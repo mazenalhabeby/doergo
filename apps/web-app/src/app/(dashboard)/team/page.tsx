@@ -1,67 +1,94 @@
 "use client"
 
-import { personName } from "@hbcfield/shared/client"
-import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { MessageCircle, Phone, Users } from "lucide-react"
-import { teamApi } from "@/lib/api"
-import { useContactActions } from "@/hooks/use-contact-actions"
-import { UserAvatar } from "@/components/user-avatar"
-import { notify } from "@/lib/toast"
-import { keys } from "@/lib/query-keys"
+import { Search, Users } from "lucide-react"
+import type { Colleague } from "@/lib/api/types/team"
+import { PersonCard } from "@/components/people/person-card"
+import { PersonDialog } from "@/components/people/person-dialog"
+import { filterPeople, presenceOf, usePeople, type PresenceFilter } from "@/components/people/use-people"
 
+const FILTERS: PresenceFilter[] = ["all", "AVAILABLE", "BUSY", "AWAY"]
+const DOT: Record<string, string> = { AVAILABLE: "bg-emerald-500", BUSY: "bg-rose-500", AWAY: "bg-amber-500" }
+
+/**
+ * Team — who's who, for every member: managers first, then colleagues, with
+ * whether each is around, Message and Profile. The same two lists as the
+ * phone's Team tab.
+ */
 export default function TeamPage() {
   const { t } = useTranslation()
-  const { message } = useContactActions()
-  const { data: colleagues = [], isLoading } = useQuery({
-    queryKey: keys.people.team(),
-    queryFn: () => teamApi.list(),
-    staleTime: 60000,
-  })
+  const { managers, colleagues, all, loading } = usePeople()
+  const [query, setQuery] = useState("")
+  const [presence, setPresence] = useState<PresenceFilter>("all")
+  const [profile, setProfile] = useState<Colleague | null>(null)
+  const count = (f: PresenceFilter) =>
+    f === "all" ? all.length : all.filter((p) => presenceOf(p.presence) === f).length
+  const sections = [
+    { key: "managers", label: t("team.managers", "Managers"), rows: filterPeople(managers, query, presence) },
+    { key: "colleagues", label: t("team.colleagues", "Colleagues"), rows: filterPeople(colleagues, query, presence) },
+  ].filter((s) => s.rows.length > 0)
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <h1 className="text-2xl font-semibold text-foreground">{t("team.title")}</h1>
-      <p className="mb-6 text-sm text-muted-foreground">{t("team.subtitle")}</p>
+      <p className="mb-5 text-sm text-muted-foreground">{t("team.subtitle")}</p>
 
-      {isLoading ? (
-        <div className="space-y-2">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-card" />
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-[1_1_240px]">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("team.search", "Search name, job, workspace")}
+            aria-label={t("team.search", "Search name, job, workspace")}
+            className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
+          />
+        </div>
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("team.filterLabel", "Show")}>
+          {FILTERS.map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setPresence(f)}
+              aria-pressed={presence === f}
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${presence === f ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground"}`}
+            >
+              {f !== "all" && <span className={`size-2 rounded-full ${DOT[f]}`} />}
+              {f === "all"
+                ? t("team.filter.all", { count: count(f), defaultValue: "All {{count}}" })
+                : t(`team.filter.${f}`, { count: count(f) })}
+            </button>
           ))}
         </div>
-      ) : colleagues.length === 0 ? (
+      </div>
+
+      {loading ? (
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-28 animate-pulse rounded-xl bg-card" />
+          ))}
+        </div>
+      ) : sections.length === 0 ? (
         <div className="rounded-xl border border-border bg-card py-14 text-center">
-          <Users className="mx-auto mb-2 h-6 w-6 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">{t("team.empty")}</p>
+          <Users className="mx-auto mb-2 size-6 text-muted-foreground/40" />
+          <p className="text-sm text-muted-foreground">
+            {all.length ? t("team.noMatch", "Nobody matches.") : t("team.empty")}
+          </p>
         </div>
       ) : (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {colleagues.map((c) => (
-            <div key={c.id} className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5">
-              <UserAvatar firstName={c.firstName} lastName={c.lastName} avatarUrl={c.avatarUrl} seed={c.id} size="md" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{personName(c)}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {c.position || t("members.roles.employee")}{c.spaceName ? ` · ${c.spaceName}` : ""}
-                </p>
-              </div>
-              <button
-                onClick={() => message(c.id)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground transition hover:opacity-90"
-              >
-                <MessageCircle className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => notify.success(t("team.callsComingSoon"))}
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground transition hover:text-foreground"
-              >
-                <Phone className="h-4 w-4" />
-              </button>
+        sections.map((s) => (
+          <section key={s.key} className="mb-6">
+            <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{s.label}</h2>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {s.rows.map((p) => (
+                <PersonCard key={p.id} person={p} onProfile={setProfile} />
+              ))}
             </div>
-          ))}
-        </div>
+          </section>
+        ))
       )}
+      <PersonDialog userId={profile?.id ?? null} onClose={() => setProfile(null)} />
     </div>
   )
 }

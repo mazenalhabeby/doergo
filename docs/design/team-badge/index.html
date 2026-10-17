@@ -1,0 +1,126 @@
+<title>Team Tab Counter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600&display=swap">
+<style>
+/* Layout: three options side by side, each a phone bottom bar in three states, plus the Messages switch. */
+:root {
+  --bg: #eef4f1; --mint: #cfe7dc; --surface: #ffffff; --capsule: #e7efec; --ink: #0f2a22; --ink-2: #5b6f68; --ink-3: #9aaba5;
+  --jade: #0f6b52; --jade-tint: #d9eee6; --red: #e5372d; --line: #e3ebe7;
+  --font: "Readex Pro", system-ui, -apple-system, sans-serif;
+  --spring: cubic-bezier(.34, 1.56, .64, 1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0c1512; --mint: #13261f; --surface: #15211c; --capsule: #1d2c26; --ink: #e8f2ee; --ink-2: #a6b8b1; --ink-3: #6e817a;
+  --jade: #4fd1a5; --jade-tint: #173a2f; --red: #ff5a4f; --line: #24342d; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0c1512; --mint: #13261f; --surface: #15211c; --capsule: #1d2c26; --ink: #e8f2ee; --ink-2: #a6b8b1; --ink-3: #6e817a;
+  --jade: #4fd1a5; --jade-tint: #173a2f; --red: #ff5a4f; --line: #24342d; color-scheme: dark }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font); padding-inline: 16px; padding-block: 28px 48px }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 22px }
+h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.01em }
+p { margin: 0; color: var(--ink-2); max-width: 70ch }
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer }
+.controls { display: flex; flex-wrap: wrap; gap: 8px }
+.ctl { padding: 7px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-weight: 500; font-size: 13px }
+.ctl.p { background: var(--jade); color: #fff; border-color: transparent }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px }
+.opt { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px; display: grid; gap: 12px; align-content: start }
+.opt h2 { margin: 0; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px }
+.opt h2 .k { width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; background: var(--jade-tint); color: var(--jade); font-size: 13px }
+.opt.rec { border-color: var(--jade); box-shadow: 0 0 0 4px color-mix(in srgb, var(--jade) 14%, transparent) }
+.tag { font-size: 11px; font-weight: 600; color: var(--jade); background: var(--jade-tint); padding: 2px 8px; border-radius: 999px }
+.stage { background: linear-gradient(180deg, var(--mint), var(--bg)); border-radius: 16px; padding: 14px 10px; display: grid; gap: 12px }
+.cap { font-size: 11px; color: var(--ink-3); font-weight: 500; padding-left: 4px }
+
+/* the bar */
+.bar { display: flex; align-items: center; gap: 2px; background: var(--surface); border-radius: 999px; padding: 8px; box-shadow: 0 8px 22px -12px rgb(15 42 34 / .35) }
+.slot { position: relative; height: 40px; flex: 1; display: flex; align-items: center; justify-content: center; border-radius: 999px; color: var(--ink-2) }
+.slot.open { flex: 2.3; background: var(--capsule); color: var(--jade); gap: 7px; padding: 0 12px }
+.slot svg { width: 22px; height: 22px; flex: none }
+.slot .lbl { font-weight: 500; font-size: 14px }
+.icon { position: relative; display: grid; place-items: center }
+
+/* badge styles */
+.b { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--red); color: #fff; font-size: 11px; font-weight: 600; display: grid; place-items: center; font-variant-numeric: tabular-nums; line-height: 1 }
+.pop { animation: pop .55s var(--spring) }
+@keyframes pop { 0% { transform: scale(.3) } 55% { transform: scale(1.3) } 100% { transform: scale(1) } }
+
+/* A: count after the label when open; corner of the icon when closed */
+.A .icon .b { position: absolute; top: -6px; right: -9px; box-shadow: 0 0 0 2px var(--surface) }
+.A .slot.open .b.inline { position: static; box-shadow: none; margin-left: 2px }
+
+/* B: on the capsule's top-right edge */
+.B .slot.open .b { position: absolute; top: -5px; right: -2px; box-shadow: 0 0 0 2.5px var(--surface), 0 3px 8px -2px rgb(229 55 45 / .55) }
+.B .icon .b { position: absolute; top: -6px; right: -9px; box-shadow: 0 0 0 2px var(--surface) }
+
+/* C: a soft count chip inside the open capsule; a dot+number on the closed icon */
+.C .slot.open .b { position: static; background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red); height: 20px; min-width: 22px; font-size: 12px }
+.C .icon .b { position: absolute; top: -5px; right: -8px; box-shadow: 0 0 0 2px var(--surface) }
+
+/* segmented switch */
+.seg { display: flex; gap: 8px }
+.chip { height: 36px; padding: 0 14px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink-2); font-weight: 500 }
+.chip.on { background: var(--surface); color: var(--jade); box-shadow: 0 0 0 1.5px var(--jade) }
+.chip .b { height: 18px }
+.C .chip .b { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red) }
+.today { font-size: 12px; color: var(--ink-3) }
+.today b { color: var(--ink-2); font-weight: 500 }
+@media (prefers-reduced-motion: reduce) { .pop { animation: none } }
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:10px">
+    <h1>Team tab counter</h1>
+    <p>Today the red "1" sits between the icon and the word "Team" when the tab is open (your screenshot). Three ways to place it, each shown open, closed, and with a big count. Press "New message" to see it arrive.</p>
+    <div class="controls">
+      <button class="ctl p" id="bump">New message</button>
+      <button class="ctl" id="read">Read it</button>
+      <button class="ctl" id="many">12 unread</button>
+    </div>
+  </header>
+  <div class="opts" id="opts"></div>
+  <p class="today"><b>Today:</b> badge pinned 13 pt from the icon's left edge, so with the label open it lands on "T" of "Team"; the Messages switch says "Messages · 1" as plain text.</p>
+</div>
+
+<script>
+var ICONS = {
+  home: '<path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  jobs: '<rect x="5" y="5" width="14" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="9" y="3" width="6" height="4" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+  clock: '<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v4l2.5 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  team: '<circle cx="9" cy="8.5" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19c.5-3.2 2.7-5 5.5-5s5 1.8 5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15.5 6a3 3 0 0 1 0 5.6M17.5 14.4c1.7.6 2.8 2.2 3 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  more: '<circle cx="6" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="18" cy="12" r="1.6" fill="currentColor"/>'
+};
+var OPTS = [
+  { k: 'A', name: 'Count after the label', note: 'Open: "Team" then the number, in line — nothing overlaps. Closed: the number on the icon\'s top-right corner, outside the drawing.', rec: true },
+  { k: 'B', name: 'On the capsule\'s corner', note: 'The number rides the top-right edge of the open tab like an app-icon badge, with a soft red glow. Closed: same as A.' },
+  { k: 'C', name: 'Quiet chip', note: 'Inside the open tab as a soft red chip that matches the text; closed: a small corner number. Calmer, less alarm.' },
+];
+var count = 1, popKey = 0;
+function svg(name) { return '<svg viewBox="0 0 24 24">' + ICONS[name] + '</svg>'; }
+function badge(n, cls) { if (!n) return ''; return '<span class="b ' + (cls || '') + ' ' + (popKey ? 'pop' : '') + '" data-k="' + popKey + '">' + (n > 9 ? '9+' : n) + '</span>'; }
+function bar(o, open, n) {
+  var slots = ['home', 'jobs', 'clock', 'team', 'more'].map(function (s) {
+    var isTeam = s === 'team', isOpen = isTeam && open;
+    var b = isTeam ? n : 0;
+    if (isOpen) {
+      if (o.k === 'A') return '<div class="slot open"><span class="icon">' + svg(s) + '</span><span class="lbl">Team</span>' + badge(b, 'inline') + '</div>';
+      if (o.k === 'B') return '<div class="slot open"><span class="icon">' + svg(s) + '</span><span class="lbl">Team</span>' + badge(b) + '</div>';
+      return '<div class="slot open"><span class="icon">' + svg(s) + '</span><span class="lbl">Team</span>' + badge(b) + '</div>';
+    }
+    return '<div class="slot"><span class="icon">' + svg(s) + (b ? badge(b) : '') + '</span></div>';
+  }).join('');
+  return '<div class="bar">' + slots + '</div>';
+}
+function render() {
+  document.getElementById('opts').innerHTML = OPTS.map(function (o) {
+    return '<section class="opt ' + o.k + (o.rec ? ' rec' : '') + '"><h2><span class="k">' + o.k + '</span>' + o.name + (o.rec ? ' <span class="tag">Recommended</span>' : '') + '</h2><p>' + o.note + '</p>' +
+      '<div class="stage"><span class="cap">Team open</span>' + bar(o, true, count) +
+      '<span class="cap">Another tab open</span>' + bar(o, false, count) +
+      '<span class="cap">Messages switch</span><div class="seg"><span class="chip">People</span><span class="chip on">Messages' + badge(count) + '</span></div></div></section>';
+  }).join('');
+}
+document.getElementById('bump').onclick = function () { count = Math.min(count + 1, 99); popKey++; render(); };
+document.getElementById('read').onclick = function () { count = 0; popKey = 0; render(); };
+document.getElementById('many').onclick = function () { count = 12; popKey++; render(); };
+render();
+</script>

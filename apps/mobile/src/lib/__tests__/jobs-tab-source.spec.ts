@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { readSource } from '../../test-utils/read-source';
 
 /**
  * The Jobs tab and New job — the rules a typecheck cannot see.
@@ -12,7 +13,7 @@ import * as path from 'path';
  */
 const MOBILE = path.resolve(__dirname, '../../..');
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
-const read = (rel: string) => strip(fs.readFileSync(path.join(MOBILE, rel), 'utf8'));
+const read = (rel: string) => strip(readSource(path.join(MOBILE, rel), 'utf8'));
 const dir = (rel: string) => fs.readdirSync(path.join(MOBILE, rel)).filter((f) => /\.tsx?$/.test(f)).map((f) => `${rel}/${f}`);
 
 const TASKS = 'app/(app)/(tabs)/tasks.tsx';
@@ -136,7 +137,7 @@ describe('design-system rules', () => {
   });
 
   it('every new word exists in all five languages', () => {
-    const load = (l: string) => JSON.parse(fs.readFileSync(path.join(MOBILE, 'src/i18n/locales', `${l}.json`), 'utf8'));
+    const load = (l: string) => JSON.parse(readSource(path.join(MOBILE, 'src/i18n/locales', `${l}.json`), 'utf8'));
     const keys = (o: Record<string, unknown>, p = ''): string[] =>
       Object.entries(o).flatMap(([k, v]) => (v && typeof v === 'object' ? keys(v as Record<string, unknown>, `${p}${k}.`) : [`${p}${k}`]));
     const en = load('en');

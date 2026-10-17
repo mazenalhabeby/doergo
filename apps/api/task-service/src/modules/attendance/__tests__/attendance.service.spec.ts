@@ -4,8 +4,10 @@ import { NotFoundException, BadRequestException, ForbiddenException } from '@nes
 import { computeScheduleFlags } from '@hbcfield/shared';
 import { AttendanceService } from '../attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
-import { BreakService } from '../break.service';
-import { ApprovalService } from '../approval.service';
+import { BREAK_SERVICES } from '../break-services';
+import { breakServicesOf, type BreakServiceParts } from './break.service.fixture';
+import { entryServicesOf, type ApprovalServiceParts } from './approval.service.fixture';
+import { ENTRY_SERVICES } from '../entry-services';
 import { AttendanceReportService } from '../attendance-report.service';
 import { ShiftResolverService } from '../shift-resolver.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
@@ -23,8 +25,8 @@ import { PresenceService } from '../presence/presence.service';
 
 describe('AttendanceService', () => {
   let service: AttendanceService;
-  let breakService: BreakService;
-  let approvalService: ApprovalService;
+  let breakService: BreakServiceParts;
+  let approvalService: ApprovalServiceParts;
   let reportService: AttendanceReportService;
 
   const mockLocation = {
@@ -173,8 +175,8 @@ describe('AttendanceService', () => {
         BreakRulesService,
         CountedTimeService,
         AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } },
-        BreakService,
-        ApprovalService,
+        ...BREAK_SERVICES,
+        ...ENTRY_SERVICES,
         AttendanceReportService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: mockNotificationClient },
@@ -193,8 +195,8 @@ describe('AttendanceService', () => {
     }).compile();
 
     service = module.get<AttendanceService>(AttendanceService);
-    breakService = module.get<BreakService>(BreakService);
-    approvalService = module.get<ApprovalService>(ApprovalService);
+    breakService = breakServicesOf(module);
+    approvalService = entryServicesOf(module);
     reportService = module.get<AttendanceReportService>(AttendanceReportService);
   });
 

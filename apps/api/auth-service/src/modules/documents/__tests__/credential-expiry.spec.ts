@@ -1,7 +1,9 @@
+import { ComplianceBoardService } from '../compliance-board.service';
 import { Test } from '@nestjs/testing';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { CredentialExpiryService } from '../credential-expiry.service';
+import { credentialExpiryPartsOf, type CredentialExpiryServiceParts } from './credential-expiry.service.fixture';
 
 /**
  * The nightly sweep.
@@ -11,7 +13,7 @@ import { CredentialExpiryService } from '../credential-expiry.service';
  * ran the same schedule.
  */
 describe('CredentialExpiryService', () => {
-  let service: CredentialExpiryService;
+  let service: CredentialExpiryServiceParts;
 
   const prisma: Record<string, any> = {
     document: { updateMany: jest.fn(), findMany: jest.fn() },
@@ -32,11 +34,12 @@ describe('CredentialExpiryService', () => {
     const module = await Test.createTestingModule({
       providers: [
         CredentialExpiryService,
+        ComplianceBoardService,
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: notifications },
       ],
     }).compile();
-    service = module.get(CredentialExpiryService);
+    service = credentialExpiryPartsOf(module);
   });
 
   describe('markExpired', () => {

@@ -12,7 +12,7 @@ import { approvalsEndpoints } from './approvals';
 import { assetCategoriesEndpoints, assetsEndpoints } from './assets';
 import { attendanceEndpoints, overtimeEndpoints, shiftIssuesEndpoints, worklogEndpoints } from './attendance';
 import { calendarEndpoints } from './calendar';
-import { chatEndpoints, notificationsEndpoints, supportEndpoints } from './comms';
+import { chatEndpoints, notificationsEndpoints, peopleEndpoints, supportEndpoints } from './comms';
 import { customersEndpoints } from './customers';
 import { documentsEndpoints, signLinkEndpoints } from './documents';
 import { invitationsEndpoints, joinRequestsEndpoints, locationsEndpoints, onboardingEndpoints, organizationsEndpoints, appEndpoints } from './organization';
@@ -80,6 +80,7 @@ export const apiEndpoints = {
   customers: customersEndpoints,
   calendar: calendarEndpoints,
   chat: chatEndpoints,
+  people: peopleEndpoints,
   support: supportEndpoints,
   portal: portalEndpoints,
   locations: locationsEndpoints,

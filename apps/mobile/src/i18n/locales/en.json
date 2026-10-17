@@ -1440,7 +1440,9 @@
       "AVAILABLE": "{{count}} available",
       "BUSY": "{{count}} busy",
       "AWAY": "{{count}} away"
-    }
+    },
+    "people": "People",
+    "notVisible": "This person is not on your team."
   },
   "navTitles": {
     "taskDetails": "Task Details",
@@ -1509,7 +1511,74 @@
     "sayHello": "Say hello",
     "new": "New",
     "send": "Send",
-    "noMessagesYet": "No messages yet"
+    "noMessagesYet": "No messages yet",
+    "attach": "Add a photo",
+    "camera": "Take a photo",
+    "library": "Choose from library",
+    "edit": "Edit",
+    "edited": "edited",
+    "editing": "Editing your message",
+    "fileOnline": "opens online",
+    "message": "Message",
+    "mute": "Turn notifications off",
+    "muted": "Notifications off",
+    "unmute": "Turn notifications back on",
+    "muteHour": "For 1 hour",
+    "muteDay": "For 8 hours",
+    "muteWeek": "For a week",
+    "muteAlways": "Until I turn it back on",
+    "notifications": "Notifications",
+    "read": "Read",
+    "remove": "Remove",
+    "removed": "Message removed",
+    "seenBy": "Seen by {{count}}",
+    "seenByAll": "Seen by everyone",
+    "sent": "Sent",
+    "status": "Status",
+    "workspaces": "Workspaces",
+    "yourMessage": "Your message",
+    "newGroup": "New group",
+    "groupName": "Group name",
+    "createGroup": "Create ({{count}})",
+    "addPeople": "Add people",
+    "addCount": "Add ({{count}})",
+    "leave": "Leave",
+    "leaveGroup": "Leave the group",
+    "leaveAsk": "Leave this group? You will no longer see its messages.",
+    "removeMember": "Take out",
+    "removeMemberAsk": "Take {{name}} out of this group?",
+    "rename": "Rename",
+    "peopleCount_one": "{{count}} person",
+    "peopleCount_other": "{{count}} people",
+    "members": "Members",
+    "groupOwner": "Manages the group",
+    "taskChat": "Job chat · the crew and the office",
+    "taskChatNote": "Everyone on this job's crew is in this chat.",
+    "openJob": "Open the job",
+    "taskChatClosed": "This job is over, so its chat is closed. You can still read what was said.",
+    "messagesFound": "Messages",
+    "noMessagesFound": "No messages with these words.",
+    "system": {
+      "created": "{{actor}} started the group \"{{title}}\" with {{users}}",
+      "renamed": "{{actor}} renamed the group to \"{{title}}\"",
+      "added": "{{actor}} added {{users}}",
+      "removed": "{{actor}} took {{users}} out",
+      "left": "{{actor}} left"
+    },
+    "searchMessages": "Search messages",
+    "searchOnline": "Searching messages needs a connection.",
+    "removedFromConversation": "You are no longer in this conversation.",
+    "couldNotOpenJob": "Could not open this job's chat. Check your connection.",
+    "tapToRemove": "Tap a person to take them out.",
+    "jobChatOpen": "Job chat",
+    "jobChatHint": "The crew and the office",
+    "sayHelloTo": "Say hello to {{name}}",
+    "starter": {
+      "hi": "Hi {{name}} 👋",
+      "hiAll": "Hi everyone 👋",
+      "onMyWay": "On my way",
+      "callMe": "Can you call me?"
+    }
   },
   "locationConsent": {
     "title": "Location in the background",
@@ -5336,5 +5405,8 @@
       "save": "Save",
       "fixRota": "Fix the rota"
     }
+  },
+  "people": {
+    "job": "Job"
   }
 }

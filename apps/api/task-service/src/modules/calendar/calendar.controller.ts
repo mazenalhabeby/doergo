@@ -5,6 +5,9 @@ import { CalendarService, type ItemsQuery } from './calendar.service';
 import { EventsService, type Caller, type EventInput } from './events.service';
 import { HolidaysService } from './holidays.service';
 import { FeedService } from './feed.service';
+import { EventAnswersService } from './event-answers.service';
+import { EventReadService } from './event-read.service';
+import { AvailabilityService } from './availability.service';
 
 /** The calendar over RPC. Every payload's identity (userId, organizationId, scopes) comes from the gateway's token. */
 @Controller()
@@ -12,6 +15,9 @@ export class CalendarController {
   constructor(
     private readonly calendar: CalendarService,
     private readonly events: EventsService,
+    private readonly freeBusy: AvailabilityService,
+    private readonly eventRead: EventReadService,
+    private readonly eventAnswers: EventAnswersService,
     private readonly holidays: HolidaysService,
     private readonly feed: FeedService,
   ) {}
@@ -31,16 +37,40 @@ export class CalendarController {
   @MessagePattern({ cmd: 'calendar_set_detected_place' }) setDetectedPlace(@Payload() d: any) { return this.holidays.setDetectedPlace(d); }
   @MessagePattern({ cmd: 'calendar_places_to_detect' }) placesToDetect(@Payload() d: any) { return this.holidays.placesToDetect(d ?? {}); }
 
-  @MessagePattern({ cmd: 'calendar_event_create' }) create(@Payload() d: Caller & { input: EventInput; clientId?: string }) { return this.events.create(d); }
-  @MessagePattern({ cmd: 'calendar_event_update' }) update(@Payload() d: Caller & { eventId: string; input: EventInput }) { return this.events.update(d); }
-  @MessagePattern({ cmd: 'calendar_event_cancel' }) cancel(@Payload() d: Caller & { eventId: string }) { return this.events.cancel(d); }
-  @MessagePattern({ cmd: 'calendar_event_get' }) get(@Payload() d: Caller & { eventId: string }) { return this.events.get(d); }
-  @MessagePattern({ cmd: 'calendar_event_respond' }) respond(@Payload() d: any) { return this.events.respond(d); }
-  @MessagePattern({ cmd: 'calendar_event_snooze' }) snooze(@Payload() d: any) { return this.events.snooze(d); }
-  @MessagePattern({ cmd: 'calendar_event_done' }) done(@Payload() d: any) { return this.events.done(d); }
-  @MessagePattern({ cmd: 'calendar_people' }) people(@Payload() d: any) { return this.events.people(d); }
-  @MessagePattern({ cmd: 'calendar_availability' }) availability(@Payload() d: any) { return this.events.availability(d); }
-  @MessagePattern({ cmd: 'calendar_free_slots' }) freeSlots(@Payload() d: any) { return this.events.freeSlots(d); }
+  @MessagePattern({ cmd: 'calendar_event_create' }) create(
+    @Payload() d: Caller & { input: EventInput; clientId?: string },
+  ) {
+    return this.events.create(d);
+  }
+  @MessagePattern({ cmd: 'calendar_event_update' }) update(
+    @Payload() d: Caller & { eventId: string; input: EventInput },
+  ) {
+    return this.events.update(d);
+  }
+  @MessagePattern({ cmd: 'calendar_event_cancel' }) cancel(@Payload() d: Caller & { eventId: string }) {
+    return this.events.cancel(d);
+  }
+  @MessagePattern({ cmd: 'calendar_event_get' }) get(@Payload() d: Caller & { eventId: string }) {
+    return this.events.get(d);
+  }
+  @MessagePattern({ cmd: 'calendar_event_respond' }) respond(@Payload() d: any) {
+    return this.eventAnswers.respond(d);
+  }
+  @MessagePattern({ cmd: 'calendar_event_snooze' }) snooze(@Payload() d: any) {
+    return this.eventAnswers.snooze(d);
+  }
+  @MessagePattern({ cmd: 'calendar_event_done' }) done(@Payload() d: any) {
+    return this.eventAnswers.done(d);
+  }
+  @MessagePattern({ cmd: 'calendar_people' }) people(@Payload() d: any) {
+    return this.eventRead.people(d);
+  }
+  @MessagePattern({ cmd: 'calendar_availability' }) availability(@Payload() d: any) {
+    return this.freeBusy.availability(d);
+  }
+  @MessagePattern({ cmd: 'calendar_free_slots' }) freeSlots(@Payload() d: any) {
+    return this.freeBusy.freeSlots(d);
+  }
 
   @MessagePattern({ cmd: 'calendar_feed_status' }) feedStatus(@Payload() d: any) { return this.feed.status(d); }
   @MessagePattern({ cmd: 'calendar_feed_rotate' }) feedRotate(@Payload() d: any) { return this.feed.rotate(d); }

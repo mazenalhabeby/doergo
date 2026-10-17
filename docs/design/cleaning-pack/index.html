@@ -1,0 +1,324 @@
+<title>Cleaning Pack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Readex+Pro:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a narrated report — sections top to bottom, each pairing PlanD's screen with ours; a player bar at the bottom. */
+:root {
+  --bg: #f4f6f9; --surface: #ffffff; --well: #eef1f6; --line: #e2e7ef;
+  --ink: #0f172a; --ink-2: #475569; --ink-3: #94a3b8;
+  --accent: #3b82f6; --accent-strong: #2563eb; --accent-tint: #e6effe;
+  --them: #0f766e; --them-tint: #ccfbf1;
+  --win: #16a34a; --win-tint: #dcfce7; --part: #d97706; --part-tint: #fef3c7; --lose: #dc2626; --lose-tint: #fee2e2;
+  --ink-grad: linear-gradient(135deg, #38bdf8, #3b82f6 55%, #6366f1);
+  --shadow: 0 1px 2px rgb(15 23 42 / .05), 0 12px 32px -16px rgb(15 23 42 / .22);
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ar: "Readex Pro", "Inter", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b1017; --surface: #111823; --well: #18212e; --line: #243041; --ink: #e6edf6; --ink-2: #a3b1c4; --ink-3: #64748b;
+  --accent: #60a5fa; --accent-strong: #3b82f6; --accent-tint: #15253d; --them: #2dd4bf; --them-tint: #0f2e2b;
+  --win: #4ade80; --win-tint: #10301c; --part: #fbbf24; --part-tint: #3a2a0c; --lose: #f87171; --lose-tint: #3b1414;
+  --shadow: 0 1px 2px rgb(0 0 0 / .4), 0 12px 32px -16px rgb(0 0 0 / .7); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0b1017; --surface: #111823; --well: #18212e; --line: #243041; --ink: #e6edf6; --ink-2: #a3b1c4; --ink-3: #64748b;
+  --accent: #60a5fa; --accent-strong: #3b82f6; --accent-tint: #15253d; --them: #2dd4bf; --them-tint: #0f2e2b;
+  --win: #4ade80; --win-tint: #10301c; --part: #fbbf24; --part-tint: #3a2a0c; --lose: #f87171; --lose-tint: #3b1414;
+  --shadow: 0 1px 2px rgb(0 0 0 / .4), 0 12px 32px -16px rgb(0 0 0 / .7); color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 14.5px/1.55 var(--font); padding-inline: 16px; padding-block: 28px 140px; margin: 0 }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 22px }
+h1, h2, h3 { margin: 0; letter-spacing: -.015em; text-wrap: balance }
+p { margin: 0; color: var(--ink-2); max-width: 70ch }
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px }
+
+header.hero { display: grid; gap: 14px; padding: 6px 0 4px }
+.kicker { font: 600 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3) }
+header.hero h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 700 }
+header.hero h1 .vs { color: var(--ink-3); font-weight: 500 }
+.grad { background: var(--ink-grad); -webkit-background-clip: text; background-clip: text; color: transparent }
+.lede { font-size: 16px }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--ink-2) }
+.legend span { display: inline-flex; align-items: center; gap: 6px }
+.dot { width: 10px; height: 10px; border-radius: 50% }
+
+section.sec { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; display: grid; gap: 16px; box-shadow: var(--shadow); transition: box-shadow .3s, border-color .3s; scroll-margin-top: 20px; scroll-margin-bottom: 140px }
+section.sec.speaking { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent), var(--shadow) }
+.sec-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap }
+.sec-h > div { display: grid; gap: 6px; min-width: 0 }
+.sec-h h2 { font-size: 21px; font-weight: 650 }
+.listen { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 9px; border-radius: 999px; background: var(--accent-tint); color: var(--accent-strong); font: 500 13px var(--ar); flex: none }
+.listen svg { width: 16px; height: 16px }
+.verdict { display: inline-flex; align-items: center; gap: 6px; font: 600 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: 5px 9px; border-radius: 999px; width: fit-content }
+.v-them { background: var(--them-tint); color: var(--them) } .v-us { background: var(--accent-tint); color: var(--accent-strong) }
+
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px }
+.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px }
+.pane { display: grid; gap: 8px; align-content: start; min-width: 0 }
+.pane-label { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--ink-2) }
+.pane-label .chip { font: 600 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border-radius: 6px }
+.chip.them { background: var(--them-tint); color: var(--them) } .chip.today { background: var(--well); color: var(--ink-2) } .chip.next { background: var(--accent-tint); color: var(--accent-strong) }
+
+/* mini screens */
+.screen { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; font-size: 12.5px; min-width: 0 }
+.screen .bar { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--well); font-weight: 600; font-size: 12px }
+.screen .bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); opacity: .5 }
+.screen .bar b { margin-left: 4px; font-weight: 600 }
+.screen.t .bar { background: color-mix(in srgb, var(--them-tint) 60%, var(--surface)) }
+.screen .body { padding: 10px; display: grid; gap: 8px }
+table.mini { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums }
+table.mini th, table.mini td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--line); white-space: nowrap }
+table.mini th { font-size: 10.5px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em }
+table.mini td.n, table.mini th.n { text-align: right }
+.tbl-wrap { overflow-x: auto }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; border-radius: 9px; font-size: 12px; font-weight: 600; border: 1px solid var(--line); background: var(--surface) }
+.btn.p { border: 0; color: #fff; background: var(--ink-grad) }
+.btn.tp { border: 0; color: #fff; background: var(--them) }
+.row { display: flex; align-items: center; gap: 8px; min-width: 0 }
+.row.sb { justify-content: space-between }
+.muted { color: var(--ink-3) } .small { font-size: 11.5px }
+.pill { font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: var(--well); color: var(--ink-2); white-space: nowrap }
+.pill.ok { background: var(--win-tint); color: var(--win) } .pill.warn { background: var(--part-tint); color: var(--part) } .pill.bad { background: var(--lose-tint); color: var(--lose) } .pill.b { background: var(--accent-tint); color: var(--accent-strong) } .pill.t { background: var(--them-tint); color: var(--them) }
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 6px }
+.chain .step { padding: 5px 9px; border-radius: 8px; background: var(--well); font-weight: 600; font-size: 11.5px }
+.chain .step.on { background: var(--them-tint); color: var(--them) }
+.chain .step.us { background: var(--accent-tint); color: var(--accent-strong) }
+.chain .step.off { opacity: .45; text-decoration: line-through }
+.chain .arr { color: var(--ink-3) }
+.av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; font-weight: 700; background: var(--well); color: var(--ink-2); flex: none }
+.bub { padding: 7px 10px; border-radius: 14px; background: var(--well); max-width: 88%; line-height: 1.4 }
+.bub.me { margin-left: auto; color: #fff; background: linear-gradient(135deg, #3b82f6, #2563eb) }
+.bub .tr { display: block; margin-top: 4px; font-size: 10.5px; opacity: .75 }
+.meter { height: 6px; border-radius: 6px; background: var(--well); overflow: hidden; flex: 1 }
+.meter > i { display: block; height: 100%; background: var(--ink-grad); border-radius: inherit }
+
+/* pillars + strengths */
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px }
+.pillar { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 6px; align-content: start; background: var(--surface) }
+.pillar b { font-size: 13.5px } .pillar span { font-size: 12.5px; color: var(--ink-2) }
+.pillar.ai { background: linear-gradient(160deg, var(--them-tint), var(--surface) 70%) }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px }
+.fact { padding: 12px; border-radius: 14px; background: var(--well); display: grid; gap: 2px }
+.fact b { font-size: 22px; font-variant-numeric: tabular-nums; letter-spacing: -.02em } .fact span { font-size: 12px; color: var(--ink-2) }
+.strengths { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px }
+.str { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 8px; align-content: start }
+.str b { font-size: 13.5px } .str p { font-size: 12.5px }
+.str .art { height: 78px; border-radius: 10px; background: var(--well); position: relative; overflow: hidden }
+
+/* scorecard */
+.score { width: 100%; border-collapse: collapse; font-size: 13px }
+.score th, .score td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top }
+.score th { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; font-weight: 600 }
+.score td:first-child { font-weight: 600; white-space: nowrap }
+.mark { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap }
+.mark::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: currentColor }
+.m-win { color: var(--win) } .m-part { color: var(--part) } .m-lose { color: var(--lose) }
+
+/* plan */
+.steps { display: grid; gap: 10px; counter-reset: s }
+.step-c { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px; border-radius: 14px; border: 1px solid var(--line) }
+.step-c .num { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; font-weight: 700; color: #fff; background: var(--ink-grad) }
+.step-c b { font-size: 14px } .step-c p { font-size: 12.5px }
+.size { font: 600 10.5px/1 var(--mono); padding: 4px 8px; border-radius: 6px; background: var(--well); color: var(--ink-2); white-space: nowrap }
+
+.note { border-left: 3px solid var(--accent); padding: 10px 14px; background: var(--accent-tint); border-radius: 0 12px 12px 0; color: var(--ink) }
+.sources { font-size: 12px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 4px 14px }
+.sources a { color: var(--ink-2) }
+
+/* player */
+.player { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; width: min(760px, calc(100% - 24px)); z-index: 10; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(14px); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 10px 12px; display: grid; gap: 8px }
+.player .top { display: flex; align-items: center; gap: 10px }
+.pbtn { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: var(--ink-grad); flex: none; box-shadow: 0 6px 16px -6px #3b82f6 }
+.pbtn svg { width: 18px; height: 18px }
+.ptxt { min-width: 0; flex: 1; display: grid; gap: 4px }
+.now { font: 500 12.5px var(--ar); color: var(--ink-2); direction: rtl; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.prog { height: 4px; border-radius: 4px; background: var(--well); overflow: hidden }
+.prog i { display: block; height: 100%; width: 0; background: var(--ink-grad) }
+.stopb { font-size: 12px; font-weight: 600; color: var(--ink-2); padding: 6px 10px; border-radius: 10px; background: var(--well) }
+.cap { font: 400 14px/1.7 var(--ar); direction: rtl; text-align: right; color: var(--ink); max-height: 4.9em; overflow: hidden }
+
+@media (max-width: 860px) { .trio, .duo { grid-template-columns: 1fr } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important } }
+</style><style>
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px }
+.node { padding: 7px 10px; border-radius: 10px; font-weight: 600; font-size: 12px; border: 1px solid var(--line); background: var(--surface) }
+.node small { display: block; font-weight: 500; color: var(--ink-3); font-size: 10.5px }
+.node.t { background: var(--them-tint); border-color: transparent; color: var(--them) }
+.node.u { background: var(--accent-tint); border-color: transparent; color: var(--accent-strong) }
+.cal { display: grid; grid-template-columns: 70px repeat(3, minmax(0, 1fr)); gap: 4px; font-size: 11px }
+.cal .h { font-weight: 600; color: var(--ink-3); padding: 2px 4px }
+.cal .c { min-height: 22px; border-radius: 6px; padding: 3px 5px; font-weight: 600; color: #fff; overflow: hidden; white-space: nowrap; text-overflow: ellipsis }
+.c.blue { background: #3b82f6 } .c.red { background: #ef4444 } .c.green { background: #16a34a } .c.empty { background: var(--well); color: var(--ink-3) }
+.weak-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px }
+.weak-item { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 10px; padding: 10px 12px; border-radius: 12px; background: var(--well); align-items: start }
+.weak-item b { font-size: 13px } .weak-item p { font-size: 12px; grid-column: 2 }
+.weak-item .x { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--lose-tint); color: var(--lose); font-weight: 700; font-size: 12px; grid-row: span 2 }
+.us-line { font-size: 12px; color: var(--accent-strong); grid-column: 2; font-weight: 500 }
+.quote { border-left: 3px solid var(--them); padding: 8px 12px; background: var(--them-tint); border-radius: 0 10px 10px 0; font-style: italic; color: var(--ink) }
+.lg { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; text-align: center; font-variant-numeric: tabular-nums }
+.lg div { padding: 6px 2px; border-radius: 8px; background: var(--well); font-size: 11px }
+.lg b { display: block; font-size: 12.5px }
+@media (max-width: 700px) { .lg { grid-template-columns: repeat(5, minmax(0, 1fr)) } }
+</style><style>
+.feat { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 18px; align-items: start }
+.cmp { display: grid; gap: 8px }
+.cmp div { padding: 10px 12px; border-radius: 12px; font-size: 12.5px; line-height: 1.5 }
+.cmp .h { font: 600 10.5px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; display: block; margin-bottom: 4px }
+.cmp .they { background: var(--them-tint) } .cmp .they .h { color: var(--them) }
+.cmp .weakb { background: var(--lose-tint) } .cmp .weakb .h { color: var(--lose) }
+.cmp .usb { background: var(--accent-tint) } .cmp .usb .h { color: var(--accent-strong) }
+.app { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); font-size: 12.5px; min-width: 0 }
+.app .top { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line) }
+.app .top b { font-size: 13.5px } .app .top .sp { flex: 1 }
+.app .in { padding: 12px; display: grid; gap: 10px }
+.banner { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 10px; font-size: 12px }
+.banner.b { background: var(--accent-tint); color: var(--accent-strong) } .banner.g { background: var(--win-tint); color: var(--win) }
+.seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--well); gap: 2px }
+.seg span { padding: 4px 9px; border-radius: 8px; font-size: 11.5px; font-weight: 600; color: var(--ink-2) }
+.seg span.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08) }
+.phone { width: 230px; max-width: 100%; margin: 0 auto; border-radius: 30px; border: 7px solid #0f172a; background: var(--surface); overflow: hidden; box-shadow: var(--shadow) }
+.phone .scr { padding: 12px; display: grid; gap: 8px; min-height: 360px; align-content: start; font-size: 12px }
+.phone .scr h4 { margin: 0; font-size: 14px }
+.sig { height: 70px; border: 1.5px dashed var(--line); border-radius: 10px; position: relative; background: var(--well) }
+.sig svg { position: absolute; inset: 0 }
+.budget { height: 8px; border-radius: 8px; background: var(--well); overflow: hidden } .budget i { display: block; height: 100%; background: var(--ink-grad) }
+.reason { font-size: 10.5px; padding: 2px 6px; border-radius: 6px; background: var(--well); color: var(--ink-2) }
+.mini-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px }
+.minicard { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 8px; align-content: start }
+.minicard b { font-size: 13.5px } .minicard p { font-size: 12px }
+.tl { display: flex; align-items: center; gap: 4px; font-size: 10.5px }
+.tl i { height: 10px; border-radius: 4px; display: block }
+.dots { display: flex; gap: 3px } .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-grad) } .dots i.o { background: var(--well) }
+@media (max-width: 860px) { .feat { grid-template-columns: 1fr } }
+</style><div class="wrap"><header class="hero"><span class="kicker">Proposal · 16 Oct 2026 · built from the PlanD deep-dive</span><h1>The <span class="grad">Cleaning Pack</span></h1>
+<p class="lede">What we would build so cleaning companies — HBC included — can run on HBCField instead of PlanD. Every screen is ours, in our design; beside it, what PlanD has, the weak spot from their own manual, and how we do it better. Press play for the Arabic walk-through.</p>
+<div class="legend"><span><i class="dot" style="background:var(--them)"></i>PlanD has</span><span><i class="dot" style="background:var(--lose)"></i>Their weak spot</span><span><i class="dot" style="background:var(--accent)"></i>How we are stronger</span></div></header><section class="sec" data-sec="payroll"><div class="sec-h"><div><span class="kicker">Priority 1 · 01</span><h2>Payroll pack for Germany and Austria</h2><p>Tariff wage groups and surcharges, worked out from the time we already count, locked and exported each month.</p></div><button class="listen" data-play="payroll"></button></div><div class="feat"><div>
+<div class="app"><div class="top"><b>Payroll · October 2026</b><span class="seg"><span class="on">Köln</span><span>Düsseldorf</span></span><span class="sp"></span><span class="pill b">DE · Gebäudereinigung 2026</span></div><div class="in">
+<div class="banner g">✓ 3 Oct (Tag der Deutschen Einheit) taken from the calendar · 1 Nov per region (BW, BY, NW…)</div>
+<div class="tbl-wrap"><table class="mini"><tr><th>Person</th><th>LG</th><th class="n">Counted</th><th class="n">Night</th><th class="n">Sun/Hol</th><th class="n">Load</th><th class="n">Surch. €</th><th class="n">Tax-free €</th></tr>
+<tr><td>A. Kowalski</td><td>1</td><td class="n">142:30</td><td class="n">18:00</td><td class="n">6:00</td><td class="n">2:00</td><td class="n">161,70</td><td class="n">153,00</td></tr>
+<tr><td>M. Yilmaz</td><td>2</td><td class="n">96:00</td><td class="n">0:00</td><td class="n">12:00</td><td class="n">0:00</td><td class="n">148,42</td><td class="n">148,42</td></tr>
+<tr><td>I. Popescu</td><td>1</td><td class="n">61:00</td><td class="n">9:30</td><td class="n">0:00</td><td class="n">0:00</td><td class="n">42,75</td><td class="n">42,75</td></tr></table></div>
+<div class="banner b">↻ Night rule changed on 14 Oct → 12 entries recomputed automatically (month not locked)</div>
+<div class="row sb"><span class="small muted">Rules: night 30 % · Sun/holiday 80 % · special days 200 % · load 25 % · highest wins (editable)</span></div>
+<div class="row sb"><span class="btn">🔒 Lock October</span><span class="row"><span class="btn">CSV</span><span class="btn">LODAS</span><span class="btn p">Export DATEV Lohn &amp; Gehalt</span></span></div></div></div></div><div class="cmp"><div class="they"><span class="h">PlanD has</span>Wage groups 1–9, night/Sunday/holiday/load surcharges, tax-free split (§3b), absence pay rules, lock after export, DATEV / LuG / LODAS / Edison / Sage.</div><div class="weakb"><span class="h">Their weak spot</span>A surcharge added after approval needs every time re-approved — impossible once locked. Holidays typed in by hand; one absence per day. Exports over 60 s time out. "Highest wins" is fixed.</div><div class="usb"><span class="h">How we are stronger</span>Recomputed from counted time and dated rates right up to the lock. Holidays automatic by country and region, half-days included. Stacking rules editable per agreement. Exports run in the background. Austria built in.</div></div></div></section><section class="sec" data-sec="quotes"><div class="sec-h"><div><span class="kicker">Priority 1 · 02</span><h2>A quote the client accepts online</h2><p>Rooms, area, soiling and frequency make the price; acceptance creates the recurring jobs and invoices.</p></div><button class="listen" data-play="quotes"></button></div><div class="feat"><div>
+<div class="duo"><div class="app"><div class="top"><b>Quote Q-2026-031 · BILLA AG</b><span class="sp"></span><span class="pill warn">Draft</span></div><div class="in">
+<div class="tbl-wrap"><table class="mini"><tr><th>Area</th><th class="n">m²</th><th>Soiling</th><th>How often</th><th class="n">€/mo</th></tr>
+<tr><td>Offices</td><td class="n">420</td><td>normal</td><td>3× / week</td><td class="n">780</td></tr>
+<tr><td>Sanitary</td><td class="n">60</td><td>high</td><td>daily</td><td class="n">310</td></tr>
+<tr><td>Windows</td><td class="n">160</td><td>—</td><td>quarterly</td><td class="n">90</td></tr></table></div>
+<div class="row sb"><span>Starts</span><b>17 Nov 2026 · first month pro-rata</b></div>
+<div class="row sb"><b>€1,180 / month</b><span class="btn p">Send for acceptance</span></div></div></div>
+<div class="phone"><div class="scr"><span class="small muted">billa.at · from HBCField</span><h4>Your cleaning quote</h4><span>Offices, sanitary, windows</span><b style="font-size:18px">€1,180 / month</b><span class="small muted">from 17 Nov 2026</span><span class="btn p">Accept quote</span><span class="btn">Ask a question</span><span class="small muted">Shown in German for this client</span></div></div></div></div><div class="cmp"><div class="they"><span class="h">PlanD has</span>Quote priced by area and soiling, accepted online in one click, becomes an order; recurring invoices.</div><div class="weakb"><span class="h">Their weak spot</span>Recurring orders must start on the 1st. Drafts reappear; a manual invoice shifts the cycle.</div><div class="usb"><span class="h">How we are stronger</span>Any start day with a pro-rata first month. Acceptance creates our recurring jobs in the right workspace. Several legal companies and currencies; the page in the client’s own language.</div></div></div></section><section class="sec" data-sec="lines"><div class="sec-h"><div><span class="kicker">Priority 1 · 03</span><h2>Invoice lines from the real work</h2><p>Quantities from counted time per person, visits done and visits missed — and nothing billed twice.</p></div><button class="listen" data-play="lines"></button></div><div class="feat"><div>
+<div class="app"><div class="top"><b>INV-2026-0187 · BILLA AG · October</b><span class="sp"></span><span class="pill">Draft</span></div><div class="in">
+<div class="tbl-wrap"><table class="mini"><tr><th>Line</th><th>From</th><th class="n">Qty</th><th class="n">Price</th><th class="n">€</th></tr>
+<tr><td>Office cleaning</td><td><span class="pill b">counted time</span></td><td class="n">128:30 h</td><td class="n">28,50</td><td class="n">3.662,25</td></tr>
+<tr><td style="padding-left:18px" class="muted small">Kowalski 64:00 · Yilmaz 41:30 · Popescu 23:00</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>Travel charge</td><td><span class="pill b">visits done</span></td><td class="n">22</td><td class="n">8,00</td><td class="n">176,00</td></tr>
+<tr><td>Missed visits</td><td><span class="pill b">visits missed</span></td><td class="n">−2</td><td class="n">95,00</td><td class="n">−190,00</td></tr></table></div>
+<div class="banner b">Partial invoices: 3 of 5 billed (€7.200 of €12.000) · the rest is what this invoice may still bill</div></div></div></div><div class="cmp"><div class="they"><span class="h">PlanD has</span>Dynamic lines from pay, planned or actual time, all/completed/missed visits (missed at a negative price).</div><div class="weakb"><span class="h">Their weak spot</span>Partial invoices don’t track what was already billed. A team visit doesn’t split time between people.</div><div class="usb"><span class="h">How we are stronger</span>We already bill counted, clocked or shift hours per person and stop days being billed twice — extended to every line, with each crew member’s own time.</div></div></div></section><section class="sec" data-sec="slip"><div class="sec-h"><div><span class="kicker">Priority 1 · 04</span><h2>The signed work slip becomes the invoice</h2><p>The client signs on the cleaner’s phone; the office turns it into an invoice in one tap.</p></div><button class="listen" data-play="slip"></button></div><div class="feat"><div>
+<div class="duo"><div class="phone"><div class="scr"><h4>Work slip · Praxis Dr. Huber</h4><span class="small muted">Today 18:05–19:40 · Yilmaz, Kowalski</span>
+<div class="row sb"><span>Floors, sanitary, bins</span><span class="pill ok">done</span></div><div class="row sb"><span>Extra: glass door</span><span class="pill b">added</span></div>
+<span class="small muted">No prices shown to the client</span><div class="sig"><svg viewBox="0 0 200 70"><path d="M15 50 C40 10 55 60 80 30 S120 50 140 25 S175 40 185 30" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+<span class="small">Signed: Dr. M. Huber</span><span class="btn p">Confirm</span></div></div>
+<div class="app"><div class="top"><b>Signed slips · 6 waiting</b></div><div class="in">
+<div class="row sb"><span>Praxis Dr. Huber · 16 Oct</span><span class="btn p">Make invoice</span></div>
+<div class="row sb"><span>Kanzlei Berg · 15 Oct</span><span class="btn">Make invoice</span></div>
+<div class="row sb"><span class="small muted">or bundle all of a client’s slips into one</span><span class="btn">Bundle 4</span></div>
+<div class="banner g">The client also gets our job report as proof of service</div></div></div></div></div><div class="cmp"><div class="they"><span class="h">PlanD has</span>Price-less slip signed on the phone, converted to invoices singly or in bulk.</div><div class="weakb"><span class="h">Their weak spot</span>Delivery notes can’t be signed in the app; extra work isn’t captured on the slip.</div><div class="usb"><span class="h">How we are stronger</span>Our service report, signature pad and client-copy job report already exist — we add “Make invoice”, extra items on the slip, and the client copy as the proof.</div></div></div></section><section class="sec" data-sec="einvoice"><div class="sec-h"><div><span class="kicker">Priority 1 · 05</span><h2>E-invoices, payments and reminders</h2><p>XRechnung/ZUGFeRD out; bank statements in from any bank; reminders in the client’s language.</p></div><button class="listen" data-play="einvoice"></button></div><div class="feat"><div>
+<div class="app"><div class="top"><b>Receivables · October</b><span class="sp"></span><span class="pill b">XRechnung · ZUGFeRD</span></div><div class="in">
+<div class="row sb"><span>Stadt Gmunden · Leitweg-ID 04011000-12345-67</span><span class="pill ok">XRechnung sent</span></div>
+<div class="row sb"><span class="small muted">Bank statement imported (CAMT.053) · Sparkasse · Raiffeisen · any bank</span></div>
+<div class="tbl-wrap"><table class="mini"><tr><th>Payment</th><th class="n">€</th><th>Matched to</th><th>How sure</th></tr>
+<tr><td>BILLA AG RE 0181</td><td class="n">1.180,00</td><td>INV-0181</td><td><span class="pill ok">exact</span></td></tr>
+<tr><td>Kanzlei Berg</td><td class="n">402,15</td><td>INV-0176 (410,36 − 2 % Skonto)</td><td><span class="pill ok">discount</span></td></tr>
+<tr><td>Huber</td><td class="n">95,00</td><td>INV-0179 (95,50)</td><td><span class="pill warn">0,50 short — confirm</span></td></tr></table></div>
+<div class="row sb"><span>Reminders: 7 days → 14 days (+€5) → 21 days (+€10)</span><span class="pill b">in the client’s language</span></div></div></div></div><div class="cmp"><div class="they"><span class="h">PlanD has</span>XRechnung/ZUGFeRD with Leitweg-ID, dunning levels with fees, finAPI bank link, CAMT import.</div><div class="weakb"><span class="h">Their weak spot</span>Bank link Germany and Austria only, one account, switched on by their support. Skonto matched only on an exact amount. Dunning e-mails can’t be personalised. DATEV cancellation numbers swapped by hand.</div><div class="usb"><span class="h">How we are stronger</span>CAMT import from any bank first; several accounts per legal company (we store up to 5). Matching with tolerance and discounts. Reminders in the client’s language. A correct accounting export from day one.</div></div></div></section><section class="sec" data-sec="languages"><div class="sec-h"><div><span class="kicker">Priority 1 · 06</span><h2>Every worker in their own language</h2><p>More app languages, and chat translated on display with the original one tap away.</p></div><button class="listen" data-play="languages"></button></div><div class="feat"><div>
+<div class="duo"><div class="phone"><div class="scr"><h4>Site team Gmunden</h4>
+<div class="row"><span class="av">IP</span><span class="bub">Cheia e la portar.<span class="tr">Romanian · original</span></span></div>
+<div class="row"><span class="av">IP</span><span class="bub">The key is with the porter.<span class="tr">Translated · show original</span></span></div>
+<div class="bub me">مرحبا، سأصل الساعة السادسة<span class="tr">Arabic → shown to Anna in German</span></div></div></div>
+<div class="app"><div class="top"><b>App language</b></div><div class="in"><div class="row" style="flex-wrap:wrap;gap:6px">
+<span class="pill ok">English</span><span class="pill ok">Deutsch</span><span class="pill ok">Español</span><span class="pill ok">Français</span><span class="pill ok">Italiano</span><span class="pill b">Türkçe</span><span class="pill b">Polski</span><span class="pill b">Română</span><span class="pill b">العربية (RTL)</span><span class="pill b">Українська</span><span class="pill b">Bosanski / Hrvatski / Српски</span></div>
+<div class="banner b">Pushes and e-mails follow the same language</div></div></div></div></div><div class="cmp"><div class="they"><span class="h">PlanD has</span>App in 15–25 languages (their pages disagree); automatic chat translation; training videos in 16 languages.</div><div class="weakb"><span class="h">Their weak spot</span>Paula, their AI, is German only. The figures on their own site contradict each other.</div><div class="usb"><span class="h">How we are stronger</span>The languages cleaning crews actually speak, Arabic right-to-left done properly; translation on display, original kept; the same language in pushes and e-mails.</div></div></div></section><section class="sec" data-sec="standin"><div class="sec-h"><div><span class="kicker">Priority 1 · 07</span><h2>A stand-in that is really automatic</h2><p>Ranked from what we already know; offered to several at once; the client told in their language.</p></div><button class="listen" data-play="standin"></button></div><div class="feat"><div>
+<div class="duo"><div class="app"><div class="top"><b>Karim is sick · Mon 06:00 · Warehouse</b></div><div class="in">
+<div class="row"><span class="av">SW</span><span style="flex:1;min-width:0">Sarah Wagner<br><span class="reason">worked here 14×</span> <span class="reason">HVAC</span> <span class="reason">4 km</span> <span class="reason">free</span></span><div class="meter" style="max-width:70px"><i style="width:94%"></i></div></div>
+<div class="row"><span class="av">DK</span><span style="flex:1;min-width:0">David Koller<br><span class="reason">HVAC</span> <span class="reason">11 km</span> <span class="reason">free from 07:00</span></span><div class="meter" style="max-width:70px"><i style="width:71%"></i></div></div>
+<div class="row"><span class="av">LA</span><span style="flex:1;min-width:0">Lisa Adler<br><span class="reason">worked here 3×</span> <span class="reason">9 km</span></span><div class="meter" style="max-width:70px"><i style="width:58%"></i></div></div>
+<div class="row sb"><label class="small"><input type="checkbox" checked> Tell the client (German)</label><span class="btn p">Offer to all 3 · first wins</span></div></div></div>
+<div class="phone"><div class="scr"><h4>Shift offered to you</h4><span>Warehouse · Mon 06:00–10:00</span><span class="small muted">Karim is off sick</span><span class="btn p">Take this shift</span><span class="btn">Not this time</span><span class="small muted">Two others were asked too — the first to take it gets it</span></div></div></div></div><div class="cmp"><div class="they"><span class="h">PlanD has</span>Marketed as “find stand-ins automatically” by qualification and capacity, with a customer e-mail.</div><div class="weakb"><span class="h">Their weak spot</span>In their own lessons the stand-in is picked by hand, visit by visit. The customer e-mail is a single on/off switch.</div><div class="usb"><span class="h">How we are stronger</span>A ranked list from our cover verdicts, “has worked at this site”, trade, distance, leave and rota; offered through our role-pool waves; the client told in their own language. We beat them outright here.</div></div></div></section><section class="sec" data-sec="materials"><div class="sec-h"><div><span class="kicker">Priority 1 · 08</span><h2>The material cupboard per site</h2><p>Stock and a monthly budget per site; ordered from the app even offline; decided in Approvals; signed on delivery.</p></div><button class="listen" data-play="materials"></button></div><div class="feat"><div>
+<div class="duo"><div class="phone"><div class="scr"><h4>Order · Warehouse</h4><span class="small muted">Budget October</span><div class="budget"><i style="width:62%"></i></div><span class="small">€310 of €500 used</span>
+<div class="row sb"><span>Glass cleaner 1 l</span><span class="pill">× 4</span></div><div class="row sb"><span>Bin bags 120 l</span><span class="pill">× 2 rolls</span></div><div class="row sb"><span>Microfibre cloths</span><span class="pill">× 20</span></div>
+<span class="pill warn" style="width:fit-content">No signal — queued, sent when back</span><span class="btn p">Send order</span></div></div>
+<div class="app"><div class="top"><b>Approvals · Material order</b><span class="sp"></span><span class="pill">Today</span></div><div class="in">
+<div class="row sb"><span>Mike · Warehouse · 3 items · €46,80</span><span class="pill ok">within budget</span></div>
+<div class="row sb"><span class="small muted">Stock here: glass cleaner 1 left (min 3)</span></div>
+<div class="row sb"><span class="btn">Decline</span><span class="btn p">Approve</span></div>
+<div class="banner g">Delivered 17 Oct · signed by Mike · delivery note → invoice to client (optional)</div></div></div></div></div><div class="cmp"><div class="they"><span class="h">PlanD has</span>Cupboard per site with a monthly budget, orders from the app, delivery notes, order → invoice.</div><div class="weakb"><span class="h">Their weak spot</span>Stock only central. Not available offline. Delivery notes can’t be signed in the app.</div><div class="usb"><span class="h">How we are stronger</span>Stock per site with minimums; orders queued offline; decided in our Approvals inbox (stand-ins, office rules); signed delivery; receipts already read on the phone.</div></div></div></section><section class="sec" data-sec="p2"><div class="sec-h"><div><span class="kicker">Priority 2</span><h2>Five strong extras</h2></div><button class="listen" data-play="p2"></button></div><div class="mini-grid">
+<div class="minicard"><b>Travel time between sites</b><div class="tl"><i style="width:70px;background:#3b82f6"></i><i style="width:36px;background:repeating-linear-gradient(90deg,#f59e0b 0 4px,transparent 4px 7px)"></i><i style="width:60px;background:#3b82f6"></i></div><p>From route tracking and the workspace rule; the first job too if the agreement allows. <span class="muted">They: worker types it, never to the first job.</span></p></div>
+<div class="minicard"><b>Approval by exception</b><div class="row sb small"><span>Within ±10 min</span><span class="pill ok">auto-approved 184</span></div><div class="row sb small"><span>Needs a look</span><span class="pill warn">6</span></div><p>Tolerance, bulk approve, drawn site boundaries. <span class="muted">They: a radius only.</span></p></div>
+<div class="minicard"><b>Absence pay rules</b><div class="row" style="flex-wrap:wrap;gap:4px"><span class="pill b">contract</span><span class="pill">planned</span><span class="pill">3-mo avg</span><span class="pill">½ day</span></div><p>Per absence type, half days, balances in working days. <span class="muted">They: one absence per day.</span></p></div>
+<div class="minicard"><b>Client QR page per site</b><div class="row sb small"><span>📷 Complaint with photo</span><span class="pill b">→ job</span></div><p>Renewable link, becomes a job with crew and time, client gets our report. <span class="muted">They: QR can’t be renewed, one assignee.</span></p></div>
+<div class="minicard"><b>Quality checks</b><div class="row sb small"><span>Warehouse</span><span class="dots"><i></i><i></i><i></i><i></i><i class="o"></i></span></div><p>Score and trend per site from our checklists and photos, in the client report.</p></div></div></section><section class="sec" data-sec="p3"><div class="sec-h"><div><span class="kicker">Priority 3</span><h2>Later</h2></div><button class="listen" data-play="p3"></button></div><div class="pillars">
+<div class="pillar"><b>Devices &amp; keys</b><span>Maintenance on recurring jobs; key hand-over with history (custody periods). They: one hidden “holder” field.</span></div>
+<div class="pillar"><b>Site leader on the phone</b><span>One app; the role unlocks planning and approvals. They: a separate app.</span></div>
+<div class="pillar"><b>Accounting export</b><span>DATEV booking batch, Lexware.</span></div>
+<div class="pillar"><b>Public API, Zapier/Make</b><span>From our shared endpoint catalogue, with scopes. They: outgoing webhooks only, 180/min.</span></div>
+<div class="pillar ai"><b>AI assistant</b><span>Only if you decide: multilingual, acting through our approvals. They: German, inbound only.</span></div></div></section><section class="sec" data-sec="close"><div class="sec-h"><div><span class="kicker">Already ours</span><h2>Keep and market</h2></div><button class="listen" data-play="close"></button></div><div class="weak-list">
+<div class="weak-item" style="grid-template-columns:auto 1fr"><span class="x" style="background:var(--win-tint);color:var(--win)">✓</span><b>Any browser, many devices</b></div>
+<div class="weak-item" style="grid-template-columns:auto 1fr"><span class="x" style="background:var(--win-tint);color:var(--win)">✓</span><b>Unlimited custom fields per task type</b></div>
+<div class="weak-item" style="grid-template-columns:auto 1fr"><span class="x" style="background:var(--win-tint);color:var(--win)">✓</span><b>A full offline engine</b></div>
+<div class="weak-item" style="grid-template-columns:auto 1fr"><span class="x" style="background:var(--win-tint);color:var(--win)">✓</span><b>Crews with each person's own time</b></div>
+<div class="weak-item" style="grid-template-columns:auto 1fr"><span class="x" style="background:var(--win-tint);color:var(--win)">✓</span><b>Live map, routes, automatic clock</b></div>
+<div class="weak-item" style="grid-template-columns:auto 1fr"><span class="x" style="background:var(--win-tint);color:var(--win)">✓</span><b>Approvals inbox with stand-ins and rules</b></div>
+<div class="weak-item" style="grid-template-columns:auto 1fr"><span class="x" style="background:var(--win-tint);color:var(--win)">✓</span><b>Holidays automatic by region</b></div>
+<div class="weak-item" style="grid-template-columns:auto 1fr"><span class="x" style="background:var(--win-tint);color:var(--win)">✓</span><b>Across companies · several legal companies and currencies</b></div></div>
+<p class="note">If you approve this design, we start with the payroll pack: a written plan first, then the build, then your review on :3000.</p></section></div>
+<div class="player" role="region" aria-label="Arabic narration">
+  <div class="top">
+    <button class="pbtn" id="play" aria-label="Play narration"><svg viewBox="0 0 24 24"><path id="picon" fill="currentColor" d="M8 5.5v13l11-6.5z"/></svg></button>
+    <div class="ptxt"><div class="now" id="now">اضغط للاستماع إلى الشرح بالعربية</div><div class="prog"><i id="prog"></i></div></div>
+    <button class="stopb" id="stop" hidden>إيقاف</button>
+  </div>
+  <div class="cap" id="cap" hidden></div>
+</div>
+
+<script>
+var VO = {"intro": "أهلاً. هذا تصميم مقترح لما سنبنيه في تطبيقنا حتى ننافس بلان دي على شركات التنظيف. لكل ميزة نعرض الشاشة كما ستبدو عندنا، وما يملكه بلان دي، ونقطة ضعفه من دليله نفسه، وكيف سنكون أقوى منه. نبدأ بأولوية واحد، ثماني ميزات.", "payroll": "الميزة الأولى: حزمة الرواتب لألمانيا والنمسا. نختار قالب الاتفاقية، وتأتي فئات الأجور من واحد إلى تسعة بأسعار ألفين وستة وعشرين. الإضافات تُحسب من الوقت المحتسب: الليل، والأحد، والعطل، وإضافة الجهد. والجزء المعفى من الضريبة يُفصل تلقائياً. عند بلان دي الإضافة التي تأتي بعد الاعتماد تحتاج إعادة اعتماد، والعطل تُدخل يدوياً. عندنا كل شيء يُعاد حسابه تلقائياً حتى قفل الشهر، والعطل تأتي من التقويم حسب المنطقة، ثم تصدير داتيف أو لوداس كعملية في الخلفية.", "quotes": "الميزة الثانية: عرض السعر. نُدخل الغرف والمساحة ودرجة الاتساخ وعدد المرات، فيُحسب السعر. يرسل العرض للعميل، فيقبله على الإنترنت بضغطة، ويتحول إلى مهام متكررة وفواتير. عند بلان دي العقود المتكررة يجب أن تبدأ في أول الشهر. عندنا تبدأ في أي يوم، والشهر الأول يُحسب بالتناسب.", "lines": "الميزة الثالثة: بنود الفاتورة من العمل الحقيقي. الكمية تأتي من الوقت المحتسب لكل شخص، أو من عدد الزيارات المنجزة، والزيارات الفائتة تُخصم. ونتتبع ما فُوتر من قبل في كل بند، فلا يُفوتر شيء مرتين، وهذا ما لا تفعله الفواتير الجزئية عند بلان دي.", "slip": "الميزة الرابعة: ورقة العمل الموقعة. في نهاية العمل يوقّع العميل على هاتف العامل، والورقة بدون أسعار. ثم في المكتب، بضغطة واحدة، تصبح فاتورة. وعندنا التوقيع ونسخة العميل من تقرير المهمة جاهزة منذ الآن، فنحن نكمل فقط الخطوة الأخيرة.", "einvoice": "الميزة الخامسة: الفاتورة الإلكترونية والتحصيل. فاتورة إكس رشنونغ وتسوغفرد مع رقم ليتفيغ للجهات العامة. ثم استيراد كشف البنك من أي بنك، ومطابقة الدفعات حتى مع فرق صغير، ومراحل التذكير مع رسوم وبلغة العميل. عند بلان دي ربط البنك لألمانيا والنمسا فقط، وحساب واحد، والخصم يُطابق فقط إذا كان المبلغ مطابقاً تماماً.", "languages": "الميزة السادسة: اللغات والترجمة. نضيف التركية والبولندية والرومانية والعربية من اليمين إلى اليسار، والأوكرانية، والبوسنية والكرواتية والصربية. كل رسالة في الدردشة تُترجم تلقائياً للغة القارئ، والأصل على بعد ضغطة. ونفس اللغات في الإشعارات والبريد.", "standin": "الميزة السابعة: البديل التلقائي الحقيقي. عندما يمرض شخص، نرتب البدائل حسب من عمل في هذا الموقع من قبل، والمهنة، والمسافة، والإجازات والجدول. نرسل العرض لثلاثة أشخاص، وأول من يقبل يأخذ المناوبة، ويُبلّغ العميل بلغته. بلان دي يعلن هذه الميزة، لكن في دليله الاختيار يدوي. هنا نتفوق عليهم بوضوح.", "materials": "الميزة الثامنة: خزانة المواد. لكل موقع ميزانية شهرية ومخزون خاص به. العامل يطلب من التطبيق حتى بدون إنترنت، والطلب يصل إلى صندوق الموافقات، ثم سند تسليم يوقّعه المستلم. عند بلان دي المخزون مركزي فقط، والطلب لا يعمل بدون إنترنت.", "p2": "أولوية اثنين، خمس ميزات أصغر. وقت التنقل بين المواقع يُحسب من تتبع الطريق، حتى إلى أول عمل إذا سمحت الاتفاقية. اعتماد الأوقات بالاستثناء مع هامش تلقائي. طريقة دفع لكل نوع غياب، وأنصاف الأيام. صفحة للعميل برمز كيو آر لكل موقع، يرسل منها شكوى بالصور تصبح مهمة. وفحوص الجودة مع تقييم ومؤشر لكل موقع.", "p3": "وأولوية ثلاثة لاحقاً: صيانة الأجهزة وتسليم المفاتيح مع السجل، وصلاحيات قائد الموقع على الهاتف، وتصدير المحاسبة، وواجهة برمجية عامة مع زابيير، ومساعدة ذكية متعددة اللغات إذا قررتم ذلك.", "close": "وفي النهاية، ما نحن أقوى فيه أصلاً ونستمر في إبرازه: يعمل على أي متصفح وعدة أجهزة، حقول مخصصة بلا حد، عمل كامل بدون إنترنت، فريق على المهمة بوقت لكل شخص، خريطة مباشرة، صندوق الموافقات، العطل تلقائية، العمل بين الشركات، وعدة شركات وعملات. إذا وافقتم على هذا التصميم، نبدأ بحزمة الرواتب. شكراً لكم."};
+var ORDER = [["intro", null, "مقدمة"], ["payroll", "payroll", "الرواتب"], ["quotes", "quotes", "عرض السعر"], ["lines", "lines", "بنود الفاتورة"], ["slip", "slip", "ورقة العمل"], ["einvoice", "einvoice", "الفاتورة الإلكترونية والتحصيل"], ["languages", "languages", "اللغات"], ["standin", "standin", "البديل التلقائي"], ["materials", "materials", "خزانة المواد"], ["p2", "p2", "أولوية اثنين"], ["p3", "p3", "أولوية ثلاثة"], ["close", "close", "ما نملكه أصلاً"]];
+(function () {
+  var audio = new Audio(), i = -1, last = ORDER.length - 1;
+  var PLAY = 'M8 5.5v13l11-6.5z', PAUSE = 'M7 5h3.5v14H7zm6.5 0H17v14h-3.5z';
+  var icon = document.getElementById('picon'), now = document.getElementById('now'), prog = document.getElementById('prog');
+  var stop = document.getElementById('stop'), cap = document.getElementById('cap'), play = document.getElementById('play');
+  var IDLE = now.textContent;
+  var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function mark(sec) {
+    document.querySelectorAll('section.sec').forEach(function (s) { s.classList.toggle('speaking', s.dataset.sec === sec); });
+    var el = sec && document.querySelector('[data-sec="' + sec + '"]');
+    window.scrollTo({ top: el ? el.getBoundingClientRect().top + window.scrollY - 20 : 0, behavior: calm ? 'auto' : 'smooth' });
+  }
+  function start(from, to) {
+    i = from; last = to; var c = ORDER[i];
+    mark(c[1]); now.textContent = (i + 1) + ' / ' + ORDER.length + ' · ' + c[2];
+    cap.textContent = VO[c[0]]; cap.hidden = false;
+    audio.src = 'audio/' + c[0] + '.mp3'; audio.play().catch(function () {});
+    icon.setAttribute('d', PAUSE); stop.hidden = false; play.setAttribute('aria-label', 'Pause narration');
+  }
+  function end() { audio.pause(); i = -1; icon.setAttribute('d', PLAY); stop.hidden = true; cap.hidden = true; prog.style.width = '0'; now.textContent = IDLE; mark(null); play.setAttribute('aria-label', 'Play narration'); }
+  audio.addEventListener('timeupdate', function () { if (audio.duration) prog.style.width = (audio.currentTime / audio.duration * 100) + '%'; });
+  audio.addEventListener('ended', function () { if (i < last) start(i + 1, last); else end(); });
+  play.onclick = function () {
+    if (i < 0) return start(0, ORDER.length - 1);
+    if (audio.paused) { audio.play().catch(function () {}); icon.setAttribute('d', PAUSE); } else { audio.pause(); icon.setAttribute('d', PLAY); }
+  };
+  stop.onclick = end;
+  document.querySelectorAll('[data-play]').forEach(function (b) {
+    var k = b.dataset.play, n = ORDER.findIndex(function (o) { return o[0] === k; });
+    b.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="' + PLAY + '"/></svg>استمع لهذا الجزء';
+    b.onclick = function () { start(n, n); };
+  });
+})();
+</script>

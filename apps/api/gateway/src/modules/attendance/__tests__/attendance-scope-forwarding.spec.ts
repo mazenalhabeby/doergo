@@ -8,7 +8,7 @@
  *   GET  /attendance/entries/:id/breaks             → requester + canViewSpaceAttendance scope
  */
 import 'reflect-metadata';
-import { AttendanceController } from '../attendance.controller';
+import { attendanceControllers } from './attendance-controllers.fixture';
 
 function controller() {
   const service = {
@@ -19,7 +19,7 @@ function controller() {
     getLocationEntriesBatch: jest.fn().mockResolvedValue({}),
     getBreaksForEntry: jest.fn().mockResolvedValue({}),
   };
-  const ctrl = new AttendanceController(service as any, {} as any) as any;
+  const ctrl = attendanceControllers(service as any, {} as any) as any;
   return { ctrl, service };
 }
 

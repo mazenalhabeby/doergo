@@ -13,7 +13,8 @@ import { AttendanceService } from '../attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
 import { AttendanceGeocoderService } from '../attendance-geocoder.service';
 import { AttendanceRoutingService } from '../attendance-routing.service';
-import { BreakService } from '../break.service';
+import { BREAK_SERVICES } from '../break-services';
+import { breakServicesOf } from './break.service.fixture';
 import { ShiftResolverService } from '../shift-resolver.service';
 import { CountedTimeService } from '../counted-time.service';
 import { BreakRulesService } from '../break-rules.service';
@@ -86,7 +87,11 @@ async function build() {
   const prisma = prismaDouble();
   const moduleRef = await Test.createTestingModule({
     providers: [
-      AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } }, BreakService, CountedTimeService, BreakRulesService, BreakReminderService,
+      AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } },
+      ...BREAK_SERVICES,
+      CountedTimeService,
+      BreakRulesService,
+      BreakReminderService,
       { provide: PrismaService, useValue: prisma },
       { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
       { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) } },
@@ -103,7 +108,7 @@ async function build() {
   */
   return {
     service,
-    breaks: moduleRef.get(BreakService),
+    breaks: breakServicesOf(moduleRef),
     prisma,
     routing: moduleRef.get(AttendanceRoutingService),
     notifications: moduleRef.get(SERVICE_NAMES.NOTIFICATION) as { emit: jest.Mock },

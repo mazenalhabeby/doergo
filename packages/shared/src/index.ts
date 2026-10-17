@@ -10,6 +10,7 @@ export * from './support';
 
 // Export chat (member-to-member conversation/message types)
 export * from './chat';
+export * from './icons';
 
 // Export customer-portal (B2B2C intake types, seed templates, helpers)
 export * from './customer-portal';

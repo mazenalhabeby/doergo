@@ -1,7 +1,7 @@
 import { createHmac } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { PLATFORM_SESSION_MAX_SECONDS, platformEnrolmentRequired, platformLogoutCutoff, mayRefreshPlatformSession, isTeamColor } from '@hbcfield/shared';
-import { PlatformAuthService } from '../platform-auth.service';
+import { platformAuthParts } from './platform-auth.service.fixture';
 import { PlatformAuditService } from '../platform-audit.service';
 import { PlatformSupportTeamsService } from '../platform-support-teams.service';
 import { PlatformAdminService } from '../platform-admin.service';
@@ -49,7 +49,7 @@ describe('platform 2FA + sessions', () => {
     supportTeamMember: { findMany: jest.fn().mockResolvedValue([]) },
   };
   const jwt = { sign: jest.fn(() => 'fresh-token'), verify: jest.fn() };
-  const svc = new PlatformAuthService(prisma as any, jwt as any, { get: () => 'secret' } as any);
+  const svc = platformAuthParts(prisma as any, jwt as any, { get: () => 'secret' } as any);
 
   beforeEach(() => {
     jest.clearAllMocks();

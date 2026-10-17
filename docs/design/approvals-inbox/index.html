@@ -1,0 +1,437 @@
+<title>One Approvals Inbox</title>
+<style>
+/* Layout: the problem as a map of today's 9 places, then the inbox (filter rail · list · detail) as it would sit in the web app, the phone version beside it, then how it works and decisions. Arabic voice-over bar on top. */
+:root{
+  --bg:#f3f5f8; --card:#ffffff; --ink:#111827; --muted:#5f6b7a; --line:#e2e7ee; --soft:#eef2f7;
+  --blue:#2563eb; --blueSoft:#2563eb14; --red:#c2410c; --redSoft:#c2410c14; --amber:#a16207; --amberSoft:#a1620716; --green:#0d8f72; --greenSoft:#0d8f7216;
+  --display:"Fraunces",Georgia,serif; --sans:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#0b0f15; --card:#131922; --ink:#e6ecf3; --muted:#93a1b2; --line:#252e3a; --soft:#19212c;
+  --blue:#6f9bff; --blueSoft:#6f9bff1f; --red:#f59e6b; --redSoft:#f59e6b1f; --amber:#e3a94a; --amberSoft:#e3a94a22; --green:#4fd1ad; --greenSoft:#4fd1ad1f;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#0b0f15; --card:#131922; --ink:#e6ecf3; --muted:#93a1b2; --line:#252e3a; --soft:#19212c;
+  --blue:#6f9bff; --blueSoft:#6f9bff1f; --red:#f59e6b; --redSoft:#f59e6b1f; --amber:#e3a94a; --amberSoft:#e3a94a22; --green:#4fd1ad; --greenSoft:#4fd1ad1f;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:28px 64px;display:flex;flex-direction:column;gap:24px}
+.eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font:600 clamp(26px,4vw,38px)/1.12 var(--display);margin:8px 0 10px;text-wrap:balance;max-width:24ch}
+h2{font:600 20px/1.2 var(--display);margin:0 0 4px;text-wrap:balance}
+p{margin:0}
+.lede{color:var(--muted);max-width:70ch}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.sub{color:var(--muted);font-size:13.5px}
+/* voice-over */
+.vo{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;box-shadow:0 6px 20px -14px #0006}
+.vo-play{width:40px;height:40px;border-radius:50%;border:0;background:var(--blue);color:var(--card);display:grid;place-items:center;cursor:pointer;flex:none}
+.vo-text{display:flex;flex-direction:column;min-width:0;flex:1}
+.vo-text b{font-size:14px}
+.vo-text span{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vo-bar{flex:0 1 160px;height:4px;border-radius:2px;background:var(--soft);overflow:hidden}
+.vo-bar i{display:block;height:100%;width:0;background:var(--blue)}
+.vo-stop,.listen{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.listen{color:var(--blue);border-radius:999px;padding:4px 10px;font-size:12.5px;display:inline-flex;gap:6px;align-items:center;align-self:flex-start}
+@media (max-width:520px){.vo-bar{display:none}}
+.speaking{outline:2px solid var(--blue);outline-offset:6px;border-radius:16px}
+button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+/* today map */
+.map{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.place{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;background:var(--card)}
+.place b{font-size:14px}
+.place code{font:500 11.5px var(--mono);color:var(--muted)}
+.kinds{display:flex;flex-wrap:wrap;gap:4px}
+.kd{font-size:12px;border-radius:6px;padding:2px 7px;background:var(--soft)}
+.kd.gap{background:var(--redSoft);color:var(--red)}
+/* inbox */
+.app{display:grid;grid-template-columns:210px minmax(0,1fr) 340px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card);min-height:560px}
+@media (max-width:1050px){.app{grid-template-columns:190px minmax(0,1fr)}.detail{grid-column:1/-1;border-left:0;border-top:1px solid var(--line)}}
+@media (max-width:640px){.app{grid-template-columns:1fr}.rail{border-right:0;border-bottom:1px solid var(--line)}}
+.rail{border-right:1px solid var(--line);padding:14px 10px;display:flex;flex-direction:column;gap:2px;background:var(--soft)}
+.rail .h{font:500 10.5px var(--mono);letter-spacing:.12em;color:var(--muted);text-transform:uppercase;padding:10px 8px 4px}
+.rail button{all:unset;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;font-size:13.5px;cursor:pointer}
+.rail button.on{background:var(--card);box-shadow:0 0 0 1px var(--line);font-weight:600}
+.rail button:focus-visible{outline:2px solid var(--blue)}
+.n{font:600 11.5px var(--mono);min-width:22px;text-align:center;border-radius:999px;padding:1px 6px;background:var(--card);color:var(--muted)}
+.n.hot{background:var(--redSoft);color:var(--red)}
+.list{display:flex;flex-direction:column;min-width:0}
+.bar{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.bar .t{font-weight:600}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 11px;font:inherit;font-size:13px;cursor:pointer}
+.btn.p{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.grp{font:500 10.5px var(--mono);letter-spacing:.12em;color:var(--muted);text-transform:uppercase;padding:12px 14px 6px}
+.it{display:grid;grid-template-columns:18px 34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line);cursor:pointer}
+.it:hover{background:var(--soft)}
+.it.sel{background:var(--blueSoft)}
+.it input{margin:0}
+.av{width:32px;height:32px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font:600 11.5px var(--sans);color:var(--muted)}
+.it b{font-size:14px;font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.it small{display:block;color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tagk{font:500 11px var(--mono);border-radius:6px;padding:2px 6px;margin-right:6px;background:var(--soft);color:var(--muted)}
+.due{font:500 11.5px var(--mono);white-space:nowrap;border-radius:999px;padding:3px 8px}
+.due.hot{background:var(--redSoft);color:var(--red)}
+.due.warm{background:var(--amberSoft);color:var(--amber)}
+.due.cool{color:var(--muted)}
+.detail{border-left:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;font-size:13.5px}
+.facts span{color:var(--muted)}
+.why{background:var(--soft);border-radius:10px;padding:10px 12px;font-size:13px}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--card);border-radius:10px;padding:8px 14px;font-size:13.5px}
+/* phone */
+.two{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
+.phone{width:min(300px,100%);margin:0 auto;border-radius:34px;padding:12px;background:#0b0f14}
+.screen{border-radius:24px;background:linear-gradient(180deg,#cfe7df,#eef5f2 50%);padding:16px 12px;display:flex;flex-direction:column;gap:10px;color:#10201b;min-height:520px}
+.screen .t{font:600 22px/1 var(--sans);letter-spacing:.02em}
+.pc{background:#fff;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.pl{font:500 10px/1 var(--mono);letter-spacing:.12em;color:#5d6d68;text-transform:uppercase}
+.pr{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;padding:6px 0;border-top:1px solid #eef3f1}
+.pr:first-of-type{border-top:0}
+.pr small{display:block;color:#5d6d68;font-size:11.5px}
+.sw{display:flex;gap:6px}
+.sw span{font-size:11.5px;font-weight:600;border-radius:999px;padding:4px 9px}
+.sw .y{background:#0d8f72;color:#fff}
+.sw .n2{background:#eef3f1;color:#10201b}
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.how div{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.k{font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--blue)}
+.how span{color:var(--muted);font-size:13.5px}
+.dec{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.dec li::marker{color:var(--blue)}
+
+/* routing + detection */
+.sim{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:16px}
+@media (max-width:760px){.sim{grid-template-columns:1fr}}
+.form{display:flex;flex-direction:column;gap:10px}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.form select,.form input,.form textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.form .chk{flex-direction:row;align-items:center;gap:8px;color:var(--ink)}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.box{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.box h4{margin:0;font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.who{display:flex;flex-direction:column;gap:6px}
+.who div{font-size:13.5px}
+.who small{display:block;color:var(--muted);font-size:12px}
+.stepn{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--blueSoft);color:var(--blue);font:600 11px var(--mono);margin-right:6px}
+.rules{width:100%;border-collapse:collapse;font-size:13px}
+.rules th,.rules td{text-align:left;padding:8px 10px;border-top:1px solid var(--line);vertical-align:top}
+.rules th{font:500 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-top:0}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.hl{background:var(--amberSoft);color:var(--amber);border-radius:4px;padding:0 3px}
+.chain{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.chain div{display:flex;gap:8px;align-items:baseline}
+.chain .ok{color:var(--green)}
+.chain .wt{color:var(--amber)}
+.warn{background:var(--amberSoft);color:var(--amber);border-radius:10px;padding:8px 12px;font-size:13px}
+.good{background:var(--greenSoft);color:var(--green);border-radius:10px;padding:8px 12px;font-size:13px}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+
+<div class="wrap">
+  <header id="sec-intro">
+    <div class="eyebrow">Mockup · Approvals</div>
+    <h1>Everything waiting for you, in one place</h1>
+    <p class="lede">Today a leader approves things in nine different places on the web — and some of them only on the phone, some only on the web. Nothing lists everything that waits for one person. This puts every decision in one inbox, on the web and the phone, ordered by what cannot wait.</p>
+  </header>
+
+  <div class="vo" id="vo" dir="rtl" lang="ar">
+    <button type="button" class="vo-play" id="voPlay" aria-label="تشغيل الشرح الصوتي"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path id="voIcon" d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
+    <div class="vo-text"><b>شرح صوتي بالعربية</b><span id="voNow">اضغط للاستماع</span></div>
+    <div class="vo-bar" aria-hidden="true"><i id="voProg"></i></div>
+    <button type="button" class="vo-stop" id="voStop" hidden>إيقاف</button>
+  </div>
+
+  <section class="card" id="sec-today" aria-label="Today">
+    <div><div class="eyebrow">Today · 13 kinds of decision, 9 places</div><h2>Where approvals live now</h2>
+    <p class="sub">Red = cannot be decided there at all.</p></div>
+    <div class="map">
+      <div class="place"><b>Attendance Management</b><code>/attendance</code><div class="kinds"><span class="kd">Shift hours</span><span class="kd">Away from site</span><span class="kd">No-shows</span></div></div>
+      <div class="place"><b>Schedule &amp; Requests</b><code>/employees/availability</code><div class="kinds"><span class="kd">Leave &amp; requests</span></div></div>
+      <div class="place"><b>Overtime</b><code>/overtime</code><div class="kinds"><span class="kd">Overtime</span><span class="kd gap">Extra time (phone only)</span></div></div>
+      <div class="place"><b>Issues</b><code>/issues</code><div class="kinds"><span class="kd">Shift issues</span></div></div>
+      <div class="place"><b>Assets</b><code>/assets</code><div class="kinds"><span class="kd">Expenses</span><span class="kd">Asset proposals</span><span class="kd gap">no phone</span></div></div>
+      <div class="place"><b>Documents review</b><code>/documents/review</code><div class="kinds"><span class="kd">Documents to verify</span><span class="kd gap">no phone</span></div></div>
+      <div class="place"><b>Join requests</b><code>/join-requests</code><div class="kinds"><span class="kd">New people</span></div></div>
+      <div class="place"><b>Workspace → Portal</b><code>/locations/…/portals</code><div class="kinds"><span class="kd">Client requests</span></div></div>
+      <div class="place"><b>Workspace → Sharing</b><code>/locations/…?tab=sharing</code><div class="kinds"><span class="kd">Guest requests</span><span class="kd gap">no phone, no alert</span></div></div>
+    </div>
+  </section>
+
+  <section id="sec-inbox" aria-label="The inbox" style="display:flex;flex-direction:column;gap:12px">
+    <div><div class="eyebrow">Web · top bar → Approvals (with the number waiting)</div><h2>The inbox</h2>
+    <p class="sub">Click a kind on the left, an item in the list, then decide on the right. Try Approve — the item leaves the list and the counts move.</p></div>
+    <div class="app">
+      <nav class="rail" id="rail" aria-label="Kinds"></nav>
+      <div class="list">
+        <div class="bar"><span class="t" id="listTitle">Everything</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="btn" id="selAll">Select shifts</button><button type="button" class="btn p" id="bulk" disabled>Approve selected</button></div></div>
+        <div id="items"></div>
+      </div>
+      <aside class="detail" id="detail" aria-label="Detail"></aside>
+    </div>
+  </section>
+
+  <section class="card" id="sec-route" aria-label="Routing">
+    <div><div class="eyebrow">The smart part · 1</div><h2>Who sees it, who decides, who is told — worked out for every request</h2>
+    <p class="sub">Nobody configures a list of names. The system reads what already exists — the workspace, the person's leaders and watchers, the permissions in that workspace, who is on leave today — and the office adds a few rules. Try it:</p></div>
+    <div class="sim">
+      <div class="form">
+        <label>Who asks<select id="sPerson"><option value="juan">Juan Diego Castrillon Salazar · AGRU America</option><option value="matias">Matias Iza · Binderholz</option><option value="ext">Klaus Huber (external) · Weingärtner</option></select></label>
+        <label>What<select id="sKind"><option value="overtime">Overtime</option><option value="leave">Vacation</option><option value="expense">Expense</option><option value="hours">Shift hours</option><option value="doc">Document to verify</option></select></label>
+        <label id="sAmtL">How much<input id="sAmt" type="number" value="3"></label>
+        <label class="chk"><input type="checkbox" id="sAway"> The usual approver is on leave today</label>
+      </div>
+      <div class="out">
+        <div class="box"><h4>Decides, in order</h4><div class="who" id="oDecide"></div></div>
+        <div class="box"><h4>Can see, cannot decide</h4><div class="who" id="oSee"></div></div>
+        <div class="box"><h4>Is told</h4><div class="who" id="oTold"></div></div>
+        <div class="box"><h4>Never sees it</h4><div class="who" id="oNever"></div></div>
+      </div>
+    </div>
+    <div class="tbl"><table class="rules">
+      <thead><tr><th>Kind</th><th>Decides by default</th><th>Office rule (optional)</th><th>No answer</th></tr></thead>
+      <tbody>
+        <tr><td>Overtime</td><td>"Approve overtime" in the workspace</td><td>More than 2 h → the workspace manager too</td><td>2 h → next approver</td></tr>
+        <tr><td>Vacation</td><td>"Manage the rota" in the workspace</td><td>Cover would drop below the minimum → the manager too</td><td>2 days → reminder, then next</td></tr>
+        <tr><td>Expense</td><td>"Manage assets" for that asset's workspace</td><td>Over €200 → Finance after the leader</td><td>3 days → Finance</td></tr>
+        <tr><td>Shift hours</td><td>"Approve hours" in the workspace</td><td>—</td><td>Morning digest</td></tr>
+        <tr><td>Document</td><td>"Issue documents" (organization)</td><td>Type restricted → only roles allowed to see it</td><td>Weekly digest</td></tr>
+      </tbody></table></div>
+  </section>
+
+  <section class="card" id="sec-detect" aria-label="Detection">
+    <div><div class="eyebrow">The smart part · 2</div><h2>It recognises what is being asked, and checks it before it reaches you</h2>
+    <p class="sub">A member who writes free text in "Other" gets the right kind suggested — from the organization's own kinds and its words, on the phone, no AI service. Before the request arrives, the system already checked what a leader would check.</p></div>
+    <div class="sim">
+      <div class="form">
+        <label>The member writes<textarea id="dText" rows="3">Need 2 days off next Thursday and Friday for my daughter's wedding</textarea></label>
+        <div class="sub">Try: "can I stay 2 more hours tonight", "fuel 84 euro for the van", "working from home tomorrow", "new boots size 43".</div>
+      </div>
+      <div class="box"><h4>What the system makes of it</h4><div id="dOut" class="who"></div></div>
+    </div>
+  </section>
+
+  <div class="two">
+    <section class="card" id="sec-order" aria-label="Order">
+      <div><div class="eyebrow">How it decides what comes first</div><h2>Ordered by what cannot wait</h2></div>
+      <div class="how">
+        <div><span class="k">Now</span><b>Someone is waiting on the spot</b><span>Extra time on an open shift, away from site, a no-show — the person is working or standing there right now.</span></div>
+        <div><span class="k">Today</span><b>It affects today's hours or work</b><span>Overtime, today's shift hours, a client request, a request that starts tomorrow.</span></div>
+        <div><span class="k">Later</span><b>Everything else</b><span>Leave next month, a document, a new person, an expense — oldest first, with how long it has waited.</span></div>
+      </div>
+      <p class="sub">Within each group the oldest comes first. A request starting soon moves up on its own as the day comes closer.</p>
+    </section>
+    <section class="card" id="sec-phone" aria-label="Phone">
+      <div><div class="eyebrow">Phone · Manage → Approvals</div><h2>The same inbox in your pocket</h2></div>
+      <div class="phone"><div class="screen">
+        <div class="t">APPROVALS</div>
+        <div class="pc"><div class="pl">Now · 2</div>
+          <div class="pr"><div>Extra time · Juan C.<small>Asks 45 min · AGRU · open shift</small></div><div class="sw"><span class="n2">No</span><span class="y">Yes</span></div></div>
+          <div class="pr"><div>Away from site · Matias I.<small>Left at 11:40 · Binderholz</small></div><div class="sw"><span class="n2">No</span><span class="y">Yes</span></div></div>
+        </div>
+        <div class="pc"><div class="pl">Today · 3</div>
+          <div class="pr"><div>Shift hours · Peter J.<small>Late 22 min · Binderholz</small></div><div class="sw"><span class="y">Yes</span></div></div>
+          <div class="pr"><div>Overtime · David M.<small>2 h asked · Binderholz</small></div><div class="sw"><span class="y">Yes</span></div></div>
+        </div>
+        <div class="pc"><div class="pl">Later · 6</div>
+          <div class="pr"><div>Vacation · Peter J.<small>Oct 20–24 · 5 days</small></div><div class="sw"><span class="y">Open</span></div></div>
+        </div>
+      </div></div>
+      <p class="sub">Every kind can be decided on the phone too — including the ones that today have no phone screen.</p>
+    </section>
+  </div>
+
+  <section class="card" id="sec-how" aria-label="Under the hood">
+    <div><div class="eyebrow">Under the hood</div><h2>One list, nothing duplicated</h2></div>
+    <div class="how">
+      <div><span class="k">Same permissions</span><b>You see exactly what you may decide</b><span>Each kind keeps its own rule — hours need "approve hours" in that workspace, documents need "issue documents". An item you may only read is shown read-only, or not at all.</span></div>
+      <div><span class="k">Same actions</span><b>The buttons call what exists</b><span>Approve in the inbox is the same approve as on today's page: same checks, same history, same notification to the member.</span></div>
+      <div><span class="k">Pages stay</span><b>Nothing is taken away</b><span>Attendance, Schedule, Overtime and the rest keep working; their counts link here. The inbox is the front door.</span></div>
+      <div><span class="k">Fast</span><b>One request for the count</b><span>The number in the top bar is one small request, refreshed live when something new arrives — never a full download of every list.</span></div>
+    </div>
+  </section>
+
+  <section class="card" id="sec-decisions" aria-label="Decisions">
+    <div><div class="eyebrow">To confirm</div><h2>Choices in this design</h2></div>
+    <ul class="dec">
+      <li>All 13 kinds come in: shift hours, away from site, extra time, overtime, leave and other requests, no-shows, shift issues, expenses, asset proposals, documents to verify, new people, client requests, guest requests.</li>
+      <li>Approve all only for shift hours (as today). Everything else is decided one by one, because each needs its own look.</li>
+      <li>Reject always asks a reason, and the member reads it.</li>
+      <li>"Delegate": a leader going on leave hands their inbox to someone for those days.</li>
+      <li>The two gaps close as part of this: extra time on the web, and expenses, proposals, documents and away-from-site on the phone.</li>
+      <li>Routing is read from what exists (workspace, leaders and watchers, permissions, who is on leave); the office only adds rules: thresholds (hours, money, cover), a second step, and how long before it moves on.</li>
+      <li>Every item says why you see it and who else can decide; a request reaches nobody who has no business with it — colleagues never see each other's requests.</li>
+      <li>Detection suggests a kind from the words and fills what it can; the member always confirms. No AI service: it runs on the phone, from the organization's own kinds.</li>
+      <li>Later, the custom request types (parked) arrive in the same inbox with no extra work.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+  var KINDS=[['all','Everything'],['hours','Shift hours'],['extra','Extra time'],['away','Away from site'],['overtime','Overtime'],['leave','Leave & requests'],['noshow','No-shows'],['issue','Shift issues'],['expense','Expenses'],['asset','Asset proposals'],['doc','Documents'],['join','New people'],['client','Client requests']];
+  var ITEMS=[
+    {id:1,k:'extra',who:'Juan Diego Castrillon Salazar',ini:'JC',ws:'AGRU America',t:'Asks 45 more minutes',when:'Now',due:['hot','waiting 6 min'],facts:[['Shift','06:07 – 16:00 planned'],['Now','still clocked in'],['Asks','45 min']],why:'Finishing the press line before handover.',acts:['Give 30 min','Give 45 min','No'],seen:'You are Juan\'s leader at AGRU America (his watcher).',chain:[['wt','You · step 1 of 1 — answer within 2 h, then Anna Müller']],check:['warn','Past his 8 h daily limit at AGRU: counts only if you approve']},
+    {id:2,k:'away',who:'Matias Iza',ini:'MI',ws:'Binderholz',t:'Left the site at 11:40',when:'Now',due:['hot','out 22 min'],facts:[['Shift','05:00 – 15:00'],['Left','11:40'],['Reason','Parts pickup in town']],why:'Picking up hydraulic hose from the dealer.',acts:['Allow 60 min','Not allowed']},
+    {id:3,k:'noshow',who:'Dana Pichler',ini:'DP',ws:'Main Office',t:'Did not come to 08:00 shift',when:'Now',due:['hot','2 h ago'],facts:[['Shift','08:00 – 16:00'],['Phone','no answer']],why:'',acts:['Excuse','Leave as missed']},
+    {id:4,k:'hours',who:'Peter Jedlicka',ini:'PJ',ws:'Binderholz',t:'Late 22 min · 9h 40m',when:'Today',due:['warm','today'],facts:[['In','05:22'],['Out','15:02'],['Flags','Late arrival']],why:'',acts:['Approve','Reject'],bulk:true},
+    {id:5,k:'hours',who:'Lisa Adler',ini:'LA',ws:'Main Office',t:'Outside the site at clock-in',when:'Today',due:['warm','today'],facts:[['In','07:58 · 140 m away'],['Out','16:05']],why:'',acts:['Approve','Reject'],bulk:true},
+    {id:6,k:'overtime',who:'David Maldonado',ini:'DM',ws:'Binderholz',t:'2 h overtime asked',when:'Today',due:['warm','shift ends 18:00'],facts:[['Shift','10:00 – 18:00'],['Asks','2 h'],['Signed','yes, on the phone']],why:'Truck delayed, unloading after 18:00.',acts:['Approve 2 h','Approve 1 h','Reject'],seen:'You lead Binderholz and hold "Approve overtime" there.',chain:[['wt','You · step 1 of 1'],['','Anna Müller can also decide (Operations Manager)']],check:['good','Within his 12 h daily limit · no leave that day']},
+    {id:7,k:'client',who:'M. Gruber (client)',ini:'MG',ws:'Weingärtner',t:'Water under the kitchen sink',when:'Today',due:['warm','1 h ago'],facts:[['Unit','Flat 4/12'],['Portal','Weingärtner residents']],why:'There is a small puddle under the sink every morning.',acts:['Turn into a job','Not for us']},
+    {id:8,k:'leave',who:'Peter Jedlicka',ini:'PJ',ws:'Binderholz',t:'Vacation · Oct 20 – 24 · 5 days',when:'Later',due:['cool','asked 2 days ago'],facts:[['Balance after','13 days'],['Cover','2 of 3 still in']],why:'',acts:['Approve','Reject'],seen:'You manage the rota at Binderholz.',chain:[['wt','You · step 1 of 2'],['','Then Anna Müller — cover would drop below the minimum of 3']],check:['warn','Cover on Oct 22 falls to 2 of a minimum 3']},
+    {id:9,k:'leave',who:'Karim Ahmad',ini:'KA',ws:'Service Center',t:'Remote day · Oct 16',when:'Later',due:['cool','asked today'],facts:[['Day','Thursday'],['Reason','Writing reports']],why:'',acts:['Approve','Reject']},
+    {id:10,k:'expense',who:'Hassan Berger',ini:'HB',ws:'Warehouse',t:'Fuel · €84.20 · Van W-123',when:'Later',due:['cool','3 days'],facts:[['Holder that day','Hassan'],['Receipt','photo']],why:'',acts:['Accept','Reject'],seen:'You manage the assets of the Warehouse workspace.',chain:[['wt','You · step 1 of 1'],['','Under €200: Finance is not asked']],check:['good','Hassan held the van on the receipt date']},
+    {id:11,k:'doc',who:'Noor Shah',ini:'NS',ws:'—',t:'Forklift licence to verify',when:'Later',due:['cool','4 days'],facts:[['Expires','2028-03-01 (read from the card)']],why:'',acts:['Verify','Reject']},
+    {id:12,k:'asset',who:'Sarah Wagner',ini:'SW',ws:'Main Office',t:'Rental contract · Ford Transit',when:'Later',due:['cool','5 days'],facts:[['Plate','GM-482 KT'],['Replaces','Van W-118']],why:'',acts:['Accept','Reject']},
+    {id:13,k:'join',who:'Ali Kaya',ini:'AK',ws:'—',t:'Wants to join with the company code',when:'Later',due:['cool','1 day'],facts:[['Email','ali.k@…']],why:'',acts:['Accept','Reject']},
+    {id:14,k:'issue',who:'Mike Weber',ini:'MW',ws:'Main Office',t:'Badge reader broken at gate 2',when:'Later',due:['cool','6 h'],facts:[['Status','new']],why:'',acts:['Take it','Assign']}
+  ];
+  var kind='all', sel=null, picked={};
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function count(k){return ITEMS.filter(function(i){return k==='all'||i.k===k;}).length;}
+  function hot(k){return ITEMS.some(function(i){return (k==='all'||i.k===k)&&i.when==='Now';});}
+  function rail(){
+    var r='<div class="h">Waiting for you</div>';
+    KINDS.forEach(function(x){var c=count(x[0]); if(x[0]!=='all'&&!c) return; r+='<button type="button" data-k="'+x[0]+'" class="'+(kind===x[0]?'on':'')+'"><span>'+x[1]+'</span><span class="n'+(hot(x[0])?' hot':'')+'">'+c+'</span></button>';});
+    r+='<div class="h">Filter</div><button type="button" disabled><span>All workspaces</span><span class="n">▾</span></button><button type="button" disabled><span>Anyone</span><span class="n">▾</span></button>';
+    $('rail').innerHTML=r;
+    $('rail').querySelectorAll('[data-k]').forEach(function(b){b.onclick=function(){kind=b.dataset.k;sel=null;draw();};});
+  }
+  function list(){
+    var vis=ITEMS.filter(function(i){return kind==='all'||i.k===kind;});
+    $('listTitle').textContent=(KINDS.find(function(x){return x[0]===kind;})||[])[1]+' · '+vis.length;
+    if(!vis.length){$('items').innerHTML='<div class="empty">Nothing waits here. You are up to date.</div>';return;}
+    var h='';
+    ['Now','Today','Later'].forEach(function(g){
+      var gi=vis.filter(function(i){return i.when===g;}); if(!gi.length) return;
+      h+='<div class="grp">'+g+' · '+gi.length+'</div>';
+      gi.forEach(function(i){
+        var kl=(KINDS.find(function(x){return x[0]===i.k;})||[])[1];
+        h+='<div class="it'+(sel===i.id?' sel':'')+'" data-id="'+i.id+'" role="button" tabindex="0">'+
+          (i.bulk?'<input type="checkbox" aria-label="Select" data-pick="'+i.id+'"'+(picked[i.id]?' checked':'')+'>':'<span></span>')+
+          '<span class="av">'+i.ini+'</span><div style="min-width:0"><b>'+esc(i.who)+'</b><small><span class="tagk">'+kl+'</span>'+esc(i.t)+' · '+esc(i.ws)+'</small></div>'+
+          '<span class="due '+i.due[0]+'">'+esc(i.due[1])+'</span></div>';
+      });
+    });
+    $('items').innerHTML=h;
+    $('items').querySelectorAll('[data-id]').forEach(function(e){
+      e.onclick=function(ev){ if(ev.target.dataset.pick) return; sel=+e.dataset.id; draw(); };
+      e.onkeydown=function(ev){ if(ev.key==='Enter'){ sel=+e.dataset.id; draw(); } };
+    });
+    $('items').querySelectorAll('[data-pick]').forEach(function(c){c.onchange=function(){picked[c.dataset.pick]=c.checked;bulkState();};});
+    bulkState();
+  }
+  function bulkState(){ var n=Object.keys(picked).filter(function(k){return picked[k];}).length; $('bulk').disabled=!n; $('bulk').textContent=n?'Approve '+n+' selected':'Approve selected'; }
+  function detail(){
+    var i=ITEMS.find(function(x){return x.id===sel;});
+    if(!i){ $('detail').innerHTML='<div class="empty">Choose an item to see it here and decide.</div>'; return; }
+    var kl=(KINDS.find(function(x){return x[0]===i.k;})||[])[1];
+    $('detail').innerHTML='<div class="eyebrow">'+kl+' · '+esc(i.ws)+'</div><h2 style="font-size:18px">'+esc(i.who)+'</h2><p class="sub">'+esc(i.t)+'</p>'+
+      '<div class="facts">'+i.facts.map(function(f){return '<span>'+esc(f[0])+'</span><b style="font-weight:500">'+esc(f[1])+'</b>';}).join('')+'</div>'+
+      (i.why?'<div class="why">“'+esc(i.why)+'”</div>':'')+
+      '<div class="box"><h4>Why you see this</h4><div class="sub">'+esc(i.seen||('You hold the permission for this in '+i.ws+'.'))+'</div></div>'+
+      '<div class="box"><h4>Who decides</h4><div class="chain">'+(i.chain||[['wt','You · step 1 of 1']]).map(function(c){return '<div><span class="'+c[0]+'">●</span><span>'+esc(c[1])+'</span></div>';}).join('')+'</div></div>'+
+      (i.check?'<div class="'+(i.check[0])+'">'+esc(i.check[1])+'</div>':'')+
+      '<div class="acts">'+i.acts.map(function(a,n){return '<button type="button" class="btn'+(n===0?' p':'')+'" data-a="'+n+'">'+esc(a)+'</button>';}).join('')+'</div>'+
+      '<p class="sub">The same decision as on today\'s page: same checks, same history, the member is told.</p>';
+    $('detail').querySelectorAll('[data-a]').forEach(function(b){b.onclick=function(){ decide(i, b.textContent); };});
+  }
+  function toast(t){ var e=document.createElement('div'); e.className='toast'; e.textContent=t; document.body.appendChild(e); setTimeout(function(){e.remove();},1800); }
+  function decide(i,label){ ITEMS=ITEMS.filter(function(x){return x.id!==i.id;}); delete picked[i.id]; sel=null; toast(label+' · '+i.who); draw(); }
+  $('selAll').onclick=function(){ ITEMS.filter(function(i){return i.bulk&&(kind==='all'||i.k===kind);}).forEach(function(i){picked[i.id]=true;}); draw(); };
+  $('bulk').onclick=function(){ var ids=Object.keys(picked).filter(function(k){return picked[k];}).map(Number); ITEMS=ITEMS.filter(function(x){return ids.indexOf(x.id)<0;}); picked={}; toast('Approved '+ids.length+' shifts'); draw(); };
+  function draw(){ rail(); list(); detail(); }
+  sel=1; draw();
+})();
+</script>
+<script>
+(function(){
+  // Voice-over: one clip per part.
+  var ORDER=[['intro','sec-intro','المقدمة'],['today','sec-today','أين الموافقات اليوم'],['inbox','sec-inbox','الصندوق الواحد'],['route','sec-route','من يرى ومن يقرّر'],['detect','sec-detect','التعرّف على الطلب'],['order','sec-order','الترتيب الذكي'],['phone','sec-phone','على الهاتف'],['how','sec-how','كيف يعمل'],['decisions','sec-decisions','قرارات للتأكيد']];
+  var audio=new Audio(), i=-1, last=ORDER.length-1, IDLE='اضغط للاستماع';
+  var play=document.getElementById('voPlay'), icon=document.getElementById('voIcon'), now=document.getElementById('voNow'), prog=document.getElementById('voProg'), stop=document.getElementById('voStop');
+  var PLAY='M8 5v14l11-7z', PAUSE='M7 5h4v14H7zM13 5h4v14h-4z', reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function mark(id){document.querySelectorAll('.speaking').forEach(function(e){e.classList.remove('speaking');}); if(!id) return; var el=document.getElementById(id); el.classList.add('speaking'); el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'});}
+  function start(from,to){ i=from; last=to; var c=ORDER[i]; mark(c[1]); now.textContent=(i+1)+' / '+ORDER.length+' · '+c[2]; audio.src='audio/'+c[0]+'.mp3'; audio.play().catch(function(){}); icon.setAttribute('d',PAUSE); stop.hidden=false; }
+  function end(){ audio.pause(); i=-1; icon.setAttribute('d',PLAY); stop.hidden=true; prog.style.width='0'; now.textContent=IDLE; mark(null); }
+  audio.addEventListener('timeupdate',function(){ if(audio.duration) prog.style.width=(audio.currentTime/audio.duration*100)+'%'; });
+  audio.addEventListener('ended',function(){ if(i<last) start(i+1,last); else end(); });
+  play.onclick=function(){ if(i<0) return start(0,ORDER.length-1); if(audio.paused){audio.play().catch(function(){}); icon.setAttribute('d',PAUSE);} else {audio.pause(); icon.setAttribute('d',PLAY);} };
+  stop.onclick=end;
+  ORDER.forEach(function(c,n){
+    var sec=document.getElementById(c[1]); var b=document.createElement('button'); b.type='button'; b.className='listen'; b.lang='ar'; b.dir='rtl';
+    b.innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>استمع';
+    b.onclick=function(){start(n,n);}; sec.insertBefore(b,sec.firstChild);
+  });
+})();
+</script>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var P={
+    juan:{name:'Juan Diego Castrillon Salazar',ws:'AGRU America',lead:'Dominik R. (his leader at AGRU)',manager:'Anna Müller (Operations Manager)',ext:false,peers:'other workers at AGRU'},
+    matias:{name:'Matias Iza',ws:'Binderholz',lead:'Erik S. (shift leader at Binderholz)',manager:'Anna Müller (Operations Manager)',ext:false,peers:'other workers at Binderholz'},
+    ext:{name:'Klaus Huber',ws:'Weingärtner',lead:'Lisa Adler (supervises Weingärtner)',manager:'Anna Müller (Operations Manager)',ext:true,peers:'other workers at Weingärtner'}
+  };
+  function li(t,s){return '<div>'+t+(s?'<small>'+s+'</small>':'')+'</div>';}
+  function sim(){
+    var p=P[$('sPerson').value], k=$('sKind').value, n=+$('sAmt').value||0, away=$('sAway').checked;
+    $('sAmtL').style.display=(k==='overtime'||k==='expense'||k==='leave')?'':'none';
+    $('sAmtL').firstChild.textContent=k==='overtime'?'Hours':k==='expense'?'Amount (€)':'Days';
+    var d=[],see=[],told=[],never=[p.peers+' — a request is between the member and the people responsible'];
+    var first=away?p.manager+' — standing in':p.lead;
+    var firstWhy=away?'The usual approver ('+p.lead.split(' (')[0]+') is on leave today, so it goes to the next in line.':'Leads '+p.ws+' and holds the permission there.';
+    if(p.ext&&(k==='leave'||k==='expense')){ d=[]; $('oDecide').innerHTML=li('Not possible','An external member has no leave and no expenses here — the request cannot be made.'); $('oSee').innerHTML=''; $('oTold').innerHTML=''; $('oNever').innerHTML=li('Everyone','Nothing is created.'); return; }
+    if(k==='doc'){ d.push(li('<span class="stepn">1</span>HR (holds "Issue documents")','Documents are decided for the whole organization.')); see.push(li(p.lead,'Sees that a document is waiting, not its content (the type is restricted).')); }
+    else {
+      d.push(li('<span class="stepn">1</span>'+first,firstWhy));
+      if(k==='overtime'&&n>2) d.push(li('<span class="stepn">2</span>'+p.manager,'Office rule: more than 2 h needs the manager too.'));
+      if(k==='expense'&&n>200) d.push(li('<span class="stepn">2</span>Finance','Office rule: over €200 goes to Finance after the leader.'));
+      if(k==='leave'&&n>=3) d.push(li('<span class="stepn">2</span>'+p.manager,'Cover would drop below the minimum on those days.'));
+      if(!away) see.push(li(p.manager,'Can decide too — sees it, is not told unless it escalates.'));
+      if(away) see.push(li(p.lead,'On leave today; sees it when back, already decided.'));
+    }
+    told.push(li(p.name,'Told of every step and the final answer, with the reason if rejected.'));
+    told.push(li(d.length>1?'Step 2 only when step 1 approves':'Step 1 now','Nobody is told about a step that is not theirs yet.'));
+    $('oDecide').innerHTML=d.join(''); $('oSee').innerHTML=see.join('')||li('Nobody else',''); $('oTold').innerHTML=told.join(''); $('oNever').innerHTML=never.map(function(x){return li(x,'');}).join('');
+  }
+  ['sPerson','sKind','sAmt','sAway'].forEach(function(id){$(id).addEventListener('input',sim);$(id).addEventListener('change',sim);});
+  sim();
+
+  var KW=[
+    ['Vacation',/\b(day|days|off|holiday|vacation|wedding|leave|urlaub)\b/i],
+    ['Overtime',/\b(stay|more hours|extra|overtime|longer|tonight)\b/i],
+    ['Expense',/\b(fuel|euro|€|receipt|paid|bought|diesel|parking)\b/i],
+    ['Remote day',/\b(home|remote|from home)\b/i],
+    ['Safety equipment',/\b(boots|gloves|helmet|jacket|size)\b/i]
+  ];
+  function detect(){
+    var t=$('dText').value, best=null, hits=[];
+    KW.forEach(function(k){var m=t.match(new RegExp(k[1].source,'gi')); if(m&&(!best||m.length>best[1].length)){best=[k[0],m];}});
+    var html=t.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});
+    if(best) best[1].forEach(function(w){html=html.replace(new RegExp('\\b'+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i'),'<span class="hl">'+w+'</span>');});
+    var nums=(t.match(/\d+/g)||[]);
+    var out='';
+    if(!best){ out=li('Stays "Other"','No kind matched — the leader reads it as written. The member can still pick a kind.'); }
+    else {
+      out+=li('Suggested kind: <b>'+best[0]+'</b>','From the words '+best[1].map(function(w){return '"'+w+'"';}).join(', ')+'. The member confirms with one tap or picks another.');
+      out+='<div class="why" style="font-size:13px">'+html+'</div>';
+      if(best[0]==='Vacation') out+=li('Filled in: 2 days · Thu Oct 22 – Fri Oct 23','Read from "2 days … next Thursday and Friday".')+'<div class="good">Balance after: 11 days</div><div class="warn">Cover at AGRU on Oct 22 falls to 2 of a minimum 3 — the manager will also be asked</div>';
+      if(best[0]==='Overtime') out+=li('Filled in: '+(nums[0]||'2')+' h tonight','')+'<div class="warn">Past the 8 h daily limit at AGRU — counts only if approved</div>';
+      if(best[0]==='Expense') out+=li('Filled in: €'+(nums[0]||'84')+' · Van W-123','The van he holds today.')+'<div class="good">Under €200 — the leader decides alone</div>';
+      if(best[0]==='Remote day') out+=li('Filled in: tomorrow','')+'<div class="good">AGRU allows remote days for him</div>';
+      if(best[0]==='Safety equipment') out+=li('Filled in: Boots · size '+(nums[0]||'43'),'A kind the office created (custom request types).');
+    }
+    $('dOut').innerHTML=out;
+  }
+  $('dText').addEventListener('input',detect); detect();
+})();
+</script>

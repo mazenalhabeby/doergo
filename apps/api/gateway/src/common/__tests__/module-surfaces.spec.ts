@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { AVAILABLE_MODULES } from '@hbcfield/shared';
+import { tasksControllerSource } from '../../modules/tasks/__tests__/tasks-controllers.fixture';
 
 /*
   A module is bought by switching it on in a space, and the space is billed for
@@ -25,9 +26,9 @@ const MODULE_CONTROLLERS: Array<{ key: string; file: string }> = [
   { key: 'assets', file: 'modules/assets/asset-categories.controller.ts' },
   { key: 'tracking', file: 'modules/tracking/tracking.controller.ts' },
   { key: 'time_tracking', file: 'modules/attendance/attendance.controller.ts' },
-  { key: 'checklists', file: 'modules/tasks/tasks.controller.ts' },
-  { key: 'subtasks', file: 'modules/tasks/tasks.controller.ts' },
-  { key: 'attachments', file: 'modules/tasks/tasks.controller.ts' },
+  { key: 'checklists', file: 'modules/tasks/task-checklist.controller.ts' },
+  { key: 'subtasks', file: 'modules/tasks/task-checklist.controller.ts' },
+  { key: 'attachments', file: 'modules/tasks/task-attachments.controller.ts' },
 ];
 
 describe('a module nobody bought cannot be used', () => {
@@ -57,7 +58,7 @@ describe('a module nobody bought cannot be used', () => {
       workspace unable to ADD a checklist item and perfectly able to edit and
       delete them, which is not a boundary, it is a speed bump.
     */
-    const src = readFileSync(join(GATEWAY, 'modules/tasks/tasks.controller.ts'), 'utf8');
+    const src = tasksControllerSource();
     const routes: Array<[string, string]> = [
       ["@Post(':id/checklist')", 'checklists'],
       ["@Patch(':id/checklist/reorder')", 'checklists'],
@@ -83,7 +84,7 @@ describe('a module nobody bought cannot be used', () => {
       by `assertTaskFieldEntitlements`, on BOTH write paths. A whole-request gate
       here would make an unbought story point stop somebody creating a job.
     */
-    const src = readFileSync(join(GATEWAY, 'modules/tasks/tasks.controller.ts'), 'utf8');
+    const src = tasksControllerSource();
     for (const f of ['sprints', 'epics', 'phases', 'story_points']) expect(src).toContain(`'${f}'`);
     // Create and update, not just create.
     expect(src.match(/this\.assertTaskFieldEntitlements\(/g) ?? []).toHaveLength(2);

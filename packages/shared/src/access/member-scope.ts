@@ -1,5 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 
+import { notEndedWhere } from './assignment-window';
 /**
  * May this caller read THIS member's record?
  *
@@ -49,7 +50,7 @@ export async function assertMemberInScope(
       spaceId: { in: data.scopeSpaceIds },
       // A membership that has ended is not a membership. Without this, somebody
       // who left the site last year still reads as "in my crew".
-      OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+      ...notEndedWhere(),
     },
     select: { id: true },
   });
@@ -77,7 +78,7 @@ export function memberScopeFilter(scopeSpaceIds?: string[]): Record<string, unkn
     spaceAssignments: {
       some: {
         spaceId: { in: scopeSpaceIds },
-        OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+        ...notEndedWhere(),
       },
     },
   };

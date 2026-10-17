@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const SRC = path.resolve(__dirname, '../..');
-const code = (p: string) => fs.readFileSync(path.join(SRC, p), 'utf8');
+const code = (p: string) => readSource(path.join(SRC, p), 'utf8');
 
 jest.mock('@react-native-async-storage/async-storage', () => {
   const data = new Map<string, string>();
@@ -25,6 +25,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { forgetEverythingKept } from '../remember/store';
 import { crewAsOf, type CrewPerson } from '../../components/home/crew-state';
+import { readSource } from '../../test-utils/read-source';
 
 const flush = () => new Promise((r) => setImmediate(r));
 

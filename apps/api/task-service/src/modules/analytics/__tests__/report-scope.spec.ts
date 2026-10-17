@@ -1,7 +1,7 @@
 import { ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { compile } from '../query-engine';
 import { DATASETS } from '../registry';
-import { AnalyticsService } from '../analytics.service';
+import { analyticsParts } from './analytics.service.fixture';
 import { ReportScheduleService } from '../report-schedule.service';
 
 /*
@@ -50,7 +50,7 @@ describe('report scope', () => {
         user: { findFirst: jest.fn().mockResolvedValue({ firstName: 'A', lastName: 'B' }) },
         $queryRawUnsafe: jest.fn().mockResolvedValue([]),
       };
-      const svc = new AnalyticsService(prisma);
+      const svc = analyticsParts(prisma);
       await expect(svc.timesheetDetail({ organizationId: ORG, userId: 'u-x', scopeSpaceIds: ['sp-1'] })).rejects.toBeInstanceOf(ForbiddenException);
       await expect(svc.timesheetDetail({ organizationId: ORG, userId: 'u-x', scopeSpaceIds: [] })).rejects.toBeInstanceOf(ForbiddenException);
       expect(prisma.$queryRawUnsafe).not.toHaveBeenCalled();
@@ -62,13 +62,13 @@ describe('report scope', () => {
         user: { findFirst: jest.fn().mockResolvedValue({ firstName: 'A', lastName: 'B' }) },
         $queryRawUnsafe: jest.fn().mockResolvedValue([]),
       };
-      await new AnalyticsService(prisma).timesheetDetail({ organizationId: ORG, userId: 'u-1', scopeSpaceIds: ['sp-1'] });
+      await analyticsParts(prisma).timesheetDetail({ organizationId: ORG, userId: 'u-1', scopeSpaceIds: ['sp-1'] });
       const [sql, ...params] = prisma.$queryRawUnsafe.mock.calls[0];
       expect(params[4]).toEqual(['sp-1']);
       expect(sql).toContain('te."locationId" = ANY($5::text[])');
       // Org-wide: $5 is null, and the crew lookup is never asked.
       prisma.spaceAssignment.findFirst.mockClear();
-      await new AnalyticsService(prisma).timesheetDetail({ organizationId: ORG, userId: 'u-1', scopeSpaceIds: null });
+      await analyticsParts(prisma).timesheetDetail({ organizationId: ORG, userId: 'u-1', scopeSpaceIds: null });
       expect(prisma.$queryRawUnsafe.mock.calls[1][5]).toBeNull();
       expect(prisma.spaceAssignment.findFirst).not.toHaveBeenCalled();
     });
@@ -82,7 +82,7 @@ describe('report scope', () => {
         delete: jest.fn().mockResolvedValue({}),
       },
     };
-    const svc = new AnalyticsService(prisma);
+    const svc = analyticsParts(prisma);
     beforeEach(() => jest.clearAllMocks());
 
     it('somebody else\'s shared report cannot be edited or deleted', async () => {

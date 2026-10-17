@@ -1,5 +1,8 @@
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import {
+  personName,
+  notEndedWhere,
+  zoneOf,
   isAbsence,
   CALENDAR_LAYERS,
   CALENDAR_MAX_RANGE_DAYS,
@@ -22,6 +25,7 @@ import {
 import { shiftRuleOf } from '../technicians/cover.service';
 import { CalendarRulesService, type PlaceCalendar } from './calendar-rules.service';
 import { EventsService, type Caller } from './events.service';
+import { EventReadService } from './event-read.service';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 /*
@@ -56,7 +60,7 @@ export class CalendarService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rules: CalendarRulesService,
-    private readonly events: EventsService,
+    private readonly eventRead: EventReadService,
   ) {}
 
   private static within(scope: string[] | undefined, spaceId: string) {
@@ -95,7 +99,7 @@ export class CalendarService {
 
     const [shade, ...lists] = await Promise.all([
       daysP,
-      layers.has('events') ? this.events.itemsFor(q, fromAt, toAt) : [],
+      layers.has('events') ? this.eventRead.itemsFor(q, fromAt, toAt) : [],
       layers.has('jobs') ? this.jobs(q, fromAt, toAt, tz, spaceId) : [],
       layers.has('leave') ? this.leave(q, spaceId) : [],
       layers.has('shifts') ? this.shifts(q) : [],
@@ -172,7 +176,7 @@ export class CalendarService {
         technician: { organizationId: q.organizationId },
         OR: [
           { technicianId: q.userId },
-          ...(team ? [{ technician: { spaceAssignments: { some: { spaceId: spaceId!, OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }] } } } }] : []),
+          ...(team ? [{ technician: { spaceAssignments: { some: { spaceId: spaceId!, ...notEndedWhere() } } } }] : []),
         ],
       },
       select: { id: true, technicianId: true, startDate: true, endDate: true, status: true, type: true, kind: true, spaceId: true, workingDays: true, technician: { select: { firstName: true, lastName: true } } },
@@ -183,10 +187,14 @@ export class CalendarService {
         ? { id: `leave:${r.id}`, kind: 'leave' as const, note: r.type as string | null }
         : { id: `remote:${r.id}`, kind: 'remote' as const, note: null, spaceId: r.spaceId }),
       layer: 'leave' as const,
-      title: `${r.technician.firstName} ${r.technician.lastName}`.trim(),
-      start: toISODateString(r.startDate), end: toISODateString(r.endDate), allDay: true,
-      personId: r.technicianId, personName: `${r.technician.firstName} ${r.technician.lastName}`.trim(),
-      status: r.status, ref: { type: 'timeOff' as const, id: r.id },
+      title: personName(r.technician),
+      start: toISODateString(r.startDate),
+      end: toISODateString(r.endDate),
+      allDay: true,
+      personId: r.technicianId,
+      personName: personName(r.technician),
+      status: r.status,
+      ref: { type: 'timeOff' as const, id: r.id },
     }));
   }
 
@@ -204,7 +212,7 @@ export class CalendarService {
     const out: CalendarItem[] = [];
     for (const r of rows) {
       const rule = shiftRuleOf(r);
-      const tz = r.space?.timezone || 'Europe/Berlin';
+      const tz = zoneOf(r.space?.timezone);
       const [sh, sm] = parseHm(r.shift.startLocal);
       const [eh, em] = parseHm(r.shift.endLocal);
       for (const day of eachDay(q.from, q.to)) {

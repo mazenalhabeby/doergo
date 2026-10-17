@@ -1,0 +1,582 @@
+<title>المشرف الخارجي في فاينغارتنر</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f3f5f5; --surface:#ffffff; --surface2:#e8edee; --line:rgba(11,20,22,.10);
+  --ink:#0b1416; --ink2:#3f4f57; --muted:#6b7a82;
+  --accent:#0d8f72; --accentTint:rgba(13,143,114,.10);
+  --ext:#b45309; --extTint:rgba(180,83,9,.11);
+  --bad:#bf4336; --badTint:rgba(191,67,54,.10);
+  --win:#0a1012; --winBar:#121b1e; --winInk:#eef4f7; --winMuted:#8b979e; --winLine:rgba(238,244,247,.09); --winTile:rgba(238,244,247,.05);
+  --wAccent:#66dbba; --wExt:#f0a35e; --wBad:#fd978c;
+  --sans:"Readex Pro",system-ui,"Segoe UI",Tahoma,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#05070a; --surface:#0c1214; --surface2:#121b1e; --line:rgba(241,246,250,.08);
+  --ink:#f1f6fa; --ink2:#c3ccd2; --muted:#7c8a92;
+  --accent:#66dbba; --accentTint:rgba(102,219,186,.10);
+  --ext:#f0a35e; --extTint:rgba(240,163,94,.11);
+  --bad:#fd978c; --badTint:rgba(253,151,140,.10);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#05070a; --surface:#0c1214; --surface2:#121b1e; --line:rgba(241,246,250,.08);
+  --ink:#f1f6fa; --ink2:#c3ccd2; --muted:#7c8a92;
+  --accent:#66dbba; --accentTint:rgba(102,219,186,.10);
+  --ext:#f0a35e; --extTint:rgba(240,163,94,.11);
+  --bad:#fd978c; --badTint:rgba(253,151,140,.10);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.75;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.lat{direction:ltr;unicode-bidi:isolate}
+header.top{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:16px 24px;margin-bottom:24px}
+.eyebrow{font-size:12.5px;color:var(--muted);letter-spacing:.02em}
+h1{font-weight:500;font-size:clamp(26px,4vw,38px);line-height:1.3;margin:4px 0 6px;text-wrap:balance}
+.lede{color:var(--ink2);max-width:62ch;margin:0}
+.badgeExt{display:inline-flex;align-items:center;gap:6px;font-size:12px;border-radius:999px;padding:2px 10px;background:var(--extTint);color:var(--ext);font-weight:500}
+.player{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 8px 8px 16px;min-width:min(100%,340px)}
+.play{appearance:none;border:0;cursor:pointer;width:44px;height:44px;border-radius:50%;background:var(--accent);color:var(--bg);display:grid;place-items:center;flex:none}
+.play:focus-visible,.chap:focus-visible,.bar:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.play svg{width:18px;height:18px}
+.bar{position:relative;flex:1;height:6px;border-radius:3px;background:var(--surface2);cursor:pointer}
+.bar i{position:absolute;inset-block:0;right:0;width:0;border-radius:3px;background:var(--accent)}
+.time{font-size:12.5px;color:var(--muted);min-width:84px;text-align:center}
+
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start}
+@media (max-width:920px){.stage{grid-template-columns:1fr}}
+.winCol{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;gap:14px}
+@media (max-width:920px){.winCol{position:static}}
+.win{border-radius:16px;background:var(--win);color:var(--winInk);overflow:hidden;box-shadow:0 30px 60px -32px rgba(0,0,0,.55);border:1px solid rgba(0,0,0,.25)}
+.chrome{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--winBar);border-bottom:1px solid var(--winLine);direction:ltr}
+.chrome i{width:10px;height:10px;border-radius:50%;background:rgba(238,244,247,.16)}
+.url{flex:1;font-family:var(--mono);font-size:11.5px;color:var(--winMuted);background:rgba(238,244,247,.05);border-radius:8px;padding:4px 10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.app{display:grid;grid-template-columns:150px minmax(0,1fr);min-height:440px}
+@media (max-width:560px){.app{grid-template-columns:1fr}.nav{display:none}}
+.nav{border-inline-end:1px solid var(--winLine);padding:14px 10px;display:flex;flex-direction:column;gap:2px;font-size:12.5px}
+.nav .who{display:flex;flex-direction:column;gap:2px;padding:4px 8px 12px;border-bottom:1px solid var(--winLine);margin-bottom:8px}
+.nav .who b{font-weight:500;font-size:13px}
+.nav .who small{color:var(--wExt);font-size:11px}
+.nav a{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px 8px;border-radius:8px;color:var(--winInk);text-decoration:none}
+.nav a.on{background:rgba(102,219,186,.10);color:var(--wAccent)}
+.nav a.off{color:rgba(238,244,247,.28)}
+.nav.admin a.off{color:var(--winInk)}
+.nav.admin a.off::after{display:none}
+.nav a.off::after{content:"";width:9px;height:9px;border:1.5px solid currentColor;border-radius:2px 2px 3px 3px}
+.view{position:relative}
+.screen{position:absolute;inset:0;padding:18px 20px;display:flex;flex-direction:column;gap:12px;opacity:0;transform:translateY(8px);transition:opacity .45s ease,transform .45s ease;pointer-events:none;overflow:hidden}
+.screen.on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.screen{transition:none}}
+.sTitle{font-size:17px;font-weight:500;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sSub{font-size:12px;color:var(--winMuted);margin-top:-8px}
+.card{background:var(--winTile);border:1px solid var(--winLine);border-radius:14px;padding:12px 14px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px}
+.ln{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--winLine)}
+.ln:last-child{border-bottom:0}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;border-radius:999px;padding:2px 9px;background:var(--winTile);color:var(--winInk);white-space:nowrap}
+.chip.ok{background:rgba(102,219,186,.14);color:var(--wAccent)}
+.chip.ext{background:rgba(240,163,94,.15);color:var(--wExt)}
+.chip.bad{background:rgba(253,151,140,.15);color:var(--wBad)}
+.btn{border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:500;background:var(--wAccent);color:#04120d;white-space:nowrap}
+.btn.ghost{background:var(--winTile);color:var(--winInk)}
+.btn.lock{background:transparent;border:1px dashed rgba(238,244,247,.18);color:rgba(238,244,247,.35);text-decoration:line-through}
+.btn.bad{background:rgba(253,151,140,.16);color:var(--wBad)}
+.acts{display:flex;flex-wrap:wrap;gap:6px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.grid3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{border:1px solid var(--winLine);border-radius:12px;padding:10px;font-size:12.5px;display:flex;flex-direction:column;gap:4px}
+.tile small{color:var(--winMuted);font-size:10.5px}
+.tile.lockT{color:rgba(238,244,247,.4);border-style:dashed}
+.ghostWs{opacity:.35;text-decoration:line-through}
+.av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:11px;background:rgba(238,244,247,.08);flex:none}
+.person{display:flex;align-items:center;gap:10px}
+.strike{text-decoration:line-through;color:var(--winMuted)}
+.warn{border-radius:14px;padding:12px 14px;background:rgba(253,151,140,.10);border:1px solid rgba(253,151,140,.35);font-size:12.5px;color:var(--wBad)}
+.perm{display:flex;flex-wrap:wrap;gap:6px}
+.caption{min-height:72px;text-align:center;font-size:15px;line-height:1.7;color:var(--ink2);text-wrap:balance;padding-inline:8px}
+.side{display:flex;flex-direction:column;gap:6px}
+.side h2{font-size:13px;font-weight:500;color:var(--muted);margin:0 0 4px}
+.chap{appearance:none;border:1px solid transparent;background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:start;display:flex;gap:12px;align-items:baseline;padding:10px 12px;border-radius:14px}
+.chap:hover{background:var(--surface)}
+.chap.on{background:var(--surface);border-color:var(--line)}
+.chap .k{font-size:12px;color:var(--muted);min-width:38px}
+.chap b{font-weight:500;font-size:14.5px;display:block}
+.chap span{font-size:12.5px;color:var(--muted)}
+.chap.on b{color:var(--accent)}
+.chap.risk.on b{color:var(--bad)}
+.side{max-height:none}
+
+section{margin-top:56px}
+section > h2{font-weight:500;font-size:24px;margin:0 0 6px}
+.sectionLede{color:var(--ink2);margin:0 0 20px;max-width:64ch}
+.tw{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:18px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
+th,td{text-align:start;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-weight:500;color:var(--muted);font-size:12.5px}
+td.area{color:var(--muted);font-size:13px;white-space:nowrap}
+.y,.n,.r{display:inline-flex;font-size:12px;border-radius:999px;padding:1px 10px;white-space:nowrap}
+.y{background:var(--accentTint);color:var(--accent)}
+.n{background:var(--surface2);color:var(--muted)}
+.r{background:var(--badTint);color:var(--bad)}
+td .ev{font-family:var(--mono);font-size:12px;color:var(--muted);direction:ltr;unicode-bidi:isolate}
+.decide{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.dc{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.dc .tag{align-self:flex-start;font-size:12px;border-radius:999px;padding:2px 10px}
+.dc .tag.h{background:var(--badTint);color:var(--bad)}
+.dc .tag.m{background:var(--extTint);color:var(--ext)}
+.dc h3{margin:0;font-size:16px;font-weight:500}
+.dc p{margin:0;color:var(--ink2);font-size:14px}
+footer{margin-top:40px;color:var(--muted);font-size:12.5px;max-width:80ch}
+
+.seg{display:flex;flex-wrap:wrap;gap:4px;background:rgba(238,244,247,.04);border:1px solid var(--winLine);border-radius:10px;padding:3px}
+.seg span{font-size:11.5px;padding:4px 9px;border-radius:7px;color:var(--winMuted);white-space:nowrap}
+.seg span.sel{background:rgba(102,219,186,.16);color:var(--wAccent)}
+.seg span.selBad{background:rgba(253,151,140,.16);color:var(--wBad)}
+.prow{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px;align-items:center;font-size:12.5px;padding:6px 0;border-bottom:1px solid var(--winLine)}
+.prow:last-child{border-bottom:0}
+.tg{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--winInk)}
+.tg i{width:30px;height:17px;border-radius:9px;background:rgba(238,244,247,.14);position:relative;flex:none}
+.tg i::after{content:"";position:absolute;top:2px;inset-inline-end:2px;width:13px;height:13px;border-radius:50%;background:#cfd8dc}
+.tg.on i{background:var(--wAccent)}
+.tg.on i::after{inset-inline-end:auto;inset-inline-start:2px;background:#04120d}
+.tgs{display:flex;flex-wrap:wrap;gap:8px 16px}
+@media (max-width:560px){.prow{grid-template-columns:1fr}}
+.presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+@media (max-width:560px){.presets{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pre{border:1px solid var(--winLine);border-radius:12px;padding:8px;font-size:12px;display:flex;flex-direction:column;gap:2px}
+.pre small{color:var(--winMuted);font-size:10.5px}
+.pre.sel{border-color:var(--wAccent);background:rgba(102,219,186,.07);color:var(--wAccent)}
+.ladder{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.step{border:1px solid var(--winLine);border-radius:12px;padding:10px;font-size:12.5px;display:flex;flex-direction:column;gap:4px}
+.step small{color:var(--winMuted);font-size:10.5px;line-height:1.5}
+.step.top{border-color:rgba(102,219,186,.5)}
+.fence{border:1.5px dashed rgba(240,163,94,.55);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.fence > small{color:var(--wExt);font-size:11px}
+.dv{font-size:12px;color:var(--muted);padding:14px 12px 4px;border-top:1px solid var(--line);margin-top:6px}
+.plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px}
+.pg{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 20px}
+.pg h3{margin:0 0 10px;font-size:16px;font-weight:500;display:flex;gap:10px;align-items:baseline}
+.pg h3 .num{font-size:12px;color:var(--accent)}
+.pg ul{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:7px;color:var(--ink2);font-size:14px}
+.pg li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:12px;background:var(--surface2);border-radius:6px;padding:1px 6px;direction:ltr;unicode-bidi:isolate}
+.bugs{display:flex;flex-direction:column;gap:10px}
+.bug{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.bug b{font-weight:500}
+.bug p{grid-column:2;margin:0;color:var(--ink2);font-size:14px}
+</style>
+
+<div class="wrap" dir="rtl" lang="ar">
+  <header class="top">
+    <div>
+      <div class="eyebrow">إتش بي سي فيلد · <span class="lat">HBC USA Inc.</span> · مساحة عمل لعميل</div>
+      <h1>المشرف الخارجي في فاينغارتنر</h1>
+      <p class="lede">ماذا يستطيع شخص من عند العميل أن يفعل، إذا أعطيناه دور <span class="badgeExt">مشرف خارجي</span> في مساحة العمل <b class="lat">Weingärtner Maschinenbau GmbH</b>. الجزء الأول ما هو اليوم، وكل نقطة فيه جرّبناها على الخادم. الجزء الثاني ما نقترح بناءه لتتحكّم أنت في كل صلاحية.</p>
+    </div>
+    <div class="player">
+      <button class="play" id="play" aria-label="تشغيل الشرح الصوتي">
+        <svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>
+        <svg id="icPause" viewBox="0 0 24 24" fill="currentColor" hidden><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+      </button>
+      <div class="bar" id="bar" role="slider" aria-label="موضع التشغيل" tabindex="0"><i id="fill"></i></div>
+      <div class="time num" id="time">0:00 / 5:28</div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="winCol">
+      <div class="win" aria-hidden="true">
+        <div class="chrome"><i></i><i></i><i></i><div class="url" id="url">hbcfield.com/locations/weingaertner</div></div>
+        <div class="app">
+          <nav class="nav">
+            <div class="who"><b id="whoName">كلاوس هوبر</b><small id="whoSub">مشرف خارجي</small></div>
+            <a data-nav="jobs">المهام</a>
+            <a data-nav="hours">الحضور</a>
+            <a data-nav="people">الأشخاص</a>
+            <a data-nav="chat">المحادثة</a>
+            <a class="off">المعدّات</a>
+            <a class="off">العملاء</a>
+            <a class="off">الفواتير</a>
+            <a class="off">التقويم</a>
+            <a class="off">المستندات</a>
+            <a class="off">الخريطة الحيّة</a>
+          </nav>
+          <div class="view">
+
+            <div class="screen on" data-scene="who" data-url="hbcfield.com/members/klaus-huber">
+              <div class="sTitle">كلاوس هوبر <span class="chip ext">خارجي</span></div>
+              <div class="sSub">مسؤول الإنتاج لدى العميل · مثال</div>
+              <div class="card">
+                <div class="ln"><span>مساحة العمل</span><b class="lat">Weingärtner Maschinenbau GmbH</b></div>
+                <div class="ln"><span>الدور فيها</span><span class="chip ext">مشرف خارجي</span></div>
+                <div class="ln"><span>دور على مستوى الشركة</span><span class="chip">لا يوجد · مرفوض للخارجي</span></div>
+                <div class="ln"><span>المقعد</span><span class="num">€9.99</span></div>
+              </div>
+              <div class="card">
+                <div class="row" style="margin-bottom:8px"><span>الصلاحيات الأربع في الدور</span></div>
+                <div class="perm">
+                  <span class="chip ok">عرض كل المهام</span>
+                  <span class="chip ok">عرض حضور المساحة</span>
+                  <span class="chip ok">الموافقة على العمل الإضافي</span>
+                  <span class="chip bad">مطابقة الحضور</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="screen" data-scene="scope" data-url="hbcfield.com/locations">
+              <div class="sTitle">مساحات العمل</div>
+              <div class="sSub">ما يراه هو</div>
+              <div class="card"><div class="row"><b class="lat">Weingärtner Maschinenbau GmbH</b><span class="chip">عميل</span></div></div>
+              <div class="card">
+                <div class="ln ghostWs"><span>المكتب الرئيسي</span><span class="num">404</span></div>
+                <div class="ln ghostWs"><span>المستودع</span><span class="num">404</span></div>
+                <div class="ln ghostWs"><span>عملاء آخرون</span><span class="num">404</span></div>
+              </div>
+              <div class="sSub" style="margin-top:0">جرّبنا: الساعات والأعضاء والمهام من مساحة أخرى ← «غير موجود»</div>
+            </div>
+
+            <div class="screen" data-scene="jobs" data-url="hbcfield.com/tasks/WM-1042">
+              <div class="sTitle">صيانة خط الكبس ٣ <span class="chip">قيد التنفيذ</span></div>
+              <div class="sSub lat">Weingärtner · #WM-1042</div>
+              <div class="grid3">
+                <div class="tile">التعليقات<small>قراءة</small></div>
+                <div class="tile">سجل المهمة<small>قراءة</small></div>
+                <div class="tile">المرفقات<small>قراءة</small></div>
+                <div class="tile">تقرير الخدمة<small>قراءة</small></div>
+                <div class="tile">الوقت لكل عامل<small>قراءة</small></div>
+                <div class="tile lockT">مسار السيارة<small>مغلق · صلاحية التتبّع</small></div>
+              </div>
+              <div class="acts">
+                <span class="btn lock">مهمة جديدة</span><span class="btn lock">تعديل</span><span class="btn lock">تعيين عامل</span><span class="btn lock">حذف</span><span class="btn lock">تعليق</span>
+              </div>
+            </div>
+
+            <div class="screen" data-scene="hours" data-url="hbcfield.com/attendance?tab=approvals">
+              <div class="sTitle">الحضور · بانتظار الموافقة <span class="chip num">2</span></div>
+              <div class="sSub">فاينغارتنر فقط</div>
+              <div class="card">
+                <div class="ln"><span class="person"><span class="av">ل</span>ليزا · كهربائية</span><span class="num">06:12 → 15:04</span><span class="chip ext">تأخير</span><span class="btn">موافقة</span></div>
+                <div class="ln"><span class="person"><span class="av">ك</span>كريم · فني تكييف</span><span class="num">06:00 → 14:31</span><span class="chip ext">خروج خارج الموقع</span><span class="btn">موافقة</span></div>
+              </div>
+              <div class="grid2">
+                <div class="card row"><span>يعمل الآن</span><span class="num">3</span></div>
+                <div class="card row"><span>تقرير الحضور</span><span class="chip ok">متاح</span></div>
+              </div>
+            </div>
+
+            <div class="screen" data-scene="power" data-url="hbcfield.com/attendance/entries/edit">
+              <div class="sTitle">صلاحية «مطابقة الحضور» <span class="chip bad">أكثر من موافقة</span></div>
+              <div class="card">
+                <div class="ln"><span>تعديل وقت الدخول</span><span><span class="num strike">06:12</span> ← <span class="num">07:12</span></span><span class="chip bad">نجح</span></div>
+                <div class="ln"><span>إضافة يوم يدوي بأثر رجعي</span><span class="num">07 Oct · 08:00–16:00</span><span class="chip bad">نجح</span></div>
+                <div class="ln"><span>حذف تسجيل كامل</span><span class="num">−8:52 h</span><span class="chip bad">نجح</span></div>
+              </div>
+              <div class="warn">شخص من عند العميل يستطيع أن يحذف ساعات عمل لعمالنا. كل تغيير يُسجَّل باسمه في سجل التدقيق.</div>
+            </div>
+
+            <div class="screen" data-scene="closed" data-url="hbcfield.com/assets">
+              <div class="sTitle">مغلق تماماً</div>
+              <div class="grid3">
+                <div class="tile lockT">المعدّات<small>للمنظمة فقط</small></div>
+                <div class="tile lockT">العملاء<small>للمنظمة فقط</small></div>
+                <div class="tile lockT">الفواتير</div>
+                <div class="tile lockT">التقويم<small>للمنظمة فقط</small></div>
+                <div class="tile lockT">ملفات الموظفين</div>
+                <div class="tile lockT">الخريطة الحيّة</div>
+                <div class="tile lockT">أعضاء الشركة</div>
+                <div class="tile lockT">الدعوات</div>
+                <div class="tile lockT">الفوترة<small>للمنظمة فقط</small></div>
+              </div>
+              <div class="card row"><span>تسجيل دخوله هو · طلب إجازة</span><span class="chip">ليس له ساعة عمل</span></div>
+            </div>
+
+            <div class="screen" data-scene="people" data-url="hbcfield.com/locations/weingaertner?tab=members">
+              <div class="sTitle">الأشخاص في فاينغارتنر</div>
+              <div class="card">
+                <div class="ln"><span class="person"><span class="av">ل</span>ليزا · كهربائية</span><span class="chip">بدون أسعار</span></div>
+                <div class="ln"><span class="person"><span class="av">ك</span>كريم · فني تكييف</span><span class="chip">بدون أسعار</span></div>
+                <div class="ln"><span class="person"><span class="av">ن</span>نور · سبّاكة</span><span class="chip">بدون أسعار</span></div>
+              </div>
+              <div class="card row"><span>المحادثة</span><span>هؤلاء فقط</span></div>
+            </div>
+
+            <div class="screen" data-scene="decide" data-url="hbcfield.com/settings/roles/external-supervisor">
+              <div class="sTitle">إعدادات الأدوار · مشرف خارجي</div>
+              <div class="sSub lat">HBC USA Inc.</div>
+              <div class="card">
+                <div class="ln"><span>عرض كل المهام</span><span class="chip ok">مُفعّل</span></div>
+                <div class="ln"><span>عرض حضور المساحة</span><span class="chip ok">مُفعّل</span></div>
+                <div class="ln"><span>الموافقة على العمل الإضافي</span><span class="chip">بلا أثر · ساعات مفتوحة</span></div>
+                <div class="ln"><span>مطابقة الحضور</span><span class="chip bad">قرارك</span></div>
+                <div class="ln"><span>إنشاء المهام · تعيين</span><span class="chip ext">تحقّق: هل أُضيفت؟</span></div>
+              </div>
+            </div>
+
+
+            <div class="screen" data-scene="plan" data-url="hbcfield.com/locations/weingaertner?tab=members">
+              <div class="sTitle">المقترح · دور تبنيه أنت <span class="chip ok">جديد</span></div>
+              <div class="fence">
+                <small>مساحة عمل واحدة · لا يخرج منها أبداً</small>
+                <div class="ladder">
+                  <div class="step">مراقب<small>يرى المهام، ويطلب مهمة</small></div>
+                  <div class="step">مشرف<small>يرى ويوافق، وما تضيفه أنت</small></div>
+                  <div class="step top">مدير مساحة العمل<small>كل ما في المساحة، تحت سقفك</small></div>
+                </div>
+              </div>
+              <div class="card row"><span>اليوم</span><span>دور ثابت بأربع صلاحيات · العملاء والمعدّات والبوابة مغلقة كلياً</span></div>
+            </div>
+
+            <div class="screen" data-scene="builder" data-who="admin" data-url="hbcfield.com/invitations/new?external=1">
+              <div class="sTitle">دعوة شخص خارجي <span class="chip ext">خارجي</span></div>
+              <div class="sSub">مساحة العمل: <b class="lat">Weingärtner Maschinenbau GmbH</b></div>
+              <div class="presets">
+                <div class="pre">مراقب<small class="num">€2</small></div>
+                <div class="pre sel">مشرف<small class="num">€9.99</small></div>
+                <div class="pre">مدير المساحة<small class="num">€9.99</small></div>
+                <div class="pre">مخصّص<small>تبدأ من الصفر</small></div>
+              </div>
+              <div class="card">
+                <div class="prow"><span>المهام</span><div class="seg"><span>لا شيء</span><span class="sel">عرض</span><span>إنشاء</span><span>إنشاء وتعيين</span></div></div>
+                <div class="prow"><span>الحضور</span><div class="seg"><span>لا شيء</span><span>عرض</span><span class="sel">موافقة</span><span>تصحيح</span></div></div>
+                <div class="prow"><span>حذف التسجيلات</span><span class="tg"><i></i>مغلق</span></div>
+                <div class="prow"><span>العمل الإضافي</span><div class="seg"><span>لا</span><span class="sel">يوافق</span></div></div>
+              </div>
+            </div>
+
+            <div class="screen" data-scene="crm" data-who="admin" data-url="hbcfield.com/invitations/new?external=1#crm">
+              <div class="sTitle">العملاء والبوابة · لهذه المساحة فقط</div>
+              <div class="card">
+                <div class="prow"><span>العملاء</span><div class="seg"><span>لا شيء</span><span>عرض</span><span class="sel">عرض وإضافة</span><span>تعديل</span><span>حذف</span></div></div>
+                <div class="prow"><span>البوابة</span><div class="seg"><span>لا شيء</span><span>عرض</span><span class="sel">ردّ وتغيير الحالة</span><span>إدارة</span></div></div>
+              </div>
+              <div class="fence">
+                <small>ما يراه كلاوس</small>
+                <div class="ln"><span>عملاء فاينغارتنر <span class="num">12</span></span><span class="btn">+ عميل</span></div>
+                <div class="ln"><span>طلب بوابة · تسرّب زيت في الخط ٢</span><span class="chip ext">جديد</span><span class="btn ghost">ردّ</span></div>
+              </div>
+            </div>
+
+            <div class="screen" data-scene="assets" data-who="admin" data-url="hbcfield.com/invitations/new?external=1#assets">
+              <div class="sTitle">المعدّات · لهذه المساحة فقط</div>
+              <div class="card">
+                <div class="prow"><span>المعدّات</span><div class="seg"><span>لا شيء</span><span>عرض</span><span class="sel">تسجيل استخدام ومصروف</span><span>إدارة كاملة</span></div></div>
+              </div>
+              <div class="fence">
+                <small>ما يراه كلاوس</small>
+                <div class="ln"><span>رافعة شوكية <span class="lat">FL-03</span></span><span class="btn ghost">تسجيل استخدام</span></div>
+                <div class="ln"><span>مكبس هيدروليكي <span class="lat">HP-7</span></span><span class="btn ghost">تسجيل استخدام</span></div>
+                <div class="ln ghostWs"><span>معدّات المستودع</span><span class="num">404</span></div>
+              </div>
+            </div>
+
+            <div class="screen" data-scene="manager" data-who="admin" data-url="hbcfield.com/invitations/new?external=1">
+              <div class="sTitle">قالب: مدير مساحة العمل</div>
+              <div class="presets">
+                <div class="pre">مراقب<small class="num">€2</small></div>
+                <div class="pre">مشرف<small class="num">€9.99</small></div>
+                <div class="pre sel">مدير المساحة<small class="num">€9.99</small></div>
+                <div class="pre">مخصّص</div>
+              </div>
+              <div class="card">
+                <div class="prow"><span>المهام</span><div class="seg"><span>عرض</span><span>إنشاء</span><span class="sel">إنشاء وتعيين</span></div></div>
+                <div class="prow"><span>الحضور</span><div class="seg"><span>عرض</span><span>موافقة</span><span class="sel">تصحيح</span></div></div>
+                <div class="prow"><span>الورديات والإجازات</span><div class="seg"><span>لا شيء</span><span>عرض</span><span class="sel">إدارة</span></div></div>
+                <div class="prow"><span>الخريطة الحيّة</span><div class="seg"><span>لا</span><span class="sel">عمال المساحة</span></div></div>
+              </div>
+              <div class="card">
+                <div class="row" style="margin-bottom:8px"><span>قدرات حسّاسة · كل واحدة بقرارك</span></div>
+                <div class="tgs">
+                  <span class="tg on"><i></i>يضيف أشخاصاً إلى المساحة</span>
+                  <span class="tg"><i></i>يعطيهم أدواراً</span>
+                  <span class="tg"><i></i>يحذف تسجيلات الحضور</span>
+                </div>
+              </div>
+              <div class="sSub" style="margin-top:0">لا يعطي أحداً أكثر مما يملك هو</div>
+            </div>
+
+            <div class="screen" data-scene="platform" data-who="admin" data-url="hbcfield.com/invitations/new?external=1#platform">
+              <div class="sTitle">أين يدخل</div>
+              <div class="card">
+                <div class="prow"><span>المنصة</span><div class="seg"><span>الويب فقط</span><span>التطبيق فقط</span><span class="sel">الاثنان</span></div></div>
+              </div>
+              <div class="grid2">
+                <div class="tile">الويب<small>المهام · الحضور · العملاء · المعدّات</small></div>
+                <div class="tile">التطبيق<small>نفس الصلاحيات تماماً</small></div>
+              </div>
+            </div>
+
+            <div class="screen" data-scene="never" data-who="admin" data-url="hbcfield.com/invitations/new?external=1#summary">
+              <div class="sTitle">لا يُعطى لخارجي أبداً</div>
+              <div class="grid3">
+                <div class="tile lockT">الفواتير</div>
+                <div class="tile lockT">تكلفة العمالة</div>
+                <div class="tile lockT">ملفات الموظفين</div>
+                <div class="tile lockT">أعضاء الشركة</div>
+                <div class="tile lockT">الفوترة</div>
+                <div class="tile lockT">مساحات أخرى</div>
+              </div>
+              <div class="card">
+                <div class="ln"><span>المقعد · تدفعه الشركة</span><span><span class="num">€2</span> يرى فقط · <span class="num">€9.99</span> غير ذلك</span></div>
+                <div class="ln"><span>الشخص الخارجي</span><span>لا يدفع شيئاً</span></div>
+                <div class="ln"><span>سجل التدقيق</span><span class="chip ext">خارجي · باسمه</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="caption" id="caption" aria-live="polite"></div>
+    </div>
+
+    <div class="side">
+      <h2>الفصول</h2>
+      <div class="dv" style="border-top:0;margin-top:0;padding-top:0">اليوم</div>
+      <button class="chap" data-ch="who"><span class="k num">01</span><span><b>من هو</b><span>شخص العميل، دور واحد، مساحة واحدة</span></span></button>
+      <button class="chap" data-ch="scope"><span class="k num">02</span><span><b>ما يراه</b><span>فاينغارتنر فقط</span></span></button>
+      <button class="chap" data-ch="jobs"><span class="k num">03</span><span><b>المهام</b><span>قراءة فقط</span></span></button>
+      <button class="chap" data-ch="hours"><span class="k num">04</span><span><b>الساعات</b><span>يرى ويوافق</span></span></button>
+      <button class="chap risk" data-ch="power"><span class="k num">05</span><span><b>انتبه</b><span>يعدّل ويضيف ويحذف</span></span></button>
+      <button class="chap" data-ch="closed"><span class="k num">06</span><span><b>المغلق</b><span>كل ما تملكه الشركة</span></span></button>
+      <button class="chap" data-ch="people"><span class="k num">07</span><span><b>الأشخاص</b><span>بدون أسعار</span></span></button>
+      <button class="chap" data-ch="decide"><span class="k num">08</span><span><b>قراراتك</b><span>ثلاثة أمور</span></span></button>
+      <div class="dv">المقترح</div>
+      <button class="chap" data-ch="plan"><span class="k num">09</span><span><b>دور تبنيه أنت</b><span>من مراقب إلى مدير</span></span></button>
+      <button class="chap" data-ch="builder"><span class="k num">10</span><span><b>القوالب والمستويات</b><span>المهام والحضور</span></span></button>
+      <button class="chap" data-ch="crm"><span class="k num">11</span><span><b>العملاء والبوابة</b><span>عرض، إضافة، تعديل، حذف</span></span></button>
+      <button class="chap" data-ch="assets"><span class="k num">12</span><span><b>المعدّات</b><span>عرض، تسجيل، إدارة</span></span></button>
+      <button class="chap" data-ch="manager"><span class="k num">13</span><span><b>مدير المساحة</b><span>ومفاتيح القدرات الحسّاسة</span></span></button>
+      <button class="chap" data-ch="platform"><span class="k num">14</span><span><b>المنصة</b><span>ويب، تطبيق، الاثنان</span></span></button>
+      <button class="chap" data-ch="never"><span class="k num">15</span><span><b>الحدود والسعر</b><span>ما لا يُعطى أبداً</span></span></button>
+    </div>
+  </div>
+
+  <section>
+    <h2>ما جرّبناه</h2>
+    <p class="sectionLede">نسخة محلية من الإعداد نفسه: مساحة عمل لعميل بنفس الوحدات وبساعات مفتوحة، وشخص خارجي بصلاحيات الدور الأصلية تماماً، وكل فعل طُلب من الخادم مباشرة.</p>
+    <div class="tw"><table>
+      <thead><tr><th>المجال</th><th>الفعل</th><th>النتيجة</th><th>ردّ الخادم</th></tr></thead>
+      <tbody>
+        <tr><td class="area">المهام</td><td>قائمة مهام فاينغارتنر، فتح مهمة</td><td><span class="y">نعم</span></td><td><span class="ev">200</span></td></tr>
+        <tr><td class="area">المهام</td><td>التعليقات، السجل، المرفقات، تقرير الخدمة، الوقت لكل عامل</td><td><span class="y">قراءة</span></td><td><span class="ev">200</span></td></tr>
+        <tr><td class="area">المهام</td><td>إنشاء، تعديل، تعيين، حذف، تعليق</td><td><span class="n">لا</span></td><td><span class="ev">403</span></td></tr>
+        <tr><td class="area">المهام</td><td>مسار السيارة على الخريطة</td><td><span class="n">لا</span></td><td><span class="ev">403 canViewTracking</span></td></tr>
+        <tr><td class="area">الحضور</td><td>كل التسجيلات، من يعمل الآن، التقرير، قائمة الموافقات</td><td><span class="y">نعم</span></td><td><span class="ev">200</span></td></tr>
+        <tr><td class="area">الحضور</td><td>الموافقة على الساعات</td><td><span class="y">نعم</span></td><td><span class="ev">201</span></td></tr>
+        <tr><td class="area">الحضور</td><td>تعديل الأوقات، إضافة يوم يدوي، حذف تسجيل</td><td><span class="r">نعم</span></td><td><span class="ev">200 · 201 · 200</span></td></tr>
+        <tr><td class="area">الحضور</td><td>نفس الأفعال في مساحة عمل أخرى</td><td><span class="n">لا</span></td><td><span class="ev">404</span></td></tr>
+        <tr><td class="area">الحضور</td><td>تسجيل دخوله هو، طلب إجازة</td><td><span class="n">لا</span></td><td><span class="ev">403</span></td></tr>
+        <tr><td class="area">الأشخاص</td><td>قائمة فاينغارتنر بدون أسعار، المحادثة معهم</td><td><span class="y">نعم</span></td><td><span class="ev">200</span></td></tr>
+        <tr><td class="area">الأشخاص</td><td>أعضاء الشركة، الدعوات، قائمة مساحة أخرى</td><td><span class="n">لا</span></td><td><span class="ev">403 · 404</span></td></tr>
+        <tr><td class="area">الشركة</td><td>المعدّات، العملاء، التقويم، الفوترة</td><td><span class="n">لا</span></td><td><span class="ev">403 DenyExternal</span></td></tr>
+        <tr><td class="area">الشركة</td><td>الفواتير، الخريطة الحيّة، ملفات الموظفين</td><td><span class="n">لا</span></td><td><span class="ev">403</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>قراراتك قبل التفعيل</h2>
+    <p class="sectionLede">مساحة فاينغارتنر على الإنتاج: عميل، وحداتها المهام الفرعية وقوائم التحقق والمرفقات والتتبّع وتقارير الخدمة وتسجيل الوقت، وتعمل بساعات مفتوحة بدون ورديات.</p>
+    <div class="decide">
+      <div class="dc"><span class="tag h">مهم</span><h3>موافقة فقط، أم تعديل وحذف أيضاً؟</h3><p>صلاحية مطابقة الحضور تسمح بتعديل الأوقات وإضافة أيام وحذف تسجيلات. إن أردت أن يوافق فقط، أزلها من الدور.</p></div>
+      <div class="dc"><span class="tag m">بلا أثر اليوم</span><h3>العمل الإضافي</h3><p>لا ورديات في فاينغارتنر، فلا يوجد عمل إضافي يُوافَق عليه. ما يصل إليه فعلاً: تسجيلات عليها علامة، مثل التأخير أو الخروج من خارج الموقع.</p></div>
+      <div class="dc"><span class="tag m">تحقّق</span><h3>الدور في <span class="lat">HBC USA</span> قد يكون مُعدّلاً</h3><p>الأدوار تُعدَّل في كل شركة. افتح الإعدادات ثم الأدوار ثم مشرف خارجي، وتأكّد أنه لم يُعطَ إنشاء المهام أو التعيين.</p></div>
+    </div>
+  </section>
+
+
+  <section>
+    <h2>ما سنبنيه</h2>
+    <p class="sectionLede">مقترح للمراجعة. لا كود قبل موافقتك على هذا الشكل.</p>
+    <div class="plan">
+      <div class="pg"><h3><span class="num">1</span>الصلاحيات</h3><ul>
+        <li>مستويات لكل مجال بدل مفاتيح متفرقة: المهام، الحضور، العمل الإضافي، الورديات والإجازات، العملاء، البوابة، المعدّات، الخريطة الحيّة، الأشخاص.</li>
+        <li>فصل «الموافقة على الحضور» عن «تصحيح الحضور»، و«حذف التسجيلات» مفتاح مستقل.</li>
+        <li>مفاتيح مستقلة للقدرات الحسّاسة: إضافة أشخاص إلى المساحة، إعطاء الأدوار، حذف التسجيلات.</li>
+        <li>صلاحيات جديدة على مستوى المساحة: إدارة البوابة، إدارة المعدّات، إدارة المساحة نفسها.</li>
+        <li>قوالب جاهزة: مراقب، مشرف، مدير المساحة، ومخصّص.</li>
+      </ul></div>
+      <div class="pg"><h3><span class="num">2</span>الخادم</h3><ul>
+        <li>العملاء يقرؤون صلاحيات المساحة، لا دور الشركة فقط (يصلح أيضاً مندوب المبيعات في مساحة).</li>
+        <li>البوابة والمعدّات تُفحص لكل مساحة، وكل قائمة تُضيَّق على مساحاته.</li>
+        <li>المنع الشامل للخارجي يبقى فقط لما تملكه الشركة: الفواتير، الفوترة، التكلفة، الملفات، الأعضاء، التقويم، التقارير.</li>
+        <li>قائمة الخارجي المسموحة تتّسع لكل صلاحية تعمل داخل المساحة، وتبقى المحظورات ثابتة.</li>
+      </ul></div>
+      <div class="pg"><h3><span class="num">3</span>الشاشات</h3><ul>
+        <li>منشئ الصلاحيات في دعوة الخارجي وفي لوحته: القالب، المستويات، المنصة، والسعر.</li>
+        <li>معاينة حيّة: «ما يراه كلاوس» قبل الحفظ.</li>
+        <li>العملاء والمعدّات والبوابة تظهر للخارجي على الويب والتطبيق بحسب صلاحياته.</li>
+      </ul></div>
+      <div class="pg"><h3><span class="num">4</span>الأمان</h3><ul>
+        <li>اختبار يمرّ على كل مسار ويتأكّد أن الخارجي لا يصل إلى مساحة أخرى.</li>
+        <li>سقف المنح: لا أحد يعطي أكثر مما يملك، والمدير الخارجي كذلك.</li>
+        <li>السعر تدفعه الشركة ويُحسب من الصلاحيات الفعلية: <span class="num">€2</span> للعرض فقط، <span class="num">€9.99</span> لأي صلاحية أكثر.</li>
+        <li>علامة «خارجي» في سجل التدقيق وفي سجل المهمة.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>أخطاء وجدناها في الطريق</h2>
+    <p class="sectionLede">تؤثر على الموظفين الداخليين أيضاً، وتُصلح في نفس العمل. الأول تحقّقنا منه في الكود؛ الأخير يحتاج تجربة.</p>
+    <div class="bugs">
+      <div class="bug"><span class="r">خطأ</span><b>تعديل عناوين العملاء ودعوتهم مرفوضة لغير المدير</b><p>المسار يطلب صلاحيات العملاء كحقول مسطّحة لا تُبنى أبداً، فيُرفض حتى من يملكها في دوره.</p></div>
+      <div class="bug"><span class="r">خطأ</span><b>صلاحيات العملاء في دور المساحة لا تفعل شيئاً</b><p>محرّر دور المساحة يعرضها ويحفظها، والخادم يتجاهلها.</p></div>
+      <div class="bug"><span class="r">خطأ</span><b>«مدير المساحة» لا يستطيع حمل صلاحية إدارة المساحة</b><p>الحفظ يحذفها من دور المساحة، فمسارات مكتوبة له لا تعمل إلا لمن يملكها على مستوى الشركة.</p></div>
+      <div class="bug"><span class="n">محتمل</span><b>المدير الذي يملك صلاحيته عبر «إدارة المستخدمين» يرى قوائم فارغة</b><p>يمرّ من الحارس، لكن القائمة تُضيَّق على المفتاح بالاسم فتصبح فارغة (الورديات والحضور).</p></div>
+    </div>
+  </section>
+
+  <footer>الأسماء في الشاشات أمثلة. الصوت من إليفن لابس. الجزء الأول من تجربة محلية بتاريخ <span class="num">2026-10-12</span>؛ إعدادات الدور على الإنتاج لم تُقرأ.</footer>
+  <audio id="vo" src="voice-ar.mp3" preload="metadata"></audio>
+</div>
+
+<script>
+const T = {"caps": [[0.4, 9.224, "who", "المشرف الخارجي شخص يعمل عند العميل، وليس عندنا. مثلاً: مسؤول من شركة فاينغارتنر للآلات، يتابع عمل فريقنا في مصنعهم."], [9.856, 21.652, "who", "نضيفه بدعوة، ونعطيه دوراً واحداً فقط: مشرف خارجي، في مساحة عمل واحدة فقط: فاينغارتنر. لا دور له على مستوى الشركة كلها، والنظام يرفض ذلك أصلاً."], [22.351, 30.269, "scope", "عندما يفتح التطبيق، يرى مساحة عمل واحدة: فاينغارتنر. لا يرى المكتب الرئيسي، ولا المستودع، ولا أي عميل آخر."], [31.087, 40.863, "scope", "جرّبنا ذلك فعلاً: طلبنا ساعات وأعضاء ومهام من مساحة عمل أخرى، والجواب كان دائماً: غير موجود. لا يعرف حتى أنها موجودة."], [41.563, 51.571, "jobs", "المهام: يرى كل مهام فاينغارتنر ويفتحها. يقرأ التعليقات، وسجل المهمة، والمرفقات، وتقرير الخدمة، وكم عمل كل عامل على المهمة."], [52.203, 62.304, "jobs", "لكنه لا ينشئ مهمة، ولا يعدّلها، ولا يعيّن عاملاً، ولا يحذفها، ولا يكتب تعليقاً. ولا يرى مسار السيارة على الخريطة. يقرأ فقط."], [63.004, 70.725, "hours", "الساعات: هنا عمله الحقيقي. يرى كل تسجيلات الدخول والخروج في فاينغارتنر، ومن يعمل الآن، وتقرير الحضور."], [71.392, 80.169, "hours", "ويرى قائمة الساعات التي تنتظر موافقة، مثل تأخير في الوصول، أو خروج من خارج الموقع. ويوافق عليها بضغطة واحدة."], [80.868, 94.185, "power", "وانتبه هنا. صلاحية مطابقة الحضور لا تعني الموافقة فقط. بها يستطيع أيضاً أن يغيّر وقت الدخول والخروج لعمالنا، وأن يضيف يوم عمل يدوياً بأثر رجعي، وأن يحذف تسجيلاً كاملاً."], [94.979, 105.463, "power", "كل هذا جرّبناه ونجح. كل تغيير يُسجَّل باسمه في السجل، لكن شخصاً من عند العميل يستطيع أن يحذف ساعات عمل لعمالنا."], [106.164, 117.391, "closed", "وما هو مغلق أمامه تماماً: المعدّات، والعملاء، والفواتير، والتقويم، وملفات الموظفين، والخريطة الحيّة، وقائمة أعضاء الشركة، والدعوات، والفوترة."], [118.104, 124.35, "closed", "وهو نفسه لا يسجّل دخولاً ولا يطلب إجازة. الشخص الخارجي ليس له ساعة عمل عندنا."], [125.05, 137.867, "people", "الأشخاص: يرى قائمة من يعمل في فاينغارتنر، بدون أسعار ولا تكاليف. ويستطيع أن يراسل في المحادثة هؤلاء فقط، لا أحداً غيرهم."], [138.567, 148.575, "decide", "ثلاثة أمور عليك أن تقرّرها. أولاً: إن أردت أن يوافق فقط، أزل صلاحية مطابقة الحضور من الدور، فلا يستطيع التعديل ولا الحذف."], [149.253, 159.517, "decide", "ثانياً: فاينغارتنر تعمل بساعات مفتوحة بدون ورديات، فلا يوجد عمل إضافي هناك. صلاحية الموافقة على العمل الإضافي لا تفعل شيئاً اليوم."], [160.381, 176.101, "decide", "ثالثاً: الأدوار قابلة للتعديل في كل شركة. افتح إعدادات الأدوار في إتش بي سي يو إس إيه، وتأكّد أن دور المشرف الخارجي لم يُعطَ صلاحيات إضافية، مثل إنشاء المهام."], [176.801, 190.036, "plan", "هذا هو الدور اليوم. والآن ما نقترحه: أن يصبح دور الشخص الخارجي دوراً تبنيه أنت، صلاحية بصلاحية، لكل مساحة عمل على حدة. من مراقب يرى فقط، إلى مدير كامل لمساحة العمل."], [190.692, 197.124, "plan", "والقاعدة الثابتة: مهما أعطيته، لا يخرج أبداً من مساحة العمل التي أضفته إليها."], [197.824, 209.353, "builder", "عند دعوة شخص خارجي أو تعديله، تختار مساحة العمل، ثم تبدأ من قالب جاهز: مراقب، أو مشرف، أو مدير مساحة العمل. ثم تعدّل كل مجال بمستوى واضح."], [209.892, 223.905, "builder", "المهام: لا شيء، أو عرض، أو إنشاء، أو إنشاء وتعيين. والحضور: عرض، أو موافقة، أو تصحيح كامل مع الحذف. فصلنا الموافقة عن التصحيح، فتعطيه الأولى دون الثانية."], [224.605, 237.202, "crm", "العملاء: إن كانت وحدة العملاء مفعّلة في مساحة العمل، يرى عملاء هذه المساحة فقط. وتختار له: عرض فقط، أو عرض وإضافة، أو إضافة وتعديل، أو كل ذلك مع الحذف."], [237.764, 247.111, "crm", "والبوابة كذلك: يرى طلبات البوابة في مساحته، أو يردّ عليها ويغيّر حالتها، أو يديرها بالكامل، بحسب ما تعطيه."], [247.811, 262.3, "assets", "المعدّات: يرى معدّات مساحته، أو يسجّل عليها استخداماً ومصروفاً، أو يديرها بالكامل: إضافة وتسليم وحذف. ومعدّات المساحات الأخرى لا يراها أبداً."], [263.0, 279.057, "manager", "ومدير مساحة العمل يجمع كل ذلك، ومعه الورديات والإجازات والأشخاص داخل المساحة. وكل قدرة حسّاسة لها مفتاح مستقل تقرّره أنت: هل يضيف أشخاصاً إلى المساحة، وهل يعطيهم أدواراً، وهل يحذف تسجيلات الحضور."], [279.724, 284.577, "manager", "تفتح ما تريد وتغلق ما تريد، ولا يعطي أحداً أكثر مما يملك هو."], [285.277, 297.955, "platform", "والمنصة: تختار له الويب فقط، أو التطبيق فقط، أو الاثنين. وفي كل منصة يرى نفس الصلاحيات تماماً، لا أكثر ولا أقل."], [298.655, 311.089, "never", "وما لا يُعطى لشخص خارجي أبداً، مهما كان دوره: الفواتير، وتكلفة العمالة، وملفات الموظفين، وأعضاء الشركة، والفوترة، ومساحات العمل الأخرى، وساعة عمل له أو إجازة."], [311.756, 326.222, "never", "والسعر تدفعه الشركة، لا الشخص الخارجي، ويتبع ما يملكه فعلاً: من يرى فقط بيوروين، وأي صلاحية أكثر بمقعد كامل. وكل ما يفعله يُسجَّل باسمه، مع علامة خارجي."]], "chapters": [["who", 0.4], ["scope", 22.351], ["jobs", 41.563], ["hours", 63.004], ["power", 80.868], ["closed", 106.164], ["people", 125.05], ["decide", 138.567], ["plan", 176.801], ["builder", 197.824], ["crm", 224.605], ["assets", 247.811], ["manager", 263.0], ["platform", 285.277], ["never", 298.655]], "duration": 328.42};
+const vo = document.getElementById('vo'), play = document.getElementById('play');
+const icPlay = document.getElementById('icPlay'), icPause = document.getElementById('icPause');
+const fill = document.getElementById('fill'), bar = document.getElementById('bar'), time = document.getElementById('time');
+const caption = document.getElementById('caption'), url = document.getElementById('url');
+const whoName = document.getElementById('whoName'), whoSub = document.getElementById('whoSub'), navEl = document.querySelector('.nav');
+const screens = [...document.querySelectorAll('.screen')], chaps = [...document.querySelectorAll('.chap')];
+const navs = [...document.querySelectorAll('.nav a[data-nav]')];
+const NAV = {jobs:'jobs', hours:'hours', power:'hours', people:'people', plan:'people', builder:'people', crm:'people', assets:'people', manager:'people', platform:'people', never:'people'};
+const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const dur = () => (isFinite(vo.duration) && vo.duration) || T.duration;
+let current = -1;
+function show(t) {
+  let i = 0;
+  for (let k = 0; k < T.caps.length; k++) if (T.caps[k][0] <= t + 0.05) i = k;
+  if (i !== current) {
+    current = i;
+    const [, , scene, text] = T.caps[i];
+    caption.textContent = text;
+    screens.forEach(s => { const on = s.dataset.scene === scene; s.classList.toggle('on', on); if (on) { url.textContent = s.dataset.url; const adm = s.dataset.who === 'admin'; whoName.textContent = adm ? 'جون أونر' : 'كلاوس هوبر'; whoSub.textContent = adm ? 'مدير النظام' : 'مشرف خارجي'; whoSub.style.color = adm ? 'var(--wAccent)' : ''; navEl.classList.toggle('admin', adm); } });
+    navs.forEach(a => a.classList.toggle('on', a.dataset.nav === NAV[scene]));
+  }
+  let ch = 0;
+  T.chapters.forEach(([, st], k) => { if (st <= t + 0.05) ch = k; });
+  chaps.forEach((c, k) => c.classList.toggle('on', k === ch));
+  fill.style.width = (100 * t / dur()) + '%';
+  time.textContent = fmt(t) + ' / ' + fmt(dur());
+}
+function setPlaying(p) { icPlay.hidden = p; icPause.hidden = !p; play.setAttribute('aria-label', p ? 'إيقاف مؤقت' : 'تشغيل الشرح الصوتي'); }
+play.addEventListener('click', () => { if (vo.paused) vo.play().catch(() => {}); else vo.pause(); });
+vo.addEventListener('play', () => setPlaying(true));
+vo.addEventListener('pause', () => setPlaying(false));
+vo.addEventListener('timeupdate', () => show(vo.currentTime));
+vo.addEventListener('ended', () => setPlaying(false));
+function seek(t) { vo.currentTime = Math.max(0, Math.min(dur() - 0.1, t)); show(vo.currentTime); }
+bar.addEventListener('click', e => { const r = bar.getBoundingClientRect(); seek(dur() * (r.right - e.clientX) / r.width); });
+bar.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') seek(vo.currentTime + 5); if (e.key === 'ArrowRight') seek(vo.currentTime - 5); });
+chaps.forEach(c => c.addEventListener('click', () => {
+  const st = (T.chapters.find(([id]) => id === c.dataset.ch) || [, 0])[1];
+  seek(st); if (vo.paused) vo.play().catch(() => {});
+}));
+show(0);
+</script>

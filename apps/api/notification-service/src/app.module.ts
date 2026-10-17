@@ -8,8 +8,16 @@ import { PushModule } from './modules/push/push.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 import { NotificationController } from './notification.controller';
 import { TaskNotificationHandler } from './handlers/task-notification.handler';
+import { RoleTaskNotificationHandler } from './handlers/role-task-notification.handler';
+import { CrewNotificationHandler } from './handlers/crew-notification.handler';
+import { TaskLiveHandler } from './handlers/task-live.handler';
 import { CalendarNotificationHandler } from './handlers/calendar-notification.handler';
 import { AttendanceNotificationHandler } from './handlers/attendance-notification.handler';
+import { BreakNotificationHandler } from './handlers/break-notification.handler';
+import { NoShowNotificationHandler } from './handlers/no-show-notification.handler';
+import { AttendanceAlertsHandler } from './handlers/attendance-alerts.handler';
+import { ExcursionNotificationHandler } from './handlers/excursion-notification.handler';
+import { AttendanceLiveHandler } from './handlers/attendance-live.handler';
 import { JoinRequestNotificationHandler } from './handlers/join-request-notification.handler';
 import { SupportNotificationHandler } from './handlers/support-notification.handler';
 import { AssetProposalNotificationHandler } from './handlers/asset-proposal-notification.handler';
@@ -41,8 +49,16 @@ import { AppUpdateNotificationHandler } from './handlers/app-update-notification
   controllers: [
     NotificationController,
     TaskNotificationHandler,
+    RoleTaskNotificationHandler,
+    CrewNotificationHandler,
+    TaskLiveHandler,
     CalendarNotificationHandler,
     AttendanceNotificationHandler,
+    BreakNotificationHandler,
+    NoShowNotificationHandler,
+    AttendanceAlertsHandler,
+    ExcursionNotificationHandler,
+    AttendanceLiveHandler,
     JoinRequestNotificationHandler,
     SupportNotificationHandler,
     ShiftIssueNotificationHandler,

@@ -21,14 +21,8 @@ import {
   FONT_WEIGHT,
   SHADOWS,
 } from '../lib/constants';
-
-
-interface SignatureCaptureProps {
-  title: string;
-  onSave: (base64: string) => void;
-  onClear: () => void;
-  existingSignature?: string;
-}
+import { useSignatureCapture, type SignatureCaptureProps } from './use-signature-capture';
+import { styles } from './signature-capture-helpers';
 
 export function SignatureCapture({
   title,
@@ -36,72 +30,25 @@ export function SignatureCapture({
   onClear,
   existingSignature,
 }: SignatureCaptureProps) {
-  const { colors, isDark } = useTheme();
-  const { t } = useTranslation();
-  const [showModal, setShowModal] = useState(false);
-  const [isSigning, setIsSigning] = useState(false);
-  const signatureRef = useRef<NativeSignaturePadHandle>(null);
-  const { width: winWidth, height: winHeight } = useWindowDimensions();
-
-
-  const insets = useSafeAreaInsets();
-  const hasSigned = !!existingSignature;
-
-  /*
-    Open sideways, close upright.
-
-    A signature is a WIDE, SHORT gesture; portrait gives a tall narrow strip that
-    a long name runs out of room in. So the pad — and only the pad — asks for
-    landscape, and hands orientation straight back to the app-wide policy when it
-    closes. Everything else in the phone UI stays portrait.
-
-    Ordered so the rotation happens BEFORE the canvas mounts and AFTER it is
-    gone. Rotating remounts the WebView, and a rotation mid-stroke would discard
-    what somebody had already drawn.
-  */
-  const openPad = useCallback(() => {
-    /*
-      No rotation. The pad opens, and the phone stays where it is.
-
-      Signing sideways was a real improvement on paper — a signature is a wide,
-      short gesture and portrait gives it a tall narrow strip. In practice it
-      turned the WHOLE app sideways and did not reliably come back, which is a
-      much worse problem than a narrow pad. It can return when it is driven by
-      the pad's own view rather than by locking the device, which is the correct
-      way to do it and not a thing to attempt while signing is broken.
-    */
-    setShowModal(true);
-  }, []);
-
-  const closePad = useCallback(() => {
-    setShowModal(false);
-    setIsSigning(false);
-  }, []);
-
-  const handleSignature = useCallback((signature: string) => {
-    onSave(signature);
-    closePad();
-  }, [onSave, closePad]);
-
-  const handleClear = useCallback(() => {
-    signatureRef.current?.clear();
-    setIsSigning(false);
-  }, []);
-
-  const handleConfirm = useCallback(async () => {
-    const png = await signatureRef.current?.toPng();
-    // An empty pad is not a signature. The button is disabled until there is
-    // ink, so this only fires if the export itself came back with nothing —
-    // and sending that would seal a blank image onto a document.
-    if (png) handleSignature(png);
-  }, [handleSignature]);
-
-  const handleBegin = useCallback(() => {
-    setIsSigning(true);
-  }, []);
-
-
-  const isTechnician = title.toLowerCase().includes('technician');
+  const {
+    colors,
+    isDark,
+    t,
+    showModal,
+    isSigning,
+    setIsSigning,
+    signatureRef,
+    winWidth,
+    winHeight,
+    insets,
+    hasSigned,
+    openPad,
+    closePad,
+    handleClear,
+    handleConfirm,
+    handleBegin,
+    isTechnician,
+  } = useSignatureCapture({ title, onSave, onClear, existingSignature });
 
   return (
     <View style={styles.container}>
@@ -305,193 +252,3 @@ export function SignatureCapture({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: SPACING.sm,
-  },
-
-  // =========================================================================
-  // Trigger Card
-  // =========================================================================
-  triggerCard: {
-    borderWidth: 1.5,
-    borderRadius: RADIUS.lg,
-    borderStyle: 'dashed',
-    overflow: 'hidden',
-  },
-  triggerEmpty: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.lg,
-  },
-  triggerIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  triggerTextCol: {
-    flex: 1,
-  },
-  triggerTitle: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  triggerHint: {
-    fontSize: FONT_SIZE.sm,
-    marginTop: 3,
-  },
-  triggerSigned: {
-    padding: SPACING.md,
-  },
-  triggerSignedTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.sm,
-  },
-  triggerSignedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  signedIconCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  triggerSignedLabel: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  triggerClearBtn: {
-    padding: SPACING.xs,
-  },
-  triggerPreviewContainer: {
-    height: 70,
-    borderRadius: RADIUS.md,
-    overflow: 'hidden',
-  },
-  triggerPreviewImage: {
-    width: '100%',
-    height: '100%',
-  },
-
-  // =========================================================================
-  // Full-screen Modal
-  // =========================================================================
-  /** Fills the screen and centres the rotated page inside it. */
-  rotateHost: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalContainer: {
-    // No flex: the size is set explicitly from the swapped window dimensions,
-    // because a rotated view still lays out in its parent's axes.
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.md,
-    borderBottomWidth: 1,
-  },
-  headerBtn: {
-    minWidth: 50,
-    alignItems: 'center',
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-  },
-  headerClearText: {
-    fontSize: FONT_SIZE.base,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-
-  // Instruction
-  instructionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.md,
-  },
-  instructionText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-
-  // Canvas
-  canvasOuter: {
-    flex: 1,
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.md,
-  },
-  canvasCard: {
-    flex: 1,
-    borderRadius: RADIUS.xl,
-    overflow: 'hidden',
-    borderWidth: 2,
-    ...SHADOWS.md,
-  },
-  signatureCanvas: {
-    flex: 1,
-  },
-  baselineContainer: {
-    position: 'absolute',
-    bottom: '22%',
-    left: SPACING.xxl,
-    right: SPACING.xxl,
-    alignItems: 'center',
-  },
-  baseline: {
-    width: '100%',
-    height: 1,
-  },
-  baselineLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
-    marginTop: 6,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-
-  // Footer
-  modalFooter: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
-    borderTopWidth: 1,
-  },
-  saveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    backgroundColor: COLORS.primary,
-    paddingVertical: 16,
-    borderRadius: RADIUS.lg,
-    ...SHADOWS.md,
-  },
-  saveButtonDisabled: {
-    opacity: 0.5,
-  },
-  saveButtonText: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.white,
-  },
-});

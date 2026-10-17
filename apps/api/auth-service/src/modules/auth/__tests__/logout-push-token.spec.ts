@@ -3,10 +3,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth.service';
+import { SessionControlService } from '../session-control.service';
+import { combinedServices } from '../../../common/testing/combined-services';
 import { AUTH_SERVICES } from '../auth-services';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AuditLogService } from '../../audit-log/audit-log.service';
 import { BillingService } from '../../billing/billing.service';
+import { BillingTrialService } from '../../billing/billing-trial.service';
 import { GraceTokenCache } from '../grace-token-cache.service';
 
 /*
@@ -28,7 +31,8 @@ import { GraceTokenCache } from '../grace-token-cache.service';
   one still in their pocket).
 */
 describe('signing out removes this device from push', () => {
-  let service: AuthService;
+  let service: AuthService &
+    Pick<SessionControlService, 'logout' | 'listSessions' | 'revokeSession' | 'revokeAllSessions'>;
 
   const stored = { userId: 'user-1', user: { organizationId: 'org-1' } };
 
@@ -50,10 +54,12 @@ describe('signing out removes this device from push', () => {
         { provide: ConfigService, useValue: { get: jest.fn(() => 'secret') } },
         { provide: AuditLogService, useValue: { log: jest.fn() } },
         { provide: BillingService, useValue: { startTrial: jest.fn() } },
+        { provide: BillingTrialService, useValue: { startTrial: jest.fn() } },
         { provide: GraceTokenCache, useValue: { get: jest.fn().mockResolvedValue(null), put: jest.fn() } },
       ],
     }).compile();
-    service = module.get(AuthService);
+    // Signing out and sessions are SessionControlService since the split; one object over both.
+    service = combinedServices(module.get(AuthService), module.get(SessionControlService)) as any;
   });
 
   it('deletes the registration the phone named', async () => {

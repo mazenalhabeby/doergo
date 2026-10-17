@@ -1,5 +1,6 @@
 import { readFileSync } from "fs"
 import { join } from "path"
+import { readSource } from "../../../../../../test-utils/read-source"
 
 /**
  * Everything the Edit Task dialog collects must reach the server.
@@ -16,7 +17,7 @@ import { join } from "path"
  * renderer to add and no markup to assert on.
  */
 const DIALOG = join(__dirname, "..", "edit-task-dialog.tsx")
-const SRC = readFileSync(DIALOG, "utf8")
+const SRC = readSource(DIALOG, "utf8")
 
 /** State that deliberately never leaves the browser. Keep the reasons. */
 const UI_ONLY_STATE: Record<string, string> = {

@@ -2,14 +2,14 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { trackingApi, ApiError } from '../lib/api';
 import { getAccessToken, sessionOwnerId } from '../lib/api/client';
 import i18n from '../i18n';
 import { requestBackgroundLocationConsent } from './location-consent';
 import { checkArrival, setRouteDestination, clearRouteDestination } from './route-arrival';
 import { cleanRoutePoints, type RoutePoint } from '@hbcfield/shared/client';
-import { createRouteBuffer, PENDING_PREFIX, type FlushPoint, type PendingBurst } from './route-buffer';
-import { lastPointKey, LAST_POINT_KEY, sealedStore } from '../lib/sealed-stores';
+import { PENDING_PREFIX } from './route-buffer';
+import { lastPointKey, LAST_POINT_KEY } from '../lib/sealed-stores';
+import { routeStore, flushPoints } from './route-upload';
 
 /**
  * Background route tracking.
@@ -42,8 +42,6 @@ const TIME_INTERVAL_MS = 15_000;
 // Radio wake-ups are the expensive part: the OS may hold points this long and
 // hand them over together, and they go to the server as ONE request.
 const DEFERRED_INTERVAL_MS = 30_000;
-// Largest request the server accepts (BatchTrackingLocationDto).
-const BATCH_MAX_POINTS = 500;
 // The last point kept, so a jump is judged across bursts and app restarts —
 // per member and sealed (`lastPointKey`, lib/sealed-stores.ts): it is where
 // somebody was. The old device-wide plaintext key is only ever removed (it
@@ -61,137 +59,10 @@ const BATCH_MAX_POINTS = 500;
   that was up to ~400 KB of JSON written per burst, every 30 s, offline.
 */
 const PENDING_KEY = PENDING_PREFIX;
-// Ceiling on what we hold without signal: at ~20 m per point about 100 km of
-// route, under 1 MB on the phone. Past it the OLDEST points go, because the
-// recent ones describe where the member is now.
-const MAX_PENDING_POINTS = 5000;
-// A burst older than this is not sent. Two working days: the server files a
-// late point only inside its own route's start-to-arrival window, so an old
-// point cannot muddy another route — but a long dead zone must still land.
-const MAX_PENDING_AGE_MS = 48 * 60 * 60 * 1000;
 
 interface RawLocation {
   coords: { latitude: number; longitude: number; accuracy: number | null };
   timestamp: number;
-}
-
-// Flips to true once we learn the batch endpoint isn't available (older server)
-// so we stop paying a guaranteed-failing batch request before each fallback.
-// Module-scoped: persists while the tracking session's process is alive.
-let batchUnsupported = false;
-
-/*
-  ⚠️ SEALED PER MEMBER (lib/secure-buffer.ts). The points used to sit in
-  AsyncStorage as plain JSON — readable from a backup. The first touch per
-  process re-seals whatever an older version left in plaintext, in place, so
-  points held across the update still go up.
-*/
-const routeStore = (owner: string) => sealedStore('route', owner);
-const held = createRouteBuffer(routeStore, { maxPoints: MAX_PENDING_POINTS, maxAgeMs: MAX_PENDING_AGE_MS });
-
-/**
- * Send one burst. Returns the points still undelivered — empty means the server
- * has them.
- *
- * Prefers the single batch request; if the server doesn't have that endpoint
- * (404) it switches to per-point uploads for the rest of the session so
- * tracking keeps working against an older backend. Order is preserved
- * (sequential) to keep route distance accurate.
- */
-/** Worth trying again later: no connection, a timeout, the server busy or limiting, or a login being refreshed. */
-function retryable(err: unknown): boolean {
-  if (!(err instanceof ApiError)) return true;
-  const c = err.statusCode;
-  return c === 0 || c === 401 || c === 408 || c === 429 || c >= 500;
-}
-
-async function sendBurst(taskId: string | undefined, points: FlushPoint[]): Promise<FlushPoint[]> {
-  if (!batchUnsupported) {
-    // ≤500 per request — a long dead zone goes up as a few requests, never one per point.
-    for (let at = 0; at < points.length; at += BATCH_MAX_POINTS) {
-      const chunk = points.slice(at, at + BATCH_MAX_POINTS);
-      try {
-        await trackingApi.updateLocationBatch({ taskId, points: chunk });
-      } catch (err) {
-        if (err instanceof ApiError && err.statusCode === 404) {
-          // Endpoint missing (an older server) — downgrade and send the rest one by one.
-          batchUnsupported = true;
-          return sendOneByOne(taskId, points.slice(at));
-        }
-        if (retryable(err)) {
-          // Offline, rate-limited, or a server fault — keep this chunk and the rest.
-          console.warn('[Route] Batch not delivered, will retry:', err);
-          return points.slice(at);
-        }
-        // The server understood and refused (not on this job any more, bad
-        // data): retrying can only fail the same way, so this chunk goes.
-        console.warn('[Route] Burst rejected, discarding:', (err as ApiError).statusCode);
-      }
-    }
-    return [];
-  }
-  return sendOneByOne(taskId, points);
-}
-
-/** Older servers only. Stops at the first point that should be retried and keeps it and everything after. */
-async function sendOneByOne(taskId: string | undefined, points: FlushPoint[]): Promise<FlushPoint[]> {
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i];
-    try {
-      await trackingApi.updateLocation({ lat: p.lat, lng: p.lng, accuracy: p.accuracy, taskId });
-    } catch (err) {
-      if (retryable(err) || (err instanceof ApiError && err.statusCode === 404)) return points.slice(i);
-      console.warn('[Route] Point rejected, discarding:', (err as ApiError).statusCode);
-    }
-  }
-  return [];
-}
-
-/**
- * Upload a burst, and any earlier bursts that couldn't be delivered.
- *
- * Field members drive through tunnels, underground garages and dead zones.
- * Before this, a burst that failed was simply gone: the route drew a straight
- * line across the gap — the exact defect background tracking was built to fix,
- * reappearing wherever coverage is worst. Failed bursts are now held and sent
- * with the next successful flush.
- *
- * Never throws: the headless task cannot handle an exception.
- */
-let flushing: Promise<void> | null = null;
-
-async function flushPoints(taskId: string | undefined, points: FlushPoint[]): Promise<void> {
-  // One flush at a time in this JS context: two overlapping ones would send the
-  // same held bursts twice.
-  while (flushing) await flushing.catch(() => undefined);
-  flushing = flushQueue(points.length ? [{ taskId, points }] : []);
-  try {
-    await flushing;
-  } finally {
-    flushing = null;
-  }
-}
-
-async function flushQueue(fresh: PendingBurst[]): Promise<void> {
-  // Whose points these are: the member the token belongs to. Nobody → nothing is sent or kept.
-  const owner = await sessionOwnerId();
-  if (!owner) return;
-  // What was held goes first, oldest first; one failure means the connection is
-  // down, and trying the rest would only hold the radio up for nothing.
-  const allHeldSent = await held.drain(owner, (b) => sendBurst(b.taskId, b.points), BATCH_MAX_POINTS);
-  if (!allHeldSent) {
-    await held.append(owner, fresh);
-    return;
-  }
-  const remaining: PendingBurst[] = [];
-  for (let i = 0; i < fresh.length; i++) {
-    const left = await sendBurst(fresh[i].taskId, fresh[i].points);
-    if (left.length) {
-      remaining.push({ taskId: fresh[i].taskId, points: left }, ...fresh.slice(i + 1));
-      break;
-    }
-  }
-  await held.append(owner, remaining);
 }
 
 // ── Background task — runs in a separate JS context, no React state access ──
@@ -373,7 +244,10 @@ async function loadLastPoint(owner: string | null): Promise<RoutePoint | null> {
 async function saveLastPoint(owner: string | null, p: RoutePoint): Promise<void> {
   if (!owner) return;
   try {
-    await routeStore(owner).setItem(lastPointKey(owner), JSON.stringify({ lat: p.lat, lng: p.lng, timestamp: p.timestamp }));
+    await routeStore(owner).setItem(
+      lastPointKey(owner),
+      JSON.stringify({ lat: p.lat, lng: p.lng, timestamp: p.timestamp }),
+    );
   } catch {
     /* only costs the jump check across one restart */
   }

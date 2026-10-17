@@ -289,7 +289,8 @@ describe("the top bar", () => {
 
   it("a technician gets no management menus", () => {
     const nav = navModelFor(technician)
-    expect(nav.team).toEqual([])
+    // Colleagues is every member's (2026-10-15) — nothing that manages people.
+    expect(nav.team).toEqual(["/team"])
     expect(nav.time).toEqual([])
     expect(nav.documents).toEqual([])
     expect(nav).toMatchObject({ spaces: false, reports: false, invoices: false, calendar: true })
@@ -300,7 +301,7 @@ describe("the top bar", () => {
     const orgWide = ctx({ canManageUsers: true })
     expect(navModelFor(orgWide).manage).toBe(false) // they have the Team menu
     const inOneSpace = ctx({ access: { org: {}, perSpace: { s1: { canManageUsers: true } } } })
-    expect(navModelFor(inOneSpace).team).toEqual([])
+    expect(navModelFor(inOneSpace).team).toEqual(["/team"])
     expect(navModelFor(inOneSpace).manage).toBe(true)
     expect(navModelFor(technician).manage).toBe(false)
   })

@@ -1,11 +1,11 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
-import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
 import { msg, verbatim, type LocalizedText, type Msg } from '../i18n/translate';
 import { duration } from '../modules/push/push.service';
 import { isAbsence, requestKindOf } from '@hbcfield/shared';
+import { ApprovalPushService } from './../modules/push/approval-push.service';
 
 /** How a leave kind reads in a sentence — a phrase of its own in each language. */
 const LEAVE_KINDS = new Set(['VACATION', 'SICK', 'FAMILY', 'OTHER']);
@@ -61,7 +61,7 @@ export class TimeOffNotificationHandler {
   private readonly logger = new Logger('TimeOffNotificationHandler');
 
   constructor(
-    private readonly pushService: PushService,
+    private readonly approvalPush: ApprovalPushService,
     private readonly websocketGateway: WebsocketGateway,
     private readonly store: NotificationStore,
   ) {}
@@ -124,7 +124,7 @@ export class TimeOffNotificationHandler {
     }
 
     try {
-      await this.pushService.sendTimeOffRequestPush({
+      await this.approvalPush.sendTimeOffRequestPush({
         recipientIds: recipients,
         text,
         technicianName: data.memberName,
@@ -197,7 +197,7 @@ export class TimeOffNotificationHandler {
     });
 
     try {
-      await this.pushService.sendTimeOffApprovedPush({
+      await this.approvalPush.sendTimeOffApprovedPush({
         technicianId: data.memberId,
         text,
         startDate: data.startDate,

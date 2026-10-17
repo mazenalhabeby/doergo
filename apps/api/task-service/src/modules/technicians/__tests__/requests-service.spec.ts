@@ -3,7 +3,8 @@
  * one parser, coded refusals, the workspace's own list of kinds, and a remote day only where
  * the member may work away — the same `resolveAwayAccess` the clock-in decides by.
  */
-import { TechniciansService } from '../technicians.service';
+import { TimeOffRequestService } from '../time-off-request.service';
+import { TimeOffDecisionService } from '../time-off-decision.service';
 
 const SITE = { lat: 47.98, lng: 13.83 };
 const space = (over: Record<string, unknown> = {}) => ({
@@ -32,7 +33,9 @@ function build(opts: {
   const cover = { assessMany: jest.fn().mockResolvedValue(new Map()) };
   const calendarRules = { countLeaveFor: jest.fn().mockResolvedValue({ counted: 3 }) };
   const notify = { emit: jest.fn() };
-  const service = new TechniciansService(prisma, routing as any, cover as any, calendarRules as any, notify as any, {} as any);
+  const deps = [prisma, routing as any, cover as any, calendarRules as any, notify as any, {} as any] as const;
+  const service = new TimeOffRequestService(...deps);
+  Object.assign(service, { decisions: new TimeOffDecisionService(...deps) });
   return { service, prisma, cover, calendarRules, notify };
 }
 

@@ -1,5 +1,5 @@
 import { of } from 'rxjs';
-import { CustomersController } from '../customers.controller';
+import { CustomerInviteController } from '../customer-invite.controller';
 
 /*
   POST /customers/:id/invite read and rewrote the client record as nobody in
@@ -16,7 +16,7 @@ describe('POST /customers/:id/invite', () => {
     };
     const authClient = { send: jest.fn(({ cmd }: { cmd: string }) => of(replies[cmd] ?? {})) };
     const spaceModules = { assertEnabled: jest.fn(async () => undefined) };
-    const c = new CustomersController(authClient as any, spaceModules as any, {} as any, { customerChanged: jest.fn() } as any);
+    const c = new CustomerInviteController(authClient as any, spaceModules as any, {} as any, { customerChanged: jest.fn() } as any);
     await c.invite('c1', {}, { user: { id: 'u1', role: 'EMPLOYEE', organizationId: 'org-1' } });
 
     const payloadOf = (cmd: string) => (authClient.send.mock.calls as any[]).find(([p]) => p.cmd === cmd)?.[1];
@@ -34,7 +34,7 @@ describe('POST /customers/:id/invite', () => {
     const authClient = { send: jest.fn(({ cmd }: { cmd: string }) => of(cmd === 'get_customer'
       ? { data: { id: 'c1', spaceId: 's1', email: 'a@b.at', name: 'BILLA AG', crmCaps: { manage: false, view: 'all' } } }
       : {})) };
-    const c = new CustomersController(authClient as any, { assertEnabled: jest.fn() } as any, {} as any, { customerChanged: jest.fn() } as any);
+    const c = new CustomerInviteController(authClient as any, { assertEnabled: jest.fn() } as any, {} as any, { customerChanged: jest.fn() } as any);
     await expect(c.invite('c1', {}, { user: { id: 'u1', role: 'EMPLOYEE', organizationId: 'org-1' } })).rejects.toThrow('Not allowed');
     expect((authClient.send.mock.calls as any[]).map(([p]) => p.cmd)).toEqual(['get_customer']);
   });
@@ -43,7 +43,7 @@ describe('POST /customers/:id/invite', () => {
     const authClient = { send: jest.fn(({ cmd }: { cmd: string }) => of(cmd === 'get_customer'
       ? { data: { id: 'c1', crmCaps: { manage: false } } }
       : { success: true })) };
-    const c = new CustomersController(authClient as any, {} as any, {} as any, { customerChanged: jest.fn() } as any);
+    const c = new CustomerInviteController(authClient as any, {} as any, {} as any, { customerChanged: jest.fn() } as any);
     await expect(c.resendInvite('c1', { user: { id: 'u1', role: 'EMPLOYEE', organizationId: 'org-1' } })).rejects.toThrow('Not allowed');
     expect((authClient.send.mock.calls as any[]).some(([p]) => p.cmd === 'resend_invitation')).toBe(false);
   });

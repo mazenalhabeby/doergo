@@ -1,5 +1,5 @@
 import { mayViewSpaceRoster, mayManageSpaceMembers, stripSpaceTerms } from '@hbcfield/shared';
-import { LocationsController } from '../locations.controller';
+import { locationsControllers, type LocationsControllers } from './locations-controllers.fixture';
 
 /*
   GET /locations/:id/members had no gate. It now carries the caller's scope to
@@ -34,8 +34,8 @@ describe('roster access rules', () => {
 describe('LocationsController.getLocationMembers', () => {
   function ctrl(rows: any[]) {
     const service = { getLocationAssignments: jest.fn().mockResolvedValue({ success: true, data: rows }) };
-    const c = new (LocationsController as any)(service, {}, {}, {});
-    return { c: c as LocationsController, service };
+    const c = locationsControllers(service, {}, {}, {});
+    return { c: c as LocationsControllers, service };
   }
 
   it('forwards requester, Access-Profile scope and the per-space grant', async () => {
@@ -60,8 +60,8 @@ describe('LocationsController.getLocationMembers', () => {
 describe('LocationsController.getRosters (dashboard batch) — same per-space rule', () => {
   function ctrl(rows: any[]) {
     const service = { getLocationAssignmentsBatch: jest.fn().mockResolvedValue({ success: true, data: rows }) };
-    const c = new (LocationsController as any)(service, {}, {}, {});
-    return { c: c as LocationsController, service };
+    const c = locationsControllers(service, {}, {}, {});
+    return { c: c as LocationsControllers, service };
   }
 
   it('an external member: no own/all path, viewing grant asked per space', async () => {

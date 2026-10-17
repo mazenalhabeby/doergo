@@ -8,6 +8,7 @@
 import fs from 'fs';
 import path from 'path';
 import { rowRight, type RowRight, type RowWho, rowWho, sameJobRowProps, sameRowRight, sameRowWho , type JobFacts } from '../../components/jobs-list/jobs-logic';
+import { readSource } from '../../test-utils/read-source';
 
 const facts: JobFacts = { mine: false, closed: false, canceled: false, underWay: false };
 const now = new Date('2026-10-10T08:00:00');
@@ -46,10 +47,10 @@ describe('the row memo', () => {
     expect(sameJobRowProps(base(), { ...base(), onOpen: () => undefined })).toBe(false);
   });
   it('the list hands every row ONE callback, not an arrow per row', () => {
-    const src = fs.readFileSync(path.resolve(__dirname, '../../components/jobs-list/jobs-screen.tsx'), 'utf8');
+    const src = readSource(path.resolve(__dirname, '../../components/jobs-list/jobs-screen.tsx'), 'utf8');
     expect(src).toMatch(/onOpen=\{openById\}/);
     expect(src).not.toMatch(/<JobRow[\s\S]*?onPress=\{\(\) =>/);
-    const row = fs.readFileSync(path.resolve(__dirname, '../../components/jobs-list/job-row.tsx'), 'utf8');
+    const row = readSource(path.resolve(__dirname, '../../components/jobs-list/job-row.tsx'), 'utf8');
     expect(row).toMatch(/\}, sameJobRowProps\);/);
   });
 });

@@ -2,6 +2,11 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import type { SpaceScopeIds } from '@hbcfield/shared';
 import { PortalService } from './portal.service';
+import { SpacePortalService } from './space-portal.service';
+import { PortalUnitsService } from './portal-units.service';
+import { UnitWriteService } from './unit-write.service';
+import { PortalClientsService } from './portal-clients.service';
+import { PortalCategoriesService } from './portal-categories.service';
 
 /*
   `scopeSpaceIds` on an office payload = the workspaces in which the caller holds
@@ -14,7 +19,14 @@ type Scoped = { scopeSpaceIds?: SpaceScopeIds };
 
 @Controller()
 export class PortalController {
-  constructor(private readonly portalService: PortalService) {}
+  constructor(
+    private readonly portalService: PortalService,
+    private readonly categories: PortalCategoriesService,
+    private readonly portalClients: PortalClientsService,
+    private readonly unitWrite: UnitWriteService,
+    private readonly units: PortalUnitsService,
+    private readonly spacePortals: SpacePortalService,
+  ) {}
 
   // ── Portals (office) ──
 
@@ -25,12 +37,12 @@ export class PortalController {
 
   @MessagePattern({ cmd: 'portal_create' })
   createPortal(@Payload() data: { organizationId: string; templateKey?: string; name?: string }) {
-    return this.portalService.createPortal(data);
+    return this.spacePortals.createPortal(data);
   }
 
   @MessagePattern({ cmd: 'portal_create_space' })
   createSpacePortal(@Payload() data: { organizationId: string; spaceId: string; templateKey?: string; name?: string }) {
-    return this.portalService.createSpacePortal(data);
+    return this.spacePortals.createSpacePortal(data);
   }
 
   @MessagePattern({ cmd: 'portal_get' })
@@ -40,37 +52,37 @@ export class PortalController {
 
   @MessagePattern({ cmd: 'portal_ensure_for_space' })
   ensurePortalForSpace(@Payload() data: { organizationId: string; spaceId: string; name?: string }) {
-    return this.portalService.ensurePortalForSpace(data);
+    return this.spacePortals.ensurePortalForSpace(data);
   }
 
   @MessagePattern({ cmd: 'portal_get_for_space' })
   getSpacePortal(@Payload() data: { organizationId: string; spaceId: string; mayCreate?: boolean }) {
-    return this.portalService.getSpacePortal(data);
+    return this.spacePortals.getSpacePortal(data);
   }
 
   @MessagePattern({ cmd: 'portal_update_for_space' })
   updateSpacePortal(@Payload() data: { organizationId: string; spaceId: string; templateKey?: string }) {
-    return this.portalService.updateSpacePortal(data);
+    return this.spacePortals.updateSpacePortal(data);
   }
 
   @MessagePattern({ cmd: 'portal_get_unit' })
   getUnit(@Payload() data: { id: string; organizationId: string; scopeSpaceIds?: string[] }) {
-    return this.portalService.getUnit(data);
+    return this.units.getUnit(data);
   }
 
   @MessagePattern({ cmd: 'portal_list_unit_activities' })
   listUnitActivities(@Payload() data: { id: string; organizationId: string; scopeSpaceIds?: string[] }) {
-    return this.portalService.listUnitActivities(data);
+    return this.units.listUnitActivities(data);
   }
 
   @MessagePattern({ cmd: 'portal_add_unit_activity' })
   addUnitActivity(@Payload() data: { id: string; organizationId: string; body?: string; authorId?: string } & Scoped) {
-    return this.portalService.addUnitActivity(data);
+    return this.units.addUnitActivity(data);
   }
 
   @MessagePattern({ cmd: 'portal_list_space_units' })
   listSpaceUnits(@Payload() data: { organizationId: string; spaceId: string }) {
-    return this.portalService.listSpaceUnits(data);
+    return this.spacePortals.listSpaceUnits(data);
   }
 
   @MessagePattern({ cmd: 'portal_update' })
@@ -94,57 +106,57 @@ export class PortalController {
 
   @MessagePattern({ cmd: 'portal_list_units' })
   listUnits(@Payload() data: { organizationId: string; customerId: string }) {
-    return this.portalService.listCustomerUnits(data);
+    return this.units.listCustomerUnits(data);
   }
 
   @MessagePattern({ cmd: 'portal_list_assets' })
   async listAssets(@Payload() data: any) {
-    return this.portalService.listAssets(data);
+    return this.units.listAssets(data);
   }
 
   @MessagePattern({ cmd: 'portal_admin_list_units' })
   adminListUnits(@Payload() data: { organizationId: string; customerId?: string } & Scoped) {
-    return this.portalService.listUnits(data);
+    return this.units.listUnits(data);
   }
 
   @MessagePattern({ cmd: 'portal_create_unit' })
   createUnit(@Payload() data: any) {
-    return this.portalService.createUnit(data);
+    return this.unitWrite.createUnit(data);
   }
 
   @MessagePattern({ cmd: 'portal_update_unit' })
   updateUnit(@Payload() data: any) {
-    return this.portalService.updateUnit(data);
+    return this.unitWrite.updateUnit(data);
   }
 
   @MessagePattern({ cmd: 'portal_set_primary_unit' })
   setPrimaryUnit(@Payload() data: { id: string; organizationId: string; scopeSpaceId?: string }) {
-    return this.portalService.setPrimaryUnit(data);
+    return this.units.setPrimaryUnit(data);
   }
 
   @MessagePattern({ cmd: 'portal_set_member_apartment' })
   setMemberApartment(@Payload() data: { organizationId: string; spaceId: string; userId: string; unitId?: string | null; actorId?: string }) {
-    return this.portalService.setMemberApartment(data);
+    return this.unitWrite.setMemberApartment(data);
   }
 
   @MessagePattern({ cmd: 'portal_delete_unit' })
   deleteUnit(@Payload() data: { id: string; organizationId: string; scopeSpaceId?: string } & Scoped) {
-    return this.portalService.deleteUnit(data);
+    return this.unitWrite.deleteUnit(data);
   }
 
   @MessagePattern({ cmd: 'portal_remove_client' })
   removePortalClient(@Payload() data: { organizationId: string; customerId: string } & Scoped) {
-    return this.portalService.removePortalClient(data);
+    return this.portalClients.removePortalClient(data);
   }
 
   @MessagePattern({ cmd: 'portal_list_available_units' })
   listAvailableUnitsForPortal(@Payload() data: { organizationId: string; portalId: string } & Scoped) {
-    return this.portalService.listAvailableUnitsForPortal(data);
+    return this.portalClients.listAvailableUnitsForPortal(data);
   }
 
   @MessagePattern({ cmd: 'portal_list_assignable_customers' })
   listAssignableCustomersForPortal(@Payload() data: { organizationId: string; portalId: string } & Scoped) {
-    return this.portalService.listAssignableCustomersForPortal(data);
+    return this.portalClients.listAssignableCustomersForPortal(data);
   }
 
   /** Is this portal / client / unit in the caller's reach? 404 when not (see the service). */
@@ -159,21 +171,21 @@ export class PortalController {
 
   @MessagePattern({ cmd: 'portal_create_category' })
   createCategory(@Payload() data: any) {
-    return this.portalService.createCategory(data);
+    return this.categories.createCategory(data);
   }
 
   @MessagePattern({ cmd: 'portal_update_category' })
   updateCategory(@Payload() data: any) {
-    return this.portalService.updateCategory(data);
+    return this.categories.updateCategory(data);
   }
 
   @MessagePattern({ cmd: 'portal_delete_category' })
   deleteCategory(@Payload() data: { id: string; organizationId: string } & Scoped) {
-    return this.portalService.deleteCategory(data);
+    return this.categories.deleteCategory(data);
   }
 
   @MessagePattern({ cmd: 'portal_reorder_categories' })
   reorderCategories(@Payload() data: { organizationId: string; portalId: string; orderedIds: string[] } & Scoped) {
-    return this.portalService.reorderCategories(data);
+    return this.categories.reorderCategories(data);
   }
 }

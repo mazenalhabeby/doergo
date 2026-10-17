@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { mayChangeStatus, isFinishedStatus, STATUS_TRANSITIONS, type StepFormAnswers } from "@hbcfield/shared/client"
 
-import { keys } from "@/lib/query-keys"
+import { keys, invalidateTaskLists } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
 import { useClockGate, useOfficeStart } from "@/hooks"
@@ -74,8 +74,7 @@ export function useTaskStatusChange({
       if (!isStepFormRefusal(e)) notify.error(serverErrorMessage(e, t))
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
+      invalidateTaskLists(queryClient)
     },
   })
 

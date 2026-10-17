@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { documentKey } from '@hbcfield/shared/storage';
-import { SHARED_ROLE_WHERE } from '@hbcfield/shared';
+import { personName, SHARED_ROLE_WHERE } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   type DocumentActor,
@@ -134,7 +134,7 @@ export class DocumentControlService {
           metadata: {
             title: d.title,
             type: d.type.label,
-            member: `${d.user.firstName} ${d.user.lastName}`.trim(),
+            member: personName(d.user),
             ...meta,
           },
         })),
@@ -208,7 +208,7 @@ export class DocumentControlService {
           metadata: {
             title: d.title,
             type: d.type.label,
-            member: `${d.user.firstName} ${d.user.lastName}`.trim(),
+            member: personName(d.user),
             previousStatus: d.status,
             signatures: d.signatures.length,
           },

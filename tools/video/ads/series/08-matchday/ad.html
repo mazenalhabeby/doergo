@@ -1,0 +1,546 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&display=swap">
+<style>
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#05080f}
+body{font-family:Archivo,system-ui,sans-serif;color:#f1f5f9}
+.abs{position:absolute}
+#bg{position:absolute;inset:0;overflow:hidden}
+.blob{position:absolute;width:900px;height:900px;border-radius:50%;filter:blur(130px);opacity:.55}
+#grain{position:absolute;inset:-50%;width:200%;height:200%;opacity:.07;mix-blend-mode:overlay;pointer-events:none}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 45%,rgba(0,0,0,.6));pointer-events:none}
+.glass{background:linear-gradient(135deg,rgba(255,255,255,.13),rgba(255,255,255,.035));backdrop-filter:blur(26px) saturate(1.5);-webkit-backdrop-filter:blur(26px) saturate(1.5);border:1.5px solid rgba(255,255,255,.18);border-radius:30px;box-shadow:0 40px 80px -30px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.25)}
+.win{overflow:hidden}
+.win .tb{height:52px;display:flex;align-items:center;gap:9px;padding:0 22px;border-bottom:1px solid rgba(255,255,255,.1);font:700 19px/1 Archivo;color:#94a3b8}
+.win .tb i{width:13px;height:13px;border-radius:50%;background:rgba(255,255,255,.22)}
+.win .tb span{margin-inline-start:10px}
+.k{font:800 22px/1 Archivo;letter-spacing:.16em;color:#94a3b8;text-transform:uppercase}
+.big{font:900 120px/.95 Archivo;letter-spacing:-3px;text-transform:uppercase}
+.pill{display:inline-block;padding:0 22px;border-radius:22px;background:#2563eb}
+.red{background:#ef4444}
+/* arena */
+#arenaW{left:0;top:0;width:1000px;height:660px;transform-origin:50% 50%}
+#arena{width:1000px;height:660px}
+/* captions */
+#cap{left:160px;right:160px;top:968px;text-align:center;font:800 40px/1.2 Archivo;color:#e2e8f0;text-shadow:0 2px 12px rgba(0,0,0,.8)}
+#cap b{font-weight:900;color:#fff}
+#cap span{opacity:.35}
+/* kinetic text */
+#kin{left:110px;top:0;width:820px}
+.line{display:block;transform-origin:0 50%;white-space:nowrap}
+/* counters */
+.cnt{display:flex;align-items:center;gap:22px;padding:18px 26px;width:620px;box-sizing:border-box}
+.cnt .sw{width:26px;height:26px;border-radius:8px;flex:none}
+.cnt b{font:900 64px/1 Archivo;min-width:190px;font-variant-numeric:tabular-nums}
+.cnt span{font:800 30px/1.1 Archivo;color:#cbd5e1;text-transform:uppercase;letter-spacing:.02em}
+/* editor */
+#ed{left:1010px;top:150px;width:800px;height:640px}
+#ed .fields{display:flex;gap:16px;padding:22px 26px}
+.fld{flex:1;border-radius:16px;background:rgba(255,255,255,.07);padding:14px 18px}
+.fld small{display:block;font:700 15px/1 Archivo;color:#94a3b8;letter-spacing:.12em}
+.fld b{font:900 44px/1.2 Archivo;font-variant-numeric:tabular-nums}
+.btnC{position:absolute;right:26px;bottom:26px;font:900 26px/1 Archivo;background:#2563eb;padding:18px 30px;border-radius:999px}
+/* match cards */
+.mc{width:360px;height:250px;padding:20px 22px;box-sizing:border-box}
+.mc .d{font:800 18px/1 Archivo;color:#94a3b8;letter-spacing:.12em}
+.mc .v{font:900 30px/1.2 Archivo;margin:6px 0 10px}
+.mc svg{width:316px;height:150px}
+/* mail + people */
+.person{width:150px;text-align:center}
+.av{width:92px;height:92px;margin:0 auto;border-radius:50%;display:grid;place-items:center;font:900 34px/1 Archivo;color:#05080f}
+.lang{display:inline-block;margin-top:10px;font:900 20px/1 Archivo;background:rgba(255,255,255,.12);border-radius:10px;padding:7px 12px}
+.env{width:86px;height:60px;border-radius:10px;background:#f1f5f9;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.env::after{content:"";position:absolute;left:0;top:0;border-left:43px solid transparent;border-right:43px solid transparent;border-top:34px solid #cbd5e1}
+#mail{left:0;top:0;width:620px;padding:30px 34px;box-sizing:border-box;background:#f8fafc;color:#0f172a;border-radius:26px;box-shadow:0 40px 80px -20px rgba(0,0,0,.7)}
+#mail small{display:block;font:700 18px/1.3 Archivo;color:#64748b}
+#mail h3{font:900 38px/1.15 Archivo;margin:10px 0}
+#mail p{font:600 24px/1.4 Archivo;margin:0 0 18px;color:#334155}
+#mail .go{display:inline-block;background:#2563eb;color:#fff;font:900 24px/1 Archivo;padding:16px 28px;border-radius:999px}
+/* phone */
+#phone{left:0;top:0;width:420px;height:860px;border-radius:64px;background:#0b1220;border:12px solid #1e293b;box-shadow:0 60px 120px -30px rgba(0,0,0,.85);overflow:hidden}
+#phone .isl{position:absolute;left:50%;top:14px;width:120px;height:34px;margin-left:-60px;border-radius:20px;background:#000}
+.scr{position:absolute;inset:0;padding:84px 28px 30px;display:flex;flex-direction:column;gap:18px}
+.pc{border-radius:24px;background:rgba(255,255,255,.07);padding:20px 22px}
+.pc small{display:block;font:700 17px/1.2 Archivo;color:#94a3b8;letter-spacing:.08em}
+.pc b{display:block;font:900 30px/1.2 Archivo;margin-top:6px}
+.opt{border-radius:22px;padding:22px;text-align:center;font:900 30px/1 Archivo;background:rgba(255,255,255,.08)}
+.opt.yes{background:#22c55e;color:#04120a}
+#tap{width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.35);border:3px solid #fff}
+#vf{position:relative;height:330px;border-radius:26px;background:#020617;overflow:hidden}
+#qr{position:absolute;left:50%;top:50%;width:210px;height:210px;margin:-105px;background:#f8fafc;border-radius:14px;padding:14px;box-sizing:border-box;display:grid;grid-template-columns:repeat(13,1fr);gap:2px}
+#qr b{background:#05080f;border-radius:1px}#qr b.o{background:transparent}
+#scanl{position:absolute;left:30px;right:30px;height:4px;border-radius:2px;background:#4ade80;box-shadow:0 0 18px #4ade80}
+.corner{position:absolute;width:48px;height:48px;border:6px solid #fff}
+.res{border-radius:24px;padding:22px;text-align:center}
+.res b{display:block;font:900 36px/1.15 Archivo}
+.res span{font:700 21px/1.3 Archivo}
+.ok{background:rgba(34,197,94,.16);border:2px solid rgba(74,222,128,.6);color:#bbf7d0}
+.bad{background:rgba(239,68,68,.18);border:2px solid rgba(248,113,113,.7);color:#fecaca}
+/* sponsor portal */
+#sp{left:1000px;top:140px;width:800px;height:660px}
+.srow{display:flex;align-items:center;gap:18px;padding:16px 26px;border-bottom:1px solid rgba(255,255,255,.07);font:800 26px/1 Archivo}
+.seatTag{font:900 22px/1 Archivo;background:#f59e0b;color:#1a1204;border-radius:10px;padding:9px 12px;min-width:92px;text-align:center}
+.srow .nm{flex:1;font-variant-numeric:tabular-nums}
+.srow .st{font:800 20px/1 Archivo;border-radius:999px;padding:9px 14px}
+/* deadline */
+#notif{left:0;top:0;width:640px;padding:24px 28px;box-sizing:border-box;display:flex;gap:20px;align-items:center}
+#notif .ic{width:64px;height:64px;border-radius:18px;background:#2563eb;flex:none;display:grid;place-items:center}
+#notif b{display:block;font:900 28px/1.2 Archivo}
+#notif span{font:600 22px/1.3 Archivo;color:#cbd5e1}
+#ring{left:0;top:0;width:440px;height:440px}
+/* waitlist */
+.wl{width:430px;padding:16px 22px;box-sizing:border-box;display:flex;align-items:center;gap:18px;font:800 26px/1 Archivo}
+.wl .n{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);display:grid;place-items:center;font:900 22px/1 Archivo}
+/* report */
+#rep{left:1000px;top:150px;width:800px;height:620px;padding:30px 36px;box-sizing:border-box}
+.rb{margin:22px 0}
+.rb .lb{display:flex;justify-content:space-between;font:800 26px/1 Archivo;margin-bottom:12px}
+.rb .tr{height:26px;border-radius:13px;background:rgba(255,255,255,.08);position:relative;overflow:hidden}
+.rb .tr i{position:absolute;left:0;top:0;bottom:0;border-radius:13px}
+#gauge{left:0;top:0;width:720px;height:720px}
+#src{font:700 20px/1.3 Archivo;color:#64748b}
+#flash{position:absolute;inset:0;background:#fff;pointer-events:none;opacity:0}
+#end{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;opacity:0}
+#end img{width:170px;height:170px}
+#end .wm{font:900 130px/1 Archivo;letter-spacing:-4px}
+#end .tl{font:800 50px/1.2 Archivo;color:#cbd5e1}
+#end .cta{font:900 40px/1 Archivo;background:#2563eb;padding:26px 46px;border-radius:999px}
+#end .url{font:800 32px/1 Archivo;color:#94a3b8}
+</style></head><body>
+<div id="bg">
+  <div class="blob" id="b1"></div><div class="blob" id="b2"></div><div class="blob" id="b3"></div>
+  <canvas id="grain" width="480" height="270"></canvas><div id="vig"></div>
+</div>
+
+<div class="abs" id="arenaW"><svg id="arena" viewBox="0 0 1000 660"></svg></div>
+
+<div class="abs" id="kin"></div>
+
+<!-- counters (P1) -->
+<div class="abs glass cnt" id="c1"><i class="sw" style="background:#60a5fa"></i><b id="n1">0</b><span>season<br>tickets</span></div>
+<div class="abs glass cnt" id="c2"><i class="sw" style="background:#f59e0b"></i><b id="n2">0</b><span>sponsor<br>seats</span></div>
+<div class="abs glass cnt" id="c3"><i class="sw" style="background:#2dd4bf"></i><b id="n3">0</b><span>VIP<br>invitations</span></div>
+
+<!-- hall editor (P5) -->
+<div class="abs glass win" id="ed"><div class="tb"><i></i><i></i><i></i><span>Hall editor · Arena</span></div>
+  <div class="fields"><div class="fld"><small>BLOCK</small><b id="fB">A</b></div><div class="fld"><small>ROWS</small><b id="fR">0</b></div><div class="fld"><small>SEATS / ROW</small><b id="fS">0</b></div></div>
+  <svg id="edSvg" class="abs" style="left:30px;top:190px" width="740" height="380" viewBox="0 0 740 380"></svg>
+  <div class="btnC" id="copyB">Copy block ×5</div>
+</div>
+
+<!-- match cards (P6) -->
+<div id="cards"></div>
+
+<!-- invitations (P7) -->
+<div id="people"></div>
+<div id="envs"></div>
+<div class="abs" id="mail"><small>Arena Tickets · in German</small><h3>Einladung · Heimspiel</h3><p>Sa., 18.10. · 19:00<br>Block B · Reihe 2 · Platz 7</p><span class="go">Antworten</span></div>
+
+<!-- phone (P8, P12, P13) -->
+<div class="abs" id="phone"><div class="isl"></div>
+  <div class="scr" id="sRsvp">
+    <div class="pc"><small>HOME GAME · SAT 18 OCT · 19:00</small><b>Are you coming?</b></div>
+    <div class="pc"><small>YOUR SEAT</small><b>Block B · Row 2 · Seat 7</b></div>
+    <div class="opt yes" id="oYes">I'm coming</div>
+    <div class="opt" id="oNo">I'm not</div>
+    <div class="opt" style="font-size:24px;background:transparent;border:2px solid rgba(255,255,255,.15)">Pass to a colleague</div>
+    <div class="abs" id="tap"></div>
+  </div>
+  <div class="scr" id="sScan">
+    <div class="pc" style="display:flex;justify-content:space-between;align-items:center"><b style="margin:0;font-size:26px">Gate 1</b><small id="offl" style="color:#4ade80">● OFFLINE</small></div>
+    <div id="vf"><div id="qr"></div><div id="scanl"></div>
+      <i class="corner" style="left:40px;top:40px;border-right:0;border-bottom:0"></i><i class="corner" style="right:40px;top:40px;border-left:0;border-bottom:0"></i><i class="corner" style="left:40px;bottom:40px;border-right:0;border-top:0"></i><i class="corner" style="right:40px;bottom:40px;border-left:0;border-top:0"></i></div>
+    <div class="res ok" id="rOk"><b>✓ Julia Brandt</b><span>B · 2 · 8 · guest of Alpine Bank</span></div>
+    <div class="res bad" id="rBad"><b>✕ Scanned twice</b><span>Gate 2 · 10 minutes ago</span></div>
+  </div>
+</div>
+
+<!-- sponsor portal (P9) -->
+<div class="abs glass win" id="sp"><div class="tb"><i></i><i></i><i></i><span>Alpine Bank · Sponsor portal</span></div>
+  <div style="padding:20px 26px 6px;display:flex;justify-content:space-between;align-items:baseline"><b style="font:900 34px/1 Archivo">Sat 18 Oct · Home game</b><span id="spQ" style="font:900 28px/1 Archivo;color:#f59e0b">0 / 6</span></div>
+  <div id="spRows"></div>
+</div>
+
+<!-- deadline (P10) -->
+<div class="abs glass" id="notif"><div class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="#fff"><path d="M12 22a2.5 2.5 0 0 0 2.4-2h-4.8A2.5 2.5 0 0 0 12 22zm7-6V11a7 7 0 0 0-5-6.7V3a2 2 0 1 0-4 0v1.3A7 7 0 0 0 5 11v5l-2 2v1h18v-1z"/></svg></div><div><b>Reminder · Home game Saturday</b><span>Please answer by Wednesday 18:00</span></div></div>
+<svg class="abs" id="ring" viewBox="0 0 440 440"><circle cx="220" cy="220" r="190" stroke="rgba(255,255,255,.1)" stroke-width="22" fill="none"/><circle id="ringA" cx="220" cy="220" r="190" stroke="#f59e0b" stroke-width="22" fill="none" stroke-linecap="round" transform="rotate(-90 220 220)" stroke-dasharray="1194" stroke-dashoffset="0"/><text id="ringT" x="220" y="225" text-anchor="middle" font-family="Archivo" font-weight="900" font-size="92" fill="#fff">48:00</text><text x="220" y="290" text-anchor="middle" font-family="Archivo" font-weight="800" font-size="26" fill="#94a3b8" letter-spacing="4">UNTIL DEADLINE</text></svg>
+
+<!-- waitlist (P11) -->
+<div id="wls"></div>
+
+<!-- report (P14) -->
+<div class="abs glass" id="rep"><div class="k">Sponsor report · season so far</div>
+  <div class="rb"><div class="lb"><span>Alpine Bank</span><span id="r1t">0%</span></div><div class="tr"><i id="r1" style="background:#4ade80"></i></div></div>
+  <div class="rb"><div class="lb"><span>Mountain Kitchen</span><span id="r2t">0%</span></div><div class="tr"><i id="r2" style="background:#f59e0b"></i></div></div>
+  <div class="rb"><div class="lb"><span>Steel &amp; Sons</span><span id="r3t">0%</span></div><div class="tr"><i id="r3" style="background:#4ade80"></i></div></div>
+  <div class="rb"><div class="lb"><span>City Motors</span><span id="r4t">0%</span></div><div class="tr"><i id="r4" style="background:#60a5fa"></i></div></div>
+</div>
+<svg class="abs" id="gauge" viewBox="0 0 720 720"><circle cx="360" cy="360" r="300" stroke="rgba(255,255,255,.08)" stroke-width="40" fill="none"/><circle id="gA" cx="360" cy="360" r="300" stroke="#4ade80" stroke-width="40" fill="none" stroke-linecap="round" transform="rotate(-90 360 360)" stroke-dasharray="1885" stroke-dashoffset="1885"/><text id="gT" x="360" y="400" text-anchor="middle" font-family="Archivo" font-weight="900" font-size="190" fill="#fff">71%</text><text x="360" y="470" text-anchor="middle" font-family="Archivo" font-weight="800" font-size="28" fill="#94a3b8" letter-spacing="5">SEATS USED</text></svg>
+
+<div class="abs" id="cap"></div>
+<div id="flash"></div>
+<div id="end"><img id="logo" src="logo.svg"><div class="wm">HBCField</div><div class="tl">Match day, handled.</div><div class="cta">Seats · Invitations · Door</div><div class="url">hbcfield.com</div></div>
+
+<script>
+const TL=__TIMELINE__;const P=TL.phrases;
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),lerp=(a,b,k)=>a+(b-a)*k;
+const eo=k=>1-Math.pow(1-clamp(k),3),eio=k=>{k=clamp(k);return k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2};
+const spring=k=>{k=Math.max(0,k);return 1-Math.exp(-7*k)*Math.cos(11*k)};
+const DE=TL.lang==='de';
+// the English script's word positions, mapped to the German script's (scenes key off spoken words)
+const WM={de:{'0_4':2,'1_0':0,'1_4':2,'1_9':4,'3_6':7,'5_4':6,'5_5':7,'5_7':8,'6_7':5,'7_10':11,'8_4':4,'10_2':2,'10_5':5,'11_9':10,'11_12':15,'11_14':15,'11_16':17,'12_5':5,'12_6':5,'15_5':7,'15_8':10}};
+const st=i=>P[i].start,en=i=>P[i].end,wsRaw=(i,w)=>P[i].wordStarts[Math.min(w,P[i].wordStarts.length-1)];
+const ws=(i,w)=>{const m=WM[TL.lang];if(m&&m[i+'_'+w]!==undefined)w=m[i+'_'+w];return wsRaw(i,w)};
+const nx=i=>i+1<P.length?P[i+1].start:TL.duration;
+function tf(el,x,y,s=1,r=0,o=1){el.style.transform=`translate(${x}px,${y}px) scale(${s}) rotate(${r}deg)`;el.style.opacity=o}
+// visibility of a scene spanning phrases a..b: fade in at st(a)-.25, out at nx(b)-.1
+function vis(t,a,b,fi=.35,fo=.3){const s=st(a)-.25,e=nx(b)-.05;return clamp((t-s)/fi)*clamp((e-t)/fo)}
+let rs=11;const rnd=()=>{rs=(rs*9301+49297)%233280;return rs/233280};
+
+/* ---------- background ---------- */
+const PAIN=[[239,68,68],[194,65,12],[124,58,237]],CALM=[[37,99,235],[13,148,136],[79,70,229]],GOLD=[[34,197,94],[37,99,235],[245,158,11]];
+const g=$('grain').getContext('2d');const gi=g.createImageData(480,270);
+function grain(f){let s=f*7919+1;for(let i=0;i<gi.data.length;i+=4){s=(s*1103515245+12345)&0x7fffffff;const v=s%255;gi.data[i]=gi.data[i+1]=gi.data[i+2]=v;gi.data[i+3]=255}g.putImageData(gi,0,0)}
+function bg(t,f){
+  const turn=clamp((t-(st(4)-.2))/.6), win=clamp((t-(st(16)-.2))/.8), pain=clamp((t-st(1))/1.2)*(1-turn);
+  const base=[[30,41,59],[30,41,59],[30,41,59]];
+  ['b1','b2','b3'].forEach((id,i)=>{
+    let c=base[i].map((v,k)=>lerp(v,PAIN[i][k],pain));
+    if(turn>0)c=c.map((v,k)=>lerp(v,CALM[i][k],turn));
+    if(win>0)c=c.map((v,k)=>lerp(v,GOLD[i][k],win*.7));
+    const el=$(id);el.style.background=`rgb(${c.map(Math.round).join(',')})`;
+    const a=t*.18+i*2.1;el.style.left=(lerp(-200,1300,(i/2))+Math.sin(a)*160)+'px';el.style.top=(-250+i*230+Math.cos(a*1.3)*120)+'px';
+  });
+  grain(f);$('grain').style.transform=`translate(${(f*37)%60-30}px,${(f*53)%60-30}px)`;
+  // white flash on the turn and on the slam
+  let fl=0;for(const ft of [st(4)-.15,st(16),st(17)-.1]){const d=t-ft;if(d>=0&&d<.3)fl=Math.max(fl,.55*(1-d/.3))}
+  $('flash').style.opacity=fl;
+}
+
+/* ---------- arena (top-down hall) ---------- */
+const AR=$('arena');let ah='';
+// court
+ah+=`<rect id="court" x="350" y="250" width="300" height="160" rx="6" fill="rgba(245,158,11,.08)" stroke="#f59e0b" stroke-width="3" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>`;
+ah+=`<line id="cl" x1="500" y1="250" x2="500" y2="410" stroke="#f59e0b" stroke-width="3" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>`;
+ah+=`<circle id="cc" cx="500" cy="330" r="30" fill="none" stroke="#f59e0b" stroke-width="3" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>`;
+ah+=`<path id="k1" d="M350 300 h55 v60 h-55 M350 262 h22 a72 72 0 0 1 0 136 h-22" fill="none" stroke="#f59e0b" stroke-width="3" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>`;
+ah+=`<path id="k2" d="M650 300 h-55 v60 h55 M650 262 h-22 a72 72 0 0 0 0 136 h22" fill="none" stroke="#f59e0b" stroke-width="3" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>`;
+ah+=`<circle cx="365" cy="330" r="6" fill="none" stroke="#fb923c" stroke-width="3"/><circle cx="635" cy="330" r="6" fill="none" stroke="#fb923c" stroke-width="3"/>`;
+const SEATS=[];const BL=[ // block: x,y,rows,cols,label
+ [70,40,8,14,'A'],[365,40,8,14,'B'],[660,40,8,14,'C'],[70,450,8,14,'D'],[365,450,8,14,'E'],[660,450,8,14,'F']];
+BL.forEach(([bx,by,R,C,L],b)=>{
+  ah+=`<text x="${bx+C*19/2}" y="${by<300?by-12:by+R*19+26}" text-anchor="middle" font-family="Archivo" font-weight="900" font-size="20" fill="#64748b" class="blbl">${L}</text>`;
+  for(let r=0;r<R;r++)for(let c=0;c<C;c++){
+    const id=SEATS.length, x=bx+c*19+9, y=by+r*19+9;
+    // groups: season ≈ 32%, sponsor 9%, vip 3%, rest free/sold later
+    const rr=rnd(); let grp=rr<.32?'season':rr<.41?'sponsor':rr<.44?'vip':'free';
+    if(L==='B'&&r<2)grp='sponsor';
+    const empty=grp!=='free'&&rnd()<.34, unclaimed=empty&&grp!=='season';
+    SEATS.push({id,x,y,b,r,c,grp,empty,unclaimed,rr:rnd(),L});
+    ah+=`<rect id="s${id}" x="${x-7}" y="${y-7}" width="14" height="14" rx="3.5"/>`;
+  }
+});
+AR.innerHTML=ah;
+const SEL=SEATS.map(s=>$('s'+s.id));
+const COL={season:'#60a5fa',sponsor:'#f59e0b',vip:'#2dd4bf',free:'rgba(255,255,255,.10)'};
+function arena(t){
+  const W=$('arenaW');
+  // where the arena sits: centre for the opening, right for steps, hidden for phone scenes, back for waitlist, centre for finale
+  let x=880,y=215,s=.95,o=1;
+  const dock=k=>{x=lerp(x,880,k);y=lerp(y,215,k);s=lerp(s,.95,k)};
+  if(t<st(4)-.3){ // opening
+    o=clamp((t-.1)/.6); s=lerp(1.08,.95,eo((t-.1)/3));
+    if(t>st(3)-.3){const k=eio((t-(st(3)-.3))/.6);o*=lerp(1,.22,k);s=lerp(.95,1.05,k)}
+  }else if(t<st(5)-.2){o=clamp((st(5)-.2-t)/.4)*.25;}
+  else if(t<st(7)-.2){o=t<st(6)-.2?0:clamp((t-(st(6)-.2))/.4)*clamp((st(7)-.1-t)/.3)*0;} // cards take this part
+  else if(t<st(11)-.3){o=0}
+  else if(t<nx(11)){o=clamp((t-(st(11)-.3))/.4)*clamp((nx(11)-t)/.3);x=880;y=215;s=.95}
+  else if(t<st(16)-.2){o=0}
+  else {o=clamp((t-(st(16)-.2))/.4)*clamp((st(17)-t)/.3);x=960;s=lerp(.82,.88,eo((t-st(16))/2))}
+  if(t>=st(11)-.3&&t<nx(11)){}
+  tf(W,x,y,s,0,o);
+  if(o<=0)return;
+  // court draw-in
+  const cd=eo((t-.15)/1.6);['court','cl','cc','k1','k2'].forEach((id,i)=>$(id).setAttribute('stroke-dashoffset',100-100*clamp(cd*1.4-i*.1)));
+  const a1=st(1),pain0=st(2),turn=st(4),full=st(16);
+  for(const s of SEATS){
+    const el=SEL[s.id]; let fill='rgba(255,255,255,.10)',op=1,stroke='none';
+    // seats appear in a wave (P0)
+    const appear=clamp((t-(.4+s.b*.12+s.r*.05+s.c*.012))/.25);
+    // groups light up on their counter's word (P1)
+    const gt={season:ws(1,0),sponsor:ws(1,4),vip:ws(1,9)}[s.grp];
+    if(gt!==undefined&&t>gt) fill=COL[s.grp];
+    // pain: a third go dark and flicker
+    if(t>pain0&&t<turn&&s.empty){const k=clamp((t-pain0-s.rr*.8)/.3);fill=k>.5?'rgba(239,68,68,.12)':fill;stroke=k>.5?'rgba(248,113,113,.7)':'none';if(k>0&&k<1)op=.4+.6*Math.abs(Math.sin(t*40))}
+    // waitlist scene: unclaimed sponsor/vip seats are outlined, then lift off; then refill green
+    if(t>=st(11)-.3&&t<nx(11)){
+      if(s.grp!=='free')fill=COL[s.grp];
+      if(s.unclaimed){const k=clamp((t-st(11)-s.rr*.6)/.5);fill=k<1?'rgba(255,255,255,.06)':'#4ade80';stroke=k<1?'#f59e0b':'none';if(t>ws(11,9)+s.rr*.8){fill='#4ade80';stroke='none'}}
+    }
+    // finale: everyone green, wave
+    if(t>=full){const k=clamp((t-full-(s.c*.02+s.b*.05))/.3);fill=k>0?(s.grp==='free'?'#22c55e':'#4ade80'):fill;}
+    el.setAttribute('fill',fill);el.setAttribute('stroke',stroke);el.setAttribute('stroke-width',stroke==='none'?0:2);
+    el.style.opacity=appear*op;
+  }
+}
+
+/* ---------- kinetic text ---------- */
+// each entry: [phraseIndex, lines[[text,size,color,pillWordIndex?]], y, mode]
+const K=$('kin');
+const KT_EN=[
+ {p:0,y:170,lines:[['SATURDAY NIGHT',30,'#94a3b8','k',0],['2,000',190,'#fff','count',4],['SEATS',96,'#fff','',6]]},
+ {p:2,y:330,lines:[['A THIRD OF',84,'#fff','',2],['FREE SEATS',84,'#fff','',6],['STAY EMPTY',110,'#fff','pillR',8]]},
+ {p:3,y:300,lines:[['ARE YOU',170,'#fff','',6],['COMING?',190,'#fff','pill',8]]},
+ {p:4,y:350,lines:[['MATCH DAY',150,'#fff','',1],['ON HBCFIELD',72,'#60a5fa','',3]]},
+ {p:5,y:330,lines:[['DRAW IT',110,'#fff','',0],['ONCE.',110,'#fff','pill',3],['BLOCKS · ROWS · SEATS',34,'#94a3b8','k',4]]},
+ {p:6,y:320,lines:[['EVERY',110,'#fff','',6],['HOME GAME.',110,'#fff','',7],['AUTOMATICALLY',56,'#4ade80','',9]]},
+ {p:7,y:330,lines:[['ONE WEEK',110,'#fff','',0],['BEFORE TIP-OFF',70,'#fff','',2],['IN THEIR OWN LANGUAGE',36,'#60a5fa','k',9]]},
+ {p:8,y:360,lines:[['NO ACCOUNT.',96,'#fff','',0],['ONE TAP.',130,'#fff','pill',2]]},
+ {p:9,y:320,lines:[['SPONSORS',110,'#fff','',0],['FILL THEIR',80,'#fff','',1],['OWN SEATS',80,'#f59e0b','',4]]},
+ {p:10,y:300,lines:[['NO ANSWER?',100,'#fff','',0],['REMINDER.',90,'#fff','',2],['DEADLINE.',110,'#fff','pill',5]]},
+ {p:11,y:200,lines:[['EMPTY SEATS',80,'#fff','',0],['COME BACK.',110,'#fff','',4],['FIRST TO ACCEPT',46,'#4ade80','',11],['GETS IT. NEVER TWICE.',46,'#4ade80','',14]]},
+ {p:12,y:330,lines:[['SIGNED CODE.',96,'#fff','',3],['WORKS',96,'#fff','',10],['OFFLINE.',120,'#fff','pill',11]]},
+ {p:13,y:360,lines:[['SCANNED',110,'#fff','',0],['TWICE?',140,'#fff','pillR',1]]},
+ {p:14,y:300,lines:[['WHO',140,'#fff','',6],['REALLY',140,'#fff','',7],['CAME.',140,'#fff','pill',8]]},
+ {p:15,y:330,lines:[['JUST BY GIVING',70,'#fff','',11],['EMPTY SEATS',90,'#fff','',15],['BACK.',120,'#fff','pill',17]]},
+ {p:16,y:320,lines:[['FULL HALL.',118,'#fff','',1],['HAPPY SPONSORS.',90,'#fff','',3],['NO SPREADSHEETS.',90,'#4ade80','',5]]},
+];
+const KT_DE=[
+ {p:0,y:170,lines:[['SAMSTAGABEND',30,'#94a3b8','k',0],['2.000',190,'#fff','count',2],['PLÄTZE',96,'#fff','',3]]},
+ {p:2,y:330,lines:[['EIN DRITTEL',90,'#fff','',3],['DER FREIPLÄTZE',76,'#fff','',5],['BLEIBT LEER',110,'#fff','pillR',7]]},
+ {p:3,y:300,lines:[['KOMMEN',170,'#fff','',7],['SIE?',190,'#fff','pill',8]]},
+ {p:4,y:350,lines:[['SPIELTAG',150,'#fff','',2],['MIT HBCFIELD',72,'#60a5fa','',3]]},
+ {p:5,y:330,lines:[['EINMAL',110,'#fff','',0],['ZEICHNEN.',110,'#fff','pill',4],['BLÖCKE · REIHEN · PLÄTZE',34,'#94a3b8','k',5]]},
+ {p:6,y:320,lines:[['JEDES',110,'#fff','',4],['HEIMSPIEL.',110,'#fff','',5],['AUTOMATISCH',56,'#4ade80','',6]]},
+ {p:7,y:330,lines:[['EINE WOCHE',110,'#fff','',0],['VOR DEM SPIEL',70,'#fff','',2],['IN IHRER SPRACHE',36,'#60a5fa','k',9]]},
+ {p:8,y:360,lines:[['KEIN KONTO.',96,'#fff','',0],['EIN TIPP.',130,'#fff','pill',2]]},
+ {p:9,y:320,lines:[['SPONSOREN',110,'#fff','',0],['VERTEILEN',80,'#fff','',1],['SELBST',80,'#f59e0b','',4]]},
+ {p:10,y:300,lines:[['KEINE ANTWORT?',80,'#fff','',0],['ERINNERUNG.',90,'#fff','',2],['FRIST.',120,'#fff','pill',5]]},
+ {p:11,y:200,lines:[['LEERE PLÄTZE',80,'#fff','',0],['KOMMEN ZURÜCK.',80,'#fff','',5],['WER ZUERST ZUSAGT,',46,'#4ade80','',12],['BEKOMMT IHN. NIE DOPPELT.',46,'#4ade80','',15]]},
+ {p:12,y:330,lines:[['SIGNIERTER CODE.',72,'#fff','',2],['FUNKTIONIERT',80,'#fff','',9],['OFFLINE.',120,'#fff','pill',10]]},
+ {p:13,y:360,lines:[['ZWEIMAL',110,'#fff','',0],['GESCANNT?',120,'#fff','pillR',1]]},
+ {p:14,y:300,lines:[['WER',140,'#fff','',6],['WIRKLICH',140,'#fff','',7],['DA WAR.',140,'#fff','pill',8]]},
+ {p:15,y:330,lines:[['NUR DURCH',70,'#fff','',13],['RÜCKGABE',96,'#fff','',16],['DER LEEREN.',96,'#fff','pill',17]]},
+ {p:16,y:300,lines:[['VOLLE HALLE.',118,'#fff','',1],['ZUFRIEDENE',80,'#fff','',3],['SPONSOREN.',80,'#fff','',4],['KEINE TABELLEN.',76,'#4ade80','',5]]},
+];
+const KT=DE?KT_DE:KT_EN;
+KT.forEach((k,i)=>{const d=document.createElement('div');d.className='abs';d.id='kt'+i;d.style.left='0';d.style.top=k.y+'px';
+  d.innerHTML=k.lines.map(([tx,sz,c,m],j)=>`<span class="line" id="kt${i}_${j}" style="font:${m==='k'?800:900} ${sz}px/1.02 Archivo;color:${c};letter-spacing:${m==='k'?'.14em':'-.02em'};margin-bottom:${m==='k'?14:6}px">${m&&m.startsWith('pill')?`<span class="pill ${m==='pillR'?'red':''}">${tx}</span>`:tx}</span>`).join('');
+  K.appendChild(d);k.el=d;});
+function kinetic(t){
+  KT.forEach((k,i)=>{
+    const a=st(k.p)-.15,b=(k.p===16?st(17)-.1:nx(k.p))-.05;
+    const out=clamp((b-t)/.3), on=t>a-.05&&t<b+.05;
+    k.el.style.display=on?'block':'none'; if(!on)return;
+    // centre the big type for the no-stage scenes
+    const centre=[2,3,4,13,15,16].includes(k.p)&&!(k.p===15);
+    k.el.style.left=centre?'0':'0';
+    k.lines.forEach((ln,j)=>{
+      const el=$(`kt${i}_${j}`);
+      const wt=wsRaw(k.p,ln[4])-.1;
+      const s0=Math.max(a,wt), sp=spring((t-s0)/.55);
+      const slam=ln[3]&&ln[3].startsWith('pill')?lerp(1.6,1,clamp(sp)):lerp(1.35,1,clamp(sp));
+      const shake=ln[3]&&ln[3].startsWith('pill')&&t-s0<.25?Math.sin((t-s0)*90)*6:0;
+      el.style.transform=`translate(${(1-clamp(sp))*-40+shake}px,${(1-clamp(sp))*30}px) scale(${slam})`;
+      el.style.opacity=clamp((t-s0)/.12)*out;
+      el.style.filter=out<1?`blur(${(1-out)*10}px)`:'none';
+      if(ln[3]==='count'){const v=Math.round(2000*eo((t-ws(0,4)+.1)/1.6));el.textContent=v.toLocaleString(DE?'de-DE':'en-US')}
+    });
+  });
+  // the opening & the big-type scenes: centre column
+  const cx={2:420,3:420,4:420,13:110,16:420};
+  KT.forEach(k=>{k.el.style.left=(cx[k.p]!==undefined&&!(k.p===13)?0:0)+'px'});
+}
+
+/* ---------- counters (P1) ---------- */
+function counters(t){
+  [['c1','n1',640,0],['c2','n2',180,4],['c3','n3',60,9]].forEach(([c,n,v,w],i)=>{
+    const s0=ws(1,w)-.1, sp=spring((t-s0)/.6), o=clamp((t-s0)/.15)*clamp((st(2)-.1-t)/.3);
+    tf($(c),110+(1-clamp(sp))*-120,330+i*150,lerp(.6,1,clamp(sp)),(1-clamp(sp))*-3,o);
+    $(n).textContent=Math.round(v*eo((t-s0)/1.3));
+  });
+}
+
+/* ---------- hall editor (P5) ---------- */
+const ES=$('edSvg');let eh='';
+const EB=[[20,20],[260,20],[500,20],[20,210],[260,210],[500,210]];
+EB.forEach(([bx,by],b)=>{for(let r=0;r<8;r++)for(let c=0;c<14;c++)eh+=`<rect class="eb${b}" data-r="${r}" data-c="${c}" x="${bx+c*15}" y="${by+r*18}" width="12" height="14" rx="3" fill="#60a5fa"/>`;
+  eh+=`<text class="ebl${b}" x="${bx+105}" y="${by+168}" text-anchor="middle" font-family="Archivo" font-weight="900" font-size="20" fill="#94a3b8">${'ABCDEF'[b]}</text>`});
+ES.innerHTML=eh;const EBR=[0,1,2,3,4,5].map(b=>[...ES.querySelectorAll('.eb'+b)]),EBL=[0,1,2,3,4,5].map(b=>ES.querySelector('.ebl'+b));
+function editor(t){
+  const o=vis(t,5,5);const sp=spring((t-st(5)+.2)/.6);
+  tf($('ed'),(1-clamp(sp))*120,0,lerp(.92,1,clamp(sp)),0,o); $('ed').style.transform+=` perspective(1600px) rotateY(${lerp(-16,-3,eo((t-st(5))/1.2))}deg)`;
+  if(o<=0)return;
+  const rows=Math.round(8*eo((t-ws(5,4))/.8)),cols=Math.round(14*eo((t-ws(5,5))/.8));
+  $('fR').textContent=rows;$('fS').textContent=cols;
+  const cp=ws(5,7)-.1; // "Copy"
+  $('copyB').style.transform=`scale(${t>cp&&t<cp+.25?.9:1})`;
+  EBR.forEach((arr,b)=>{
+    arr.forEach(el=>{const r=+el.dataset.r,c=+el.dataset.c;
+      let on;
+      if(b===0)on=r<rows&&c<cols;
+      else {const k=spring((t-cp-b*.12)/.45);on=t>cp+b*.12;el.setAttribute('transform',on?`translate(${(1-clamp(k))*(-EB[b][0]+20)} ${(1-clamp(k))*(-EB[b][1]+20)})`:'')}
+      el.style.opacity=on?1:0;
+      el.setAttribute('fill',b===0?'#60a5fa':'#3b82f6');
+    });
+    EBL[b].style.opacity=b===0?(rows>0?1:0):(t>cp+b*.12+.3?1:0);
+  });
+  $('fB').textContent=t>cp?'A–F':'A';
+}
+
+/* ---------- match cards (P6) ---------- */
+const CARDS=DE?[['SA 18. OKT','gegen Graz'],['SA 01. NOV','gegen Wien'],['FR 14. NOV','gegen Linz'],['SA 29. NOV','gegen Salzburg'],['SA 13. DEZ','gegen Klosterneuburg'],['SA 10. JAN','gegen Oberwart']]:[['SAT 18 OCT','vs Graz'],['SAT 01 NOV','vs Vienna'],['FRI 14 NOV','vs Linz'],['SAT 29 NOV','vs Salzburg'],['SAT 13 DEC','vs Klosterneuburg'],['SAT 10 JAN','vs Oberwart']];
+const CW=$('cards');CARDS.forEach(([d,v],i)=>{const e=document.createElement('div');e.className='abs glass mc';e.id='mc'+i;
+  let s='';for(let k=0;k<96;k++){const x=(k%16)*19+10,y=Math.floor(k/16)*22+12;s+=`<rect id="m${i}_${k}" x="${x}" y="${y}" width="15" height="16" rx="4" fill="rgba(255,255,255,.1)"/>`}
+  e.innerHTML=`<div class="d">${d} · ${DE?'HEIM':'HOME'}</div><div class="v">${v}</div><svg viewBox="0 0 316 150">${s}</svg>`;CW.appendChild(e)});
+let rs2=5;const r2=()=>{rs2=(rs2*9301+49297)%233280;return rs2/233280};const MG=Array.from({length:96},()=>{const r=r2();return r<.42?'#60a5fa':r<.56?'#f59e0b':r<.6?'#2dd4bf':null});
+function cards(t){
+  CARDS.forEach((_,i)=>{const s0=st(6)-.2+i*.18,sp=spring((t-s0)/.6),o=clamp((t-s0)/.2)*clamp((nx(6)-.05-t)/.3);
+    const col=i%2,row=Math.floor(i/2);
+    tf($('mc'+i),1040+col*390+(1-clamp(sp))*200,110+row*275,lerp(.7,1,clamp(sp)),(1-clamp(sp))*4,o);
+    if(o<=0)return;
+    for(let k=0;k<96;k++){const fill=MG[k]&&t>ws(6,7)+i*.15+(k%16)*.02?MG[k]:'rgba(255,255,255,.1)';$(`m${i}_${k}`).setAttribute('fill',fill)}
+  });
+}
+
+/* ---------- invitations (P7) ---------- */
+const PEOPLE=[['JB','DE','#f59e0b'],['MR','IT','#60a5fa'],['SK','EN','#2dd4bf'],['LF','FR','#a78bfa'],['AG','ES','#f472b6'],['TW','DE','#4ade80']];
+const PW=$('people'),EW=$('envs');
+PEOPLE.forEach(([n,l,c],i)=>{const p=document.createElement('div');p.className='abs person';p.id='pp'+i;p.innerHTML=`<div class="av" style="background:${c}">${n}</div><span class="lang">${l}</span>`;PW.appendChild(p);
+  const e=document.createElement('div');e.className='abs env';e.id='ev'+i;EW.appendChild(e)});
+function invites(t){
+  const a=st(7),o=vis(t,7,7);
+  PEOPLE.forEach((_,i)=>{
+    const ang=-Math.PI/2+(i/(PEOPLE.length))*Math.PI*2, px=1430+Math.cos(ang)*330-75, py=470+Math.sin(ang)*300-60;
+    const sp=spring((t-a-.1-i*.08)/.5);const dimP=1-.65*clamp((t-(ws(7,10)-.1))/.3);tf($('pp'+i),px,py,lerp(.4,1,clamp(sp)),0,o*clamp(sp*2)*dimP);
+    // envelopes fly from centre to each person
+    const ft=a+.9+i*.22,k=eio((t-ft)/.7);
+    const ex=lerp(1387,px+32,k),ey=lerp(440,py+16,k)-Math.sin(k*Math.PI)*80;
+    tf($('ev'+i),ex,ey,lerp(.6,.55,k),lerp(-10,0,k),o*(t>ft?clamp((ft+1-t)/.2+1):0)*(k<1?1:clamp(1-(t-ft-.7)/.3)));
+    const lang=$('pp'+i).querySelector('.lang');lang.style.transform=`scale(${t>ft+.7?lerp(1.4,1,clamp((t-ft-.7)/.25)):1})`;lang.style.background=t>ft+.7?'#2563eb':'rgba(255,255,255,.12)';
+  });
+  // the German email itself slides in at "own language"
+  const m0=ws(7,10)-.1,mp=spring((t-m0)/.6),mo=clamp((t-m0)/.2)*clamp((nx(7)-.05-t)/.3);
+  tf($('mail'),1060+(1-clamp(mp))*80,170,lerp(.85,1,clamp(mp)),lerp(4,-2,clamp(mp)),mo);
+}
+
+/* ---------- phone (P8 RSVP · P12/13 scan) ---------- */
+(function(){const q=$('qr');let x=3;for(let r=0;r<13;r++)for(let c=0;c<13;c++){const f=(r<4&&c<4)||(r<4&&c>8)||(r>8&&c<4);x=(x*73+19)%101;const b=document.createElement('b');if(!(f||x%2))b.className='o';q.appendChild(b)}})();
+function phone(t){
+  const inR=t>st(8)-.3&&t<nx(8), inS=t>st(12)-.3&&t<nx(13);
+  let o=0,y=70;
+  if(inR){o=vis(t,8,8);const sp=spring((t-st(8)+.25)/.6);y=lerp(260,70,clamp(sp))}
+  if(inS){o=vis(t,12,13);const sp=spring((t-st(12)+.25)/.6);y=lerp(260,70,clamp(sp))}
+  const shake=t>st(13)&&t<st(13)+.4?Math.sin((t-st(13))*70)*10:0;
+  tf($('phone'),1200+shake,y,1,0,o);
+  $('sRsvp').style.display=inR?'flex':'none';$('sScan').style.display=inS?'flex':'none';
+  if(inR){const tapT=ws(8,4)-.05;const tp=clamp((t-tapT+.5)/.5);
+    tf($('tap'),lerp(320,170,eo(tp)),lerp(620,330,eo(tp)),t>tapT&&t<tapT+.3?.8:1,0,t>tapT-.5&&t<tapT+.6?.9:0);
+    const yes=$('oYes');yes.style.transform=`scale(${t>tapT?lerp(1.12,1,clamp((t-tapT)/.3)):1})`;yes.textContent=DE?(t>tapT?'✓ Ich komme':'Ich komme'):(t>tapT?"✓ I'm coming":"I'm coming");yes.style.background=t>tapT?'#22c55e':'rgba(255,255,255,.08)';yes.style.color=t>tapT?'#04120a':'#fff';}
+  if(inS){const sc=(t-st(12))%1.4/1.4;$('scanl').style.top=(30+sc*270)+'px';
+    const okT=ws(12,6),badT=st(13)+.15;
+    $('rOk').style.display=t>okT&&t<badT?'block':'none';$('rOk').style.transform=`scale(${spring((t-okT)/.4)})`;
+    $('rBad').style.display=t>=badT?'block':'none';$('rBad').style.transform=`scale(${spring((t-badT)/.4)})`;
+    $('vf').style.boxShadow=t>=badT?'0 0 0 4px #ef4444 inset':t>okT?'0 0 0 4px #4ade80 inset':'none';
+    $('scanl').style.background=t>=badT?'#ef4444':'#4ade80';}
+}
+
+/* ---------- sponsor portal (P9) ---------- */
+const SPN=[['B·2·7','Julia Brandt'],['B·2·8','Tom Weiss'],['B·2·9','Lena Fuchs'],['B·2·10','Marco Rossi'],['B·2·11','Sara Kern'],['B·2·12',DE?'Gast von Lena':'Guest of Lena']];
+$('spRows').innerHTML=SPN.map(([s],i)=>`<div class="srow"><span class="seatTag">${s}</span><span class="nm" id="spn${i}"></span><span class="st" id="sps${i}"></span></div>`).join('');
+function sponsor(t){
+  const o=vis(t,9,9),sp=spring((t-st(9)+.2)/.6);
+  tf($('sp'),(1-clamp(sp))*120,0,lerp(.92,1,clamp(sp)),0,o);$('sp').style.transform+=` perspective(1600px) rotateY(${lerp(-16,-3,eo((t-st(9))/1.2))}deg)`;
+  if(o<=0)return;let filled=0;
+  SPN.forEach(([,n],i)=>{const s0=st(9)+.2+i*.42,k=clamp((t-s0)/.35);const txt=n.slice(0,Math.round(n.length*k));$('spn'+i).textContent=txt;
+    const done=k>=1;if(done)filled++;const s=$('sps'+i);s.textContent=done?(i===5?(DE?'eingeladen':'invited'):(DE?'✓ kommt':'✓ coming')):'';s.style.background=done?(i===5?'rgba(255,255,255,.1)':'rgba(34,197,94,.18)'):'transparent';s.style.color=done&&i!==5?'#86efac':'#cbd5e1'});
+  $('spQ').textContent=filled+' / 6';
+}
+
+/* ---------- deadline (P10) ---------- */
+function deadline(t){
+  const o=vis(t,10,10);
+  const n0=ws(10,2)-.1,ns=spring((t-n0)/.5);tf($('notif'),1080,lerp(-120,110,clamp(ns)),1,0,o*clamp((t-n0)/.15));
+  const r0=ws(10,5)-.2,rp=spring((t-r0)/.6);tf($('ring'),1180,300,lerp(.5,1,clamp(rp)),0,o*clamp((t-r0)/.2));
+  const k=eio((t-r0)/(nx(10)-r0-.2));$('ringA').setAttribute('stroke-dashoffset',1194*k);
+  const mins=Math.max(0,Math.round(2880*(1-k)));$('ringT').textContent=String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0');
+  $('ringA').setAttribute('stroke',k>.85?'#ef4444':'#f59e0b');
+}
+
+/* ---------- waitlist (P11) ---------- */
+const WLN=[['Anna P.','#4ade80'],['David K.','#94a3b8'],['Noor S.','#94a3b8']];
+WLN.forEach(([n],i)=>{const d=document.createElement('div');d.className='abs glass wl';d.id='wl'+i;d.innerHTML=`<span class="n">${i+1}</span><span style="flex:1">${n}</span><span id="wls${i}" style="font:900 22px/1 Archivo"></span>`;$('wls').appendChild(d)});
+function waitlist(t){
+  WLN.forEach(([n,c],i)=>{const s0=ws(11,9)-.3+i*.15,sp=spring((t-s0)/.5),o=clamp((t-s0)/.2)*clamp((nx(11)-.05-t)/.3);
+    tf($('wl'+i),110,650+i*92,lerp(.7,1,clamp(sp)),0,o);
+    const s=$('wls'+i);const got=ws(11,14)-.05,tw=ws(11,16)-.05;
+    if(i===0){s.textContent=t>got?(DE?'✓ PLATZ B·2·9':'✓ SEAT B·2·9'):'';s.style.color='#4ade80'}
+    if(i===1){s.textContent=t>tw?(DE?'🔒 VERGEBEN':'🔒 TAKEN'):'';s.style.color='#f87171'}
+    $('wl'+i).style.borderColor=i===0&&t>got?'rgba(74,222,128,.7)':i===1&&t>tw?'rgba(248,113,113,.6)':'rgba(255,255,255,.18)';
+  });
+}
+
+/* ---------- report (P14) + gauge (P15) ---------- */
+function report(t){
+  const o=vis(t,14,14),sp=spring((t-st(14)+.2)/.6);tf($('rep'),(1-clamp(sp))*120,0,lerp(.92,1,clamp(sp)),0,o);
+  [[95,'r1'],[61,'r2'],[88,'r3'],[79,'r4']].forEach(([v,id],i)=>{const k=eo((t-st(14)-.3-i*.2)/1.1);$(id).style.width=(v*k)+'%';$(id+'t').textContent=Math.round(v*k)+'%'});
+  const go=vis(t,15,15),g0=ws(15,5)-.2,gp=spring((t-st(15)+.2)/.6);
+  tf($('gauge'),1040,120,lerp(.7,1,clamp(gp)),0,go);
+  const k=eo((t-g0)/((ws(15,8)+.4)-g0));const v=lerp(71,97,clamp(k));
+  $('gA').setAttribute('stroke-dashoffset',1885*(1-v/100));$('gT').textContent=Math.round(t<g0?71:v)+'%';
+  $('gA').setAttribute('stroke',v>90?'#4ade80':'#f59e0b');
+}
+
+/* ---------- captions ---------- */
+const NOCAP=new Set([3,4,16,17]);
+function caption(t){
+  let i=-1;for(let k=0;k<P.length;k++)if(t>=P[k].start-.1&&t<=nx(k)-.05)i=k;
+  const el=$('cap');if(i<0||NOCAP.has(i)){el.style.opacity=0;return}
+  el.style.opacity=clamp((t-P[i].start+.1)/.2)*clamp((nx(i)-.05-t)/.2);
+  const w=P[i].text.split(' ');el.innerHTML=w.map((x,j)=>t>=ws(i,j)-.02?`<b>${x}</b>`:`<span>${x}</span>`).join(' ');
+}
+
+/* ---------- end card ---------- */
+function endcard(t){
+  const a=st(17)-.1,o=clamp((t-a)/.4);$('end').style.opacity=o;
+  const els=[...$('end').children];els.forEach((e,i)=>{const sp=spring((t-a-.1-i*.12)/.55);e.style.transform=`translateY(${(1-clamp(sp))*40}px) scale(${lerp(i===1?1.4:.8,1,clamp(sp))})`;e.style.opacity=clamp((t-a-i*.12)/.2)});
+  ['arenaW','kin','cap'].forEach(id=>{if(o>0)$(id).style.opacity=Math.min(+$(id).style.opacity||1,1-o)});
+}
+
+
+if(DE){
+  const T=(sel,h)=>{const e=document.querySelector(sel);if(e)e.innerHTML=h};
+  T('#c1 span','Dauer-<br>karten');T('#c2 span','Sponsoren-<br>plätze');T('#c3 span','VIP-<br>Einladungen');
+  T('#ed .tb span','Hallen-Editor · Arena');T('#ed .fld:nth-child(2) small','REIHEN');T('#ed .fld:nth-child(3) small','PLÄTZE / REIHE');T('#copyB','Block ×5 kopieren');
+  T('#mail small','Arena Tickets · auf Deutsch');
+  const r=document.querySelectorAll('#sRsvp .pc');r[0].innerHTML='<small>HEIMSPIEL · SA 18. OKT · 19:00</small><b>Kommen Sie?</b>';r[1].innerHTML='<small>IHR PLATZ</small><b>Block B · Reihe 2 · Platz 7</b>';
+  T('#oNo','Ich komme nicht');document.querySelectorAll('#sRsvp .opt')[2].textContent='An Kollegen weitergeben';
+  T('#sScan .pc b','Eingang 1');T('#rOk','<b>✓ Julia Brandt</b><span>B · 2 · 8 · Gast von Alpine Bank</span>');T('#rBad','<b>✕ Zweimal gescannt</b><span>Eingang 2 · vor 10 Minuten</span>');
+  T('#sp .tb span','Alpine Bank · Sponsorenportal');T('#sp b','Sa 18. Okt · Heimspiel');
+  T('#notif b','Erinnerung · Heimspiel Samstag');T('#notif span','Bitte bis Mittwoch 18:00 antworten');
+  document.querySelector('#ring text:last-of-type').textContent='BIS ZUR FRIST';
+  T('#rep .k','Sponsorenbericht · Saison bisher');
+  document.querySelector('#gauge text:last-of-type').textContent='PLÄTZE GENUTZT';
+  T('#end .tl','Spieltag, erledigt.');T('#end .cta','Plätze · Einladungen · Eingang');
+}
+function render(t,f){bg(t,f);arena(t);counters(t);editor(t);cards(t);invites(t);phone(t);sponsor(t);deadline(t);waitlist(t);report(t);kinetic(t);caption(t);endcard(t)}
+window.SFX=[
+  {t:.15,s:'s1492',v:.35},
+  {t:ws(1,0),s:'s1133',v:.6},{t:ws(1,4),s:'s1133',v:.6},{t:ws(1,9),s:'s1133',v:.6},
+  {t:st(2)+.1,s:'s1368',v:.35},
+  {t:ws(3,6),s:'s1365',v:.9},
+  {t:st(4)-.15,s:'s1365',v:1},
+  {t:ws(5,7),s:'s1133',v:.6},{t:ws(5,7)+.3,s:'s1492',v:.4},
+  {t:ws(6,7),s:'s1492',v:.35},
+  {t:st(7)+.9,s:'s1492',v:.3},
+  {t:ws(8,4),s:'s1133',v:.8},
+  {t:ws(10,2),s:'s1368',v:.45},
+  {t:ws(11,12),s:'s1133',v:.6},{t:ws(11,16),s:'s275',v:.5},
+  {t:ws(12,5),s:'s1133',v:.7},
+  {t:st(13)+.15,s:'s275',v:.7},
+  {t:ws(15,5),s:'s1492',v:.35},
+  {t:st(16),s:'s1365',v:1},
+  {t:st(17)-.1,s:'s1365',v:.7},
+];
+window.__ready=Promise.all([document.fonts.load('900 70px Archivo'),document.fonts.load('800 40px Archivo'),document.fonts.load('700 20px Archivo'),document.fonts.ready,$('logo').decode().catch(()=>{})]).then(()=>render(0,0));
+</script></body></html>

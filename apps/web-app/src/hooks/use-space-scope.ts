@@ -1,11 +1,10 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
 import { useCallback, useEffect, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
-import { locationsApi, type CompanyLocation } from "@/lib/api"
+import { type CompanyLocation } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
+import { useActiveSpaces } from "@/hooks/use-space-directory"
 
 /**
  * Which workspace a screen is looking at, when the screen belongs to no single
@@ -85,16 +84,11 @@ export function useSpaceScope(options: {
     these pages reuses whatever the nav or the dashboard already fetched instead
     of asking again.
   */
-  const { data, isLoading } = useQuery({
-    queryKey: keys.locations.list({ limit: 200 }),
-    queryFn: () => locationsApi.list({ limit: 200 }),
-    staleTime: 60000,
-  })
+  const { data, isLoading } = useActiveSpaces()
 
   const spaces = useMemo(() => {
-    const all: CompanyLocation[] = (data as { data?: CompanyLocation[] } | undefined)?.data ?? []
+    const all: CompanyLocation[] = data ?? []
     return all.filter((s) => {
-      if (s.isActive === false) return false
       // What a workspace IS, before what it has switched on.
       if (kind && s.kind !== kind) return false
       /*

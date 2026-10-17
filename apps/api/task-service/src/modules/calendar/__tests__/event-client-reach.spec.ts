@@ -1,4 +1,4 @@
-import { EventsService } from '../events.service';
+import { eventServices } from './events.service.fixture';
 
 /**
  * A client on an event is shown only to a viewer who can REACH that client
@@ -31,7 +31,7 @@ describe('calendar event: whose client is shown', () => {
         }),
       },
     };
-    return new EventsService(prisma, {} as any, { emit: jest.fn() } as any);
+    return eventServices(prisma, {} as any, { emit: jest.fn() } as any);
   };
   const read = async (userId: string, perms: Record<string, boolean>, crm = true, spaces: any[] = [], customer: any = client) =>
     ((await make(userId, perms, spaces, customer).get({ userId, organizationId: 'org', role: 'EMPLOYEE', crm, eventId: 'e1' })) as any).data.customer;

@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { ChatService } from '../chat.service';
+import { chatPartsOf, type ChatServiceParts } from './chat.service.fixture';
+import { CHAT_PROVIDERS } from '../chat.module';
+import { chatStorageStubs } from './chat-storage-stubs';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /**
@@ -13,7 +16,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
  * and every thread they already had kept working. These cover the re-check.
  */
 describe('ChatService.sendMessage — permission is re-checked on every send', () => {
-  let service: ChatService;
+  let service: ChatServiceParts;
 
   const ORG = 'org-1';
   const ME = 'user-me';
@@ -21,7 +24,14 @@ describe('ChatService.sendMessage — permission is re-checked on every send', (
 
   const prisma = {
     user: { findUnique: jest.fn(), findFirst: jest.fn() },
-    conversationMember: { findUnique: jest.fn(), update: jest.fn() },
+    conversationMember: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _sum: { unreadCount: 0 } }),
+    },
     conversation: { update: jest.fn() },
     // The reply right asks whether the counterpart wrote here; by default they did not.
     message: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
@@ -68,12 +78,13 @@ describe('ChatService.sendMessage — permission is re-checked on every send', (
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ChatService,
+        ...CHAT_PROVIDERS,
+        ...chatStorageStubs(),
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: notificationClient },
       ],
     }).compile();
-    service = module.get<ChatService>(ChatService);
+    service = chatPartsOf(module);
   });
 
   it('refuses when contact permission has since been revoked', async () => {
@@ -129,11 +140,22 @@ describe('ChatService.sendMessage — permission is re-checked on every send', (
     expect(prisma.spaceAssignment.findMany).not.toHaveBeenCalled();
   });
 
-  it('leaves GROUP threads to membership — there is no pair to evaluate', async () => {
+  it("leaves GROUP threads to membership — there is no pair; only the sender's own switch is asked", async () => {
     prisma.conversationMember.findUnique.mockResolvedValue(membership('GROUP'));
+    prisma.user.findUnique.mockResolvedValue({ enabledModules: null });
 
     await expect(send()).resolves.toMatchObject({ success: true });
-    expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    // One read: the sender's Messaging switch. No contact rule, no counterpart.
+    expect(prisma.user.findUnique).toHaveBeenCalledTimes(1);
+    expect(prisma.user.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('off means off in a group too: a sender taken out of chat writes nowhere', async () => {
+    prisma.conversationMember.findUnique.mockResolvedValue(membership('GROUP'));
+    prisma.user.findUnique.mockResolvedValue({ enabledModules: { canContact: false } });
+
+    await expect(send()).rejects.toBeInstanceOf(ForbiddenException);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
   it('denies a malformed direct thread with no counterpart', async () => {

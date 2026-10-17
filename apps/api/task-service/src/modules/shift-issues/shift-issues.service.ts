@@ -1,21 +1,15 @@
-import { Injectable, Inject, Logger, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { SERVICE_NAMES, success, personName, personNameById, UPLOAD_RULES } from '@hbcfield/shared';
-import { OBJECT_STORE, ObjectStore, newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { MediaSigner } from '../../common/storage/media-signer.service';
-import { NotificationRoutingService } from '../../common/notification-routing.service';
-import { createOnce } from '../../common/create-once.util';
-
-// What may be uploaded, and how big: ONE shared definition (constants/upload-rules.ts).
-// Shift-issue evidence takes no Word files — deliberate, and named there.
-const MAX_FILE_SIZE = UPLOAD_RULES.shiftIssue.maxBytes;
-const ALLOWED_FILE_TYPES = UPLOAD_RULES.shiftIssue.allTypes;
-const UPLOAD_TTL_SECONDS = 3600;
-const SEVERITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
-const BODY_MAX = 5000;
-
-type Attachment = { fileKey: string; fileUrl: string; fileName: string; fileSize: number; mimeType: string; width?: number | null; height?: number | null };
+import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
+import { success, personName } from '@hbcfield/shared';
+import { newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
+import {
+  MAX_FILE_SIZE,
+  ALLOWED_FILE_TYPES,
+  UPLOAD_TTL_SECONDS,
+  SEVERITIES,
+  BODY_MAX,
+  Attachment,
+} from './shift-issues-helpers';
+import { ShiftIssuesBase } from './shift-issues.base';
 
 /**
  * Shift Issues (blockers). A member reports a problem during a shift; the
@@ -25,106 +19,7 @@ type Attachment = { fileKey: string; fileUrl: string; fileName: string; fileSize
  * existing notification-service (`shift_issue_*` emits). Photos go phone→S3.
  */
 @Injectable()
-export class ShiftIssuesService {
-  private readonly logger = new Logger(ShiftIssuesService.name);
-
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly routing: NotificationRoutingService,
-    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
-    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
-    private readonly media: MediaSigner,
-  ) {}
-
-  // ── helpers ────────────────────────────────────────────────────────────────
-
-  private async loadIssue(issueId: string, organizationId: string) {
-    const issue = await this.prisma.shiftIssue.findFirst({ where: { id: issueId, organizationId } });
-    if (!issue) throw new NotFoundException('Issue not found');
-    return issue;
-  }
-
-  /** Access: the reporter, the dispatched assignee, or a manager (canManage). */
-  /**
-   * May this caller open this issue?
-   *
-   * Reporter, dispatched worker, an org-wide manager — and now the person who
-   * oversees the SPACE it happened on. They are the one the notification goes
-   * to, so being refused the thread it points at was the whole feature failing
-   * for exactly the people it is for.
-   */
-  private assertParticipant(
-    issue: { reportedById: string; assignedToId: string | null; spaceId?: string | null },
-    callerUserId: string,
-    canManage: boolean,
-    ledSpaceIds?: string[],
-  ) {
-    if (canManage) return;
-    if (issue.reportedById === callerUserId) return;
-    if (issue.assignedToId && issue.assignedToId === callerUserId) return;
-    if (issue.spaceId && ledSpaceIds?.includes(issue.spaceId)) return;
-    throw new ForbiddenException('Not your issue');
-  }
-
-  /** One shared rule for a name (people/person-name.ts) — never "John null". */
-  private nameOf(userId: string | null | undefined): Promise<string> {
-    return personNameById(this.prisma as never, userId);
-  }
-
-  private issuePrefix(organizationId: string, issueId: string): string {
-    return `${organizationId}/shift-issues/${issueId}/`;
-  }
-
-  /**
-   * Keep only attachments whose object lives under THIS issue's prefix.
-   *
-   * ⚠️ The KEY is what gets signed, so the key is what is checked. This used to
-   * check the prefix of `fileUrl` and then sign `fileKey` as sent — a member
-   * could pair a valid-looking URL with another organization's key and be handed
-   * a signed link to that organization's file. The key is now taken from the
-   * key if it passes, else read out of the legacy URL, and must pass either way.
-   */
-  cleanAttachments(issue: { id: string; organizationId: string }, attachments: unknown): Attachment[] {
-    if (!Array.isArray(attachments)) return [];
-    const prefix = this.issuePrefix(issue.organizationId, issue.id);
-    const within = (k: unknown): k is string => typeof k === 'string' && k.startsWith(prefix) && !k.includes('..');
-    const out: Attachment[] = [];
-    for (const a of attachments.slice(0, 10) as any[]) {
-      if (!a) continue;
-      const fromUrl = this.store?.keyFromUrl(a.fileUrl) ?? null;
-      const key = within(a.fileKey) ? a.fileKey : within(fromUrl) ? fromUrl : null;
-      if (!key) continue;
-      out.push({
-        fileKey: key,
-        fileUrl: this.store ? this.store.privateUrl(key) : '',
-        fileName: String(a.fileName ?? 'file').slice(0, 255),
-        fileSize: Number(a.fileSize) || 0,
-        mimeType: ALLOWED_FILE_TYPES.includes(String(a.mimeType)) ? String(a.mimeType) : '',
-        width: typeof a.width === 'number' ? a.width : null,
-        height: typeof a.height === 'number' ? a.height : null,
-      });
-    }
-    return out;
-  }
-
-  /**
-   * Signed links for a thread event's files — re-checked against the issue's
-   * prefix on READ as well, so a key stored before the write check existed can
-   * never be signed for someone who should not see it.
-   */
-  private async signAttachments(issue: { id: string; organizationId: string }, attachments: unknown): Promise<any[]> {
-    return this.media.signAll(this.cleanAttachments(issue, attachments));
-  }
-
-  /** Resolve the responsible people for the reporter (managers/space leaders). */
-  private async watcherIds(reportedById: string, organizationId: string): Promise<string[]> {
-    const { ids } = await this.routing.resolveWatchers(reportedById, organizationId, 'attendance', false);
-    return ids;
-  }
-
-  private emit(event: string, payload: Record<string, unknown>) {
-    try { this.notificationClient.emit(event, payload); } catch (e) { this.logger.warn(`emit ${event} failed: ${e}`); }
-  }
+export class ShiftIssuesService extends ShiftIssuesBase {
 
   // ── create ───────────────────────────────────────────────────────────────
   async create(data: {
@@ -261,103 +156,6 @@ export class ShiftIssuesService {
     });
   }
 
-  // ── add a message to the thread ───────────────────────────────────────────────
-  async addMessage(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; body?: string; attachments?: Attachment[];
-    /** Made on the phone: a message sent twice is still one message. */
-    id?: string }) {
-    const issue = await this.loadIssue(data.issueId, data.organizationId);
-    this.assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
-    const body = (data.body ?? '').trim();
-    const attachments = this.cleanAttachments(issue, data.attachments);
-    if (!body && !attachments.length) throw new BadRequestException('Empty message');
-
-    const { row: event, created } = await createOnce({
-      id: data.id,
-      find: (id) => this.prisma.shiftIssueEvent.findUnique({ where: { id } }),
-      isSame: (e) => e.issueId === issue.id && e.actorId === data.callerUserId,
-      create: () =>
-        this.prisma.shiftIssueEvent.create({
-          data: { ...(data.id ? { id: data.id } : {}), issueId: issue.id, type: 'MESSAGE', actorId: data.callerUserId, body: body.slice(0, BODY_MAX) || null, attachments: attachments as any },
-        }),
-    });
-    if (!created) {
-      return success({ ...event, attachments: await this.signAttachments(issue, event.attachments), actorName: await this.nameOf(data.callerUserId) });
-    }
-    await this.prisma.shiftIssue.update({ where: { id: issue.id }, data: { updatedAt: new Date() } });
-    await this.broadcast(issue, data.callerUserId, event);
-    const signed = { ...event, attachments: await this.signAttachments(issue, event.attachments), actorName: await this.nameOf(data.callerUserId) };
-    return success(signed);
-  }
-
-  // ── acknowledge ──────────────────────────────────────────────────────────────
-  async acknowledge(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[] }) {
-    const issue = await this.loadIssue(data.issueId, data.organizationId);
-    if (!data.canManage && issue.assignedToId !== data.callerUserId) throw new ForbiddenException('Only the responsible can acknowledge');
-    const updated = await this.prisma.shiftIssue.update({
-      where: { id: issue.id },
-      data: { status: issue.status === 'OPEN' ? 'ACKNOWLEDGED' : issue.status, acknowledgedById: issue.acknowledgedById ?? data.callerUserId, acknowledgedAt: issue.acknowledgedAt ?? new Date() },
-    });
-    const event = await this.prisma.shiftIssueEvent.create({ data: { issueId: issue.id, type: 'ACKNOWLEDGED', actorId: data.callerUserId } });
-    await this.broadcast(updated, data.callerUserId, event);
-    return success(updated);
-  }
-
-  // ── assign / dispatch someone ─────────────────────────────────────────────────
-  async assign(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; assignToId: string }) {
-    const issue = await this.loadIssue(data.issueId, data.organizationId);
-    if (!data.canManage) throw new ForbiddenException('Only the responsible can dispatch');
-    const assignee = await this.prisma.user.findFirst({ where: { id: data.assignToId, organizationId: data.organizationId }, select: { id: true, firstName: true, lastName: true } });
-    if (!assignee) throw new BadRequestException('Assignee not found');
-    const assignedToName = `${assignee.firstName ?? ''} ${assignee.lastName ?? ''}`.trim();
-
-    const updated = await this.prisma.shiftIssue.update({
-      where: { id: issue.id },
-      data: { assignedToId: assignee.id, status: issue.status === 'OPEN' || issue.status === 'ACKNOWLEDGED' ? 'IN_PROGRESS' : issue.status },
-    });
-    const event = await this.prisma.shiftIssueEvent.create({
-      data: { issueId: issue.id, type: 'ASSIGNED', actorId: data.callerUserId, metadata: { assignedToId: assignee.id, assignedToName } as any },
-    });
-    await this.broadcast(updated, data.callerUserId, event, [assignee.id]);
-    return success({ ...updated, assigneeName: assignedToName });
-  }
-
-  // ── status change / resolve ───────────────────────────────────────────────────
-  async setStatus(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; status: string; note?: string }) {
-    const issue = await this.loadIssue(data.issueId, data.organizationId);
-    // Reporter can only cancel their own; managers/assignee can drive the rest.
-    const isAssignee = issue.assignedToId === data.callerUserId;
-    if (!data.canManage && !isAssignee && !(issue.reportedById === data.callerUserId && data.status === 'CANCELED')) {
-      throw new ForbiddenException('Not allowed to change this issue');
-    }
-    const valid = ['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'CANCELED'];
-    if (!valid.includes(data.status)) throw new BadRequestException('Invalid status');
-    const resolving = data.status === 'RESOLVED';
-    const reopening = data.status === 'IN_PROGRESS' && issue.status === 'RESOLVED';
-
-    const updated = await this.prisma.shiftIssue.update({
-      where: { id: issue.id },
-      data: {
-        status: data.status as any,
-        resolutionNote: resolving ? (data.note?.slice(0, BODY_MAX) ?? issue.resolutionNote) : issue.resolutionNote,
-        resolvedById: resolving ? data.callerUserId : issue.resolvedById,
-        resolvedAt: resolving ? new Date() : issue.resolvedAt,
-      },
-    });
-    const event = await this.prisma.shiftIssueEvent.create({
-      data: {
-        issueId: issue.id,
-        type: resolving ? 'RESOLVED' : reopening ? 'REOPENED' : data.status === 'CLOSED' ? 'CLOSED' : 'STATUS_CHANGED',
-        actorId: data.callerUserId,
-        // The reason / excuse ("parts not delivered") — kept on the event for
-        // resolve / cancel / close so it shows inline in the thread.
-        body: data.note?.trim().slice(0, BODY_MAX) || null,
-        metadata: { fromStatus: issue.status, toStatus: data.status } as any,
-      },
-    });
-    await this.broadcast(updated, data.callerUserId, event);
-    return success(updated);
-  }
-
   // ── attachments (S3) ──────────────────────────────────────────────────────────
   async presignAttachment(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; fileName: string; mimeType: string }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
@@ -374,21 +172,6 @@ export class ShiftIssuesService {
       fileUrl: store.privateUrl(key),
       expiresIn: UPLOAD_TTL_SECONDS,
       maxFileSize: MAX_FILE_SIZE,
-    });
-  }
-
-  // Confirm is folded into addMessage/create: the client sends the attachment
-  // metadata array with the message. We only validate the prefix here on read.
-
-  // ── broadcast: persist bumped + emit socket/push ────────────────────────────────
-  private async broadcast(issue: { id: string; organizationId: string; reportedById: string; assignedToId: string | null; title: string; severity: string; status: string }, actorId: string, event: { id: string; type: string; body: string | null; at: Date; metadata?: unknown }, extraRecipients: string[] = []) {
-    const watchers = await this.watcherIds(issue.reportedById, issue.organizationId);
-    const recipientIds = Array.from(new Set([...watchers, issue.reportedById, ...(issue.assignedToId ? [issue.assignedToId] : []), ...extraRecipients])).filter((id) => id !== actorId);
-    const actorName = await this.nameOf(actorId);
-    this.emit('shift_issue_event', {
-      issueId: issue.id, organizationId: issue.organizationId, title: issue.title, severity: issue.severity, status: issue.status,
-      event: { id: event.id, type: event.type, body: event.body, at: event.at, actorId, actorName, metadata: event.metadata ?? null },
-      actorId, actorName, recipientIds,
     });
   }
 }

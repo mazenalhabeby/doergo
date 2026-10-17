@@ -3,10 +3,14 @@ import { JobProcessor } from '../../common/queue/job-processor';
 import { Job } from 'bullmq';
 import { QUEUE_NAMES, OVERTIME_JOB_TYPES } from '@hbcfield/shared';
 import { OvertimeService } from './overtime.service';
+import { OvertimeDecisionService } from './overtime-decision.service';
 
 @Processor(QUEUE_NAMES.OVERTIME)
 export class OvertimeProcessor extends JobProcessor {
-  constructor(private readonly overtimeService: OvertimeService) {
+  constructor(
+    private readonly overtimeService: OvertimeService,
+    private readonly overtimeDecisions: OvertimeDecisionService,
+  ) {
     super();
   }
 
@@ -18,13 +22,13 @@ export class OvertimeProcessor extends JobProcessor {
         return this.overtimeService.technicianRespond(data);
 
       case OVERTIME_JOB_TYPES.LEADER_APPROVE:
-        return this.overtimeService.leaderApprove(data);
+        return this.overtimeDecisions.leaderApprove(data);
 
       case OVERTIME_JOB_TYPES.LEADER_APPROVE_SIGNATURE:
-        return this.overtimeService.leaderApproveSignature(data);
+        return this.overtimeDecisions.leaderApproveSignature(data);
 
       case OVERTIME_JOB_TYPES.LEADER_REJECT:
-        return this.overtimeService.leaderReject(data);
+        return this.overtimeDecisions.leaderReject(data);
 
       case OVERTIME_JOB_TYPES.CHECK_TIMEOUTS:
         return this.overtimeService.checkTimeouts();

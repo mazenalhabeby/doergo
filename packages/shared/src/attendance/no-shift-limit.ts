@@ -18,6 +18,7 @@
  */
 import { addDaysStr, localPartsIn, zonedWallTimeToUtc } from './zoned-time';
 
+import { zoneOf } from '../utils/workspace-zone';
 export const NO_SHIFT_POLICIES = ['ALLOW', 'LIMIT', 'SHIFT_ONLY'] as const;
 export type NoShiftPolicy = (typeof NO_SHIFT_POLICIES)[number];
 
@@ -131,7 +132,7 @@ export function clampDailyMinutes(minutes: number | null | undefined): number {
  * next said hours were left.
  */
 export function memberDayZone(userTz: string | null | undefined, orgTz: string | null | undefined, fallback?: string | null): string {
-  return userTz || orgTz || fallback || 'UTC';
+  return zoneOf(userTz, orgTz, fallback);
 }
 
 /** Local midnight of the day `at` falls on, in `tz`, as an instant. */

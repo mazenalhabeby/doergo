@@ -4,8 +4,8 @@
  * Replayed live, a point from an hour ago says somebody "has left the site"
  * now. These pin the periods the batch turns into, and what each one does.
  */
-// AttendanceService hands heartbeatBatch to HeartbeatService, where it lives.
-import { HeartbeatService } from '../heartbeat.service';
+// AttendanceService hands heartbeatBatch to HeartbeatBatchService, where it lives.
+import { HeartbeatBatchService } from '../heartbeat-batch.service';
 import { lastReadingIsFresh, replayRing, type RingReading } from '../heartbeat-replay';
 
 const NOW = new Date('2026-09-14T11:40:00.000Z');
@@ -51,7 +51,7 @@ describe('heartbeatBatch', () => {
   const point = (where: { lat: number; lng: number }, t: string) => ({ ...where, recordedAt: at(t).toISOString() });
 
   function service(active: any = null) {
-    const svc = Object.create(HeartbeatService.prototype) as any;
+    const svc = Object.create(HeartbeatBatchService.prototype) as any;
     svc.logger = { debug: jest.fn(), log: jest.fn(), warn: jest.fn() };
     svc.presence = { onBatch: jest.fn().mockResolvedValue(undefined), onPosition: jest.fn().mockResolvedValue(undefined) };
     svc.prisma = {

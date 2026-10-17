@@ -15,9 +15,10 @@ import { formatDistance } from '@hbcfield/shared/client';
 import { lookFor, offeredTo, readThread, severityShown, severityTone, unreadFor, groupIssues } from '../../components/home/issue-status';
 import type { ShiftIssue, ShiftIssueStatus } from '../../lib/api/shift-issues';
 import { shiftCard } from './shift-card-files';
+import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
-const read = (p: string) => fs.readFileSync(path.join(SRC, p), 'utf8');
+const read = (p: string) => readSource(path.join(SRC, p), 'utf8');
 /** Comments quote the things these rules forbid — strip them first. */
 const code = (p: string) =>
   read(p).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
@@ -774,7 +775,7 @@ describe('the shift clock is a row', () => {
     expect(registry).toMatch(/key: 'shift-clock'/);
     expect(registry).toMatch(/surface: 'glass'/);
     expect(registry).toMatch(/module: 'clock'/);
-    const tabs = fs.readFileSync(path.resolve(SRC, 'lib/tab-layout.ts'), 'utf8');
+    const tabs = readSource(path.resolve(SRC, 'lib/tab-layout.ts'), 'utf8');
     expect(tabs).toContain("hasAccessModule(u, 'clock')");
   });
 

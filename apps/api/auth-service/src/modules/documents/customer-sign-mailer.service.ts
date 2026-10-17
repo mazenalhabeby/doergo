@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as nodemailer from 'nodemailer';
 import {
+  personName,
   mailRoutesFromConfig,
   sendViaFirstWorking,
   runWithCronLock,
@@ -154,9 +155,7 @@ export class CustomerSignMailerService {
     return {
       toSign: live.map((r) => ({
         title: r.document.title,
-        forMember: r.document.user
-          ? `${r.document.user.firstName} ${r.document.user.lastName}`.trim()
-          : null,
+        forMember: r.document.user ? personName(r.document.user) : null,
       })),
       customerId: live.find((r) => r.customerId)?.customerId ?? null,
       organizationName: live[0]?.document.organization?.name ?? '',

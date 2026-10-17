@@ -1,4 +1,4 @@
-import { ClockInService } from '../clock-in.service';
+import { ClockInLocationsService } from '../clock-in-locations.service';
 
 /*
   One day for the person, at every workspace.
@@ -19,7 +19,7 @@ describe('the no-shift limit counts the MEMBER\'s day', () => {
       timeEntry: { findMany: jest.fn().mockResolvedValue([session]) },
       timeOff: { findMany: jest.fn().mockResolvedValue([]) },
     };
-    const self: any = Object.create(ClockInService.prototype);
+    const self: any = Object.create(ClockInLocationsService.prototype);
     self.prisma = prisma;
     self.shiftResolver = { resolveForClockIn: jest.fn().mockResolvedValue(null) };
     return { self, prisma };

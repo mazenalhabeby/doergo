@@ -1,0 +1,75 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { activeAssignmentWhere } from '@hbcfield/shared';
+import { scopeAllows, type AttendanceScope } from '@hbcfield/shared';
+import { PresenceService } from './presence/presence.service';
+import { HeartbeatService } from './heartbeat.service';
+import { ClockInLocationsService } from './clock-in-locations.service';
+
+/**
+ * What the attendance reads share: who may see a workspace's hours, and the order
+ * a list of entries is sorted in.
+ */
+@Injectable()
+export abstract class AttendanceReadBase {
+
+  constructor(
+    protected readonly prisma: PrismaService,
+    // Where they are working now — display only, and never in the way of a clock-in.
+    protected readonly presence: PresenceService,
+    protected readonly clockInLocations: ClockInLocationsService,
+    protected readonly heartbeats: HeartbeatService,
+  ) {}
+
+
+  /**
+   * May this caller read the attendance of one workspace?
+   *
+   * `scope` is where they hold `canViewSpaceAttendance` (null = org-wide). A
+   * space-scoped grant comes from a space assignment, so it is honoured only
+   * while that assignment is active (`activeAssignmentWhere` — the same window
+   * the clock-in uses): a supervisor whose engagement ended yesterday reads
+   * nothing today, whatever a cached session still says.
+   */
+  protected async mayViewSpaceAttendance(spaceId: string, userId: string | undefined, scope: AttendanceScope): Promise<boolean> {
+    if (scope === null || scope === undefined) return true;
+    if (!userId || !scopeAllows(scope, spaceId)) return false;
+    const active = await this.prisma.spaceAssignment.findFirst({
+      where: { spaceId, ...activeAssignmentWhere(userId) },
+      select: { id: true },
+    });
+    return !!active;
+  }
+
+  /**
+   * Get all time entries for an organization (admin view)
+   */
+  /**
+   * Map a UI sort key → Prisma orderBy for the entries list. Defaults to newest
+   * clock-in first. `totalMinutes`/`clockOutAt` are nullable → nulls sort last.
+   */
+  protected buildEntriesOrderBy(sortBy?: string, sortOrder?: string): any {
+    const dir: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
+    // Smart "sort by day": every non-chronological sort gets clock-in (newest day
+    // first) as a secondary tie-breaker, so a worker's / status's rows always fall
+    // into day order instead of an arbitrary within-group order. Invisible in the
+    // UI — same columns, same rows — but the list is always day-coherent.
+    const byDay = { clockInAt: 'desc' as const };
+    switch (sortBy) {
+      case 'worker':
+        return [{ user: { firstName: dir } }, { user: { lastName: dir } }, byDay];
+      case 'status':
+        return [{ status: dir }, byDay];
+      case 'clockIn':
+        return { clockInAt: dir };
+      case 'clockOut':
+        return [{ clockOutAt: { sort: dir, nulls: 'last' } }, byDay];
+      case 'duration':
+        return [{ totalMinutes: { sort: dir, nulls: 'last' } }, byDay];
+      case 'approval':
+        return [{ approvalStatus: dir }, byDay];
+      default:
+        return byDay;
+    }
+  }
+}

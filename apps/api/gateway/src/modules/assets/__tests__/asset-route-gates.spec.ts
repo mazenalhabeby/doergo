@@ -3,9 +3,9 @@ import { PATH_METADATA, METHOD_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common';
 import { PERMISSIONS_KEY, PERMISSIONS_IN_SPACE_KEY, Role, assetSpaces } from '@hbcfield/shared';
 import { DENY_EXTERNAL_KEY } from '../../../common/decorators/deny-external.decorator';
-import { AssetsController } from '../assets.controller';
 import { AssetCategoriesController, AssetTypesController } from '../asset-categories.controller';
 import { assetActor } from '../asset-actor';
+import { assetControllers } from './assets-controllers.fixture';
 
 /**
  * Every asset route, walked from the metadata Nest actually registers.
@@ -54,7 +54,7 @@ const routesOf = (target: any): Route[] =>
       source: fn.toString(),
     }));
 
-const CONTROLLERS = [AssetsController, AssetCategoriesController, AssetTypesController];
+const CONTROLLERS = [...assetControllers(), AssetCategoriesController, AssetTypesController];
 const ROUTES = CONTROLLERS.flatMap(routesOf);
 
 /*

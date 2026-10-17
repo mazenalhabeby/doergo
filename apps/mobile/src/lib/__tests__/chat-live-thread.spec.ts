@@ -5,6 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { appendMessage, applyToConversations, bubbleShape, debounce, isPlaceable, markReadLocally } from '../../components/chat/live-thread';
+import { readSource } from '../../test-utils/read-source';
 
 const msg = (id: string, at: string, senderId = 'karim', conversationId = 'c1') =>
   ({ id, conversationId, senderId, body: id, attachments: [], createdAt: at });
@@ -71,6 +72,21 @@ describe('the conversation list after a message', () => {
     expect(r.list).toBe(list);
   });
 
+  it("takes the server's own count when the event carries it (another screen may have read some)", () => {
+    const r = applyToConversations(
+      list,
+      { conversationId: 'c1', message: msg('m', '2026-10-10T09:00:00Z'), unread: 1 },
+      { meId: 'mike' },
+    );
+    expect(r.list[0]!.unread).toBe(1);
+    const open = applyToConversations(
+      list,
+      { conversationId: 'c1', message: msg('m', '2026-10-10T09:00:00Z'), unread: 5 },
+      { meId: 'mike', openId: 'c1' },
+    );
+    expect(open.list[0]!.unread).toBe(0);
+  });
+
   it('reading clears the count on the phone, without asking for the list again', () => {
     const r = markReadLocally(list, 'c1');
     expect(r[1]!.unread).toBe(0);
@@ -108,15 +124,31 @@ describe('bubble shape from neighbours', () => {
     expect(bubbleShape(list, 2)).toEqual({ newDay: false, grouped: true, lastOfGroup: true });
     expect(bubbleShape(list, 3)).toEqual({ newDay: false, grouped: false, lastOfGroup: true });
   });
+
+  it('a system line stands alone, even when its actor wrote the message above', () => {
+    const list = [msg('a', '2026-10-10T10:00:00Z', 'k'), { ...msg('b', '2026-10-10T10:01:00Z', 'k'), kind: 'SYSTEM' }];
+    expect(bubbleShape(list, 0).lastOfGroup).toBe(true);
+    expect(bubbleShape(list, 1).grouped).toBe(false);
+  });
+
+  it("the web's pause rule: a run breaks after the quiet gap it is given", () => {
+    const list = [msg('a', '2026-10-10T10:00:00Z', 'k'), msg('b', '2026-10-10T10:06:00Z', 'k')];
+    expect(bubbleShape(list, 1).grouped).toBe(true);
+    expect(bubbleShape(list, 1, undefined, { groupWithinMs: 5 * 60000 }).grouped).toBe(false);
+  });
 });
 
 describe('the screens use it', () => {
   const ROOT = path.resolve(__dirname, '../../..');
-  const read = (f: string) => fs.readFileSync(path.join(ROOT, f), 'utf8');
-  it.each(['src/components/chat/chat-screen.tsx', 'app/(app)/support.tsx'])('%s: a virtualised, inverted thread and no reload per message', (f) => {
-    const src = read(f);
+  const read = (f: string) => readSource(path.join(ROOT, f), 'utf8');
+  // [screen, where its live updates are applied] — chat's moved into its hook (use-chat-thread).
+  it.each([
+    ['src/components/chat/chat-screen.tsx', 'src/components/chat/use-chat-thread.ts'],
+    ['app/(app)/support.tsx', 'app/(app)/support.tsx'],
+  ])('%s: a virtualised, inverted thread and no reload per message', (screen, logic) => {
+    const src = read(screen);
     expect(src).toMatch(/<FlatList[\s\S]*?\binverted\b/);
     expect(src).not.toMatch(/<ScrollView\b/);
-    expect(src).toMatch(/appendMessage\(/);
+    expect(read(logic)).toMatch(/appendMessage\(/);
   });
 });

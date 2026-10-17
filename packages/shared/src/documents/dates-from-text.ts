@@ -1,4 +1,5 @@
 import { toISODateString } from '../utils/date';
+import { foldText } from '../utils/fold';
 /**
  * Dates read off a document that has no machine-readable zone.
  *
@@ -61,7 +62,7 @@ const MONTHS: Record<string, number> = (() => {
   return out;
 })();
 
-const fold = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const fold = foldText;
 const monthOf = (word: string): number | null => MONTHS[fold(word).replace(/\.$/, '')] ?? null;
 
 /**

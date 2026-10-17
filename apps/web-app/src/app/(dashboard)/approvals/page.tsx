@@ -29,30 +29,9 @@ import { PAGE_SHELL } from "@/components/ui/page-width"
 import { ListTableError } from "@/components/list-page"
 import { UserAvatar } from "@/components/user-avatar"
 import { DecisionPanel } from "./_components/decision-panel"
-
-// Opened by a button: never part of the first load.
-const RulesDialog = dynamic(() => import("./_components/rules-dialog").then((m) => m.RulesDialog), { ssr: false })
-const StandInDialog = dynamic(() => import("./_components/stand-in-dialog").then((m) => m.StandInDialog), { ssr: false })
 import { nameParts } from "./_components/name-parts"
-
-type Filter = ApprovalKind | "all"
-
-/** The kind's own screen reads these — refreshed after a decision made here. */
-const KIND_KEYS: Partial<Record<ApprovalKind, QueryKey[]>> = {
-  hours: [keys.attendance.approvals(), keys.attendance.pendingApprovals()],
-  away: [keys.attendance.excursions()],
-  extraTime: [keys.overtime.pending()],
-  overtime: [keys.overtime.pending()],
-  noShow: [keys.attendance.noShows()],
-  issue: [keys.shiftIssues.list()],
-  expense: [keys.assets.expensesPending()],
-  assetProposal: [keys.assets.proposalsPending()],
-  document: [keys.documents.awaitingVerification()],
-  join: [keys.people.joinRequests()],
-  clientRequest: [keys.portal.allRequests()],
-}
-
-const itemKey = (i: Pick<ApprovalItem, "kind" | "id">) => `${i.kind}:${i.id}`
+import { useApprovalsPage, itemKey } from "./use-approvals-page"
+import { RulesDialog, StandInDialog, RailItem, Row } from "./approvals-page-helpers"
 
 /**
  * Approvals — everything waiting for the member to decide, in one place.
@@ -63,103 +42,33 @@ const itemKey = (i: Pick<ApprovalItem, "kind" | "id">) => `${i.kind}:${i.id}`
  * cannot wait first, then today, then the rest.
  */
 export default function ApprovalsPage() {
-  const { t } = useTranslation()
-  const qc = useQueryClient()
-  const { user } = useAuth()
-  const [filter, setFilter] = useState<Filter>("all")
-  const [selected, setSelected] = useState<string | null>(null)
-  // Arriving from a page's "decide in Approvals" line: open on that kind.
-  useEffect(() => {
-    const q = new URLSearchParams(window.location.search)
-    const kind = q.get("kind")
-    if (kind && (APPROVAL_KINDS as readonly string[]).includes(kind)) {
-      setFilter(kind as Filter)
-      // One item asked for by name (a page's "Decide in Approvals"): open it.
-      const id = q.get("id")
-      if (id) setSelected(`${kind}:${id}`)
-    }
-  }, [])
-  const [standInOpen, setStandInOpen] = useState(false)
-  const [rulesOpen, setRulesOpen] = useState(false)
-  // Office rules are the organization's own policy: people managers only (the server checks the same).
-  const { holds } = useRouteAccess()
-  const managesPeople = holds("org:canManageUsers")
-
-  const { data, isLoading, isError, error, refetch, isFetching, dataUpdatedAt } = useQuery({
-    queryKey: keys.approvals.list(),
-    queryFn: approvalsApi.list,
-    staleTime: 15_000,
-  })
-
-  const items = useMemo(() => data?.items ?? [], [data])
-  const counts = useMemo(() => {
-    const c = new Map<ApprovalKind, number>()
-    for (const i of items) c.set(i.kind, (c.get(i.kind) ?? 0) + 1)
-    return c
-  }, [items])
-  const visible = useMemo(() => (filter === "all" ? items : items.filter((i) => i.kind === filter)), [items, filter])
-
-  // The first item is chosen for you on a wide screen; a narrow one starts on the list.
-  const current = visible.find((i) => itemKey(i) === selected) ?? null
-  useEffect(() => {
-    if (current || visible.length === 0) return
-    if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) setSelected(itemKey(visible[0]!))
-  }, [current, visible])
-
-  // ↑ / ↓ walk the list — a queue is worked through, not clicked through.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement | null
-      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return
-      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return
-      const at = visible.findIndex((i) => itemKey(i) === selected)
-      const next = visible[Math.min(visible.length - 1, Math.max(0, at + (e.key === "ArrowDown" ? 1 : -1)))]
-      if (next) {
-        e.preventDefault()
-        setSelected(itemKey(next))
-      }
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [visible, selected])
-
-  const decide = useMutation({
-    mutationFn: (d: ApprovalDecision) => approvalsApi.decide(d),
-    onSuccess: (res, d) => {
-      const done = items.find((i) => i.kind === d.kind && i.id === d.id)
-      if (res.stage === "FIRST_STEP") {
-        // Step 1 of 2: theirs is in; the item stays, now waiting for the second person.
-        notify.success(t("approvals.step.firstDone", { role: res.waitingFor ?? "" }))
-        qc.invalidateQueries({ queryKey: keys.approvals.all() })
-        return
-      }
-      // Next in line BEFORE the list drops it, so the panel moves on instead of emptying.
-      const at = visible.findIndex((i) => i.kind === d.kind && i.id === d.id)
-      const next = visible[at + 1] ?? visible[at - 1]
-      setSelected(next ? itemKey(next) : null)
-      qc.setQueryData<ApprovalsResponse>(keys.approvals.list(), (old) =>
-        old ? { ...old, items: old.items.filter((i) => !(i.kind === d.kind && i.id === d.id)) } : old,
-      )
-      notify.success(t("approvals.decided", { name: done?.subject.name || t("approvals.someone") }))
-      qc.invalidateQueries({ queryKey: keys.approvals.all() })
-      for (const k of KIND_KEYS[d.kind] ?? []) qc.invalidateQueries({ queryKey: k })
-      if (d.kind === "request") invalidateTimeOff(qc)
-      if (d.kind === "guestRequest" && done?.space) qc.invalidateQueries({ queryKey: keys.spaces.shareRequests(done.space.id) })
-    },
-    onError: (e: Error) => {
-      notify.error(e.message)
-      // Somebody else may have decided it first — read the truth again.
-      qc.invalidateQueries({ queryKey: keys.approvals.all() })
-    },
-  })
-
-  const onDecide = useCallback((d: ApprovalDecision) => decide.mutate(d), [decide])
-  const unavailable = data?.unavailable ?? []
-  // Whose decisions the reader covers today — said once, above the list.
-  const covering = useMemo(
-    () => [...new Set(items.filter((i) => i.why?.via === "DELEGATED" && i.why.fromName).map((i) => i.why!.fromName!))],
-    [items],
-  )
+  const {
+    t,
+    user,
+    filter,
+    setFilter,
+    selected,
+    setSelected,
+    standInOpen,
+    setStandInOpen,
+    rulesOpen,
+    setRulesOpen,
+    managesPeople,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+    dataUpdatedAt,
+    items,
+    counts,
+    visible,
+    current,
+    decide,
+    onDecide,
+    unavailable,
+    covering,
+  } = useApprovalsPage()
 
   return (
     <div className={PAGE_SHELL}>
@@ -316,87 +225,5 @@ export default function ApprovalsPage() {
       {standInOpen && <StandInDialog open={standInOpen} onOpenChange={setStandInOpen} />}
       {rulesOpen && <RulesDialog open={rulesOpen} onOpenChange={setRulesOpen} />}
     </div>
-  )
-}
-
-function RailItem({
-  active,
-  label,
-  count,
-  urgent,
-  onClick,
-}: {
-  active: boolean
-  label: string
-  count: number
-  urgent?: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-current={active ? "true" : undefined}
-      className={cn(
-        "flex shrink-0 items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors",
-        active ? "bg-accent font-medium text-foreground" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
-      )}
-    >
-      <span className="truncate">{label}</span>
-      <span
-        className={cn(
-          "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums",
-          urgent ? "bg-red-600 text-white" : "bg-muted text-muted-foreground",
-        )}
-      >
-        {count}
-      </span>
-    </button>
-  )
-}
-
-function Row({
-  item,
-  active,
-  onSelect,
-  orgCurrency,
-}: {
-  item: ApprovalItem
-  active: boolean
-  onSelect: () => void
-  orgCurrency?: string | null
-}) {
-  const { t } = useTranslation()
-  const text = describeApproval(item, t as ApprovalT, dateLocale(), orgCurrency)
-  const lead = text.facts[0]
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={onSelect}
-        aria-current={active ? "true" : undefined}
-        className={cn(
-          "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
-          active ? "bg-accent" : "hover:bg-accent/50",
-        )}
-      >
-        <UserAvatar {...nameParts(item.subject.name)} avatarUrl={item.subject.avatarUrl} seed={item.subject.id ?? item.subject.name} size="md" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
-            <span className="truncate font-medium text-foreground">{item.subject.name || t("approvals.someone")}</span>
-            <span className="shrink-0 text-xs text-muted-foreground">{t(`approvals.kinds.${item.kind}`)}</span>
-          </div>
-          <p className="truncate text-sm text-muted-foreground">
-            {text.headline}
-            {lead ? ` · ${lead.value}` : ""}
-            {item.space ? ` · ${item.space.name}` : ""}
-            {item.step ? ` · ${t("approvals.step.short", { role: item.step.roleName })}` : ""}
-          </p>
-        </div>
-        {item.raisedAt && (
-          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatTimeAgo(item.raisedAt)}</span>
-        )}
-      </button>
-    </li>
   )
 }

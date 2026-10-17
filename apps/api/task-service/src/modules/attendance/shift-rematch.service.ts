@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { SERVICE_NAMES, computeScheduleFlags } from '@hbcfield/shared';
+import { zoneOf, SERVICE_NAMES, computeScheduleFlags } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ShiftResolverService } from './shift-resolver.service';
 import { CountedTimeService } from './counted-time.service';
@@ -180,7 +180,7 @@ export class ShiftRematchService implements OnModuleDestroy {
             clockInAt: entry.clockInAt,
             expectedStartAt: resolved.expectedClockInAt,
             expectedEndAt: resolved.expectedClockOutAt,
-            timezone: entry.timezone ?? entry.location.timezone ?? 'UTC',
+            timezone: zoneOf(entry.timezone, entry.location.timezone),
           })
         : null;
 

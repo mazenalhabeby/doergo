@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { CustomersService } from '../customers.service';
+import { customerServices, type CustomerServices } from './customer-services.fixture';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /*
@@ -12,7 +13,7 @@ const ORG = 'org-1';
 const HOUR = 3_600_000;
 
 describe('customers due() — the Clients widget', () => {
-  let service: CustomersService;
+  let service: CustomerServices;
   const prisma: Record<string, any> = {
     user: { findFirst: jest.fn() },
     customerActivity: { findMany: jest.fn(), groupBy: jest.fn() },
@@ -33,8 +34,7 @@ describe('customers due() — the Clients widget', () => {
     prisma.customerActivity.groupBy.mockResolvedValue([]);
     prisma.customerActivity.count = jest.fn().mockResolvedValue(0);
     prisma.$queryRaw.mockResolvedValue([]);
-    const m = await Test.createTestingModule({ providers: [CustomersService, { provide: PrismaService, useValue: prisma }] }).compile();
-    service = m.get(CustomersService);
+    service = customerServices(prisma);
   });
 
   const rep = (permissions: Record<string, boolean>) => prisma.user.findFirst.mockResolvedValue({ role: 'EMPLOYEE', memberRole: { isActive: true, permissions } });

@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { readSource } from '../../test-utils/read-source';
 
 /**
  * The job page's structure — the rules a typecheck cannot see.
@@ -26,7 +27,7 @@ function* walk(dir: string): Generator<string> {
   }
 }
 const files = [...walk(JOB), SCREEN];
-const read = (f: string) => strip(fs.readFileSync(f, 'utf8'));
+const read = (f: string) => strip(readSource(f, 'utf8'));
 const rel = (f: string) => path.relative(MOBILE, f);
 
 describe('the job page — every popup is the one sheet', () => {
@@ -102,7 +103,9 @@ describe('the job page — design-system rules', () => {
   });
 
   it('no style names a font face AND a weight', () => {
-    const bad = files.filter((f) => [...read(f).matchAll(/\{[^{}]*\}/g)].some((m) => /fontFamily\s*:/.test(m[0]) && /fontWeight\s*:/.test(m[0])));
+    const bad = files.filter((f) =>
+      [...read(f).matchAll(/\{[^{}]*\}/g)].some((m) => /fontFamily\s*:/.test(m[0]) && /fontWeight\s*:/.test(m[0])),
+    );
     expect(bad.map(rel)).toEqual([]);
   });
 

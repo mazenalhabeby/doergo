@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { SpaceRolesService } from '../space-roles.service';
+import { spaceRoleServices, type SpaceRolesServiceParts } from './space-roles.service.fixture';
 
 /**
  * A member's routing may only name roles and people of the SAME organization.
@@ -17,7 +17,7 @@ describe('updateMemberRouting stays inside the organization', () => {
       accessRole: { count: jest.fn().mockResolvedValue(roleCount) },
       user: { count: jest.fn().mockResolvedValue(userCount) },
     };
-    return { svc: new SpaceRolesService(prisma), prisma };
+    return { svc: spaceRoleServices(prisma), prisma };
   };
   const base = { organizationId: 'org1', spaceId: 's1', memberId: 'sa1' };
 

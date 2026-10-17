@@ -6,9 +6,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { shiftCard } from './shift-card-files';
+import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
-const read = (p: string) => fs.readFileSync(path.join(SRC, p), 'utf8');
+const read = (p: string) => readSource(path.join(SRC, p), 'utf8');
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 const TIME = fs.readdirSync(path.join(SRC, 'components/time')).filter((f) => /\.tsx?$/.test(f)).map((f) => `components/time/${f}`);
 

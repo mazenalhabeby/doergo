@@ -1,3 +1,4 @@
+import { rolePoolServices } from './role-pool.service.fixture';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { RolePoolService, ROLE_WAVE_CLOSED } from '../role-pool.service';
 
@@ -39,7 +40,12 @@ function make(overrides: Record<string, any> = {}) {
   prisma.$transaction = jest.fn(async (fn: any) => fn(prisma));
   const tasks: any = { assertCanReceiveTasks: jest.fn(), onAssigneesChanged: jest.fn(), assertMayAssignTask: jest.fn() };
   const notifications: any = { emit: jest.fn() };
-  const svc = new RolePoolService(prisma, { expectedToday: jest.fn().mockResolvedValue(new Map()) } as any, notifications, tasks);
+  const svc = rolePoolServices(
+    prisma,
+    { expectedToday: jest.fn().mockResolvedValue(new Map()) } as any,
+    notifications,
+    tasks,
+  );
   return { svc, prisma, tasks, notifications };
 }
 

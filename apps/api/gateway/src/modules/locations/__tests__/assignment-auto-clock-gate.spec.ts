@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { LocationsController } from '../locations.controller';
+import { locationsControllers, type LocationsControllers } from './locations-controllers.fixture';
 
 /*
   PATCH /locations/:id/members/:assignmentId — decided against the space in the
@@ -14,7 +14,7 @@ const user = (extra: any) => ({ id: 'u-1', role: 'EMPLOYEE', organizationId: 'or
 function ctrl() {
   const queue = { updateAssignment: jest.fn().mockResolvedValue({ success: true }) };
   const service = { getLocationAssignments: jest.fn() };
-  const c = new (LocationsController as any)(service, queue, { rebill: jest.fn() }, {}, {}) as LocationsController;
+  const c = locationsControllers(service, queue, { rebill: jest.fn() }, {}, {}) as LocationsControllers;
   return { c, queue, service };
 }
 

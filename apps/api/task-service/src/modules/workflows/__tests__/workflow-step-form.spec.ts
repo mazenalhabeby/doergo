@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { WorkflowsService } from '../workflows.service';
+import { workflowServices } from './workflows.service.fixture';
 
 /**
  * A step's form is saved through the workflow editor's own routes: judged in
@@ -13,7 +14,7 @@ describe('WorkflowsService — step forms', () => {
 
   let prisma: any;
   let cache: any;
-  const svc = () => new WorkflowsService(prisma, cache);
+  const svc = () => workflowServices(prisma, cache);
 
   beforeEach(() => {
     cache = { invalidate: jest.fn() };

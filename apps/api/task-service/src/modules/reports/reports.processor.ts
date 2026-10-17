@@ -3,6 +3,8 @@ import { JobProcessor } from '../../common/queue/job-processor';
 import { Job } from 'bullmq';
 import { QUEUE_NAMES, REPORT_JOB_TYPES } from '@hbcfield/shared';
 import { ReportsService } from './reports.service';
+import { ReportPartsService } from './report-parts.service';
+import { ReportAttachmentsService } from './report-attachments.service';
 
 /**
  * BullMQ Processor for Reports Queue
@@ -16,7 +18,11 @@ import { ReportsService } from './reports.service';
  */
 @Processor(QUEUE_NAMES.REPORTS)
 export class ReportsProcessor extends JobProcessor {
-  constructor(private readonly reportsService: ReportsService) {
+  constructor(
+    private readonly reportsService: ReportsService,
+    private readonly reportAttachments: ReportAttachmentsService,
+    private readonly reportParts: ReportPartsService,
+  ) {
     super();
   }
 
@@ -36,23 +42,23 @@ export class ReportsProcessor extends JobProcessor {
 
       // ============ Attachment Operations ============
       case REPORT_JOB_TYPES.ADD_ATTACHMENT:
-        return this.reportsService.addAttachment(data);
+        return this.reportAttachments.addAttachment(data);
 
       case REPORT_JOB_TYPES.DELETE_ATTACHMENT:
-        return this.reportsService.deleteAttachment(data);
+        return this.reportAttachments.deleteAttachment(data);
 
       case REPORT_JOB_TYPES.GET_PRESIGNED_URL:
-        return this.reportsService.getPresignedUrl(data);
+        return this.reportAttachments.getPresignedUrl(data);
 
       // ============ Parts Operations ============
       case REPORT_JOB_TYPES.ADD_PART:
-        return this.reportsService.addPart(data);
+        return this.reportParts.addPart(data);
 
       case REPORT_JOB_TYPES.UPDATE_PART:
-        return this.reportsService.updatePart(data);
+        return this.reportParts.updatePart(data);
 
       case REPORT_JOB_TYPES.DELETE_PART:
-        return this.reportsService.deletePart(data);
+        return this.reportParts.deletePart(data);
 
       default:
         this.logger.warn(`Unknown job type: ${name}`);

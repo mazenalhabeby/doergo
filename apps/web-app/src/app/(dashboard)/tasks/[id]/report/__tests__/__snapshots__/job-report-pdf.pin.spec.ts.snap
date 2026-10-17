@@ -1,0 +1,188 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`job report PDF — pinned drawing a long report that breaks across pages, with a logo 1`] = `
+{
+  "bytes": "dc592085d2ae681d2a609c7839716347ce96af4e90f2d4e7d1e9ebd90595decb",
+  "calls": 4393,
+  "log": "ffc268b96057d9773f0600e6f5cc88589e6728a52b675b735fd4cad3a78d5759",
+  "pages": 8,
+  "progress": [
+    [
+      0,
+      16,
+    ],
+    [
+      1,
+      16,
+    ],
+    [
+      2,
+      16,
+    ],
+    [
+      3,
+      16,
+    ],
+    [
+      4,
+      16,
+    ],
+    [
+      5,
+      16,
+    ],
+    [
+      6,
+      16,
+    ],
+    [
+      7,
+      16,
+    ],
+    [
+      8,
+      16,
+    ],
+    [
+      9,
+      16,
+    ],
+    [
+      10,
+      16,
+    ],
+    [
+      11,
+      16,
+    ],
+    [
+      12,
+      16,
+    ],
+    [
+      13,
+      16,
+    ],
+    [
+      14,
+      16,
+    ],
+    [
+      15,
+      16,
+    ],
+    [
+      16,
+      16,
+    ],
+  ],
+}
+`;
+
+exports[`job report PDF — pinned drawing every section asked for, every section empty 1`] = `
+{
+  "bytes": "0d91e10bd3b3eb38898c2aa6eb9b56d2bd650413f2e1b9459e4296d132f04bab",
+  "calls": 700,
+  "log": "465de36f0e8cce7dd2077623315317cec343cf3612b904cb1117b077691778fb",
+  "pages": 2,
+  "progress": [
+    [
+      0,
+      0,
+    ],
+  ],
+}
+`;
+
+exports[`job report PDF — pinned drawing letterhead lines, labels and boxes switched off 1`] = `
+{
+  "bytes": "b9b7094a525e98cc2bc056a39b2493e90bb39db902fee295cbd5204b4bf97519",
+  "calls": 1500,
+  "log": "bfa58025143a2d5ae2a15a38c4315a5d4495541e1a54df89dcf1df26f77c37db",
+  "pages": 4,
+  "progress": [
+    [
+      0,
+      4,
+    ],
+    [
+      1,
+      4,
+    ],
+    [
+      2,
+      4,
+    ],
+    [
+      3,
+      4,
+    ],
+    [
+      4,
+      4,
+    ],
+  ],
+}
+`;
+
+exports[`job report PDF — pinned drawing the client copy, no prices 1`] = `
+{
+  "bytes": "b9e79937b3f3955aedf5bb2fb8a4c8476e95a495d9177c55e773943d01e98e0c",
+  "calls": 1105,
+  "log": "e66093d422d619b1dac35c70d15fd2a577191691be3bc07f550d6d892160f25a",
+  "pages": 3,
+  "progress": [
+    [
+      0,
+      4,
+    ],
+    [
+      1,
+      4,
+    ],
+    [
+      2,
+      4,
+    ],
+    [
+      3,
+      4,
+    ],
+    [
+      4,
+      4,
+    ],
+  ],
+}
+`;
+
+exports[`job report PDF — pinned drawing the office copy, every section 1`] = `
+{
+  "bytes": "8e2da1a358040a290a4bdbd06169eb54075f176f9921991506877a10593f7727",
+  "calls": 1531,
+  "log": "015748c6f5f3418563a3f37213fddbd5d94eb5e3f83629744ba6beb2c157ecc5",
+  "pages": 4,
+  "progress": [
+    [
+      0,
+      4,
+    ],
+    [
+      1,
+      4,
+    ],
+    [
+      2,
+      4,
+    ],
+    [
+      3,
+      4,
+    ],
+    [
+      4,
+      4,
+    ],
+  ],
+}
+`;

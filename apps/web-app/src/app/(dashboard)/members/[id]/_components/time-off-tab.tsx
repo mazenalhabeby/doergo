@@ -60,96 +60,30 @@ import { RequestKindChip } from "@/components/requests/request-kind"
 import { LeaveLedgerPanel } from "@/components/leave/leave-ledger-panel"
 import Link from "next/link"
 import { Inbox } from "lucide-react"
-
-const STATUS_PILLS: Record<
-  TimeOffStatus,
-  { labelKey: string; hex: string }
-> = {
-  PENDING: { labelKey: "common.pending", hex: "#ca8a04" },
-  APPROVED: { labelKey: "common.approved", hex: "#16a34a" },
-  REJECTED: { labelKey: "common.rejected", hex: "#dc2626" },
-  CANCELED: { labelKey: "common.canceled", hex: "#64748b" },
-}
-
-/** What a request costs — its stored working-day count, or the span for rows from before the calendar. */
-function getDurationDays(start: string, end: string, workingDays?: number | null): number {
-  return workingDays ?? differenceInCalendarDays(new Date(end), new Date(start)) + 1
-}
-
-interface TimeOffTabProps {
-  employeeId: string
-  employeeName: string
-  canManage: boolean
-}
+import { useTimeOffTab, type TimeOffTabProps } from "./use-time-off-tab"
+import { STATUS_PILLS, getDurationDays } from "./time-off-tab-helpers"
+import { TimeOffTabTimeOffTab } from "./time-off-tab-time-off-tab"
 
 export function TimeOffTab({ employeeId, employeeName, canManage }: TimeOffTabProps) {
-  const { t } = useTranslation()
-  const { formatDate } = useTimeFormat()
-  const queryClient = useQueryClient()
-  // Adjusting a balance is deciding leave: the gate the server puts on approving it
-  // (@RequirePermissionInSpace('canManageRota')); the ledger's own `canEdit` narrows it per person.
-  const canAdjust = useRouteAccess().holds("any:canManageRota")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [createOpen, setCreateOpen] = useState(false)
-
-  // Create form state
-  const [dateRange, setDateRange] = useState<DateRange | undefined>()
-  const [reason, setReason] = useState("")
-
-  const { data: timeOffRequests, isLoading } = useQuery({
-    queryKey: keys.timeOff.member(employeeId, statusFilter === "all" ? undefined : statusFilter),
-    queryFn: () =>
-      employeesApi.getTimeOff(
-        employeeId,
-        statusFilter === "all"
-          ? undefined
-          : (statusFilter as TimeOffStatus)
-      ),
-    enabled: !!employeeId,
-    staleTime: 30_000, // avoid refetching on every tab re-open
-  })
-
-  const requestMutation = useMutation({
-    mutationFn: (data: {
-      startDate: string
-      endDate: string
-      reason?: string
-    }) => employeesApi.requestTimeOff(employeeId, data),
-    onSuccess: () => {
-      invalidateTimeOff(queryClient, employeeId)
-      setCreateOpen(false)
-      setDateRange(undefined)
-      setReason("")
-      notify.success(t('technicians.timeOffTab.submittedSuccessfully'))
-    },
-    onError: (error: Error) => {
-      notify.error(serverErrorMessage(error, t) || t('technicians.timeOffTab.failedToSubmit'))
-    },
-  })
-
-  const cancelMutation = useMutation({
-    mutationFn: (timeOffId: string) =>
-      employeesApi.cancelTimeOff(timeOffId),
-    onSuccess: () => {
-      invalidateTimeOff(queryClient, employeeId)
-      notify.success(t('technicians.timeOffTab.canceledSuccessfully'))
-    },
-    onError: (error: Error) => {
-      notify.error(serverErrorMessage(error, t) || t('technicians.timeOffTab.failedToCancel'))
-    },
-  })
-
-  const handleCreateSubmit = () => {
-    if (!dateRange?.from || !dateRange?.to) {
-      notify.error(t('validation.pleaseSelectDateRange'))
-      return
-    }
-    requestMutation.mutate({
-      startDate: format(dateRange.from, "yyyy-MM-dd"),
-      endDate: format(dateRange.to, "yyyy-MM-dd"),
-      reason: reason || undefined,
-    })
-  }
+  const vm = useTimeOffTab({ employeeId, employeeName, canManage })
+  const {
+    t,
+    formatDate,
+    canAdjust,
+    statusFilter,
+    setStatusFilter,
+    createOpen,
+    setCreateOpen,
+    dateRange,
+    setDateRange,
+    reason,
+    setReason,
+    timeOffRequests,
+    isLoading,
+    requestMutation,
+    cancelMutation,
+    handleCreateSubmit,
+  } = vm
 
   if (isLoading) {
     return (
@@ -181,203 +115,7 @@ export function TimeOffTab({ employeeId, employeeName, canManage }: TimeOffTabPr
       <div className="mb-6">
         <LeaveLedgerPanel memberId={employeeId} memberName={employeeName} canAdjust={canAdjust} />
       </div>
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <CalendarOff className="h-4 w-4" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-foreground">{t('technicians.timeOffTab.title')}</h2>
-            <p className="text-xs text-muted-foreground">{t('technicians.timeOffTab.description')}</p>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-36">
-                  <SelectValue placeholder={t('common.filterByStatus')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('common.all')}</SelectItem>
-                  <SelectItem value="PENDING">{t('common.pending')}</SelectItem>
-                  <SelectItem value="APPROVED">{t('common.approved')}</SelectItem>
-                  <SelectItem value="REJECTED">{t('common.rejected')}</SelectItem>
-                  <SelectItem value="CANCELED">{t('common.canceled')}</SelectItem>
-                </SelectContent>
-              </Select>
-              {canManage && (
-                <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t('technicians.timeOffTab.requestTimeOff')}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{t('technicians.timeOffTab.requestDialog.title')}</DialogTitle>
-                      <DialogDescription>
-                        {t('technicians.timeOffTab.requestDialog.description')}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label>{t('technicians.timeOffTab.requestDialog.dateRangeLabel')}</Label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className="w-full justify-start text-left font-normal"
-                            >
-                              <CalendarDays className="mr-2 h-4 w-4" />
-                              {dateRange?.from ? (
-                                dateRange.to ? (
-                                  <>
-                                    {format(dateRange.from, "MMM d, yyyy")} -{" "}
-                                    {format(dateRange.to, "MMM d, yyyy")}
-                                  </>
-                                ) : (
-                                  format(dateRange.from, "MMM d, yyyy")
-                                )
-                              ) : (
-                                <span className="text-muted-foreground">
-                                  {t('technicians.timeOffTab.requestDialog.selectDates')}
-                                </span>
-                              )}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="range"
-                              selected={dateRange}
-                              onSelect={setDateRange}
-                              disabled={{ before: new Date() }}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>{t('technicians.timeOffTab.requestDialog.reasonLabel')}</Label>
-                        <Textarea
-                          placeholder={t('technicians.timeOffTab.requestDialog.reasonPlaceholder')}
-                          value={reason}
-                          onChange={(e) => setReason(e.target.value)}
-                          rows={3}
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => setCreateOpen(false)}
-                      >
-                        {t('common.cancel')}
-                      </Button>
-                      <Button
-                        onClick={handleCreateSubmit}
-                        disabled={
-                          !dateRange?.from ||
-                          !dateRange?.to ||
-                          requestMutation.isPending
-                        }
-                      >
-                        {requestMutation.isPending
-                          ? t('common.submitting')
-                          : t('technicians.timeOffTab.requestDialog.submitButton')}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              )}
-          </div>
-        </div>
-
-        {timeOffRequests && timeOffRequests.length > 0 ? (
-          <div className="divide-y divide-border/60">
-            {timeOffRequests.map((request) => {
-              const pill = STATUS_PILLS[request.status]
-              const isPending = request.status === "PENDING"
-              return (
-                <div
-                  key={request.id}
-                  className="px-5 py-3.5 hover:bg-accent/40 transition-colors flex items-center gap-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium text-foreground">
-                        {formatDate(request.startDate)}
-                        {request.endDate.slice(0, 10) !== request.startDate.slice(0, 10) && <> – {formatDate(request.endDate)}</>}
-                      </p>
-                      <RequestKindChip kind={request.kind} />
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                      {isAbsence(request.kind) ? (
-                        <span className="flex-shrink-0">
-                          {getDurationDays(request.startDate, request.endDate, request.workingDays)}{" "}
-                          {t('technicians.timeOffTab.days')}
-                        </span>
-                      ) : requestDetail(request, t) ? (
-                        <span className="flex-shrink-0">{requestDetail(request, t)}</span>
-                      ) : null}
-                      {request.reason && (
-                        <>
-                          <span className="text-muted-foreground/40">·</span>
-                          <span className="truncate">{request.reason}</span>
-                        </>
-                      )}
-                      {request.approvedBy && (
-                        <>
-                          <span className="text-muted-foreground/40">·</span>
-                          <span className="truncate">
-                            {personName(request.approvedBy)}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <span
-                    className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium flex-shrink-0"
-                    style={{ borderColor: `${pill.hex}33`, color: pill.hex, backgroundColor: `${pill.hex}14` }}
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: pill.hex }} />
-                    {t(pill.labelKey)}
-                  </span>
-                  {(canManage && isPending) && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="flex-shrink-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {/* Decided in Approvals — the one place. */}
-                        <DropdownMenuItem asChild>
-                          <Link href={`/approvals?kind=request&id=${encodeURIComponent(request.id)}`}>
-                            <Inbox className="h-4 w-4 mr-2" />
-                            {t('approvals.decideInApprovals')}
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            cancelMutation.mutate(request.id)
-                          }
-                        >
-                          {t('technicians.timeOffTab.cancelRequest')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="px-5 py-14 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 text-muted-foreground">
-              <CalendarOff className="h-6 w-6" />
-            </div>
-            <p className="text-sm text-muted-foreground">{t('technicians.timeOffTab.noRequests')}</p>
-          </div>
-        )}
-      </div>
+      <TimeOffTabTimeOffTab vm={vm} canManage={canManage} />
 
     </>
   )

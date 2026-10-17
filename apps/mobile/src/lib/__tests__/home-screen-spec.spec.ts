@@ -11,9 +11,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { move, hide, show, onHome, offHome, canMove } from '../../home/arrange-list';
+import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
-const read = (p: string) => fs.readFileSync(path.join(SRC, p), 'utf8');
+const read = (p: string) => readSource(path.join(SRC, p), 'utf8');
 /** Comments quote the things these rules forbid — strip them first. */
 const code = (p: string) =>
   read(p).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');

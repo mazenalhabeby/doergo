@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ApprovalService } from '../approval.service';
+import { entryServicesOf, type ApprovalServiceParts } from './approval.service.fixture';
+import { ENTRY_SERVICES } from '../entry-services';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { CountedTimeService } from '../counted-time.service';
 import { BreakRulesService } from '../break-rules.service';
@@ -19,7 +20,7 @@ import { BreakReminderService } from '../break-reminder.service';
   rows, everywhere.
 */
 describe('a rest entered with a manual attendance', () => {
-  let service: ApprovalService;
+  let service: ApprovalServiceParts;
 
   const created: Array<Record<string, unknown>> = [];
   const breaks: Array<Record<string, unknown>> = [];
@@ -52,20 +53,19 @@ describe('a rest entered with a manual attendance', () => {
         BreakReminderService,
         BreakRulesService,
         CountedTimeService,
-        ApprovalService,
+        ...ENTRY_SERVICES,
         { provide: PrismaService, useValue: prisma },
         // It announces the change to the notification service on success; that
         // is not what is under test here.
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
       ],
     }).compile();
-    service = module.get(ApprovalService);
+    service = entryServicesOf(module);
   });
 
   const add = (over: Record<string, unknown> = {}) =>
     (service as unknown as { addManualEntries: (d: unknown) => Promise<unknown> }).addManualEntries({
-      userId: 'u1',
-      organizationId: 'org-1',
+      userId: 'u1', organizationId: 'org-1',
       editorId: 'admin-1',
       locationId: 'sp-1',
       startDate: '2026-09-01',

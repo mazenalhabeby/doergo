@@ -74,6 +74,7 @@ jest.mock('../stored-user', () => ({
 
 import { endSession, shouldDestroyLocalData } from '../end-session';
 import { onSessionEnd, registerUnsentProbe } from '../session-registry';
+import { readSource } from '../../../test-utils/read-source';
 
 beforeEach(() => {
   calls.length = 0;
@@ -219,7 +220,7 @@ describe('the reasons differ only where they must', () => {
 */
 const MOBILE = path.resolve(__dirname, '../../../..');
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-const read = (p: string) => strip(fs.readFileSync(path.join(MOBILE, p), 'utf8'));
+const read = (p: string) => strip(readSource(path.join(MOBILE, p), 'utf8'));
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of fs.readdirSync(dir)) {
     const p = path.join(dir, name);
@@ -229,7 +230,7 @@ function walk(dir: string, out: string[] = []): string[] {
   }
   return out;
 }
-const sources = () => [...walk(path.join(MOBILE, 'src')), ...walk(path.join(MOBILE, 'app'))].map((f) => ({ rel: path.relative(MOBILE, f), src: strip(fs.readFileSync(f, 'utf8')) }));
+const sources = () => [...walk(path.join(MOBILE, 'src')), ...walk(path.join(MOBILE, 'app'))].map((f) => ({ rel: path.relative(MOBILE, f), src: strip(readSource(f, 'utf8')) }));
 
 describe('every exit is the one exit', () => {
   it('the auth context\'s sign-out, refused session, failed restore and web-only refusal all call endSession', () => {

@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { mayReadTeamAvailability } from '../permissions';
 import { approverCandidates } from '../overtime-approvers';
+import { readSource } from '../../test-utils/read-source';
 
 const ROOT = path.resolve(__dirname, '../../..');
 
@@ -31,8 +32,8 @@ describe('who can be asked to sign overtime', () => {
 
 describe('no screen decides by a retired role string, or reads an admin-only list it cannot use', () => {
   it('time-off and the overtime signature screen', () => {
-    const timeOff = fs.readFileSync(path.join(ROOT, 'app/(app)/(tabs)/time-off.tsx'), 'utf8');
-    const sign = fs.readFileSync(path.join(ROOT, 'app/(app)/overtime/sign/[id].tsx'), 'utf8');
+    const timeOff = readSource(path.join(ROOT, 'app/(app)/(tabs)/time-off.tsx'), 'utf8');
+    const sign = readSource(path.join(ROOT, 'app/(app)/overtime/sign/[id].tsx'), 'utf8');
     for (const src of [timeOff, sign]) expect(src).not.toMatch(/role\s*===\s*'(?:CLIENT|DISPATCHER)'/);
     expect(timeOff).toMatch(/mayReadTeamAvailability\(user\)/);
     // `/organizations/members` needs canManageUsers — a field worker gets a 403 and an empty list.

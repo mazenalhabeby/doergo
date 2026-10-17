@@ -1,4 +1,4 @@
-import { ChatService } from '../chat.service';
+import { ChatReachService } from '../chat-reach.service';
 
 /**
  * "Managers reach anyone in chat" asked the flat `User.canManageUsers` column.
@@ -7,7 +7,7 @@ import { ChatService } from '../chat.service';
  * granting once the legacy columns were retired. It reads resolved access now.
  */
 describe('chat: who counts as a manager', () => {
-  const svc = new ChatService({} as any, { emit: jest.fn() } as any);
+  const svc = new ChatReachService({} as any, {} as any);
   const canReach = (me: any) =>
     (svc as any).canReach(
       { enabledModules: null, contactScope: 'NONE', contactAllowedIds: [], ...me },

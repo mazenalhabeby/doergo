@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { orgMonthlyCost, SEAT_MONTHLY_CENTS, OBSERVER_SEAT_MONTHLY_CENTS } from '@hbcfield/shared/client';
+import { readSource } from '../test-utils/read-source'
 
 /**
  * The billing page must add up on screen.
@@ -61,7 +62,7 @@ describe('what the page renders reconstructs the total', () => {
 });
 
 describe('the page tells people the price excludes tax', () => {
-  const src = fs.readFileSync(
+  const src = readSource(
     path.join(process.cwd(), 'src/app/(dashboard)/settings/billing/_components/bill-breakdown.tsx'),
     'utf8',
   );
@@ -84,7 +85,7 @@ describe('the page tells people the price excludes tax', () => {
 });
 
 describe('the options rail', () => {
-  const src = fs.readFileSync(
+  const src = readSource(
     path.join(process.cwd(), 'src/app/(dashboard)/settings/billing/_components/options-rail.tsx'),
     'utf8',
   );
@@ -104,11 +105,11 @@ describe('the options rail', () => {
 });
 
 describe('an organization with no subscription can start one', () => {
-  const rail = fs.readFileSync(
+  const rail = readSource(
     path.join(process.cwd(), 'src/app/(dashboard)/settings/billing/_components/options-rail.tsx'),
     'utf8',
   );
-  const page = fs.readFileSync(
+  const page = readSource(
     path.join(process.cwd(), 'src/app/(dashboard)/settings/billing/page.tsx'),
     'utf8',
   );

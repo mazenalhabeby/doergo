@@ -5,9 +5,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { splitTabs, tabAccessFor, tabVisible } from '../tab-layout';
 import { groupManageRows } from '../../components/more/more-groups';
+import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
-const read = (p: string) => fs.readFileSync(path.join(SRC, p), 'utf8');
+const read = (p: string) => readSource(path.join(SRC, p), 'utf8');
 const ROUTES = ['index', 'tasks', 'create-task', 'manage', 'attendance', 'time-off', 'team', 'chat', 'calendar', 'profile', 'more'];
 
 describe('who gets which tab — one answer', () => {
@@ -17,16 +18,21 @@ describe('who gets which tab — one answer', () => {
     for (const n of ['profile', 'manage', 'more']) expect(tabVisible(n, { ...all, isAdmin: true })).toBe(false);
   });
 
-  it('an admin has no Time off tab; chat still needs the add-on', () => {
+  it('an admin has no Time off tab; chat is never a slot (Team → Messages holds it)', () => {
     expect(tabVisible('time-off', { ...all, isAdmin: true })).toBe(false);
-    expect(tabVisible('chat', { ...all, isAdmin: true, chat: false })).toBe(false);
+    expect(tabVisible('chat', { ...all, isAdmin: true, chat: true })).toBe(false);
+  });
+
+  it('chat no longer needs the paid Live Chat option — Messaging decides', () => {
+    expect(tabAccessFor({ role: 'EMPLOYEE', orgAddOns: [] } as never).chat).toBe(true);
+    expect(tabAccessFor({ role: 'EMPLOYEE', enabledModules: { canContact: false } } as never).chat).toBe(false);
   });
 
   it('what the bar leaves out is what More offers — four on the bar, the rest overflow', () => {
     const visible = ROUTES.filter((n) => tabVisible(n, all)).map((name) => ({ name }));
     const { barRoutes, overflowRoutes } = splitTabs(visible, true);
     expect(barRoutes.map((r) => r.name)).toEqual(['index', 'tasks', 'attendance', 'team']);
-    expect(overflowRoutes.map((r) => r.name)).toEqual(['chat', 'calendar', 'time-off', 'create-task']);
+    expect(overflowRoutes.map((r) => r.name)).toEqual(['calendar', 'time-off', 'create-task']);
   });
 
   it('a member with nothing reads nothing', () => {

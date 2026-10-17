@@ -1,8 +1,10 @@
+import { ComplianceBoardService } from '../compliance-board.service';
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { CredentialExpiryService } from '../credential-expiry.service';
+import { credentialExpiryPartsOf, type CredentialExpiryServiceParts } from './credential-expiry.service.fixture';
 import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';
@@ -16,7 +18,7 @@ import { OBJECT_STORE } from '../object-store.provider';
  */
 
 describe('retention sweep', () => {
-  let service: CredentialExpiryService;
+  let service: CredentialExpiryServiceParts;
   const prisma: Record<string, any> = {
     document: { updateMany: jest.fn(), findMany: jest.fn(), deleteMany: jest.fn() },
     user: { findMany: jest.fn() },
@@ -34,11 +36,12 @@ describe('retention sweep', () => {
     const module = await Test.createTestingModule({
       providers: [
         CredentialExpiryService,
+        ComplianceBoardService,
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
       ],
     }).compile();
-    service = module.get(CredentialExpiryService);
+    service = credentialExpiryPartsOf(module);
   });
 
   afterAll(() => {

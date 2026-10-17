@@ -13,6 +13,17 @@ import { DocumentCustomerSigningService } from './document-customer-signing.serv
 import { DocumentRegistersService } from './document-registers.service';
 import { DocumentDownloadsService } from './document-downloads.service';
 import { DocumentControlService } from './document-control.service';
+import { DocumentChainService } from './document-chain.service';
+import { OwnUploadReaderService } from './own-upload-reader.service';
+import { DocumentSendBackService } from './document-send-back.service';
+import { DocumentSealService } from './document-seal.service';
+import { IssuedRegisterService } from './issued-register.service';
+import { MemberDocumentsService } from './member-documents.service';
+import { DocumentDraftsService } from './document-drafts.service';
+import { DocumentRequirementsService } from './document-requirements.service';
+import { ContractIssueService } from './contract-issue.service';
+import { CustomerSignBatchService } from './customer-sign-batch.service';
+import { DocumentTypeUpdateService } from './document-type-update.service';
 
 /**
  * The personnel file as providers: the `DocumentsService` facade and the
@@ -23,18 +34,29 @@ import { DocumentControlService } from './document-control.service';
  */
 export const DOCUMENT_SERVICES = [
   DocumentsService,
+  OwnUploadReaderService,
   DocumentStorageService,
   DocumentLookupService,
   DocumentNotifierService,
   DocumentRoutingService,
+  DocumentChainService,
   DocumentSigningService,
+  DocumentSendBackService,
+  DocumentSealService,
   DocumentTypesService,
+  DocumentTypeUpdateService,
   DocumentTemplatesService,
+  ContractIssueService,
   DocumentIssuingService,
+  DocumentDraftsService,
   DocumentSupplyService,
+  DocumentRequirementsService,
   DocumentVerificationService,
   DocumentCustomerSigningService,
+  CustomerSignBatchService,
   DocumentRegistersService,
+  IssuedRegisterService,
+  MemberDocumentsService,
   DocumentDownloadsService,
   DocumentControlService,
 ];

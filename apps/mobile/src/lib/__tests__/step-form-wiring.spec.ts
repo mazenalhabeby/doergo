@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { readSource } from '../../test-utils/read-source';
 
 /**
  * Step forms — the wiring a typecheck cannot see.
@@ -15,13 +16,15 @@ import * as path from 'path';
 
 const MOBILE = path.resolve(__dirname, '../../..');
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
-const read = (rel: string) => strip(fs.readFileSync(path.join(MOBILE, rel), 'utf8'));
+// A split file reads with the parts moved out of it (test-utils/read-source.ts).
+const read = (rel: string) => strip(readSource(path.join(MOBILE, rel), 'utf8'));
 
 function* walk(dir: string): Generator<string> {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, e.name);
-    if (e.isDirectory()) { if (e.name !== '__tests__' && e.name !== 'node_modules') yield* walk(full); }
-    else if (/\.tsx?$/.test(e.name)) yield full;
+    if (e.isDirectory()) {
+      if (e.name !== '__tests__' && e.name !== 'node_modules') yield* walk(full);
+    } else if (/\.tsx?$/.test(e.name)) yield full;
   }
 }
 
@@ -50,7 +53,9 @@ describe('a step with a form opens the sheet; without one the job just moves', (
   });
 
   it('the page draws the step form from whatever form the target step resolves to', () => {
-    expect(page).toMatch(/const activeForm = formTarget \? formForMove\(task\.workflow, steps, formTarget, workflowName\)\.form : null/);
+    expect(page).toMatch(
+      /const activeForm = formTarget \? formForMove\(task\.workflow, steps, formTarget, workflowName\)\.form : null/,
+    );
     expect(page).toMatch(/<StepFormSheet\b/);
     expect(page).toMatch(/writes\.moveWithForm\(formTarget, activeForm, draft, signatures\)/);
     // A refusal keeps the sheet open on its fields.
@@ -60,14 +65,23 @@ describe('a step with a form opens the sheet; without one the job just moves', (
 
 describe('the old Finish path is gone', () => {
   it('no FinishSheet, no completeTaskWithReport, no POST /complete from the phone', () => {
-    const all = [...walk(path.join(MOBILE, 'src')), ...walk(path.join(MOBILE, 'app'))].map((f) => [path.relative(MOBILE, f), strip(fs.readFileSync(f, 'utf8'))] as const);
-    expect(all.filter(([, s]) => /FinishSheet|completeTaskWithReport|reportsApi\.completeTask|reportAttachmentsApi/.test(s)).map(([f]) => f)).toEqual([]);
+    const all = [...walk(path.join(MOBILE, 'src')), ...walk(path.join(MOBILE, 'app'))].map(
+      (f) => [path.relative(MOBILE, f), strip(fs.readFileSync(f, 'utf8'))] as const,
+    );
+    expect(
+      all
+        .filter(([, s]) => /FinishSheet|completeTaskWithReport|reportsApi\.completeTask|reportAttachmentsApi/.test(s))
+        .map(([f]) => f),
+    ).toEqual([]);
     expect(fs.existsSync(path.join(MOBILE, 'src/components/job/sheets/finish-sheet.tsx'))).toBe(false);
   });
 });
 
 describe('files first, then the move — through the one status write', () => {
-  const move = writes.slice(writes.indexOf('const moveWithForm = useCallback('), writes.indexOf('const resetFormFiles'));
+  const move = writes.slice(
+    writes.indexOf('const moveWithForm = useCallback('),
+    writes.indexOf('const resetFormFiles'),
+  );
 
   it('prepares (uploads) before it writes the status, and the write carries the answers and what to wait for', () => {
     const prep = move.indexOf('await prepareStepForm(');
@@ -80,7 +94,9 @@ describe('files first, then the move — through the one status write', () => {
 
   it('every file goes through the ONE sender: queued with a signature kind for the pad, direct only without the engine', () => {
     const send = writes.slice(writes.indexOf('const sendFile = useCallback('), writes.indexOf('const photoRefused'));
-    expect(send).toMatch(/if \(offline\.engine && offline\.files\) \{[\s\S]*?addTaskPhoto\(offline\.engine, offline\.files/);
+    expect(send).toMatch(
+      /if \(offline\.engine && offline\.files\) \{[\s\S]*?addTaskPhoto\(offline\.engine, offline\.files/,
+    );
     expect(send).toMatch(/photo\.uri\.startsWith\('data:'\) \? \{ base64: photo\.uri, kind: 'signature' as const \}/);
     expect(send).toMatch(/waitFor: sent\.state === 'done' \? null : sent\.opId/);
     expect(writes.match(/addTaskPhoto\(/g)?.length).toBe(1);
@@ -114,7 +130,7 @@ describe('the sheet — the one sheet, drawn from the form', () => {
     expect(sheet).toMatch(/display: page === i \? 'flex' : 'none'/);
   });
 
-  it('shows the organization\'s labels through fieldLabel — never a translation key made from them', () => {
+  it("shows the organization's labels through fieldLabel — never a translation key made from them", () => {
     expect(sheet).toMatch(/fieldLabel\(f, t\)/);
     expect(sheet).not.toMatch(/t\(`[^`]*\$\{f\.label\}/);
   });
@@ -125,10 +141,12 @@ describe('reports — read only when seen', () => {
     expect(data.match(/getSubmissions\(/g)?.length).toBe(1);
     expect(data).toMatch(/const loadSubmissions = useCallback\(\(\) => \{[^}]*\n[^]*?getSubmissions\(/);
     expect(page).toMatch(/job\.loadSubmissions\(\)/);
-    expect(page).toMatch(/asksRef\.current && submissionsY\.current != null && seenTo\.current >= submissionsY\.current/);
+    expect(page).toMatch(
+      /asksRef\.current && submissionsY\.current != null && seenTo\.current >= submissionsY\.current/,
+    );
   });
 
-  it('an older job\'s service report still shows, beside the new reports', () => {
+  it("an older job's service report still shows, beside the new reports", () => {
     expect(page).toMatch(/<JobSubmissions\b/);
     expect(page).toMatch(/<JobReport report=\{job\.report\} sayNone=\{reportSaysNone\}/);
   });

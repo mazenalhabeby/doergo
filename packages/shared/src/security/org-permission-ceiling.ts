@@ -2,6 +2,7 @@ import { Role } from '../types/enums';
 import { type PermissionSet } from '../types/permissions';
 import { ORG_ACCESS_SELECT, memberAccessOf, type OrgAccessRow } from '../access/org-access';
 
+import { activeWindowWhere } from '../access/assignment-window';
 /**
  * The narrow slice of a Prisma client this needs — structural, so the shared
  * package does not depend on any one service's generated client.
@@ -74,8 +75,7 @@ export async function loadSpacePermissionCeiling(
       spaceAssignments: {
         where: {
           spaceId,
-          effectiveFrom: { lte: now },
-          OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }],
+          ...activeWindowWhere(now),
         },
         select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
       },

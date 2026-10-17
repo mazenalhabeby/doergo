@@ -4,6 +4,7 @@ import { OBJECT_STORE } from './object-store.provider';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { DOCUMENT_READERS, type DocumentReader, type DocumentReading } from './document-reader';
 
+import { personName } from '@hbcfield/shared';
 /** A document that could not be read twice is left to the reviewer, not retried forever. */
 const MAX_ATTEMPTS = 2;
 /** Give the service time to settle before the first sweep. */
@@ -126,7 +127,7 @@ export class DocumentReadQueue implements OnApplicationBootstrap, OnModuleDestro
           verdict: 'SUSPECT',
           checks: [
             ...best.scan.checks.filter((c) => c.id !== 'notAlreadyFiled'),
-            { id: 'notAlreadyFiled', outcome: 'FAIL', detail: `${other.user.firstName} ${other.user.lastName}`.trim() },
+            { id: 'notAlreadyFiled', outcome: 'FAIL', detail: personName(other.user) },
           ],
         };
       }

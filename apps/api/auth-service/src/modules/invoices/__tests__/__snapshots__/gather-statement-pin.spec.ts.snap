@@ -1,0 +1,1373 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`invoice gather (pinned) a client: answer and queries 1`] = `
+{
+  "data": {
+    "baseCurrency": "EUR",
+    "billableRateCents": 7000,
+    "clientAddress": null,
+    "clientEmail": "c@x.test",
+    "clientName": "Client",
+    "currency": "USD",
+    "currencySource": "client",
+    "customerId": "c1",
+    "dayEntries": [],
+    "hourEntries": [],
+    "legalEntityId": "le1",
+    "outstandingDays": [
+      "2026-10-02",
+      "2026-10-25",
+    ],
+    "periodFrom": null,
+    "periodTo": null,
+    "rate": 70,
+    "spaceId": null,
+    "taskCount": 2,
+    "timezone": "UTC",
+    "totalHours": 3,
+    "twoRates": true,
+    "workEntries": [
+      {
+        "billBy": "HOUR",
+        "billRateCents": 7000,
+        "completedAt": 2026-10-02T12:00:00.000Z,
+        "costRateCents": 3000,
+        "hasReport": true,
+        "hours": 3,
+        "hoursBillable": true,
+        "laborAmount": 210,
+        "notes": "did it",
+        "parts": [
+          {
+            "amount": 25,
+            "name": "Valve",
+            "partNumber": null,
+            "quantity": 2,
+            "unitCost": 12.5,
+          },
+        ],
+        "reportId": "r1",
+        "taskId": "t1",
+        "taskTitle": "Fix boiler",
+        "workRoleId": null,
+        "workRoleName": null,
+        "workedOn": "2026-10-02",
+        "workerId": "anna",
+        "workerName": "Anna X",
+      },
+      {
+        "billBy": "HOUR",
+        "billRateCents": 7000,
+        "completedAt": 2026-10-25T12:00:00.000Z,
+        "costRateCents": 2000,
+        "hasReport": false,
+        "hours": 0,
+        "hoursBillable": true,
+        "laborAmount": 0,
+        "notes": null,
+        "parts": [],
+        "reportId": null,
+        "taskId": "t3",
+        "taskTitle": "No report",
+        "workRoleId": null,
+        "workRoleName": null,
+        "workedOn": "2026-10-25",
+        "workerId": "mark",
+        "workerName": "Mark X",
+      },
+    ],
+    "workerSummary": [
+      {
+        "hours": 3,
+        "name": "Anna X",
+      },
+    ],
+  },
+  "success": true,
+}
+`;
+
+exports[`invoice gather (pinned) a client: answer and queries 2`] = `
+{
+  "companyLocation.findFirst": [],
+  "customer.findFirst": [
+    [
+      {
+        "select": {
+          "address": true,
+          "currency": true,
+          "email": true,
+          "id": true,
+          "legalEntityId": true,
+          "name": true,
+        },
+        "where": {
+          "id": "c1",
+          "organizationId": "o",
+        },
+      },
+    ],
+  ],
+  "invoiceItem.findMany": [
+    [
+      {
+        "select": {
+          "taskId": true,
+          "taskIds": true,
+        },
+        "where": {
+          "OR": [
+            {
+              "taskId": {
+                "in": [
+                  "t1",
+                  "t2",
+                  "t3",
+                ],
+              },
+            },
+            {
+              "taskIds": {
+                "hasSome": [
+                  "t1",
+                  "t2",
+                  "t3",
+                ],
+              },
+            },
+          ],
+          "invoice": {
+            "organizationId": "o",
+            "status": {
+              "not": "CANCELED",
+            },
+          },
+        },
+      },
+    ],
+  ],
+  "organization.findUnique": [
+    [
+      {
+        "select": {
+          "billableRateCents": true,
+          "costRateCents": true,
+          "currency": true,
+        },
+        "where": {
+          "id": "o",
+        },
+      },
+    ],
+  ],
+  "rateHistory.findMany": [
+    [
+      {
+        "select": {
+          "cents": true,
+          "createdAt": true,
+          "effectiveFrom": true,
+          "kind": true,
+          "spaceId": true,
+          "target": true,
+          "targetId": true,
+        },
+        "where": {
+          "OR": [
+            {
+              "target": "ORGANIZATION",
+              "targetId": {
+                "in": [
+                  "o",
+                ],
+              },
+            },
+            {
+              "target": "MEMBER",
+              "targetId": {
+                "in": [
+                  "anna",
+                  "mark",
+                ],
+              },
+            },
+          ],
+          "organizationId": "o",
+        },
+      },
+    ],
+  ],
+  "spaceAssignment.findMany": [],
+  "task.findMany": [
+    [
+      {
+        "orderBy": {
+          "updatedAt": "asc",
+        },
+        "select": {
+          "assignedTo": {
+            "select": {
+              "billRateCents": true,
+              "costRateCents": true,
+              "firstName": true,
+              "id": true,
+              "lastName": true,
+            },
+          },
+          "id": true,
+          "serviceReport": {
+            "select": {
+              "completedAt": true,
+              "completedBy": {
+                "select": {
+                  "billRateCents": true,
+                  "costRateCents": true,
+                  "firstName": true,
+                  "id": true,
+                  "lastName": true,
+                },
+              },
+              "id": true,
+              "partsUsed": {
+                "select": {
+                  "name": true,
+                  "partNumber": true,
+                  "quantity": true,
+                  "unitCost": true,
+                },
+              },
+              "summary": true,
+              "workDuration": true,
+              "workPerformed": true,
+            },
+          },
+          "title": true,
+          "updatedAt": true,
+        },
+        "where": {
+          "customerId": "c1",
+          "organizationId": "o",
+          "status": {
+            "in": [
+              "COMPLETED",
+              "CLOSED",
+            ],
+          },
+        },
+      },
+    ],
+  ],
+}
+`;
+
+exports[`invoice gather (pinned) a workspace: answer, queries and the site-time step 1`] = `
+{
+  "data": {
+    "baseCurrency": "EUR",
+    "billableRateCents": 8000,
+    "clientAddress": "Street 1",
+    "clientEmail": "b@x.test",
+    "clientName": "Mr B",
+    "currency": "EUR",
+    "currencySource": "organization",
+    "customerId": null,
+    "dayEntries": [
+      {
+        "costCents": null,
+        "days": 1,
+        "workerId": "anna",
+      },
+    ],
+    "hourEntries": [
+      {
+        "costCents": 3000,
+        "hours": 2,
+        "workerId": "anna",
+      },
+    ],
+    "legalEntityId": "le1",
+    "outstandingDays": [
+      "2026-10-01",
+      "2026-10-02",
+      "2026-10-25",
+    ],
+    "periodFrom": "2026-10-01",
+    "periodTo": "2026-10-31",
+    "rate": 80,
+    "spaceId": "s1",
+    "taskCount": 2,
+    "timezone": "Europe/Vienna",
+    "totalHours": 3,
+    "twoRates": true,
+    "workEntries": [
+      {
+        "billBy": "BOTH",
+        "billRateCents": 8000,
+        "completedAt": 2026-10-02T12:00:00.000Z,
+        "costRateCents": 3000,
+        "hasReport": true,
+        "hours": 3,
+        "hoursBillable": false,
+        "laborAmount": 0,
+        "notes": "did it",
+        "parts": [
+          {
+            "amount": 25,
+            "name": "Valve",
+            "partNumber": null,
+            "quantity": 2,
+            "unitCost": 12.5,
+          },
+        ],
+        "reportId": "r1",
+        "taskId": "t1",
+        "taskTitle": "Fix boiler",
+        "workRoleId": "w1",
+        "workRoleName": "Plumber",
+        "workedOn": "2026-10-02",
+        "workerId": "anna",
+        "workerName": "Anna X",
+      },
+      {
+        "billBy": "HOUR",
+        "billRateCents": 8000,
+        "completedAt": 2026-10-25T12:00:00.000Z,
+        "costRateCents": 2000,
+        "hasReport": false,
+        "hours": 0,
+        "hoursBillable": false,
+        "laborAmount": 0,
+        "notes": null,
+        "parts": [],
+        "reportId": null,
+        "taskId": "t3",
+        "taskTitle": "No report",
+        "workRoleId": null,
+        "workRoleName": null,
+        "workedOn": "2026-10-25",
+        "workerId": "mark",
+        "workerName": "Mark X",
+      },
+    ],
+    "workerSummary": [
+      {
+        "hours": 3,
+        "name": "Anna X",
+      },
+    ],
+  },
+  "success": true,
+}
+`;
+
+exports[`invoice gather (pinned) a workspace: answer, queries and the site-time step 2`] = `
+{
+  "companyLocation.findFirst": [
+    [
+      {
+        "select": {
+          "address": true,
+          "billableRateCents": true,
+          "contactEmail": true,
+          "contactName": true,
+          "costRateCents": true,
+          "currency": true,
+          "id": true,
+          "kind": true,
+          "legalEntityId": true,
+          "name": true,
+          "sourceCustomerId": true,
+          "timezone": true,
+        },
+        "where": {
+          "id": "s1",
+          "organizationId": "o",
+        },
+      },
+    ],
+  ],
+  "customer.findFirst": [],
+  "invoiceItem.findMany": [
+    [
+      {
+        "select": {
+          "taskId": true,
+          "taskIds": true,
+        },
+        "where": {
+          "OR": [
+            {
+              "taskId": {
+                "in": [
+                  "t1",
+                  "t2",
+                  "t3",
+                ],
+              },
+            },
+            {
+              "taskIds": {
+                "hasSome": [
+                  "t1",
+                  "t2",
+                  "t3",
+                ],
+              },
+            },
+          ],
+          "invoice": {
+            "organizationId": "o",
+            "status": {
+              "not": "CANCELED",
+            },
+          },
+        },
+      },
+    ],
+  ],
+  "organization.findUnique": [
+    [
+      {
+        "select": {
+          "billableRateCents": true,
+          "costRateCents": true,
+          "currency": true,
+        },
+        "where": {
+          "id": "o",
+        },
+      },
+    ],
+  ],
+  "rateHistory.findMany": [
+    [
+      {
+        "select": {
+          "cents": true,
+          "createdAt": true,
+          "effectiveFrom": true,
+          "kind": true,
+          "spaceId": true,
+          "target": true,
+          "targetId": true,
+        },
+        "where": {
+          "OR": [
+            {
+              "target": "ORGANIZATION",
+              "targetId": {
+                "in": [
+                  "o",
+                ],
+              },
+            },
+            {
+              "target": "SPACE",
+              "targetId": {
+                "in": [
+                  "s1",
+                ],
+              },
+            },
+            {
+              "target": "MEMBER",
+              "targetId": {
+                "in": [
+                  "anna",
+                  "mark",
+                ],
+              },
+            },
+            {
+              "target": "ASSIGNMENT",
+              "targetId": {
+                "in": [
+                  "a1",
+                ],
+              },
+            },
+            {
+              "OR": [
+                {
+                  "spaceId": "s1",
+                },
+                {
+                  "spaceId": null,
+                },
+              ],
+              "target": "ROLE",
+              "targetId": {
+                "in": [
+                  "w1",
+                ],
+              },
+            },
+          ],
+          "organizationId": "o",
+        },
+      },
+    ],
+  ],
+  "spaceAssignment.findMany": [
+    [
+      {
+        "select": {
+          "billBy": true,
+          "billRateCents": true,
+          "costRateCents": true,
+          "hoursBasis": true,
+          "id": true,
+          "user": {
+            "select": {
+              "billRateCents": true,
+              "costRateCents": true,
+              "firstName": true,
+              "id": true,
+              "isExternal": true,
+              "lastName": true,
+            },
+          },
+          "userId": true,
+          "workRole": {
+            "select": {
+              "id": true,
+              "kind": true,
+              "name": true,
+            },
+          },
+        },
+        "where": {
+          "organizationId": "o",
+          "spaceId": "s1",
+        },
+      },
+    ],
+  ],
+  "task.findMany": [
+    [
+      {
+        "orderBy": {
+          "updatedAt": "asc",
+        },
+        "select": {
+          "assignedTo": {
+            "select": {
+              "billRateCents": true,
+              "costRateCents": true,
+              "firstName": true,
+              "id": true,
+              "lastName": true,
+            },
+          },
+          "id": true,
+          "serviceReport": {
+            "select": {
+              "completedAt": true,
+              "completedBy": {
+                "select": {
+                  "billRateCents": true,
+                  "costRateCents": true,
+                  "firstName": true,
+                  "id": true,
+                  "lastName": true,
+                },
+              },
+              "id": true,
+              "partsUsed": {
+                "select": {
+                  "name": true,
+                  "partNumber": true,
+                  "quantity": true,
+                  "unitCost": true,
+                },
+              },
+              "summary": true,
+              "workDuration": true,
+              "workPerformed": true,
+            },
+          },
+          "title": true,
+          "updatedAt": true,
+        },
+        "where": {
+          "OR": [
+            {
+              "serviceReport": {
+                "completedAt": {
+                  "gte": 2026-10-01T00:00:00.000Z,
+                  "lte": 2026-10-31T23:59:59.999Z,
+                },
+              },
+            },
+            {
+              "serviceReport": null,
+              "updatedAt": {
+                "gte": 2026-10-01T00:00:00.000Z,
+                "lte": 2026-10-31T23:59:59.999Z,
+              },
+            },
+          ],
+          "organizationId": "o",
+          "spaceId": "s1",
+          "status": {
+            "in": [
+              "COMPLETED",
+              "CLOSED",
+            ],
+          },
+        },
+      },
+    ],
+  ],
+}
+`;
+
+exports[`invoice gather (pinned) a workspace: answer, queries and the site-time step 3`] = `
+{
+  "dayEntries": [
+    {
+      "costCents": null,
+      "days": 1,
+      "workerId": "anna",
+    },
+  ],
+  "hourEntries": [
+    {
+      "costCents": 3000,
+      "hours": 2,
+      "workerId": "anna",
+    },
+  ],
+  "seen": {
+    "assignments": [
+      {
+        "billBy": "BOTH",
+        "billRateCents": null,
+        "costRateCents": null,
+        "hoursBasis": "COUNTED",
+        "id": "a1",
+        "user": {
+          "billRateCents": 9000,
+          "costRateCents": 3000,
+          "firstName": "Anna",
+          "id": "anna",
+          "isExternal": false,
+          "lastName": "X",
+        },
+        "userId": "anna",
+        "workRole": {
+          "id": "w1",
+          "kind": "WORK",
+          "name": "Plumber",
+        },
+      },
+    ],
+    "billByOf": [Function],
+    "billedTasks": Set {
+      "t2",
+    },
+    "book": undefined,
+    "from": "2026-10-01",
+    "jobWorkers": Map {
+      "anna" => "Anna X",
+      "mark" => "Mark X",
+    },
+    "organizationId": "o",
+    "ratesFor": {
+      "billRateCents": 8000,
+      "costRateCents": 3000,
+    },
+    "spaceId": "s1",
+    "to": "2026-10-31",
+    "tz": "Europe/Vienna",
+  },
+  "workDays": [
+    "2026-10-01",
+    "2026-10-02",
+  ],
+}
+`;
+
+exports[`invoice gather (pinned) refuses a missing space, a non-customer space and a missing client 1`] = `
+{
+  "message": "Space not found",
+  "statusCode": 404,
+  "success": false,
+}
+`;
+
+exports[`invoice gather (pinned) refuses a missing space, a non-customer space and a missing client 2`] = `
+{
+  "message": "Our office is not a customer workspace, so it cannot be invoiced",
+  "statusCode": 400,
+  "success": false,
+}
+`;
+
+exports[`invoice gather (pinned) refuses a missing space, a non-customer space and a missing client 3`] = `
+{
+  "message": "Client not found",
+  "statusCode": 404,
+  "success": false,
+}
+`;
+
+exports[`invoice gather (pinned) refuses no source and two sources 1`] = `
+{
+  "message": "Choose a workspace or a client to gather work from",
+  "statusCode": 400,
+  "success": false,
+}
+`;
+
+exports[`invoice gather (pinned) refuses no source and two sources 2`] = `
+{
+  "message": "Gather from a workspace or a client, not both",
+  "statusCode": 400,
+  "success": false,
+}
+`;
+
+exports[`worker statement (pinned) hours, days and no-workspace lines, with the queries asked 1`] = `
+{
+  "data": {
+    "currency": "EUR",
+    "daysBySpace": {
+      "s1": 2,
+      "s2": 2,
+    },
+    "from": "2026-10-01",
+    "lines": [
+      {
+        "amountCents": 7500,
+        "basis": "hours",
+        "fromDay": "2026-10-05",
+        "hours": 3,
+        "jobs": 1,
+        "rateCents": 2500,
+        "rateLevel": "member",
+        "spaceId": null,
+        "spaceName": null,
+        "toDay": "2026-10-05",
+      },
+      {
+        "amountCents": 14000,
+        "basis": "hours",
+        "fromDay": "2026-10-22",
+        "hours": 5,
+        "jobs": 1,
+        "rateCents": 2800,
+        "rateLevel": "member",
+        "spaceId": null,
+        "spaceName": null,
+        "toDay": "2026-10-22",
+      },
+      {
+        "amountCents": 25000,
+        "basis": "hours",
+        "days": 2,
+        "fromDay": "2026-10-06",
+        "hours": 10,
+        "jobs": 1,
+        "rateCents": 2500,
+        "rateLevel": "member",
+        "spaceId": "s2",
+        "spaceName": "Aldi",
+        "toDay": "2026-10-08",
+      },
+      {
+        "amountCents": 20000,
+        "basis": "days",
+        "days": 1,
+        "fromDay": "2026-10-06",
+        "hours": 6,
+        "jobs": 1,
+        "rateCents": 20000,
+        "rateLevel": null,
+        "spaceId": "s2",
+        "spaceName": "Aldi",
+        "toDay": "2026-10-06",
+      },
+      {
+        "amountCents": 22000,
+        "basis": "days",
+        "days": 1,
+        "fromDay": "2026-10-08",
+        "hours": 4,
+        "jobs": 0,
+        "rateCents": 22000,
+        "rateLevel": null,
+        "spaceId": "s2",
+        "spaceName": "Aldi",
+        "toDay": "2026-10-08",
+      },
+      {
+        "amountCents": 23750,
+        "basis": "hours",
+        "days": 2,
+        "fromDay": "2026-10-02",
+        "hours": 9.5,
+        "jobs": 2,
+        "rateCents": 2500,
+        "rateLevel": "member",
+        "spaceId": "s1",
+        "spaceName": "BILLA",
+        "toDay": "2026-10-03",
+      },
+    ],
+    "member": {
+      "id": "mark",
+      "name": "Mark W",
+    },
+    "missingRate": false,
+    "organizationName": "HBC",
+    "to": "2026-10-31",
+    "totalCents": 112250,
+    "totalHours": 27.5,
+  },
+  "success": true,
+}
+`;
+
+exports[`worker statement (pinned) hours, days and no-workspace lines, with the queries asked 2`] = `
+{
+  "organization.findUnique": [
+    [
+      {
+        "select": {
+          "costRateCents": true,
+          "currency": true,
+          "name": true,
+          "timezone": true,
+        },
+        "where": {
+          "id": "o",
+        },
+      },
+    ],
+  ],
+  "rateHistory.findMany": [
+    [
+      {
+        "select": {
+          "cents": true,
+          "createdAt": true,
+          "effectiveFrom": true,
+          "kind": true,
+          "spaceId": true,
+          "target": true,
+          "targetId": true,
+        },
+        "where": {
+          "OR": [
+            {
+              "target": "ORGANIZATION",
+              "targetId": {
+                "in": [
+                  "o",
+                ],
+              },
+            },
+            {
+              "target": "SPACE",
+              "targetId": {
+                "in": [
+                  "s1",
+                  "s2",
+                ],
+              },
+            },
+            {
+              "target": "MEMBER",
+              "targetId": {
+                "in": [
+                  "mark",
+                ],
+              },
+            },
+            {
+              "target": "ASSIGNMENT",
+              "targetId": {
+                "in": [
+                  "a1",
+                  "a2",
+                ],
+              },
+            },
+          ],
+          "organizationId": "o",
+        },
+      },
+    ],
+  ],
+  "spaceAssignment.findMany": [
+    [
+      {
+        "select": {
+          "billBy": true,
+          "costRateCents": true,
+          "id": true,
+          "space": {
+            "select": {
+              "costRateCents": true,
+              "id": true,
+              "name": true,
+              "timezone": true,
+            },
+          },
+          "spaceId": true,
+        },
+        "where": {
+          "organizationId": "o",
+          "userId": "mark",
+        },
+      },
+    ],
+  ],
+  "task.findMany": [
+    [
+      {
+        "orderBy": {
+          "updatedAt": "asc",
+        },
+        "select": {
+          "id": true,
+          "serviceReport": {
+            "select": {
+              "completedAt": true,
+              "workDuration": true,
+            },
+          },
+          "space": {
+            "select": {
+              "costRateCents": true,
+              "id": true,
+              "name": true,
+              "timezone": true,
+            },
+          },
+          "spaceId": true,
+          "updatedAt": true,
+        },
+        "where": {
+          "AND": [
+            {
+              "OR": [
+                {
+                  "serviceReport": {
+                    "completedById": "mark",
+                  },
+                },
+                {
+                  "assignedToId": "mark",
+                  "serviceReport": null,
+                },
+              ],
+            },
+            {
+              "OR": [
+                {
+                  "serviceReport": {
+                    "completedAt": {
+                      "gte": 2026-10-01T00:00:00.000Z,
+                      "lte": 2026-10-31T23:59:59.999Z,
+                    },
+                  },
+                },
+                {
+                  "serviceReport": null,
+                  "updatedAt": {
+                    "gte": 2026-10-01T00:00:00.000Z,
+                    "lte": 2026-10-31T23:59:59.999Z,
+                  },
+                },
+              ],
+            },
+          ],
+          "organizationId": "o",
+          "status": {
+            "in": [
+              "COMPLETED",
+              "CLOSED",
+            ],
+          },
+        },
+      },
+    ],
+  ],
+  "timeEntry.findMany": [
+    [
+      {
+        "select": {
+          "clockInAt": true,
+          "clockOutAt": true,
+          "location": {
+            "select": {
+              "timezone": true,
+            },
+          },
+          "locationId": true,
+          "paidMinutes": true,
+          "totalMinutes": true,
+          "userId": true,
+        },
+        "where": {
+          "approvalStatus": {
+            "not": "REJECTED",
+          },
+          "clockInAt": {
+            "gte": 2026-09-30T00:00:00.000Z,
+            "lte": 2026-11-01T23:59:59.999Z,
+          },
+          "organizationId": "o",
+          "userId": "mark",
+        },
+      },
+    ],
+  ],
+  "user.findFirst": [
+    [
+      {
+        "select": {
+          "costRateCents": true,
+          "firstName": true,
+          "id": true,
+          "isExternal": true,
+          "lastName": true,
+        },
+        "where": {
+          "id": "mark",
+          "organizationId": "o",
+        },
+      },
+    ],
+  ],
+}
+`;
+
+exports[`worker statement (pinned) no period: every time entry, the open-ended task filter 1`] = `
+{
+  "data": {
+    "currency": "EUR",
+    "daysBySpace": {
+      "s1": 2,
+      "s2": 2,
+    },
+    "from": null,
+    "lines": [
+      {
+        "amountCents": 7500,
+        "basis": "hours",
+        "fromDay": "2026-10-05",
+        "hours": 3,
+        "jobs": 1,
+        "rateCents": 2500,
+        "rateLevel": "member",
+        "spaceId": null,
+        "spaceName": null,
+        "toDay": "2026-10-05",
+      },
+      {
+        "amountCents": 14000,
+        "basis": "hours",
+        "fromDay": "2026-10-22",
+        "hours": 5,
+        "jobs": 1,
+        "rateCents": 2800,
+        "rateLevel": "member",
+        "spaceId": null,
+        "spaceName": null,
+        "toDay": "2026-10-22",
+      },
+      {
+        "amountCents": 25000,
+        "basis": "hours",
+        "days": 2,
+        "fromDay": "2026-10-06",
+        "hours": 10,
+        "jobs": 1,
+        "rateCents": 2500,
+        "rateLevel": "member",
+        "spaceId": "s2",
+        "spaceName": "Aldi",
+        "toDay": "2026-10-08",
+      },
+      {
+        "amountCents": 20000,
+        "basis": "days",
+        "days": 1,
+        "fromDay": "2026-10-06",
+        "hours": 6,
+        "jobs": 1,
+        "rateCents": 20000,
+        "rateLevel": null,
+        "spaceId": "s2",
+        "spaceName": "Aldi",
+        "toDay": "2026-10-06",
+      },
+      {
+        "amountCents": 22000,
+        "basis": "days",
+        "days": 1,
+        "fromDay": "2026-10-08",
+        "hours": 4,
+        "jobs": 0,
+        "rateCents": 22000,
+        "rateLevel": null,
+        "spaceId": "s2",
+        "spaceName": "Aldi",
+        "toDay": "2026-10-08",
+      },
+      {
+        "amountCents": 23750,
+        "basis": "hours",
+        "days": 2,
+        "fromDay": "2026-10-02",
+        "hours": 9.5,
+        "jobs": 2,
+        "rateCents": 2500,
+        "rateLevel": "member",
+        "spaceId": "s1",
+        "spaceName": "BILLA",
+        "toDay": "2026-10-03",
+      },
+    ],
+    "member": {
+      "id": "mark",
+      "name": "Mark W",
+    },
+    "missingRate": false,
+    "organizationName": "HBC",
+    "to": null,
+    "totalCents": 112250,
+    "totalHours": 27.5,
+  },
+  "success": true,
+}
+`;
+
+exports[`worker statement (pinned) no period: every time entry, the open-ended task filter 2`] = `
+{
+  "organization.findUnique": [
+    [
+      {
+        "select": {
+          "costRateCents": true,
+          "currency": true,
+          "name": true,
+          "timezone": true,
+        },
+        "where": {
+          "id": "o",
+        },
+      },
+    ],
+  ],
+  "rateHistory.findMany": [
+    [
+      {
+        "select": {
+          "cents": true,
+          "createdAt": true,
+          "effectiveFrom": true,
+          "kind": true,
+          "spaceId": true,
+          "target": true,
+          "targetId": true,
+        },
+        "where": {
+          "OR": [
+            {
+              "target": "ORGANIZATION",
+              "targetId": {
+                "in": [
+                  "o",
+                ],
+              },
+            },
+            {
+              "target": "SPACE",
+              "targetId": {
+                "in": [
+                  "s1",
+                  "s2",
+                ],
+              },
+            },
+            {
+              "target": "MEMBER",
+              "targetId": {
+                "in": [
+                  "mark",
+                ],
+              },
+            },
+            {
+              "target": "ASSIGNMENT",
+              "targetId": {
+                "in": [
+                  "a1",
+                  "a2",
+                ],
+              },
+            },
+          ],
+          "organizationId": "o",
+        },
+      },
+    ],
+  ],
+  "spaceAssignment.findMany": [
+    [
+      {
+        "select": {
+          "billBy": true,
+          "costRateCents": true,
+          "id": true,
+          "space": {
+            "select": {
+              "costRateCents": true,
+              "id": true,
+              "name": true,
+              "timezone": true,
+            },
+          },
+          "spaceId": true,
+        },
+        "where": {
+          "organizationId": "o",
+          "userId": "mark",
+        },
+      },
+    ],
+  ],
+  "task.findMany": [
+    [
+      {
+        "orderBy": {
+          "updatedAt": "asc",
+        },
+        "select": {
+          "id": true,
+          "serviceReport": {
+            "select": {
+              "completedAt": true,
+              "workDuration": true,
+            },
+          },
+          "space": {
+            "select": {
+              "costRateCents": true,
+              "id": true,
+              "name": true,
+              "timezone": true,
+            },
+          },
+          "spaceId": true,
+          "updatedAt": true,
+        },
+        "where": {
+          "AND": [
+            {
+              "OR": [
+                {
+                  "serviceReport": {
+                    "completedById": "mark",
+                  },
+                },
+                {
+                  "assignedToId": "mark",
+                  "serviceReport": null,
+                },
+              ],
+            },
+            {},
+          ],
+          "organizationId": "o",
+          "status": {
+            "in": [
+              "COMPLETED",
+              "CLOSED",
+            ],
+          },
+        },
+      },
+    ],
+  ],
+  "timeEntry.findMany": [
+    [
+      {
+        "select": {
+          "clockInAt": true,
+          "clockOutAt": true,
+          "location": {
+            "select": {
+              "timezone": true,
+            },
+          },
+          "locationId": true,
+          "paidMinutes": true,
+          "totalMinutes": true,
+          "userId": true,
+        },
+        "where": {
+          "approvalStatus": {
+            "not": "REJECTED",
+          },
+          "organizationId": "o",
+          "userId": "mark",
+        },
+      },
+    ],
+  ],
+  "user.findFirst": [
+    [
+      {
+        "select": {
+          "costRateCents": true,
+          "firstName": true,
+          "id": true,
+          "isExternal": true,
+          "lastName": true,
+        },
+        "where": {
+          "id": "mark",
+          "organizationId": "o",
+        },
+      },
+    ],
+  ],
+}
+`;
+
+exports[`worker statement (pinned) refuses a bad period, an unknown member and an external one 1`] = `
+{
+  "message": "The period must be two real days, the first not after the last",
+  "statusCode": 400,
+  "success": false,
+}
+`;
+
+exports[`worker statement (pinned) refuses a bad period, an unknown member and an external one 2`] = `
+{
+  "message": "The period must be two real days, the first not after the last",
+  "statusCode": 400,
+  "success": false,
+}
+`;
+
+exports[`worker statement (pinned) refuses a bad period, an unknown member and an external one 3`] = `
+{
+  "message": "Member not found",
+  "statusCode": 404,
+  "success": false,
+}
+`;
+
+exports[`worker statement (pinned) refuses a bad period, an unknown member and an external one 4`] = `
+{
+  "message": "An external member works for somebody else — there is no statement from us",
+  "statusCode": 400,
+  "success": false,
+}
+`;

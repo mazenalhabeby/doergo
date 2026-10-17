@@ -1,26 +1,23 @@
 import * as SecureStore from 'expo-secure-store';
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
 import {
   ApiError,
-  TRANSPORT_CODES,
   apiEndpoints,
   createApiClient,
   type ApiClient,
-  type CacheRequest,
   type CallArgs,
   type Endpoint,
   type EndpointArgs,
   type EndpointBody,
-  type FetchLike,
   type RefreshResult,
-  type ResponseLike,
 } from '@hbcfield/shared/client';
-import { keepResponse, keptResponse } from './response-cache';
 import { networkErrorText } from './network-error';
-import { resolveApiUrl } from './base-url';
-import { urlEnvironment } from './url-environment';
-import { jwtSubject } from './session-owner';
+import { jwtExpiry, jwtSubject } from './session-owner';
+import { getApiUrl, APP_VERSION, APP_PLATFORM } from './client-build';
+import { notifyObservers } from './response-observers';
+import { type RefreshOutcome, refreshRefusedSession, phoneFetch, phoneMessage, cacheHooks } from './phone-transport';
+export { type RefreshOutcome, refreshRefusedSession, phoneFetch } from './phone-transport';
+export { type ResponseObservation, observeResponses } from './response-observers';
+export { getApiUrl, APP_VERSION, resolveMediaUrl } from './client-build';
 
 /*
   THE PHONE'S API CLIENT — a plug-in of the shared core (`@hbcfield/shared`
@@ -39,81 +36,11 @@ import { jwtSubject } from './session-owner';
 
 export { ApiError };
 
-/**
- * The API's address. ⚠️ A release build only ever gets an https address — see
- * `base-url.ts`, shared with the socket so the two can never disagree again.
- */
-export function getApiUrl(): string {
-  return resolveApiUrl(urlEnvironment());
-}
-
-
-/*
-  Which build this is, sent on every request.
-
-  The server had no way to know what anybody was running. When a crash took out
-  every Play Store user, "who is affected" and "who still needs to update" could
-  not be asked at all, so the only available response was to notify everybody.
-
-  Two headers rather than a parsed user-agent: this is a fact the app knows
-  about itself, and guessing it from a string other libraries also write is how
-  it silently stops being true.
-*/
-export const APP_VERSION: string = Constants.expoConfig?.version ?? '0.0.0';
-const APP_PLATFORM: string = Platform.OS === 'ios' ? 'ios' : 'android';
-
-/**
- * Resolve a media path (e.g. an uploaded avatar `/uploads/avatars/…`) to an
- * absolute URL. React Native's <Image> can't load relative URIs, so uploaded
- * avatars render blank without this. Absolute URLs (http/https, data:) pass
- * through unchanged. The origin is the API host without the `/api/v1` prefix,
- * since static uploads are served from the host root.
- */
-export function resolveMediaUrl(url?: string | null): string | undefined {
-  if (!url) return undefined;
-  if (/^(https?:)?\/\//i.test(url) || url.startsWith('data:')) return url;
-  const origin = getApiUrl().replace(/\/api\/v\d+\/?$/, '');
-  return `${origin}${url.startsWith('/') ? '' : '/'}${url}`;
-}
-
 // Token storage keys
 const ACCESS_TOKEN_KEY = 'hbcfield_access_token';
 const REFRESH_TOKEN_KEY = 'hbcfield_refresh_token';
 /** When the session now on this phone began — see `sessionStartedAt`. */
 const SESSION_STARTED_KEY = 'hbcfield_session_started_at';
-
-// ============================================================================
-// Response observers
-// ============================================================================
-
-/**
- * What every request tells the rest of the app, without the client knowing who
- * listens: the server's clock (the anchor offline timestamps are checked
- * against) and whether the network actually worked (NetInfo alone reports a
- * site Wi-Fi with no internet as "connected").
- *
- * The offline layer subscribes; this file stays free of it.
- */
-export type ResponseObservation =
-  | { kind: 'response'; status: number; serverTime: string | null }
-  | { kind: 'network-error' };
-
-const responseObservers = new Set<(o: ResponseObservation) => void>();
-
-export function observeResponses(cb: (o: ResponseObservation) => void): () => void {
-  responseObservers.add(cb);
-  return () => responseObservers.delete(cb);
-}
-
-function notifyObservers(o: ResponseObservation) {
-  for (const cb of responseObservers) {
-    try {
-      cb(o);
-    } catch {
-      /* an observer must never break a request */
-    }
-  }
-}
 
 // ============================================================================
 // Token Management
@@ -134,6 +61,23 @@ export async function getAccessToken(): Promise<string | null> {
   const token = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
   if (knownOwner === undefined) knownOwner = jwtSubject(token);
   return token;
+}
+
+/**
+ * An access token good for at least `minSeconds` more — refreshed first when the
+ * stored one is about to lapse (one shared refresh). For the live socket: it
+ * reconnects without going through the HTTP client's 401 → refresh path, and
+ * the server cycles every socket the moment its token expires (15 min), so a
+ * reconnect with the stored token was refused and the phone went deaf to live
+ * updates until something else happened to refresh. Mirrors the web's
+ * getFreshAccessToken.
+ */
+export async function getFreshAccessToken(minSeconds = 30): Promise<string | null> {
+  const token = await getAccessToken();
+  const exp = jwtExpiry(token);
+  if (token && exp !== null && exp * 1000 - Date.now() > minSeconds * 1000) return token;
+  const outcome = await refreshSession().catch(() => null);
+  return outcome?.kind === 'refreshed' ? outcome.accessToken : token;
 }
 
 export async function getRefreshToken(): Promise<string | null> {
@@ -237,38 +181,6 @@ export function setUserRefreshedCallback(callback: (user: any) => void) {
   onUserRefreshed = callback;
 }
 
-// ============================================================================
-// Token Refresh
-// ============================================================================
-
-/**
- * What a refresh found out — three answers, because two were one too few.
- *
- * - `refreshed`: a new pair is stored.
- * - `invalid`: the SERVER said no (400/401/403) or there is no refresh token.
- *   The session is over; only this clears the tokens and signs the member out.
- * - `unreachable`: anything else — no network, a timeout, a 429, a 5xx, an
- *   answer that could not be read. Says nothing about the session, so the
- *   tokens stay and the request that needed them fails with a retryable error.
- *
- * ⚠️ It used to be two: a 502 from a restarting gateway or a 429 at shift
- * change was "refresh failed", which cleared the tokens and logged a field
- * worker out mid-shift — losing their clocked-in context to a server blip.
- *
- * The core asks this through `config.refresh` (mapped to its own tri-state);
- * the core makes it single-flight across requests, and so does this function
- * for its direct callers (the biometric unlock, the auth context).
- */
-export type RefreshOutcome =
-  | { kind: 'refreshed'; accessToken: string }
-  | { kind: 'invalid' }
-  | { kind: 'unreachable' };
-
-/** Only these answers from /auth/refresh mean the session itself is no longer valid. */
-export function refreshRefusedSession(status: number): boolean {
-  return status === 400 || status === 401 || status === 403;
-}
-
 let refreshPromise: Promise<RefreshOutcome> | null = null;
 
 /**
@@ -336,69 +248,6 @@ export async function refreshForCore(): Promise<RefreshResult> {
   const outcome = await refreshSession();
   return outcome.kind;
 }
-
-// ============================================================================
-// The transport, the cache, the sentences
-// ============================================================================
-
-/**
- * `fetch`, with one rule the phone has always had: a body that is present but
- * is NOT JSON, on a 2xx or a 5xx, is no answer at all.
- *
- * A 502/503 page from the proxy while the gateway restarts, or a captive
- * portal's HTML on a site Wi-Fi, is the network failing, not the server
- * deciding — so the member keeps the kept answers and the outbox tries again
- * later, exactly as before the client moved onto the shared core (which would
- * read a 502 page as a refusal). 4xx answers are decisions whatever their body.
- */
-export const phoneFetch: FetchLike = async (url, init) => {
-  const fetchImpl = (globalThis as { fetch?: FetchLike }).fetch;
-  if (typeof fetchImpl !== 'function') throw new TypeError('Network request failed');
-  const res = await fetchImpl(url, init);
-  if (res.status === 204 || res.status === 205) return res;
-  if (res.status >= 300 && res.status < 500) return res;
-  if (typeof (res as Partial<ResponseLike>).text !== 'function') return res;
-  const text = await res.text();
-  if (text.trim()) {
-    try {
-      JSON.parse(text);
-    } catch {
-      throw new TypeError('Network request failed');
-    }
-  }
-  const replay: ResponseLike = { status: res.status, ok: res.ok, headers: res.headers, text: async () => text };
-  return replay;
-};
-
-/**
- * The phone's sentences for refusals, kept as they were: a 401 that the
- * refresh could not save is "Session expired" (the auth context ends the
- * session; the root handler stays quiet about it), any other 401 — a wrong
- * password — is "Authentication failed", a 429 is "Too many requests".
- */
-function phoneMessage(e: ApiError): void {
-  if (e.kind !== 'http') return;
-  let text: string | null = null;
-  if (e.status === 401) text = e.code === TRANSPORT_CODES.sessionEnded ? 'Session expired' : 'Authentication failed';
-  else if (e.status === 429) text = 'Too many requests. Please wait.';
-  if (text) {
-    try {
-      (e as { message: string }).message = text;
-    } catch {
-      /* a frozen error keeps the core's sentence */
-    }
-  }
-}
-
-/**
- * The cache hooks. The endpoint's own verdict (`endpoint({ keep })` in the
- * shared table) decides first; a path the table has not marked falls back to
- * the phone's allow-list (response-cache.ts).
- */
-const cacheHooks = {
-  read: (req: CacheRequest) => keptResponse(req.path, req.keep),
-  write: (req: CacheRequest, data: unknown) => keepResponse(req.path, data, req.keep),
-};
 
 // ============================================================================
 // The client

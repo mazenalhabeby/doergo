@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from "fs"
 import { join } from "path"
+import { readSource } from "../test-utils/read-source"
 
 /**
  * Nothing a dialog collects may be thrown away.
@@ -105,7 +106,7 @@ describe.each(DIALOGS.map((d) => [d.name, d] as [string, DialogUnderTest]))(
         ? readdirSync(join(__dirname, "..", dialog.dir)).sort().map((f) => `${dialog.dir}/${f}`)
         : []),
     ]
-      .map((p) => readFileSync(join(__dirname, "..", p), "utf8"))
+      .map((p) => readSource(join(__dirname, "..", p), "utf8"))
       .join("\n")
     const stateNames = [
       ...new Set([...SRC.matchAll(/const \[(\w+), set\w+\] = useState/g)].map((m) => m[1])),

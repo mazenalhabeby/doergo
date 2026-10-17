@@ -4,6 +4,7 @@
  * after the OTA lands — once, in order, and the disk holds no plaintext after.
  */
 import { webcrypto } from 'crypto';
+import { readSource } from '../../test-utils/read-source';
 import { createSecureBuffer, ENVELOPE, type KeyVault, type PlainStorage } from '../secure-buffer';
 import { createRouteBuffer, PENDING_PREFIX, type PendingBurst } from '../../services/route-buffer';
 import { checkInBufferKey, createCheckInBuffer, type KeptCheckIn } from '../../services/check-in-buffer';
@@ -14,9 +15,16 @@ function disk() {
     data,
     writes: [],
     getItem: async (k) => data.get(k) ?? null,
-    setItem: async (k, v) => { data.set(k, v); storage.writes.push(k); },
-    removeItem: async (k) => { data.delete(k); },
-    multiRemove: async (ks) => { ks.forEach((k) => data.delete(k)); },
+    setItem: async (k, v) => {
+      data.set(k, v);
+      storage.writes.push(k);
+    },
+    removeItem: async (k) => {
+      data.delete(k);
+    },
+    multiRemove: async (ks) => {
+      ks.forEach((k) => data.delete(k));
+    },
     getAllKeys: async () => [...data.keys()],
   };
   return storage;
@@ -25,19 +33,33 @@ function vault() {
   const data = new Map<string, string>();
   let down = false;
   const v: KeyVault & { down(on: boolean): void } = {
-    down: (on) => { down = on; },
-    get: async (n) => { if (down) throw new Error('locked'); return data.get(n) ?? null; },
-    set: async (n, x) => { if (down) throw new Error('locked'); data.set(n, x); },
-    remove: async (n) => { data.delete(n); },
+    down: (on) => {
+      down = on;
+    },
+    get: async (n) => {
+      if (down) throw new Error('locked');
+      return data.get(n) ?? null;
+    },
+    set: async (n, x) => {
+      if (down) throw new Error('locked');
+      data.set(n, x);
+    },
+    remove: async (n) => {
+      data.delete(n);
+    },
   };
   return v;
 }
 const random = (n: number) => webcrypto.getRandomValues(new Uint8Array(n));
 
 const T0 = Date.parse('2026-10-10T06:00:00Z');
-const pts = (n: number, from = 0) => Array.from({ length: n }, (_, i) => ({
-  lat: 47.98 + (from + i) * 0.0002, lng: 13.82, accuracy: 5, timestamp: new Date(T0 + (from + i) * 5000).toISOString(),
-}));
+const pts = (n: number, from = 0) =>
+  Array.from({ length: n }, (_, i) => ({
+    lat: 47.98 + (from + i) * 0.0002,
+    lng: 13.82,
+    accuracy: 5,
+    timestamp: new Date(T0 + (from + i) * 5000).toISOString(),
+  }));
 
 /** Exactly what the version before this one left on disk: a 200-point chunk layout AND the even older single value. */
 function oldRouteLayout(storage: ReturnType<typeof disk>, owner = 'mike') {
@@ -45,18 +67,28 @@ function oldRouteLayout(storage: ReturnType<typeof disk>, owner = 'mike') {
   storage.data.set(p, JSON.stringify([{ taskId: 't', points: pts(3, 0) }]));
   storage.data.set(`${p}:a`, JSON.stringify({ taskId: 't', points: pts(200, 3) }));
   storage.data.set(`${p}:b`, JSON.stringify({ taskId: 't', points: pts(120, 203) }));
-  storage.data.set(`${p}:index`, JSON.stringify([
-    { id: 'a', n: 200, taskId: 't', oldest: T0 + 15_000, newest: T0 + 202 * 5000 },
-    { id: 'b', n: 120, taskId: 't', oldest: T0 + 203 * 5000, newest: T0 + 322 * 5000 },
-  ]));
+  storage.data.set(
+    `${p}:index`,
+    JSON.stringify([
+      { id: 'a', n: 200, taskId: 't', oldest: T0 + 15_000, newest: T0 + 202 * 5000 },
+      { id: 'b', n: 120, taskId: 't', oldest: T0 + 203 * 5000, newest: T0 + 322 * 5000 },
+    ]),
+  );
 }
 
 function routeSetup(storage: ReturnType<typeof disk>, v: ReturnType<typeof vault>) {
   const sb = createSecureBuffer({ storage, vault: () => v, randomBytes: random });
-  const store = (owner: string) => sb.storageFor(owner, 'route', (all) =>
-    all.filter((k) => k === `${PENDING_PREFIX}:${owner}` || k.startsWith(`${PENDING_PREFIX}:${owner}:`)));
+  const store = (owner: string) =>
+    sb.storageFor(owner, 'route', (all) =>
+      all.filter((k) => k === `${PENDING_PREFIX}:${owner}` || k.startsWith(`${PENDING_PREFIX}:${owner}:`)),
+    );
   let n = 0;
-  const buf = createRouteBuffer(store, { maxPoints: 5000, maxAgeMs: 48 * 3600_000, now: () => T0 + 3600_000, newId: () => `n${n++}` });
+  const buf = createRouteBuffer(store, {
+    maxPoints: 5000,
+    maxAgeMs: 48 * 3600_000,
+    now: () => T0 + 3600_000,
+    newId: () => `n${n++}`,
+  });
   return { sb, buf };
 }
 
@@ -78,7 +110,16 @@ describe('route points held across the update', () => {
     expect(storage.data.get(`${PENDING_PREFIX}:karim:index`)).toBe('[]');
 
     const sent: PendingBurst[] = [];
-    expect(await buf.drain('mike', async (b) => { sent.push(b); return []; }, 500)).toBe(true);
+    expect(
+      await buf.drain(
+        'mike',
+        async (b) => {
+          sent.push(b);
+          return [];
+        },
+        500,
+      ),
+    ).toBe(true);
     const stamps = sent.flatMap((b) => b.points).map((p) => p.timestamp);
     expect(stamps).toEqual(pts(323).map((p) => p.timestamp));
     expect([...storage.data.keys()].filter((k) => k.startsWith(`${PENDING_PREFIX}:mike`))).toEqual([]);
@@ -114,7 +155,13 @@ describe('route points held across the update', () => {
     // A burst arriving now cannot be sealed — it is refused, and the held points are NOT written over.
     await locked.append('mike', [{ taskId: 't', points: pts(5, 323) }]);
     expect(plaintextLeft(storage, `${PENDING_PREFIX}:mike`).sort()).toEqual(
-      [`${PENDING_PREFIX}:mike`, `${PENDING_PREFIX}:mike:a`, `${PENDING_PREFIX}:mike:b`, `${PENDING_PREFIX}:mike:index`].sort());
+      [
+        `${PENDING_PREFIX}:mike`,
+        `${PENDING_PREFIX}:mike:a`,
+        `${PENDING_PREFIX}:mike:b`,
+        `${PENDING_PREFIX}:mike:index`,
+      ].sort(),
+    );
     v.down(false);
     const later = routeSetup(storage, v).buf;
     expect(await later.count('mike')).toBe(323);
@@ -129,15 +176,22 @@ describe('kept check-ins held across the update', () => {
     const storage = disk();
     const v = vault();
     const sb = createSecureBuffer({ storage, vault: () => v, randomBytes: random });
-    const old: KeptCheckIn[] = [{ lat: 47.98, lng: 13.82, recordedAt: at(30) }, { lat: 47.99, lng: 13.83, recordedAt: at(20) }];
+    const old: KeptCheckIn[] = [
+      { lat: 47.98, lng: 13.82, recordedAt: at(30) },
+      { lat: 47.99, lng: 13.83, recordedAt: at(20) },
+    ];
     storage.data.set(checkInBufferKey('mike'), JSON.stringify(old));
     const sent: KeptCheckIn[][] = [];
     let online = false;
     const buf = createCheckInBuffer({
       storage,
-      storageFor: (owner) => sb.storageFor(owner, 'check-ins', (all) => all.filter((k) => k === checkInBufferKey(owner))),
+      storageFor: (owner) =>
+        sb.storageFor(owner, 'check-ins', (all) => all.filter((k) => k === checkInBufferKey(owner))),
       owner: async () => 'mike',
-      send: async (p) => { if (!online) throw new Error('offline'); sent.push(p); },
+      send: async (p) => {
+        if (!online) throw new Error('offline');
+        sent.push(p);
+      },
       isUnreachable: () => true,
     });
 
@@ -162,7 +216,11 @@ describe('every per-person buffer outside the database is sealed', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const path = require('path') as typeof import('path');
   const SRC = path.resolve(__dirname, '../..');
-  const code = (p: string) => fs.readFileSync(path.join(SRC, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  // A split file reads with the parts moved out of it (test-utils/read-source.ts).
+  const code = (p: string) =>
+    readSource(path.join(SRC, p), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|[^:])\/\/.*$/gm, '$1');
   const STORES: Record<string, string> = {
     'services/background-route-tracking.ts': 'route points + the last point',
     'services/kept-check-ins.ts': 'kept GPS check-ins',

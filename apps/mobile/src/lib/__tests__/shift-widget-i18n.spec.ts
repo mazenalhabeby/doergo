@@ -9,6 +9,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { SHIFT_CARD_FILES } from './shift-card-files';
+import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;
@@ -23,10 +24,10 @@ function flat(o: Record<string, unknown>, p = '', out: Record<string, string> = 
   return out;
 }
 const catalogue = Object.fromEntries(
-  LOCALES.map((l) => [l, flat(JSON.parse(fs.readFileSync(path.join(SRC, `i18n/locales/${l}.json`), 'utf8')))]),
+  LOCALES.map((l) => [l, flat(JSON.parse(readSource(path.join(SRC, `i18n/locales/${l}.json`), 'utf8')))]),
 ) as Record<(typeof LOCALES)[number], Record<string, string>>;
 
-const card = SHIFT_CARD_FILES.map((f) => fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
+const card = SHIFT_CARD_FILES.map((f) => readSource(path.join(SRC, f), 'utf8')).join('\n');
 /** `t('a.b', { count … })` → keys, and whether they are plural. */
 const calls = [...card.matchAll(/\bt\(\s*[`'"]([a-zA-Z0-9_.]+)[`'"]\s*(,\s*\{([\s\S]*?)\})?\s*\)/g)].map((m) => ({
   key: m[1],
@@ -87,7 +88,7 @@ describe('never "paid" (rule 4)', () => {
 
   it('no English fallback in the card\'s own source says it', () => {
     for (const f of CARD_FILES) {
-      const strings = [...fs.readFileSync(path.join(SRC, f), 'utf8')
+      const strings = [...readSource(path.join(SRC, f), 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
         .matchAll(/(['"`])((?:(?!\1)[^\\]|\\.)*)\1/g)].map((m) => m[2]);
       expect({ f, hits: strings.filter((s) => PAID.test(s)) }).toEqual({ f, hits: [] });

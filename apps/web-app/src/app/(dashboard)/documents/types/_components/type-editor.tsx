@@ -12,6 +12,10 @@ import { useTypeEditor } from "../_hooks/use-type-editor"
 import { DIRECTION_ICON } from "./direction-icon"
 import { Step, Field, Choice, Toggle, Locked } from "./editor-parts"
 import { RouteEditor } from "./route-editor"
+import { useTypeEditorLogic } from "./use-type-editor-logic"
+import { TypeEditorTypes } from "./type-editor-types"
+import { TypeEditorTypes2 } from "./type-editor-types2"
+import { TypeEditorTypes3 } from "./type-editor-types3"
 
 export function TypeEditor({
   type, starter, existingKeys, workflows, roles, onClose,
@@ -23,19 +27,47 @@ export function TypeEditor({
   roles: { id: string; name: string }[]
   onClose: () => void
 }) {
-  const { t } = useTranslation()
+  const vm = useTypeEditorLogic({ type, starter, existingKeys, workflows, roles, onClose })
   const {
-    isNew, key, keyTaken, save, canSave,
-    label, setLabel, description, setDescription,
-    direction, setDirection, cadence, setCadence,
-    signatureMode, setSignatureMode,
-    isCredential, setIsCredential, hasExpiry, setHasExpiry,
-    gates, setGates,
-    requiredFromAll, setRequiredFromAll, requiredFromRoleIds, setRequiredFromRoleIds,
-    visibleToRoleIds, setVisibleToRoleIds,
-    twoSided, setTwoSided, multiPage, setMultiPage, scanShape, setScanShape,
-    route, setRoute, retentionMonths, setRetentionMonths,
-  } = useTypeEditor({ type, starter, existingKeys, onClose })
+    t,
+    isNew,
+    key,
+    keyTaken,
+    save,
+    canSave,
+    label,
+    setLabel,
+    description,
+    setDescription,
+    direction,
+    setDirection,
+    cadence,
+    setCadence,
+    signatureMode,
+    setSignatureMode,
+    isCredential,
+    setIsCredential,
+    hasExpiry,
+    setHasExpiry,
+    gates,
+    setGates,
+    requiredFromAll,
+    setRequiredFromAll,
+    requiredFromRoleIds,
+    setRequiredFromRoleIds,
+    visibleToRoleIds,
+    setVisibleToRoleIds,
+    twoSided,
+    setTwoSided,
+    multiPage,
+    setMultiPage,
+    scanShape,
+    setScanShape,
+    route,
+    setRoute,
+    retentionMonths,
+    setRetentionMonths,
+  } = vm
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
@@ -70,80 +102,7 @@ export function TypeEditor({
           </div>
         </Step>
 
-        <Step n={2} title={t("documents.types.step2")}>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {DIRECTIONS.map((d) => (
-              <Choice
-                key={d}
-                selected={direction === d}
-                disabled={!isNew}
-                onClick={() => setDirection(d)}
-                Icon={DIRECTION_ICON[d]}
-                title={t(`documents.types.direction.${d.toLowerCase()}`)}
-                hint={t(`documents.types.directionHint.${d.toLowerCase()}`)}
-              />
-            ))}
-          </div>
-          {!isNew && <Locked>{t("documents.types.directionLocked")}</Locked>}
-
-          {/* Which sides to photograph. A property of the document itself:
-              European ID cards and licences carry the machine-readable zone on
-              the back, a passport carries it on the photo page, and a paper
-              certificate has nothing on its reverse. */}
-          {direction !== "ISSUED" && (
-            <div className="mt-3 space-y-3">
-              {/*
-                The frame the scanner draws. Not decoration: a document held to
-                fit the wrong frame sits further from the lens, and how many
-                pixels the machine-readable zone occupies is what decides
-                whether it can be read at all.
-              */}
-              <div>
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {t("documents.types.scanShape")}
-                </p>
-                <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
-                  {t("documents.types.scanShapeHint")}
-                </p>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {(["CARD", "PASSPORT", "PAGE"] as const).map((sh) => (
-                    <Choice
-                      key={sh}
-                      selected={scanShape === sh}
-                      onClick={() => setScanShape(sh)}
-                      Icon={sh === "PAGE" ? FileText : CreditCard}
-                      title={t(`documents.types.shapes.${sh}.name`)}
-                      hint={t(`documents.types.shapes.${sh}.hint`)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <Toggle
-                checked={twoSided}
-                onChange={(v) => { setTwoSided(v); if (v) setMultiPage(false) }}
-                title={t("documents.types.twoSided")}
-                hint={t("documents.types.twoSidedHint")}
-              />
-
-              {/*
-                Paper, not a card. Turning this on turns two-sided off: the
-                server refuses both together, and a form that lets somebody save
-                a rejected combination has wasted their time to no purpose.
-
-                It also switches OFF the scanner on the phone — no frame, no
-                machine-readable zone, no expiry prompt — which is the whole
-                point for a hotel invoice or a flight confirmation.
-              */}
-              <Toggle
-                checked={multiPage}
-                onChange={(v) => { setMultiPage(v); if (v) setTwoSided(false) }}
-                title={t("documents.types.multiPage")}
-                hint={t("documents.types.multiPageHint")}
-              />
-            </div>
-          )}
-        </Step>
+        <TypeEditorTypes vm={vm} />
 
         <Step n={3} title={t("documents.types.step3")}>
           <div className="grid gap-2 sm:grid-cols-3">
@@ -162,71 +121,7 @@ export function TypeEditor({
           {!isNew && <Locked>{t("documents.types.cadenceLocked")}</Locked>}
         </Step>
 
-        <Step n={4} title={t("documents.types.step4")}>
-          <Toggle
-            checked={isCredential}
-            onChange={(v) => {
-              setIsCredential(v)
-              // A certificate that does not expire is legitimate, but the
-              // common case by far is one that does.
-              if (v && !hasExpiry) setHasExpiry(true)
-              if (!v) setGates([])
-            }}
-            title={t("documents.types.isCredential")}
-            hint={t("documents.types.isCredentialHint")}
-          />
-
-          {isCredential && (
-            <div className="mt-3 space-y-3 border-l-2 border-amber-300 pl-4 dark:border-amber-800">
-              <Toggle
-                checked={hasExpiry}
-                onChange={setHasExpiry}
-                title={t("documents.types.hasExpiry")}
-                hint={t("documents.types.hasExpiryHint")}
-              />
-
-              <div>
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {t("documents.types.gates")}
-                </p>
-                <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
-                  {t("documents.types.gatesHint")}
-                </p>
-                {workflows.length === 0 ? (
-                  <p className="text-sm text-slate-400">{t("documents.types.noTaskTypes")}</p>
-                ) : (
-                  <div className="flex flex-wrap gap-1.5">
-                    {workflows.map((w) => {
-                      const on = gates.includes(w.id)
-                      return (
-                        <button
-                          key={w.id}
-                          onClick={() => setGates((g) =>
-                            on ? g.filter((x) => x !== w.id) : [...g, w.id],
-                          )}
-                          className={cn(
-                            "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
-                            on
-                              ? "border-amber-400 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300"
-                              : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400",
-                          )}
-                        >
-                          {w.name}
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-                {gates.length > 0 && (
-                  <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
-                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    {t("documents.types.gatesWarning", { count: gates.length })}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </Step>
+        <TypeEditorTypes2 vm={vm} workflows={workflows} />
 
         {/*
           Only for what the member provides. "Do we require this from people?"
@@ -234,65 +129,7 @@ export function TypeEditor({
           an employee to produce one is not a requirement, it is a category
           error. The server refuses it too.
         */}
-        {direction !== "ISSUED" && (
-          <Step n={5} title={t("documents.types.stepRequired")}>
-            <Toggle
-              checked={requiredFromAll || requiredFromRoleIds.length > 0}
-              onChange={(v) => {
-                setRequiredFromAll(v)
-                if (!v) setRequiredFromRoleIds([])
-              }}
-              title={t("documents.types.isRequired")}
-              hint={t("documents.types.isRequiredHint")}
-            />
-
-            {(requiredFromAll || requiredFromRoleIds.length > 0) && (
-              <div className="mt-3 space-y-2 border-l-2 border-blue-300 pl-4 dark:border-blue-800">
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {t("documents.types.requiredFromWho")}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => { setRequiredFromAll(true); setRequiredFromRoleIds([]) }}
-                    className={cn(
-                      "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
-                      requiredFromAll
-                        ? "border-blue-400 bg-blue-100 text-blue-800 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                        : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400",
-                    )}
-                  >
-                    {t("documents.types.everyone")}
-                  </button>
-                  {roles.map((r) => {
-                    const on = !requiredFromAll && requiredFromRoleIds.includes(r.id)
-                    return (
-                      <button
-                        key={r.id}
-                        onClick={() => {
-                          setRequiredFromAll(false)
-                          setRequiredFromRoleIds((ids) =>
-                            ids.includes(r.id) ? ids.filter((x) => x !== r.id) : [...ids, r.id],
-                          )
-                        }}
-                        className={cn(
-                          "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
-                          on
-                            ? "border-blue-400 bg-blue-100 text-blue-800 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                            : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400",
-                        )}
-                      >
-                        {r.name}
-                      </button>
-                    )
-                  })}
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {t("documents.types.requiredNote")}
-                </p>
-              </div>
-            )}
-          </Step>
-        )}
+        <TypeEditorTypes3 vm={vm} roles={roles} />
 
         {/*
           Who may see it.

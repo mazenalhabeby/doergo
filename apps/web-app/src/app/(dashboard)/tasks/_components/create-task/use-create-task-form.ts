@@ -1,69 +1,29 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
-import { useAssignableMembers } from "@/hooks/use-assignable-members"
-import { useQuery } from "@tanstack/react-query"
 
 import { useAuth } from "@/contexts/auth-context"
-import { useSpaceModules, useSpaceModulesQuery } from "@/hooks/use-space-modules"
-import {
-  phasesApi,
-  sprintsApi,
-  epicsApi,
-  customFieldsApi,
-  locationsApi,
-  type Phase,
-  type Sprint,
-  type RecurringFrequency,
-  workflowsApi,
-} from "@/lib/api"
-import { byAssignableFirst, todayKey } from "@hbcfield/shared/client"
-import { useOrgWorkflow } from "@/hooks/use-org-workflow"
-import { type RoleAssignValue } from "../role-assign-field"
-import { useWorkspaceWorkRoles } from "@/hooks/use-workspace-work-roles"
+import { useSpaceModulesQuery } from "@/hooks/use-space-modules"
 import { useTaskAttachments } from "./use-task-attachments"
 import { useVisitClient } from "./use-visit-client"
 import { useCreateTaskSubmit } from "./use-create-task-submit"
-
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
-export interface CreateTaskDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  defaultSprintId?: string | null
-  defaultSpaceId?: string | null
-  /** Link the new task to a CRM customer (locks the space to the customer's). */
-  defaultCustomerId?: string | null
-  /** Opened from the calendar: the day (and hour, when not midnight) that was tapped. */
-  defaultDueDate?: Date | null
-}
-
-// ---------------------------------------------------------------------------
-// CreateTaskDialog
-// ---------------------------------------------------------------------------
-/**
- * What the assignee picker actually needs from a person.
- *
- * Both sources supply it — a space roster entry and an organization member —
- * and naming the shape keeps that union honest rather than casting the narrower
- * one to the wider.
- */
-export type AssigneeOption = {
-  id: string
-  firstName?: string
-  lastName?: string
-  enabledModules?: unknown
-}
+import { useCreateTaskLists } from "./use-create-task-lists"
+import { createTaskIndicators } from "./create-task-indicators"
+import { useCreateTaskType, useSpaceTaskType } from "./use-create-task-type"
+import { useCreateTaskAssignment } from "./use-create-task-assignment"
+import type { CreateTaskDialogProps } from "./create-task-types"
+export type { CreateTaskDialogProps, AssigneeOption } from "./create-task-types"
+import { useRepeatState, useTaskSpaces } from "./create-task-sections"
 
 /**
  * Everything the New Task dialog holds, loads and submits. The dialog and its
  * sections (this folder) only render it.
  */
-export function useCreateTaskForm({ open, onOpenChange, defaultSprintId, defaultSpaceId, defaultCustomerId, defaultDueDate }: CreateTaskDialogProps) {
+export function useCreateTaskForm({
+  open, onOpenChange, defaultSprintId, defaultSpaceId, defaultCustomerId, defaultDueDate,
+}: CreateTaskDialogProps) {
   const { t } = useTranslation()
   const { user, hasModule: orgHasModule, hasPlanFeature, hasPermission } = useAuth()
   const canRecur = hasPlanFeature("recurring") // Recurring tasks = Professional+
@@ -71,43 +31,9 @@ export function useCreateTaskForm({ open, onOpenChange, defaultSprintId, default
   // ── Space state ──
   const [spaceId, setSpaceId] = useState<string>("none")
 
-  // ── Task Type (workflow) — "inherit" = use the space's default; otherwise the
-  // task carries its own flow so one space can hold tasks of different types. ──
-  const [workflowId, setWorkflowId] = useState<string>("inherit")
-  const { workflows: orgWorkflows } = useOrgWorkflow()
-
-  /*
-    The task types THIS space offers — not every type the organization owns.
-
-    A space chooses its own set now, and the server refuses a type the space
-    does not offer, so listing them all would present choices that fail on
-    submit. Falls back to the organization's list when no space is picked yet,
-    or when a space has no offerings of its own (it still runs on the legacy
-    single default).
-  */
-  const { data: spaceWorkflows } = useQuery({
-    queryKey: keys.spaces.workflows(spaceId),
-    queryFn: () => workflowsApi.listForSpace(spaceId),
-    enabled: open && !!spaceId && spaceId !== "none",
-  })
-  const workflows: { id: string; name: string }[] = spaceWorkflows?.length ? spaceWorkflows : orgWorkflows
-
-  // ── Space-aware module resolution ──
-  const { hasModule: spaceHasModule } = useSpaceModules(spaceId !== "none" ? spaceId : null)
-  const hasModule = spaceId !== "none" ? spaceHasModule : orgHasModule
-  /*
-    ⚠️ This asked `hasPlanFeature` with a module key, and custom fields are a
-    MODULE, not an Option.
-
-    `hasPlanFeature` opens with `if (!isAddOn(feature)) return false`, so it
-    answered NO for every organization — including the ones with the module
-    switched on and being billed €6 a workspace for it. Custom fields never
-    appeared in this dialog for anybody, and nothing said why.
-
-    `hasModule` is the right question, and it is the per-SPACE one when a
-    workspace is chosen (line above) — which is how the module is sold.
-  */
-  const canCustomFields = hasModule("custom_fields")
+  // ── Task Type (workflow) and the modules it runs with (use-create-task-type.ts) ──
+  const { workflowId, setWorkflowId, orgWorkflows, workflows, hasModule, canCustomFields } =
+    useCreateTaskType({ open, spaceId, orgHasModule })
 
   // ── Core form state ──
   const [title, setTitle] = useState("")
@@ -133,16 +59,11 @@ export function useCreateTaskForm({ open, onOpenChange, defaultSprintId, default
 
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
 
-  // ── Repeat (recurring) section ──
-  const [isRecurring, setIsRecurring] = useState(false)
-  const [frequency, setFrequency] = useState<RecurringFrequency>("WEEKLY")
-  const [customDays, setCustomDays] = useState<number>(7)
-  const [dayOfWeek, setDayOfWeek] = useState<number>(1)
-  const [dayOfMonth, setDayOfMonth] = useState<number>(1)
-  const [recurStart, setRecurStart] = useState<string>(
-    () => todayKey(),
-  )
-  const [recurEnd, setRecurEnd] = useState<string>("")
+  // ── Repeat (recurring) section (create-task-sections.ts) ──
+  const {
+    isRecurring, setIsRecurring, frequency, setFrequency, customDays, setCustomDays, dayOfWeek, setDayOfWeek,
+    dayOfMonth, setDayOfMonth, recurStart, setRecurStart, recurEnd, setRecurEnd,
+  } = useRepeatState()
   const [estimatedHours, setEstimatedHours] = useState("")
 
   /*
@@ -224,135 +145,17 @@ export function useCreateTaskForm({ open, onOpenChange, defaultSprintId, default
     }
   }, [open])
 
-  // ── Fetch custom fields ──
-  const { data: customFields } = useQuery({
-    queryKey: keys.customFields.definitions(),
-    queryFn: () => customFieldsApi.listDefinitions(),
-    staleTime: 120000,
-    retry: 1,
-    enabled: open,
-  })
-  const activeCustomFields = useMemo(
-    () => (customFields || []).filter((f) => f.isActive),
-    [customFields],
-  )
+  // ── Custom fields, phases, sprints, epics (use-create-task-lists.ts) ──
+  const { activeCustomFields, phases, sprints, fetchedEpics } = useCreateTaskLists(open)
 
-  // ── Fetch phases and sprints ──
-  const { data: phases } = useQuery({
-    queryKey: keys.phases.lists(),
-    queryFn: () => phasesApi.list(),
-    staleTime: 60000,
-    enabled: open,
-  })
+  // ── Who it is for: people or a work role (use-create-task-assignment.ts) ──
+  const {
+    assigneeIds, setAssigneeIds, assignMode, setAssignMode, openRole, setOpenRole,
+    isSelfScope, showAssigneePicker, roleModeAvailable, members,
+  } = useCreateTaskAssignment({ open, user, hasPermission, spaceId, isRecurring })
 
-  const { data: sprints } = useQuery({
-    queryKey: keys.sprints.lists(),
-    queryFn: () => sprintsApi.list(),
-    staleTime: 60000,
-    enabled: open,
-  })
-
-  // ── Fetch epics ──
-  const { data: fetchedEpics } = useQuery({
-    queryKey: keys.epics.lists(),
-    queryFn: () => epicsApi.list(),
-    staleTime: 60000,
-    enabled: open,
-  })
-
-  /*
-    Who the task is being assigned to.
-
-    The picker below had no `value` and no `onValueChange` — an uncontrolled
-    Select that stored nothing. You chose a member, the dialog forgot it, and
-    the task was created unassigned, so the only way to assign anyone was to
-    open the task afterwards and do it again.
-  */
-  const [assigneeIds, setAssigneeIds] = useState<string[]>([])
-  /*
-    People, or a work role (shared tasks/role-pool.ts): "a Mechanic" instead of
-    "Ahmad". Only inside a workspace — a role is a fact about a workspace — and
-    only for a one-off task.
-  */
-  const [assignMode, setAssignMode] = useState<"people" | "role">("people")
-  const [openRole, setOpenRole] = useState<RoleAssignValue>({ roleId: null, spots: 1 })
-
-  // ── Fetch members for assignee picker ──
-  const taskCreationScope = user?.taskCreationScope || "NONE"
-  const isSelfScope = taskCreationScope === "SELF"
-  /*
-    Creating is not assigning.
-
-    Both are needed to offer this control. A creation scope of SPACE says WHERE
-    somebody may open a task, not that they may hand it to anyone — an External
-    Observer holds `canCreateTasks` through a space role, which resolves to
-    SPACE, and would have been shown a picker whose value the server strips.
-
-    `hasPermission` is space-aware, matching what the create route accepts.
-  */
-  const canAssign = user?.role === "ADMIN" || hasPermission("canAssignTasks")
-  const showAssigneePicker =
-    canAssign && (taskCreationScope === "SPACE" || taskCreationScope === "ORG")
-  // A role belongs to a workspace and a one-off task — and only where that workspace HAS work roles.
-  const roleCandidate = showAssigneePicker && spaceId !== "none" && !isRecurring
-  const { hasRoles: spaceHasRoles } = useWorkspaceWorkRoles(spaceId !== "none" ? spaceId : null, roleCandidate)
-  const roleModeAvailable = roleCandidate && spaceHasRoles
-  // A role is a fact about ONE workspace: another workspace starts the choice again.
-  useEffect(() => { setOpenRole((r) => (r.roleId ? { ...r, roleId: null } : r)) }, [spaceId])
-
-  /*
-    Who can be given this work.
-
-    The WORKSPACE's roster when one is chosen, and the organization directory
-    only when none is. Two reasons, and the first is why the picker came up
-    empty for a site supervisor:
-
-      • `GET /organizations/members` is `@RequirePermission('canManageUsers')`
-        — a permission an external member can never hold, and a space-scoped
-        manager holds org-wide only if somebody made them an admin. The request
-        403s, the list renders empty, and the dialog offers a control that
-        cannot be used. `GET /locations/:id/members` needs no permission: it is
-        a space's own roster, org-scoped in the service.
-
-      • It is the better answer anyway. Work at a site goes to the people at
-        that site, and the roster is a handful of rows rather than a directory
-        truncated at fifty — beyond which a member simply could not be picked.
-  */
-  // "none" is this dialog's unset sentinel, not an empty string.
-  const hasSpace = !!spaceId && spaceId !== "none"
-  // No workspace chosen: the directory for whoever may read it, otherwise the
-  // rosters of the workspaces this person can see (lib/assignable-members.ts).
-  const { members: assignable } = useAssignableMembers({
-    spaceId: hasSpace ? spaceId : null,
-    rosterOnly: true,
-    enabled: open && showAssigneePicker,
-  })
-  const members: AssigneeOption[] = useMemo(
-    () => [...assignable].sort(byAssignableFirst),
-    [assignable],
-  )
-
-  // ── Fetch spaces ──
-  const { data: spacesData } = useQuery({
-    queryKey: keys.locations.list(),
-    queryFn: () => locationsApi.list(),
-    staleTime: 60000,
-    enabled: open,
-  })
-  const availableSpaces = spacesData?.data || []
-  const hasSpaces = availableSpaces.length > 0
-
-  // Every task belongs to a space — once spaces load, default the picker to the
-  // org's "General" (default) space instead of leaving it unselected.
-  useEffect(() => {
-    if (open && spaceId === "none" && !defaultSpaceId && availableSpaces.length) {
-      const def =
-        availableSpaces.find((s) => s.isDefault) ??
-        availableSpaces.find((s) => s.name === "General") ??
-        availableSpaces[0]
-      if (def?.id) setSpaceId(def.id)
-    }
-  }, [open, availableSpaces, defaultSpaceId, spaceId])
+  // ── Fetch spaces (create-task-sections.ts) ──
+  const { availableSpaces, hasSpaces } = useTaskSpaces({ open, spaceId, setSpaceId, defaultSpaceId })
 
   // ── Effective workflow comes from the SELECTED SPACE (task type = space's) ──
   // The task itself is always created with no explicit workflowId so the backend
@@ -375,35 +178,10 @@ export function useCreateTaskForm({ open, onOpenChange, defaultSprintId, default
     setLocationLng,
   })
 
-  const spaceWorkflowId = spaceId !== "none" ? spaceModules?.workflowId ?? null : null
-  /*
-    The workspace's own flow by NAME, for the "Workspace default (…)" choice.
-    ⚠️ It is not always among the types offered (a workspace may offer others
-    and keep a legacy default) — the label read "Workspace default ()". Looked
-    up in what is loaded first, fetched only when it is missing.
-  */
-  const knownSpaceWorkflowName = spaceWorkflowId
-    ? (workflows.find((w) => w.id === spaceWorkflowId) ?? orgWorkflows?.find((w) => w.id === spaceWorkflowId))?.name ?? null
-    : null
-  const { data: fetchedSpaceWorkflow } = useQuery({
-    queryKey: keys.spaces.workflow(spaceWorkflowId),
-    queryFn: () => workflowsApi.getById(spaceWorkflowId!),
-    enabled: open && !!spaceWorkflowId && !knownSpaceWorkflowName,
-    staleTime: 120000,
-    retry: 1,
+  // ── The workspace's own type, by name, and the custom fields that apply (use-create-task-type.ts) ──
+  const { spaceWorkflowId, spaceWorkflowName, applicableCustomFields } = useSpaceTaskType({
+    open, spaceId, spaceModules, workflows, orgWorkflows, workflowId, canCustomFields, activeCustomFields,
   })
-  const spaceWorkflowName = knownSpaceWorkflowName ?? fetchedSpaceWorkflow?.name ?? null
-  // The task's effective type: an explicit pick, else inherited from the space.
-  const effectiveWorkflowId = workflowId !== "inherit" ? workflowId : spaceWorkflowId
-
-  // Fields applicable to the chosen Task Type: globals always, plus that
-  // workflow's own fields. No type → globals only.
-  const applicableCustomFields = useMemo(
-    // Custom Fields is a Professional+ feature — don't render the inputs below tier
-    // (the backend also 402s the write; this keeps a downgraded org from seeing them).
-    () => (canCustomFields ? activeCustomFields.filter((f) => f.workflowId == null || f.workflowId === effectiveWorkflowId) : []),
-    [activeCustomFields, effectiveWorkflowId, canCustomFields],
-  )
 
   // ── Submission state ──
   const [isSubmittingLocal, setIsSubmittingLocal] = useState(false)
@@ -465,34 +243,11 @@ export function useCreateTaskForm({ open, onOpenChange, defaultSprintId, default
     setCustomFieldValues((prev) => ({ ...prev, [defId]: value }))
   }
 
-  // ── Section indicators ──
-  const scheduleIndicator =
-    startDate || dueDate || estimatedHours
-      ? [
-          startDate && format(startDate, "MMM d"),
-          dueDate && (dueTime ? `${format(dueDate, "MMM d")} ${dueTime}` : format(dueDate, "MMM d")),
-          estimatedHours && `${estimatedHours}h`,
-        ]
-          .filter(Boolean)
-          .join(" - ")
-      : null
-
-  const locationIndicator = locationAddress || null
-  const checklistIndicator =
-    checklistItems.length > 0 ? t("tasks.create.itemsCount", { count: checklistItems.length }) : null
-  const orgIndicator =
-    phaseId !== "none" || sprintId !== "none"
-      ? [
-          phaseId !== "none" && phases?.find((p: Phase) => p.id === phaseId)?.name,
-          sprintId !== "none" && sprints?.find((s: Sprint) => s.id === sprintId)?.name,
-        ]
-          .filter(Boolean)
-          .join(", ")
-      : null
-  const customFieldIndicator =
-    Object.values(customFieldValues).filter((v) => v.trim()).length > 0
-      ? `${Object.values(customFieldValues).filter((v) => v.trim()).length} set`
-      : null
+  // ── Section indicators (create-task-indicators.ts) ──
+  const { scheduleIndicator, locationIndicator, checklistIndicator, orgIndicator } = createTaskIndicators({
+    t, startDate, dueDate, dueTime, estimatedHours, locationAddress, checklistItems, phaseId, sprintId, phases, sprints,
+    customFieldValues,
+  })
 
   const hasPhases = (phases ?? []).length > 0
   const hasSprints = (sprints ?? []).length > 0

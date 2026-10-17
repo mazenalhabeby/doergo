@@ -4,11 +4,13 @@ import { AnalyticsService } from './analytics.service';
 import { ReportScheduleService } from './report-schedule.service';
 import { ReportDefinition } from './query-engine';
 import type { SpaceScopeIds } from '@hbcfield/shared';
+import { SavedReportsService } from './saved-reports.service';
 
 @Controller()
 export class AnalyticsController {
   constructor(
     private readonly analytics: AnalyticsService,
+    private readonly savedReports: SavedReportsService,
     private readonly schedules: ReportScheduleService,
   ) {}
 
@@ -29,22 +31,22 @@ export class AnalyticsController {
 
   @MessagePattern({ cmd: 'analytics_list_saved' })
   listSaved(@Payload() data: { organizationId: string; userId: string }) {
-    return this.analytics.listSaved(data);
+    return this.savedReports.listSaved(data);
   }
 
   @MessagePattern({ cmd: 'analytics_create_saved' })
   createSaved(@Payload() data: { organizationId: string; userId: string; name: string; description?: string; config: ReportDefinition; isShared?: boolean }) {
-    return this.analytics.createSaved(data);
+    return this.savedReports.createSaved(data);
   }
 
   @MessagePattern({ cmd: 'analytics_update_saved' })
   updateSaved(@Payload() data: { id: string; organizationId: string; userId: string; isAdmin?: boolean; name?: string; description?: string; config?: ReportDefinition; isShared?: boolean }) {
-    return this.analytics.updateSaved(data);
+    return this.savedReports.updateSaved(data);
   }
 
   @MessagePattern({ cmd: 'analytics_delete_saved' })
   deleteSaved(@Payload() data: { id: string; organizationId: string; userId?: string; isAdmin?: boolean }) {
-    return this.analytics.deleteSaved(data);
+    return this.savedReports.deleteSaved(data);
   }
 
   // ── Schedules ───────────────────────────────────────────────────────────────

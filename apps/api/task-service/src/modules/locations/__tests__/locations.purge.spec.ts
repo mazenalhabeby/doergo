@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
-import { LocationsService } from '../locations.service';
+import { SpaceLifecycleService } from '../space-lifecycle.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /**
@@ -22,8 +22,8 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
  * revoked another organization's access with no notice and left the grant row
  * dangling.
  */
-describe('LocationsService.purge — what counts as empty (S-B1, S-B2)', () => {
-  let service: LocationsService;
+describe('SpaceLifecycleService.purge — what counts as empty (S-B1, S-B2)', () => {
+  let service: SpaceLifecycleService;
 
   const EMPTY = {
     tasks: 0, timeEntries: 0, shifts: 0, shiftAssignments: 0, overtimeRequests: 0,
@@ -54,12 +54,12 @@ describe('LocationsService.purge — what counts as empty (S-B1, S-B2)', () => {
     prisma.$transaction.mockImplementation(async (fn: any) => fn(prisma));
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        LocationsService,
+        SpaceLifecycleService,
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: notificationClient },
       ],
     }).compile();
-    service = module.get(LocationsService);
+    service = module.get(SpaceLifecycleService);
   });
 
   const purge = () =>

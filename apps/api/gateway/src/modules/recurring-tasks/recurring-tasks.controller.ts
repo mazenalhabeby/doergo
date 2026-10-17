@@ -1,15 +1,7 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Request,
-} from '@nestjs/common';
+import { scopeIdsFor } from '../../common/permission-scope';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { Role, spacesGranting, isAdmin } from '@hbcfield/shared';
+import { Role, isAdmin } from '@hbcfield/shared';
 import { RequirePermissionInSpace } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
@@ -37,9 +29,7 @@ export class RecurringTasksController {
   async findAll(@Request() req: any) {
     return this.recurringTasksService.findAll({
       organizationId: req.user.organizationId,
-      scopeSpaceIds: isAdmin(req.user)
-        ? undefined
-        : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? undefined),
+      scopeSpaceIds: scopeIdsFor(req.user, 'canViewAllTasks'),
     });
   }
 

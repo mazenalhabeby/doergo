@@ -1,10 +1,14 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { WorklogService } from './worklog.service';
+import { WorklogAttachmentsService } from './worklog-attachments.service';
 
 @Controller()
 export class WorklogController {
-  constructor(private readonly worklog: WorklogService) {}
+  constructor(
+    private readonly worklog: WorklogService,
+    private readonly worklogFiles: WorklogAttachmentsService,
+  ) {}
 
   @MessagePattern({ cmd: 'worklog_add_note' })
   addNote(@Payload() d: any) {
@@ -28,16 +32,16 @@ export class WorklogController {
 
   @MessagePattern({ cmd: 'worklog_presign_attachment' })
   presign(@Payload() d: any) {
-    return this.worklog.presignAttachment(d);
+    return this.worklogFiles.presignAttachment(d);
   }
 
   @MessagePattern({ cmd: 'worklog_confirm_attachment' })
   confirm(@Payload() d: any) {
-    return this.worklog.confirmAttachment(d);
+    return this.worklogFiles.confirmAttachment(d);
   }
 
   @MessagePattern({ cmd: 'worklog_delete_attachment' })
   deleteAttachment(@Payload() d: any) {
-    return this.worklog.deleteAttachment(d);
+    return this.worklogFiles.deleteAttachment(d);
   }
 }

@@ -6,6 +6,8 @@ import { Reflector } from '@nestjs/core';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { PERMISSIONS_IN_SPACE_KEY, PERMISSIONS_KEY, Role } from '@hbcfield/shared';
 import { PortalAdminController } from '../portal-admin.controller';
+import { PortalSetupController } from '../portal-setup.controller';
+import { PortalResidentsController } from '../portal-residents.controller';
 import { SpacePortalController } from '../space-portal.controller';
 import { SpaceUnitsController, UnitDetailController } from '../space-units.controller';
 import { PermissionsGuard } from '../../../common/guards/permissions.guard';
@@ -30,6 +32,8 @@ import { portalScope } from '../../../common/portal-scope';
 const PORTAL_KEYS = ['canViewPortal', 'canAnswerPortal', 'canManagePortals'];
 const CONTROLLERS: Array<[string, any, string]> = [
   ['portal-admin.controller.ts', PortalAdminController, 'PortalAdminController'],
+  ['portal-setup.controller.ts', PortalSetupController, 'PortalSetupController'],
+  ['portal-residents.controller.ts', PortalResidentsController, 'PortalResidentsController'],
   ['space-portal.controller.ts', SpacePortalController, 'SpacePortalController'],
   ['space-units.controller.ts', SpaceUnitsController, 'SpaceUnitsController'],
   ['space-units.controller.ts', UnitDetailController, 'UnitDetailController'],

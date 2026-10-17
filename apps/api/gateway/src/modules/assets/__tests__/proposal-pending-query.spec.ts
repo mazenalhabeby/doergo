@@ -3,7 +3,8 @@ import { validateSync } from 'class-validator';
 import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_IN_SPACE_KEY } from '@hbcfield/shared';
 import { PendingProposalsQueryDto } from '../dto';
-import { AssetsController } from '../assets.controller';
+import { AssetIntakeController } from '../asset-intake.controller';
+import { assetRoute } from './assets-controllers.fixture';
 
 /**
  * GET /assets/proposals/pending?spaceId= — a workspace's Assets tab asking for
@@ -43,7 +44,7 @@ describe('the pending-proposals query', () => {
 });
 
 describe('the route', () => {
-  const fn = (AssetsController.prototype as any).pendingProposals;
+  const fn = assetRoute('pendingProposals') as any;
 
   it('still asks canManageAssets somewhere — the narrowing adds no door', () => {
     expect(new Reflector().get<string[]>(PERMISSIONS_IN_SPACE_KEY, fn)).toEqual(['canManageAssets']);
@@ -51,7 +52,7 @@ describe('the route', () => {
 
   it('forwards the workspace alongside the caller’s own scope, never instead of it', async () => {
     const proposalPending = jest.fn(async (d: any) => d);
-    const controller = new AssetsController({ proposalPending } as any, {} as any);
+    const controller = new AssetIntakeController({ proposalPending } as any, {} as any);
     const user = {
       id: 'u-lena', role: 'EMPLOYEE', organizationId: 'org1', canViewAllTasks: false,
       access: { org: {}, perSpace: { linz: { canManageAssets: true }, graz: { canManageAssets: true } } },

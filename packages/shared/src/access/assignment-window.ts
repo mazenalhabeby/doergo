@@ -14,9 +14,24 @@
  */
 /** `userId` may be several people at once (`{ in: [...] }`) — the window is the same rule. */
 export function activeAssignmentWhere(userId: string | { in: string[] }, now: Date = new Date()) {
-  return {
-    userId,
-    effectiveFrom: { lte: now },
-    OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }],
-  };
+  return { userId, ...activeWindowWhere(now) };
+}
+
+/**
+ * The window alone, for a query that names the people (or the space) itself:
+ * started on or before `now` and not ended before it. Spread it into a `where`
+ * — it carries an `OR`, so never beside another `OR` in the same object.
+ */
+export function activeWindowWhere(now: Date = new Date()) {
+  return { effectiveFrom: { lte: now }, ...notEndedWhere(now) };
+}
+
+/**
+ * Only the END bound: not ended before `at` (future-dated assignments included).
+ * Kept apart from `activeWindowWhere` on purpose — the queries that use it ask
+ * "who is or will be on this roster", and adding the start bound would change
+ * what they return.
+ */
+export function notEndedWhere(at: Date = new Date()) {
+  return { OR: [{ effectiveTo: null }, { effectiveTo: { gte: at } }] };
 }

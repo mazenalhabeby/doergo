@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CustomersService } from '../customers.service';
+import { customerServices, type CustomerServices } from './customer-services.fixture';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { BILLABLE_CLIENT_WHERE } from '@hbcfield/shared';
 
@@ -18,7 +19,7 @@ const ORG = 'org-1';
 const OTHER_ORG = 'org-2';
 
 describe('contact people', () => {
-  let service: CustomersService;
+  let service: CustomerServices;
 
   const prisma: Record<string, any> = {
     customer: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
@@ -55,10 +56,7 @@ describe('contact people', () => {
     prisma.customerContact.upsert.mockResolvedValue({ id: 'lnk-1', role: null, isPrimary: false, person: person() });
     // No reverse link unless a test says there is one.
     prisma.customerContact.findUnique.mockResolvedValue(null);
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [CustomersService, { provide: PrismaService, useValue: prisma }],
-    }).compile();
-    service = module.get(CustomersService);
+    service = customerServices(prisma);
   });
 
   const add = (over: Record<string, unknown> = {}) =>
@@ -249,7 +247,7 @@ describe('contact people', () => {
   moved out from under the portal that runs their login.
 */
 describe('changing a client’s workspace', () => {
-  let service: CustomersService;
+  let service: CustomerServices;
 
   const prisma: Record<string, any> = {
     customer: { findFirst: jest.fn(), update: jest.fn(), findUnique: jest.fn() },
@@ -266,10 +264,7 @@ describe('changing a client’s workspace', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     prisma.customer.update.mockResolvedValue({ id: 'c1' });
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [CustomersService, { provide: PrismaService, useValue: prisma }],
-    }).compile();
-    service = module.get(CustomersService);
+    service = customerServices(prisma);
   });
 
   const move = (to: string | null, existing = client()) => {

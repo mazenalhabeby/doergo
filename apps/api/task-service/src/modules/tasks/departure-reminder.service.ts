@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
+  zoneOf,
   runWithCronLock,
   haversineDistance,
   straightLineTravel,
@@ -99,7 +100,7 @@ export class DepartureReminderService {
     let sent = 0;
     for (const task of candidates) {
       const due = task.dueDate!;
-      const offsetMinutes = tzOffsetMs(now, task.space?.timezone || 'UTC') / 60_000;
+      const offsetMinutes = tzOffsetMs(now, zoneOf(task.space?.timezone)) / 60_000;
 
       // A dated-only job has no departure to announce. Midnight IS that value.
       if (!hasAppointmentTime(due, offsetMinutes)) continue;

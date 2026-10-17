@@ -1,9 +1,11 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { JobPauseService } from './handover/job-pause.service';
 import { TasksService } from './tasks.service';
 import { RolePoolService } from './role-pool.service';
 import { TaskReportService } from './task-report.service';
+import { RoleTakeService } from './role-take.service';
+import { RoleStatsService } from './role-stats.service';
+import { JobPauseReadService } from './handover/job-pause-read.service';
 
 /**
  * Microservice Controller for Task READ Operations
@@ -18,8 +20,10 @@ import { TaskReportService } from './task-report.service';
 export class TasksController {
   constructor(
     private readonly tasksService: TasksService,
-    private readonly jobPause: JobPauseService,
+    private readonly pausedJobs: JobPauseReadService,
     private readonly rolePool: RolePoolService,
+    private readonly roleStats: RoleStatsService,
+    private readonly roleTake: RoleTakeService,
     private readonly taskReport: TaskReportService,
   ) {}
 
@@ -34,7 +38,7 @@ export class TasksController {
 
   @MessagePattern({ cmd: 'role_task_take' })
   async roleTaskTake(@Payload() data: any) {
-    return this.rolePool.take(data);
+    return this.roleTake.take(data);
   }
 
   @MessagePattern({ cmd: 'role_task_return' })
@@ -59,7 +63,7 @@ export class TasksController {
 
   @MessagePattern({ cmd: 'role_task_stats' })
   async roleTaskStats(@Payload() data: any) {
-    return this.rolePool.stats(data);
+    return this.roleStats.stats(data);
   }
 
   // Its OWN pattern: on the shared Redis transport a common 'health' was answered
@@ -151,7 +155,7 @@ export class TasksController {
 
   @MessagePattern({ cmd: 'get_my_handovers' })
   async myHandovers(@Payload() data: { userId: string; organizationId: string }) {
-    return this.jobPause.mine(data);
+    return this.pausedJobs.mine(data);
   }
 
   @MessagePattern({ cmd: 'get_comments' })

@@ -1,5 +1,6 @@
 import fs from "fs"
 import path from "path"
+import { readSource } from "../../test-utils/read-source"
 import { SUPPORTED_LOCALES } from "@hbcfield/shared/client"
 
 /*
@@ -19,18 +20,38 @@ const tables: Array<{ head: string[][]; body: string[][] }> = []
 jest.mock("jspdf", () => {
   class FakeDoc {
     internal = { pageSize: { getWidth: () => 210, getHeight: () => 297 } }
-    GState = class { constructor(public o: unknown) {} }
+    GState = class {
+      constructor(public o: unknown) {}
+    }
     lastAutoTable = { finalY: 120 }
     private pages = 1
-    text(t: string | string[]) { drawn.push(...(Array.isArray(t) ? t : [t])) }
-    splitTextToSize(t: string) { return [t] }
-    getNumberOfPages() { return this.pages }
+    text(t: string | string[]) {
+      drawn.push(...(Array.isArray(t) ? t : [t]))
+    }
+    splitTextToSize(t: string) {
+      return [t]
+    }
+    getNumberOfPages() {
+      return this.pages
+    }
     setPage() {}
-    addPage() { this.pages++ }
+    addPage() {
+      this.pages++
+    }
     save() {}
-    output() { return "blob:fake" }
-    setTextColor() {} ; setFont() {} ; setFontSize() {} ; setDrawColor() {} ; setLineWidth() {}
-    line() {} ; addImage() {} ; saveGraphicsState() {} ; restoreGraphicsState() {} ; setGState() {}
+    output() {
+      return "blob:fake"
+    }
+    setTextColor() {}
+    setFont() {}
+    setFontSize() {}
+    setDrawColor() {}
+    setLineWidth() {}
+    line() {}
+    addImage() {}
+    saveGraphicsState() {}
+    restoreGraphicsState() {}
+    setGState() {}
   }
   return { __esModule: true, default: FakeDoc }
 })
@@ -43,14 +64,24 @@ jest.mock("jspdf-autotable", () => ({
 }))
 
 import {
-  INVOICE_DOCUMENT_LABELS, documentLocaleOf, formatDocumentDate, formatDocumentMoney, formatDocumentQuantity,
-  pdfLocaleFor, pdfText, termsSentence,
+  INVOICE_DOCUMENT_LABELS,
+  documentLocaleOf,
+  formatDocumentDate,
+  formatDocumentMoney,
+  formatDocumentQuantity,
+  pdfLocaleFor,
+  pdfText,
+  termsSentence,
 } from "../invoice-document-locale"
 import { exportInvoicePdf, type InvoicePdfData } from "../invoice-pdf"
 
 const placeholders = (s: string) => [...s.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]).sort()
 const flatten = (o: object): Record<string, string> =>
-  Object.fromEntries(Object.entries(o).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : Object.entries(flatten(v)).map(([kk, vv]) => [`${k}.${kk}`, vv]))))
+  Object.fromEntries(
+    Object.entries(o).flatMap(([k, v]) =>
+      typeof v === "string" ? [[k, v]] : Object.entries(flatten(v)).map(([kk, vv]) => [`${k}.${kk}`, vv]),
+    ),
+  )
 
 describe("invoice document labels — five languages", () => {
   const en = flatten(INVOICE_DOCUMENT_LABELS.en)
@@ -101,7 +132,8 @@ describe("dates and amounts in the document's language", () => {
     expect(formatDocumentMoney(12345.5, "EUR", "it")).toBe("12.345,50 €")
     expect(formatDocumentMoney(12345.5, "EUR", "es")).toBe("12.345,50 €")
     expect(formatDocumentMoney(1234.5, "EUR", "fr")).toBe("1 234,50 €")
-    for (const l of SUPPORTED_LOCALES) expect(formatDocumentMoney(98765.43, "EUR", l)).toMatch(/^[\x20-\x7E\xA0-\xFF€]*$/)
+    for (const l of SUPPORTED_LOCALES)
+      expect(formatDocumentMoney(98765.43, "EUR", l)).toMatch(/^[\x20-\x7E\xA0-\xFF€]*$/)
     expect(formatDocumentMoney(1234.5, "EUR", "fr")).not.toMatch(/[  ]/)
   })
 
@@ -124,7 +156,9 @@ describe("dates and amounts in the document's language", () => {
 
   it("asks to settle a due invoice by its date or on receipt — and says nothing once it is settled", () => {
     const base = { total: 100, currency: "EUR" }
-    expect(termsSentence("de", { ...base, status: "ISSUED", dueDate: "2026-09-30T00:00:00Z" })).toMatch(/^Bitte begleichen Sie 100,00 € bis zum 30\. Sep/)
+    expect(termsSentence("de", { ...base, status: "ISSUED", dueDate: "2026-09-30T00:00:00Z" })).toMatch(
+      /^Bitte begleichen Sie 100,00 € bis zum 30\. Sep/,
+    )
     expect(termsSentence("fr", { ...base, status: "SENT" })).toBe("Merci de régler 100,00 € à réception.")
     for (const status of ["PAID", "CANCELED", "REFUNDED"]) expect(termsSentence("en", { ...base, status })).toBeNull()
   })
@@ -140,7 +174,7 @@ describe("which language a download is written in", () => {
   })
 
   it("the invoice page sends that language to both the download and the print", () => {
-    const page = fs.readFileSync(path.join(__dirname, "../../app/(dashboard)/invoices/[id]/page.tsx"), "utf8")
+    const page = readSource(path.join(__dirname, "../../app/(dashboard)/invoices/[id]/page.tsx"), "utf8")
     expect(page.match(/toPdfData\(inv, pdfLocaleFor\(inv, pdfLocaleOverride\)\)/g)?.length).toBe(2)
     expect(page).toContain("invoices.pdfLanguage.client")
   })
@@ -167,12 +201,31 @@ describe("the drawn invoice", () => {
     ...over,
   })
 
-  beforeEach(() => { drawn.length = 0; tables.length = 0 })
+  beforeEach(() => {
+    drawn.length = 0
+    tables.length = 0
+  })
 
   it("writes a German invoice in German, and leaves what somebody wrote as written", async () => {
     await exportInvoicePdf(invoice({ locale: "de" }), { name: "HBC GmbH", vatId: "ATU12345678" })
     const text = drawn.join("\n")
-    for (const w of ["RECHNUNG", "Rechnungsnr. INV-2026-0042", "RECHNUNG AN", "Rechnungsdatum", "Fälligkeitsdatum", "Leistungszeitraum", "Zwischensumme", "USt. (20%)", "Gesamt", "ANMERKUNGEN", "Seite 1 von 2", "Seite 2 von 2", "ENTWURF", "USt-IdNr.: ATU12345678", "1.200,00 €"]) {
+    for (const w of [
+      "RECHNUNG",
+      "Rechnungsnr. INV-2026-0042",
+      "RECHNUNG AN",
+      "Rechnungsdatum",
+      "Fälligkeitsdatum",
+      "Leistungszeitraum",
+      "Zwischensumme",
+      "USt. (20%)",
+      "Gesamt",
+      "ANMERKUNGEN",
+      "Seite 1 von 2",
+      "Seite 2 von 2",
+      "ENTWURF",
+      "USt-IdNr.: ATU12345678",
+      "1.200,00 €",
+    ]) {
       expect(text).toContain(w)
     }
     expect(tables[0].head).toEqual([["Beschreibung", "Menge", "Einzelpreis", "Betrag"]])
@@ -181,7 +234,18 @@ describe("the drawn invoice", () => {
     expect(text).toContain("Thank you for the quick turnaround")
     expect(text).toContain("Müller Haustechnik GmbH")
     // And no English label left behind.
-    for (const w of ["INVOICE", "BILL TO", "Issue date", "Due date", "Subtotal", "Tax (", "Total", "NOTES", "DRAFT", "Page "]) {
+    for (const w of [
+      "INVOICE",
+      "BILL TO",
+      "Issue date",
+      "Due date",
+      "Subtotal",
+      "Tax (",
+      "Total",
+      "NOTES",
+      "DRAFT",
+      "Page ",
+    ]) {
       expect(text).not.toContain(w)
     }
   })

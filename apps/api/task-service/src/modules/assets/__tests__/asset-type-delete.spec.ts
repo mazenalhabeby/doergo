@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { AssetCatalogService } from '../asset-catalog.service';
+import { assetCatalogParts } from './asset-catalog.service.fixture';
 import { AssetAccessService } from '../asset-access.service';
 
 /**
@@ -31,7 +31,7 @@ function serviceHolding(assetCount: number) {
       updateMany: jest.fn(async () => { calls.updateMany++; return { count: assetCount }; }),
     },
   };
-  return { service: new AssetCatalogService(prisma, new AssetAccessService(prisma)), calls };
+  return { service: assetCatalogParts(prisma, new AssetAccessService(prisma)), calls };
 }
 
 describe('deleting an asset type', () => {

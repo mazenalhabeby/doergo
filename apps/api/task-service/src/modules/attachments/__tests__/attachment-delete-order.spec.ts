@@ -1,6 +1,6 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { TaskAccessService } from '../../../common/task-access/task-access.service';
-import { AttachmentsService } from '../attachments.service';
+import { attachmentsParts } from './attachments.service.fixture';
 
 /**
  * Deleting an attachment asks the ORGANIZATION first. The uploader check ran
@@ -17,7 +17,7 @@ describe('attachment delete: organization before uploader', () => {
       taskEvent: { create: jest.fn() },
     };
     const media: any = { keyOf: jest.fn().mockReturnValue(null) };
-    return { svc: new AttachmentsService(prisma, null, media, { emit: jest.fn() } as any, new TaskAccessService(prisma)), prisma };
+    return { svc: attachmentsParts(prisma, null, media, { emit: jest.fn() } as any, new TaskAccessService(prisma)), prisma };
   };
 
   it('another organization — even its ADMIN — gets 404', async () => {

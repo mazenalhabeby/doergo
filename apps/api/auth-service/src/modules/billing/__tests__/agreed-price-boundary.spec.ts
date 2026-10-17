@@ -14,9 +14,11 @@ import { join } from 'path';
 const SERVICES = ['auth-service', 'gateway', 'task-service'];
 const AGREED_COLUMNS = ['agreedMonthlyCents', 'agreedListCents', 'agreedUntil', 'agreedNote', 'agreedSetAt', 'agreedSetById'];
 
-/** The one file allowed to write them, and the tests that check it does. */
+/** The one service allowed to write them (its operator-billing part since the split), and the tests that check it does. */
 const ALLOWED = [
   join('platform-admin', 'platform-admin.service.ts'),
+  join('platform-admin', 'platform-billing.service.ts'),
+  join('platform-admin', 'platform-admin-helpers.ts'),
   '__tests__',
   '.spec.ts',
 ];

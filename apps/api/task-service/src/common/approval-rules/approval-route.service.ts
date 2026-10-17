@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  activeWindowWhere,
   ABSENCE_WHERE,
   APPROVAL_KIND_SPECS,
   delegationDay,
@@ -118,5 +119,5 @@ export class ApprovalRouteService {
 }
 
 function activeWindow(now: Date) {
-  return { effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] };
+  return { ...activeWindowWhere(now) };
 }

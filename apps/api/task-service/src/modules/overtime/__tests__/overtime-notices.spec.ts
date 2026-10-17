@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { OVERTIME_NOTICE_EVENT, OVERTIME_NOTICE_KINDS, overtimeNoticeKeys } from '@hbcfield/shared';
-import { OvertimeService } from '../overtime.service';
+import { overtimeServices } from './overtime.service.fixture';
 
 /**
  * Who hears about an overtime request, and in which language.
@@ -34,7 +34,7 @@ describe('overtime pushes', () => {
     };
     const emit = jest.fn();
     const attendance: any = { notifyTargetsFor: jest.fn().mockResolvedValue(targets) };
-    const svc = new OvertimeService(prisma, { emit } as any, {} as any, attendance, {} as any);
+    const svc = overtimeServices(prisma, { emit } as any, {} as any, attendance, {} as any);
     return { svc, prisma, emit, attendance };
   };
 

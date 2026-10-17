@@ -19,12 +19,40 @@ import { StripeService } from '../billing/stripe.service';
   console its own copies with their own state.
 */
 import { BillingModule } from '../billing/billing.module';
+import { PlatformBillingService } from './platform-billing.service';
+import { PlatformBillingAlertsService } from './platform-billing-alerts.service';
+import { PlatformTrialService } from './platform-trial.service';
+import { PlatformTwoFactorService } from './platform-two-factor.service';
+import { PlatformStaffService } from './platform-staff.service';
 
 // PrismaService (global PrismaModule) + JwtService (global JwtModule) are available.
 @Module({
   imports: [SessionEventsModule, BillingModule],
-  controllers: [PlatformAdminController, PlatformAuthController, PlatformPricingController, PlatformSupportTeamsController],
-  providers: [PlatformAdminService, PlatformAuthService, PlatformAuditService, PricingService, PlatformSupportTeamsService, StripeService],
-  exports: [PlatformAdminService, PlatformAuthService, PlatformAuditService, PricingService, PlatformSupportTeamsService],
+  controllers: [
+    PlatformAdminController,
+    PlatformAuthController,
+    PlatformPricingController,
+    PlatformSupportTeamsController,
+  ],
+  providers: [
+    PlatformAdminService,
+    PlatformBillingService,
+    PlatformBillingAlertsService,
+    PlatformTrialService,
+    PlatformAuthService,
+    PlatformTwoFactorService,
+    PlatformStaffService,
+    PlatformAuditService,
+    PricingService,
+    PlatformSupportTeamsService,
+    StripeService,
+  ],
+  exports: [
+    PlatformAdminService,
+    PlatformAuthService,
+    PlatformAuditService,
+    PricingService,
+    PlatformSupportTeamsService,
+  ],
 })
 export class PlatformAdminModule {}

@@ -5,6 +5,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { SubscriptionGuard, ALLOW_WHEN_LOCKED_KEY } from '../guards/subscription.guard';
 import { AttendanceController } from '../../modules/attendance/attendance.controller';
+import { attendanceRoute } from '../../modules/attendance/__tests__/attendance-controllers.fixture';
 
 /**
  * The billing lock refuses writes — except the ones that END a member's own
@@ -23,7 +24,8 @@ function run(handler: (...a: any[]) => any, req: any) {
   return guard.canActivate(ctx);
 }
 
-const proto = AttendanceController.prototype as any;
+/** The handlers by name, from whichever /attendance controller owns each since the split. */
+const proto = new Proxy({}, { get: (_t, name: string) => attendanceRoute(name) }) as any;
 
 describe('SubscriptionGuard — a locked organization', () => {
   it('lets a member clock OUT', () => {
@@ -76,8 +78,8 @@ describe('SubscriptionGuard — a locked organization', () => {
  */
 const ALLOWED_WHEN_LOCKED = [
   'attendance/attendance.controller.ts: clockOut',
-  'attendance/attendance.controller.ts: endBreak',
-  'attendance/attendance.controller.ts: resolveForgotClockOut',
+  'attendance/breaks.controller.ts: endBreak',
+  'attendance/extra-time.controller.ts: resolveForgotClockOut',
 ];
 
 const ROOT = path.join(__dirname, '../../modules');

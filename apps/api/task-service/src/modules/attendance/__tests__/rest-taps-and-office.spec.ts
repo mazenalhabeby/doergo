@@ -1,4 +1,4 @@
-import { BreakService } from '../break.service';
+import { breakServices } from './break.service.fixture';
 import { BreakReminderService } from '../break-reminder.service';
 import { CountedTimeService } from '../counted-time.service';
 import { resolveBreakPlan, type BreakRuleLike } from '@hbcfield/shared';
@@ -46,7 +46,7 @@ function prismaMock() {
   return prisma;
 }
 
-const breaks = (prisma: any) => new BreakService(prisma, new CountedTimeService(prisma), { emit: jest.fn() } as any);
+const breaks = (prisma: any) => breakServices(prisma, new CountedTimeService(prisma), { emit: jest.fn() } as any);
 
 describe('a tap takes a planned rest only when it is that rest', () => {
   const openEntry = (plan: unknown) => ({ id: 'e1', userId: MEMBER, clockInAt: t('07:00'), breakPlan: plan, breaks: [] });

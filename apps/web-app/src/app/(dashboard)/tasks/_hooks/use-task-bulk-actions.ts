@@ -4,7 +4,7 @@ import { useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { useQueryClient } from "@tanstack/react-query"
 
-import { keys } from "@/lib/query-keys"
+import { keys, invalidateTaskLists } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
 import { tasksApi, type Task } from "@/lib/api"
@@ -56,8 +56,7 @@ export function useTaskBulkActions({
         if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: movable.length }))
         else notify.bulk(movable.length, t("tasks.notify.actionUpdated"))
         handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-        queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
+        invalidateTaskLists(queryClient)
       })
   }, [handleClearSelection, queryClient, tasks, workflowForTask, user?.id, t])
 
@@ -88,8 +87,7 @@ export function useTaskBulkActions({
         if (failed > 0) notify.error(t("tasks.notify.deletesFailed", { failed, total: taskIds.length }))
         else notify.bulk(taskIds.length, t("tasks.notify.actionDeleted"))
         handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-        queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
+        invalidateTaskLists(queryClient)
       })
   }, [handleClearSelection, queryClient])
 

@@ -1,0 +1,575 @@
+<title>Chat and Team</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky Arabic voice bar · what exists today (chat, team, bugs) · the proposed web Messages page and Team page as live mockups · three phone screens · the one contact rule · three phases · decisions. */
+:root{
+  --bg:#f2f4f7; --card:#ffffff; --ink:#0f172a; --muted:#5b6678; --line:#e1e6ee; --soft:#edf1f6;
+  --blue:#2563eb; --blueSoft:#2563eb14; --green:#0f9f6e; --greenSoft:#0f9f6e17; --amber:#b26a00; --amberSoft:#b26a0017; --red:#c53030; --redSoft:#c5303014; --grey:#94a3b8;
+  --bubble:#e9eef6; --mine:#2563eb; --mineInk:#ffffff;
+  --display:"Bricolage Grotesque",Georgia,serif; --sans:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif; --ar:"IBM Plex Sans Arabic","Geeza Pro",Tahoma,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#0a0e14; --card:#121821; --ink:#e5ebf3; --muted:#93a0b3; --line:#242d3a; --soft:#18202b;
+  --blue:#6f9bff; --blueSoft:#6f9bff1f; --green:#4fd1a0; --greenSoft:#4fd1a01f; --amber:#e8ac4a; --amberSoft:#e8ac4a22; --red:#f08484; --redSoft:#f084841f; --grey:#64748b;
+  --bubble:#1d2633; --mine:#3d6fe0; --mineInk:#ffffff;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#0a0e14; --card:#121821; --ink:#e5ebf3; --muted:#93a0b3; --line:#242d3a; --soft:#18202b;
+  --blue:#6f9bff; --blueSoft:#6f9bff1f; --green:#4fd1a0; --greenSoft:#4fd1a01f; --amber:#e8ac4a; --amberSoft:#e8ac4a22; --red:#f08484; --redSoft:#f084841f; --grey:#64748b;
+  --bubble:#1d2633; --mine:#3d6fe0; --mineInk:#ffffff;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:24px 72px;display:flex;flex-direction:column;gap:22px}
+h1{font:700 clamp(28px,4.4vw,44px)/1.08 var(--display);margin:6px 0 10px;letter-spacing:-.01em;text-wrap:balance}
+h2{font:700 22px/1.2 var(--display);margin:0;text-wrap:balance}
+h3{font:600 15px/1.3 var(--sans);margin:0}
+p{margin:0}
+.lead{color:var(--muted);max-width:68ch}
+.eyebrow{font:500 11.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--blue)}
+.sec{display:flex;flex-direction:column;gap:14px;scroll-margin-top:90px;border-radius:18px;padding:4px;transition:box-shadow .3s}
+.sec.speaking{box-shadow:0 0 0 2px var(--blue)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.sub{color:var(--muted);font-size:13.5px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:600;white-space:nowrap}
+.ok{background:var(--greenSoft);color:var(--green)} .no{background:var(--redSoft);color:var(--red)} .half{background:var(--amberSoft);color:var(--amber)} .new{background:var(--blueSoft);color:var(--blue)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+th,td{text-align:left;padding:8px 10px;border-top:1px solid var(--line);vertical-align:top}
+th{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-top:0}
+td code,.mono{font:12px var(--mono);color:var(--muted)}
+.bugs{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.bugs li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--card)}
+.sev{font:600 11px var(--mono);border-radius:6px;padding:2px 7px;margin-top:2px}
+.sev.hi{background:var(--redSoft);color:var(--red)} .sev.md{background:var(--amberSoft);color:var(--amber)} .sev.lo{background:var(--soft);color:var(--muted)}
+.bugs b{display:block;font-weight:600}
+.bugs span{color:var(--muted);font-size:13.5px}
+.lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.lists div{border:1px dashed var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px;background:var(--card)}
+.lists div small{color:var(--muted);font-size:12.5px}
+
+/* voice bar */
+.vo{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;box-shadow:0 8px 24px -16px #0007}
+.vo-play{width:42px;height:42px;border-radius:50%;border:0;background:var(--blue);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+.vo-text{display:flex;flex-direction:column;min-width:0;flex:1;font-family:var(--ar)}
+.vo-text b{font-size:14px}
+.vo-text span{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vo-bar{flex:0 1 180px;height:4px;border-radius:2px;background:var(--soft);overflow:hidden}
+.vo-bar i{display:block;height:100%;width:0;background:var(--blue)}
+.vo-stop,.listen{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.listen{color:var(--blue);border-radius:999px;padding:4px 11px;font:600 12.5px var(--ar);display:inline-flex;gap:6px;align-items:center;align-self:flex-start}
+button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+@media (max-width:540px){.vo-bar{display:none}}
+
+/* web app frame */
+.frame{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card)}
+.top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--soft)}
+.brand{font:700 15px var(--display);margin-right:auto}
+.ib{position:relative;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--ink);cursor:pointer}
+.ib.on{border-color:var(--blue);color:var(--blue);box-shadow:0 0 0 3px var(--blueSoft)}
+.badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font:600 10.5px var(--sans);display:grid;place-items:center;padding:0 4px}
+.hint{font-size:12px;color:var(--blue);font-weight:600}
+.msgs{display:grid;grid-template-columns:270px minmax(0,1fr) 250px;min-height:540px}
+.cl{border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.cl-h{display:flex;gap:8px;padding:10px;border-bottom:1px solid var(--line)}
+.cl-h input{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--card);color:var(--ink);font:inherit;font-size:13.5px}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:7px 11px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn.p{background:var(--blue);border-color:var(--blue);color:#fff}
+.tabs{display:flex;gap:4px;padding:8px 10px 0;flex-wrap:wrap}
+.tabs button{border:0;background:none;color:var(--muted);font:600 12.5px var(--sans);padding:5px 9px;border-radius:7px;cursor:pointer}
+.tabs button.on{background:var(--blueSoft);color:var(--blue)}
+.conv{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border:0;border-top:1px solid var(--line);background:none;color:inherit;text-align:left;font:inherit;cursor:pointer;width:100%}
+.conv:first-of-type{border-top:0}
+.conv.on{background:var(--blueSoft)}
+.conv b{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.conv small{display:block;color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.conv .meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:11.5px;color:var(--muted)}
+.un{background:var(--blue);color:#fff;border-radius:9px;min-width:18px;height:18px;font:600 10.5px var(--sans);display:grid;place-items:center;padding:0 5px}
+.av{position:relative;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:600 12px var(--sans);color:#fff;flex:none}
+.av.sq{border-radius:10px}
+.dot{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;border:2px solid var(--card)}
+.d-on{background:var(--green)} .d-busy{background:var(--amber)} .d-away{background:var(--grey)}
+.th{display:flex;flex-direction:column;min-width:0}
+.th-h{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.th-h b{font-size:14.5px} .th-h small{display:block;color:var(--muted);font-size:12.5px}
+.stream{flex:1;padding:14px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:440px}
+.older{align-self:center;font-size:12px;color:var(--muted);border:1px dashed var(--line);border-radius:999px;padding:3px 10px;background:none;cursor:pointer}
+.day{align-self:center;font:500 11px var(--mono);color:var(--muted)}
+.b{max-width:72%;padding:8px 12px;border-radius:14px;background:var(--bubble);font-size:14px;align-self:flex-start;overflow-wrap:anywhere}
+.b.me{align-self:flex-end;background:var(--mine);color:var(--mineInk)}
+.b .who{display:block;font-size:11.5px;font-weight:600;color:var(--blue)}
+.b .t{display:block;font-size:11px;opacity:.75;text-align:right;margin-top:2px}
+.b.sys{align-self:center;background:none;color:var(--muted);font-size:12.5px;padding:2px}
+.ph{width:200px;max-width:100%;aspect-ratio:4/3;border-radius:10px;background:linear-gradient(135deg,#8aa4c8,#4a6a94);display:grid;place-items:center;color:#fff;font-size:12px;margin:2px 0}
+.file{display:flex;gap:8px;align-items:center;border-radius:10px;padding:6px 8px;background:#ffffff26;font-size:13px}
+.typing{font-size:12.5px;color:var(--muted);padding:0 14px 6px}
+.comp{display:flex;gap:8px;align-items:center;padding:10px;border-top:1px solid var(--line)}
+.comp input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--card);color:var(--ink);font:inherit}
+.side{border-left:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;font-size:13.5px}
+.facts dt{color:var(--muted)} .facts dd{margin:0;overflow-wrap:anywhere}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12.5px;background:var(--card);color:var(--ink);cursor:pointer;font-family:inherit}
+.chip.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+@media (max-width:980px){.msgs{grid-template-columns:240px minmax(0,1fr)}.side{display:none}}
+@media (max-width:640px){.msgs{grid-template-columns:1fr}.cl{border-right:0;border-bottom:1px solid var(--line);max-height:260px;overflow-y:auto}}
+
+/* team page */
+.team{padding:16px;display:flex;flex-direction:column;gap:14px}
+.team-h{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.team-h input{flex:1 1 220px;min-width:0;border:1px solid var(--line);border-radius:9px;padding:8px 11px;background:var(--card);color:var(--ink);font:inherit}
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.person{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--card)}
+.person .row{display:flex;gap:10px;align-items:center;min-width:0}
+.person b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.person small{display:block;color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.person .acts{display:flex;gap:6px}
+.person .acts .btn{flex:1;padding:6px 8px;font-size:12.5px}
+.grp{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+/* phones */
+.phones{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;justify-items:center}
+.phone{width:100%;max-width:290px;border-radius:36px;border:8px solid var(--ink);background:var(--bg);overflow:hidden;display:flex;flex-direction:column;min-height:560px}
+.ps{flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.pt{display:flex;justify-content:space-between;align-items:center;font:700 20px var(--display)}
+.pc{background:var(--card);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.pr{display:flex;gap:10px;align-items:center;font-size:13.5px;min-width:0}
+.pr .grow{flex:1;min-width:0}
+.pr b{display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pr small{display:block;color:var(--muted);font-size:11.5px}
+.mini{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);background:var(--card);color:var(--blue);flex:none}
+.tabbar{display:flex;justify-content:space-around;padding:8px 6px 12px;border-top:1px solid var(--line);background:var(--card);font-size:10.5px;color:var(--muted)}
+.tabbar span{display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabbar span.on{color:var(--blue);font-weight:600}
+.tabbar i{width:18px;height:18px;border-radius:5px;background:currentColor;opacity:.35;display:block}
+.tabbar span.on i{opacity:1}
+.cap{font-size:13px;color:var(--muted);text-align:center;max-width:290px}
+.prof{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.prof .av{width:64px;height:64px;font-size:20px}
+.prof .dot{width:15px;height:15px}
+
+/* rule + plan */
+.rule{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.rule div{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;background:var(--card)}
+.rule small{color:var(--muted);font-size:13px}
+.phase{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.phase .card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:14px}
+.ph-n{font:700 30px var(--display);color:var(--blue);line-height:1}
+.dec{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.fl{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.fl>div{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.big{font:700 26px var(--display);color:var(--ink);font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:9px 16px;border-radius:10px;font-size:13.5px;z-index:20}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+  <div class="vo" role="region" aria-label="Arabic voice-over">
+    <button type="button" class="vo-play" id="voPlay" aria-label="تشغيل الشرح الصوتي"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path id="voIcon" d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
+    <div class="vo-text" lang="ar" dir="rtl"><b>شرح صوتي بالعربية</b><span id="voNow">اضغط للاستماع</span></div>
+    <div class="vo-bar" aria-hidden="true"><i id="voProg"></i></div>
+    <button type="button" class="vo-stop" id="voStop" hidden>إيقاف</button>
+  </div>
+
+  <header class="sec" id="sec-intro">
+    <span class="eyebrow">HBCField · mockup · not built</span>
+    <h1>Chat and Team, web and phone</h1>
+    <p class="lead">What the code does today, read file by file, then how Messages and Team could look. Everything below the "today" part is a proposal for you to confirm. Nothing here is built.</p>
+  </header>
+
+  <!-- TODAY: CHAT -->
+  <section class="sec" id="sec-chat-today">
+    <span class="eyebrow">Today · chat</span>
+    <h2>One-to-one text, nothing more</h2>
+    <div class="card tw">
+      <table>
+        <thead><tr><th>What</th><th>Web</th><th>Phone</th><th>Where in the code</th></tr></thead>
+        <tbody>
+          <tr><td>Where it lives</td><td>A side drawer, no page</td><td>Chat tab (usually under More) and from Team</td><td><code>chat-drawer.tsx</code> · <code>chat-screen.tsx</code></td></tr>
+          <tr><td>1-to-1 text messages</td><td><span class="pill ok">Yes</span></td><td><span class="pill ok">Yes</span></td><td><code>task-service/modules/chat</code></td></tr>
+          <tr><td>Live delivery, typing, online dot</td><td><span class="pill ok">Yes</span></td><td><span class="pill ok">Yes</span></td><td>socket <code>chat.message</code>, <code>chat.typing</code></td></tr>
+          <tr><td>People from a shared workspace (other company)</td><td><span class="pill ok">Yes</span></td><td><span class="pill ok">Yes</span></td><td>read-only once sharing ends</td></tr>
+          <tr><td>Send with no signal</td><td>—</td><td><span class="pill ok">Yes</span></td><td>outbox <code>chat.send</code>, no duplicates</td></tr>
+          <tr><td>Search a person to write to</td><td><span class="pill ok">Yes</span></td><td><span class="pill no">No</span></td><td></td></tr>
+          <tr><td>Unread counts</td><td><span class="pill half">Hidden</span></td><td><span class="pill ok">Yes</span></td><td>web context has it, nothing shows it</td></tr>
+          <tr><td>Groups</td><td><span class="pill no">No</span></td><td><span class="pill no">No</span></td><td>type GROUP in the database, no way to create</td></tr>
+          <tr><td>Photos and files</td><td><span class="pill no">No</span></td><td><span class="pill no">No</span></td><td>server refuses: "cannot be sent in chat yet"</td></tr>
+          <tr><td>Read receipts</td><td><span class="pill no">No</span></td><td><span class="pill no">No</span></td><td>read time stored, never shown</td></tr>
+          <tr><td>Older messages</td><td><span class="pill no">No</span></td><td><span class="pill no">No</span></td><td>only the last 30; server supports more</td></tr>
+          <tr><td>Edit / delete a message</td><td><span class="pill no">No</span></td><td><span class="pill no">No</span></td><td>fields exist, unused</td></tr>
+          <tr><td>Chat per job, search in messages</td><td><span class="pill no">No</span></td><td><span class="pill no">No</span></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="sec-chat-bugs">
+    <span class="eyebrow">Today · chat problems</span>
+    <h2>What is broken or misleading</h2>
+    <ul class="bugs">
+      <li><span class="sev hi">HIGH</span><div><b>On the phone, chat only shows if the company bought "Live Chat Support"</b><span>That is the support-desk option, not team chat. Web and server don't ask for it, so most companies never see chat on the phone. <span class="mono">mobile/src/lib/tab-layout.ts:143</span></span></div></li>
+      <li><span class="sev hi">HIGH</span><div><b>The web has no Messages button and no unread badge</b><span>You reach your conversations only by opening a message to someone and pressing back.</span></div></li>
+      <li><span class="sev md">MED</span><div><b>"Typing…" goes to every connected screen in the company</b><span>Only people in the conversation should get it. It never works with another company.</span></div></li>
+      <li><span class="sev md">MED</span><div><b>Web shows "Calls are coming soon" buttons</b><span>The phone already removed them.</span></div></li>
+      <li><span class="sev lo">LOW</span><div><b>Chat push can't be switched off</b><span>The client portal "Messages" tab is a placeholder that sends nothing. No end-to-end test covers chat.</span></div></li>
+    </ul>
+  </section>
+
+  <!-- TODAY: TEAM -->
+  <section class="sec" id="sec-team-today">
+    <span class="eyebrow">Today · team</span>
+    <h2>Good on the phone, thin on the web, no profile on the phone</h2>
+    <div class="card tw">
+      <table>
+        <thead><tr><th>Screen</th><th>Web</th><th>Phone</th></tr></thead>
+        <tbody>
+          <tr><td>Colleagues</td><td><code>/team</code>: plain grid, Message, stub Call. No online status, no search. Menu shows it to managers only.</td><td><b>Team tab</b>: managers + colleagues, live status, Available / Busy / Away, search, Message.</td></tr>
+          <tr><td>All members (admin)</td><td><code>/members</code>: table, invite, roles, bulk actions, edit.</td><td><b>Manage → Members</b>: search, role chips, remove. <span class="pill no">Shows 10 people at most</span></td></tr>
+          <tr><td>A person's profile</td><td><code>/members/:id</code>: tasks, attendance, schedule, leave, performance, access. No Message button.</td><td><span class="pill no">None</span></td></tr>
+          <tr><td>Who is working now</td><td>"Floor now" on the leave wallchart</td><td>Home "Crew" widget</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="sec-team-bugs">
+    <span class="eyebrow">Today · team problems</span>
+    <h2>Four people lists, four rules</h2>
+    <div class="lists">
+      <div><b>Admin roster</b><small><code>/organizations/members</code> · needs manage-people</small></div>
+      <div><b>Colleagues</b><small><code>/locations/team</code> · shares a workspace</small></div>
+      <div><b>Managers</b><small><code>/organizations/contacts</code> · old permission fields, ignores "show in chat"</small></div>
+      <div><b>Chat contacts</b><small><code>/chat/contacts</code> · the chat rule</small></div>
+    </div>
+    <p class="sub">So a person can be on Team and not be messageable, or the other way round. Also: the phone shows the last known online status while offline, which the Crew widget deliberately never does; <code>/employees/new</code> is still live with nothing linking to it.</p>
+  </section>
+
+  <section class="sec" id="sec-team-path">
+    <span class="eyebrow">Today · where team lives on the web</span>
+    <h2>The dashboard is the live team; /team is only a name list</h2>
+    <div class="card tw">
+      <table>
+        <thead><tr><th>Where</th><th>Path</th><th>What it is</th><th>Who sees it</th></tr></thead>
+        <tbody>
+          <tr><td><b>Dashboard</b></td><td><code>/dashboard</code></td><td>One box per workspace with its people by state: working, on the road, remote, off shift, off duty. Click a person for details and Message.</td><td>Managers and office</td></tr>
+          <tr><td><b>Colleagues</b></td><td><code>/team</code><br><span class="sub">Top bar → Team → Colleagues</span></td><td>Plain grid of names with Message. No status, no search, no profile.</td><td>Managers only</td></tr>
+          <tr><td><b>Managers box</b></td><td><code>/dashboard</code></td><td>The people a member can contact, with status.</td><td>Ordinary members (their only team view on the web)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid2">
+      <div class="card"><span class="pill new" style="align-self:flex-start">Proposal</span><h3>Dashboard = the team right now</h3><p class="sub">Keep the workspace boxes. Add a search box over all people and a Profile link next to Message.</p></div>
+      <div class="card"><span class="pill new" style="align-self:flex-start">Proposal</span><h3>/team = who's who, for everyone</h3><p class="sub">The directory: managers first, live status, search, Message and Profile — the same as the phone's Team tab, and shown to every member, not only managers.</p></div>
+    </div>
+  </section>
+
+  <!-- PROPOSAL: WEB MESSAGES -->
+  <section class="sec" id="sec-web">
+    <span class="eyebrow">Proposal · web</span>
+    <h2>A Messages page, reached from the top bar</h2>
+    <p class="lead">Try it: switch conversations, send a message, open older messages. The envelope sits beside the bell with the unread count.</p>
+    <div class="frame">
+      <div class="top">
+        <span class="brand">HBCField</span>
+        <span class="hint">New</span>
+        <button type="button" class="ib on" aria-label="Messages, 4 unread"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="badge" id="topBadge">4</span></button>
+        <button type="button" class="ib" aria-label="Notifications"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
+      </div>
+      <div class="msgs">
+        <div class="cl">
+          <div class="cl-h"><input id="convSearch" placeholder="Search people and messages" aria-label="Search"><button type="button" class="btn p" id="newBtn">New</button></div>
+          <div class="tabs" id="convTabs"><button type="button" class="on" data-f="all">All</button><button type="button" data-f="people">People</button><button type="button" data-f="group">Groups</button><button type="button" data-f="job">Jobs</button></div>
+          <div id="convList"></div>
+        </div>
+        <div class="th">
+          <div class="th-h" id="thHead"></div>
+          <div class="stream" id="stream"></div>
+          <div class="typing" id="typing"></div>
+          <form class="comp" id="comp">
+            <button type="button" class="btn" id="attach" aria-label="Add photo or file">＋ Photo</button>
+            <input id="msgIn" placeholder="Write a message" autocomplete="off" aria-label="Message">
+            <button type="submit" class="btn p">Send</button>
+          </form>
+        </div>
+        <aside class="side" id="side"></aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROPOSAL: WEB TEAM -->
+  <section class="sec" id="sec-team-web">
+    <span class="eyebrow">Proposal · web</span>
+    <h2>Team on the web, the same as the phone</h2>
+    <div class="frame">
+      <div class="team">
+        <div class="team-h">
+          <input id="teamSearch" placeholder="Search name, job, workspace" aria-label="Search team">
+          <div class="chips" id="presChips"></div>
+        </div>
+        <div id="teamBody"></div>
+      </div>
+    </div>
+    <p class="sub">Managers first, then colleagues. Live status. Every card has Message and Profile. The member page (<code>/members/:id</code>) gets a Message button too. The "Call" button goes, unless you want a plain phone call when a number exists.</p>
+  </section>
+
+  <!-- PROPOSAL: PHONE -->
+  <section class="sec" id="sec-phone">
+    <span class="eyebrow">Proposal · phone</span>
+    <h2>Chat for everyone allowed, a profile for every person</h2>
+    <div class="phones">
+      <div>
+        <div class="phone"><div class="ps">
+          <div class="pt">Team <span class="pill new">Messages 4</span></div>
+          <div class="chips"><span class="chip on">All 12</span><span class="chip">Available 7</span><span class="chip">Busy 3</span></div>
+          <div class="pc"><span class="grp">Managers</span>
+            <div class="pr"><span class="av" style="background:#7c3aed">AM<span class="dot d-on"></span></span><span class="grow"><b>Anna Müller</b><small>Operations Manager</small></span><span class="mini">✉</span></div>
+          </div>
+          <div class="pc"><span class="grp">Main Office</span>
+            <div class="pr"><span class="av" style="background:#0e7490">MW<span class="dot d-busy"></span></span><span class="grow"><b>Mike Weber</b><small>On a job · Hofer Gmunden</small></span><span class="mini">✉</span></div>
+            <div class="pr"><span class="av" style="background:#b45309">SW<span class="dot d-on"></span></span><span class="grow"><b>Sarah Wagner</b><small>Clocked in 07:02</small></span><span class="mini">✉</span></div>
+            <div class="pr"><span class="av" style="background:#475569">KA<span class="dot d-away"></span></span><span class="grow"><b>Karim Ahmad</b><small>Off today</small></span><span class="mini">✉</span></div>
+          </div>
+        </div><div class="tabbar"><span><i></i>Home</span><span><i></i>Jobs</span><span><i></i>Clock</span><span class="on"><i></i>Team</span><span><i></i>More</span></div></div>
+        <p class="cap">Team tab: unchanged, but Messages shows for everyone allowed to contact, with no paid option.</p>
+      </div>
+      <div>
+        <div class="phone"><div class="ps">
+          <div class="pt">‹ <span></span></div>
+          <div class="prof"><span class="av" style="background:#0e7490">MW<span class="dot d-busy"></span></span><b style="font:700 18px var(--display)">Mike Weber</b><span class="sub">Field Technician</span><span class="pill half">Busy · on a job</span></div>
+          <div class="pc"><dl class="facts">
+            <dt>Today</dt><dd>Main Office · 07:00–15:30</dd>
+            <dt>Now</dt><dd>Boiler service, Hofer Gmunden</dd>
+            <dt>Phone</dt><dd>+43 664 123 4567</dd>
+            <dt>Leader</dt><dd>Anna Müller</dd>
+          </dl></div>
+          <button type="button" class="btn p" style="width:100%">Message</button>
+          <button type="button" class="btn" style="width:100%">Copy phone number</button>
+          <p class="sub" style="font-size:12px">Office people also see Tasks, Hours and Leave tabs here, the same rules as the web.</p>
+        </div><div class="tabbar"><span><i></i>Home</span><span><i></i>Jobs</span><span><i></i>Clock</span><span class="on"><i></i>Team</span><span><i></i>More</span></div></div>
+        <p class="cap">New: a person's profile. Today a tap goes straight to chat.</p>
+      </div>
+      <div>
+        <div class="phone"><div class="ps">
+          <div class="pr"><span>‹</span><span class="av sq" style="background:#2563eb">#</span><span class="grow"><b>Job · Boiler service</b><small>Mike, Sarah, Anna</small></span></div>
+          <div class="b"><span class="who">Mike</span>Pressure valve is gone, sending a photo<span class="t">10:41</span></div>
+          <div class="b"><span class="who">Mike</span><div class="ph">valve.jpg</div><span class="t">10:41</span></div>
+          <div class="b me">I'll bring a new one from the warehouse<span class="t">10:44 ✓✓ Read</span></div>
+          <div class="b sys">Sarah joined the job</div>
+          <div style="flex:1"></div>
+          <div class="comp" style="border:0;padding:0"><span class="mini">📷</span><input placeholder="Message" aria-label="Message" style="padding:8px 10px"></div>
+        </div></div>
+        <p class="cap">New: photos from the camera, read receipts, and one chat per job (phase 3).</p>
+      </div>
+    </div>
+    <p class="sub">Manage → Members loads everyone, page by page, not just the first 10.</p>
+  </section>
+
+  <!-- RULE -->
+  <section class="sec" id="sec-rule">
+    <span class="eyebrow">Proposal · one rule</span>
+    <h2>Who I see is who I can message</h2>
+    <div class="rule">
+      <div><b>Administrator</b><small>The whole company.</small></div>
+      <div><b>Leader</b><small>Everyone in the workspaces they lead.</small></div>
+      <div><b>Member</b><small>Their managers and the colleagues in their workspaces.</small></div>
+      <div><b>Anyone written to</b><small>Can always answer.</small></div>
+      <div><b>Other company (shared workspace)</b><small>Only while the sharing lasts.</small></div>
+      <div><b>Clients (portal)</b><small>Never in team chat.</small></div>
+    </div>
+    <p class="sub">One server function decides it, used by Team, Members, Managers and Chat, and checked again on every message as today. The company's "Messaging" switch per person still turns chat off completely.</p>
+  </section>
+
+  <!-- PERFORMANCE -->
+  <section class="sec" id="sec-perf">
+    <span class="eyebrow">Proposal · speed</span>
+    <h2>Fast with 10 people or 10,000 messages</h2>
+    <div class="flow card">
+      <div class="fl">
+        <div><span class="pill no">Today</span><p><b>1 message → every open web screen downloads the list and the conversation again.</b></p><p class="sub">50 people online ≈ <span class="big">100</span> requests for one message.</p></div>
+        <div><span class="pill ok">Proposed</span><p><b>The live event carries the message and the new list row; screens update themselves.</b></p><p class="sub">Extra requests per message: <span class="big">0</span> (the phone already works like this).</p></div>
+      </div>
+    </div>
+    <div class="card tw">
+      <table>
+        <thead><tr><th>#</th><th>Today</th><th>Proposed</th><th>Gain</th><th>Phase</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Each new message refetches list + conversation on every open web screen</td><td>Socket event carries the full message and summary; update in place. Send the unused <code>CHAT_CONVERSATION_UPDATED</code>.</td><td>0 extra requests</td><td><span class="pill new">1</span></td></tr>
+          <tr><td>2</td><td>List loads 100 threads with members + last message, then counts unread every time</td><td>Last message preview stored on the conversation; an unread counter on each member row (+1 on send, 0 on read). One indexed query.</td><td>Same speed at any size</td><td><span class="pill new">1</span></td></tr>
+          <tr><td>3</td><td>No cheap unread total for a badge</td><td>Sum of counters, cached ~20 s in Redis, pushed live (like the Approvals count)</td><td>Badge costs ~nothing</td><td><span class="pill new">1</span></td></tr>
+          <tr><td>4</td><td>"Typing…" goes to everyone online in the company</td><td>Only to the conversation's members (one room per conversation), throttled; works with other companies too</td><td>Less traffic, fixes a leak</td><td><span class="pill new">1</span></td></tr>
+          <tr><td>5</td><td>Only the last 30 messages; paging by time alone can skip ties</td><td>Page by (time, id) with an index; load older on scroll; virtualized list on web, inverted list on the phone</td><td>Smooth at any length</td><td>2</td></tr>
+          <tr><td>6</td><td>No photos or files</td><td>Phone shrinks photos, upload straight to storage (presigned, like tasks), thumbnails on the server, short-lived links when viewed</td><td>Server never carries file bytes</td><td>2</td></tr>
+          <tr><td>7</td><td>Read time stored, never shown</td><td>✓✓ Read in 1-to-1, "Seen by 3" in groups, live <code>chat.read</code> event; no new table</td><td>Receipts for free</td><td>2</td></tr>
+          <tr><td>8</td><td>Push for every message, even while reading that chat; can't mute</td><td>No push while the chat is open; one stacked notification per conversation; mute per conversation</td><td>Fewer, quieter pushes</td><td>2</td></tr>
+          <tr><td>9</td><td>Four people lists, four rules, four queries</td><td>One "who can I contact" function, cached ~60 s per person; re-check on every send stays</td><td>One rule, fewer queries</td><td>2</td></tr>
+          <tr><td>10</td><td>No search in messages</td><td>Postgres full-text (works for German, Arabic, English), only in my conversations</td><td>No new server</td><td>3</td></tr>
+          <tr><td>11</td><td>Opening a chat on the phone waits for the network</td><td>Last messages kept in the phone's offline database; opens instantly, then refreshes</td><td>Instant, even offline</td><td>3</td></tr>
+          <tr><td>12</td><td>No groups or job chats</td><td>Same tables; a job chat follows the job's crew automatically</td><td>No new chat engine</td><td>3</td></tr>
+          <tr><td>13</td><td>One server copy</td><td>Confirm Socket.IO's Redis adapter so live messages reach every copy</td><td>Ready to scale out</td><td>3</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- BIG-APP MODEL -->
+  <section class="sec" id="sec-bigapp">
+    <span class="eyebrow">Proposal · the big-app model</span>
+    <h2>How WhatsApp, Telegram and Slack keep requests near zero</h2>
+    <div class="grid2">
+      <div class="card"><h3>1 · One live connection for everything</h3><p class="sub">Send, receive, typing, read ticks and online status all travel on the connection we already have (Socket.IO). Every send gets an "arrived" reply, so nothing is lost.</p></div>
+      <div class="card"><h3>2 · A copy on the device</h3><p class="sub">Chats and messages are kept on the phone (its offline database) and in the browser's storage. Opening the app shows everything at once, with no request.</p></div>
+      <div class="card"><h3>3 · Catch-up by number</h3><p class="sub">Every change for a person gets a rising number. Back from a tunnel or sleep, the app asks once: "everything after 1532". One new table on the server.</p></div>
+      <div class="card"><h3>4 · Photos straight to storage, push only when closed</h3><p class="sub">Media never passes through the chat server. No push while the app is connected.</p></div>
+    </div>
+    <div class="card tw">
+      <table>
+        <thead><tr><th>Situation</th><th>Today</th><th>Speed fixes (phase 1)</th><th>Big-app model (phase 2)</th></tr></thead>
+        <tbody>
+          <tr><td>Open the chat screen</td><td>2–3 requests</td><td>2</td><td><b>0</b> + 1 small catch-up</td></tr>
+          <tr><td>Receive a message (web open)</td><td>2 per open screen</td><td>0</td><td><b>0</b></td></tr>
+          <tr><td>Send a message</td><td>1 web request</td><td>1</td><td><b>0</b> (over the live connection)</td></tr>
+          <tr><td>Back from no signal or sleep</td><td>Reload everything</td><td>Reload list + chat</td><td><b>1</b>, only the changes</td></tr>
+          <tr><td>Open a chat read yesterday</td><td>1</td><td>1</td><td><b>0</b></td></tr>
+          <tr><td>Server work per reload</td><td>Count unread, load 100 threads</td><td>1 quick query</td><td>Only the changes since your number</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid2">
+      <div class="card"><span class="pill ok" style="align-self:flex-start">We take</span><p class="sub">The live connection for everything, the device copy, catch-up by number, photos straight to storage.</p></div>
+      <div class="card"><span class="pill no" style="align-self:flex-start">We don't take</span><p class="sub">WhatsApp's own server language and binary protocol (built for billions; ours handles thousands). End-to-end encryption (the company must be able to see its work chats, as in Slack and Teams). Deleting messages after delivery (the company needs the history).</p></div>
+    </div>
+  </section>
+
+  <!-- PLAN -->
+  <section class="sec" id="sec-plan">
+    <span class="eyebrow">Order of work</span>
+    <h2>Three phases</h2>
+    <div class="phase">
+      <div class="card"><span class="ph-n">1</span><h3>Quick fixes · days</h3><ul>
+        <li>Chat on the phone without the Live Chat option</li><li>Messages button + unread badge on the web</li><li>Phone Members list loads everyone</li><li>Speed 1–4: live updates in place, stored last message + unread counters, cached badge, typing only to members</li><li>Remove the "coming soon" call buttons</li></ul><p class="sub">One small additive migration (two columns). Phone part is JS only: an over-the-air update after your preview.</p></div>
+      <div class="card"><span class="ph-n">2</span><h3>Big-app foundation + better chat · 2–3 weeks</h3><ul>
+        <li><b>Foundation:</b> device copy, catch-up by number, sending over the live connection</li>
+        <li>Messages page on the web</li><li>Photos and files (camera on the phone)</li><li>Read receipts</li><li>Older messages on scroll</li><li>Quieter pushes, mute per conversation</li><li>Profile screen on the phone; /team as the directory for everyone; search on the dashboard</li><li>One "who can I message" rule</li></ul></div>
+      <div class="card"><span class="ph-n">3</span><h3>Groups · 2–3 weeks</h3><ul>
+        <li>Group chats</li><li>One chat per job, for its crew</li><li>Search inside messages</li><li>Instant chat open on the phone, offline</li><li>End-to-end test for chat</li></ul></div>
+    </div>
+  </section>
+
+  <!-- DECISIONS -->
+  <section class="sec" id="sec-decisions">
+    <span class="eyebrow">Your decisions</span>
+    <h2>Four things to confirm</h2>
+    <div class="card"><ol class="dec">
+      <li>Start phase 1 now?</li>
+      <li>Calls on the web: remove them, or make them a plain phone call when a number exists?</li>
+      <li>Who may create a group: everyone, or managers and leaders only?</li>
+      <li>Job chat: created automatically for every job with more than one person, or only when someone starts it?</li>
+    </ol></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function toast(t){var e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(function(){e.remove();},1800);}
+  var P={
+    anna:{n:'Anna Müller',i:'AM',c:'#7c3aed',p:'on',r:'Operations Manager',ws:'All workspaces',mgr:true},
+    mike:{n:'Mike Weber',i:'MW',c:'#0e7490',p:'busy',r:'Field Technician',ws:'Main Office',now:'On a job · Hofer Gmunden'},
+    sarah:{n:'Sarah Wagner',i:'SW',c:'#b45309',p:'on',r:'Service Engineer',ws:'Main Office',now:'Clocked in 07:02'},
+    karim:{n:'Karim Ahmad',i:'KA',c:'#475569',p:'away',r:'HVAC Specialist',ws:'Warehouse',now:'Off today'},
+    lisa:{n:'Lisa Adler',i:'LA',c:'#be185d',p:'on',r:'Electrician',ws:'Service Center',now:'Clocked in 06:55'},
+    david:{n:'David Koller',i:'DK',c:'#15803d',p:'busy',r:'Senior Technician',ws:'Warehouse',now:'On a break'},
+    noor:{n:'Noor Shah',i:'NS',c:'#9333ea',p:'on',r:'Plumber',ws:'Service Center',now:'Clocked in 07:15'},
+    klaus:{n:'Klaus Brenner',i:'KB',c:'#64748b',p:'on',r:'Site supervisor · AGRU (other company)',ws:'AGRU shared site',ext:true}
+  };
+  var C=[
+    {id:'mike',k:'people',who:'mike',un:2,last:'Pressure valve is gone',at:'10:41',older:[['mike','Morning, starting at Hofer','07:58']],msgs:[['day','Today'],['mike','Pressure valve is gone, sending a photo','10:41'],['mike','@photo','10:41']]},
+    {id:'job',k:'job',title:'Job · Boiler service',sub:'Mike, Sarah, Anna',un:1,last:'Sarah: I can come at 13:00',at:'10:52',msgs:[['day','Today'],['sys','Job chat started with the crew'],['mike','Valve needs replacing','10:40'],['me','Bringing one from the warehouse','10:44'],['sarah','I can come at 13:00','10:52']]},
+    {id:'grp',k:'group',title:'Main Office team',sub:'8 people',un:1,last:'Anna: Safety briefing Friday 08:00',at:'09:10',msgs:[['day','Today'],['anna','Safety briefing Friday 08:00 in the hall','09:10'],['anna','@file','09:10']]},
+    {id:'anna',k:'people',who:'anna',un:0,last:'You: Thanks, done',at:'Tue',msgs:[['day','Tuesday'],['anna','Can you check Lisa\'s hours?','15:02'],['me','Thanks, done','15:20']]},
+    {id:'klaus',k:'people',who:'klaus',un:0,last:'Gate code changed to 4471',at:'Mon',msgs:[['day','Monday'],['klaus','Gate code changed to 4471','08:12']],ext:true}
+  ];
+  var sel='mike', filter='all', q='';
+  function av(p,sq){return '<span class="av'+(sq?' sq':'')+'" style="background:'+p.c+'">'+esc(p.i)+(p.p?'<span class="dot d-'+p.p+'"></span>':'')+'</span>';}
+  function titleOf(c){return c.who?P[c.who].n:c.title;}
+  function avOf(c){return c.who?av(P[c.who]):av({c:c.k==='job'?'#2563eb':'#0f766e',i:c.k==='job'?'#':'MO'},true);}
+  function unread(){return C.reduce(function(n,c){return n+c.un;},0);}
+  function list(){
+    var rows=C.filter(function(c){return (filter==='all'||c.k===filter)&&(!q||(titleOf(c)+' '+c.last).toLowerCase().indexOf(q)>=0);});
+    $('convList').innerHTML=rows.map(function(c){return '<button type="button" class="conv'+(c.id===sel?' on':'')+'" data-id="'+c.id+'">'+avOf(c)+'<span style="min-width:0"><b>'+esc(titleOf(c))+(c.ext?' <span class="pill half" style="font-size:10.5px">Other company</span>':'')+'</b><small>'+esc(c.last)+'</small></span><span class="meta">'+esc(c.at)+(c.un?'<span class="un">'+c.un+'</span>':'')+'</span></button>';}).join('')||'<p class="sub" style="padding:14px">No conversation matches.</p>';
+    $('convList').querySelectorAll('.conv').forEach(function(b){b.onclick=function(){sel=b.dataset.id;open();};});
+    var u=unread(); $('topBadge').textContent=u; $('topBadge').hidden=!u;
+  }
+  function bubble(m){
+    if(m[0]==='day') return '<span class="day">'+esc(m[1])+'</span>';
+    if(m[0]==='sys') return '<div class="b sys">'+esc(m[1])+'</div>';
+    var me=m[0]==='me', body=m[1]==='@photo'?'<div class="ph">valve.jpg · photo</div>':m[1]==='@file'?'<div class="file">📄 Safety-briefing.pdf · 240 KB</div>':esc(m[1]);
+    var who=(!me&&c().k!=='people')?'<span class="who">'+esc(P[m[0]].n.split(' ')[0])+'</span>':'';
+    return '<div class="b'+(me?' me':'')+'">'+who+body+'<span class="t">'+esc(m[2])+(me?(m[3]==='sent'?' ✓ Sent':' ✓✓ Read'):'')+'</span></div>';
+  }
+  function c(){return C.filter(function(x){return x.id===sel;})[0];}
+  function open(){
+    var x=c(); x.un=0;
+    var sub=x.who?(P[x.who].now||P[x.who].r):x.sub;
+    $('thHead').innerHTML=avOf(x)+'<span style="min-width:0"><b>'+esc(titleOf(x))+'</b><small>'+esc(sub)+'</small></span>';
+    $('stream').innerHTML=(x.older?'<button type="button" class="older" id="older">Show older messages</button>':'')+x.msgs.map(bubble).join('');
+    if(x.older) $('older').onclick=function(){x.msgs=x.older.concat(x.msgs);x.older=null;open();};
+    $('stream').scrollTop=$('stream').scrollHeight;
+    $('typing').textContent=x.id==='job'?'Sarah is typing…':'';
+    if(x.ext){ $('typing').textContent='Shared through "AGRU shared site". Closes if the sharing ends.'; }
+    side(x); list();
+  }
+  function side(x){
+    if(x.who){var p=P[x.who];
+      $('side').innerHTML='<div style="display:flex;gap:10px;align-items:center">'+av(p)+'<span><b>'+esc(p.n)+'</b><br><span class="sub">'+esc(p.r)+'</span></span></div><dl class="facts"><dt>Status</dt><dd>'+({on:'Available',busy:'Busy',away:'Away'})[p.p]+'</dd><dt>Workspace</dt><dd>'+esc(p.ws)+'</dd>'+(p.now?'<dt>Now</dt><dd>'+esc(p.now)+'</dd>':'')+'</dl><button type="button" class="btn">Open profile</button><h3>Shared in this chat</h3><div class="chips"><span class="chip">1 photo</span><span class="chip">0 files</span></div>';
+    } else {
+      $('side').innerHTML='<h3>'+esc(x.title)+'</h3><p class="sub">'+(x.k==='job'?'Everyone on the job\'s crew is in it. Joining the crew adds you, leaving removes you.':'Created by Anna Müller.')+'</p><h3>People</h3><div class="chips"><span class="chip">Mike</span><span class="chip">Sarah</span><span class="chip">Anna</span>'+(x.k==='group'?'<span class="chip">+5</span>':'')+'</div>'+(x.k==='job'?'<button type="button" class="btn">Open the job</button>':'<button type="button" class="btn">Add people</button>');
+    }
+  }
+  $('comp').onsubmit=function(e){e.preventDefault();var v=$('msgIn').value.trim();if(!v)return;var x=c();var m=['me',v,'now','sent'];x.msgs.push(m);x.last='You: '+v;x.at='now';$('msgIn').value='';open();setTimeout(function(){m[3]='read';if(c()===x)open();},1400);};
+  $('attach').onclick=function(){var x=c();x.msgs.push(['me','@photo','now','sent']);x.last='You: Photo';x.at='now';open();};
+  $('newBtn').onclick=function(){toast('Pick people: one person starts a chat, two or more make a group');};
+  $('convSearch').oninput=function(){q=this.value.trim().toLowerCase();list();};
+  $('convTabs').querySelectorAll('button').forEach(function(b){b.onclick=function(){filter=b.dataset.f;$('convTabs').querySelectorAll('button').forEach(function(o){o.classList.toggle('on',o===b);});list();};});
+  open();
+
+  // Team
+  var pf='all', tq='';
+  var PRES=[['all','All'],['on','Available'],['busy','Busy'],['away','Away']];
+  function team(){
+    var ids=Object.keys(P).filter(function(k){var p=P[k];return (pf==='all'||p.p===pf)&&(!tq||(p.n+' '+p.r+' '+p.ws).toLowerCase().indexOf(tq)>=0);});
+    $('presChips').innerHTML=PRES.map(function(x){var n=Object.keys(P).filter(function(k){return x[0]==='all'||P[k].p===x[0];}).length;return '<button type="button" class="chip'+(pf===x[0]?' on':'')+'" data-p="'+x[0]+'">'+x[1]+' '+n+'</button>';}).join('');
+    $('presChips').querySelectorAll('button').forEach(function(b){b.onclick=function(){pf=b.dataset.p;team();};});
+    function card(k){var p=P[k];return '<div class="person"><div class="row">'+av(p)+'<span style="min-width:0"><b>'+esc(p.n)+'</b><small>'+esc(p.r)+'</small><small>'+esc(p.now||p.ws)+'</small></span></div><div class="acts"><button type="button" class="btn p" data-m="'+k+'">Message</button><button type="button" class="btn" data-pr="'+k+'">Profile</button></div></div>';}
+    var mg=ids.filter(function(k){return P[k].mgr;}), rest=ids.filter(function(k){return !P[k].mgr;});
+    $('teamBody').innerHTML=(mg.length?'<p class="grp">Managers</p><div class="people">'+mg.map(card).join('')+'</div>':'')+(rest.length?'<p class="grp" style="margin-top:12px">Colleagues</p><div class="people">'+rest.map(card).join('')+'</div>':'')+(ids.length?'':'<p class="sub">Nobody matches.</p>');
+    $('teamBody').querySelectorAll('[data-m]').forEach(function(b){b.onclick=function(){var id=b.dataset.m;if(!C.some(function(x){return x.id===id;}))C.unshift({id:id,k:'people',who:id,un:0,last:'New conversation',at:'now',msgs:[]});sel=id;filter='all';open();document.getElementById('sec-web').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});};});
+    $('teamBody').querySelectorAll('[data-pr]').forEach(function(b){b.onclick=function(){toast('Opens '+P[b.dataset.pr].n+'\'s profile');};});
+  }
+  $('teamSearch').oninput=function(){tq=this.value.trim().toLowerCase();team();};
+  team();
+})();
+</script>
+<script>
+(function(){
+  var ORDER=[['intro','sec-intro','المقدمة'],['chat-today','sec-chat-today','الدردشة اليوم'],['chat-bugs','sec-chat-bugs','مشاكل الدردشة'],['team-today','sec-team-today','الفريق اليوم'],['team-bugs','sec-team-bugs','أربع قوائم'],['team-path','sec-team-path','أين الفريق على الويب'],['web','sec-web','صفحة الرسائل على الويب'],['team-web','sec-team-web','الفريق على الويب'],['phone','sec-phone','على الهاتف'],['rule','sec-rule','قاعدة واحدة'],['perf','sec-perf','السرعة والأداء'],['bigapp','sec-bigapp','مثل التطبيقات الكبيرة'],['plan','sec-plan','ترتيب العمل'],['decisions','sec-decisions','قرارات للتأكيد']];
+  var audio=new Audio(), i=-1, last=ORDER.length-1, IDLE='اضغط للاستماع';
+  var play=document.getElementById('voPlay'), icon=document.getElementById('voIcon'), now=document.getElementById('voNow'), prog=document.getElementById('voProg'), stop=document.getElementById('voStop');
+  var PLAY='M8 5v14l11-7z', PAUSE='M7 5h4v14H7zM13 5h4v14h-4z', reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function mark(id){document.querySelectorAll('.speaking').forEach(function(e){e.classList.remove('speaking');}); if(!id) return; var el=document.getElementById(id); el.classList.add('speaking'); el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});}
+  function start(from,to){ i=from; last=to; var c=ORDER[i]; mark(c[1]); now.textContent=(i+1)+' / '+ORDER.length+' · '+c[2]; audio.src='audio/'+c[0]+'.mp3'; audio.play().catch(function(){}); icon.setAttribute('d',PAUSE); stop.hidden=false; }
+  function end(){ audio.pause(); i=-1; icon.setAttribute('d',PLAY); stop.hidden=true; prog.style.width='0'; now.textContent=IDLE; mark(null); }
+  audio.addEventListener('timeupdate',function(){ if(audio.duration) prog.style.width=(audio.currentTime/audio.duration*100)+'%'; });
+  audio.addEventListener('ended',function(){ if(i<last) start(i+1,last); else end(); });
+  play.onclick=function(){ if(i<0) return start(0,ORDER.length-1); if(audio.paused){audio.play().catch(function(){}); icon.setAttribute('d',PAUSE);} else {audio.pause(); icon.setAttribute('d',PLAY);} };
+  stop.onclick=end;
+  ORDER.forEach(function(c,n){
+    var sec=document.getElementById(c[1]); var b=document.createElement('button'); b.type='button'; b.className='listen'; b.lang='ar'; b.dir='rtl';
+    b.innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>استمع';
+    b.onclick=function(){start(n,n);}; sec.insertBefore(b,sec.firstChild);
+  });
+})();
+</script>

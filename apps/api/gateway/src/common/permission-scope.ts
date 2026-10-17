@@ -24,3 +24,13 @@ export function scopeFor(user: any, key: AccessPermissionKey): string[] | null {
   if (isAdmin(user) || user[key] === true) return null;
   return spacesGranting(user.access, key);
 }
+
+/**
+ * `scopeFor` in the shape the services take: `undefined` = org-wide (no
+ * narrowing), `[ids]` = only these, `[]` = nothing. Never write
+ * `isAdmin(u) ? undefined : spacesGranting(...)` by hand — that skips the
+ * org flag and its bridges (`permission-scope-guard.spec.ts`).
+ */
+export function scopeIdsFor(user: any, key: AccessPermissionKey): string[] | undefined {
+  return scopeFor(user, key) ?? undefined;
+}

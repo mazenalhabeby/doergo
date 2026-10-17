@@ -1,5 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
-import { PortalService } from '../portal.service';
+import { portalServices } from './portal-services.fixture';
 
 /*
   The customer portal honoured PER WORKSPACE.
@@ -132,7 +132,7 @@ function setup() {
     ],
   };
   const { prisma, writes } = fakePrisma(db);
-  const service = new PortalService(prisma, {} as any);
+  const service = portalServices(prisma, {});
   return { service, prisma, writes, db };
 }
 

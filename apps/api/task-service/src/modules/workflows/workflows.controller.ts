@@ -2,6 +2,11 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { WorkflowsService } from './workflows.service';
 import { WorkflowLibraryService } from './workflow-library.service';
+import { WorkflowStatusesService } from './workflow-statuses.service';
+import { DefinitionOfDoneService } from './definition-of-done.service';
+import { SpaceWorkflowsService } from './space-workflows.service';
+import { WorkflowSharingService } from './workflow-sharing.service';
+import { LibraryCurationService } from './library-curation.service';
 
 /**
  * Microservice Controller for Status Workflow Operations
@@ -12,7 +17,12 @@ import { WorkflowLibraryService } from './workflow-library.service';
 export class WorkflowsController {
   constructor(
     private readonly workflowsService: WorkflowsService,
+    private readonly sharing: WorkflowSharingService,
+    private readonly spaceWorkflows: SpaceWorkflowsService,
+    private readonly definitionOfDone: DefinitionOfDoneService,
+    private readonly statuses: WorkflowStatusesService,
     private readonly library: WorkflowLibraryService,
+    private readonly curation: LibraryCurationService,
   ) {}
 
   @MessagePattern({ cmd: 'find_all_workflows' })
@@ -42,77 +52,77 @@ export class WorkflowsController {
 
   @MessagePattern({ cmd: 'set_default_workflow' })
   async setDefault(@Payload() data: { id: string; organizationId: string }) {
-    return this.workflowsService.setDefault(data);
+    return this.spaceWorkflows.setDefault(data);
   }
 
   @MessagePattern({ cmd: 'add_workflow_status' })
   async addStatus(@Payload() data: any) {
-    return this.workflowsService.addStatus(data);
+    return this.statuses.addStatus(data);
   }
 
   @MessagePattern({ cmd: 'update_workflow_status' })
   async updateStatus(@Payload() data: any) {
-    return this.workflowsService.updateStatus(data);
+    return this.statuses.updateStatus(data);
   }
 
   @MessagePattern({ cmd: 'delete_workflow_status' })
   async removeStatus(@Payload() data: { workflowId: string; statusId: string; organizationId: string }) {
-    return this.workflowsService.removeStatus(data);
+    return this.statuses.removeStatus(data);
   }
 
   @MessagePattern({ cmd: 'reorder_workflow_statuses' })
   async reorderStatuses(@Payload() data: { workflowId: string; organizationId: string; statusIds: string[] }) {
-    return this.workflowsService.reorderStatuses(data);
+    return this.statuses.reorderStatuses(data);
   }
 
   // ==================== Definition of Done ====================
 
   @MessagePattern({ cmd: 'get_definition_of_done' })
   async getDefinitionOfDone(@Payload() data: { organizationId: string; workflowId?: string }) {
-    return this.workflowsService.getDefinitionOfDone(data);
+    return this.definitionOfDone.getDefinitionOfDone(data);
   }
 
   @MessagePattern({ cmd: 'upsert_definition_of_done' })
   async upsertDefinitionOfDone(@Payload() data: any) {
-    return this.workflowsService.upsertDefinitionOfDone(data);
+    return this.definitionOfDone.upsertDefinitionOfDone(data);
   }
 
   @MessagePattern({ cmd: 'delete_definition_of_done' })
   async removeDefinitionOfDone(@Payload() data: { id: string; organizationId: string }) {
-    return this.workflowsService.removeDefinitionOfDone(data);
+    return this.definitionOfDone.removeDefinitionOfDone(data);
   }
   // ── Which workflows a space offers ──────────────────────────────────────────
 
   @MessagePattern({ cmd: 'list_space_workflows' })
   listSpaceWorkflows(@Payload() data: { spaceId: string; organizationId: string }) {
-    return this.workflowsService.listSpaceWorkflows(data);
+    return this.spaceWorkflows.listSpaceWorkflows(data);
   }
 
   @MessagePattern({ cmd: 'attach_space_workflow' })
   attachSpaceWorkflow(
     @Payload() data: { spaceId: string; workflowId: string; organizationId: string; makeDefault?: boolean },
   ) {
-    return this.workflowsService.attachSpaceWorkflow(data);
+    return this.spaceWorkflows.attachSpaceWorkflow(data);
   }
 
   @MessagePattern({ cmd: 'detach_space_workflow' })
   detachSpaceWorkflow(@Payload() data: { spaceId: string; workflowId: string; organizationId: string }) {
-    return this.workflowsService.detachSpaceWorkflow(data);
+    return this.spaceWorkflows.detachSpaceWorkflow(data);
   }
 
   @MessagePattern({ cmd: 'share_workflow_with_org' })
   shareWithOrganization(@Payload() data: { workflowId: string; organizationId: string }) {
-    return this.workflowsService.shareWithOrganization(data);
+    return this.sharing.shareWithOrganization(data);
   }
 
   @MessagePattern({ cmd: 'fork_workflow_for_space' })
   forkForSpace(@Payload() data: { workflowId: string; spaceId: string; organizationId: string }) {
-    return this.workflowsService.forkForSpace(data);
+    return this.sharing.forkForSpace(data);
   }
 
   @MessagePattern({ cmd: 'set_space_default_workflow' })
   setSpaceDefaultWorkflow(@Payload() data: { spaceId: string; workflowId: string; organizationId: string }) {
-    return this.workflowsService.setSpaceDefaultWorkflow(data);
+    return this.spaceWorkflows.setSpaceDefaultWorkflow(data);
   }
 
   // ── The shared task-type library ────────────────────────────────────────────
@@ -148,26 +158,26 @@ export class WorkflowsController {
 
   @MessagePattern({ cmd: 'curate_list_workflow_templates' })
   curateList() {
-    return this.library.curateList();
+    return this.curation.curateList();
   }
 
   @MessagePattern({ cmd: 'curate_upsert_workflow_template' })
   curateUpsert(@Payload() data: any) {
-    return this.library.curateUpsert(data);
+    return this.curation.curateUpsert(data);
   }
 
   @MessagePattern({ cmd: 'curate_publish_workflow_template' })
   curatePublish(@Payload() data: { id: string; isPublished: boolean }) {
-    return this.library.curateSetPublished(data);
+    return this.curation.curateSetPublished(data);
   }
 
   @MessagePattern({ cmd: 'curate_delete_workflow_template' })
   curateDelete(@Payload() data: { id: string }) {
-    return this.library.curateDelete(data);
+    return this.curation.curateDelete(data);
   }
 
   @MessagePattern({ cmd: 'curate_import_workflow_template' })
   curateImport(@Payload() data: { workflowId: string; slug?: string; industry?: string | null }) {
-    return this.library.curateImportFromOrg(data);
+    return this.curation.curateImportFromOrg(data);
   }
 }

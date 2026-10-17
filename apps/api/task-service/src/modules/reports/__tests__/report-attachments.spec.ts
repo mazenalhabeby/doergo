@@ -1,3 +1,4 @@
+import { reportServices } from './reports.service.fixture';
 /**
  * Service report photos on the shared object store — the same rules as task
  * attachments, because a report photo ends up in a PDF sent to the customer.
@@ -23,7 +24,13 @@ function setup(objects: Record<string, { size: number; type?: string }> = {}) {
     serviceReport: { findUnique: jest.fn(async () => ({ id: REPORT, organizationId: ORG, completedById: 'tech' })) },
     reportAttachment: { create: jest.fn(async ({ data }: any) => ({ id: 'ra1', ...data })), findUnique: jest.fn(), delete: jest.fn() },
   };
-  const service = new ReportsService(prisma, store, new MediaSigner(store), { emit: jest.fn() } as any, new TaskAccessService(prisma));
+  const service = reportServices(
+    prisma,
+    store,
+    new MediaSigner(store),
+    { emit: jest.fn() } as any,
+    new TaskAccessService(prisma),
+  );
   return { service, store, prisma };
 }
 

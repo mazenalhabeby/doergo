@@ -38,6 +38,21 @@ function base64UrlDecode(input: string): string | null {
   }
 }
 
+/** The `exp` claim of a JWT (seconds since 1970), or null when it is not one. */
+export function jwtExpiry(token: string | null | undefined): number | null {
+  if (!token) return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const json = base64UrlDecode(parts[1]!);
+  if (!json) return null;
+  try {
+    const payload = JSON.parse(json) as { exp?: unknown };
+    return typeof payload.exp === 'number' && Number.isFinite(payload.exp) ? payload.exp : null;
+  } catch {
+    return null;
+  }
+}
+
 /** The `sub` claim of a JWT, or null when it is not one. */
 export function jwtSubject(token: string | null | undefined): string | null {
   if (!token) return null;

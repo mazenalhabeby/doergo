@@ -5,10 +5,13 @@ import { ConfigService } from '@nestjs/config';
 import { HttpStatus } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from '../auth.service';
+import { SessionControlService } from '../session-control.service';
+import { combinedServices } from '../../../common/testing/combined-services';
 import { AUTH_SERVICES } from '../auth-services';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AuditLogService } from '../../audit-log/audit-log.service';
 import { BillingService } from '../../billing/billing.service';
+import { BillingTrialService } from '../../billing/billing-trial.service';
 import { GraceTokenCache } from '../grace-token-cache.service';
 import { Role, Platform, BCRYPT_COST_FACTOR } from '@hbcfield/shared';
 
@@ -16,7 +19,8 @@ import { Role, Platform, BCRYPT_COST_FACTOR } from '@hbcfield/shared';
 jest.mock('bcryptjs');
 
 describe('AuthService', () => {
-  let service: AuthService;
+  let service: AuthService &
+    Pick<SessionControlService, 'logout' | 'listSessions' | 'revokeSession' | 'revokeAllSessions'>;
   let prismaService: jest.Mocked<PrismaService>;
   let jwtService: jest.Mocked<JwtService>;
   let configService: jest.Mocked<ConfigService>;
@@ -114,6 +118,7 @@ describe('AuthService', () => {
         { provide: ConfigService, useValue: mockConfigService },
         { provide: AuditLogService, useValue: { log: jest.fn() } },
         { provide: BillingService, useValue: { startTrial: jest.fn().mockResolvedValue(undefined) } },
+        { provide: BillingTrialService, useValue: { startTrial: jest.fn().mockResolvedValue(undefined) } },
         {
           provide: GraceTokenCache,
           useValue: { get: jest.fn().mockResolvedValue(null), put: jest.fn().mockResolvedValue(undefined) },
@@ -121,7 +126,9 @@ describe('AuthService', () => {
       ],
     }).compile();
 
-    service = module.get<AuthService>(AuthService);
+    // Signing out and sessions are SessionControlService since the split; one object over both.
+
+    service = combinedServices(module.get(AuthService), module.get(SessionControlService)) as any;
     prismaService = module.get(PrismaService);
     jwtService = module.get(JwtService);
     configService = module.get(ConfigService);

@@ -26,35 +26,32 @@
  *                     every open tab.
  */
 import { AUTH_BASE_URL } from "./endpoints"
-
-export type RefreshOutcome = "ok" | "ended" | "unavailable"
-export type SessionEndReason = "expired" | "suspended" | "signed-out"
-
-type SessionEvent =
-  | { type: "token"; token: string }
-  | { type: "ended"; reason: SessionEndReason; message?: string }
-  | { type: "identity-changed"; userId: string | null }
-
-type ChannelMessage =
-  | { type: "token"; token: string; sub: string | null; from: string }
-  | { type: "request-token"; from: string }
-  | { type: "signed-out"; from: string }
-  | { type: "identity"; sub: string | null; from: string }
-
-const AUTH_CHANNEL_NAME = "hbc-auth"
-/** A NON-secret hint that a session may exist, so anonymous visits skip the refresh call. */
-export const SESSION_HINT_KEY = "hbc-auth-session"
-const STORAGE_EVENT_KEY = "hbc-auth-event"
-/** Removed on load: the access token from before it moved into memory. */
-const LEGACY_KEYS = ["hbcfield_access_token", "hbcfield_refresh_token"]
-
-/** The gateway's suspension refusal (shared `ORG_SUSPENDED_CODE` / message). */
-const ORG_SUSPENDED_CODE = "ORGANIZATION_SUSPENDED"
-const SUSPENDED_PATTERN = /deactivated|suspended/i
-
-const REFRESH_TIMEOUT_MS = 15_000
-const REFRESH_RETRY_DELAYS_MS = [1_000, 2_000, 4_000]
-const TOKEN_REQUEST_WAIT_MS = 150
+import {
+  type RefreshOutcome,
+  type SessionEndReason,
+  type SessionEvent,
+  type ChannelMessage,
+  AUTH_CHANNEL_NAME,
+  STORAGE_EVENT_KEY,
+  LEGACY_KEYS,
+  REFRESH_TIMEOUT_MS,
+  REFRESH_RETRY_DELAYS_MS,
+  TOKEN_REQUEST_WAIT_MS,
+  subOf,
+  tokenExpiresWithin,
+  safeStorage,
+  setHint,
+  hasSessionHint,
+  looksSuspended,
+} from "./auth-session-parts"
+export {
+  type RefreshOutcome,
+  type SessionEndReason,
+  tokenExpiresWithin,
+  hasSessionHint,
+  SESSION_HINT_KEY,
+  decodeJwtPayload,
+} from "./auth-session-parts"
 
 // ── state ──────────────────────────────────────────────────────────────────
 let accessToken: string | null = null
@@ -64,61 +61,6 @@ const tabId = Math.random().toString(36).slice(2) + Date.now().toString(36)
 let channel: BroadcastChannel | null = null
 let channelReady = false
 let sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
-
-// ── JWT helpers (payload only — never trusted, only used for timing / identity) ─
-export function decodeJwtPayload(token: string | null | undefined): { exp?: number; iat?: number; sub?: string } | null {
-  if (!token) return null
-  try {
-    const part = token.split(".")[1]
-    if (!part) return null
-    const b64 = part.replace(/-/g, "+").replace(/_/g, "/")
-    const json = decodeURIComponent(
-      atob(b64)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join(""),
-    )
-    return JSON.parse(json)
-  } catch {
-    return null
-  }
-}
-
-const subOf = (token: string | null) => decodeJwtPayload(token)?.sub ?? null
-
-export function tokenExpiresWithin(token: string | null, seconds: number): boolean {
-  const exp = decodeJwtPayload(token)?.exp
-  if (!exp) return true
-  return exp * 1000 - Date.now() < seconds * 1000
-}
-
-// ── storage (hint flag + fallback channel only) ─────────────────────────────
-function safeStorage(): Storage | null {
-  try {
-    return typeof window !== "undefined" ? window.localStorage : null
-  } catch {
-    return null
-  }
-}
-
-function setHint(on: boolean) {
-  const s = safeStorage()
-  try {
-    if (on) s?.setItem(SESSION_HINT_KEY, "1")
-    else s?.removeItem(SESSION_HINT_KEY)
-  } catch {
-    /* private mode — the hint is an optimisation only */
-  }
-}
-
-/** Might there be a session to restore? (No token is stored; this is a flag.) */
-export function hasSessionHint(): boolean {
-  try {
-    return safeStorage()?.getItem(SESSION_HINT_KEY) === "1"
-  } catch {
-    return false
-  }
-}
 
 // ── events ─────────────────────────────────────────────────────────────────
 export function onSessionEvent(listener: (e: SessionEvent) => void): () => void {
@@ -253,14 +195,6 @@ export function clearSession(opts: { broadcast?: boolean } = {}): void {
   accessToken = null
   setHint(false)
   if (opts.broadcast !== false) post({ type: "signed-out", from: tabId })
-}
-
-// ── refresh ────────────────────────────────────────────────────────────────
-function looksSuspended(body: unknown): boolean {
-  const b = body as { code?: unknown; message?: unknown } | null
-  if (b?.code === ORG_SUSPENDED_CODE) return true
-  const msg = Array.isArray(b?.message) ? b?.message.join(" ") : b?.message
-  return typeof msg === "string" && SUSPENDED_PATTERN.test(msg)
 }
 
 async function refreshOnce(): Promise<{ outcome: RefreshOutcome; reason?: SessionEndReason; message?: string }> {

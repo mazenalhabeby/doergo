@@ -5,18 +5,10 @@ import {
   type DocumentDirection,
   type SignatureMode,
   routeProblem,
-  SHARED_ROLE_WHERE,
 } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import {
-  type DocumentActor,
-  assertCanManageTypes,
-  assertCanManageVisibility,
-  normaliseKey,
-  sameIdSet,
-} from './document-common';
-import { DocumentLookupService } from './document-lookup.service';
+import { type DocumentActor, assertCanManageTypes, assertCanManageVisibility, normaliseKey } from './document-common';
+import { DocumentTypesBase } from './document-types.base';
 
 /**
  * The document type catalogue: what can be filed, who must supply it, who may see it.
@@ -24,11 +16,7 @@ import { DocumentLookupService } from './document-lookup.service';
  * Part of the personnel file; `DocumentsService` is the facade every caller uses.
  */
 @Injectable()
-export class DocumentTypesService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly lookup: DocumentLookupService,
-  ) {}
+export class DocumentTypesService extends DocumentTypesBase {
 
   async listTypes(data: {
     organizationId: string;
@@ -68,22 +56,6 @@ export class DocumentTypesService {
       },
       orderBy: [{ position: 'asc' }, { label: 'asc' }],
     });
-  }
-
-  /**
-   * A card has a reverse; a stack of paper has a page 2.
-   *
-   * ⚠️ Refused rather than silently coerced. Both set is somebody misreading
-   * the editor, and quietly picking a winner means the type behaves one way
-   * while its settings screen says another — which is only discovered by a
-   * member whose upload asks for the wrong thing.
-   */
-  private assertPageShape(twoSided?: boolean | null, multiPage?: boolean | null) {
-    if (twoSided && multiPage) {
-      throw new BadRequestException(
-        'A document type is either two-sided or many sheets, not both',
-      );
-    }
   }
 
   async createType(data: {
@@ -182,77 +154,6 @@ export class DocumentTypesService {
     }
   }
 
-  async updateType(data: {
-    actor: DocumentActor;
-    id: string;
-    patch: Partial<{
-      label: string;
-      description: string | null;
-      retentionMonths: number | null;
-      signatureMode: SignatureMode;
-      isCredential: boolean;
-      hasExpiry: boolean;
-      requiredForWorkflowIds: string[];
-      requiredFromAll: boolean;
-      requiredFromRoleIds: string[];
-      /** Roles that may SEE documents of this type. Empty = no restriction. */
-      visibleToRoleIds: string[];
-      twoSided: boolean;
-      /** Sheets of paper rather than a card — refused together with twoSided. */
-      multiPage: boolean;
-      scanShape: string;
-      isActive: boolean;
-      position: number;
-      /** Ordered signer roles, or null to go back to a single signature. */
-      signerRoute: unknown;
-    }>;
-  }) {
-    assertCanManageTypes(data.actor);
-    const existing = await this.lookup.findTypeOr404(data.id, data.actor.organizationId);
-
-    // Checked against what the type WILL be, not only what the edit names —
-    // turning on multiPage alone, for a type already two-sided, is the same
-    // misconfiguration arrived at in two steps.
-    this.assertPageShape(
-      data.patch.twoSided ?? existing.twoSided,
-      data.patch.multiPage ?? (existing as { multiPage?: boolean }).multiPage,
-    );
-
-    /*
-      A route is validated here rather than trusted.
-
-      It is JSON on a column, so nothing else stops a malformed one being
-      stored — and a document type whose route cannot be parsed would issue
-      documents with no chain while appearing to have one, which is the worst
-      of both. routeProblem returns the reason so the message is written once.
-    */
-    if (data.patch.signerRoute !== undefined) {
-      const problem = routeProblem(data.patch.signerRoute);
-      if (problem) throw new BadRequestException(problem);
-
-    }
-
-    // A form sends every field, so only a list that actually DIFFERS from the
-    // stored one is a change of who may see the type.
-    if (
-      data.patch.visibleToRoleIds !== undefined &&
-      !sameIdSet(data.patch.visibleToRoleIds, existing.visibleToRoleIds ?? [])
-    ) {
-      assertCanManageVisibility(data.actor);
-    }
-    await this.assertTypeRefsInOrg(data.actor.organizationId, data.patch);
-
-    // `cadence` and `direction` are absent from the patch on purpose. Changing
-    // either would re-interpret every document already filed under the type —
-    // a MONTHLY type turned ONE_OFF orphans twelve rows a year from their
-    // period, and flipping direction would hand members a delete button for
-    // payslips. Make a new type instead.
-    return this.prisma.documentType.update({
-      where: { id: existing.id },
-      data: data.patch as Prisma.DocumentTypeUpdateInput,
-    });
-  }
-
   /**
    * Retire a type. Never a hard delete: the documents filed under it must stay
    * readable, and the FK is RESTRICT precisely so this cannot be got around.
@@ -264,44 +165,5 @@ export class DocumentTypesService {
       where: { id: existing.id },
       data: { isActive: false },
     });
-  }
-
-  /**
-   * Every role and workflow a type names must be this organization's own.
-   *
-   * ⚠️ Without it a type could carry another tenant's role id — harmless to
-   * read, but a list nobody here can edit and an id that leaks across tenants.
-   */
-  private async assertTypeRefsInOrg(
-    organizationId: string,
-    refs: {
-      visibleToRoleIds?: string[];
-      requiredFromRoleIds?: string[];
-      requiredForWorkflowIds?: string[];
-    },
-  ) {
-    const roleIds = [
-      ...new Set([...(refs.visibleToRoleIds ?? []), ...(refs.requiredFromRoleIds ?? [])]),
-    ];
-    if (roleIds.length > 0) {
-      // A personal role names one person in one workspace — not a group a document type can address.
-      const found = await this.prisma.accessRole.count({
-        where: { id: { in: roleIds }, organizationId, ...SHARED_ROLE_WHERE },
-      });
-      if (found !== roleIds.length) {
-        throw new BadRequestException('A role on this document type is not in your organization');
-      }
-    }
-    const workflowIds = [...new Set(refs.requiredForWorkflowIds ?? [])];
-    if (workflowIds.length > 0) {
-      const found = await this.prisma.statusWorkflow.count({
-        where: { id: { in: workflowIds }, organizationId },
-      });
-      if (found !== workflowIds.length) {
-        throw new BadRequestException(
-          'A workflow on this document type is not in your organization',
-        );
-      }
-    }
   }
 }

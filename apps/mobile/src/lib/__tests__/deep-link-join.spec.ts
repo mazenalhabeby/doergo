@@ -11,9 +11,10 @@ import { armCrewJoin, clearCrewJoin, crewJoinArmed, JOIN_INTENT_TTL_MS, takeCrew
 import { parseOpenSheet } from '../../components/job/job-logic';
 import { crewJoinTarget } from '../notification-route';
 import { runSessionEndCleaners } from '../session/session-registry';
+import { readSource } from '../../test-utils/read-source';
 
 const ROOT = path.resolve(__dirname, '../../..');
-const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+const read = (p: string) => readSource(path.join(ROOT, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
 beforeEach(() => clearCrewJoin());
 

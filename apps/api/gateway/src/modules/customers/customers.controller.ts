@@ -1,72 +1,10 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Query,
-  Inject,
-  Request,
-  BadRequestException,
-  ForbiddenException,
-} from '@nestjs/common';
-import { OrgEventsService } from '../../common/events/org-events.service';
-import { ClientProxy } from '@nestjs/microservices';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Request, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
 import { Throttle } from '@nestjs/throttler';
 import { DenyExternal } from '../../common/decorators';
-import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
-import { parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, moduleAnywhere, parseContactImport, CONTACT_IMPORT_MESSAGES, pickUnitFields } from '@hbcfield/shared';
-import { SpaceModulesService } from '../../common/space-modules.service';
-
-interface CustomerDto {
-  /** Made on the phone when creating: a client added twice is one client. Ignored on update. */
-  id?: string;
-  name?: string;
-  contactName?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  address?: string | null;
-  notes?: string | null;
-  isActive?: boolean;
-  spaceId?: string | null; // per-space CRM
-  ownerId?: string | null; // sales owner
-  managerIds?: string[] | null; // assigned sales managers
-  status?: string; // CRM lifecycle stage
-  // Person vs Company + B2B company fields
-  type?: string; // PERSON | COMPANY
-  legalName?: string | null;
-  website?: string | null;
-  industry?: string | null;
-  vatId?: string | null;
-  regNumber?: string | null;
-  /** The language email to this client is written in. null / "" = not set. */
-  locale?: string | null;
-  /** Invoice currency outside a workspace. null / "" = the organization's. */
-  currency?: string | null;
-  /** The company that invoices this client outside a workspace. null / "" = the main one. */
-  legalEntityId?: string | null;
-  details?: { label: string; value: string }[] | null;
-}
-
-/**
- * Refuse a language that is not on the list before anything is forwarded.
- *
- * auth-service refuses it too — it is the boundary, and the phone's offline
- * sync reaches it by another route — but a request that can only fail should
- * fail here, without a round trip and without a module check on the way.
- */
-function assertClientLocale(dto: CustomerDto): void {
-  if (dto.locale !== undefined && !parseClientLocale(dto.locale).ok) {
-    throw new BadRequestException(CLIENT_LOCALE_INVALID_MESSAGE);
-  }
-  if (dto.currency !== undefined && !parseCurrency(dto.currency, { optional: true }).ok) {
-    throw new BadRequestException(CURRENCY_INVALID_MESSAGE);
-  }
-}
+import { moduleAnywhere, parseContactImport, CONTACT_IMPORT_MESSAGES } from '@hbcfield/shared';
+import { CustomerDto, assertClientLocale } from './customers-controller-helpers';
+import { CustomersControllerBase } from './customers-controller.base';
 
 /**
  * Customers. Two overlapping uses on ONE model:
@@ -100,43 +38,7 @@ function assertClientLocale(dto: CustomerDto): void {
   is a workspace's. The service is the boundary on every route here.
 */
 @Controller('customers')
-export class CustomersController {
-  constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    private readonly spaceModules: SpaceModulesService,
-    private readonly authCache: AuthTokenCache,
-    private readonly orgEvents: OrgEventsService,
-  ) {}
-
-  private auth(cmd: string, payload: any) {
-    return firstValueFrom(this.authClient.send({ cmd }, payload));
-  }
-
-  /**
-   * Run a CRM mutation and tell the org to re-read (audit C-D2). Nothing in the
-   * CRM announced anything: a rep adding an activity was invisible to a
-   * co-manager viewing the same client, and a new client never appeared on another
-   * admin's list. Broadcast on success only — a refused mutation changed nothing.
-   */
-  private async authMutation(cmd: string, payload: any, organizationId: string, customerId?: string) {
-    const res = await this.auth(cmd, payload);
-    if (!res || res.success !== false) {
-      this.orgEvents.customerChanged(organizationId, customerId ?? res?.data?.id ?? res?.id);
-    }
-    return res;
-  }
-
-  /** Caller context for CRM cap resolution + per-record ownership (server-authoritative). */
-  private caller(req: any) {
-    return { userId: req.user.id, role: req.user.role };
-  }
-
-  /** Assert the space has a module enabled (per-space gate; defence in depth). */
-  private async requireSpaceModule(spaceId: string | null | undefined, organizationId: string, mod: string) {
-    if (!spaceId) throw new BadRequestException('spaceId is required');
-    await this.spaceModules.assertEnabled(spaceId, organizationId, mod);
-  }
-
+export class CustomersController extends CustomersControllerBase {
 
   // CRM read/work endpoints are authorization-enforced IN the service against the
   // caller's CRM caps + per-record ownership (see customers.service). We pass the
@@ -269,54 +171,6 @@ export class CustomersController {
     });
   }
 
-  @Get(':id/contacts')
-  @ApiOperation({ summary: 'Who works at this company' })
-  async listContacts(@Param('id') id: string, @Request() req: any) {
-    return this.auth('list_customer_contacts', {
-      companyId: id,
-      organizationId: req.user.organizationId,
-      caller: this.caller(req),
-    });
-  }
-
-  @Get(':id/companies')
-  @ApiOperation({ summary: 'Which companies this person is a contact at' })
-  async listContactCompanies(@Param('id') id: string, @Request() req: any) {
-    return this.auth('list_customer_contact_companies', {
-      personId: id,
-      organizationId: req.user.organizationId,
-      caller: this.caller(req),
-    });
-  }
-
-  @Post(':id/contacts')
-  @ApiOperation({ summary: 'Attach a person to this company — an existing one, or a new one' })
-  async addContact(
-    @Param('id') id: string,
-    @Body() body: { personId?: string; person?: { name?: string; email?: string; phone?: string }; role?: string; isPrimary?: boolean },
-    @Request() req: any,
-  ) {
-    return this.auth('add_customer_contact', {
-      companyId: id,
-      personId: body?.personId,
-      person: body?.person,
-      role: body?.role,
-      isPrimary: body?.isPrimary,
-      organizationId: req.user.organizationId,
-      caller: this.caller(req),
-    });
-  }
-
-  @Post(':id/promote')
-  @ApiOperation({ summary: 'Make a contact person a client in their own right' })
-  async promoteContact(@Param('id') id: string, @Request() req: any) {
-    return this.auth('promote_customer_contact', {
-      personId: id,
-      organizationId: req.user.organizationId,
-      caller: this.caller(req),
-    });
-  }
-
   @Get(':id')
   @ApiOperation({ summary: 'Get a customer' })
   async get(@Param('id') id: string, @Request() req: any) {
@@ -345,93 +199,6 @@ export class CustomersController {
     return this.authMutation('update_customer', { id, organizationId: req.user.organizationId, dto, actorId: req.user.id, caller: this.caller(req) }, req.user.organizationId, id);
   }
 
-  // ── Addresses (a customer's units; one is primary → shown on the map) ──
-  // Read gated by CRM reach (get_customer enforces it); writes stay manager-only
-  // in Phase 1 (address editing for scoped members is a follow-up).
-  @Get(':id/addresses')
-  async listAddresses(@Param('id') id: string, @Request() req: any) {
-    // Enforce the caller may reach this client before exposing its units.
-    await this.auth('get_customer', { id, organizationId: req.user.organizationId, caller: this.caller(req) });
-    return this.auth('portal_list_units', { organizationId: req.user.organizationId, customerId: id });
-  }
-
-  /*
-    Address WRITES carry the caller as `crmCaller`: the portal service then asks
-    the CRM's own reach rule (view-all, or own / co-manage this client, plus
-    editInfo) before touching a unit. `crmEditInfo` alone let a rep scoped to
-    their own clients edit any client's addresses by id. No route-level
-    `crmEditInfo` any more: it read the ORG-wide flag and refused a member whose
-    edit right is a workspace's — the service decides on the client's own
-    workspace (org ∪ that workspace's grant). Identity goes LAST and
-    the body is whitelisted (`pickUnitFields`, no relations): an address edits
-    its own text and pin, never which client, space or portal it belongs to.
-  */
-  @Post(':id/addresses')
-  addAddress(@Param('id') id: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number; isPrimary?: boolean; contactName?: string; contactPhone?: string }, @Request() req: any) {
-    const fields = pickUnitFields(body, { relations: false });
-    return this.auth('portal_create_unit', {
-      ...fields,
-      name: body?.name?.trim() || body?.address || 'Address',
-      organizationId: req.user.organizationId, customerId: id, crmCaller: this.caller(req),
-    });
-  }
-
-  @Patch(':id/addresses/:unitId')
-  updateAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
-    // scopeCustomerId binds the unit to THIS customer (no cross-customer edits).
-    return this.auth('portal_update_unit', {
-      ...pickUnitFields(body, { relations: false }),
-      id: unitId, organizationId: req.user.organizationId, scopeCustomerId: id,
-      actorId: req.user.id, crmCaller: this.caller(req),
-    });
-  }
-
-  @Post(':id/addresses/:unitId/primary')
-  setPrimaryAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
-    return this.auth('portal_set_primary_unit', { id: unitId, organizationId: req.user.organizationId, customerId: id, crmCaller: this.caller(req) });
-  }
-
-  @Delete(':id/addresses/:unitId')
-  deleteAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
-    return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId, customerId: id, crmCaller: this.caller(req) });
-  }
-
-  // ── CRM activity timeline (service enforces reach + work cap) ──
-  @Get(':id/activities')
-  @ApiOperation({ summary: "A customer's CRM timeline (notes, calls, reminders, status)" })
-  listActivities(@Param('id') id: string, @Request() req: any) {
-    return this.auth('list_customer_activities', { customerId: id, organizationId: req.user.organizationId, caller: this.caller(req) });
-  }
-
-  @Post(':id/activities')
-  @ApiOperation({ summary: 'Log an activity / note / reminder on a customer' })
-  addActivity(@Param('id') id: string, @Body() body: { id?: string; type?: string; body?: string; dueAt?: string; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }, @Request() req: any) {
-    return this.authMutation('add_customer_activity', {
-      clientId: body.id,
-      customerId: id, organizationId: req.user.organizationId, authorId: req.user.id,
-      type: body.type, body: body.body, dueAt: body.dueAt,
-      reminderKind: body.reminderKind, remindBeforeMin: body.remindBeforeMin,
-      reminderAssigneeId: body.reminderAssigneeId, repeat: body.repeat,
-      caller: this.caller(req),
-    }, req.user.organizationId, id);
-  }
-
-  @Patch(':id/activities/:activityId')
-  updateActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Body() body: { body?: string; dueAt?: string | null; done?: boolean; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }, @Request() req: any) {
-    return this.authMutation('update_customer_activity', {
-      id: activityId, customerId: id, organizationId: req.user.organizationId,
-      body: body.body, dueAt: body.dueAt, done: body.done,
-      reminderKind: body.reminderKind, remindBeforeMin: body.remindBeforeMin,
-      reminderAssigneeId: body.reminderAssigneeId, repeat: body.repeat,
-      caller: this.caller(req),
-    }, req.user.organizationId, id);
-  }
-
-  @Delete(':id/activities/:activityId')
-  deleteActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Request() req: any) {
-    return this.authMutation('delete_customer_activity', { id: activityId, customerId: id, organizationId: req.user.organizationId, caller: this.caller(req) }, req.user.organizationId, id);
-  }
-
   @Delete(':id')
   @ApiOperation({ summary: 'Deactivate a customer (soft delete; revokes any app login)' })
   async remove(@Param('id') id: string, @Request() req: any) {
@@ -442,82 +209,5 @@ export class CustomersController {
     await Promise.all(ids.map((uid) => this.authCache.invalidateUser(uid).catch(() => undefined)));
     this.orgEvents.customerChanged(req.user.organizationId, id);
     return result;
-  }
-
-  @Post(':id/invite')
-  // Bringing a client into the app is the organization's act, not a workspace's.
-  @DenyExternal()
-  @ApiOperation({ summary: 'Invite this customer to the app (B2C Portal) — returns a code' })
-  async invite(@Param('id') id: string, @Body() body: { email?: string; portalId?: string }, @Request() req: any) {
-    const orgId = req.user.organizationId;
-    /*
-      Both reads and the write below carry the CALLER, like every other CRM
-      route: customers.service decides with the caller's CRM caps and their
-      ownership of THIS record. Without it the invite was judged as nobody in
-      particular, so the route-level permission was the only check on whose
-      client could be flipped into a portal resident.
-    */
-    const caller = this.caller(req);
-    const customer = await this.managedCustomer(id, orgId, caller);
-    if (!customer.spaceId) throw new BadRequestException('Customer is not attached to a space');
-    await this.requireSpaceModule(customer.spaceId, orgId, 'b2c_portal');
-
-    const email = body.email?.trim() || customer.email;
-    if (!email) throw new BadRequestException('An email is required to invite this customer');
-
-    // Which portal (= which entity + which categories the client will see)?
-    // Priority: (1) the customer's assigned unit's OWN portal — the apartment
-    // they hold decides their portal; (2) an explicitly-chosen portalId from the
-    // caller (validated to belong to this customer's space); (3) the space's
-    // default portal (single-portal spaces / no choice needed).
-    const units: any[] = (await this.auth('portal_list_units', { organizationId: orgId, customerId: id })) || [];
-    let unit: any = units.find((u) => u.isPrimary) ?? units[0];
-    let portalId: string | undefined = unit?.portalId ?? undefined;
-    if (!portalId && body.portalId) {
-      const p: any = await this.auth('portal_get', { id: body.portalId, organizationId: orgId });
-      const portal = p?.data ?? p;
-      if (!portal || portal.spaceId !== customer.spaceId) {
-        throw new BadRequestException('Invalid portal for this customer');
-      }
-      portalId = body.portalId;
-    }
-    if (!portalId) {
-      const portalRes: any = await this.auth('portal_ensure_for_space', { organizationId: orgId, spaceId: customer.spaceId });
-      portalId = portalRes?.data?.id ?? portalRes?.id;
-    }
-    if (!unit) {
-      unit = await this.auth('portal_create_unit', { organizationId: orgId, customerId: id, portalId, name: customer.name, address: customer.address });
-    }
-    const inviteRes: any = await this.auth('create_invitation', {
-      targetRole: 'CUSTOMER', organizationId: orgId, createdById: req.user.id, creatorRole: req.user.role,
-      customerId: id, unitId: unit.id, portalId, email,
-    });
-    // Flip the CRM record into a portal resident + advance the stage to Customer
-    // (an invited app user has converted). Status change is auto-logged.
-    await this.auth('update_customer', { id, organizationId: orgId, actorId: req.user.id, caller, dto: { isPortalResident: true, portalId, status: 'CUSTOMER' } });
-    return { data: { code: inviteRes?.data?.code, email } };
-  }
-
-  @Post(':id/resend-invite')
-  @DenyExternal()
-  @ApiOperation({ summary: "Re-send a customer's app invite" })
-  async resendInvite(@Param('id') id: string, @Request() req: any) {
-    // The same door as the invite: manage where the client is filed. It used to
-    // re-send for any client id on the org-wide flag alone.
-    await this.managedCustomer(id, req.user.organizationId, this.caller(req));
-    return this.auth('resend_invitation', { organizationId: req.user.organizationId, customerId: id });
-  }
-
-  /**
-   * The client, read AS the caller (404 when out of their reach), and refused
-   * unless they may manage it where it is filed — `crmCaps` on the record is
-   * customers.service's answer for org ∪ that workspace, never the org flag.
-   */
-  private async managedCustomer(id: string, organizationId: string, caller: { userId: string; role: string }) {
-    const res: any = await this.auth('get_customer', { id, organizationId, caller });
-    const customer = res?.data ?? res;
-    if (!customer?.id) throw new BadRequestException('Customer not found');
-    if (!customer.crmCaps?.manage) throw new ForbiddenException('Not allowed to manage this client');
-    return customer;
   }
 }

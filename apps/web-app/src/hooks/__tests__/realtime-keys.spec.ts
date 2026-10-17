@@ -62,9 +62,14 @@ const INVALIDATION_BEFORE = /(?:invalidate|refetch|reset|remove|cancel)Queries\(
  * behind a helper (`roleQueryKey`) counts as read; what this cannot forgive is a
  * family nothing anywhere builds except to invalidate it.
  */
+// The realtime map: the hook plus the table it reads (moved out of it 2026-10-17).
+const REALTIME = ['use-realtime-sync.ts', 'realtime-events.ts', 'realtime-event-names.ts'].map((n) => join('hooks', n))
+const isRealtime = (f: string) => REALTIME.some((r) => f.endsWith(r))
+// query-keys.ts is a barrel over lib/query-keys/ (split 2026-10-17): both are the key definitions.
+const isKeyDefinition = (f: string) => f.endsWith(join('lib', 'query-keys.ts')) || f.includes(join('lib', 'query-keys') + '/')
 const readHeads: string[][] = []
 for (const { f, src } of files) {
-  if (f.endsWith(join('lib', 'query-keys.ts')) || f.endsWith(join('hooks', 'use-realtime-sync.ts'))) continue
+  if (isKeyDefinition(f) || isRealtime(f)) continue
   for (const m of src.matchAll(FACTORY)) {
     if (INVALIDATION_BEFORE.test(src.slice(Math.max(0, m.index! - 60), m.index!))) continue
     readHeads.push(staticHead(m[1]!, m[2]!))
@@ -80,7 +85,7 @@ describe('invalidation keys are real', () => {
   })
 
   it('every key a socket event invalidates is read by some query', () => {
-    const sync = files.find(({ f }) => f.endsWith(join('hooks', 'use-realtime-sync.ts')))!.src
+    const sync = files.filter(({ f }) => isRealtime(f)).map(({ src }) => src).join('\n')
     const declared = [...sync.matchAll(FACTORY)].map((m) => ({ where: `keys.${m[1]}.${m[2]}()`, head: staticHead(m[1]!, m[2]!) }))
     expect(declared.length).toBeGreaterThan(40)
     expect(phantoms(declared)).toEqual([])
@@ -89,7 +94,7 @@ describe('invalidation keys are real', () => {
   it('every key a write invalidates is read by some query', () => {
     const invalidated: Array<{ where: string; head: string[] }> = []
     for (const { f, src } of files) {
-      if (f.endsWith(join('hooks', 'use-realtime-sync.ts'))) continue
+      if (isRealtime(f)) continue
       for (const m of src.matchAll(FACTORY)) {
         if (!INVALIDATION_BEFORE.test(src.slice(Math.max(0, m.index! - 60), m.index!))) continue
         invalidated.push({ where: `${f.slice(SRC.length + 1)}: keys.${m[1]}.${m[2]}`, head: staticHead(m[1]!, m[2]!) })

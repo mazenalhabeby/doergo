@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 import { OwnAccountService } from '../own-account.service';
-import { OnboardingService } from '../../onboarding/onboarding.service';
+import { OrgSettingsService } from '../../onboarding/org-settings.service';
 
 /**
  * Two sets of notification switches, stored where they are read.
@@ -54,7 +54,7 @@ describe('reading a member’s switches', () => {
 
 describe('the organization’s notification switches', () => {
   function service(existing: unknown, found = true) {
-    const svc = Object.create(OnboardingService.prototype) as any;
+    const svc = Object.create(OrgSettingsService.prototype) as any;
     svc.prisma = {
       organization: {
         findUnique: jest.fn().mockResolvedValue(found ? { notificationPrefs: existing } : null),

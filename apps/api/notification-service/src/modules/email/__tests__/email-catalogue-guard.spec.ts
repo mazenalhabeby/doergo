@@ -53,7 +53,7 @@ function senders() {
     join(NOTIFICATION, 'notification.controller.ts'),
     join(NOTIFICATION, 'modules', 'email', 'email.service.ts'),
     join(NOTIFICATION, 'modules', 'email', 'member-emails.service.ts'),
-    join(API, 'auth-service', 'src', 'modules', 'auth', 'auth.service.ts'),
+    join(API, 'auth-service', 'src', 'modules', 'auth', 'auth-mail.service.ts'),
     join(API, 'auth-service', 'src', 'modules', 'documents', 'customer-sign-mailer.service.ts'),
     join(API, 'auth-service', 'src', 'modules', 'invitations', 'invitation.service.ts'),
     join(API, 'task-service', 'src', 'modules', 'analytics', 'report-schedule.service.ts'),
@@ -71,7 +71,7 @@ describe('email catalogue guard', () => {
     expect(files.map((f) => f.file)).toEqual(
       expect.arrayContaining([
         'notification-service/src/modules/email/email.service.ts',
-        'auth-service/src/modules/auth/auth.service.ts',
+        'auth-service/src/modules/auth/auth-mail.service.ts',
         'auth-service/src/modules/documents/customer-sign-mailer.service.ts',
         'task-service/src/modules/analytics/report-schedule.service.ts',
       ]),
@@ -100,7 +100,10 @@ describe('email catalogue guard', () => {
   });
 
   describe('the shared templates', () => {
-    const templates = read(join(SHARED_MAIL, 'email-templates.ts'));
+    // One file per area since 2026-10-17 (mail/templates/), read as one.
+    const templates = ((parts) => ({ file: 'mail/templates', code: parts.map((p) => p.code).join('\n') }))(
+      readdirSync(join(SHARED_MAIL, 'templates')).map((f) => read(join(SHARED_MAIL, 'templates', f))),
+    );
 
     /*
       A sentence typed into a template's markup reads the same in all five

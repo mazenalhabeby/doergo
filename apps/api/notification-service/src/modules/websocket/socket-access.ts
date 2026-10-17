@@ -1,4 +1,13 @@
-import { buildResolvedAccess, canAccessTask, holdsOpenRole, platformEnrolmentRequired, tokenIssuedBeforeCutoff, type ResolvedAccess, memberAccessOf } from '@hbcfield/shared';
+import {
+  activeWindowWhere,
+  buildResolvedAccess,
+  canAccessTask,
+  holdsOpenRole,
+  platformEnrolmentRequired,
+  tokenIssuedBeforeCutoff,
+  type ResolvedAccess,
+  memberAccessOf,
+} from '@hbcfield/shared';
 
 /**
  * What a socket's user may see — resolved from the DATABASE, the same way the
@@ -53,7 +62,7 @@ export async function resolveSocketAccess(
       organization: { select: { suspendedAt: true } },
       memberRole: { select: { permissions: true, isActive: true } },
       spaceAssignments: {
-        where: { effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] },
+        where: { ...activeWindowWhere(now) },
         select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
       },
     },

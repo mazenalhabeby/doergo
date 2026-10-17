@@ -1,5 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
-import { SupportService } from '../support.service';
+import { supportParts } from './support.service.fixture';
 
 /*
   Support scoping (2026-10-10): the inbox was scoped to the operator's teams,
@@ -27,7 +27,7 @@ describe('support — agent scope on every ticket operation', () => {
   };
   const notify = { emit: jest.fn() };
   const queue = { getJob: jest.fn(), add: jest.fn() };
-  const svc = new SupportService(prisma, notify as any, queue as any);
+  const svc = supportParts(prisma, notify as any, queue as any);
   const scoped = { isSupervisor: false, teamIds: ['t1'], platformUserId: 'op-3' };
 
   const ops = (id: string, scope: any) => [

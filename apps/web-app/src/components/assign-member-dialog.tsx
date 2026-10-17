@@ -18,92 +18,16 @@ import { cn } from "@/lib/utils"
 import type { AssignablePerson } from "@/lib/assignable-members"
 import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { UserAvatar } from "@/components/user-avatar"
-
-// =============================================================================
-// TYPES
-// =============================================================================
-
-interface AssignMemberDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  taskId: string | null
-  spaceId?: string | null
-  currentAssigneeId?: string | null
-  /** Current assignee IDs — for multi-select mode */
-  currentAssigneeIds?: string[]
-  /** Called with the final selected member IDs when Save is clicked */
-  onSave?: (added: string[], removed: string[]) => void
-  /** Legacy single-assign callback */
-  onAssign: (memberId: string) => void
-  onRemove?: (memberId: string) => void
-  isAssigning?: boolean
-  /** Shown under the title — something the caller needs said before a pick (e.g. a handover still owed). */
-  notice?: React.ReactNode
-}
+import { useAssignMemberDialog, type AssignMemberDialogProps } from "./use-assign-member-dialog"
+import { MemberRow } from "./assign-member-dialog-helpers"
 
 // =============================================================================
 // MOCK DATA
 // =============================================================================
 
-
 // =============================================================================
 // MEMBER ROW
 // =============================================================================
-
-const MemberRow = React.memo(function MemberRow({
-  member,
-  isCurrent,
-  isAssigning,
-  onAssign,
-}: {
-  member: AssignablePerson
-  isCurrent: boolean
-  isAssigning: boolean
-  onAssign: (id: string) => void
-}) {
-  const title = member.position || member.specialty || member.role || member.email || ""
-
-  return (
-    <button
-      type="button"
-      className={cn(
-        "w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200 ease-out",
-        isCurrent
-          ? "bg-blue-50/80 dark:bg-blue-500/10"
-          : "hover:bg-accent/50",
-        isAssigning && "pointer-events-none opacity-60",
-      )}
-      onClick={() => onAssign(member.id)}
-      disabled={isAssigning}
-    >
-      {/* Avatar */}
-      <UserAvatar
-        firstName={member.firstName}
-        lastName={member.lastName}
-        avatarUrl={member.avatarUrl}
-        seed={member.id}
-        size="md"
-      />
-
-      {/* Name + title */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground truncate">
-            {personName(member)}
-          </span>
-        </div>
-        <p className="text-xs text-muted-foreground truncate">{title}</p>
-      </div>
-
-      {/* Current assignee indicator */}
-      {isCurrent && (
-        <div className="flex-shrink-0">
-          <Check className="size-4 text-blue-600 dark:text-blue-400" />
-        </div>
-      )}
-    </button>
-  )
-})
 
 // =============================================================================
 // MAIN COMPONENT
@@ -122,122 +46,22 @@ export function AssignMemberDialog({
   isAssigning = false,
   notice,
 }: AssignMemberDialogProps) {
-  const { t } = useTranslation()
-  const isMultiMode = !!onSave || !!onRemove
-  const [search, setSearch] = useState("")
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [saving, setSaving] = useState(false)
-  const prevOpenRef = React.useRef(false)
-
-  // Only sync selection when dialog OPENS (not on every render)
-  React.useEffect(() => {
-    if (open && !prevOpenRef.current) {
-      const initial = new Set(currentAssigneeIds)
-      if (currentAssigneeId) initial.add(currentAssigneeId)
-      setSelectedIds(initial)
-    }
-    prevOpenRef.current = open
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Compute what changed
-  const originalIds = useMemo(() => {
-    const ids = new Set(currentAssigneeIds)
-    if (currentAssigneeId) ids.add(currentAssigneeId)
-    return ids
-  }, [currentAssigneeId, currentAssigneeIds])
-
-  const hasChanges = useMemo(() => {
-    if (selectedIds.size !== originalIds.size) return true
-    for (const id of selectedIds) { if (!originalIds.has(id)) return true }
-    for (const id of originalIds) { if (!selectedIds.has(id)) return true }
-    return false
-  }, [selectedIds, originalIds])
-
-  const handleOpenChange = useCallback((nextOpen: boolean) => {
-    if (!nextOpen) { setSearch(""); setSelectedIds(new Set()) }
-    onOpenChange(nextOpen)
-  }, [onOpenChange])
-
-  /*
-    Who can be picked — the organization directory for whoever may read it, the
-    workspace's roster otherwise (see lib/assignable-members.ts). Reading the
-    directory unconditionally 403'd for every manager without canManageUsers and
-    the dialog listed nobody.
-  */
-  const { members: allMembers, spaceMemberIds, isLoading } = useAssignableMembers({
-    spaceId,
-    enabled: open,
-  })
-
-  // Filter by search
-  const filtered = useMemo(() => {
-    if (!search) return allMembers
-    const q = search.toLowerCase()
-    return allMembers.filter((m) => {
-      const fullName = personName(m).toLowerCase()
-      return fullName.includes(q) || (m.email && m.email.toLowerCase().includes(q))
-    })
-  }, [allMembers, search])
-
-  // Split into space members and others
-  const { spaceMembers, otherMembers } = useMemo(() => {
-    if (!spaceId || spaceMemberIds.size === 0) {
-      return { spaceMembers: [], otherMembers: filtered }
-    }
-    const space: AssignablePerson[] = []
-    const other: AssignablePerson[] = []
-    for (const m of filtered) {
-      if (spaceMemberIds.has(m.id)) {
-        space.push(m)
-      } else {
-        other.push(m)
-      }
-    }
-    return { spaceMembers: space, otherMembers: other }
-  }, [filtered, spaceId, spaceMemberIds])
-
-  const handleToggle = useCallback((memberId: string) => {
-    if (isMultiMode) {
-      // Toggle in local state — no server call yet
-      setSelectedIds(prev => {
-        const next = new Set(prev)
-        if (next.has(memberId)) next.delete(memberId)
-        else next.add(memberId)
-        return next
-      })
-    } else {
-      // Single mode — assign immediately
-      onAssign(memberId)
-    }
-  }, [isMultiMode, onAssign])
-
-  const handleSave = useCallback(async () => {
-    const added = [...selectedIds].filter(id => !originalIds.has(id))
-    const removed = [...originalIds].filter(id => !selectedIds.has(id))
-    if (added.length === 0 && removed.length === 0) { handleOpenChange(false); return }
-
-    setSaving(true)
-    try {
-      if (onSave) {
-        await onSave(added, removed)
-      } else {
-        // Fallback: call onAssign/onRemove individually
-        for (const id of added) onAssign(id)
-        for (const id of removed) onRemove?.(id)
-      }
-      handleOpenChange(false)
-    } finally {
-      setSaving(false)
-    }
-  }, [selectedIds, originalIds, onSave, onAssign, onRemove, handleOpenChange])
-
-  // Find space name for section header
-  const spaceName = useMemo(() => {
-    if (!spaceId) return null
-    // We don't have direct access to space name here, so use a generic label
-    // The caller can enhance this if needed
-    return "Space"
-  }, [spaceId])
+  const {
+    t,
+    isMultiMode,
+    search,
+    setSearch,
+    selectedIds,
+    saving,
+    hasChanges,
+    handleOpenChange,
+    isLoading,
+    filtered,
+    spaceMembers,
+    otherMembers,
+    handleToggle,
+    handleSave,
+  } = useAssignMemberDialog({ open, onOpenChange, taskId, spaceId, currentAssigneeId, currentAssigneeIds, onSave, onAssign, onRemove, isAssigning, notice })
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

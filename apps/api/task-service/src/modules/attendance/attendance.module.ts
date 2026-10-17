@@ -3,12 +3,17 @@ import { ClientsModule } from '@nestjs/microservices';
 import { BullModule } from '@nestjs/bullmq';
 import { SERVICE_NAMES, createClientOptions, QUEUE_NAMES } from '@hbcfield/shared';
 import { AttendanceController } from './attendance.controller';
+import { AttendanceReportsRpcController } from './attendance-reports.rpc.controller';
+import { BreaksRpcController } from './breaks.rpc.controller';
+import { EntryDecisionsRpcController } from './entry-decisions.rpc.controller';
+import { AutoClockRpcController } from './auto-clock.rpc.controller';
 import { AttendanceService } from './attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from './attendance-service-parts';
+import { DecidedCloseService } from './decided-close.service';
 import { ShiftResolverService } from './shift-resolver.service';
-import { BreakService } from './break.service';
+import { BREAK_SERVICES } from './break-services';
 import { AttendanceReportService } from './attendance-report.service';
-import { ApprovalService } from './approval.service';
+import { ENTRY_SERVICES } from './entry-services';
 import { AttendanceProcessor } from './attendance.processor';
 import { AttendanceScheduler } from './attendance.scheduler';
 import { CountedTimeService } from './counted-time.service';
@@ -32,7 +37,13 @@ import { CalendarRulesModule } from '../calendar/calendar-rules.module';
     // Public holidays close a missed shift by themselves (no-show-settle).
     CalendarRulesModule,
   ],
-  controllers: [AttendanceController],
+  controllers: [
+    AttendanceController,
+    AttendanceReportsRpcController,
+    BreaksRpcController,
+    EntryDecisionsRpcController,
+    AutoClockRpcController,
+  ],
   providers: [
     AttendanceService,
     ...ATTENDANCE_SERVICE_PARTS, // the collaborators behind the AttendanceService facade
@@ -43,15 +54,22 @@ import { CalendarRulesModule } from '../calendar/calendar-rules.module';
     // Rests: the rules a workspace writes, and one shift's plan of them.
     BreakRulesService,
     BreakReminderService,
-    BreakService,
+    ...BREAK_SERVICES,
     // A shift added after the clock-in reaches the entries it covers.
     ShiftRematchService,
     AttendanceReportService,
-    ApprovalService,
+    ...ENTRY_SERVICES,
     AttendanceProcessor,
     AttendanceScheduler,
   ],
   // ClockOutService: the one way a shift closes — the legacy overtime module closes through it too.
-  exports: [AttendanceService, AttendanceScheduler, ShiftRematchService, ClockOutService, NoShowSettleService],
+  exports: [
+    AttendanceService,
+    AttendanceScheduler,
+    ShiftRematchService,
+    ClockOutService,
+    DecidedCloseService,
+    NoShowSettleService,
+  ],
 })
 export class AttendanceModule {}

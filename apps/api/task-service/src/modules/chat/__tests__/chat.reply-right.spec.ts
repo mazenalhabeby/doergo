@@ -1,7 +1,10 @@
+import { chatPartsOf, type ChatServiceParts } from './chat.service.fixture';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { ChatService, CONVERSATION_LIST_ORDER } from '../chat.service';
+import { CHAT_PROVIDERS } from '../chat.module';
+import { chatStorageStubs } from './chat-storage-stubs';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /**
@@ -15,7 +18,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
  * and both are still in chat. Re-asked on every send, never granted by history.
  */
 describe('ChatService.sendMessage — the reply right', () => {
-  let service: ChatService;
+  let service: ChatServiceParts;
 
   const ORG = 'org-1';
   const MIKE = 'emp-mike';
@@ -36,7 +39,14 @@ describe('ChatService.sendMessage — the reply right', () => {
       findUnique: jest.fn(({ where }: any) => Promise.resolve(rows[where.id] ?? null)),
       findFirst: jest.fn(({ where }: any) => Promise.resolve(rows[where.id]?.organizationId === where.organizationId ? rows[where.id] : null)),
     },
-    conversationMember: { findUnique: jest.fn(), update: jest.fn() },
+    conversationMember: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _sum: { unreadCount: 0 } }),
+    },
     conversation: { update: jest.fn() },
     message: { create: jest.fn(), findFirst: jest.fn() },
     spaceAssignment: { findMany: jest.fn().mockResolvedValue([]) },
@@ -67,12 +77,13 @@ describe('ChatService.sendMessage — the reply right', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ChatService,
+        ...CHAT_PROVIDERS,
+        ...chatStorageStubs(),
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
       ],
     }).compile();
-    service = module.get(ChatService);
+    service = chatPartsOf(module);
   });
 
   it('a member written to by a manager may answer, although they could not have started it', async () => {
@@ -133,12 +144,13 @@ describe('conversation list order', () => {
     const findMany = jest.fn().mockResolvedValue([]);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ChatService,
+        ...CHAT_PROVIDERS,
+        ...chatStorageStubs(),
         { provide: PrismaService, useValue: { conversation: { findMany } } },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
       ],
     }).compile();
-    await module.get(ChatService).listConversations({ userId: 'u', organizationId: 'o' });
+    await chatPartsOf(module).listConversations({ userId: 'u', organizationId: 'o' });
     expect(findMany.mock.calls[0][0].orderBy).toBe(CONVERSATION_LIST_ORDER);
   });
 });

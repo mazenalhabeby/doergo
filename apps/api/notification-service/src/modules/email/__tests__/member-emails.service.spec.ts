@@ -218,7 +218,7 @@ describe('the shift the sweep closed', () => {
     const push = { sendAttendanceResolvedPush: jest.fn() };
     const ws = { emitToUser: jest.fn(), emitToOrganization: jest.fn() };
     const store = { record: jest.fn() };
-    const h = new AttendanceNotificationHandler(s.email, s.service, push as any, ws as any, store as any);
+    const h = new AttendanceNotificationHandler(s.service, push as any, ws as any, store as any);
     return { ...s, h, push };
   }
 
@@ -261,7 +261,7 @@ describe('the task handler hands the ids over, never an address', () => {
     const push = { sendTaskAssignedPush: jest.fn(), sendStatusChangePush: jest.fn(), sendToUsers: jest.fn() };
     const ws = { emitTaskAssigned: jest.fn(), emitTaskStatusChanged: jest.fn(), emitToUser: jest.fn() };
     const store = { record: jest.fn() };
-    const h = new TaskNotificationHandler(memberEmails as any, push as any, ws as any, store as any);
+    const h = new TaskNotificationHandler(memberEmails as any, push as any, push as any, ws as any, store as any);
     return { h, memberEmails };
   }
   const t = { id: 't1', title: 'Pump', organizationId: 'org-1', createdById: 'creator', assignedToId: 'tech' };

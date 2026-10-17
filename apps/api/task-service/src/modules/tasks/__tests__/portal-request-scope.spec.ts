@@ -1,5 +1,5 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { TaskPortalService } from '../task-portal.service';
+import { taskPortalParts } from './task-portal.service.fixture';
 
 /*
   Portal REQUESTS honoured per workspace.
@@ -22,7 +22,7 @@ function setup() {
     workflowStatus: { findFirst: jest.fn() },
     customerUnit: { findFirst: jest.fn() },
   };
-  const service = new TaskPortalService(prisma, { emit: jest.fn() } as any, {} as any, {} as any, {} as any);
+  const service = taskPortalParts(prisma, { emit: jest.fn() } as any, {} as any, {} as any, {} as any);
   return { prisma, service };
 }
 

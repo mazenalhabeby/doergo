@@ -1,0 +1,398 @@
+<title>مقاعد المباريات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f2f5f6; --surface:#ffffff; --surface2:#e9eef0; --line:rgba(11,20,22,.10);
+  --ink:#0b1416; --ink2:#3f4f57; --muted:#6b7a82;
+  --accent:#0d8f72; --accentTint:rgba(13,143,114,.10);
+  --warn:#a8650f; --warnTint:rgba(168,101,15,.12);
+  --bad:#bf4336; --badTint:rgba(191,67,54,.10);
+  --phone:#05080a; --phoneInk:#f1f6fa; --phoneMuted:#8b979e; --phoneLine:rgba(241,246,250,.09);
+  --pAccent:#66dbba; --pWarn:#f2b263; --pBad:#fd978c; --pTile:rgba(241,246,250,.06);
+  --sans:"Readex Pro",system-ui,"Segoe UI",Tahoma,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#040507; --surface:#0b1113; --surface2:#111a1d; --line:rgba(241,246,250,.08);
+  --ink:#f1f6fa; --ink2:#c3ccd2; --muted:#7c8a92;
+  --accent:#66dbba; --accentTint:rgba(102,219,186,.10);
+  --warn:#f2b263; --warnTint:rgba(242,178,99,.10);
+  --bad:#fd978c; --badTint:rgba(253,151,140,.10);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#040507; --surface:#0b1113; --surface2:#111a1d; --line:rgba(241,246,250,.08);
+  --ink:#f1f6fa; --ink2:#c3ccd2; --muted:#7c8a92;
+  --accent:#66dbba; --accentTint:rgba(102,219,186,.10);
+  --warn:#f2b263; --warnTint:rgba(242,178,99,.10);
+  --bad:#fd978c; --badTint:rgba(253,151,140,.10);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.75;margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+header.top{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:16px 24px;margin-bottom:24px}
+.eyebrow{font-size:12.5px;color:var(--muted);letter-spacing:.02em}
+h1{font-weight:500;font-size:clamp(26px,4vw,38px);line-height:1.3;margin:4px 0 6px;text-wrap:balance}
+.lede{color:var(--ink2);max-width:60ch;margin:0}
+.player{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 8px 8px 16px;min-width:min(100%,340px)}
+.play{appearance:none;border:0;cursor:pointer;width:44px;height:44px;border-radius:50%;background:var(--accent);color:var(--bg);display:grid;place-items:center;flex:none}
+.play:focus-visible,.chap:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.play svg{width:18px;height:18px}
+.bar{position:relative;flex:1;height:6px;border-radius:3px;background:var(--surface2);cursor:pointer}
+.bar i{position:absolute;inset-block:0;right:0;width:0;border-radius:3px;background:var(--accent)}
+.time{font-size:12.5px;color:var(--muted);min-width:84px;text-align:center}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px;align-items:start}
+@media (max-width:860px){.stage{grid-template-columns:1fr}}
+.phoneCol{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;align-items:center;gap:14px}
+@media (max-width:860px){.phoneCol{position:static}}
+.phone{position:relative;width:min(100%,320px);aspect-ratio:9/19;border-radius:44px;background:var(--phone);border:10px solid #1a2226;box-shadow:0 30px 60px -30px rgba(0,0,0,.55);overflow:hidden;color:var(--phoneInk)}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:96px;height:26px;border-radius:14px;background:#000;z-index:5}
+.status{position:absolute;top:12px;inset-inline:22px;display:flex;justify-content:space-between;font-size:12px;color:var(--phoneMuted);z-index:4}
+.screen{position:absolute;inset:0;padding:54px 16px 18px;display:flex;flex-direction:column;gap:10px;opacity:0;transform:translateY(8px);transition:opacity .45s ease,transform .45s ease;pointer-events:none}
+.screen.on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.screen{transition:none}}
+.sTitle{font-size:16px;font-weight:500}
+.sSub{font-size:12px;color:var(--phoneMuted);margin-top:-6px}
+.card{background:var(--pTile);border:1px solid var(--phoneLine);border-radius:18px;padding:12px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;border-radius:999px;padding:3px 10px;background:var(--pTile);color:var(--phoneInk)}
+.chip.ok{background:rgba(102,219,186,.14);color:var(--pAccent)}
+.chip.warn{background:rgba(242,178,99,.14);color:var(--pWarn)}
+.chip.bad{background:rgba(253,151,140,.14);color:var(--pBad)}
+.btn{border-radius:999px;padding:11px;text-align:center;font-size:14px;font-weight:500;background:var(--pAccent);color:#04120d}
+.btn.ghost{background:var(--pTile);color:var(--phoneInk)}
+.btn.off{background:var(--pTile);color:var(--phoneMuted)}
+.bigClock{margin:22px auto 8px;width:178px;height:178px;border-radius:50%;display:grid;place-items:center;text-align:center;background:radial-gradient(circle at 50% 40%,rgba(102,219,186,.28),rgba(102,219,186,.06) 70%);border:1.5px solid rgba(102,219,186,.6)}
+.bigClock b{display:block;font-size:30px;font-weight:400}
+.bigClock span{font-size:12.5px;color:var(--pAccent)}
+.map{position:relative;height:210px;border-radius:18px;overflow:hidden;background:
+  linear-gradient(90deg,rgba(241,246,250,.04) 1px,transparent 1px) 0 0/28px 28px,
+  linear-gradient(rgba(241,246,250,.04) 1px,transparent 1px) 0 0/28px 28px,#0a1214}
+.ring{position:absolute;left:50%;top:50%;width:110px;height:110px;margin:-55px;border-radius:50%;border:1.5px dashed rgba(102,219,186,.7);background:rgba(102,219,186,.07)}
+.pin{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px;border-radius:50%;background:var(--pAccent)}
+.me{position:absolute;width:14px;height:14px;margin:-7px;border-radius:50%;background:#7fb2ff;box-shadow:0 0 0 4px rgba(127,178,255,.22)}
+.halo{position:absolute;border-radius:50%;background:rgba(127,178,255,.13);border:1px solid rgba(127,178,255,.35)}
+.scale{position:absolute;bottom:8px;left:10px;font-size:10.5px;color:var(--phoneMuted)}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:8px 0;border-bottom:1px solid var(--phoneLine)}
+.check:last-child{border-bottom:0}
+.dot{flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;margin-top:2px}
+.dot.ok{background:rgba(102,219,186,.16);color:var(--pAccent)}
+.dot.bad{background:rgba(253,151,140,.16);color:var(--pBad)}
+.tl{position:relative;height:56px;margin:8px 4px}
+.tl .track{position:absolute;inset-inline:0;top:24px;height:8px;border-radius:4px;background:var(--pTile)}
+.tl .seg{position:absolute;top:24px;height:8px;border-radius:4px}
+.tl .lbl{position:absolute;top:0;font-size:10.5px;color:var(--phoneMuted);transform:translateX(50%)}
+.tl .lbl.b{top:38px}
+.notif{background:rgba(241,246,250,.08);border-radius:16px;padding:9px 12px;font-size:12.5px}
+.notif small{display:block;color:var(--phoneMuted);font-size:10.5px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{border:1px solid var(--phoneLine);border-radius:12px;padding:7px 10px;font-size:12px}
+.opt.sel{border-color:var(--pAccent);color:var(--pAccent);background:rgba(102,219,186,.08)}
+.bars{display:flex;flex-direction:column;gap:12px}
+.bars .lab{display:flex;justify-content:space-between;font-size:12px;color:var(--phoneMuted);margin-bottom:4px}
+.bars .b{height:14px;border-radius:7px;background:var(--pTile);position:relative;overflow:hidden}
+.bars .b i{position:absolute;inset-block:0;border-radius:7px}
+.flow{display:flex;flex-direction:column;gap:8px}
+.flow .step{display:flex;gap:10px;align-items:center;font-size:13px}
+.ln{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:6px 0;border-bottom:1px solid var(--phoneLine)}
+.ln:last-child{border-bottom:0}
+table.map2{width:100%;border-collapse:collapse;font-size:14px}table.map2 th,table.map2 td{text-align:start;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}table.map2 th{font-weight:500;color:var(--muted);font-size:12.5px}.tw{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:20px}
+.flow .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;background:var(--pTile)}
+.caption{width:min(100%,360px);min-height:84px;text-align:center;font-size:15px;line-height:1.7;color:var(--ink2);text-wrap:balance}
+.side{display:flex;flex-direction:column;gap:6px}
+.side h2{font-size:13px;font-weight:500;color:var(--muted);margin:0 0 4px}
+.chap{appearance:none;border:1px solid transparent;background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:start;display:flex;gap:12px;align-items:baseline;padding:10px 12px;border-radius:14px}
+.chap:hover{background:var(--surface)}
+.chap.on{background:var(--surface);border-color:var(--line)}
+.chap .k{font-size:12px;color:var(--muted);min-width:42px}
+.chap b{font-weight:500;font-size:14.5px;display:block}
+.chap span{font-size:12.5px;color:var(--muted)}
+.chap.on b{color:var(--accent)}
+section.rules{margin-top:56px}
+section.rules > h2,section.issues > h2{font-weight:500;font-size:24px;margin:0 0 6px}
+.sectionLede{color:var(--ink2);margin:0 0 22px;max-width:62ch}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px 20px}
+.group h3{font-size:16px;font-weight:500;margin:0 0 10px;display:flex;gap:10px;align-items:baseline}
+.group h3 .num{font-size:12px;color:var(--accent)}
+.group ul{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:7px;color:var(--ink2);font-size:14px}
+.group li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:12px;background:var(--surface2);border-radius:6px;padding:1px 6px;direction:ltr;unicode-bidi:isolate}
+section.issues{margin-top:48px}
+.issueList{display:flex;flex-direction:column;gap:10px}
+.issue{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.sev{font-size:11.5px;border-radius:999px;padding:2px 10px;height:fit-content;white-space:nowrap}
+.sev.h{background:var(--badTint);color:var(--bad)}
+.sev.m{background:var(--warnTint);color:var(--warn)}
+.issue b{font-weight:500}
+.issue p{grid-column:2;margin:0;color:var(--ink2);font-size:14px}
+footer{margin-top:40px;color:var(--muted);font-size:12.5px}
+</style>
+<style>
+/* seats */
+.hallMap{display:flex;flex-direction:column;gap:7px;align-items:center}
+.court{width:120px;height:46px;border-radius:6px;border:1.5px solid rgba(242,178,99,.55);background:rgba(242,178,99,.07);display:grid;place-items:center;font-size:10.5px;color:var(--pWarn)}
+.blocks{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%}
+.blk{border:1px solid var(--phoneLine);border-radius:10px;padding:5px;display:flex;flex-direction:column;gap:3px;align-items:center}
+.blk small{font-size:10px;color:var(--phoneMuted)}
+.seats{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;width:100%}
+.s{aspect-ratio:1;border-radius:2px;background:rgba(241,246,250,.13)}
+.s.sea{background:#7fb2ff}.s.spo{background:var(--pWarn)}.s.inv{background:var(--pAccent)}.s.acc{background:#c79bff}.s.rel{background:rgba(241,246,250,.13);outline:1px dashed var(--pAccent)}.s.no{background:var(--pBad)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:10.5px;color:var(--phoneMuted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-inline-end:4px;vertical-align:-1px}
+.qr{width:150px;height:150px;margin:6px auto;border-radius:14px;background:#f1f6fa;padding:10px;display:grid;grid-template-columns:repeat(11,1fr);gap:1px}
+.qr b{background:#05080a;border-radius:1px}.qr b.o{background:transparent}
+.scanOk{border-radius:18px;padding:14px;text-align:center;background:rgba(102,219,186,.12);border:1px solid rgba(102,219,186,.4)}
+.scanBad{border-radius:18px;padding:12px;text-align:center;background:rgba(253,151,140,.12);border:1px solid rgba(253,151,140,.45)}
+.big{font-size:26px;font-weight:500}
+.mail{background:#f1f6fa;color:#0b1416;border-radius:16px;padding:12px;font-size:12.5px;line-height:1.6}
+.mail small{color:#55636a;display:block;font-size:10.5px}
+.mail .btn{margin-top:8px}
+.meter{height:10px;border-radius:5px;background:var(--pTile);position:relative;overflow:hidden}
+.meter i{position:absolute;inset-block:0;right:0;border-radius:5px}
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}
+</style>
+<div class="wrap" dir="rtl" lang="ar">
+  <header class="top">
+    <div>
+      <div class="eyebrow">إتش بي سي فيلد · مقترح · نادي كرة سلة</div>
+      <h1>مقاعد المباريات والدعوات</h1>
+      <p class="lede">النادي يدير مقاعد صالته، ويوزّعها على المشتركين والرعاة، والضيف المدعوّ يقول بنقرة واحدة: سآتي أو لن آتي. والمقعد الفارغ يعود ويُعطى لغيره.</p>
+    </div>
+    <div class="player">
+      <button class="play" id="play" aria-label="تشغيل الشرح الصوتي">
+        <svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>
+        <svg id="icPause" viewBox="0 0 24 24" fill="currentColor" hidden><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+      </button>
+      <div class="bar" id="bar" role="slider" aria-label="موضع التشغيل" tabindex="0"><i id="fill"></i></div>
+      <div class="time num" id="time">0:00 / 3:43</div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="phoneCol">
+      <div class="phone" aria-hidden="true">
+        <div class="island"></div>
+        <div class="status"><span class="num" id="clk">9:41</span><span>HBCField</span></div>
+
+        <div class="screen on" data-scene="problem">
+          <div class="sTitle">المباراة ضد غراتس</div>
+          <div class="sSub">السبت <span class="num">18 Oct · 19:00</span> · <span class="num">2,000</span> مقعد</div>
+          <div class="card"><div class="ln"><span>مشتركون موسميون</span><span class="num">640</span></div><div class="ln"><span>مقاعد الرعاة</span><span class="num">180</span></div><div class="ln"><span>دعوات</span><span class="num">60</span></div></div>
+          <div class="card row"><span>مقاعد مجانية تبقى فارغة عادةً</span><span class="chip bad num">25–45%</span></div>
+          <div class="notif"><small>اليوم</small>هاتف، بريد، وملف إكسل · لا أحد يعرف من سيأتي</div>
+        </div>
+
+        <div class="screen" data-scene="hall">
+          <div class="sTitle">خريطة الصالة</div>
+          <div class="sSub">مساحة العمل · صالة النادي</div>
+          <div class="hallMap">
+            <div class="blocks" id="blocksTop"></div>
+            <div class="court">الملعب</div>
+            <div class="blocks" id="blocksBot"></div>
+          </div>
+          <div class="card row"><span>صالة كبار الضيوف</span><span class="chip num">سعة 40</span></div>
+          <div class="legend"><span><i style="background:#c79bff"></i>كرسي متحرك + مرافق</span><span><i style="background:rgba(241,246,250,.13)"></i>متاح</span></div>
+        </div>
+
+        <div class="screen" data-scene="rights">
+          <div class="sTitle">حقوق الموسم <span class="num">2026/27</span></div>
+          <div class="card"><div class="ln"><span>بنك محلي · راعٍ</span><span class="num">6 · B + 2 VIP</span></div><div class="ln"><span>مطاعم الجبل · راعٍ</span><span class="num">4 · C</span></div><div class="ln"><span>مارك فيبر · موسمي</span><span class="num">A · 4 · 12</span></div><div class="ln"><span>سارة فاغنر · موسمية</span><span class="num">A · 4 · 13</span></div></div>
+          <div class="hallMap"><div class="blocks" id="blocksRights"></div></div>
+          <div class="legend"><span><i style="background:#7fb2ff"></i>موسمي</span><span><i style="background:var(--pWarn)"></i>راعٍ</span><span><i style="background:rgba(241,246,250,.13)"></i>للبيع</span></div>
+          <div class="notif"><small>مباراة جديدة</small>تُحجز <span class="num">820</span> مقعداً لأصحابها تلقائياً</div>
+        </div>
+
+        <div class="screen" data-scene="invite">
+          <div class="mail"><small>نادي السلة ‹tickets@club.at› · بالألمانية</small><b>Einladung · Heimspiel gegen Graz</b><br>Sa., <span class="num">18.10. · 19:00</span> · Block B, Reihe 2, Platz 7<div class="btn">Antworten</div></div>
+          <div class="card"><div class="row"><span>هل ستأتي؟</span><span class="chip warn">حتى الأربعاء</span></div></div>
+          <div class="opts"><span class="opt sel">سآتي</span><span class="opt">لن آتي</span><span class="opt">تحويل لزميل</span></div>
+          <div class="card"><div class="ln"><span>مرافق</span><span>يوليا ب.</span></div><div class="ln"><span>طعام خاص (اختياري)</span><span>نباتي</span></div></div>
+          <div class="btn">إرسال</div>
+        </div>
+
+        <div class="screen" data-scene="deadline">
+          <div class="sTitle">الردود</div>
+          <div class="sSub">الموعد النهائي · الأربعاء <span class="num">18:00</span></div>
+          <div class="bars">
+            <div><div class="lab"><span>سيأتون</span><span class="num">142</span></div><div class="b"><i style="width:59%;background:var(--pAccent);right:0"></i></div></div>
+            <div><div class="lab"><span>لن يأتوا</span><span class="num">38</span></div><div class="b"><i style="width:16%;background:var(--pBad);right:0"></i></div></div>
+            <div><div class="lab"><span>لم يجيبوا</span><span class="num">60</span></div><div class="b"><i style="width:25%;background:var(--pWarn);right:0"></i></div></div>
+          </div>
+          <div class="notif"><small>عند الموعد</small><span class="num">98</span> مقعداً عادت للنادي</div>
+          <div class="opts"><span class="opt sel">قائمة الانتظار · أول من يقبل</span><span class="opt">إرجاع للبيع</span></div>
+        </div>
+
+        <div class="screen" data-scene="door">
+          <div class="sTitle">البوابة <span class="num">1</span></div>
+          <div class="sSub">القائمة على الهاتف · بلا إنترنت</div>
+          <div class="qr" id="qr"></div>
+          <div class="scanOk"><div class="big">✓ يوليا برانت</div><span style="font-size:12px">B · 2 · 8 · ضيفة بنك محلي</span></div>
+          <div class="scanBad"><b>مُسح من قبل</b><br><span style="font-size:12px">البوابة <span class="num">2</span> · قبل <span class="num">10</span> دقائق</span></div>
+        </div>
+
+        <div class="screen" data-scene="report">
+          <div class="sTitle">تقرير الرعاة</div>
+          <div class="sSub">الموسم حتى الآن · <span class="num">7</span> مباريات</div>
+          <div class="card"><div class="ln"><span>بنك محلي</span><span class="num">56 / 56 · 95%</span></div><div class="meter"><i style="width:95%;background:var(--pAccent)"></i></div>
+          <div class="ln"><span>مطاعم الجبل</span><span class="num">28 / 28 · 61%</span></div><div class="meter"><i style="width:61%;background:var(--pWarn)"></i></div></div>
+          <div class="card row"><span>بعد إعادة المقاعد الفارغة</span><span class="chip ok num">71% → 97%</span></div>
+        </div>
+
+        <div class="screen" data-scene="build">
+          <div class="sTitle">على ماذا يُبنى</div>
+          <div class="card"><div class="ln"><span>مساحة العمل = الصالة</span><span class="chip ok">موجود</span></div><div class="ln"><span>العملاء وجهات الاتصال</span><span class="chip ok">موجود</span></div><div class="ln"><span>بريد بلغة العميل · رابط آمن</span><span class="chip ok">موجود</span></div><div class="ln"><span>أول من يأخذ · تذكيرات</span><span class="chip ok">موجود</span></div><div class="ln"><span>تطبيق بلا إنترنت · كاميرا</span><span class="chip ok">موجود</span></div><div class="ln"><span>خريطة المقاعد · المباريات</span><span class="chip warn">جديد</span></div><div class="ln"><span>الحقوق · الدعوات · رمز الدخول</span><span class="chip warn">جديد</span></div></div>
+        </div>
+      </div>
+      <div class="caption" id="caption" aria-live="polite">اضغط تشغيل لتبدأ الشرح.</div>
+    </div>
+
+    <nav class="side" aria-label="الفصول">
+      <h2>الفصول</h2>
+      <button class="chap on" data-ch="problem"><span class="k num">0:00</span><div><b>المشكلة</b><span>ربع المقاعد المجانية فارغ</span></div></button>
+      <button class="chap" data-ch="hall"><span class="k num">0:21</span><div><b>خريطة الصالة</b><span>أقسام، صفوف، مقاعد</span></div></button>
+      <button class="chap" data-ch="rights"><span class="k num">0:49</span><div><b>حقوق الموسم</b><span>تُحجز تلقائياً لكل مباراة</span></div></button>
+      <button class="chap" data-ch="invite"><span class="k num">1:22</span><div><b>الدعوة</b><span>سآتي أو لن آتي، بلا حساب</span></div></button>
+      <button class="chap" data-ch="deadline"><span class="k num">1:53</span><div><b>الموعد النهائي</b><span>المقعد الفارغ يعود</span></div></button>
+      <button class="chap" data-ch="door"><span class="k num">2:26</span><div><b>الباب</b><span>رمز موقَّع، يعمل بلا إنترنت</span></div></button>
+      <button class="chap" data-ch="report"><span class="k num">2:52</span><div><b>تقرير الرعاة</b><span>من حضر فعلاً</span></div></button>
+      <button class="chap" data-ch="build"><span class="k num">3:12</span><div><b>على ماذا يُبنى</b><span>الموجود والجديد</span></div></button>
+    </nav>
+  </div>
+
+  <section class="rules">
+    <h2>حالة المقعد في كل مباراة</h2>
+    <p class="sectionLede">لكل مباراة ولكل مقعد سطر واحد، والتغيير بتحديث مشروط: مقعد واحد لا يُعطى لشخصين أبداً، حتى لو ضغطا في نفس اللحظة.</p>
+    <div class="tw"><table class="map2">
+      <thead><tr><th>الحالة</th><th>من أين</th><th>ماذا يحدث بعدها</th></tr></thead>
+      <tbody>
+        <tr><td>متاح</td><td>الخريطة</td><td>يُدعى عليه ضيف، أو يُباع لاحقاً</td></tr>
+        <tr><td>موسمي</td><td>حق المشترك، تلقائياً لكل مباراة على الأرض</td><td>المشترك يستطيع «لن آتي» فيعود للنادي لهذه المباراة فقط</td></tr>
+        <tr><td>راعٍ</td><td>حصة الراعي، تلقائياً</td><td>الراعي يوزّع مقاعده على موظفيه بالأسماء</td></tr>
+        <tr><td>مدعوّ · بانتظار الرد</td><td>دعوة أُرسلت</td><td>تذكير، ثم تذكير أخير، ثم يعود عند الموعد</td></tr>
+        <tr><td>مؤكَّد</td><td>الضيف قال «سآتي»</td><td>رمز دخول موقَّع بالبريد وفي التطبيق</td></tr>
+        <tr><td>أُعيد</td><td>رُفض أو لم يُجب عنه حتى الموعد</td><td>قائمة الانتظار (أول من يقبل) أو البيع</td></tr>
+        <tr><td>حضر</td><td>مسح الرمز عند الباب</td><td>يدخل في تقرير الراعي</td></tr>
+        <tr><td>محجوب</td><td>النادي (كاميرا، صحافة، أمن)</td><td>لا يُعرض أبداً</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="rules">
+    <h2>القواعد المهمة</h2>
+    <div class="groups">
+      <div class="group"><h3><span class="num">1</span>الدعوة</h3><ul>
+        <li>الضيف لا يحتاج حساباً: رابط آمن، يُحفظ منه البصمة فقط، وينتهي بعد المباراة.</li>
+        <li>البريد بلغة العميل، والتذكير قبل الموعد بثلاثة أيام ثم بيوم.</li>
+        <li>التحويل لزميل يلغي الرمز القديم ويصدر جديداً.</li>
+        <li>الراعي يوزّع حصته بنفسه، ولا يستطيع أن يأخذ أكثر منها.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">2</span>الباب</h3><ul>
+        <li>رمز كيو آر موقَّع: رقم التذكرة والمباراة والتوقيع. نسخة مزوّرة تُرفض.</li>
+        <li>قائمة الضيوف تُحمَّل على هاتف الموظف قبل المباراة، والمسح يعمل بلا إنترنت.</li>
+        <li>المسح المكرّر يظهر بالأحمر فوراً على نفس الهاتف، وبين البوابات عند المزامنة.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">§</span>القانون</h3><ul>
+        <li>البيانات الصحية والدينية (الطعام الخاص) اختيارية، بموافقة صريحة، وتُحذف بعد المباراة.</li>
+        <li>ضيف الراعي يُبلَّغ بسياسة الخصوصية في رسالة الدعوة (المادة 14 من اللائحة الأوروبية).</li>
+        <li>عند البيع لاحقاً: لا حق انسحاب لتذاكر حدث بتاريخ محدد، ويُكتب ذلك في الشروط. ضريبة دخول الفعاليات الرياضية في النمسا 13% عادةً، حسب شكل النادي القانوني.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="rules">
+    <h2>خريطة المقاعد: نشتريها أم نبنيها؟</h2>
+    <div class="compare">
+      <div class="group"><h3>شراء seats.io</h3><ul>
+        <li>جاهزة وجميلة، وفيها «أفضل مقعد متاح».</li>
+        <li>تُدفع لكل مقعد مستخدم: صالة ألفي مقعد، ثماني عشرة مباراة ≈ <span class="num">€4,500–7,200</span> في السنة لكل نادٍ.</li>
+        <li>كل بيانات المقاعد عند جهة أخرى.</li>
+      </ul></div>
+      <div class="group"><h3>نبنيها (الاقتراح)</h3><ul>
+        <li>صالة كرة سلة مدرّجات مستطيلة: قسم = صفوف × مقاعد، يُرسم ويُنسخ.</li>
+        <li>لا تكلفة لكل مقعد، والبيانات عندنا، وتعمل بلا إنترنت في التطبيق.</li>
+        <li>وحدة جديدة لكل مساحة عمل بسعر ثابت.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="rules">
+    <h2>المراحل</h2>
+    <div class="groups">
+      <div class="group"><h3><span class="num">v1</span>ما طلبه النادي</h3><ul>
+        <li>خريطة الصالة، والمباريات، وحقوق الموسم للمشتركين والرعاة.</li>
+        <li>الدعوات بالرابط والتطبيق: سآتي، لن آتي، تحويل، أسماء المرافقين.</li>
+        <li>الموعد النهائي، والتذكيرات، وإعادة المقعد، وقائمة الانتظار.</li>
+        <li>رمز الدخول والمسح بلا إنترنت، وتقرير الرعاة.</li>
+        <li>بلا بيع: النادي يبقي متجره الحالي للجمهور.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">v2</span>لاحقاً</h3><ul>
+        <li>بيع المقاعد بالدفع الإلكتروني، مع حجز مؤقت أثناء الاختيار.</li>
+        <li>بطاقات محفظة آبل وغوغل، ورمز متغيّر ضد لقطات الشاشة.</li>
+        <li>قوائم الطعام لصالة كبار الضيوف حسب الطاولة.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">✕</span>لا نبنيه</h3><ul>
+        <li>بوابات الدخول الآلية، والتسعير المتغيّر، وسوق إعادة البيع العامة.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer>مقترح، لم يُبنَ بعد · مصادر: wehave، Ticketmaster، seats.io، Sportico (71%→97%)، دراسات الحضور (25–45% فارغ) · الصوت بالعربية من ElevenLabs.</footer>
+</div>
+
+<audio id="vo" src="voice-ar.mp3" preload="metadata"></audio>
+<script>
+const T = {"caps": [[0.4, 9.583, "problem", "نادي كرة سلة، صالته فيها ألفا مقعد. لكل مباراة: مقاعد للمشتركين الموسميين، ومقاعد للرعاة، ودعوات لضيوف مهمين."], [10.251, 20.816, "problem", "اليوم يتم ذلك بالهاتف وبملف إكسل. والأبحاث تقول إن ربع إلى نصف مقاعد الدعوات المجانية تبقى فارغة، لأن أحداً لم يسأل الضيف: هل ستأتي؟"], [21.516, 30.154, "hall", "الخطوة الأولى: الصالة. الصالة هي مساحة عمل في إتش بي سي فيلد، لها عنوان وموقع على الخريطة مسبقاً. نضيف لها خريطة المقاعد."], [30.832, 48.758, "hall", "المدرّجات أقسام، والقسم صفوف، والصف مقاعد. يُرسم القسم مرة واحدة: عدد الصفوف وعدد المقاعد، ثم يُنسخ. ومقاعد الكراسي المتحركة ومرافقيها معلَّمة. وصالة كبار الضيوف ليست مقاعد، بل سعة: أربعون شخصاً."], [49.458, 57.98, "rights", "الخطوة الثانية: الحقوق. الرعاة والمشتركون هم عملاء موجودون في نظام العملاء عندنا. لكل عميل حقّه للموسم."], [58.693, 72.846, "rights", "مثلاً: بنك محلي له ستة مقاعد في القسم بي، ومكانان في صالة كبار الضيوف، في كل مباراة على أرضنا. ومشترك موسمي له مقعده الثابت: القسم إيه، الصف الرابع، المقعد اثنا عشر."], [73.582, 82.162, "rights", "عند إضافة مباراة جديدة، تُحجز هذه المقاعد تلقائياً لأصحابها. لا أحد يوزّعها يدوياً."], [82.862, 92.522, "invite", "الخطوة الثالثة: الدعوة. قبل المباراة بأسبوع تخرج الدعوات تلقائياً، بالبريد بلغة العميل، وبإشعار في تطبيق العملاء لمن عنده حساب."], [93.235, 105.1, "invite", "الضيف لا يحتاج حساباً. رابط آمن يفتح صفحة صغيرة: سآتي، أو لن آتي. ويكتب أسماء من سيحضر معه، أو يحوّل الدعوة لزميل، ويختار إن أراد طعاماً خاصاً."], [105.837, 112.872, "invite", "والراعي يرى مقاعده الستة ويوزّعها على موظفيه بنفسه، بدل أن يتصل بالنادي."], [113.573, 120.934, "deadline", "الخطوة الرابعة: الموعد النهائي. من لم يجب يتلقّى تذكيراً، ثم تذكيراً أخيراً قبل الموعد بيوم."], [121.647, 131.852, "deadline", "عند الموعد، كل مقعد رُفض أو لم يُجب عنه يعود للنادي. والنادي يقرّر: يعرضه على قائمة الانتظار، وأول من يقبل يأخذه، أو يرجعه للبيع."], [132.659, 145.348, "deadline", "وهذا موجود عندنا اليوم: نفس طريقة المهام المفتوحة لدور العمل، أول من يأخذ المكان يحصل عليه، ولا يمكن لشخصين أن يأخذا نفس المقعد."], [146.048, 153.118, "door", "الخطوة الخامسة: الباب. كل ضيف قبل الدعوة يحصل على رمز كيو آر موقَّع، في البريد وفي التطبيق."], [153.727, 163.712, "door", "موظف النادي يفتح تطبيق إتش بي سي فيلد ويمسح الرمز. القائمة محمّلة على الهاتف، فيعمل المسح حتى بلا إنترنت في الصالة، ويُزامَن لاحقاً."], [164.367, 171.414, "door", "ورمز مُسح مرتين يظهر بالأحمر فوراً: هذا الضيف دخل قبل عشر دقائق من البوابة الثانية."], [172.115, 181.229, "report", "بعد المباراة: تقرير لكل راعٍ. كم مقعداً حصل، وكم ضيفاً حضر فعلاً. وهذا ما يحتاجه النادي عند تجديد عقد الرعاية."], [182.012, 191.509, "report", "شركة كبيرة رفعت استخدام تذاكرها من واحد وسبعين إلى سبعة وتسعين بالمئة، فقط لأن المقعد الفارغ صار يُعاد ويُعطى لغيره."], [192.209, 209.252, "build", "ونبني على الموجود: مساحة العمل للصالة، ونظام العملاء وجهات الاتصال للرعاة والضيوف، والبريد بلغة العميل، والرابط الآمن بلا حساب، وطريقة أول من يأخذ، والتذكيرات، والتطبيق بلا إنترنت، والكاميرا الموجودة في التطبيق."], [209.861, 220.798, "build", "والجديد: خريطة المقاعد، والمباريات، والحقوق، والدعوات، ورمز الدخول. والبيع بالدفع الإلكتروني وبطاقات المحفظة في المرحلة الثانية."]], "chapters": [["problem", 0.4], ["hall", 21.516], ["rights", 49.458], ["invite", 82.862], ["deadline", 113.573], ["door", 146.048], ["report", 172.115], ["build", 192.209]], "duration": 223.0};
+// little seat grids
+function grid(el, n, paint){ const g=document.createElement('div'); g.className='seats'; for(let i=0;i<n;i++){const s=document.createElement('i'); s.className='s '+(paint(i)||''); g.appendChild(s);} el.appendChild(g); }
+function blocks(id, names, paint){ const host=document.getElementById(id); names.forEach((nm,b)=>{ const d=document.createElement('div'); d.className='blk'; d.innerHTML='<small>'+nm+'</small>'; grid(d,32,i=>paint(b,i)); host.appendChild(d); }); }
+blocks('blocksTop',['A','B','C'],(b,i)=> b===0&&i>=28?'acc':'');
+blocks('blocksBot',['D','E','F'],()=> '');
+blocks('blocksRights',['A','B','C'],(b,i)=> b===0&&i%3!==2?'sea': b===1&&i<14?'spo': b===2&&i<6?'spo': b===2&&i%4===0?'sea':'');
+// a decorative QR
+(function(){ const q=document.getElementById('qr'); let x=7; for(let r=0;r<11;r++)for(let c=0;c<11;c++){ const f=(r<3&&c<3)||(r<3&&c>7)||(r>7&&c<3); x=(x*73+19)%101; const b=document.createElement('b'); if(!(f||x%2)) b.className='o'; q.appendChild(b);} })();
+
+const vo = document.getElementById('vo'), play = document.getElementById('play');
+const icPlay = document.getElementById('icPlay'), icPause = document.getElementById('icPause');
+const fill = document.getElementById('fill'), bar = document.getElementById('bar'), time = document.getElementById('time');
+const caption = document.getElementById('caption'), clk = document.getElementById('clk');
+const screens = [...document.querySelectorAll('.screen')], chaps = [...document.querySelectorAll('.chap')];
+const CLOCK = {door:'18:42', report:'22:10', deadline:'18:00'};
+const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const dur = () => (isFinite(vo.duration) && vo.duration) || T.duration;
+let current = -1;
+function show(t) {
+  let i = 0;
+  for (let k = 0; k < T.caps.length; k++) if (T.caps[k][0] <= t + 0.05) i = k;
+  if (i !== current) {
+    current = i;
+    const [, , scene, text] = T.caps[i];
+    caption.textContent = text;
+    screens.forEach(s => s.classList.toggle('on', s.dataset.scene === scene));
+    clk.textContent = CLOCK[scene] || '9:41';
+  }
+  let ch = 0;
+  T.chapters.forEach(([, st], k) => { if (st <= t + 0.05) ch = k; });
+  chaps.forEach((c, k) => c.classList.toggle('on', k === ch));
+  fill.style.width = (100 * t / dur()) + '%';
+  time.textContent = fmt(t) + ' / ' + fmt(dur());
+}
+function setPlaying(p) { icPlay.hidden = p; icPause.hidden = !p; play.setAttribute('aria-label', p ? 'إيقاف مؤقت' : 'تشغيل الشرح الصوتي'); }
+play.addEventListener('click', () => { if (vo.paused) vo.play().catch(() => {}); else vo.pause(); });
+vo.addEventListener('play', () => setPlaying(true));
+vo.addEventListener('pause', () => setPlaying(false));
+vo.addEventListener('timeupdate', () => show(vo.currentTime));
+vo.addEventListener('ended', () => setPlaying(false));
+function seek(t) { vo.currentTime = Math.max(0, Math.min(dur() - 0.1, t)); show(vo.currentTime); }
+bar.addEventListener('click', e => { const r = bar.getBoundingClientRect(); seek(dur() * (r.right - e.clientX) / r.width); });
+bar.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') seek(vo.currentTime + 5); if (e.key === 'ArrowRight') seek(vo.currentTime - 5); });
+chaps.forEach(c => c.addEventListener('click', () => {
+  const st = (T.chapters.find(([id]) => id === c.dataset.ch) || [, 0])[1];
+  seek(st); if (vo.paused) vo.play().catch(() => {});
+}));
+show(0);
+</script>

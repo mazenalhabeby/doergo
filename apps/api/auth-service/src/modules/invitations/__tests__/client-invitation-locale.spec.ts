@@ -1,4 +1,4 @@
-import { InvitationService } from '../invitation.service';
+import { invitationServices } from './invitation.service.fixture';
 
 /*
   A portal invitation goes to a CLIENT, so its language follows the client rule
@@ -37,7 +37,7 @@ describe('client invitation language', () => {
       },
     };
     const emit = jest.fn();
-    const service = new InvitationService(prisma, { emit } as any, {} as any);
+    const service = invitationServices(prisma, { emit } as any, {} as any);
     return { service, emit, prisma };
   }
 

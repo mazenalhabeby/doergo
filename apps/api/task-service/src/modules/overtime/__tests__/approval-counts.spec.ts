@@ -4,7 +4,7 @@
  * the shift's expected end and recounts a closed shift.
  */
 import { OVERTIME_CONSTANTS } from '@hbcfield/shared';
-import { OvertimeService } from '../overtime.service';
+import { overtimeServices } from './overtime.service.fixture';
 
 const ROUND = { id: 'ot1', timeEntryId: 'entry-1', technicianId: 'member', locationId: 'l1', organizationId: 'o1', status: 'PENDING_APPROVAL' };
 
@@ -15,7 +15,7 @@ function setup() {
   };
   const queue = { add: jest.fn() };
   const attendance = { approveExtraTime: jest.fn(async () => ({ success: true, data: { entryId: 'entry-1' } })) };
-  const service = new OvertimeService(prisma, { emit: jest.fn() } as any, queue as any, attendance as any, {} as any);
+  const service = overtimeServices(prisma, { emit: jest.fn() } as any, queue as any, attendance as any, {} as any);
   return { service, prisma, queue, attendance };
 }
 

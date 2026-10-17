@@ -1,10 +1,10 @@
 /**
  * Cancelling time off, sent again by a phone that had no signal.
  */
-import { TechniciansService } from '../technicians.service';
+import { TimeOffDecisionService } from '../time-off-decision.service';
 
 function service(status: string) {
-  const svc = Object.create(TechniciansService.prototype) as any;
+  const svc = Object.create(TimeOffDecisionService.prototype) as any;
   svc.prisma = {
     timeOff: {
       findUnique: jest.fn().mockResolvedValue({ id: 'to-1', technicianId: 'u1', status }),

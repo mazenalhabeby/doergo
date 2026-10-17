@@ -1,5 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { isAdmin, accessAllowsAnywhere, spacesGranting } from '@hbcfield/shared';
+import { scopeFor } from '../permission-scope';
+import { isAdmin, accessAllowsAnywhere } from '@hbcfield/shared';
 
 /**
  * WHERE a report reader may read: the spaces granting canViewReports or
@@ -13,9 +14,8 @@ import { isAdmin, accessAllowsAnywhere, spacesGranting } from '@hbcfield/shared'
  * timesheet narrow to.
  */
 export function reportSpaceScope(user: any): string[] | null {
-  if (isAdmin(user)) return null;
-  const reports = spacesGranting(user?.access, 'canViewReports');
-  const tasks = spacesGranting(user?.access, 'canViewAllTasks');
+  const reports = scopeFor(user, 'canViewReports');
+  const tasks = scopeFor(user, 'canViewAllTasks');
   if (reports === null || tasks === null) return null;
   return [...new Set([...reports, ...tasks])];
 }

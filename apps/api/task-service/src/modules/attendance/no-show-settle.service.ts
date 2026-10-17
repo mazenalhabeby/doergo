@@ -1,5 +1,6 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
+  zoneOf,
   ABSENCE_WHERE,
   NO_SHOW_OPEN_STATES,
   settleNoShow,
@@ -191,7 +192,7 @@ export class NoShowSettleService {
           a.shift?.isActive !== false &&
           a.effectiveFrom.getTime() <= dayEnd &&
           (!a.effectiveTo || a.effectiveTo.getTime() >= dayStart) &&
-          !!this.shiftResolver.matchAndWindowForDate(a, a.space?.timezone || 'UTC', inst.localDate),
+          !!this.shiftResolver.matchAndWindowForDate(a, zoneOf(a.space?.timezone), inst.localDate),
       );
       const holiday = holidays.get(inst.spaceId)?.has(inst.localDate) ?? false;
       out.set(inst.id, settleNoShow(inst, { overlapping, onLeave, memberGone, stillPlanned, holiday }));

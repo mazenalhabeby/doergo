@@ -1,0 +1,42 @@
+# 02: a message from Anna arrives — the Team tab shows the count, the Messages half the row;
+# Dana opens it and answers. Env: MSG (Anna's text), REPLY (Dana's answer).
+appId: com.hbcfield.app
+---
+# Start from a known screen whatever the last run left open: Team, People half.
+- openLink: "hbcfield://team?half=people"
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible: "People"
+    timeout: 20000
+- extendedWaitUntil:
+    visible: "Messages · 1"
+    timeout: 15000
+- takeScreenshot: p3-badge
+- tapOn: "Messages · 1"
+- extendedWaitUntil:
+    visible: ".*${MSG}.*"
+    timeout: 15000
+- takeScreenshot: p4-row
+- tapOn: ".*${MSG}.*"
+- extendedWaitUntil:
+    visible: "Write a message.*"
+    timeout: 15000
+- takeScreenshot: p5-thread
+- tapOn: "Write a message.*"
+- inputText: "${REPLY}"
+- tapOn:
+    id: "send"
+    optional: true
+- runFlow:
+    when:
+      visible: "Send"
+    commands:
+      - tapOn: "Send"
+- extendedWaitUntil:
+    visible: ".*${REPLY}.*"
+    timeout: 15000
+- takeScreenshot: p6-replied

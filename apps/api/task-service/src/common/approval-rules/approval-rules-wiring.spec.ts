@@ -10,14 +10,15 @@ const MODULES = path.join(__dirname, '..', '..', 'modules');
 const read = (rel: string) => fs.readFileSync(path.join(MODULES, rel), 'utf8');
 
 describe('office rules are asked on every approve path of their kinds', () => {
+  // A kind whose approve and refuse paths live in two files since a split names both (`a + b`).
   const paths: Array<[string, string]> = [
-    ['attendance/extra-time.service.ts', 'overtime'],
-    ['technicians/technicians.service.ts', 'request'],
-    ['assets/asset-expense.service.ts', 'expense'],
+    ['attendance/extra-time.base.ts + attendance/extra-time-decision.service.ts', 'overtime'],
+    ['technicians/time-off-decision.service.ts', 'request'],
+    ['assets/asset-expense-review.service.ts', 'expense'],
   ];
   for (const [file, kind] of paths) {
     it(`${file} gates and clears '${kind}'`, () => {
-      const src = read(file);
+      const src = file.split(' + ').map(read).join('\n');
       expect(src).toMatch(new RegExp(`rules\\.gate\\(\\{[\\s\\S]{0,200}kind: '${kind}'`));
       expect(src).toMatch(new RegExp(`rules\\?\\.clear\\([^)]*'${kind}'`));
       // A step-1 answer returns BEFORE anything is written.

@@ -1,0 +1,272 @@
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Request } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { Role, assertServiceOk } from '@hbcfield/shared';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermissionInSpace } from '../../common/decorators';
+import { StartBreakDto, EndBreakDto, AddBreakForMemberDto, BreakRuleDto, SnoozeBreakDto } from './dto';
+import { RequireModule } from '../../common/decorators/require-module.decorator';
+import { AllowWhenLocked } from '../../common/guards/subscription.guard';
+import { AttendanceControllerBase } from './attendance-controller.base';
+
+/** /attendance — rests: taking one, the rules, a member's breaks. */
+@ApiTags('attendance')
+@ApiBearerAuth()
+@Controller('attendance')
+export class BreaksController extends AttendanceControllerBase {
+  // =========================================================================
+  // BREAKS
+  // =========================================================================
+
+  @Post('breaks/start')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Start a break during current shift' })
+  async startBreak(@Body() dto: StartBreakDto, @Request() req: any) {
+    return this.breaksGateway.startBreak({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+      type: dto.type,
+      notes: dto.notes,
+      // Which planned rest this answers. Never trusted for anything but
+      // matching: the plan is on the server and an id that is not in it simply
+      // does not match, leaving an ordinary unplanned break.
+      ruleId: dto.ruleId,
+      id: dto.id,
+      entryId: dto.entryId,
+      evidence: dto.evidence,
+    });
+  }
+
+  /**
+   * "Later" — postpone the rest the member was just asked about.
+   *
+   * The snooze COUNT lives on the server. If the phone kept it, "Later" would be
+   * a mute button and a device that is off would silence the alarm by not
+   * existing.
+   */
+  @Post('breaks/snooze')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Postpone the rest that has fallen due' })
+  async snoozeBreak(@Body() dto: SnoozeBreakDto, @Request() req: any) {
+    return this.breaksGateway.snoozeBreak({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+      ruleId: dto.ruleId,
+    });
+  }
+
+  // ── Rest rules: what a workspace expects ─────────────────────────────────
+  //
+  // Reading is open to anyone who can clock in — a member is entitled to know
+  // when their own rests fall due. Writing is workspace configuration and takes
+  // the same permission as the rest of it.
+
+  @Get('break-rules')
+  @RequireModule('time_tracking')
+  @ApiOperation({ summary: 'The planned rests for a workspace or shift' })
+  async listBreakRules(@Request() req: any, @Query('spaceId') spaceId?: string, @Query('shiftId') shiftId?: string) {
+    return this.breaksGateway.listBreakRules({
+      organizationId: req.user.organizationId,
+      spaceId,
+      shiftId,
+    });
+  }
+
+  @Post('break-rules')
+  @RequireModule('time_tracking')
+  @RequirePermissionInSpace('canManageWorkspaces')
+  @ApiOperation({ summary: 'Add a planned rest' })
+  async createBreakRule(@Body() dto: BreakRuleDto, @Request() req: any) {
+    return this.breaksGateway.createBreakRule({
+      ...dto,
+      // Never from the body: the organization is whose token this is.
+      organizationId: req.user.organizationId,
+      // The guard passes a grant in ANY workspace; the service narrows it to
+      // the rule's own workspace (`BreakRulesService.assertMayManage`).
+      scopeSpaceIds: this.scope(req, 'canManageWorkspaces'),
+    });
+  }
+
+  @Patch('break-rules/:id')
+  @RequireModule('time_tracking')
+  @RequirePermissionInSpace('canManageWorkspaces')
+  @ApiOperation({ summary: 'Change a planned rest' })
+  async updateBreakRule(@Param('id') id: string, @Body() dto: BreakRuleDto, @Request() req: any) {
+    return this.breaksGateway.updateBreakRule({
+      ...dto,
+      id,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canManageWorkspaces'),
+    });
+  }
+
+  @Delete('break-rules/:id')
+  @RequireModule('time_tracking')
+  @RequirePermissionInSpace('canManageWorkspaces')
+  @ApiOperation({ summary: 'Remove a planned rest' })
+  async deleteBreakRule(@Param('id') id: string, @Request() req: any) {
+    return this.breaksGateway.deleteBreakRule({
+      id,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canManageWorkspaces'),
+    });
+  }
+
+  @Post('breaks/end')
+  // Ends the caller's own running work — never stranded by a lapsed subscription.
+  @AllowWhenLocked()
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'End current break' })
+  async endBreak(@Body() dto: EndBreakDto, @Request() req: any) {
+    return this.breaksGateway.endBreak({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+      notes: dto.notes,
+      breakId: dto.breakId,
+      evidence: dto.evidence,
+    });
+  }
+
+  @Get('breaks/status')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Get current break status' })
+  async getBreakStatus(@Request() req: any) {
+    return this.breaksGateway.getBreakStatus({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+    });
+  }
+
+  @Get('entries/:id/breaks')
+  @ApiOperation({ summary: 'Get breaks for a specific time entry' })
+  async getBreaksForEntry(@Param('id') timeEntryId: string, @Request() req: any) {
+    // No permission gate on the route: a member reads the rests of their own
+    // shift. Anybody else's entry is narrowed in the service to the spaces
+    // where the caller holds canViewSpaceAttendance — the entry-read rule.
+    return this.breaksGateway.getBreaksForEntry({
+      timeEntryId,
+      organizationId: req.user.organizationId,
+      requesterId: req.user.id,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+    });
+  }
+
+  @Get('breaks/active')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
+  @ApiOperation({ summary: 'Get all active breaks in the organization' })
+  async getActiveBreaks(@Request() req: any) {
+    return this.breaksGateway.getActiveBreaks({
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+    });
+  }
+
+  @Get('breaks/history')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
+  @ApiOperation({ summary: 'Get break history with filters' })
+  @ApiQuery({ name: 'date', required: false, type: String, description: 'Date (yyyy-MM-dd)' })
+  @ApiQuery({ name: 'userId', required: false, type: String })
+  @ApiQuery({ name: 'type', required: false, enum: ['LUNCH', 'SHORT', 'OTHER'] })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getBreakHistory(
+    @Query('date') date?: string,
+    @Query('userId') userId?: string,
+    @Query('type') type?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Request() req?: any,
+  ) {
+    return this.breaksGateway.getBreakHistory({
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      date,
+      userId,
+      type,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
+  }
+
+  /**
+   * Add a break to a member's shift on their behalf.
+   *
+   * Breaks stay self-service — this is the correction path for when that did not
+   * happen: a dead phone, a shift reconstructed after the fact.
+   *
+   * On `canReconcileAttendance`, the grant that already covers correcting
+   * somebody else's attendance, rather than on being an ADMIN. The person who
+   * does payroll should be able to hold it without also being handed the
+   * organization, and an admin who should not touch timesheets should be able to
+   * not hold it.
+   */
+  @Post('entries/:id/breaks')
+  @RequirePermissionInSpace('canReconcileAttendance')
+  @ApiOperation({ summary: 'Add a break to a member’s shift (reconciliation)' })
+  async addBreakForMember(@Param('id') timeEntryId: string, @Body() dto: AddBreakForMemberDto, @Request() req: any) {
+    const result: any = await this.breaksGateway.addBreakForMember({
+      timeEntryId,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      editorId: req.user.id,
+      type: dto.type,
+      startedAt: dto.startedAt,
+      endedAt: dto.endedAt,
+      reason: dto.reason,
+    });
+    return assertServiceOk(result);
+  }
+
+  /**
+   * Remove a break from a shift.
+   *
+   * Same grant as adding one — correcting somebody else's attendance is one
+   * capability, not several. Deleting recomputes the shift's break total and
+   * returns an approved entry to PENDING, because its paid hours change.
+   */
+  @Delete('breaks/:id')
+  @RequirePermissionInSpace('canReconcileAttendance')
+  @ApiOperation({ summary: 'Remove a break from a shift (reconciliation)' })
+  async deleteBreak(@Param('id') breakId: string, @Request() req: any) {
+    const result: any = await this.breaksGateway.deleteBreak({
+      breakId,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      editorId: req.user.id,
+    });
+    return assertServiceOk(result);
+  }
+
+  @Post('breaks/:id/end')
+  @RequirePermissionInSpace('canReconcileAttendance')
+  @ApiOperation({ summary: 'End a break manually (manager action)' })
+  async endBreakManually(@Param('id') breakId: string, @Body() body?: { notes?: string }, @Request() req?: any) {
+    return this.breaksGateway.endBreakManually({
+      breakId,
+      adminId: req.user.id,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      notes: body?.notes,
+    });
+  }
+
+  @Get('breaks/summary')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
+  @ApiOperation({ summary: 'Get break summary statistics' })
+  @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (yyyy-MM-dd)' })
+  @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (yyyy-MM-dd)' })
+  @ApiQuery({ name: 'userId', required: false, type: String })
+  async getBreakSummary(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('userId') userId?: string,
+    @Request() req?: any,
+  ) {
+    return this.breaksGateway.getBreakSummary({
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      startDate,
+      endDate,
+      userId,
+    });
+  }
+}

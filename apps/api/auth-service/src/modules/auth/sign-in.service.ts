@@ -1,10 +1,7 @@
 import {
+  activeWindowWhere,
   MAX_SESSIONS_PER_USER,
   MAX_FAILED_ATTEMPTS,
-  BCRYPT_COST_FACTOR,
-  DEFAULT_PERMISSIONS,
-  DEFAULT_ORG_MODULES,
-  Role,
   canUsePlatform,
   isOrganizationSuspended,
   ORG_SUSPENDED_MESSAGE,
@@ -18,12 +15,11 @@ import {
 } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { seedDefaultWorkflow } from '../../common/seed-default-workflow';
 import { AuditLogService } from '../audit-log/audit-log.service';
-import { BillingService } from '../billing/billing.service';
 import * as bcrypt from 'bcryptjs';
 import { dummyPasswordHash, type AuthResult } from './auth-common';
 import { SessionTokensService } from './session-tokens.service';
+import { BillingTrialService } from './../billing/billing-trial.service';
 
 /**
  * The two ways in: registering a new organization owner, and signing in.
@@ -37,172 +33,9 @@ export class SignInService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
-    private readonly billing: BillingService,
+    private readonly trials: BillingTrialService,
     private readonly tokens: SessionTokensService,
   ) {}
-
-  async register(data: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    companyName?: string;
-    firstSpaceName?: string;
-  }) {
-    try {
-      // Sanitize inputs: email to lowercase, names preserve case (capitalized by DTO)
-      const email = normalizeEmail(data.email);
-      const firstName = data.firstName.trim();
-      const lastName = data.lastName.trim();
-      const companyName = data.companyName?.trim();
-      // SECURITY: Force role to ADMIN regardless of input (self-registered users are admins of their org)
-      const role = Role.ADMIN;
-      // Get default permissions for the role
-      const defaultPerms = DEFAULT_PERMISSIONS[role];
-
-      const existingUser = await this.prisma.user.findUnique({
-        where: { email },
-      });
-
-      if (existingUser) {
-        return {
-          success: false,
-          statusCode: HttpStatus.CONFLICT,
-          message: 'An account with this email already exists',
-        };
-      }
-
-      // Use higher bcrypt cost factor (12) for better security
-      const passwordHash = await bcrypt.hash(data.password, BCRYPT_COST_FACTOR);
-
-      // Determine if this is a full registration (with org) or orphan user (onboarding later)
-      const hasCompanyName = !!companyName;
-
-      if (hasCompanyName) {
-        // Full registration: create org + user in a transaction
-        const result = await this.prisma.$transaction(async (tx) => {
-          const organization = await tx.organization.create({
-            data: {
-              name: companyName,
-              isActive: true,
-              enabledModules: DEFAULT_ORG_MODULES,
-            },
-          });
-
-          // The org's first space is created in the dedicated "Set up your first
-          // space" onboarding step (so it can have a type, address & map pin) —
-          // not here. The org starts with no space.
-
-          // Seed the org's default task type (Field Service) so Task Types isn't
-          // empty and new tasks have a capability-rich flow out of the box.
-          await seedDefaultWorkflow(tx, organization.id);
-
-          const newUser = await tx.user.create({
-            data: {
-              email,
-              passwordHash,
-              firstName,
-              lastName,
-              role,
-              organizationId: organization.id,
-              onboardingCompleted: true,
-              failedLoginAttempts: 0,
-              lockedUntil: null,
-
-              canCreateTasks: defaultPerms.canCreateTasks,
-              taskCreationScope: defaultPerms.taskCreationScope,
-              canViewAllTasks: defaultPerms.canViewAllTasks,
-              canAssignTasks: defaultPerms.canAssignTasks,
-              canManageUsers: defaultPerms.canManageUsers,
-            },
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-              role: true,
-              organizationId: true,
-              onboardingCompleted: true,
-              // Works for a client or partner — see the same field on the
-              // validateToken select. Both session payloads must carry it or
-              // the badge changes meaning depending which one built the user.
-              isExternal: true,
-              avatarUrl: true,
-
-              canCreateTasks: true,
-              taskCreationScope: true,
-              canViewAllTasks: true,
-              canAssignTasks: true,
-              canManageUsers: true,
-              createdAt: true,
-            },
-          });
-
-          return newUser;
-        });
-
-        // Start the 14-day Professional trial (sets planTier/subStatus/trialEndsAt
-        // + Subscription row). Without this a full web signup lands with
-        // planTier=null and every premium feature 402s. Non-fatal — a billing
-        // hiccup must not block registration.
-        if (result.organizationId) {
-          try {
-            await this.billing.startTrial(result.organizationId);
-          } catch (e) {
-            this.logger.warn(
-              `startTrial failed for org ${result.organizationId}: ${(e as Error).message}`,
-            );
-          }
-        }
-
-        return { success: true, data: result };
-      } else {
-        // Orphan user: no org, onboarding required
-        const user = await this.prisma.user.create({
-          data: {
-            email,
-            passwordHash,
-            firstName,
-            lastName,
-            role,
-            onboardingCompleted: false,
-            failedLoginAttempts: 0,
-            lockedUntil: null,
-            canCreateTasks: defaultPerms.canCreateTasks,
-            taskCreationScope: defaultPerms.taskCreationScope,
-            canViewAllTasks: defaultPerms.canViewAllTasks,
-            canAssignTasks: defaultPerms.canAssignTasks,
-            canManageUsers: defaultPerms.canManageUsers,
-          },
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            role: true,
-            organizationId: true,
-            onboardingCompleted: true,
-            canCreateTasks: true,
-            taskCreationScope: true,
-            canViewAllTasks: true,
-            canAssignTasks: true,
-            canManageUsers: true,
-            createdAt: true,
-          },
-        });
-
-        return { success: true, data: user };
-      }
-    } catch (error) {
-      this.logger.error('Registration error:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Failed to create account. Please try again.',
-      };
-    }
-  }
 
   async login(data: { email: string; password: string; rememberMe?: boolean; client?: string; clientPlatform?: string; userAgent?: string; ipAddress?: string }): Promise<AuthResult> {
     try {
@@ -220,8 +53,7 @@ export class SignInService {
           memberRole: { select: { permissions: true, isActive: true } },
           spaceAssignments: {
             where: {
-              effectiveFrom: { lte: new Date() },
-              OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+              ...activeWindowWhere(),
             },
             select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
           },

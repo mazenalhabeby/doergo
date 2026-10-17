@@ -16,7 +16,7 @@ import {
 } from '@hbcfield/shared';
 import { AssetAccessService } from '../asset-access.service';
 import { AssetExpenseService } from '../asset-expense.service';
-import { AssetLogService } from '../asset-log.service';
+import { assetLogParts } from './asset-log.service.fixture';
 import { readAssetEntryDate } from '../asset-entry-date';
 
 /**
@@ -172,7 +172,7 @@ describe('the server reads every asset date through one door', () => {
     const notifier: any = { expenseSubmitted: jest.fn() };
     const store: any = { head: jest.fn(async () => ({ exists: true, sizeBytes: 10 })) };
     const expense = new AssetExpenseService(prisma, new AssetAccessService(prisma), custody, notifier, store);
-    const log = new AssetLogService(prisma, new AssetAccessService(prisma), custody, expense, store);
+    const log = assetLogParts(prisma, new AssetAccessService(prisma), custody, expense, store);
     return { expense, log };
   }
 

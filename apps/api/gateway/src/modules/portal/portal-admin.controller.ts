@@ -9,22 +9,19 @@ import {
   Param,
   Query,
   Request,
-  Inject,
   BadRequestException,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
-import { RequirePermission, RequirePermissionInSpace, pickUnitFields } from '@hbcfield/shared';
+import { RequirePermission, RequirePermissionInSpace } from '@hbcfield/shared';
 import { join } from 'path';
 import { mkdir, writeFile } from 'fs/promises';
-import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
-import { StorageService } from '../../common/storage/storage.service';
 import { portalScope } from '../../common/portal-scope';
 import { assignSpaceIds } from '../../common/task-actor';
+import { PortalAdminControllerBase } from './portal-admin-controller.base';
 
 /**
  * Office-facing multi-portal management. Org always from the token. An org can
@@ -54,26 +51,7 @@ import { assignSpaceIds } from '../../common/task-actor';
 @ApiTags('portal-admin')
 @ApiBearerAuth()
 @Controller('portal/admin')
-export class PortalAdminController {
-  constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    @Inject('TASK_SERVICE') private readonly taskClient: ClientProxy,
-    private readonly authCache: AuthTokenCache,
-    private readonly storage: StorageService,
-  ) {}
-
-  private auth(cmd: string, payload: any) {
-    return firstValueFrom(this.authClient.send({ cmd }, payload));
-  }
-
-  /** 404 unless the portal / client / unit is in the caller's reach for `manage`. */
-  private assertManageReach(req: any, refs: { portalId?: string; customerId?: string; unitId?: string }) {
-    return this.auth('portal_assert_reach', {
-      ...refs,
-      organizationId: req.user.organizationId,
-      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-    });
-  }
+export class PortalAdminController extends PortalAdminControllerBase {
 
   // ── Portals ──
 
@@ -274,232 +252,6 @@ export class PortalAdminController {
       id,
       organizationId: req.user.organizationId,
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-    });
-  }
-
-  // ── Intake categories (per portal) ──
-  // Reach is the category's PORTAL's workspace; a routing `spaceId` in the body
-  // is a target and must be in reach too (guard + service).
-
-  @Post('categories')
-  @RequirePermissionInSpace('canManagePortals')
-  createCategory(@Body() body: any, @Request() req: any) {
-    return this.auth('portal_create_category', {
-      ...body,
-      organizationId: req.user.organizationId,
-      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-    });
-  }
-
-  @Patch('categories/:id')
-  @RequirePermissionInSpace('canManagePortals')
-  updateCategory(@Param('id') id: string, @Body() body: any, @Request() req: any) {
-    return this.auth('portal_update_category', {
-      ...body,
-      id,
-      organizationId: req.user.organizationId,
-      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-    });
-  }
-
-  @Delete('categories/:id')
-  @RequirePermissionInSpace('canManagePortals')
-  deleteCategory(@Param('id') id: string, @Request() req: any) {
-    return this.auth('portal_delete_category', {
-      id,
-      organizationId: req.user.organizationId,
-      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-    });
-  }
-
-  @Post('categories/reorder')
-  @RequirePermissionInSpace('canManagePortals')
-  reorderCategories(@Body() body: { portalId: string; orderedIds: string[] }, @Request() req: any) {
-    return this.auth('portal_reorder_categories', {
-      portalId: body?.portalId,
-      orderedIds: Array.isArray(body?.orderedIds) ? body.orderedIds : [],
-      organizationId: req.user.organizationId,
-      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-    });
-  }
-
-  // ── Residents (B2C, per portal) ──
-
-  @Get('residents')
-  // The resident register (names, email, phone) is the portal's management
-  // surface — the invite/remove screen — not the request inbox. Answerers see
-  // who sent a request on the request itself.
-  @RequirePermissionInSpace('canManagePortals')
-  @ApiOperation({ summary: 'List a portal’s residents' })
-  async residents(@Query('portalId') portalId: string | undefined, @Query('search') search: string | undefined, @Request() req: any) {
-    const scopeSpaceIds = portalScope(req.user, 'canManagePortals');
-    if (scopeSpaceIds !== undefined) {
-      // Workspace-scoped: the CRM list below knows nothing about portal reach,
-      // so the portal is checked HERE first — and without one, "every resident
-      // of every portal" is an org-wide question.
-      if (!portalId) throw new BadRequestException('Pick a portal');
-      await this.assertManageReach(req, { portalId });
-    }
-    return this.auth('list_customers', { organizationId: req.user.organizationId, portalResident: true, portalId, search, limit: 100 });
-  }
-
-  @Get('portals/:id/available-units')
-  @RequirePermissionInSpace('canManagePortals')
-  @ApiOperation({ summary: "Vacant apartments in the portal's space, for the invite picker" })
-  availableUnits(@Param('id') id: string, @Request() req: any) {
-    return this.auth('portal_list_available_units', {
-      organizationId: req.user.organizationId,
-      portalId: id,
-      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-    });
-  }
-
-  @Get('portals/:id/available-customers')
-  @RequirePermissionInSpace('canManagePortals')
-  @ApiOperation({ summary: "Existing CRM customers (non-residents) in the portal's space, for the invite picker" })
-  availableCustomers(@Param('id') id: string, @Request() req: any) {
-    return this.auth('portal_list_assignable_customers', {
-      organizationId: req.user.organizationId,
-      portalId: id,
-      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-    });
-  }
-
-  @Post('residents')
-  // Closed to externals: this creates (or promotes) a client record AND issues a
-  // customer ACCOUNT invitation — the organization deciding who gets into its
-  // app. Workspace-scoped internal managers may, for a portal in reach.
-  @RequirePermissionInSpace('canManagePortals')
-  @DenyExternal()
-  @ApiOperation({ summary: 'Invite a resident into a portal (assign an existing apartment or create one + invite code)' })
-  async inviteResident(
-    @Body() body: { portalId: string; customerId?: string; name?: string; email?: string; unitId?: string; unitName?: string; unitAddress?: string },
-    @Request() req: any,
-  ) {
-    const orgId = req.user.organizationId;
-    const scopeSpaceIds = portalScope(req.user, 'canManagePortals');
-    // Every id the body names, in reach, BEFORE anything is created: the CRM and
-    // invitation calls below are org-scoped only.
-    if (!body?.portalId) throw new BadRequestException('Pick a portal');
-    await this.assertManageReach(req, { portalId: body.portalId, customerId: body.customerId, unitId: body.unitId });
-    // Promote an EXISTING CRM customer into the portal, or create a new one.
-    // Name is optional for new — the resident sets their own name on register.
-    let customer: any;
-    if (body.customerId) {
-      const updRes: any = await this.auth('update_customer', {
-        id: body.customerId,
-        organizationId: orgId,
-        actorId: req.user.id,
-        dto: { isPortalResident: true, portalId: body.portalId, ...(body.email ? { email: body.email } : {}) },
-      });
-      customer = updRes?.data ?? updRes;
-    } else {
-      const initialName = body.name?.trim() || body.unitName?.trim() || 'Pending client';
-      const customerRes: any = await this.auth('create_customer', {
-        organizationId: orgId,
-        dto: { name: initialName, email: body.email, isPortalResident: true, portalId: body.portalId },
-      });
-      customer = customerRes?.data ?? customerRes;
-    }
-    // Assign an EXISTING vacant apartment, or create a new one from free text.
-    const unit: any = body.unitId
-      ? await this.auth('portal_update_unit', {
-          id: body.unitId, organizationId: orgId,
-          customerId: customer.id, portalId: body.portalId, isPrimary: true,
-          scopeSpaceIds,
-        })
-      : await this.auth('portal_create_unit', {
-          organizationId: orgId,
-          customerId: customer.id,
-          portalId: body.portalId,
-          name: body.unitName?.trim() || 'Unit',
-          address: body.unitAddress,
-          scopeSpaceIds,
-        });
-    const inviteRes: any = await this.auth('create_invitation', {
-      targetRole: 'CUSTOMER',
-      organizationId: orgId,
-      createdById: req.user.id,
-      creatorRole: req.user.role,
-      customerId: customer.id,
-      unitId: unit.id,
-      portalId: body.portalId,
-      email: body.email,
-    });
-    return { customer, unit, code: inviteRes?.data?.code, invite: inviteRes };
-  }
-
-  @Post('residents/:customerId/resend-invite')
-  // Closed to externals: sends a customer-account invitation (see above).
-  @RequirePermissionInSpace('canManagePortals')
-  @DenyExternal()
-  @ApiOperation({ summary: "Re-send a pending client's invite by email" })
-  async resendResidentInvite(@Param('customerId') customerId: string, @Request() req: any) {
-    await this.assertManageReach(req, { customerId });
-    return this.auth('resend_invitation', {
-      organizationId: req.user.organizationId,
-      customerId,
-    });
-  }
-
-  @Delete('residents/:customerId')
-  // Closed to externals: revokes a customer ACCOUNT (their app login).
-  @RequirePermissionInSpace('canManagePortals')
-  @DenyExternal()
-  @ApiOperation({ summary: 'Remove a client from the portal (revokes app access, detaches, vacates units)' })
-  async removeResident(@Param('customerId') customerId: string, @Request() req: any) {
-    const result: any = await this.auth('portal_remove_client', {
-      organizationId: req.user.organizationId,
-      customerId,
-      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-    });
-    // Instantly revoke the deactivated logins (don't wait for the 60s token-cache TTL).
-    const ids: string[] = result?.data?.deactivatedUserIds ?? [];
-    await Promise.all(ids.map((uid) => this.authCache.invalidateUser(uid).catch(() => undefined)));
-    return result;
-  }
-
-  // ── Unit CRUD (per resident) ──
-
-  @Post('units')
-  @RequirePermissionInSpace('canManagePortals')
-  createUnit(@Body() body: any, @Request() req: any) {
-    // Whitelisted like every unit route (pickUnitFields); identity last.
-    return this.auth('portal_create_unit', {
-      ...pickUnitFields(body),
-      name: (typeof body?.name === 'string' && body.name.trim()) || body?.address || 'Unit',
-      organizationId: req.user.organizationId, actorId: req.user.id,
-      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-    });
-  }
-
-  @Patch('units/:id')
-  @RequirePermissionInSpace('canManagePortals')
-  updateUnit(@Param('id') id: string, @Body() body: any, @Request() req: any) {
-    // Whitelisted: a spread body could carry scopeCustomerId, actorId or a CRM caller.
-    return this.auth('portal_update_unit', {
-      ...pickUnitFields(body), id, organizationId: req.user.organizationId, actorId: req.user.id,
-      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-    });
-  }
-
-  @Delete('units/:id')
-  @RequirePermissionInSpace('canManagePortals')
-  deleteUnit(@Param('id') id: string, @Request() req: any) {
-    return this.auth('portal_delete_unit', {
-      id,
-      organizationId: req.user.organizationId,
-      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-    });
-  }
-
-  @Get('units')
-  @RequirePermissionInSpace('canViewPortal')
-  listUnits(@Query('customerId') customerId: string | undefined, @Request() req: any) {
-    return this.auth('portal_admin_list_units', {
-      organizationId: req.user.organizationId,
-      customerId,
-      scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
     });
   }
 

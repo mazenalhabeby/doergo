@@ -1,4 +1,4 @@
-import { Role, canContactColleagues, hasAccessModule, normalizeRole, orgHasAddOn } from '@hbcfield/shared/client';
+import { Role, canContactColleagues, hasAccessModule, normalizeRole } from '@hbcfield/shared/client';
 import { isExternalMember } from './member-reach';
 /*
   Five is the whole bar.
@@ -42,13 +42,13 @@ export const MAX_TABS = 5;
                  before — "never a tile for a tab" — and it can be one the
                  moment it stops being a tab.
     time-off     falls into the overflow, which is what the overflow is for.
-    team         likewise.
+    team         is the fourth slot, and holds chat (People | Messages).
 
-  ⚠️ And `chat` JOINED it, so `app/(app)/chat.tsx` was DELETED — not turned
-  into a redirect. `(tabs)` is a group, so both files resolved to `/chat` and
-  the redirect looped onto itself, rendering a blank screen:
-  a tab has to live inside the tab group to carry the pill, and every chat
-  push notification already delivered still names the old path.
+  ⚠️ `chat` is NOT a tab any more (2026-10-15): its list is Team → Messages,
+  and `(tabs)/chat.tsx` stays only as the ROUTE of one conversation (href: null,
+  never in the bar or More). It stays inside `(tabs)` because `(tabs)` is a
+  group: `app/(app)/chat.tsx` would also resolve to `/chat`, and two files on
+  one route once rendered a blank screen for every chat push.
 
   The order is FIXED, not adaptive. A bar that reorders itself by usage moves
   the target out from under the thumb of the person who uses it most — muscle
@@ -56,15 +56,14 @@ export const MAX_TABS = 5;
   bar destroys.
 */
 /*
-  ⚠️ TEAM BEFORE CHAT (2026-09-27, asked for by the owner). Who is working —
-  and a message to any of them — is one tap from the bar; the conversation
-  list sits one step further, in More.
+  ⚠️ TEAM HOLDS CHAT (2026-10-15, the owner's choice): one tab, People |
+  Messages, with the unread count on the tab.
 */
 /*
   The calendar sits in the overflow (More) behind the fixed four — the owner fixed the bar — and
   its own day reaches the home screen through the Today card.
 */
-export const TAB_PRIORITY = ['index', 'tasks', 'attendance', 'team', 'chat', 'calendar', 'time-off', 'create-task'];
+export const TAB_PRIORITY = ['index', 'tasks', 'attendance', 'team', 'calendar', 'time-off', 'create-task'];
 
 const byPriority = (a: { name: string }, b: { name: string }) => {
   const ia = TAB_PRIORITY.indexOf(a.name);
@@ -140,7 +139,9 @@ export function tabAccessFor(user: Record<string, unknown> | null | undefined): 
     timeOff: hasAccessModule(u, 'time_off'),
     create: hasAccessModule(u, 'create_task'),
     team: canContactColleagues(u),
-    chat: orgHasAddOn((user as { orgAddOns?: string[] } | null)?.orgAddOns ?? null, 'live_chat') && canContactColleagues(u),
+    // Team chat is part of the product, not the paid "Live Chat Support" option
+    // (that is the support desk) — it was gated on it by mistake until 2026-10-15.
+    chat: canContactColleagues(u),
     // An external member holds no calendar (`@DenyExternal` on /calendar).
     calendar: !!user && !isExternalMember(user as never),
   };
@@ -155,7 +156,8 @@ export function tabAccessFor(user: Record<string, unknown> | null | undefined): 
  */
 export function tabVisible(name: string, a: TabAccess): boolean {
   if (name === 'profile' || name === 'manage' || name === 'more') return false;
-  if (name === 'chat') return a.chat;
+  // A route, never a slot: its list is Team → Messages (2026-10-15). `a.chat` still says who may chat.
+  if (name === 'chat') return false;
   if (name === 'calendar') return a.calendar;
   if (name === 'team') return a.team;
   if (name === 'attendance') return a.attendance;

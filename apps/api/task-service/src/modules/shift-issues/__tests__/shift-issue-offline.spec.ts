@@ -1,7 +1,7 @@
 /**
  * A shift issue reported, or a message sent, from a phone that was offline.
  */
-import { ShiftIssuesService } from '../shift-issues.service';
+import { shiftIssuesParts } from './shift-issues.service.fixture';
 
 function build() {
   const issues = new Map<string, any>();
@@ -30,7 +30,7 @@ function build() {
     user: { findUnique: jest.fn(async () => ({ firstName: 'Mike', lastName: 'Weber' })), findMany: jest.fn(async () => []) },
   };
   const routing: any = { resolveWatchers: jest.fn(async () => ({ ids: [] })) };
-  const service = new ShiftIssuesService(prisma, routing, { emit: jest.fn() } as any, null, { signAll: async (r: any) => r } as any);
+  const service = shiftIssuesParts(prisma, routing, { emit: jest.fn() } as any, null, { signAll: async (r: any) => r } as any);
   (service as any).broadcast = jest.fn();
   (service as any).signAttachments = async (_i: any, a: any) => a ?? [];
   return { service, prisma, issues };

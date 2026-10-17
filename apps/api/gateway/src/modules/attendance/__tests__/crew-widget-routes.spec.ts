@@ -16,7 +16,7 @@
  */
 import 'reflect-metadata';
 import { PERMISSIONS_IN_SPACE_KEY } from '@hbcfield/shared';
-import { AttendanceController } from '../attendance.controller';
+import { attendanceControllers, attendanceRoute } from './attendance-controllers.fixture';
 
 const ROUTES = ['getAllEntries', 'getActiveBreaks', 'listNoShows', 'getPendingApprovals'] as const;
 
@@ -27,7 +27,7 @@ function controller() {
     listNoShows: jest.fn().mockResolvedValue({ data: [] }),
     getPendingApprovals: jest.fn().mockResolvedValue({ total: 0, bySpace: {} }),
   };
-  const ctrl = new AttendanceController(service as any, {} as any);
+  const ctrl = attendanceControllers(service as any, {} as any);
   return { ctrl: ctrl as any, service };
 }
 
@@ -62,7 +62,7 @@ async function call(ctrl: any, route: (typeof ROUTES)[number], user: any) {
 
 describe('Crew card routes — the gate', () => {
   it.each(ROUTES)('%s requires canViewSpaceAttendance, and only that', (route) => {
-    const perms = Reflect.getMetadata(PERMISSIONS_IN_SPACE_KEY, AttendanceController.prototype[route]);
+    const perms = Reflect.getMetadata(PERMISSIONS_IN_SPACE_KEY, attendanceRoute(route));
     expect(perms).toEqual(['canViewSpaceAttendance']);
   });
 });

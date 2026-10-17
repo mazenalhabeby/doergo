@@ -16,10 +16,17 @@ import { join } from 'path';
  * that reports HOW MANY PEOPLE are on the floor is gated on attendance.
  */
 describe('cover never rides in on the task permission', () => {
-  const controller = readFileSync(
-    join(__dirname, '..', 'technicians.controller.ts'),
-    'utf8',
-  );
+  // The /employees controller was split by job (2026-10-16): read every part as one source.
+  const controller = [
+    'technicians.controller.ts',
+    'employee-cover.controller.ts',
+    'time-off-admin.controller.ts',
+    'leave-ledger.controller.ts',
+    'employee-records.controller.ts',
+    'employee-time-off.controller.ts',
+  ]
+    .map((f) => readFileSync(join(__dirname, '..', f), 'utf8'))
+    .join('\n');
 
   /** The source with comments removed — a rule must not be satisfied by prose. */
   const code = controller
@@ -52,8 +59,8 @@ describe('cover never rides in on the task permission', () => {
   it('scopes both to the spaces attendance was granted in, never to task spaces', () => {
     for (const path of ['floor-now', 'cover-range']) {
       const r = route(path);
-      expect(r).toContain("spacesGranting(user?.access as never, 'canViewSpaceAttendance')");
-      expect(r).not.toContain("spacesGranting(user?.access as never, 'canViewAllTasks')");
+      expect(r).toMatch(/scope(Ids)?For\(user, 'canViewSpaceAttendance'\)/);
+      expect(r).not.toMatch(/scope(Ids)?For\(user, 'canViewAllTasks'\)/);
     }
   });
 
@@ -71,7 +78,7 @@ describe('cover never rides in on the task permission', () => {
   it('asks for attendance before attaching a cover projection to the leave list', () => {
     const r = route('time-off');
     expect(r).toContain('withCover');
-    expect(r).toContain("spacesGranting(user?.access as never, 'canViewSpaceAttendance')");
+    expect(r).toMatch(/scope(Ids)?For\(user, 'canViewSpaceAttendance'\)/);
   });
 
 });

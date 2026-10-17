@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { readSource } from '../../test-utils/read-source';
 
 /*
   ⚠️ THE DATE COMES OFF THE DOCUMENT. It was reported as "you did not remove the
@@ -36,7 +37,7 @@ const DIALOG = path.join(
 const SURFACES: [string, string[]][] = [['mobile', SHEET], ['web', [DIALOG]]];
 
 describe.each(SURFACES)('%s: the document is asked before the member is', (_name, files) => {
-  const src = () => files.map((file) => stripComments(fs.readFileSync(file, 'utf8'))).join('\n');
+  const src = () => files.map((file) => stripComments(readSource(file, 'utf8'))).join('\n');
 
   it('decides through the shared rule, not its own condition', () => {
     // Two copies of "when do we ask for a date" is how one surface keeps the
@@ -80,7 +81,7 @@ describe('the strings both surfaces need exist in all five languages', () => {
   it.each(['en', 'de', 'es', 'fr', 'it'])('%s', (lang) => {
     for (const app of [MOBILE, WEB]) {
       const dict = JSON.parse(
-        fs.readFileSync(path.join(app, `src/i18n/locales/${lang}.json`), 'utf8'),
+        readSource(path.join(app, `src/i18n/locales/${lang}.json`), 'utf8'),
       );
       const supply = dict.documents?.supply ?? {};
       const missing = [
@@ -94,7 +95,7 @@ describe('the strings both surfaces need exist in all five languages', () => {
   });
 
   it('the value line carries the date', () => {
-    const en = JSON.parse(fs.readFileSync(path.join(MOBILE, 'src/i18n/locales/en.json'), 'utf8'));
+    const en = JSON.parse(readSource(path.join(MOBILE, 'src/i18n/locales/en.json'), 'utf8'));
     expect(en.documents.supply.expiresOnValue).toContain('{{date}}');
   });
 });
@@ -129,7 +130,7 @@ describe('a calendar date is not moved by a time zone', () => {
   it('is what both surfaces call', () => {
     // A local `new Date(iso)` in either screen reintroduces the shift.
     for (const [, files] of SURFACES) {
-      const src = files.map((file) => stripComments(fs.readFileSync(file, 'utf8'))).join('\n');
+      const src = files.map((file) => stripComments(readSource(file, 'utf8'))).join('\n');
       expect(src).toContain('formatCalendarDate(prompt.value)');
       expect(src).not.toMatch(/new Date\(prompt\.value\)/);
     }

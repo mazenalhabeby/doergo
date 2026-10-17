@@ -1,5 +1,6 @@
 import { overtimeRoundMinutes, overtimeRoundState } from '@hbcfield/shared';
 import { OvertimeRecordService } from '../overtime-record.service';
+import { overtimeRecordParts, type OvertimeRecordServiceParts } from './overtime-record.service.fixture';
 
 /*
   One round of overtime as the Overtime page reads it (shared
@@ -53,7 +54,7 @@ describe('a round of overtime', () => {
 
 describe('the period summary', () => {
   function service(rows: any[], running: any[] = [], latest: Record<string, number> = {}) {
-    const svc = Object.create(OvertimeRecordService.prototype) as any;
+    const svc = overtimeRecordParts() as any;
     svc.prisma = {
       overtimeRequest: {
         findMany: jest.fn().mockResolvedValueOnce(rows).mockResolvedValueOnce(running),
@@ -61,7 +62,7 @@ describe('the period summary', () => {
         groupBy: jest.fn().mockResolvedValue(Object.entries(latest).map(([timeEntryId, cycle]) => ({ timeEntryId, _max: { cycle } }))),
       },
     };
-    return svc as OvertimeRecordService;
+    return svc as OvertimeRecordServiceParts;
   }
   const person = { id: 'mike', firstName: 'Mike', lastName: 'Weber', avatarUrl: null };
   const place = { id: 'main', name: 'Main Office', timezone: 'Europe/Vienna' };

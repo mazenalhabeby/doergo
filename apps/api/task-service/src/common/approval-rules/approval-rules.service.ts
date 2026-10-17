@@ -1,22 +1,9 @@
-import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import {
-  SERVICE_NAMES,
-  personName,
-  pickRule,
-  ruleInputProblem,
-  type ApprovalRuleInput,
-  type ApprovalRuleView,
-  type ApprovalStepView,
-  type RuleFacts,
-  type RuleKind,
-} from '@hbcfield/shared';
-import { PrismaService } from '../prisma/prisma.service';
+import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
+import { personName, pickRule, type ApprovalStepView, type RuleFacts, type RuleKind } from '@hbcfield/shared';
+import { GateVerdict } from './approval-rules-helpers';
+import { ApprovalRulesBase } from './approval-rules.base';
 
-/** What a decision's approve path learns from the gate. */
-export type GateVerdict =
-  | { finalize: true; minutes?: number }
-  | { finalize: false; roleName: string };
+export { type GateVerdict } from './approval-rules-helpers';
 
 /**
  * OFFICE RULES, enforced where the decision is made (shared `approval-rules.ts`).
@@ -35,13 +22,7 @@ export type GateVerdict =
  * first at the same moment cannot both "go first".
  */
 @Injectable()
-export class ApprovalRulesService {
-  private readonly logger = new Logger(ApprovalRulesService.name);
-
-  constructor(
-    private readonly prisma: PrismaService,
-    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notifications: ClientProxy,
-  ) {}
+export class ApprovalRulesService extends ApprovalRulesBase {
 
   async gate(input: {
     organizationId: string;
@@ -151,156 +132,4 @@ export class ApprovalRulesService {
       roleName: roleByRule.get(r.ruleId) ?? '',
     }));
   }
-
-  // ── The office's rules ────────────────────────────────────────────────
-
-  async listRules(organizationId: string): Promise<ApprovalRuleView[]> {
-    const rules = await this.prisma.approvalRule.findMany({ where: { organizationId }, orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }] });
-    const roleIds = [...new Set(rules.flatMap((r) => [r.secondRoleId, r.escalateRoleId]).filter(Boolean) as string[])];
-    const [roles, spaces] = await Promise.all([
-      this.prisma.accessRole.findMany({ where: { id: { in: roleIds } }, select: { id: true, name: true } }),
-      this.prisma.companyLocation.findMany({ where: { id: { in: rules.map((r) => r.spaceId).filter(Boolean) as string[] } }, select: { id: true, name: true } }),
-    ]);
-    return rules.map((r) => ({
-      id: r.id,
-      kind: r.kind as RuleKind,
-      spaceId: r.spaceId,
-      spaceName: spaces.find((s) => s.id === r.spaceId)?.name ?? null,
-      minMinutes: r.minMinutes,
-      minDays: r.minDays,
-      minAmountCents: r.minAmountCents,
-      whenCoverShort: r.whenCoverShort,
-      secondRoleId: r.secondRoleId,
-      secondRoleName: roles.find((x) => x.id === r.secondRoleId)?.name ?? null,
-      remindAfterHours: r.remindAfterHours,
-      escalateAfterHours: r.escalateAfterHours,
-      escalateRoleId: r.escalateRoleId,
-      escalateRoleName: roles.find((x) => x.id === r.escalateRoleId)?.name ?? null,
-      isActive: r.isActive,
-    }));
-  }
-
-  async saveRule(organizationId: string, userId: string, input: ApprovalRuleInput, id?: string): Promise<{ id: string }> {
-    const problem = ruleInputProblem(input);
-    if (problem) throw new BadRequestException({ message: RULE_MESSAGES[problem], code: problem });
-    // Any of the organization's SHARED roles — never somebody's personal role.
-    const sharedRole = (id: string) => this.prisma.accessRole.findFirst({ where: { id, organizationId, personalAssignmentId: null }, select: { id: true } });
-    const [second, escalate, space] = await Promise.all([
-      input.secondRoleId ? sharedRole(input.secondRoleId) : Promise.resolve({ id: null }),
-      input.escalateRoleId ? sharedRole(input.escalateRoleId) : Promise.resolve({ id: null }),
-      input.spaceId ? this.prisma.companyLocation.findFirst({ where: { id: input.spaceId, organizationId }, select: { id: true } }) : Promise.resolve({ id: null }),
-    ]);
-    if (!second || !escalate) throw new BadRequestException({ message: RULE_MESSAGES.RULE_ROLE_REQUIRED, code: 'RULE_ROLE_REQUIRED' });
-    if (!space) throw new NotFoundException('Workspace not found');
-    const data = {
-      kind: input.kind,
-      spaceId: input.spaceId ?? null,
-      minMinutes: input.kind === 'overtime' ? input.minMinutes ?? null : null,
-      minDays: input.kind === 'request' ? input.minDays ?? null : null,
-      minAmountCents: input.kind === 'expense' ? input.minAmountCents ?? null : null,
-      whenCoverShort: input.kind === 'request' ? input.whenCoverShort === true : false,
-      secondRoleId: input.secondRoleId || null,
-      remindAfterHours: input.remindAfterHours ?? null,
-      escalateAfterHours: input.escalateAfterHours ?? null,
-      escalateRoleId: input.escalateRoleId || null,
-      isActive: input.isActive ?? true,
-    };
-    if (id) {
-      const { count } = await this.prisma.approvalRule.updateMany({ where: { id, organizationId }, data });
-      if (!count) throw new NotFoundException('Rule not found');
-      // Switched off: items half-way under it finish on their next approval, and stop saying "needs …" now.
-      if (!data.isActive) await this.closeStepsOf(organizationId, id);
-      return { id };
-    }
-    return this.prisma.approvalRule.create({ data: { ...data, organizationId, createdById: userId }, select: { id: true } });
-  }
-
-  async deleteRule(organizationId: string, id: string): Promise<{ deleted: true }> {
-    const { count } = await this.prisma.approvalRule.deleteMany({ where: { id, organizationId } });
-    if (!count) throw new NotFoundException('Rule not found');
-    // Items half-way under it finish on their next approval, and stop saying "needs …" now.
-    await this.closeStepsOf(organizationId, id);
-    return { deleted: true };
-  }
-
-  // ── helpers ───────────────────────────────────────────────────────────
-
-  private openStep(organizationId: string, kind: RuleKind, itemId: string) {
-    return this.prisma.approvalStep.findFirst({ where: { organizationId, kind, itemId, consumedAt: null } });
-  }
-
-  private async closeStepsOf(organizationId: string, ruleId: string) {
-    await this.prisma.approvalStep.updateMany({ where: { organizationId, ruleId, consumedAt: null }, data: { consumedAt: new Date() } });
-  }
-
-  private async consume(id: string) {
-    await this.prisma.approvalStep.updateMany({ where: { id, consumedAt: null }, data: { consumedAt: new Date() } });
-  }
-
-  private async roleName(roleId: string): Promise<string> {
-    return (await this.prisma.accessRole.findUnique({ where: { id: roleId }, select: { name: true } }))?.name ?? '';
-  }
-
-  /** Holds the role org-wide, or as a workspace role in one of the item's workspaces — and it is active. */
-  private async holdsRole(organizationId: string, userId: string, roleId: string, spaceIds: string[]): Promise<boolean> {
-    const now = new Date();
-    const [org, space] = await Promise.all([
-      this.prisma.user.findFirst({ where: { id: userId, organizationId, isActive: true, memberRoleId: roleId, memberRole: { isActive: true } }, select: { id: true } }),
-      spaceIds.length
-        ? this.prisma.spaceAssignment.findFirst({
-            where: { userId, organizationId, roleId, spaceId: { in: spaceIds }, role: { isActive: true }, effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] },
-            select: { id: true },
-          })
-        : Promise.resolve(null),
-    ]);
-    return !!org || !!space;
-  }
-
-  /** Active holders of a role — org-wide, or as a workspace role in one of these workspaces. */
-  async holdersOf(organizationId: string, roleId: string, spaceIds: string[], exclude: string[] = []): Promise<string[]> {
-    const now = new Date();
-    const holders = await this.prisma.user.findMany({
-      where: {
-        organizationId,
-        isActive: true,
-        id: { notIn: exclude },
-        OR: [
-          { memberRoleId: roleId, memberRole: { isActive: true } },
-          ...(spaceIds.length
-            ? [{ spaceAssignments: { some: { roleId, spaceId: { in: spaceIds }, role: { isActive: true }, effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] } } }]
-            : []),
-        ],
-      },
-      select: { id: true },
-      take: 50,
-    });
-    return holders.map((h) => h.id);
-  }
-
-  /** Push the holders of the second role (never the first approver or the person it is about). */
-  private async tellSecondStep(roleId: string, input: { organizationId: string; kind: RuleKind; itemId: string; facts: RuleFacts; deciderId: string; subjectId?: string | null; subjectName?: string | null }, firstName: string) {
-    try {
-      const recipientIds = await this.holdersOf(input.organizationId, roleId, input.facts.spaceIds, [input.deciderId, ...(input.subjectId ? [input.subjectId] : [])]);
-      if (!recipientIds.length) return;
-      this.notifications.emit('approval_second_step', {
-        organizationId: input.organizationId,
-        recipientIds,
-        kind: input.kind,
-        itemId: input.itemId,
-        firstName,
-        subjectName: input.subjectName ?? '',
-      });
-    } catch (e) {
-      this.logger.warn(`second-step notice failed: ${(e as Error).message}`);
-    }
-  }
 }
-
-const RULE_MESSAGES: Record<string, string> = {
-  RULE_KIND_INVALID: 'Rules exist for overtime, requests and expenses.',
-  RULE_THRESHOLD_INVALID: 'The threshold is not a valid number.',
-  RULE_ROLE_REQUIRED: 'Choose one of the organization\'s roles.',
-  RULE_EMPTY: 'A rule needs a second approval, a reminder or an escalation.',
-  RULE_HOURS_INVALID: 'Hours must be a whole number between 1 and 720.',
-  RULE_ESCALATE_ROLE_REQUIRED: 'Choose who it passes to when nobody answers.',
-};

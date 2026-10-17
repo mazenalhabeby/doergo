@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
-import { TechniciansService, availabilityDays } from '../technicians.service';
+import { availabilityDays } from '../technicians-helpers';
+import { MemberScheduleService } from '../member-schedule.service';
 
 /**
  * Availability for a date RANGE answers every calendar day exactly once, whatever zone the
@@ -95,7 +96,10 @@ describe('availability days', () => {
 
     const service = () => {
       const prisma = { user: { findMany: jest.fn().mockResolvedValue([tech]) } };
-      return { prisma, svc: new TechniciansService(prisma as any, {} as any, {} as any, {} as any, {} as any, {} as any) };
+      return {
+        prisma,
+        svc: new MemberScheduleService(prisma as any, {} as any, {} as any, {} as any, {} as any, {} as any),
+      };
     };
 
     it('answers 13→26 Oct once per day, with the right weekday and the leave on the 26th', async () => {
@@ -130,10 +134,10 @@ describe('availability days', () => {
 
 describe('availability is scoped to the reader\'s workspaces', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { TechniciansService } = require('../technicians.service');
+  const { MemberScheduleService } = require('../member-schedule.service');
   const run = async (scopeSpaceIds?: string[]) => {
     const findMany = jest.fn().mockResolvedValue([]);
-    const svc = Object.create(TechniciansService.prototype);
+    const svc = Object.create(MemberScheduleService.prototype);
     svc.prisma = { user: { findMany }, timeOff: { findMany: jest.fn().mockResolvedValue([]) }, task: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) } };
     await svc.getAvailability({ organizationId: 'o1', date: '2026-10-13', scopeSpaceIds }).catch(() => undefined);
     return findMany.mock.calls[0]?.[0]?.where;

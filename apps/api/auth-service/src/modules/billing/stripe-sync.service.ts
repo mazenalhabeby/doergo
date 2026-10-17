@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { stripeCatalog } from '@hbcfield/shared';
-import { StripeService } from './stripe.service';
+import { StripeCatalogService } from './stripe-catalog.service';
 
 const ok = <T>(data: T) => ({ success: true, data });
 
@@ -29,18 +29,18 @@ const ok = <T>(data: T) => ({ success: true, data });
 @Injectable()
 export class StripeSyncService {
   private readonly logger = new Logger(StripeSyncService.name);
-  constructor(private readonly stripe: StripeService) {}
+  constructor(private readonly stripeCatalog: StripeCatalogService) {}
 
   async status() {
     const catalog = stripeCatalog();
-    if (!this.stripe.isConfigured) {
+    if (!this.stripeCatalog.isConfigured) {
       return ok({ configured: false, expected: catalog.length, matched: 0, missing: [], mismatched: [], orphaned: [] });
     }
 
     // Every price carrying one of our lookup keys, in a couple of pages rather
     // than one round trip per catalogue entry.
     const live = new Map<string, { id: string; unit_amount: number | null; interval?: string }>();
-    for await (const p of this.stripe.listActivePrices()) {
+    for await (const p of this.stripeCatalog.listActivePrices()) {
       if (p.lookup_key) {
         live.set(p.lookup_key, { id: p.id, unit_amount: p.unit_amount, interval: p.recurring?.interval });
       }

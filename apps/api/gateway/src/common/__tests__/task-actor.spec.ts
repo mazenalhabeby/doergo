@@ -4,7 +4,7 @@ import { Role } from '@hbcfield/shared';
 import { of } from 'rxjs';
 import { taskActor, taskRequester, assignSpaceIds, grantedSpaceIds } from '../task-actor';
 import { SearchController } from '../../modules/search/search.controller';
-import { TasksController } from '../../modules/tasks/tasks.controller';
+import { tasksControllers } from '../../modules/tasks/__tests__/tasks-controllers.fixture';
 
 /**
  * One caller for every task route.
@@ -68,6 +68,11 @@ describe('taskActor', () => {
 describe('task routes build no caller by hand', () => {
   const FILES = [
     'tasks/tasks.controller.ts',
+    'tasks/task-list.controller.ts',
+    'tasks/task-crew.controller.ts',
+    'tasks/task-activity.controller.ts',
+    'tasks/task-checklist.controller.ts',
+    'tasks/task-attachments.controller.ts',
     'reports/reports.controller.ts',
     'sync/sync.controller.ts',
     'custom-fields/custom-fields.controller.ts',
@@ -108,14 +113,14 @@ describe('routes the lead named', () => {
 
   it('a subtask carries the assigning right, org-wide and per space', async () => {
     const queue = { createSubtask: jest.fn() };
-    const c = new TasksController(queue as any, {} as any);
+    const c = tasksControllers(queue as any, {} as any);
     await c.createSubtask('p1', { title: 'x' } as any, spaceMember);
     expect(queue.createSubtask).toHaveBeenCalledWith(expect.objectContaining({ canAssignTasks: false, assignSpaceIds: ['s2'], parentId: 'p1' }));
   });
 
   it('resume carries the space grants it used to drop', async () => {
     const queue = { resumeWork: jest.fn() };
-    const c = new TasksController(queue as any, {} as any);
+    const c = tasksControllers(queue as any, {} as any);
     await c.resumeWork('t1', {} as any, spaceMember);
     // A write: the space grants travel, a guest's shares never do.
     expect(queue.resumeWork).toHaveBeenCalledWith(expect.objectContaining({ id: 't1', viewAllSpaceIds: ['s1'], sharedSpaceIds: [] }));

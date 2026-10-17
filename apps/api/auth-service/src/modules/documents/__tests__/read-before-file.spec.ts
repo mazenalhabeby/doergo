@@ -7,6 +7,8 @@ import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';
 import { OBJECT_STORE } from '../object-store.provider';
+import { OwnUploadReaderService } from '../own-upload-reader.service';
+import { combinedServices } from '../../../common/testing/combined-services';
 
 /**
  * Reading the document BEFORE it is filed.
@@ -23,7 +25,7 @@ import { OBJECT_STORE } from '../object-store.provider';
  * somebody with the app's authority behind it.
  */
 describe('DocumentsService — reading before filing', () => {
-  let service: DocumentsService;
+  let service: DocumentsService & Pick<OwnUploadReaderService, 'readOwnUpload'>;
   const ocr = { read: jest.fn() };
 
   const prisma: Record<string, any> = {
@@ -33,12 +35,8 @@ describe('DocumentsService — reading before filing', () => {
   const store = { head: jest.fn(), get: jest.fn(), delete: jest.fn(), put: jest.fn() };
 
   const actor = (): DocumentActor => ({
-    userId: 'member1',
-    organizationId: 'org1',
-    canViewMemberDocuments: false,
-    canOpenMemberDocuments: false,
-    canIssueDocuments: false,
-    canManageDocumentTemplates: false,
+    userId: 'member1', organizationId: 'org1',
+    canViewMemberDocuments: false, canOpenMemberDocuments: false, canIssueDocuments: false, canManageDocumentTemplates: false,
   });
 
   const OWN_KEY = 'org1/documents/_staging/u/member1/abc.jpg';
@@ -63,7 +61,8 @@ describe('DocumentsService — reading before filing', () => {
         { provide: OBJECT_STORE, useValue: store },
       ],
     }).compile();
-    service = module.get(DocumentsService);
+    // Reading an own upload is its own service since the split; one object over both.
+    service = combinedServices(module.get(DocumentsService), module.get(OwnUploadReaderService));
 
     prisma.user.findFirst.mockResolvedValue({
       id: 'member1', firstName: 'Lisa', lastName: 'Adler', email: 'lisa@example.com',

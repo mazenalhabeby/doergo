@@ -32,7 +32,7 @@ const read = (rel: string) => readFileSync(join(API, rel), 'utf8');
 
 describe('rates are written through the dated writer', () => {
   it('nothing outside an invoice line cleans a rate onto a column', () => {
-    const allowed = new Set(['auth-service/src/modules/invoices/invoice.service.ts']);
+    const allowed = new Set(['auth-service/src/modules/invoices/invoice-create.service.ts']);
     const offenders = ALL.filter((p) => readFileSync(p, 'utf8').includes('cleanRateCents('))
       .map((p) => relative(API, p))
       .filter((p) => !allowed.has(p));
@@ -40,11 +40,11 @@ describe('rates are written through the dated writer', () => {
   });
 
   it.each([
-    ['organization default', 'auth-service/src/modules/onboarding/onboarding.service.ts', "target: 'ORGANIZATION'"],
-    ['a member', 'auth-service/src/modules/users/employees.service.ts', "target: 'MEMBER'"],
-    ['a workspace', 'task-service/src/modules/locations/locations.service.ts', "target: 'SPACE'"],
-    ['a member at one client', 'task-service/src/modules/space-roles/space-roles.service.ts', "target: 'ASSIGNMENT'"],
-    ['a work role\'s day rate', 'task-service/src/modules/space-roles/space-roles.service.ts', "target: 'ROLE'"],
+    ['organization default', 'auth-service/src/modules/onboarding/org-profile.service.ts', "target: 'ORGANIZATION'"],
+    ['a member', 'auth-service/src/modules/users/employee-write.service.ts', "target: 'MEMBER'"],
+    ['a workspace', 'task-service/src/modules/locations/space-service.base.ts', "target: 'SPACE'"],
+    ['a member at one client', 'task-service/src/modules/space-roles/member-terms.service.ts', "target: 'ASSIGNMENT'"],
+    ["a work role's day rate", 'task-service/src/modules/space-roles/role-admin.service.ts', "target: 'ROLE'"],
   ])('%s goes through writeRateChange', (_label, file, target) => {
     const src = read(file);
     expect(src).toContain('writeRateChange(');
@@ -55,6 +55,6 @@ describe('rates are written through the dated writer', () => {
     // `data: { ... billRateCents: <something that is not the writer's answer> }`
     const direct = /(billRateCents|costRateCents|billableRateCents)\s*:\s*(?!true\b)(?!.*nowCents)[^,\n}]*cleanRate/;
     const offenders = ALL.filter((p) => direct.test(readFileSync(p, 'utf8'))).map((p) => relative(API, p));
-    expect(offenders.filter((p) => !p.endsWith('invoice.service.ts'))).toEqual([]);
+    expect(offenders.filter((p) => !p.endsWith('invoice-create.service.ts'))).toEqual([]);
   });
 });

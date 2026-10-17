@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { builtInRoleCatchUp, setAssignmentPermissions, AssignmentPermissionsError, SHARED_ROLE_WHERE } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { SpaceRolesService } from '../space-roles.service';
+import { spaceRoleServices, type SpaceRolesServiceParts } from './space-roles.service.fixture';
 
 /**
  * Per-person permissions in a workspace — the builder's writer and the role
@@ -171,7 +171,7 @@ describe('personal roles never leak', () => {
     },
     spaceAssignment: { findFirst: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), upsert: jest.fn(), update: jest.fn(), delete: jest.fn(), count: jest.fn() },
   };
-  let service: SpaceRolesService;
+  let service: SpaceRolesServiceParts;
   const othersPersonal = { id: 'r-p', name: 'Bob · Site A', organizationId: 'org1', scope: 'SPACE', kind: 'MANAGEMENT', isSystem: false, permissions: {}, personalAssignmentId: 'a-bob' };
 
   beforeEach(async () => {
@@ -181,10 +181,7 @@ describe('personal roles never leak', () => {
     prisma.user.findFirst.mockResolvedValue({ id: 'u2', isExternal: false });
     prisma.accessRole.findMany.mockResolvedValue([]);
     prisma.spaceAssignment.findMany.mockResolvedValue([]);
-    const mod = await Test.createTestingModule({
-      providers: [SpaceRolesService, { provide: PrismaService, useValue: prisma }],
-    }).compile();
-    service = mod.get(SpaceRolesService);
+    service = spaceRoleServices(prisma);
   });
 
   it('the role lists exclude them', async () => {
@@ -238,7 +235,7 @@ describe('who may change what about a workspace’s people', () => {
     accessRole: { findFirst: jest.fn(), deleteMany: jest.fn() },
     spaceAssignment: { findFirst: jest.fn(), findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn(), delete: jest.fn() },
   };
-  let service: SpaceRolesService;
+  let service: SpaceRolesServiceParts;
   const mgmt = { id: 'r-obs', organizationId: 'org1', scope: 'SPACE', kind: 'MANAGEMENT', permissions: { canViewAllTasks: true }, personalAssignmentId: null };
   const addOnly = { addMembers: true, grantRoles: false, manageTerms: false };
   const grantOnly = { addMembers: false, grantRoles: true, manageTerms: false };
@@ -247,10 +244,7 @@ describe('who may change what about a workspace’s people', () => {
     jest.clearAllMocks();
     prisma.accessRole.findFirst.mockResolvedValue(mgmt);
     prisma.spaceAssignment.upsert.mockResolvedValue({ id: 'a-new', userId: 'u2', roleId: null, user: null, role: null, workRole: null });
-    const mod = await Test.createTestingModule({
-      providers: [SpaceRolesService, { provide: PrismaService, useValue: prisma }],
-    }).compile();
-    service = mod.get(SpaceRolesService);
+    service = spaceRoleServices(prisma);
   });
 
   it('adding a NEW person needs canAddSpaceMembers', async () => {

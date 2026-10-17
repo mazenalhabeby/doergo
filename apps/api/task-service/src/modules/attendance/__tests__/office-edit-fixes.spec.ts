@@ -1,4 +1,4 @@
-import { ApprovalService } from '../approval.service';
+import { entryServices, type ApprovalServiceParts } from './approval.service.fixture';
 import { CountedTimeService } from '../counted-time.service';
 
 /**
@@ -34,7 +34,7 @@ function build(entry: Record<string, any>, opts: { ownerAdmin?: boolean } = {}) 
     $transaction: jest.fn(),
   };
   prisma.$transaction.mockImplementation(async (fn: any) => fn(prisma));
-  const svc = new ApprovalService(prisma, new CountedTimeService(prisma), { emit: jest.fn() } as any);
+  const svc = entryServices(prisma, new CountedTimeService(prisma), { emit: jest.fn() } as any);
   return { svc, prisma };
 }
 
@@ -63,7 +63,7 @@ const closedEntry = (over: Record<string, any> = {}) => ({
   ...over,
 });
 
-const edit = (svc: ApprovalService, over: Record<string, any>) =>
+const edit = (svc: ApprovalServiceParts, over: Record<string, any>) =>
   svc.editEntry({ entryId: 'e1', editorId: OFFICE, organizationId: ORG, reason: 'Correction', ...over } as any);
 const written = (prisma: any) => prisma.timeEntry.update.mock.calls[0][0].data;
 
@@ -178,7 +178,7 @@ describe('office edit — closing an open entry', () => {
 });
 
 describe('deleting an entry', () => {
-  const del = (svc: ApprovalService, editorId: string) =>
+  const del = (svc: ApprovalServiceParts, editorId: string) =>
     svc.deleteEntry({ entryId: 'e1', editorId, organizationId: ORG });
 
   it('refuses a shift leader deleting their own entry', async () => {

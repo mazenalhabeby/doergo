@@ -43,29 +43,19 @@ import { JobReport } from './job-report';
 import { JobSubmissions } from './job-submissions';
 import { JobDock, type DockPrimary } from './job-dock';
 import { Banner, QuietButton, SectionLabel } from './job-ui';
-import { MoreSheet } from './sheets/more-sheet';
-import { ReportIssueSheet } from './sheets/report-issue-sheet';
-import { JobConfirmSheet } from './sheets/confirm-sheet';
-import { ClockInToStartSheet } from './sheets/clock-in-to-start-sheet';
-import { HandoverSheet } from './sheets/handover-sheet';
 import { JobHandover } from './job-handover';
 import { JobTimeCard } from './job-time-card';
-import { HandOverLeadSheet, JobCrewCard, MyIssueSheet } from './job-crew';
+import { JobCrewCard } from './job-crew';
 import { JobRoleCard } from './job-role';
 import { useCrew } from './use-crew';
 import { jobTimeNow } from './job-time-logic';
 import { useJobTime } from '../../hooks/useJobTime';
-import { LocationPickerSheet } from '../index';
 import { useShift } from '../../offline/attendance/use-shift';
 import { useClockIn } from '../../hooks/useClockIn';
-import { AssignSheet } from './sheets/assign-sheet';
-import { EditSheet } from './sheets/edit-sheet';
-import { StepFormSheet } from './sheets/step-form-sheet';
-import { SignSheet } from './sheets/sign-sheet';
 import { TourTarget, useTourScroll } from '../tour/tour-target';
 import { takeCrewJoin } from '../../lib/join-intent';
 
-type SheetKind = 'more' | 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'form' | 'sign' | 'delete' | 'clockIn' | 'handover' | 'myIssue' | 'handOverLead';
+import { JobPageSheets, type SheetKind } from './job-page-sheets';
 
 /** What waits for the clock-in: a step to move into, or picking a paused job back up. */
 const RESUME = '__resume__';
@@ -574,18 +564,18 @@ export function JobPage({
         {reportShown ? <JobReport report={job.report} sayNone={reportSaysNone} onLayout={at(reportY)} /> : null}
 
         <TourTarget name="taskdetail-activity">
-        <JobActivity
-          comments={job.comments}
-          events={job.events}
-          localEvents={job.localEvents}
-          created={{ at: task.createdAt, by: task.createdBy }}
-          labelOf={labelOf}
-          canWrite
-          visitNotes={doingTheWork && hasCapability(caps, 'form')}
-          busy={writes.busy}
-          onSend={writes.addComment}
-          onLayout={at(activityY)}
-        />
+      <JobActivity
+        comments={job.comments}
+        events={job.events}
+        localEvents={job.localEvents}
+        created={{ at: task.createdAt, by: task.createdBy }}
+        labelOf={labelOf}
+        canWrite
+        visitNotes={doingTheWork && hasCapability(caps, 'form')}
+        busy={writes.busy}
+        onSend={writes.addComment}
+        onLayout={at(activityY)}
+      />
         </TourTarget>
       </ScrollView>
 
@@ -607,102 +597,25 @@ export function JobPage({
         />
       ) : null}
 
-      {/* ⚠️ ONE sheet state — two can never be asked for at once. */}
-      <ClockInToStartSheet
-        visible={sheet === 'clockIn'}
-        onClose={() => { setStartAfterClockIn(null); closeSheet(); }}
-        jobTitle={[task.title, task.space?.name].filter(Boolean).join(' · ')}
-        busy={clockIn.isBusy || writes.busy}
-        onClockIn={clockIn.openClockInModal}
-      />
-      <LocationPickerSheet {...clockIn.pickerProps} confirmDisabled={clockIn.isClockingIn} />
-      <MyIssueSheet visible={sheet === 'myIssue'} onClose={closeSheet} busy={crew.busy} onSend={crew.reportMine} />
-      <HandOverLeadSheet visible={sheet === 'handOverLead'} onClose={closeSheet} crew={crew} jobTitle={task.title} />
-      <HandoverSheet
-        visible={sheet === 'handover'}
-        onClose={closeSheet}
-        context={[task.title, task.space?.name].filter(Boolean).join(' · ')}
-        busy={writes.busy}
-        onSend={writes.handover}
-      />
-      <MoreSheet
-        visible={sheet === 'more'}
-        onClose={closeSheet}
-        title={task.title}
+      <JobPageSheets
+        sheet={sheet}
+        setSheet={setSheet}
+        closeSheet={closeSheet}
+        setStartAfterClockIn={setStartAfterClockIn}
+        clockIn={clockIn}
+        crew={crew}
+        task={task}
+        writes={writes}
+        user={user}
         options={options}
         labelOf={labelOf}
-        assigned={!!task.assignedToId}
-        onPick={pick}
-      />
-      <ReportIssueSheet
-        visible={sheet === 'issue'}
-        onClose={closeSheet}
-        context={[task.title, task.space?.name].filter(Boolean).join(' · ')}
-        busy={writes.busy}
-        onSend={writes.reportIssue}
-      />
-      <JobConfirmSheet
-        visible={sheet === 'decline'}
-        onClose={closeSheet}
-        title={t('job.decline.title')}
-        body={t('job.decline.body')}
-        confirmLabel={t('job.decline.confirm')}
-        busy={writes.busy}
-        onConfirm={() => { setSheet(null); void writes.decline(); }}
-      />
-      <JobConfirmSheet
-        visible={sheet === 'cancel'}
-        onClose={closeSheet}
-        title={t('job.cancel.title')}
-        body={t('job.cancel.body')}
-        confirmLabel={t('job.cancel.confirm')}
-        busy={writes.busy}
-        onConfirm={() => { setSheet(null); void writes.cancelJob(); }}
-      />
-      <JobConfirmSheet
-        visible={sheet === 'delete'}
-        onClose={() => { setSheet(null); setDeleting(null); }}
-        title={t('job.files.deleteTitle')}
-        body={t('job.files.deleteBody', { name: deleting?.fileName ?? '' })}
-        confirmLabel={t('common.delete')}
-        busy={false}
-        onConfirm={() => { const f = deleting; setSheet(null); setDeleting(null); if (f) void writes.deleteAttachment(f.id); }}
-      />
-      <AssignSheet
-        visible={sheet === 'assign'}
-        current={task.assignedToId}
-        spaceId={task.space?.id ?? null}
-        busy={writes.busy}
-        onPick={async (m) => { if (await writes.assign(m)) setSheet(null); }}
-        onClose={closeSheet}
-      />
-      <EditSheet
-        visible={sheet === 'edit'}
-        onClose={closeSheet}
-        initial={{ title: task.title, description: task.description, priority: task.priority, locationAddress: task.locationAddress }}
-        busy={writes.busy}
-        onSave={writes.edit}
-      />
-      <StepFormSheet
-        visible={sheet === 'form' && !!activeForm}
-        onClose={closeSheet}
-        title={formTarget ? labelOf(formTarget) : ''}
-        form={activeForm}
-        busy={writes.busy}
-        serverErrors={formErrors}
-        onSubmit={async (draft, signatures) => {
-          if (!formTarget || !activeForm) return false;
-          setFormErrors(null);
-          const res = await writes.moveWithForm(formTarget, activeForm, draft, signatures);
-          if (!res.ok) setFormErrors(res.fieldErrors ?? null);
-          return res.ok;
-        }}
-      />
-      <SignSheet
-        visible={sheet === 'sign'}
-        onClose={closeSheet}
-        busy={writes.uploading}
-        onSave={writes.addSignature}
+        pick={pick}
+        deleting={deleting}
+        setDeleting={setDeleting}
+        formTarget={formTarget}
+        activeForm={activeForm}
+        formErrors={formErrors}
+        setFormErrors={setFormErrors}
       />
     </View>,
   );

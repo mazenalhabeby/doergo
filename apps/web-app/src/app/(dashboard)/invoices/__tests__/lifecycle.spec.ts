@@ -6,6 +6,7 @@ import {
   primaryStep, otherSteps, statusStyle, isEditable, isDeletable,
 } from "../_lib/lifecycle"
 import { isOutstanding } from "../_lib/aging"
+import { serverModuleSource } from "./server-source"
 
 /*
   THE LIFE OF AN INVOICE.
@@ -21,14 +22,12 @@ import { isOutstanding } from "../_lib/aging"
   invoice in the same click, with no confirmation and no way back.
 */
 
-const SERVICE = path.join(
-  __dirname,
-  "../../../../../../api/auth-service/src/modules/invoices/invoice.service.ts",
-)
+/** The invoices module folder — its service is split by job, so a rule is read from all of it. */
+const SERVICE_DIR = path.join(__dirname, "../../../../../../api/auth-service/src/modules/invoices")
 
 /** The server's own table, read out of the service. It is the authority. */
 function serverTransitions(): Record<string, string[]> {
-  const src = strip(fs.readFileSync(SERVICE, "utf8"))
+  const src = strip(serverModuleSource(SERVICE_DIR))
   const block = src.match(/const validTransitions[^=]*=\s*\{([\s\S]*?)\n\s*\};/)?.[1]
   expect(block).toBeTruthy()
   const out: Record<string, string[]> = {}
@@ -118,7 +117,7 @@ describe("the flow", () => {
       expect(isEditable(s)).toBe(false)
       expect(isDeletable(s)).toBe(false)
     }
-    const service = strip(fs.readFileSync(SERVICE, "utf8"))
+    const service = strip(serverModuleSource(SERVICE_DIR))
     expect(service.match(/status !== 'DRAFT'/g)?.length).toBeGreaterThanOrEqual(4)
   })
 

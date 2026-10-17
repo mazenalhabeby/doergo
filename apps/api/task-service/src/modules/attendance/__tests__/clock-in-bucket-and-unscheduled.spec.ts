@@ -20,11 +20,11 @@ import { ShiftResolverService } from '../shift-resolver.service';
 import { CountedTimeService } from '../counted-time.service';
 import { BreakRulesService } from '../break-rules.service';
 import { BreakReminderService } from '../break-reminder.service';
-import { BreakService } from '../break.service';
+import { BREAK_SERVICES } from '../break-services';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { PresenceService } from '../presence/presence.service';
-import { LocationsService } from '../../locations/locations.service';
+import { SpaceUpdateService } from '../../locations/space-update.service';
 
 const NOW = new Date('2026-09-15T12:00:00.000Z');
 const SITE = { lat: 47.9813, lng: 13.8269 };
@@ -70,8 +70,14 @@ async function build(opts: { role?: string; allowRemote?: boolean; assigned?: bo
   const moduleRef = await Test.createTestingModule({
     providers: [
       AttendanceService, ...ATTENDANCE_SERVICE_PARTS,
-      { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn(), onBatch: jest.fn() } },
-      BreakService, CountedTimeService, BreakRulesService, BreakReminderService,
+      {
+        provide: PresenceService,
+        useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn(), onBatch: jest.fn() },
+      },
+      ...BREAK_SERVICES,
+      CountedTimeService,
+      BreakRulesService,
+      BreakReminderService,
       { provide: PrismaService, useValue: prisma },
       { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
       { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) } },
@@ -251,7 +257,7 @@ describe('saving the workspace settings', () => {
         update: jest.fn(async ({ data }: any) => ({ ...row, ...data })),
       },
     };
-    return { svc: new LocationsService(prisma, { emit: jest.fn() } as never), prisma };
+    return { svc: new SpaceUpdateService(prisma, { emit: jest.fn() } as never), prisma };
   };
   const base = { id: 'loc-1', organizationId: 'org-1', userId: 'admin' };
 

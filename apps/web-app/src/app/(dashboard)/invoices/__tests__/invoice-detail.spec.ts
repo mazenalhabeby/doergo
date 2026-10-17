@@ -2,6 +2,7 @@ import fs from "fs"
 import path from "path"
 
 import { code, listPage } from "./_screen"
+import { readSource } from "../../../../test-utils/read-source"
 
 /*
   THE INVOICE, ONCE IT EXISTS.
@@ -84,7 +85,7 @@ describe("the issued invoice", () => {
   })
 
   it.each(["en", "de", "es", "fr", "it"])("says the payment term in %s", (lang) => {
-    const d = JSON.parse(fs.readFileSync(path.join(LOCALES, `${lang}.json`), "utf8"))
+    const d = JSON.parse(readSource(path.join(LOCALES, `${lang}.json`), "utf8"))
     expect(typeof d.invoices?.create?.onReceipt).toBe("string")
     expect(d.invoices.create.onReceipt.length).toBeGreaterThan(1)
     // Plurals: "1 day overdue" and "3 days overdue" are different sentences.
@@ -194,7 +195,7 @@ describe("the invoice list", () => {
   })
 
   it.each(["en", "de", "es", "fr", "it"])("names the four piles in %s", (lang) => {
-    const d = JSON.parse(fs.readFileSync(path.join(LOCALES, `${lang}.json`), "utf8"))
+    const d = JSON.parse(readSource(path.join(LOCALES, `${lang}.json`), "utf8"))
     for (const k of ["overdue", "open", "draft", "settled"]) {
       expect(typeof d.invoices?.buckets?.[k]).toBe("string")
     }

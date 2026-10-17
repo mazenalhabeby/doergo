@@ -1,5 +1,6 @@
 import { Role } from '@hbcfield/shared';
-import { TasksController, normalizeQueryParams } from '../tasks.controller';
+import { normalizeQueryParams } from '../tasks.controller';
+import { tasksControllers } from './tasks-controllers.fixture';
 
 /**
  * The gateway's half of the task scope rules: it must SEND the facts the
@@ -19,7 +20,7 @@ describe('TasksController — scope facts forwarded', () => {
     assignTask: jest.fn().mockResolvedValue({}),
   };
   const direct = { findAll: jest.fn().mockResolvedValue({}) };
-  const controller = new TasksController(queue as never, direct as never);
+  const controller = tasksControllers(queue as never, direct as never);
 
   /** A member who may create and assign only at site A, by a space role. */
   const siteMember = {

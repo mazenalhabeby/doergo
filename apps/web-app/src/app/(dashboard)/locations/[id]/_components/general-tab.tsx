@@ -26,154 +26,52 @@ import { TimezoneCombobox, fetchTimezone } from "@/components/timezone-combobox"
 import { DangerZone } from "./danger-zone"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouteAccess } from "@/hooks/use-route-access"
-
-const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } =
-  ATTENDANCE_CONSTANTS
-
-// The same map picker used by the New-Space form — reused so the address
-// experience is identical (DRY). Dynamic-imported because Leaflet needs `window`.
-const LocationPicker = dynamic(() => import("@/components/location-picker"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-[220px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/40">
-      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-    </div>
-  ),
-})
+import { useGeneralTab, GEO_MIN, GEO_MAX } from "./use-general-tab"
+import { LocationPicker, WorkspaceCompanyField } from "./general-tab-helpers"
+import { GeneralTabOwnershipSection } from "./general-tab-ownership-section"
+import { GeneralTabLocationSection } from "./general-tab-location-section"
 
 export function GeneralTab({ space }: { space: CompanyLocation }) {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-  const { hasPlanFeature, user } = useAuth()
-  const access = useRouteAccess()
-  const orgCurrency = user?.orgCurrency ?? "EUR"
-  // This workspace's rates and their history, read only where they are shown (a client).
-  const { data: spaceRates } = useQuery({
-    queryKey: keys.rates.history("SPACE", space.id),
-    queryFn: () => rateHistoryApi.list({ target: "SPACE", targetId: space.id }),
-    enabled: space.kind === "CUSTOMER",
-  })
-  const saveSpaceRate = async (patch: UpdateLocationInput) => {
-    await locationsApi.update(space.id, patch)
-    queryClient.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
-    queryClient.invalidateQueries({ queryKey: keys.rates.history("SPACE", space.id) })
-  }
-
-  const [makingDefault, setMakingDefault] = useState(false)
-  const [name, setName] = useState(space.name)
-  // Type is derived from whether the space has coordinates (same implicit model
-  // as the New-Space form — a physical site has a pin, a workspace doesn't).
-  const [type, setType] = useState<"workspace" | "physical">(
-    space.lat != null && space.lng != null ? "physical" : "workspace",
-  )
-  const [address, setAddress] = useState(space.address || "")
-  const [lat, setLat] = useState<number | null>(space.lat ?? null)
-  const [lng, setLng] = useState<number | null>(space.lng ?? null)
-  const [radius, setRadius] = useState(space.geofenceRadius.toString())
-  // The drawn outline. `parseGeofencePolygon` rather than a cast: the column is
-  // JSON and may hold anything an older build or a restored backup left there.
-  const [polygon, setPolygon] = useState<LatLng[] | null>(
-    parseGeofencePolygon((space as { geofencePolygon?: unknown }).geofencePolygon),
-  )
-  /** A drawn boundary supersedes the radius — see the note by the field. */
-  const hasBoundary = (polygon?.length ?? 0) >= 3
-  const [timezone, setTimezone] = useState(space.timezone || "Europe/Berlin")
-  // Ownership classification (separate axis from workspace/physical).
-  const [kind, setKind] = useState<"PROJECT" | "COMPANY" | "CUSTOMER">(
-    (space.kind as "PROJECT" | "COMPANY" | "CUSTOMER") || "COMPANY",
-  )
-  const [contactName, setContactName] = useState(space.contactName || "")
-  const [contactEmail, setContactEmail] = useState(space.contactEmail || "")
-  const [contactPhone, setContactPhone] = useState(space.contactPhone || "")
-
-  const isPhysical = type === "physical"
-  const KIND_OPTIONS = [
-    { value: "PROJECT" as const, icon: Briefcase, label: t("locations.form.kindProject", "My project") },
-    { value: "COMPANY" as const, icon: Building2, label: t("locations.form.kindCompany", "My company") },
-    { value: "CUSTOMER" as const, icon: Handshake, label: t("locations.form.kindCustomer", "Customer company") },
-  ]
-  const clampRadius = () => Math.min(GEO_MAX, Math.max(GEO_MIN, parseInt(radius) || GEO_DEFAULT))
-
-  // Remember the last coords we auto-derived a timezone for, so a save/re-render
-  // doesn't refetch and clobber a manual override.
-  const lastTzCoords = useRef<string>("")
-
-  const mutation = useMutation({
-    mutationFn: (data: UpdateLocationInput) => locationsApi.update(space.id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
-      queryClient.invalidateQueries({ queryKey: keys.locations.lists() })
-      notify.success(t("locations.toast.updated"))
-    },
-    onError: (err: Error) => notify.error(err.message || t("locations.toast.updateFailed")),
-  })
-
-  // Dropping a pin / searching updates coords AND auto-fills the timezone from
-  // the map (the admin can still override with the searchable picker below).
-  const handleLocationChange = (newLat: number, newLng: number) => {
-    setLat(newLat)
-    setLng(newLng)
-    const key = `${newLat.toFixed(4)},${newLng.toFixed(4)}`
-    if (key === lastTzCoords.current) return
-    lastTzCoords.current = key
-    void fetchTimezone(newLat, newLng).then((tz) => {
-      if (tz) setTimezone(tz)
-    })
-  }
-
-  const handleSave = () => {
-    if (!name.trim()) return notify.error(t("locations.nameRequired"))
-    mutation.mutate({
-      name: name.trim(),
-      timezone,
-      // Ownership kind + customer contact fields (cleared when not CUSTOMER).
-      kind,
-      contactName: kind === "CUSTOMER" ? contactName.trim() || null : null,
-      contactEmail: kind === "CUSTOMER" ? contactEmail.trim() || null : null,
-      contactPhone: kind === "CUSTOMER" ? contactPhone.trim() || null : null,
-      // Rates are not part of this Save — each has its own dated Change (below).
-      // Physical → persist the pin/address/geofence. Workspace → clear the
-      // physical attributes (null) so the space becomes a logical one.
-      ...(isPhysical
-        ? {
-            address: address.trim() || undefined,
-            lat: lat ?? undefined,
-            lng: lng ?? undefined,
-            geofenceRadius: clampRadius(),
-            // Sent on every physical save so clearing a boundary persists;
-            // `null` returns the site to its radius.
-            geofencePolygon: polygon,
-          }
-        : { address: null, lat: null, lng: null, geofencePolygon: null }),
-    })
-  }
-
-  /*
-    What this workspace HAS, as links rather than tabs.
-
-    Clients, assets and portals moved to their own pages — they are content, not
-    settings, and this page is settings. The path from a workspace survives as
-    one row: the same screens, pre-filtered to this one, a click away. Only what
-    the workspace actually runs appears.
-  */
-  const mods = (space.enabledModules ?? []) as string[]
-  // …and only where the page behind the link would open for this reader (the route table).
-  const contentLinks = [
-    { href: "/clients", label: t("customers.title", "Customers"), Icon: Contact, show: mods.includes("crm") && access.may("/clients") },
-    { href: "/assets", label: t("assetKinds.title", "Assets"), Icon: Package, show: mods.includes("assets") && access.may("/assets") },
-    { href: "/portals", label: t("portal.title", "Client portal"), Icon: LayoutTemplate, show: mods.includes("b2c_portal") && access.may("/portals") },
-    /*
-      ⚠️ Invoicing is an organization OPTION, not a per-space module, so it is
-      not in `mods` — and what decides whether this workspace can be billed is
-      what it IS. You invoice a customer site, never your own warehouse.
-    */
-    {
-      href: "/invoices",
-      label: t("invoices.title"),
-      Icon: FileText,
-      show: space.kind === "CUSTOMER" && hasPlanFeature("invoicing"),
-    },
-  ].filter((l) => l.show)
+  const vm = useGeneralTab({ space })
+  const {
+    t,
+    queryClient,
+    orgCurrency,
+    spaceRates,
+    saveSpaceRate,
+    makingDefault,
+    setMakingDefault,
+    name,
+    setName,
+    type,
+    setType,
+    address,
+    setAddress,
+    lat,
+    lng,
+    radius,
+    setRadius,
+    polygon,
+    setPolygon,
+    hasBoundary,
+    timezone,
+    setTimezone,
+    kind,
+    setKind,
+    contactName,
+    setContactName,
+    contactEmail,
+    setContactEmail,
+    contactPhone,
+    setContactPhone,
+    isPhysical,
+    KIND_OPTIONS,
+    clampRadius,
+    mutation,
+    handleLocationChange,
+    handleSave,
+    contentLinks,
+  } = vm
 
   return (
     <div className="max-w-3xl space-y-5">
@@ -356,208 +254,10 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
       </Card>
 
       {/* ── Ownership (project / my company / customer company) ── */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-start gap-3">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-300">
-              <Handshake className="h-[18px] w-[18px]" />
-            </span>
-            <div>
-              <CardTitle className="text-base">{t("locations.ownershipSection", "Ownership")}</CardTitle>
-              <CardDescription>{t("locations.ownershipHint", "Is this a project, your own company, or a customer company you do work for?")}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {KIND_OPTIONS.map((opt) => {
-              const Icon = opt.icon
-              const active = kind === opt.value
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setKind(opt.value)}
-                  className={cn(
-                    "rounded-xl border p-3 text-left transition-all",
-                    active
-                      ? "border-blue-600 bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-900/20 dark:ring-blue-800"
-                      : "border-border hover:border-muted-foreground/30",
-                  )}
-                >
-                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <Icon className="h-4 w-4 text-blue-600" /> {opt.label}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-          {kind === "CUSTOMER" && (
-            <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
-              <p className="text-xs font-medium text-muted-foreground">{t("locations.form.customerContact", "Customer contact")}</p>
-              <div className="space-y-1.5">
-                <Label htmlFor="cfg-contact-name">{t("locations.form.contactName", "Contact name")}</Label>
-                <Input id="cfg-contact-name" value={contactName} onChange={(e) => setContactName(e.target.value)} />
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="cfg-contact-email">{t("locations.form.contactEmail", "Contact email")}</Label>
-                  <Input id="cfg-contact-email" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cfg-contact-phone">{t("locations.form.contactPhone", "Contact phone")}</Label>
-                  <Input id="cfg-contact-phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
-                </div>
-              </div>
-              {/*
-                What this client pays per hour, and what an hour here costs you.
-                Each changes from a day and keeps its history — never part of
-                the Save above, which would otherwise date every edit "today".
-              */}
-              {/*
-                What this client is billed in. Every rate on this workspace is
-                in it; a worker's cost stays in the organization's currency.
-              */}
-              <CurrencySetting
-                id="cfg-currency"
-                label={t("currency.spaceLabel")}
-                hint={t("currency.spaceHint")}
-                value={space.currency ?? null}
-                inheritFrom={space.organizationCurrency ?? orgCurrency}
-                ratesSet={space.ratesSet ?? 0}
-                onSave={(code) => saveSpaceRate({ currency: code })}
-              />
-              <div className="grid gap-4 sm:grid-cols-2">
-                {/* What the client pays per hour. What a person COSTS is on their profile, not here. */}
-                <DatedRateField
-                  id="cfg-billable-rate"
-                  label={t("rates.spaceBill")}
-                  hint={t("rates.spaceBillHint")}
-                  currentCents={space.billableRateCents ?? null}
-                  currency={space.effectiveCurrency ?? orgCurrency}
-                  history={spaceRates?.filter((r) => r.kind === "BILL_HOUR")}
-                  onSubmit={(c, from) => saveSpaceRate({ billableRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })}
-                />
-              </div>
-            </div>
-          )}
-          {/*
-            Who invoices this workspace — the legal company on its invoices (customer workspaces are
-            the ones invoiced). Saved on its own, like
-            the currency; issued invoices keep the company frozen on them. Hidden while the
-            organization has one company.
-          */}
-          {kind === "CUSTOMER" && <WorkspaceCompanyField
-            value={space.legalEntityId ?? null}
-            onSave={async (id) => {
-              try {
-                await saveSpaceRate({ legalEntityId: id })
-                notify.success(t("companies.saved"))
-              } catch (e) {
-                notify.error(serverErrorMessage(e, t))
-              }
-            }}
-          />}
-        </CardContent>
-      </Card>
+      <GeneralTabOwnershipSection vm={vm} space={space} />
 
       {/* ── Location & timezone ── */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-start gap-3">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-300">
-              <MapPin className="h-[18px] w-[18px]" />
-            </span>
-            <div>
-              <CardTitle className="text-base">{t("locations.locationSection")}</CardTitle>
-              <CardDescription>
-                {isPhysical ? t("locations.locationHint") : t("locations.timezoneOnlyHint")}
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Physical sites get the map + geofence; workspaces just pick a
-              timezone (used to display attendance/task times). */}
-          {isPhysical && (
-            <>
-              <div className="space-y-1.5">
-                <Label htmlFor="cfg-address">{t("locations.address")}</Label>
-                <Input
-                  id="cfg-address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder={t("locations.form.addressPlaceholder")}
-                />
-              </div>
-              <LocationPicker
-                polygon={polygon}
-                onPolygonChange={setPolygon}
-                lat={lat}
-                lng={lng}
-                radius={clampRadius()}
-                address={address}
-                onLocationChange={handleLocationChange}
-                onAddressChange={setAddress}
-              />
-            </>
-          )}
-
-          {isPhysical ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="cfg-radius" className={hasBoundary ? "text-muted-foreground" : undefined}>
-                  {t("locations.geofenceRadius")}
-                </Label>
-                {/*
-                  A drawn boundary REPLACES the radius — `isAtSite` checks the
-                  shape and never looks at this number. Leaving the field live
-                  offers a control that silently does nothing, which is how
-                  somebody spends an afternoon adjusting a radius that was never
-                  being read. Disabled and explained, rather than hidden: a
-                  control that vanishes is its own kind of confusing, and the
-                  value is still there when the boundary is cleared.
-                */}
-                <div className="relative w-40">
-                  <Input
-                    id="cfg-radius"
-                    type="number"
-                    min={GEO_MIN}
-                    max={GEO_MAX}
-                    value={radius}
-                    onChange={(e) => setRadius(e.target.value)}
-                    disabled={hasBoundary}
-                    className="pr-8"
-                  />
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                    m
-                  </span>
-                </div>
-                {hasBoundary && (
-                  <p className="text-[11px] leading-snug text-muted-foreground/80">
-                    {t(
-                      "locations.boundary.radiusSuperseded",
-                      "The drawn site is used instead. Clear it to go back to a radius.",
-                    )}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="cfg-timezone">{t("locations.timezone")}</Label>
-                <TimezoneCombobox value={timezone} onChange={setTimezone} />
-                <p className="text-[11px] text-muted-foreground/70">{t("locations.timezoneAutoHint")}</p>
-              </div>
-            </div>
-          ) : (
-            // Logical space: no timezone to set — shifts use each worker's own
-            // clock-in timezone. Pin it on the map (make it physical) to fix a
-            // site timezone + geofence.
-            <p className="text-sm text-muted-foreground">
-              {t("locations.logicalNoTimezone", "No fixed location — attendance uses each worker's own timezone. Add a location to set a fixed site timezone and geofence.")}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      <GeneralTabLocationSection vm={vm} />
 
       {/* ── Save ── */}
       <div className="flex justify-end">
@@ -579,21 +279,5 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
       {/* Danger zone — delete (archive) this space. */}
       <DangerZone space={space} />
     </div>
-  )
-}
-
-/** "Invoices issued by" for this workspace; null follows the main company. */
-function WorkspaceCompanyField({ value, onSave }: { value: string | null; onSave: (id: string | null) => void }) {
-  const { t } = useTranslation()
-  const { main } = useCompanies()
-  return (
-    <CompanyField
-      id="cfg-company"
-      label={t("companies.issuedBy")}
-      help={t("companies.issuedByWorkspaceHelp")}
-      value={value}
-      onChange={onSave}
-      inheritLabel={t("companies.sameAsMain", { name: companyName(main) })}
-    />
   )
 }

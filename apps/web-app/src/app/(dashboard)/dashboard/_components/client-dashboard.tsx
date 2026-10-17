@@ -41,310 +41,35 @@ import { DashboardPageSkeleton, dashboardVariant } from "./dashboard-skeleton"
 import { DocumentsReminderBanner } from "@/components/documents-reminder-banner"
 import { cn } from "@/lib/utils";
 import { PAGE_SHELL, PAGE_WIDTH } from "@/components/ui/page-width";
+import { FindPerson } from "@/components/people/find-person"
+import { useClientDashboard } from "./use-client-dashboard";
+import { toRecentTask } from "./client-dashboard-helpers";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Map a Task to the compact RecentTask shape used by the dashboard list. */
-function toRecentTask(tk: Task): RecentTask {
-  return {
-    id: tk.id,
-    title: tk.title,
-    status: tk.status,
-    priority: tk.priority || "MEDIUM",
-    dueDate: tk.dueDate ? new Date(tk.dueDate) : undefined,
-    location: tk.locationAddress || undefined,
-    createdAt: new Date(tk.updatedAt || Date.now()),
-  }
-}
 
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function ClientDashboard() {
-  const { user } = useAuth()
-  const { t, i18n } = useTranslation()
-  const router = useRouter()
-  const queryClient = useQueryClient()
-  // Drives the guide example team (see below).
-  const { activeTourId, isTourCompleted } = useTour()
-  // All reads live in useDashboardData; this component is presentation.
   const {
+    user,
+    t,
     isAdminOrDispatcher,
-    spaceScope,
-    isLoading: isDataLoading,
+    isDataLoading,
     tasks,
-    allLocations,
-    members,
-    rosters,
-    todayEntries,
-    pendingApprovals,
-    memberMap,
-    clockedInUserIds,
-    attendanceByUser,
-    onBreakUserIds,
-    shiftLabelInfo,
-    activeTaskMap,
-    rosterActiveTaskMap,
-    assignmentsPerLocation,
-  } = useDashboardData(user)
-
-  const handleEditLocation = useCallback((locationId: string) => {
-    // "Manage Space" → that space's own settings page, not the all-spaces list.
-    router.push(`/locations/${locationId}`)
-  }, [router])
-
-  const [assignSpaceId, setAssignSpaceId] = useState<string | null>(null)
-  const handleNavigateToProfile = useCallback((userId: string) => {
-    router.push(`/members/${userId}`)
-  }, [router])
-
-  const handleAssignWorkers = useCallback((locationId: string) => {
-    setAssignSpaceId(locationId)
-  }, [])
-
-  const handleViewTasks = useCallback((locationId: string) => {
-    router.push(`/tasks?space=${locationId}`)
-  }, [router])
-
-  // ── Space roster mutation ─────────────────────────────────────────────────
-
-  // Assignments for the space the dialog is editing — supplies both the dialog's
-  // initial selection and the assignment ids needed to remove someone (the API
-  // deletes by assignment id, not user id).
-  const assignSpaceRoster = useMemo(
-    () => (assignSpaceId ? rosters.filter((a) => a.locationId === assignSpaceId) : []),
-    [rosters, assignSpaceId],
-  )
-
-  /**
-   * Persist a roster edit made from a space card. This dialog previously got an
-   * empty `onAssign` and no `onSave`, which left it in single-select mode calling
-   * a no-op — the picker looked functional but never wrote anything.
-   *
-   * Removals go first so that swapping a member can't transiently exceed a space
-   * cap, and both directions run concurrently within their phase. Partial
-   * failures are reported rather than swallowed, matching the bulk actions on the
-   * members page.
-   */
-  const rosterMutation = useMutation({
-    mutationFn: async ({ spaceId, added, removed }: { spaceId: string; added: string[]; removed: string[] }) => {
-      const assignmentIdByUser = new Map(assignSpaceRoster.map((a) => [a.userId, a.id]))
-
-      const settle = async (jobs: Promise<unknown>[]) => {
-        const results = await Promise.allSettled(jobs)
-        return results.filter((r) => r.status === "rejected").length
-      }
-
-      let failed = await settle(
-        removed
-          .map((userId) => assignmentIdByUser.get(userId))
-          .filter((id): id is string => !!id)
-          .map((assignmentId) => locationsApi.removeAssignment(spaceId, assignmentId)),
-      )
-      failed += await settle(added.map((userId) => locationsApi.assignMember(spaceId, { userId })))
-
-      return { failed, total: added.length + removed.length }
-    },
-    onSuccess: ({ failed, total }) => {
-      if (failed > 0) {
-        notify.error(t("dashboard.client.assignPartial", { ok: total - failed, failed }))
-      } else if (total > 0) {
-        notify.success(t("dashboard.client.assignSaved", { count: total }))
-      }
-    },
-    onError: (error: Error) => notify.error(error.message),
-    onSettled: () => {
-      // The rosters drive the space cards, and the dialog reads its own copy.
-      queryClient.invalidateQueries({ queryKey: keys.locations.rosterBatches() })
-      queryClient.invalidateQueries({ queryKey: keys.locations.rosters() })
-    },
-  })
-
-  const handleSaveRoster = useCallback(
-    async (added: string[], removed: string[]) => {
-      if (!assignSpaceId) return
-      await rosterMutation.mutateAsync({ spaceId: assignSpaceId, added, removed })
-    },
-    [assignSpaceId, rosterMutation],
-  )
-
-  // ── Loading ────────────────────────────────────────────────────────────────
-
-
-  // Role-based + Access-Profile space-scope filtering.
-  //   admin/manager → all spaces
-  //   scope 'tasks' → NO spaces (tasks-only landing)
-  //   scope 'all'   → read-only overview of every space
-  //   scope 'own'   → only the spaces they're a roster member of (or assigned a task in)
-  const locations = useMemo(() => {
-    if (isAdminOrDispatcher) return allLocations
-    if (spaceScope === "tasks") return []
-    if (spaceScope === "all") return allLocations
-    // 'own' — spaces where the user is on the roster, plus any space a task of
-    // theirs lives in (covers ad-hoc assignments without a roster entry).
-    const userSpaceIds = new Set<string>()
-    for (const [locId, ids] of assignmentsPerLocation) {
-      if (user?.id && ids.has(user.id)) userSpaceIds.add(locId)
-    }
-    for (const task of tasks) {
-      if (task.spaceId && isAssignedTo(task, user?.id)) userSpaceIds.add(task.spaceId)
-    }
-    if (userSpaceIds.size === 0) return []
-    return allLocations.filter((loc: { id: string }) => userSpaceIds.has(loc.id))
-  }, [isAdminOrDispatcher, spaceScope, allLocations, tasks, user?.id, assignmentsPerLocation])
-
-  // A clocked-in member is physically in ONE place. Resolve their single "active
-  // space": the space they clocked in at (if visible), else — for a remote/field
-  // clock-in whose location isn't a visible space — their first assigned space, so
-  // they surface as active exactly once instead of showing "remotely" in every
-  // space they belong to. Pure in-memory over already-loaded maps (no queries).
-  const spaceNameById = useMemo(
-    () => new Map(allLocations.map((l: { id: string; name: string }) => [l.id, l.name])),
-    [allLocations],
-  )
-  const activeSpaceByUser = useMemo(() => {
-    const map = new Map<string, string>()
-    const visible = new Set(locations.map((l: { id: string }) => l.id))
-    for (const userId of clockedInUserIds) {
-      const loc = attendanceByUser.get(userId)?.locationId
-      if (loc && visible.has(loc)) {
-        map.set(userId, loc) // clocked in at a visible space → active there
-      } else {
-        // Remote/off-grid clock-in → attribute to their first assigned space so
-        // they appear once. locations is stable-ordered, so this is deterministic.
-        for (const l of locations) {
-          if (assignmentsPerLocation.get(l.id)?.has(userId)) { map.set(userId, l.id); break }
-        }
-      }
-    }
-    return map
-  }, [clockedInUserIds, attendanceByUser, locations, assignmentsPerLocation])
-
-  // ── Build Workspace Boxes ─────────────────────────────────────────────────
-
-  // The card-building rules live in _lib/build-workspace-boxes — pure, and
-  // tested there. This memo only supplies the inputs.
-  const workspaceBoxes: WorkspaceBoxProps[] = useMemo(
-    () =>
-      buildWorkspaceBoxes({
-        locations,
-        tasks,
-        members,
-        memberMap,
-        assignmentsPerLocation,
-        clockedInUserIds,
-        onBreakUserIds,
-        attendanceByUser,
-        activeTaskMap,
-        rosterActiveTaskMap,
-        activeSpaceByUser,
-        spaceNameById,
-        shiftLabelInfo,
-        isAdminOrDispatcher,
-        // For the per-space capability checks on Manage / Add member — they
-        // need the resolved grants, not just an id.
-        currentUser: user,
-        currentUserId: user?.id,
-        handlers: {
-          // Manage/assign are admin-only; employees get a read-only space view.
-          onEdit: isAdminOrDispatcher ? handleEditLocation : undefined,
-          onAssign: isAdminOrDispatcher ? handleAssignWorkers : undefined,
-          onViewTasks: handleViewTasks,
-          onPersonClick: handleNavigateToProfile,
-        },
-      }),
-    [
-      locations, tasks, members, assignmentsPerLocation,
-      memberMap, clockedInUserIds, onBreakUserIds, attendanceByUser, shiftLabelInfo, activeTaskMap, rosterActiveTaskMap,
-      activeSpaceByUser, spaceNameById,
-      handleEditLocation, handleAssignWorkers, handleViewTasks, handleNavigateToProfile,
-      isAdminOrDispatcher, user?.id, i18n.language,
-    ],
-  )
-
-  // ── Live Events ────────────────────────────────────────────────────────────
-
-  const liveEvents: LiveEvent[] = useMemo(
-    () => buildRecentActivity({ tasks, todayEntries, memberMap }),
-    [tasks, todayEntries, memberMap, i18n.language],
-  )
-
-  // ── Pending Actions ────────────────────────────────────────────────────────
-
-  const pendingActions: PendingAction[] = useMemo(
-    () =>
-      buildPendingActions({
-        tasks,
-        onView: (id) => router.push(`/tasks/${id}`),
-        approvals: pendingApprovals,
-        // Hours are decided in Approvals — the one place.
-        onReviewApproval: () => router.push("/approvals?kind=hours"),
-      }),
-    [tasks, router, pendingApprovals, i18n.language],
-  )
-
-  // ── Guide example team ───────────────────────────────────────────────────────
-  // A brand-new dashboard is empty, so the guide would have no members to point at.
-  // Until the user has completed their welcome guide (and only while their team is
-  // still empty), we show an example space with example teammates so the guide —
-  // and the onboarding dashboard itself — demonstrates how spaces, member statuses
-  // and per-member actions work. It shows from the very first (empty) visit, and
-  // disappears once the guide is finished OR real members exist. Nothing persisted.
-  const welcomeTourId =
-    user?.role === "ADMIN" ? "welcomeAdmin" : user?.canViewAllTasks ? "welcomeManager" : "welcomeEmployee"
-  const guideActive = activeTourId === welcomeTourId
-  const welcomeGuidePending = guideActive || !isTourCompleted(welcomeTourId)
-  // The guide walks the SPACES and opens one to show its team. The open-space view
-  // prominently shows the ACTIVE members (present on-site + in the field); off-duty /
-  // off-shift only appear as a small side list. So the guide has "nobody to point at"
-  // whenever no space has an active member — a brand-new org, members not yet assigned
-  // to a space, OR a space whose whole team is currently off. In those cases we show
-  // an example team so every guide step (open space → a teammate → actions) has real
-  // content. Two gates so we never hide the user's own data outside the guide:
-  //  • on a truly empty dashboard (no spaces) we show the example as an onboarding
-  //    preview until the guide is completed;
-  //  • on a dashboard that HAS spaces we only swap them for the example WHILE the
-  //    guide is actively running, reverting the instant it ends.
-  const spacesHaveActiveMembers = workspaceBoxes.some(
-    (b) => (b.people?.length ?? 0) + (b.onRoadPeople?.length ?? 0) > 0,
-  )
-  const showExampleOnEmpty = welcomeGuidePending && !spacesHaveActiveMembers
-  const showExampleInSpaces = guideActive && !spacesHaveActiveMembers
-  const exampleSpace: WorkspaceBoxProps = {
-    title: t("dashboard.client.exampleSpaceName"),
-    type: "fixed",
-    activeCount: 7,
-    totalAssigned: 12,
-    people: [
-      { initials: "AM", color: "#2563EB", status: "on", clockedIn: true, name: "Ahmed M.", role: "Admin", tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
-      { initials: "SW", color: "#7c3aed", status: "on", clockedIn: true, name: "Sara W.", role: "Employee", currentTask: t("dashboard.client.exampleJob"), tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
-      { initials: "OF", color: "#0891b2", status: "on", clockedIn: true, name: "Omar F.", role: "Employee", tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
-      { initials: "ER", color: "#16a34a", status: "on", clockedIn: true, name: "Emma R.", role: "Employee", tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
-      { initials: "LK", color: "#ea580c", status: "on", clockedIn: true, name: "Leo K.", role: "Employee", tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
-    ],
-    onRoadPeople: [
-      { initials: "MB", color: "#CA8A04", status: "busy", name: "Mike B.", role: "Employee", currentTask: t("dashboard.client.exampleJob"), tag: { text: t("dashboard.client.exampleInField"), variant: "task" } },
-      { initials: "JP", color: "#db2777", status: "busy", name: "Jonas P.", role: "Employee", tag: { text: t("dashboard.client.exampleInField"), variant: "task" } },
-    ],
-    remotePeople: [
-      { initials: "NK", color: "#0ea5e9", status: "away", name: "Nora K.", role: "Employee" },
-      { initials: "YT", color: "#6366f1", status: "away", name: "Yuki T.", role: "Employee" },
-    ],
-    offDutyPeople: [
-      { initials: "LA", color: "#64748b", status: "off", name: "Lisa A.", role: "Employee" },
-      { initials: "TH", color: "#78716c", status: "off", name: "Tom H.", role: "Employee" },
-      { initials: "AS", color: "#94a3b8", status: "off", name: "Anna S.", role: "Employee" },
-    ],
-    onEdit: () => router.push("/locations"),
-    onAssign: () => router.push("/members"),
-    onViewTasks: () => router.push("/tasks"),
-    onPersonClick: () => router.push("/members"),
-  }
-  /** Boxes to render in a live dashboard: example teammates while the guide runs on an empty team. */
-  const displayBoxes = showExampleInSpaces ? [exampleSpace] : workspaceBoxes
-
-  // ── Render ─────────────────────────────────────────────────────────────────
-
-  const greeting = getGreeting()
+    assignSpaceId,
+    setAssignSpaceId,
+    assignSpaceRoster,
+    rosterMutation,
+    handleSaveRoster,
+    workspaceBoxes,
+    liveEvents,
+    pendingActions,
+    showExampleOnEmpty,
+    showExampleInSpaces,
+    exampleSpace,
+    displayBoxes,
+    greeting,
+  } = useClientDashboard();
 
   // Structural skeleton while the first fetch is in flight. Returning null here
   // blanked the screen between the route-level skeleton unmounting and the data
@@ -469,6 +194,7 @@ export function ClientDashboard() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <FindPerson />
             {/* Creating a workspace needs `canManageWorkspaces`, org-wide —
                 `isAdminOrDispatcher` is "can view all tasks", which a member
                 can now legitimately hold in a single space. That offered the

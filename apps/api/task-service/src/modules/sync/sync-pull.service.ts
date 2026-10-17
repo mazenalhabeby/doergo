@@ -15,6 +15,10 @@ import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from '../tasks/tas
 import { TASK_LIST_INCLUDE, annotateTracksLocation } from '../tasks/task-list-shape';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
 import { MediaSigner } from '../../common/storage/media-signer.service';
+import { decodeCursor, encodeCursor, pageResponse } from './sync-cursor';
+import { ChatPullReader } from './chat-pull.reader';
+
+export { decodeCursor, encodeCursor } from './sync-cursor';
 
 /** Closed work stays on the phone this long, so yesterday's job can still be looked up in a basement. */
 const CLOSED_TASK_WINDOW_DAYS = 30;
@@ -26,44 +30,6 @@ export interface PullRequest extends TaskVisibilityFacts {
   scope: SyncPullScope;
   cursor?: string | null;
   limit?: number;
-}
-
-/** The position a pull reached: last change seen, and last tombstone seen. */
-interface Cursor {
-  v: 1;
-  /** updatedAt of the last row sent (ISO). */
-  t: string;
-  /** id of the last row sent, to break updatedAt ties. */
-  i: string;
-  /** Highest tombstone id seen. */
-  d: string;
-  /**
-   * When this cursor was issued (server time). ⚠️ The age check reads THIS, not
-   * `t`: a scope whose newest change is months old is perfectly current, and
-   * judging staleness by the row's date reset every page of an old scope back
-   * to the start — the pull never advanced.
-   */
-  s: string;
-}
-
-export function encodeCursor(c: Omit<Cursor, 'v'>): string {
-  return Buffer.from(JSON.stringify({ v: 1, ...c })).toString('base64url');
-}
-
-export function decodeCursor(raw: string | null | undefined): Cursor | null {
-  if (!raw) return null;
-  try {
-    const c = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8'));
-    if (
-      c?.v !== 1 || typeof c.t !== 'string' || typeof c.i !== 'string' || !/^\d+$/.test(String(c.d)) ||
-      Number.isNaN(Date.parse(c.t)) || typeof c.s !== 'string' || Number.isNaN(Date.parse(c.s))
-    ) {
-      return null;
-    }
-    return c as Cursor;
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -80,6 +46,7 @@ export class SyncPullService {
     private readonly prisma: PrismaService,
     private readonly workflows: WorkflowConfigCache,
     private readonly media: MediaSigner,
+    private readonly chat: ChatPullReader,
   ) {}
 
   /**
@@ -115,6 +82,10 @@ export class SyncPullService {
         return this.taskChildren(req, 'comments');
       case 'attachments':
         return this.taskChildren(req, 'attachments');
+      case 'chat_conversations':
+        return this.chat.conversations(req);
+      case 'chat_messages':
+        return this.chat.messages(req);
       default:
         throw new BadRequestException('Unknown sync scope');
     }
@@ -212,7 +183,12 @@ export class SyncPullService {
     }
 
     return {
-      ...this.pageResponse('tasks', page, tombstones.map((t) => t.entityId), { from, highestTombstone, hasMore, reset }),
+      ...pageResponse(
+        'tasks',
+        page,
+        tombstones.map((t) => t.entityId),
+        { from, highestTombstone, hasMore, reset },
+      ),
       scopeIds,
     };
   }
@@ -297,35 +273,7 @@ export class SyncPullService {
       highestTombstone = tombstones.at(-1)?.id ?? tombstoneFrom;
     }
 
-    return this.pageResponse(scope, page, deleted, { from, highestTombstone, hasMore, reset });
-  }
-
-  /**
-   * One page of a scope, with the cursor that resumes after it: the last row's
-   * (updatedAt, id), the highest tombstone seen, and when this was served. An
-   * empty page keeps the caller's position rather than rewinding to the epoch.
-   */
-  private pageResponse(
-    scope: SyncPullResponse['scope'],
-    page: Array<{ id: string; updatedAt: Date }>,
-    deleted: string[],
-    at: { from?: { t: string; i: string } | null; highestTombstone: number | bigint | string; hasMore: boolean; reset: boolean },
-  ) {
-    const last = page.at(-1);
-    return {
-      scope,
-      rows: page,
-      deleted,
-      cursor: encodeCursor({
-        t: last ? last.updatedAt.toISOString() : at.from?.t ?? new Date(0).toISOString(),
-        i: last ? last.id : at.from?.i ?? '',
-        d: String(at.highestTombstone),
-        s: new Date().toISOString(),
-      }),
-      hasMore: at.hasMore,
-      reset: at.reset,
-      serverTime: new Date().toISOString(),
-    };
+    return pageResponse(scope, page, deleted, { from, highestTombstone, hasMore, reset });
   }
 
   /**

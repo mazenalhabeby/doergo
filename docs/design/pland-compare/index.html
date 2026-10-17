@@ -1,0 +1,488 @@
+<title>HBCField vs PlanD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Readex+Pro:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a narrated report — sections top to bottom, each pairing PlanD's screen with ours; a player bar at the bottom. */
+:root {
+  --bg: #f4f6f9; --surface: #ffffff; --well: #eef1f6; --line: #e2e7ef;
+  --ink: #0f172a; --ink-2: #475569; --ink-3: #94a3b8;
+  --accent: #3b82f6; --accent-strong: #2563eb; --accent-tint: #e6effe;
+  --them: #0f766e; --them-tint: #ccfbf1;
+  --win: #16a34a; --win-tint: #dcfce7; --part: #d97706; --part-tint: #fef3c7; --lose: #dc2626; --lose-tint: #fee2e2;
+  --ink-grad: linear-gradient(135deg, #38bdf8, #3b82f6 55%, #6366f1);
+  --shadow: 0 1px 2px rgb(15 23 42 / .05), 0 12px 32px -16px rgb(15 23 42 / .22);
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ar: "Readex Pro", "Inter", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b1017; --surface: #111823; --well: #18212e; --line: #243041; --ink: #e6edf6; --ink-2: #a3b1c4; --ink-3: #64748b;
+  --accent: #60a5fa; --accent-strong: #3b82f6; --accent-tint: #15253d; --them: #2dd4bf; --them-tint: #0f2e2b;
+  --win: #4ade80; --win-tint: #10301c; --part: #fbbf24; --part-tint: #3a2a0c; --lose: #f87171; --lose-tint: #3b1414;
+  --shadow: 0 1px 2px rgb(0 0 0 / .4), 0 12px 32px -16px rgb(0 0 0 / .7); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0b1017; --surface: #111823; --well: #18212e; --line: #243041; --ink: #e6edf6; --ink-2: #a3b1c4; --ink-3: #64748b;
+  --accent: #60a5fa; --accent-strong: #3b82f6; --accent-tint: #15253d; --them: #2dd4bf; --them-tint: #0f2e2b;
+  --win: #4ade80; --win-tint: #10301c; --part: #fbbf24; --part-tint: #3a2a0c; --lose: #f87171; --lose-tint: #3b1414;
+  --shadow: 0 1px 2px rgb(0 0 0 / .4), 0 12px 32px -16px rgb(0 0 0 / .7); color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 14.5px/1.55 var(--font); padding-inline: 16px; padding-block: 28px 140px; margin: 0 }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 22px }
+h1, h2, h3 { margin: 0; letter-spacing: -.015em; text-wrap: balance }
+p { margin: 0; color: var(--ink-2); max-width: 70ch }
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px }
+
+header.hero { display: grid; gap: 14px; padding: 6px 0 4px }
+.kicker { font: 600 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3) }
+header.hero h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 700 }
+header.hero h1 .vs { color: var(--ink-3); font-weight: 500 }
+.grad { background: var(--ink-grad); -webkit-background-clip: text; background-clip: text; color: transparent }
+.lede { font-size: 16px }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--ink-2) }
+.legend span { display: inline-flex; align-items: center; gap: 6px }
+.dot { width: 10px; height: 10px; border-radius: 50% }
+
+section.sec { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; display: grid; gap: 16px; box-shadow: var(--shadow); transition: box-shadow .3s, border-color .3s; scroll-margin-top: 20px; scroll-margin-bottom: 140px }
+section.sec.speaking { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent), var(--shadow) }
+.sec-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap }
+.sec-h > div { display: grid; gap: 6px; min-width: 0 }
+.sec-h h2 { font-size: 21px; font-weight: 650 }
+.listen { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 9px; border-radius: 999px; background: var(--accent-tint); color: var(--accent-strong); font: 500 13px var(--ar); flex: none }
+.listen svg { width: 16px; height: 16px }
+.verdict { display: inline-flex; align-items: center; gap: 6px; font: 600 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: 5px 9px; border-radius: 999px; width: fit-content }
+.v-them { background: var(--them-tint); color: var(--them) } .v-us { background: var(--accent-tint); color: var(--accent-strong) }
+
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px }
+.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px }
+.pane { display: grid; gap: 8px; align-content: start; min-width: 0 }
+.pane-label { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--ink-2) }
+.pane-label .chip { font: 600 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border-radius: 6px }
+.chip.them { background: var(--them-tint); color: var(--them) } .chip.today { background: var(--well); color: var(--ink-2) } .chip.next { background: var(--accent-tint); color: var(--accent-strong) }
+
+/* mini screens */
+.screen { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; font-size: 12.5px; min-width: 0 }
+.screen .bar { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--well); font-weight: 600; font-size: 12px }
+.screen .bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); opacity: .5 }
+.screen .bar b { margin-left: 4px; font-weight: 600 }
+.screen.t .bar { background: color-mix(in srgb, var(--them-tint) 60%, var(--surface)) }
+.screen .body { padding: 10px; display: grid; gap: 8px }
+table.mini { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums }
+table.mini th, table.mini td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--line); white-space: nowrap }
+table.mini th { font-size: 10.5px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em }
+table.mini td.n, table.mini th.n { text-align: right }
+.tbl-wrap { overflow-x: auto }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; border-radius: 9px; font-size: 12px; font-weight: 600; border: 1px solid var(--line); background: var(--surface) }
+.btn.p { border: 0; color: #fff; background: var(--ink-grad) }
+.btn.tp { border: 0; color: #fff; background: var(--them) }
+.row { display: flex; align-items: center; gap: 8px; min-width: 0 }
+.row.sb { justify-content: space-between }
+.muted { color: var(--ink-3) } .small { font-size: 11.5px }
+.pill { font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: var(--well); color: var(--ink-2); white-space: nowrap }
+.pill.ok { background: var(--win-tint); color: var(--win) } .pill.warn { background: var(--part-tint); color: var(--part) } .pill.bad { background: var(--lose-tint); color: var(--lose) } .pill.b { background: var(--accent-tint); color: var(--accent-strong) } .pill.t { background: var(--them-tint); color: var(--them) }
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 6px }
+.chain .step { padding: 5px 9px; border-radius: 8px; background: var(--well); font-weight: 600; font-size: 11.5px }
+.chain .step.on { background: var(--them-tint); color: var(--them) }
+.chain .step.us { background: var(--accent-tint); color: var(--accent-strong) }
+.chain .step.off { opacity: .45; text-decoration: line-through }
+.chain .arr { color: var(--ink-3) }
+.av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; font-weight: 700; background: var(--well); color: var(--ink-2); flex: none }
+.bub { padding: 7px 10px; border-radius: 14px; background: var(--well); max-width: 88%; line-height: 1.4 }
+.bub.me { margin-left: auto; color: #fff; background: linear-gradient(135deg, #3b82f6, #2563eb) }
+.bub .tr { display: block; margin-top: 4px; font-size: 10.5px; opacity: .75 }
+.meter { height: 6px; border-radius: 6px; background: var(--well); overflow: hidden; flex: 1 }
+.meter > i { display: block; height: 100%; background: var(--ink-grad); border-radius: inherit }
+
+/* pillars + strengths */
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px }
+.pillar { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 6px; align-content: start; background: var(--surface) }
+.pillar b { font-size: 13.5px } .pillar span { font-size: 12.5px; color: var(--ink-2) }
+.pillar.ai { background: linear-gradient(160deg, var(--them-tint), var(--surface) 70%) }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px }
+.fact { padding: 12px; border-radius: 14px; background: var(--well); display: grid; gap: 2px }
+.fact b { font-size: 22px; font-variant-numeric: tabular-nums; letter-spacing: -.02em } .fact span { font-size: 12px; color: var(--ink-2) }
+.strengths { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px }
+.str { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 8px; align-content: start }
+.str b { font-size: 13.5px } .str p { font-size: 12.5px }
+.str .art { height: 78px; border-radius: 10px; background: var(--well); position: relative; overflow: hidden }
+
+/* scorecard */
+.score { width: 100%; border-collapse: collapse; font-size: 13px }
+.score th, .score td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top }
+.score th { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; font-weight: 600 }
+.score td:first-child { font-weight: 600; white-space: nowrap }
+.mark { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap }
+.mark::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: currentColor }
+.m-win { color: var(--win) } .m-part { color: var(--part) } .m-lose { color: var(--lose) }
+
+/* plan */
+.steps { display: grid; gap: 10px; counter-reset: s }
+.step-c { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px; border-radius: 14px; border: 1px solid var(--line) }
+.step-c .num { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; font-weight: 700; color: #fff; background: var(--ink-grad) }
+.step-c b { font-size: 14px } .step-c p { font-size: 12.5px }
+.size { font: 600 10.5px/1 var(--mono); padding: 4px 8px; border-radius: 6px; background: var(--well); color: var(--ink-2); white-space: nowrap }
+
+.note { border-left: 3px solid var(--accent); padding: 10px 14px; background: var(--accent-tint); border-radius: 0 12px 12px 0; color: var(--ink) }
+.sources { font-size: 12px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 4px 14px }
+.sources a { color: var(--ink-2) }
+
+/* player */
+.player { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; width: min(760px, calc(100% - 24px)); z-index: 10; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(14px); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 10px 12px; display: grid; gap: 8px }
+.player .top { display: flex; align-items: center; gap: 10px }
+.pbtn { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: var(--ink-grad); flex: none; box-shadow: 0 6px 16px -6px #3b82f6 }
+.pbtn svg { width: 18px; height: 18px }
+.ptxt { min-width: 0; flex: 1; display: grid; gap: 4px }
+.now { font: 500 12.5px var(--ar); color: var(--ink-2); direction: rtl; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.prog { height: 4px; border-radius: 4px; background: var(--well); overflow: hidden }
+.prog i { display: block; height: 100%; width: 0; background: var(--ink-grad) }
+.stopb { font-size: 12px; font-weight: 600; color: var(--ink-2); padding: 6px 10px; border-radius: 10px; background: var(--well) }
+.cap { font: 400 14px/1.7 var(--ar); direction: rtl; text-align: right; color: var(--ink); max-height: 4.9em; overflow: hidden }
+
+@media (max-width: 860px) { .trio, .duo { grid-template-columns: 1fr } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important } }
+</style>
+<style>
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px }
+.node { padding: 7px 10px; border-radius: 10px; font-weight: 600; font-size: 12px; border: 1px solid var(--line); background: var(--surface) }
+.node small { display: block; font-weight: 500; color: var(--ink-3); font-size: 10.5px }
+.node.t { background: var(--them-tint); border-color: transparent; color: var(--them) }
+.node.u { background: var(--accent-tint); border-color: transparent; color: var(--accent-strong) }
+.cal { display: grid; grid-template-columns: 70px repeat(3, minmax(0, 1fr)); gap: 4px; font-size: 11px }
+.cal .h { font-weight: 600; color: var(--ink-3); padding: 2px 4px }
+.cal .c { min-height: 22px; border-radius: 6px; padding: 3px 5px; font-weight: 600; color: #fff; overflow: hidden; white-space: nowrap; text-overflow: ellipsis }
+.c.blue { background: #3b82f6 } .c.red { background: #ef4444 } .c.green { background: #16a34a } .c.empty { background: var(--well); color: var(--ink-3) }
+.weak-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px }
+.weak-item { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 10px; padding: 10px 12px; border-radius: 12px; background: var(--well); align-items: start }
+.weak-item b { font-size: 13px } .weak-item p { font-size: 12px; grid-column: 2 }
+.weak-item .x { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--lose-tint); color: var(--lose); font-weight: 700; font-size: 12px; grid-row: span 2 }
+.us-line { font-size: 12px; color: var(--accent-strong); grid-column: 2; font-weight: 500 }
+.quote { border-left: 3px solid var(--them); padding: 8px 12px; background: var(--them-tint); border-radius: 0 10px 10px 0; font-style: italic; color: var(--ink) }
+.lg { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; text-align: center; font-variant-numeric: tabular-nums }
+.lg div { padding: 6px 2px; border-radius: 8px; background: var(--well); font-size: 11px }
+.lg b { display: block; font-size: 12.5px }
+@media (max-width: 700px) { .lg { grid-template-columns: repeat(5, minmax(0, 1fr)) } }
+</style>
+<div class="wrap">
+  <header class="hero">
+    <span class="kicker">Competitor deep-dive · 16 Oct 2026 · 242 site pages + 155 help articles + 31 customer stories read</span>
+    <h1><span class="grad">HBCField</span> <span class="vs">vs</span> PlanD</h1>
+    <p class="lede">Not only the marketing: this read PlanD's whole website, every training lesson, every customer story and their complete user manual (Help Center). So this is how PlanD really works inside, where it is strong, where its own manual shows the limits, and what we should build. Press play for the Arabic walk-through.</p>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--them)"></i>PlanD (from their site and manual)</span>
+      <span><i class="dot" style="background:var(--ink-3)"></i>HBCField today</span>
+      <span><i class="dot" style="background:var(--accent)"></i>HBCField, proposed</span>
+    </div>
+  </header>
+
+  <section class="sec" data-sec="glance">
+    <div class="sec-h"><div><span class="kicker">01 · At a glance</span><h2>Who PlanD is</h2></div><button class="listen" data-play="glance"></button></div>
+    <div class="facts">
+      <div class="fact"><b>comm'on digital</b><span>GmbH, Berlin · founder & CEO Tobias Wittekindt</span></div>
+      <div class="fact"><b>800+</b><span>customers claimed (other pages say 500+ / 200+)</span></div>
+      <div class="fact"><b>21–250</b><span>staff: most customers; 29 of 31 stories in Germany</span></div>
+      <div class="fact"><b>No list price</b><span>demo only; AI "Paula" from €99/month</span></div>
+    </div>
+    <p>Found through the CMS cleaning fair in Berlin, Instagram, Facebook and referrals. Interclean 2024 Newcomer Award; nominated for the Purus Innovation Award 2025 with Paula. First invite-only customer event "PlanD Werk / 01" in Berlin on 24 June 2026 (120+ decision-makers, firms of 20+ staff).</p>
+  </section>
+
+  <section class="sec" data-sec="model">
+    <div class="sec-h"><div><span class="kicker">02 · How it is built</span><h2>Their data model, and ours</h2><p>Everything in PlanD hangs off one chain. The contract is what is billed; the visit is what is timed.</p></div><button class="listen" data-play="model"></button></div>
+    <div class="duo">
+      <div class="pane"><div class="pane-label"><span class="chip them">PlanD</span>One chain</div>
+        <div class="flow"><span class="node t">Kunde<small>client</small></span>→<span class="node t">Objekt<small>site · 1 site lead</small></span>→<span class="node t">Auftrag<small>contract · billing</small></span>→<span class="node t">Einsatz<small>visit · series</small></span>→<span class="node t">Zeitstempel<small>stamp</small></span>→<span class="node t">Lohnzeit<small>pay time + surcharges</small></span></div>
+        <p class="small">Every record has its own log (history, messages, office-only notes, @-mentions). 4 built-in roles + custom groups.</p></div>
+      <div class="pane"><div class="pane-label"><span class="chip today">Us</span>Wider, and shared</div>
+        <div class="flow"><span class="node u">Organization<small>several legal companies</small></span>→<span class="node u">Workspace<small>modules · rules · sharing</small></span>→<span class="node u">Client<small>CRM · contacts · portal</small></span>→<span class="node u">Task / recurring<small>workflow · crew</small></span>→<span class="node u">Time entry<small>counted vs actual</small></span></div>
+        <p class="small">Several people on one job with their own time, workspaces shared with other companies, roles built per person and workspace.</p></div>
+    </div>
+  </section>
+
+  <section class="sec" data-sec="planning">
+    <div class="sec-h"><div><span class="kicker">03 · Planning</span><h2>The planner, routes and stand-ins</h2></div><button class="listen" data-play="planning"></button></div>
+    <div class="trio">
+      <div class="pane"><div class="pane-label"><span class="chip them">PlanD</span>Column per worker, colour per state</div>
+        <div class="screen t"><div class="bar"><i></i><i></i><i></i><b>Einsatzplanung · Mo</b></div><div class="body">
+          <div class="cal"><span class="h"></span><span class="h">Yilmaz</span><span class="h">Kowalski</span><span class="h">Offen</span>
+            <span class="h">06:00</span><span class="c green">Hbf Süd</span><span class="c red">Büro Nord</span><span class="c empty">—</span>
+            <span class="h">10:00</span><span class="c blue">Praxis</span><span class="c blue">Route A ▸ 4</span><span class="c empty">Schule ✈</span></div>
+          <div class="row" style="flex-wrap:wrap;gap:6px"><span class="pill t">blue = future</span><span class="pill t">red = missed</span><span class="pill t">green = stamped</span></div>
+        </div></div></div>
+      <div class="pane"><div class="pane-label"><span class="chip them">PlanD manual</span>What the manual actually shows</div>
+        <div class="screen t"><div class="bar"><i></i><i></i><i></i><b>Reality check</b></div><div class="body">
+          <div class="row sb"><span>"Find substitutes automatically"</span><span class="pill bad">manual in the lessons</span></div>
+          <div class="row sb"><span>Team visit</span><span class="pill warn">time not split</span></div>
+          <div class="row sb"><span>Route stops</span><span class="pill warn">reassigned only as a whole</span></div>
+          <div class="row sb"><span>Series change</span><span class="pill">future only</span></div>
+        </div></div></div>
+      <div class="pane"><div class="pane-label"><span class="chip next">Proposed</span>A real automatic stand-in</div>
+        <div class="screen"><div class="bar"><i></i><i></i><i></i><b>Cover for Karim · Mon 06:00</b></div><div class="body">
+          <div class="row"><span class="av">SW</span><span style="flex:1">Sarah · knows this site · 4 km</span><div class="meter" style="max-width:70px"><i style="width:92%"></i></div></div>
+          <div class="row"><span class="av">DK</span><span style="flex:1">David · same trade · 11 km</span><div class="meter" style="max-width:70px"><i style="width:68%"></i></div></div>
+          <div class="row sb"><span class="small">Client told in German ✓</span><span class="btn p">Ask Sarah</span></div>
+        </div></div></div>
+    </div>
+  </section>
+
+  <section class="sec" data-sec="time">
+    <div class="sec-h"><div><span class="kicker">04 · Time</span><h2>Clocking, approval by exception, travel time</h2></div><button class="listen" data-play="time"></button></div>
+    <div class="duo">
+      <div class="pane"><div class="pane-label"><span class="chip them">PlanD</span>Only the odd ones are checked</div>
+        <div class="screen t"><div class="bar"><i></i><i></i><i></i><b>Zeitenfreigabe · 3 Abweichungen</b></div><div class="body">
+          <div class="row sb"><span>Popescu · Büro Nord</span><span class="pill bad">Standortfehler 920 m</span></div>
+          <div class="row sb"><span>Yilmaz · Praxis</span><span class="pill warn">+18 min</span></div>
+          <div class="row sb"><span>Kowalski · nachgetragen</span><span class="pill warn">added later</span></div>
+          <div class="row sb"><span class="small muted">Approve: plan · actual · own value</span><span class="btn tp">Quick Actions</span></div>
+        </div></div>
+        <p class="small">GPS tolerance 300–800 m or a QR code at the site; under/over-time buffers; optional rounding up to planned time. Travel time = the gap between two visits up to 3 h — never to the first job of the day.</p></div>
+      <div class="pane"><div class="pane-label"><span class="chip today">Us today</span>Where we are already ahead</div>
+        <div class="screen"><div class="bar"><i></i><i></i><i></i><b>Mike · Warehouse</b></div><div class="body">
+          <div class="row sb"><span>Arrived → clocked in automatically</span><span class="pill ok">auto clock</span></div>
+          <div class="row sb"><span>Site drawn as a boundary</span><span class="pill ok">not just a radius</span></div>
+          <div class="row sb"><span>Counted 7:30 · actual 7:52</span><span class="pill ok">two clocks</span></div>
+          <div class="row sb"><span>Rest planned, overtime rounds signed</span><span class="pill ok">built in</span></div>
+        </div></div>
+        <p class="small">Gap to add: travel time between sites as working time (the cleaning agreement counts gaps up to 3 h).</p></div>
+    </div>
+  </section>
+
+  <section class="sec" data-sec="absences">
+    <div class="sec-h"><div><span class="kicker">05 · Absences</span><h2>Leave, sickness and public holidays</h2></div><button class="listen" data-play="absences"></button></div>
+    <div class="duo">
+      <div class="pane"><div class="pane-label"><span class="chip them">PlanD</span>Deep pay rules, manual holidays</div>
+        <div class="screen t"><div class="bar"><i></i><i></i><i></i><b>Abwesenheitstyp · Krank</b></div><div class="body">
+          <div class="row sb"><span>Pay as</span><span class="pill t">3-month average</span></div>
+          <div class="row" style="flex-wrap:wrap;gap:6px"><span class="pill">contract hours</span><span class="pill">planned hours</span><span class="pill t">3-month avg</span><span class="pill">unpaid</span><span class="pill">daily rate</span></div>
+          <div class="row sb"><span>Public holiday</span><span class="pill bad">entered by hand for everyone</span></div>
+          <div class="row sb"><span>Absences per day</span><span class="pill bad">only one</span></div>
+        </div></div></div>
+      <div class="pane"><div class="pane-label"><span class="chip today">Us today</span>Calendar-aware</div>
+        <div class="screen"><div class="bar"><i></i><i></i><i></i><b>Leave · Sarah · 3 days</b></div><div class="body">
+          <div class="row sb"><span>Holidays by country + region</span><span class="pill ok">automatic</span></div>
+          <div class="row sb"><span>Charged in working days</span><span class="pill ok">her own rota</span></div>
+          <div class="row sb"><span>Cover check + approvals inbox</span><span class="pill ok">built in</span></div>
+          <div class="row sb"><span>Pay rule per absence type</span><span class="pill bad">missing</span></div>
+        </div></div></div>
+    </div>
+  </section>
+
+  <section class="sec" data-sec="payroll">
+    <div class="sec-h"><div><span class="verdict v-them">Their core</span><h2>German cleaning payroll, in detail</h2><p>This is the specification we would have to meet. Figures as PlanD publishes them for 2026.</p></div><button class="listen" data-play="payroll"></button></div>
+    <div class="pane"><div class="pane-label"><span class="chip them">Tariff</span>Wage groups LG 1–9, € per hour from 1 Jan 2026</div>
+      <div class="lg"><div>LG 1<b>15,00</b></div><div>LG 2<b>15,46</b></div><div>LG 3<b>15,95</b></div><div>LG 4<b>16,66</b></div><div>LG 5<b>17,47</b></div><div>LG 6<b>18,40</b></div><div>LG 7<b>19,39</b></div><div>LG 8<b>20,42</b></div><div>LG 9<b>21,64</b></div></div></div>
+    <div class="trio">
+      <div class="pane"><div class="pane-label"><span class="chip them">PlanD</span>Surcharge rules</div>
+        <div class="screen t"><div class="bar"><i></i><i></i><i></i><b>Zuschläge (Tarif-Assistent)</b></div><div class="body">
+          <div class="row sb"><span>Night</span><span class="pill t">30 %</span></div>
+          <div class="row sb"><span>Sunday · public holiday</span><span class="pill t">80 %</span></div>
+          <div class="row sb"><span>1 May · New Year · Christmas</span><span class="pill t">200 %</span></div>
+          <div class="row sb"><span>> 8 h/day or 40 h/week</span><span class="pill t">25 % Belastung</span></div>
+          <div class="row sb"><span class="small muted">Only the highest applies · §3b tax-free split</span></div>
+        </div></div></div>
+      <div class="pane"><div class="pane-label"><span class="chip them">PlanD</span>Lock and export</div>
+        <div class="screen t"><div class="bar"><i></i><i></i><i></i><b>Lohnexport · Oktober</b></div><div class="body">
+          <div class="row" style="flex-wrap:wrap;gap:6px"><span class="pill t">DATEV</span><span class="pill t">Lohn &amp; Gehalt</span><span class="pill t">LODAS</span><span class="pill t">Edison</span><span class="pill t">Agenda</span><span class="pill t">Sage</span></div>
+          <div class="row sb"><span>Pay times locked after export</span><span class="pill t">customs-proof</span></div>
+          <div class="row sb"><span class="small muted">Managed payroll via partner Relog</span><span class="btn tp">Exportieren</span></div>
+        </div></div></div>
+      <div class="pane"><div class="pane-label"><span class="chip next">Proposed</span>Our payroll pack</div>
+        <div class="screen"><div class="bar"><i></i><i></i><i></i><b>Payroll · Gmunden · October</b></div><div class="body">
+          <div class="row sb"><span>Tariff template DE / AT</span><span class="pill b">LG 1–9 · dated rates</span></div>
+          <div class="row sb"><span>Surcharges from counted time</span><span class="pill b">holidays from our calendar</span></div>
+          <div class="row sb"><span>Absence pay rule per type</span><span class="pill b">contract · planned · 3-mo avg</span></div>
+          <div class="row sb"><span class="small muted">Lock month · audit row</span><span class="btn p">Export DATEV</span></div>
+        </div></div></div>
+    </div>
+  </section>
+
+  <section class="sec" data-sec="invoicing">
+    <div class="sec-h"><div><span class="verdict v-them">They lead</span><h2>Faktura: from quote to payment</h2></div><button class="listen" data-play="invoicing"></button></div>
+    <div class="trio">
+      <div class="pane"><div class="pane-label"><span class="chip them">PlanD</span>The chain</div>
+        <div class="screen t"><div class="bar"><i></i><i></i><i></i><b>Angebot → Zahlung</b></div><div class="body">
+          <div class="chain"><span class="step on">Angebot (m² · Verschmutzung)</span><span class="arr">→</span><span class="step on">Auftrag</span><span class="arr">→</span><span class="step on">Arbeitsschein ✍</span><span class="arr">→</span><span class="step on">Rechnung</span><span class="arr">→</span><span class="step on">Gemahnt</span><span class="arr">→</span><span class="step on">Bezahlt</span></div>
+          <div class="row" style="flex-wrap:wrap;gap:6px"><span class="pill t">XRechnung + Leitweg-ID</span><span class="pill t">ZUGFeRD</span><span class="pill t">finAPI bank DE/AT</span><span class="pill t">CAMT import</span><span class="pill t">Mahngebühr</span><span class="pill t">Post</span></div>
+        </div></div></div>
+      <div class="pane"><div class="pane-label"><span class="chip them">PlanD</span>Dynamic lines</div>
+        <div class="screen t"><div class="bar"><i></i><i></i><i></i><b>Auftrag · Unterhaltsreinigung</b></div><div class="body">
+          <div class="row sb"><span>Cleaning × pay time</span><b>128 h</b></div>
+          <div class="row sb"><span>Travel charge × visits done</span><b>22</b></div>
+          <div class="row sb"><span>Missed visits (credit)</span><b class="muted">−2</b></div>
+          <div class="row sb"><span class="small muted">Monthly on the 1st · draft or auto-send 03:00</span></div>
+        </div></div>
+        <p class="small">Their own manual lists workarounds: drafts reappearing, partial invoices not tracking what was billed, no personalised e-mails, DATEV cancellation numbers swapped by hand.</p></div>
+      <div class="pane"><div class="pane-label"><span class="chip next">Proposed</span>Built on our invoices</div>
+        <div class="screen"><div class="bar"><i></i><i></i><i></i><b>Quote Q-2026-031 · BILLA AG</b></div><div class="body">
+          <div class="row sb"><span>Office cleaning · 640 m² · weekly</span><b>€1,180/mo</b></div>
+          <div class="row sb"><span>Lines from counted time or visits</span><span class="pill b">dynamic</span></div>
+          <div class="row sb"><span>Work slip signed on the phone</span><span class="pill b">→ invoice</span></div>
+          <div class="row sb"><span class="pill b">XRechnung · dunning</span><span class="btn p">Send for acceptance</span></div>
+        </div></div></div>
+    </div>
+  </section>
+
+  <section class="sec" data-sec="materials">
+    <div class="sec-h"><div><span class="kicker">08 · Around the work</span><h2>Materials, devices, keys, tasks, client QR</h2></div><button class="listen" data-play="materials"></button></div>
+    <div class="pillars">
+      <div class="pillar"><b>Material cupboard</b><span>Per site, monthly budget (0 = unlimited), order from the app, delivery note, order → invoice. Stock only central.</span><span class="pill bad" style="width:fit-content">we: missing</span></div>
+      <div class="pillar"><b>Devices v1.0</b><span>Device types, maintenance interval, DGUV V3 checks, QR code read in the site-lead app.</span><span class="pill warn" style="width:fit-content">we: Assets + custody, no maintenance plan</span></div>
+      <div class="pillar"><b>Keys</b><span>Who holds the site key now (one field, hidden from staff).</span><span class="pill warn" style="width:fit-content">we: custody can model it</span></div>
+      <div class="pillar"><b>Tasks (since 1 Jan 2026)</b><span>Replaced tickets: Kanban, links to anything, recurring templates, response metrics. One assignee, no time.</span><span class="pill ok" style="width:fit-content">we: workflows, crews, time</span></div>
+      <div class="pillar"><b>Client QR per site</b><span>No login: last 30 days of work, complaints with photos become "Reklamation" tasks.</span><span class="pill warn" style="width:fit-content">we: portal, but needs a login</span></div>
+    </div>
+  </section>
+
+  <section class="sec" data-sec="paula">
+    <div class="sec-h"><div><span class="kicker">09 · AI</span><h2>Paula, as the manual describes her</h2></div><button class="listen" data-play="paula"></button></div>
+    <div class="duo">
+      <div class="pane"><div class="pane-label"><span class="chip them">Phone</span>Inbound assistant</div>
+        <div class="screen t"><div class="bar"><i></i><i></i><i></i><b>Paula · Telefon</b></div><div class="body">
+          <div class="row sb"><span>Own number, opening hours inverted</span><span class="pill t">after hours</span></div>
+          <div class="row sb"><span>Workflows with required questions</span><span class="pill t">→ creates a task</span></div>
+          <div class="row sb"><span>Language</span><span class="pill bad">German only · inbound only</span></div>
+        </div></div></div>
+      <div class="pane"><div class="pane-label"><span class="chip them">In PlanD</span>Assistant by voice or chat</div>
+        <div class="screen t"><div class="bar"><i></i><i></i><i></i><b>Paula · Assistent</b></div><div class="body">
+          <div class="bub">"Zeig mir den Dienstplan für morgen"</div>
+          <div class="row sb"><span>Changes data only via a confirm card</span><span class="pill t">per-user licence + quota</span></div>
+          <div class="row sb"><span>Reads your mailbox (Google, Microsoft, IMAP)</span><span class="pill t">drafts replies</span></div>
+        </div></div></div>
+    </div>
+  </section>
+
+  <section class="sec" data-sec="apps">
+    <div class="sec-h"><div><span class="kicker">10 · Apps and roles</span><h2>Two apps, four fixed roles</h2></div><button class="listen" data-play="apps"></button></div>
+    <div class="duo">
+      <div class="pane"><div class="pane-label"><span class="chip them">PlanD</span>Staff app + site-lead app</div>
+        <div class="screen t"><div class="bar"><i></i><i></i><i></i><b>Apps</b></div><div class="body">
+          <div class="row sb"><span>Staff: SMS invite, Play/Pause/Stop, timesheet colours, leave, chat</span></div>
+          <div class="row sb"><span>Site lead: plan, approve times, create staff/sites/keys</span></div>
+          <div class="row sb"><span>Roles</span><span class="pill t">Admin · Innendienst · Objektleiter · Servicekraft</span></div>
+          <div class="row sb"><span class="small muted">Built-ins not editable; custom groups with a CRUD matrix</span></div>
+        </div></div></div>
+      <div class="pane"><div class="pane-label"><span class="chip today">Us today</span>One app, every role</div>
+        <div class="screen"><div class="bar"><i></i><i></i><i></i><b>Phone app</b></div><div class="body">
+          <div class="row sb"><span>Workers, leaders and the office in one app</span><span class="pill ok">offline engine</span></div>
+          <div class="row sb"><span>Roles per person and workspace</span><span class="pill ok">permission builder</span></div>
+          <div class="row sb"><span>External members (€2 seat)</span><span class="pill ok">client's people too</span></div>
+          <div class="row sb"><span>Languages</span><span class="pill bad">5 vs their 15–25</span></div>
+        </div></div></div>
+    </div>
+  </section>
+
+  <section class="sec" data-sec="weak">
+    <div class="sec-h"><div><span class="verdict v-us">Our openings</span><h2>Their limits, from their own manual</h2></div><button class="listen" data-play="weak"></button></div>
+    <div class="weak-list">
+      <div class="weak-item"><span class="x">×</span><b>Chrome and Firefox only</b><span class="us-line">Us: any modern browser</span></div>
+      <div class="weak-item"><span class="x">×</span><b>One session per licence</b><span class="us-line">Us: many devices at once</span></div>
+      <div class="weak-item"><span class="x">×</span><b>3 custom fields per company</b><span class="us-line">Us: custom fields per task type</span></div>
+      <div class="weak-item"><span class="x">×</span><b>Holidays entered by hand</b><span class="us-line">Us: automatic by country and region</span></div>
+      <div class="weak-item"><span class="x">×</span><b>Offline: no materials, absences or tickets</b><span class="us-line">Us: offline engine with an outbox</span></div>
+      <div class="weak-item"><span class="x">×</span><b>Team visit doesn't split time</b><span class="us-line">Us: each person's own time on a crew</span></div>
+      <div class="weak-item"><span class="x">×</span><b>Stand-ins chosen by hand</b><span class="us-line">Us: can build it truly automatic</span></div>
+      <div class="weak-item"><span class="x">×</span><b>Bank link Germany and Austria only</b><span class="us-line">Us: multi-currency, several companies</span></div>
+      <div class="weak-item"><span class="x">×</span><b>Late surcharge = re-approve every time</b><span class="us-line">Us: dated rates, recomputed per day</span></div>
+      <div class="weak-item"><span class="x">×</span><b>Paula: German only, inbound only</b><span class="us-line">Us: no AI today — an open field</span></div>
+    </div>
+  </section>
+
+  <section class="sec" data-sec="market">
+    <div class="sec-h"><div><span class="kicker">12 · Their customers</span><h2>What 31 customer stories say</h2></div><button class="listen" data-play="market"></button></div>
+    <div class="facts">
+      <div class="fact"><b>22 / 31</b><span>paper timesheets retyped into Excel</span></div>
+      <div class="fact"><b>#1 reason</b><span>to switch: a previous software that failed</span></div>
+      <div class="fact"><b>10 days → ½ day</b><span>payroll (Temberger, 170+ staff)</span></div>
+      <div class="fact"><b>€80k/yr</b><span>two office jobs saved (Stier)</span></div>
+    </div>
+    <p>Named rivals: <b>Hero</b>, <b>SQ One</b>, <b>Landwehr</b>. The only price complaint: "anfangs abschreckend" for a small firm. Missing per customers: an admin mobile app for appointments, cost centres on invoices.</p>
+  </section>
+
+  <section class="sec" data-sec="hbc">
+    <div class="sec-h"><div><span class="verdict v-them">Important</span><h2>HBC Service runs on PlanD</h2></div><button class="listen" data-play="hbc"></button></div>
+    <div class="duo">
+      <div class="pane">
+        <p class="quote">„PlanD ist das beste System, mit dem ich bisher gearbeitet habe.” — Ralf Kurtenbach, Niederlassungsleiter Rheinland</p>
+        <div class="facts" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+          <div class="fact"><b>0 → 25</b><span>staff in 6 months, Rheinland branch (Köln/Düsseldorf), built on PlanD</span></div>
+          <div class="fact"><b>500+</b><span>staff, six German sites (PlanD Werk event page)</span></div>
+        </div>
+        <p class="small">Managing director Stephan Teichmann spoke on PlanD's own event panel "Geld verdienen in der Gebäudereinigung" (24 Jun 2026). Before PlanD: a paper rota and fingerprint terminals that failed on wet hands.</p>
+      </div>
+      <div class="pane"><div class="pane-label"><span class="chip them">What HBC uses</span>The bar to match before switching them</div>
+        <div class="screen t"><div class="body">
+          <div class="row sb"><span>1 · Rota on staff phones</span><span class="pill ok">we have</span></div>
+          <div class="row sb"><span>2 · Time capture at the site</span><span class="pill ok">we have</span></div>
+          <div class="row sb"><span>3 · Leave and sickness overview</span><span class="pill ok">we have</span></div>
+          <div class="row sb"><span>4 · Group chat instead of WhatsApp</span><span class="pill ok">we have</span></div>
+          <div class="row sb"><span>5 · Payroll (1.5 h for the branch)</span><span class="pill bad">missing</span></div>
+          <div class="row sb"><span>6 · Material orders he approves</span><span class="pill bad">missing</span></div>
+          <div class="row sb"><span>7 · Complaints with cleaners' photos</span><span class="pill warn">partly</span></div>
+        </div></div></div>
+    </div>
+  </section>
+
+  <section class="sec" data-sec="plan">
+    <div class="sec-h"><div><span class="kicker">14 · What to build</span><h2>Six things, in this order</h2><p>Sizes are a rough guess.</p></div><button class="listen" data-play="plan"></button></div>
+    <div class="steps">
+      <div class="step-c"><span class="num">1</span><div><b>German/Austrian payroll pack</b><p>Tariff template with dated LG 1–9 rates; surcharges (night, Sunday, holiday, special days, 25 % load) on counted time, highest wins, §3b split; travel time between sites; absence pay rule per type; lock the month; DATEV Lohn &amp; Gehalt / LODAS export with pay numbers and cost centres.</p></div><span class="size">L</span></div>
+      <div class="step-c"><span class="num">2</span><div><b>Quotes and smarter invoices</b><p>Quote → accepted online → recurring jobs; lines from counted time, visits done or missed; a work slip signed on the phone → invoice; XRechnung/ZUGFeRD with Leitweg-ID; dunning with fees; CAMT bank import.</p></div><span class="size">L</span></div>
+      <div class="step-c"><span class="num">3</span><div><b>Languages and chat translation</b><p>Turkish, Polish, Romanian, Arabic, Ukrainian, Bosnian/Croatian/Serbian; translation on display with the original one tap away.</p></div><span class="size">M</span></div>
+      <div class="step-c"><span class="num">4</span><div><b>A truly automatic stand-in</b><p>Ranked by "knows this site", trade, cover and distance; the client told in their language. They market this but their manual shows it manual.</p></div><span class="size">M</span></div>
+      <div class="step-c"><span class="num">5</span><div><b>Material cupboard, device maintenance, keys</b><p>Grow out of Assets and custody: per-site budget, order from the app, delivery note; maintenance due dates; who holds the key.</p></div><span class="size">M</span></div>
+      <div class="step-c"><span class="num">6</span><div><b>Client QR per site</b><p>A no-login page per site: recent work, a complaint with photos that becomes a task — on top of our portal.</p></div><span class="size">S</span></div>
+    </div>
+  </section>
+
+  <section class="sec" data-sec="close">
+    <div class="sec-h"><div><span class="kicker">15 · Bottom line</span><h2>Deep paperwork vs a modern platform</h2></div><button class="listen" data-play="close"></button></div>
+    <p class="note">PlanD goes very deep into German cleaning paperwork but is limited in flexibility and technology. We are stronger in technology, field operations and working across companies. With payroll, invoicing and languages built, we are a real alternative — even for HBC.</p>
+    <div class="sources"><span>Read in full:</span><a href="https://pland.app/" target="_blank" rel="noopener">pland.app (242 pages)</a><a href="https://help.pland.app/de/" target="_blank" rel="noopener">help.pland.app (155 articles)</a><a href="https://pland.app/erfolgsgeschichten" target="_blank" rel="noopener">31 customer stories</a><a href="https://pland.app/ki-assistenz" target="_blank" rel="noopener">Paula</a><span>Notes: docs/design/pland-compare/research/</span></div>
+  </section>
+</div>
+
+<div class="player" role="region" aria-label="Arabic narration">
+  <div class="top">
+    <button class="pbtn" id="play" aria-label="Play narration"><svg viewBox="0 0 24 24"><path id="picon" fill="currentColor" d="M8 5.5v13l11-6.5z"/></svg></button>
+    <div class="ptxt"><div class="now" id="now">اضغط للاستماع إلى الشرح بالعربية</div><div class="prog"><i id="prog"></i></div></div>
+    <button class="stopb" id="stop" hidden>إيقاف</button>
+  </div>
+  <div class="cap" id="cap" hidden></div>
+</div>
+
+<script>
+var VO = {"intro": "أهلاً. هذه نسخة أعمق من المقارنة. هذه المرة قرأنا موقع بلان دي بالكامل: مئتين واثنتين وأربعين صفحة، وكل دروس التدريب، وواحداً وثلاثين قصة عميل، وأيضاً دليل المستخدم الكامل في مركز المساعدة، مئة وخمسة وخمسين مقالاً. لذلك نعرف الآن كيف يعمل البرنامج من الداخل، وليس فقط ما يقوله التسويق.", "glance": "بلان دي من شركة كوم أون ديجيتال في برلين، والمدير والمؤسس توبياس ويتيكيندت. عملاؤهم في ألمانيا أساساً، ومعهم قليل في النمسا وسويسرا، وأغلبهم بين عشرين ومئتين وخمسين موظفاً. لا يوجد سعر منشور، فقط حجز عرض. يجدون العملاء في معرض التنظيف في برلين، وعلى إنستغرام وفيسبوك، وبالتوصيات. وفازوا بجائزة الشركات الجديدة في معرض إنتركلين سنة ألفين وأربعة وعشرين.", "model": "من الداخل، كل شيء عندهم مبني على سلسلة واحدة: العميل، ثم الموقع، ثم العقد، ثم الموعد، ثم ختم الوقت، ثم وقت الأجر مع الإضافات. العقد هو وحدة الفوترة، والموعد هو وحدة تسجيل الوقت. ولكل موقع مسؤول واحد يستلم الإشعارات. عندنا البنية أوسع: الشركة، ثم مساحة العمل، ثم العميل، ثم المهمة، مع فريق كامل على المهمة ووقت لكل شخص.", "planning": "التخطيط عندهم تقويم بعمود لكل موظف، مع السحب والإفلات، وألوان تبين المستقبل والفائت والمسجل. عندهم قوالب مسارات بمحطات ومدة لكل محطة. لكن انتبهوا: الإعلان يقول إن البديل يُقترح تلقائياً، بينما دليل المستخدم يبين أن اختيار البديل يدوي بالكامل. وفي مهمة الفريق لا يُقسم الوقت بين الأشخاص.", "time": "تسجيل الوقت عندهم بالاستثناء: فقط الأختام المخالفة للخطة تصل للمراجعة. يتحققون من المسافة بالـ جي بي إس، عادة بين ثلاثمئة وثمانمئة متر، أو برمز كيو آر في الموقع. ووقت التنقل يحسب تلقائياً بين موعدين حتى ثلاث ساعات، لكن التنقل إلى أول عمل في اليوم لا يُسجل. عندنا تسجيل دخول تلقائي عند الوصول، وحدود مرسومة للموقع، ووقت محتسب مقابل الوقت الفعلي.", "absences": "في الغياب عندهم خمس طرق لدفع أيام المرض والإجازة. لكن العطل الرسمية لا تُضاف تلقائياً، يجب إدخالها يدوياً لكل الموظفين، ويُسمح بغياب واحد فقط في اليوم. عندنا العطل الرسمية تأتي تلقائياً حسب الدولة والمنطقة، والإجازة تُحسب بأيام العمل الفعلية.", "payroll": "الرواتب هي قلب بلان دي. عندهم معالج للاتفاقية الجماعية: فئات الأجور من واحد إلى تسعة، مثلاً خمسة عشر يورو للفئة الأولى في ألفين وستة وعشرين. والإضافات: الليل، والأحد، والعطل، وإضافة الجهد بعد ثماني ساعات في اليوم أو أربعين في الأسبوع، والأعلى فقط يُدفع. ويفصلون الجزء المعفى من الضريبة تلقائياً، ثم يقفلون الأوقات بعد التصدير بشكل نهائي، ويصدّرون إلى داتيف ولوداس وغيرها. هذا بالضبط ما ينقصنا.", "invoicing": "الفوترة عندهم منتج كامل اسمه فاكتورا. عرض السعر يُحسب من المساحة ودرجة الاتساخ، ويصبح عقداً بضغطة. البنود الذكية تأخذ الكمية من وقت الأجر أو عدد الزيارات أو حتى الزيارات الفائتة. ورقة العمل يوقعها العميل على الهاتف وتتحول إلى فاتورة. وعندهم الفاتورة الإلكترونية، والتذكير بالدفع مع رسوم، وربط البنك في ألمانيا والنمسا. ومع ذلك دليلهم يذكر حلولاً التفافية كثيرة في الفواتير.", "materials": "عندهم أيضاً خزانة مواد لكل موقع بميزانية شهرية، وطلب المواد من التطبيق، وسند تسليم. وإدارة الأجهزة مع مواعيد الصيانة ورمز كيو آر، ومفاتيح المواقع. ومنذ بداية ألفين وستة وعشرين حلت المهام محل التذاكر، مع لوحة كانبان، وبوابة للعميل برمز كيو آر في كل موقع بدون تسجيل دخول، يرسل منها الشكاوى بالصور.", "paula": "باولا لها شكلان. الأول مساعدة هاتفية برقم خاص، ترد خارج ساعات العمل، وتسأل أسئلة محددة، وتنشئ مهمة. لكنها بالألمانية فقط، وللمكالمات الواردة فقط، وتنشئ مهام فقط. الثاني مساعدة داخل البرنامج بالصوت أو الكتابة، بترخيص لكل مستخدم وحصة شهرية، وأي تغيير يحتاج تأكيداً. وتبدأ من تسعة وتسعين يورو شهرياً.", "apps": "عندهم تطبيقان: تطبيق للعامل، فيه بدء وإيقاف الوقت، والجدول، والإجازات، والدردشة. وتطبيق لمسؤول الموقع يخطط ويعتمد الأوقات بدون الحاسوب. والصلاحيات: أربع مجموعات ثابتة لا تتغير، ومجموعات مخصصة بمصفوفة صلاحيات. عندنا نظام الأدوار مرن بالكامل، لكل مساحة عمل، ومع أعضاء خارجيين.", "weak": "والآن نقاط ضعفهم، من دليلهم نفسه. يعمل فقط على كروم وفايرفوكس، وجلسة واحدة لكل ترخيص. الحقول المخصصة ثلاثة فقط. العمل بدون إنترنت لا يشمل المواد والغياب والتذاكر. الإضافة التي تُضاف بعد الاعتماد تحتاج إعادة اعتماد. والبنك لألمانيا والنمسا فقط. كل نقطة من هذه فرصة لنا.", "market": "من قصص العملاء: الألم الأكبر هو أوراق الوقت الورقية التي تُنقل يدوياً إلى إكسل، في اثنتين وعشرين قصة من واحد وثلاثين. السبب الأول للانتقال هو برنامج سابق فشل. والمنافسون المذكورون هم هيرو، وإس كيو ون، ولاندفير. الشكوى الوحيدة عن السعر جاءت من شركة صغيرة قالت إنه مخيف في البداية.", "hbc": "والآن الأهم: إتش بي سي سيرفيس. هي عميل مميز عند بلان دي. فرع راينلاند في كولونيا ودوسلدورف بُني بالكامل على بلان دي، من صفر إلى خمسة وعشرين موظفاً في ستة أشهر، ومدير الفرع رالف كورتنباخ قال إنه أفضل نظام عمل به. والمدير العام ستيفان تايشمان كان متحدثاً في فعالية بلان دي في يونيو، والشركة أكثر من خمسمئة موظف في ستة مواقع. يستخدمون الجدول، والوقت، والإجازات، والرواتب، والدردشة، والمواد، والشكاوى. إذا أردنا نقل إتش بي سي إلينا، يجب أن نغطي هذه السبعة على الأقل.", "plan": "الخطة المحدثة، بالترتيب. أولاً حزمة الرواتب الألمانية: فئات الأجور، والإضافات، وطرق دفع الغياب، والقفل، وتصدير داتيف. ثانياً الفوترة: عروض الأسعار، والبنود من الوقت والزيارات، وورقة العمل الموقعة، والفاتورة الإلكترونية، والتذكير. ثالثاً اللغات والترجمة. رابعاً اقتراح البديل تلقائياً بحق، وهذا ما لا يملكونه فعلاً. خامساً خزانة المواد والأجهزة والمفاتيح. سادساً بوابة شكاوى برمز كيو آر لكل موقع.", "close": "الخلاصة: بلان دي عميق جداً في أوراق التنظيف الألمانية، لكنه محدود في المرونة والتقنية. نحن أقوى في التقنية والعمليات الميدانية والعمل بين الشركات. إذا بنينا حزمة الرواتب والفوترة واللغات، نصبح بديلاً حقيقياً، حتى لإتش بي سي. شكراً لكم."};
+var ORDER = [["intro", null, "مقدمة"], ["glance", "glance", "لمحة"], ["model", "model", "البنية"], ["planning", "planning", "التخطيط"], ["time", "time", "الوقت"], ["absences", "absences", "الغياب"], ["payroll", "payroll", "الرواتب"], ["invoicing", "invoicing", "الفوترة"], ["materials", "materials", "المواد والمهام"], ["paula", "paula", "باولا"], ["apps", "apps", "التطبيقات والأدوار"], ["weak", "weak", "نقاط ضعفهم"], ["market", "market", "عملاؤهم"], ["hbc", "hbc", "إتش بي سي"], ["plan", "plan", "الخطة"], ["close", "close", "الخلاصة"]];
+(function () {
+  var audio = new Audio(), i = -1, last = ORDER.length - 1;
+  var PLAY = 'M8 5.5v13l11-6.5z', PAUSE = 'M7 5h3.5v14H7zm6.5 0H17v14h-3.5z';
+  var icon = document.getElementById('picon'), now = document.getElementById('now'), prog = document.getElementById('prog');
+  var stop = document.getElementById('stop'), cap = document.getElementById('cap'), play = document.getElementById('play');
+  var IDLE = now.textContent;
+  var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function mark(sec) {
+    document.querySelectorAll('section.sec').forEach(function (s) { s.classList.toggle('speaking', s.dataset.sec === sec); });
+    var el = sec && document.querySelector('[data-sec="' + sec + '"]');
+    window.scrollTo({ top: el ? el.getBoundingClientRect().top + window.scrollY - 20 : 0, behavior: calm ? 'auto' : 'smooth' });
+  }
+  function start(from, to) {
+    i = from; last = to; var c = ORDER[i];
+    mark(c[1]); now.textContent = (i + 1) + ' / ' + ORDER.length + ' · ' + c[2];
+    cap.textContent = VO[c[0]]; cap.hidden = false;
+    audio.src = 'audio/' + c[0] + '.mp3'; audio.play().catch(function () {});
+    icon.setAttribute('d', PAUSE); stop.hidden = false; play.setAttribute('aria-label', 'Pause narration');
+  }
+  function end() { audio.pause(); i = -1; icon.setAttribute('d', PLAY); stop.hidden = true; cap.hidden = true; prog.style.width = '0'; now.textContent = IDLE; mark(null); play.setAttribute('aria-label', 'Play narration'); }
+  audio.addEventListener('timeupdate', function () { if (audio.duration) prog.style.width = (audio.currentTime / audio.duration * 100) + '%'; });
+  audio.addEventListener('ended', function () { if (i < last) start(i + 1, last); else end(); });
+  play.onclick = function () {
+    if (i < 0) return start(0, ORDER.length - 1);
+    if (audio.paused) { audio.play().catch(function () {}); icon.setAttribute('d', PAUSE); } else { audio.pause(); icon.setAttribute('d', PLAY); }
+  };
+  stop.onclick = end;
+  document.querySelectorAll('[data-play]').forEach(function (b) {
+    var k = b.dataset.play, n = ORDER.findIndex(function (o) { return o[0] === k; });
+    b.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="' + PLAY + '"/></svg>استمع لهذا الجزء';
+    b.onclick = function () { start(n, n); };
+  });
+})();
+</script>

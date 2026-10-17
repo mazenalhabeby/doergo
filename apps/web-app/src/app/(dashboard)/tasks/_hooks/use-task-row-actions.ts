@@ -4,7 +4,7 @@ import { useMemo, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { useQueryClient } from "@tanstack/react-query"
 
-import { keys } from "@/lib/query-keys"
+import { keys, invalidateTaskLists } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
 import { tasksApi, type Task, type TasksListResponse } from "@/lib/api"
 import type { TaskContextMenuActions } from "../_components/task-context-menu"
@@ -137,18 +137,21 @@ export function useTaskRowActions({
             data: old.data.filter((t) => t.id !== taskId),
             meta: old.meta ? { ...old.meta, total: old.meta.total - 1 } : old.meta,
           }
-        },
-      )
-      tasksApi.delete(taskId).then(() => {
-        notify.success(t("tasks.notify.taskDeleted"))
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-        queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
-      }).catch((e: Error) => {
-        restoreTasksCache(queryClient, snapshot)
-        notify.error(e.message)
-      })
-    },
-  }), [requestStatusChange, queryClient])
+        })
+        tasksApi
+          .delete(taskId)
+          .then(() => {
+            notify.success(t("tasks.notify.taskDeleted"))
+            invalidateTaskLists(queryClient)
+          })
+          .catch((e: Error) => {
+            restoreTasksCache(queryClient, snapshot)
+            notify.error(e.message)
+          })
+      },
+    }),
+    [requestStatusChange, queryClient],
+  )
 
   // Build recent assignees from visible tasks for context menu
   const recentAssignees = useMemo(() => {

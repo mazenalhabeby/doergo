@@ -127,6 +127,8 @@ describe('TasksService', () => {
       findMany: jest.fn().mockResolvedValue([]),
       create: jest.fn(),
     },
+    // A job's chat follows its crew; none exists in these specs.
+    conversation: { findUnique: jest.fn().mockResolvedValue(null) },
     checklistItem: {
       findMany: jest.fn().mockResolvedValue([]),
       createMany: jest.fn(),
@@ -1023,8 +1025,7 @@ describe('TasksService', () => {
         service.getSuggestedTechnicians({
           taskId: 'task-123',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE,
-          canViewAllTasks: true,
+          userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(ForbiddenException);

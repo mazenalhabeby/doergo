@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { checkScan, suggestExpiry, type Rect } from '@hbcfield/shared';
 import { MrzOcrService } from './mrz-ocr.service';
-import { type DocumentActor } from './document-common';
 import { DocumentStorageService } from './document-storage.service';
 import { DocumentLookupService } from './document-lookup.service';
 import { DocumentRoutingService } from './document-routing.service';
@@ -15,6 +13,16 @@ import { DocumentCustomerSigningService } from './document-customer-signing.serv
 import { DocumentRegistersService } from './document-registers.service';
 import { DocumentDownloadsService } from './document-downloads.service';
 import { DocumentControlService } from './document-control.service';
+import { DocumentChainService } from './document-chain.service';
+import { DocumentSendBackService } from './document-send-back.service';
+import { IssuedRegisterService } from './issued-register.service';
+import { MemberDocumentsService } from './member-documents.service';
+import { DocumentDraftsService } from './document-drafts.service';
+import { DocumentRequirementsService } from './document-requirements.service';
+import { ContractIssueService } from './contract-issue.service';
+import { CustomerSignBatchService } from './customer-sign-batch.service';
+import { DocumentTypeUpdateService } from './document-type-update.service';
+
 export { CONSENT_TEXT, type DocumentActor, type RouteCandidateStep } from './document-common';
 
 /**
@@ -43,14 +51,23 @@ export class DocumentsService {
     private readonly storage: DocumentStorageService,
     private readonly lookup: DocumentLookupService,
     private readonly routing: DocumentRoutingService,
+    private readonly chain: DocumentChainService,
     private readonly signing: DocumentSigningService,
+    private readonly sendBacks: DocumentSendBackService,
     private readonly types: DocumentTypesService,
+    private readonly typeUpdates: DocumentTypeUpdateService,
     private readonly templates: DocumentTemplatesService,
+    private readonly contractIssue: ContractIssueService,
     private readonly issuing: DocumentIssuingService,
+    private readonly drafts: DocumentDraftsService,
     private readonly supply: DocumentSupplyService,
+    private readonly requirements: DocumentRequirementsService,
     private readonly verification: DocumentVerificationService,
     private readonly customerSigning: DocumentCustomerSigningService,
+    private readonly customerSignBatch: CustomerSignBatchService,
     private readonly registers: DocumentRegistersService,
+    private readonly memberDocuments: MemberDocumentsService,
+    private readonly issuedRegister: IssuedRegisterService,
     private readonly downloads: DocumentDownloadsService,
     private readonly control: DocumentControlService,
   ) {}
@@ -63,8 +80,8 @@ export class DocumentsService {
     return this.types.createType(...args);
   }
 
-  updateType(...args: Parameters<DocumentTypesService['updateType']>) {
-    return this.types.updateType(...args);
+  updateType(...args: Parameters<DocumentTypeUpdateService['updateType']>) {
+    return this.typeUpdates.updateType(...args);
   }
 
   deactivateType(...args: Parameters<DocumentTypesService['deactivateType']>) {
@@ -103,8 +120,8 @@ export class DocumentsService {
     return this.templates.resolveTemplateForMember(...args);
   }
 
-  issueFromTemplate(...args: Parameters<DocumentTemplatesService['issueFromTemplate']>) {
-    return this.templates.issueFromTemplate(...args);
+  issueFromTemplate(...args: Parameters<ContractIssueService['issueFromTemplate']>) {
+    return this.contractIssue.issueFromTemplate(...args);
   }
 
   previewTemplate(...args: Parameters<DocumentTemplatesService['previewTemplate']>) {
@@ -119,131 +136,12 @@ export class DocumentsService {
     return this.supply.submitOwnDocument(...args);
   }
 
-  /**
-   * Read a staged upload and say what is on it — WITHOUT filing anything.
-   *
-   * This exists because the flow was backwards. The member typed an expiry
-   * date, sent the document, and the server then read the real one and quietly
-   * used it instead: busywork followed by a silent override, which is the worst
-   * of both. Reading first turns it into what every identity flow does — the
-   * machine reads, the person confirms.
-   *
-   * The distinction in the answer is the important part. An expiry from a
-   * machine-readable zone is a FACT the document proves about itself, with a
-   * check digit behind it. An expiry scraped from printed text is a SUGGESTION,
-   * because a European driving licence has no zone at all and nothing about
-   * that reading is provable. The caller is told which it got.
-   *
-   * The staged object is left where it is: the member may still change their
-   * mind, and `submitOwnDocument` is what consumes it.
-   */
-  async readOwnUpload(data: {
-    actor: DocumentActor;
-    stagingKey: string;
-    crop?: Rect | null;
-    /** The reverse, for a card that carries its zone there. */
-    backStagingKey?: string | null;
-    backCrop?: Rect | null;
-  }) {
-    const { organizationId, userId } = data.actor;
-
-    // The frame, not the room: an uncropped photo puts the zone somewhere the
-    // band search will never look.
-    const front = await this.storage.peekStaged(organizationId, data.stagingKey, userId, data.crop);
-    const back = data.backStagingKey
-      ? await this.storage.peekStaged(organizationId, data.backStagingKey, userId, data.backCrop)
-      : null;
-
-    /*
-      A PDF cannot be read here, and the honest thing is to say so rather than
-      to fail at it.
-
-      Rasterising needs a renderer this service does not have — `pdf-lib`
-      manipulates PDFs, it does not draw them. ⚠️ Which is NOT the end of the
-      story for the member: the browser reads a PDF's TEXT LAYER before it
-      uploads (`src/lib/pdf-text.ts`), and a text layer is the characters the
-      document was written with rather than a guess at their shape, so it beats
-      anything OCR could return. This answer is what lets that reading stand
-      instead of being overwritten with a worse one.
-    */
-    if (!front.mimeType.startsWith('image/')) {
-      return { source: 'NOTHING' as const, expiresOn: null, fields: null, verdict: null };
-    }
-
-    // Read the two sides together. On an ID card the zone is only on the back.
-    const bytes = await this.storage.composeSides(front.bytes, back?.bytes ?? null);
-    const text = await this.ocr.read(bytes, 'image/jpeg');
-
-    if (!text) {
-      return { source: 'NOTHING' as const, expiresOn: null, fields: null, verdict: null };
-    }
-
-    const member = await this.lookup.assertMemberOfOrg(data.actor.userId, data.actor.organizationId);
-    const scan = checkScan({ mrzText: text, member });
-
-    if (scan.raw) {
-      const fields = {
-        holderName: scan.extracted.holderName,
-        documentNumber: scan.extracted.documentNumber,
-        dateOfBirth: scan.extracted.dateOfBirth,
-        issuingState: scan.extracted.issuingState,
-      };
-
-      /*
-        A zone was read, and its arithmetic agrees. This is the only expiry in
-        the product that is a FACT rather than a reading.
-      */
-      if (scan.raw.allChecksPassed) {
-        return {
-          source: 'MRZ' as const,
-          expiresOn: scan.extracted.dateOfExpiry,
-          fields,
-          verdict: scan.verdict,
-        };
-      }
-
-      /*
-        The check digit disagrees, so the zone's own date is not offered — it
-        would be a wrong date with the app's authority behind it.
-        ⚠️ But that used to end the matter, and the member was left typing.
-        The band is the lower third of the picture; the date is very often
-        printed in the part of the page the band never covered. So look at the
-        whole frame before giving up, and label what comes back as the guess it
-        is. Costs a second pass, on the rare path where the first one failed.
-      */
-      const printed = await this.ocr.read(bytes, 'image/jpeg', { wholeFrame: true });
-      const fallback = printed ? suggestExpiry(printed) : null;
-      return {
-        source: fallback ? ('TEXT' as const) : ('NOTHING' as const),
-        expiresOn: fallback?.iso ?? null,
-        fields,
-        verdict: scan.verdict,
-      };
-    }
-
-    /*
-      No zone: a licence, a certificate, an insurance card — which is MOST of
-      what this product files.
-
-      ⚠️ This branch was unreachable until the OCR stopped discarding text that
-      did not look like a zone. `suggestExpiry` has been sitting here, tested
-      and correct, never once called with anything but null.
-    */
-    const guess = suggestExpiry(text);
-    return {
-      source: guess ? ('TEXT' as const) : ('NOTHING' as const),
-      expiresOn: guess?.iso ?? null,
-      fields: null,
-      verdict: null,
-    };
+  listRequirements(...args: Parameters<DocumentRequirementsService['listRequirements']>) {
+    return this.requirements.listRequirements(...args);
   }
 
-  listRequirements(...args: Parameters<DocumentSupplyService['listRequirements']>) {
-    return this.supply.listRequirements(...args);
-  }
-
-  pendingForMember(...args: Parameters<DocumentSupplyService['pendingForMember']>) {
-    return this.supply.pendingForMember(...args);
+  pendingForMember(...args: Parameters<DocumentRequirementsService['pendingForMember']>) {
+    return this.requirements.pendingForMember(...args);
   }
 
   listAwaitingVerification(...args: Parameters<DocumentVerificationService['listAwaitingVerification']>) {
@@ -274,8 +172,8 @@ export class DocumentsService {
     return this.customerSigning.openForCustomer(...args);
   }
 
-  signBatchAsCustomer(...args: Parameters<DocumentCustomerSigningService['signBatchAsCustomer']>) {
-    return this.customerSigning.signBatchAsCustomer(...args);
+  signBatchAsCustomer(...args: Parameters<CustomerSignBatchService['signBatchAsCustomer']>) {
+    return this.customerSignBatch.signBatchAsCustomer(...args);
   }
 
   acknowledgeDocument(...args: Parameters<DocumentSigningService['acknowledgeDocument']>) {
@@ -286,52 +184,52 @@ export class DocumentsService {
     return this.issuing.listMatchCandidates(...args);
   }
 
-  listDrafts(...args: Parameters<DocumentIssuingService['listDrafts']>) {
-    return this.issuing.listDrafts(...args);
+  listDrafts(...args: Parameters<DocumentDraftsService['listDrafts']>) {
+    return this.drafts.listDrafts(...args);
   }
 
-  publishBatch(...args: Parameters<DocumentIssuingService['publishBatch']>) {
-    return this.issuing.publishBatch(...args);
+  publishBatch(...args: Parameters<DocumentDraftsService['publishBatch']>) {
+    return this.drafts.publishBatch(...args);
   }
 
-  discardDraft(...args: Parameters<DocumentIssuingService['discardDraft']>) {
-    return this.issuing.discardDraft(...args);
+  discardDraft(...args: Parameters<DocumentDraftsService['discardDraft']>) {
+    return this.drafts.discardDraft(...args);
   }
 
-  purgeAbandonedDrafts(...args: Parameters<DocumentIssuingService['purgeAbandonedDrafts']>) {
-    return this.issuing.purgeAbandonedDrafts(...args);
+  purgeAbandonedDrafts(...args: Parameters<DocumentDraftsService['purgeAbandonedDrafts']>) {
+    return this.drafts.purgeAbandonedDrafts(...args);
   }
 
   browse(...args: Parameters<DocumentRegistersService['browse']>) {
     return this.registers.browse(...args);
   }
 
-  sendBack(...args: Parameters<DocumentSigningService['sendBack']>) {
-    return this.signing.sendBack(...args);
+  sendBack(...args: Parameters<DocumentSendBackService['sendBack']>) {
+    return this.sendBacks.sendBack(...args);
   }
 
-  documentChain(...args: Parameters<DocumentRoutingService['documentChain']>) {
-    return this.routing.documentChain(...args);
+  documentChain(...args: Parameters<DocumentChainService['documentChain']>) {
+    return this.chain.documentChain(...args);
   }
 
   routeCandidates(...args: Parameters<DocumentRoutingService['routeCandidates']>) {
     return this.routing.routeCandidates(...args);
   }
 
-  listIssued(...args: Parameters<DocumentRegistersService['listIssued']>) {
-    return this.registers.listIssued(...args);
+  listIssued(...args: Parameters<IssuedRegisterService['listIssued']>) {
+    return this.issuedRegister.listIssued(...args);
   }
 
-  listForMember(...args: Parameters<DocumentRegistersService['listForMember']>) {
-    return this.registers.listForMember(...args);
+  listForMember(...args: Parameters<MemberDocumentsService['listForMember']>) {
+    return this.memberDocuments.listForMember(...args);
   }
 
   getDownloadUrl(...args: Parameters<DocumentDownloadsService['getDownloadUrl']>) {
     return this.downloads.getDownloadUrl(...args);
   }
 
-  listEvents(...args: Parameters<DocumentRegistersService['listEvents']>) {
-    return this.registers.listEvents(...args);
+  listEvents(...args: Parameters<MemberDocumentsService['listEvents']>) {
+    return this.memberDocuments.listEvents(...args);
   }
 
   exportForMember(...args: Parameters<DocumentDownloadsService['exportForMember']>) {

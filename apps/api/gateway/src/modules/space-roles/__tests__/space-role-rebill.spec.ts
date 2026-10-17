@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { SpaceRolesController } from '../space-roles.controller';
+import { spaceRolesControllers } from './space-roles-controllers.fixture';
 
 /*
   An external member's seat is priced from the permissions their SPACE role
@@ -21,7 +21,7 @@ describe('space-role routes re-bill', () => {
       mergeRole: jest.fn(answer),
     };
     const billing = { rebill: jest.fn() };
-    return { c: new SpaceRolesController(service as any, billing as any), billing };
+    return { c: spaceRolesControllers(service as any, billing as any), billing };
   }
 
   it.each([

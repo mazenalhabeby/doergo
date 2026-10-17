@@ -1,15 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Body,
-  Param,
-  Query,
-  Inject,
-  HttpStatus,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, Inject, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
   ApiTags,
@@ -21,8 +10,6 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
 import { Public, RequirePermission } from '../../common/decorators';
 import { OrgEventsService } from '../../common/events/org-events.service';
 import {
@@ -41,7 +28,6 @@ export class InvitationsController {
 
   @Post()
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @RequirePermission('canManageUsers')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Create an invitation code' })
@@ -77,7 +63,6 @@ export class InvitationsController {
 
   @Get()
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'List organization invitations' })
   @ApiResponse({ status: 200, description: 'Invitations list' })
@@ -124,7 +109,6 @@ export class InvitationsController {
 
   @Delete(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Revoke an invitation' })
   @ApiParam({ name: 'id', description: 'Invitation ID to revoke' })

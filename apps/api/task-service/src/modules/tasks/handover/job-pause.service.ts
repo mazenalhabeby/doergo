@@ -1,38 +1,19 @@
-import { ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { TaskEventType } from '@prisma/client';
 import {
+  personName,
   HANDOVER_CODES,
   HANDOVER_PHOTOS_MAX,
-  TaskStatus,
   cleanHandoverNote,
-  crewPresence,
   pausesAtClockOut,
   createOnce,
-  stepCapabilities,
-  stepStartsWork,
-  success, assertFoundInOrg,
+  success,
+  assertFoundInOrg,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../../common/prisma/prisma.service';
-import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
-import { resolveSpaceDefaultWorkflowId } from '../../../common/space-workflow.util';
-import { JobTimeService } from './job-time.service';
+import { ClockOutHandover, AUTHOR } from './job-pause-helpers';
+import { JobPauseBase } from './job-pause.base';
 
-/** A note written at the clock-out, for one job. */
-export interface ClockOutHandover {
-  /** Made on the phone, so a replayed clock-out writes it once. */
-  id?: string;
-  taskId: string;
-  note: string;
-  attachmentIds?: string[];
-}
-
-/** Steps a job is never "being worked" in, whatever its workflow says. */
-const NEVER_WORKING = [TaskStatus.DRAFT, TaskStatus.NEW, TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELED] as string[];
-
-const AUTHOR = { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } as const;
-
-type Candidate = { id: string; title: string; status: string; workflowId: string | null; spaceId: string | null; organizationId: string; assignedToId: string | null; pausedAt: Date | null };
+export { type ClockOutHandover } from './job-pause-helpers';
 
 /**
  * Paused at clock-out, and the handover note. Rule: packages/shared/src/tasks/handover.ts
@@ -46,52 +27,7 @@ type Candidate = { id: string; title: string; status: string; workflowId: string
  * runs; a job that could not be paused is logged, never a clock-out refused.
  */
 @Injectable()
-export class JobPauseService {
-  private readonly logger = new Logger(JobPauseService.name);
-
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly workflows: WorkflowConfigCache,
-    @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
-    // The one job-time rule — the pause records what it says the worker put in.
-    private readonly jobTime: JobTimeService,
-  ) {}
-
-  /**
-   * The jobs this person is working right now: on the job (lead or crew), in a
-   * step where work runs, not paused. What the clock-out sheet lists, and what
-   * the clock-out pauses.
-   */
-  async workingJobsOf(userId: string, organizationId: string, opts: { includePaused?: boolean } = {}): Promise<Candidate[]> {
-    const rows = await this.prisma.task.findMany({
-      where: {
-        organizationId,
-        status: { notIn: NEVER_WORKING },
-        ...(opts.includePaused ? {} : { pausedAt: null }),
-        OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] },
-      select: { id: true, title: true, status: true, workflowId: true, spaceId: true, organizationId: true, assignedToId: true, pausedAt: true },
-      take: 50 });
-    if (rows.length === 0) return [];
-
-    // One workflow lookup per distinct flow, from the per-org cache.
-    const spaceFlow = new Map<string, Promise<string | null>>();
-    const flowOf = (r: Candidate) => {
-      if (r.workflowId) return Promise.resolve(r.workflowId);
-      if (!r.spaceId) return Promise.resolve(null);
-      if (!spaceFlow.has(r.spaceId)) spaceFlow.set(r.spaceId, resolveSpaceDefaultWorkflowId(this.prisma, r.spaceId));
-      return spaceFlow.get(r.spaceId)!;
-    };
-    const flows = new Map<string | null, Promise<any>>();
-    const working = await Promise.all(
-      rows.map(async (r) => {
-        const flowId = await flowOf(r);
-        if (!flows.has(flowId)) flows.set(flowId, this.workflows.getWorkflow(organizationId, flowId));
-        const wf = await flows.get(flowId);
-        return stepStartsWork(r.status, stepCapabilities(wf, r.status)) ? r : null;
-      }),
-    );
-    return working.filter((r): r is Candidate => !!r);
-  }
+export class JobPauseService extends JobPauseBase {
 
   /**
    * A shift ended at `at`: pause what this person was working on, and keep the
@@ -181,41 +117,6 @@ export class JobPauseService {
       this.notifications.emit('tasks_paused', { taskIds: paused, userId, organizationId, reason: args.reason });
     }
     return { paused };
-  }
-
-  /**
-   * Who has joined each of these jobs (the CREW only), and which of the others
-   * are on the clock — one history read, one assignee read, one clock read.
-   *
-   * ⚠️ THE CREW, not everybody in the history: a dispatcher dragging the card
-   * on the board is a STATUS event too, and must never keep a job running.
-   */
-  private async crewOnJobs(jobs: Candidate[], userId: string, organizationId: string) {
-    const [timelines, rows] = await Promise.all([
-      this.jobTime.timelinesOf(jobs.map((j) => j.id)),
-      jobs.length
-        ? this.prisma.taskAssignee.findMany({ where: { taskId: { in: jobs.map((j) => j.id) } }, select: { taskId: true, userId: true } })
-        : Promise.resolve([] as Array<{ taskId: string; userId: string }>),
-    ]);
-    const crewOf = new Map(jobs.map((j) => [j.id, new Set([j.assignedToId, ...rows.filter((r) => r.taskId === j.id).map((r) => r.userId)].filter((x): x is string => !!x))]));
-    const joinedOf = new Map(jobs.map((j) => {
-      const people = [...(crewOf.get(j.id) ?? [])];
-      return [j.id, [...crewPresence(timelines.get(j.id) ?? [], people)].filter(([, p]) => p.joined).map(([id]) => id)] as const;
-    }));
-    const others = [...new Set([...joinedOf.values()].flat().filter((id) => id !== userId))];
-    const onClock = new Set(
-      others.length
-        ? (await this.prisma.timeEntry.findMany({ where: { organizationId, userId: { in: others }, status: 'CLOCKED_IN' }, select: { userId: true } })).map((e) => e.userId)
-        : [],
-    );
-    return { joinedOf, onClock };
-  }
-
-  /** The jobs that keep running after this person clocks out — somebody else who joined is still on the clock. */
-  private async crewCarriesOn(jobs: Candidate[], userId: string, organizationId: string): Promise<Set<string>> {
-    if (!jobs.length) return new Set();
-    const { joinedOf, onClock } = await this.crewOnJobs(jobs, userId, organizationId);
-    return new Set(jobs.filter((j) => !pausesAtClockOut({ leaverId: userId, joined: joinedOf.get(j.id) ?? [], onClock })).map((j) => j.id));
   }
 
   /**
@@ -311,58 +212,9 @@ export class JobPauseService {
       taskId: task.id,
       taskTitle: task.title,
       authorId: data.userId,
-      authorName: `${row.author.firstName} ${row.author.lastName}`.trim(),
+      authorName: personName(row.author),
       recipientIds,
       organizationId: task.organizationId });
     return success(row);
-  }
-
-  /**
-   * The member's own picture: what they are working on (the clock-out sheet),
-   * what they owe a note for (asked on every open), and what is paused on them
-   * (offered to resume at the next clock-in).
-   */
-  async mine(data: { userId: string; organizationId: string }) {
-    const select = { id: true, title: true, status: true, pausedAt: true, pausedById: true, locationAddress: true, customer: { select: { name: true } } } as const;
-    const [working, owed, paused] = await Promise.all([
-      this.workingJobsOf(data.userId, data.organizationId),
-      this.prisma.task.findMany({ where: { organizationId: data.organizationId, handoverDueById: data.userId }, select, orderBy: { pausedAt: 'desc' }, take: 20 }),
-      this.prisma.task.findMany({
-        where: {
-          organizationId: data.organizationId,
-          pausedAt: { not: null },
-          status: { notIn: NEVER_WORKING },
-          OR: [{ assignedToId: data.userId }, { assignees: { some: { userId: data.userId } } }] },
-        select,
-        orderBy: { pausedAt: 'desc' },
-        take: 20 }),
-    ]);
-    const open = working.length
-      ? await this.prisma.task.findMany({ where: { id: { in: working.map((w) => w.id) } }, select, take: 50 })
-      : [];
-    // "Working 2h 15m" on the clock-out sheet, "2h 15m so far" on a paused job — the member's own share.
-    const refs = await this.prisma.task.findMany({
-      where: { id: { in: [...new Set([...open, ...paused].map((t) => t.id))] } },
-      select: { id: true, workflowId: true, spaceId: true, organizationId: true } });
-    const mins = await this.jobTime.workedForMany(refs, data.userId);
-    const withTime = <T extends { id: string }>(list: T[]) => list.map((t) => ({ ...t, workedMinutes: mins.get(t.id) ?? 0 }));
-    // Which open jobs the crew carries on after this person clocks out (shared crew.ts) —
-    // the clock-out sheet says "leave the crew a note" there, not "pauses".
-    // …and "2 of your items are still open" (shared tasks/checklist.ts): one grouped read on the
-    // owner index, only for the jobs in work, only when there are any.
-    const [carriesOn, openItems] = await Promise.all([
-      this.crewCarriesOn(working, data.userId, data.organizationId),
-      working.length
-        ? this.prisma.checklistItem.groupBy({
-            by: ['taskId'],
-            where: { assigneeId: data.userId, isCompleted: false, taskId: { in: working.map((w) => w.id) } },
-            _count: { _all: true } })
-        : Promise.resolve([] as Array<{ taskId: string; _count: { _all: number } }>),
-    ]);
-    const openOf = new Map(openItems.map((r) => [r.taskId, r._count._all]));
-    return success({
-      open: withTime(open).map((t) => ({ ...t, crewContinues: carriesOn.has(t.id), myOpenItems: openOf.get(t.id) ?? 0 })),
-      owed,
-      paused: withTime(paused) });
   }
 }

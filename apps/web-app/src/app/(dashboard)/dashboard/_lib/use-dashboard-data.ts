@@ -4,7 +4,7 @@ import { keys } from "@/lib/query-keys"
 import { useCallback, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 
-import { getSpaceScope, isWorkPresence, presenceFreshness } from "@hbcfield/shared/client"
+import { getSpaceScope } from "@hbcfield/shared/client"
 import type { TimeEntry } from "@hbcfield/shared"
 import {
   attendanceApi,
@@ -17,11 +17,17 @@ import {
 } from "@/lib/api"
 import { useSpaceDirectory } from "@/hooks/use-space-directory"
 import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
-import { assigneeIds } from "@/lib/task-assignment"
 
-import { isClockedIn } from "../_components/helpers"
 import { todayKey } from "@hbcfield/shared/client"
-import type { AttendanceFacts } from "./build-workspace-boxes"
+import {
+  memberMapOf,
+  attendanceFactsOf,
+  spaceMetaOf,
+  activeTaskMapOf,
+  rosterActiveTaskMapOf,
+  assignmentsPerLocationOf,
+} from "./dashboard-derive"
+import { PRESENCE_REFETCH_MS, useAttendanceFeeds } from "./use-attendance-feeds"
 import { buildPresenceDirectory } from "./presence-directory"
 import { useAuth } from "@/contexts/auth-context"
 
@@ -42,14 +48,6 @@ import { useAuth } from "@/contexts/auth-context"
  */
 const DASHBOARD_TASK_LIMIT = 200
 
-/**
- * Presence self-heal interval. "Online" is derived client-side from
- * lastActiveAt, so a dashboard left open needs a periodic refetch or the cached
- * timestamp ages out of the window and a still-connected member wrongly goes
- * dark. The server bumps lastActiveAt at least once a minute.
- */
-const PRESENCE_REFETCH_MS = 60_000
-
 /** Stable empty default — a `= []` literal would be a new identity each render. */
 const NO_MEMBERS: OrgMember[] = []
 
@@ -65,7 +63,7 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   const { hasPermission } = useAuth()
   // Space-aware: "view all tasks" held by a SPACE role counts here too, or a
   // member whose only authority is a space gets the narrow employee dashboard.
-  const isAdminOrDispatcher = user?.role === "ADMIN" || hasPermission('canViewAllTasks')
+  const isAdminOrDispatcher = user?.role === "ADMIN" || hasPermission("canViewAllTasks")
   // Access-Profile space scope: 'all' | 'own' | 'tasks'. Admins/managers always
   // see every space. Resolved before the queries because it decides whether the
   // spaces request is worth making at all.
@@ -124,44 +122,8 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
     refetchInterval: PRESENCE_REFETCH_MS,
   })
 
-  // Who is clocked in RIGHT NOW? Admins read org-wide. This is date-independent
-  // (open entries only) so an overnight / still-open shift that started before
-  // midnight still counts — a single-day query would drop them after the date
-  // rolls over. Employees can't read this (403); they fetch presence per space.
-  const { data: attendanceData } = useQuery({
-    queryKey: keys.attendance.active(),
-    queryFn: () => attendanceApi.getActiveEntries(),
-    staleTime: 30000,
-    enabled: canReadAttendance,
-    // Safety refetch so clock-in/out state self-heals if a socket event is missed.
-    refetchInterval: PRESENCE_REFETCH_MS,
-  })
-
-  // Active breaks — who is currently on break? (admin-only endpoint)
-  // getActiveBreaks() already unwraps the envelope and resolves to Break[], so
-  // the failure fallback must be an array too.
-  //
-  // After the first load: it only turns a present member's label into "On
-  // break", a moment after the grid has drawn them present.
-  const { data: activeBreaks } = useQuery({
-    queryKey: keys.attendance.dashboardBreaks(),
-    queryFn: () => attendanceApi.getActiveBreaks().catch(() => []),
-    staleTime: 30000,
-    enabled: canReadAttendance && afterFirstLoad,
-  })
-
-  // Attendance entries awaiting approval — feeds the "Pending Actions" panel so
-  // admins see payroll-blocking approvals from anywhere, not just the Attendance tab.
-  //
-  // After the first load (useAfterFirstLoad): the list it feeds sits in the side
-  // panel among the task-derived items and grows by these rows a moment later,
-  // while the grid and the presence it draws first go out with the page.
-  const { data: pendingApprovalsData } = useQuery({
-    queryKey: keys.attendance.pendingApprovals(),
-    queryFn: () => attendanceApi.getPendingApprovals({ limit: 50 }).catch(() => ({ data: [] })),
-    staleTime: 30000,
-    enabled: canReadAttendance && afterFirstLoad,
-  })
+  // The three live attendance feeds (active entries, active breaks, pending approvals).
+  const { attendanceData, activeBreaks, pendingApprovalsData } = useAttendanceFeeds(canReadAttendance, afterFirstLoad)
 
   // ── Derived Data ───────────────────────────────────────────────────────────
 
@@ -231,19 +193,10 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
     [members, todayEntries, isAdminOrDispatcher],
   )
 
-  const memberMap = useMemo(() => {
-    const map = new Map<string, OrgMember>()
-    for (const a of rosters) {
-      if (a.user && !map.has(a.user.id)) {
-        map.set(a.user.id, { ...a.user, isActive: true, role: "EMPLOYEE" } as unknown as OrgMember)
-      }
-    }
-    // Fuller records take precedence — the real directory first, then anything
-    // reconstructed from attendance for viewers who cannot read it.
-    for (const m of presenceDirectory) if (!map.has(m.id)) map.set(m.id, m)
-    for (const m of members) map.set(m.id, m)
-    return map
-  }, [members, presenceDirectory, rosters])
+  const memberMap = useMemo(
+    () => memberMapOf(members, presenceDirectory, rosters),
+    [members, presenceDirectory, rosters],
+  )
 
   // Per-user attendance facts, derived in ONE pass. Previously the same array
   // was copied and re-sorted three times to build three parallel maps keyed by
@@ -252,51 +205,10 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // `clockedIn` is true when ANY of today's entries is open; the descriptive
   // fields come from the most recent entry, which is what the presence labels
   // describe. Identical results to the three maps it replaces.
-  const { clockedInUserIds, attendanceByUser } = useMemo(() => {
-    const clocked = new Set<string>()
-    const facts = new Map<string, AttendanceFacts>()
-
-    // Newest first, so the first entry seen per user IS their most recent.
-    const byRecency = [...todayEntries].sort(
-      (a, b) => new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime(),
-    )
-
-    for (const entry of byRecency) {
-      if (isClockedIn(entry)) clocked.add(entry.userId)
-      if (!facts.has(entry.userId)) {
-        facts.set(entry.userId, {
-          locationId: entry.locationId,
-          isRemote: !!entry.isRemote,
-          withinGeofence: !!entry.clockInWithinGeofence,
-          // ESCALATED = the reminder engine chased this session to its limit,
-          // got nothing back, handed it to a leader and stopped. Everything
-          // else ('REMINDED', an open overtime request) is still in flight and
-          // should keep reading as a normal shift.
-          needsReview: entry.reminderState === "ESCALATED",
-          workPresence: isWorkPresence(entry.presence) ? entry.presence : null,
-          freshness: isClockedIn(entry)
-            ? presenceFreshness({ clockInAt: entry.clockInAt, lastSeenAt: entry.lastSeenAt, now: new Date() })
-            : undefined,
-          lastSeenAt: entry.lastSeenAt ?? null,
-        })
-      }
-    }
-
-    return { clockedInUserIds: clocked, attendanceByUser: facts }
-  }, [todayEntries])
+  const { clockedInUserIds, attendanceByUser } = useMemo(() => attendanceFactsOf(todayEntries), [todayEntries])
 
   // locationId -> { is this space shift-based, does it have a real geofence }.
-  const spaceMetaByLocation = useMemo(() => {
-    const map = new Map<string, { isShiftBased: boolean; hasLocation: boolean }>()
-    for (const l of allLocations as Array<{ id: string; workModel?: string; lat?: number | null; lng?: number | null }>) {
-      const wm = l.workModel || "NONE"
-      map.set(l.id, {
-        isShiftBased: wm === "SHIFT" || wm === "FIXED",
-        hasLocation: l.lat != null && l.lng != null,
-      })
-    }
-    return map
-  }, [allLocations])
+  const spaceMetaByLocation = useMemo(() => spaceMetaOf(allLocations), [allLocations])
 
   // Resolve the On Shift / In Field / Working inputs for a worker from their
   // current clock-in space. "atSpace" is true only when the space has a real
@@ -317,51 +229,15 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // Map userId -> active task (highest priority: IN_PROGRESS > EN_ROUTE > ARRIVED > BLOCKED).
   // Credited to EVERY assignee, not just the lead: a co-assignee working the task
   // showed no current task at all when this keyed off assignedToId alone.
-  const activeTaskMap = useMemo(() => {
-    const map = new Map<string, Task>()
-    const priority: Record<string, number> = {
-      IN_PROGRESS: 4,
-      ARRIVED: 3,
-      EN_ROUTE: 2,
-      BLOCKED: 1,
-    }
-    for (const task of tasks) {
-      const p = priority[task.status]
-      if (p === undefined) continue
-      for (const assigneeId of assigneeIds(task)) {
-        const existing = map.get(assigneeId)
-        if (!existing || (priority[existing.status] || 0) < p) {
-          map.set(assigneeId, task)
-        }
-      }
-    }
-    return map
-  }, [tasks])
+  const activeTaskMap = useMemo(() => activeTaskMapOf(tasks), [tasks])
 
   // Active task per member as computed server-side on the roster. Employees can
   // only read their own tasks, so this is how their dashboard learns which
   // colleagues are currently working (presence parity with the admin view).
-  const rosterActiveTaskMap = useMemo(() => {
-    const map = new Map<string, { title: string; status: string }>()
-    for (const a of rosters) {
-      if (a.currentTask) {
-        map.set(a.userId, { title: a.currentTask, status: a.currentTaskStatus || "IN_PROGRESS" })
-      }
-    }
-    return map
-  }, [rosters])
+  const rosterActiveTaskMap = useMemo(() => rosterActiveTaskMapOf(rosters), [rosters])
 
   // Assignments per location: locationId -> userId[]
-  const assignmentsPerLocation = useMemo(() => {
-    const map = new Map<string, Set<string>>()
-    for (const locId of locationIds) map.set(locId, new Set<string>())
-    for (const a of rosters) {
-      if (!map.has(a.locationId)) map.set(a.locationId, new Set<string>())
-      map.get(a.locationId)!.add(a.userId)
-    }
-    return map
-  }, [locationIds, rosters])
-
+  const assignmentsPerLocation = useMemo(() => assignmentsPerLocationOf(locationIds, rosters), [locationIds, rosters])
 
   const pendingApprovals: TimeEntry[] = useMemo(
     () => (pendingApprovalsData as { data?: TimeEntry[] } | undefined)?.data || [],

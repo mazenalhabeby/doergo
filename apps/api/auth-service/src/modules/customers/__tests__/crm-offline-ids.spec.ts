@@ -2,10 +2,10 @@
  * A client or activity added by a sales rep from the phone is created once.
  */
 import { crmReachOrgOnly } from '@hbcfield/shared';
-import { CustomersService } from '../customers.service';
+import { customerServices, type CustomerServices } from './customer-services.fixture';
 
-function withDeps(deps: Record<string, unknown>): CustomersService {
-  return Object.assign(Object.create(CustomersService.prototype), deps);
+function withDeps(deps: Record<string, unknown>): CustomerServices {
+  return customerServices(deps.prisma);
 }
 
 describe('CRM records named by the phone', () => {

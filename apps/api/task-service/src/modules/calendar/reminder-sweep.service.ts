@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService, runWithCronLock } from '@hbcfield/shared';
 import { EventsService } from './events.service';
+import { EventAnswersService } from './event-answers.service';
 
 /** Every minute, under the shared lease: send what is due (EventsService.sweepDue claims each row). */
 @Injectable()
@@ -10,14 +11,18 @@ export class ReminderSweepService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly events: EventsService,
+    private readonly eventAnswers: EventAnswersService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
   async sweepCron() {
-    await runWithCronLock(this.prisma, { name: 'task:calendarReminders', ttlSeconds: 55, logger: this.logger }, async () => {
-      const sent = await this.events.sweepDue();
-      if (sent) this.logger.log(`Calendar reminders sent: ${sent}`);
-    });
+    await runWithCronLock(
+      this.prisma,
+      { name: 'task:calendarReminders', ttlSeconds: 55, logger: this.logger },
+      async () => {
+        const sent = await this.eventAnswers.sweepDue();
+        if (sent) this.logger.log(`Calendar reminders sent: ${sent}`);
+      },
+    );
   }
 }

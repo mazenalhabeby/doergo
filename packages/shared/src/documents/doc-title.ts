@@ -19,6 +19,7 @@
  * returns null rather than a sentence from the body, and the caller keeps the
  * type's label. A wrong name is worse than a generic one.
  */
+import { foldText } from '../utils/fold';
 
 export interface TitleLine {
   text: string;
@@ -70,7 +71,7 @@ const SMALL_WORDS = new Set([
   'de', 'du', 'la', 'le', 'les', 'et', 'di', 'del', 'della', 'e', 'el', 'y',
 ]);
 
-const fold = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const fold = foldText;
 
 const looksLikeDate = (s: string) =>
   /\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/.test(s) ||

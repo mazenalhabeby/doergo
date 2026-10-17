@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { LocationsController } from '../locations.controller';
+import { locationsControllers, type LocationsControllers } from './locations-controllers.fixture';
 
 /*
   Two routes on `:id` that the space guard could not scope, because the guard
@@ -23,7 +23,7 @@ function ctrl() {
   const queue = { assignMember: jest.fn().mockResolvedValue({ success: true }) };
   const billing = { rebill: jest.fn() };
   const spaceModules = { invalidate: jest.fn() };
-  const c = new (LocationsController as any)(service, queue, billing, { nudge: jest.fn() }, spaceModules) as LocationsController;
+  const c = locationsControllers(service, queue, billing, { nudge: jest.fn() }, spaceModules) as LocationsControllers;
   return { c, service, queue, billing };
 }
 

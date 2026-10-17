@@ -52,6 +52,8 @@ export const UPLOAD_RULES = {
   worklog: rule(UPLOAD_DOCUMENT_TYPES),
   /** No Word files — see the note above. */
   shiftIssue: rule(UPLOAD_PLAIN_DOCUMENT_TYPES),
+  /** Photos and the documents people pass around at work. */
+  chat: rule(UPLOAD_DOCUMENT_TYPES),
 } as const;
 
 /** Is this MIME type allowed by this rule? */

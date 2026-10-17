@@ -2,12 +2,14 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { OvertimeService } from './overtime.service';
 import { OvertimeRecordService } from './overtime-record.service';
+import { OvertimeSummaryService } from './overtime-summary.service';
 
 @Controller()
 export class OvertimeController {
   constructor(
     private readonly overtimeService: OvertimeService,
     private readonly record: OvertimeRecordService,
+    private readonly overtimeTotals: OvertimeSummaryService,
   ) {}
 
   @MessagePattern({ cmd: 'get_active_overtime' })
@@ -27,7 +29,7 @@ export class OvertimeController {
 
   @MessagePattern({ cmd: 'get_overtime_summary' })
   async getSummary(@Payload() data: any) {
-    return this.record.summary(data);
+    return this.overtimeTotals.summary(data);
   }
 
   @MessagePattern({ cmd: 'get_overtime_round' })

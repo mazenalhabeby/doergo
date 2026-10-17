@@ -3,10 +3,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth.service';
+import { AuthMailService } from '../auth-mail.service';
 import { AUTH_SERVICES } from '../auth-services';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AuditLogService } from '../../audit-log/audit-log.service';
 import { BillingService } from '../../billing/billing.service';
+import { BillingTrialService } from '../../billing/billing-trial.service';
 import { GraceTokenCache } from '../grace-token-cache.service';
 
 /*
@@ -39,11 +41,12 @@ describe('password reset email language', () => {
         { provide: ConfigService, useValue: { get: jest.fn((_k: string, fallback?: unknown) => fallback) } },
         { provide: AuditLogService, useValue: { log: jest.fn() } },
         { provide: BillingService, useValue: {} },
+        { provide: BillingTrialService, useValue: {} },
         { provide: GraceTokenCache, useValue: {} },
       ],
     }).compile();
     service = module.get(AuthService);
-    (service as any).mailRoutes = [
+    (module.get(AuthMailService) as any).mailRoutes = [
       { label: 'test', options: { host: 'test', port: 465 }, tx: { sendMail, verify: jest.fn().mockResolvedValue(true) } },
     ];
   });

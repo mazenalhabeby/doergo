@@ -2,6 +2,7 @@ import fs from "fs"
 import path from "path"
 
 import { code, listPage, strip } from "./_screen"
+import { readSource } from "../../../../test-utils/read-source"
 
 /*
   INVOICES BELONG TO A WORKSPACE THE WAY CLIENTS AND ASSETS DO.
@@ -19,7 +20,7 @@ import { code, listPage, strip } from "./_screen"
 */
 
 const DASHBOARD = path.join(__dirname, "../..")
-const read = (rel: string) => strip(fs.readFileSync(path.join(DASHBOARD, rel), "utf8"))
+const read = (rel: string) => strip(readSource(path.join(DASHBOARD, rel), "utf8"))
 
 describe("the workspace's invoices", () => {
   it("are reached at their own address, like clients and assets", () => {

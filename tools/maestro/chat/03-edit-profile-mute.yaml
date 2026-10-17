@@ -1,0 +1,36 @@
+# 03: Dana edits her reply (long press), sees Anna's profile from the header, mutes and unmutes.
+# Env: REPLY (the text to edit), EDITED (the new text).
+appId: com.hbcfield.app
+---
+- longPressOn: ".*${REPLY}.*"
+- extendedWaitUntil:
+    visible: "Edit"
+    timeout: 5000
+- tapOn: "Edit"
+- extendedWaitUntil:
+    visible: ".*Editing your message.*"
+    timeout: 5000
+- tapOn: ".*${REPLY}.*"
+- eraseText: 80
+- inputText: "${EDITED}"
+- tapOn: "Save"
+- extendedWaitUntil:
+    visible: ".*edited.*"
+    timeout: 10000
+- takeScreenshot: p7-edited
+- tapOn: "Turn notifications off"
+- tapOn: "For 1 hour"
+- extendedWaitUntil:
+    visible: "Notifications off"
+    timeout: 8000
+- takeScreenshot: p8-muted
+- tapOn: "Notifications off"
+- tapOn: "Turn notifications back on"
+- extendedWaitUntil:
+    visible: "Turn notifications off"
+    timeout: 8000
+- tapOn: ".*Anna Müller.*"
+- extendedWaitUntil:
+    visible: "Operations Manager"
+    timeout: 15000
+- takeScreenshot: p9-profile

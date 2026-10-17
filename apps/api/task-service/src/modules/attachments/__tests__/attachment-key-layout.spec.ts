@@ -1,3 +1,4 @@
+import { attachmentsParts } from './attachments.service.fixture';
 /**
  * Task attachments on the shared object store.
  *
@@ -43,7 +44,7 @@ function makeService(store: ReturnType<typeof makeStore>, task: any = { id: TASK
   };
   const notify: any = { emit: jest.fn() };
   const media = new MediaSigner(store as any);
-  const service = new AttachmentsService(prisma, store as any, media, notify, new TaskAccessService(prisma));
+  const service = attachmentsParts(prisma, store as any, media, notify, new TaskAccessService(prisma));
   return { service, prisma, notify };
 }
 

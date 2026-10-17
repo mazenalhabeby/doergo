@@ -4,6 +4,7 @@ import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { AnalyticsController } from './analytics.controller';
 import { AnalyticsService } from './analytics.service';
 import { ReportScheduleService } from './report-schedule.service';
+import { SavedReportsService } from './saved-reports.service';
 
 @Module({
   imports: [
@@ -11,6 +12,6 @@ import { ReportScheduleService } from './report-schedule.service';
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
   controllers: [AnalyticsController],
-  providers: [AnalyticsService, ReportScheduleService],
+  providers: [AnalyticsService, SavedReportsService, ReportScheduleService],
 })
 export class AnalyticsModule {}

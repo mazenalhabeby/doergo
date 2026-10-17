@@ -5,10 +5,11 @@
  */
 import fs from "node:fs"
 import path from "node:path"
+import { readSource } from "../test-utils/read-source"
 
 const root = path.join(__dirname, "..")
 const readOne = (rel: string) =>
-  fs.readFileSync(path.join(root, rel), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")
+  readSource(path.join(root, rel), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")
 // A path ending in "/" is a SCREEN split across files: every .ts/.tsx directly in that folder.
 const read = (rel: string) =>
   rel.endsWith("/")
@@ -24,13 +25,13 @@ const PICKERS = [
   "app/(dashboard)/locations/[id]/_components/apartment-dialog.tsx",
   "components/assets/holder-picker.tsx",
   "components/assets/contract-dialog.tsx",
-  "app/(dashboard)/reports/page.tsx",
+  "app/(dashboard)/reports/use-reports-page-data.ts",
 ]
 const LETTERHEADS = [
   "app/(dashboard)/invoices/[id]/page.tsx",
   "app/(dashboard)/invoices/[id]/edit/page.tsx",
   "app/(dashboard)/invoices/new/page.tsx",
-  "app/(dashboard)/reports/page.tsx",
+  "app/(dashboard)/reports/use-reports-page-data.ts",
 ]
 
 describe("member pickers read people through useAssignableMembers", () => {

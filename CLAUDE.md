@@ -517,6 +517,27 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > **Pre-check** (`request-precheck.ts` + task-service `RequestPrecheckService`): every answer is an existing reader — `requestClashes` (the ONE overlap reader, shared with sending), the working-day count, the leave ledger, the wallchart's `CoverService` (the member gets the LEVEL, never who is off), the planned shift (`plannedWindows`) against `DAILY_WORK_GUIDE_MINUTES` (600, a warning), and the office rules (`secondStepFor`). Advice only — sending still runs every rule. Phone: `PrecheckCard` on the leave form and every request form (asked 450 ms after the form settles; the reason is not part of the key).
 
+### Chat: groups, a job's chat, search (`/chat`, phase 3 — LOCAL, not deployed)
+| Method | Endpoint | Description | Gate |
+|---|---|---|---|
+| GET | `/chat/capabilities` | `{ mayCreateGroup }` | any member |
+| POST · PATCH | `/chat/groups` · `/chat/groups/:id` | Start (`{title, memberIds}`) · rename | start: org-wide `canManageUsers` or the space-leader permission, never external; rename/add/remove: the creator or a manager |
+| POST · DELETE · POST | `/chat/groups/:id/members` · `/members/:userId` · `/leave` | Add · take out · leave | same; leave: anybody in it |
+| POST | `/chat/tasks/:taskId` | Open (or create) a job's chat | the normal job gate, own org only, **404** |
+| GET | `/chat/search?q&before` | Words in the caller's OWN conversations, newest first | membership joined in the SQL |
+
+> Plan + decisions: `docs/plans/chat-team.md` §5. Migration `20261016090000_chat_groups_tasks_search` (additive). E2E `node tools/chat-phase3-e2e.mjs` (LOCAL, 39 checks).
+>
+> ⚠️ **A group is never a way round the contact rules**: the person starting or adding must be allowed to message EVERY person (`assertMayAddToGroup`), asked at that moment; same company only. Group/job sends ask the sender's own Messaging switch (off means off).
+>
+> ⚠️ **A job's chat follows the CREW** (`syncTaskChatCrew`, called from `afterAssigneesChanged`): `CREW` rows added/removed with the crew; `OFFICE` rows (opened through the job gate) are re-gated on every read/write and removed when the gate fails — the crew never removes them. Closed (409 `CHAT_TASK_CLOSED`) once the job is over (`taskChatClosed`), still readable.
+>
+> ⚠️ **System lines are messages** (`Message.kind = SYSTEM`, `meta` = a names snapshot): no unread, no push (`silent`), never editable (404). The apps write the sentence (`chatSystemLine` → `chat.system.*`).
+>
+> ⚠️ **`messages.search` is a GENERATED tsvector + GIN index in SQL only** — Prisma cannot express it; a `migrate diff` lists it as drift, keep it. `chatSearchQuery` keeps only letters/digits, so nothing typed reaches tsquery syntax. Phone search is ONLINE ONLY.
+>
+> ⚠️ Member changes emit `chat_members_changed` → the socket's member cache forgets the thread (typing/viewing) + `chat.conversationUpdated {conversationId, removed}` to every affected person.
+
 ### Documents — the personnel file (`/documents`)
 > The whole filing cabinet: what the organization ISSUES to a member (contracts, payslips) and what a member SUPPLIES to it (passport, licence). Types are configuration; documents are records; signatures are evidence.
 
@@ -1555,6 +1576,10 @@ export class TasksController {
 // Paginated
 { data: T[], meta: { total, page, limit, totalPages } }
 ```
+
+### Size and formatting (the ratchet)
+- A source file ≤ **300 lines**, a line ≤ **140 characters**. Today's offenders are recorded in `tools/size-baseline.json`: they may shrink, never grow; a new file must be under both. `pnpm size:check` (also runs in task-service's tests); after shrinking a file, `pnpm size:update` (it only ever lowers).
+- Prettier at 120, each app's own quote/semicolon style. Run `pnpm format:changed` on what you touched — **never format the whole repo**.
 
 ### File Naming
 ```

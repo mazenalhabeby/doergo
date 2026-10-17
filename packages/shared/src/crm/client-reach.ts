@@ -2,6 +2,7 @@ import { ORG_ACCESS_SELECT, memberAccessOf, type OrgAccessRow } from '../access/
 import { effectiveSpaceModules } from '../types';
 import { crmReachOf, crmReachOrgOnly, NO_CRM_CAPS, type CrmReach } from './crm-reach';
 
+import { activeWindowWhere } from '../access/assignment-window';
 /**
  * A member's CRM reach, read from the DATABASE — the CRM's own rule
  * (auth-service `CustomersService.crmReachFor`) and every other service that
@@ -31,7 +32,7 @@ export function crmReachSelect(now: Date = new Date()) {
     organization: { select: { enabledModules: true } },
     spaceAssignments: {
       // The same window the session uses (activeAssignmentWhere, minus the user).
-      where: { effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] },
+      where: { ...activeWindowWhere(now) },
       select: {
         spaceId: true,
         role: { select: { permissions: true, isActive: true } },

@@ -11,6 +11,7 @@ import { objectStoreProvider } from './object-store.provider';
 import { CredentialExpiryService } from './credential-expiry.service';
 import { DOCUMENT_READERS, OcrRulesReader, PdfTextReader } from './document-reader';
 import { DocumentReadQueue } from './document-read-queue.service';
+import { ComplianceBoardService } from './compliance-board.service';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { DocumentReadQueue } from './document-read-queue.service';
     CustomerSignLinkService,
     CustomerSignMailerService,
     CredentialExpiryService,
+    ComplianceBoardService,
     // Reads a document's machine-readable zone in-process, so members'
     // passports never leave the box.
     MrzOcrService,

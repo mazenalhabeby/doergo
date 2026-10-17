@@ -30,217 +30,57 @@ import { PROFILE_GLYPHS } from './profile-glyphs';
 import { useShift } from '../../offline/attendance/use-shift';
 import { offersClockInPick, parseClockInPick } from '@hbcfield/shared/client';
 import { hasUnsentLocalWork } from '../../lib/session/end-session';
-
-const THEME_MODE_I18N: Record<ThemeMode, string> = {
-  system: 'profile.theme.system',
-  light: 'profile.theme.light',
-  dark: 'profile.theme.dark',
-};
-
+import { useProfileScreen } from './use-profile-screen';
+import { THEME_MODE_I18N, Group, Row } from './profile-screen-helpers';
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export function ProfileScreen() {
-  const { user, logout, refreshUser, patchUser } = useAuth();
-  const offline = useOffline();
-  // "Clock in" means something only with more than one workspace to clock in at.
-  const clockInOffered = offersClockInPick(useShift().status?.assignedLocations?.length ?? 0);
-  const { snapshot: syncSnapshot } = useSyncStatus();
-  const [showUnsentConfirm, setShowUnsentConfirm] = useState(false);
-  const { amazen, mode } = useTheme();
-  const c = amazen.color;
-  const toast = useToast();
-  const { t } = useTranslation();
-  const { pickFromGallery, takePhoto } = useImagePicker();
-  // Already loaded for the home card — this reads the same fetch, not a second one.
-  const { total: outstandingDocs, blocksWork: docsBlockWork } = useDocumentRequirements();
-  /*
-    Whether "What I have" appears at all.
-
-    Decided by whether this member actually holds anything, not by a permission
-    and not by a module flag: most members hold nothing, and a permanent row
-    that opens an empty screen is how a menu teaches people to stop reading it.
-  */
-  const { held, canPropose } = useHeldAssets();
-  /* Without the Documents option, My equipment is where a contract is sent in — so it must be reachable with nothing held. */
-  const contractHere = canPropose && !orgHasAddOn(user?.orgAddOns ?? null, 'documents');
-
-  const [avatarLoading, setAvatarLoading] = useState(false);
-  const [savingPresence, setSavingPresence] = useState(false);
-  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
-  const [guidesOpen, setGuidesOpen] = useState(false);
-  const tourScroll = useTourScroll();
-
-  // Availability control (mirrors the web navbar toggle): Available / Busy / Away.
-  const handleSetPresence = useCallback(async (presence: 'AVAILABLE' | 'BUSY' | 'AWAY') => {
-    setSavingPresence(true);
-    try {
-      if (offline.engine && user?.id) {
-        const outcome = await updateOwnProfile(offline.engine, user.id, { presence });
-        if (outcome.kind === 'refused') throw new Error(outcome.message);
-        patchUser({ presence });
-        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-        return;
-      }
-      await userApi.setPresence(presence);
-      await refreshUser();
-    } catch (err) {
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('profile.status.failed', 'Could not update status'));
-    } finally {
-      setSavingPresence(false);
-    }
-  }, [refreshUser, toast, t, offline.engine, user?.id, patchUser]);
-  const hasRefreshed = useRef(false);
-  const lastFetchTimeRef = useRef(0);
-
-  // Refresh user data when profile screen is focused (picks up admin edits)
-  useFocusEffect(
-    useCallback(() => {
-      if (hasRefreshed.current) {
-        if (Date.now() - lastFetchTimeRef.current < 30000) return;
-        lastFetchTimeRef.current = Date.now();
-        refreshUser();
-      }
-      hasRefreshed.current = true;
-    }, [refreshUser])
-  );
-
-  const isTechnician = user?.role === Role.EMPLOYEE;
-  const appVersion = Constants.expoConfig?.version || '1.0.0';
-  const { status: versionStatus } = useVersionStatus();
-  /*
-    A photo chosen (or removed) without signal shows at once and is sent when
-    a connection returns — see offline/profile/pending-avatar.ts.
-  */
-  const [pendingAvatar, setPendingAvatar] = useState<AvatarChange | null>(null);
-  useEffect(() => {
-    const queue = offline.avatar;
-    if (!queue) {
-      setPendingAvatar(null);
-      return;
-    }
-    void queue.current().then(setPendingAvatar);
-    return queue.subscribe((change) => {
-      setPendingAvatar(change);
-      if (!change) void refreshUser();
-    });
-  }, [offline.avatar, refreshUser]);
-  const shownAvatarUri = pendingAvatar?.kind === 'photo' ? pendingAvatar.uri
-    : pendingAvatar?.kind === 'remove' ? null
-    : user?.avatarUrl ? resolveMediaUrl(user.avatarUrl) : null;
-  const hasAvatar = !!shownAvatarUri;
-
-  // ---- avatar upload flow ------------------------------------------------
-
-  const uploadAvatar = useCallback(async (uri: string, fileName: string, mimeType: string) => {
-    setAvatarLoading(true);
-    try {
-      if (offline.avatar && offline.files) {
-        // Kept on the phone first, so it survives no signal and a closed app.
-        const fileId = uuidv7();
-        const kept = await offline.files.keep({ id: fileId, kind: 'photo', mime: mimeType, uri });
-        await offline.avatar.set({ kind: 'photo', fileId, uri: kept.path, mime: kept.mime, fileName, at: Date.now() });
-        const result = await offline.avatar.flush();
-        if (result === 'waiting') toast.info(t('offline.savedForLater'));
-        if (result === 'refused') toast.error(t('profile.uploadFailed'), t('profile.couldNotUpload'));
-        return;
-      }
-      // Upload the avatar (multipart) — returns the new avatar URL
-      await avatarApi.upload(uri, fileName, mimeType);
-
-      // Refresh user data
-      await refreshUser();
-    } catch (err: any) {
-      toast.error(t('profile.uploadFailed'), err?.message || t('profile.couldNotUpload'));
-    } finally {
-      setAvatarLoading(false);
-    }
-  }, [refreshUser, offline.avatar, offline.files]);
-
-  const handleRemoveAvatar = useCallback(async () => {
-    setAvatarLoading(true);
-    try {
-      if (offline.avatar) {
-        await offline.avatar.set({ kind: 'remove', at: Date.now() });
-        const result = await offline.avatar.flush();
-        if (result === 'waiting') toast.info(t('offline.savedForLater'));
-        return;
-      }
-      await avatarApi.remove();
-      await refreshUser();
-    } catch (err: any) {
-      toast.error(t('common.error'), err?.message || t('profile.couldNotRemove'));
-    } finally {
-      setAvatarLoading(false);
-    }
-  }, [refreshUser, offline.avatar]);
-
-  // The photo menu is a sheet in the design system, not a platform alert.
-  const [photoMenu, setPhotoMenu] = useState(false);
-  const handleAvatarPress = useCallback(() => {
-    if (!avatarLoading) setPhotoMenu(true);
-  }, [avatarLoading]);
-  const pickPhoto = useCallback(async (from: 'camera' | 'gallery') => {
-    setPhotoMenu(false);
-    if (from === 'camera') {
-      const photo = await takePhoto('avatar');
-      if (photo) void uploadAvatar(photo.uri, photo.fileName, photo.mimeType);
-    } else {
-      const images = await pickFromGallery('avatar');
-      const img = images[0];
-      if (img) void uploadAvatar(img.uri, img.fileName, img.mimeType);
-    }
-  }, [takePhoto, pickFromGallery, uploadAvatar]);
-
-  // ---- handlers -----------------------------------------------------------
-
-  const handleAppearancePress = useCallback(() => {
-    router.push('/profile/appearance' as Href);
-  }, []);
-
-  const handleTimeFormatPress = useCallback(() => {
-    router.push('/profile/time-format' as Href);
-  }, []);
-
-  const handleLogout = () => {
-    /*
-      ⚠️ Work that exists only on this phone is asked about first.
-
-      Signing out deletes the member's offline database — the queue with it. A
-      plain "Sign out?" would let somebody throw away a morning of clock-ins and
-      photos with one tap, so unsent work gets its own question.
-    */
-    // `running`, not `engine`: with offline mode off a phone may still hold queued work.
-    // The old work-log queue counts too — the same rule the session end uses.
-    if (offline.running?.hasUnsent()) {
-      setShowUnsentConfirm(true);
-      return;
-    }
-    void (user?.id ? hasUnsentLocalWork(user.id) : Promise.resolve(false)).then((unsent) =>
-      unsent ? setShowUnsentConfirm(true) : setShowSignOutConfirm(true),
-    );
-  };
-
-  const confirmSignOut = async () => {
-    setShowSignOutConfirm(false);
-    setShowUnsentConfirm(false);
-    // Nothing unsent, or the member chose to delete it: the phone's copy goes too.
-    // Everything else a sign-out clears is `endSession`'s, the same for every exit.
-    await logout({ keepUnsent: false });
-  };
-  /* ---------------- the page ---------------- */
-
-  const r = useResponsive();
-  const wide = r.isTablet ? centeredContent(640) : null;
-  const back = () => (router.canGoBack() ? router.back() : router.navigate('/(app)/(tabs)' as Href));
-  const presence = user?.presence ?? 'AVAILABLE';
-  const lang = supportedLanguages.find((l) => l.code === getCurrentLanguage());
-  const waitingOnPhone = syncSnapshot.attention + syncSnapshot.waiting;
-  const badges = user?.profileBadges;
-  const showSpecialty = badges?.showSpecialty !== false;
-  const roleLine = [user?.position, isTechnician && showSpecialty ? user?.specialty : null].filter(Boolean).join(' · ');
+  const {
+    user,
+    offline,
+    clockInOffered,
+    syncSnapshot,
+    showUnsentConfirm,
+    setShowUnsentConfirm,
+    amazen,
+    mode,
+    c,
+    t,
+    outstandingDocs,
+    docsBlockWork,
+    held,
+    contractHere,
+    avatarLoading,
+    savingPresence,
+    showSignOutConfirm,
+    setShowSignOutConfirm,
+    guidesOpen,
+    setGuidesOpen,
+    tourScroll,
+    handleSetPresence,
+    appVersion,
+    versionStatus,
+    shownAvatarUri,
+    hasAvatar,
+    handleRemoveAvatar,
+    photoMenu,
+    setPhotoMenu,
+    handleAvatarPress,
+    pickPhoto,
+    handleAppearancePress,
+    handleTimeFormatPress,
+    handleLogout,
+    confirmSignOut,
+    wide,
+    back,
+    presence,
+    lang,
+    waitingOnPhone,
+    roleLine,
+  } = useProfileScreen();
 
   return (
     <Ground style={{ flex: 1 }}>
@@ -406,57 +246,5 @@ export function ProfileScreen() {
 
       <GuideSheet visible={guidesOpen} onClose={() => setGuidesOpen(false)} />
     </Ground>
-  );
-}
-
-/** A labelled group of rows on a well. Children that render nothing leave no divider behind. */
-function Group({ label, children }: { label: string; children: React.ReactNode }) {
-  const { amazen } = useTheme();
-  const rows = React.Children.toArray(children).filter(Boolean);
-  if (!rows.length) return null;
-  return (
-    <View style={{ gap: amazen.space(2) }}>
-      <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(1) }}>{label}</SectionLabel>
-      <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-        {rows.map((row, i) => (
-          <React.Fragment key={i}>
-            {i > 0 ? <WellDivider /> : null}
-            {row}
-          </React.Fragment>
-        ))}
-      </Well>
-    </View>
-  );
-}
-
-function Row({
-  glyph, label, value, valueTone, count = 0, countTone = 'warn', onPress,
-}: {
-  glyph: keyof typeof PROFILE_GLYPHS;
-  label: string;
-  value?: string;
-  valueTone?: 'accent';
-  count?: number;
-  countTone?: 'warn' | 'critical';
-  onPress: () => void;
-}) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
-  const G = PROFILE_GLYPHS[glyph];
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={value ? `${label}, ${value}` : label}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(3), opacity: pressed ? 0.8 : 1 })}>
-      <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
-        <G size={19} color={c.accent} contrast={c.well} />
-      </View>
-      <AText variant="body" tone="strong" numberOfLines={1} style={{ flex: 1, fontSize: 14.5 }}>{label}</AText>
-      {value ? <AText variant="caption" numberOfLines={1} style={{ fontSize: 13, color: valueTone === 'accent' ? c.accent : c.inkMuted, maxWidth: '40%' }}>{value}</AText> : null}
-      {count > 0 ? (
-        <View style={{ minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, backgroundColor: countTone === 'critical' ? c.criticalTint : c.warnTint, alignItems: 'center', justifyContent: 'center' }}>
-          <AText variant="caption" tone={countTone} numeric>{String(count)}</AText>
-        </View>
-      ) : null}
-      <AText variant="body" tone="muted">›</AText>
-    </Pressable>
   );
 }

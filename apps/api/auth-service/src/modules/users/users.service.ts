@@ -6,6 +6,11 @@ import { EmployeeDetailService } from './employee-detail.service';
 import { MemberAdminService } from './member-admin.service';
 import { OwnAccountService } from './own-account.service';
 import { MemberWatchersService } from './member-watchers.service';
+import { MemberOwnershipService } from './member-ownership.service';
+import { MemberProfileService } from './member-profile.service';
+import { EmployeeWriteService } from './employee-write.service';
+import { AccessRoleWriteService } from './access-role-write.service';
+import { OrgMembersService } from './org-members.service';
 
 /**
  * Members and their access — THE FACADE.
@@ -23,10 +28,15 @@ export class UsersService implements OnApplicationBootstrap {
 
   constructor(
     private readonly roles: AccessRolesService,
+    private readonly roleWrites: AccessRoleWriteService,
     private readonly directory: MemberDirectoryService,
+    private readonly orgMembers: OrgMembersService,
     private readonly employees: EmployeesService,
+    private readonly employeeWrites: EmployeeWriteService,
     private readonly employeeDetail: EmployeeDetailService,
     private readonly admin: MemberAdminService,
+    private readonly memberProfile: MemberProfileService,
+    private readonly ownership: MemberOwnershipService,
     private readonly ownAccount: OwnAccountService,
     private readonly watchers: MemberWatchersService,
   ) {}
@@ -60,12 +70,12 @@ export class UsersService implements OnApplicationBootstrap {
     return this.employeeDetail.getEmployeeDetail(...args);
   }
 
-  createEmployee(...args: Parameters<EmployeesService['createEmployee']>) {
-    return this.employees.createEmployee(...args);
+  createEmployee(...args: Parameters<EmployeeWriteService['createEmployee']>) {
+    return this.employeeWrites.createEmployee(...args);
   }
 
-  updateEmployee(...args: Parameters<EmployeesService['updateEmployee']>) {
-    return this.employees.updateEmployee(...args);
+  updateEmployee(...args: Parameters<EmployeeWriteService['updateEmployee']>) {
+    return this.employeeWrites.updateEmployee(...args);
   }
 
   deactivateEmployee(...args: Parameters<EmployeesService['deactivateEmployee']>) {
@@ -76,44 +86,44 @@ export class UsersService implements OnApplicationBootstrap {
     return this.directory.listOrgContacts(...args);
   }
 
-  listOrgMembers(...args: Parameters<MemberDirectoryService['listOrgMembers']>) {
-    return this.directory.listOrgMembers(...args);
+  listOrgMembers(...args: Parameters<OrgMembersService['listOrgMembers']>) {
+    return this.orgMembers.listOrgMembers(...args);
   }
 
-  getOrgMemberById(...args: Parameters<MemberDirectoryService['getOrgMemberById']>) {
-    return this.directory.getOrgMemberById(...args);
+  getOrgMemberById(...args: Parameters<OrgMembersService['getOrgMemberById']>) {
+    return this.orgMembers.getOrgMemberById(...args);
   }
 
-  transferOwnership(...args: Parameters<MemberAdminService['transferOwnership']>) {
-    return this.admin.transferOwnership(...args);
+  transferOwnership(...args: Parameters<MemberOwnershipService['transferOwnership']>) {
+    return this.ownership.transferOwnership(...args);
   }
 
-  setAssignedHome(...args: Parameters<MemberAdminService['setAssignedHome']>) {
-    return this.admin.setAssignedHome(...args);
+  setAssignedHome(...args: Parameters<MemberOwnershipService['setAssignedHome']>) {
+    return this.ownership.setAssignedHome(...args);
   }
 
   removeMember(...args: Parameters<MemberAdminService['removeMember']>) {
     return this.admin.removeMember(...args);
   }
 
-  updateMemberProfile(...args: Parameters<MemberAdminService['updateMemberProfile']>) {
-    return this.admin.updateMemberProfile(...args);
+  updateMemberProfile(...args: Parameters<MemberProfileService['updateMemberProfile']>) {
+    return this.memberProfile.updateMemberProfile(...args);
   }
 
   listAccessRoles(...args: Parameters<AccessRolesService['listAccessRoles']>) {
     return this.roles.listAccessRoles(...args);
   }
 
-  createAccessRole(...args: Parameters<AccessRolesService['createAccessRole']>) {
-    return this.roles.createAccessRole(...args);
+  createAccessRole(...args: Parameters<AccessRoleWriteService['createAccessRole']>) {
+    return this.roleWrites.createAccessRole(...args);
   }
 
-  updateAccessRole(...args: Parameters<AccessRolesService['updateAccessRole']>) {
-    return this.roles.updateAccessRole(...args);
+  updateAccessRole(...args: Parameters<AccessRoleWriteService['updateAccessRole']>) {
+    return this.roleWrites.updateAccessRole(...args);
   }
 
-  deleteAccessRole(...args: Parameters<AccessRolesService['deleteAccessRole']>) {
-    return this.roles.deleteAccessRole(...args);
+  deleteAccessRole(...args: Parameters<AccessRoleWriteService['deleteAccessRole']>) {
+    return this.roleWrites.deleteAccessRole(...args);
   }
 
   updateOwnProfile(...args: Parameters<OwnAccountService['updateOwnProfile']>) {

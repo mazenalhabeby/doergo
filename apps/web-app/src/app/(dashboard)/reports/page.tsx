@@ -7,13 +7,6 @@ import { useTranslation } from "react-i18next"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { CHART_COLORS } from "./_components/chart-colors"
-
-// recharts is heavy and only renders when a report actually produces a chart
-// (audit R-C1). ssr:false — it measures the DOM.
-const ReportBarChart = dynamic(
-  () => import("./_components/report-bar-chart").then((m) => m.ReportBarChart),
-  { ssr: false },
-)
 import { Timer, BarChart3, Download, FileText, Play, Clock, Save, Trash2, Pencil, Lock, CalendarClock, ChevronDown, Table2, SlidersHorizontal } from "lucide-react"
 
 import {
@@ -40,294 +33,75 @@ import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { personName, localizeReportColumns, reportLabel, toCsv, localDateKey, todayKey, toISODateString } from "@hbcfield/shared/client"
-
-const DATE_PRESETS: { value: ReportDatePreset; label: string }[] = [
-  { value: "last_7d", label: "Last 7 days" }, { value: "last_30d", label: "Last 30 days" },
-  { value: "last_90d", label: "Last 90 days" }, { value: "this_month", label: "This month" },
-  { value: "last_month", label: "Last month" }, { value: "this_year", label: "This year" }, { value: "all", label: "All time" },
-]
-const GRANULARITIES: { value: ReportGranularity; label: string }[] = [
-  { value: "none", label: "No time split" }, { value: "day", label: "Daily" },
-  { value: "week", label: "Weekly" }, { value: "month", label: "Monthly" },
-]
-
-// The table, its chart and the PDF read one cell formatter, in the reader's language.
-function fmt(value: unknown, format?: string): string {
-  return formatReportCell(value, format, dateLocale())
-}
-// Through the shared builder: every cell quoted, formula-looking cells defused.
-function toCSV(result: ReportResult): string {
-  return toCsv(result.rows, result.columns.map((c) => ({ header: c.label, value: (r: (typeof result.rows)[number]) => r[c.key] })))
-}
-
-// Tasteful, colorful chart palette (Stripe-ish).
-
-// Selectable columns for the detailed timesheet. Every column is freely
-// toggleable; the picker only enforces that at least one stays selected.
-// Named from the same catalogue as the table headings (`col.<key>`), so the
-// chip and the column it adds cannot be called two different things.
-const TIMESHEET_COLS: string[] = [
-  "date", "day", "shiftStart", "shiftEnd", "clockIn", "clockOut", "break", "hours", "hoursInShift",
-  "late", "overtime", "jobs", "leaveReason", "location", "remote", "note", "status",
-]
-const TIMESHEET_DEFAULT = ["date", "day", "shiftStart", "shiftEnd", "clockIn", "clockOut", "break", "hours", "hoursInShift", "status"]
-/*
-  The column key stays `hours` (saved choices keep working); what it holds is
-  clock time minus breaks, so its chip reads "Hours worked" beside "Hours in
-  shift" — two numbers called "Hours" would be read as the same thing.
-*/
-const TIMESHEET_LABEL: Record<string, string> = { hours: "col.hoursWorked" }
-
-/** KPI totals for the measure columns — sum, or average for percentages. */
-function statCards(result: ReportResult): { label: string; value: string; format?: string }[] {
-  return result.columns
-    .filter((c) => c.kind === "measure")
-    .map((c) => {
-      const nums = result.rows.map((r) => Number(r[c.key]) || 0)
-      const total = nums.reduce((a, b) => a + b, 0)
-      const v = c.format === "percent" && nums.length ? total / nums.length : total
-      return { label: c.label, value: fmt(v, c.format), format: c.format }
-    })
-}
-
-interface ActiveReport {
-  def: ReportDefinition
-  name: string
-  builder: boolean // editable measures/dimensions/dataset
-  savedId?: string
-  detail?: boolean // attendance "Detailed" view (day-by-day per user) instead of aggregate
-  userId?: string // for the detailed timesheet
-}
+import { useReportsPage, DATE_PRESETS, fmt } from "./use-reports-page"
+import {
+  ReportBarChart,
+  GRANULARITIES,
+  TIMESHEET_COLS,
+  TIMESHEET_LABEL,
+  statCards,
+} from "./reports-page-helpers"
+import { ReportsPageDataset } from "./reports-page-dataset"
+import { ReportsPageScheduleTitle } from "./reports-page-schedule-title"
 
 export default function ReportsPage() {
-  const { t, i18n } = useTranslation()
-  /*
-    Column and dataset names are the system's own, and read in the viewer's
-    language from REPORT_LABELS — the catalogue the scheduled email reads too.
-    What the table shows is what the CSV and PDF take away, so localizing the
-    result once below names the export in the same language.
-  */
-  const lang = i18n.language
-  const { hasPlanFeature } = useAuth()
-  const { formatSchedule } = useTimeFormat()
-  const qc = useQueryClient()
-  const canBuild = hasPlanFeature("reports_builder")
-  const canSchedule = hasPlanFeature("report_scheduling")
-
-  const [active, setActive] = useState<ActiveReport | null>(null)
-  const [result, setResult] = useState<ReportResult | null>(null)
-  const [saveOpen, setSaveOpen] = useState(false)
-  const [saveMeta, setSaveMeta] = useState({ name: "", description: "", isShared: true })
-  const [schedOpen, setSchedOpen] = useState(false)
-  const [schedForm, setSchedForm] = useState<{ cadence: ReportCadence; hour: number; dayOfWeek: number; dayOfMonth: number; recipients: string }>({ cadence: "weekly", hour: 7, dayOfWeek: 1, dayOfMonth: 1, recipients: "" })
-  const [pdfOpen, setPdfOpen] = useState(false)
-  const [tsCols, setTsCols] = useState<string[]>(TIMESHEET_DEFAULT)
-
-  const { data: catalog } = useQuery({ queryKey: keys.reports.catalog(), queryFn: () => analyticsApi.catalog() })
-  const { data: saved } = useQuery({ queryKey: keys.reports.saved(), queryFn: () => analyticsApi.listSaved() })
-  // Letterhead from what this reader may read (the profile is ADMIN-only) — hooks/use-org-letterhead.
-  const { data: orgProfile } = useOrgLetterhead()
-  const { data: customersData } = useQuery({ queryKey: keys.customers.list({ limit: 200 }), queryFn: () => customersApi.list({ limit: 200 }) })
-  const customers = customersData?.data || []
-  // People to report on: the directory for whoever may read it, else the rosters they can see.
-  const { members } = useAssignableMembers({})
-  const datasets = catalog?.datasets || []
-  const dsMeta: DatasetMeta | undefined = datasets.find((d) => d.key === active?.def.dataset)
-  // "Detailed" attendance view (day-by-day per user) — only for the attendance dataset.
-  const isAttendance = active?.def.dataset === "attendance"
-  const isDetail = !!active?.detail && isAttendance
-  const hasCustomerDim = !isDetail && !!dsMeta?.dimensions.some((d) => d.key === "customer")
-  // Current single-customer "eq" filter value (customer dimension is name-based).
-  const customerFilter = active?.def.filters?.find((f) => f.field === "customer" && f.op === "eq")?.value as string | undefined
-
-  const run = useMutation({
-    mutationFn: (def: ReportDefinition) => analyticsApi.run(def),
-    onSuccess: setResult,
-    onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to run report"),
-  })
-  const timesheet = useMutation({
-    mutationFn: (p: { userId: string; from?: string; to?: string }) => analyticsApi.timesheet(p.userId, { from: p.from, to: p.to }),
-    onSuccess: (data) => {
-      setResult({ columns: data.columns, rows: data.rows })
-      setActive((a) => (a ? { ...a, name: `${t("reports.timesheetFor", "Timesheet")} — ${data.userName}` } : a))
-    },
-    onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to load timesheet"),
-  })
-  const save = useMutation({
-    mutationFn: async () => {
-      if (!active) return
-      const input = { name: saveMeta.name, description: saveMeta.description, config: active.def, isShared: saveMeta.isShared }
-      return active.savedId ? analyticsApi.updateSaved(active.savedId, input) : analyticsApi.createSaved(input)
-    },
-    onSuccess: (r) => {
-      qc.invalidateQueries({ queryKey: keys.reports.saved() })
-      setSaveOpen(false)
-      if (r) setActive({ def: r.config, name: r.name, builder: canBuild, savedId: r.id })
-      notify.success(t("reports.saved", "Report saved"))
-    },
-    onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to save"),
-  })
-  const del = useMutation({
-    mutationFn: (id: string) => analyticsApi.deleteSaved(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: keys.reports.saved() }); setActive(null); setResult(null); notify.success(t("reports.deleted", "Report deleted")) },
-    onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to delete"),
-  })
-
-  const { data: schedules } = useQuery({
-    queryKey: keys.reports.schedules(active?.savedId),
-    queryFn: () => analyticsApi.listSchedules(active!.savedId!),
-    enabled: !!active?.savedId && canSchedule && schedOpen,
-  })
-  const createSched = useMutation({
-    mutationFn: () => analyticsApi.createSchedule({
-      reportDefinitionId: active!.savedId!,
-      cadence: schedForm.cadence,
-      hour: schedForm.hour,
-      dayOfWeek: schedForm.cadence === "weekly" ? schedForm.dayOfWeek : null,
-      dayOfMonth: schedForm.cadence === "monthly" ? schedForm.dayOfMonth : null,
-      recipients: schedForm.recipients.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean),
-    }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: keys.reports.schedules() }); setSchedForm((f) => ({ ...f, recipients: "" })); notify.success(t("reports.scheduled", "Schedule created")) },
-    onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to schedule"),
-  })
-  const delSched = useMutation({
-    mutationFn: (id: string) => analyticsApi.deleteSchedule(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.reports.schedules() }),
-  })
-
-  const pickSaved = (r: SavedReport) => { setResult(null); setActive({ def: r.config, name: r.name, builder: false, savedId: r.id }) }
-  const newReport = () => {
-    setResult(null)
-    const ds = datasets[0]
-    if (!ds) return
-    setActive({ def: { dataset: ds.key, measures: ds.measures[0] ? [ds.measures[0].key] : [], dimensions: [], granularity: "none", dateRange: { preset: "last_30d" } }, name: t("reports.untitled", "Untitled report"), builder: true })
-  }
-  // Default to the builder on first load (no templates — the dataset selector is always the entry point).
-  useEffect(() => {
-    if (!active && datasets.length) newReport()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [datasets.length])
-  const resolveRange = (dr?: ReportDefinition["dateRange"]): { from?: string; to?: string } => {
-    if (!dr) return {}
-    if (dr.from || dr.to) return { from: dr.from, to: dr.to }
-    const now = new Date()
-    // Emit LOCAL calendar dates as YYYY-MM-DD. Using toISOString() here converted
-    // local midnight to UTC and shifted the month boundary to the previous day
-    // (e.g. "last month" started on Jun 30 instead of Jul 1) for users east of UTC.
-    const ymd = (d: Date) => localDateKey(d)
-    const Y = now.getFullYear(), M = now.getMonth(), D = now.getDate()
-    switch (dr.preset) {
-      case "last_7d": return { from: ymd(new Date(Y, M, D - 6)), to: ymd(now) }
-      case "last_90d": return { from: ymd(new Date(Y, M, D - 89)), to: ymd(now) }
-      case "this_month": return { from: ymd(new Date(Y, M, 1)), to: ymd(now) }
-      case "last_month": return { from: ymd(new Date(Y, M - 1, 1)), to: ymd(new Date(Y, M, 0)) }
-      case "this_year": return { from: ymd(new Date(Y, 0, 1)), to: ymd(now) }
-      case "last_30d": default: return { from: ymd(new Date(Y, M, D - 29)), to: ymd(now) }
-    }
-  }
-  const runTimesheet = () => {
-    if (!active?.userId) return
-    const { from, to } = resolveRange(active.def.dateRange)
-    timesheet.mutate({ userId: active.userId, from, to })
-  }
-
-  const patchDef = (p: Partial<ReportDefinition>) => setActive((a) => (a ? { ...a, def: { ...a.def, ...p } } : a))
-  // Scope the report to a single customer (or clear). Uses the name-based
-  // customer dimension so it works on any dataset that has one.
-  const setCustomerFilter = (name: string | undefined) =>
-    setActive((a) => {
-      if (!a) return a
-      const others = (a.def.filters || []).filter((f) => f.field !== "customer")
-      const filters = name ? [...others, { field: "customer", op: "eq" as const, value: name }] : others
-      return { ...a, def: { ...a.def, filters } }
-    })
-  const toggleArr = (key: "measures" | "dimensions", val: string) =>
-    setActive((a) => {
-      if (!a) return a
-      const cur = a.def[key] || []
-      const next = cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val]
-      return { ...a, def: { ...a.def, [key]: next } }
-    })
-
-  const openSave = () => { setSaveMeta({ name: active?.savedId ? active.name : "", description: "", isShared: true }); setSaveOpen(true) }
-  const download = () => {
-    if (!displayResult || !active) return
-    const blob = new Blob([toCSV(displayResult)], { type: "text/csv;charset=utf-8;" })
-    downloadBlob(blob, `${active.name.replace(/\s+/g, "-").toLowerCase()}-${todayKey()}.csv`)
-  }
-  // Human range label for the export subtitle (preset OR custom from–to).
-  const rangeLabel = (() => {
-    const dr = active?.def.dateRange
-    if (!dr) return undefined
-    if (dr.from || dr.to) {
-      const f = dr.from ? new Date(dr.from).toLocaleDateString(dateLocale()) : "…"
-      const to = dr.to ? new Date(dr.to).toLocaleDateString(dateLocale()) : "now"
-      return `${f} – ${to}`
-    }
-    return DATE_PRESETS.find((p) => p.value === dr.preset)?.label
-  })()
-  // When scoped to one customer, feed their details into the PDF header.
-  const preparedFor = (() => {
-    if (!customerFilter) return undefined
-    const c = customers.find((x) => x.name === customerFilter)
-    if (!c) return { name: customerFilter, lines: [] as string[] }
-    return { name: c.name, lines: [c.contactName || "", c.address || "", [c.phone, c.email].filter(Boolean).join("  •  ")].filter(Boolean) as string[] }
-  })()
-  const pdfMeta = active
-    ? { title: active.name, subtitle: rangeLabel, preparedFor }
-    : { title: "" }
-
-  // Period control: "custom" when an explicit from/to range is set.
-  const isCustomRange = !!(active?.def.dateRange?.from || active?.def.dateRange?.to)
-  const toDateInput = (iso?: string) => (iso ? toISODateString(new Date(iso)) : "")
-
-  const supportsTime = active && (active.def.granularity !== undefined)
-  // For the detailed timesheet, show only the user-selected columns.
-  const displayResult = useMemo<ReportResult | null>(() => {
-    if (!result) return null
-    if (!isDetail) return { ...result, columns: localizeReportColumns(result.columns, lang) }
-    const keep = new Set(tsCols)
-    // Clock-in/out arrive from the backend as 24h "HH:MM" strings. Re-format them
-    // to honor the user's 12h/24h preference (set in Settings). Only non-empty
-    // values are touched, so blank days still render "—".
-    /*
-      Hours in shift follow the columns chosen: the planned time inside the
-      rota, minus Late when Late is shown, plus approved Overtime when Overtime
-      is shown. Recomputed here so the table, the totals and the CSV/PDF all
-      carry the same number.
-    */
-    const lateOn = keep.has("late")
-    const otOn = keep.has("overtime")
-    const rows = result.rows.map((r) => {
-      const nr = { ...r }
-      for (const k of ["shiftStart", "shiftEnd", "clockIn", "clockOut"]) if (nr[k]) nr[k] = formatSchedule(String(nr[k]))
-      if (nr.plannedInShift !== undefined) {
-        const v = Number(nr.plannedInShift) - (lateOn ? Number(nr.late) || 0 : 0) + (otOn ? Number(nr.overtime) || 0 : 0)
-        nr.hoursInShift = Math.max(0, Math.round(v * 100) / 100)
-      }
-      return nr
-    })
-    return { columns: localizeReportColumns(result.columns.filter((c) => keep.has(c.key)), lang), rows }
-  }, [result, isDetail, tsCols, formatSchedule, lang])
-  const measureCols = displayResult?.columns.filter((c) => c.kind === "measure") || []
-  const labelCol = displayResult?.columns.find((c) => c.kind === "period" || c.kind === "dimension")
-  const chartMeasure = measureCols[0]
-  const chartData = chartMeasure && labelCol
-    ? (displayResult?.rows.slice(0, 12).map((r) => ({ label: String(fmt(r[labelCol.key], labelCol.format)), value: Number(r[chartMeasure.key]) || 0 })) || [])
-    : []
-
-  const NavBtn = ({ activeKey, onClick, icon: Icon, label, desc, onDelete, dataTour }: { activeKey: boolean; onClick: () => void; icon: typeof Clock; label: string; desc?: string; onDelete?: () => void; dataTour?: string }) => (
-    <div data-tour={dataTour} className={cn("group/nav w-full rounded-xl border px-2.5 py-2.5 transition-all cursor-pointer flex items-start gap-2.5", activeKey ? "border-primary/50 bg-primary/[0.05] shadow-sm" : "border-transparent hover:bg-accent/50")} onClick={onClick}>
-      <div className={cn("grid place-items-center h-8 w-8 rounded-lg shrink-0 transition-colors", activeKey ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover/nav:text-foreground")}>
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="min-w-0 flex-1 pt-0.5">
-        <div className="text-sm font-medium text-foreground truncate">{label}</div>
-        {desc && <p className="text-xs text-muted-foreground mt-0.5 leading-snug line-clamp-2">{desc}</p>}
-      </div>
-      {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete() }} className="opacity-0 group-hover/nav:opacity-100 text-muted-foreground hover:text-red-600 shrink-0 pt-0.5"><Trash2 className="h-3.5 w-3.5" /></button>}
-    </div>
-  )
+  const s = useReportsPage()
+  const {
+    t,
+    lang,
+    canBuild,
+    canSchedule,
+    active,
+    setActive,
+    result,
+    saveOpen,
+    setSaveOpen,
+    saveMeta,
+    setSaveMeta,
+    schedOpen,
+    setSchedOpen,
+    schedForm,
+    setSchedForm,
+    pdfOpen,
+    setPdfOpen,
+    tsCols,
+    setTsCols,
+    saved,
+    orgProfile,
+    customers,
+    members,
+    datasets,
+    dsMeta,
+    isAttendance,
+    isDetail,
+    hasCustomerDim,
+    customerFilter,
+    run,
+    timesheet,
+    save,
+    del,
+    schedules,
+    createSched,
+    delSched,
+    pickSaved,
+    newReport,
+    runTimesheet,
+    patchDef,
+    setCustomerFilter,
+    toggleArr,
+    openSave,
+    download,
+    rangeLabel,
+    pdfMeta,
+    isCustomRange,
+    toDateInput,
+    supportsTime,
+    displayResult,
+    labelCol,
+    chartMeasure,
+    chartData,
+    NavBtn,
+  } = s
 
   return (
     <div className="min-h-full bg-background">
@@ -421,161 +195,7 @@ export default function ReportsPage() {
                 </div>
 
                 {/* ── Configure & run ─────────────────────────────────────────── */}
-                <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] divide-y divide-border/60">
-                  {/* Builder fields */}
-                  {active.builder && dsMeta && (
-                    <div className="p-4 space-y-3">
-                      {/* Dataset */}
-                      <div data-tour="reports-dataset" className="flex items-center gap-3">
-                        <Label className="text-xs w-20 shrink-0">{t("reports.dataset", "Dataset")}</Label>
-                        <Select value={active.def.dataset} onValueChange={(v) => { const d = datasets.find((x) => x.key === v); setActive((a) => (a ? { ...a, detail: false, def: { ...a.def, dataset: v, measures: d?.measures[0] ? [d.measures[0].key] : [], dimensions: [], filters: [] } } : a)) }}>
-                          <SelectTrigger className="h-9 w-[220px] text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>{datasets.map((d) => <SelectItem key={d.key} value={d.key} className="text-xs">{reportLabel(lang, d.labelKey, d.label)}</SelectItem>)}</SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Attendance-only: Summary vs Detailed (day-by-day per user) */}
-                      {isAttendance && (
-                        <div className="flex items-center gap-3">
-                          <Label className="text-xs w-20 shrink-0">{t("reports.view", "View")}</Label>
-                          <div className="flex gap-1">
-                            {([["summary", "Summary"], ["detail", "Detailed"]] as const).map(([v, label]) => {
-                              const on = (v === "detail") === isDetail
-                              return <button key={v} onClick={() => setActive((a) => (a ? { ...a, detail: v === "detail" } : a))} className={cn("rounded-lg border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{t(`reports.view_${v}`, label)}</button>
-                            })}
-                          </div>
-                          {isDetail && <span className="text-[11px] text-muted-foreground">{t("reports.detailHint", "Day-by-day clock-in/out for one person")}</span>}
-                        </div>
-                      )}
-
-                      {isDetail ? (
-                        /* Detailed timesheet: pick the user + columns */
-                        <>
-                          <div className="flex items-center gap-3">
-                            <Label className="text-xs w-20 shrink-0">{t("reports.user", "User")}</Label>
-                            <Select value={active.userId ?? ""} onValueChange={(v) => setActive((a) => (a ? { ...a, userId: v } : a))}>
-                              <SelectTrigger className="h-9 w-[240px] text-xs"><SelectValue placeholder={t("reports.pickUser", "Select a technician…")} /></SelectTrigger>
-                              <SelectContent>
-                                {members.map((m) => <SelectItem key={m.id} value={m.id} className="text-xs">{personName(m)}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="flex items-start gap-3">
-                            <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.columns", "Columns")}</Label>
-                            <div className="flex flex-wrap gap-1.5">
-                              {TIMESHEET_COLS.map((key) => {
-                                const on = tsCols.includes(key)
-                                // Keep at least one column so the report is never empty.
-                                const isLast = on && tsCols.length === 1
-                                return (
-                                  <button
-                                    key={key}
-                                    disabled={isLast}
-                                    onClick={() => setTsCols((cur) => (cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key]))}
-                                    className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground", isLast && "cursor-default")}
-                                  >
-                                    {reportLabel(lang, TIMESHEET_LABEL[key] ?? `col.${key}`, key)}
-                                  </button>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div data-tour="reports-measures" className="flex items-start gap-3">
-                            <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.measures", "Measures")}</Label>
-                            <div className="flex flex-wrap gap-1.5">
-                              {dsMeta.measures.map((m) => {
-                                const on = (active.def.measures || []).includes(m.key)
-                                return <button key={m.key} onClick={() => toggleArr("measures", m.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{reportLabel(lang, m.labelKey, m.label)}</button>
-                              })}
-                            </div>
-                          </div>
-                          <div data-tour="reports-dimensions" className="flex items-start gap-3">
-                            <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.groupByDim", "Group by")}</Label>
-                            <div className="flex flex-wrap gap-1.5">
-                              {dsMeta.dimensions.map((dim) => {
-                                const on = (active.def.dimensions || []).includes(dim.key)
-                                return <button key={dim.key} onClick={() => toggleArr("dimensions", dim.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{reportLabel(lang, dim.labelKey, dim.label)}</button>
-                              })}
-                            </div>
-                          </div>
-                          {/* Scope to one customer → the export becomes their statement. */}
-                          {hasCustomerDim && (
-                            <div className="flex items-center gap-3">
-                              <Label className="text-xs w-20 shrink-0">{t("reports.customer", "Customer")}</Label>
-                              <Select value={customerFilter ?? "__all__"} onValueChange={(v) => setCustomerFilter(v === "__all__" ? undefined : v)}>
-                                <SelectTrigger className="h-9 w-[220px] text-xs"><SelectValue placeholder={t("reports.allCustomers", "All customers")} /></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="__all__" className="text-xs">{t("reports.allCustomers", "All customers")}</SelectItem>
-                                  {customers.map((c) => <SelectItem key={c.id} value={c.name} className="text-xs">{c.name}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                              {customerFilter && <span className="text-[11px] text-muted-foreground">{t("reports.customerScoped", "Export shows this customer's details")}</span>}
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Period / time split + Run */}
-                  <div data-tour="reports-period" className="flex flex-wrap items-end gap-3 p-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs text-muted-foreground">{t("reports.period", "Period")}</label>
-                      <Select
-                        value={isCustomRange ? "__custom__" : (active.def.dateRange?.preset || "last_30d")}
-                        onValueChange={(v) => {
-                          if (v === "__custom__") {
-                            const to = new Date(); const from = new Date(to.getTime() - 30 * 86400000)
-                            patchDef({ dateRange: { from: from.toISOString(), to: to.toISOString() } })
-                          } else patchDef({ dateRange: { preset: v as ReportDatePreset } })
-                        }}
-                      >
-                        <SelectTrigger className="h-9 w-[160px] text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {DATE_PRESETS.map((p) => <SelectItem key={p.value} value={p.value} className="text-xs">{p.label}</SelectItem>)}
-                          <SelectItem value="__custom__" className="text-xs">{t("reports.customRange", "Custom range…")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {isCustomRange && (
-                      <>
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">{t("reports.from", "From")}</label>
-                          <Input type="date" value={toDateInput(active.def.dateRange?.from)} max={toDateInput(active.def.dateRange?.to) || undefined}
-                            onChange={(e) => patchDef({ dateRange: { ...active.def.dateRange, from: e.target.value ? new Date(e.target.value).toISOString() : undefined } })}
-                            className="h-9 w-[150px] text-xs" />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">{t("reports.to", "To")}</label>
-                          <Input type="date" value={toDateInput(active.def.dateRange?.to)} min={toDateInput(active.def.dateRange?.from) || undefined}
-                            onChange={(e) => patchDef({ dateRange: { ...active.def.dateRange, to: e.target.value ? new Date(e.target.value + "T23:59:59").toISOString() : undefined } })}
-                            className="h-9 w-[150px] text-xs" />
-                        </div>
-                      </>
-                    )}
-                    {!isDetail && supportsTime && (
-                      <div className="space-y-1.5">
-                        <label className="text-xs text-muted-foreground">{t("reports.timeSplit", "Time split")}</label>
-                        <Select value={active.def.granularity || "none"} onValueChange={(v) => patchDef({ granularity: v as ReportGranularity })}>
-                          <SelectTrigger className="h-9 w-[150px] text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>{GRANULARITIES.map((g) => <SelectItem key={g.value} value={g.value} className="text-xs">{g.label}</SelectItem>)}</SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                    {isDetail ? (
-                      <Button data-tour="reports-run" className="gap-1.5 h-9 ml-auto" disabled={timesheet.isPending || !active.userId} onClick={runTimesheet}>
-                        <Play className="h-3.5 w-3.5" />{timesheet.isPending ? t("reports.running", "Running…") : t("reports.run", "Run report")}
-                      </Button>
-                    ) : (
-                      <Button data-tour="reports-run" className="gap-1.5 h-9 ml-auto" disabled={run.isPending || !(active.def.measures?.length)} onClick={() => run.mutate(active.def)}>
-                        <Play className="h-3.5 w-3.5" />{run.isPending ? t("reports.running", "Running…") : t("reports.run", "Run report")}
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                <ReportsPageDataset s={s} />
 
                 {!canBuild && (
                   <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Lock className="h-3 w-3" />{t("reports.builderLocked", "Custom report builder is available on Professional and above.")}</p>
@@ -657,71 +277,7 @@ export default function ReportsPage() {
       </Dialog>
 
       {/* Schedule dialog */}
-      <Dialog open={schedOpen} onOpenChange={setSchedOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{t("reports.scheduleTitle", "Schedule email delivery")}</DialogTitle></DialogHeader>
-
-          {/* Existing schedules */}
-          {schedules && schedules.length > 0 && (
-            <div className="space-y-1.5 rounded-lg border border-border p-2">
-              {schedules.map((s) => (
-                <div key={s.id} className="flex items-center gap-2 text-xs">
-                  <CalendarClock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="flex-1 min-w-0 truncate">
-                    <span className="font-medium capitalize">{s.cadence}</span> @ {String(s.hour).padStart(2, "0")}:00 UTC → {s.recipients.join(", ")}
-                  </span>
-                  <button onClick={() => delSched.mutate(s.id)} className="text-muted-foreground hover:text-red-600 shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* New schedule */}
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">{t("reports.cadence", "Frequency")}</Label>
-                <Select value={schedForm.cadence} onValueChange={(v) => setSchedForm({ ...schedForm, cadence: v as ReportCadence })}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily" className="text-xs">Daily</SelectItem>
-                    <SelectItem value="weekly" className="text-xs">Weekly</SelectItem>
-                    <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">{t("reports.hour", "Hour (UTC)")}</Label>
-                <Input type="number" min={0} max={23} value={schedForm.hour} onChange={(e) => setSchedForm({ ...schedForm, hour: Math.min(23, Math.max(0, Number(e.target.value) || 0)) })} />
-              </div>
-            </div>
-            {schedForm.cadence === "weekly" && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">{t("reports.dayOfWeek", "Day of week")}</Label>
-                <Select value={String(schedForm.dayOfWeek)} onValueChange={(v) => setSchedForm({ ...schedForm, dayOfWeek: Number(v) })}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>{["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((d, i) => <SelectItem key={i} value={String(i)} className="text-xs">{d}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            )}
-            {schedForm.cadence === "monthly" && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">{t("reports.dayOfMonth", "Day of month (1–28)")}</Label>
-                <Input type="number" min={1} max={28} value={schedForm.dayOfMonth} onChange={(e) => setSchedForm({ ...schedForm, dayOfMonth: Math.min(28, Math.max(1, Number(e.target.value) || 1)) })} />
-              </div>
-            )}
-            <div className="space-y-1.5">
-              <Label className="text-xs">{t("reports.recipients", "Recipients (comma-separated emails)")}</Label>
-              <Input value={schedForm.recipients} onChange={(e) => setSchedForm({ ...schedForm, recipients: e.target.value })} placeholder="anna@example.com, john@example.com" />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setSchedOpen(false)}>{t("common.close", "Close")}</Button>
-            <Button disabled={!schedForm.recipients.trim() || createSched.isPending} onClick={() => createSched.mutate()}>{createSched.isPending ? t("common.saving", "Saving…") : t("reports.addSchedule", "Add schedule")}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ReportsPageScheduleTitle s={s} />
 
       {/* Full-screen PDF export studio — visual template gallery + live preview */}
       <ReportExportStudio

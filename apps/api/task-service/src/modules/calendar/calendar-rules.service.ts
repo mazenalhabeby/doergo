@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  notEndedWhere,
   PrismaService,
   countLeave,
   holidayDays,
@@ -158,7 +159,7 @@ export class CalendarRulesService {
       where: {
         organizationId,
         userId: { in: userIds },
-        OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+        ...notEndedWhere(),
         space: { isActive: true, isRemote: false },
       },
       select: { userId: true, spaceId: true },

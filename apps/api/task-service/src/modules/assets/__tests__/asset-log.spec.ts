@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, NotFoundException, ConflictExc
 import { Prisma } from '@prisma/client';
 import { kindTemplate } from '@hbcfield/shared';
 import { AssetAccessService } from '../asset-access.service';
-import { AssetLogService } from '../asset-log.service';
+import { assetLogParts } from './asset-log.service.fixture';
 import { AssetLogReminderService } from '../asset-log-reminder.service';
 
 /**
@@ -59,7 +59,9 @@ function setup(opts: { held?: boolean; spaceId?: string | null } = {}) {
   const custody: any = { heldBy: jest.fn(async () => opts.held ?? false) };
   const expenses: any = { review: jest.fn(async () => ({ data: { status: 'RECORDED' } })), forgetReceipt: jest.fn() };
   const store: any = { head: jest.fn(async () => ({ exists: true, sizeBytes: 1000 })), presignUpload: jest.fn(async () => ({ url: 'u' })) };
-  const service = new AssetLogService(prisma, new AssetAccessService(prisma), custody, expenses, store);
+  const service = assetLogParts(prisma, new AssetAccessService(prisma), custody, expenses, store);
+  // review moved to AssetExpenseReviewService, injected as a property (2026-10-17).
+  (service as any).expenseReviews = expenses;
   return { service, prisma, tx, custody, expenses, store };
 }
 

@@ -1,31 +1,31 @@
-'use client';
+"use client"
 
-import { useEffect, useState, Suspense, type ReactNode } from 'react';
-import { BootScreen } from '@/components/skeletons/boot-screen';
-import { useRouter, usePathname } from 'next/navigation';
-import { PageContentSkeleton } from '@/components/skeletons';
-import { ErrorBoundary } from '@/components/error-boundary';
-import { TopNavbar } from '@/components/top-navbar';
-import { FirstSpaceGate } from '@/components/first-space-gate';
-import { BillingBanner } from '@/components/billing-banner';
-import { CommandPalette } from '@/components/command-palette';
-import { ActivityPanelProvider } from '@/contexts/activity-panel-context';
-import { CommandPaletteProvider } from '@/contexts/command-palette-context';
-import { useAuth } from '@/contexts/auth-context';
-import { getAccessPlatforms } from '@hbcfield/shared/client';
-import { Smartphone, LogOut, Building2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { SocketProvider } from '@/contexts/socket-context';
-import { BreadcrumbProvider } from '@/contexts/breadcrumb-context';
-import { TokenDebugPanel } from '@/components/token-debug';
-import { useRealtimeSync } from '@/hooks/use-realtime-sync';
-import { ChatProvider } from '@/components/chat/chat-drawer';
-import { TourProvider } from '@/components/tour';
-import { MobileAppInterstitial } from '@/components/mobile-app-interstitial';
-import { StoreBadges } from '@/app/_home/StoreBadges';
-import { useTranslation } from 'react-i18next';
-import { NoPageAccess } from '@/components/no-page-access';
-import { useRouteAccess } from '@/hooks/use-route-access';
+import { useEffect, useState, Suspense, type ReactNode } from "react"
+import { BootScreen } from "@/components/skeletons/boot-screen"
+import { useRouter, usePathname } from "next/navigation"
+import { PageContentSkeleton } from "@/components/skeletons"
+import { ErrorBoundary } from "@/components/error-boundary"
+import { TopNavbar } from "@/components/top-navbar"
+import { FirstSpaceGate } from "@/components/first-space-gate"
+import { BillingBanner } from "@/components/billing-banner"
+import { CommandPalette } from "@/components/command-palette"
+import { ActivityPanelProvider } from "@/contexts/activity-panel-context"
+import { CommandPaletteProvider } from "@/contexts/command-palette-context"
+import { useAuth } from "@/contexts/auth-context"
+import { getAccessPlatforms } from "@hbcfield/shared/client"
+import { Smartphone, LogOut, Building2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { SocketProvider } from "@/contexts/socket-context"
+import { BreadcrumbProvider } from "@/contexts/breadcrumb-context"
+import { TokenDebugPanel } from "@/components/token-debug"
+import { useRealtimeSync } from "@/hooks/use-realtime-sync"
+import { ChatProvider } from "@/components/chat/chat-provider"
+import { TourProvider } from "@/components/tour"
+import { MobileAppInterstitial } from "@/components/mobile-app-interstitial"
+import { StoreBadges } from "@/app/_home/StoreBadges"
+import { useTranslation } from "react-i18next"
+import { NoPageAccess } from "@/components/no-page-access"
+import { useRouteAccess } from "@/hooks/use-route-access"
 
 // ---------------------------------------------------------------------------
 // Route-change progress bar — shows a slim animated bar at the top of the

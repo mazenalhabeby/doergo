@@ -1,0 +1,43 @@
+# 00: sign in as the seed-demo account given in EMAIL (LOCAL only; password from the seed, CLAUDE.md §11).
+appId: com.hbcfield.app
+---
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- runFlow:
+    when:
+      visible: "(you@company.com|EMAIL ADDRESS)"
+    commands:
+      - tapOn:
+          below: "EMAIL ADDRESS"
+          index: 0
+      - eraseText: 60
+      - inputText: "${EMAIL}"
+      - tapOn: "Enter your password"
+      - eraseText: 40
+      - inputText: "password123"
+      # Dismiss the keyboard by tapping the page (hideKeyboard is unreliable on iOS).
+      - tapOn: "Welcome back.*"
+      # The BUTTON — the heading "Sign In" matches the same words.
+      - tapOn:
+          text: "Sign in"
+          index: 1
+# iOS offers to save the password — decline (nothing is stored).
+- extendedWaitUntil:
+    visible: "(Not Now|Team)"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: "Not Now"
+    commands:
+      - tapOn: "Not Now"
+- extendedWaitUntil:
+    visible: "Team"
+    timeout: 120000
+- runFlow:
+    when:
+      visible: "Skip"
+    commands:
+      - tapOn: "Skip"

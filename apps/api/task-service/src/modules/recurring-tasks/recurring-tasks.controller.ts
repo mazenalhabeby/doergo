@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RecurringTasksService } from './recurring-tasks.service';
+import { RecurringRunnerService } from './recurring-runner.service';
 
 /**
  * Microservice Controller for Recurring Task Template Operations
@@ -9,7 +10,10 @@ import { RecurringTasksService } from './recurring-tasks.service';
  */
 @Controller()
 export class RecurringTasksController {
-  constructor(private readonly recurringTasksService: RecurringTasksService) {}
+  constructor(
+    private readonly recurringTasksService: RecurringTasksService,
+    private readonly runner: RecurringRunnerService,
+  ) {}
 
   @MessagePattern({ cmd: 'find_all_recurring_tasks' })
   async findAll(@Payload() data: { organizationId: string }) {
@@ -33,6 +37,6 @@ export class RecurringTasksController {
 
   @MessagePattern({ cmd: 'generate_recurring_task' })
   async generate(@Payload() data: { id: string; organizationId: string; userId: string }) {
-    return this.recurringTasksService.generate(data);
+    return this.runner.generate(data);
   }
 }

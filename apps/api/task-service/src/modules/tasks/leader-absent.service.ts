@@ -1,7 +1,15 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ClientProxy } from '@nestjs/microservices';
-import { ABSENCE_WHERE, runWithCronLock, TaskStatus, localPartsIn, toISODateString } from '@hbcfield/shared';
+import {
+  personName,
+  zoneOf,
+  ABSENCE_WHERE,
+  runWithCronLock,
+  TaskStatus,
+  localPartsIn,
+  toISODateString,
+} from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { CrewService } from './handover/crew.service';
@@ -85,7 +93,7 @@ export class LeaderAbsentService {
 
     let sent = 0;
     for (const job of jobs) {
-      const tz = job.space?.timezone || job.organization?.timezone || 'UTC';
+      const tz = zoneOf(job.space?.timezone, job.organization?.timezone);
       const { dateStr: today, minutesOfDay } = localPartsIn(now, tz);
       if (job.leadNoticeOn === today || minutesOfDay < MORNING_HOUR * 60) continue;
       if (!(offBy.get(job.assignedToId!) ?? []).some((r) => r.from <= today && today <= r.to)) continue;
@@ -119,8 +127,8 @@ export class LeaderAbsentService {
         taskId: job.id,
         taskTitle: job.title,
         recipientIds: recipients,
-        leaderName: job.assignedTo ? `${job.assignedTo.firstName} ${job.assignedTo.lastName}`.trim() : '',
-        actingName: acting ? `${acting.firstName} ${acting.lastName}`.trim() : null,
+        leaderName: job.assignedTo ? personName(job.assignedTo) : '',
+        actingName: acting ? personName(acting) : null,
       });
       sent++;
     }

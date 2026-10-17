@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
+  personName,
   SERVICE_NAMES,
   parseBreakPlan,
   nextBreakRemindAt,
@@ -225,7 +226,7 @@ export class BreakReminderService {
     this.notificationClient.emit(event, {
       entryId: entry.id,
       userId: entry.userId,
-      userName: entry.user ? `${entry.user.firstName} ${entry.user.lastName}` : '',
+      userName: entry.user ? personName(entry.user) : '',
       locationId: entry.locationId,
       locationName: entry.location?.name ?? 'your shift',
       organizationId: entry.organizationId,

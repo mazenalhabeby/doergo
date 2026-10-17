@@ -1,0 +1,264 @@
+<style>
+/* seats */
+.hallMap{display:flex;flex-direction:column;gap:7px;align-items:center}
+.court{width:120px;height:46px;border-radius:6px;border:1.5px solid rgba(242,178,99,.55);background:rgba(242,178,99,.07);display:grid;place-items:center;font-size:10.5px;color:var(--pWarn)}
+.blocks{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%}
+.blk{border:1px solid var(--phoneLine);border-radius:10px;padding:5px;display:flex;flex-direction:column;gap:3px;align-items:center}
+.blk small{font-size:10px;color:var(--phoneMuted)}
+.seats{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;width:100%}
+.s{aspect-ratio:1;border-radius:2px;background:rgba(241,246,250,.13)}
+.s.sea{background:#7fb2ff}.s.spo{background:var(--pWarn)}.s.inv{background:var(--pAccent)}.s.acc{background:#c79bff}.s.rel{background:rgba(241,246,250,.13);outline:1px dashed var(--pAccent)}.s.no{background:var(--pBad)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:10.5px;color:var(--phoneMuted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-inline-end:4px;vertical-align:-1px}
+.qr{width:150px;height:150px;margin:6px auto;border-radius:14px;background:#f1f6fa;padding:10px;display:grid;grid-template-columns:repeat(11,1fr);gap:1px}
+.qr b{background:#05080a;border-radius:1px}.qr b.o{background:transparent}
+.scanOk{border-radius:18px;padding:14px;text-align:center;background:rgba(102,219,186,.12);border:1px solid rgba(102,219,186,.4)}
+.scanBad{border-radius:18px;padding:12px;text-align:center;background:rgba(253,151,140,.12);border:1px solid rgba(253,151,140,.45)}
+.big{font-size:26px;font-weight:500}
+.mail{background:#f1f6fa;color:#0b1416;border-radius:16px;padding:12px;font-size:12.5px;line-height:1.6}
+.mail small{color:#55636a;display:block;font-size:10.5px}
+.mail .btn{margin-top:8px}
+.meter{height:10px;border-radius:5px;background:var(--pTile);position:relative;overflow:hidden}
+.meter i{position:absolute;inset-block:0;right:0;border-radius:5px}
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}
+</style>
+<div class="wrap" dir="rtl" lang="ar">
+  <header class="top">
+    <div>
+      <div class="eyebrow">إتش بي سي فيلد · مقترح · نادي كرة سلة</div>
+      <h1>مقاعد المباريات والدعوات</h1>
+      <p class="lede">النادي يدير مقاعد صالته، ويوزّعها على المشتركين والرعاة، والضيف المدعوّ يقول بنقرة واحدة: سآتي أو لن آتي. والمقعد الفارغ يعود ويُعطى لغيره.</p>
+    </div>
+    <div class="player">
+      <button class="play" id="play" aria-label="تشغيل الشرح الصوتي">
+        <svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>
+        <svg id="icPause" viewBox="0 0 24 24" fill="currentColor" hidden><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+      </button>
+      <div class="bar" id="bar" role="slider" aria-label="موضع التشغيل" tabindex="0"><i id="fill"></i></div>
+      <div class="time num" id="time">0:00 / __DUR__</div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="phoneCol">
+      <div class="phone" aria-hidden="true">
+        <div class="island"></div>
+        <div class="status"><span class="num" id="clk">9:41</span><span>HBCField</span></div>
+
+        <div class="screen on" data-scene="problem">
+          <div class="sTitle">المباراة ضد غراتس</div>
+          <div class="sSub">السبت <span class="num">18 Oct · 19:00</span> · <span class="num">2,000</span> مقعد</div>
+          <div class="card"><div class="ln"><span>مشتركون موسميون</span><span class="num">640</span></div><div class="ln"><span>مقاعد الرعاة</span><span class="num">180</span></div><div class="ln"><span>دعوات</span><span class="num">60</span></div></div>
+          <div class="card row"><span>مقاعد مجانية تبقى فارغة عادةً</span><span class="chip bad num">25–45%</span></div>
+          <div class="notif"><small>اليوم</small>هاتف، بريد، وملف إكسل · لا أحد يعرف من سيأتي</div>
+        </div>
+
+        <div class="screen" data-scene="hall">
+          <div class="sTitle">خريطة الصالة</div>
+          <div class="sSub">مساحة العمل · صالة النادي</div>
+          <div class="hallMap">
+            <div class="blocks" id="blocksTop"></div>
+            <div class="court">الملعب</div>
+            <div class="blocks" id="blocksBot"></div>
+          </div>
+          <div class="card row"><span>صالة كبار الضيوف</span><span class="chip num">سعة 40</span></div>
+          <div class="legend"><span><i style="background:#c79bff"></i>كرسي متحرك + مرافق</span><span><i style="background:rgba(241,246,250,.13)"></i>متاح</span></div>
+        </div>
+
+        <div class="screen" data-scene="rights">
+          <div class="sTitle">حقوق الموسم <span class="num">2026/27</span></div>
+          <div class="card"><div class="ln"><span>بنك محلي · راعٍ</span><span class="num">6 · B + 2 VIP</span></div><div class="ln"><span>مطاعم الجبل · راعٍ</span><span class="num">4 · C</span></div><div class="ln"><span>مارك فيبر · موسمي</span><span class="num">A · 4 · 12</span></div><div class="ln"><span>سارة فاغنر · موسمية</span><span class="num">A · 4 · 13</span></div></div>
+          <div class="hallMap"><div class="blocks" id="blocksRights"></div></div>
+          <div class="legend"><span><i style="background:#7fb2ff"></i>موسمي</span><span><i style="background:var(--pWarn)"></i>راعٍ</span><span><i style="background:rgba(241,246,250,.13)"></i>للبيع</span></div>
+          <div class="notif"><small>مباراة جديدة</small>تُحجز <span class="num">820</span> مقعداً لأصحابها تلقائياً</div>
+        </div>
+
+        <div class="screen" data-scene="invite">
+          <div class="mail"><small>نادي السلة ‹tickets@club.at› · بالألمانية</small><b>Einladung · Heimspiel gegen Graz</b><br>Sa., <span class="num">18.10. · 19:00</span> · Block B, Reihe 2, Platz 7<div class="btn">Antworten</div></div>
+          <div class="card"><div class="row"><span>هل ستأتي؟</span><span class="chip warn">حتى الأربعاء</span></div></div>
+          <div class="opts"><span class="opt sel">سآتي</span><span class="opt">لن آتي</span><span class="opt">تحويل لزميل</span></div>
+          <div class="card"><div class="ln"><span>مرافق</span><span>يوليا ب.</span></div><div class="ln"><span>طعام خاص (اختياري)</span><span>نباتي</span></div></div>
+          <div class="btn">إرسال</div>
+        </div>
+
+        <div class="screen" data-scene="deadline">
+          <div class="sTitle">الردود</div>
+          <div class="sSub">الموعد النهائي · الأربعاء <span class="num">18:00</span></div>
+          <div class="bars">
+            <div><div class="lab"><span>سيأتون</span><span class="num">142</span></div><div class="b"><i style="width:59%;background:var(--pAccent);right:0"></i></div></div>
+            <div><div class="lab"><span>لن يأتوا</span><span class="num">38</span></div><div class="b"><i style="width:16%;background:var(--pBad);right:0"></i></div></div>
+            <div><div class="lab"><span>لم يجيبوا</span><span class="num">60</span></div><div class="b"><i style="width:25%;background:var(--pWarn);right:0"></i></div></div>
+          </div>
+          <div class="notif"><small>عند الموعد</small><span class="num">98</span> مقعداً عادت للنادي</div>
+          <div class="opts"><span class="opt sel">قائمة الانتظار · أول من يقبل</span><span class="opt">إرجاع للبيع</span></div>
+        </div>
+
+        <div class="screen" data-scene="door">
+          <div class="sTitle">البوابة <span class="num">1</span></div>
+          <div class="sSub">القائمة على الهاتف · بلا إنترنت</div>
+          <div class="qr" id="qr"></div>
+          <div class="scanOk"><div class="big">✓ يوليا برانت</div><span style="font-size:12px">B · 2 · 8 · ضيفة بنك محلي</span></div>
+          <div class="scanBad"><b>مُسح من قبل</b><br><span style="font-size:12px">البوابة <span class="num">2</span> · قبل <span class="num">10</span> دقائق</span></div>
+        </div>
+
+        <div class="screen" data-scene="report">
+          <div class="sTitle">تقرير الرعاة</div>
+          <div class="sSub">الموسم حتى الآن · <span class="num">7</span> مباريات</div>
+          <div class="card"><div class="ln"><span>بنك محلي</span><span class="num">56 / 56 · 95%</span></div><div class="meter"><i style="width:95%;background:var(--pAccent)"></i></div>
+          <div class="ln"><span>مطاعم الجبل</span><span class="num">28 / 28 · 61%</span></div><div class="meter"><i style="width:61%;background:var(--pWarn)"></i></div></div>
+          <div class="card row"><span>بعد إعادة المقاعد الفارغة</span><span class="chip ok num">71% → 97%</span></div>
+        </div>
+
+        <div class="screen" data-scene="build">
+          <div class="sTitle">على ماذا يُبنى</div>
+          <div class="card"><div class="ln"><span>مساحة العمل = الصالة</span><span class="chip ok">موجود</span></div><div class="ln"><span>العملاء وجهات الاتصال</span><span class="chip ok">موجود</span></div><div class="ln"><span>بريد بلغة العميل · رابط آمن</span><span class="chip ok">موجود</span></div><div class="ln"><span>أول من يأخذ · تذكيرات</span><span class="chip ok">موجود</span></div><div class="ln"><span>تطبيق بلا إنترنت · كاميرا</span><span class="chip ok">موجود</span></div><div class="ln"><span>خريطة المقاعد · المباريات</span><span class="chip warn">جديد</span></div><div class="ln"><span>الحقوق · الدعوات · رمز الدخول</span><span class="chip warn">جديد</span></div></div>
+        </div>
+      </div>
+      <div class="caption" id="caption" aria-live="polite">اضغط تشغيل لتبدأ الشرح.</div>
+    </div>
+
+    <nav class="side" aria-label="الفصول">
+      <h2>الفصول</h2>
+      <button class="chap on" data-ch="problem"><span class="k num">__T_problem__</span><div><b>المشكلة</b><span>ربع المقاعد المجانية فارغ</span></div></button>
+      <button class="chap" data-ch="hall"><span class="k num">__T_hall__</span><div><b>خريطة الصالة</b><span>أقسام، صفوف، مقاعد</span></div></button>
+      <button class="chap" data-ch="rights"><span class="k num">__T_rights__</span><div><b>حقوق الموسم</b><span>تُحجز تلقائياً لكل مباراة</span></div></button>
+      <button class="chap" data-ch="invite"><span class="k num">__T_invite__</span><div><b>الدعوة</b><span>سآتي أو لن آتي، بلا حساب</span></div></button>
+      <button class="chap" data-ch="deadline"><span class="k num">__T_deadline__</span><div><b>الموعد النهائي</b><span>المقعد الفارغ يعود</span></div></button>
+      <button class="chap" data-ch="door"><span class="k num">__T_door__</span><div><b>الباب</b><span>رمز موقَّع، يعمل بلا إنترنت</span></div></button>
+      <button class="chap" data-ch="report"><span class="k num">__T_report__</span><div><b>تقرير الرعاة</b><span>من حضر فعلاً</span></div></button>
+      <button class="chap" data-ch="build"><span class="k num">__T_build__</span><div><b>على ماذا يُبنى</b><span>الموجود والجديد</span></div></button>
+    </nav>
+  </div>
+
+  <section class="rules">
+    <h2>حالة المقعد في كل مباراة</h2>
+    <p class="sectionLede">لكل مباراة ولكل مقعد سطر واحد، والتغيير بتحديث مشروط: مقعد واحد لا يُعطى لشخصين أبداً، حتى لو ضغطا في نفس اللحظة.</p>
+    <div class="tw"><table class="map2">
+      <thead><tr><th>الحالة</th><th>من أين</th><th>ماذا يحدث بعدها</th></tr></thead>
+      <tbody>
+        <tr><td>متاح</td><td>الخريطة</td><td>يُدعى عليه ضيف، أو يُباع لاحقاً</td></tr>
+        <tr><td>موسمي</td><td>حق المشترك، تلقائياً لكل مباراة على الأرض</td><td>المشترك يستطيع «لن آتي» فيعود للنادي لهذه المباراة فقط</td></tr>
+        <tr><td>راعٍ</td><td>حصة الراعي، تلقائياً</td><td>الراعي يوزّع مقاعده على موظفيه بالأسماء</td></tr>
+        <tr><td>مدعوّ · بانتظار الرد</td><td>دعوة أُرسلت</td><td>تذكير، ثم تذكير أخير، ثم يعود عند الموعد</td></tr>
+        <tr><td>مؤكَّد</td><td>الضيف قال «سآتي»</td><td>رمز دخول موقَّع بالبريد وفي التطبيق</td></tr>
+        <tr><td>أُعيد</td><td>رُفض أو لم يُجب عنه حتى الموعد</td><td>قائمة الانتظار (أول من يقبل) أو البيع</td></tr>
+        <tr><td>حضر</td><td>مسح الرمز عند الباب</td><td>يدخل في تقرير الراعي</td></tr>
+        <tr><td>محجوب</td><td>النادي (كاميرا، صحافة، أمن)</td><td>لا يُعرض أبداً</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="rules">
+    <h2>القواعد المهمة</h2>
+    <div class="groups">
+      <div class="group"><h3><span class="num">1</span>الدعوة</h3><ul>
+        <li>الضيف لا يحتاج حساباً: رابط آمن، يُحفظ منه البصمة فقط، وينتهي بعد المباراة.</li>
+        <li>البريد بلغة العميل، والتذكير قبل الموعد بثلاثة أيام ثم بيوم.</li>
+        <li>التحويل لزميل يلغي الرمز القديم ويصدر جديداً.</li>
+        <li>الراعي يوزّع حصته بنفسه، ولا يستطيع أن يأخذ أكثر منها.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">2</span>الباب</h3><ul>
+        <li>رمز كيو آر موقَّع: رقم التذكرة والمباراة والتوقيع. نسخة مزوّرة تُرفض.</li>
+        <li>قائمة الضيوف تُحمَّل على هاتف الموظف قبل المباراة، والمسح يعمل بلا إنترنت.</li>
+        <li>المسح المكرّر يظهر بالأحمر فوراً على نفس الهاتف، وبين البوابات عند المزامنة.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">§</span>القانون</h3><ul>
+        <li>البيانات الصحية والدينية (الطعام الخاص) اختيارية، بموافقة صريحة، وتُحذف بعد المباراة.</li>
+        <li>ضيف الراعي يُبلَّغ بسياسة الخصوصية في رسالة الدعوة (المادة 14 من اللائحة الأوروبية).</li>
+        <li>عند البيع لاحقاً: لا حق انسحاب لتذاكر حدث بتاريخ محدد، ويُكتب ذلك في الشروط. ضريبة دخول الفعاليات الرياضية في النمسا 13% عادةً، حسب شكل النادي القانوني.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="rules">
+    <h2>خريطة المقاعد: نشتريها أم نبنيها؟</h2>
+    <div class="compare">
+      <div class="group"><h3>شراء seats.io</h3><ul>
+        <li>جاهزة وجميلة، وفيها «أفضل مقعد متاح».</li>
+        <li>تُدفع لكل مقعد مستخدم: صالة ألفي مقعد، ثماني عشرة مباراة ≈ <span class="num">€4,500–7,200</span> في السنة لكل نادٍ.</li>
+        <li>كل بيانات المقاعد عند جهة أخرى.</li>
+      </ul></div>
+      <div class="group"><h3>نبنيها (الاقتراح)</h3><ul>
+        <li>صالة كرة سلة مدرّجات مستطيلة: قسم = صفوف × مقاعد، يُرسم ويُنسخ.</li>
+        <li>لا تكلفة لكل مقعد، والبيانات عندنا، وتعمل بلا إنترنت في التطبيق.</li>
+        <li>وحدة جديدة لكل مساحة عمل بسعر ثابت.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="rules">
+    <h2>المراحل</h2>
+    <div class="groups">
+      <div class="group"><h3><span class="num">v1</span>ما طلبه النادي</h3><ul>
+        <li>خريطة الصالة، والمباريات، وحقوق الموسم للمشتركين والرعاة.</li>
+        <li>الدعوات بالرابط والتطبيق: سآتي، لن آتي، تحويل، أسماء المرافقين.</li>
+        <li>الموعد النهائي، والتذكيرات، وإعادة المقعد، وقائمة الانتظار.</li>
+        <li>رمز الدخول والمسح بلا إنترنت، وتقرير الرعاة.</li>
+        <li>بلا بيع: النادي يبقي متجره الحالي للجمهور.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">v2</span>لاحقاً</h3><ul>
+        <li>بيع المقاعد بالدفع الإلكتروني، مع حجز مؤقت أثناء الاختيار.</li>
+        <li>بطاقات محفظة آبل وغوغل، ورمز متغيّر ضد لقطات الشاشة.</li>
+        <li>قوائم الطعام لصالة كبار الضيوف حسب الطاولة.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">✕</span>لا نبنيه</h3><ul>
+        <li>بوابات الدخول الآلية، والتسعير المتغيّر، وسوق إعادة البيع العامة.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer>مقترح، لم يُبنَ بعد · مصادر: wehave، Ticketmaster، seats.io، Sportico (71%→97%)، دراسات الحضور (25–45% فارغ) · الصوت بالعربية من ElevenLabs.</footer>
+</div>
+
+<audio id="vo" src="voice-ar.mp3" preload="metadata"></audio>
+<script>
+const T = __T__;
+// little seat grids
+function grid(el, n, paint){ const g=document.createElement('div'); g.className='seats'; for(let i=0;i<n;i++){const s=document.createElement('i'); s.className='s '+(paint(i)||''); g.appendChild(s);} el.appendChild(g); }
+function blocks(id, names, paint){ const host=document.getElementById(id); names.forEach((nm,b)=>{ const d=document.createElement('div'); d.className='blk'; d.innerHTML='<small>'+nm+'</small>'; grid(d,32,i=>paint(b,i)); host.appendChild(d); }); }
+blocks('blocksTop',['A','B','C'],(b,i)=> b===0&&i>=28?'acc':'');
+blocks('blocksBot',['D','E','F'],()=> '');
+blocks('blocksRights',['A','B','C'],(b,i)=> b===0&&i%3!==2?'sea': b===1&&i<14?'spo': b===2&&i<6?'spo': b===2&&i%4===0?'sea':'');
+// a decorative QR
+(function(){ const q=document.getElementById('qr'); let x=7; for(let r=0;r<11;r++)for(let c=0;c<11;c++){ const f=(r<3&&c<3)||(r<3&&c>7)||(r>7&&c<3); x=(x*73+19)%101; const b=document.createElement('b'); if(!(f||x%2)) b.className='o'; q.appendChild(b);} })();
+
+const vo = document.getElementById('vo'), play = document.getElementById('play');
+const icPlay = document.getElementById('icPlay'), icPause = document.getElementById('icPause');
+const fill = document.getElementById('fill'), bar = document.getElementById('bar'), time = document.getElementById('time');
+const caption = document.getElementById('caption'), clk = document.getElementById('clk');
+const screens = [...document.querySelectorAll('.screen')], chaps = [...document.querySelectorAll('.chap')];
+const CLOCK = {door:'18:42', report:'22:10', deadline:'18:00'};
+const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const dur = () => (isFinite(vo.duration) && vo.duration) || T.duration;
+let current = -1;
+function show(t) {
+  let i = 0;
+  for (let k = 0; k < T.caps.length; k++) if (T.caps[k][0] <= t + 0.05) i = k;
+  if (i !== current) {
+    current = i;
+    const [, , scene, text] = T.caps[i];
+    caption.textContent = text;
+    screens.forEach(s => s.classList.toggle('on', s.dataset.scene === scene));
+    clk.textContent = CLOCK[scene] || '9:41';
+  }
+  let ch = 0;
+  T.chapters.forEach(([, st], k) => { if (st <= t + 0.05) ch = k; });
+  chaps.forEach((c, k) => c.classList.toggle('on', k === ch));
+  fill.style.width = (100 * t / dur()) + '%';
+  time.textContent = fmt(t) + ' / ' + fmt(dur());
+}
+function setPlaying(p) { icPlay.hidden = p; icPause.hidden = !p; play.setAttribute('aria-label', p ? 'إيقاف مؤقت' : 'تشغيل الشرح الصوتي'); }
+play.addEventListener('click', () => { if (vo.paused) vo.play().catch(() => {}); else vo.pause(); });
+vo.addEventListener('play', () => setPlaying(true));
+vo.addEventListener('pause', () => setPlaying(false));
+vo.addEventListener('timeupdate', () => show(vo.currentTime));
+vo.addEventListener('ended', () => setPlaying(false));
+function seek(t) { vo.currentTime = Math.max(0, Math.min(dur() - 0.1, t)); show(vo.currentTime); }
+bar.addEventListener('click', e => { const r = bar.getBoundingClientRect(); seek(dur() * (r.right - e.clientX) / r.width); });
+bar.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') seek(vo.currentTime + 5); if (e.key === 'ArrowRight') seek(vo.currentTime - 5); });
+chaps.forEach(c => c.addEventListener('click', () => {
+  const st = (T.chapters.find(([id]) => id === c.dataset.ch) || [, 0])[1];
+  seek(st); if (vo.paused) vo.play().catch(() => {});
+}));
+show(0);
+</script>

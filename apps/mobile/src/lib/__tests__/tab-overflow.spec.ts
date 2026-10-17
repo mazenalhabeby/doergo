@@ -65,19 +65,16 @@ describe('the tab bar never exceeds five', () => {
       than it ever was a place.
     */
     const { barRoutes, overflowRoutes } = splitTabs(
-      r('team', 'time-off', 'create-task', 'chat', 'attendance', 'tasks', 'index'),
+      r('team', 'time-off', 'create-task', 'attendance', 'tasks', 'index'),
       true, // an admin also has the management rows
     );
     // Team took Messages' slot (2026-09-27): who is working, and a message to them, from the bar.
     expect(names(barRoutes)).toEqual(['index', 'tasks', 'attendance', 'team']);
-    expect(names(overflowRoutes)).toEqual(['chat', 'time-off', 'create-task']);
+    expect(names(overflowRoutes)).toEqual(['time-off', 'create-task']);
   });
 
-  it('Messages still comes before Time off when there is no Team tab', () => {
-    // The v2 set is fixed, and this is the half of it that changed.
-    const { barRoutes } = splitTabs(r('index', 'tasks', 'attendance', 'chat', 'time-off'), true);
-    expect(names(barRoutes)).toContain('chat');
-    expect(names(barRoutes)).not.toContain('time-off');
+  it('chat has no place in the order: it is Team → Messages, not a tab (2026-10-15)', () => {
+    expect(TAB_PRIORITY).not.toContain('chat');
   });
 
   it('orders by priority, not by the order routes happen to arrive in', () => {

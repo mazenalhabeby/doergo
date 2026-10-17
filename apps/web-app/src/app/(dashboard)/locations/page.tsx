@@ -1,6 +1,6 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
+import { keys, invalidateTaskLists } from "@/lib/query-keys"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { useState, memo } from "react"
 import { useTranslation } from "react-i18next"
@@ -57,21 +57,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ConfirmDialog } from "@/components/confirm-dialog"
-import { PAGE_SHELL } from "@/components/ui/page-width";
-
-// Module color mapping for pills
-const MODULE_COLORS: Record<string, string> = {
-  time_tracking: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-  sprints: "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
-  story_points: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-  epics: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-  phases: "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
-  custom_fields: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-}
-
-function getModuleLabel(key: string): string {
-  return AVAILABLE_MODULES.find((m) => m.key === key)?.label || key
-}
+import { PAGE_SHELL } from "@/components/ui/page-width"
+import { useSpaceDirectory } from "@/hooks/use-space-directory"
+import { EmptyState, SpaceCard, LEVEL_BADGE } from "./space-card"
+import { SharedWithUsSection, CreateSpaceDialog } from "./shared-with-us-section"
 
 // ============================================================================
 // MAIN PAGE
@@ -89,12 +78,8 @@ export default function SpacesPage() {
   const [archiveTarget, setArchiveTarget] = useState<CompanyLocation | null>(null)
   const [resyncAllOpen, setResyncAllOpen] = useState(false)
 
-  const { data, isLoading } = useQuery({
-    // The Spaces directory shows EVERY kind (incl. customer companies); work
-    // pickers elsewhere default to hiding CUSTOMER.
-    queryKey: keys.locations.list({ limit: 100, includeInactive: true, kind: "all" }),
-    queryFn: () => locationsApi.list({ limit: 100, includeInactive: true, kind: "all" }),
-  })
+  // The Spaces page shows EVERY kind and archived ones too — the whole directory.
+  const { data: directory, isLoading } = useSpaceDirectory()
 
   // GET /workflows is @RequirePermission('canViewAllTasks') — asked only of whoever holds it.
   const { holds } = useRouteAccess()
@@ -104,7 +89,7 @@ export default function SpacesPage() {
     enabled: holds("org:canViewAllTasks"),
   })
 
-  const locations = data?.data || []
+  const locations = directory ?? []
 
   // Unified space lifecycle — restore is instant; archive goes through the
   // shared type-to-confirm SpaceLifecycleDialog (same flow as space settings).
@@ -114,8 +99,7 @@ export default function SpacesPage() {
   const resyncAllMutation = useMutation({
     mutationFn: () => locationsApi.resyncAllTasks(),
     onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: keys.tasks.lists() })
-      queryClient.invalidateQueries({ queryKey: keys.tasks.counts() })
+      invalidateTaskLists(queryClient)
       setResyncAllOpen(false)
       notify.success(
         t("locations.toast.resyncAllDone", { updated: res?.updated ?? 0, spaces: res?.spacesProcessed ?? 0 }),
@@ -258,401 +242,5 @@ export default function SpacesPage() {
         />
       </div>
     </div>
-  )
-}
-
-// ============================================================================
-// EMPTY STATE
-// ============================================================================
-
-/*
-  The empty state offers the same action as the header, so it obeys the same
-  rule. A control disabled in one place and live in another is worse than one
-  that is live everywhere: it looks like a bug rather than a policy.
-*/
-function EmptyState({
-  onCreateClick,
-  isAdmin,
-  locked,
-  lockReason,
-}: {
-  onCreateClick: () => void;
-  isAdmin: boolean;
-  locked?: boolean;
-  lockReason?: string;
-}) {
-  const { t } = useTranslation()
-  return (
-    <CenteredNotice
-      icon={Building2}
-      className="py-20"
-      title={t("locations.empty.title")}
-      description={t("locations.empty.description")}
-    >
-      {isAdmin && (
-        <Button onClick={onCreateClick} disabled={locked} title={locked ? lockReason : undefined} className="mt-6 gap-2">
-          <Plus className="h-4 w-4" />
-          {t("locations.createSpace")}
-        </Button>
-      )}
-    </CenteredNotice>
-  )
-}
-
-// ============================================================================
-// SPACE CARD
-// ============================================================================
-
-const SpaceCard = memo(function SpaceCard({
-  space,
-  workflows,
-  isAdmin,
-  index,
-  onDelete,
-  onReactivate,
-  onViewTasks,
-  onOpenSettings,
-  canConfigure,
-}: {
-  space: CompanyLocation
-  workflows: StatusWorkflow[]
-  isAdmin: boolean
-  index: number
-  onDelete: () => void
-  onReactivate: () => void
-  onViewTasks: () => void
-  onOpenSettings: () => void
-  /** May this member configure THIS space — see canManageSpace. */
-  canConfigure: boolean
-}) {
-  const { t } = useTranslation()
-  const { data: assignments } = useQuery({
-    queryKey: keys.locations.roster(space.id),
-    queryFn: () => locationsApi.getAssignedMembers(space.id),
-    enabled: space.isActive,
-  })
-
-  const memberCount = assignments?.length || 0
-  const enabledModules = space.enabledModules || []
-  const workflow = workflows.find((w) => w.id === space.workflowId) || workflows.find((w) => w.isDefault)
-  const statusCount = workflow?.statuses?.length || 0
-
-  return (
-    <div
-      data-tour={index === 0 ? "spaces-card" : undefined}
-      className={`rounded-xl border bg-card p-5 transition-all duration-200 hover:shadow-md ${
-        !space.isActive ? "opacity-60" : ""
-      }`}
-      style={{ animationDelay: `${index * 50}ms`, animation: "fadeInUp 0.3s ease-out forwards", opacity: 0 }}
-    >
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-
-      {/* Top: Name + Status + Member count */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h3 className="text-base font-semibold text-foreground truncate">{space.name}</h3>
-            <Badge
-              variant="outline"
-              className={`text-xs font-medium ${
-                space.isActive
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                  : "border-border text-muted-foreground"
-              }`}
-            >
-              {space.isActive ? t("common.active") : t("locations.archived", "Archived")}
-            </Badge>
-            {/*
-              Which workspace catches work belonging to no particular one.
-
-              On the LIST, not only inside the space: it is a property of the
-              ORGANIZATION — exactly one space has it — and a fact about the set
-              is unreadable when it is only visible one card at a time. It is
-              also what makes a space undeletable, so seeing it here explains a
-              refusal before somebody meets it.
-            */}
-            {space.isDefault && (
-              <Badge variant="outline" className="gap-1 text-xs font-medium border-primary/30 bg-primary/10 text-primary">
-                <Inbox className="h-3 w-3" />
-                {t("locations.default.badge", "Default")}
-              </Badge>
-            )}
-            {/* Ownership kind — badge the non-default kinds (COMPANY is implicit). */}
-            {space.kind === "CUSTOMER" && (
-              <Badge variant="outline" className="gap-1 text-xs font-medium border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                <Handshake className="h-3 w-3" />
-                {t("locations.form.kindCustomer", "Customer company")}
-              </Badge>
-            )}
-            {space.kind === "PROJECT" && (
-              <Badge variant="outline" className="gap-1 text-xs font-medium border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">
-                <Briefcase className="h-3 w-3" />
-                {t("locations.form.kindProject", "My project")}
-              </Badge>
-            )}
-            {memberCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <Users className="h-3.5 w-3.5" />
-                {t("locations.memberCount", { count: memberCount })}
-              </span>
-            )}
-          </div>
-
-          {/* Address */}
-          {space.address && (
-            <p className="text-sm text-muted-foreground mt-1 truncate">{space.address}</p>
-          )}
-
-          {/* Modules row */}
-          {enabledModules.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {enabledModules.map((mod) => (
-                <span
-                  key={mod}
-                  className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${
-                    MODULE_COLORS[mod] || "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {getModuleLabel(mod)}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Workflow info */}
-          {workflow && (
-            <p className="text-xs text-muted-foreground mt-2">
-              {t("locations.workflowPrefix")}{workflow.name}{statusCount > 0 ? t("locations.statusCountSuffix", { count: statusCount }) : ""}
-            </p>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          {space.isActive && (
-            <>
-              {/* Offered only to somebody who may actually use it. It used to be
-                  shown to everyone and landed them on a permission wall — the
-                  page refused correctly, but the button had already promised. */}
-              {canConfigure && (
-              <Button
-                data-tour={index === 0 ? "spaces-card-configure" : undefined}
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1.5 text-xs rounded-lg"
-                onClick={onOpenSettings}
-              >
-                <Settings2 className="h-3.5 w-3.5" />
-                {t("locations.configure")}
-              </Button>
-              )}
-              <Button
-                data-tour={index === 0 ? "spaces-card-viewtasks" : undefined}
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground rounded-lg"
-                onClick={onViewTasks}
-              >
-                {t("locations.viewTasks")}
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
-            </>
-          )}
-          {isAdmin && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button data-tour={index === 0 ? "spaces-card-actions" : undefined} variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {canConfigure && (
-                  <DropdownMenuItem onClick={onOpenSettings}>
-                    <SlidersHorizontal className="mr-2 h-4 w-4" />
-                    {t("locations.spaceSettings")}
-                  </DropdownMenuItem>
-                )}
-                {space.isActive ? (
-                  <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
-                    <ToggleLeft className="mr-2 h-4 w-4" />
-                    {t("locations.archiveAction", "Archive")}
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem onClick={onReactivate} className="text-emerald-600 focus:text-emerald-600">
-                    <ToggleRight className="mr-2 h-4 w-4" />
-                    {t("locations.restoreAction", "Restore")}
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-})
-
-// ============================================================================
-// SHARED WITH US — cross-org invites + active shared spaces (guest side)
-// ============================================================================
-
-const LEVEL_BADGE: Record<string, string> = {
-  VIEW: "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  CONTRIBUTE: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300",
-  CONTROL: "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300",
-}
-
-function SharedWithUsSection() {
-  const { t } = useTranslation()
-  const router = useRouter()
-  const queryClient = useQueryClient()
-  const { user, refreshUser } = useAuth()
-
-  // Active shared spaces come from the auth context (no fetch). Pending invites
-  // are fetched: /shared-spaces returns both PENDING and ACTIVE — filter here.
-  const activeShared = user?.access?.sharedSpaces || []
-
-  const { data: sharedSpaces } = useQuery({
-    queryKey: keys.sharedSpaces.list(),
-    queryFn: () => spaceSharingApi.listSharedSpaces(),
-  })
-  const pending = (sharedSpaces || []).filter((s) => s.status === "PENDING")
-
-  const respondMutation = useMutation({
-    mutationFn: ({ shareId, accept }: { shareId: string; accept: boolean }) =>
-      spaceSharingApi.respondToShare(shareId, accept),
-    onSuccess: (_res, { accept }) => {
-      queryClient.invalidateQueries({ queryKey: keys.sharedSpaces.list() })
-      // Full access (auth context sharedSpaces) refreshes after /auth/me reloads.
-      if (accept) void refreshUser()
-      notify.success(accept ? t("spaceSharing.toast.inviteAccepted") : t("spaceSharing.toast.inviteDeclined"))
-    },
-    onError: (err: Error) => notify.error(err.message || t("spaceSharing.toast.respondFailed")),
-  })
-
-  if (pending.length === 0 && activeShared.length === 0) return null
-
-  return (
-    <div className="mb-8 space-y-6">
-      {/* Pending invites */}
-      {pending.length > 0 && (
-        <div className="space-y-2">
-          {pending.map((invite) => (
-            <div
-              key={invite.id}
-              className="flex flex-col gap-3 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900 dark:bg-indigo-950/40 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="flex items-start gap-3 min-w-0">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300">
-                  <Share2 className="h-4 w-4" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground">
-                    {t("spaceSharing.guest.inviteTitle", { space: invite.spaceName, org: invite.ownerOrgName })}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {t(`spaceSharing.levels.${invite.level}.description`)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  size="sm"
-                  className="h-8 gap-1.5 text-xs"
-                  onClick={() => respondMutation.mutate({ shareId: invite.id, accept: true })}
-                  disabled={respondMutation.isPending}
-                >
-                  <Check className="h-3.5 w-3.5" />
-                  {t("spaceSharing.guest.accept")}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
-                  onClick={() => respondMutation.mutate({ shareId: invite.id, accept: false })}
-                  disabled={respondMutation.isPending}
-                >
-                  <X className="h-3.5 w-3.5" />
-                  {t("spaceSharing.guest.decline")}
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Active shared spaces */}
-      {activeShared.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Share2 className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.sharedWithUs")}</h2>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {activeShared.map((s) => (
-              <button
-                key={s.spaceId}
-                type="button"
-                onClick={() => router.push(`/shared/${s.spaceId}`)}
-                className="text-left rounded-xl border bg-card p-5 transition-all duration-200 hover:shadow-md hover:border-primary/40"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="text-base font-semibold text-foreground truncate">{s.spaceName}</h3>
-                    <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                      <Badge variant="outline" className="gap-1 text-xs font-medium border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
-                        <Handshake className="h-3 w-3" />
-                        {t("spaceSharing.guest.sharedFrom", { org: s.ownerOrgName })}
-                      </Badge>
-                      <Badge variant="outline" className={`text-xs font-medium ${LEVEL_BADGE[s.level] || LEVEL_BADGE.VIEW}`}>
-                        {t(`spaceSharing.levels.${s.level}.label`)}
-                      </Badge>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ============================================================================
-// CREATE SPACE DIALOG
-// ============================================================================
-
-function CreateSpaceDialog({
-  open,
-  onOpenChange,
-  onSuccess,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSuccess: () => void
-}) {
-  const { t } = useTranslation()
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t("locations.createSpace")}</DialogTitle>
-          <DialogDescription>
-            {t("locations.createDescription")}
-          </DialogDescription>
-        </DialogHeader>
-        <SpaceForm
-          onCreated={() => { onOpenChange(false); onSuccess() }}
-          onCancel={() => onOpenChange(false)}
-        />
-      </DialogContent>
-    </Dialog>
   )
 }

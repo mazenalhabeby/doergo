@@ -1,8 +1,7 @@
-import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { scopeFor, scopeIdsFor } from '../../common/permission-scope';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Role, CurrentUser, CurrentUserData, isAdmin, crmReachOf, crmCanAccess, moduleAnywhere, spacesGranting } from '@hbcfield/shared';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
+import { Role, CurrentUser, CurrentUserData, crmReachOf, crmCanAccess, moduleAnywhere } from '@hbcfield/shared';
 import { DenyExternal, RequirePermission, Roles } from '../../common/decorators';
 import { CalendarGatewayService } from './calendar.service';
 import {
@@ -25,20 +24,18 @@ function id(v: string): string {
 @ApiTags('calendar')
 @ApiBearerAuth()
 @Controller('calendar')
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.EMPLOYEE)
 @DenyExternal()
 export class CalendarController {
   constructor(private readonly svc: CalendarGatewayService) {}
 
   private caller(u: CurrentUserData) {
-    const admin = isAdmin(u as any);
     return {
       userId: u.id,
       organizationId: u.organizationId as string,
       role: String(u.role),
       canManageUsers: !!u.canManageUsers,
-      orgWideView: admin || spacesGranting(u.access as any, 'canViewAllTasks') === null,
+      orgWideView: scopeFor(u, 'canViewAllTasks') === null,
       // A client on an event is shown (and may be set) only for somebody who reads the client book —
       // org-wide or in a workspace (crm/crm-reach.ts). A coarse gate: task-service then asks the
       // reach from the database for the client's own workspace, module included.
@@ -50,16 +47,14 @@ export class CalendarController {
 
   /** Where the caller sees the team's leave: the cover chart's gate (leads attendance or the rota). */
   private teamSpaces(u: CurrentUserData): string[] | undefined {
-    if (isAdmin(u as any)) return undefined;
-    const a = spacesGranting(u.access as any, 'canViewSpaceAttendance');
-    const b = spacesGranting(u.access as any, 'canManageRota');
+    const a = scopeFor(u, 'canViewSpaceAttendance');
+    const b = scopeFor(u, 'canManageRota');
     if (a === null || b === null) return undefined;
     return [...new Set([...a, ...b])];
   }
 
   private viewTaskSpaces(u: CurrentUserData): string[] | undefined {
-    if (isAdmin(u as any)) return undefined;
-    return spacesGranting(u.access as any, 'canViewAllTasks') ?? undefined;
+    return scopeIdsFor(u, 'canViewAllTasks');
   }
 
   // ─── reading ─────────────────────────────────────────────────────────────

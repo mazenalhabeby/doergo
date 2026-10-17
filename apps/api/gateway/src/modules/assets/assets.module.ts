@@ -7,6 +7,11 @@ import { QUEUE_NAMES } from '@hbcfield/shared';
 import { AssetsService } from './assets.service';
 import { AssetsQueueService } from './assets.queue.service';
 import { AssetsController } from './assets.controller';
+import { AssetMineController } from './asset-mine.controller';
+import { AssetExpensesController } from './asset-expenses.controller';
+import { AssetIntakeController } from './asset-intake.controller';
+import { AssetRecordsController } from './asset-records.controller';
+import { AssetCustodyController } from './asset-custody.controller';
 import { AssetCategoriesController, AssetTypesController } from './asset-categories.controller';
 
 @Module({
@@ -17,7 +22,19 @@ import { AssetCategoriesController, AssetTypesController } from './asset-categor
       adapter: BullMQAdapter,
     }),
   ],
-  controllers: [AssetsController, AssetCategoriesController, AssetTypesController],
+  // ⚠️ ORDER MATTERS: every controller with STATIC paths (usage, orphans, mine,
+  // expenses/*, proposals/*, contracts/*) comes before AssetsController's
+  // `GET :id` and the `:id/...` controllers — Express matches in this order.
+  controllers: [
+    AssetMineController,
+    AssetExpensesController,
+    AssetIntakeController,
+    AssetsController,
+    AssetRecordsController,
+    AssetCustodyController,
+    AssetCategoriesController,
+    AssetTypesController,
+  ],
   providers: [AssetsService, AssetsQueueService],
 })
 export class AssetsModule {}

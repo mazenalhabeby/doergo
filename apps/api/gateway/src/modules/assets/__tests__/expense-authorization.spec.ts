@@ -2,7 +2,7 @@ import { Reflector } from '@nestjs/core';
 import { PATH_METADATA, METHOD_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common';
 import { PERMISSIONS_KEY, PERMISSIONS_IN_SPACE_KEY } from '@hbcfield/shared';
-import { AssetsController } from '../assets.controller';
+import { assetHandlers, assetRoute } from './assets-controllers.fixture';
 
 /**
  * Who may do what with somebody else's fuel receipt.
@@ -24,7 +24,7 @@ import { AssetsController } from '../assets.controller';
 const reflector = new Reflector();
 
 const routeOf = (name: string) => {
-  const fn = (AssetsController.prototype as any)[name];
+  const fn = assetRoute(name) as any;
   expect(typeof fn).toBe('function');
   return {
     path: Reflect.getMetadata(PATH_METADATA, fn) as string,
@@ -135,10 +135,8 @@ describe('a member sends a page in; only the office turns it into a thing', () =
     and the day somebody adds `:id/mine` the order is all that saves it.
   */
   it('declares the proposal reads before the parameter routes', () => {
-    const order = Object.getOwnPropertyNames(AssetsController.prototype)
-      .filter((n) => n !== 'constructor')
-      .map((n) => (AssetsController.prototype as any)[n])
-      .filter((fn) => typeof fn === 'function' && Reflect.getMetadata(METHOD_METADATA, fn) === RequestMethod.GET)
+    const order = assetHandlers()
+      .filter((fn) => Reflect.getMetadata(METHOD_METADATA, fn) === RequestMethod.GET)
       .map((fn) => Reflect.getMetadata(PATH_METADATA, fn) as string);
     expect(order.indexOf('proposals/mine')).toBeLessThan(order.indexOf(':id'));
     expect(order.indexOf('proposals/pending')).toBeLessThan(order.indexOf(':id'));
@@ -203,10 +201,8 @@ describe('route order', () => {
     controller has already shipped once, for `/assets/usage`.
   */
   it('declares mine before :id', () => {
-    const order = Object.getOwnPropertyNames(AssetsController.prototype)
-      .filter((n) => n !== 'constructor')
-      .map((n) => (AssetsController.prototype as any)[n])
-      .filter((fn) => typeof fn === 'function' && Reflect.getMetadata(METHOD_METADATA, fn) === RequestMethod.GET)
+    const order = assetHandlers()
+      .filter((fn) => Reflect.getMetadata(METHOD_METADATA, fn) === RequestMethod.GET)
       .map((fn) => Reflect.getMetadata(PATH_METADATA, fn) as string);
     expect(order.indexOf('mine')).toBeGreaterThan(-1);
     expect(order.indexOf('mine')).toBeLessThan(order.indexOf(':id'));

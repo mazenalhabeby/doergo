@@ -39,14 +39,14 @@ describe('MemberOffboardService', () => {
   });
 });
 
-// TasksService hands this to TaskAssignmentService, which is where it lives.
+// TasksService hands this to TaskCrewMembersService, which is where it lives.
 describe('TasksService.releaseMemberFromOpenWork', () => {
   it('only looks at jobs that are not finished, closed or canceled', async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { TaskAssignmentService } = require('../../tasks/task-assignment.service');
+    const { TaskCrewMembersService } = require('../../tasks/task-crew-members.service');
     const { TERMINAL_STATUSES } = require('@hbcfield/shared');
     const prisma: any = { task: { findMany: jest.fn().mockResolvedValue([]) } };
-    const svc = Object.create(TaskAssignmentService.prototype);
+    const svc = Object.create(TaskCrewMembersService.prototype);
     svc.prisma = prisma;
     await svc.releaseMemberFromOpenWork('o1', 'u1', 'admin');
     expect(prisma.task.findMany.mock.calls[0][0].where).toMatchObject({ organizationId: 'o1', status: { notIn: TERMINAL_STATUSES } });
@@ -56,7 +56,7 @@ describe('TasksService.releaseMemberFromOpenWork', () => {
 describe('TasksService.releaseMemberFromOpenWork — a custom flow’s finish is history too', () => {
   it('keeps the leaver on a job its workflow calls finished (Delivered, Done…)', async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { TaskAssignmentService } = require('../../tasks/task-assignment.service');
+    const { TaskCrewMembersService } = require('../../tasks/task-crew-members.service');
     const prisma: any = {
       task: {
         findMany: jest.fn().mockResolvedValue([
@@ -68,7 +68,7 @@ describe('TasksService.releaseMemberFromOpenWork — a custom flow’s finish is
       workflowStatus: { findMany: jest.fn().mockResolvedValue([{ workflowId: 'logistics', key: 'DELIVERED' }]) },
       taskAssignee: { deleteMany: jest.fn() },
     };
-    const svc = Object.create(TaskAssignmentService.prototype);
+    const svc = Object.create(TaskCrewMembersService.prototype);
     svc.prisma = prisma;
     svc.afterAssigneesChanged = jest.fn();
     svc.support = { createTaskEvent: jest.fn() };

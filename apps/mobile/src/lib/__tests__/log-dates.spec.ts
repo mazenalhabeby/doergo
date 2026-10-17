@@ -1,5 +1,6 @@
 import { ASSET_ENTRY_BACKDATE_DAYS, LOG_MEMBER_BACKDATE_DAYS, assetEntryDateMessage, logDateProblem } from '@hbcfield/shared/client';
 import { assetEntryDateText, dateFromDayKey, dayKeyOf, logEntryDayBounds, occurredAtForDay } from '../log-dates';
+import { readSource } from '../../test-utils/read-source';
 
 /**
  * The days the logbook's calendar offers — pinned against the rule the server
@@ -151,7 +152,8 @@ describe('both screens that file against an asset use this rule', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const path = require('path');
   // Comments quote the very shortcuts this forbids, so they are stripped first.
-  const read = (f: string) => (fs.readFileSync(path.join(__dirname, '../../../app/(app)', f), 'utf8') as string)
+  // A screen with the parts moved out of it (asset-log was split 2026-10-17).
+  const read = (f: string) => readSource(path.join(__dirname, '../../../app/(app)', f), 'utf8')
     .replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, '$1')
     .replace(/(^|[^:/])\/\/[^\n]*/g, '$1');
 

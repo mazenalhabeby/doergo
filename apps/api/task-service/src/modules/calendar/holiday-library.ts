@@ -9,7 +9,7 @@
  * Data licence: CC BY 3.0 (date-holidays) — credited on the settings screen.
  */
 import Holidays from 'date-holidays';
-import { isEstimatedRule, libraryHolidayKey, ruleDurationDays, type LibraryHoliday } from '@hbcfield/shared';
+import { foldText, isEstimatedRule, libraryHolidayKey, ruleDurationDays, type LibraryHoliday } from '@hbcfield/shared';
 
 const CACHE_MAX = 300;
 const cache = new Map<string, LibraryHoliday[]>();
@@ -79,9 +79,7 @@ export function regionList(country: string, lang = 'en'): { code: string; name: 
 
 /** A state name compared without accents, case, punctuation or the usual prefixes ("Canton of", "Land"…). */
 function plain(s: string): string {
-  return s
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
+  return foldText(s)
     .replace(/^(canton of|state of|free state of|province of|region of|land|hansestadt|freistaat|bundesland)\s+/, '')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();

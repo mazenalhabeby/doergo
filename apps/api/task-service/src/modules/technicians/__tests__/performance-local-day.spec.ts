@@ -1,4 +1,4 @@
-import { TechniciansService } from '../technicians.service';
+import { MemberPerformanceService } from '../member-performance.service';
 
 /*
   The performance chart counted hours and finished jobs on the UTC day, so a
@@ -7,7 +7,7 @@ import { TechniciansService } from '../technicians.service';
   work happened — the organization's zone when the workspace names none.
 */
 describe('performance trends — the local day', () => {
-  const service = Object.create(TechniciansService.prototype) as any;
+  const service = Object.create(MemberPerformanceService.prototype) as any;
   const start = new Date('2026-10-09T00:00:00Z');
   const end = new Date('2026-10-11T00:00:00Z');
   const bar = (trends: Array<{ date: string; hoursWorked: number; tasksCompleted: number }>, date: string) =>

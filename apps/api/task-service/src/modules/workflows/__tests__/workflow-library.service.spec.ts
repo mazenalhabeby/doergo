@@ -1,5 +1,7 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { WorkflowLibraryService } from '../workflow-library.service';
+import { LibraryCurationService } from '../library-curation.service';
+import { combinedServices } from '../../../common/testing/combined-services';
 
 /**
  * The library is the only table in this system a tenant reads but does not own.
@@ -56,7 +58,9 @@ describe('WorkflowLibraryService', () => {
     attachSpaceWorkflow: async (data: any) => { attached.push(data); return { success: true, data: {} }; },
   };
 
-  const svc = () => new WorkflowLibraryService(prisma, workflows);
+  // Using the library and curating it are two services since the split — one object over both.
+  const svc = () =>
+    combinedServices<any>(new WorkflowLibraryService(prisma, workflows, workflows), new LibraryCurationService(prisma));
 
   beforeEach(() => { created = []; attached = []; updates = []; deletes = []; });
 
@@ -139,7 +143,7 @@ describe('WorkflowLibraryService', () => {
       // The space may lack a module the template's steps need. Swallowing that
       // would leave a new task type stranded outside the space it was added from.
       const failing: any = { ...workflows, attachSpaceWorkflow: async () => { throw new BadRequestException('needs tracking'); } };
-      const s = new WorkflowLibraryService(prisma, failing);
+      const s = new WorkflowLibraryService(prisma, failing, failing);
       await expect(s.useTemplate({ templateId: 'tpl-live', organizationId: ORG, spaceId: 'sp-1' })).rejects.toThrow('needs tracking');
     });
   });
@@ -194,7 +198,7 @@ describe('WorkflowLibraryService', () => {
         ...prisma,
         statusWorkflow: { findUnique: async () => ({ name: 'Their flow', statuses: sound }) },
       };
-      const res: any = await new WorkflowLibraryService(p, workflows).curateImportFromOrg({ workflowId: 'wf-1' });
+      const res: any = await new LibraryCurationService(p).curateImportFromOrg({ workflowId: 'wf-1' });
       expect(res.data.isPublished).toBe(false);
       expect(res.data.name).toBe('Their flow');
     });
@@ -214,7 +218,10 @@ describe('WorkflowLibraryService', () => {
         findMany: async () => [],
         create: async ({ data }: any) => { saved = data; return { id: 'tpl-sub', ...data }; },
       });
-      await new WorkflowLibraryService(p, workflows).submitToLibrary({ workflowId: 'wf-1', organizationId: ORG });
+      await new WorkflowLibraryService(p, workflows, workflows).submitToLibrary({
+        workflowId: 'wf-1',
+        organizationId: ORG,
+      });
       expect(saved.isPublished).toBe(false);
       expect(saved.submittedByOrgId).toBe(ORG);
       expect(saved.submittedAt).toBeInstanceOf(Date);
@@ -222,8 +229,12 @@ describe('WorkflowLibraryService', () => {
 
     it('refuses a flow that traps work, while the person who built it is still looking at it', async () => {
       const p = withWorkflow(unsound, { findFirst: async () => null, findMany: async () => [] });
-      await expect(new WorkflowLibraryService(p, workflows).submitToLibrary({ workflowId: 'wf-1', organizationId: ORG }))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        new WorkflowLibraryService(p, workflows, workflows).submitToLibrary({
+          workflowId: 'wf-1',
+          organizationId: ORG,
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('updates the pending row instead of queueing a second copy of the same task type', async () => {
@@ -232,15 +243,22 @@ describe('WorkflowLibraryService', () => {
         findFirst: async () => ({ id: 'tpl-pending', isPublished: false }),
         update: async ({ where, data }: any) => { updated = { where, data }; return { id: where.id }; },
       });
-      const res: any = await new WorkflowLibraryService(p, workflows).submitToLibrary({ workflowId: 'wf-1', organizationId: ORG });
+      const res: any = await new WorkflowLibraryService(p, workflows, workflows).submitToLibrary({
+        workflowId: 'wf-1',
+        organizationId: ORG,
+      });
       expect(res.data.resubmitted).toBe(true);
       expect(updated.where.id).toBe('tpl-pending');
     });
 
     it('refuses to silently rewrite a template every tenant is already being offered', async () => {
       const p = withWorkflow(sound, { findFirst: async () => ({ id: 'tpl-x', isPublished: true }) });
-      await expect(new WorkflowLibraryService(p, workflows).submitToLibrary({ workflowId: 'wf-1', organizationId: ORG }))
-        .rejects.toThrow(ConflictException);
+      await expect(
+        new WorkflowLibraryService(p, workflows, workflows).submitToLibrary({
+          workflowId: 'wf-1',
+          organizationId: ORG,
+        }),
+      ).rejects.toThrow(ConflictException);
     });
 
     it('finds a free slug when the obvious one is taken — submissions collide on common names', async () => {
@@ -250,14 +268,21 @@ describe('WorkflowLibraryService', () => {
         findMany: async () => [{ slug: 'our-flow' }, { slug: 'our-flow-2' }],
         create: async ({ data }: any) => { saved = data; return { id: 'x', ...data }; },
       });
-      await new WorkflowLibraryService(p, workflows).submitToLibrary({ workflowId: 'wf-1', organizationId: ORG });
+      await new WorkflowLibraryService(p, workflows, workflows).submitToLibrary({
+        workflowId: 'wf-1',
+        organizationId: ORG,
+      });
       expect(saved.slug).toBe('our-flow-3');
     });
 
     it('refuses a task type belonging to another organization', async () => {
       const p = { ...prisma, statusWorkflow: { findFirst: async () => null } };
-      await expect(new WorkflowLibraryService(p, workflows).submitToLibrary({ workflowId: 'wf-theirs', organizationId: ORG }))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        new WorkflowLibraryService(p, workflows, workflows).submitToLibrary({
+          workflowId: 'wf-theirs',
+          organizationId: ORG,
+        }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -274,7 +299,7 @@ describe('WorkflowLibraryService', () => {
               .map((t) => ({ ...t, submittedByOrgId: 'org-secret', submittedAt: new Date() })),
         },
       };
-      const s = new WorkflowLibraryService(p, workflows);
+      const s = new WorkflowLibraryService(p, workflows, workflows);
 
       const tenant: any = await s.listTemplates({ organizationId: ORG });
       for (const row of tenant.data) {
@@ -282,7 +307,7 @@ describe('WorkflowLibraryService', () => {
         expect(row).not.toHaveProperty('sourceKey');
       }
 
-      const curator: any = await s.curateList();
+      const curator: any = await new LibraryCurationService((s as any).prisma).curateList();
       expect(curator.data[0]).toHaveProperty('submittedByOrgId');
       expect(curator.data[0]).toHaveProperty('advice');
     });

@@ -1,216 +1,27 @@
 import { Injectable } from '@nestjs/common';
-import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import {
-  ABSENCE_WHERE,
-  PrismaService,
+  zoneOf,
   assessLeave,
   coverOn,
   daysBrief,
   eachDay,
-  floorStatus,
   hasRota,
   isRosteredOn,
   leaveCovers,
   localPartsIn,
-  parseHm,
-  tradeOf,
-  zonedWallTimeToUtc,
   verdictOf,
-  type CoverLeave,
-  type CoverPerson,
   type CoverSpace,
   type CoverDayBrief,
   type CoverRangeDay,
   type CoverVerdict,
   type DateKey,
-  toISODateString,
 } from '@hbcfield/shared';
+import { CoverBase } from './cover.base';
 
-/**
- * Everything the product knows about whether there will be enough people.
- *
- * Its own service rather than more methods on TechniciansService, because it
- * answers ONE question — cover — for callers that otherwise have nothing to do
- * with each other: the leave list wants a verdict per request, the floor panel
- * wants the present tense, and a member asking for days wants a warning. Keeping
- * them together is what stops three slightly different answers appearing on
- * three screens.
- *
- * The RULES are not here. They are pure functions in @hbcfield/shared, so the
- * web and the phone can label what this returns without re-deriving it. This
- * class does the part a pure function cannot: fetch the roster and the leave, in
- * a bounded number of queries, whatever the size of the question.
- */
-/** A rota row → the shape the rules read. Shared with the calendar's person layer. */
-export function shiftRuleOf(r: {
-  recurrence: string; daysOfWeek: number[]; daysOfMonth: number[]; dates: Date[]; effectiveFrom: Date; effectiveTo: Date | null;
-}) {
-  return {
-    recurrence: r.recurrence as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'ONE_OFF',
-    daysOfWeek: r.daysOfWeek,
-    daysOfMonth: r.daysOfMonth,
-    dates: r.dates.map(toISODateString),
-    effectiveFrom: toISODateString(r.effectiveFrom),
-    effectiveTo: r.effectiveTo ? toISODateString(r.effectiveTo) : null,
-  };
-}
+export { shiftRuleOf } from './cover-helpers';
 
 @Injectable()
-export class CoverService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly calendarRules: CalendarRulesService,
-  ) {}
-
-  /**
-   * The calendar layer on a roster: each workspace's weekend becomes the rest days of somebody
-   * with no rota, and its full holidays are closed days for everybody (a rota shift on one still
-   * counts). Three queries for every workspace together.
-   */
-  private async withCalendar(organizationId: string, bySpace: Map<string, CoverPerson[]>, from: DateKey, to: DateKey) {
-    const places = await this.calendarRules.places(organizationId, [...bySpace.keys()], from, to);
-    for (const [spaceId, people] of bySpace) {
-      const place = places.get(spaceId);
-      if (!place) continue;
-      const closed = [...place.rules.holidays.values()].filter((h) => !h.halfDay).map((h) => h.day);
-      for (const p of people) {
-        p.restDows = place.place.weekend;
-        p.closedDays = closed;
-      }
-    }
-    return bySpace;
-  }
-
-  /** A Date → the local calendar day the rota means. */
-  private static key(d: Date | string): DateKey {
-    return toISODateString((typeof d === 'string' ? new Date(d) : d));
-  }
-
-  /**
-   * The roster of every given space, shaped for the rules.
-   *
-   * ONE query for the people and ONE for their rota, regardless of how many
-   * spaces or requests are in play. The alternative — resolving each request's
-   * workspace separately — is the N+1 that makes an approvals list unusable at
-   * fifty pending requests.
-   */
-  private async rosters(organizationId: string, spaceIds: string[], window?: { from: DateKey; to: DateKey }) {
-    const bySpace = new Map<string, CoverPerson[]>();
-    if (!spaceIds.length) return bySpace;
-
-    const assignments = await this.prisma.spaceAssignment.findMany({
-      where: {
-        organizationId,
-        spaceId: { in: spaceIds },
-        OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
-        user: { isActive: true },
-      },
-      select: {
-        spaceId: true,
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            specialty: true,
-            position: true,
-            // `startTime` is what makes "due 08:00 · 2h 42m ago" possible.
-            // Without it the panel can only say "not clocked in", which names a
-            // state nobody can act on.
-            schedules: { where: { isActive: true }, select: { dayOfWeek: true, startTime: true } },
-          },
-        },
-      },
-    });
-
-    const userIds = [...new Set(assignments.map((a) => a.user.id))];
-    const shifts = userIds.length
-      ? await this.prisma.shiftAssignment.findMany({
-          where: { organizationId, userId: { in: userIds }, spaceId: { in: spaceIds }, isActive: true },
-          select: {
-            userId: true,
-            spaceId: true,
-            recurrence: true,
-            daysOfWeek: true,
-            daysOfMonth: true,
-            dates: true,
-            effectiveFrom: true,
-            effectiveTo: true,
-          },
-        })
-      : [];
-
-    for (const s of spaceIds) bySpace.set(s, []);
-    for (const a of assignments) {
-      const list = bySpace.get(a.spaceId);
-      if (!list) continue;
-      // A member can hold two assignments in one space over time; count them once.
-      if (list.some((p) => p.id === a.user.id)) continue;
-      list.push({
-        id: a.user.id,
-        firstName: a.user.firstName,
-        lastName: a.user.lastName,
-        spaceId: a.spaceId,
-        specialty: a.user.specialty,
-        position: a.user.position,
-        scheduleDows: [...new Set(a.user.schedules.map((s) => s.dayOfWeek))],
-        startByDow: Object.fromEntries(a.user.schedules.map((s) => [s.dayOfWeek, s.startTime])),
-        shiftRules: shifts
-          .filter((r) => r.userId === a.user.id && r.spaceId === a.spaceId)
-          .map(shiftRuleOf),
-      });
-    }
-    return window ? this.withCalendar(organizationId, bySpace, window.from, window.to) : bySpace;
-  }
-
-
-  /** Approved leave for these people, overlapping this window. One query. */
-  private async approvedLeave(
-    personIds: string[],
-    from: DateKey,
-    to: DateKey,
-  ): Promise<CoverLeave[]> {
-    if (!personIds.length) return [];
-    const rows = await this.prisma.timeOff.findMany({
-      where: {
-        technicianId: { in: personIds },
-        status: 'APPROVED',
-        // Only leave thins cover — somebody working remotely is still working.
-        ...ABSENCE_WHERE,
-        startDate: { lte: new Date(`${to}T23:59:59.999Z`) },
-        endDate: { gte: new Date(`${from}T00:00:00.000Z`) },
-      },
-      select: { id: true, technicianId: true, startDate: true, endDate: true },
-    });
-    return rows.map((r) => ({
-      id: r.id,
-      personId: r.technicianId,
-      from: CoverService.key(r.startDate),
-      to: CoverService.key(r.endDate),
-    }));
-  }
-
-  /**
-   * Which workspace does this person's absence thin?
-   *
-   * Their primary assignment, falling back to the first — the same choice the
-   * availability calendar already makes, so the two screens name the same place.
-   */
-  private async spaceOfEach(organizationId: string, personIds: string[]) {
-    const out = new Map<string, string>();
-    if (!personIds.length) return out;
-    const rows = await this.prisma.spaceAssignment.findMany({
-      where: {
-        organizationId,
-        userId: { in: personIds },
-        OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
-      },
-      select: { userId: true, spaceId: true, isPrimary: true },
-      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
-    });
-    for (const r of rows) if (!out.has(r.userId)) out.set(r.userId, r.spaceId);
-    return out;
-  }
+export class CoverService extends CoverBase {
 
   /**
    * A cover verdict for each of these leave requests.
@@ -242,8 +53,8 @@ export class CoverService {
       spaces.map((s) => [s.id, { id: s.id, name: s.name, minCover: s.minCover }]),
     );
 
-    const from = requests.map((r) => CoverService.key(r.startDate)).sort()[0]!;
-    const to = requests.map((r) => CoverService.key(r.endDate)).sort().at(-1)!;
+    const from = requests.map((r) => CoverBase.key(r.startDate)).sort()[0]!;
+    const to = requests.map((r) => CoverBase.key(r.endDate)).sort().at(-1)!;
     const rosterBySpace = await this.rosters(organizationId, spaceIds, { from, to });
     const rosterIds = [...new Set([...rosterBySpace.values()].flat().map((p) => p.id))];
     const leave = await this.approvedLeave(rosterIds, from, to);
@@ -259,8 +70,8 @@ export class CoverService {
         {
           id: req.id,
           personId: req.technicianId,
-          from: CoverService.key(req.startDate),
-          to: CoverService.key(req.endDate),
+          from: CoverBase.key(req.startDate),
+          to: CoverBase.key(req.endDate),
         },
         person,
         space,
@@ -332,7 +143,7 @@ export class CoverService {
    */
   async expectedToday(organizationId: string, spaceId: string, timezone: string | null | undefined): Promise<Map<string, { rostered: boolean; onLeave: boolean }>> {
     const out = new Map<string, { rostered: boolean; onLeave: boolean }>();
-    const today = localPartsIn(new Date(), timezone || 'Europe/Berlin').dateStr;
+    const today = localPartsIn(new Date(), zoneOf(timezone)).dateStr;
     const roster = (await this.rosters(organizationId, [spaceId], { from: today, to: today })).get(spaceId) ?? [];
     if (!roster.length) return out;
     const leave = await this.approvedLeave(roster.map((p) => p.id), today, today);
@@ -343,191 +154,5 @@ export class CoverService {
       });
     }
     return out;
-  }
-
-  /**
-   * Who is on the floor right now.
-   *
-   * Two numbers, deliberately: EXPECTED comes from the rota, HERE comes from the
-   * clock. A single "available" figure hides the only actionable thing on the
-   * panel — the gap between them, which is somebody who has not turned up.
-   *
-   * Read-only and cheap: six indexed queries bounded by the org's size, so the
-   * screen can poll it without thinking about cost.
-   */
-  async floorNow(organizationId: string, scopeSpaceIds?: string[]) {
-    if (scopeSpaceIds !== undefined && scopeSpaceIds.length === 0) return [];
-
-    const spaces = await this.prisma.companyLocation.findMany({
-      where: {
-        organizationId,
-        isActive: true,
-        ...(scopeSpaceIds !== undefined ? { id: { in: scopeSpaceIds } } : {}),
-      },
-      select: { id: true, name: true, minCover: true, timezone: true },
-      orderBy: { name: 'asc' },
-    });
-    if (!spaces.length) return [];
-
-    const spaceIds = spaces.map((s) => s.id);
-    const nowForSpan = new Date();
-    const spanKeys = spaces.map((s) => localPartsIn(nowForSpan, s.timezone || 'Europe/Berlin').dateStr).sort();
-    const rosterBySpace = await this.rosters(organizationId, spaceIds, { from: spanKeys[0]!, to: spanKeys[spanKeys.length - 1]! });
-    const people = [...rosterBySpace.values()].flat();
-    const personIds = [...new Set(people.map((p) => p.id))];
-    if (!personIds.length) {
-      return spaces.map((s) => ({
-        spaceId: s.id, spaceName: s.name, minCover: s.minCover,
-        here: 0, expected: 0, status: 'ok', rotaKnown: false, people: [],
-      }));
-    }
-
-    /*
-      "Today" is a fact about each SITE, not about the server.
-
-      A workspace in another zone rolls over at a different moment, and reading
-      the server's date would put a member on the wrong day either side of
-      midnight — which on this panel means reporting somebody as a no-show for a
-      shift that has not started.
-    */
-    const now = new Date();
-    const dayOfSpace = new Map(
-      spaces.map((s) => [s.id, localPartsIn(now, s.timezone || 'Europe/Berlin')]),
-    );
-    const todaySpan = [...new Set([...dayOfSpace.values()].map((p) => p.dateStr))].sort();
-    const from = todaySpan[0]!;
-    const to = todaySpan[todaySpan.length - 1]!;
-
-    const [leave, entries, breaks, tasks, shiftInstances] = await Promise.all([
-      this.approvedLeave(personIds, from, to),
-      this.prisma.timeEntry.findMany({
-        where: { organizationId, status: 'CLOCKED_IN', userId: { in: personIds } },
-        select: { id: true, userId: true, clockInAt: true, locationId: true, isRemote: true },
-      }),
-      this.prisma.break.findMany({
-        where: { endedAt: null, timeEntry: { organizationId, status: 'CLOCKED_IN' } },
-        select: { timeEntryId: true, startedAt: true, type: true },
-      }),
-      // What they are actually on. Only the statuses that mean "working it".
-      this.prisma.task.findMany({
-        where: {
-          organizationId,
-          assignedToId: { in: personIds },
-          status: { in: ['EN_ROUTE', 'ARRIVED', 'IN_PROGRESS'] },
-        },
-        select: { id: true, title: true, status: true, assignedToId: true },
-        orderBy: { updatedAt: 'desc' },
-      }),
-      // The rota's own answer to "when were they due", already resolved to the
-      // right zone by the materializer. Preferred over the weekly schedule
-      // because it is what the no-show sweep itself acts on.
-      this.prisma.shiftInstance.findMany({
-        where: {
-          organizationId,
-          userId: { in: personIds },
-          spaceId: { in: spaceIds },
-          localDate: { in: todaySpan },
-        },
-        select: { userId: true, spaceId: true, localDate: true, expectedClockInAt: true },
-      }),
-    ]);
-
-    const entryByUser = new Map(entries.map((e) => [e.userId, e]));
-    const breakByEntry = new Map(breaks.map((b) => [b.timeEntryId, b]));
-    const taskByUser = new Map<string, (typeof tasks)[number]>();
-    for (const t of tasks) if (t.assignedToId && !taskByUser.has(t.assignedToId)) taskByUser.set(t.assignedToId, t);
-    const instanceKey = (u: string, sp: string) => `${u}:${sp}`;
-    const dueByPerson = new Map(
-      shiftInstances.map((i) => [instanceKey(i.userId, i.spaceId), i.expectedClockInAt]),
-    );
-
-    return spaces.map((space) => {
-      const tz = space.timezone || 'Europe/Berlin';
-      const parts = dayOfSpace.get(space.id)!;
-      const today = parts.dateStr;
-      const roster = rosterBySpace.get(space.id) ?? [];
-      const day = coverOn(roster, leave, today);
-      const awayIds = new Set(day.away.map((p) => p.id));
-
-      /**
-       * When were they due in?
-       *
-       * The rota's materialized instance first — it is what the no-show sweep
-       * acts on, so the panel and the escalation cannot disagree about who is
-       * late. The weekly schedule's start time otherwise, resolved in the
-       * SITE's zone. Null when neither is set, and the chip then simply says
-       * they have not clocked in, with no claim about lateness.
-       */
-      const dueFor = (p: (typeof roster)[number]): Date | null => {
-        const fromRota = dueByPerson.get(instanceKey(p.id, space.id));
-        if (fromRota) return fromRota;
-        const hm = p.startByDow?.[parts.dow];
-        if (!hm) return null;
-        const [hh, mm] = parseHm(hm);
-        return zonedWallTimeToUtc(today, hh, mm, tz);
-      };
-
-      const rows = roster.map((p) => {
-        const onLeave = leave.find((l) => l.personId === p.id && leaveCovers(l, today));
-        const entry = entryByUser.get(p.id);
-        const onBreak = entry ? breakByEntry.get(entry.id) : undefined;
-        const task = taskByUser.get(p.id);
-
-        /*
-          The order of these three tests is the rule, and getting it wrong is how
-          a rota system ends up chasing somebody for not clocking in on their day
-          off. Leave beats the rota (they are not coming), the rota beats the
-          clock (a rest day is not a no-show), and only then does the clock speak.
-        */
-        const state = onLeave
-          ? 'leave'
-          : !isRosteredOn(p, today)
-            ? 'rest'
-            : onBreak
-              ? 'break'
-              : entry
-                ? (task ? 'busy' : 'working')
-                : 'expected';
-
-        // Only somebody who is expected and absent can be LATE. A person on a
-        // break has already arrived, and one on leave was never coming.
-        const dueAt = state === 'expected' ? dueFor(p) : null;
-
-        return {
-          id: p.id,
-          firstName: p.firstName,
-          lastName: p.lastName,
-          specialty: p.specialty,
-          position: p.position,
-          // The one field a screen should print: specialty when somebody filled
-          // it in, position otherwise. Resolved here so every surface agrees.
-          trade: tradeOf(p),
-          state,
-          since: entry?.clockInAt ?? null,
-          isRemote: entry?.isRemote ?? false,
-          breakSince: onBreak?.startedAt ?? null,
-          leaveUntil: onLeave?.to ?? null,
-          dueAt,
-          /** Minutes past due. Negative = still to come, so a screen can stay calm. */
-          lateMinutes: dueAt ? Math.round((now.getTime() - dueAt.getTime()) / 60000) : null,
-          task: task ? { id: task.id, title: task.title, status: task.status } : null,
-        };
-      });
-
-      const here = rows.filter((r) => r.state === 'busy' || r.state === 'working' || r.state === 'break').length;
-      const expected = roster.filter((p) => !awayIds.has(p.id) && isRosteredOn(p, today)).length;
-
-      return {
-        spaceId: space.id,
-        spaceName: space.name,
-        timezone: space.timezone,
-        minCover: space.minCover,
-        here,
-        expected,
-        status: floorStatus(here, space.minCover),
-        rotaKnown: roster.some(hasRota),
-        people: rows,
-      };
-    });
   }
 }

@@ -1,5 +1,7 @@
 import fs from 'fs';
 import path from 'path';
+import { readSource } from '../../test-utils/read-source';
+import { serverModuleSource } from './server-source';
 
 /*
   A PDF receipt is read by the SERVER; an image is read by the PHONE.
@@ -44,7 +46,7 @@ const stripComments = (s: string) =>
 const SCREEN = path.join(MOBILE, 'app/(app)/asset-expense.tsx');
 
 describe('the phone sends a PDF up and keeps an image', () => {
-  const src = () => stripComments(read(SCREEN));
+  const src = () => stripComments(readSource(SCREEN, 'utf8'));
 
   it('offers a file as well as the camera', () => {
     expect(src()).toContain('DocumentPicker.getDocumentAsync');
@@ -90,7 +92,9 @@ describe('the server reads the file, and is allowed to by custody', () => {
       out of the one screen built for them. What the service checks is who HELD
       the asset on the receipt's own date.
     */
-    const ctrl = stripComments(read(path.join(GATEWAY, 'src/modules/assets/assets.controller.ts')));
+    const ctrl = stripComments(
+      serverModuleSource(path.join(GATEWAY, 'src/modules/assets'), (f) => f.endsWith('.controller.ts')),
+    );
     const at = ctrl.indexOf("@Post(':id/expenses/read')");
     expect(at).toBeGreaterThan(-1);
     const decorators = ctrl.slice(Math.max(0, at - 400), at);
@@ -106,7 +110,9 @@ describe('the server reads the file, and is allowed to by custody', () => {
 
   it('asks custody on the RECEIPT’s date, not today', () => {
     const svc = stripComments(read(path.join(TASK, 'src/modules/assets/asset-expense.service.ts')));
-    expect(svc).toMatch(/readReceipt[\s\S]{0,600}readAssetEntryDate\(data\.occurredAt, data\)[\s\S]{0,200}this\.gate\(/);
+    expect(svc).toMatch(
+      /readReceipt[\s\S]{0,600}readAssetEntryDate\(data\.occurredAt, data\)[\s\S]{0,200}this\.gate\(/,
+    );
   });
 
   it('declines an image rather than reading it worse', () => {

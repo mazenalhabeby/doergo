@@ -1,9 +1,14 @@
 import { AuthService } from './auth.service';
 import { SessionTokensService } from './session-tokens.service';
 import { SignInService } from './sign-in.service';
+import { AuthMailService } from './auth-mail.service';
 import { SessionsService } from './sessions.service';
 import { TokenValidationService } from './token-validation.service';
 import { OwnAccountSecurityService } from './own-account-security.service';
+import { SessionControlService } from './session-control.service';
+import { RegisterService } from './register.service';
+import { PasswordResetService } from './password-reset.service';
+import { AccountDeletionService } from './account-deletion.service';
 
 /**
  * Authentication as providers: the `AuthService` facade and the collaborators
@@ -16,7 +21,12 @@ export const AUTH_SERVICES = [
   AuthService,
   SessionTokensService,
   SignInService,
+  AuthMailService,
+  RegisterService,
   SessionsService,
+  SessionControlService,
   TokenValidationService,
   OwnAccountSecurityService,
+  PasswordResetService,
+  AccountDeletionService,
 ];

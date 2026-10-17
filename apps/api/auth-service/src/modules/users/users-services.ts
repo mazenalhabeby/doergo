@@ -7,6 +7,12 @@ import { EmployeeDetailService } from './employee-detail.service';
 import { MemberAdminService } from './member-admin.service';
 import { OwnAccountService } from './own-account.service';
 import { MemberWatchersService } from './member-watchers.service';
+import { MemberOwnershipService } from './member-ownership.service';
+import { MemberProfileService } from './member-profile.service';
+import { EmployeeWriteService } from './employee-write.service';
+import { EmployeeStatsService } from './employee-stats.service';
+import { AccessRoleWriteService } from './access-role-write.service';
+import { OrgMembersService } from './org-members.service';
 
 /**
  * Member management as providers: the `UsersService` facade and the
@@ -19,10 +25,16 @@ export const USERS_SERVICES = [
   UsersService,
   MemberAccessChecksService,
   AccessRolesService,
+  AccessRoleWriteService,
   MemberDirectoryService,
+  OrgMembersService,
   EmployeesService,
+  EmployeeWriteService,
   EmployeeDetailService,
+  EmployeeStatsService,
   MemberAdminService,
+  MemberOwnershipService,
+  MemberProfileService,
   OwnAccountService,
   MemberWatchersService,
 ];

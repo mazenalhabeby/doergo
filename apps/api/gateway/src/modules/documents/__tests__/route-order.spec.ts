@@ -1,6 +1,7 @@
 import { PATH_METADATA, METHOD_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common';
-import { DocumentsController } from '../documents.controller';
+import { DocumentsModule } from '../documents.module';
+import { moduleHandlers } from '../../../common/testing/module-routes';
 
 /**
  * Express matches routes in DECLARATION order, so a literal path declared after
@@ -14,13 +15,10 @@ import { DocumentsController } from '../documents.controller';
  * Asserted from the metadata Nest actually registers, not from the source text,
  * so moving a method below a parameter route fails this test.
  */
-const routesFor = (target: any, method: RequestMethod): string[] =>
-  Object.getOwnPropertyNames(target.prototype)
-    .filter((name) => name !== 'constructor')
-    .map((name) => target.prototype[name])
-    .filter(
-      (fn) => typeof fn === 'function' && Reflect.getMetadata(METHOD_METADATA, fn) === method,
-    )
+/** Every /documents route of one method, across the module's controllers, in registration order. */
+const routesFor = (method: RequestMethod): string[] =>
+  moduleHandlers(DocumentsModule, 'documents')
+    .filter((fn) => Reflect.getMetadata(METHOD_METADATA, fn) === method)
     .map((fn) => (Reflect.getMetadata(PATH_METADATA, fn) as string) ?? '');
 
 /**
@@ -40,9 +38,9 @@ const swallows = (earlier: string, later: string): boolean => {
 };
 
 describe('document route order', () => {
-  const gets = routesFor(DocumentsController, RequestMethod.GET);
-  const posts = routesFor(DocumentsController, RequestMethod.POST);
-  const deletes = routesFor(DocumentsController, RequestMethod.DELETE);
+  const gets = routesFor(RequestMethod.GET);
+  const posts = routesFor(RequestMethod.POST);
+  const deletes = routesFor(RequestMethod.DELETE);
 
   const swallowed = (routes: string[]) => {
     const out: string[] = [];

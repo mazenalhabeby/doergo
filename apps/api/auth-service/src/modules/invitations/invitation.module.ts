@@ -5,6 +5,8 @@ import { InvitationController } from './invitation.controller';
 import { InvitationService } from './invitation.service';
 import { DocumentsModule } from '../documents/documents.module';
 import { BillingModule } from '../billing/billing.module';
+import { InvitationAcceptService } from './invitation-accept.service';
+import { InvitationAdminService } from './invitation-admin.service';
 
 @Module({
   imports: [
@@ -17,7 +19,7 @@ import { BillingModule } from '../billing/billing.module';
     BillingModule,
   ],
   controllers: [InvitationController],
-  providers: [InvitationService],
-  exports: [InvitationService],
+  providers: [InvitationService, InvitationAcceptService, InvitationAdminService],
+  exports: [InvitationService, InvitationAcceptService, InvitationAdminService],
 })
 export class InvitationModule {}

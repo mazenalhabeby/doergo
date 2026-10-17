@@ -18,6 +18,7 @@ import { PermissionsGuard } from '../src/common/guards/permissions.guard';
 import { TasksController } from '../src/modules/tasks/tasks.controller';
 import { TasksService } from '../src/modules/tasks/tasks.service';
 import { TasksQueueService } from '../src/modules/tasks/tasks.queue.service';
+import { TASK_CONTROLLERS } from '../src/modules/tasks/__tests__/tasks-controllers.fixture';
 
 describe('TasksController (e2e)', () => {
   let app: INestApplication;
@@ -171,7 +172,7 @@ describe('TasksController (e2e)', () => {
           { name: 'default', ttl: 60000, limit: 1000 },
         ]),
       ],
-      controllers: [TasksController],
+      controllers: [...TASK_CONTROLLERS],
       providers: [
         {
           provide: TasksService,

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
+  notEndedWhere,
   orgMonthlyCost,
   applyAgreement,
   agreementFrom,
@@ -78,7 +79,7 @@ export class OrgBillService {
           isExternal: true,
           memberRole: { select: { permissions: true } },
           spaceAssignments: {
-            where: { OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }] },
+            where: { ...notEndedWhere() },
             select: { role: { select: { permissions: true } } },
           },
         },

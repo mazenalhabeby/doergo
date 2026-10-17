@@ -19,10 +19,8 @@
  *      narrowed by another, a grant in workspace A acts on workspace B.
  */
 import 'reflect-metadata';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { PERMISSIONS_IN_SPACE_KEY } from '@hbcfield/shared';
-import { AttendanceController } from '../attendance.controller';
+import { attendanceControllers, attendanceRoute, attendanceControllerSource } from './attendance-controllers.fixture';
 
 type Key = 'canApproveAttendance' | 'canReconcileAttendance' | 'canDeleteAttendance';
 
@@ -70,12 +68,12 @@ function controller() {
   const service = new Proxy({} as Record<string, jest.Mock>, {
     get: (target, prop: string) => (target[prop] ??= jest.fn().mockResolvedValue({ success: true })),
   });
-  return { ctrl: new AttendanceController(service as any, {} as any) as any, service };
+  return { ctrl: attendanceControllers(service as any, {} as any) as any, service };
 }
 
 describe('attendance decisions — the gate', () => {
   it.each(Object.entries(ROUTES))('%s requires %s, and only that', (route, [key]) => {
-    const perms = Reflect.getMetadata(PERMISSIONS_IN_SPACE_KEY, (AttendanceController.prototype as any)[route]);
+    const perms = Reflect.getMetadata(PERMISSIONS_IN_SPACE_KEY, attendanceRoute(route));
     expect(perms).toEqual([key]);
   });
 });
@@ -110,7 +108,7 @@ describe('attendance decisions — the scope handed to the service', () => {
   narrow by the key it is gated on. Catches the next route, not just these.
 */
 describe('attendance controller — decorator key = narrowing key', () => {
-  const src = readFileSync(join(__dirname, '..', 'attendance.controller.ts'), 'utf8')
+  const src = attendanceControllerSource()
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/\/\/.*$/gm, '');
   const blocks = src.split(/\n\s*@(?:Get|Post|Patch|Put|Delete)\(/).slice(1);

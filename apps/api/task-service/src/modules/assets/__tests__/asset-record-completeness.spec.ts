@@ -8,7 +8,7 @@ import {
   SELECTABLE_ASSET_WHERE,
   BILLABLE_ASSET_WHERE,
 } from '@hbcfield/shared';
-import { AssetsService } from '../assets.service';
+import { assetServices } from './assets.service.fixture';
 import { AssetAccessService } from '../asset-access.service';
 
 /**
@@ -39,7 +39,7 @@ function setup(stored: Record<string, unknown> = {}) {
     $transaction: jest.fn(async (fn: any) => fn(prisma)),
   };
   const holders: any = { resolve: jest.fn(async () => []), limitFor: jest.fn(() => 1) };
-  const service = new AssetsService(
+  const service = assetServices(
     prisma,
     new AssetAccessService(prisma),
     { logHolderChange: jest.fn() } as any,

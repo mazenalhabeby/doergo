@@ -1,5 +1,6 @@
 import { sessionAccess } from './stand-in';
 import {
+  activeWindowWhere,
   readAssignedHome,
   normalizeRole,
   isAdmin,
@@ -102,8 +103,7 @@ export class TokenValidationService {
           assignedHome: true,
           spaceAssignments: {
             where: {
-              effectiveFrom: { lte: new Date() },
-              OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+              ...activeWindowWhere(),
             },
             select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
           },

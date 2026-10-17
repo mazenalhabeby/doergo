@@ -1,5 +1,5 @@
 import { buildIcs, occurrences, repeatToRrule } from '@hbcfield/shared';
-import { EventsService } from '../events.service';
+import { eventServices } from './events.service.fixture';
 
 /* Regressions found by the calendar audit (2026-10-06) — each one pinned. */
 
@@ -34,7 +34,7 @@ function svcWith(ev: any) {
   };
   prisma.$transaction = jest.fn(async (fn: any) => fn(prisma));
   const notifications = { emit: jest.fn() };
-  const svc = new EventsService(prisma, { workspacesOf: jest.fn().mockResolvedValue([]) } as any, notifications as any);
+  const svc = eventServices(prisma, { workspacesOf: jest.fn().mockResolvedValue([]) } as any, notifications as any);
   // The read-back after a save is not under test.
   (svc as any).get = jest.fn().mockResolvedValue({});
   return { svc, prisma, notifications };
@@ -95,7 +95,7 @@ describe('availability tells a colleague "not working", never why', () => {
       spaceAssignment: { findMany: jest.fn().mockResolvedValue([]) },
     };
     const rules: any = { personRulesMany: jest.fn().mockResolvedValue(new Map()), workspacesOf: jest.fn() };
-    const svc = new EventsService(prisma, rules, { emit: jest.fn() } as any);
+    const svc = eventServices(prisma, rules, { emit: jest.fn() } as any);
     const r: any = await svc.availability({ userId: 'me', organizationId: 'org', role: 'ADMIN', teamSpaces: [], userIds: ['k'], from: '2027-03-01T07:00:00Z', to: '2027-03-01T19:00:00Z' } as any);
     const k = r.data.find((x: any) => x.userId === 'k');
     expect(k.days[0]).toEqual({ day: '2027-03-01', kind: 'off', leave: null });

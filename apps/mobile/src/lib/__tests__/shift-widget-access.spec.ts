@@ -18,11 +18,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { hasAccessModule } from '@hbcfield/shared/client';
 import { meets } from '../../home/entitlement';
+import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const APP = path.resolve(__dirname, '../../../app');
 const code = (p: string) =>
-  fs.readFileSync(p, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  readSource(p, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 /** The registry row, as written in `home/registry.tsx`. */
 const SHIFT = { module: 'clock' as const, internal: true as const, self: true as const };

@@ -4,10 +4,13 @@
 import { RELEASE_API_URL, RELEASE_ORIGIN, resolveApiUrl, resolveSocketUrl } from '../api/base-url';
 import * as fs from 'fs';
 import * as path from 'path';
+import { readSource } from '../../test-utils/read-source';
 
 describe('the API address', () => {
   it('release: an https env URL is used; http is refused for the shipped address', () => {
-    expect(resolveApiUrl({ apiUrl: 'https://staging.hbcfield.com/api/v1', dev: false })).toBe('https://staging.hbcfield.com/api/v1');
+    expect(resolveApiUrl({ apiUrl: 'https://staging.hbcfield.com/api/v1', dev: false })).toBe(
+      'https://staging.hbcfield.com/api/v1',
+    );
     expect(resolveApiUrl({ apiUrl: 'http://hbcfield.com/api/v1', dev: false })).toBe(RELEASE_API_URL);
     expect(resolveApiUrl({ apiUrl: 'http://192.168.1.4:4000/api/v1', dev: false })).toBe(RELEASE_API_URL);
     expect(resolveApiUrl({ apiUrl: 'hbcfield.com', dev: false })).toBe(RELEASE_API_URL);
@@ -24,9 +27,11 @@ describe('the API address', () => {
 });
 
 describe('the socket address', () => {
-  it('release: the https API\'s origin, never http', () => {
+  it("release: the https API's origin, never http", () => {
     expect(resolveSocketUrl({ apiUrl: 'https://hbcfield.com/api/v1', dev: false })).toBe('https://hbcfield.com');
-    expect(resolveSocketUrl({ socketUrl: 'http://hbcfield.com', apiUrl: 'https://hbcfield.com/api/v1', dev: false })).toBe('https://hbcfield.com');
+    expect(
+      resolveSocketUrl({ socketUrl: 'http://hbcfield.com', apiUrl: 'https://hbcfield.com/api/v1', dev: false }),
+    ).toBe('https://hbcfield.com');
     expect(resolveSocketUrl({ apiUrl: 'http://x.com/api/v1', dev: false })).toBe(RELEASE_ORIGIN);
     expect(resolveSocketUrl({ debuggerHost: '10.0.0.2:8081', dev: false })).toBe(RELEASE_ORIGIN);
   });
@@ -37,7 +42,10 @@ describe('the socket address', () => {
   });
   it('both read the one resolver', () => {
     const ROOT = path.resolve(__dirname, '../../..');
-    expect(fs.readFileSync(path.join(ROOT, 'src/lib/socket.ts'), 'utf8')).toMatch(/resolveSocketUrl\(urlEnvironment\(\)\)/);
-    expect(fs.readFileSync(path.join(ROOT, 'src/lib/api/client.ts'), 'utf8')).toMatch(/resolveApiUrl\(urlEnvironment\(\)\)/);
+    expect(fs.readFileSync(path.join(ROOT, 'src/lib/socket.ts'), 'utf8')).toMatch(
+      /resolveSocketUrl\(urlEnvironment\(\)\)/,
+    );
+    // client.ts reads with the parts moved out of it (test-utils/read-source.ts).
+    expect(readSource(path.join(ROOT, 'src/lib/api/client.ts'), 'utf8')).toMatch(/resolveApiUrl\(urlEnvironment\(\)\)/);
   });
 });

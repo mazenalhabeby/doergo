@@ -1,28 +1,15 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList,
-  RefreshControl, ActivityIndicator, TextInput,
-} from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
 import { ScreenHeader } from '../../../src/components';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
-import { useTheme } from '../../../src/contexts/theme-context';
-import { useToast } from '../../../src/island/island-context';
-import { useAuth } from '../../../src/contexts/auth-context';
-import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
-import { attendanceApi, type NoShow } from '../../../src/lib/api';
+import { type NoShow } from '../../../src/lib/api';
 import type { TimeEntry } from '../../../src/lib/api/types';
-import { workedMinutes, personName, localDateKey, formatDuration } from '@hbcfield/shared/client';
-import { holds } from '../../../src/lib/permissions';
+import { localDateKey } from '@hbcfield/shared/client';
 import { FilterChip } from '../../../src/components/filter-chip';
-import {
-  Skeleton, ScreenContainer, AttendanceEditSheet,
-} from '../../../src/components';
+import { Skeleton, ScreenContainer, AttendanceEditSheet } from '../../../src/components';
 import { DatePickerModal } from '../../../src/components/date-picker-modal';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
-import { router, type Href } from 'expo-router';
+import { COLORS, SPACING } from '../../../src/lib/constants';
+import { SEGMENTS, PERIODS, dateFromISO, shortDay, s } from '../../../src/screens/app/manage/attendance-review-helpers';
+import { useAttendanceReviewScreen } from '../../../src/screens/app/manage/use-attendance-review-screen';
 
 /**
  * Attendance review on the phone — the web `/attendance` page's working half.
@@ -43,377 +30,39 @@ import { router, type Href } from 'expo-router';
  * where a mistake is easier to see and to undo.
  */
 
-// Approving hours and excusing a missed clock-in are decided in Approvals; this screen is the record.
-type Segment = 'records' | 'noshows';
-type Period = 'today' | 'week' | 'month' | 'custom';
-
-const SEGMENTS: Segment[] = ['records', 'noshows'];
-const PERIODS: Period[] = ['today', 'week', 'month', 'custom'];
-/** One screenful and a bit — every list pages in as it is read. */
-const PAGE = 30;
-/** How far back the no-show sweep looks, matching the web default. */
-const NO_SHOW_DAYS = 7;
-
-/** Auto-approval flags, coloured by how much attention each deserves. */
-const FLAG_COLOR: Record<string, string> = {
-  MISSED_CLOCK_OUT: '#ef4444',
-  OVERTIME: '#f97316',
-  OUTSIDE_GEOFENCE_IN: '#f59e0b',
-  OUTSIDE_GEOFENCE_OUT: '#f59e0b',
-  LATE_ARRIVAL: '#eab308',
-  EARLY_DEPARTURE: '#eab308',
-  UNSCHEDULED_DAY: '#a855f7',
-};
-
-/** A list plus where it has got to. `done` means the server has no more rows. */
-interface Feed<T> {
-  rows: T[];
-  page: number;
-  done: boolean;
-}
-
 export default function AttendanceReviewScreen() {
-  const { colors } = useTheme();
-  const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
-  const toast = useToast();
-  const { user } = useAuth();
-  const { formatTime, formatDateRelative } = useTimeFormat();
-
-  /*
-    May they DECIDE, CORRECT, or only look?
-
-    Three separate grants, and the endpoints enforce exactly this split:
-    `canViewSpaceAttendance` reads the lists, `canApproveAttendance` approves or
-    rejects a shift (a sign-off — a client's supervisor holds it), and
-    `canReconcileAttendance` corrects one: edits its times, excuses a no-show.
-    Each button follows the grant its own route asks, so a supervisor who signs
-    off our hours is never offered a correction the server would refuse.
-  */
-  const canCorrect = holds(user, 'canReconcileAttendance');
-
-  const [segment, setSegment] = useState<Segment>('records');
-  const [period, setPeriod] = useState<Period>('today');
-  const [search, setSearch] = useState('');
-  /* A range the reader picked themselves — two calendar days, inclusive. */
-  const [customFrom, setCustomFrom] = useState<string | null>(null);
-  const [customTo, setCustomTo] = useState<string | null>(null);
-  const [pickingRange, setPickingRange] = useState<'from' | 'to' | null>(null);
-  const [editing, setEditing] = useState<TimeEntry | null>(null);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-
-  const [records, setRecords] = useState<Feed<TimeEntry> | null>(null);
-  const [noShows, setNoShows] = useState<Feed<NoShow> | null>(null);
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  /** One Date for the calendars, so they do not re-render on every keystroke. */
-  const TODAY = useMemo(() => new Date(), []);
-  /*
-    Where the range picker goes after this pick.
-
-    The calendar closes itself after a selection — it calls `onSelect` and then
-    `onClose`, in that order. Setting the second step inside `onSelect` was
-    therefore undone a line later by the close handler, so choosing From simply
-    shut the calendar and To was never asked for. The step is parked here and
-    read by `onClose`, which is the one that runs last.
-  */
-  const nextRangeStepRef = useRef<'to' | null>(null);
-
-  const lastLoadedRef = useRef<Record<Segment, number>>({ records: 0, noshows: 0 });
-  const feedOf = { records, noshows: noShows }[segment];
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  /*
-    Which days the History tab is asking about.
-
-    The endpoint takes either a single `date` or a `startDate`/`endDate` pair,
-    so "today" stays a one-day query rather than a range of length one — the
-    same request the dashboard makes, and the cheaper index for it.
-  */
-  const rangeParams = useCallback(() => {
-    if (period === 'today') return { date: dayISO(0) };
-    if (period === 'custom') {
-      // Until both ends are chosen, a custom range has nothing to ask about —
-      // showing the last 30 days under a "Custom" chip would be a lie.
-      if (!customFrom || !customTo) return null;
-      return { startDate: customFrom, endDate: customTo };
-    }
-    return { startDate: dayISO(period === 'week' ? 6 : 29), endDate: dayISO(0) };
-  }, [period, customFrom, customTo]);
-
-  const fetchPage = useCallback(async (which: Segment, page: number) => {
-    if (which === 'records') {
-      const range = rangeParams();
-      if (!range) return [] as TimeEntry[];
-      return attendanceApi.getAllEntries({
-        ...range,
-        search: debouncedSearch || undefined,
-        page,
-        limit: PAGE,
-      });
-    }
-    // No-shows are a fixed window of a few days, and arrive whole.
-    return attendanceApi.listNoShows(NO_SHOW_DAYS);
-  }, [rangeParams, debouncedSearch]);
-
-  const setFeed = useCallback((which: Segment, feed: Feed<any> | null) => {
-    if (which === 'records') setRecords(feed);
-    else setNoShows(feed);
-  }, []);
-
-  /*
-    One segment, one request, and only when it is actually looked at.
-
-    Loading all three up front would fire three queries over the same table for
-    a screen that shows one of them — and the approvals queue is the one people
-    open. A segment already fetched is kept, so switching back is instant; pull
-    to refresh, or leave for half a minute, and it asks again.
-  */
-  const load = useCallback(async (which: Segment, mode: 'initial' | 'refresh' = 'initial') => {
-    if (mode === 'refresh') setIsRefreshing(true);
-    else setIsLoading(true);
-    try {
-      const rows = await fetchPage(which, 1);
-      setFeed(which, { rows, page: 1, done: rows.length < PAGE });
-      lastLoadedRef.current[which] = Date.now();
-    } catch (err: any) {
-      if (err?.statusCode === 401) return;
-      toast.error(t('common.error'), err?.message || t('attendanceReview.failedToLoad'));
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [fetchPage, setFeed, t, toast]);
-
-  /*
-    More rows when the reader reaches the end of what they have.
-
-    A fixed limit would be a silent cap: thirty rows shown, the rest invisible,
-    and a screen that looks finished when it is not. A month of attendance for a
-    real crew is hundreds of shifts.
-  */
-  const loadMore = useCallback(async () => {
-    const feed = feedOf;
-    if (!feed || feed.done || loadingMore || isLoading || segment === 'noshows') return;
-    const next = feed.page + 1;
-    setLoadingMore(true);
-    try {
-      const more = await fetchPage(segment, next);
-      setFeed(segment, { rows: [...feed.rows, ...more], page: next, done: more.length < PAGE });
-    } catch {
-      // A failed page is not worth a toast — pull-to-refresh is right there.
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [feedOf, loadingMore, isLoading, segment, fetchPage, setFeed]);
-
-  const show = useCallback((which: Segment) => {
-    setSegment(which);
-    const feed = { records, noshows: noShows }[which];
-    if (feed === null) load(which);
-  }, [load, records, noShows]);
-
-  // A different window or a different name is a different question — ask it,
-  // from the first page.
-  useEffect(() => {
-    if (records === null) return; // History has not been opened yet.
-    load('records');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, debouncedSearch, customFrom, customTo]);
-
-  useFocusEffect(useCallback(() => {
-    if (Date.now() - lastLoadedRef.current[segment] < 30000) return;
-    load(segment);
-  }, [segment, load]));
-
-  // ── Rows ──────────────────────────────────────────────────────────────────
-
-  const memberName = (e: TimeEntry) => {
-    const u = (e as unknown as { user?: { firstName?: string; lastName?: string } }).user;
-    return u ? personName(u) : t('attendanceReview.someone');
-  };
-  const spaceName = (e: TimeEntry) =>
-    (e as unknown as { location?: { name?: string } }).location?.name ?? '';
-  /*
-    The zone the entry HAPPENED in, not the reader's.
-
-    An entry carries the timezone captured at clock-in, with the space's zone
-    behind it. Rendering a shift in the phone's zone would tell a supervisor
-    abroad that their crew started at four in the morning.
-  */
-  const zoneOf = (e: TimeEntry) =>
-    (e as unknown as { timezone?: string | null }).timezone ??
-    (e as unknown as { location?: { timezone?: string | null } }).location?.timezone ??
-    undefined;
-
-  const Flags = ({ reasons }: { reasons?: string[] }) => {
-    if (!reasons?.length) return null;
-    return (
-      <View style={s.flagRow}>
-        {reasons.map((r) => {
-          const color = FLAG_COLOR[r] ?? colors.textMuted;
-          return (
-            <View key={r} style={[s.flag, { backgroundColor: color + '1f', borderColor: color + '55' }]}>
-              <Text style={[s.flagText, { color }]}>{t(`attendanceReview.flags.${r}`, r)}</Text>
-            </View>
-          );
-        })}
-      </View>
-    );
-  };
-
-  /** Where a past shift ended up: approved, sent back, or still waiting. */
-  const Outcome = ({ entry }: { entry: TimeEntry }) => {
-    const status = entry.approvalStatus;
-    if (!status) return null;
-    const color = status === 'APPROVED' ? '#22c55e' : status === 'REJECTED' ? COLORS.error : '#f59e0b';
-    return (
-      <View style={[s.flag, { backgroundColor: color + '1f', borderColor: color + '55' }]}>
-        <Text style={[s.flagText, { color }]}>{t(`attendanceReview.outcome.${status}`, status)}</Text>
-      </View>
-    );
-  };
-
-  const EntryCard = ({ entry }: { entry: TimeEntry }) => {
-    const tz = zoneOf(entry);
-    const open = !entry.clockOutAt;
-    return (
-      <View style={[s.card, { backgroundColor: colors.card }]}>
-        <View style={s.cardTop}>
-          <View style={s.cardInfo}>
-            <Text style={[s.name, { color: colors.textPrimary }]} numberOfLines={1}>{memberName(entry)}</Text>
-            <Text style={[s.meta, { color: colors.textSecondary }]} numberOfLines={1}>
-              {formatDateRelative(entry.clockInAt, tz)}
-              {spaceName(entry) ? ` · ${spaceName(entry)}` : ''}
-            </Text>
-          </View>
-          <Text style={[s.duration, { color: colors.textPrimary }]}>
-            {open ? t('attendanceReview.onTheClock') : formatDuration(workedMinutes(entry))}
-          </Text>
-        </View>
-
-        <View style={s.timesRow}>
-          <Ionicons name="log-in-outline" size={14} color={colors.textMuted} />
-          <Text style={[s.times, { color: colors.textSecondary }]}>{formatTime(entry.clockInAt, tz)}</Text>
-          <Ionicons name="arrow-forward" size={13} color={colors.textMuted} />
-          <Text style={[s.times, { color: open ? colors.textMuted : colors.textSecondary }]}>
-            {entry.clockOutAt ? formatTime(entry.clockOutAt, tz) : '—'}
-          </Text>
-        </View>
-
-        <View style={s.flagRow}>
-          {/* History says how each shift ended; the queue is all pending by
-              definition, so the badge would be the same word on every card. */}
-          {segment === 'records' && <Outcome entry={entry} />}
-        </View>
-        <Flags reasons={entry.flagReasons} />
-
-        {!!entry.notes && (
-          <Text style={[s.note, { color: colors.textMuted }]} numberOfLines={2}>{entry.notes}</Text>
-        )}
-
-        {/* Correcting a past shift belongs to whoever reconciles attendance —
-            the same grant the endpoint enforces. */}
-        {canCorrect && segment === 'records' && (
-          <TouchableOpacity style={s.editRow} onPress={() => setEditing(entry)} activeOpacity={0.7}>
-            <Ionicons name="create-outline" size={15} color={COLORS.primary} />
-            <Text style={[s.editText, { color: COLORS.primary }]}>{t('attendanceReview.edit.button')}</Text>
-            {entry.isEdited && (
-              <Text style={[s.editedNote, { color: colors.textMuted }]}>{t('attendanceReview.edit.editedBadge')}</Text>
-            )}
-          </TouchableOpacity>
-        )}
-
-      </View>
-    );
-  };
-
-  const NoShowCard = ({ row }: { row: NoShow }) => {
-    return (
-      <View style={[s.card, { backgroundColor: colors.card }]}>
-        <View style={s.cardTop}>
-          <View style={s.cardInfo}>
-            <Text style={[s.name, { color: colors.textPrimary }]} numberOfLines={1}>{row.userName}</Text>
-            <Text style={[s.meta, { color: colors.textSecondary }]} numberOfLines={1}>
-              {formatDateRelative(row.expectedClockInAt)} · {row.spaceName}
-            </Text>
-          </View>
-          {row.state === 'EXCUSED' && (
-            <View style={[s.flag, { backgroundColor: '#22c55e1f', borderColor: '#22c55e55' }]}>
-              <Text style={[s.flagText, { color: '#22c55e' }]} numberOfLines={1}>
-                {row.closeReason
-                  ? `${t('attendanceReview.excusedBadge')} · ${t(`attendanceReview.closeReason.${row.closeReason}`, { defaultValue: row.closeReason })}`
-                  : t('attendanceReview.excusedBadge')}
-              </Text>
-            </View>
-          )}
-          {row.state === 'ABSENT' && (
-            <View style={[s.flag, { backgroundColor: '#ef44441f', borderColor: '#ef444455' }]}>
-              <Text style={[s.flagText, { color: '#ef4444' }]}>{t('attendanceReview.absentBadge')}</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={s.timesRow}>
-          <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
-          <Text style={[s.times, { color: colors.textSecondary }]}>
-            {t('attendanceReview.expected', {
-              from: formatTime(row.expectedClockInAt),
-              to: formatTime(row.expectedClockOutAt),
-            })}
-          </Text>
-        </View>
-
-        {!!row.excuseReason && (
-          <Text style={[s.note, { color: colors.textMuted }]} numberOfLines={2}>{row.excuseReason}</Text>
-        )}
-
-        {/* An open one is decided in Approvals — the one place. */}
-        {row.state !== 'EXCUSED' && row.state !== 'ABSENT' && (
-          <TouchableOpacity style={s.editRow} onPress={() => router.push('/(app)/approvals?kind=noShow' as Href)} activeOpacity={0.7}>
-            <Ionicons name="file-tray-full-outline" size={15} color={COLORS.primary} />
-            <Text style={[s.editText, { color: COLORS.primary }]}>{t('approvals.decideInApprovals')}</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  };
-
-  // ── Render ────────────────────────────────────────────────────────────────
-
-  // People still on the clock first: they are the ones a decision can still
-  // reach today. Past days are newest-first, which is how they arrive.
-  const rows: (TimeEntry | NoShow)[] = useMemo(() => {
-    const list = feedOf?.rows ?? [];
-    if (segment !== 'records' || period !== 'today') return list;
-    return [...(list as TimeEntry[])].sort((a, b) => {
-      const openA = a.clockOutAt ? 1 : 0;
-      const openB = b.clockOutAt ? 1 : 0;
-      if (openA !== openB) return openA - openB;
-      return new Date(b.clockInAt).getTime() - new Date(a.clockInAt).getTime();
-    });
-  }, [feedOf, segment, period]);
-
-  const searching = segment === 'records' && !!debouncedSearch;
-  const emptyCopy = {
-    records: {
-      icon: 'time-outline' as const,
-      text: searching
-        ? t('attendanceReview.empty.noMatch', { name: debouncedSearch })
-        : t(`attendanceReview.empty.records.${period}`),
-    },
-    noshows: { icon: 'happy-outline' as const, text: t('attendanceReview.empty.noshows') },
-  }[segment];
-
-  const segmentLabel = (seg: Segment) =>
-    t(`attendanceReview.segments.${seg}`);
+  const {
+    colors,
+    t,
+    insets,
+    segment,
+    period,
+    setPeriod,
+    search,
+    setSearch,
+    customFrom,
+    setCustomFrom,
+    customTo,
+    setCustomTo,
+    pickingRange,
+    setPickingRange,
+    editing,
+    setEditing,
+    setRecords,
+    isLoading,
+    isRefreshing,
+    loadingMore,
+    TODAY,
+    nextRangeStepRef,
+    load,
+    loadMore,
+    show,
+    EntryCard,
+    NoShowCard,
+    rows,
+    emptyCopy,
+    segmentLabel,
+  } = useAttendanceReviewScreen();
 
   return (
     <View style={[s.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
@@ -475,9 +124,7 @@ export default function AttendanceReviewScreen() {
             data={rows as any[]}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) =>
-              segment === 'noshows'
-                ? <NoShowCard row={item as NoShow} />
-                : <EntryCard entry={item as TimeEntry} />
+              segment === 'noshows' ? <NoShowCard row={item as NoShow} /> : <EntryCard entry={item as TimeEntry} />
             }
             contentContainerStyle={s.list}
             showsVerticalScrollIndicator={false}
@@ -566,71 +213,3 @@ export default function AttendanceReviewScreen() {
     </View>
   );
 }
-
-/** "yyyy-MM-dd" → a Date for the calendar; a calendar day has no zone. */
-function dateFromISO(d: string | null): Date | null {
-  if (!d) return null;
-  const [y, m, day] = d.split('-').map(Number);
-  if (!y || !m || !day) return null;
-  return new Date(y, m - 1, day);
-}
-/** "2026-08-05" → "8/5" — short enough to sit inside a chip. */
-function shortDay(iso: string): string {
-  const [, m = '', d = ''] = iso.split('-');
-  return `${Number(m)}/${Number(d)}`;
-}
-
-/**
- * A calendar day, `back` days ago, in the device's own zone.
- *
- * The query is a date, not an instant: the server resolves each day against the
- * entry's own timezone, so what this has to send is which days the reader means.
- */
-function dayISO(back: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - back);
-  return localDateKey(d);
-}
-
-const s = StyleSheet.create({
-  container: { flex: 1 },
-  filterRow: { flexDirection: 'row', gap: SPACING.sm, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md },
-  controls: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md, gap: SPACING.sm },
-  searchBox: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
-    borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: SPACING.md, height: 42,
-  },
-  searchInput: { flex: 1, fontSize: FONT_SIZE.base, paddingVertical: 0 },
-  periodRow: { flexDirection: 'row', gap: SPACING.sm },
-  list: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
-  card: { borderRadius: RADIUS.md, padding: SPACING.lg, marginBottom: SPACING.md, ...SHADOWS.sm },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: SPACING.md },
-  cardInfo: { flex: 1 },
-  name: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
-  meta: { fontSize: FONT_SIZE.sm, marginTop: 2 },
-  duration: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
-  timesRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginTop: SPACING.sm },
-  times: { fontSize: FONT_SIZE.sm },
-  flagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginTop: SPACING.sm },
-  flag: { paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: RADIUS.sm, borderWidth: StyleSheet.hairlineWidth },
-  flagText: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold },
-  note: { fontSize: FONT_SIZE.sm, marginTop: SPACING.sm, fontStyle: 'italic' },
-  actions: { flexDirection: 'row', gap: SPACING.md, marginTop: SPACING.md },
-  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.xs, paddingVertical: SPACING.sm + 2, borderRadius: RADIUS.md },
-  rejectBtn: { borderWidth: 1 },
-  approveBtn: { backgroundColor: COLORS.primary },
-  actionBtnText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
-  empty: { paddingVertical: SPACING.xxxl * 2, alignItems: 'center' },
-  emptyText: { fontSize: FONT_SIZE.base, marginTop: SPACING.md, textAlign: 'center', paddingHorizontal: SPACING.xl },
-  editRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginTop: SPACING.md },
-  editText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
-  editedNote: { fontSize: FONT_SIZE.xs, marginLeft: SPACING.sm },
-  sheetHint: { fontSize: FONT_SIZE.sm, marginBottom: SPACING.md },
-  input: {
-    minHeight: 90, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth,
-    padding: SPACING.md, fontSize: FONT_SIZE.base, textAlignVertical: 'top',
-  },
-  sheetBtn: { marginTop: SPACING.md, paddingVertical: SPACING.md, borderRadius: RADIUS.md, alignItems: 'center' },
-  sheetBtnText: { color: '#fff', fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold },
-});

@@ -9,8 +9,6 @@ import { useQuery, useMutation } from "@tanstack/react-query"
 import { Boxes, MapPin, ChevronDown, ChevronRight, Loader2, Briefcase, Building2, Handshake } from "lucide-react"
 import type { LatLng } from "@hbcfield/shared/client"
 import { ATTENDANCE_CONSTANTS, AVAILABLE_MODULES, DEFAULT_ORG_MODULES, MODULE_GROUPS, MODULE_PRESETS, RADIUS_SLIDER_STEPS, radiusToSliderPosition, sliderPositionToRadius } from "@hbcfield/shared/client"
-
-const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } = ATTENDANCE_CONSTANTS
 import { locationsApi, workflowsApi, type CreateLocationInput } from "@/lib/api"
 import { ExplainerButton } from "@/components/explainer/explainer-button"
 import { notify } from "@/lib/toast"
@@ -18,15 +16,10 @@ import { cn } from "@/lib/utils"
 import { Input, Button, Label } from "@/components/ui"
 import { TimezoneCombobox, fetchTimezone } from "@/components/timezone-combobox"
 import { WorkflowSelector } from "./workflow-selector"
-
-const LocationPicker = dynamic(() => import("@/components/location-picker"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/40">
-      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-    </div>
-  ),
-})
+import { useSpaceForm, GEO_MIN, GEO_MAX, GEO_DEFAULT } from "./use-space-form"
+import { LocationPicker } from "./space-form-helpers"
+import { SpaceFormForm } from "./space-form-form"
+import { SpaceFormAddress } from "./space-form-address"
 
 /**
  * Shared "create a space" form — name, workspace/physical type, location +
@@ -46,104 +39,49 @@ export function SpaceForm({
   submitLabel?: string
   autoFocus?: boolean
 }) {
-  const { hasPlanFeature } = useAuth()
-  const { t } = useTranslation()
-  const resolvedSubmitLabel = submitLabel ?? t("locations.createSpace")
-  // Workflows are fetched here (cached key shared with /locations, so no extra
-  // request) — keeps both call sites a one-liner.
-  const { data: workflows = [] } = useQuery({
-    queryKey: keys.workflows.lists(),
-    queryFn: () => workflowsApi.list(),
-    staleTime: 60000,
-  })
-
-  const [name, setName] = useState("")
-  const [type, setType] = useState<"workspace" | "physical">("workspace")
-  // Ownership classification — orthogonal to workspace/physical. CUSTOMER reveals
-  // contact fields (a customer-company space you do work for).
-  const [kind, setKind] = useState<"PROJECT" | "COMPANY" | "CUSTOMER">("COMPANY")
-  const [contactName, setContactName] = useState("")
-  const [contactEmail, setContactEmail] = useState("")
-  const [contactPhone, setContactPhone] = useState("")
-  const [address, setAddress] = useState("")
-  const [lat, setLat] = useState<number | null>(null)
-  const [lng, setLng] = useState<number | null>(null)
-  const [radius, setRadius] = useState(String(GEO_DEFAULT))
-  const [polygon, setPolygon] = useState<LatLng[] | null>(null)
-  /** A drawn boundary supersedes the radius — the check never reads it. */
-  const hasBoundary = (polygon?.length ?? 0) >= 3
-  // Auto-derived from the picked coordinates (admin can override with the
-  // searchable picker); backend also auto-derives if this is empty.
-  const [timezone, setTimezone] = useState("")
-  const lastTzCoords = useRef<string>("")
-  const [workflowId, setWorkflowId] = useState("")
-  const [enabledModules, setEnabledModules] = useState<string[]>([...DEFAULT_ORG_MODULES])
-  const [showAdvanced, setShowAdvanced] = useState(false)
-
-  const isPhysical = type === "physical"
-  const defaultWorkflow = workflows.find((w) => w.isDefault)
-
-  const mutation = useMutation({
-    mutationFn: (data: CreateLocationInput) => locationsApi.create(data),
-    onSuccess: () => {
-      notify.success(t("locations.toast.created"))
-      onCreated()
-    },
-    onError: (err: Error) => notify.error(err.message || t("locations.toast.createFailed")),
-  })
-
-  const toggleModule = useCallback((key: string) => {
-    setEnabledModules((prev) => (prev.includes(key) ? prev.filter((m) => m !== key) : [...prev, key]))
-  }, [])
-
-  // Dropping a pin / searching updates coords AND auto-fills the timezone from
-  // the map (admin can still override with the searchable picker below).
-  const handleLocationChange = useCallback((newLat: number, newLng: number) => {
-    setLat(newLat)
-    setLng(newLng)
-    const key = `${newLat.toFixed(4)},${newLng.toFixed(4)}`
-    if (key === lastTzCoords.current) return
-    lastTzCoords.current = key
-    void fetchTimezone(newLat, newLng).then((tz) => {
-      if (tz) setTimezone(tz)
-    })
-  }, [])
-
-  const handleSubmit = () => {
-    if (!name.trim()) return notify.error(t("locations.nameRequired"))
-    mutation.mutate({
-      name: name.trim(),
-      address: address.trim() || undefined,
-      // Logical workspaces have no coords; only physical sites need lat/lng for
-      // attendance geofencing.
-      lat: lat ?? undefined,
-      lng: lng ?? undefined,
-      // Geofence only matters for a physical site; clamp to the backend's
-      // allowed range so the value can never be rejected. Workspaces omit it
-      // (the backend defaults it).
-      geofenceRadius: isPhysical
-        ? Math.min(GEO_MAX, Math.max(GEO_MIN, parseInt(radius) || GEO_DEFAULT))
-        : undefined,
-      // A drawn boundary replaces the radius. Only sent for a physical site —
-      // a workspace with no coordinates has nothing to enclose.
-      geofencePolygon: isPhysical && polygon && polygon.length >= 3 ? polygon : undefined,
-      // Empty → backend auto-derives from coordinates (or its own default).
-      timezone: timezone || undefined,
-      enabledModules,
-      workflowId: workflowId || defaultWorkflow?.id || undefined,
-      // Ownership kind + customer contact fields (only sent for CUSTOMER).
-      kind,
-      contactName: kind === "CUSTOMER" ? contactName.trim() || undefined : undefined,
-      contactEmail: kind === "CUSTOMER" ? contactEmail.trim() || undefined : undefined,
-      contactPhone: kind === "CUSTOMER" ? contactPhone.trim() || undefined : undefined,
-    })
-  }
-
-  const KIND_OPTIONS = [
-    { value: "PROJECT" as const, icon: Briefcase, label: t("locations.form.kindProject", "My project") },
-    { value: "COMPANY" as const, icon: Building2, label: t("locations.form.kindCompany", "My company") },
-    { value: "CUSTOMER" as const, icon: Handshake, label: t("locations.form.kindCustomer", "Customer company") },
-  ]
+  const vm = useSpaceForm({ onCreated, onCancel, submitLabel, autoFocus })
+  const {
+    hasPlanFeature,
+    t,
+    resolvedSubmitLabel,
+    workflows,
+    name,
+    setName,
+    type,
+    setType,
+    kind,
+    setKind,
+    contactName,
+    setContactName,
+    contactEmail,
+    setContactEmail,
+    contactPhone,
+    setContactPhone,
+    address,
+    setAddress,
+    lat,
+    lng,
+    radius,
+    setRadius,
+    polygon,
+    setPolygon,
+    hasBoundary,
+    timezone,
+    setTimezone,
+    workflowId,
+    setWorkflowId,
+    enabledModules,
+    setEnabledModules,
+    showAdvanced,
+    setShowAdvanced,
+    isPhysical,
+    defaultWorkflow,
+    mutation,
+    toggleModule,
+    handleLocationChange,
+    handleSubmit,
+    KIND_OPTIONS,
+  } = vm
 
   return (
     <div className="space-y-5">
@@ -250,80 +188,7 @@ export function SpaceForm({
       )}
 
       {/* Physical-only: address + map + geofence */}
-      {isPhysical && (
-        <div data-tour="spaces-form-physical" className="space-y-3 rounded-xl border border-border bg-muted/30 p-4">
-          <div className="space-y-2">
-            <Label htmlFor="space-address">{t("locations.address")}</Label>
-            <Input
-              id="space-address"
-              placeholder={t("locations.form.addressPlaceholder")}
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-            />
-          </div>
-          <LocationPicker
-            polygon={polygon}
-            onPolygonChange={setPolygon}
-            lat={lat}
-            lng={lng}
-            radius={parseInt(radius) || GEO_DEFAULT}
-            address={address}
-            onLocationChange={handleLocationChange}
-            onAddressChange={setAddress}
-          />
-          {/* Timezone only matters for a PHYSICAL space (has a pin). A logical
-              space anchors shifts to each worker's own clock-in timezone, so
-              there's nothing to set here. */}
-          {lat != null && lng != null && (
-            <div className="space-y-2">
-              <Label htmlFor="space-timezone">{t("locations.timezone")}</Label>
-              <TimezoneCombobox value={timezone} onChange={setTimezone} />
-              <p className="text-xs text-muted-foreground">{t("locations.timezoneAutoHint")}</p>
-            </div>
-          )}
-          {/*
-            A drawn boundary REPLACES this — `isAtSite` checks the shape and
-            never reads the radius. Left visible but inert rather than hidden:
-            the value survives clearing the boundary, and a control that
-            disappears is its own kind of confusing.
-          */}
-          <div className="space-y-2">
-            <Label htmlFor="space-radius" className={hasBoundary ? "text-muted-foreground" : undefined}>
-              {t("locations.form.geofenceRadius")}
-            </Label>
-            <div className={cn("flex items-center gap-3", hasBoundary && "opacity-50")}>
-              <Input
-                id="space-radius"
-                type="number"
-                min={GEO_MIN}
-                max={GEO_MAX}
-                value={radius}
-                onChange={(e) => setRadius(e.target.value)}
-                disabled={hasBoundary}
-                className="w-24"
-              />
-              <input
-                type="range"
-                min={0}
-                max={RADIUS_SLIDER_STEPS}
-                value={radiusToSliderPosition(parseInt(radius) || GEO_DEFAULT)}
-                onChange={(e) => setRadius(String(sliderPositionToRadius(parseInt(e.target.value))))}
-                disabled={hasBoundary}
-                className="flex-1 accent-blue-600"
-              />
-              <span className="text-sm text-muted-foreground w-12 text-right">{radius}m</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {hasBoundary
-                ? t(
-                    "locations.boundary.radiusSuperseded",
-                    "The drawn site is used instead. Clear it to go back to a radius.",
-                  )
-                : t("locations.form.geofenceHint")}
-            </p>
-          </div>
-        </div>
-      )}
+      <SpaceFormAddress vm={vm} />
 
       {/* Workflow */}
       <div data-tour="spaces-form-workflow">
@@ -344,95 +209,7 @@ export function SpaceForm({
       </div>
 
       {/* Advanced — modules (collapsed; sensible defaults already set) */}
-      <div className="rounded-xl border border-border" data-tour="spaces-form-modules">
-        <button
-          type="button"
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className="flex w-full items-center justify-between px-4 py-3 text-sm hover:bg-muted/30 transition-colors rounded-xl"
-        >
-          <span className="font-medium text-foreground">{t("locations.form.advancedModules")}</span>
-          <span className="flex items-center gap-2 text-xs text-muted-foreground">
-            {t("locations.form.enabledCount", { count: enabledModules.length })}
-            {showAdvanced ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </span>
-        </button>
-        {showAdvanced && (
-          <div className="border-t border-border p-3 space-y-3 max-h-[340px] overflow-y-auto">
-            <p className="text-xs text-muted-foreground">
-              {t("locations.form.modulesIntro")}
-            </p>
-
-            {/* Presets */}
-            <div className="space-y-1.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("locations.presets")}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {MODULE_PRESETS.map((p) => {
-                  const active =
-                    p.modules.length === enabledModules.length &&
-                    p.modules.every((m) => enabledModules.includes(m))
-                  return (
-                    <button
-                      key={p.key}
-                      type="button"
-                      onClick={() => setEnabledModules([...p.modules])}
-                      className={cn(
-                        "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                        active
-                          ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                          : "border-border text-muted-foreground hover:bg-muted/50",
-                      )}
-                    >
-                      {p.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Grouped modules */}
-            {MODULE_GROUPS.map((grp) => (
-              <div key={grp.key} className="space-y-1">
-                <div className="px-1 pt-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{grp.label}</p>
-                  <p className="text-[11px] text-muted-foreground/70">{grp.description}</p>
-                </div>
-                {AVAILABLE_MODULES.filter((m) => m.group === grp.key).map((mod) => (
-                  <label
-                    htmlFor={`space-module-${mod.key}`}
-                    key={mod.key}
-                    className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                  >
-                    <input
-                      id={`space-module-${mod.key}`}
-                      type="checkbox"
-                      checked={enabledModules.includes(mod.key)}
-                      onChange={() => toggleModule(mod.key)}
-                      className="mt-0.5 rounded border-border text-blue-600 focus:ring-blue-500"
-                    />
-                    <div>
-                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
-                        {mod.label}
-                        {/*
-                          The row is a <label> around the checkbox, so this button
-                          stops its own click — see ExplainerButton. Without that,
-                          opening the help also switches the module on.
-                        */}
-                        <ExplainerButton
-                          explainerKey={mod.key}
-                          title={mod.label}
-                          scope="workspace"
-                          enabled={enabledModules.includes(mod.key)}
-                        />
-                      </span>
-                      <p className="text-xs text-muted-foreground mt-0.5">{mod.description}</p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <SpaceFormForm vm={vm} />
 
       {/* Footer */}
       <div className="flex justify-end gap-2 pt-1">

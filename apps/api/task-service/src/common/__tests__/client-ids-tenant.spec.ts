@@ -2,7 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { SprintsService } from '../../modules/sprints/sprints.service';
 import { EpicsService } from '../../modules/epics/epics.service';
 import { PhasesService } from '../../modules/phases/phases.service';
-import { RecurringTasksService } from '../../modules/recurring-tasks/recurring-tasks.service';
+import { recurringParts } from '../../modules/recurring-tasks/__tests__/recurring-tasks.service.fixture';
 import { LocationsService } from '../../modules/locations/locations.service';
 import { AssetProposalService } from '../../modules/assets/asset-proposal.service';
 
@@ -50,7 +50,7 @@ describe('client-supplied ids are checked before the write', () => {
 
   it('a recurring template’s client must be the organization’s', async () => {
     prisma.customer.findFirst.mockResolvedValue(null);
-    const svc = new RecurringTasksService(prisma);
+    const svc = recurringParts(prisma);
     await expect(
       svc.create({ title: 'T', frequency: 'DAILY', startDate: '2099-01-01', customerId: 'theirs', organizationId: ORG, createdById: 'u' } as any),
     ).rejects.toBeInstanceOf(NotFoundException);

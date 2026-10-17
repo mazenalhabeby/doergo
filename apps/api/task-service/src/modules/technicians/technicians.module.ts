@@ -4,11 +4,18 @@ import { ClientsModule } from '@nestjs/microservices';
 import { PrismaModule, SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { TechniciansController } from './technicians.controller';
 import { TechniciansService } from './technicians.service';
+import { MemberPerformanceService } from './member-performance.service';
+import { MemberScheduleService } from './member-schedule.service';
+import { TimeOffRequestService } from './time-off-request.service';
+import { LeaveRecordsService } from './leave-records.service';
+import { TimeOffDecisionService } from './time-off-decision.service';
 import { CoverService } from './cover.service';
 import { LeaveLedgerService } from './leave-ledger.service';
 import { LeaveCarryOverService } from './leave-carry-over.service';
 import { AttendanceModule } from '../attendance/attendance.module';
 import { CalendarRulesModule } from '../calendar/calendar-rules.module';
+import { LeaveOpeningService } from './leave-opening.service';
+import { CoverFloorService } from './cover-floor.service';
 
 @Module({
   // NotificationRoutingService needs no import — NotificationRoutingModule is
@@ -20,7 +27,20 @@ import { CalendarRulesModule } from '../calendar/calendar-rules.module';
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
   controllers: [TechniciansController],
-  providers: [TechniciansService, CoverService, LeaveLedgerService, LeaveCarryOverService, RequestPrecheckService],
-  exports: [TechniciansService, CoverService, LeaveLedgerService],
+  providers: [
+    TechniciansService,
+    MemberPerformanceService,
+    MemberScheduleService,
+    TimeOffRequestService,
+    LeaveRecordsService,
+    TimeOffDecisionService,
+    CoverService,
+    CoverFloorService,
+    LeaveLedgerService,
+    LeaveOpeningService,
+    LeaveCarryOverService,
+    RequestPrecheckService,
+  ],
+  exports: [TechniciansService, LeaveRecordsService, TimeOffDecisionService, CoverService, LeaveLedgerService],
 })
 export class TechniciansModule {}

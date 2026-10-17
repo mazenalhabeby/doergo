@@ -8,6 +8,8 @@ import { NotificationRoutingService } from '../../../common/notification-routing
 import { AssetAccessService } from '../asset-access.service';
 import { AssetContractService } from '../asset-contract.service';
 import { AssetProposalService } from '../asset-proposal.service';
+import { ProposalReviewService } from '../proposal-review.service';
+import { assetProposalServicesOf, type AssetProposalServiceParts } from './asset-proposal.service.fixture';
 import { AssetNotifier } from '../asset-notifier.service';
 import { AssetResponsibleService } from '../asset-responsible.service';
 
@@ -23,7 +25,7 @@ import { AssetResponsibleService } from '../asset-responsible.service';
 const FIELDS = { registration: 'GM-472 DK', vin: 'WF0YXXTTGYKA12345' };
 
 describe('AssetProposalService', () => {
-  let service: AssetProposalService;
+  let service: AssetProposalServiceParts;
   // `assertMay` is the REAL rule, so the proposal queue is tested against the
   // same door the contract flow opens; only `apply` is stubbed.
   const contracts = {
@@ -64,6 +66,7 @@ describe('AssetProposalService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AssetProposalService,
+        ProposalReviewService,
         // The real one: the fallback it owns is what these tests pin.
         AssetNotifier,
         AssetResponsibleService,
@@ -76,7 +79,7 @@ describe('AssetProposalService', () => {
         { provide: OBJECT_STORE, useValue: store },
       ],
     }).compile();
-    service = module.get(AssetProposalService);
+    service = assetProposalServicesOf(module);
   });
 
   const raise = (over: any = {}) =>

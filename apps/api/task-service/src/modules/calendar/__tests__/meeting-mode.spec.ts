@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { cleanPhone, meetingFieldsFor, meetingProvider, telHref } from '@hbcfield/shared';
-import { EventsService } from '../events.service';
+import { eventServices } from './events.service.fixture';
 
 /*
   How and where an appointment happens. The server decides what is saved: a workspace address is
@@ -26,7 +26,7 @@ function make() {
     calendarAttendee: { findMany: jest.fn().mockResolvedValue([]) },
   };
   const rules: any = { workspacesOf: jest.fn().mockResolvedValue(['office']) };
-  const svc = new EventsService(prisma, rules, { emit: jest.fn() } as any);
+  const svc = eventServices(prisma, rules, { emit: jest.fn() } as any);
   // The read-back after create is not under test here.
   jest.spyOn(svc, 'get').mockResolvedValue({ data: {} } as any);
   return { svc, prisma, rules };

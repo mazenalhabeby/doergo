@@ -22,6 +22,7 @@ type ChangeListener = (scope: string) => void;
 const PARENT_OF: Record<string, (row: any) => string | null> = {
   comments: (r) => r.taskId ?? null,
   attachments: (r) => r.taskId ?? null,
+  chat_messages: (r) => r.conversationId ?? null,
 };
 
 export class RecordsStore {

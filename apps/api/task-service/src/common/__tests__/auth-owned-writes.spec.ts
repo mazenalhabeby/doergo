@@ -8,6 +8,9 @@ import { join, relative } from 'path';
  * organization columns commit with the feed-token wipe; the leave ledger's
  * tracking-start day commits with the first starting balances). A third writer must
  * be added here with its reason — or go through auth-service.
+ *
+ * The space-roles MODULE is one writer: its service was split by job
+ * (2026-10-16), and the role writes now sit in three of its files.
  */
 describe('task-service writes to auth-owned tables', () => {
   const SRC = join(__dirname, '..', '..');
@@ -23,14 +26,20 @@ describe('task-service writes to auth-owned tables', () => {
     const writers = walk(SRC)
       .filter((f) => WRITE.test(readFileSync(f, 'utf8')))
       .map((f) => relative(SRC, f))
+      .map((f) => (f.startsWith('modules/space-roles/') ? 'modules/space-roles/' : f))
+      .filter((f, i, all) => all.indexOf(f) === i)
       .sort();
-    expect(writers).toEqual(['modules/calendar/holidays.service.ts', 'modules/space-roles/space-roles.service.ts', 'modules/technicians/leave-ledger.service.ts']);
+    expect(writers).toEqual([
+      'modules/calendar/holidays.service.ts',
+      'modules/space-roles/',
+      'modules/technicians/leave-opening.service.ts',
+    ]);
   });
 
   it.each([
     ['modules/calendar/holidays.service.ts', /A write to `Organization`, which auth-service owns/],
     ['modules/space-roles/space-roles.service.ts', /WHY THIS SERVICE WRITES `AccessRole`/],
-    ['modules/technicians/leave-ledger.service.ts', /WHY THIS SERVICE WRITES `Organization`/],
+    ['modules/technicians/leave-opening.service.ts', /WHY THIS SERVICE WRITES `Organization`/],
   ])('%s says why at the write', (file, why) => {
     expect(readFileSync(join(SRC, file), 'utf8')).toMatch(why);
   });

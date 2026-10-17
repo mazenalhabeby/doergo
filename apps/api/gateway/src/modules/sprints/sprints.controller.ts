@@ -10,14 +10,12 @@ import {
   Request,
   ParseIntPipe,
   DefaultValuePipe,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
-import { ModuleGuard } from '../../common/guards/module.guard';
 import { CreateSprintDto, UpdateSprintDto } from './dto';
 import { SprintsService } from './sprints.service';
 
@@ -82,7 +80,6 @@ export class SprintsController {
 
   @Post()
   @Roles(Role.ADMIN)
-  @UseGuards(ModuleGuard)
   @RequireModule('sprints')
   @ApiOperation({ summary: 'Create a new sprint' })
   async create(@Body() createSprintDto: CreateSprintDto, @Request() req: any) {

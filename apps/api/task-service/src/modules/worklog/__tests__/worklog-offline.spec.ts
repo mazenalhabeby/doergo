@@ -1,7 +1,7 @@
 /**
  * A work-log note (and its photo) written offline and sent — possibly twice.
  */
-import { WorklogService } from '../worklog.service';
+import { worklogParts } from './worklog.service.fixture';
 
 const session = { id: 'e1', userId: 'u1', organizationId: 'o1', clockInAt: new Date('2026-09-14T06:00:00Z'), locationId: 'l1' };
 const PREFIX = 'o1/attendance/2026/09/14/u1/e1/';
@@ -32,7 +32,7 @@ function build() {
   };
   const store: any = { head: jest.fn().mockResolvedValue({ exists: true, sizeBytes: 1234 }), privateUrl: (k: string) => `s3://${k}`, keyFromUrl: () => null, delete: jest.fn() };
   const media: any = { sign: jest.fn(async (a: any) => ({ ...a, url: 'https://signed' })), signAll: jest.fn() };
-  return { service: new WorklogService(prisma, store, media), prisma, store };
+  return { service: worklogParts(prisma, store, media), prisma, store };
 }
 
 const me = { organizationId: 'o1', callerUserId: 'u1', canManage: false, timeEntryId: 'e1' };

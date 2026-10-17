@@ -6,19 +6,32 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { slotHeldBy, ONE_AT_A_TIME_STATUSES } from '@hbcfield/shared/client';
+import { readSource } from '../../test-utils/read-source';
 
-const code = (p: string) => fs.readFileSync(path.resolve(__dirname, '../..', p), 'utf8');
+// A split file reads with the parts moved out of it (test-utils/read-source.ts).
+const code = (p: string) => readSource(path.resolve(__dirname, '../..', p), 'utf8');
 
 describe('the slot', () => {
   const me = 'u1';
   const job = (id: string, status: string, assignedToId = me) => ({ id, status, assignedToId, title: id });
-  it('another of mine under way holds it; blocked, finished and others\' jobs do not', () => {
+  it("another of mine under way holds it; blocked, finished and others' jobs do not", () => {
     expect(slotHeldBy('a', me, [job('a', 'ASSIGNED'), job('rewe', 'EN_ROUTE')])?.id).toBe('rewe');
-    expect(slotHeldBy('a', me, [job('a', 'ASSIGNED'), job('b', 'BLOCKED'), job('c', 'COMPLETED'), job('d', 'IN_PROGRESS', 'u2')])).toBeNull();
+    expect(
+      slotHeldBy('a', me, [
+        job('a', 'ASSIGNED'),
+        job('b', 'BLOCKED'),
+        job('c', 'COMPLETED'),
+        job('d', 'IN_PROGRESS', 'u2'),
+      ]),
+    ).toBeNull();
     expect(slotHeldBy('a', me, [job('a', 'IN_PROGRESS')])).toBeNull(); // itself never blocks
   });
   it('the server reads the same list', () => {
-    const server = fs.readFileSync(path.resolve(__dirname, '../../../../api/task-service/src/modules/tasks/task-status.service.ts'), 'utf8');
+    const server = fs.readFileSync(
+      // The one-at-a-time check moved out of task-status.service.ts with the updateStatus split.
+      path.resolve(__dirname, '../../../../api/task-service/src/modules/tasks/task-status-checks.ts'),
+      'utf8',
+    );
     expect(server).toMatch(/status: \{ in: \[\.\.\.ONE_AT_A_TIME_STATUSES\]/);
     expect([...ONE_AT_A_TIME_STATUSES]).toEqual(['ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS']);
   });
@@ -49,9 +62,20 @@ describe('the direct status write sends only what the endpoint takes', () => {
       }),
     }));
     const { tasksApi } = require('../api/tasks');
-    await tasksApi.updateStatus('t1', 'ARRIVED', undefined, { lat: 48.1, lng: 16.3, accuracy: 12, fixAt: '2026-09-27T09:00:00Z', mocked: false } as never);
+    await tasksApi.updateStatus('t1', 'ARRIVED', undefined, {
+      lat: 48.1,
+      lng: 16.3,
+      accuracy: 12,
+      fixAt: '2026-09-27T09:00:00Z',
+      mocked: false,
+    } as never);
     expect(calls[0]!.url).toBe('/tasks/t1/status');
     // As JSON on the wire: `reason: undefined` is not sent.
-    expect(JSON.parse(JSON.stringify(calls[0]!.body))).toEqual({ status: 'ARRIVED', lat: 48.1, lng: 16.3, accuracy: 12 });
+    expect(JSON.parse(JSON.stringify(calls[0]!.body))).toEqual({
+      status: 'ARRIVED',
+      lat: 48.1,
+      lng: 16.3,
+      accuracy: 12,
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  activeWindowWhere,
   DELEGATABLE_KEYS,
   DELEGATION_MAX_DAYS,
   ORG_ACCESS_SELECT,
@@ -91,12 +92,12 @@ export class StandInsService {
     let spaceFilter = {};
     if (!caller.managesPeople) {
       const mine = await this.prisma.spaceAssignment.findMany({
-        where: { userId: caller.userId, organizationId: caller.organizationId, effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] },
+        where: { userId: caller.userId, organizationId: caller.organizationId, ...activeWindowWhere(now) },
         select: { spaceId: true },
       });
       const spaceIds = [...new Set(mine.map((a) => a.spaceId))];
       if (!spaceIds.length) return [];
-      spaceFilter = { spaceAssignments: { some: { spaceId: { in: spaceIds }, effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] } } };
+      spaceFilter = { spaceAssignments: { some: { spaceId: { in: spaceIds }, ...activeWindowWhere(now) } } };
     }
     const people = await this.prisma.user.findMany({
       where: { organizationId: caller.organizationId, isActive: true, isExternal: false, id: { not: caller.userId }, ...spaceFilter },
@@ -115,7 +116,7 @@ export class StandInsService {
       select: {
         id: true, firstName: true, lastName: true, ...ORG_ACCESS_SELECT,
         spaceAssignments: {
-          where: { effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] },
+          where: { ...activeWindowWhere(now) },
           select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
         },
       },
@@ -228,7 +229,7 @@ export class StandInsService {
       select: {
         ...ORG_ACCESS_SELECT,
         spaceAssignments: {
-          where: { effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] },
+          where: { ...activeWindowWhere(now) },
           select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
         },
       },

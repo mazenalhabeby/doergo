@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { attendanceAuthority } from '../attendance-authority';
-import { AttendanceController } from '../../modules/attendance/attendance.controller';
+import { attendanceControllers } from '../../modules/attendance/__tests__/attendance-controllers.fixture';
 import { ShiftIssuesController } from '../../modules/shift-issues/shift-issues.controller';
 
 /*
@@ -38,7 +38,7 @@ describe('the controllers forward it', () => {
 
   it('work log: a read carries the viewing spaces, a write the reconciling ones', async () => {
     const svc = { worklogList: jest.fn(), worklogDeleteNote: jest.fn() };
-    const c = new AttendanceController(svc as any, {} as any);
+    const c = attendanceControllers(svc as any, {} as any);
     await c.worklogList('e1', supervisor);
     await c.worklogDelete('n1', supervisor);
     expect(svc.worklogList).toHaveBeenCalledWith(expect.objectContaining({ canManage: false, manageSpaceIds: ['s1', 's2'] }));
@@ -54,14 +54,15 @@ describe('the controllers forward it', () => {
     expect(svc.setStatus).toHaveBeenCalledWith(expect.objectContaining({ canManage: false, ledSpaceIds: ['s1'] }));
   });
 
-  it.each(['attendance/attendance.controller.ts', 'shift-issues/shift-issues.controller.ts'])(
-    '%s keeps no private copy of the rule',
-    (file) => {
-      const src = fs.readFileSync(path.join(__dirname, '../../modules', file), 'utf8');
-      expect(src).not.toMatch(/private canManage\(/);
-      expect(src).not.toMatch(/canManageUsers\s*\|\|\s*req\.user\?*\.canViewAllTasks/);
-    },
-  );
+  it.each([
+    'attendance/attendance.controller.ts',
+    'attendance/worklog.controller.ts',
+    'shift-issues/shift-issues.controller.ts',
+  ])('%s keeps no private copy of the rule', (file) => {
+    const src = fs.readFileSync(path.join(__dirname, '../../modules', file), 'utf8');
+    expect(src).not.toMatch(/private canManage\(/);
+    expect(src).not.toMatch(/canManageUsers\s*\|\|\s*req\.user\?*\.canViewAllTasks/);
+  });
 });
 
 describe('attendanceAuthority — the org-wide people manager', () => {

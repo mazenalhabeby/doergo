@@ -99,7 +99,10 @@
     "docker:down": "docker-compose -f infra/docker/docker-compose.yml down",
     "docker:logs": "docker-compose -f infra/docker/docker-compose.yml logs -f",
     "clean": "rm -rf node_modules apps/*/node_modules apps/api/*/node_modules packages/*/node_modules",
-    "db:create-fresh": "pnpm --filter @hbcfield/auth-service db:create-fresh"
+    "db:create-fresh": "pnpm --filter @hbcfield/auth-service db:create-fresh",
+    "size:check": "node tools/size-ratchet.mjs",
+    "size:update": "node tools/size-ratchet.mjs --update",
+    "format:changed": "node tools/format-changed.mjs"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -113,6 +116,7 @@
     "@eslint/js": "^9.39.4",
     "@playwright/test": "^1.49.1",
     "eslint": "^9.39.4",
+    "prettier": "3.9.9",
     "sharp": "^0.35.5",
     "typescript-eslint": "^8.57.0"
   }

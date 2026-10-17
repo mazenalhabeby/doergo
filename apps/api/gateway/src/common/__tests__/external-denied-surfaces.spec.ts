@@ -1,6 +1,7 @@
 import { DENY_EXTERNAL_KEY } from '../decorators/deny-external.decorator';
 import { SpaceUnitsController, UnitDetailController } from '../../modules/portal/space-units.controller';
 import { PortalAdminController } from '../../modules/portal/portal-admin.controller';
+import { PortalResidentsController } from '../../modules/portal/portal-residents.controller';
 import { SpacePortalController } from '../../modules/portal/space-portal.controller';
 import { BillingController } from '../../modules/billing/billing.controller';
 
@@ -25,9 +26,9 @@ describe('closed to external members', () => {
   it.each([
     ['portal/admin POST portals', PortalAdminController.prototype.createPortal],
     ['portal/admin DELETE portals/:id', PortalAdminController.prototype.deletePortal],
-    ['portal/admin POST residents', PortalAdminController.prototype.inviteResident],
-    ['portal/admin POST residents/:id/resend-invite', PortalAdminController.prototype.resendResidentInvite],
-    ['portal/admin DELETE residents/:id', PortalAdminController.prototype.removeResident],
+    ['portal/admin POST residents', PortalResidentsController.prototype.inviteResident],
+    ['portal/admin POST residents/:id/resend-invite', PortalResidentsController.prototype.resendResidentInvite],
+    ['portal/admin DELETE residents/:id', PortalResidentsController.prototype.removeResident],
     ['spaces/:spaceId/portal POST portals', SpacePortalController.prototype.createPortal],
   ])('%s', (_name, handler) => {
     expect(denied(handler)).toBe(true);

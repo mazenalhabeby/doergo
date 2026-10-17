@@ -14,6 +14,7 @@
  */
 
 import { unwrapDocuments } from '@/lib/api/documents';
+import { readSource } from '../test-utils/read-source';
 
 describe('unwrapDocuments', () => {
   it('reads a BARE array — the shape that broke every screen', () => {
@@ -63,12 +64,11 @@ describe('unwrapDocuments', () => {
 describe('every documents call uses it', () => {
   const fs = require('fs') as typeof import('fs');
   const path = require('path') as typeof import('path');
-  const src = fs.readFileSync(path.join(process.cwd(), 'src/lib/api/documents.ts'), 'utf8');
+  const src = readSource(path.join(process.cwd(), 'src/lib/api/documents.ts'), 'utf8');
 
-  const block = src.slice(
-    src.indexOf('export const documentsApi = {'),
-    src.indexOf('\n};', src.indexOf('export const documentsApi = {')),
-  );
+  // documentsApi is assembled from its parts (documents-files, documents-registers) since 2026-10-17;
+  // the source read is the index plus those parts, so the whole client is the block.
+  const block = src;
 
   it('finds the documentsApi block', () => {
     expect(block.length).toBeGreaterThan(500);

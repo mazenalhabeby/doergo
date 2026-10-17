@@ -11,7 +11,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
+import { personName, CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { OrgEventsService } from '../../common/events/org-events.service';
@@ -85,7 +85,7 @@ export class JoinRequestsController {
         organizationId: user.organizationId,
         organizationName: result.data.organizationName || '',
         role: dto.role,
-        approvedByName: `${user.firstName} ${user.lastName}`,
+        approvedByName: personName(user),
       });
     }
 
@@ -126,7 +126,7 @@ export class JoinRequestsController {
         organizationId: user.organizationId,
         organizationName: result.data.organizationName || '',
         reason: dto.reason || '',
-        rejectedByName: `${user.firstName} ${user.lastName}`,
+        rejectedByName: personName(user),
       });
     }
 

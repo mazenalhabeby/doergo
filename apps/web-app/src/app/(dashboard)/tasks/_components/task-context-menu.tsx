@@ -29,38 +29,16 @@ import { personName, mayChangeStatus, isFinishedStatus, STATUS_TRANSITIONS } fro
 import { getStatusConfig, getPriorityConfig, TASK_STATUSES, TASK_PRIORITIES } from "@/lib/constants"
 import type { Task, Sprint, Phase, Epic } from "@/lib/api"
 import { STORY_POINT_OPTIONS } from "@/lib/api"
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-export interface TaskContextMenuActions {
-  onStatusChange?: (taskId: string, status: string) => void
-  onPriorityChange?: (taskId: string, priority: string) => void
-  onAssigneeChange?: (taskId: string, assigneeId: string | null) => void
-  onSprintChange?: (taskId: string, sprintId: string | null) => void
-  onPhaseChange?: (taskId: string, phaseId: string | null) => void
-  onEpicChange?: (taskId: string, epicId: string | null) => void
-  onStoryPointsChange?: (taskId: string, points: number | null) => void
-  onSpaceChange?: (taskId: string, spaceId: string | null) => void
-  onDelete?: (taskId: string) => void
-}
-
-interface TaskContextMenuProps {
-  task: Task
-  children: React.ReactNode
-  sprints?: Sprint[]
-  phases?: Phase[]
-  epics?: Epic[]
-  spaces?: { id: string; name: string }[]
-  actions: TaskContextMenuActions
-  /** Unique assignees from recent tasks for quick assign */
-  recentAssignees?: { id: string; firstName: string; lastName: string }[]
-}
+import { useTaskContextMenuInner, type TaskContextMenuProps } from "./use-task-context-menu-inner"
+import { TaskContextMenuInnerMenu } from "./task-context-menu-inner-menu"
+import { TaskContextMenuInnerMenu2 } from "./task-context-menu-inner-menu2"
+import { TaskContextMenuInnerMenu3 } from "./task-context-menu-inner-menu3"
+export { type TaskContextMenuActions } from "./use-task-context-menu-inner"
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-function TaskContextMenuInner({
+export function TaskContextMenuInner({
   task,
   children,
   sprints = [],
@@ -70,40 +48,17 @@ function TaskContextMenuInner({
   actions,
   recentAssignees = [],
 }: TaskContextMenuProps) {
-  const { t } = useTranslation()
-  const { user, hasPermission } = useAuth()
-
-  /*
-    The statuses THIS task can be in — its own type's, not a fixed list. Same
-    derivation as the table row; both feed the shared rule so what is offered
-    matches what the service accepts.
-  */
-  const { statuses: flowStatuses, hasWorkflow: taskHasWorkflow } = useWorkflow(flowIdOf(task))
-  const usesFlow = taskHasWorkflow && flowStatuses.length > 0
-  const statusOptions = usesFlow
-    ? flowStatuses.map((st) => ({ key: st.key, label: st.name, hex: st.color }))
-    : TASK_STATUSES.filter((st) => st !== "DRAFT").map((st) => {
-        const cfg = getStatusConfig(st)
-        return { key: st, label: cfg.label, hex: cfg.hex }
-      })
-  const currentFlowStatus = usesFlow ? flowStatuses.find((st) => st.key === task.status) : undefined
-  const currentIsFinished = usesFlow
-    ? !!currentFlowStatus?.isFinal || !!currentFlowStatus?.isCanceled
-    : isFinishedStatus(task.status)
-  const allowedTargets: string[] = usesFlow
-    ? (currentFlowStatus?.transitions ?? [])
-    : ((STATUS_TRANSITIONS[task.status as keyof typeof STATUS_TRANSITIONS] ?? []) as string[])
-  const isManager = user?.role === "ADMIN" || hasPermission('canViewAllTasks')
-  const router = useRouter()
-/*
-    Modules are the SPACE's, and a board can show tasks from several spaces at
-    once — so the row asks about its OWN task's space rather than the
-    organization's set. Cached per space by the hook, so a board of fifty rows
-    from three spaces makes three lookups, not fifty.
-  */
-  const { hasModule: orgHasModule } = useAuth()
-  const { hasModule: spaceHasModule } = useSpaceModules(task.spaceId ?? null)
-  const hasModule = task.spaceId ? spaceHasModule : orgHasModule
+  const vm = useTaskContextMenuInner({ task, children, sprints, phases, epics, spaces, actions, recentAssignees })
+  const {
+    t,
+    flowStatuses,
+    statusOptions,
+    currentIsFinished,
+    allowedTargets,
+    isManager,
+    router,
+    hasModule,
+  } = vm
 
   return (
     <ContextMenu>
@@ -118,50 +73,7 @@ function TaskContextMenuInner({
         <ContextMenuSeparator />
 
         {/* Status submenu */}
-        {actions.onStatusChange && (
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              <span
-                className="size-2 rounded-full mr-2 flex-shrink-0"
-                style={{ backgroundColor: stepConfig(task.status, flowStatuses).hex }}
-              />
-              {t("tasks.menu.status")}
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent className="w-[180px]">
-              {/*
-                The task's own statuses, not a fixed list — a task on a custom
-                type was offered columns that do not exist in its flow. Entries
-                the service would refuse are shown but not selectable, using the
-                same rule it applies.
-              */}
-              {statusOptions.map((opt) => {
-                const config = { hex: opt.hex, label: opt.label }
-                const permitted = mayChangeStatus({
-                  from: task.status,
-                  to: opt.key,
-                  allowedTargets,
-                  targetIsValidStatus: true,
-                  isManager,
-                  fromIsFinished: currentIsFinished,
-                })
-                return (
-                  <ContextMenuItem
-                    key={opt.key}
-                    disabled={!permitted}
-                    onClick={() => actions.onStatusChange!(task.id, opt.key)}
-                    className={!permitted ? "opacity-50" : ""}
-                  >
-                    <span
-                      className="size-2 rounded-full mr-2 flex-shrink-0"
-                      style={{ backgroundColor: config.hex }}
-                    />
-                    {config.label}
-                  </ContextMenuItem>
-                )
-              })}
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-        )}
+        <TaskContextMenuInnerMenu vm={vm} actions={actions} task={task} />
 
         {/* Priority submenu */}
         {actions.onPriorityChange && (
@@ -196,45 +108,7 @@ function TaskContextMenuInner({
         )}
 
         {/* Assign to submenu */}
-        {actions.onAssigneeChange && recentAssignees.length > 0 && (
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              <span className="size-4 mr-2 flex-shrink-0 flex items-center justify-center">
-                <span className="size-3 rounded-full bg-gradient-to-br from-blue-500 to-blue-600" />
-              </span>
-              {t("tasks.menu.assignTo")}
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent className="w-[180px]">
-              <ContextMenuItem
-                onClick={() => actions.onAssigneeChange!(task.id, null)}
-                disabled={!task.assignedToId}
-                className={!task.assignedToId ? "opacity-50" : ""}
-              >
-                {t("tasks.menu.unassigned")}
-              </ContextMenuItem>
-              {recentAssignees.map((a) => {
-                const isCurrent = task.assignedToId === a.id
-                return (
-                  <ContextMenuItem
-                    key={a.id}
-                    disabled={isCurrent}
-                    onClick={() => actions.onAssigneeChange!(task.id, a.id)}
-                    className={isCurrent ? "opacity-50" : ""}
-                  >
-                    <UserAvatar
-                      firstName={a.firstName}
-                      lastName={a.lastName}
-                      seed={a.id}
-                      size="xs"
-                      className="mr-2"
-                    />
-                    {personName(a)}
-                  </ContextMenuItem>
-                )
-              })}
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-        )}
+        <TaskContextMenuInnerMenu2 vm={vm} actions={actions} recentAssignees={recentAssignees} task={task} />
 
         <ContextMenuSeparator />
 
@@ -272,42 +146,7 @@ function TaskContextMenuInner({
         )}
 
         {/* Set Phase submenu */}
-        {hasModule('phases') && actions.onPhaseChange && phases.length > 0 && (
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              <span className="size-4 mr-2 flex-shrink-0 flex items-center justify-center">
-                <span className="size-2 rounded-full bg-muted-foreground/40" />
-              </span>
-              {t("tasks.menu.setPhase")}
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent className="w-[180px]">
-              <ContextMenuItem
-                onClick={() => actions.onPhaseChange!(task.id, null)}
-                disabled={!task.phaseId}
-                className={!task.phaseId ? "opacity-50" : ""}
-              >
-                {t("tasks.menu.noPhase")}
-              </ContextMenuItem>
-              {phases.map((phase) => {
-                const isCurrent = task.phaseId === phase.id
-                return (
-                  <ContextMenuItem
-                    key={phase.id}
-                    disabled={isCurrent}
-                    onClick={() => actions.onPhaseChange!(task.id, phase.id)}
-                    className={isCurrent ? "opacity-50" : ""}
-                  >
-                    <span
-                      className="size-2 rounded-full mr-2 flex-shrink-0"
-                      style={{ backgroundColor: phase.color }}
-                    />
-                    {phase.name}
-                  </ContextMenuItem>
-                )
-              })}
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-        )}
+        <TaskContextMenuInnerMenu3 vm={vm} actions={actions} phases={phases} task={task} />
 
         {/* Set Epic submenu */}
         {hasModule('epics') && actions.onEpicChange && epics.length > 0 && (

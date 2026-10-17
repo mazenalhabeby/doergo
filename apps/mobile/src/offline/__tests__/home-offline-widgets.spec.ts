@@ -48,6 +48,7 @@ import { forgetEverythingKept } from '../../home/remember/store';
 import { queuedDoneIds, withoutDone } from '../../components/home/clients-state';
 import { shouldKeep } from '../../lib/api/response-cache';
 import { apiEndpoints as EP, type Endpoint } from '@hbcfield/shared/client';
+import { readSource } from '../../test-utils/read-source';
 
 /** Would the client let the cache hold this call's answer? (the endpoint's verdict, as the client passes it) */
 const kept = <A,>(def: Endpoint<A, any, any>, args: A) => {
@@ -174,7 +175,7 @@ describe('clients — a kept copy, but never one that undoes the member', () => 
 
 describe('what the cards do with it, pinned in the source', () => {
   const code = (rel: string) =>
-    fs.readFileSync(path.resolve(__dirname, '../..', rel), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+    readSource(path.resolve(__dirname, '../..', rel), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
   it('my work says "Nothing scheduled" only once a list is on screen — never while the database opens', () => {
     const card = code('components/home/my-work-card.tsx');

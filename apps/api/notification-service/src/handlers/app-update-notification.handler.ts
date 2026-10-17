@@ -1,7 +1,7 @@
 import { Controller, Logger, OnModuleDestroy } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import Redis from 'ioredis';
-import { PrismaService, compareAppVersions, getRedisConfig } from '@hbcfield/shared';
+import { personName, PrismaService, compareAppVersions, getRedisConfig } from '@hbcfield/shared';
 import { PushService } from '../modules/push/push.service';
 import { msg } from '../i18n/translate';
 
@@ -42,7 +42,13 @@ export class AppUpdateNotificationHandler implements OnModuleDestroy {
     const told = new Set(await this.redis.smembers(key).catch(() => [] as string[]));
     const older = users.filter((u) => u.lastAppVersion && compareAppVersions(u.lastAppVersion, version) < 0 && !u.organization?.suspendedAt);
     const due = older.filter((u) => !told.has(u.id) && u._count.pushTokens > 0);
-    const list = (xs: typeof older) => xs.map((u) => ({ name: `${u.firstName} ${u.lastName}`.trim(), version: u.lastAppVersion, platform: u.lastAppPlatform, organization: u.organization?.name ?? null }));
+    const list = (xs: typeof older) =>
+      xs.map((u) => ({
+        name: personName(u),
+        version: u.lastAppVersion,
+        platform: u.lastAppPlatform,
+        organization: u.organization?.name ?? null,
+      }));
 
     if (data.dryRun !== false) {
       return {

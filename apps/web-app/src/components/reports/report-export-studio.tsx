@@ -17,89 +17,16 @@ import {
   type ReportBranding, type PdfTemplate, type CustomPdfOptions,
 } from "@/lib/report-pdf-options"
 import type { ReportPdfMeta } from "@/lib/report-pdf"
-
-const loadRenderer = () => import("@/lib/report-pdf")
 import type { ReportResult } from "@/lib/api"
-
-const ACCENTS = ["#2563EB", "#334155", "#059669", "#7C3AED", "#E11D48", "#D97706"]
-
-// Module-scope so they keep a stable identity across renders (defining these
-// inside the component would remount the inputs on every keystroke).
-function Seg<T extends string>({ value, options, onChange }: { value: T; options: { v: T; label: string }[]; onChange: (v: T) => void }) {
-  return (
-    <div className="flex gap-0.5 rounded-lg bg-muted/70 p-0.5">
-      {options.map((o) => (
-        <button key={o.v} type="button" onClick={() => onChange(o.v)}
-          className={cn("flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors", value === o.v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
-          {o.label}
-        </button>
-      ))}
-    </div>
-  )
-}
-const Group = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div className="rounded-xl border border-border p-3 space-y-2.5">
-    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
-    {children}
-  </div>
-)
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div className="space-y-1"><Label className="text-[11px] text-muted-foreground">{label}</Label>{children}</div>
-)
-
-/** Tiny CSS mock of each template layout — a Canva-style visual thumbnail. */
-function TemplateThumb({ template, accent }: { template: PdfTemplate; accent: string }) {
-  const bar = (w: string, c = "bg-slate-200") => <div className={cn("h-1 rounded-full", c)} style={{ width: w }} />
-  const card = <div className="flex-1 rounded-sm bg-slate-100 border-l-2" style={{ borderColor: accent }} />
-  const rows = (n: number) => (
-    <div className="space-y-[3px]">{Array.from({ length: n }).map((_, i) => <div key={i} className="h-[3px] rounded-full bg-slate-200" />)}</div>
-  )
-  const wrap = (children: React.ReactNode, landscape = false) => (
-    <div className={cn("mx-auto bg-white rounded-sm ring-1 ring-slate-200 shadow-sm p-2 space-y-1.5 overflow-hidden", landscape ? "w-full aspect-[1.414/1]" : "aspect-[1/1.414] w-[62%]")}>{children}</div>
-  )
-  const header = (band = false) =>
-    band ? (
-      <div className="-mx-2 -mt-2 mb-1 px-2 py-1.5 flex items-center gap-1" style={{ backgroundColor: accent }}>
-        <div className="h-2 w-2 rounded-sm bg-white/80" /><div className="h-1 w-8 rounded-full bg-white/80" />
-      </div>
-    ) : (
-      <div className="flex items-center gap-1 pb-1 border-b" style={{ borderColor: accent }}>
-        <div className="h-2 w-2 rounded-sm" style={{ backgroundColor: accent }} /><div className="h-1 w-8 rounded-full bg-slate-300" />
-      </div>
-    )
-  const chart = (
-    <div className="space-y-[3px]">
-      {["70%", "45%", "88%", "30%"].map((w, i) => <div key={i} className="h-[3px] rounded-full" style={{ width: w, backgroundColor: accent }} />)}
-    </div>
-  )
-  const cards = (
-    <div className="flex gap-1">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-4 flex-1 rounded-sm bg-slate-100 border-l-2" style={{ borderColor: accent }} />)}</div>
-  )
-
-  switch (template) {
-    case "executive":
-      return wrap(<>{header()}<div className="pt-0.5">{bar("55%", "bg-slate-300")}</div>{cards}{chart}{rows(3)}</>)
-    case "data":
-      return wrap(<>{header()}<div className="pt-0.5">{bar("55%", "bg-slate-300")}</div>{rows(8)}</>, true)
-    case "presentation":
-      return wrap(<>{header(true)}{cards}{chart}{rows(2)}</>)
-    case "custom":
-      return wrap(<>{header()}<div className="pt-0.5">{bar("55%", "bg-slate-300")}</div><div className="flex gap-1">{card}{card}</div>{chart}{rows(3)}</>)
-    case "classic":
-    default:
-      return wrap(<>{header()}<div className="pt-0.5">{bar("55%", "bg-slate-300")}</div>{chart}{rows(5)}</>)
-  }
-}
-
-interface ReportExportStudioProps {
-  open: boolean
-  onOpenChange: (v: boolean) => void
-  result: ReportResult | null
-  meta: ReportPdfMeta
-  branding: ReportBranding
-  canCustom: boolean
-  defaultName?: string
-}
+import {
+  loadRenderer,
+  ACCENTS,
+  Seg,
+  Group,
+  Field,
+  type ReportExportStudioProps,
+} from "./report-export-studio-shared"
+import { TemplateThumb } from "./template-thumb"
 
 export function ReportExportStudio({ open, onOpenChange, result, meta, branding, canCustom, defaultName }: ReportExportStudioProps) {
   const { t } = useTranslation()

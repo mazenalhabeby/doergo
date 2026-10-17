@@ -1,6 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role, SELECTABLE_ASSET_WHERE } from '@hbcfield/shared';
+import { notEndedWhere, Role, SELECTABLE_ASSET_WHERE } from '@hbcfield/shared';
 
 /*
   Who may act on a task, and which ids a client put on it really belong to the
@@ -126,7 +126,7 @@ export async function assertTargetIsInSpace(
     where: {
       userId: targetUserId,
       spaceId: task.spaceId,
-      OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+      ...notEndedWhere(),
     },
     select: { id: true },
   });

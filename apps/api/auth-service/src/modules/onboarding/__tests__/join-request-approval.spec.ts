@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 import { Role } from '@hbcfield/shared';
-import { OnboardingService } from '../onboarding.service';
+import { onboardingServices, type OnboardingServiceParts } from './onboarding.service.fixture';
 import { claimInvitation, InvitationAlreadyClaimedError } from '../../invitations/invitation-apply';
 
 /*
@@ -28,7 +28,7 @@ describe('join-request approval', () => {
     $transaction: jest.fn((cb: any) => cb(tx)),
   };
   const billing = { scheduleReconcile: jest.fn() };
-  const service = new OnboardingService(prisma as any, billing as any, { emit: jest.fn() } as any);
+  const service = onboardingServices(prisma as any, billing as any, { emit: jest.fn() } as any);
 
   beforeEach(() => {
     jest.clearAllMocks();

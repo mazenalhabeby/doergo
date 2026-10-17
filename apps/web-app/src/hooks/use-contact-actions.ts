@@ -1,13 +1,11 @@
 "use client"
 
 import { useCallback } from "react"
-import { useTranslation } from "react-i18next"
-
 import { useChat } from "@/components/chat/chat-context"
-import { notify } from "@/lib/toast"
 
 /**
- * Reaching a colleague: message them, or call them.
+ * Reaching a colleague: message them. (Calls were removed 2026-10-15 — people
+ * carry no phone number, so every Call button only said "coming soon".)
  *
  * The same pair of buttons sits on the team page, the workspace card, the
  * employee panel, the management contacts list and the task detail card. Four
@@ -17,12 +15,11 @@ import { notify } from "@/lib/toast"
  * handlers fell through their own `&&` guard in silence.
  *
  * Behaviour lives here now so there is one answer to "what does Message do",
- * and so the day voice calling ships, one file changes instead of five. The
+ * and so one file changes when calling ships. The
  * markup deliberately stays where it is — those five buttons look different on
  * purpose, and a shared component would have to fight each of them.
  */
 export function useContactActions() {
-  const { t } = useTranslation()
   const { openChatWith, canMessage } = useChat()
 
   /** Open a direct conversation. No contact details required — every colleague
@@ -30,20 +27,5 @@ export function useContactActions() {
    *  yourself, and a Message button that reaches you does nothing. */
   const message = useCallback((userId: string) => openChatWith(userId), [openChatWith])
 
-  /**
-   * Ring their phone if we hold a number; otherwise say what's actually true.
-   * Voice calling inside the app isn't built yet.
-   */
-  const call = useCallback(
-    (phone?: string | null) => {
-      if (phone) {
-        window.location.href = `tel:${phone}`
-        return
-      }
-      notify.success(t("workspace.voiceCallComingSoon"))
-    },
-    [t],
-  )
-
-  return { message, call, canMessage }
+  return { message, canMessage }
 }

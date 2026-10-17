@@ -1,3 +1,4 @@
+import { autoClockParts, type AutoClockServiceParts } from './auto-clock.service.fixture';
 /**
  * The automatic clock's server half (attendance/auto-clock.service.ts + the
  * clock-in / clock-out / close / sweeps it rides on).
@@ -24,13 +25,13 @@ import { ShiftResolverService } from '../shift-resolver.service';
 import { CountedTimeService } from '../counted-time.service';
 import { BreakRulesService } from '../break-rules.service';
 import { BreakReminderService } from '../break-reminder.service';
-import { BreakService } from '../break.service';
+import { BREAK_SERVICES } from '../break-services';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { PresenceService } from '../presence/presence.service';
 import { AutoClockService, AUTO_UNDO_EVENT } from '../auto-clock.service';
-import { ClockOutService } from '../clock-out.service';
-import { ShiftSweepService } from '../shift-sweep.service';
+import { clockOutServices } from './clock-out.service.fixture';
+import { shiftSweepParts } from './shift-sweep.service.fixture';
 
 const ON = { ...AUTO_CLOCK_DEFAULTS, enabled: true, leaderAfterMinutes: 5, closeAfterMinutes: 60, autoRestMinutes: 30 };
 // 15 Sept 2026, Vienna UTC+2: the shift is 08:00–16:00 local = 06:00Z–14:00Z.
@@ -82,8 +83,14 @@ async function buildClockIn(opts: { consent?: boolean; chosen?: boolean; undone?
   const moduleRef = await Test.createTestingModule({
     providers: [
       AttendanceService, ...ATTENDANCE_SERVICE_PARTS,
-      { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn(), onBatch: jest.fn() } },
-      BreakService, CountedTimeService, BreakRulesService, BreakReminderService,
+      {
+        provide: PresenceService,
+        useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn(), onBatch: jest.fn() },
+      },
+      ...BREAK_SERVICES,
+      CountedTimeService,
+      BreakRulesService,
+      BreakReminderService,
       { provide: PrismaService, useValue: prisma },
       { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
       { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) } },
@@ -163,7 +170,7 @@ describe('clock-in sent as AUTO — re-checked, never refused for it', () => {
 function buildAuto(prisma: any) {
   const emit = jest.fn();
   const resolver = new ShiftResolverService(prisma);
-  return { svc: new AutoClockService(prisma, resolver, { emit } as any), emit };
+  return { svc: autoClockParts(prisma, resolver, { emit } as any), emit };
 }
 
 const autoEntry = (over: Record<string, unknown> = {}) => ({
@@ -182,7 +189,7 @@ function undoPrisma(entry: any, opts: { logged?: boolean; worked?: boolean } = {
   };
   return prisma;
 }
-const undo = (svc: AutoClockService, over: Record<string, unknown> = {}) =>
+const undo = (svc: AutoClockServiceParts, over: Record<string, unknown> = {}) =>
   svc.undo({ userId: 'u1', organizationId: 'org-1', entryId: 'e1', ...over } as any);
 
 describe('undo an automatic clock-in', () => {
@@ -347,7 +354,7 @@ function buildClose(entry: any, opts: { auto?: boolean } = {}) {
     $transaction: jest.fn(async (fn: any) => fn(prisma)),
   };
   const auto = buildAuto(prisma).svc;
-  const svc = new ClockOutService(
+  const svc = clockOutServices(
     prisma, { emit: jest.fn() } as any, { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) } as any,
     new CountedTimeService(prisma), { notifyTargetsFor: jest.fn().mockResolvedValue([]) } as any,
     { reverseGeocode: jest.fn().mockResolvedValue(null) } as any, { requestOvertimeAtClockOut: jest.fn() } as any,
@@ -455,7 +462,7 @@ describe('still clocked in after the end — the workspace’s own thresholds', 
     const entry = { ...shiftEntry({ breaks: [{ id: 'b0', startedAt: at('10:00'), endedAt: at('10:30'), durationMinutes: 30, isPaid: false }] }), user: { firstName: 'M', lastName: 'W' } };
     const prisma = sweepPrisma([entry]);
     const emit = jest.fn();
-    const svc = new ClockOutService(
+    const svc = clockOutServices(
       prisma, { emit } as any, {} as any, new CountedTimeService(prisma), {} as any, {} as any, {} as any,
       { pauseAtClockOut: jest.fn() } as any, buildAuto(prisma).svc,
     );
@@ -470,7 +477,17 @@ describe('still clocked in after the end — the workspace’s own thresholds', 
 
   it('does not close before closeAfterMinutes', async () => {
     const prisma = sweepPrisma([shiftEntry()]);
-    const svc = new ClockOutService(prisma, { emit: jest.fn() } as any, {} as any, new CountedTimeService(prisma), {} as any, {} as any, {} as any, undefined, buildAuto(prisma).svc);
+    const svc = clockOutServices(
+      prisma,
+      { emit: jest.fn() } as any,
+      {} as any,
+      new CountedTimeService(prisma),
+      {} as any,
+      {} as any,
+      {} as any,
+      undefined,
+      buildAuto(prisma).svc,
+    );
     const res: any = await svc.closeAbandonedShifts(at('14:30'));
     expect(res.data.closed).toBe(0);
   });
@@ -485,7 +502,7 @@ describe('still clocked in after the end — the workspace’s own thresholds', 
     };
     const emit = jest.fn();
     const routing = { notifyTargetsFor: jest.fn().mockResolvedValue(['leader-1']) };
-    const sweep = new ShiftSweepService(prisma, { emit } as any, {} as any, routing as any, buildAuto(prisma).svc);
+    const sweep = shiftSweepParts(prisma, { emit } as any, {} as any, routing as any, buildAuto(prisma).svc);
 
     jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] });
     jest.setSystemTime(at('14:03')); // before 14:05 → re-armed, nothing sent

@@ -1,5 +1,6 @@
 import { readFileSync } from "fs"
 import { join } from "path"
+import { readSource } from "../../../../../test-utils/read-source"
 
 /**
  * A module row's label must name the control it toggles.
@@ -25,7 +26,7 @@ describe("module rows toggle the checkbox, not the explainer", () => {
   it.each(FILES.map((f) => [f.split("/_components/")[1] ?? f, f]))(
     "%s names its labelled control",
     (_name, file) => {
-      const src = readFileSync(file, "utf8")
+      const src = readSource(file, "utf8")
 
       // Every <label> that wraps a module checkbox carries an htmlFor…
       const labels = src.match(/<label\b[\s\S]*?>/g) ?? []
@@ -49,7 +50,7 @@ describe("module rows toggle the checkbox, not the explainer", () => {
   it.each(FILES.map((f) => [f.split("/_components/")[1] ?? f, f]))(
     "%s does not rely on a button coming after the checkbox",
     (_name, file) => {
-      const src = readFileSync(file, "utf8")
+      const src = readSource(file, "utf8")
       const button = src.indexOf("<ExplainerButton")
       const checkbox = src.indexOf('type="checkbox"')
       if (button === -1 || checkbox === -1) return

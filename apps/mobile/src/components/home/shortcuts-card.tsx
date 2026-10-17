@@ -20,6 +20,8 @@ import {
 } from '../../home/shortcuts';
 import { useInGallery, usePitch } from '../../home/pitch';
 import { loadShortcuts, saveShortcuts, onShortcutsChanged } from '../../home/layout-store';
+import { useShortcutsEditor } from './use-shortcuts-editor';
+import { Badge, GROUPS } from './shortcuts-editor-helpers';
 
 /**
  * ⭐ SHORTCUTS — `docs/design/shortcuts`. Four tiles the member chooses.
@@ -163,19 +165,6 @@ function Tile({ r, count, bg, onPress, size = 'rail' }: { r: Destination; count:
   );
 }
 
-/** A count, never a dot — and capped at 9+ (spec §4). */
-function Badge({ n, ring, style }: { n: number; ring: string; style?: StyleProp<ViewStyle> }) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
-  return (
-    <View style={[{ position: 'absolute', top: 6, right: 6, minWidth: 19, height: 19, paddingHorizontal: 4, borderRadius: 10, backgroundColor: c.warn, borderWidth: 2, borderColor: ring, alignItems: 'center', justifyContent: 'center' }, style]}>
-      <AText variant="caption" numeric style={{ fontSize: 10, lineHeight: 12, color: c.warnInk }}>{n > 9 ? '9+' : String(n)}</AText>
-    </View>
-  );
-}
-
-const GROUPS: ShortcutGroup[] = ['waiting', 'do', 'go', 'manage'];
-
 /**
  * Choose your four. Tap a slot, then a shortcut to put there; tap a chosen
  * shortcut (or ×) to take it off. "Smart picks" puts the suggestion back.
@@ -184,52 +173,24 @@ function ShortcutsEditor({ visible, initial, cands, badges, onClose, onSave }: {
   visible: boolean; initial: string[]; cands: Destination[]; badges: Badges;
   onClose: () => void; onSave: (keys: string[] | null) => void;
 }) {
-  const { amazen, colors } = useTheme();
-  const c = amazen.color;
-  const { t } = useTranslation();
-  const [draft, setDraft] = useState<string[]>(initial);
-  const [sel, setSel] = useState(0);
-  const [warn, setWarn] = useState(false);
-
-  useEffect(() => {
-    if (visible) { setDraft(initial); setSel(Math.min(initial.length, SLOTS - 1)); setWarn(false); }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
-
-  const by = useMemo(() => new Map(cands.map((r) => [r.labelKey, r])), [cands]);
-  const surface = colors.card;
-  const slotBg = over(c.tile, surface);
-
-  const pick = (key: string) => {
-    selection();
-    setWarn(false);
-    const at = draft.indexOf(key);
-    if (at >= 0) {
-      const next = draft.filter((k) => k !== key);
-      setDraft(next);
-      setSel(Math.min(sel, next.length));
-      return;
-    }
-    const next = [...draft];
-    if (sel < next.length) next[sel] = key; else next.push(key);
-    setDraft(next);
-    setSel(next.length < SLOTS ? next.length : Math.min(sel + 1, SLOTS - 1));
-  };
-  const clear = (i: number) => {
-    selection();
-    setDraft((d) => d.filter((_, j) => j !== i));
-    setSel(i);
-  };
-  const saveDraft = () => {
-    if (draft.length < MIN_TILES) { setWarn(true); return; }
-    onSave(draft);
-  };
-
-  const hint = warn
-    ? t('shortcutsCard.atLeastTwo', { defaultValue: 'Choose at least two. One tile is a button, not a widget.' })
-    : draft[sel] && by.get(draft[sel]!)
-      ? t('shortcutsCard.replacing', { name: t(by.get(draft[sel]!)!.labelKey), n: sel + 1 })
-      : t('shortcutsCard.choosing', { n: sel + 1 });
+  const {
+    amazen,
+    c,
+    t,
+    draft,
+    setDraft,
+    sel,
+    setSel,
+    warn,
+    setWarn,
+    by,
+    surface,
+    slotBg,
+    pick,
+    clear,
+    saveDraft,
+    hint,
+  } = useShortcutsEditor({ visible, initial, cands, badges, onClose, onSave });
 
   return (
     <BlurSheet visible={visible} onClose={onClose}>

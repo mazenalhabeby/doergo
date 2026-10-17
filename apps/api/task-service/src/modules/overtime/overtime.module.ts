@@ -8,6 +8,8 @@ import { OvertimeProcessor } from './overtime.processor';
 import { OvertimeScheduler } from './overtime.scheduler';
 import { OvertimeController } from './overtime.controller';
 import { AttendanceModule } from '../attendance/attendance.module';
+import { OvertimeDecisionService } from './overtime-decision.service';
+import { OvertimeSummaryService } from './overtime-summary.service';
 
 @Module({
   imports: [
@@ -17,7 +19,14 @@ import { AttendanceModule } from '../attendance/attendance.module';
     AttendanceModule,
   ],
   controllers: [OvertimeController],
-  providers: [OvertimeService, OvertimeRecordService, OvertimeProcessor, OvertimeScheduler],
+  providers: [
+    OvertimeService,
+    OvertimeDecisionService,
+    OvertimeRecordService,
+    OvertimeSummaryService,
+    OvertimeProcessor,
+    OvertimeScheduler,
+  ],
   exports: [OvertimeService],
 })
 export class OvertimeModule {}

@@ -6,6 +6,8 @@ import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';
 import { OBJECT_STORE } from '../object-store.provider';
+import { OwnUploadReaderService } from '../own-upload-reader.service';
+import { combinedServices } from '../../../common/testing/combined-services';
 
 /**
  * Two bounds on things a stranger or a member controls.
@@ -16,7 +18,7 @@ import { OBJECT_STORE } from '../object-store.provider';
  *    pulled into memory and decoded.
  */
 describe('DocumentsService — link file route and staged size', () => {
-  let service: DocumentsService;
+  let service: DocumentsService & Pick<OwnUploadReaderService, 'readOwnUpload'>;
   const prisma: Record<string, any> = {
     user: { findFirst: jest.fn() },
     documentSigner: { findFirst: jest.fn(), update: jest.fn() },
@@ -39,7 +41,8 @@ describe('DocumentsService — link file route and staged size', () => {
         { provide: OBJECT_STORE, useValue: store },
       ],
     }).compile();
-    service = module.get(DocumentsService);
+    // Reading an own upload is its own service since the split; one object over both.
+    service = combinedServices(module.get(DocumentsService), module.get(OwnUploadReaderService));
   });
 
   it('asks only for documents the link may show — a revoked one is not found', async () => {

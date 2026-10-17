@@ -3,7 +3,7 @@
  * phone, only points from this trip, and a retry never counts twice.
  */
 import { of } from 'rxjs';
-import { LocationService } from '../location.service';
+import { locationServices } from './location.service.fixture';
 
 const START = new Date('2026-09-30T06:01:30Z');
 const at = (s: number) => new Date(START.getTime() + s * 1000).toISOString();
@@ -28,7 +28,7 @@ function build(assignedToId = 'u1') {
     },
     $transaction: jest.fn((ops: any[]) => Promise.all(ops)),
   };
-  return { service: new LocationService(prisma, { emit: jest.fn(() => of(null)) } as any, {} as any), prisma, history };
+  return { service: locationServices(prisma, { emit: jest.fn(() => of(null)) } as any, {} as any), prisma, history };
 }
 
 const drive = [

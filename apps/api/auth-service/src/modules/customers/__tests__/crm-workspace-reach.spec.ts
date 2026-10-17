@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CustomersService } from '../customers.service';
+import { customerServices, type CustomerServices } from './customer-services.fixture';
 
 /*
   CRM permissions honoured PER WORKSPACE — through the real CustomersService,
@@ -52,7 +53,7 @@ function setup(row: unknown) {
     portal: { findFirst: jest.fn().mockResolvedValue(null) },
     $transaction: jest.fn(async () => []),
   };
-  const service = new CustomersService(prisma);
+  const service = customerServices(prisma);
   // The company lookup is the invoices' rule and not under test here.
   (service as any).clientCompany = async () => undefined;
   return { service, prisma };

@@ -1,0 +1,299 @@
+{
+ "phrases": [
+  {
+   "text": "Samstagabend. Heimspiel. Zweitausend Pl\u00e4tze.",
+   "start": 0.3,
+   "end": 4.352,
+   "wordStarts": [
+    0.3,
+    1.809,
+    3.017,
+    3.748
+   ]
+  },
+  {
+   "text": "Sechshundert Dauerkarten. Hundertachtzig Sponsorenpl\u00e4tze. Sechzig VIP-Einladungen.",
+   "start": 5.004,
+   "end": 11.378,
+   "wordStarts": [
+    5.004,
+    5.782,
+    6.85,
+    7.883,
+    9.497,
+    10.17
+   ]
+  },
+  {
+   "text": "Und trotzdem bleibt ein Drittel der Freipl\u00e4tze leer.",
+   "start": 11.998,
+   "end": 15.075,
+   "wordStarts": [
+    11.998,
+    12.219,
+    12.799,
+    13.101,
+    13.275,
+    13.693,
+    13.867,
+    14.599
+   ]
+  },
+  {
+   "text": "Weil niemand eine einfache Frage gestellt hat: Kommen Sie?",
+   "start": 15.723,
+   "end": 19.787,
+   "wordStarts": [
+    15.723,
+    16.071,
+    16.513,
+    16.803,
+    17.279,
+    17.732,
+    18.184,
+    18.974,
+    19.357
+   ]
+  },
+  {
+   "text": "Willkommen beim Spieltag, mit HBCField.",
+   "start": 20.851,
+   "end": 23.533,
+   "wordStarts": [
+    20.851,
+    21.432,
+    21.664,
+    22.256,
+    22.465
+   ]
+  },
+  {
+   "text": "Zeichnen Sie Ihre Halle einmal. Bl\u00f6cke, Reihen, Pl\u00e4tze. Kopieren, fertig.",
+   "start": 24.277,
+   "end": 30.291,
+   "wordStarts": [
+    24.277,
+    24.857,
+    25.02,
+    25.264,
+    25.589,
+    26.506,
+    27.319,
+    27.888,
+    28.944,
+    29.606
+   ]
+  },
+  {
+   "text": "Dauerkarten und Sponsorenrechte f\u00fcllen jedes Heimspiel, automatisch.",
+   "start": 30.931,
+   "end": 35.703,
+   "wordStarts": [
+    30.931,
+    31.813,
+    31.918,
+    32.905,
+    33.334,
+    33.822,
+    34.484
+   ]
+  },
+  {
+   "text": "Eine Woche vor dem Spiel gehen die Einladungen raus, in der Sprache jedes Gastes.",
+   "start": 36.323,
+   "end": 41.804,
+   "wordStarts": [
+    36.323,
+    36.753,
+    37.09,
+    37.275,
+    37.461,
+    38.1,
+    38.379,
+    38.588,
+    39.331,
+    39.633,
+    39.772,
+    39.969,
+    40.631,
+    41.095
+   ]
+  },
+  {
+   "text": "Kein Konto. Ein Tipp. Ich komme, oder ich komme nicht.",
+   "start": 42.266,
+   "end": 46.736,
+   "wordStarts": [
+    42.266,
+    42.603,
+    43.265,
+    43.532,
+    44.147,
+    44.484,
+    45.134,
+    45.563,
+    45.796,
+    46.19
+   ]
+  },
+  {
+   "text": "Sponsoren verteilen ihre Pl\u00e4tze selbst an ihr eigenes Team.",
+   "start": 47.449,
+   "end": 50.932,
+   "wordStarts": [
+    47.449,
+    48.088,
+    48.599,
+    48.808,
+    49.214,
+    49.574,
+    49.702,
+    49.899,
+    50.398
+   ]
+  },
+  {
+   "text": "Keine Antwort? Eine Erinnerung. Dann die Frist.",
+   "start": 51.646,
+   "end": 56.557,
+   "wordStarts": [
+    51.646,
+    52.18,
+    53.19,
+    53.62,
+    54.966,
+    55.5,
+    55.826
+   ]
+  },
+  {
+   "text": "Jeder Platz, den niemand will, kommt zur\u00fcck und geht an die Warteliste. Wer zuerst zusagt, bekommt ihn. Nie doppelt.",
+   "start": 57.228,
+   "end": 65.46,
+   "wordStarts": [
+    57.228,
+    57.67,
+    58.088,
+    58.366,
+    58.831,
+    59.086,
+    59.388,
+    59.806,
+    59.945,
+    60.201,
+    60.294,
+    60.421,
+    61.64,
+    61.919,
+    62.383,
+    63.15,
+    63.718,
+    64.415,
+    64.729
+   ]
+  },
+  {
+   "text": "Am Eingang ein signierter Code, gescannt in unserer App, auch ohne Netz.",
+   "start": 66.096,
+   "end": 71.39,
+   "wordStarts": [
+    66.096,
+    66.34,
+    66.769,
+    66.92,
+    67.547,
+    68.209,
+    68.871,
+    69.01,
+    69.381,
+    69.881,
+    70.357,
+    70.809
+   ]
+  },
+  {
+   "text": "Zweimal gescannt? Dann wird es rot. Sofort.",
+   "start": 72.085,
+   "end": 76.694,
+   "wordStarts": [
+    72.085,
+    72.758,
+    73.838,
+    74.291,
+    74.616,
+    74.825,
+    75.765
+   ]
+  },
+  {
+   "text": "Nach dem Spiel sieht jeder Sponsor, wer wirklich da war.",
+   "start": 77.434,
+   "end": 81.08,
+   "wordStarts": [
+    77.434,
+    77.817,
+    78.015,
+    78.421,
+    78.642,
+    78.932,
+    79.57,
+    79.814,
+    80.348,
+    80.604
+   ]
+  },
+  {
+   "text": "Ein Unternehmen hat die Nutzung seiner Pl\u00e4tze von einundsiebzig auf siebenundneunzig Prozent gesteigert, nur durch die R\u00fcckgabe der leeren.",
+   "start": 81.693,
+   "end": 91.167,
+   "wordStarts": [
+    81.693,
+    81.937,
+    82.541,
+    82.703,
+    82.843,
+    83.319,
+    83.644,
+    84.143,
+    84.456,
+    85.559,
+    85.803,
+    86.952,
+    87.44,
+    88.578,
+    89.019,
+    89.321,
+    89.565,
+    90.215,
+    90.459
+   ]
+  },
+  {
+   "text": "Eine volle Halle. Zufriedene Sponsoren. Keine Tabellen mehr.",
+   "start": 92.247,
+   "end": 98.029,
+   "wordStarts": [
+    92.247,
+    92.689,
+    93.223,
+    94.639,
+    95.301,
+    96.555,
+    96.984,
+    97.507
+   ]
+  },
+  {
+   "text": "HBCField. Spieltag, erledigt.",
+   "start": 98.959,
+   "end": 102.72,
+   "wordStarts": [
+    98.959,
+    100.723,
+    101.757
+   ]
+  }
+ ],
+ "duration": 105.02,
+ "lang": "de"
+}

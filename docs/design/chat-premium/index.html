@@ -1,0 +1,183 @@
+<title>Premium Chat Screen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: the phone conversation screen, light and dark side by side, in the app's own tokens (theme/amazen.ts). */
+:root {
+  --page: #eef2f0; --page-ink: #0b1f1a; --page-ink-2: #485752; --card: #ffffff; --line: #dde6e2;
+  --font: "Readex Pro", system-ui, -apple-system, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
+  --spring: cubic-bezier(.34, 1.4, .64, 1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #07090b; --page-ink: #f1f6fa; --page-ink-2: #acb6bf; --card: #0e1316; --line: #1b2226; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #07090b; --page-ink: #f1f6fa; --page-ink-2: #acb6bf; --card: #0e1316; --line: #1b2226; color-scheme: dark }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--page); color: var(--page-ink); font: 14px/1.5 var(--font); padding-inline: 16px; padding-block: 28px 48px }
+.wrap { max-width: 1160px; margin: 0 auto; display: grid; gap: 20px }
+h1 { margin: 0; font-size: 26px; font-weight: 500; letter-spacing: -.01em }
+p { margin: 0; color: var(--page-ink-2); max-width: 72ch }
+.phones { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center }
+.col { display: grid; gap: 10px; justify-items: center }
+.col .lbl { font: 500 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--page-ink-2) }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px }
+.note { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: grid; gap: 4px }
+.note b { font-weight: 500 } .note span { font-size: 12.5px; color: var(--page-ink-2) }
+.ctrls { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center }
+.ctl { font: 500 13px var(--font); padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--page-ink); cursor: pointer }
+
+/* ── the phone, themed by class (each phone is ONE mode, whatever the page's) ── */
+.phone { width: 340px; max-width: 100%; height: 700px; border-radius: 46px; padding: 10px; background: #0a0d0f; box-shadow: 0 30px 60px -30px rgb(0 0 0 / .5); flex: none }
+.scr { position: relative; height: 100%; border-radius: 37px; overflow: hidden; display: flex; flex-direction: column; font-family: var(--font) }
+.light { --g0: #bfe0d2; --g1: #d5ece1; --g2: #e6f2ec; --g3: #f0f6f3; --g4: #f3f7f5;
+  --glass: #ffffffb8; --lineGlass: #0b332a1f; --well: #ffffff; --tile: #0b332a0f; --inkStrong: #0b1f1a; --ink: #485752; --inkMuted: #63726d;
+  --accent: #097058; --accentSolid: #0b8168; --accentTint: #0b816818; --accentInk: #ffffff;
+  --mine0: #0f8f72; --mine1: #087961; --mineInk: #ffffff; --mineMeta: #ffffffb3;
+  --jade0: #22b48d; --jade1: #0a6f58; --shadow: 0 1px 1px #0b332a0f, 0 6px 16px -10px #0b332a40; --critical: #b03127 }
+.dark { --g0: #0c4339; --g1: #09291f; --g2: #061a19; --g3: #050c0f; --g4: #040507;
+  --glass: #ffffff14; --lineGlass: #ffffff1c; --well: #11171a; --tile: #ffffff12; --inkStrong: #f1f6fa; --ink: #acb6bf; --inkMuted: #808b95;
+  --accent: #66dbba; --accentSolid: #10b993; --accentTint: #66dbba24; --accentInk: #001810;
+  --mine0: #7fe6c8; --mine1: #10b993; --mineInk: #001810; --mineMeta: #001810a6;
+  --jade0: #9af0d6; --jade1: #10b993; --shadow: 0 1px 1px #0000004d, 0 8px 18px -10px #00000099; --critical: #fd978c }
+.scr { background: linear-gradient(180deg, var(--g0) 0%, var(--g1) 26%, var(--g2) 52%, var(--g3) 78%, var(--g4) 100%); color: var(--inkStrong) }
+.status { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 26px; font-weight: 500; font-size: 14px; flex: none }
+
+/* header: one glass bar */
+.hdr { margin: 2px 12px 0; padding: 8px 10px; border-radius: 22px; background: var(--glass); border: 1px solid var(--lineGlass); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); display: flex; align-items: center; gap: 10px; flex: none }
+.ib { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--tile); flex: none; border: 0; cursor: pointer; transition: transform .2s var(--spring) }
+.ib:active { transform: scale(.9) }
+.av { position: relative; width: 40px; height: 40px; border-radius: 50%; flex: none; background: linear-gradient(135deg, #f0c9a8, #c98d6b); display: grid; place-items: center; color: #fff; font-weight: 600; font-size: 14px }
+.av::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 2px solid var(--accentSolid); opacity: .55 }
+.av .dot { position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; background: #22c55e; border: 2px solid var(--well) }
+.who { min-width: 0; flex: 1 } .who b { display: block; font-weight: 500; font-size: 16px; line-height: 1.2; color: var(--inkStrong) } .who span { font-size: 12px; color: var(--accent) }
+
+/* messages */
+.feed { flex: 1; overflow: hidden; padding: 14px 14px 6px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px }
+.day { align-self: center; margin: 8px 0 10px; padding: 3px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--lineGlass); font: 500 10px/1.6 var(--mono); letter-spacing: .14em; color: var(--ink); backdrop-filter: blur(10px) }
+.b { position: relative; max-width: 76%; padding: 9px 13px 7px; font-size: 14.5px; line-height: 1.38; box-shadow: var(--shadow) }
+.b .meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 2px; font: 500 10px/1 var(--mono); letter-spacing: .02em }
+.th { align-self: flex-start; background: var(--well); color: var(--inkStrong); border-radius: 20px 20px 20px 6px; border: 1px solid var(--lineGlass) }
+.th .meta { color: var(--inkMuted) }
+.th.mid { border-radius: 20px 20px 20px 6px } .th.first { border-bottom-left-radius: 6px }
+.mn { align-self: flex-end; background: linear-gradient(140deg, var(--mine0), var(--mine1)); color: var(--mineInk); border-radius: 20px 20px 6px 20px }
+.mn .meta { color: var(--mineMeta) }
+.gap { height: 8px }
+.ticks { display: inline-flex } .ticks svg { width: 15px; height: 11px }
+.ticks.read { color: var(--mineInk) }
+.typing { align-self: flex-start; background: var(--well); border: 1px solid var(--lineGlass); border-radius: 20px 20px 20px 6px; padding: 12px 14px; display: flex; gap: 4px; box-shadow: var(--shadow) }
+.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--inkMuted); animation: wave 1.1s ease-in-out infinite }
+.typing i:nth-child(2) { animation-delay: .15s } .typing i:nth-child(3) { animation-delay: .3s }
+@keyframes wave { 0%, 60%, 100% { transform: translateY(0); opacity: .5 } 30% { transform: translateY(-4px); opacity: 1 } }
+.in { animation: pop .42s var(--spring) both } .mn.in { transform-origin: bottom right } .th.in { transform-origin: bottom left }
+@keyframes pop { from { opacity: 0; transform: translateY(14px) scale(.9) } }
+.photo { padding: 4px; border-radius: 20px 20px 6px 20px }
+.photo .img { width: 190px; height: 130px; border-radius: 16px; background: linear-gradient(135deg, #8fb9a8, #3d6b5c 60%, #24423a); position: relative; overflow: hidden }
+.photo .img::after { content: ""; position: absolute; left: 20px; bottom: 18px; width: 90px; height: 50px; border-radius: 50% 50% 0 0; background: #ffffff30 }
+.photo .meta { padding: 5px 8px 3px }
+
+/* empty state */
+.empty { flex: 1; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 20px; text-align: center }
+.halo { width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, var(--accentTint) 0 60%, transparent 61%); }
+.halo .av { width: 72px; height: 72px; font-size: 22px }
+.empty b { font-weight: 500; font-size: 17px } .empty span { font-size: 12.5px; color: var(--ink) }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 4px }
+.chip { padding: 7px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--lineGlass); font-size: 12.5px; color: var(--inkStrong); cursor: pointer; backdrop-filter: blur(10px) }
+
+/* composer: one floating glass capsule */
+.comp { margin: 6px 12px 14px; padding: 6px; border-radius: 28px; background: var(--glass); border: 1px solid var(--lineGlass); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); display: flex; align-items: center; gap: 6px; flex: none; box-shadow: var(--shadow) }
+.comp input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: 400 14.5px var(--font); color: var(--inkStrong); padding: 8px 4px }
+.comp input::placeholder { color: var(--inkMuted) }
+.send { width: 40px; height: 40px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; background: var(--tile); color: var(--inkMuted); transition: transform .25s var(--spring), background .2s }
+.send.ready { background: linear-gradient(140deg, var(--mine0), var(--mine1)); color: var(--mineInk); box-shadow: 0 6px 14px -6px var(--accentSolid) }
+.send:active { transform: scale(.9) }
+.send.fly svg { animation: fly .45s ease-out }
+@keyframes fly { 40% { transform: translate(10px, -10px); opacity: 0 } 41% { transform: translate(-10px, 10px); opacity: 0 } 100% { transform: none; opacity: 1 } }
+.ico { width: 22px; height: 22px; display: block }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- The icons' ink IS the app's jade: one gradient per mode, read from the phone's own tokens. -->
+    <linearGradient id="jadeL" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22b48d"/><stop offset="1" stop-color="#0a6f58"/></linearGradient>
+    <linearGradient id="jadeD" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9af0d6"/><stop offset="1" stop-color="#10b993"/></linearGradient>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <h1>Conversation, made premium</h1>
+    <p>The same screen as your 01.png and 02.png, redesigned in the app's own colours. The icons are painted in the app's jade, a brighter jade in dark mode, instead of the web's blue. Type in either phone and press send to see a message arrive.</p>
+  </header>
+  <div class="ctrls"><button class="ctl" id="reply">Get a reply</button><button class="ctl" id="empty">Show the empty conversation</button></div>
+  <div class="phones" id="phones"></div>
+  <div class="notes">
+    <div class="note"><b>Icons in the app's colour</b><span>The bell, back, photo and send icons are painted in a jade gradient made from the app's own tokens: deep jade on light, mint on dark. No more blue.</span></div>
+    <div class="note"><b>One glass header</b><span>Back, avatar with a jade ring, name, "Active now" and the bell in one frosted bar, so the chat scrolls underneath it.</span></div>
+    <div class="note"><b>Real bubbles</b><span>Your messages are a jade gradient with white text (dark text on dark mode). Theirs are a white card. The time and the read ticks sit inside the bubble, not underneath.</span></div>
+    <div class="note"><b>Floating composer</b><span>One capsule holds the photo button, the text and the send button. Send lights up jade only when there's something to send, and its plane flies when tapped.</span></div>
+    <div class="note"><b>A warm empty state</b><span>"Say hello" becomes the person in a soft jade halo, with quick starters ("Hi Anna 👋", "On my way") one tap away.</span></div>
+    <div class="note"><b>Same motion as the web</b><span>Messages spring in from their side, typing shows a wave, and everything is off when the phone asks for reduced motion.</span></div>
+  </div>
+</div>
+
+<script>
+var IC = {
+  back: '<path d="M15 5 8 12l7 7" fill="none" stroke="P" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
+  bell: '<path d="M12 2.6A6.4 6.4 0 0 0 5.6 9v3.4l-1.5 2.8A1.2 1.2 0 0 0 5.2 17h13.6a1.2 1.2 0 0 0 1.1-1.8l-1.5-2.8V9A6.4 6.4 0 0 0 12 2.6Z" fill="P" opacity=".4"/><path d="M9.2 18.4h5.6a2.8 2.8 0 0 1-5.6 0Z" fill="P"/><path d="M8.7 9a3.4 3.4 0 0 1 2.4-3.1" fill="none" stroke="P" stroke-width="1.8" stroke-linecap="round"/>',
+  photo: '<rect x="2.6" y="4.6" width="18.8" height="14.8" rx="3.6" fill="P" opacity=".4"/><path d="m5.8 17 3.8-4.4a1 1 0 0 1 1.5 0l2.3 2.6 1.6-1.6a1 1 0 0 1 1.4 0L19 16.2v.8Z" fill="P"/><circle cx="15.6" cy="9" r="1.9" fill="P"/>',
+  send: '<path d="M3.3 10.6 19.8 3.3a.8.8 0 0 1 1 1l-7.3 16.6a.8.8 0 0 1-1.5-.1l-1.8-6.9a1 1 0 0 0-.7-.7l-6.9-1.8a.8.8 0 0 1-.1-1.5Z" fill="P" opacity=".55"/><path d="m10.6 13.4 5.6-5.6" stroke="P" stroke-width="2" stroke-linecap="round"/>'
+};
+function ico(name, paint) { return '<svg class="ico" viewBox="0 0 24 24">' + IC[name].split('"P"').join('"' + paint + '"') + '</svg>'; }
+var TICK = '<span class="ticks read"><svg viewBox="0 0 16 12"><path d="m1.5 6.5 3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><svg viewBox="0 0 16 12" style="margin-left:-10px"><path d="m1.5 6.5 3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+var THREAD = [
+  { t: 'th', b: 'are you there', m: '18:29' },
+  { t: 'mn', b: 'Yes I am here', m: '18:32' },
+  { t: 'th', b: 'what are you doing', m: '18:33' },
+  { t: 'mn', b: 'nothing and you ?', m: '18:40', read: true },
+  { t: 'th', b: 'are you sure >?', m: '' },
+  { t: 'th', b: 'hello again', m: '18:52' },
+];
+var emptyMode = false;
+function bubble(x, anim) {
+  var meta = x.m ? '<span class="meta">' + x.m + (x.t === 'mn' ? ' ' + TICK : '') + '</span>' : '';
+  if (x.photo) return '<div class="b mn photo ' + (anim ? 'in' : '') + '"><div class="img"></div>' + meta + '</div>';
+  return '<div class="b ' + x.t + ' ' + (anim ? 'in' : '') + '">' + x.b + meta + '</div>';
+}
+function phone(mode) {
+  var paint = mode === 'light' ? 'url(#jadeL)' : 'url(#jadeD)';
+  var name = emptyMode ? 'Anna Müller' : 'John Owner', ini = emptyMode ? 'AM' : 'JO';
+  var body = emptyMode
+    ? '<div class="empty"><div class="halo"><span class="av">' + ini + '<span class="dot"></span></span></div><b>Say hello to Anna</b><span>Active now · Operations Manager</span><div class="chips"><span class="chip">Hi Anna 👋</span><span class="chip">On my way</span><span class="chip">Can you call me?</span></div></div>'
+    : '<div class="feed" data-feed><span class="day">TODAY</span>' + THREAD.map(function (x, i) { var next = THREAD[i + 1]; return bubble(x) + (next && next.t !== x.t ? '<div class="gap"></div>' : ''); }).join('') + '</div>';
+  return '<div class="col"><span class="lbl">' + mode + ' mode</span><div class="phone"><div class="scr ' + mode + '" data-mode="' + mode + '">' +
+    '<div class="status"><span>18:54</span><span style="font-size:12px">●●● ◔</span></div>' +
+    '<div class="hdr"><button class="ib" aria-label="Back">' + ico('back', paint) + '</button><span class="av">' + ini + '<span class="dot"></span></span><span class="who"><b>' + name + '</b><span>Active now</span></span><button class="ib" aria-label="Notifications">' + ico('bell', paint) + '</button></div>' +
+    body +
+    '<div class="comp"><button class="ib" aria-label="Add a photo">' + ico('photo', paint) + '</button><input placeholder="Message ' + name.split(' ')[0] + '…" aria-label="Message"><button class="send" aria-label="Send">' + ico('send', 'currentColor') + '</button></div>' +
+    '</div></div></div>';
+}
+function render() {
+  document.getElementById('phones').innerHTML = phone('light') + phone('dark');
+  document.querySelectorAll('.scr').forEach(function (scr) {
+    var input = scr.querySelector('input'), send = scr.querySelector('.send');
+    input.oninput = function () { send.classList.toggle('ready', !!input.value.trim()); };
+    function go() {
+      var v = input.value.trim(); if (!v) return;
+      send.classList.remove('fly'); void send.offsetWidth; send.classList.add('fly');
+      if (emptyMode) { emptyMode = false; render(); scr = document.querySelector('.scr[data-mode="' + scr.dataset.mode + '"]'); }
+      var feed = scr.querySelector('[data-feed]'); feed.insertAdjacentHTML('beforeend', bubble({ t: 'mn', b: v, m: 'now' }, true));
+      input.value = ''; send.classList.remove('ready');
+    }
+    send.onclick = go; input.onkeydown = function (e) { if (e.key === 'Enter') go(); };
+    scr.querySelectorAll('.chip').forEach(function (c) { c.onclick = function () { input.value = c.textContent; send.classList.add('ready'); }; });
+  });
+}
+document.getElementById('reply').onclick = function () {
+  if (emptyMode) { emptyMode = false; render(); }
+  document.querySelectorAll('[data-feed]').forEach(function (feed) {
+    var t = document.createElement('div'); t.className = 'typing in'; t.innerHTML = '<i></i><i></i><i></i>'; feed.appendChild(t);
+    setTimeout(function () { t.remove(); feed.insertAdjacentHTML('beforeend', bubble({ t: 'th', b: 'Great — see you at 7:30 👍', m: 'now' }, true)); }, 1400);
+  });
+};
+document.getElementById('empty').onclick = function () { emptyMode = !emptyMode; this.textContent = emptyMode ? 'Show the conversation' : 'Show the empty conversation'; render(); };
+render();
+</script>

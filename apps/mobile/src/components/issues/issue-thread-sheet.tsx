@@ -15,21 +15,10 @@ import { AText, Chip, Eyebrow } from '../amazen';
 import { lookFor, offeredTo, readThread, severityShown, severityTone, type IssueActions, type ThreadEntry } from '../home/issue-status';
 import { MAX_PHOTOS, uploadPhotos } from './photos';
 import { personName } from '@hbcfield/shared/client';
-
-/**
- * ⚠️ THE TWO ENDINGS DO NOT SHARE A LIST. "Fixed on site" is not a reason to
- * withdraw something, and "Duplicate" is not a repair — one list would put
- * every wrong answer in front of both people. The web's six split four / two
- * along exactly that line.
- *
- * ⚠️ AND THEY ARE THE WEB'S OWN KEYS (`issues.resolveReasons`), already
- * written in five languages. A second list of the same six sentences is how
- * the phone and the desk end up disagreeing about what "Duplicate" means.
- */
-const ENDING_REASONS = {
-  resolve: ['fixedOnSite', 'partsUnavailable', 'needsSpecialist', 'customerUnavailable'],
-  withdraw: ['duplicate', 'notAnIssue'],
-} as const;
+import { useShiftIssueThreadSheet } from './use-shift-issue-thread-sheet';
+import { ENDING_REASONS, Note, Bubble } from './shift-issue-thread-sheet-helpers';
+import { ShiftIssueThreadSheetReasonOptional } from './shift-issue-thread-sheet-reason-optional';
+import { ShiftIssueThreadSheetAddPhoto } from './shift-issue-thread-sheet-add-photo';
 
 /**
  * ONE ISSUE — THE THREAD.
@@ -81,119 +70,36 @@ export function ShiftIssueThreadSheet({
   canManage?: boolean;
   currentUserId?: string;
 }) {
-  const { amazen } = useTheme();
-  const { t } = useTranslation();
-  const c = amazen.color;
-  const { user } = useAuth();
-  const { subscribe } = useSocketContext();
-  const { pickFromGallery, takePhoto } = useImagePicker();
-  const offline = useOffline();
-  const { operations } = useSyncStatus();
-
-  const [issue, setIssue] = useState<ShiftIssue | null>(null);
-  /* ⚠️ A failed read is not "still loading" — see `load`. */
-  const [failed, setFailed] = useState(false);
-  const [draft, setDraft] = useState('');
-  const [picked, setPicked] = useState<PickedImage[]>([]);
-  const [busy, setBusy] = useState(false);
-  /* A photo opened full screen — a 180pt thumbnail of a cracked weld is not evidence. */
-  const [viewing, setViewing] = useState<string | null>(null);
-  /* `resolve` or `withdraw`, while the reason is being written. */
-  const [ending, setEnding] = useState<'resolve' | 'withdraw' | null>(null);
-  const [reason, setReason] = useState('');
-  const scrollRef = useRef<ScrollView>(null);
-
-  const load = useCallback(async () => {
-    if (!issueId) return;
-    try {
-      setIssue(await shiftIssuesApi.get(issueId));
-      setFailed(false);
-    } catch {
-      /*
-        ⚠️ A FAILED READ USED TO LOOK EXACTLY LIKE A SLOW ONE. The catch was
-        empty and the sheet rendered `Loading…` for as long as it was open, so
-        a member whose request 404'd or timed out sat watching a spinner
-        message with nothing to do about it — the same mistake the list sheet
-        was fixed for. The sheet keeps whatever it already had; if it had
-        nothing, it says so and offers the tap again.
-      */
-      setFailed(true);
-    }
-  }, [issueId]);
-
-  /*
-    ⚠️ AND THE PREVIOUS ISSUE GOES. `issue` survived a change of `issueId`, so
-    opening a second fault showed the first one's title and thread until the
-    read came back — on a slow connection, long enough to reply to the wrong
-    one.
-  */
-  useEffect(() => { setIssue(null); setFailed(false); }, [issueId]);
-
-  useEffect(() => { if (visible && issueId) void load(); }, [visible, issueId, load]);
-
-  // Live: refresh the thread on any socket event for this issue.
-  useEffect(() => {
-    if (!visible || !issueId) return;
-    const handler = (d: unknown) => {
-      if ((d as { issueId?: string })?.issueId === issueId) void load();
-    };
-    const offs = [subscribe('shift_issue.event', handler), subscribe('shift_issue.created', handler)];
-    return () => offs.forEach((o) => o());
-  }, [visible, issueId, subscribe, load]);
-
-  /* The server's thread, with what this phone has written and not yet sent on the end. */
-  const myName = personName(user);
-  const thread = useMemo(() => {
-    const server = issue?.thread ?? [];
-    if (!issueId || !offline.files) return server;
-    const known = new Set(server.map((e) => e.id));
-    const files = offline.files;
-    const mine = pendingIssueEvents(issueId, operations, (id, mime) => files.uriFor(id, mime), {
-      id: user?.id ?? '',
-      name: myName,
-    }).filter((e) => !known.has(e.id));
-    return [...server, ...mine];
-  }, [issue?.thread, issueId, operations, offline.files, user?.id, myName]);
-
-  const send = useCallback(async () => {
-    if (!issueId || (!draft.trim() && picked.length === 0)) return;
-    setBusy(true);
-    try {
-      if (offline.engine && offline.files) {
-        const outcome = await sendIssueMessageFromPhone(offline.engine, offline.files, {
-          issueId,
-          body: draft,
-          photos: picked.map((p) => ({ uri: p.uri, fileName: p.fileName, mimeType: p.mimeType, width: p.width, height: p.height })),
-        });
-        if (outcome.kind === 'refused') return;
-        setDraft(''); setPicked([]);
-        if (outcome.kind === 'done') await load();
-        return;
-      }
-      const attachments = picked.length ? await uploadPhotos(issueId, picked) : [];
-      await shiftIssuesApi.message(issueId, { body: draft.trim(), attachments });
-      setDraft(''); setPicked([]);
-      await load();
-    } catch { /* the client reports its own failures */ } finally { setBusy(false); }
-  }, [issueId, draft, picked, load, offline.engine, offline.files]);
-
-  const addPhoto = useCallback(async () => {
-    const img = await takePhoto('issue-photo');
-    if (img) { setPicked((p) => [...p, img].slice(0, MAX_PHOTOS)); return; }
-    const imgs = await pickFromGallery('issue-photo');
-    if (imgs.length) setPicked((p) => [...p, ...imgs].slice(0, MAX_PHOTOS));
-  }, [takePhoto, pickFromGallery]);
-
-  const act = useCallback(async (fn: () => Promise<unknown>) => {
-    try { await fn(); await load(); } catch { /* the client reports its own failures */ }
-  }, [load]);
-
-  const viewerId = currentUserId ?? user?.id ?? null;
-  const offered: IssueActions = issue
-    ? offeredTo({ issue, viewerId, canManage: !!canManage })
-    : { acknowledge: false, resolve: false, withdraw: false, reopen: false, reply: false };
-  const look = issue ? lookFor(issue.status) : null;
-  const tone = look?.tone === 'warn' ? c.warn : look?.tone === 'accent' ? c.accent : c.inkMuted;
+  const vm = useShiftIssueThreadSheet({ visible, onClose, issueId, canManage, currentUserId });
+  const {
+    amazen,
+    t,
+    c,
+    issue,
+    failed,
+    setFailed,
+    draft,
+    setDraft,
+    picked,
+    setPicked,
+    busy,
+    viewing,
+    setViewing,
+    ending,
+    setEnding,
+    reason,
+    setReason,
+    scrollRef,
+    load,
+    thread,
+    send,
+    addPhoto,
+    act,
+    viewerId,
+    offered,
+    look,
+    tone,
+  } = vm;
 
   return (
     <BlurSheet visible={visible} onClose={onClose}>
@@ -317,53 +223,7 @@ export function ShiftIssueThreadSheet({
             ) : null}
 
             {/* The composer: a photo, the reply, and send. */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2), marginTop: amazen.space(3) }}>
-              <Pressable
-                onPress={addPhoto}
-                accessibilityRole="button"
-                accessibilityLabel={t('issues.addPhoto', { defaultValue: 'Add a photo' })}
-                hitSlop={8}
-                style={{
-                  width: 40, height: 40, borderRadius: amazen.radius.full,
-                  backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <AText variant="body" tone="ink">＋</AText>
-              </Pressable>
-              <TextInput
-                value={draft}
-                onChangeText={setDraft}
-                placeholder={t('issues.replyPlaceholder', { defaultValue: 'Reply…' })}
-                placeholderTextColor={c.inkMuted}
-                multiline
-                style={{
-                  flex: 1,
-                  backgroundColor: c.sunken,
-                  borderRadius: amazen.radius.field,
-                  borderWidth: StyleSheet.hairlineWidth * 2,
-                  borderColor: c.lineField,
-                  paddingHorizontal: amazen.space(3),
-                  paddingVertical: amazen.space(2),
-                  color: c.inkStrong,
-                  fontFamily: amazen.font.sans,
-                  fontSize: 15,
-                  maxHeight: 96,
-                }}
-              />
-              <Pressable
-                onPress={() => void send()}
-                disabled={busy || (!draft.trim() && picked.length === 0)}
-                accessibilityRole="button"
-                accessibilityLabel={t('issues.send', { defaultValue: 'Send' })}
-                style={({ pressed }) => ({
-                  width: 40, height: 40, borderRadius: amazen.radius.full,
-                  backgroundColor: c.accentSolid, alignItems: 'center', justifyContent: 'center',
-                  opacity: busy || (!draft.trim() && picked.length === 0) ? 0.4 : pressed ? 0.85 : 1,
-                })}
-              >
-                <AText variant="body" style={{ color: c.accentInk }}>➤</AText>
-              </Pressable>
-            </View>
+            <ShiftIssueThreadSheetAddPhoto vm={vm} />
 
             {/*
               ⚠️ THE QUIET ONE, UNDER THE COMPOSER. Ending the issue must not
@@ -426,199 +286,11 @@ export function ShiftIssueThreadSheet({
               ending somebody cannot reach without writing an essay is an
               ending they stop using.
             */}
-            {ending ? (
-              <View style={{ marginTop: amazen.space(4), gap: amazen.space(2) }}>
-                <Eyebrow tone="muted">
-                  {t('issues.reasonOptional', { defaultValue: 'Reason (optional)' })}
-                </Eyebrow>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(2) }}>
-                  {ENDING_REASONS[ending].map((k) => {
-                    const label = t(`issues.resolveReasons.${k}`, { defaultValue: k });
-                    const on = reason === label;
-                    return (
-                      <Pressable
-                        key={k}
-                        onPress={() => setReason(on ? '' : label)}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: on }}
-                        style={{
-                          paddingHorizontal: amazen.space(3),
-                          paddingVertical: amazen.space(2),
-                          borderRadius: amazen.radius.full,
-                          backgroundColor: c.tile,
-                          borderWidth: 1.5,
-                          borderColor: on ? c.inkStrong : 'transparent',
-                        }}
-                      >
-                        <AText variant="caption" tone={on ? 'strong' : 'muted'}>{label}</AText>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-                <TextInput
-                  value={reason}
-                  onChangeText={setReason}
-                  multiline
-                  maxLength={400}
-                  placeholder={t('issues.reasonPlaceholder', { defaultValue: 'Anything to add?' })}
-                  placeholderTextColor={c.inkMuted}
-                  style={{
-                    backgroundColor: c.sunken,
-                    borderRadius: amazen.radius.field,
-                    borderWidth: StyleSheet.hairlineWidth * 2,
-                    borderColor: c.lineField,
-                    paddingHorizontal: amazen.space(3),
-                    paddingVertical: amazen.space(2.5),
-                    color: c.inkStrong,
-                    fontFamily: amazen.font.sans,
-                    fontSize: 15,
-                    height: 64,
-                    textAlignVertical: 'top',
-                  }}
-                />
-                <Pressable
-                  onPress={() => {
-                    const note = reason.trim() || undefined;
-                    const to = ending === 'resolve' ? 'RESOLVED' : 'CANCELED';
-                    setEnding(null); setReason('');
-                    void act(() => shiftIssuesApi.setStatus(issue.id, to, note));
-                  }}
-                  accessibilityRole="button"
-                  style={({ pressed }) => ({
-                    paddingVertical: amazen.space(3),
-                    alignItems: 'center',
-                    borderRadius: amazen.radius.full,
-                    backgroundColor: c.accentSolid,
-                    opacity: pressed ? 0.85 : 1,
-                  })}
-                >
-                  <AText variant="body" style={{ color: c.accentInk, fontFamily: amazen.font.sansMedium }}>
-                    {ending === 'resolve'
-                      ? t('issues.confirmResolve', { defaultValue: 'Mark it resolved' })
-                      : t('issues.confirmWithdraw', { defaultValue: 'Withdraw it' })}
-                  </AText>
-                </Pressable>
-                <Pressable
-                  onPress={() => { setEnding(null); setReason(''); }}
-                  accessibilityRole="button"
-                  hitSlop={8}
-                  style={{ alignSelf: 'center' }}
-                >
-                  <AText variant="caption" tone="muted">{t('shiftEnd.notYet', { defaultValue: 'Not yet' })}</AText>
-                </Pressable>
-              </View>
-            ) : null}
+            <ShiftIssueThreadSheetReasonOptional vm={vm} />
 
           </>
         )}
       </SheetPanel>
     </BlurSheet>
-  );
-}
-
-/**
- * SOMETHING HAPPENED — a centred line, and the reason under it when there is one.
- *
- * ⚠️ IT IS NOT A BUBBLE AND MUST NOT LOOK LIKE ONE. A system event styled as a
- * message from somebody is the read-receipt mistake in another shape: it
- * invites a reply to a sentence nobody wrote.
- */
-function Note({ entry }: { entry: Extract<ThreadEntry, { kind: 'note' }> }) {
-  const { amazen } = useTheme();
-  const { t } = useTranslation();
-  const c = amazen.color;
-  const clockOf = useTimeFormat().formatTime;
-  const when = new Date(entry.event.at);
-  const time = Number.isNaN(when.getTime()) ? '' : clockOf(when);
-  const line = t(entry.key, {
-    name: entry.who,
-    defaultValue: entry.who ? `${entry.who} updated this` : 'This was updated',
-  });
-
-  return (
-    <View style={{ alignItems: 'center', marginBottom: amazen.space(3) }}>
-      <View
-        style={{
-          maxWidth: '92%',
-          alignItems: 'center',
-          backgroundColor: c.tile,
-          borderRadius: amazen.radius.full,
-          paddingHorizontal: amazen.space(3),
-          paddingVertical: amazen.space(1.5),
-        }}
-      >
-        <AText variant="caption" tone="muted" style={{ textAlign: 'center' }}>
-          {`${line}${time ? ` · ${time}` : ''}`}
-        </AText>
-      </View>
-      {/* ⚠️ Its own line — see `readThread`. */}
-      {entry.reason ? (
-        <AText variant="caption" tone="ink" style={{ marginTop: 4, maxWidth: '86%', textAlign: 'center' }}>
-          {entry.reason}
-        </AText>
-      ) : null}
-    </View>
-  );
-}
-
-/** Yours on the right in accent-tint; theirs on the left on a sunken surface. */
-function Bubble({ event, mine, onOpenPhoto }: { event: ShiftIssueEvent; mine: boolean; onOpenPhoto: (uri: string) => void }) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
-  /* The same clock as the card and the receipt — see `useTimeFormat`. */
-  const clockOf = useTimeFormat().formatTime;
-  const when = new Date(event.at);
-  const time = Number.isNaN(when.getTime()) ? '' : clockOf(when);
-
-  if (!event.body && !(event.attachments?.length)) return null;
-
-  return (
-    <View style={{ alignItems: mine ? 'flex-end' : 'flex-start', marginBottom: amazen.space(3) }}>
-      <View
-        style={{
-          maxWidth: '82%',
-          backgroundColor: mine ? c.accentTint : c.sunken,
-          borderRadius: amazen.radius.field,
-          padding: amazen.space(3),
-          gap: amazen.space(2),
-        }}
-      >
-        {/*
-          ⚠️ A PDF IS NOT AN IMAGE. Every attachment was drawn through
-          `<Image>`, so a document arrived as a 180×135 blank — the member is
-          told a file is there and shown nothing. And a photo opens full
-          screen: a thumbnail of a cracked weld is not evidence of anything.
-        */}
-        {event.attachments?.map((a) => {
-          const uri = a.url ?? a.fileUrl;
-          return (a.mimeType ?? '').startsWith('image/') ? (
-            <Pressable
-              key={a.id ?? a.fileUrl}
-              onPress={() => onOpenPhoto(uri)}
-              accessibilityRole="imagebutton"
-              accessibilityLabel={a.fileName}
-            >
-              <Image source={{ uri }} style={{ width: 180, height: 135, borderRadius: amazen.radius.tile }} />
-            </Pressable>
-          ) : (
-            <View
-              key={a.id ?? a.fileUrl}
-              style={{
-                flexDirection: 'row', alignItems: 'center', gap: amazen.space(2),
-                backgroundColor: c.tile, borderRadius: amazen.radius.tile,
-                paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(2),
-              }}
-            >
-              <AText variant="caption" tone="muted">▤</AText>
-              <AText variant="caption" tone="ink" numberOfLines={1} style={{ flex: 1 }}>{a.fileName}</AText>
-            </View>
-          );
-        })}
-        {event.body ? <AText variant="body" tone="ink">{event.body}</AText> : null}
-      </View>
-      <AText variant="caption" tone="muted" style={{ marginTop: 2 }}>
-        {`${event.actorName ?? ''} · ${time}`.trim()}
-      </AText>
-    </View>
   );
 }

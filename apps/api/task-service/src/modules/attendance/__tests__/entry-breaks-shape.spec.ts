@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BreakService } from '../break.service';
+import { BREAK_SERVICES } from '../break-services';
+import { breakServicesOf, type BreakServiceParts } from './break.service.fixture';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { CountedTimeService } from '../counted-time.service';
 import { BreakRulesService } from '../break-rules.service';
@@ -18,7 +19,7 @@ import { BreakReminderService } from '../break-reminder.service';
  * because nothing ever says the guess was wrong — so the shape is pinned here.
  */
 describe('getBreaksForEntry — response shape', () => {
-  let service: BreakService;
+  let service: BreakServiceParts;
 
   const prisma: Record<string, any> = {
     timeEntry: { findFirst: jest.fn() },
@@ -33,11 +34,11 @@ describe('getBreaksForEntry — response shape', () => {
         BreakRulesService,
         CountedTimeService,
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
-        BreakService,
+        ...BREAK_SERVICES,
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();
-    service = module.get(BreakService);
+    service = breakServicesOf(module);
   });
 
   const rows = [

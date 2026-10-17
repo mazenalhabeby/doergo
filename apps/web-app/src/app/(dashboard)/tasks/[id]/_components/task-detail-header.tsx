@@ -6,16 +6,9 @@ import { useJobTime } from "@/hooks/use-job-time"
 import type { User as AuthUser } from "@/contexts/auth-context"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
-import {
-  Calendar,
-  Pencil,
-  MoreHorizontal,
-  Trash2,
-  MapPin,
-  ChevronRight,
-  Clock,
-  FileText,
-} from "lucide-react"
+import { Calendar, Pencil, MoreHorizontal, Trash2, MapPin, ChevronRight, Clock, FileText } from "lucide-react"
+import { GradientIcon } from "@/components/ui/gradient-icon"
+import { useRouteAccess } from "@/hooks/use-route-access"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -33,26 +26,7 @@ import { getRequestId } from "@/lib/utils"
 import { formatMediumDate as formatShortDate } from "@/lib/format-date"
 import { InlineEditField } from "./inline-edit-field"
 import type { WorkflowStatus } from "@/lib/api"
-
-interface TaskDetailHeaderProps {
-  task: Task
-  user: AuthUser | null
-  canEdit: boolean
-  canAssign: boolean
-  isCompleted: boolean
-  isCanceled: boolean
-  hasAssignee: boolean
-  hasModule: (m: string) => boolean
-  allowedTransitions: WorkflowStatus[]
-  onTitleSave: (value: string) => Promise<void> | void
-  onStatusChange: (status: string) => void
-  onAssignClick: () => void
-  onEditClick: () => void
-  onCancelTask: () => void
-  /** Cancelling is destructive and permission-gated in its own right. */
-  canCancel: boolean
-  isStatusChanging: boolean
-}
+import { type TaskDetailHeaderProps, TaskTimer } from "./task-timer"
 
 export function TaskDetailHeader({
   task,
@@ -73,6 +47,8 @@ export function TaskDetailHeader({
   isStatusChanging,
 }: TaskDetailHeaderProps) {
   const { t } = useTranslation()
+  const { may } = useRouteAccess()
+  const mayMessage = may("/messages")
   const requestId = getRequestId(task, user?.organizationName)
   const taskDate = formatShortDate(task.createdAt)
   // The step's own name from the task's flow — the fixed table is English and knows only built-in steps.
@@ -117,6 +93,19 @@ export function TaskDetailHeader({
             (not a canceled one), so a custom workflow's own "Delivered" counts.
             The server applies the job's own read gate either way.
           */}
+          {/*
+            The job's chat: its crew, and the office through this same job gate
+            (POST /chat/tasks/:id, 404 otherwise). Opened — and created — on first
+            tap, never for every job. A finished job's chat still opens, to read.
+          */}
+          {mayMessage && (
+            <Button variant="outline" size="sm" className="icon-motion h-8" asChild>
+              <Link href={`/messages?task=${encodeURIComponent(task.id)}`}>
+                <GradientIcon name="chat" size={17} className="mr-1.5" />
+                {t("chat.jobChat", "Chat")}
+              </Link>
+            </Button>
+          )}
           {isCompleted && !isCanceled && (
             <Button variant="outline" size="sm" className="h-8" asChild>
               <Link href={`/tasks/${task.id}/report`}>
@@ -270,27 +259,5 @@ export function TaskDetailHeader({
         )}
       </div>
     </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// TaskTimer — the job's WORKING time (shared tasks/job-time.ts), the same
-// figure as the job-time card below it. It used to count from Accepted to
-// Completed — the evening before, every night and the weekend — and read
-// "13d 17h" above a card saying 68h of work.
-// ---------------------------------------------------------------------------
-function TaskTimer({ taskId, paused }: { taskId: string; paused: boolean }) {
-  const { t } = useTranslation()
-  const { time, live } = useJobTime(taskId, paused)
-  if (!time || time.working + time.travel === 0) return null
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold tabular-nums bg-muted text-foreground"
-      title={t("tasks.jobTime.title")}
-    >
-      <Clock className="size-3" />
-      {formatDuration(time.working)}
-      {live ? <span className="size-1.5 rounded-full bg-green-500" /> : null}
-    </span>
   )
 }

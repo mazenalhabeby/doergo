@@ -1,6 +1,9 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { LocationService } from './location.service';
+import { WorkerLocationReadService } from './worker-location-read.service';
+import { RouteReadService } from './route-read.service';
+import { LocationBatchService } from './location-batch.service';
 
 /**
  * The gateway sends `scopeSpaceIds` only for a workspace-scoped caller (an
@@ -14,7 +17,12 @@ function scopeOf(data: { scopeSpaceIds?: unknown }): string[] | undefined {
 
 @Controller()
 export class LocationController {
-  constructor(private readonly locationService: LocationService) {}
+  constructor(
+    private readonly locationService: LocationService,
+    private readonly batches: LocationBatchService,
+    private readonly routeReads: RouteReadService,
+    private readonly workerReads: WorkerLocationReadService,
+  ) {}
 
   // Its OWN pattern: on the shared Redis transport a common 'health' was answered
   // by whichever service replied first, so the gateway could not tell who was up.
@@ -34,12 +42,12 @@ export class LocationController {
   async updateLocationBatch(
     @Payload() data: { userId: string; taskId?: string; organizationId?: string; points: { lat: number; lng: number; accuracy?: number; timestamp?: string }[] },
   ) {
-    return this.locationService.updateLocationBatch(data.userId, data.taskId, data.points, data.organizationId);
+    return this.batches.updateLocationBatch(data.userId, data.taskId, data.points, data.organizationId);
   }
 
   @MessagePattern({ cmd: 'get_active_workers' })
   async getActiveWorkers(@Payload() data: { organizationId?: string; scopeSpaceIds?: string[] }) {
-    return this.locationService.getActiveWorkers(data.organizationId, undefined, scopeOf(data));
+    return this.workerReads.getActiveWorkers(data.organizationId, undefined, scopeOf(data));
   }
 
   // Cross-org shared space: live locations of the owner-org workers assigned to
@@ -47,28 +55,34 @@ export class LocationController {
   // (both resolved server-side by the gateway; never client input).
   @MessagePattern({ cmd: 'get_space_workers' })
   async getSpaceWorkers(@Payload() data: { organizationId: string; userIds: string[] }) {
-    return this.locationService.getActiveWorkers(data.organizationId, data.userIds);
+    return this.workerReads.getActiveWorkers(data.organizationId, data.userIds);
   }
 
   @MessagePattern({ cmd: 'get_worker_location' })
   async getWorkerLocation(@Payload() data: { workerId: string; organizationId?: string; scopeSpaceIds?: string[] }) {
-    return this.locationService.getWorkerLocation(data.workerId, data.organizationId, scopeOf(data));
+    return this.workerReads.getWorkerLocation(data.workerId, data.organizationId, scopeOf(data));
   }
 
   @MessagePattern({ cmd: 'get_worker_history' })
   async getWorkerHistory(
     @Payload() data: { workerId: string; startDate?: string; endDate?: string; organizationId?: string; scopeSpaceIds?: string[] },
   ) {
-    return this.locationService.getWorkerHistory(data.workerId, data.startDate, data.endDate, data.organizationId, scopeOf(data));
+    return this.workerReads.getWorkerHistory(
+      data.workerId,
+      data.startDate,
+      data.endDate,
+      data.organizationId,
+      scopeOf(data),
+    );
   }
 
   @MessagePattern({ cmd: 'get_task_route' })
   async getTaskRoute(@Payload() data: { taskId: string; organizationId?: string; scopeSpaceIds?: string[] }) {
-    return this.locationService.getTaskRoute(data.taskId, data.organizationId, scopeOf(data));
+    return this.routeReads.getTaskRoute(data.taskId, data.organizationId, scopeOf(data));
   }
 
   @MessagePattern({ cmd: 'get_worker_current_route' })
   async getWorkerCurrentRoute(@Payload() data: { workerId: string; organizationId?: string; scopeSpaceIds?: string[] }) {
-    return this.locationService.getWorkerCurrentRoute(data.workerId, data.organizationId, scopeOf(data));
+    return this.routeReads.getWorkerCurrentRoute(data.workerId, data.organizationId, scopeOf(data));
   }
 }

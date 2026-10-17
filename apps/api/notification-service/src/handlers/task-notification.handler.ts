@@ -6,6 +6,7 @@ import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
 import { taskStatus } from '../modules/push/push.service';
 import { msg, plural, type LocalizedText } from '../i18n/translate';
+import { TaskPushService } from './../modules/push/task-push.service';
 
 @Controller()
 export class TaskNotificationHandler {
@@ -14,6 +15,7 @@ export class TaskNotificationHandler {
   constructor(
     private readonly memberEmails: MemberEmailsService,
     private readonly pushService: PushService,
+    private readonly taskPush: TaskPushService,
     private readonly websocketGateway: WebsocketGateway,
     private readonly store: NotificationStore,
   ) {}
@@ -39,19 +41,6 @@ export class TaskNotificationHandler {
     }
   }
 
-  /** Something on a job changed — every open screen on it re-reads (websocket.gateway announceTaskChanged). */
-  @EventPattern('task_updated')
-  handleTaskUpdated(@Payload() data: { task?: { id?: string } }) {
-    const id = data?.task?.id;
-    if (typeof id === 'string' && id) this.websocketGateway.announceTaskChanged(id);
-  }
-
-  @EventPattern('task_created')
-  async handleTaskCreated(@Payload() data: any) {
-    this.logger.log(`Task created: ${data.id}`);
-    this.websocketGateway.emitTaskCreated(data);
-  }
-
   /**
    * The sweep decided somebody should be setting off.
    *
@@ -64,7 +53,7 @@ export class TaskNotificationHandler {
     this.logger.log(`Departure due: task ${data.taskId} for ${data.userId}`);
     try {
       const due = new Date(data.dueDate);
-      await this.pushService.sendDepartureDuePush(
+      await this.taskPush.sendDepartureDuePush(
         data.userId,
         { id: data.taskId, title: data.title },
         {
@@ -88,7 +77,7 @@ export class TaskNotificationHandler {
     const selfAssigned = !!data.actorId && data.actorId === data.workerId;
     if (!selfAssigned) {
       try {
-        await this.pushService.sendTaskAssignedPush(data.workerId, {
+        await this.taskPush.sendTaskAssignedPush(data.workerId, {
           id: data.task.id,
           title: data.task.title,
         });
@@ -130,88 +119,6 @@ export class TaskNotificationHandler {
     }
   }
 
-  /*
-    A task OPEN TO A ROLE (packages/shared/src/tasks/role-pool.ts).
-
-    Offered: a push to each person the wave reaches, in their own language, and
-    a line in their inbox — the push is gone once swiped, the inbox is where
-    "what was I offered?" is answered. Taken / unclaimed go to whoever opened it.
-    Pushes are typed `task_role_*`, so a member who switched job pushes off is
-    not buzzed (pushCategory → tasks).
-  */
-  @EventPattern('role_task_offered')
-  async handleRoleTaskOffered(@Payload() data: { task: { id: string; title: string; organizationId: string }; roleName: string; userIds: string[]; wave: number }) {
-    const ids = [...new Set(data.userIds ?? [])];
-    if (ids.length === 0) return;
-    this.logger.log(`Role task offered: ${data.task.id} wave ${data.wave} to ${ids.length}`);
-    const text: LocalizedText = {
-      title: msg('task.roleOffer.title', { role: data.roleName }),
-      body: msg('task.roleOffer.body', { task: data.task.title }),
-    };
-    try {
-      await this.pushService.sendToUsers(ids, text, { taskId: data.task.id, type: 'task_role_offer' });
-    } catch (error) {
-      this.logger.error(`Failed to send role offer push: ${error}`);
-    }
-    for (const id of ids) this.websocketGateway.emitToUser(id, 'role_task_open', { taskId: data.task.id });
-    await this.store.record({
-      recipientIds: ids,
-      organizationId: data.task.organizationId,
-      eventType: 'task.roleOffer',
-      text,
-      link: `/tasks/${data.task.id}`,
-      data: { taskId: data.task.id },
-    });
-  }
-
-  @EventPattern('role_task_taken')
-  async handleRoleTaskTaken(@Payload() data: { task: { id: string; title: string; organizationId: string }; takerName: string; notifyIds: string[] }) {
-    const ids = [...new Set(data.notifyIds ?? [])];
-    if (ids.length === 0) return;
-    const text: LocalizedText = {
-      title: msg('task.roleTaken.title'),
-      body: msg('task.roleTaken.body', { name: data.takerName, task: data.task.title }),
-    };
-    try {
-      await this.pushService.sendToUsers(ids, text, { taskId: data.task.id, type: 'task_role_taken' });
-    } catch (error) {
-      this.logger.error(`Failed to send role taken push: ${error}`);
-    }
-    await this.store.record({
-      recipientIds: ids,
-      organizationId: data.task.organizationId,
-      eventType: 'task.roleTaken',
-      text,
-      link: `/tasks/${data.task.id}`,
-      data: { taskId: data.task.id },
-    });
-  }
-
-  @EventPattern('role_task_unclaimed')
-  async handleRoleTaskUnclaimed(@Payload() data: { task: { id: string; title: string; organizationId: string }; roleName: string; minutes: number; names: string[]; notifyIds: string[] }) {
-    const ids = [...new Set(data.notifyIds ?? [])];
-    if (ids.length === 0) return;
-    const names = (data.names ?? []).slice(0, 3).join(', ');
-    const params = { task: data.task.title, role: data.roleName, minutes: data.minutes, names };
-    const text: LocalizedText = {
-      title: msg('task.roleUnclaimed.title'),
-      body: msg(names ? 'task.roleUnclaimed.body' : 'task.roleUnclaimed.bodyNone', params),
-    };
-    try {
-      await this.pushService.sendToUsers(ids, text, { taskId: data.task.id, type: 'task_role_unclaimed' });
-    } catch (error) {
-      this.logger.error(`Failed to send role unclaimed push: ${error}`);
-    }
-    await this.store.record({
-      recipientIds: ids,
-      organizationId: data.task.organizationId,
-      eventType: 'task.roleUnclaimed',
-      text,
-      link: `/tasks/${data.task.id}`,
-      data: { taskId: data.task.id },
-    });
-  }
-
   @EventPattern('task_status_changed')
   async handleTaskStatusChanged(@Payload() data: any) {
     this.logger.log(`Task status changed: ${data.task.id} ${data.oldStatus} -> ${data.newStatus}`);
@@ -219,7 +126,7 @@ export class TaskNotificationHandler {
 
     if (data.task.createdById) {
       try {
-        await this.pushService.sendStatusChangePush(
+        await this.taskPush.sendStatusChangePush(
           data.task.createdById,
           { id: data.task.id, title: data.task.title },
           data.newStatus,
@@ -267,18 +174,6 @@ export class TaskNotificationHandler {
     }
   }
 
-  @EventPattern('task_declined')
-  async handleTaskDeclined(@Payload() data: any) {
-    this.logger.log(`Task declined: ${data.task.id}`);
-    this.websocketGateway.emitTaskDeclined(data.task, data.declinedBy);
-  }
-
-  @EventPattern('task_deleted')
-  async handleTaskDeleted(@Payload() data: { taskId: string; organizationId: string; spaceId?: string | null }) {
-    this.logger.log(`Task deleted: ${data.taskId}`);
-    this.websocketGateway.emitTaskDeleted(data.taskId, data.organizationId, data.spaceId ?? undefined);
-  }
-
   @EventPattern('comment_added')
   async handleCommentAdded(@Payload() data: any) {
     this.logger.log(`Comment added to task: ${data.taskId}`);
@@ -291,7 +186,7 @@ export class TaskNotificationHandler {
 
     if (data.task?.createdById && data.task.createdById !== commenterId) {
       try {
-        await this.pushService.sendTaskCommentPush(
+        await this.taskPush.sendTaskCommentPush(
           data.task.createdById,
           { id: data.taskId, title: data.task.title },
           commenterName,
@@ -303,7 +198,7 @@ export class TaskNotificationHandler {
 
     if (data.task?.assignedToId && data.task.assignedToId !== commenterId) {
       try {
-        await this.pushService.sendTaskCommentPush(
+        await this.taskPush.sendTaskCommentPush(
           data.task.assignedToId,
           { id: data.taskId, title: data.task.title },
           commenterName,
@@ -312,12 +207,6 @@ export class TaskNotificationHandler {
         this.logger.error(`Failed to send comment push to assignee: ${error}`);
       }
     }
-  }
-
-  @EventPattern('attachment_added')
-  async handleAttachmentAdded(@Payload() data: any) {
-    this.logger.log(`Attachment added to task: ${data.taskId}`);
-    this.websocketGateway.emitAttachmentAdded(data.taskId, data.attachment);
   }
 
   @EventPattern('blocked_tasks_reminder')
@@ -342,114 +231,5 @@ export class TaskNotificationHandler {
     } catch (error) {
       this.logger.error(`Failed to send blocked tasks reminder push: ${error}`);
     }
-  }
-
-  /**
-   * A worker wrote what they did on a job and what is left — the people who have
-   * the job now hear it, including a note written after it was given to them.
-   */
-  @EventPattern('task_handover_added')
-  async handleHandoverAdded(@Payload() data: { taskId: string; taskTitle: string; authorName: string; recipientIds: string[]; organizationId: string }) {
-    this.websocketGateway.emitToOrganization(data.organizationId, 'task.handoverAdded', { taskId: data.taskId });
-    if (!data.recipientIds?.length) return;
-    try {
-      await this.pushService.sendToUsers(
-        data.recipientIds,
-        { title: msg('task.handover.title', { name: data.authorName }), body: msg('task.handover.body', { name: data.authorName, task: data.taskTitle }) },
-        { type: 'task_handover', taskId: data.taskId },
-      );
-    } catch (error) {
-      this.logger.error(`Failed to send handover push: ${error}`);
-    }
-  }
-
-  /** The office started somebody's job for them — they hear who, and why. */
-  @EventPattern('task_started_for_you')
-  async handleStartedForYou(@Payload() data: { taskId: string; taskTitle: string; userId: string; byName: string; reason: string; organizationId: string }) {
-    try {
-      await this.pushService.sendToUser(
-        data.userId,
-        { title: msg('task.startedForYou.title', { name: data.byName }), body: msg('task.startedForYou.body', { task: data.taskTitle, reason: data.reason }) },
-        { type: 'task_started_for_you', taskId: data.taskId },
-      );
-    } catch (error) {
-      this.logger.error(`Failed to send started-for-you push: ${error}`);
-    }
-  }
-
-  /**
-   * A crew job started (or picked up again): the crew members on the clock who
-   * have not joined are asked "are you with them?" — one tap joins them from
-   * the start (shared crew.ts joinMoment). The category carries the button.
-   */
-  @EventPattern('task_crew_started')
-  async handleCrewStarted(@Payload() d: { taskId: string; taskTitle: string; starterName: string; startedAt: string; memberIds: string[] }) {
-    if (!d.memberIds?.length) return;
-    try {
-      await this.pushService.sendToUsers(
-        d.memberIds,
-        { title: msg('task.crewStarted.title', { name: d.starterName, task: d.taskTitle }), body: msg('task.crewStarted.body', { name: d.starterName }) },
-        { type: 'task_crew_started', taskId: d.taskId, startedAt: d.startedAt, category: 'crew_join' },
-      );
-    } catch (error) {
-      this.logger.error(`Failed to send crew-started push: ${error}`);
-    }
-  }
-
-  /** The lead of one job was handed to somebody — they are told, and for how long. */
-  @EventPattern('task_lead_changed')
-  async handleLeadChanged(@Payload() d: { taskId: string; taskTitle: string; toUserId: string; byName: string; scope: 'TODAY' | 'PERMANENT' }) {
-    try {
-      await this.pushService.sendToUser(
-        d.toUserId,
-        { title: msg('task.leadChanged.title', { task: d.taskTitle }), body: msg(d.scope === 'TODAY' ? 'task.leadChanged.bodyToday' : 'task.leadChanged.bodyPermanent', { name: d.byName }) },
-        { type: 'task_lead_changed', taskId: d.taskId },
-      );
-    } catch (error) {
-      this.logger.error(`Failed to send lead-changed push: ${error}`);
-    }
-  }
-
-  /** The morning notice: a job's leader has approved time off today. */
-  @EventPattern('task_lead_needed')
-  async handleLeadNeeded(@Payload() d: { taskId: string; taskTitle: string; recipientIds: string[]; leaderName: string; actingName?: string | null }) {
-    if (!d.recipientIds?.length) return;
-    try {
-      await this.pushService.sendToUsers(
-        d.recipientIds,
-        {
-          title: msg('task.leadNeeded.title', { name: d.leaderName }),
-          body: d.actingName ? msg('task.leadNeeded.bodyActing', { task: d.taskTitle, acting: d.actingName }) : msg('task.leadNeeded.bodyNone', { task: d.taskTitle }),
-        },
-        { type: 'task_lead_needed', taskId: d.taskId },
-      );
-    } catch (error) {
-      this.logger.error(`Failed to send lead-needed push: ${error}`);
-    }
-  }
-
-  /** A crew member stopped on their own ("My issue") — the leader is told why. */
-  @EventPattern('task_crew_issue')
-  async handleCrewIssue(@Payload() d: { taskId: string; taskTitle: string; leaderId: string; name: string; reason: string }) {
-    try {
-      await this.pushService.sendToUser(
-        d.leaderId,
-        { title: msg('task.crewIssue.title', { name: d.name, task: d.taskTitle }), body: msg('task.crewIssue.body', { reason: d.reason }) },
-        { type: 'task_crew_issue', taskId: d.taskId },
-      );
-    } catch (error) {
-      this.logger.error(`Failed to send crew-issue push: ${error}`);
-    }
-  }
-
-  /** Jobs paused at a clock-out — the office's boards refresh and show them paused. */
-  @EventPattern('tasks_paused')
-  async handleTasksPaused(@Payload() data: { taskIds: string[]; userId: string; organizationId: string }) {
-    this.websocketGateway.emitToOrganization(data.organizationId, 'tasks.paused', { taskIds: data.taskIds, userId: data.userId });
-  }
-
-  @EventPattern('worker_location_updated')
-  async handleWorkerLocationUpdated(@Payload() data: any) {
-    this.websocketGateway.emitWorkerLocationUpdated(data.organizationId, data.workerId, data.location);
   }
 }

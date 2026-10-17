@@ -1,0 +1,24 @@
+# Chat & Team phase 1+2 on the phone (LOCAL, iOS simulator, dev build + Metro on :8081, signed in).
+# 01: the Team tab — People half, then Messages half.
+appId: com.hbcfield.app
+---
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Team"
+    timeout: 60000
+- tapOn: "Team"
+- extendedWaitUntil:
+    visible: "People"
+    timeout: 30000
+- tapOn: "People"
+- takeScreenshot: p1-team-people
+- tapOn:
+    text: "Messages.*"
+- extendedWaitUntil:
+    visible: "Messages.*"
+    timeout: 15000
+- takeScreenshot: p2-team-messages

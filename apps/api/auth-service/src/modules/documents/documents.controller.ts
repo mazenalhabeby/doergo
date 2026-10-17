@@ -1,9 +1,10 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { DocumentsService } from './documents.service';
-import { CredentialExpiryService } from './credential-expiry.service';
 import { CustomerSignLinkService } from './customer-sign-link.service';
 import { CustomerSignMailerService } from './customer-sign-mailer.service';
+import { OwnUploadReaderService } from './own-upload-reader.service';
+import { ComplianceBoardService } from './compliance-board.service';
 
 /**
  * Transport only. Every method forwards to the service, which is where the
@@ -14,7 +15,8 @@ import { CustomerSignMailerService } from './customer-sign-mailer.service';
 export class DocumentsController {
   constructor(
     private readonly documents: DocumentsService,
-    private readonly credentials: CredentialExpiryService,
+    private readonly ownUploadReader: OwnUploadReaderService,
+    private readonly complianceBoard: ComplianceBoardService,
     private readonly links: CustomerSignLinkService,
     private readonly mailer: CustomerSignMailerService,
   ) {}
@@ -93,7 +95,7 @@ export class DocumentsController {
 
   // ── Credentials ──────────────────────────────────────────────────────────
   @MessagePattern({ cmd: 'documents_compliance' })
-  compliance(@Payload() data: any) { return this.credentials.listCompliance(data); }
+  compliance(@Payload() data: any) { return this.complianceBoard.listCompliance(data); }
 
   // ── Templates ────────────────────────────────────────────────────────────
   @MessagePattern({ cmd: 'documents_list_templates' })
@@ -129,7 +131,9 @@ export class DocumentsController {
   presignOwnUpload(@Payload() data: any) { return this.documents.presignOwnUpload(data); }
 
   @MessagePattern({ cmd: 'documents_read_own_upload' })
-  readOwnUpload(@Payload() data: any) { return this.documents.readOwnUpload(data); }
+  readOwnUpload(@Payload() data: any) {
+    return this.ownUploadReader.readOwnUpload(data);
+  }
 
   @MessagePattern({ cmd: 'documents_submit_own' })
   submitOwnDocument(@Payload() data: any) { return this.documents.submitOwnDocument(data); }

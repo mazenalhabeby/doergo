@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CustomFieldsService } from './custom-fields.service';
+import { CustomFieldValuesService } from './custom-field-values.service';
 
 /**
  * Microservice Controller for Custom Field Operations
@@ -9,7 +10,10 @@ import { CustomFieldsService } from './custom-fields.service';
  */
 @Controller()
 export class CustomFieldsController {
-  constructor(private readonly customFieldsService: CustomFieldsService) {}
+  constructor(
+    private readonly customFieldsService: CustomFieldsService,
+    private readonly fieldValues: CustomFieldValuesService,
+  ) {}
 
   @MessagePattern({ cmd: 'find_all_custom_fields' })
   async findAll(@Payload() data: { organizationId: string; forWorkflow?: string }) {
@@ -37,7 +41,7 @@ export class CustomFieldsController {
   }
 
   @MessagePattern({ cmd: 'set_task_custom_fields' })
-  async setTaskValues(@Payload() data: Parameters<CustomFieldsService['setTaskValues']>[0]) {
-    return this.customFieldsService.setTaskValues(data);
+  async setTaskValues(@Payload() data: Parameters<CustomFieldValuesService['setTaskValues']>[0]) {
+    return this.fieldValues.setTaskValues(data);
   }
 }

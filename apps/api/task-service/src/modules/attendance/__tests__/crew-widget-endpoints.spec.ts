@@ -12,18 +12,20 @@
  * scope states: org-wide (null), some spaces, and none ([] = nothing).
  */
 import { AttendanceService } from '../attendance.service';
-import { NoShowRecordService } from '../no-show-record.service';
+import { noShowRecordParts } from './no-show-record.service.fixture';
 import { AttendanceReadService } from '../attendance-read.service';
+import { AttendanceEntriesReadService } from '../attendance-entries-read.service';
 import { ApprovalService } from '../approval.service';
-import { BreakService } from '../break.service';
+import { breakServices } from './break.service.fixture';
 
 const ORG = 'org-1';
 
 /** The facade over the two collaborators these reads live in, each given only the database. */
 function attendance(prisma: any) {
   const svc = Object.create(AttendanceService.prototype) as any;
-  svc.noShows = Object.assign(Object.create(NoShowRecordService.prototype), { prisma });
+  svc.noShows = Object.assign(noShowRecordParts(), { prisma });
   svc.reads = Object.assign(Object.create(AttendanceReadService.prototype), { prisma });
+  svc.entryReads = Object.assign(Object.create(AttendanceEntriesReadService.prototype), { prisma });
   return svc as AttendanceService;
 }
 function approvals(prisma: any) {
@@ -32,9 +34,7 @@ function approvals(prisma: any) {
   return svc as ApprovalService;
 }
 function breaks(prisma: any) {
-  const svc = Object.create(BreakService.prototype) as any;
-  svc.prisma = prisma;
-  return svc as BreakService;
+  return breakServices(prisma);
 }
 
 describe('approvals/pending?summary=true — the count the card shows', () => {

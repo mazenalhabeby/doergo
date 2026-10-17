@@ -13,6 +13,7 @@
  */
 import { isSpaceLeaderPermissions } from '../types/permissions';
 
+import { notEndedWhere } from './assignment-window';
 /**
  * The three questions this resolver answers, which are deliberately separate.
  *
@@ -64,7 +65,7 @@ function spaceColumn(kind: RoutingKind): string {
  */
 export async function spaceIdsForUser(prisma: RoutingPrisma, userId: string): Promise<string[]> {
   const now = new Date();
-  const effective = { OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] };
+  const effective = { ...notEndedWhere(now) };
   const assignments = await prisma.spaceAssignment.findMany({
     where: { userId, ...effective },
     select: { spaceId: true },
@@ -173,7 +174,7 @@ export async function resolveMemberRouting(
   // which spaces are in play, the org-scoped subset decides overrides.
   const now = new Date();
   const mineAll = await prisma.spaceAssignment.findMany({
-    where: { userId: personId, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] },
+    where: { userId: personId, ...notEndedWhere(now) },
     select: {
       spaceId: true,
       organizationId: true,

@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { SprintsService } from './sprints.service';
+import { SprintReportsService } from './sprint-reports.service';
 
 /**
  * Microservice Controller for Sprint Operations
@@ -10,7 +11,10 @@ import { SprintsService } from './sprints.service';
  */
 @Controller()
 export class SprintsController {
-  constructor(private readonly sprintsService: SprintsService) {}
+  constructor(
+    private readonly sprintsService: SprintsService,
+    private readonly sprintReports: SprintReportsService,
+  ) {}
 
   @MessagePattern({ cmd: 'find_all_sprints' })
   async findAll(@Payload() data: { organizationId: string; status?: string }) {
@@ -49,11 +53,11 @@ export class SprintsController {
 
   @MessagePattern({ cmd: 'get_sprint_report' })
   async getReport(@Payload() data: { id: string; organizationId: string }) {
-    return this.sprintsService.getReport(data);
+    return this.sprintReports.getReport(data);
   }
 
   @MessagePattern({ cmd: 'get_velocity' })
   async getVelocity(@Payload() data: { organizationId: string; limit?: number }) {
-    return this.sprintsService.getVelocity(data);
+    return this.sprintReports.getVelocity(data);
   }
 }

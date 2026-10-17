@@ -137,7 +137,12 @@ describe('the scanner keeps the card on the phone', () => {
   const REVIEW = fs
     .readdirSync(path.join(MOBILE, 'src/components/customer'))
     .filter((f) => f.startsWith('card-'))
-    .map((f) => path.join('src/components/customer', f));
+    // card-review/ is the rules file's parts (split 2026-10-17): read each part, not the folder.
+    .flatMap((f) => {
+      const rel = path.join('src/components/customer', f);
+      const abs = path.join(MOBILE, rel);
+      return fs.statSync(abs).isDirectory() ? fs.readdirSync(abs).map((g) => path.join(rel, g)) : [rel];
+    });
   // The screen's own pieces (camera, review state, save flow, review view),
   // split out of the route so it stays a thin composition.
   const SCREEN = fs

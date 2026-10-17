@@ -1,6 +1,7 @@
 import { canReceiveTasks } from '../types/modules';
 import { isOpenToRole } from './role-pool';
 
+import { activeWindowWhere } from '../access/assignment-window';
 /**
  * The database shape the rule needs — any Prisma client (or transaction)
  * satisfies it, so every service asks the SAME query.
@@ -37,8 +38,7 @@ export async function holdsOpenRole(
       userId,
       spaceId: task.spaceId,
       workRoleId: task.openRoleId!,
-      effectiveFrom: { lte: now },
-      OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }],
+      ...activeWindowWhere(now),
     },
     select: { user: { select: { role: true, enabledModules: true, isExternal: true } } },
   });

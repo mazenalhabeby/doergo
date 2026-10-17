@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { SpaceRolesService } from '../space-roles.service';
+import { spaceRoleServices, type SpaceRolesServiceParts } from './space-roles.service.fixture';
 
 /**
  * Nobody may grant what they do not hold.
@@ -22,7 +23,7 @@ import { SpaceRolesService } from '../space-roles.service';
  * read from the request body.
  */
 describe('SpaceRolesService — the grant ceiling', () => {
-  let service: SpaceRolesService;
+  let service: SpaceRolesServiceParts;
 
   const prisma: Record<string, any> = {
     $executeRawUnsafe: jest.fn(),
@@ -66,10 +67,7 @@ describe('SpaceRolesService — the grant ceiling', () => {
     prisma.accessRole.aggregate.mockResolvedValue({ _max: { position: 0 } });
     prisma.accessRole.create.mockImplementation(async ({ data }: any) => ({ id: 'r-new', ...data }));
 
-    const mod = await Test.createTestingModule({
-      providers: [SpaceRolesService, { provide: PrismaService, useValue: prisma }],
-    }).compile();
-    service = mod.get(SpaceRolesService);
+    service = spaceRoleServices(prisma);
   });
 
   const assign = (requesterPerms: any) =>

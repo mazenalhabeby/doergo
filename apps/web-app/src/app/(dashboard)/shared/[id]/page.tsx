@@ -59,94 +59,42 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { dateLocale } from "@/lib/format-date"
-
-const LEVEL_STYLES: Record<string, string> = {
-  VIEW: "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  CONTRIBUTE: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300",
-  CONTROL: "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300",
-}
-
-const REQUEST_STATUS_STYLES: Record<SpaceShareRequestStatus, string> = {
-  PENDING: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  APPROVED: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
-  REJECTED: "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300",
-}
+import { useSharedSpaceViewPage } from "./use-shared-space-view-page"
+import {
+  LEVEL_STYLES,
+  REQUEST_STATUS_STYLES,
+  AddWorkerDialog,
+  CreateTaskDialog,
+  RequestMoreDialog,
+} from "./shared-space-view-page-helpers"
+import { SharedSpaceViewPageGuest } from "./shared-space-view-page-guest"
+import { SharedSpaceViewPageGuest2 } from "./shared-space-view-page-guest2"
 
 export default function SharedSpaceViewPage() {
-  const { t } = useTranslation()
-  const params = useParams()
-  const spaceId = params.id as string
-  const { user } = useAuth()
-
-  // The share (and its capabilities / scope) is already in the auth context — no
-  // extra fetch. workers/attendance/tracking are gated by show* flags for a later
-  // phase; v1 renders the read-only board + (optionally) request-more.
-  const share = user?.access?.sharedSpaces?.find((s) => s.spaceId === spaceId)
-  // Capabilities for THIS space (from the server-resolved grant): CONTRIBUTE/CONTROL
-  // can create; CONTROL can assign. Drives the direct-control UI (backend enforces).
-  const perSpace = user?.access?.perSpace?.[spaceId] ?? {}
-  const canCreate = !!perSpace.canCreateTasks
-  const canAssign = !!perSpace.canAssignTasks
-  const canManageMembers = !!perSpace.canManageWorkspaces || !!perSpace.canManageUsers // CONTROL → add own workers to the space
-
-  const [requestOpen, setRequestOpen] = useState(false)
-  const [createOpen, setCreateOpen] = useState(false)
-  const [addWorkerOpen, setAddWorkerOpen] = useState(false)
-
-  const { data: taskData, isLoading } = useQuery({
-    queryKey: keys.tasks.list({ spaceId, limit: 100 }),
-    queryFn: () => tasksApi.list({ spaceId, limit: 100 }),
-    enabled: !!share,
-  })
-  const tasks: Task[] = (taskData?.data as Task[]) || []
-
-  const { data: myRequests } = useQuery({
-    queryKey: keys.sharedSpaces.requests(spaceId),
-    queryFn: () => spaceSharingApi.listGuestRequests(spaceId),
-    enabled: !!share,
-  })
-
-  // Workers on this space — only when the owner enabled "show workers".
-  const { data: workers } = useQuery({
-    queryKey: keys.sharedSpaces.workers(spaceId),
-    queryFn: () => locationsApi.getAssignedMembers(spaceId),
-    enabled: !!share && !!share.showWorkers,
-  })
-
-  // Attendance — only when the owner enabled "show attendance".
-  const { data: attendance } = useQuery({
-    queryKey: keys.sharedSpaces.attendance(spaceId),
-    queryFn: () => attendanceApi.getLocationEntries(spaceId, { limit: 50 }),
-    enabled: !!share && !!share.showAttendance,
-  })
-  const attendanceEntries: TimeEntry[] = attendance?.data ?? []
-
-  // Live worker locations — only when the owner enabled "show tracking".
-  const { data: tracked } = useQuery({
-    queryKey: keys.sharedSpaces.tracking(spaceId),
-    queryFn: () => trackingApi.getSpaceWorkers(spaceId),
-    enabled: !!share && !!share.showTracking,
-    refetchInterval: share?.showTracking ? 30_000 : false,
-  })
-
-  const queryClient = useQueryClient()
-  const assignMutation = useMutation({
-    mutationFn: ({ taskId, workerId }: { taskId: string; workerId: string }) => tasksApi.assign(taskId, workerId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.tasks.list({ spaceId, limit: 100 }) })
-      notify.success(t("spaceSharing.guest.assigned", "Task assigned"))
-    },
-    onError: (e: Error) => notify.error(e.message),
-  })
-
-  // The auth context surfaces the share by spaceId but not its share id, which the
-  // "request more" POST targets — resolve it once from /shared-spaces.
-  const { data: sharedSpaces } = useQuery({
-    queryKey: keys.sharedSpaces.list(),
-    queryFn: () => spaceSharingApi.listSharedSpaces(),
-    enabled: !!share,
-  })
-  const shareId = sharedSpaces?.find((s) => s.spaceId === spaceId)?.id ?? ""
+  const vm = useSharedSpaceViewPage()
+  const {
+    t,
+    spaceId,
+    user,
+    share,
+    canCreate,
+    canAssign,
+    canManageMembers,
+    requestOpen,
+    setRequestOpen,
+    createOpen,
+    setCreateOpen,
+    addWorkerOpen,
+    setAddWorkerOpen,
+    isLoading,
+    tasks,
+    myRequests,
+    workers,
+    attendanceEntries,
+    tracked,
+    assignMutation,
+    shareId,
+  } = vm
 
   // Not an active shared space for this org (e.g. still pending or revoked).
   if (!share) {
@@ -168,126 +116,10 @@ export default function SharedSpaceViewPage() {
     <div className="min-h-full bg-background">
       <div className="max-w-[1100px] mx-auto px-6 py-6">
         {/* Header */}
-        <div className="mb-6">
-          <BackToSpaces />
-          <div className="mt-3 flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="rounded-xl bg-primary/10 p-2.5">
-                <Building2 className="h-5 w-5 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-2xl font-bold text-foreground tracking-tight truncate">{share.spaceName}</h1>
-                <div className="mt-1 flex items-center gap-2 flex-wrap">
-                  <Badge variant="outline" className="gap-1 text-xs font-medium border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
-                    <Share2 className="h-3 w-3" />
-                    {t("spaceSharing.guest.sharedFrom", { org: share.ownerOrgName })}
-                  </Badge>
-                  <Badge variant="outline" className={cn("text-xs font-medium", LEVEL_STYLES[share.level])}>
-                    {t(`spaceSharing.levels.${share.level}.label`)}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {canManageMembers && (
-                <Button variant="outline" onClick={() => setAddWorkerOpen(true)} className="gap-1.5">
-                  <UserPlus className="h-4 w-4" />
-                  {t("spaceSharing.guest.addWorker", "Add worker")}
-                </Button>
-              )}
-              {canCreate && (
-                <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
-                  <Plus className="h-4 w-4" />
-                  {t("spaceSharing.guest.newTask", "New task")}
-                </Button>
-              )}
-              {share.allowRequests && (
-                <Button variant={canCreate ? "outline" : "default"} onClick={() => setRequestOpen(true)} className="gap-1.5">
-                  {!canCreate && <Plus className="h-4 w-4" />}
-                  {t("spaceSharing.guest.requestMore")}
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+        <SharedSpaceViewPageGuest2 vm={vm} />
 
         {/* Task board (read-only) */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <ClipboardList className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.tasksHeading")}</h2>
-          </div>
-
-          {isLoading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
-            </div>
-          ) : tasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-muted/20 px-6 py-14 text-center">
-              <span className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-                <ClipboardList className="h-6 w-6" />
-              </span>
-              <p className="mt-4 text-sm font-semibold text-foreground">{t("spaceSharing.guest.noTasks")}</p>
-            </div>
-          ) : (
-            <div className="grid gap-2">
-              {tasks.map((task) => (
-                <div key={task.id} className="rounded-xl border bg-card p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{task.title}</p>
-                      {task.description && (
-                        <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{task.description}</p>
-                      )}
-                      <div className="mt-2 flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="text-[11px] font-medium border-border bg-muted text-muted-foreground">
-                          {task.status?.replace(/_/g, " ")}
-                        </Badge>
-                        {task.priority && (
-                          <PriorityBadge priority={task.priority} showIcon={false} className="text-[11px] font-medium" />
-                        )}
-                        {task.assignedTo && (
-                          <span className="text-[11px] text-muted-foreground">
-                            {personName(task.assignedTo)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {task.dueDate && (
-                      <span className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0">
-                        {new Date(task.dueDate).toLocaleDateString(dateLocale(), { day: "2-digit", month: "short" })}
-                      </span>
-                    )}
-                  </div>
-                  {/* CONTROL guests can assign the owner's workers directly. */}
-                  {canAssign && workers && workers.length > 0 && (
-                    <div className="mt-3 flex items-center gap-2 border-t border-border/40 pt-2.5">
-                      <span className="text-[11px] text-muted-foreground">{t("spaceSharing.guest.assignTo", "Assign to")}</span>
-                      <Select
-                        value={task.assignedTo?.id || ""}
-                        onValueChange={(v) => assignMutation.mutate({ taskId: task.id, workerId: v })}
-                      >
-                        <SelectTrigger className="h-7 w-[190px] text-xs">
-                          <SelectValue placeholder={t("spaceSharing.guest.unassigned", "Unassigned")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {/* An assignment with no user attached cannot be
-                              picked — a Select option whose value is undefined
-                              renders but silently refuses to select. */}
-                          {workers.filter((w) => w.user?.id).map((w) => (
-                            <SelectItem key={w.user!.id} value={w.user!.id}>
-                              {personName(w.user)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <SharedSpaceViewPageGuest vm={vm} />
 
         {/* Workers on this space (owner enabled "show workers") */}
         {share.showWorkers && workers && workers.length > 0 && (
@@ -424,228 +256,5 @@ export default function SharedSpaceViewPage() {
         )}
       </div>
     </div>
-  )
-}
-
-function AddWorkerDialog({
-  spaceId,
-  open,
-  onOpenChange,
-}: {
-  spaceId: string
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}) {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-  const { data: employees } = useQuery({
-    queryKey: keys.employees.shareInvite(),
-    queryFn: () => employeesApi.list({ limit: 100 }),
-    enabled: open,
-  })
-  const list: EmployeeListItem[] = employees?.data ?? []
-
-  const mutation = useMutation({
-    mutationFn: (userId: string) => locationsApi.assignMember(spaceId, { userId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.sharedSpaces.workers(spaceId) })
-      notify.success(t("spaceSharing.guest.workerAdded", "Worker added to the workspace"))
-    },
-    onError: (e: Error) => notify.error(e.message),
-  })
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("spaceSharing.guest.addWorker", "Add worker")}</DialogTitle>
-          <DialogDescription>{t("spaceSharing.guest.addWorkerDescription", "Add one of your team to this shared workspace.")}</DialogDescription>
-        </DialogHeader>
-        <div className="max-h-80 overflow-y-auto -mx-1 px-1 py-1 space-y-1">
-          {list.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">{t("spaceSharing.guest.noTeam", "No team members found.")}</p>
-          ) : list.map((e) => (
-            <div key={e.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/60 p-2.5">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <UserAvatar firstName={e.firstName} lastName={e.lastName} seed={e.id} size="sm" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{personName(e)}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{e.email}</p>
-                </div>
-              </div>
-              <Button size="sm" variant="outline" className="h-7 text-xs shrink-0" disabled={mutation.isPending} onClick={() => mutation.mutate(e.id)}>
-                {t("spaceSharing.guest.add", "Add")}
-              </Button>
-            </div>
-          ))}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>{t("common.close", "Close")}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-function CreateTaskDialog({
-  spaceId,
-  open,
-  onOpenChange,
-}: {
-  spaceId: string
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}) {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [priority, setPriority] = useState("MEDIUM")
-
-  const mutation = useMutation({
-    mutationFn: () =>
-      tasksApi.create({ spaceId, title: title.trim(), description: description.trim() || undefined, priority }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.tasks.list({ spaceId, limit: 100 }) })
-      notify.success(t("spaceSharing.guest.taskCreated", "Task created"))
-      setTitle(""); setDescription(""); setPriority("MEDIUM")
-      onOpenChange(false)
-    },
-    onError: (e: Error) => notify.error(e.message),
-  })
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("spaceSharing.guest.newTask", "New task")}</DialogTitle>
-          <DialogDescription>{t("spaceSharing.guest.newTaskDescription", "Create a task in this shared workspace.")}</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="ct-title" className="text-xs">{t("spaceSharing.guest.requestTitle", "Title")}</Label>
-            <Input id="ct-title" value={title} onChange={(e) => setTitle(e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="ct-desc" className="text-xs">{t("spaceSharing.guest.requestNote", "Details")}</Label>
-            <Textarea id="ct-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">{t("tasks.priority.label", "Priority")}</Label>
-            <Select value={priority} onValueChange={setPriority}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {["LOW", "MEDIUM", "HIGH", "URGENT"].map((p) => (
-                  <SelectItem key={p} value={p}>{t(`tasks.priority.${p}`, p)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={mutation.isPending}>
-            {t("common.cancel")}
-          </Button>
-          <Button onClick={() => title.trim() && mutation.mutate()} disabled={mutation.isPending || !title.trim()}>
-            {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {t("spaceSharing.guest.newTask", "New task")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-function RequestMoreDialog({
-  spaceId,
-  shareId,
-  open,
-  onOpenChange,
-}: {
-  spaceId: string
-  shareId: string
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}) {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-
-  const [type, setType] = useState<SpaceShareRequestType>("TASK")
-  const [title, setTitle] = useState("")
-  const [note, setNote] = useState("")
-
-  const mutation = useMutation({
-    mutationFn: () =>
-      spaceSharingApi.createGuestRequest(shareId, { type, title: title.trim(), note: note.trim() || undefined }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.sharedSpaces.requests(spaceId) })
-      notify.success(t("spaceSharing.toast.requestSent"))
-      setType("TASK")
-      setTitle("")
-      setNote("")
-      onOpenChange(false)
-    },
-    onError: (err: Error) => notify.error(err.message || t("spaceSharing.toast.requestSendFailed")),
-  })
-
-  const handleSubmit = () => {
-    if (!shareId) return notify.error(t("spaceSharing.toast.requestSendFailed"))
-    if (!title.trim()) return notify.error(t("spaceSharing.guest.titleRequired"))
-    mutation.mutate()
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("spaceSharing.guest.requestDialogTitle")}</DialogTitle>
-          <DialogDescription>{t("spaceSharing.guest.requestDialogDescription")}</DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <Label className="text-xs">{t("spaceSharing.guest.requestType")}</Label>
-            <Select value={type} onValueChange={(v) => setType(v as SpaceShareRequestType)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TASK">{t("spaceSharing.requestTypes.TASK")}</SelectItem>
-                <SelectItem value="WORKER">{t("spaceSharing.requestTypes.WORKER")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="req-title" className="text-xs">{t("spaceSharing.guest.requestTitle")}</Label>
-            <Input
-              id="req-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t("spaceSharing.guest.requestTitlePlaceholder")}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="req-note" className="text-xs">{t("spaceSharing.guest.requestNote")}</Label>
-            <Textarea
-              id="req-note"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={3}
-              placeholder={t("spaceSharing.guest.requestNotePlaceholder")}
-            />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={mutation.isPending}>
-            {t("common.cancel")}
-          </Button>
-          <Button onClick={handleSubmit} disabled={mutation.isPending}>
-            {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {t("spaceSharing.guest.sendRequest")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   )
 }

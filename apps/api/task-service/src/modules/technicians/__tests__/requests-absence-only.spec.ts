@@ -1,3 +1,4 @@
+import { ABSENCE_WHERE } from '@hbcfield/shared';
 /**
  * ⚠️ ONLY LEAVE IS AN ABSENCE (requests/request-kinds.ts ABSENCE_WHERE).
  *
@@ -8,7 +9,7 @@
  */
 import { ShiftSweepService } from '../../attendance/shift-sweep.service';
 import { CoverService } from '../cover.service';
-import { TechniciansService } from '../technicians.service';
+import { LeaveRecordsService } from '../leave-records.service';
 import { LeaveLedgerService } from '../leave-ledger.service';
 
 const day = (d: string) => new Date(`${d}T00:00:00.000Z`);
@@ -43,7 +44,14 @@ describe('only leave is an absence', () => {
     const res = await svc.runNoShowSweep();
     expect(res.data.excusedCount).toBe(0);
     expect(res.data.remindedCount).toBe(1);
-    expect(svc.prisma.timeOff.findMany.mock.calls[0][0].where.kind).toBe('LEAVE');
+    // Since 2026-10-14 the sweep asks NoShowSettleService what is proven, and
+    // that reads approved time off through the one absence filter.
+    expect(ABSENCE_WHERE).toEqual({ kind: 'LEAVE' });
+    const settleSource = require('fs').readFileSync(
+      require('path').join(__dirname, '../../attendance/no-show-settle.service.ts'),
+      'utf8',
+    );
+    expect(settleSource).toMatch(/timeOff\.findMany\(\{[\s\S]*?\.\.\.ABSENCE_WHERE/);
   });
 
   it('cover does not count somebody working remotely as off', async () => {
@@ -61,7 +69,14 @@ describe('only leave is an absence', () => {
       leaveAdjustment: { findMany: jest.fn().mockResolvedValue([]) },
     };
     const calendarRules = { personRules: jest.fn(), personRulesMany: jest.fn().mockResolvedValue(new Map()) } as any;
-    const service = new TechniciansService(prisma, {} as any, {} as any, calendarRules, {} as any, new LeaveLedgerService(prisma, calendarRules));
+    const service = new LeaveRecordsService(
+      prisma,
+      {} as any,
+      {} as any,
+      calendarRules,
+      {} as any,
+      new LeaveLedgerService(prisma, calendarRules),
+    );
     const res: any = await service.getLeaveBalance({ technicianId: 'u1', organizationId: 'org-1' });
     expect(res.data).toMatchObject({ taken: 0, pending: 0, remaining: 25 });
     expect(prisma.timeOff.findMany.mock.calls[0][0].where.kind).toBe('LEAVE');

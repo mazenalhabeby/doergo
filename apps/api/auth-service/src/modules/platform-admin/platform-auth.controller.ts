@@ -1,10 +1,16 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PlatformAuthService } from './platform-auth.service';
+import { PlatformTwoFactorService } from './platform-two-factor.service';
+import { PlatformStaffService } from './platform-staff.service';
 
 @Controller()
 export class PlatformAuthController {
-  constructor(private readonly svc: PlatformAuthService) {}
+  constructor(
+    private readonly svc: PlatformAuthService,
+    private readonly staff: PlatformStaffService,
+    private readonly twoFactor: PlatformTwoFactorService,
+  ) {}
 
   @MessagePattern({ cmd: 'platform_login' })
   login(@Payload() d: any) { return this.svc.login(d); }
@@ -16,34 +22,34 @@ export class PlatformAuthController {
   me(@Payload() d: { userId: string }) { return this.svc.me(d.userId); }
 
   @MessagePattern({ cmd: 'platform_users_list' })
-  listUsers() { return this.svc.listUsers(); }
+  listUsers() { return this.staff.listUsers(); }
 
   @MessagePattern({ cmd: 'platform_users_create' })
-  createUser(@Payload() d: any) { return this.svc.createUser(d); }
+  createUser(@Payload() d: any) { return this.staff.createUser(d); }
 
   @MessagePattern({ cmd: 'platform_users_update' })
-  updateUser(@Payload() d: any) { return this.svc.updateUser(d); }
+  updateUser(@Payload() d: any) { return this.staff.updateUser(d); }
 
   @MessagePattern({ cmd: 'platform_users_reset_password' })
-  resetPassword(@Payload() d: any) { return this.svc.resetPassword(d); }
+  resetPassword(@Payload() d: any) { return this.staff.resetPassword(d); }
 
   @MessagePattern({ cmd: 'platform_bootstrap_owner' })
-  bootstrap(@Payload() d: any) { return this.svc.bootstrapOwner(d); }
+  bootstrap(@Payload() d: any) { return this.staff.bootstrapOwner(d); }
 
   @MessagePattern({ cmd: 'platform_change_password' })
   changePassword(@Payload() d: any) { return this.svc.changePassword(d); }
 
   @MessagePattern({ cmd: 'platform_2fa_setup' })
-  setup2fa(@Payload() d: any) { return this.svc.setup2fa(d); }
+  setup2fa(@Payload() d: any) { return this.twoFactor.setup2fa(d); }
 
   @MessagePattern({ cmd: 'platform_2fa_enable' })
-  enable2fa(@Payload() d: any) { return this.svc.enable2fa(d); }
+  enable2fa(@Payload() d: any) { return this.twoFactor.enable2fa(d); }
 
   @MessagePattern({ cmd: 'platform_2fa_disable' })
-  disable2fa(@Payload() d: any) { return this.svc.disable2fa(d); }
+  disable2fa(@Payload() d: any) { return this.twoFactor.disable2fa(d); }
 
   @MessagePattern({ cmd: 'platform_users_reset_2fa' })
-  reset2fa(@Payload() d: any) { return this.svc.reset2fa(d); }
+  reset2fa(@Payload() d: any) { return this.twoFactor.reset2fa(d); }
 
   @MessagePattern({ cmd: 'platform_logout' })
   logout(@Payload() d: any) { return this.svc.logout(d); }

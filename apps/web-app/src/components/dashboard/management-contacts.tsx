@@ -4,9 +4,8 @@ import type { TFunction } from "i18next"
 
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Phone, MessageSquare } from "lucide-react"
+import { MessageSquare } from "lucide-react"
 import { organizationsApi, type OrgMember } from "@/lib/api"
-import { notify } from "@/lib/toast"
 import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
 import { useContactActions } from "@/hooks/use-contact-actions"
@@ -93,22 +92,16 @@ export function ManagementContacts() {
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => message(m.id)}
-                  className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                  title={t("workspace.message", "Message")}
-                >
-                  <MessageSquare className="size-4" strokeWidth={2} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => notify.success(t("workspace.voiceCallComingSoon"))}
-                  className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                  title={t("workspace.voiceCall", "Call")}
-                >
-                  <Phone className="size-4" strokeWidth={2} />
-                </button>
+                {(m as { canMessage?: boolean }).canMessage !== false && (
+                  <button
+                    type="button"
+                    onClick={() => message(m.id)}
+                    className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    title={t("workspace.message", "Message")}
+                  >
+                    <MessageSquare className="size-4" strokeWidth={2} />
+                  </button>
+                )}
               </div>
             </div>
           )

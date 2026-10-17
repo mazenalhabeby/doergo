@@ -3,7 +3,7 @@
  * `fileUrl` and then signed from `fileKey` as sent, so a valid-looking URL
  * paired with another organization's key yielded a signed link to that file.
  */
-import { ShiftIssuesService } from '../shift-issues.service';
+import { shiftIssuesParts } from './shift-issues.service.fixture';
 
 const LEGACY = 'https://hel1.your-objectstorage.com/hbcfield';
 const issue = { id: 'iss_1', organizationId: 'org_1' };
@@ -13,7 +13,7 @@ const store: any = {
   keyFromUrl: (u?: string | null) => (u && u.startsWith(`${LEGACY}/`) ? u.slice(LEGACY.length + 1) : null),
   privateUrl: (k: string) => `${LEGACY}/${k}`,
 };
-const service = new ShiftIssuesService({} as any, {} as any, {} as any, store, {} as any);
+const service = shiftIssuesParts({} as any, {} as any, {} as any, store, {} as any);
 
 describe('shift issue attachments', () => {
   it('drops a foreign key even when the URL looks right', () => {

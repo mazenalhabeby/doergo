@@ -1,5 +1,4 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { tasksControllerSource } from './tasks-controllers.fixture';
 
 /**
  * A crew's checklist records WHO did the work (shared tasks/checklist.ts).
@@ -8,7 +7,7 @@ import { join } from 'path';
  * to them; a route added without it fails here.
  */
 describe('checklist write routes', () => {
-  const src = readFileSync(join(__dirname, '..', 'tasks.controller.ts'), 'utf8');
+  const src = tasksControllerSource();
   const routes = [...src.matchAll(/@(Post|Patch|Delete)\(':id\/checklist[^']*'\)([\s\S]*?)async (\w+)\(/g)];
 
   it('finds them at all — a passing scan of nothing proves nothing', () => {

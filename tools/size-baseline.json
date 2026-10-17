@@ -1,0 +1,4638 @@
+{
+ "apps/api/auth-service/src/common/member-offboarding/member-offboarding.service.ts": {
+  "lines": 43,
+  "long": 2
+ },
+ "apps/api/auth-service/src/modules/auth/auth-mail.service.ts": {
+  "lines": 242,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/auth/auth.controller.ts": {
+  "lines": 131,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/auth/session-tokens.base.ts": {
+  "lines": 181,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/auth/session-tokens.service.ts": {
+  "lines": 184,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/auth/sign-in.service.ts": {
+  "lines": 238,
+  "long": 2
+ },
+ "apps/api/auth-service/src/modules/auth/token-validation.service.ts": {
+  "lines": 265,
+  "long": 2
+ },
+ "apps/api/auth-service/src/modules/billing/billing-admin.service.ts": {
+  "lines": 60,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/billing/stripe-catalog.service.ts": {
+  "lines": 176,
+  "long": 3
+ },
+ "apps/api/auth-service/src/modules/billing/stripe-sync.service.ts": {
+  "lines": 74,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/billing/stripe-webhook.service.ts": {
+  "lines": 83,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/billing/subscription.service.ts": {
+  "lines": 234,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/blog/blog.service.ts": {
+  "lines": 141,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/customers/customer-activities.service.ts": {
+  "lines": 140,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/customers/customer-due.service.ts": {
+  "lines": 184,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/customers/customer-write.service.ts": {
+  "lines": 194,
+  "long": 6
+ },
+ "apps/api/auth-service/src/modules/customers/customers-service.base.ts": {
+  "lines": 241,
+  "long": 2
+ },
+ "apps/api/auth-service/src/modules/customers/customers.controller.ts": {
+  "lines": 113,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/documents/customer-sign-mailer.service.ts": {
+  "lines": 286,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/documents/document-chain.service.ts": {
+  "lines": 153,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/documents/document-read-queue.service.ts": {
+  "lines": 215,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/documents/document-reader.ts": {
+  "lines": 164,
+  "long": 3
+ },
+ "apps/api/auth-service/src/modules/documents/document-routing.base.ts": {
+  "lines": 244,
+  "long": 4
+ },
+ "apps/api/auth-service/src/modules/documents/document-send-back.service.ts": {
+  "lines": 102,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/documents/member-documents.service.ts": {
+  "lines": 202,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/documents/mrz-ocr.service.ts": {
+  "lines": 320,
+  "long": 0
+ },
+ "apps/api/auth-service/src/modules/invitations/invitation-service.base.ts": {
+  "lines": 229,
+  "long": 3
+ },
+ "apps/api/auth-service/src/modules/invoices/invoice-create.service.ts": {
+  "lines": 210,
+  "long": 2
+ },
+ "apps/api/auth-service/src/modules/invoices/invoice-edit.service.ts": {
+  "lines": 218,
+  "long": 3
+ },
+ "apps/api/auth-service/src/modules/invoices/invoice-service.base.ts": {
+  "lines": 227,
+  "long": 4
+ },
+ "apps/api/auth-service/src/modules/invoices/legal-entities.service.ts": {
+  "lines": 206,
+  "long": 8
+ },
+ "apps/api/auth-service/src/modules/invoices/site-time.service.ts": {
+  "lines": 282,
+  "long": 3
+ },
+ "apps/api/auth-service/src/modules/onboarding/invitation-onboarding.service.ts": {
+  "lines": 153,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/onboarding/onboarding-helpers.ts": {
+  "lines": 35,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/onboarding/org-profile.service.ts": {
+  "lines": 152,
+  "long": 3
+ },
+ "apps/api/auth-service/src/modules/platform-admin/platform-admin.service.ts": {
+  "lines": 248,
+  "long": 2
+ },
+ "apps/api/auth-service/src/modules/platform-admin/platform-auth.service.ts": {
+  "lines": 129,
+  "long": 4
+ },
+ "apps/api/auth-service/src/modules/platform-admin/platform-billing.service.ts": {
+  "lines": 235,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/platform-admin/platform-staff.service.ts": {
+  "lines": 87,
+  "long": 2
+ },
+ "apps/api/auth-service/src/modules/platform-admin/platform-trial.service.ts": {
+  "lines": 77,
+  "long": 2
+ },
+ "apps/api/auth-service/src/modules/platform-admin/platform-two-factor.service.ts": {
+  "lines": 96,
+  "long": 3
+ },
+ "apps/api/auth-service/src/modules/platform-admin/totp.util.ts": {
+  "lines": 56,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/portal/portal-clients.service.ts": {
+  "lines": 94,
+  "long": 2
+ },
+ "apps/api/auth-service/src/modules/portal/portal-service.base.ts": {
+  "lines": 120,
+  "long": 3
+ },
+ "apps/api/auth-service/src/modules/portal/portal-units.service.ts": {
+  "lines": 131,
+  "long": 3
+ },
+ "apps/api/auth-service/src/modules/portal/portal.controller.ts": {
+  "lines": 191,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/portal/unit-write.service.ts": {
+  "lines": 252,
+  "long": 7
+ },
+ "apps/api/auth-service/src/modules/users/access-role-write.service.ts": {
+  "lines": 220,
+  "long": 1
+ },
+ "apps/api/auth-service/src/modules/users/own-account.service.ts": {
+  "lines": 234,
+  "long": 2
+ },
+ "apps/api/auth-service/src/modules/users/users.controller.ts": {
+  "lines": 255,
+  "long": 3
+ },
+ "apps/api/gateway/src/app.module.ts": {
+  "lines": 251,
+  "long": 1
+ },
+ "apps/api/gateway/src/common/decorators/index.ts": {
+  "lines": 5,
+  "long": 1
+ },
+ "apps/api/gateway/src/common/guards/platform-auth.guard.ts": {
+  "lines": 84,
+  "long": 1
+ },
+ "apps/api/gateway/src/common/interceptors/labour-cost.interceptor.ts": {
+  "lines": 30,
+  "long": 1
+ },
+ "apps/api/gateway/src/common/interceptors/platform-audit.interceptor.ts": {
+  "lines": 110,
+  "long": 2
+ },
+ "apps/api/gateway/src/common/self-dispatch.ts": {
+  "lines": 41,
+  "long": 1
+ },
+ "apps/api/gateway/src/common/space-modules.service.ts": {
+  "lines": 256,
+  "long": 1
+ },
+ "apps/api/gateway/src/main.ts": {
+  "lines": 229,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/analytics/analytics.controller.ts": {
+  "lines": 147,
+  "long": 2
+ },
+ "apps/api/gateway/src/modules/approvals/approval-rules.client.ts": {
+  "lines": 24,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/approvals/approvals.controller.ts": {
+  "lines": 118,
+  "long": 2
+ },
+ "apps/api/gateway/src/modules/approvals/approvals.service.ts": {
+  "lines": 309,
+  "long": 3
+ },
+ "apps/api/gateway/src/modules/approvals/stand-ins.service.ts": {
+  "lines": 52,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/assets/dto/asset-custody.dto.ts": {
+  "lines": 326,
+  "long": 0
+ },
+ "apps/api/gateway/src/modules/attendance/attendance-records.controller.ts": {
+  "lines": 200,
+  "long": 2
+ },
+ "apps/api/gateway/src/modules/attendance/attendance.service.ts": {
+  "lines": 132,
+  "long": 4
+ },
+ "apps/api/gateway/src/modules/attendance/dto/heartbeat.dto.ts": {
+  "lines": 51,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/attendance/extra-time.gateway-service.ts": {
+  "lines": 71,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/auth/dto/index.ts": {
+  "lines": 140,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/billing/billing.controller.ts": {
+  "lines": 225,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/blog/blog.controller.ts": {
+  "lines": 108,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/calendar/calendar.controller.ts": {
+  "lines": 209,
+  "long": 3
+ },
+ "apps/api/gateway/src/modules/calendar/calendar.dto.ts": {
+  "lines": 129,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/calendar/workspace-place.detector.ts": {
+  "lines": 88,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/customers/customer-addresses.controller.ts": {
+  "lines": 98,
+  "long": 6
+ },
+ "apps/api/gateway/src/modules/customers/customer-invite.controller.ts": {
+  "lines": 75,
+  "long": 2
+ },
+ "apps/api/gateway/src/modules/customers/customers.controller.ts": {
+  "lines": 213,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/documents/dto/documents.dto.ts": {
+  "lines": 777,
+  "long": 0
+ },
+ "apps/api/gateway/src/modules/geo/geo-providers.ts": {
+  "lines": 61,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/invitations/dto/index.ts": {
+  "lines": 286,
+  "long": 2
+ },
+ "apps/api/gateway/src/modules/invoices/legal-entities.controller.ts": {
+  "lines": 101,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/locations/dto/create-location.dto.ts": {
+  "lines": 282,
+  "long": 4
+ },
+ "apps/api/gateway/src/modules/locations/locations.controller.ts": {
+  "lines": 281,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/organizations/dto/index.ts": {
+  "lines": 452,
+  "long": 4
+ },
+ "apps/api/gateway/src/modules/organizations/organizations.controller.ts": {
+  "lines": 216,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/platform-admin/platform-admin.controller.ts": {
+  "lines": 237,
+  "long": 4
+ },
+ "apps/api/gateway/src/modules/platform-admin/platform-admin.module.ts": {
+  "lines": 16,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/platform-admin/platform-admin.service.ts": {
+  "lines": 58,
+  "long": 6
+ },
+ "apps/api/gateway/src/modules/platform-admin/platform-auth.controller.ts": {
+  "lines": 146,
+  "long": 3
+ },
+ "apps/api/gateway/src/modules/platform-admin/platform-support-teams.controller.ts": {
+  "lines": 79,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/platform-admin/platform-support.controller.ts": {
+  "lines": 83,
+  "long": 3
+ },
+ "apps/api/gateway/src/modules/platform-admin/platform-support.service.ts": {
+  "lines": 17,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/portal/portal-residents.controller.ts": {
+  "lines": 149,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/portal/space-portal.controller.ts": {
+  "lines": 160,
+  "long": 3
+ },
+ "apps/api/gateway/src/modules/portal/space-units.controller.ts": {
+  "lines": 171,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/routes/routes.controller.ts": {
+  "lines": 42,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/search/search.controller.ts": {
+  "lines": 74,
+  "long": 2
+ },
+ "apps/api/gateway/src/modules/shift-issues/dto/index.ts": {
+  "lines": 65,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/shifts/shifts.controller.ts": {
+  "lines": 143,
+  "long": 4
+ },
+ "apps/api/gateway/src/modules/shifts/shifts.service.ts": {
+  "lines": 46,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/space-roles/space-roles.dto.ts": {
+  "lines": 131,
+  "long": 2
+ },
+ "apps/api/gateway/src/modules/space-sharing/space-sharing.controller.ts": {
+  "lines": 163,
+  "long": 3
+ },
+ "apps/api/gateway/src/modules/sync/sync-health.store.ts": {
+  "lines": 186,
+  "long": 2
+ },
+ "apps/api/gateway/src/modules/sync/sync-push.service.ts": {
+  "lines": 148,
+  "long": 4
+ },
+ "apps/api/gateway/src/modules/tasks/dto/index.ts": {
+  "lines": 513,
+  "long": 4
+ },
+ "apps/api/gateway/src/modules/tasks/tasks.controller.ts": {
+  "lines": 225,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/technicians/employee-time-off.controller.ts": {
+  "lines": 130,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/technicians/leave-ledger.controller.ts": {
+  "lines": 142,
+  "long": 1
+ },
+ "apps/api/gateway/src/modules/workflows/dto/index.ts": {
+  "lines": 256,
+  "long": 1
+ },
+ "apps/api/notification-service/src/handlers/app-update-notification.handler.ts": {
+  "lines": 72,
+  "long": 2
+ },
+ "apps/api/notification-service/src/handlers/approval-notification.handler.ts": {
+  "lines": 42,
+  "long": 2
+ },
+ "apps/api/notification-service/src/handlers/attendance-notification.handler.ts": {
+  "lines": 280,
+  "long": 3
+ },
+ "apps/api/notification-service/src/handlers/calendar-notification.handler.ts": {
+  "lines": 119,
+  "long": 3
+ },
+ "apps/api/notification-service/src/handlers/crew-notification.handler.ts": {
+  "lines": 123,
+  "long": 10
+ },
+ "apps/api/notification-service/src/handlers/no-show-notification.handler.ts": {
+  "lines": 138,
+  "long": 2
+ },
+ "apps/api/notification-service/src/handlers/role-task-notification.handler.ts": {
+  "lines": 100,
+  "long": 3
+ },
+ "apps/api/notification-service/src/i18n/push-messages.ts": {
+  "lines": 1380,
+  "long": 36
+ },
+ "apps/api/notification-service/src/modules/push/approval-push.service.ts": {
+  "lines": 111,
+  "long": 3
+ },
+ "apps/api/notification-service/src/modules/push/push-helpers.ts": {
+  "lines": 107,
+  "long": 4
+ },
+ "apps/api/task-service/src/common/approval-rules/approval-escalation.service.ts": {
+  "lines": 210,
+  "long": 7
+ },
+ "apps/api/task-service/src/common/approval-rules/approval-route.service.ts": {
+  "lines": 123,
+  "long": 6
+ },
+ "apps/api/task-service/src/common/approval-rules/approval-rules-admin.service.ts": {
+  "lines": 83,
+  "long": 3
+ },
+ "apps/api/task-service/src/common/approval-rules/approval-rules.base.ts": {
+  "lines": 104,
+  "long": 3
+ },
+ "apps/api/task-service/src/common/approval-rules/approval-rules.service.ts": {
+  "lines": 135,
+  "long": 8
+ },
+ "apps/api/task-service/src/modules/analytics/analytics.controller.ts": {
+  "lines": 72,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/analytics/analytics.service.ts": {
+  "lines": 254,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/analytics/query-engine.ts": {
+  "lines": 158,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/analytics/registry.ts": {
+  "lines": 256,
+  "long": 7
+ },
+ "apps/api/task-service/src/modules/analytics/report-schedule.service.ts": {
+  "lines": 237,
+  "long": 3
+ },
+ "apps/api/task-service/src/modules/approvals/stand-ins.service.ts": {
+  "lines": 254,
+  "long": 4
+ },
+ "apps/api/task-service/src/modules/assets/asset-contract.base.ts": {
+  "lines": 207,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/assets/asset-custody.service.ts": {
+  "lines": 194,
+  "long": 3
+ },
+ "apps/api/task-service/src/modules/assets/asset-log-read.service.ts": {
+  "lines": 173,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/assets/asset-log-reminder.service.ts": {
+  "lines": 170,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/assets/asset-log.base.ts": {
+  "lines": 187,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/attendance.controller.ts": {
+  "lines": 201,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/attendance/auto-clock-plan.service.ts": {
+  "lines": 180,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/auto-clock-undo.service.ts": {
+  "lines": 133,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/break-status.service.ts": {
+  "lines": 237,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/break.service.ts": {
+  "lines": 300,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/attendance/clock-in-helpers.ts": {
+  "lines": 22,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/clock-in-locations.service.ts": {
+  "lines": 215,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/attendance/clock-in.base.ts": {
+  "lines": 278,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/attendance/excursions.service.ts": {
+  "lines": 221,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/extra-time-decision.service.ts": {
+  "lines": 194,
+  "long": 5
+ },
+ "apps/api/task-service/src/modules/attendance/extra-time.base.ts": {
+  "lines": 236,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/attendance/heartbeat-batch.service.ts": {
+  "lines": 142,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/heartbeat.base.ts": {
+  "lines": 111,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/heartbeat.service.ts": {
+  "lines": 202,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/no-show-record.base.ts": {
+  "lines": 107,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/no-show-record.service.ts": {
+  "lines": 146,
+  "long": 3
+ },
+ "apps/api/task-service/src/modules/attendance/no-show-settle.service.ts": {
+  "lines": 241,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/no-show-summary.service.ts": {
+  "lines": 98,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/open-shift-close.ts": {
+  "lines": 117,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/attendance/presence/presence.service.ts": {
+  "lines": 238,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/attendance/self-decision.ts": {
+  "lines": 74,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/attendance/shift-close-sweep.service.ts": {
+  "lines": 159,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/shift-close.base.ts": {
+  "lines": 287,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/attendance/shift-rematch.service.ts": {
+  "lines": 264,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/attendance/shift-reminder-sweep.service.ts": {
+  "lines": 192,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/attendance/shift-sweep.service.ts": {
+  "lines": 189,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/calendar/availability.service.ts": {
+  "lines": 125,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/calendar/calendar-rules.service.ts": {
+  "lines": 229,
+  "long": 11
+ },
+ "apps/api/task-service/src/modules/calendar/calendar.controller.ts": {
+  "lines": 79,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/calendar/calendar.service.ts": {
+  "lines": 282,
+  "long": 7
+ },
+ "apps/api/task-service/src/modules/calendar/event-answers.service.ts": {
+  "lines": 112,
+  "long": 3
+ },
+ "apps/api/task-service/src/modules/calendar/events-helpers.ts": {
+  "lines": 92,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/calendar/events.base.ts": {
+  "lines": 249,
+  "long": 6
+ },
+ "apps/api/task-service/src/modules/calendar/events.service.ts": {
+  "lines": 275,
+  "long": 18
+ },
+ "apps/api/task-service/src/modules/calendar/feed.service.ts": {
+  "lines": 152,
+  "long": 8
+ },
+ "apps/api/task-service/src/modules/calendar/holiday-library.ts": {
+  "lines": 115,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/calendar/holidays.service.ts": {
+  "lines": 299,
+  "long": 18
+ },
+ "apps/api/task-service/src/modules/chat/chat-messages.service.ts": {
+  "lines": 190,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/chat/chat-reach.service.ts": {
+  "lines": 289,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/locations/assignment-terms.service.ts": {
+  "lines": 163,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/locations/member-spaces.service.ts": {
+  "lines": 107,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/locations/space-update.service.ts": {
+  "lines": 248,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/members/member-offboard.service.ts": {
+  "lines": 83,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/overtime/overtime-decision.service.ts": {
+  "lines": 216,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/overtime/overtime-record.base.ts": {
+  "lines": 84,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/overtime/overtime-record.service.ts": {
+  "lines": 88,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/overtime/overtime.service.ts": {
+  "lines": 250,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/shift-issues/shift-issue-actions.service.ts": {
+  "lines": 107,
+  "long": 11
+ },
+ "apps/api/task-service/src/modules/shift-issues/shift-issues-helpers.ts": {
+  "lines": 17,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/shift-issues/shift-issues.base.ts": {
+  "lines": 131,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/shift-issues/shift-issues.service.ts": {
+  "lines": 177,
+  "long": 8
+ },
+ "apps/api/task-service/src/modules/shifts/rota.service.ts": {
+  "lines": 257,
+  "long": 5
+ },
+ "apps/api/task-service/src/modules/shifts/shifts-helpers.ts": {
+  "lines": 18,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/shifts/shifts.service.ts": {
+  "lines": 170,
+  "long": 3
+ },
+ "apps/api/task-service/src/modules/space-roles/member-terms.service.ts": {
+  "lines": 175,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/space-roles/role-admin.service.ts": {
+  "lines": 167,
+  "long": 3
+ },
+ "apps/api/task-service/src/modules/space-roles/space-roles.controller.ts": {
+  "lines": 156,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/space-roles/space-roles.service.ts": {
+  "lines": 243,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/support/support-inbox.service.ts": {
+  "lines": 130,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/sync/sync-pull.service.ts": {
+  "lines": 298,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/tasks/handover/clock-gate.service.ts": {
+  "lines": 106,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/tasks/handover/crew-lookup.base.ts": {
+  "lines": 190,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/tasks/handover/crew.base.ts": {
+  "lines": 133,
+  "long": 5
+ },
+ "apps/api/task-service/src/modules/tasks/handover/crew.service.ts": {
+  "lines": 294,
+  "long": 15
+ },
+ "apps/api/task-service/src/modules/tasks/handover/job-pause-helpers.ts": {
+  "lines": 19,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/tasks/handover/job-pause-read.service.ts": {
+  "lines": 58,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/tasks/handover/job-pause.base.ts": {
+  "lines": 97,
+  "long": 3
+ },
+ "apps/api/task-service/src/modules/tasks/handover/job-pause.service.ts": {
+  "lines": 220,
+  "long": 7
+ },
+ "apps/api/task-service/src/modules/tasks/handover/job-time-helpers.ts": {
+  "lines": 49,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/tasks/handover/job-time.base.ts": {
+  "lines": 234,
+  "long": 8
+ },
+ "apps/api/task-service/src/modules/tasks/handover/job-time.service.ts": {
+  "lines": 122,
+  "long": 4
+ },
+ "apps/api/task-service/src/modules/tasks/leader-absent.service.ts": {
+  "lines": 138,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/tasks/role-pool-sweep.service.ts": {
+  "lines": 75,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/tasks/role-pool.base.ts": {
+  "lines": 252,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/tasks/role-pool.service.ts": {
+  "lines": 260,
+  "long": 6
+ },
+ "apps/api/task-service/src/modules/tasks/role-stats.service.ts": {
+  "lines": 81,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/tasks/role-take.service.ts": {
+  "lines": 79,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/tasks/step-submission.ts": {
+  "lines": 196,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/tasks/task-assignment.base.ts": {
+  "lines": 220,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/tasks/task-decline.service.ts": {
+  "lines": 84,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/tasks/task-detail.service.ts": {
+  "lines": 224,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/tasks/task-query.service.ts": {
+  "lines": 294,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/tasks/task-report-helpers.ts": {
+  "lines": 81,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/tasks/task-report-parties.ts": {
+  "lines": 183,
+  "long": 6
+ },
+ "apps/api/task-service/src/modules/tasks/task-report.service.ts": {
+  "lines": 206,
+  "long": 9
+ },
+ "apps/api/task-service/src/modules/tasks/task-support.service.ts": {
+  "lines": 210,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/tasks/task-update.service.ts": {
+  "lines": 204,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/technicians/cover.service.ts": {
+  "lines": 158,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/technicians/leave-carry-over.service.ts": {
+  "lines": 143,
+  "long": 6
+ },
+ "apps/api/task-service/src/modules/technicians/leave-ledger-helpers.ts": {
+  "lines": 111,
+  "long": 5
+ },
+ "apps/api/task-service/src/modules/technicians/leave-ledger.base.ts": {
+  "lines": 254,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/technicians/leave-ledger.service.ts": {
+  "lines": 115,
+  "long": 3
+ },
+ "apps/api/task-service/src/modules/technicians/leave-opening.service.ts": {
+  "lines": 183,
+  "long": 8
+ },
+ "apps/api/task-service/src/modules/technicians/leave-records.service.ts": {
+  "lines": 293,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/technicians/member-schedule.service.ts": {
+  "lines": 238,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/technicians/member-service.base.ts": {
+  "lines": 157,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/technicians/request-precheck.service.ts": {
+  "lines": 128,
+  "long": 4
+ },
+ "apps/api/task-service/src/modules/technicians/technicians.controller.ts": {
+  "lines": 229,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/technicians/time-off-decision.service.ts": {
+  "lines": 262,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/technicians/time-off-request.service.ts": {
+  "lines": 241,
+  "long": 2
+ },
+ "apps/api/task-service/src/modules/worklog/worklog-attachments.service.ts": {
+  "lines": 105,
+  "long": 4
+ },
+ "apps/api/task-service/src/modules/worklog/worklog.base.ts": {
+  "lines": 107,
+  "long": 1
+ },
+ "apps/api/task-service/src/modules/worklog/worklog.service.ts": {
+  "lines": 117,
+  "long": 3
+ },
+ "apps/api/tracking-service/src/modules/location/location.controller.ts": {
+  "lines": 88,
+  "long": 1
+ },
+ "apps/mobile/app/(app)/(tabs)/time-off.tsx": {
+  "lines": 200,
+  "long": 3
+ },
+ "apps/mobile/app/(app)/_layout.tsx": {
+  "lines": 386,
+  "long": 2
+ },
+ "apps/mobile/app/(app)/asset-log.tsx": {
+  "lines": 166,
+  "long": 2
+ },
+ "apps/mobile/app/(app)/manage/time-off-requests.tsx": {
+  "lines": 121,
+  "long": 8
+ },
+ "apps/mobile/app/(app)/overtime/[id].tsx": {
+  "lines": 270,
+  "long": 3
+ },
+ "apps/mobile/app/(app)/overtime/sign/[id].tsx": {
+  "lines": 249,
+  "long": 9
+ },
+ "apps/mobile/app/(app)/route-planner.tsx": {
+  "lines": 206,
+  "long": 6
+ },
+ "apps/mobile/app/(app)/support.tsx": {
+  "lines": 167,
+  "long": 3
+ },
+ "apps/mobile/app/(auth)/forgot-password.tsx": {
+  "lines": 94,
+  "long": 3
+ },
+ "apps/mobile/app/(auth)/login.tsx": {
+  "lines": 276,
+  "long": 11
+ },
+ "apps/mobile/app/(auth)/register.tsx": {
+  "lines": 131,
+  "long": 11
+ },
+ "apps/mobile/app/(customer)/(tabs)/index.tsx": {
+  "lines": 217,
+  "long": 18
+ },
+ "apps/mobile/app/(customer)/(tabs)/profile.tsx": {
+  "lines": 250,
+  "long": 11
+ },
+ "apps/mobile/app/(customer)/(tabs)/requests.tsx": {
+  "lines": 130,
+  "long": 2
+ },
+ "apps/mobile/app/(customer)/change-password.tsx": {
+  "lines": 75,
+  "long": 3
+ },
+ "apps/mobile/app/(customer)/edit-profile.tsx": {
+  "lines": 72,
+  "long": 1
+ },
+ "apps/mobile/app/(customer)/report.tsx": {
+  "lines": 256,
+  "long": 4
+ },
+ "apps/mobile/app/(customer)/request/[id].tsx": {
+  "lines": 193,
+  "long": 5
+ },
+ "apps/mobile/app/(onboarding)/choose-path.tsx": {
+  "lines": 32,
+  "long": 1
+ },
+ "apps/mobile/app/(onboarding)/create-org.tsx": {
+  "lines": 270,
+  "long": 8
+ },
+ "apps/mobile/app/(onboarding)/pending-approval.tsx": {
+  "lines": 144,
+  "long": 5
+ },
+ "apps/mobile/src/components/LocationConsentModal.tsx": {
+  "lines": 122,
+  "long": 6
+ },
+ "apps/mobile/src/components/always-location-sheet.tsx": {
+  "lines": 125,
+  "long": 2
+ },
+ "apps/mobile/src/components/amazen/button.tsx": {
+  "lines": 152,
+  "long": 1
+ },
+ "apps/mobile/src/components/amazen/filter.tsx": {
+  "lines": 153,
+  "long": 2
+ },
+ "apps/mobile/src/components/amazen/header-back.tsx": {
+  "lines": 78,
+  "long": 1
+ },
+ "apps/mobile/src/components/amazen/index.ts": {
+  "lines": 39,
+  "long": 1
+ },
+ "apps/mobile/src/components/amazen/ink-icon.tsx": {
+  "lines": 44,
+  "long": 1
+ },
+ "apps/mobile/src/components/amazen/use-tab-pill.ts": {
+  "lines": 185,
+  "long": 1
+ },
+ "apps/mobile/src/components/animated-splash.tsx": {
+  "lines": 244,
+  "long": 1
+ },
+ "apps/mobile/src/components/approvals/approval-detail.tsx": {
+  "lines": 263,
+  "long": 8
+ },
+ "apps/mobile/src/components/approvals/approvals-screen.tsx": {
+  "lines": 154,
+  "long": 5
+ },
+ "apps/mobile/src/components/approvals/stand-in-sheet.tsx": {
+  "lines": 130,
+  "long": 6
+ },
+ "apps/mobile/src/components/approvals/who-else.tsx": {
+  "lines": 63,
+  "long": 5
+ },
+ "apps/mobile/src/components/auth/auth-ui.tsx": {
+  "lines": 108,
+  "long": 6
+ },
+ "apps/mobile/src/components/bar.tsx": {
+  "lines": 61,
+  "long": 1
+ },
+ "apps/mobile/src/components/biometric-icon.tsx": {
+  "lines": 53,
+  "long": 1
+ },
+ "apps/mobile/src/components/calendar/calendar-data.ts": {
+  "lines": 148,
+  "long": 4
+ },
+ "apps/mobile/src/components/calendar/calendar-screen.tsx": {
+  "lines": 186,
+  "long": 18
+ },
+ "apps/mobile/src/components/calendar/calendar-sheets.tsx": {
+  "lines": 106,
+  "long": 6
+ },
+ "apps/mobile/src/components/calendar/calendar-views.tsx": {
+  "lines": 276,
+  "long": 29
+ },
+ "apps/mobile/src/components/calendar/event-sheet.tsx": {
+  "lines": 167,
+  "long": 16
+ },
+ "apps/mobile/src/components/calendar/new-event-screen.tsx": {
+  "lines": 244,
+  "long": 27
+ },
+ "apps/mobile/src/components/calendar/use-new-event-screen.tsx": {
+  "lines": 223,
+  "long": 6
+ },
+ "apps/mobile/src/components/chat/chat-rows-shared.tsx": {
+  "lines": 146,
+  "long": 1
+ },
+ "apps/mobile/src/components/chat/contact-row.tsx": {
+  "lines": 76,
+  "long": 2
+ },
+ "apps/mobile/src/components/chat/conversation-row.tsx": {
+  "lines": 88,
+  "long": 3
+ },
+ "apps/mobile/src/components/client-requests/request-detail.tsx": {
+  "lines": 159,
+  "long": 13
+ },
+ "apps/mobile/src/components/client-requests/requests-screen.tsx": {
+  "lines": 117,
+  "long": 6
+ },
+ "apps/mobile/src/components/clients/add-client-sheet.tsx": {
+  "lines": 169,
+  "long": 12
+ },
+ "apps/mobile/src/components/clients/client-row.tsx": {
+  "lines": 93,
+  "long": 6
+ },
+ "apps/mobile/src/components/clients/clients-screen.tsx": {
+  "lines": 206,
+  "long": 4
+ },
+ "apps/mobile/src/components/clients/clients-today.tsx": {
+  "lines": 62,
+  "long": 1
+ },
+ "apps/mobile/src/components/clients/contacts-import/done-step.tsx": {
+  "lines": 61,
+  "long": 3
+ },
+ "apps/mobile/src/components/clients/contacts-import/explain-step.tsx": {
+  "lines": 95,
+  "long": 5
+ },
+ "apps/mobile/src/components/clients/contacts-import/pick-step.tsx": {
+  "lines": 175,
+  "long": 12
+ },
+ "apps/mobile/src/components/clients/contacts-import/review-step.tsx": {
+  "lines": 115,
+  "long": 5
+ },
+ "apps/mobile/src/components/clock-out-sheet-props.tsx": {
+  "lines": 56,
+  "long": 1
+ },
+ "apps/mobile/src/components/clock-out-sheet.tsx": {
+  "lines": 262,
+  "long": 2
+ },
+ "apps/mobile/src/components/customer/activity-composer.tsx": {
+  "lines": 278,
+  "long": 1
+ },
+ "apps/mobile/src/components/customer/activity-row.tsx": {
+  "lines": 84,
+  "long": 5
+ },
+ "apps/mobile/src/components/customer/add-contact-sheet.tsx": {
+  "lines": 233,
+  "long": 2
+ },
+ "apps/mobile/src/components/customer/address-row.tsx": {
+  "lines": 56,
+  "long": 4
+ },
+ "apps/mobile/src/components/customer/client-edit-sheet.tsx": {
+  "lines": 274,
+  "long": 3
+ },
+ "apps/mobile/src/components/customer/contact-row.tsx": {
+  "lines": 84,
+  "long": 7
+ },
+ "apps/mobile/src/components/customer/portal-form.tsx": {
+  "lines": 73,
+  "long": 2
+ },
+ "apps/mobile/src/components/customer/record/record-about.tsx": {
+  "lines": 219,
+  "long": 10
+ },
+ "apps/mobile/src/components/customer/record/record-hero.tsx": {
+  "lines": 138,
+  "long": 8
+ },
+ "apps/mobile/src/components/customer/record/record-screen.tsx": {
+  "lines": 263,
+  "long": 12
+ },
+ "apps/mobile/src/components/customer/record/use-record-screen.tsx": {
+  "lines": 129,
+  "long": 4
+ },
+ "apps/mobile/src/components/customer/request-bits.tsx": {
+  "lines": 74,
+  "long": 1
+ },
+ "apps/mobile/src/components/documents/document-row.tsx": {
+  "lines": 106,
+  "long": 6
+ },
+ "apps/mobile/src/components/documents/documents-screen-helpers.tsx": {
+  "lines": 16,
+  "long": 2
+ },
+ "apps/mobile/src/components/documents/documents-screen.tsx": {
+  "lines": 192,
+  "long": 13
+ },
+ "apps/mobile/src/components/documents/use-documents-screen.tsx": {
+  "lines": 293,
+  "long": 22
+ },
+ "apps/mobile/src/components/equipment/capture-review.tsx": {
+  "lines": 84,
+  "long": 1
+ },
+ "apps/mobile/src/components/equipment/equipment-frame.tsx": {
+  "lines": 35,
+  "long": 1
+ },
+ "apps/mobile/src/components/equipment/equipment-picker.tsx": {
+  "lines": 78,
+  "long": 4
+ },
+ "apps/mobile/src/components/equipment/equipment-screen-helpers.tsx": {
+  "lines": 75,
+  "long": 9
+ },
+ "apps/mobile/src/components/equipment/equipment-screen.tsx": {
+  "lines": 231,
+  "long": 22
+ },
+ "apps/mobile/src/components/equipment/use-equipment-screen.tsx": {
+  "lines": 249,
+  "long": 11
+ },
+ "apps/mobile/src/components/glyphs/crm-glyphs.tsx": {
+  "lines": 150,
+  "long": 1
+ },
+ "apps/mobile/src/components/glyphs/glyphs.tsx": {
+  "lines": 140,
+  "long": 1
+ },
+ "apps/mobile/src/components/glyphs/tile-glyphs.tsx": {
+  "lines": 294,
+  "long": 1
+ },
+ "apps/mobile/src/components/glyphs/work-glyphs.tsx": {
+  "lines": 205,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/action-strip-state.ts": {
+  "lines": 161,
+  "long": 2
+ },
+ "apps/mobile/src/components/home/action-strip.tsx": {
+  "lines": 206,
+  "long": 4
+ },
+ "apps/mobile/src/components/home/band.ts": {
+  "lines": 269,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/clients-card.tsx": {
+  "lines": 121,
+  "long": 2
+ },
+ "apps/mobile/src/components/home/clients-state.ts": {
+  "lines": 127,
+  "long": 3
+ },
+ "apps/mobile/src/components/home/crew-card.tsx": {
+  "lines": 606,
+  "long": 33
+ },
+ "apps/mobile/src/components/home/done-ring.tsx": {
+  "lines": 84,
+  "long": 3
+ },
+ "apps/mobile/src/components/home/glyph-tile.tsx": {
+  "lines": 37,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/jobs-strip-state.ts": {
+  "lines": 48,
+  "long": 2
+ },
+ "apps/mobile/src/components/home/my-work-card-helpers.tsx": {
+  "lines": 210,
+  "long": 12
+ },
+ "apps/mobile/src/components/home/my-work-card.tsx": {
+  "lines": 229,
+  "long": 13
+ },
+ "apps/mobile/src/components/home/my-work.ts": {
+  "lines": 80,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/next-stop.tsx": {
+  "lines": 129,
+  "long": 10
+ },
+ "apps/mobile/src/components/home/reminder-row.tsx": {
+  "lines": 149,
+  "long": 9
+ },
+ "apps/mobile/src/components/home/route-card.tsx": {
+  "lines": 257,
+  "long": 19
+ },
+ "apps/mobile/src/components/home/route-sketch.tsx": {
+  "lines": 139,
+  "long": 2
+ },
+ "apps/mobile/src/components/home/shift-clock-card-view-queued.tsx": {
+  "lines": 171,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/shift-clock-card-view-view.tsx": {
+  "lines": 63,
+  "long": 2
+ },
+ "apps/mobile/src/components/home/shift-clock-card.tsx": {
+  "lines": 266,
+  "long": 2
+ },
+ "apps/mobile/src/components/home/shift-clock/use-shift-clock-actions.ts": {
+  "lines": 101,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/shortcuts-card.tsx": {
+  "lines": 297,
+  "long": 15
+ },
+ "apps/mobile/src/components/home/shortcuts-editor-helpers.tsx": {
+  "lines": 18,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/strip-box.tsx": {
+  "lines": 80,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/today-card.tsx": {
+  "lines": 118,
+  "long": 9
+ },
+ "apps/mobile/src/components/home/use-crew.ts": {
+  "lines": 146,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/use-my-work-card.ts": {
+  "lines": 253,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/use-schedule-totals.ts": {
+  "lines": 245,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/use-shift-clock-card-view.ts": {
+  "lines": 262,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/use-widget-gallery.ts": {
+  "lines": 206,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/well-door.tsx": {
+  "lines": 43,
+  "long": 1
+ },
+ "apps/mobile/src/components/home/widget-gallery.tsx": {
+  "lines": 227,
+  "long": 9
+ },
+ "apps/mobile/src/components/home/work-shape.ts": {
+  "lines": 252,
+  "long": 2
+ },
+ "apps/mobile/src/components/issues/issue-thread-sheet.tsx": {
+  "lines": 296,
+  "long": 1
+ },
+ "apps/mobile/src/components/job/decision.ts": {
+  "lines": 281,
+  "long": 1
+ },
+ "apps/mobile/src/components/job/job-activity.tsx": {
+  "lines": 164,
+  "long": 7
+ },
+ "apps/mobile/src/components/job/job-banners.tsx": {
+  "lines": 107,
+  "long": 1
+ },
+ "apps/mobile/src/components/job/job-checklist.tsx": {
+  "lines": 251,
+  "long": 9
+ },
+ "apps/mobile/src/components/job/job-crew.tsx": {
+  "lines": 177,
+  "long": 9
+ },
+ "apps/mobile/src/components/job/job-dock.tsx": {
+  "lines": 111,
+  "long": 8
+ },
+ "apps/mobile/src/components/job/job-facts.tsx": {
+  "lines": 67,
+  "long": 2
+ },
+ "apps/mobile/src/components/job/job-fields.tsx": {
+  "lines": 136,
+  "long": 3
+ },
+ "apps/mobile/src/components/job/job-files.tsx": {
+  "lines": 116,
+  "long": 5
+ },
+ "apps/mobile/src/components/job/job-handover.tsx": {
+  "lines": 103,
+  "long": 2
+ },
+ "apps/mobile/src/components/job/job-header.tsx": {
+  "lines": 123,
+  "long": 3
+ },
+ "apps/mobile/src/components/job/job-page.tsx": {
+  "lines": 622,
+  "long": 13
+ },
+ "apps/mobile/src/components/job/job-report.tsx": {
+  "lines": 76,
+  "long": 2
+ },
+ "apps/mobile/src/components/job/job-role.tsx": {
+  "lines": 89,
+  "long": 1
+ },
+ "apps/mobile/src/components/job/job-submissions.tsx": {
+  "lines": 123,
+  "long": 4
+ },
+ "apps/mobile/src/components/job/job-ui.tsx": {
+  "lines": 90,
+  "long": 2
+ },
+ "apps/mobile/src/components/job/sheet-option.tsx": {
+  "lines": 282,
+  "long": 8
+ },
+ "apps/mobile/src/components/job/sheets/assign-sheet.tsx": {
+  "lines": 144,
+  "long": 2
+ },
+ "apps/mobile/src/components/job/sheets/more-sheet.tsx": {
+  "lines": 72,
+  "long": 3
+ },
+ "apps/mobile/src/components/job/sign-pad.tsx": {
+  "lines": 70,
+  "long": 2
+ },
+ "apps/mobile/src/components/job/state-eyebrow.tsx": {
+  "lines": 45,
+  "long": 4
+ },
+ "apps/mobile/src/components/job/step-form-logic/draft.ts": {
+  "lines": 209,
+  "long": 1
+ },
+ "apps/mobile/src/components/job/step-form-logic/labels.ts": {
+  "lines": 66,
+  "long": 1
+ },
+ "apps/mobile/src/components/job/step-form-logic/send.ts": {
+  "lines": 163,
+  "long": 3
+ },
+ "apps/mobile/src/components/job/use-crew.ts": {
+  "lines": 82,
+  "long": 3
+ },
+ "apps/mobile/src/components/job/use-job.ts": {
+  "lines": 284,
+  "long": 1
+ },
+ "apps/mobile/src/components/jobs-list/job-row.tsx": {
+  "lines": 108,
+  "long": 1
+ },
+ "apps/mobile/src/components/jobs-list/jobs-controls.tsx": {
+  "lines": 123,
+  "long": 4
+ },
+ "apps/mobile/src/components/jobs-list/next-up.tsx": {
+  "lines": 181,
+  "long": 2
+ },
+ "apps/mobile/src/components/jobs-list/period.ts": {
+  "lines": 294,
+  "long": 1
+ },
+ "apps/mobile/src/components/jobs-list/route-row.tsx": {
+  "lines": 38,
+  "long": 2
+ },
+ "apps/mobile/src/components/jobs-list/use-jobs-screen-data.tsx": {
+  "lines": 205,
+  "long": 2
+ },
+ "apps/mobile/src/components/jobs-list/use-jobs-screen.tsx": {
+  "lines": 247,
+  "long": 8
+ },
+ "apps/mobile/src/components/more/more-screen.tsx": {
+  "lines": 185,
+  "long": 9
+ },
+ "apps/mobile/src/components/new-job/day-picker-parts.tsx": {
+  "lines": 65,
+  "long": 2
+ },
+ "apps/mobile/src/components/new-job/new-job-photos.tsx": {
+  "lines": 47,
+  "long": 2
+ },
+ "apps/mobile/src/components/new-job/new-job-screen.tsx": {
+  "lines": 271,
+  "long": 7
+ },
+ "apps/mobile/src/components/new-job/use-create-job.ts": {
+  "lines": 85,
+  "long": 1
+ },
+ "apps/mobile/src/components/new-job/when-sheets.tsx": {
+  "lines": 140,
+  "long": 5
+ },
+ "apps/mobile/src/components/onboarding/pass-badge.tsx": {
+  "lines": 137,
+  "long": 15
+ },
+ "apps/mobile/src/components/onboarding/pass-frame.tsx": {
+  "lines": 65,
+  "long": 3
+ },
+ "apps/mobile/src/components/onboarding/pass-screen.tsx": {
+  "lines": 253,
+  "long": 12
+ },
+ "apps/mobile/src/components/open-jobs.tsx": {
+  "lines": 91,
+  "long": 4
+ },
+ "apps/mobile/src/components/out-of-ring-sheet.tsx": {
+  "lines": 178,
+  "long": 1
+ },
+ "apps/mobile/src/components/people/invitations-screen.tsx": {
+  "lines": 200,
+  "long": 18
+ },
+ "apps/mobile/src/components/people/members-screen.tsx": {
+  "lines": 205,
+  "long": 19
+ },
+ "apps/mobile/src/components/people/person-avatar.tsx": {
+  "lines": 61,
+  "long": 1
+ },
+ "apps/mobile/src/components/people/team-messages.tsx": {
+  "lines": 298,
+  "long": 1
+ },
+ "apps/mobile/src/components/people/team-screen-helpers.tsx": {
+  "lines": 75,
+  "long": 3
+ },
+ "apps/mobile/src/components/people/team-screen.tsx": {
+  "lines": 131,
+  "long": 1
+ },
+ "apps/mobile/src/components/people/use-team-screen.tsx": {
+  "lines": 224,
+  "long": 3
+ },
+ "apps/mobile/src/components/profile/profile-glyphs.tsx": {
+  "lines": 133,
+  "long": 1
+ },
+ "apps/mobile/src/components/profile/profile-screen-helpers.tsx": {
+  "lines": 65,
+  "long": 4
+ },
+ "apps/mobile/src/components/profile/profile-screen.tsx": {
+  "lines": 250,
+  "long": 21
+ },
+ "apps/mobile/src/components/receipt.tsx": {
+  "lines": 86,
+  "long": 1
+ },
+ "apps/mobile/src/components/register/register-record.tsx": {
+  "lines": 258,
+  "long": 20
+ },
+ "apps/mobile/src/components/register/register-screen.tsx": {
+  "lines": 169,
+  "long": 5
+ },
+ "apps/mobile/src/components/requests/precheck-card.tsx": {
+  "lines": 47,
+  "long": 5
+ },
+ "apps/mobile/src/components/requests/request-form-card.tsx": {
+  "lines": 239,
+  "long": 14
+ },
+ "apps/mobile/src/components/requests/request-glyphs.tsx": {
+  "lines": 109,
+  "long": 5
+ },
+ "apps/mobile/src/components/requests/request-model.ts": {
+  "lines": 223,
+  "long": 1
+ },
+ "apps/mobile/src/components/requests/request-parts.tsx": {
+  "lines": 228,
+  "long": 13
+ },
+ "apps/mobile/src/components/requests/suggestion-card.tsx": {
+  "lines": 44,
+  "long": 5
+ },
+ "apps/mobile/src/components/rest-card.tsx": {
+  "lines": 271,
+  "long": 2
+ },
+ "apps/mobile/src/components/rota/day-sheet.tsx": {
+  "lines": 140,
+  "long": 8
+ },
+ "apps/mobile/src/components/rota/schedules-screen.tsx": {
+  "lines": 221,
+  "long": 13
+ },
+ "apps/mobile/src/components/scan-card/scan-card-copy.ts": {
+  "lines": 52,
+  "long": 1
+ },
+ "apps/mobile/src/components/settings/about-page.tsx": {
+  "lines": 111,
+  "long": 11
+ },
+ "apps/mobile/src/components/settings/account-page.tsx": {
+  "lines": 218,
+  "long": 17
+ },
+ "apps/mobile/src/components/settings/choice-pages.tsx": {
+  "lines": 213,
+  "long": 6
+ },
+ "apps/mobile/src/components/settings/notifications-page.tsx": {
+  "lines": 144,
+  "long": 6
+ },
+ "apps/mobile/src/components/settings/settings-ui.tsx": {
+  "lines": 119,
+  "long": 5
+ },
+ "apps/mobile/src/components/settings/sync-page.tsx": {
+  "lines": 296,
+  "long": 26
+ },
+ "apps/mobile/src/components/slide-sheet.tsx": {
+  "lines": 228,
+  "long": 2
+ },
+ "apps/mobile/src/components/supply-document/credential-section.tsx": {
+  "lines": 213,
+  "long": 2
+ },
+ "apps/mobile/src/components/supply-document/type-chooser.tsx": {
+  "lines": 131,
+  "long": 10
+ },
+ "apps/mobile/src/components/supply-document/use-credential-photo.ts": {
+  "lines": 213,
+  "long": 2
+ },
+ "apps/mobile/src/components/time-off/availability-panel.tsx": {
+  "lines": 63,
+  "long": 1
+ },
+ "apps/mobile/src/components/time-off/calendar-card.tsx": {
+  "lines": 147,
+  "long": 9
+ },
+ "apps/mobile/src/components/time-off/stats-row.tsx": {
+  "lines": 43,
+  "long": 2
+ },
+ "apps/mobile/src/components/time/date-tile-row.tsx": {
+  "lines": 46,
+  "long": 2
+ },
+ "apps/mobile/src/components/time/day-bar.tsx": {
+  "lines": 61,
+  "long": 1
+ },
+ "apps/mobile/src/components/time/place-relation.ts": {
+  "lines": 263,
+  "long": 2
+ },
+ "apps/mobile/src/components/time/request-sheet-off.tsx": {
+  "lines": 97,
+  "long": 7
+ },
+ "apps/mobile/src/components/time/request-sheet-view.tsx": {
+  "lines": 13,
+  "long": 1
+ },
+ "apps/mobile/src/components/time/time-banners.tsx": {
+  "lines": 212,
+  "long": 21
+ },
+ "apps/mobile/src/components/time/time-history.tsx": {
+  "lines": 201,
+  "long": 6
+ },
+ "apps/mobile/src/components/time/time-off-section.tsx": {
+  "lines": 277,
+  "long": 20
+ },
+ "apps/mobile/src/components/time/time-places.tsx": {
+  "lines": 170,
+  "long": 7
+ },
+ "apps/mobile/src/components/time/time-screen.tsx": {
+  "lines": 193,
+  "long": 2
+ },
+ "apps/mobile/src/components/time/time-today.tsx": {
+  "lines": 155,
+  "long": 6
+ },
+ "apps/mobile/src/components/time/time-week.tsx": {
+  "lines": 92,
+  "long": 4
+ },
+ "apps/mobile/src/components/time/use-request-sheet.ts": {
+  "lines": 120,
+  "long": 4
+ },
+ "apps/mobile/src/components/time/use-shift-watch.ts": {
+  "lines": 121,
+  "long": 1
+ },
+ "apps/mobile/src/components/time/use-time-screen.ts": {
+  "lines": 249,
+  "long": 1
+ },
+ "apps/mobile/src/components/tour/tour-overlay.tsx": {
+  "lines": 225,
+  "long": 3
+ },
+ "apps/mobile/src/components/update-page.tsx": {
+  "lines": 170,
+  "long": 3
+ },
+ "apps/mobile/src/components/use-location-search-picker.ts": {
+  "lines": 234,
+  "long": 1
+ },
+ "apps/mobile/src/components/worklog-sheet.tsx": {
+  "lines": 281,
+  "long": 16
+ },
+ "apps/mobile/src/components/worklog/use-worklog.ts": {
+  "lines": 148,
+  "long": 2
+ },
+ "apps/mobile/src/contexts/query-provider.tsx": {
+  "lines": 28,
+  "long": 1
+ },
+ "apps/mobile/src/home/home-load.tsx": {
+  "lines": 119,
+  "long": 1
+ },
+ "apps/mobile/src/home/load-queue.ts": {
+  "lines": 150,
+  "long": 2
+ },
+ "apps/mobile/src/home/remember/use-remembered.ts": {
+  "lines": 126,
+  "long": 1
+ },
+ "apps/mobile/src/hooks/useClockIn.ts": {
+  "lines": 205,
+  "long": 2
+ },
+ "apps/mobile/src/hooks/usePushNotifications.ts": {
+  "lines": 254,
+  "long": 1
+ },
+ "apps/mobile/src/island/island-view.tsx": {
+  "lines": 160,
+  "long": 2
+ },
+ "apps/mobile/src/island/use-island-view.ts": {
+  "lines": 273,
+  "long": 2
+ },
+ "apps/mobile/src/lib/api/approvals.ts": {
+  "lines": 38,
+  "long": 1
+ },
+ "apps/mobile/src/lib/api/assets.ts": {
+  "lines": 112,
+  "long": 1
+ },
+ "apps/mobile/src/lib/api/attachments.ts": {
+  "lines": 32,
+  "long": 1
+ },
+ "apps/mobile/src/lib/api/attendance.ts": {
+  "lines": 258,
+  "long": 1
+ },
+ "apps/mobile/src/lib/api/client.ts": {
+  "lines": 319,
+  "long": 0
+ },
+ "apps/mobile/src/lib/api/envelope.ts": {
+  "lines": 38,
+  "long": 1
+ },
+ "apps/mobile/src/lib/api/onboarding.ts": {
+  "lines": 51,
+  "long": 2
+ },
+ "apps/mobile/src/lib/api/rota.ts": {
+  "lines": 14,
+  "long": 1
+ },
+ "apps/mobile/src/lib/api/shift-issues.ts": {
+  "lines": 22,
+  "long": 1
+ },
+ "apps/mobile/src/lib/api/tasks.ts": {
+  "lines": 171,
+  "long": 1
+ },
+ "apps/mobile/src/lib/document-asks.ts": {
+  "lines": 145,
+  "long": 1
+ },
+ "apps/mobile/src/lib/manage-row.ts": {
+  "lines": 288,
+  "long": 9
+ },
+ "apps/mobile/src/lib/manage-rows.ts": {
+  "lines": 95,
+  "long": 12
+ },
+ "apps/mobile/src/lib/notification-route.ts": {
+  "lines": 201,
+  "long": 1
+ },
+ "apps/mobile/src/lib/phone-contacts.ts": {
+  "lines": 95,
+  "long": 1
+ },
+ "apps/mobile/src/lib/route-day/figures.ts": {
+  "lines": 123,
+  "long": 1
+ },
+ "apps/mobile/src/lib/safe-links.ts": {
+  "lines": 74,
+  "long": 1
+ },
+ "apps/mobile/src/offline/actions/queued-create.ts": {
+  "lines": 109,
+  "long": 2
+ },
+ "apps/mobile/src/offline/attendance/clock-in-check.ts": {
+  "lines": 79,
+  "long": 1
+ },
+ "apps/mobile/src/offline/attendance/refused-shift.ts": {
+  "lines": 102,
+  "long": 1
+ },
+ "apps/mobile/src/offline/attendance/shift-actions.ts": {
+  "lines": 262,
+  "long": 3
+ },
+ "apps/mobile/src/offline/attendance/shift-overlay.ts": {
+  "lines": 106,
+  "long": 1
+ },
+ "apps/mobile/src/offline/attendance/use-shift.ts": {
+  "lines": 162,
+  "long": 2
+ },
+ "apps/mobile/src/offline/attendance/worklog.ts": {
+  "lines": 143,
+  "long": 1
+ },
+ "apps/mobile/src/offline/background-sync.ts": {
+  "lines": 152,
+  "long": 1
+ },
+ "apps/mobile/src/offline/crm/client-overlay.ts": {
+  "lines": 149,
+  "long": 1
+ },
+ "apps/mobile/src/offline/db/records-store.ts": {
+  "lines": 138,
+  "long": 1
+ },
+ "apps/mobile/src/offline/db/sqlite-outbox-store.ts": {
+  "lines": 62,
+  "long": 1
+ },
+ "apps/mobile/src/offline/files/sqlite-file-registry.ts": {
+  "lines": 75,
+  "long": 2
+ },
+ "apps/mobile/src/offline/issues/issue-actions.ts": {
+  "lines": 108,
+  "long": 2
+ },
+ "apps/mobile/src/offline/offline-context.tsx": {
+  "lines": 242,
+  "long": 2
+ },
+ "apps/mobile/src/offline/outbox/transitions.ts": {
+  "lines": 95,
+  "long": 1
+ },
+ "apps/mobile/src/offline/profile/pending-avatar.ts": {
+  "lines": 91,
+  "long": 1
+ },
+ "apps/mobile/src/offline/routes/plan-route.ts": {
+  "lines": 45,
+  "long": 2
+ },
+ "apps/mobile/src/offline/tasks/crew-actions.ts": {
+  "lines": 35,
+  "long": 1
+ },
+ "apps/mobile/src/offline/telemetry.ts": {
+  "lines": 52,
+  "long": 1
+ },
+ "apps/mobile/src/permissions/media-access-screen.tsx": {
+  "lines": 163,
+  "long": 3
+ },
+ "apps/mobile/src/screens/app/asset-log-screen-helpers.tsx": {
+  "lines": 167,
+  "long": 4
+ },
+ "apps/mobile/src/screens/app/overtime/overtime-request-styles.tsx": {
+  "lines": 34,
+  "long": 6
+ },
+ "apps/mobile/src/screens/app/route-planner-screen-helpers.tsx": {
+  "lines": 184,
+  "long": 1
+ },
+ "apps/mobile/src/screens/app/route-planner-screen-your-route.tsx": {
+  "lines": 175,
+  "long": 2
+ },
+ "apps/mobile/src/screens/app/send-document-screen-helpers.tsx": {
+  "lines": 38,
+  "long": 2
+ },
+ "apps/mobile/src/screens/app/support-screen-helpers.tsx": {
+  "lines": 70,
+  "long": 7
+ },
+ "apps/mobile/src/screens/app/tabs/use-requests-screen-data.ts": {
+  "lines": 251,
+  "long": 1
+ },
+ "apps/mobile/src/screens/app/tabs/use-requests-screen.ts": {
+  "lines": 284,
+  "long": 4
+ },
+ "apps/mobile/src/screens/app/use-asset-log-screen.ts": {
+  "lines": 277,
+  "long": 3
+ },
+ "apps/mobile/src/screens/app/use-send-document-screen.ts": {
+  "lines": 196,
+  "long": 1
+ },
+ "apps/mobile/src/screens/app/use-support-screen.ts": {
+  "lines": 266,
+  "long": 8
+ },
+ "apps/mobile/src/screens/customer/option.tsx": {
+  "lines": 64,
+  "long": 4
+ },
+ "apps/mobile/src/screens/onboarding/create-org-screen-helpers.tsx": {
+  "lines": 144,
+  "long": 9
+ },
+ "apps/mobile/src/services/auto-clock/context.ts": {
+  "lines": 84,
+  "long": 1
+ },
+ "apps/mobile/src/services/auto-clock/runner.ts": {
+  "lines": 290,
+  "long": 9
+ },
+ "apps/mobile/src/theme/amazen.ts": {
+  "lines": 374,
+  "long": 0
+ },
+ "apps/web-app/src/app/(auth)/forgot-password/page.tsx": {
+  "lines": 236,
+  "long": 1
+ },
+ "apps/web-app/src/app/(auth)/layout.tsx": {
+  "lines": 19,
+  "long": 1
+ },
+ "apps/web-app/src/app/(auth)/reset-password/reset-password-content-helpers.tsx": {
+  "lines": 215,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/approvals/_components/decision-panel.tsx": {
+  "lines": 272,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/approvals/_components/no-show-decision.tsx": {
+  "lines": 215,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/approvals/_components/rules-dialog.tsx": {
+  "lines": 202,
+  "long": 11
+ },
+ "apps/web-app/src/app/(dashboard)/approvals/_components/stand-in-dialog.tsx": {
+  "lines": 167,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/approvals/approvals-page-helpers.tsx": {
+  "lines": 97,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/approvals/page.tsx": {
+  "lines": 229,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/assets/[id]/_components/asset-about.tsx": {
+  "lines": 169,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/assets/[id]/_components/asset-activity.tsx": {
+  "lines": 91,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/assets/[id]/_components/asset-jobs-panel.tsx": {
+  "lines": 71,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/assets/[id]/_components/entry-row.tsx": {
+  "lines": 196,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/assets/[id]/_components/field-input.tsx": {
+  "lines": 110,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/assets/[id]/_components/log-entry-dialog.tsx": {
+  "lines": 230,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/assets/[id]/_components/logbook-panel.tsx": {
+  "lines": 238,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/assets/[id]/_components/money-panel.tsx": {
+  "lines": 243,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/assets/[id]/page.tsx": {
+  "lines": 228,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/_components/add-dayoff-dialog.tsx": {
+  "lines": 184,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/_components/add-overtime-dialog.tsx": {
+  "lines": 162,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/_components/breaks-tab-breaks.tsx": {
+  "lines": 171,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/_components/breaks-tab.tsx": {
+  "lines": 241,
+  "long": 10
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/_components/edit-entry-dialog-add-break.tsx": {
+  "lines": 248,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/_components/no-shows-tab.tsx": {
+  "lines": 229,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/_components/out-of-ring-panel.tsx": {
+  "lines": 125,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/_components/stat-card.tsx": {
+  "lines": 283,
+  "long": 9
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/_components/tracking-tab-tracking.tsx": {
+  "lines": 278,
+  "long": 12
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/_components/tracking-tab-tracking2.tsx": {
+  "lines": 130,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/_components/tracking-tab.tsx": {
+  "lines": 221,
+  "long": 8
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/_components/use-breaks-tab.ts": {
+  "lines": 55,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/_components/use-tracking-tab.ts": {
+  "lines": 119,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/attendance-page-helpers.tsx": {
+  "lines": 16,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/page.tsx": {
+  "lines": 207,
+  "long": 5
+ },
+ "apps/web-app/src/app/(dashboard)/attendance/use-attendance-page-data.ts": {
+  "lines": 201,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/calendar/_components/agenda-list.tsx": {
+  "lines": 79,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/calendar/_components/event-dialog-client.tsx": {
+  "lines": 167,
+  "long": 19
+ },
+ "apps/web-app/src/app/(dashboard)/calendar/_components/event-dialog-invite.tsx": {
+  "lines": 111,
+  "long": 9
+ },
+ "apps/web-app/src/app/(dashboard)/calendar/_components/event-dialog.tsx": {
+  "lines": 278,
+  "long": 19
+ },
+ "apps/web-app/src/app/(dashboard)/calendar/_components/feed-card.tsx": {
+  "lines": 69,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/calendar/_components/item-popover.tsx": {
+  "lines": 219,
+  "long": 18
+ },
+ "apps/web-app/src/app/(dashboard)/calendar/_components/month-grid.tsx": {
+  "lines": 98,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/calendar/_components/rail.tsx": {
+  "lines": 130,
+  "long": 7
+ },
+ "apps/web-app/src/app/(dashboard)/calendar/_components/use-event-dialog-data.ts": {
+  "lines": 204,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/calendar/_components/use-event-dialog.ts": {
+  "lines": 253,
+  "long": 5
+ },
+ "apps/web-app/src/app/(dashboard)/calendar/_components/week-grid.tsx": {
+  "lines": 232,
+  "long": 12
+ },
+ "apps/web-app/src/app/(dashboard)/calendar/_lib/kinds.ts": {
+  "lines": 32,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/calendar/page.tsx": {
+  "lines": 241,
+  "long": 13
+ },
+ "apps/web-app/src/app/(dashboard)/customers/[id]/add-contact-dialog.tsx": {
+  "lines": 240,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/customers/[id]/customer-addresses.tsx": {
+  "lines": 283,
+  "long": 21
+ },
+ "apps/web-app/src/app/(dashboard)/customers/[id]/customer-composer.tsx": {
+  "lines": 153,
+  "long": 8
+ },
+ "apps/web-app/src/app/(dashboard)/customers/[id]/customer-contacts.tsx": {
+  "lines": 215,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/customers/[id]/customer-invite-card.tsx": {
+  "lines": 119,
+  "long": 14
+ },
+ "apps/web-app/src/app/(dashboard)/customers/[id]/customer-managers.tsx": {
+  "lines": 105,
+  "long": 5
+ },
+ "apps/web-app/src/app/(dashboard)/customers/[id]/customer-record-bits.tsx": {
+  "lines": 95,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/customers/[id]/customer-record-lib.ts": {
+  "lines": 101,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/customers/[id]/customer-timeline.tsx": {
+  "lines": 188,
+  "long": 22
+ },
+ "apps/web-app/src/app/(dashboard)/customers/[id]/page.tsx": {
+  "lines": 272,
+  "long": 16
+ },
+ "apps/web-app/src/app/(dashboard)/customers/[id]/works-at-panel.tsx": {
+  "lines": 190,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/dashboard/_components/activity-rail-skeleton.tsx": {
+  "lines": 156,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/dashboard/_components/dashboard-skeleton.tsx": {
+  "lines": 166,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/dashboard/_components/empty-workspace.tsx": {
+  "lines": 174,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/dashboard/_components/use-client-dashboard.ts": {
+  "lines": 221,
+  "long": 7
+ },
+ "apps/web-app/src/app/(dashboard)/dashboard/_lib/presence.ts": {
+  "lines": 139,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/documents/_components/editor-step.tsx": {
+  "lines": 18,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/documents/_components/filed-as.tsx": {
+  "lines": 78,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/documents/_components/issue-rows-table.tsx": {
+  "lines": 124,
+  "long": 5
+ },
+ "apps/web-app/src/app/(dashboard)/documents/_components/match-chip.tsx": {
+  "lines": 43,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/documents/_components/period-cell.tsx": {
+  "lines": 90,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/documents/_components/staged-drafts.tsx": {
+  "lines": 184,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/documents/all/_components/delete-dialog.tsx": {
+  "lines": 267,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/documents/all/_components/document-control.tsx": {
+  "lines": 236,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/documents/all/_components/document-row-menu.tsx": {
+  "lines": 163,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/documents/all/_components/folder-browser.tsx": {
+  "lines": 236,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/documents/compliance/page.tsx": {
+  "lines": 216,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/documents/page.tsx": {
+  "lines": 210,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/documents/templates/_components/form-parts.tsx": {
+  "lines": 35,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/documents/templates/_components/pdf-preview.tsx": {
+  "lines": 154,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/documents/templates/_components/template-editor.tsx": {
+  "lines": 208,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/documents/templates/_components/template-preview-pane.tsx": {
+  "lines": 99,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/documents/templates/page.tsx": {
+  "lines": 229,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/documents/types/_components/editor-parts.tsx": {
+  "lines": 92,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/documents/types/_components/route-editor.tsx": {
+  "lines": 150,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/documents/types/_components/type-editor.tsx": {
+  "lines": 264,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/documents/types/_components/type-row.tsx": {
+  "lines": 67,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/documents/types/page.tsx": {
+  "lines": 229,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/employees/availability/_components/drawer-body-helpers.tsx": {
+  "lines": 23,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/employees/availability/_components/exceptions-card-floor-now.tsx": {
+  "lines": 68,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/employees/availability/_components/exceptions-card-helpers.tsx": {
+  "lines": 98,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/employees/availability/_components/floor-now-panel.tsx": {
+  "lines": 278,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/employees/availability/_components/leave-decision-drawer.tsx": {
+  "lines": 287,
+  "long": 5
+ },
+ "apps/web-app/src/app/(dashboard)/employees/availability/_components/leave-wallchart-cover.tsx": {
+  "lines": 127,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/employees/availability/_components/leave-wallchart-space.tsx": {
+  "lines": 221,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/employees/availability/_components/leave-wallchart.tsx": {
+  "lines": 231,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/employees/availability/_components/use-exceptions-card.ts": {
+  "lines": 81,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/employees/availability/page.tsx": {
+  "lines": 280,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/employees/availability/use-schedule-and-time-off-page.ts": {
+  "lines": 237,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/employees/leave-opening/page.tsx": {
+  "lines": 270,
+  "long": 6
+ },
+ "apps/web-app/src/app/(dashboard)/invitations/invitations-page-helpers.tsx": {
+  "lines": 41,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/_components/invoice-document-create.tsx": {
+  "lines": 237,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/_components/invoice-document-helpers.tsx": {
+  "lines": 82,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/_components/invoice-document.tsx": {
+  "lines": 193,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/_components/invoice-fields.tsx": {
+  "lines": 167,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/_components/invoice-shell.tsx": {
+  "lines": 217,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/_components/labour-cost-panel.tsx": {
+  "lines": 170,
+  "long": 5
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/_components/list/aging-summary.tsx": {
+  "lines": 195,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/_components/list/invoice-row.tsx": {
+  "lines": 202,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/_lib/labour-cost-rows.ts": {
+  "lines": 98,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/new/_components/billable-work.tsx": {
+  "lines": 134,
+  "long": 12
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/new/_components/hours-basis-chip.tsx": {
+  "lines": 71,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/new/_components/labour-layout-fields.tsx": {
+  "lines": 121,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/new/_components/work-runs.tsx": {
+  "lines": 119,
+  "long": 6
+ },
+ "apps/web-app/src/app/(dashboard)/invoices/new/_lib/use-draft-lines.ts": {
+  "lines": 226,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/issues/page.tsx": {
+  "lines": 288,
+  "long": 28
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/add-member-dialog.tsx": {
+  "lines": 171,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/apartment-dialog.tsx": {
+  "lines": 175,
+  "long": 8
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/asset-kind-dialog-lists.tsx": {
+  "lines": 180,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/asset-kind-dialog-money.tsx": {
+  "lines": 84,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/asset-kind-dialog.tsx": {
+  "lines": 264,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/assets-tab.tsx": {
+  "lines": 272,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/attendance-tab.tsx": {
+  "lines": 207,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/auto-clock-section.tsx": {
+  "lines": 198,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/away-policy-section.tsx": {
+  "lines": 139,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/choice-options-editor.tsx": {
+  "lines": 126,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/customer-form-edit.tsx": {
+  "lines": 213,
+  "long": 14
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/customer-form-helpers.tsx": {
+  "lines": 32,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/customers-tab.tsx": {
+  "lines": 288,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/danger-zone.tsx": {
+  "lines": 122,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/general-tab-location-section.tsx": {
+  "lines": 129,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/general-tab-ownership-section.tsx": {
+  "lines": 139,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/general-tab.tsx": {
+  "lines": 283,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/invite-section.tsx": {
+  "lines": 241,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/kind-contents.tsx": {
+  "lines": 274,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/log-types-editor.tsx": {
+  "lines": 251,
+  "long": 9
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/member-auto-clock.tsx": {
+  "lines": 207,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/member-panel-helpers.tsx": {
+  "lines": 62,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/member-panel-members.tsx": {
+  "lines": 255,
+  "long": 9
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/member-panel.tsx": {
+  "lines": 108,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/member-permissions.tsx": {
+  "lines": 194,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/members-people.tsx": {
+  "lines": 273,
+  "long": 8
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/min-cover-section.tsx": {
+  "lines": 103,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/modules-tab.tsx": {
+  "lines": 288,
+  "long": 9
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/no-shift-section.tsx": {
+  "lines": 192,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/orphan-assets-card.tsx": {
+  "lines": 183,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/portal-tab.tsx": {
+  "lines": 196,
+  "long": 26
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/rest-dialog-rests.tsx": {
+  "lines": 190,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/rests-section.tsx": {
+  "lines": 208,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/role-dialog-roles.tsx": {
+  "lines": 260,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/rota-tab-helpers.tsx": {
+  "lines": 294,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/rota-tab-rota.tsx": {
+  "lines": 251,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/rota-tab.tsx": {
+  "lines": 107,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/routing-section.tsx": {
+  "lines": 144,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/sharing-tab.tsx": {
+  "lines": 211,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/shift-dialog.tsx": {
+  "lines": 182,
+  "long": 5
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/shifts-tab.tsx": {
+  "lines": 190,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/space-workflows-section.tsx": {
+  "lines": 236,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/sub-roles-section.tsx": {
+  "lines": 239,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/type-details-editor.tsx": {
+  "lines": 117,
+  "long": 5
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/type-details-helpers.tsx": {
+  "lines": 45,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/use-customer-form.ts": {
+  "lines": 129,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/use-general-tab.ts": {
+  "lines": 195,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/use-space-workflows-section.ts": {
+  "lines": 132,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/use-type-details.ts": {
+  "lines": 64,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/work-roles.tsx": {
+  "lines": 195,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/_components/workflow-tab.tsx": {
+  "lines": 215,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/page.tsx": {
+  "lines": 297,
+  "long": 6
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/page.tsx": {
+  "lines": 297,
+  "long": 34
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/portal-detail-page-invite-resident.tsx": {
+  "lines": 118,
+  "long": 7
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/portal-detail-page-portal.tsx": {
+  "lines": 292,
+  "long": 31
+ },
+ "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/use-portal-detail-page.ts": {
+  "lines": 282,
+  "long": 10
+ },
+ "apps/web-app/src/app/(dashboard)/locations/_components/color-picker.tsx": {
+  "lines": 62,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/_components/space-form.tsx": {
+  "lines": 225,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/_components/space-lifecycle-dialog.tsx": {
+  "lines": 122,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/_components/workflow-builder.tsx": {
+  "lines": 296,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/_components/workflow-builder/capabilities.ts": {
+  "lines": 33,
+  "long": 7
+ },
+ "apps/web-app/src/app/(dashboard)/locations/_components/workflow-builder/saved-workflow-extras.tsx": {
+  "lines": 75,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/_components/workflow-builder/status-row.tsx": {
+  "lines": 244,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/locations/_components/workflow-builder/use-workflow-save.ts": {
+  "lines": 197,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/_components/workflow-builder/workflow-templates.tsx": {
+  "lines": 39,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/locations/_components/workflow-selector.tsx": {
+  "lines": 147,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/locations/page.tsx": {
+  "lines": 246,
+  "long": 7
+ },
+ "apps/web-app/src/app/(dashboard)/locations/shared-with-us-section.tsx": {
+  "lines": 165,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/locations/space-card.tsx": {
+  "lines": 291,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/manage/page.tsx": {
+  "lines": 58,
+  "long": 6
+ },
+ "apps/web-app/src/app/(dashboard)/members/[id]/_components/attendance-tab.tsx": {
+  "lines": 196,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/members/[id]/_components/locations-tab.tsx": {
+  "lines": 260,
+  "long": 6
+ },
+ "apps/web-app/src/app/(dashboard)/members/[id]/_components/performance-tab.tsx": {
+  "lines": 275,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/members/[id]/_components/statement-tab.tsx": {
+  "lines": 218,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/members/[id]/_components/tasks-tab.tsx": {
+  "lines": 82,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/members/[id]/member-profile-page-active.tsx": {
+  "lines": 161,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/members/[id]/member-profile-page-detail3.tsx": {
+  "lines": 284,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/members/[id]/member-profile-page-view.tsx": {
+  "lines": 18,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/members/_components/edit-member-dialog.tsx": {
+  "lines": 256,
+  "long": 6
+ },
+ "apps/web-app/src/app/(dashboard)/members/_components/edit-member-dialog/employment-fields.tsx": {
+  "lines": 241,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/members/_components/edit-member-dialog/member-security-section.tsx": {
+  "lines": 57,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/members/_components/member-row.tsx": {
+  "lines": 124,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/members/_components/members-list-skeleton.tsx": {
+  "lines": 31,
+  "long": 7
+ },
+ "apps/web-app/src/app/(dashboard)/members/_components/members-table.tsx": {
+  "lines": 157,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/members/_components/pending-invitations.tsx": {
+  "lines": 102,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/members/phone-sync/detail-panel.tsx": {
+  "lines": 134,
+  "long": 5
+ },
+ "apps/web-app/src/app/(dashboard)/members/phone-sync/page.tsx": {
+  "lines": 228,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/my/attendance/my-attendance-page-my.tsx": {
+  "lines": 181,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/my/attendance/my-attendance-page-view.tsx": {
+  "lines": 82,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/my/attendance/page.tsx": {
+  "lines": 266,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/my/documents/[id]/sign/page.tsx": {
+  "lines": 258,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/my/documents/_components/supply-document-dialog.tsx": {
+  "lines": 264,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/my/documents/my-documents-page-helpers.tsx": {
+  "lines": 42,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/my/documents/my-documents-page-my.tsx": {
+  "lines": 185,
+  "long": 7
+ },
+ "apps/web-app/src/app/(dashboard)/my/documents/page.tsx": {
+  "lines": 272,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/my/layout.tsx": {
+  "lines": 77,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/my/time-off/my-time-off-page-my.tsx": {
+  "lines": 66,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/my/time-off/my-time-off-page-my2.tsx": {
+  "lines": 75,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/my/time-off/page.tsx": {
+  "lines": 286,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/my/time-off/use-my-time-off-page.tsx": {
+  "lines": 210,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/overtime/_components/by-person.tsx": {
+  "lines": 89,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/overtime/_components/round-panel.tsx": {
+  "lines": 218,
+  "long": 16
+ },
+ "apps/web-app/src/app/(dashboard)/overtime/_components/rounds-list.tsx": {
+  "lines": 101,
+  "long": 7
+ },
+ "apps/web-app/src/app/(dashboard)/overtime/_components/running-now.tsx": {
+  "lines": 67,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/overtime/_lib/round-words.ts": {
+  "lines": 90,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/overtime/page.tsx": {
+  "lines": 206,
+  "long": 7
+ },
+ "apps/web-app/src/app/(dashboard)/reports/job-time/page.tsx": {
+  "lines": 161,
+  "long": 6
+ },
+ "apps/web-app/src/app/(dashboard)/reports/page.tsx": {
+  "lines": 294,
+  "long": 30
+ },
+ "apps/web-app/src/app/(dashboard)/reports/reports-page-dataset.tsx": {
+  "lines": 200,
+  "long": 15
+ },
+ "apps/web-app/src/app/(dashboard)/reports/reports-page-schedule-title.tsx": {
+  "lines": 91,
+  "long": 7
+ },
+ "apps/web-app/src/app/(dashboard)/reports/use-reports-page-data.ts": {
+  "lines": 230,
+  "long": 6
+ },
+ "apps/web-app/src/app/(dashboard)/reports/use-reports-page.tsx": {
+  "lines": 239,
+  "long": 6
+ },
+ "apps/web-app/src/app/(dashboard)/settings/_components/companies-section.tsx": {
+  "lines": 241,
+  "long": 9
+ },
+ "apps/web-app/src/app/(dashboard)/settings/_components/company-card.tsx": {
+  "lines": 159,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/settings/_components/general-section-general.tsx": {
+  "lines": 287,
+  "long": 8
+ },
+ "apps/web-app/src/app/(dashboard)/settings/_components/holiday-list.tsx": {
+  "lines": 198,
+  "long": 21
+ },
+ "apps/web-app/src/app/(dashboard)/settings/_components/holidays-section.tsx": {
+  "lines": 168,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/settings/_components/leave-settings-card.tsx": {
+  "lines": 226,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/settings/_components/members-section.tsx": {
+  "lines": 206,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/settings/_components/profile-section.tsx": {
+  "lines": 235,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/settings/_components/workspace-dialog.tsx": {
+  "lines": 178,
+  "long": 5
+ },
+ "apps/web-app/src/app/(dashboard)/settings/audit-log/audit-log-page-inner.tsx": {
+  "lines": 242,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/settings/billing/_components/add-on-picker.tsx": {
+  "lines": 201,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/settings/billing/_components/bill-breakdown-bill.tsx": {
+  "lines": 150,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/settings/billing/_components/bill-breakdown.tsx": {
+  "lines": 173,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/settings/billing/page.tsx": {
+  "lines": 246,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/settings/page.tsx": {
+  "lines": 193,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/shared/[id]/page.tsx": {
+  "lines": 260,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/shared/[id]/shared-space-view-page-guest2.tsx": {
+  "lines": 67,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/shared/[id]/shared-space-view-page-helpers.tsx": {
+  "lines": 268,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/activity-events.ts": {
+  "lines": 152,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/add-dependency-dialog-dependencies.tsx": {
+  "lines": 94,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/checklist-item-row.tsx": {
+  "lines": 153,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/comments-section.tsx": {
+  "lines": 109,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/dependencies-section.tsx": {
+  "lines": 267,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/edit-task-dialog.tsx": {
+  "lines": 291,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/handover-card.tsx": {
+  "lines": 144,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/inline-edit-field.tsx": {
+  "lines": 266,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/job-time-card.tsx": {
+  "lines": 93,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/open-role-card.tsx": {
+  "lines": 154,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/open-to-role-dialog.tsx": {
+  "lines": 90,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/photo-gallery.tsx": {
+  "lines": 121,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/service-report-section-shared.tsx": {
+  "lines": 86,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/subtasks-section.tsx": {
+  "lines": 250,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/task-crew-card.tsx": {
+  "lines": 262,
+  "long": 8
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/task-detail-header.tsx": {
+  "lines": 263,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/task-detail-sidebar-sidebar.tsx": {
+  "lines": 206,
+  "long": 8
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/task-detail-sidebar.tsx": {
+  "lines": 142,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/task-progress-card.tsx": {
+  "lines": 265,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/use-task-detail-sidebar.ts": {
+  "lines": 46,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/page.tsx": {
+  "lines": 208,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/report/_components/report-rail.tsx": {
+  "lines": 183,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/report/_components/report-sheet-helpers.tsx": {
+  "lines": 176,
+  "long": 9
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/report/_components/report-sheet-report.tsx": {
+  "lines": 43,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/report/_components/report-sheet.tsx": {
+  "lines": 283,
+  "long": 7
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/report/_components/report-skeleton.tsx": {
+  "lines": 47,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/report/_components/use-report-sheet.tsx": {
+  "lines": 66,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/report/_lib/report-model/facts.ts": {
+  "lines": 204,
+  "long": 7
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/report/_lib/report-model/history.ts": {
+  "lines": 183,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/report/_lib/report-model/toggles.ts": {
+  "lines": 239,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/report/page.tsx": {
+  "lines": 223,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/task-detail-page-helpers.tsx": {
+  "lines": 63,
+  "long": 8
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/task-detail-page-sections.tsx": {
+  "lines": 290,
+  "long": 8
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/[id]/task-detail-page-view.tsx": {
+  "lines": 40,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/calendar-view-helpers.tsx": {
+  "lines": 156,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/create-task-dialog.tsx": {
+  "lines": 128,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/create-task/assignment-section.tsx": {
+  "lines": 162,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/create-task/attachments-dropzone.tsx": {
+  "lines": 92,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/create-task/collapsible-section.tsx": {
+  "lines": 63,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/create-task/repeat-section.tsx": {
+  "lines": 123,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/create-task/use-visit-client.ts": {
+  "lines": 118,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/epic-roadmap.tsx": {
+  "lines": 221,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/group-by-option.tsx": {
+  "lines": 109,
+  "long": 7
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/grouped-list.tsx": {
+  "lines": 276,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/kanban-board.tsx": {
+  "lines": 232,
+  "long": 2
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/kanban-column.tsx": {
+  "lines": 270,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/open-role-chip.tsx": {
+  "lines": 18,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/role-assign-field.tsx": {
+  "lines": 130,
+  "long": 5
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/role-jobs-summary.tsx": {
+  "lines": 85,
+  "long": 4
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/task-assign-dialog.tsx": {
+  "lines": 42,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/task-card.tsx": {
+  "lines": 178,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/task-context-menu-inner-menu.tsx": {
+  "lines": 63,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/task-context-menu-inner-menu2.tsx": {
+  "lines": 58,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/task-context-menu-inner-menu3.tsx": {
+  "lines": 53,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/task-context-menu.tsx": {
+  "lines": 278,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/task-schedule-view.tsx": {
+  "lines": 79,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/task-table-row.tsx": {
+  "lines": 71,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/tasks-page-header.tsx": {
+  "lines": 139,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/timeline-view-helpers.tsx": {
+  "lines": 128,
+  "long": 3
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/use-epic-roadmap.ts": {
+  "lines": 141,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/use-task-table-row-inner-data.ts": {
+  "lines": 140,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/use-task-table-row-inner.tsx": {
+  "lines": 253,
+  "long": 5
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_components/use-timeline-view.ts": {
+  "lines": 270,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_hooks/use-sprint-planning.ts": {
+  "lines": 189,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/tasks/_hooks/use-task-status-change.ts": {
+  "lines": 134,
+  "long": 1
+ },
+ "apps/web-app/src/app/(dashboard)/team/page.tsx": {
+  "lines": 94,
+  "long": 1
+ },
+ "apps/web-app/src/app/_home/FeatureMatrix.tsx": {
+  "lines": 108,
+  "long": 1
+ },
+ "apps/web-app/src/app/_home/HeroLines2D.tsx": {
+  "lines": 242,
+  "long": 1
+ },
+ "apps/web-app/src/app/_home/HomeClient.tsx": {
+  "lines": 284,
+  "long": 10
+ },
+ "apps/web-app/src/app/_home/IntroVideo.tsx": {
+  "lines": 59,
+  "long": 1
+ },
+ "apps/web-app/src/app/_home/LaptopShowcase.tsx": {
+  "lines": 163,
+  "long": 8
+ },
+ "apps/web-app/src/app/_home/PhoneShowcase.tsx": {
+  "lines": 141,
+  "long": 6
+ },
+ "apps/web-app/src/app/_home/PricingEstimator.tsx": {
+  "lines": 197,
+  "long": 1
+ },
+ "apps/web-app/src/app/_home/StoreBadges.tsx": {
+  "lines": 80,
+  "long": 3
+ },
+ "apps/web-app/src/app/_home/home-client-footer.tsx": {
+  "lines": 81,
+  "long": 3
+ },
+ "apps/web-app/src/app/_home/home-client-helpers.tsx": {
+  "lines": 160,
+  "long": 2
+ },
+ "apps/web-app/src/app/_home/home-client-hero.tsx": {
+  "lines": 65,
+  "long": 3
+ },
+ "apps/web-app/src/app/_home/home-client-industries.tsx": {
+  "lines": 55,
+  "long": 6
+ },
+ "apps/web-app/src/app/_home/home-client-nav.tsx": {
+  "lines": 72,
+  "long": 11
+ },
+ "apps/web-app/src/app/_home/home-client-pricing.tsx": {
+  "lines": 100,
+  "long": 3
+ },
+ "apps/web-app/src/app/_home/home-client-why.tsx": {
+  "lines": 67,
+  "long": 7
+ },
+ "apps/web-app/src/app/_home/showcase-parts.tsx": {
+  "lines": 65,
+  "long": 1
+ },
+ "apps/web-app/src/app/_industries/IndustriesHub.tsx": {
+  "lines": 65,
+  "long": 2
+ },
+ "apps/web-app/src/app/_industries/IndustryArticle.tsx": {
+  "lines": 122,
+  "long": 3
+ },
+ "apps/web-app/src/app/_pricing/Calculator.tsx": {
+  "lines": 236,
+  "long": 6
+ },
+ "apps/web-app/src/app/_pricing/PricingClient.tsx": {
+  "lines": 279,
+  "long": 10
+ },
+ "apps/web-app/src/app/_pricing/calculator-helpers.tsx": {
+  "lines": 230,
+  "long": 2
+ },
+ "apps/web-app/src/app/_pricing/pricing-client-helpers.tsx": {
+  "lines": 137,
+  "long": 1
+ },
+ "apps/web-app/src/app/account-deletion/page.tsx": {
+  "lines": 129,
+  "long": 2
+ },
+ "apps/web-app/src/app/blog/[slug]/page.tsx": {
+  "lines": 144,
+  "long": 1
+ },
+ "apps/web-app/src/app/blog/_components/blog-markdown.tsx": {
+  "lines": 62,
+  "long": 3
+ },
+ "apps/web-app/src/app/help/[slug]/article-view.tsx": {
+  "lines": 96,
+  "long": 2
+ },
+ "apps/web-app/src/app/help/_components/markdown.tsx": {
+  "lines": 50,
+  "long": 2
+ },
+ "apps/web-app/src/app/help/page-client.tsx": {
+  "lines": 141,
+  "long": 5
+ },
+ "apps/web-app/src/app/layout.tsx": {
+  "lines": 116,
+  "long": 1
+ },
+ "apps/web-app/src/app/onboarding/join-org/page.tsx": {
+  "lines": 210,
+  "long": 3
+ },
+ "apps/web-app/src/app/onboarding/layout.tsx": {
+  "lines": 57,
+  "long": 1
+ },
+ "apps/web-app/src/app/onboarding/page.tsx": {
+  "lines": 127,
+  "long": 1
+ },
+ "apps/web-app/src/app/onboarding/use-invitation/page.tsx": {
+  "lines": 172,
+  "long": 1
+ },
+ "apps/web-app/src/app/pricing/page.tsx": {
+  "lines": 22,
+  "long": 1
+ },
+ "apps/web-app/src/app/robots.ts": {
+  "lines": 20,
+  "long": 2
+ },
+ "apps/web-app/src/app/sign/page.tsx": {
+  "lines": 216,
+  "long": 1
+ },
+ "apps/web-app/src/app/splash-preview/page.tsx": {
+  "lines": 135,
+  "long": 6
+ },
+ "apps/web-app/src/app/unauthorized/page.tsx": {
+  "lines": 47,
+  "long": 1
+ },
+ "apps/web-app/src/app/update/apple-glyph.tsx": {
+  "lines": 39,
+  "long": 2
+ },
+ "apps/web-app/src/app/update/update-client.tsx": {
+  "lines": 264,
+  "long": 6
+ },
+ "apps/web-app/src/app/welcome/_wizard/choice-card.tsx": {
+  "lines": 70,
+  "long": 1
+ },
+ "apps/web-app/src/app/welcome/_wizard/setup-wizard-group.tsx": {
+  "lines": 88,
+  "long": 5
+ },
+ "apps/web-app/src/app/welcome/_wizard/setup-wizard-helpers.tsx": {
+  "lines": 98,
+  "long": 1
+ },
+ "apps/web-app/src/app/welcome/_wizard/setup-wizard.tsx": {
+  "lines": 246,
+  "long": 5
+ },
+ "apps/web-app/src/app/welcome/_wizard/wizard-shell.tsx": {
+  "lines": 81,
+  "long": 4
+ },
+ "apps/web-app/src/components/access-builder.tsx": {
+  "lines": 292,
+  "long": 6
+ },
+ "apps/web-app/src/components/access-fields-contact-access.tsx": {
+  "lines": 75,
+  "long": 4
+ },
+ "apps/web-app/src/components/access-fields-permissions.tsx": {
+  "lines": 96,
+  "long": 6
+ },
+ "apps/web-app/src/components/access-fields.tsx": {
+  "lines": 243,
+  "long": 2
+ },
+ "apps/web-app/src/components/assets/all-assets-list.tsx": {
+  "lines": 166,
+  "long": 2
+ },
+ "apps/web-app/src/components/assets/asset-faults.tsx": {
+  "lines": 225,
+  "long": 5
+ },
+ "apps/web-app/src/components/assets/asset-invite-client.tsx": {
+  "lines": 182,
+  "long": 1
+ },
+ "apps/web-app/src/components/assets/asset-record-dialog-more.tsx": {
+  "lines": 75,
+  "long": 2
+ },
+ "apps/web-app/src/components/assets/asset-record-dialog.tsx": {
+  "lines": 282,
+  "long": 2
+ },
+ "apps/web-app/src/components/assets/asset-retire-dialog.tsx": {
+  "lines": 72,
+  "long": 1
+ },
+ "apps/web-app/src/components/assets/contract-dialog.tsx": {
+  "lines": 247,
+  "long": 5
+ },
+ "apps/web-app/src/components/assets/custody-parts.tsx": {
+  "lines": 33,
+  "long": 1
+ },
+ "apps/web-app/src/components/assets/holder-picker.tsx": {
+  "lines": 195,
+  "long": 1
+ },
+ "apps/web-app/src/components/assets/log-style.ts": {
+  "lines": 49,
+  "long": 1
+ },
+ "apps/web-app/src/components/assets/proposal-queue-shared.tsx": {
+  "lines": 60,
+  "long": 1
+ },
+ "apps/web-app/src/components/assets/proposal-queue.tsx": {
+  "lines": 281,
+  "long": 1
+ },
+ "apps/web-app/src/components/assign-member-dialog.tsx": {
+  "lines": 186,
+  "long": 1
+ },
+ "apps/web-app/src/components/attendance-status-cell.tsx": {
+  "lines": 91,
+  "long": 1
+ },
+ "apps/web-app/src/components/attendance/clock-out-early-dialog.tsx": {
+  "lines": 106,
+  "long": 2
+ },
+ "apps/web-app/src/components/attendance/presence-day.tsx": {
+  "lines": 104,
+  "long": 1
+ },
+ "apps/web-app/src/components/attendance/rest-panel.tsx": {
+  "lines": 233,
+  "long": 2
+ },
+ "apps/web-app/src/components/audit-trail.tsx": {
+  "lines": 233,
+  "long": 1
+ },
+ "apps/web-app/src/components/auth/login-form.tsx": {
+  "lines": 150,
+  "long": 1
+ },
+ "apps/web-app/src/components/auth/register-form.tsx": {
+  "lines": 228,
+  "long": 1
+ },
+ "apps/web-app/src/components/billing-banner.tsx": {
+  "lines": 153,
+  "long": 3
+ },
+ "apps/web-app/src/components/chat/chat-avatar.tsx": {
+  "lines": 68,
+  "long": 3
+ },
+ "apps/web-app/src/components/chat/chat-composer.tsx": {
+  "lines": 190,
+  "long": 4
+ },
+ "apps/web-app/src/components/chat/chat-thread.tsx": {
+  "lines": 180,
+  "long": 2
+ },
+ "apps/web-app/src/components/chat/contacts-picker.tsx": {
+  "lines": 96,
+  "long": 3
+ },
+ "apps/web-app/src/components/chat/conversation-list.tsx": {
+  "lines": 145,
+  "long": 4
+ },
+ "apps/web-app/src/components/chat/group-creator.tsx": {
+  "lines": 93,
+  "long": 1
+ },
+ "apps/web-app/src/components/chat/group-panel.tsx": {
+  "lines": 280,
+  "long": 5
+ },
+ "apps/web-app/src/components/chat/message-bubble.tsx": {
+  "lines": 183,
+  "long": 2
+ },
+ "apps/web-app/src/components/chat/messages-view.tsx": {
+  "lines": 230,
+  "long": 4
+ },
+ "apps/web-app/src/components/clock-in-picker.tsx": {
+  "lines": 169,
+  "long": 1
+ },
+ "apps/web-app/src/components/clock-widget.tsx": {
+  "lines": 115,
+  "long": 1
+ },
+ "apps/web-app/src/components/command-palette-helpers.tsx": {
+  "lines": 22,
+  "long": 1
+ },
+ "apps/web-app/src/components/command-palette.tsx": {
+  "lines": 164,
+  "long": 3
+ },
+ "apps/web-app/src/components/companies/company-select.tsx": {
+  "lines": 206,
+  "long": 2
+ },
+ "apps/web-app/src/components/custom-fields-manager.tsx": {
+  "lines": 276,
+  "long": 1
+ },
+ "apps/web-app/src/components/dashboard/activity-panel.tsx": {
+  "lines": 166,
+  "long": 2
+ },
+ "apps/web-app/src/components/dashboard/worker-avatar.tsx": {
+  "lines": 107,
+  "long": 1
+ },
+ "apps/web-app/src/components/dashboard/workspace-box.tsx": {
+  "lines": 295,
+  "long": 3
+ },
+ "apps/web-app/src/components/dashboard/workspace-box/expanded-view.tsx": {
+  "lines": 187,
+  "long": 7
+ },
+ "apps/web-app/src/components/dashboard/workspace-box/expanded-worker-cell.tsx": {
+  "lines": 80,
+  "long": 2
+ },
+ "apps/web-app/src/components/dashboard/workspace-box/off-duty-row.tsx": {
+  "lines": 50,
+  "long": 7
+ },
+ "apps/web-app/src/components/dashboard/workspace-box/side-status-box.tsx": {
+  "lines": 106,
+  "long": 6
+ },
+ "apps/web-app/src/components/dashboard/workspace-box/worker-dropdown-content.tsx": {
+  "lines": 274,
+  "long": 10
+ },
+ "apps/web-app/src/components/detail-fields.tsx": {
+  "lines": 56,
+  "long": 4
+ },
+ "apps/web-app/src/components/explainer/explainer-dialog.tsx": {
+  "lines": 223,
+  "long": 2
+ },
+ "apps/web-app/src/components/explainer/reports-builder.tsx": {
+  "lines": 234,
+  "long": 3
+ },
+ "apps/web-app/src/components/explainer/time-tracking.tsx": {
+  "lines": 273,
+  "long": 1
+ },
+ "apps/web-app/src/components/field-dialog-edit-field.tsx": {
+  "lines": 138,
+  "long": 1
+ },
+ "apps/web-app/src/components/handover-pending-notice.tsx": {
+  "lines": 56,
+  "long": 2
+ },
+ "apps/web-app/src/components/invitations/create-invitation-dialog-invite-dialog.tsx": {
+  "lines": 294,
+  "long": 3
+ },
+ "apps/web-app/src/components/invitations/create-invitation-dialog.tsx": {
+  "lines": 192,
+  "long": 1
+ },
+ "apps/web-app/src/components/invitations/use-create-invitation-dialog.ts": {
+  "lines": 261,
+  "long": 1
+ },
+ "apps/web-app/src/components/language-switcher.tsx": {
+  "lines": 73,
+  "long": 1
+ },
+ "apps/web-app/src/components/leave/leave-balance-breakdown.tsx": {
+  "lines": 120,
+  "long": 2
+ },
+ "apps/web-app/src/components/leave/leave-ledger-panel.tsx": {
+  "lines": 228,
+  "long": 3
+ },
+ "apps/web-app/src/components/location-picker-panel.tsx": {
+  "lines": 290,
+  "long": 4
+ },
+ "apps/web-app/src/components/location-picker.tsx": {
+  "lines": 232,
+  "long": 1
+ },
+ "apps/web-app/src/components/marketing/legal-document.tsx": {
+  "lines": 212,
+  "long": 6
+ },
+ "apps/web-app/src/components/marketing/site-footer.tsx": {
+  "lines": 115,
+  "long": 3
+ },
+ "apps/web-app/src/components/marketing/site-nav.tsx": {
+  "lines": 83,
+  "long": 3
+ },
+ "apps/web-app/src/components/mobile-app-interstitial.tsx": {
+  "lines": 149,
+  "long": 4
+ },
+ "apps/web-app/src/components/notification-bell.tsx": {
+  "lines": 134,
+  "long": 1
+ },
+ "apps/web-app/src/components/office-start-dialog.tsx": {
+  "lines": 104,
+  "long": 3
+ },
+ "apps/web-app/src/components/paused-chip.tsx": {
+  "lines": 32,
+  "long": 1
+ },
+ "apps/web-app/src/components/pending-attachments.tsx": {
+  "lines": 66,
+  "long": 1
+ },
+ "apps/web-app/src/components/people/person-dialog.tsx": {
+  "lines": 68,
+  "long": 1
+ },
+ "apps/web-app/src/components/permissions/permission-builder.tsx": {
+  "lines": 255,
+  "long": 1
+ },
+ "apps/web-app/src/components/plan-gate.tsx": {
+  "lines": 89,
+  "long": 1
+ },
+ "apps/web-app/src/components/rates/currency-setting.tsx": {
+  "lines": 217,
+  "long": 2
+ },
+ "apps/web-app/src/components/rates/dated-rate.tsx": {
+  "lines": 300,
+  "long": 3
+ },
+ "apps/web-app/src/components/reports/report-export-studio-shared.tsx": {
+  "lines": 48,
+  "long": 2
+ },
+ "apps/web-app/src/components/reports/report-export-studio.tsx": {
+  "lines": 285,
+  "long": 27
+ },
+ "apps/web-app/src/components/reports/template-thumb.tsx": {
+  "lines": 49,
+  "long": 5
+ },
+ "apps/web-app/src/components/requests/request-fields.tsx": {
+  "lines": 151,
+  "long": 2
+ },
+ "apps/web-app/src/components/requests/request-kind.tsx": {
+  "lines": 91,
+  "long": 2
+ },
+ "apps/web-app/src/components/roles/manage-roles-dialog.tsx": {
+  "lines": 255,
+  "long": 4
+ },
+ "apps/web-app/src/components/seo/structured-data.tsx": {
+  "lines": 83,
+  "long": 2
+ },
+ "apps/web-app/src/components/skeletons/boot-screen.tsx": {
+  "lines": 64,
+  "long": 1
+ },
+ "apps/web-app/src/components/step-forms/step-form-editor-helpers.tsx": {
+  "lines": 158,
+  "long": 6
+ },
+ "apps/web-app/src/components/step-forms/step-form-editor-start-from.tsx": {
+  "lines": 258,
+  "long": 4
+ },
+ "apps/web-app/src/components/step-forms/step-form-editor.tsx": {
+  "lines": 117,
+  "long": 4
+ },
+ "apps/web-app/src/components/step-forms/step-move-dialog.tsx": {
+  "lines": 111,
+  "long": 1
+ },
+ "apps/web-app/src/components/step-forms/step-reports-section.tsx": {
+  "lines": 141,
+  "long": 4
+ },
+ "apps/web-app/src/components/step-forms/use-step-form-editor.ts": {
+  "lines": 75,
+  "long": 2
+ },
+ "apps/web-app/src/components/step-forms/use-step-move-dialog-data.ts": {
+  "lines": 177,
+  "long": 5
+ },
+ "apps/web-app/src/components/step-forms/use-step-move-dialog.tsx": {
+  "lines": 209,
+  "long": 2
+ },
+ "apps/web-app/src/components/step-forms/use-step-move.tsx": {
+  "lines": 117,
+  "long": 1
+ },
+ "apps/web-app/src/components/support/support-widget.tsx": {
+  "lines": 145,
+  "long": 2
+ },
+ "apps/web-app/src/components/support/ticket-list.tsx": {
+  "lines": 168,
+  "long": 6
+ },
+ "apps/web-app/src/components/token-debug.tsx": {
+  "lines": 137,
+  "long": 1
+ },
+ "apps/web-app/src/components/top-navbar-sidebar.tsx": {
+  "lines": 254,
+  "long": 2
+ },
+ "apps/web-app/src/components/top-navbar-view.tsx": {
+  "lines": 74,
+  "long": 1
+ },
+ "apps/web-app/src/components/top-navbar.tsx": {
+  "lines": 186,
+  "long": 1
+ },
+ "apps/web-app/src/components/top-navbar/command-palette-button.tsx": {
+  "lines": 28,
+  "long": 2
+ },
+ "apps/web-app/src/components/top-navbar/messages-button.tsx": {
+  "lines": 43,
+  "long": 1
+ },
+ "apps/web-app/src/components/top-navbar/mobile-menu.tsx": {
+  "lines": 292,
+  "long": 1
+ },
+ "apps/web-app/src/components/top-navbar/nav-active.ts": {
+  "lines": 33,
+  "long": 1
+ },
+ "apps/web-app/src/components/top-navbar/nav-styles.ts": {
+  "lines": 19,
+  "long": 1
+ },
+ "apps/web-app/src/components/top-navbar/use-prefetch-routes.ts": {
+  "lines": 46,
+  "long": 2
+ },
+ "apps/web-app/src/components/tour/help-button.tsx": {
+  "lines": 129,
+  "long": 2
+ },
+ "apps/web-app/src/components/tour/page-tours.ts": {
+  "lines": 239,
+  "long": 2
+ },
+ "apps/web-app/src/components/tour/tour-overlay.tsx": {
+  "lines": 169,
+  "long": 5
+ },
+ "apps/web-app/src/components/tour/welcome-tours.ts": {
+  "lines": 124,
+  "long": 2
+ },
+ "apps/web-app/src/components/ui/alert-dialog.tsx": {
+  "lines": 143,
+  "long": 2
+ },
+ "apps/web-app/src/components/ui/badge.tsx": {
+  "lines": 36,
+  "long": 1
+ },
+ "apps/web-app/src/components/ui/button.tsx": {
+  "lines": 57,
+  "long": 1
+ },
+ "apps/web-app/src/components/ui/calendar.tsx": {
+  "lines": 213,
+  "long": 3
+ },
+ "apps/web-app/src/components/ui/checkbox.tsx": {
+  "lines": 30,
+  "long": 1
+ },
+ "apps/web-app/src/components/ui/command.tsx": {
+  "lines": 155,
+  "long": 4
+ },
+ "apps/web-app/src/components/ui/context-menu.tsx": {
+  "lines": 197,
+  "long": 6
+ },
+ "apps/web-app/src/components/ui/dialog.tsx": {
+  "lines": 135,
+  "long": 3
+ },
+ "apps/web-app/src/components/ui/dropdown-menu.tsx": {
+  "lines": 201,
+  "long": 7
+ },
+ "apps/web-app/src/components/ui/hover-card.tsx": {
+  "lines": 29,
+  "long": 1
+ },
+ "apps/web-app/src/components/ui/input.tsx": {
+  "lines": 22,
+  "long": 1
+ },
+ "apps/web-app/src/components/ui/period-picker.tsx": {
+  "lines": 238,
+  "long": 2
+ },
+ "apps/web-app/src/components/ui/popover.tsx": {
+  "lines": 33,
+  "long": 1
+ },
+ "apps/web-app/src/components/ui/select.tsx": {
+  "lines": 159,
+  "long": 3
+ },
+ "apps/web-app/src/components/ui/sheet.tsx": {
+  "lines": 144,
+  "long": 5
+ },
+ "apps/web-app/src/components/ui/sonner.tsx": {
+  "lines": 38,
+  "long": 3
+ },
+ "apps/web-app/src/components/ui/switch.tsx": {
+  "lines": 29,
+  "long": 2
+ },
+ "apps/web-app/src/components/ui/table.tsx": {
+  "lines": 120,
+  "long": 1
+ },
+ "apps/web-app/src/components/ui/tabs.tsx": {
+  "lines": 55,
+  "long": 1
+ },
+ "apps/web-app/src/components/ui/textarea.tsx": {
+  "lines": 22,
+  "long": 1
+ },
+ "apps/web-app/src/components/ui/tooltip.tsx": {
+  "lines": 32,
+  "long": 1
+ },
+ "apps/web-app/src/components/use-access-fields.tsx": {
+  "lines": 253,
+  "long": 1
+ },
+ "apps/web-app/src/components/use-assign-member-dialog.ts": {
+  "lines": 178,
+  "long": 1
+ },
+ "apps/web-app/src/components/use-notification-bell-data.ts": {
+  "lines": 134,
+  "long": 1
+ },
+ "apps/web-app/src/components/use-notification-bell-data2.ts": {
+  "lines": 288,
+  "long": 3
+ },
+ "apps/web-app/src/components/use-notification-bell.ts": {
+  "lines": 69,
+  "long": 1
+ },
+ "apps/web-app/src/components/worklog-timeline.tsx": {
+  "lines": 169,
+  "long": 8
+ },
+ "apps/web-app/src/hooks/realtime-events.ts": {
+  "lines": 239,
+  "long": 2
+ },
+ "apps/web-app/src/hooks/use-client-addresses.ts": {
+  "lines": 57,
+  "long": 2
+ },
+ "apps/web-app/src/hooks/use-clock-in-data.ts": {
+  "lines": 243,
+  "long": 1
+ },
+ "apps/web-app/src/hooks/use-clock-in.ts": {
+  "lines": 186,
+  "long": 1
+ },
+ "apps/web-app/src/lib/api/analytics.ts": {
+  "lines": 58,
+  "long": 4
+ },
+ "apps/web-app/src/lib/api/approvals.ts": {
+  "lines": 69,
+  "long": 1
+ },
+ "apps/web-app/src/lib/api/assets-records.ts": {
+  "lines": 152,
+  "long": 11
+ },
+ "apps/web-app/src/lib/api/assets-review.ts": {
+  "lines": 137,
+  "long": 11
+ },
+ "apps/web-app/src/lib/api/assets.ts": {
+  "lines": 165,
+  "long": 4
+ },
+ "apps/web-app/src/lib/api/attendance-breaks.ts": {
+  "lines": 54,
+  "long": 6
+ },
+ "apps/web-app/src/lib/api/attendance-entries.ts": {
+  "lines": 238,
+  "long": 9
+ },
+ "apps/web-app/src/lib/api/attendance-review.ts": {
+  "lines": 177,
+  "long": 7
+ },
+ "apps/web-app/src/lib/api/attendance.ts": {
+  "lines": 66,
+  "long": 5
+ },
+ "apps/web-app/src/lib/api/auth.ts": {
+  "lines": 135,
+  "long": 4
+ },
+ "apps/web-app/src/lib/api/calendar.ts": {
+  "lines": 59,
+  "long": 19
+ },
+ "apps/web-app/src/lib/api/chat.ts": {
+  "lines": 149,
+  "long": 1
+ },
+ "apps/web-app/src/lib/api/custom-fields.ts": {
+  "lines": 51,
+  "long": 4
+ },
+ "apps/web-app/src/lib/api/customers.ts": {
+  "lines": 118,
+  "long": 9
+ },
+ "apps/web-app/src/lib/api/documents-files.ts": {
+  "lines": 192,
+  "long": 9
+ },
+ "apps/web-app/src/lib/api/documents-registers.ts": {
+  "lines": 201,
+  "long": 7
+ },
+ "apps/web-app/src/lib/api/documents.ts": {
+  "lines": 32,
+  "long": 4
+ },
+ "apps/web-app/src/lib/api/employees-leave.ts": {
+  "lines": 172,
+  "long": 4
+ },
+ "apps/web-app/src/lib/api/employees.ts": {
+  "lines": 88,
+  "long": 2
+ },
+ "apps/web-app/src/lib/api/epics.ts": {
+  "lines": 24,
+  "long": 1
+ },
+ "apps/web-app/src/lib/api/index.ts": {
+  "lines": 104,
+  "long": 7
+ },
+ "apps/web-app/src/lib/api/invoices.ts": {
+  "lines": 70,
+  "long": 5
+ },
+ "apps/web-app/src/lib/api/join-requests.ts": {
+  "lines": 40,
+  "long": 2
+ },
+ "apps/web-app/src/lib/api/legal-entities.ts": {
+  "lines": 34,
+  "long": 5
+ },
+ "apps/web-app/src/lib/api/locations.ts": {
+  "lines": 124,
+  "long": 11
+ },
+ "apps/web-app/src/lib/api/organizations.ts": {
+  "lines": 237,
+  "long": 11
+ },
+ "apps/web-app/src/lib/api/overtime.ts": {
+  "lines": 58,
+  "long": 4
+ },
+ "apps/web-app/src/lib/api/portal-admin.ts": {
+  "lines": 105,
+  "long": 7
+ },
+ "apps/web-app/src/lib/api/rate-history.ts": {
+  "lines": 18,
+  "long": 1
+ },
+ "apps/web-app/src/lib/api/recurring-tasks.ts": {
+  "lines": 36,
+  "long": 2
+ },
+ "apps/web-app/src/lib/api/report-attachments.ts": {
+  "lines": 54,
+  "long": 2
+ },
+ "apps/web-app/src/lib/api/rota.ts": {
+  "lines": 27,
+  "long": 3
+ },
+ "apps/web-app/src/lib/api/shift-issues.ts": {
+  "lines": 42,
+  "long": 2
+ },
+ "apps/web-app/src/lib/api/sign-link.ts": {
+  "lines": 46,
+  "long": 3
+ },
+ "apps/web-app/src/lib/api/space-members.ts": {
+  "lines": 92,
+  "long": 6
+ },
+ "apps/web-app/src/lib/api/space-portal.ts": {
+  "lines": 39,
+  "long": 2
+ },
+ "apps/web-app/src/lib/api/space-roles.ts": {
+  "lines": 63,
+  "long": 4
+ },
+ "apps/web-app/src/lib/api/space-sharing.ts": {
+  "lines": 69,
+  "long": 5
+ },
+ "apps/web-app/src/lib/api/space-units.ts": {
+  "lines": 22,
+  "long": 2
+ },
+ "apps/web-app/src/lib/api/sprints.ts": {
+  "lines": 52,
+  "long": 2
+ },
+ "apps/web-app/src/lib/api/support.ts": {
+  "lines": 41,
+  "long": 1
+ },
+ "apps/web-app/src/lib/api/task-attachments.ts": {
+  "lines": 47,
+  "long": 2
+ },
+ "apps/web-app/src/lib/api/tasks-parts.ts": {
+  "lines": 100,
+  "long": 8
+ },
+ "apps/web-app/src/lib/api/tasks-work.ts": {
+  "lines": 139,
+  "long": 11
+ },
+ "apps/web-app/src/lib/api/tasks.ts": {
+  "lines": 126,
+  "long": 2
+ },
+ "apps/web-app/src/lib/api/types/asset-status.ts": {
+  "lines": 274,
+  "long": 1
+ },
+ "apps/web-app/src/lib/api/types/calendar.ts": {
+  "lines": 47,
+  "long": 1
+ },
+ "apps/web-app/src/lib/api/types/task-assignee.ts": {
+  "lines": 239,
+  "long": 2
+ },
+ "apps/web-app/src/lib/api/users.ts": {
+  "lines": 69,
+  "long": 7
+ },
+ "apps/web-app/src/lib/api/workflows.ts": {
+  "lines": 168,
+  "long": 10
+ },
+ "apps/web-app/src/lib/api/worklog.ts": {
+  "lines": 32,
+  "long": 2
+ },
+ "apps/web-app/src/lib/auth-session.ts": {
+  "lines": 322,
+  "long": 0
+ },
+ "apps/web-app/src/lib/auto-clock.ts": {
+  "lines": 131,
+  "long": 2
+ },
+ "apps/web-app/src/lib/capability-groups.tsx": {
+  "lines": 69,
+  "long": 1
+ },
+ "apps/web-app/src/lib/countries.ts": {
+  "lines": 69,
+  "long": 5
+ },
+ "apps/web-app/src/lib/invoice-document-labels.ts": {
+  "lines": 206,
+  "long": 2
+ },
+ "apps/web-app/src/lib/invoice-document-locale.ts": {
+  "lines": 131,
+  "long": 6
+ },
+ "apps/web-app/src/lib/invoice-pdf.ts": {
+  "lines": 263,
+  "long": 2
+ },
+ "apps/web-app/src/lib/leave-ledger.ts": {
+  "lines": 179,
+  "long": 1
+ },
+ "apps/web-app/src/lib/marketing-seo.ts": {
+  "lines": 64,
+  "long": 5
+ },
+ "apps/web-app/src/lib/pdf-common.ts": {
+  "lines": 147,
+  "long": 1
+ },
+ "apps/web-app/src/lib/query-keys/things.ts": {
+  "lines": 144,
+  "long": 3
+ },
+ "packages/shared/src/access/assignment-permissions/read.ts": {
+  "lines": 115,
+  "long": 1
+ },
+ "packages/shared/src/access/delegation.ts": {
+  "lines": 167,
+  "long": 1
+ },
+ "packages/shared/src/access/org-flags.ts": {
+  "lines": 64,
+  "long": 1
+ },
+ "packages/shared/src/access/permission-levels.ts": {
+  "lines": 230,
+  "long": 2
+ },
+ "packages/shared/src/api/prisma-error.ts": {
+  "lines": 76,
+  "long": 2
+ },
+ "packages/shared/src/app-release/release-notes.ts": {
+  "lines": 162,
+  "long": 36
+ },
+ "packages/shared/src/approvals/approval-kinds.ts": {
+  "lines": 299,
+  "long": 10
+ },
+ "packages/shared/src/approvals/approval-rules.ts": {
+  "lines": 149,
+  "long": 3
+ },
+ "packages/shared/src/approvals/approval-text.ts": {
+  "lines": 170,
+  "long": 2
+ },
+ "packages/shared/src/assets/logbook/credits.ts": {
+  "lines": 100,
+  "long": 1
+ },
+ "packages/shared/src/assets/logbook/values.ts": {
+  "lines": 185,
+  "long": 1
+ },
+ "packages/shared/src/attendance/auto-clock/presence.ts": {
+  "lines": 204,
+  "long": 3
+ },
+ "packages/shared/src/attendance/clock-in-choice.ts": {
+  "lines": 118,
+  "long": 1
+ },
+ "packages/shared/src/attendance/rota.ts": {
+  "lines": 169,
+  "long": 2
+ },
+ "packages/shared/src/billing/add-ons.ts": {
+  "lines": 220,
+  "long": 1
+ },
+ "packages/shared/src/billing/agreement.ts": {
+  "lines": 219,
+  "long": 1
+ },
+ "packages/shared/src/billing/hours-basis.ts": {
+  "lines": 106,
+  "long": 1
+ },
+ "packages/shared/src/billing/invoice-lines/workspace-lines.ts": {
+  "lines": 148,
+  "long": 3
+ },
+ "packages/shared/src/billing/legal-entity.ts": {
+  "lines": 262,
+  "long": 6
+ },
+ "packages/shared/src/billing/plans.ts": {
+  "lines": 217,
+  "long": 1
+ },
+ "packages/shared/src/calendar/ics.ts": {
+  "lines": 88,
+  "long": 3
+ },
+ "packages/shared/src/calendar/meeting.ts": {
+  "lines": 117,
+  "long": 2
+ },
+ "packages/shared/src/calendar/recurrence.ts": {
+  "lines": 150,
+  "long": 1
+ },
+ "packages/shared/src/calendar/reminders.ts": {
+  "lines": 87,
+  "long": 1
+ },
+ "packages/shared/src/crm/card-extras.ts": {
+  "lines": 141,
+  "long": 1
+ },
+ "packages/shared/src/crm/card/patterns-words.ts": {
+  "lines": 176,
+  "long": 6
+ },
+ "packages/shared/src/customer-portal/templates.ts": {
+  "lines": 65,
+  "long": 22
+ },
+ "packages/shared/src/documents/doc-title.ts": {
+  "lines": 158,
+  "long": 1
+ },
+ "packages/shared/src/documents/merge-fields.ts": {
+  "lines": 184,
+  "long": 2
+ },
+ "packages/shared/src/documents/starter-templates.ts": {
+  "lines": 282,
+  "long": 8
+ },
+ "packages/shared/src/documents/starter-types.ts": {
+  "lines": 330,
+  "long": 0
+ },
+ "packages/shared/src/http/core/api-error.ts": {
+  "lines": 136,
+  "long": 2
+ },
+ "packages/shared/src/http/core/query-keys.ts": {
+  "lines": 47,
+  "long": 1
+ },
+ "packages/shared/src/http/core/result.ts": {
+  "lines": 45,
+  "long": 1
+ },
+ "packages/shared/src/http/endpoints/approvals.ts": {
+  "lines": 25,
+  "long": 4
+ },
+ "packages/shared/src/http/endpoints/assets.ts": {
+  "lines": 110,
+  "long": 12
+ },
+ "packages/shared/src/http/endpoints/attendance.ts": {
+  "lines": 271,
+  "long": 22
+ },
+ "packages/shared/src/http/endpoints/calendar.ts": {
+  "lines": 70,
+  "long": 12
+ },
+ "packages/shared/src/http/endpoints/comms.ts": {
+  "lines": 136,
+  "long": 5
+ },
+ "packages/shared/src/http/endpoints/customers.ts": {
+  "lines": 83,
+  "long": 6
+ },
+ "packages/shared/src/http/endpoints/documents.ts": {
+  "lines": 124,
+  "long": 11
+ },
+ "packages/shared/src/http/endpoints/index.ts": {
+  "lines": 120,
+  "long": 2
+ },
+ "packages/shared/src/http/endpoints/organization.ts": {
+  "lines": 139,
+  "long": 18
+ },
+ "packages/shared/src/http/endpoints/people.ts": {
+  "lines": 191,
+  "long": 9
+ },
+ "packages/shared/src/http/endpoints/platform-admin/routes.ts": {
+  "lines": 190,
+  "long": 7
+ },
+ "packages/shared/src/http/endpoints/platform.ts": {
+  "lines": 119,
+  "long": 9
+ },
+ "packages/shared/src/http/endpoints/portal.ts": {
+  "lines": 34,
+  "long": 1
+ },
+ "packages/shared/src/http/endpoints/tasks.ts": {
+  "lines": 169,
+  "long": 6
+ },
+ "packages/shared/src/http/endpoints/web/invoices.ts": {
+  "lines": 20,
+  "long": 1
+ },
+ "packages/shared/src/http/endpoints/web/portal-admin.ts": {
+  "lines": 25,
+  "long": 7
+ },
+ "packages/shared/src/http/endpoints/web/space-members.ts": {
+  "lines": 20,
+  "long": 6
+ },
+ "packages/shared/src/http/endpoints/web/space-portal.ts": {
+  "lines": 15,
+  "long": 1
+ },
+ "packages/shared/src/http/endpoints/web/space-roles.ts": {
+  "lines": 19,
+  "long": 4
+ },
+ "packages/shared/src/http/endpoints/web/space-sharing.ts": {
+  "lines": 20,
+  "long": 5
+ },
+ "packages/shared/src/http/endpoints/web/space-units.ts": {
+  "lines": 13,
+  "long": 1
+ },
+ "packages/shared/src/http/endpoints/web/workflows.ts": {
+  "lines": 26,
+  "long": 7
+ },
+ "packages/shared/src/icons/index.ts": {
+  "lines": 95,
+  "long": 22
+ },
+ "packages/shared/src/index.ts": {
+  "lines": 226,
+  "long": 1
+ },
+ "packages/shared/src/leave/leave-api.ts": {
+  "lines": 250,
+  "long": 1
+ },
+ "packages/shared/src/leave/leave-ledger.ts": {
+  "lines": 281,
+  "long": 1
+ },
+ "packages/shared/src/mail/email-messages.ts": {
+  "lines": 647,
+  "long": 27
+ },
+ "packages/shared/src/mail/templates/account.ts": {
+  "lines": 121,
+  "long": 2
+ },
+ "packages/shared/src/mail/templates/base.ts": {
+  "lines": 88,
+  "long": 1
+ },
+ "packages/shared/src/mail/templates/signing.ts": {
+  "lines": 99,
+  "long": 3
+ },
+ "packages/shared/src/mail/templates/tasks.ts": {
+  "lines": 120,
+  "long": 2
+ },
+ "packages/shared/src/platform/permissions.ts": {
+  "lines": 52,
+  "long": 1
+ },
+ "packages/shared/src/reports/report-labels.ts": {
+  "lines": 127,
+  "long": 14
+ },
+ "packages/shared/src/requests/request-detect.ts": {
+  "lines": 280,
+  "long": 9
+ },
+ "packages/shared/src/setup/catalog.ts": {
+  "lines": 145,
+  "long": 1
+ },
+ "packages/shared/src/sync/occurrence.ts": {
+  "lines": 186,
+  "long": 1
+ },
+ "packages/shared/src/tasks/checklist.ts": {
+  "lines": 109,
+  "long": 1
+ },
+ "packages/shared/src/tasks/handover.ts": {
+  "lines": 73,
+  "long": 2
+ },
+ "packages/shared/src/tasks/job-time/readings.ts": {
+  "lines": 112,
+  "long": 2
+ },
+ "packages/shared/src/tasks/job-time/spans.ts": {
+  "lines": 269,
+  "long": 2
+ },
+ "packages/shared/src/tasks/my-work.ts": {
+  "lines": 222,
+  "long": 1
+ },
+ "packages/shared/src/tasks/report/sections.ts": {
+  "lines": 154,
+  "long": 1
+ },
+ "packages/shared/src/tasks/report/types.ts": {
+  "lines": 286,
+  "long": 2
+ },
+ "packages/shared/src/tasks/role-pool.ts": {
+  "lines": 158,
+  "long": 1
+ },
+ "packages/shared/src/timezone-country.ts": {
+  "lines": 349,
+  "long": 0
+ },
+ "packages/shared/src/types/attendance/breaks-inputs.ts": {
+  "lines": 219,
+  "long": 1
+ },
+ "packages/shared/src/types/entities/org-modules.ts": {
+  "lines": 134,
+  "long": 6
+ },
+ "packages/shared/src/types/permissions/keys.ts": {
+  "lines": 176,
+  "long": 36
+ },
+ "packages/shared/src/types/shift.ts": {
+  "lines": 295,
+  "long": 1
+ },
+ "packages/shared/src/types/task-flow/capabilities.ts": {
+  "lines": 150,
+  "long": 6
+ },
+ "packages/shared/src/types/task-flow/templates.ts": {
+  "lines": 159,
+  "long": 28
+ },
+ "packages/shared/src/workflows/step-form/presets.ts": {
+  "lines": 130,
+  "long": 2
+ }
+}

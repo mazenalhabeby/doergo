@@ -10,6 +10,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { TaskAccessService } from '../../../common/task-access/task-access.service';
 import { ReportsService } from '../reports.service';
+import { reportServices } from './reports.service.fixture';
 
 const ORG = 'org_1';
 
@@ -40,7 +41,13 @@ function setup() {
       count: jest.fn(async () => 1),
     },
   };
-  const service = new ReportsService(prisma, {} as any, {} as any, { emit: jest.fn() } as any, new TaskAccessService(prisma));
+  const service = reportServices(
+    prisma,
+    {} as any,
+    {} as any,
+    { emit: jest.fn() } as any,
+    new TaskAccessService(prisma),
+  );
   return { service, prisma };
 }
 

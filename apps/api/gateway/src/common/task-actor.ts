@@ -1,4 +1,5 @@
-import { isAdmin, spacesGranting, type ResolvedAccess } from '@hbcfield/shared';
+import { isAdmin, type ResolvedAccess } from '@hbcfield/shared';
+import { scopeIdsFor } from './permission-scope';
 
 /**
  * The caller of a task route, as task-service's ONE task gate
@@ -67,7 +68,7 @@ export function taskActor(req: { user?: any; method?: string }, opts: TaskActorO
     userRole: user.role,
     organizationId: user.organizationId,
     canViewAllTasks: user.canViewAllTasks,
-    viewAllSpaceIds: isAdmin(user) ? undefined : (spacesGranting(user.access, 'canViewAllTasks') ?? undefined),
+    viewAllSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
     canAssignTasks: user.canAssignTasks,
     sharedSpaceIds: reading ? (user.access?.sharedSpaces ?? []).map((s: { spaceId: string }) => s.spaceId) : [],
     access: user.access,
@@ -98,7 +99,7 @@ export function grantedSpaceIds(
   permission: 'canAssignTasks' | 'canCreateTasks',
 ): string[] | undefined {
   const user = req.user ?? {};
-  return isAdmin(user) ? undefined : (spacesGranting(user.access, permission) ?? undefined);
+  return scopeIdsFor(user, permission);
 }
 
 /** Spaces where the caller may ASSIGN work — see `grantedSpaceIds`. */

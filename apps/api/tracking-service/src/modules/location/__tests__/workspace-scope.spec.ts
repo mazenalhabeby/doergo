@@ -7,7 +7,7 @@
  *   []         granted nowhere — matches nothing
  */
 import { of } from 'rxjs';
-import { LocationService } from '../location.service';
+import { locationServices } from './location.service.fixture';
 import { LocationController } from '../location.controller';
 
 function build() {
@@ -17,7 +17,11 @@ function build() {
     task: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
     locationHistory: { findMany: jest.fn().mockResolvedValue([]) },
   };
-  const service = new LocationService(prisma, { emit: jest.fn(() => of(null)) } as any, { matchToRoads: jest.fn() } as any);
+  const service = locationServices(
+    prisma,
+    { emit: jest.fn(() => of(null)) } as any,
+    { matchToRoads: jest.fn() } as any,
+  );
   return { service, prisma };
 }
 
@@ -86,7 +90,7 @@ describe('live map — workspace scope', () => {
 
   it('the controller passes an array through ([] included) and treats anything else as org-wide', async () => {
     const service: any = { getTaskRoute: jest.fn(), getActiveWorkers: jest.fn() };
-    const c = new LocationController(service);
+    const c = new LocationController(service, service, service, service); // the four location services since the split
     await c.getTaskRoute({ taskId: 't', organizationId: 'o', scopeSpaceIds: [] });
     expect(service.getTaskRoute).toHaveBeenLastCalledWith('t', 'o', []);
     await c.getTaskRoute({ taskId: 't', organizationId: 'o', scopeSpaceIds: null as any });

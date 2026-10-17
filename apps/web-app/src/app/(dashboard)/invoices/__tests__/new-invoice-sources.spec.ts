@@ -2,6 +2,8 @@ import fs from "fs"
 import path from "path"
 
 import { code, createScreen, newPage } from "./_screen"
+import { serverModuleSource } from "./server-source"
+import { readSource } from "../../../../test-utils/read-source"
 
 /** Where the locale files live, for the two assertions that read them. */
 const ROOT = path.join(__dirname, "..")
@@ -113,10 +115,10 @@ describe("only a workspace that is a customer can be billed", () => {
       A list must not be stricter OR looser than the check behind it. The picker
       hiding them is what makes it convenient; this is what makes it a rule.
     */
-    const svc = fs.readFileSync(
-      path.join(ROOT, "../../../../../api/auth-service/src/modules/invoices/invoice.service.ts"),
-      "utf8",
-    ).replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1")
+    const svc = serverModuleSource(path.join(ROOT, "../../../../../api/auth-service/src/modules/invoices")).replace(
+      /(^|[\s{])\/\*[\s\S]*?\*\//g,
+      "$1",
+    )
     expect(svc).toMatch(/space\.kind !== 'CUSTOMER'/)
   })
 })
@@ -215,7 +217,7 @@ describe("the CRM, when there is one", () => {
 describe("the nav label", () => {
   const LOCALES = path.join(ROOT, "../../../i18n/locales")
   it.each(["en", "de", "es", "fr", "it"])("is one word in %s", (lang) => {
-    const d = JSON.parse(fs.readFileSync(path.join(LOCALES, `${lang}.json`), "utf8"))
+    const d = JSON.parse(readSource(path.join(LOCALES, `${lang}.json`), "utf8"))
     const label = d.nav?.sidebar?.invoices
     expect(typeof label).toBe("string")
     // "Customer Invoices" / "Facturas de clientes" — the qualifier is noise in a
@@ -224,7 +226,7 @@ describe("the nav label", () => {
   })
 
   it.each(["en", "de", "es", "fr", "it"])("translates every new source string in %s", (lang) => {
-    const d = JSON.parse(fs.readFileSync(path.join(LOCALES, `${lang}.json`), "utf8"))
+    const d = JSON.parse(readSource(path.join(LOCALES, `${lang}.json`), "utf8"))
     const c = d.invoices?.create ?? {}
     const missing = [
       "billFrom", "fromSpace", "fromClient", "fromNothing", "workspace", "client",
@@ -306,7 +308,7 @@ describe("how the labour is written up", () => {
   it("is translated in all five languages", () => {
     const LOCALES = path.join(ROOT, "../../../i18n/locales")
     for (const lang of ["en", "de", "es", "fr", "it"]) {
-      const d = JSON.parse(fs.readFileSync(path.join(LOCALES, `${lang}.json`), "utf8"))
+      const d = JSON.parse(readSource(path.join(LOCALES, `${lang}.json`), "utf8"))
       const missing = [
         "groupBy", "groupByTask", "groupByMember", "groupByBoth",
         "groupByTaskHint", "groupByMemberHint", "groupByBothHint",
@@ -501,7 +503,7 @@ describe("the pickers", () => {
   it("labels the search box in all five languages", () => {
     const LOCALES = path.join(ROOT, "../../../i18n/locales")
     for (const lang of ["en", "de", "es", "fr", "it"]) {
-      const d = JSON.parse(fs.readFileSync(path.join(LOCALES, `${lang}.json`), "utf8"))
+      const d = JSON.parse(readSource(path.join(LOCALES, `${lang}.json`), "utf8"))
       const missing = ["searchWorkspace", "searchClient"]
         .filter((k) => typeof d.invoices?.create?.[k] !== "string")
       expect({ lang, missing }).toEqual({ lang, missing: [] })

@@ -1,5 +1,5 @@
 import { trackingVisibility } from '../tracking-visibility';
-import { UsersController } from '../../modules/users/users.controller';
+import { UserDirectoryController } from '../../modules/users/user-directory.controller';
 import { of } from 'rxjs';
 
 /*
@@ -27,7 +27,7 @@ describe('trackingVisibility', () => {
 describe('GET /users/workers', () => {
   it('forwards the resolved answer after the query, so a query string cannot set it', async () => {
     const authClient = { send: jest.fn(() => of({ data: [] })) };
-    const c = new (UsersController as any)(authClient, {}, {}, {}, {}, {}) as UsersController;
+    const c = new (UserDirectoryController as any)(authClient, {}) as UserDirectoryController;
     await c.getWorkers(user({ canViewAllTasks: true }) as any, { canViewTracking: 'true', page: '1' });
     const payload = (authClient.send.mock.calls[0] as any)[1];
     expect(payload.canViewTracking).toBe(false);

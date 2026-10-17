@@ -20,6 +20,11 @@ import { Switch } from "@/components/ui/switch"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog"
+import { useAssetKindDialog } from "./use-asset-kind-dialog"
+import { Row, Pick, DirBtn, OwnerBtn } from "./asset-kind-dialog-helpers"
+import { AssetKindDialogLists } from "./asset-kind-dialog-lists"
+import { AssetKindDialogHasHolder } from "./asset-kind-dialog-has-holder"
+import { AssetKindDialogMoney } from "./asset-kind-dialog-money"
 
 /**
  * Describe a kind of thing this space owns.
@@ -43,61 +48,27 @@ export function AssetKindDialog({
   onSaved: () => void
   trigger: React.ReactNode
 }) {
-  const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
-
-  const start = normalizeKindShape(existing?.config)
-  const [name, setName] = useState(existing?.name ?? "")
-  const [description, setDescription] = useState(existing?.description ?? "")
-  const [shape, setShape] = useState<KindShape>(start)
-
-  const set = <K extends keyof KindShape>(k: K, v: KindShape[K]) => setShape((s) => ({ ...s, [k]: v }))
-  const setHolder = (patch: Partial<KindShape["holder"]>) =>
-    setShape((s) => ({ ...s, holder: { ...s.holder, ...patch } }))
-  const setField = (i: number, label: string) =>
-    setShape((s) => ({ ...s, fields: s.fields.map((f, idx) => (idx === i ? { label } : f)) }))
-  const setMoney = (patch: Partial<KindShape["money"]>) =>
-    setShape((s) => ({ ...s, money: { ...s.money, ...patch } }))
-  const setList = (i: number, patch: { label?: string; columns?: KindColumn[]; display?: "table" | "cards"; shared?: boolean }) =>
-    setShape((s) => ({ ...s, lists: s.lists.map((l, idx) => (idx === i ? { ...l, ...patch } : l)) }))
-  const setCategory = (i: number, patch: { label?: string; direction?: MoneyDirection }) =>
-    setShape((s) => ({
-      ...s,
-      money: {
-        ...s.money,
-        categories: s.money.categories.map((c, idx) => (idx === i ? { ...c, ...patch } : c)),
-      },
-    }))
-
-  const save = useMutation({
-    mutationFn: () => {
-      const input = {
-        name: name.trim(),
-        description: description.trim() || undefined,
-        config: normalizeKindShape(shape) as unknown as Record<string, unknown>,
-      }
-      return existing
-        ? assetsApi.updateCategory(existing.id, input)
-        : assetsApi.createCategory({ ...input, spaceId })
-    },
-    onSuccess: () => {
-      notify.success(existing ? t("common.saved", "Saved") : t("assetKinds.created", "{{name}} added", { name: name.trim() }))
-      onSaved()
-      setOpen(false)
-    },
-    onError: (e: Error) => notify.error(e.message),
-  })
-
-  const reset = (next: boolean) => {
-    if (next) {
-      setName(existing?.name ?? "")
-      setDescription(existing?.description ?? "")
-      setShape(normalizeKindShape(existing?.config))
-    }
-    setOpen(next)
-  }
-
-  const atFieldCap = shape.fields.length >= KIND_SHAPE_LIMITS.maxFields
+  const vm = useAssetKindDialog({ spaceId, existing, onSaved, trigger })
+  const {
+    t,
+    open,
+    setOpen,
+    name,
+    setName,
+    description,
+    setDescription,
+    shape,
+    setShape,
+    set,
+    setHolder,
+    setField,
+    setMoney,
+    setList,
+    setCategory,
+    save,
+    reset,
+    atFieldCap,
+  } = vm
 
   return (
     <Dialog open={open} onOpenChange={reset}>
@@ -202,79 +173,7 @@ export function AssetKindDialog({
           />
 
           {/* Holder → the apartment "resident", renamed to whatever this is. */}
-          <div className="rounded-xl border border-border">
-            <Row
-              icon={User}
-              title={t("assetKinds.hasHolder", "Someone can have it")}
-              hint={t("assetKinds.hasHolderHint", "A member or a client is assigned to it — a resident, a driver, an operator.")}
-              checked={shape.holder.enabled}
-              onChange={(v) => setHolder({ enabled: v })}
-              bare
-            />
-            {shape.holder.enabled && (
-              <div className="space-y-3 border-t border-border p-3">
-                <div>
-                  <Label className="text-xs text-muted-foreground">
-                    {t("assetKinds.holderLabel", "Call that person")}
-                  </Label>
-                  <Input
-                    className="mt-1"
-                    value={shape.holder.label}
-                    onChange={(e) => setHolder({ label: e.target.value })}
-                    placeholder={t("assetKinds.holderLabelPlaceholder", "Resident")}
-                    maxLength={KIND_SHAPE_LIMITS.maxHolderLabel}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">
-                    {t("assetKinds.holderWho", "Who can be one")}
-                  </Label>
-                  <div className="mt-1.5 flex gap-2">
-                    <Pick
-                      label={t("assetKinds.members", "Members")}
-                      active={shape.holder.members}
-                      onClick={() => setHolder({ members: !shape.holder.members })}
-                    />
-                    <Pick
-                      label={t("assetKinds.clients", "Clients")}
-                      active={shape.holder.clients}
-                      onClick={() => setHolder({ clients: !shape.holder.clients })}
-                    />
-                  </div>
-                </div>
-                {/* Phrased against the switch above it — "Someone can have it",
-                    then "How many can have it". "How many at a time" read like a
-                    rate limit: it never said what was being counted.
-
-                    Two named choices rather than a toggle, because "just one"
-                    and "more than one" are both real answers; a switch labelled
-                    "multiple" makes its off state look like a decision nobody
-                    made. */}
-                <div>
-                  <Label className="text-xs text-muted-foreground">
-                    {t("assetKinds.holderCount", "How many can have it")}
-                  </Label>
-                  <div className="mt-1.5 flex gap-2">
-                    <Pick
-                      label={t("assetKinds.holderOne", "Just one")}
-                      active={!shape.holder.multiple}
-                      onClick={() => setHolder({ multiple: false })}
-                    />
-                    <Pick
-                      label={t("assetKinds.holderSeveral", "More than one")}
-                      active={shape.holder.multiple}
-                      onClick={() => setHolder({ multiple: true })}
-                    />
-                  </div>
-                  <p className="mt-1 text-[11px] text-muted-foreground/70">
-                    {shape.holder.multiple
-                      ? t("assetKinds.holderSeveralHint", "A shared flat, a shift of operators — records can list more than one.")
-                      : t("assetKinds.holderOneHint", "One van, one driver. Assigning someone new replaces whoever is there.")}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
+          <AssetKindDialogHasHolder vm={vm} />
 
           {/* More info → the fields every record is prompted for. */}
           <div className="space-y-2">
@@ -335,165 +234,7 @@ export function AssetKindDialog({
           {/* Tables. A field answers "what is this one's floor"; a list answers
               "what is in it" — a machine's parts, an apartment's keys — which
               needs rows, not a value. */}
-          <div className="space-y-2 rounded-xl border border-border p-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                  <Table2 className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {t("assetKinds.lists", "Tables on each one")}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {t("assetKinds.listsHint", "A parts catalogue, a set of keys — a table with as many rows as it needs.")}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                disabled={shape.lists.length >= KIND_SHAPE_LIMITS.maxLists}
-                onClick={() => set("lists", [...shape.lists, { label: "", columns: [{ label: "", type: "text" as const }], display: "table" as const, shared: false }])}
-                className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
-              >
-                <Plus className="h-3.5 w-3.5" /> {t("common.add", "Add")}
-              </button>
-            </div>
-
-            {shape.lists.map((list, i) => (
-              <div key={i} className="space-y-2 rounded-lg border border-border/70 p-2.5">
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={list.label}
-                    onChange={(e) => setList(i, { label: e.target.value })}
-                    placeholder={t("assetKinds.listName", "Parts")}
-                    maxLength={KIND_SHAPE_LIMITS.maxLabel}
-                  />
-                  {/* How the rows read. A display choice — nothing about what
-                      the table MEANS, which the columns decide. */}
-                  <select
-                    value={list.display}
-                    onChange={(e) => setList(i, { display: e.target.value as "table" | "cards" })}
-                    className="h-9 shrink-0 rounded-md border border-border bg-background px-2 text-sm text-foreground"
-                  >
-                    <option value="table">{t("assetKinds.displayTable", "As a grid")}</option>
-                    <option value="cards">{t("assetKinds.displayCards", "As cards")}</option>
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => set("lists", shape.lists.filter((_, idx) => idx !== i))}
-                    className="shrink-0 rounded p-1.5 text-muted-foreground hover:text-destructive"
-                    aria-label={t("common.remove", "Remove")}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {/* Typed once for the kind, or filled in per record. A parts
-                    catalogue is the same on every machine of a model; a set of
-                    keys belongs to one flat. */}
-                <div className="flex gap-2 pl-1">
-                  <OwnerBtn
-                    active={list.shared}
-                    onClick={() => setList(i, { shared: true })}
-                    label={t("assetKinds.sharedOn", "Same for every one")}
-                  />
-                  <OwnerBtn
-                    active={!list.shared}
-                    onClick={() => setList(i, { shared: false })}
-                    label={t("assetKinds.sharedOff", "Different on each")}
-                  />
-                </div>
-
-                <div className="pl-1">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-[11px] text-muted-foreground">
-                      {t("assetKinds.listColumns", "Columns in this table")}
-                    </Label>
-                    <button
-                      type="button"
-                      disabled={list.columns.length >= KIND_SHAPE_LIMITS.maxColumns}
-                      onClick={() => setList(i, { columns: [...list.columns, { label: "", type: "text" as const }] })}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
-                    >
-                      <Plus className="h-3 w-3" /> {t("common.add", "Add")}
-                    </button>
-                  </div>
-                  <div className="mt-1.5 space-y-1.5">
-                    {list.columns.map((col, ci) => {
-                      const setCol = (patch: Partial<KindColumn>) =>
-                        setList(i, {
-                          columns: list.columns.map((c, idx) =>
-                            idx === ci ? { ...c, ...patch } : c,
-                          ) as KindColumn[],
-                        })
-                      const targets = linkTargets(shape, list)
-                      return (
-                        <div key={ci} className="flex items-center gap-1.5">
-                          <Input
-                            value={col.label}
-                            onChange={(e) => setCol({ label: e.target.value })}
-                            placeholder={t("assetKinds.listColumn", "Code")}
-                            className="h-8 flex-1"
-                            maxLength={KIND_SHAPE_LIMITS.maxLabel}
-                          />
-                          {/* What the column IS. A key makes rows of this table
-                              referenceable; a link points at another table's
-                              keys and is picked, not typed. */}
-                          <select
-                            value={col.type}
-                            onChange={(e) => {
-                              const type = e.target.value as KindColumnType
-                              setCol({
-                                type,
-                                linkTo: type === "link" ? col.linkTo ?? targets[0]?.label : undefined,
-                              })
-                            }}
-                            className="h-8 shrink-0 rounded-md border border-border bg-background px-1.5 text-xs text-foreground"
-                          >
-                            <option value="text">{t("assetKinds.colText", "Plain text")}</option>
-                            <option value="key">{t("assetKinds.colKey", "Code (identifies the row)")}</option>
-                            <option value="link" disabled={targets.length === 0}>
-                              {t("assetKinds.colLink", "Points at another table")}
-                            </option>
-                          </select>
-                          {col.type === "link" && (
-                            <select
-                              value={col.linkTo ?? ""}
-                              onChange={(e) => setCol({ linkTo: e.target.value })}
-                              className="h-8 shrink-0 rounded-md border border-border bg-background px-1.5 text-xs text-foreground"
-                            >
-                              {targets.map((tl) => (
-                                <option key={tl.label} value={tl.label}>{tl.label}</option>
-                              ))}
-                            </select>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => setList(i, { columns: list.columns.filter((_, idx) => idx !== ci) })}
-                            className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive"
-                            aria-label={t("common.remove", "Remove")}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  {!keyColumn(list) && (
-                    <p className="mt-1 text-[11px] text-muted-foreground/70">
-                      {t("assetKinds.noKeyHint", "No column marked as the code — other tables cannot point at this one.")}
-                    </p>
-                  )}
-                  {list.columns.filter((c) => c.label.trim()).length === 0 && (
-                    <p className="mt-1 text-[11px] text-destructive">
-                      {t("assetKinds.listNeedsColumn", "A table needs at least one column, or it is dropped.")}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          <AssetKindDialogLists vm={vm} />
 
           {/* Log types. What gets done to one of these, and when it comes due
               again. The body lives in its own file: a type carries fields, flags
@@ -507,75 +248,7 @@ export function AssetKindDialog({
           {/* Money. The kind names the headings, so an Apartments kind logs Rent
               and Repairs while a Vehicles kind logs Fuel and Service — one
               ledger, different words. */}
-          <div className="rounded-xl border border-border">
-            <Row
-              icon={Wallet}
-              title={t("assetKinds.money", "It costs or earns money")}
-              hint={t("assetKinds.moneyHint", "Log what comes in and what goes out, with dates and a running total.")}
-              checked={shape.money.enabled}
-              onChange={(v) => setMoney({ enabled: v })}
-              bare
-            />
-            {shape.money.enabled && (
-              <div className="space-y-2 border-t border-border p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">
-                      {t("assetKinds.moneyCategories", "What money gets logged under")}
-                    </Label>
-                    <p className="text-[11px] text-muted-foreground/70">
-                      {t("assetKinds.moneyCategoriesHint", "Rent, Repairs, Utilities — or Fuel, Service, Insurance.")}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={shape.money.categories.length >= KIND_SHAPE_LIMITS.maxMoneyCategories}
-                    onClick={() => setMoney({ categories: [...shape.money.categories, { label: "", direction: "out" }] })}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
-                  >
-                    <Plus className="h-3.5 w-3.5" /> {t("common.add", "Add")}
-                  </button>
-                </div>
-
-                {shape.money.categories.map((c, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <Input
-                      value={c.label}
-                      onChange={(e) => setCategory(i, { label: e.target.value })}
-                      placeholder={t("assetKinds.moneyCategoryPh", "Rent")}
-                      maxLength={KIND_SHAPE_LIMITS.maxLabel}
-                    />
-                    {/* In or out is a property of the heading, not of each entry:
-                        rent is always money in, a repair is always money out. */}
-                    <div className="flex shrink-0 overflow-hidden rounded-md border border-border">
-                      <DirBtn
-                        active={c.direction === "in"}
-                        onClick={() => setCategory(i, { direction: "in" })}
-                        icon={ArrowDownLeft}
-                        label={t("assetKinds.moneyIn", "Money in")}
-                        tone="in"
-                      />
-                      <DirBtn
-                        active={c.direction === "out"}
-                        onClick={() => setCategory(i, { direction: "out" })}
-                        icon={ArrowUpRight}
-                        label={t("assetKinds.moneyOut", "Money out")}
-                        tone="out"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setMoney({ categories: shape.money.categories.filter((_, idx) => idx !== i) })}
-                      className="shrink-0 rounded p-1.5 text-muted-foreground hover:text-destructive"
-                      aria-label={t("common.remove", "Remove")}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <AssetKindDialogMoney vm={vm} />
         </div>
 
         <DialogFooter>
@@ -587,94 +260,5 @@ export function AssetKindDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
-
-/** One switchable part of the record. */
-function Row({
-  icon: Icon, title, hint, checked, onChange, bare,
-}: {
-  icon: typeof MapPin
-  title: string
-  hint: string
-  checked: boolean
-  onChange: (v: boolean) => void
-  bare?: boolean
-}) {
-  return (
-    <div className={cn("flex items-start gap-3 p-3", !bare && "rounded-xl border border-border")}>
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-        <Icon className="h-4 w-4" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="text-[11px] text-muted-foreground">{hint}</p>
-      </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
-    </div>
-  )
-}
-
-/** A two-state chip — members, clients, or both. */
-function Pick({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-        active
-          ? "border-primary bg-primary/10 text-foreground"
-          : "border-border text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {label}
-    </button>
-  )
-}
-
-/** In or out, for one money heading. */
-function DirBtn({
-  active, onClick, icon: Icon, label, tone,
-}: {
-  active: boolean
-  onClick: () => void
-  icon: typeof ArrowDownLeft
-  label: string
-  tone: "in" | "out"
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center gap-1 px-2.5 py-2 text-xs font-medium transition-colors",
-        active
-          ? tone === "in"
-            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-            : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-          : "text-muted-foreground hover:text-foreground",
-      )}
-    >
-      <Icon className="h-3.5 w-3.5" /> {label}
-    </button>
-  )
-}
-
-/** Typed once for the kind, or filled in per record. */
-function OwnerBtn({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-3 py-1 text-[11px] font-medium transition-colors",
-        active
-          ? "border-primary bg-primary/10 text-foreground"
-          : "border-border text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {label}
-    </button>
   )
 }

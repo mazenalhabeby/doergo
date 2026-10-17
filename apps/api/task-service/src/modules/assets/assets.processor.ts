@@ -4,12 +4,18 @@ import { Job } from 'bullmq';
 import { QUEUE_NAMES, ASSET_JOB_TYPES } from '@hbcfield/shared';
 import { AssetsService } from './assets.service';
 import { AssetCatalogService } from './asset-catalog.service';
+import { AssetCreateService } from './asset-create.service';
+import { AssetUpdateService } from './asset-update.service';
+import { AssetTypesService } from './asset-types.service';
 
 @Processor(QUEUE_NAMES.ASSETS)
 export class AssetsProcessor extends JobProcessor {
   constructor(
     private readonly assetsService: AssetsService,
+    private readonly assetUpdate: AssetUpdateService,
+    private readonly assetCreate: AssetCreateService,
     private readonly catalog: AssetCatalogService,
+    private readonly assetTypes: AssetTypesService,
   ) {
     super();
   }
@@ -28,20 +34,20 @@ export class AssetsProcessor extends JobProcessor {
 
       // Types
       case ASSET_JOB_TYPES.CREATE_TYPE:
-        return this.catalog.createType(job.data);
+        return this.assetTypes.createType(job.data);
 
       case ASSET_JOB_TYPES.UPDATE_TYPE:
-        return this.catalog.updateType(job.data);
+        return this.assetTypes.updateType(job.data);
 
       case ASSET_JOB_TYPES.DELETE_TYPE:
-        return this.catalog.deleteType(job.data);
+        return this.assetTypes.deleteType(job.data);
 
       // Assets
       case ASSET_JOB_TYPES.CREATE:
-        return this.assetsService.create(job.data);
+        return this.assetCreate.create(job.data);
 
       case ASSET_JOB_TYPES.UPDATE:
-        return this.assetsService.update(job.data);
+        return this.assetUpdate.update(job.data);
 
       case ASSET_JOB_TYPES.DELETE:
         return this.assetsService.delete(job.data);

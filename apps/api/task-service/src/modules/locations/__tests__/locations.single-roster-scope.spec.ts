@@ -1,12 +1,12 @@
 import { NotFoundException } from '@nestjs/common';
-import { LocationsService } from '../locations.service';
+import { SpaceRosterService } from '../space-roster.service';
 
 /**
  * GET /locations/:id/members — the SINGLE roster had no scope at all: any
  * member (an external one included) read any workspace's people by id. It now
  * follows the batch's rule, through the same helper.
  */
-describe('LocationsService.getLocationAssignments — space scope', () => {
+describe('SpaceRosterService.getLocationAssignments — space scope', () => {
   function setup(assignedTo: string[]) {
     const prisma: any = {
       companyLocation: { findFirst: jest.fn().mockResolvedValue({ id: 'sp-2' }) },
@@ -18,7 +18,7 @@ describe('LocationsService.getLocationAssignments — space scope', () => {
       },
       task: { findMany: jest.fn().mockResolvedValue([]) },
     };
-    return { prisma, service: new LocationsService(prisma, { emit: jest.fn() } as any) };
+    return { prisma, service: new SpaceRosterService(prisma, { emit: jest.fn() } as any) };
   }
 
   it("'own' scope: a space the caller is not assigned to reads as not found", async () => {

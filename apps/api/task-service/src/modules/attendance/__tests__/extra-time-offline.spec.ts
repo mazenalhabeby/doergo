@@ -5,14 +5,14 @@
  * signal; both arrive at 19:30, in that order. A leader must still be able to
  * approve the ninety minutes, and the timesheet must then pay them.
  */
-// The rules are still imported from the facade (re-exported); the methods live in ExtraTimeService.
+// The rules are still imported from the facade (re-exported); the methods live in ExtraTimeDecisionService (and its base).
 import { decidableExtraTimeWhere, respondedAt } from '../attendance.service';
-import { ExtraTimeService } from '../extra-time.service';
+import { ExtraTimeDecisionService } from '../extra-time-decision.service';
 
 const at = (hhmm: string) => new Date(`2026-09-14T${hhmm}:00.000Z`);
 
 function service(entry: any, round: any = { id: 'round-1' }) {
-  const svc = Object.create(ExtraTimeService.prototype) as any;
+  const svc = Object.create(ExtraTimeDecisionService.prototype) as any;
   svc.logger = { log: jest.fn(), debug: jest.fn(), warn: jest.fn() };
   svc.prisma = {
     timeEntry: {

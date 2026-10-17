@@ -16,6 +16,9 @@ import { PresenceModule } from '../attendance/presence/presence.module';
 import { HandoverModule } from './handover/handover.module';
 import { RolePoolService } from './role-pool.service';
 import { TechniciansModule } from '../technicians/technicians.module';
+import { RoleTakeService } from './role-take.service';
+import { RoleStatsService } from './role-stats.service';
+import { RolePoolSweepService } from './role-pool-sweep.service';
 
 @Module({
   imports: [
@@ -39,7 +42,10 @@ import { TechniciansModule } from '../technicians/technicians.module';
     TasksProcessor, // BullMQ processor for exactly-once job processing
     DepartureReminderService, // sweep: tells a member when to set off
     LeaderAbsentService, // sweep: tells the office a job's leader is off today
-    RolePoolService, // a task open to a WORK role: offers in waves, the first to take it gets it
+    RolePoolService, // a task open to a WORK role: offers in waves, the first to take it gets it,
+    RoleTakeService,
+    RoleStatsService,
+    RolePoolSweepService,
     /*
       The full report for one job. Beside the facade, not one of its parts: it
       composes services from OTHER modules (reports, attachments, custom fields),

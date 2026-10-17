@@ -4,7 +4,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AssetAccessService } from '../asset-access.service';
 import { AssetCustodyService } from '../asset-custody.service';
 import { AssetContractService } from '../asset-contract.service';
-import { AssetCatalogService } from '../asset-catalog.service';
+import { assetCatalogParts } from './asset-catalog.service.fixture';
 
 /**
  * Accepting a contract: create the car, hand it over, retire the one it replaces.
@@ -300,7 +300,7 @@ describe('AssetContractService', () => {
   describe('the kinds a space-scoped manager can list', () => {
     const catalog = () => {
       const db: any = { assetCategory: { findMany: jest.fn(async () => []) } };
-      return { db, svc: new AssetCatalogService(db, new AssetAccessService(db)) };
+      return { db, svc: assetCatalogParts(db, new AssetAccessService(db)) };
     };
     const base = { userId: 'u', userRole: 'EMPLOYEE', organizationId: 'org1' };
 

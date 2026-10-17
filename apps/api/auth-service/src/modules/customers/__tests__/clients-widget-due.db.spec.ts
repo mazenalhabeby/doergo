@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { CustomersService } from '../customers.service';
+import { customerServices, type CustomerServices } from './customer-services.fixture';
 
 /*
   The Clients widget against a REAL database (the seeded dev org) — real role
@@ -24,7 +25,7 @@ d('Clients widget — live database', () => {
   const prisma = new PrismaClient({ log: [{ emit: 'event', level: 'query' }] });
   const queries: Array<{ query: string; params: string; duration: number }> = [];
   (prisma as any).$on('query', (e: any) => queries.push(e));
-  const service = new CustomersService(prisma as any);
+  const service = customerServices(prisma);
   const now = Date.now();
   const day = { dayStart: new Date(now - 2 * HOUR).toISOString(), dayEnd: new Date(now + 20 * HOUR).toISOString() };
   const due = (userId: string, role = 'EMPLOYEE', extra: Record<string, unknown> = {}) =>

@@ -24,203 +24,39 @@ import { UnconfirmedClockOutCard } from "@/components/attendance/unconfirmed-clo
 import { keys } from "@/lib/query-keys"
 import { dateLocale } from "@/lib/format-date"
 import { deriveAttendanceFlags } from "@/lib/attendance-status"
-
-/** Human-readable duration between two ISO timestamps (or to now). */
-function duration(fromIso?: string | null, toIso?: string | null): string {
-  if (!fromIso) return "—"
-  const from = new Date(fromIso).getTime()
-  const to = toIso ? new Date(toIso).getTime() : Date.now()
-  return formatDuration(Math.max(0, Math.round((to - from) / 60000)))
-}
-
-function fmtDate(iso?: string | null): string {
-  if (!iso) return "—"
-  return new Date(iso).toLocaleDateString(dateLocale(), { weekday: "short", month: "short", day: "numeric" })
-}
-/**
- * The clock that is actually running.
- *
- * A shift in progress is the one thing on this page that changes while somebody
- * looks at it, and a number frozen at the moment the page loaded says the
- * opposite of what a live shift is.
- *
- * Its own component on purpose: a second-by-second tick in the page would
- * re-render the history list, the week strip and every button sixty times a
- * minute. Here it re-renders one span.
- */
-function LiveShift({ since, target }: { since: string; target: { start: number; totalMins: number } | null }) {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(id)
-  }, [])
-
-  const mins = Math.max(0, (now - new Date(since).getTime()) / 60000)
-  const h = Math.floor(mins / 60)
-  const m = Math.floor(mins % 60)
-  const sec = Math.floor((mins * 60) % 60)
-
-  return (
-    <div className="flex items-center gap-4">
-      {target && (
-        <ProgressRing
-          value={Math.min(mins, target.totalMins)}
-          total={target.totalMins}
-          label={`${Math.round((Math.min(mins, target.totalMins) / target.totalMins) * 100)}%`}
-          size={64}
-        />
-      )}
-      <div>
-        <div className="text-[28px] font-semibold leading-none tabular-nums text-foreground">
-          {h}:{String(m).padStart(2, "0")}
-          <span className="text-base text-muted-foreground">:{String(sec).padStart(2, "0")}</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/**
- * The window, chosen once.
- *
- * Two separate pickers asked the same person the same question twice and let
- * them answer it inconsistently — a "to" before its "from" is a state the form
- * has to catch and explain, and the second popover made picking a fortnight
- * four clicks and two menus.
- *
- * `mode="range"` is one gesture: click the first day, click the last, done. The
- * calendar cannot express a backwards range, so the validation it replaces has
- * nothing left to catch. Same composition the member's time-off dialog already
- * uses — Button, Popover, the shared Calendar.
- *
- * Values stay "yyyy-MM-dd" strings, because that is what the API takes; the
- * Date objects exist only while the calendar is open.
- */
-function RangeField({
-  from,
-  to,
-  onChange,
-  placeholder,
-}: {
-  from: string
-  to: string
-  onChange: (from: string, to: string) => void
-  placeholder: string
-}) {
-  const { locale } = useTimeFormat()
-  const selected: DateRange | undefined = from
-    ? { from: new Date(`${from}T00:00:00`), to: to ? new Date(`${to}T00:00:00`) : undefined }
-    : undefined
-
-  const show = (d: Date) => d.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn("h-9 justify-start rounded-lg text-left text-sm font-normal", !from && "text-muted-foreground")}
-        >
-          <CalendarIcon className="mr-2 size-3.5 text-muted-foreground" />
-          {selected?.from
-            ? selected.to
-              ? `${show(selected.from)} — ${show(selected.to)}`
-              : show(selected.from)
-            : placeholder}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <CalendarPicker
-          mode="range"
-          selected={selected}
-          onSelect={(r) => onChange(r?.from ? localDateKey(r.from) : "", r?.to ? localDateKey(r.to) : "")}
-          // Two months, because a range that crosses one is the common case —
-          // "the last fortnight" should not need a click into the previous page.
-          numberOfMonths={2}
-          // Nothing that has not happened: this is a record, not a plan.
-          disabled={{ after: new Date() }}
-          defaultMonth={selected?.from}
-          initialFocus
-        />
-      </PopoverContent>
-    </Popover>
-  )
-}
+import { useMyAttendancePage } from "./use-my-attendance-page"
+import { duration, fmtDate, LiveShift, RangeField } from "./my-attendance-page-helpers"
+import { MyAttendancePageView } from "./my-attendance-page-view"
+import { MyAttendancePageMy } from "./my-attendance-page-my"
 
 /** Local calendar day as yyyy-MM-dd — never via toISOString, which shifts to UTC. */
 
 export default function MyAttendancePage() {
-  const { t } = useTranslation()
-  const { formatTime, locale } = useTimeFormat()
-  const { user } = useAuth()
-  const canSee = !user || hasAccessModule(user, "clock")
-
-  /*
-    Clocking in and out lives in `useClockIn`, shared with the navbar widget.
-
-    Both surfaces used to carry their own copy — two status queries, two
-    locations queries, two sets of geolocation messages and two rules for
-    choosing a workspace. The copies drifted, which is how the workspace picker
-    came to exist on this page and not in the navbar.
-
-    They share query keys, so mounting the hook twice is still one status
-    request and one locations request.
-  */
+  const vm = useMyAttendancePage()
   const {
-    clockedIn, activeEntry, locations, pending, startClockIn, clockOut,
-    pickerProps, earlyProps,
-  } = useClockIn({ enabled: canSee, locationsNow: true })
-
-  /*
-    Which stretch of time the page is about.
-
-    It used to be "the last 60 entries", which is not a period anybody thinks
-    in: a part-timer's 60 entries reach back six months and a full-timer's three
-    weeks, so the same screen meant something different to each of them and
-    neither could ask "how did last month go".
-
-    The window drives the totals, the bars AND the list, so there is one answer
-    on the page rather than three that happen to be near each other.
-  */
-  const [period, setPeriod] = useState<"7" | "30" | "custom">("7")
-  const [customFrom, setCustomFrom] = useState("")
-  const [customTo, setCustomTo] = useState("")
-
-  // Days in the reader's own calendar — `toISOString()` is the UTC day, which
-  // after midnight in Vienna is still yesterday and left today's shift out.
-  const range = (() => {
-    if (period === "custom") {
-      // Half a range is not a question yet — until both ends are set the page
-      // keeps showing the last week rather than an empty screen.
-      if (!customFrom || !customTo) return null
-      return customFrom <= customTo
-        ? { startDate: customFrom, endDate: customTo }
-        : { startDate: customTo, endDate: customFrom }
-    }
-    const to = new Date()
-    const from = new Date()
-    from.setDate(from.getDate() - (period === "7" ? 6 : 29))
-    return { startDate: localDateKey(from), endDate: localDateKey(to) }
-  })()
-
-  const effectiveRange = range ?? (() => {
-    const to = new Date()
-    const from = new Date()
-    from.setDate(from.getDate() - 6)
-    return { startDate: localDateKey(from), endDate: localDateKey(to) }
-  })()
-
-  const { data: history, isLoading } = useQuery({
-    // The range is IN the key: a different window is a different question, and
-    // the answer to the old one must not be shown while this one loads.
-    queryKey: keys.attendance.myHistory(effectiveRange.startDate, effectiveRange.endDate),
-    queryFn: () => attendanceApi.getMyHistory({ ...effectiveRange, limit: 200 }),
-    enabled: canSee,
-    // A finished period does not change; only one that includes today does.
-    staleTime: 30_000,
-  })
-
-  const entries: TimeEntry[] = (history as { data?: TimeEntry[] })?.data ?? []
+    t,
+    formatTime,
+    locale,
+    canSee,
+    clockedIn,
+    activeEntry,
+    locations,
+    pending,
+    startClockIn,
+    clockOut,
+    pickerProps,
+    earlyProps,
+    period,
+    setPeriod,
+    customFrom,
+    setCustomFrom,
+    customTo,
+    setCustomTo,
+    range,
+    effectiveRange,
+    isLoading,
+    entries,
+  } = vm
 
   if (!canSee) {
     return (
@@ -240,68 +76,7 @@ export default function MyAttendancePage() {
     Bars stay readable at any length: a fortnight is drawn day by day, a quarter
     week by week. Thirty hairlines would be a texture, not information.
   */
-  const window_ = (() => {
-    const day = 86_400_000
-    const from = new Date(`${effectiveRange.startDate}T00:00:00`)
-    const to = new Date(`${effectiveRange.endDate}T00:00:00`)
-    const dayCount = Math.max(1, Math.round((to.getTime() - from.getTime()) / day) + 1)
-    const groupWeekly = dayCount > 16
-
-    const buckets: { key: string; start: Date; minutes: number; label: string }[] = []
-    for (let i = 0; i < dayCount; i += groupWeekly ? 7 : 1) {
-      // Calendar steps, not 24h ones — a DST night is 23 or 25 hours long.
-      const d = new Date(from)
-      d.setDate(from.getDate() + i)
-      buckets.push({
-        key: localDateKey(d),
-        start: d,
-        minutes: 0,
-        label: groupWeekly
-          ? d.toLocaleDateString(locale, { day: "numeric", month: "short" })
-          : d.toLocaleDateString(locale, { weekday: "narrow" }),
-      })
-    }
-
-    let worked = 0
-    let daysWorked = 0
-    const seenDays = new Set<string>()
-    for (const e of entries) {
-      if (!e.clockInAt) continue
-      const at = new Date(e.clockInAt)
-      const dayKey = localDateKey(at)
-      const offset = Math.round((new Date(`${dayKey}T00:00:00`).getTime() - from.getTime()) / day)
-      if (offset < 0 || offset >= dayCount) continue
-      const idx = groupWeekly ? Math.floor(offset / 7) : offset
-      const to_ = e.clockOutAt ? new Date(e.clockOutAt).getTime() : Date.now()
-      const mins = Math.max(0, (to_ - at.getTime()) / 60000)
-      const bucket = buckets[idx]
-      if (bucket) bucket.minutes += mins
-      worked += mins
-      if (!seenDays.has(dayKey)) {
-        seenDays.add(dayKey)
-        daysWorked++
-      }
-    }
-
-    const peak = Math.max(60, ...buckets.map((b) => b.minutes))
-    return { buckets, peak, worked, daysWorked, dayCount, groupWeekly, todayKey: todayKey() }
-  })()
-
-  /*
-    How far through today's shift, when the shift has a known end.
-
-    `expectedClockOutAt` is set at clock-in for a scheduled space and null for an
-    open-hours one — so the ring appears where there is a real target and the
-    elapsed time stands alone where there is not. Inventing an eight-hour default
-    would draw a progress bar against a number nobody agreed to.
-  */
-  const shiftTarget = (() => {
-    if (!clockedIn || !activeEntry?.clockInAt || !activeEntry.expectedClockOutAt) return null
-    const start = new Date(activeEntry.clockInAt).getTime()
-    const end = new Date(activeEntry.expectedClockOutAt).getTime()
-    if (!(end > start)) return null
-    return { start, totalMins: (end - start) / 60000 }
-  })()
+  const { window_, shiftTarget } = MyAttendancePageView({ locale, clockedIn, activeEntry, effectiveRange, entries })
 
   return (
     <div className="max-w-3xl">
@@ -318,156 +93,7 @@ export default function MyAttendancePage() {
       <UnconfirmedClockOutCard className="mb-6" />
 
       {/* Status + summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-        <div className="rounded-2xl border border-border bg-card p-5" data-tour="my-attn-clock">
-          <div data-tour="my-attn-status">
-            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              <CircleDot className={`h-4 w-4 ${clockedIn ? "text-green-600" : "text-slate-400"}`} />
-              {t("attendance.my.currentStatus")}
-            </div>
-            {clockedIn && activeEntry?.clockInAt ? (
-              <>
-                <div className="mt-3">
-                  <LiveShift since={activeEntry.clockInAt} target={shiftTarget} />
-                </div>
-                {/*
-                  Both clocks, when they differ.
-
-                  Arriving twenty minutes early is recorded and is not paid, and
-                  a member who reads that here does not have to discover it on a
-                  payslip and ask.
-                */}
-                {activeEntry.countedStartAt &&
-                  new Date(activeEntry.countedStartAt).getTime() !== new Date(activeEntry.clockInAt).getTime() && (
-                    <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
-                      <Clock className="h-3 w-3" />
-                      {t("attendance.my.paidFrom", "Counted from {{time}}", {
-                        time: formatTime(activeEntry.countedStartAt, activeEntry.timezone ?? activeEntry.location?.timezone),
-                      })}
-                    </p>
-                  )}
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {t("attendance.my.sinceAt", "Since {{time}}", {
-                    time: formatTime(activeEntry.clockInAt, activeEntry.timezone ?? activeEntry.location?.timezone),
-                  })}
-                  {/*
-                    The workspace comes first, then whether they are at it.
-
-                    An away day belongs to a workspace now — it is not filed
-                    somewhere called "Remote" — so naming the site and then
-                    qualifying it is the honest order. Reading only "Remote" hid
-                    which site the day was worked FOR, which is the fact the
-                    timesheet is grouped by.
-                  */}
-                  {activeEntry.location?.name ? ` · ${activeEntry.location.name}` : ""}
-                  {activeEntry.isRemote
-                    ? ` · ${t("attendance.my.away", "away")}${activeEntry.clockInPlace ? ` · ${activeEntry.clockInPlace}` : ""}`
-                    : ""}
-                </p>
-              </>
-            ) : (
-              <p className="mt-2 text-lg font-semibold text-foreground">{t("attendance.my.clockedOut")}</p>
-            )}
-          </div>
-
-          {clockedIn ? (
-            <Button onClick={clockOut} disabled={pending} variant="outline" className="mt-4 w-full">
-              {pending ? (
-                <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
-              ) : (
-                <><LogOut className="h-4 w-4" />{t("attendance.my.clockOut", "Clock Out")}</>
-              )}
-            </Button>
-          ) : (
-            <div className="mt-4 space-y-2">
-              <Button
-                onClick={startClockIn}
-                disabled={pending || locations.length === 0}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-              >
-                {pending ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
-                ) : (
-                  <><LogIn className="h-4 w-4" />{t("attendance.my.clockIn", "Clock In")}</>
-                )}
-              </Button>
-              {/*
-                Nowhere to clock in is a real state and it used to surface as an
-                error toast AFTER the member had already granted location and
-                waited for a fix. Said up front instead.
-              */}
-              {locations.length === 0 && (
-                <p className="text-[11px] leading-snug text-amber-600 dark:text-amber-400">
-                  {t(
-                    "attendance.my.noAssignedLocations",
-                    "You are not assigned to a workspace yet, so there is nowhere to clock in. Ask your admin to add you to one.",
-                  )}
-                </p>
-              )}
-            </div>
-          )}
-          {/* Both dialogs come from the same hook, so the navbar behaves identically. */}
-          <ClockInPicker {...pickerProps} />
-          <ClockOutEarlyDialog {...earlyProps} />
-          <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-            {t("attendance.my.gpsHintOneButton", "Uses your location to pick your workspace and check you are there. Where you are working through the day is worked out for you.")}
-          </p>
-        </div>
-        {/*
-          The window, as bars — and the two numbers that describe it.
-
-          "Hours in the last 60 entries" was a true number that answered no
-          question anybody has. This says how the chosen stretch went, which day
-          was heavy, and what a working day averaged.
-        */}
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <Clock className="h-4 w-4 text-slate-400" />
-            {t("attendance.my.hoursIn", "Hours worked")}
-          </div>
-
-          <div className="mt-2 flex items-baseline gap-3">
-            <p className="text-2xl font-semibold tabular-nums text-foreground">{formatDuration(window_.worked)}</p>
-            {window_.daysWorked > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {t("attendance.my.overDays", "{{days}} days · {{avg}} avg", {
-                  days: window_.daysWorked,
-                  avg: formatDuration(window_.worked / window_.daysWorked),
-                })}
-              </p>
-            )}
-          </div>
-
-          <div className="mt-4 flex items-end justify-between gap-1.5" aria-hidden>
-            {window_.buckets.map((b) => {
-              const pct = b.minutes / window_.peak
-              const isNow = !window_.groupWeekly && b.key === window_.todayKey
-              return (
-                <div key={b.key} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                  <div className="flex h-16 w-full items-end">
-                    <div
-                      className={cn(
-                        "w-full rounded-md transition-[height] duration-700 ease-out",
-                        b.minutes === 0 ? "bg-muted" : isNow ? "bg-primary" : "bg-primary/35",
-                      )}
-                      style={{ height: `${Math.max(b.minutes === 0 ? 4 : 10, pct * 100)}%` }}
-                      title={`${b.label} · ${formatDuration(b.minutes)}`}
-                    />
-                  </div>
-                  <span
-                    className={cn(
-                      "truncate text-[10px] leading-none",
-                      isNow ? "font-semibold text-foreground" : "text-muted-foreground",
-                    )}
-                  >
-                    {b.label}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
+      <MyAttendancePageMy vm={vm} shiftTarget={shiftTarget} window_={window_} />
 
       {/*
         The rests planned for the shift that is running.

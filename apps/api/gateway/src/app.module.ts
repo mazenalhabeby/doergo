@@ -43,6 +43,7 @@ import { ShiftIssuesModule } from './modules/shift-issues/shift-issues.module';
 import { PlatformAdminModule } from './modules/platform-admin/platform-admin.module';
 import { BlogModule } from './modules/blog/blog.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { PeopleModule } from './modules/people/people.module';
 import { PhasesModule } from './modules/phases/phases.module';
 import { SprintsModule } from './modules/sprints/sprints.module';
 import { EpicsModule } from './modules/epics/epics.module';
@@ -145,6 +146,7 @@ import { StorageModule } from './common/storage/storage.module';
     PlatformAdminModule,
     BlogModule,
     ChatModule,
+    PeopleModule,
     PhasesModule,
     SprintsModule,
     EpicsModule,

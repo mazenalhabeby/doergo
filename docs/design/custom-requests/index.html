@@ -1,0 +1,264 @@
+<title>Custom Request Types</title>
+<style>
+/* Layout: the gap today, then the office builder beside a live phone preview, then the member's and the approver's side, then decisions. One Arabic voice-over bar on top. */
+:root{
+  --bg:#f4f6f8; --card:#ffffff; --ink:#111a24; --muted:#5f6b78; --line:#e1e6ec; --soft:#eef2f6;
+  --blue:#2563eb; --blueSoft:#2563eb14; --green:#0d8f72; --greenSoft:#0d8f7218; --amber:#a86a12; --amberSoft:#a86a1218; --red:#b42318;
+  --display:"Fraunces",Georgia,serif; --sans:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#0c1015; --card:#141a21; --ink:#e6edf4; --muted:#95a3b2; --line:#26303a; --soft:#1a222b;
+  --blue:#6f9bff; --blueSoft:#6f9bff1f; --green:#4fd1ad; --greenSoft:#4fd1ad1f; --amber:#e3a94a; --amberSoft:#e3a94a22; --red:#f2836f;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#0c1015; --card:#141a21; --ink:#e6edf4; --muted:#95a3b2; --line:#26303a; --soft:#1a222b;
+  --blue:#6f9bff; --blueSoft:#6f9bff1f; --green:#4fd1ad; --greenSoft:#4fd1ad1f; --amber:#e3a94a; --amberSoft:#e3a94a22; --red:#f2836f;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:28px 64px;display:flex;flex-direction:column;gap:24px}
+.eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font:600 clamp(26px,4vw,38px)/1.12 var(--display);margin:8px 0 10px;text-wrap:balance;max-width:26ch}
+h2{font:600 20px/1.2 var(--display);margin:0 0 4px;text-wrap:balance}
+p{margin:0}
+.lede{color:var(--muted);max-width:70ch}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.sub{color:var(--muted);font-size:13.5px}
+.gap{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.gap div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.k{font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--blue)}
+.gap span{color:var(--muted);font-size:13.5px}
+/* voice-over */
+.vo{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;box-shadow:0 6px 20px -14px #0006}
+.vo-play{width:40px;height:40px;border-radius:50%;border:0;background:var(--blue);color:var(--card);display:grid;place-items:center;cursor:pointer;flex:none}
+.vo-text{display:flex;flex-direction:column;min-width:0;flex:1}
+.vo-text b{font-size:14px}
+.vo-text span{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vo-bar{flex:0 1 160px;height:4px;border-radius:2px;background:var(--soft);overflow:hidden}
+.vo-bar i{display:block;height:100%;width:0;background:var(--blue)}
+.vo-stop,.listen{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.listen{color:var(--blue);border-radius:999px;padding:4px 10px;font-size:12.5px;display:inline-flex;gap:6px;align-items:center;align-self:flex-start}
+@media (max-width:520px){.vo-bar{display:none}}
+.speaking{outline:2px solid var(--blue);outline-offset:6px;border-radius:16px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+/* builder */
+.two{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
+.types{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:13px;cursor:pointer}
+.chip.on{color:var(--blue);border-color:var(--blue);background:var(--blueSoft)}
+.chip.built{border-style:dashed}
+.grp{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.grp h3{font-size:13px;font-weight:600;margin:0;display:flex;justify-content:space-between;align-items:center}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=text],select{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 10px;min-width:0}
+.field{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center;background:var(--soft);border-radius:10px;padding:8px 10px}
+.field b{font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{font:500 11px var(--mono);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:2px 6px;color:var(--muted)}
+.req{font-size:12px;color:var(--muted);display:flex;gap:4px;align-items:center}
+.x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px}
+.palette{display:flex;flex-wrap:wrap;gap:6px}
+.palette button{border:1px dashed var(--line);background:none;color:var(--ink);border-radius:8px;padding:5px 9px;font:inherit;font-size:12.5px;cursor:pointer}
+.steps{display:flex;flex-direction:column;gap:6px}
+.step{display:flex;gap:10px;align-items:center;font-size:13.5px}
+.num{width:22px;height:22px;border-radius:50%;background:var(--blueSoft);color:var(--blue);display:grid;place-items:center;font:600 12px var(--mono);flex:none}
+/* phone */
+.phone{width:min(300px,100%);margin:0 auto;border-radius:34px;padding:12px;background:#0b0f14}
+.screen{border-radius:24px;background:linear-gradient(180deg,#cfe7df,#eef5f2 50%);padding:16px 12px;display:flex;flex-direction:column;gap:10px;color:#10201b;min-height:540px}
+.screen .t{font:600 18px/1.1 var(--sans)}
+.pcard{background:#fff;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.pl{font:500 10px/1 var(--mono);letter-spacing:.12em;color:#5d6d68;text-transform:uppercase}
+.pin{border:1px solid #dfe7e4;border-radius:10px;padding:8px 10px;font-size:13px;color:#4b5d57;background:#f7faf9}
+.pbtn{background:#0d8f72;color:#fff;border-radius:999px;text-align:center;padding:10px;font-weight:600;font-size:14px}
+.status{display:flex;flex-direction:column;gap:0}
+.st{display:grid;grid-template-columns:18px 1fr;gap:8px;font-size:12.5px;padding:4px 0}
+.dot{width:10px;height:10px;border-radius:50%;margin-top:4px;border:2px solid #0d8f72}
+.dot.done{background:#0d8f72}
+.dot.wait{border-color:#a86a12}
+/* inbox */
+.inbox{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);align-items:center}
+.item:last-child{border-bottom:0}
+.item small{display:block;color:var(--muted);font-size:12.5px}
+.pill{font:500 11.5px var(--mono);border-radius:999px;padding:3px 9px;white-space:nowrap}
+.p-wait{background:var(--amberSoft);color:var(--amber)}
+.p-ok{background:var(--greenSoft);color:var(--green)}
+.acts{display:flex;gap:6px}
+.acts button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:5px 10px;font:inherit;font-size:13px;cursor:pointer}
+.acts .yes{background:var(--blue);color:#fff;border-color:var(--blue)}
+.dec{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.dec li::marker{color:var(--blue)}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+
+<div class="wrap">
+  <header id="sec-intro">
+    <div class="eyebrow">Mockup · Requests</div>
+    <h1>Request types the office designs itself</h1>
+    <p class="lede">Today a member can ask for leave, a remote day, different hours or overtime — and everything else goes into "Other" as free text, with no fields, no fixed approver and nothing to report on. This lets each organization add its own request types: a name, the fields to fill, who may send it and who approves it.</p>
+  </header>
+
+  <div class="vo" id="vo" dir="rtl" lang="ar">
+    <button type="button" class="vo-play" id="voPlay" aria-label="تشغيل الشرح الصوتي"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path id="voIcon" d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
+    <div class="vo-text"><b>شرح صوتي بالعربية</b><span id="voNow">اضغط للاستماع</span></div>
+    <div class="vo-bar" aria-hidden="true"><i id="voProg"></i></div>
+    <button type="button" class="vo-stop" id="voStop" hidden>إيقاف</button>
+  </div>
+
+  <section class="gap" id="sec-gap" aria-label="The gap today">
+    <div><span class="k">Today</span><b>"Other" is free text</b><span>"I need new safety boots, size 43" — no size field, no cost, the leader decides by memory.</span></div>
+    <div><span class="k">Today</span><b>One approver for everything</b><span>A cash advance goes to the shift leader, not to whoever pays it.</span></div>
+    <div><span class="k">Today</span><b>Nothing to count</b><span>"How many tool requests last month, and what did they cost?" has no answer.</span></div>
+  </section>
+
+  <div class="two">
+    <section class="card" id="sec-builder" aria-label="Office builder">
+      <div>
+        <div class="eyebrow">Web · Settings → Requests</div>
+        <h2>Design a request type</h2>
+        <p class="sub">Start from a template or from nothing. The phone on the right shows what the member will fill in.</p>
+      </div>
+      <div class="types" id="types"></div>
+
+      <div class="grp">
+        <h3>Name</h3>
+        <div class="row"><input type="text" id="tName" aria-label="Name" style="flex:1"><select id="tIcon" aria-label="Icon"><option>Box</option><option>Wallet</option><option>Car</option><option>Graduation cap</option><option>Wrench</option></select></div>
+      </div>
+
+      <div class="grp">
+        <h3>What they fill in <span class="sub" id="fCount"></span></h3>
+        <div id="fields" style="display:flex;flex-direction:column;gap:6px"></div>
+        <div class="palette" id="palette" aria-label="Add a field"></div>
+      </div>
+
+      <div class="grp">
+        <h3>Who can send it</h3>
+        <div class="row">
+          <select id="who" aria-label="Who can send it"><option>Everyone in the organization</option><option>Only some workspaces</option><option>Only some roles</option></select>
+        </div>
+      </div>
+
+      <div class="grp">
+        <h3>Who approves, in order</h3>
+        <div class="steps" id="steps"></div>
+        <p class="sub">Up to three steps. Each step: their leader in the workspace, a role (Finance, Warehouse), or a named person. A step not answered in 2 days reminds them, then the person after.</p>
+      </div>
+
+      <div class="grp">
+        <h3>Who sees the requests</h3>
+        <div class="row"><select id="see" aria-label="Who sees the requests"><option>The member and the approvers only</option><option>Also everyone who manages the workspace</option></select></div>
+      </div>
+    </section>
+
+    <section class="card" id="sec-phone" aria-label="Phone preview">
+      <div>
+        <div class="eyebrow">Phone · what the member sees</div>
+        <h2 id="phoneTitle">New request</h2>
+      </div>
+      <div class="phone"><div class="screen">
+        <div class="pl">New request</div>
+        <div class="t" id="pName"></div>
+        <div class="pcard" id="pForm"></div>
+        <div class="pbtn">Send request</div>
+        <div class="pcard">
+          <div class="pl">After sending</div>
+          <div class="status" id="pStatus"></div>
+        </div>
+      </div></div>
+    </section>
+  </div>
+
+  <section class="card" id="sec-approve" aria-label="Approver">
+    <div>
+      <div class="eyebrow">Web and phone · the approver</div>
+      <h2>One inbox for every kind</h2>
+      <p class="sub">Leave and custom requests side by side. Each shows what was filled in; approving moves it to the next step, rejecting asks for a reason the member reads.</p>
+    </div>
+    <div class="inbox">
+      <div class="item"><div><b>Safety equipment · Juan Diego Castrillon Salazar</b><small>Boots, size 43 · €89 · AGRU America · step 1 of 2: you (leader)</small></div><div class="acts"><button type="button">Reject</button><button type="button" class="yes">Approve</button></div></div>
+      <div class="item"><div><b>Cash advance · Matias Iza</b><small>$300 · reason: family · Binderholz · step 2 of 2: Finance</small></div><span class="pill p-wait">Waiting for Finance</span></div>
+      <div class="item"><div><b>Vacation · Peter Jedlicka</b><small>Oct 20 – Oct 24 · 5 working days</small></div><span class="pill p-ok">Approved</span></div>
+    </div>
+    <p class="sub">Reports: a count and the money fields add up per type, per workspace, per month — "18 equipment requests in October, €1,240".</p>
+  </section>
+
+  <section class="card" id="sec-decisions" aria-label="Decisions">
+    <div><div class="eyebrow">To confirm</div><h2>Choices in this design</h2></div>
+    <ul class="dec">
+      <li>Types belong to the organization; each can be limited to some workspaces or roles. The four built-in kinds stay and keep their special effects (leave counts against the allowance, a remote day allows away clock-in, and so on). A custom type never changes hours or pay on its own.</li>
+      <li>Field kinds: short text, long text, number, money (in the workspace's currency), date, date range, time, choice from a list, yes/no, photo or file. Each can be required.</li>
+      <li>Up to three approval steps, in order. Nobody approves their own request. The approver set is resolved when it reaches the step, so a new leader takes over open requests.</li>
+      <li>Changing a type's fields later never changes requests already sent: each request keeps the form it was sent with.</li>
+      <li>Offline: a member can fill and send it without signal; it goes when the phone reconnects, like leave today.</li>
+      <li>Which Option or module carries it, and its price, is a separate decision.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+  var KINDS={text:'Short text',long:'Long text',number:'Number',money:'Money',date:'Date',range:'Date range',time:'Time',choice:'Choice',yesno:'Yes / no',file:'Photo or file'};
+  var T={
+    equipment:{name:'Safety equipment',icon:'Box',fields:[['choice','Item','Boots · Gloves · Helmet · Jacket',true],['text','Size','',false],['money','Estimated cost','',false],['long','Why','',false],['file','Photo of the old one','',false]],steps:['Their leader in the workspace','Warehouse']},
+    advance:{name:'Cash advance',icon:'Wallet',fields:[['money','Amount','',true],['choice','Reason','Family · Medical · Travel · Other',true],['date','Needed by','',true],['long','Note','',false]],steps:['Their leader in the workspace','Finance']},
+    vehicle:{name:'Company vehicle',icon:'Car',fields:[['range','Days','',true],['choice','Vehicle','Van · Car · Truck',true],['text','Destination','',true],['yesno','Taking other people','',false]],steps:['Fleet manager']},
+    training:{name:'Training course',icon:'Graduation cap',fields:[['text','Course','',true],['range','Dates','',true],['money','Fee','',false],['file','Course page or offer','',false]],steps:['Their leader in the workspace','Owner']},
+    blank:{name:'New request type',icon:'Box',fields:[['long','Details','',true]],steps:['Their leader in the workspace']}
+  };
+  var BUILT=['Leave','Remote day','Different hours','Overtime'];
+  var cur=JSON.parse(JSON.stringify(T.equipment)), curKey='equipment';
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function types(){
+    $('types').innerHTML=BUILT.map(function(b){return '<button type="button" class="chip built" disabled title="Built in">'+b+'</button>';}).join('')+
+      [['equipment','Safety equipment'],['advance','Cash advance'],['vehicle','Company vehicle'],['training','Training course'],['blank','+ From nothing']].map(function(t){return '<button type="button" class="chip'+(curKey===t[0]?' on':'')+'" data-t="'+t[0]+'">'+t[1]+'</button>';}).join('');
+    $('types').querySelectorAll('[data-t]').forEach(function(b){b.onclick=function(){curKey=b.dataset.t;cur=JSON.parse(JSON.stringify(T[curKey]));render();};});
+  }
+  function render(){
+    types();
+    $('tName').value=cur.name; $('tIcon').value=cur.icon;
+    $('fCount').textContent=cur.fields.length+' field'+(cur.fields.length===1?'':'s');
+    $('fields').innerHTML=cur.fields.map(function(f,i){return '<div class="field"><b>'+esc(f[1])+'</b><span class="tag">'+KINDS[f[0]]+'</span><label class="req"><input type="checkbox" data-r="'+i+'"'+(f[3]?' checked':'')+'>Required</label><button type="button" class="x" data-x="'+i+'" aria-label="Remove '+esc(f[1])+'">×</button></div>';}).join('');
+    $('fields').querySelectorAll('[data-r]').forEach(function(c){c.onchange=function(){cur.fields[+c.dataset.r][3]=c.checked;phone();};});
+    $('fields').querySelectorAll('[data-x]').forEach(function(b){b.onclick=function(){cur.fields.splice(+b.dataset.x,1);render();};});
+    $('steps').innerHTML=cur.steps.map(function(s,i){return '<div class="step"><span class="num">'+(i+1)+'</span>'+esc(s)+'</div>';}).join('');
+    phone();
+  }
+  function input(f){
+    var label='<div class="pl">'+esc(f[1])+(f[3]?' *':'')+'</div>';
+    var body={choice:esc((f[2]||'').split(' · ')[0]||'Choose')+' ▾',money:'€ 0.00',date:'Pick a date',range:'From – to',time:'--:--',yesno:'No ◯',file:'＋ Add photo or file',number:'0',long:'Write here…',text:'Write here…'}[f[0]];
+    return label+'<div class="pin">'+body+'</div>';
+  }
+  function phone(){
+    $('pName').textContent=cur.name;
+    $('pForm').innerHTML=cur.fields.map(input).join('')||'<div class="pin">No fields yet</div>';
+    $('pStatus').innerHTML='<div class="st"><span class="dot done"></span><span>Sent</span></div>'+cur.steps.map(function(s,i){return '<div class="st"><span class="dot'+(i===0?' wait':'')+'"></span><span>'+(i===0?'Waiting for ':'Then ')+esc(s)+'</span></div>';}).join('')+'<div class="st"><span class="dot"></span><span>Approved — you are told</span></div>';
+  }
+  $('tName').oninput=function(){cur.name=this.value;phone();};
+  $('palette').innerHTML=Object.keys(KINDS).map(function(k){return '<button type="button" data-k="'+k+'">＋ '+KINDS[k]+'</button>';}).join('');
+  $('palette').querySelectorAll('[data-k]').forEach(function(b){b.onclick=function(){cur.fields.push([b.dataset.k,KINDS[b.dataset.k],'',false]);render();};});
+  render();
+})();
+</script>
+<script>
+(function(){
+  // Voice-over: one clip per part.
+  var ORDER=[['intro','sec-intro','المقدمة'],['gap','sec-gap','المشكلة اليوم'],['builder','sec-builder','المكتب يصمّم نوع الطلب'],['phone','sec-phone','ما يراه الموظف'],['approve','sec-approve','الموافقات'],['decisions','sec-decisions','قرارات للتأكيد']];
+  var audio=new Audio(), i=-1, last=ORDER.length-1, IDLE='اضغط للاستماع';
+  var play=document.getElementById('voPlay'), icon=document.getElementById('voIcon'), now=document.getElementById('voNow'), prog=document.getElementById('voProg'), stop=document.getElementById('voStop');
+  var PLAY='M8 5v14l11-7z', PAUSE='M7 5h4v14H7zM13 5h4v14h-4z', reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function mark(id){document.querySelectorAll('.speaking').forEach(function(e){e.classList.remove('speaking');}); if(!id) return; var el=document.getElementById(id); el.classList.add('speaking'); el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'});}
+  function start(from,to){ i=from; last=to; var c=ORDER[i]; mark(c[1]); now.textContent=(i+1)+' / '+ORDER.length+' · '+c[2]; audio.src='audio/'+c[0]+'.mp3'; audio.play().catch(function(){}); icon.setAttribute('d',PAUSE); stop.hidden=false; }
+  function end(){ audio.pause(); i=-1; icon.setAttribute('d',PLAY); stop.hidden=true; prog.style.width='0'; now.textContent=IDLE; mark(null); }
+  audio.addEventListener('timeupdate',function(){ if(audio.duration) prog.style.width=(audio.currentTime/audio.duration*100)+'%'; });
+  audio.addEventListener('ended',function(){ if(i<last) start(i+1,last); else end(); });
+  play.onclick=function(){ if(i<0) return start(0,ORDER.length-1); if(audio.paused){audio.play().catch(function(){}); icon.setAttribute('d',PAUSE);} else {audio.pause(); icon.setAttribute('d',PLAY);} };
+  stop.onclick=end;
+  ORDER.forEach(function(c,n){
+    var sec=document.getElementById(c[1]); var b=document.createElement('button'); b.type='button'; b.className='listen'; b.lang='ar'; b.dir='rtl';
+    b.innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>استمع';
+    b.onclick=function(){start(n,n);}; sec.insertBefore(b,sec.firstChild);
+  });
+})();
+</script>

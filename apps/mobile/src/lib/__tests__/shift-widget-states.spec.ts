@@ -14,10 +14,11 @@ import { shiftCard } from './shift-card-files';
 import {
   readShiftState, targetLabel, heroParts, workingDaysLeftIn,
 } from '../../components/home/shift-state';
+import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const code = (p: string) =>
-  fs.readFileSync(path.join(SRC, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  readSource(path.join(SRC, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 const Z = (s: string) => new Date(`2026-09-26T${s}:00.000Z`);
 const RULE = 'cmtq95s22000le3liunwgrkwy';

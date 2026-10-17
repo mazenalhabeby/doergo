@@ -1,4 +1,4 @@
-import { EmployeeDetailService } from '../employee-detail.service';
+import { employeeDetailParts } from './employee-detail.service.fixture';
 
 /**
  * Who may read a colleague's record, and how much of it.
@@ -73,7 +73,7 @@ describe('employee detail visibility', () => {
 /** The service itself: the recent-activity feed follows the viewer's spaces. */
 describe('UsersService employee recent activity — narrowed to the viewer\'s spaces', () => {
   function svc() {
-    const s = Object.create(EmployeeDetailService.prototype) as any;
+    const s = employeeDetailParts() as any;
     s.prisma = {
       taskEvent: { findMany: jest.fn().mockResolvedValue([]) },
       timeEntry: { findMany: jest.fn().mockResolvedValue([]) },

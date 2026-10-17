@@ -6,7 +6,7 @@
  * recorded on.
  */
 import { of } from 'rxjs';
-import { LocationService } from '../location.service';
+import { locationServices } from './location.service.fixture';
 
 const START = new Date('2026-09-14T08:00:00Z');
 const END = new Date('2026-09-14T08:30:00Z');
@@ -33,14 +33,11 @@ function build(task: Record<string, unknown>, stored: { lat: number; lng: number
           : [...history].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
         return select.timestamp && !select.lat ? rows.map((r) => ({ timestamp: r.timestamp })) : rows;
       }),
-      createMany: jest.fn(async ({ data }: any) => {
-        history.push(...data);
-        return { count: data.length };
-      }),
+      createMany: jest.fn(async ({ data }: any) => { history.push(...data); return { count: data.length }; }),
     },
     $transaction: jest.fn((ops: any[]) => Promise.all(ops)),
   };
-  const service = new LocationService(prisma, { emit: jest.fn(() => of(null)) } as any, {} as any);
+  const service = locationServices(prisma, { emit: jest.fn(() => of(null)) } as any, {} as any);
   return { service, prisma, history };
 }
 

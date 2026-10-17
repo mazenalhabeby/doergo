@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { readSource } from '../../test-utils/read-source';
 
 /*
   ONE READER, ONE SET OF RULES — asked of the whole product.
@@ -20,7 +21,7 @@ const MOBILE = path.join(__dirname, '../../..');
 const WEB = path.join(MOBILE, '../web-app');
 const AUTH = path.join(MOBILE, '../api/auth-service');
 
-const read = (p: string) => fs.readFileSync(p, 'utf8');
+const read = (p: string) => readSource(p, 'utf8');
 const stripComments = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
@@ -66,7 +67,7 @@ describe('the phone has one reader, and everything that reads uses it', () => {
       ML Kit beats tesseract on a photographed page.
     */
     // The read and the upload live in the credential hook since the sheet was split.
-    const sheet = stripComments(read(path.join(MOBILE, 'src/components/supply-document/use-credential-photo.ts')));
+    const sheet = stripComments((read(path.join(MOBILE, 'src/components/supply-document/use-credential-photo.ts')) + read(path.join(MOBILE, 'src/components/supply-document/use-credential-photo-data.ts'))));
     expect(sheet).toContain('readExpiryOnDevice');
     // Before the presign, not after the upload.
     expect(sheet.indexOf('readExpiryOnDevice')).toBeLessThan(sheet.indexOf('ownUploadUrl'));
@@ -75,7 +76,7 @@ describe('the phone has one reader, and everything that reads uses it', () => {
   it('a device read is never wiped by a server that found nothing', () => {
     // Losing a date already on screen because a second, weaker reader missed it
     // is the worst of both.
-    const sheet = stripComments(read(path.join(MOBILE, 'src/components/supply-document/use-credential-photo.ts')));
+    const sheet = stripComments((read(path.join(MOBILE, 'src/components/supply-document/use-credential-photo.ts')) + read(path.join(MOBILE, 'src/components/supply-document/use-credential-photo-data.ts'))));
     expect(sheet).toMatch(/setDateSource\(\(prev\) =>/);
   });
 });
@@ -85,7 +86,7 @@ describe('the meaning of a page is decided in one place', () => {
     const callers: [string, string][] = [
       ['phone', path.join(MOBILE, 'src/lib/document-scan.ts')],
       ['browser', path.join(WEB, 'src/app/(dashboard)/my/documents/_components/supply-document-dialog.tsx')],
-      ['server', path.join(AUTH, 'src/modules/documents/documents.service.ts')],
+      ['server', path.join(AUTH, 'src/modules/documents/own-upload-reader.service.ts')],
     ];
     for (const [where, file] of callers) {
       expect({ where, uses: stripComments(read(file)).includes('suggestExpiry') })

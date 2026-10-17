@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { readSource } from '../../test-utils/read-source';
 
 /**
  * The card's own rules that live in JSX and hooks, where a render test would
@@ -7,11 +8,13 @@ import path from 'path';
  * a warning that QUOTES a mistake never satisfies (or trips) the scan.
  */
 const SRC = path.resolve(__dirname, '../..');
-const raw = fs.readFileSync(path.join(SRC, 'components/home/my-work-card.tsx'), 'utf8');
+const raw = readSource(path.join(SRC, 'components/home/my-work-card.tsx'), 'utf8');
+// The card alone (its hooks moved to use-my-work-card, which runs before the card's exit).
+const cardOnly = require('fs').readFileSync(path.join(SRC, 'components/home/my-work-card.tsx'), 'utf8') as string;
 const code = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
 const LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;
-const load = (l: string) => JSON.parse(fs.readFileSync(path.join(SRC, 'i18n/locales', `${l}.json`), 'utf8'));
+const load = (l: string) => JSON.parse(readSource(path.join(SRC, 'i18n/locales', `${l}.json`), 'utf8'));
 const at = (o: unknown, p: string): unknown => p.split('.').reduce<unknown>((x, k) => (x as Record<string, unknown> | undefined)?.[k], o);
 
 /** Every `t('key', { … })` the card makes, with whether it passes a count and which variables. */
@@ -35,9 +38,11 @@ describe('my-work widget — the card source', () => {
   });
 
   it('the neither-module exit sits below every hook', () => {
-    const exit = code.indexOf("if (shape === 'none') return null;");
+    const card = cardOnly.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    const exit = card.indexOf("if (shape === 'none') return null;");
     expect(exit).toBeGreaterThan(0);
-    const after = code.slice(exit, code.indexOf('function ActiveRow'));
+    const end = card.indexOf('function ActiveRow');
+    const after = card.slice(exit, end === -1 ? undefined : end);
     expect(after).not.toMatch(/\buse(State|Effect|Memo|Callback|Ref|FocusEffect|Pitch)\(/);
   });
 

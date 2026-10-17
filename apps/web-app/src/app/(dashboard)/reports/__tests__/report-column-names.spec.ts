@@ -13,7 +13,9 @@ import { isReportLabelKey, localizeReportColumns, reportLabel } from "@hbcfield/
   did not get translated.
 */
 const PAGE = path.join(__dirname, "..", "page.tsx")
-const code = fs.readFileSync(PAGE, "utf8").replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
+// The page, its hook and its sections — one source since the page was split (2026-10-17).
+const DIR = path.dirname(PAGE)
+const code = fs.readdirSync(DIR).filter((f) => /\.tsx?$/.test(f)).map((f) => fs.readFileSync(path.join(DIR, f), "utf8")).join("\n").replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
 
 describe("reports — column names in the reader's language", () => {
   it("names every timesheet column chip from the catalogue", () => {

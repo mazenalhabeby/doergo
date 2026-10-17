@@ -2,6 +2,8 @@ import { localDateKey } from '../utils/date';
 import { orgFlagFields } from './org-flags';
 import { memberAccessOf, ORG_ACCESS_SELECT, type OrgAccessRow } from './org-access';
 import type { AccessPermissionKey, ResolvedAccess } from '../types/permissions';
+import { zoneOf } from '../utils/workspace-zone';
+import { activeWindowWhere } from './assignment-window';
 export { DELEGATION_MAX_DAYS } from '../approvals/approval-routing';
 
 /**
@@ -98,7 +100,7 @@ export function ownAccess<T extends ResolvedAccess | null | undefined>(access: T
 
 /** "Today" as the organization reads it — the date the stand-in's days are compared with. */
 export function delegationDay(now: Date, timeZone: string | null | undefined): Date {
-  return new Date(`${localDateKey(now, timeZone || 'UTC')}T00:00:00.000Z`);
+  return new Date(`${localDateKey(now, zoneOf(timeZone))}T00:00:00.000Z`);
 }
 
 /** Active on `day`: not revoked, the day within its whole days. */
@@ -112,12 +114,9 @@ interface DelegationPrisma {
 }
 
 const LEADER_SELECT = (now: Date) => ({
-  id: true,
-  firstName: true,
-  lastName: true,
-  ...ORG_ACCESS_SELECT,
+  id: true, firstName: true, lastName: true, ...ORG_ACCESS_SELECT,
   spaceAssignments: {
-    where: { effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] },
+    where: { ...activeWindowWhere(now) },
     select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
   },
 });

@@ -33,6 +33,7 @@ import { setResponseCache } from '../response-cache';
 import { httpSyncTransport } from '../../../offline/http-transport';
 import { SyncEngine } from '../../../offline/sync-engine';
 import { MemoryOutboxStore } from '../../../offline/outbox/memory-store';
+import { readSource } from '../../../test-utils/read-source';
 
 const b64url = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64').replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
 const jwt = (sub: string, n = 0) => `${b64url({ alg: 'HS256' })}.${b64url({ sub, n })}.sig`;
@@ -261,7 +262,7 @@ describe('the address picker\'s geocoding goes through the client WITH the membe
   });
 
   it('the picker itself asks through the endpoints, not a URL of its own', () => {
-    const src = fs.readFileSync(path.resolve(__dirname, '../../../components/location-search-picker.tsx'), 'utf8');
+    const src = readSource(path.resolve(__dirname, '../../../components/location-search-picker.tsx'), 'utf8');
     expect(src).toMatch(/call\(E\.geo\.search,/);
     expect(src).toMatch(/call\(E\.geo\.reverse,/);
     expect(src).toMatch(/call\(E\.geo\.place,/);

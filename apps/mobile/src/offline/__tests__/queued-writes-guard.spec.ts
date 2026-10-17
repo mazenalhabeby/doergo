@@ -33,6 +33,15 @@ const SCANNED = ['app', 'src/components', 'src/hooks', 'src/screens', 'src/featu
 const FALLBACK = 'the no-offline-build path, behind `if (offline.engine)`';
 const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: string }> = {
   /*
+    A chat message WITH PHOTOS is sent directly: the photos are uploaded first,
+    which needs the network anyway, so there is nothing to queue. Words alone
+    go through the queue in the same hook.
+  */
+  'src/components/chat/use-chat-thread.ts': {
+    calls: { 'chatApi.send': 2 },
+    why: "a message with photos needs the network (uploaded first); the second call is the queue's own online fallback for words",
+  },
+  /*
     The job page split into `src/components/job/` when it was rebuilt to
     `docs/design/job-flow.html`. The status write stayed on the screen (one
     call, every step, Blocked and Cancel included — it was three); every other
@@ -47,13 +56,14 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     calls: { 'tasksApi.changeLead': 1 },
     why: FALLBACK,
   },
-  'src/components/job/use-job-writes.ts': {
+  // The job's writes (use-job-writes.ts), split 2026-10-17 into these parts — the same calls, the same counts.
+  'src/components/job/use-job-writes-state.ts': {
+    calls: { 'tasksApi.addComment': 1 },
+    why: FALLBACK,
+  },
+  'src/components/job/use-job-writes-data.ts': {
     calls: {
-      'tasksApi.addComment': 1,
       'tasksApi.declineTask': 1,
-      // Paused at a clock-out: picking it back up, and the handover note.
-      'tasksApi.resumeWork': 1,
-      'tasksApi.writeHandover': 1,
       /*
         ONE uploader (`sendFile`) for a photo added to the job and for a step
         form's photos and signatures. The old finish path (`reportsApi.completeTask`
@@ -61,6 +71,14 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
         status change itself.
       */
       'taskAttachmentsApi.confirmUpload': 1,
+    },
+    why: FALLBACK,
+  },
+  'src/components/job/use-job-writes-actions.ts': {
+    calls: {
+      // Paused at a clock-out: picking it back up, and the handover note.
+      'tasksApi.resumeWork': 1,
+      'tasksApi.writeHandover': 1,
     },
     why: FALLBACK,
   },
@@ -98,23 +116,33 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     through and calls nothing itself. The allowance moved with the code — the
     same two direct calls, in the two files that now make them.
   */
-  'src/components/issues/report-issue-sheet.tsx': {
+  'src/components/issues/use-report-issue-sheet.ts': {
+    // the sheet's logic, since the split
     calls: { 'shiftIssuesApi.create': 1, 'shiftIssuesApi.message': 1 },
     why: `${FALLBACK}. The photo message is posted AFTER create, because the S3 key is namespaced by the issue id`,
   },
-  'src/components/issues/issue-thread-sheet.tsx': { calls: { 'shiftIssuesApi.message': 1 }, why: FALLBACK },
-  'app/(app)/asset-expense.tsx': { calls: { 'assetsApi.submitExpense': 1 }, why: FALLBACK },
-  'app/(app)/asset-log.tsx': { calls: { 'assetsApi.createLog': 1 }, why: FALLBACK },
-  'app/(app)/send-document.tsx': { calls: { 'assetProposalsApi.raise': 1 }, why: FALLBACK },
+  'src/components/issues/use-shift-issue-thread-sheet.ts': { calls: { 'shiftIssuesApi.message': 1 }, why: FALLBACK },
+  'src/screens/app/use-asset-expense-screen.ts': { calls: { 'assetsApi.submitExpense': 1 }, why: FALLBACK }, // asset-expense's logic, since the split
+  'src/screens/app/use-asset-log-screen.ts': { calls: { 'assetsApi.createLog': 1 }, why: FALLBACK }, // asset-log's logic, since the split
+  'src/screens/app/use-send-document-screen.ts': { calls: { 'assetProposalsApi.raise': 1 }, why: FALLBACK },
   // One copy of a member's leave, shared by the Time off tab and the Time tab.
   'src/components/time/use-my-time-off.ts': { calls: { 'timeOffApi.cancel': 1 }, why: FALLBACK },
-  'src/components/profile/profile-screen.tsx': { calls: { 'userApi.setPresence': 1 }, why: FALLBACK },
+  'src/components/profile/use-profile-screen.ts': { calls: { 'userApi.setPresence': 1 }, why: FALLBACK },
   // Time format and language: both pages live in one file now.
-  'src/components/settings/choice-pages.tsx': { calls: { 'userApi.setTimeFormat': 1, 'userApi.setLocale': 1, 'userApi.setClockInPick': 1 }, why: FALLBACK },
+  'src/components/settings/choice-pages.tsx': {
+    calls: { 'userApi.setTimeFormat': 1, 'userApi.setLocale': 1, 'userApi.setClockInPick': 1 },
+    why: FALLBACK,
+  },
   // The client portal runs no offline layer: a client edits their name at home, not in a basement.
-  'app/(customer)/edit-profile.tsx': { calls: { 'userApi.updateProfile': 1 }, why: 'the customer portal has no outbox' },
+  'app/(customer)/edit-profile.tsx': {
+    calls: { 'userApi.updateProfile': 1 },
+    why: 'the customer portal has no outbox',
+  },
   // Same portal: its sync push is confined to portal requests, so a language change goes direct.
-  'app/(customer)/(tabs)/profile.tsx': { calls: { 'userApi.setLocale': 1 }, why: 'the customer portal has no outbox for profile changes' },
+  'app/(customer)/(tabs)/profile.tsx': {
+    calls: { 'userApi.setLocale': 1 },
+    why: 'the customer portal has no outbox for profile changes',
+  },
   // The work log's data moved out of the sheet so the Today card reads the same notes.
   'src/components/worklog/use-worklog.ts': {
     calls: { 'worklogApi.addNote': 1, 'worklogApi.confirmAttachment': 1 },
@@ -125,14 +153,23 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
 const stripComments = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 /** `/tasks/:taskId/comments` → `/tasks/:/comments`. */
-const shape = (p: string) => p.split('?')[0]!.replace(/\$\{[^}]+\}/g, ':').replace(/:[A-Za-z]+/g, ':');
+const shape = (p: string) =>
+  p
+    .split('?')[0]!
+    .replace(/\$\{[^}]+\}/g, ':')
+    .replace(/:[A-Za-z]+/g, ':');
 
 type EndpointDef = { method: string; path: (a: unknown) => string };
 const PLACEHOLDER = 'XPLACEHOLDERX';
 const placeholderArgs = new Proxy({}, { get: (_t, k) => (k === 'then' ? undefined : PLACEHOLDER) });
 /** An endpoint's path with every argument a placeholder, in the same `:` shape. */
 const builtShape = (def: EndpointDef) =>
-  def.path(placeholderArgs).split('?')[0]!.split('/').map((seg) => (seg === PLACEHOLDER ? ':' : seg)).join('/');
+  def
+    .path(placeholderArgs)
+    .split('?')[0]!
+    .split('/')
+    .map((seg) => (seg === PLACEHOLDER ? ':' : seg))
+    .join('/');
 
 function queuedApiFunctions(): Set<string> {
   const queued = new Set(Object.values(SYNC_OPERATIONS).map((r) => `${r.method} ${shape(r.path)}`));
@@ -156,7 +193,9 @@ function queuedApiFunctions(): Set<string> {
         const fn = body.slice(m.index!, end);
         // Each request names its endpoint (`call(E.tasks.addComment, …)`); its method and path come from the table.
         for (const ref of fn.matchAll(/\bE\.(\w+)\.(\w+)\b/g)) {
-          const def = (apiEndpoints as unknown as Record<string, Record<string, EndpointDef> | undefined>)[ref[1]!]?.[ref[2]!];
+          const def = (apiEndpoints as unknown as Record<string, Record<string, EndpointDef> | undefined>)[ref[1]!]?.[
+            ref[2]!
+          ];
           if (!def || def.method === 'GET') continue;
           if (queued.has(`${def.method} ${builtShape(def)}`)) found.add(`${obj[1]}.${m[1]}`);
         }
@@ -166,7 +205,8 @@ function queuedApiFunctions(): Set<string> {
   return found;
 }
 
-const callsTo = (src: string, fn: string) => (src.match(new RegExp(`\\b${fn.replace('.', '\\s*\\.\\s*')}\\s*\\(`, 'g')) ?? []).length;
+const callsTo = (src: string, fn: string) =>
+  (src.match(new RegExp(`\\b${fn.replace('.', '\\s*\\.\\s*')}\\s*\\(`, 'g')) ?? []).length;
 
 function* walk(dir: string): Generator<string> {
   if (!fs.existsSync(dir)) return;
@@ -186,15 +226,21 @@ describe('queued writes go through the queue', () => {
 
   it('finds the API functions for queued routes (the scan itself works)', () => {
     // If these stop being found, the parser broke and the guard below passes vacuously.
-    expect([...functions]).toEqual(expect.arrayContaining([
-      'tasksApi.addComment', 'tasksApi.updateStatus',
-      // The CRM writes: a PATCH on the record, both ends of a contact link, and
-      // a reminder's tick. Named here because each reaches its route through a
-      // differently-shaped function, and one of them silently dropping out of
-      // the scan would let a direct call back onto the record screen.
-      'customersApi.update', 'customersApi.addContact', 'customersApi.updateContact',
-      'customersApi.removeContact', 'customersApi.updateActivity',
-    ]));
+    expect([...functions]).toEqual(
+      expect.arrayContaining([
+        'tasksApi.addComment',
+        'tasksApi.updateStatus',
+        // The CRM writes: a PATCH on the record, both ends of a contact link, and
+        // a reminder's tick. Named here because each reaches its route through a
+        // differently-shaped function, and one of them silently dropping out of
+        // the scan would let a direct call back onto the record screen.
+        'customersApi.update',
+        'customersApi.addContact',
+        'customersApi.updateContact',
+        'customersApi.removeContact',
+        'customersApi.updateActivity',
+      ]),
+    );
   });
 
   it('no screen, component or hook calls one directly', () => {

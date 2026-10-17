@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { ReportsService } from './reports.service';
+import { ReportReadService } from './report-read.service';
 
 /**
  * Microservice Controller for Report READ Operations
@@ -13,7 +13,7 @@ import { ReportsService } from './reports.service';
  */
 @Controller()
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) {}
+  constructor(private readonly reportRead: ReportReadService) {}
 
   // ============ READ Operations (Direct Microservice) ============
 
@@ -27,7 +27,7 @@ export class ReportsController {
       organizationId: string;
     },
   ) {
-    return this.reportsService.findByTaskId(data);
+    return this.reportRead.findByTaskId(data);
   }
 
   @MessagePattern({ cmd: 'get_asset_reports' })
@@ -43,6 +43,6 @@ export class ReportsController {
       organizationId: string;
     },
   ) {
-    return this.reportsService.findByAssetId(data);
+    return this.reportRead.findByAssetId(data);
   }
 }

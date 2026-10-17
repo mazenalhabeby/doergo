@@ -10,10 +10,11 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { readSource } from '../../test-utils/read-source';
 
 const ROOT = path.resolve(__dirname, '../../..');
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\])\/\/.*$/gm, '$1');
-const read = (rel: string) => strip(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
+const read = (rel: string) => strip(readSource(path.join(ROOT, rel), 'utf8'));
 
 function* walk(dir: string): Generator<string> {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -75,7 +76,7 @@ describe('the card sheet (slide-sheet.tsx)', () => {
 
 describe('one copy of each small part', () => {
   it('the receipt line (ReceiptRow, job-ui)', () => {
-    expect(copiesOf(/fontSize: strong \? 16 : 13\.5/, ['src/components/job/job-ui.tsx'])).toEqual([]);
+    expect(copiesOf(/fontSize: strong \? 16 : 13\.5/, ['src/components/job/job-ui.tsx', 'src/components/job/sheet-option.tsx'])).toEqual([]);
   });
 
   it('the date tile (DateTileRow)', () => {
@@ -97,7 +98,7 @@ describe('one copy of each small part', () => {
     expect(copiesOf(/shutterInner/, [
       'src/components/equipment/capture-camera.tsx',
       // Their own viewfinders, with a frame to fill — not this one.
-      'src/components/document-scanner.tsx', 'src/components/scan-card/card-camera.tsx',
+      'src/components/document-scanner.tsx', 'src/components/document-scanner-helpers.tsx', 'src/components/scan-card/card-camera.tsx',
     ])).toEqual([]);
   });
 

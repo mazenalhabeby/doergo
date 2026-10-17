@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { SpaceMemberPermissionsController } from '../space-member-permissions.controller';
-import { SpaceRolesController } from '../space-roles.controller';
+import { spaceRolesControllers } from './space-roles-controllers.fixture';
 import { managesMembersOrgWide, outrankCeiling, spaceMemberAuthority } from '../space-member-access';
 
 /**
@@ -109,7 +109,7 @@ describe('the member routes ask the split trusts', () => {
       removeMember: jest.fn(async () => ({ success: true })),
       updateMemberRoles: jest.fn(async () => ({ success: true })),
     };
-    return { c: new SpaceRolesController(service as any, { rebill: jest.fn() } as any), service };
+    return { c: spaceRolesControllers(service as any, { rebill: jest.fn() } as any), service };
   }
 
   it('an external lead may assign in their workspace, with the authority the service enforces', async () => {

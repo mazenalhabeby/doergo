@@ -45,10 +45,11 @@ const mockLive: { refresh: (() => unknown) | null } = { refresh: null };
 import { mountHook, settle } from './hook-harness';
 import { useHomeLayout } from '../../home/use-home-layout';
 import { useDriverPosition } from '../../hooks/use-driver-position';
+import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const code = (rel: string) =>
-  fs.readFileSync(path.join(SRC, rel), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  readSource(path.join(SRC, rel), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 describe('the home layout keeps its identity', () => {
   function useLayout() { return useHomeLayout(); }

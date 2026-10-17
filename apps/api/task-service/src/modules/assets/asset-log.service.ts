@@ -1,52 +1,14 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { AssetExpenseReviewService } from './asset-expense-review.service';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
-import {
-  success,
-  normalizeKindShape,
-  findLogType,
-  logTypesForKind,
-  validateLogValues,
-  latestReadings,
-  computeNextDue,
-  dueStatus,
-  remindAtAfterWrite,
-  readLogState,
-  creditsByAuthor,
-  creditsByLogType,
-  findPrior,
-  COST_LOG_KEY,
-  type AssetLogState,
-  type KindShape,
-  type LogDueState,
-  clampListLimit,
-} from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { AssetAccessService, type AssetActor } from './asset-access.service';
-import { AssetCustodyService } from './asset-custody.service';
-import { AssetExpenseService, EXPENSE_STATUS } from './asset-expense.service';
+import { extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
+import { success, findLogType, validateLogValues, findPrior, COST_LOG_KEY } from '@hbcfield/shared';
+import { EXPENSE_STATUS } from './asset-expense.service';
 import { ASSET_FILE_MAX_BYTES, ASSET_FILE_MIMES, isAssetFileKey, assetFilePrefix } from './asset-files';
 import { readAssetEntryDate } from './asset-entry-date';
-
-/**
- * How many reading-carrying entries the recompute reads to find each meter's
- * latest value. Newest first, so the latest of every meter written in the last
- * 200 readings is exact; a meter nobody has read in 200 entries keeps nothing
- * rather than a stale value — and 200 readings is years of fuel slips.
- */
-const READINGS_WINDOW = 200;
-
-type Db = PrismaService | Prisma.TransactionClient;
-
-type Actor = AssetActor;
+import { Actor } from './asset-log-helpers';
+import { AssetLogBase } from './asset-log.base';
 
 /**
  * The logbook: what gets done to a thing, and when it is due again.
@@ -74,70 +36,9 @@ type Actor = AssetActor;
  * way the set of RECORDED entries can change.
  */
 @Injectable()
-export class AssetLogService {
-  private readonly logger = new Logger(AssetLogService.name);
+export class AssetLogService extends AssetLogBase {
+  @Inject(AssetExpenseReviewService) private readonly expenseReviews!: AssetExpenseReviewService;
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly access: AssetAccessService,
-    private readonly custody: AssetCustodyService,
-    private readonly expenses: AssetExpenseService,
-    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
-  ) {}
-
-  // ── Shared checks ──────────────────────────────────────────────────────────
-
-  private async loadAsset(id: string, organizationId: string) {
-    const asset = await this.prisma.asset.findFirst({
-      where: { id, organizationId },
-      select: { id: true, name: true, category: { select: { config: true, spaceId: true } } },
-    });
-    if (!asset) throw new NotFoundException('Asset not found in this organization');
-    return { ...asset, shape: normalizeKindShape(asset.category?.config), spaceId: asset.category?.spaceId ?? null };
-  }
-
-  /**
-   * Can this person SEE this asset's register?
-   *
-   * The door plus the workspace: a grant held in the depot opens the depot's
-   * vans, not the Linz office's. Asked of the KIND's workspace, which is the
-   * gap a space-scoped reader would otherwise walk through.
-   */
-  private assertSees(actor: Actor, spaceId: string | null): void {
-    this.access.assertMay(actor, 'view');
-    // 404-shaped: the asset exists, but not for this reader.
-    if (!this.access.mayIn(actor, 'view', spaceId)) throw new NotFoundException('Asset not found in this organization');
-  }
-
-  /**
-   * May this person log this type against this asset, on this date?
-   *
-   *   · Whoever manages the record's workspace — always: the office types in
-   *     what the garage sent, holder-only or not.
-   *   · Whoever held it on that date — the driver's own fuel, by custody.
-   *   · Whoever may LOG in the record's workspace (`canLogAssets`) — any type
-   *     that is not holder-only: the colleague who noticed the dent.
-   *
-   * ⚠️ Seeing a record is no longer enough to write to it. Logging became its
-   * own key so that "may watch the vans" and "may put entries in their book"
-   * can be given separately — an External Observer must be able to have the
-   * first without the second.
-   *
-   * ⚠️ An external member never passes on custody: they hold nothing of the
-   * organization's. Their reach is `canLogAssets` in their workspace, nothing
-   * else.
-   */
-  private async assertMayLog(
-    actor: Actor,
-    asset: { id: string; spaceId: string | null },
-    holderOnly: boolean,
-    when: Date,
-  ): Promise<void> {
-    if (this.access.mayIn(actor, 'manage', asset.spaceId)) return;
-    if (actor.isExternal !== true && (await this.custody.heldBy(asset.id, actor.userId, when))) return;
-    if (!holderOnly && this.access.mayIn(actor, 'log', asset.spaceId)) return;
-    throw new ForbiddenException(holderOnly ? 'You did not have this on that date' : 'You cannot log against this');
-  }
 
   // ── The photograph ─────────────────────────────────────────────────────────
 
@@ -251,181 +152,6 @@ export class AssetLogService {
     return success(this.present(entry));
   }
 
-  // ── Reading it ─────────────────────────────────────────────────────────────
-
-  /** The keys never leave the server — only whether there is a photo. */
-  private present<T extends { receiptKey?: string | null; logType?: string | null }>(row: T) {
-    const { receiptKey, ...rest } = row;
-    return { ...rest, logType: row.logType ?? COST_LOG_KEY, hasReceipt: !!receiptKey };
-  }
-
-  /**
-   * One asset's log, newest first, a page at a time.
-   *
-   * Keyset-paged on (occurredAt, id) rather than offset: the log grows at the
-   * top while somebody reads it, and an offset page would repeat or skip rows.
-   */
-  async list(
-    data: Actor & {
-      id: string;
-      logType?: string;
-      authorId?: string;
-      status?: string;
-      cursor?: string;
-      limit?: number;
-    },
-  ) {
-    const asset = await this.loadAsset(data.id, data.organizationId);
-    this.assertSees(data, asset.spaceId);
-    const take = this.access.pageSize(data.limit, 50);
-
-    const where: Prisma.AssetMoneyWhereInput = { assetId: data.id, organizationId: data.organizationId };
-    if (data.logType) where.logType = data.logType === COST_LOG_KEY ? null : data.logType;
-    if (data.authorId) where.authorId = data.authorId;
-    if (data.status && Object.values(EXPENSE_STATUS).includes(data.status as never)) where.status = data.status;
-
-    if (data.cursor) {
-      const at = await this.prisma.assetMoney.findFirst({
-        where: { id: data.cursor, assetId: data.id },
-        select: { id: true, occurredAt: true },
-      });
-      if (at) {
-        where.OR = [
-          { occurredAt: { lt: at.occurredAt } },
-          { occurredAt: at.occurredAt, id: { lt: at.id } },
-        ];
-      }
-    }
-
-    const rows = await this.prisma.assetMoney.findMany({
-      where,
-      orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
-      take: take + 1,
-    });
-    const page = rows.slice(0, take);
-    const authors = await this.names(page.map((r) => r.authorId), data.organizationId);
-
-    return success({
-      entries: page.map((r) => ({ ...this.present(r), author: r.authorId ? authors.get(r.authorId) ?? null : null })),
-      nextCursor: rows.length > take ? page[page.length - 1]!.id : null,
-    });
-  }
-
-  /**
-   * The Logbook tab's head: latest readings, where each due rule stands, and
-   * who spent what on which type in a period.
-   *
-   * The readings and due come from the stored state (one row); the period
-   * totals from one narrow read of the period, split by the shared rules — the
-   * same functions the phone and the browser would use.
-   */
-  async summary(data: Actor & { id: string; from?: string; to?: string }) {
-    const asset = await this.loadAsset(data.id, data.organizationId);
-    this.assertSees(data, asset.spaceId);
-
-    const now = new Date();
-    const from = data.from ? new Date(data.from) : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    const to = data.to ? new Date(data.to) : now;
-    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to < from) {
-      throw new BadRequestException('That period could not be read');
-    }
-    // Bounded: the split is done in memory, and "all time" on a fleet is not one screen.
-    if (to.getTime() - from.getTime() > 400 * 86_400_000) throw new BadRequestException('A period may be at most a year');
-
-    const [row, inPeriod, waiting] = await Promise.all([
-      this.prisma.asset.findUnique({ where: { id: data.id }, select: { logState: true } }),
-      this.prisma.assetMoney.findMany({
-        where: { assetId: data.id, status: EXPENSE_STATUS.RECORDED, occurredAt: { gte: from, lte: to } },
-        select: { authorId: true, amountCents: true, direction: true, logType: true },
-      }),
-      this.prisma.assetMoney.count({ where: { assetId: data.id, status: EXPENSE_STATUS.SUBMITTED } }),
-    ]);
-    const state = readLogState(row?.logState);
-    const types = logTypesForKind(asset.shape);
-
-    const byAuthor = creditsByAuthor(inPeriod);
-    const byType = creditsByLogType(inPeriod);
-    const authors = await this.names([...byAuthor.keys()], data.organizationId);
-
-    return success({
-      period: { from: from.toISOString(), to: to.toISOString() },
-      readings: state.readings,
-      due: this.dueFor(state, asset.shape, now),
-      waitingCount: waiting,
-      byAuthor: [...byAuthor.entries()]
-        .map(([authorId, c]) => ({ authorId: authorId || null, author: authorId ? authors.get(authorId) ?? null : null, ...c }))
-        .sort((a, b) => b.outCents - a.outCents || b.entries - a.entries),
-      byType: types
-        .map((t) => ({ logType: t.key, label: t.label, color: t.color, ...(byType.get(t.key) ?? { inCents: 0, outCents: 0, netCents: 0, entries: 0 }) }))
-        // A type the kind has since removed still has history, and it still counted.
-        .concat(
-          [...byType.entries()]
-            .filter(([k]) => !types.some((t) => t.key === k))
-            .map(([k, c]) => ({ logType: k, label: k, color: 'slate' as const, ...c })),
-        ),
-    });
-  }
-
-  /** Where each type stands NOW, from the stored state — for any screen. */
-  private dueFor(state: AssetLogState, shape: KindShape, now: Date) {
-    return state.due
-      .map((s) => {
-        const type = findLogType(shape, s.key);
-        // A rule removed from the kind since the last write says nothing.
-        if (!type?.due) return null;
-        const reading = s.meterKey ? state.readings[s.meterKey]?.value ?? null : null;
-        const unit = s.meterKey ? type.fields.find((f) => f.key === s.meterKey)?.unit ?? null : null;
-        return { ...s, label: type.label, color: type.color, unit, reading, ...dueStatus(s, reading, now) };
-      })
-      .filter(<T>(v: T | null): v is T => v !== null);
-  }
-
-  /**
-   * What is due soon on the things the CALLER holds — the phone's "due soon"
-   * line. No permission: the filter (open custody naming the caller) is the
-   * authorization, the same rule as `GET /assets/mine`.
-   */
-  async dueMine(data: { userId: string; organizationId: string }) {
-    const held = await this.prisma.assetCustody.findMany({
-      where: { userId: data.userId, organizationId: data.organizationId, endedAt: null },
-      select: { assetId: true },
-      take: 100,
-    });
-    if (held.length === 0) return success({ items: [] });
-    const assets = await this.prisma.asset.findMany({
-      where: { id: { in: [...new Set(held.map((h) => h.assetId))] }, organizationId: data.organizationId },
-      select: { id: true, name: true, logState: true, category: { select: { config: true } } },
-    });
-    const now = new Date();
-    const items = assets.flatMap((a) =>
-      this.dueFor(readLogState(a.logState), normalizeKindShape(a.category?.config), now)
-        .filter((d) => d.stage !== 'ok')
-        .map((d) => ({ assetId: a.id, assetName: a.name, ...d })),
-    );
-    items.sort((x, y) => (x.stage === y.stage ? (x.daysLeft ?? 1e9) - (y.daysLeft ?? 1e9) : x.stage === 'overdue' ? -1 : 1));
-    return success({ items });
-  }
-
-  /** What the caller has logged, newest first, with what happened to it. */
-  async mine(data: { userId: string; organizationId: string; assetId?: string; limit?: number }) {
-    const take = clampListLimit(data.limit, 50, 100);
-    const rows = await this.prisma.assetMoney.findMany({
-      where: {
-        organizationId: data.organizationId,
-        authorId: data.userId,
-        ...(data.assetId ? { assetId: data.assetId } : {}),
-      },
-      orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }],
-      take,
-      select: {
-        id: true, assetId: true, logType: true, category: true, direction: true, amountCents: true, note: true,
-        values: true, occurredAt: true, status: true, reviewNote: true, reviewedAt: true, receiptKey: true,
-        asset: { select: { id: true, name: true } },
-      },
-    });
-    return success(rows.map((r) => this.present(r)));
-  }
-
   // ── Decisions and removal ──────────────────────────────────────────────────
 
   /**
@@ -433,7 +159,7 @@ export class AssetLogService {
    * it never needed before: an accepted oil change resets a service interval.
    */
   async review(data: Actor & { entryId: string; decision: 'accept' | 'reject'; note?: string }) {
-    const result = await this.expenses.review(data);
+    const result = await this.expenseReviews.review(data);
     const entry = await this.prisma.assetMoney.findFirst({
       where: { id: data.entryId, organizationId: data.organizationId },
       select: { assetId: true, logType: true },
@@ -489,77 +215,5 @@ export class AssetLogService {
       }
     }
     return done;
-  }
-
-  /** Recompute outside a caller's transaction. */
-  async recomputeAsset(assetId: string): Promise<void> {
-    await this.prisma.$transaction((tx) => this.recompute(tx, assetId));
-  }
-
-  /**
-   * The asset's latest readings and due states, from its RECORDED entries.
-   *
-   * A handful of indexed reads whatever the length of the log: one per type
-   * with a due rule ("newest entry of this type", on assetId+logType+occurredAt)
-   * and one bounded read of the newest reading-carrying entries.
-   */
-  async recompute(db: Db, assetId: string, knownShape?: KindShape, now = new Date()): Promise<AssetLogState> {
-    let shape = knownShape;
-    if (!shape) {
-      const a = await db.asset.findUnique({ where: { id: assetId }, select: { category: { select: { config: true } } } });
-      shape = normalizeKindShape(a?.category?.config);
-    }
-    const dueTypes = shape.logTypes.filter((t) => t.due);
-
-    const [lasts, readingRows] = await Promise.all([
-      Promise.all(
-        dueTypes.map((t) =>
-          db.assetMoney.findFirst({
-            where: { assetId, logType: t.key, status: EXPENSE_STATUS.RECORDED },
-            orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
-            select: { id: true, occurredAt: true, readings: true },
-          }),
-        ),
-      ),
-      db.assetMoney.findMany({
-        where: { assetId, status: EXPENSE_STATUS.RECORDED, readings: { not: Prisma.DbNull } },
-        orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
-        take: READINGS_WINDOW,
-        select: { id: true, occurredAt: true, readings: true },
-      }),
-    ]);
-
-    const readings = latestReadings(
-      readingRows.map((r) => ({ id: r.id, occurredAt: r.occurredAt, readings: r.readings as Record<string, number> | null })),
-    );
-    const due = dueTypes
-      .map((t, i) => {
-        const last = lasts[i];
-        return computeNextDue(t, last ? { id: last.id, occurredAt: last.occurredAt, readings: last.readings as Record<string, number> | null } : null);
-      })
-      .filter((s): s is LogDueState => s !== null);
-
-    const state: AssetLogState = { readings, due, computedAt: now.toISOString() };
-    await db.asset.update({
-      where: { id: assetId },
-      data: {
-        logState: state as unknown as Prisma.InputJsonValue,
-        logRemindAt: remindAtAfterWrite(due, readings, now),
-      },
-    });
-    return state;
-  }
-
-  // ── Names ──────────────────────────────────────────────────────────────────
-
-  private async names(ids: Array<string | null | undefined>, organizationId: string) {
-    const unique = [...new Set(ids.filter((v): v is string => !!v))];
-    const users = unique.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: unique }, organizationId },
-          select: { id: true, firstName: true, lastName: true, avatarUrl: true },
-        })
-      : [];
-    return new Map(users.map((u) => [u.id, u]));
   }
 }

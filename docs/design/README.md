@@ -279,3 +279,10 @@ The law, quoted from the app's own `glyphs.tsx`:
 
 The README also records the three marks that took more than one attempt and
 why, because the same mistakes are easy to make again.
+
+## Messages: icons and motion (2026-10-16)
+
+`messages-motion.html` (+ `messages-motion@2x.png`): the web Messages page with the
+**Gradient ink** icons (Solar shapes, CC BY 4.0, painted sky → blue → indigo) and eleven
+motions. Approved by the user; live at https://claude.ai/artifact/DECL6UnyhVTEXq7DPrwbxN.
+The icons live once in `packages/shared/src/icons` for the web and the phone.

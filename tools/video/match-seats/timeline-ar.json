@@ -1,0 +1,161 @@
+{
+ "chapters": [
+  {
+   "id": "problem",
+   "start": 0.4,
+   "end": 21.516,
+   "phrases": [
+    {
+     "start": 0.4,
+     "end": 9.583,
+     "scene": "problem"
+    },
+    {
+     "start": 10.251,
+     "end": 20.816,
+     "scene": "problem"
+    }
+   ]
+  },
+  {
+   "id": "hall",
+   "start": 21.516,
+   "end": 49.458,
+   "phrases": [
+    {
+     "start": 21.516,
+     "end": 30.154,
+     "scene": "hall"
+    },
+    {
+     "start": 30.832,
+     "end": 48.758,
+     "scene": "hall"
+    }
+   ]
+  },
+  {
+   "id": "rights",
+   "start": 49.458,
+   "end": 82.862,
+   "phrases": [
+    {
+     "start": 49.458,
+     "end": 57.98,
+     "scene": "rights"
+    },
+    {
+     "start": 58.693,
+     "end": 72.846,
+     "scene": "rights"
+    },
+    {
+     "start": 73.582,
+     "end": 82.162,
+     "scene": "rights"
+    }
+   ]
+  },
+  {
+   "id": "invite",
+   "start": 82.862,
+   "end": 113.573,
+   "phrases": [
+    {
+     "start": 82.862,
+     "end": 92.522,
+     "scene": "invite"
+    },
+    {
+     "start": 93.235,
+     "end": 105.1,
+     "scene": "invite"
+    },
+    {
+     "start": 105.837,
+     "end": 112.872,
+     "scene": "invite"
+    }
+   ]
+  },
+  {
+   "id": "deadline",
+   "start": 113.573,
+   "end": 146.048,
+   "phrases": [
+    {
+     "start": 113.573,
+     "end": 120.934,
+     "scene": "deadline"
+    },
+    {
+     "start": 121.647,
+     "end": 131.852,
+     "scene": "deadline"
+    },
+    {
+     "start": 132.659,
+     "end": 145.348,
+     "scene": "deadline"
+    }
+   ]
+  },
+  {
+   "id": "door",
+   "start": 146.048,
+   "end": 172.115,
+   "phrases": [
+    {
+     "start": 146.048,
+     "end": 153.118,
+     "scene": "door"
+    },
+    {
+     "start": 153.727,
+     "end": 163.712,
+     "scene": "door"
+    },
+    {
+     "start": 164.367,
+     "end": 171.414,
+     "scene": "door"
+    }
+   ]
+  },
+  {
+   "id": "report",
+   "start": 172.115,
+   "end": 192.209,
+   "phrases": [
+    {
+     "start": 172.115,
+     "end": 181.229,
+     "scene": "report"
+    },
+    {
+     "start": 182.012,
+     "end": 191.509,
+     "scene": "report"
+    }
+   ]
+  },
+  {
+   "id": "build",
+   "start": 192.209,
+   "end": 221.498,
+   "phrases": [
+    {
+     "start": 192.209,
+     "end": 209.252,
+     "scene": "build"
+    },
+    {
+     "start": 209.861,
+     "end": 220.798,
+     "scene": "build"
+    }
+   ]
+  }
+ ],
+ "duration": 223.0
+}

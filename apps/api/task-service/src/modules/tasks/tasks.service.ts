@@ -9,6 +9,13 @@ import { TaskActivityService } from './task-activity.service';
 import { TaskSupportService } from './task-support.service';
 import { TechnicianSuggestionService } from './technician-suggestion.service';
 import { TaskHierarchyService } from './task-hierarchy.service';
+import { TaskDeclineService } from './task-decline.service';
+import { TaskCrewMembersService } from './task-crew-members.service';
+import { TaskUpdateService } from './task-update.service';
+import { WorkflowResyncService } from './workflow-resync.service';
+import { TaskDetailService } from './task-detail.service';
+import { TaskDependenciesService } from './task-dependencies.service';
+import { TaskTriageService } from './task-triage.service';
 
 /**
  * Everything the per-task authorization rule needs about the caller.
@@ -34,15 +41,22 @@ export type { TaskAccessFacts } from '../../common/task-access/task-access.servi
 export class TasksService {
   constructor(
     private readonly records: TaskRecordsService,
+    private readonly workflowResync: WorkflowResyncService,
+    private readonly taskUpdates: TaskUpdateService,
     private readonly portal: TaskPortalService,
+    private readonly triage: TaskTriageService,
     private readonly query: TaskQueryService,
+    private readonly taskDetail: TaskDetailService,
     private readonly status: TaskStatusService,
     private readonly assignment: TaskAssignmentService,
+    private readonly crewMembers: TaskCrewMembersService,
+    private readonly declines: TaskDeclineService,
     private readonly checklist: TaskChecklistService,
     private readonly activity: TaskActivityService,
     private readonly support: TaskSupportService,
     private readonly suggestions: TechnicianSuggestionService,
     private readonly hierarchy: TaskHierarchyService,
+    private readonly dependencies: TaskDependenciesService,
   ) {}
 
   // ── A task as a record: create, edit, delete, re-sync a space onto its workflow.
@@ -51,20 +65,20 @@ export class TasksService {
     return this.records.create(...args);
   }
 
-  resyncSpaceWorkflow(...args: Parameters<TaskRecordsService['resyncSpaceWorkflow']>) {
-    return this.records.resyncSpaceWorkflow(...args);
+  resyncSpaceWorkflow(...args: Parameters<WorkflowResyncService['resyncSpaceWorkflow']>) {
+    return this.workflowResync.resyncSpaceWorkflow(...args);
   }
 
-  resyncAllSpaces(...args: Parameters<TaskRecordsService['resyncAllSpaces']>) {
-    return this.records.resyncAllSpaces(...args);
+  resyncAllSpaces(...args: Parameters<WorkflowResyncService['resyncAllSpaces']>) {
+    return this.workflowResync.resyncAllSpaces(...args);
   }
 
-  update(...args: Parameters<TaskRecordsService['update']>) {
-    return this.records.update(...args);
+  update(...args: Parameters<TaskUpdateService['update']>) {
+    return this.taskUpdates.update(...args);
   }
 
-  remove(...args: Parameters<TaskRecordsService['remove']>) {
-    return this.records.remove(...args);
+  remove(...args: Parameters<TaskUpdateService['remove']>) {
+    return this.taskUpdates.remove(...args);
   }
 
   // ── The customer portal: a customer's own requests, a portal's inbox, triage.
@@ -81,8 +95,8 @@ export class TasksService {
     return this.portal.getPortalRequest(...args);
   }
 
-  triageRequest(...args: Parameters<TaskPortalService['triageRequest']>) {
-    return this.portal.triageRequest(...args);
+  triageRequest(...args: Parameters<TaskTriageService['triageRequest']>) {
+    return this.triage.triageRequest(...args);
   }
 
   // ── Reading tasks: the list, one task, job time, step submissions.
@@ -91,20 +105,20 @@ export class TasksService {
     return this.query.findAll(...args);
   }
 
-  spaceOf(...args: Parameters<TaskQueryService['spaceOf']>) {
-    return this.query.spaceOf(...args);
+  spaceOf(...args: Parameters<TaskDetailService['spaceOf']>) {
+    return this.taskDetail.spaceOf(...args);
   }
 
-  findOne(...args: Parameters<TaskQueryService['findOne']>) {
-    return this.query.findOne(...args);
+  findOne(...args: Parameters<TaskDetailService['findOne']>) {
+    return this.taskDetail.findOne(...args);
   }
 
-  getJobTime(...args: Parameters<TaskQueryService['getJobTime']>) {
-    return this.query.getJobTime(...args);
+  getJobTime(...args: Parameters<TaskDetailService['getJobTime']>) {
+    return this.taskDetail.getJobTime(...args);
   }
 
-  getJobTimeReport(...args: Parameters<TaskQueryService['getJobTimeReport']>) {
-    return this.query.getJobTimeReport(...args);
+  getJobTimeReport(...args: Parameters<TaskDetailService['getJobTimeReport']>) {
+    return this.taskDetail.getJobTimeReport(...args);
   }
 
   getSubmissions(...args: Parameters<TaskQueryService['getSubmissions']>) {
@@ -127,24 +141,24 @@ export class TasksService {
     return this.assignment.assign(...args);
   }
 
-  decline(...args: Parameters<TaskAssignmentService['decline']>) {
-    return this.assignment.decline(...args);
+  decline(...args: Parameters<TaskDeclineService['decline']>) {
+    return this.declines.decline(...args);
   }
 
-  addAssignee(...args: Parameters<TaskAssignmentService['addAssignee']>) {
-    return this.assignment.addAssignee(...args);
+  addAssignee(...args: Parameters<TaskCrewMembersService['addAssignee']>) {
+    return this.crewMembers.addAssignee(...args);
   }
 
-  removeAssignee(...args: Parameters<TaskAssignmentService['removeAssignee']>) {
-    return this.assignment.removeAssignee(...args);
+  removeAssignee(...args: Parameters<TaskCrewMembersService['removeAssignee']>) {
+    return this.crewMembers.removeAssignee(...args);
   }
 
   getAssignees(...args: Parameters<TaskAssignmentService['getAssignees']>) {
     return this.assignment.getAssignees(...args);
   }
 
-  releaseMemberFromOpenWork(...args: Parameters<TaskAssignmentService['releaseMemberFromOpenWork']>) {
-    return this.assignment.releaseMemberFromOpenWork(...args);
+  releaseMemberFromOpenWork(...args: Parameters<TaskCrewMembersService['releaseMemberFromOpenWork']>) {
+    return this.crewMembers.releaseMemberFromOpenWork(...args);
   }
 
   assertCanReceiveTasks(...args: Parameters<TaskAssignmentService['assertCanReceiveTasks']>) {
@@ -217,11 +231,11 @@ export class TasksService {
     return this.hierarchy.getSubtasks(...args);
   }
 
-  addDependency(...args: Parameters<TaskHierarchyService['addDependency']>) {
-    return this.hierarchy.addDependency(...args);
+  addDependency(...args: Parameters<TaskDependenciesService['addDependency']>) {
+    return this.dependencies.addDependency(...args);
   }
 
-  removeDependency(...args: Parameters<TaskHierarchyService['removeDependency']>) {
-    return this.hierarchy.removeDependency(...args);
+  removeDependency(...args: Parameters<TaskDependenciesService['removeDependency']>) {
+    return this.dependencies.removeDependency(...args);
   }
 }

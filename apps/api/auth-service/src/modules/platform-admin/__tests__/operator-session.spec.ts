@@ -1,6 +1,6 @@
 import { createHmac } from 'crypto';
 import * as bcrypt from 'bcryptjs';
-import { PlatformAuthService } from '../platform-auth.service';
+import { platformAuthParts } from './platform-auth.service.fixture';
 import { matchTotpStep } from '../totp.util';
 
 jest.mock('bcryptjs');
@@ -38,7 +38,7 @@ describe('operator console sessions', () => {
     supportTeamMember: { findMany: jest.fn().mockResolvedValue([]) },
   };
   const jwt = { sign: jest.fn(() => 'op-token'), verify: jest.fn() };
-  const service = new PlatformAuthService(prisma as any, jwt as any, { get: () => 'secret' } as any);
+  const service = platformAuthParts(prisma as any, jwt as any, { get: () => 'secret' } as any);
 
   beforeEach(() => {
     jest.clearAllMocks();

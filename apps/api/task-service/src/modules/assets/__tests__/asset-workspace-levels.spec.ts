@@ -1,10 +1,10 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { assetSpaces, assetAccessIn } from '@hbcfield/shared';
 import { AssetAccessService } from '../asset-access.service';
-import { AssetsService } from '../assets.service';
-import { AssetCatalogService } from '../asset-catalog.service';
-import { AssetCustodyService } from '../asset-custody.service';
-import { AssetExpenseService } from '../asset-expense.service';
+import { assetServices } from './assets.service.fixture';
+import { assetCatalogParts } from './asset-catalog.service.fixture';
+import { custodyServices } from './asset-custody.service.fixture';
+import { assetExpenseParts } from './asset-expense.service.fixture';
 
 /**
  * The register, honoured PER WORKSPACE at three levels — view, log, manage.
@@ -80,13 +80,13 @@ function services() {
   const prisma = fakePrisma();
   const access = new AssetAccessService(prisma);
   const custody: any = { apply: jest.fn(), announce: jest.fn(), heldBy: jest.fn(async () => false) };
-  const assets = new AssetsService(
+  const assets = assetServices(
     prisma, access,
     { logHolderChange: jest.fn() } as any,
     { resolve: jest.fn(async () => []), limitFor: jest.fn(() => 1) } as any,
     custody,
   );
-  const catalog = new AssetCatalogService(prisma, access);
+  const catalog = assetCatalogParts(prisma, access);
   return { prisma, access, assets, catalog, custody };
 }
 
@@ -237,13 +237,15 @@ describe('an external member keeps to their workspace', () => {
 
   it('cannot hand over another workspace\'s record', async () => {
     const prisma = fakePrisma();
-    const custody = new AssetCustodyService(prisma, new AssetAccessService(prisma), { custodyChanged: jest.fn() } as any);
-    await expect(custody.handOver({ id: 'a-graz', to: [], ...linzExternal } as any)).rejects.toBeInstanceOf(NotFoundException);
+    const custody = custodyServices(prisma, new AssetAccessService(prisma), { custodyChanged: jest.fn() } as any);
+    await expect(custody.handOver({ id: 'a-graz', to: [], ...linzExternal } as any)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 
   it('sees only Linz\'s records in a member\'s custody', async () => {
     const prisma = fakePrisma();
-    const custody = new AssetCustodyService(prisma, new AssetAccessService(prisma), {} as any);
+    const custody = custodyServices(prisma, new AssetAccessService(prisma), {} as any);
     await custody.forMember({ memberId: 'm1', ...linzExternal } as any);
     expect(prisma.assetCustody.findMany.mock.calls[0][0].where).toMatchObject({
       userId: 'm1', asset: { category: { spaceId: { in: [LINZ] } } },
@@ -281,7 +283,7 @@ describe('kinds follow their workspace', () => {
 
 describe('expenses, per workspace', () => {
   const expenseService = (prisma: any, held = false) =>
-    new AssetExpenseService(
+    assetExpenseParts(
       prisma,
       new AssetAccessService(prisma),
       { heldBy: jest.fn(async () => held) } as any,

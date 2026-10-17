@@ -2,7 +2,7 @@
 
 import { keys } from "@/lib/query-keys"
 import { useMemo } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/auth-context"
 import { locationsApi, organizationsApi } from "@/lib/api"
 import {
@@ -13,6 +13,7 @@ import {
   type AssignablePerson,
   type MemberSource,
 } from "@/lib/assignable-members"
+import { fetchSpaceDirectory, spaceDirectoryKey, SPACE_DIRECTORY_STALE_MS } from "@/lib/space-directory"
 
 const NONE: AssignablePerson[] = []
 
@@ -24,6 +25,7 @@ const NONE: AssignablePerson[] = []
  */
 export function useAssignableMembers(opts: { spaceId?: string | null; enabled?: boolean; rosterOnly?: boolean }) {
   const { user } = useAuth()
+  const qc = useQueryClient()
   const enabled = opts.enabled !== false && !!user
   const spaceId = opts.spaceId || null
   const mayListOrg = mayListOrgMembers(user)
@@ -47,8 +49,15 @@ export function useAssignableMembers(opts: { spaceId?: string | null; enabled?: 
   const visible = useQuery({
     queryKey: keys.spaces.visibleRosters(),
     queryFn: async () => {
-      const spaces = await locationsApi.list({ limit: 200 })
-      const ids = (spaces?.data ?? []).map((s) => s.id).filter(Boolean)
+      const spaces = await qc.fetchQuery({
+        queryKey: spaceDirectoryKey(),
+        queryFn: fetchSpaceDirectory,
+        staleTime: SPACE_DIRECTORY_STALE_MS,
+      })
+      const ids = spaces
+        .filter((s) => s.isActive !== false)
+        .map((s) => s.id)
+        .filter(Boolean)
       return locationsApi.getRosters(ids)
     },
     enabled: enabled && source === "visible-spaces",

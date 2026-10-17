@@ -12,12 +12,15 @@ import { AssetContractService } from './asset-contract.service';
 import { AssetProposalService } from './asset-proposal.service';
 import { AssetLogService } from './asset-log.service';
 import { AssetAccessService } from './asset-access.service';
+import { ProposalReviewService } from './proposal-review.service';
+import { AssetTypesService } from './asset-types.service';
 
 @Controller()
 export class AssetsController {
   constructor(
     private readonly assetsService: AssetsService,
     private readonly catalog: AssetCatalogService,
+    private readonly assetTypes: AssetTypesService,
     private readonly rows: AssetRowsService,
     private readonly ledger: AssetLedgerService,
     private readonly activity: AssetActivityService,
@@ -26,6 +29,7 @@ export class AssetsController {
     private readonly expenses: AssetExpenseService,
     private readonly contracts: AssetContractService,
     private readonly proposals: AssetProposalService,
+    private readonly proposalReview: ProposalReviewService,
     private readonly logs: AssetLogService,
     private readonly access: AssetAccessService,
   ) {}
@@ -45,7 +49,7 @@ export class AssetsController {
 
   @MessagePattern({ cmd: 'find_types_by_category' })
   async findTypesByCategory(@Payload() data: any) {
-    return this.catalog.findTypesByCategory(data);
+    return this.assetTypes.findTypesByCategory(data);
   }
 
   // ============================================
@@ -106,224 +110,4 @@ export class AssetsController {
   async addActivity(@Payload() data: any) {
     return this.activity.addActivity(data);
   }
-
-  @MessagePattern({ cmd: 'list_asset_money' })
-  async listMoney(@Payload() data: any) {
-    return this.ledger.listMoney(data);
-  }
-
-  @MessagePattern({ cmd: 'add_asset_money' })
-  async addMoney(@Payload() data: any) {
-    return this.ledger.addMoney(data);
-  }
-
-  @MessagePattern({ cmd: 'remove_asset_money' })
-  async removeMoney(@Payload() data: any) {
-    return this.ledger.removeMoney(data);
-  }
-
-  // ============================================
-  // CUSTODY — who held it, and when
-  // ============================================
-
-  @MessagePattern({ cmd: 'asset_custody_timeline' })
-  async custodyTimeline(@Payload() data: any) {
-    return this.custody.timeline(data);
-  }
-
-  /*
-    A write, and it goes STRAIGHT to the service rather than through the queue —
-    the same choice as a money entry or a note. The queue exists to make task
-    creation exactly-once under a burst; a handover is one person pressing one
-    button and waiting to see the result, and a round trip through Redis buys
-    nothing but latency on a screen somebody is watching.
-  */
-  @MessagePattern({ cmd: 'asset_custody_handover' })
-  async handOver(@Payload() data: any) {
-    return this.custody.handOver(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_custody_for_member' })
-  async custodyForMember(@Payload() data: any) {
-    return this.custody.forMember(data);
-  }
-
-  /** What the CALLER holds — the phone opens on this. */
-  @MessagePattern({ cmd: 'asset_custody_mine' })
-  async custodyMine(@Payload() data: any) {
-    return this.custody.mine(data);
-  }
-
-  // ============================================
-  // EXPENSES — a member spends, the office accepts
-  // ============================================
-
-  @MessagePattern({ cmd: 'asset_expense_presign' })
-  async expensePresign(@Payload() data: any) {
-    return this.expenses.presignReceipt(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_expense_read' })
-  async expenseRead(@Payload() data: any) {
-    return this.expenses.readReceipt(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_expense_submit' })
-  async expenseSubmit(@Payload() data: any) {
-    return this.expenses.submit(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_expense_mine' })
-  async expenseMine(@Payload() data: any) {
-    return this.expenses.mine(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_expense_pending' })
-  async expensePending(@Payload() data: any) {
-    return this.expenses.pending(data);
-  }
-
-  /*
-    Through the logbook, which calls the same decision and then recomputes the
-    asset: an accepted oil change resets a service interval, and a decision that
-    skipped that would leave the due date a job behind.
-  */
-  @MessagePattern({ cmd: 'asset_expense_review' })
-  async expenseReview(@Payload() data: any) {
-    return this.logs.review(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_expense_receipt_url' })
-  async expenseReceiptUrl(@Payload() data: any) {
-    return this.expenses.receiptUrl(data);
-  }
-
-  // ============================================
-  // CONTRACTS — read one, then propose, then apply
-  // ============================================
-
-  @MessagePattern({ cmd: 'asset_contract_read' })
-  async contractRead(@Payload() data: any) {
-    return this.contracts.read(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_contract_preview' })
-  async contractPreview(@Payload() data: any) {
-    return this.contracts.preview(data);
-  }
-
-  /*
-    A write, straight to the service like the handover — one person pressing one
-    button and watching for the result. It is a transaction either way; a round
-    trip through Redis would only add latency to a screen somebody is looking at.
-  */
-  @MessagePattern({ cmd: 'asset_contract_apply' })
-  async contractApply(@Payload() data: any) {
-    return this.contracts.apply(data);
-  }
-
-  // ============================================
-  // PROPOSALS — a member sends a page, the office decides
-  // ============================================
-
-  @MessagePattern({ cmd: 'asset_proposal_presign' })
-  async proposalPresign(@Payload() data: any) {
-    return this.proposals.presign(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_proposal_raise' })
-  async proposalRaise(@Payload() data: any) {
-    return this.proposals.raise(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_proposal_mine' })
-  async proposalMine(@Payload() data: any) {
-    return this.proposals.mine(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_proposal_pending' })
-  async proposalPending(@Payload() data: any) {
-    return this.proposals.pending(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_proposal_accept' })
-  async proposalAccept(@Payload() data: any) {
-    return this.proposals.accept(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_proposal_reject' })
-  async proposalReject(@Payload() data: any) {
-    return this.proposals.reject(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_proposal_withdraw' })
-  async proposalWithdraw(@Payload() data: any) {
-    return this.proposals.withdraw(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_proposal_document_url' })
-  async proposalDocumentUrl(@Payload() data: any) {
-    return this.proposals.documentUrl(data);
-  }
-
-  // ============================================
-  // LOGBOOK — what gets done to a thing, and when it is due again
-  // ============================================
-
-  @MessagePattern({ cmd: 'asset_log_presign' })
-  async logPresign(@Payload() data: any) {
-    return this.logs.presign(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_log_create' })
-  async logCreate(@Payload() data: any) {
-    return this.logs.create(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_log_list' })
-  async logList(@Payload() data: any) {
-    return this.logs.list(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_log_summary' })
-  async logSummary(@Payload() data: any) {
-    return this.logs.summary(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_log_mine' })
-  async logMine(@Payload() data: any) {
-    return this.logs.mine(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_log_due_mine' })
-  async logDueMine(@Payload() data: any) {
-    return this.logs.dueMine(data);
-  }
-
-  @MessagePattern({ cmd: 'asset_log_remove' })
-  async logRemove(@Payload() data: any) {
-    return this.logs.remove(data);
-  }
-
-  @MessagePattern({ cmd: 'list_asset_rows' })
-  async listRows(@Payload() data: any) {
-    return this.rows.listRows(data);
-  }
-
-  @MessagePattern({ cmd: 'add_asset_row' })
-  async addRow(@Payload() data: any) {
-    return this.rows.addRow(data);
-  }
-
-  @MessagePattern({ cmd: 'update_asset_row' })
-  async updateRow(@Payload() data: any) {
-    return this.rows.updateRow(data);
-  }
-
-  @MessagePattern({ cmd: 'remove_asset_row' })
-  async removeRow(@Payload() data: any) {
-    return this.rows.removeRow(data);
-  }
-
-
 }

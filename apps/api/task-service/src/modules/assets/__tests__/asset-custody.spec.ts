@@ -1,10 +1,14 @@
+import { AssetExpenseReviewService } from '../asset-expense-review.service';
+import { CustodyReadService } from '../custody-read.service';
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AssetAccessService } from '../asset-access.service';
 import { AssetCustodyService } from '../asset-custody.service';
+import { custodyServicesOf, type AssetCustodyServiceParts } from './asset-custody.service.fixture';
 import { AssetExpenseService } from '../asset-expense.service';
+import { assetExpensePartsOf, type AssetExpenseServiceParts } from './asset-expense.service.fixture';
 import { AssetNotifier } from '../asset-notifier.service';
 import { ConfigService } from '@nestjs/config';
 
@@ -23,7 +27,7 @@ const KIND_ONE_HOLDER = { holder: { enabled: true, members: true, clients: false
 const notifier = { handedOver: jest.fn(), expenseSubmitted: jest.fn(), expenseDecided: jest.fn() };
 
 describe('AssetCustodyService.handOver', () => {
-  let service: AssetCustodyService;
+  let service: AssetCustodyServiceParts;
   let tx: any;
 
   const prisma: any = {
@@ -55,12 +59,13 @@ describe('AssetCustodyService.handOver', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AssetCustodyService,
+        CustodyReadService,
         { provide: PrismaService, useValue: prisma },
         AssetAccessService,
         { provide: AssetNotifier, useValue: notifier },
       ],
     }).compile();
-    service = module.get(AssetCustodyService);
+    service = custodyServicesOf(module);
   });
 
   const call = (over: any = {}) =>
@@ -196,7 +201,7 @@ describe('AssetCustodyService.handOver', () => {
 });
 
 describe('filing an expense is gated on custody', () => {
-  let service: AssetExpenseService;
+  let service: AssetExpenseServiceParts;
   const custody = { heldBy: jest.fn() };
 
   const prisma: any = {
@@ -218,15 +223,16 @@ describe('filing an expense is gated on custody', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AssetExpenseService,
+        AssetExpenseReviewService,
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: { get: (_k: string, d?: string) => d ?? '' } },
         AssetAccessService,
-        { provide: AssetCustodyService, useValue: custody },
+        { provide: CustodyReadService, useValue: custody },
         { provide: AssetNotifier, useValue: notifier },
         { provide: OBJECT_STORE, useValue: { head: async () => ({ exists: true, sizeBytes: 1000 }) } },
       ],
     }).compile();
-    service = module.get(AssetExpenseService);
+    service = assetExpensePartsOf(module);
   });
 
   const submit = (over: any = {}) =>
@@ -354,7 +360,7 @@ describe('filing an expense is gated on custody', () => {
 });
 
 describe('reviewing one', () => {
-  let service: AssetExpenseService;
+  let service: AssetExpenseServiceParts;
   // `findFirst` + `user`: the review reads the author first, so nobody accepts their own slip.
   const prisma: any = { assetMoney: { updateMany: jest.fn(), findFirst: jest.fn().mockResolvedValue({ authorId: 'member' }) }, user: { findFirst: jest.fn().mockResolvedValue(null) } };
 
@@ -363,15 +369,16 @@ describe('reviewing one', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AssetExpenseService,
+        AssetExpenseReviewService,
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: { get: (_k: string, d?: string) => d ?? '' } },
         AssetAccessService,
-        { provide: AssetCustodyService, useValue: { heldBy: jest.fn() } },
+        { provide: CustodyReadService, useValue: { heldBy: jest.fn() } },
         { provide: AssetNotifier, useValue: notifier },
         { provide: OBJECT_STORE, useValue: null },
       ],
     }).compile();
-    service = module.get(AssetExpenseService);
+    service = assetExpensePartsOf(module);
   });
 
   /*

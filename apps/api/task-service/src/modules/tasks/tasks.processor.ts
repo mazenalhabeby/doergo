@@ -6,6 +6,7 @@ import { TasksService } from './tasks.service';
 import { AttachmentsService } from '../attachments/attachments.service';
 import { JobPauseService } from './handover/job-pause.service';
 import { CrewService } from './handover/crew.service';
+import { AttachmentFilesService } from '../attachments/attachment-files.service';
 
 /**
  * BullMQ Processor for Task Queue
@@ -22,6 +23,7 @@ export class TasksProcessor extends JobProcessor {
   constructor(
     private readonly tasksService: TasksService,
     private readonly attachmentsService: AttachmentsService,
+    private readonly attachmentFiles: AttachmentFilesService,
     private readonly jobPause: JobPauseService,
     private readonly crew: CrewService,
   ) {
@@ -113,10 +115,10 @@ export class TasksProcessor extends JobProcessor {
         return this.attachmentsService.create(data);
 
       case TASK_JOB_TYPES.DELETE_ATTACHMENT:
-        return this.attachmentsService.remove(data);
+        return this.attachmentFiles.remove(data);
 
       case TASK_JOB_TYPES.GET_PRESIGNED_URL:
-        return this.attachmentsService.getPresignedUrl(data);
+        return this.attachmentFiles.getPresignedUrl(data);
 
       default:
         this.logger.warn(`Unknown job type: ${name}`);

@@ -1,0 +1,203 @@
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  personName,
+  TaskEventType,
+  success,
+  canReceiveTasks,
+  TERMINAL_STATUSES, assertFoundInOrg,
+} from '@hbcfield/shared';
+import { assertMayAssign, assertTargetIsInSpace } from './task-scope';
+import { TaskAssignmentBase } from './task-assignment.base';
+
+/** Adding and removing people on a job's crew, and releasing a member who left from their open work. */
+@Injectable()
+export class TaskCrewMembersService extends TaskAssignmentBase {
+  async addAssignee(data: {
+    taskId: string;
+    userId: string;
+    role?: string;
+    requestUserId: string;
+    userRole: string;
+    canViewAllTasks?: boolean;
+    /** The ORG-wide resolution of canAssignTasks. */
+    canAssignTasks?: boolean;
+    /** Spaces where the caller holds canAssignTasks through a SPACE role. */
+    assignSpaceIds?: string[];
+    organizationId: string;
+  }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
+    assertFoundInOrg(task, data.organizationId, 'Task');
+    assertMayAssign(task, data);
+    await assertTargetIsInSpace(this.prisma, task, data.userId, data);
+
+    // Verify the target user exists in the organization
+    const user = await this.prisma.user.findFirst({
+      where: { id: data.userId, organizationId: data.organizationId, isActive: true },
+      // role + enabledModules so canReceiveTasks can be answered without a second read.
+      select: { id: true, firstName: true, lastName: true, avatarUrl: true, role: true, enabledModules: true },
+    });
+    if (!user) throw new NotFoundException('User not found or not in your organization');
+    if (!canReceiveTasks(user)) {
+      throw new BadRequestException(
+        `${user.firstName} ${user.lastName} cannot be assigned tasks — their access profile does not include the Tasks feature.`,
+      );
+    }
+
+    // A second person added to a task is doing the same work as the first, so
+    // the same certificate applies.
+    const assigneeTask = await this.prisma.task.findFirst({
+      where: { id: data.taskId, organizationId: data.organizationId },
+      select: { workflowId: true, organizationId: true },
+    });
+    await this.assertAssigneesAreQualified([user.id], [user], assigneeTask?.workflowId, assigneeTask?.organizationId);
+
+    const role = (data.role as any) || 'MEMBER';
+
+    // If adding as LEAD, demote existing LEAD to MEMBER
+    if (role === 'LEAD') {
+      await this.prisma.taskAssignee.updateMany({
+        where: { taskId: data.taskId, role: 'LEAD' },
+        data: { role: 'MEMBER' },
+      });
+    }
+
+    // Read before the write: after the upsert there is no telling whether this
+    // person is new to the task or was already on it in another role.
+    const wasAlreadyOn = !!(await this.prisma.taskAssignee.findUnique({
+      where: { taskId_userId: { taskId: data.taskId, userId: data.userId } },
+      select: { id: true },
+    }));
+
+    const assignee = await this.prisma.taskAssignee.upsert({
+      where: { taskId_userId: { taskId: data.taskId, userId: data.userId } },
+      create: { taskId: data.taskId, userId: data.userId, role },
+      update: { role },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+      },
+    });
+
+    // Primary, status and the notification — all of it, in one place.
+    // `wasAlreadyOn` decides whether this is news: re-adding somebody to change
+    // their role must not push them a second time about work they already have.
+    await this.afterAssigneesChanged(data.taskId, wasAlreadyOn ? [] : [data.userId], data.requestUserId);
+
+    await this.support.createTaskEvent(data.taskId, data.requestUserId, TaskEventType.ASSIGNEE_ADDED, {
+      assigneeId: data.userId,
+      assigneeName: personName(user),
+      role,
+    });
+
+    this.notificationClient.emit('task_updated', { task: { ...task, id: data.taskId } });
+
+    return success(assignee);
+  }
+
+  /**
+   * Remove an assignee from a task
+   */
+  async removeAssignee(data: {
+    taskId: string;
+    userId: string;
+    requestUserId: string;
+    userRole: string;
+    canViewAllTasks?: boolean;
+    canAssignTasks?: boolean;
+    assignSpaceIds?: string[];
+    organizationId: string;
+  }) {
+    const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
+    assertFoundInOrg(task, data.organizationId, 'Task');
+    // Taking somebody OFF a job is the same authority as putting them on it.
+    assertMayAssign(task, data);
+
+    const existing = await this.prisma.taskAssignee.findUnique({
+      where: { taskId_userId: { taskId: data.taskId, userId: data.userId } },
+      include: { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+    });
+    if (!existing) throw new NotFoundException('Assignee not found on this task');
+
+    await this.prisma.taskAssignee.delete({
+      where: { taskId_userId: { taskId: data.taskId, userId: data.userId } },
+    });
+
+    // Sync the primary assignedToId field
+    // Same writer as every other change to who is on this task. Nobody is newly
+    // assigned by a removal, so nobody is told they have new work.
+    await this.afterAssigneesChanged(data.taskId, [], data.requestUserId);
+
+    await this.support.createTaskEvent(data.taskId, data.requestUserId, TaskEventType.ASSIGNEE_REMOVED, {
+      assigneeId: data.userId,
+      assigneeName: existing.user ? personName(existing.user) : '',
+    });
+
+    this.notificationClient.emit('task_updated', { task: { ...task, id: data.taskId } });
+
+    return success(null, 'Assignee removed');
+  }
+
+  /**
+   * Everything that follows from a change to who is on a task.
+   *
+   * ONE writer, because four had four opinions. `create`, `assign`,
+   * `addAssignee` and `removeAssignee` each decided for themselves what an
+   * assignment implies, and three of them were wrong in a different way: the
+   * primary was cleared, the status never moved, and the person was never told.
+   * Each of those was found separately, as a separate bug, from one report.
+   *
+   * The row mutation stays with the caller — they mean different things by it
+   * ("make this one the lead" is not "add a colleague"). What is IDENTICAL
+   * afterwards, and therefore lives here:
+   *
+   *   1. who is primarily responsible
+   *   2. that a task with somebody on it is no longer merely NEW
+   *   3. that a person given work is TOLD
+   *
+   * `newlyAssigned` is the caller's answer to "who did not have this before" —
+   * only they know, since only they know what the rows looked like going in.
+   */
+  /**
+   * Take somebody who is leaving off every job that is still OPEN.
+   *
+   * Through the same writer as the office's picker (`afterAssigneesChanged`),
+   * so the lead, the role places, the today's-lead hand-over and the open
+   * checklist items all follow — the one path that knows every consequence of
+   * a crew changing. Finished, closed and canceled jobs keep the person: that
+   * is the record of who did the work, and a leaver does not unmake history.
+   *
+   * Called by `member_offboard` only (members/member-offboard.service.ts).
+   */
+  async releaseMemberFromOpenWork(organizationId: string, userId: string, actorId: string): Promise<number> {
+    const candidates = await this.prisma.task.findMany({
+      where: {
+        organizationId,
+        status: { notIn: TERMINAL_STATUSES },
+        OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }],
+      },
+      select: { id: true, status: true, workflowId: true },
+    });
+    /*
+      ⚠️ "Finished" is the WORKFLOW's word, not ours. The built-in flows end on
+      Delivered, Done, Outcome, Submitted — names TERMINAL_STATUSES has never
+      heard of. A job in one of those is history, and the person stays on it.
+    */
+    const flowIds = [...new Set(candidates.map((t) => t.workflowId).filter((x): x is string => !!x))];
+    const finished = new Set(
+      flowIds.length
+        ? (await this.prisma.workflowStatus.findMany({
+            where: { workflowId: { in: flowIds }, OR: [{ isFinal: true }, { isCanceled: true }] },
+            select: { workflowId: true, key: true },
+          })).map((s) => `${s.workflowId}:${s.key}`)
+        : [],
+    );
+    const tasks = candidates.filter((t) => !(t.workflowId && finished.has(`${t.workflowId}:${t.status}`)));
+    for (const { id } of tasks) {
+      await this.prisma.taskAssignee.deleteMany({ where: { taskId: id, userId } });
+      // The primary column too: a job assigned the old way has no crew row to remove.
+      await this.prisma.task.updateMany({ where: { id, assignedToId: userId }, data: { assignedToId: null } });
+      await this.afterAssigneesChanged(id, [], actorId);
+      await this.support.createTaskEvent(id, actorId, TaskEventType.ASSIGNEE_REMOVED, { assigneeId: userId, reason: 'MEMBER_LEFT' });
+    }
+    return tasks.length;
+  }
+}

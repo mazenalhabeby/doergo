@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { SupportService } from './support.service';
+import { SupportInboxService } from './support-inbox.service';
 
 /**
  * Support ops are synchronous request/reply (ClientProxy.send from the gateway) —
@@ -8,7 +9,10 @@ import { SupportService } from './support.service';
  */
 @Controller()
 export class SupportController {
-  constructor(private readonly support: SupportService) {}
+  constructor(
+    private readonly support: SupportService,
+    private readonly supportInbox: SupportInboxService,
+  ) {}
 
   @MessagePattern({ cmd: 'support.create' })
   create(@Payload() data: any) {
@@ -37,16 +41,16 @@ export class SupportController {
 
   @MessagePattern({ cmd: 'support.list' })
   list(@Payload() data: any) {
-    return this.support.listForCustomer(data);
+    return this.supportInbox.listForCustomer(data);
   }
 
   @MessagePattern({ cmd: 'support.thread' })
   thread(@Payload() data: any) {
-    return this.support.getThread(data);
+    return this.supportInbox.getThread(data);
   }
 
   @MessagePattern({ cmd: 'support.inbox' })
   inbox(@Payload() data: any) {
-    return this.support.agentInbox(data);
+    return this.supportInbox.agentInbox(data);
   }
 }

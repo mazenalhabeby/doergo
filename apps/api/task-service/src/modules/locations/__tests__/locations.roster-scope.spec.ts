@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SERVICE_NAMES } from '@hbcfield/shared';
-import { LocationsService } from '../locations.service';
+import { SpaceRosterService } from '../space-roster.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /**
@@ -11,8 +11,8 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
  * members whose Access Profile grants them no spaces at all. The scope now
  * travels with the request and is applied before anything is read.
  */
-describe('LocationsService.getLocationAssignmentsBatch — space scope', () => {
-  let service: LocationsService;
+describe('SpaceRosterService.getLocationAssignmentsBatch — space scope', () => {
+  let service: SpaceRosterService;
 
   const prisma = {
     companyLocation: { findMany: jest.fn() },
@@ -32,7 +32,7 @@ describe('LocationsService.getLocationAssignmentsBatch — space scope', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        LocationsService,
+        SpaceRosterService,
         { provide: PrismaService, useValue: prisma },
         // Space/roster mutations announce themselves over this client; reads
         // never touch it, so a stub is enough.
@@ -40,7 +40,7 @@ describe('LocationsService.getLocationAssignmentsBatch — space scope', () => {
       ],
     }).compile();
 
-    service = module.get(LocationsService);
+    service = module.get(SpaceRosterService);
   });
 
   /** The scope lookup is the FIRST spaceAssignment query; the roster read follows. */

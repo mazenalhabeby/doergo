@@ -10,6 +10,7 @@ import { SessionTokensService } from '../session-tokens.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AuditLogService } from '../../audit-log/audit-log.service';
 import { BillingService } from '../../billing/billing.service';
+import { BillingTrialService } from '../../billing/billing-trial.service';
 import { GraceTokenCache } from '../grace-token-cache.service';
 import { Role, Platform, MAX_FAILED_ATTEMPTS } from '@hbcfield/shared';
 
@@ -70,6 +71,7 @@ describe('sign-in hardening', () => {
         { provide: ConfigService, useValue: { get: jest.fn(() => 'secret') } },
         { provide: AuditLogService, useValue: { log: jest.fn() } },
         { provide: BillingService, useValue: { startTrial: jest.fn() } },
+        { provide: BillingTrialService, useValue: { startTrial: jest.fn() } },
         { provide: GraceTokenCache, useValue: { get: jest.fn().mockResolvedValue(null), put: jest.fn() } },
       ],
     }).compile();

@@ -1,12 +1,8 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
+import { keys, invalidateTask } from "@/lib/query-keys"
 import { useState, useEffect, lazy, Suspense } from "react"
 import { useTranslation } from "react-i18next"
-
-const LocationPicker = lazy(() =>
-  import("@/components/location-picker").then((m) => ({ default: m.LocationPicker }))
-)
 import { format } from "date-fns"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react"
@@ -18,14 +14,7 @@ import { Label } from "@/components/ui/label"
 import { PhaseSelectContent, SprintSelectContent } from "../../_components/planning-select-options"
 import { Textarea } from "@/components/ui/textarea"
 import { timeOf, withTime } from "@/lib/due-time"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   Popover,
   PopoverContent,
@@ -43,130 +32,49 @@ import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
 import { PrioritySelector } from "@/components/tasks"
 import { useSpaceModules } from "@/hooks/use-space-modules"
-
-interface EditTaskDialogProps {
-  task: Task
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
+import { useEditTaskDialog, type EditTaskDialogProps } from "./use-edit-task-dialog"
+import { LocationPicker } from "./edit-task-dialog-helpers"
+import { EditTaskDialogSidebar } from "./edit-task-dialog-sidebar"
 
 export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps) {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-
-  const [title, setTitle] = useState(task.title)
-  const [description, setDescription] = useState(task.description || "")
-  const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH" | "URGENT">(
-    (task.priority as "LOW" | "MEDIUM" | "HIGH" | "URGENT") || "MEDIUM"
-  )
-  const [dueDate, setDueDate] = useState<Date | undefined>(
-    task.dueDate ? new Date(task.dueDate) : undefined
-  )
-  // The hour the member is expected on site; "" when the job is only dated.
-  const [dueTime, setDueTime] = useState<string>(timeOf(task.dueDate))
-  const [locationAddress, setLocationAddress] = useState(task.locationAddress || "")
-  /*
-    The coordinates behind the address.
-
-    Editing used to change the address text alone and leave lat/lng untouched,
-    so a task could read "Vienna" while its pin — and the route a member is
-    navigated along — still pointed at the previous place. The address and the
-    point on the map are one fact and are now set together.
-  */
-  const [locationLat, setLocationLat] = useState<number | null>(task.locationLat ?? null)
-  const [locationLng, setLocationLng] = useState<number | null>(task.locationLng ?? null)
-  const [startDate, setStartDate] = useState<Date | undefined>(
-    task.startDate ? new Date(task.startDate) : undefined
-  )
-  const [estimatedHours, setEstimatedHours] = useState<string>(
-    task.estimatedHours != null ? String(task.estimatedHours) : ""
-  )
-  const [phaseId, setPhaseId] = useState<string>(task.phaseId || "none")
-  const [sprintId, setSprintId] = useState<string>(task.sprintId || "none")
-  // Flow (task type / workflow) — "none" = simple canonical flow.
-  const [workflowId, setWorkflowId] = useState<string>(task.workflowId || "none")
-
-  // Phase & Sprint are agile modules — only relevant when the task's SPACE has
-  // them enabled (a property/field space won't; a project/software space will).
-  const { hasModule } = useSpaceModules(task.spaceId ?? null)
-  const showPhases = hasModule("phases")
-  const showSprints = hasModule("sprints")
-
-  // Fetch phases, sprints, and the org's flows (task types)
-  const { data: flows } = useQuery({
-    queryKey: keys.workflows.lists(),
-    queryFn: () => workflowsApi.list(),
-    enabled: open,
-    staleTime: 60000,
-  })
-  const { data: phases } = useQuery({
-    queryKey: keys.phases.lists(),
-    queryFn: () => phasesApi.list(),
-    enabled: open,
-    staleTime: 60000,
-  })
-
-  const { data: sprints } = useQuery({
-    queryKey: keys.sprints.lists(),
-    queryFn: () => sprintsApi.list(),
-    enabled: open,
-    staleTime: 60000,
-  })
-
-  // Reset form when task changes or dialog opens
-  useEffect(() => {
-    if (open) {
-      setTitle(task.title)
-      setDescription(task.description || "")
-      setPriority((task.priority as "LOW" | "MEDIUM" | "HIGH" | "URGENT") || "MEDIUM")
-      setDueDate(task.dueDate ? new Date(task.dueDate) : undefined)
-    setDueTime(timeOf(task.dueDate))
-      setStartDate(task.startDate ? new Date(task.startDate) : undefined)
-      setEstimatedHours(task.estimatedHours != null ? String(task.estimatedHours) : "")
-      setLocationAddress(task.locationAddress || "")
-      setLocationLat(task.locationLat ?? null)
-      setLocationLng(task.locationLng ?? null)
-      setPhaseId(task.phaseId || "none")
-      setSprintId(task.sprintId || "none")
-      setWorkflowId(task.workflowId || "none")
-    }
-  }, [open, task])
-
-  const updateMutation = useMutation({
-    mutationFn: (input: UpdateTaskInput) => tasksApi.update(task.id, input),
-    onSuccess: () => {
-      notify.success(t("tasks.edit.success"))
-      onOpenChange(false)
-      queryClient.invalidateQueries({ queryKey: keys.tasks.detail(task.id), refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: keys.tasks.timeline(task.id), refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-    },
-    onError: (e: Error) => notify.error(e.message || t("tasks.edit.failed")),
-  })
-
-  const isFormValid = title.trim() !== "" && description.trim() !== ""
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!isFormValid || updateMutation.isPending) return
-
-    const parsedHours = estimatedHours ? parseFloat(estimatedHours) : undefined
-
-    updateMutation.mutate({
-      title: title.trim(),
-      description: description.trim(),
-      priority,
-      dueDate: dueDate?.toISOString(),
-      startDate: startDate?.toISOString(),
-      estimatedHours: parsedHours && !isNaN(parsedHours) ? parsedHours : undefined,
-      locationAddress: locationAddress.trim() || undefined,
-      locationLat: locationLat ?? undefined,
-      locationLng: locationLng ?? undefined,
-      phaseId: phaseId === "none" ? null : phaseId,
-      sprintId: sprintId === "none" ? null : sprintId,
-      workflowId: workflowId === "none" ? null : workflowId,
-    })
-  }
+  const vm = useEditTaskDialog({ task, open, onOpenChange })
+  const {
+    t,
+    title,
+    setTitle,
+    description,
+    setDescription,
+    priority,
+    setPriority,
+    dueDate,
+    setDueDate,
+    dueTime,
+    setDueTime,
+    locationAddress,
+    setLocationAddress,
+    locationLat,
+    setLocationLat,
+    locationLng,
+    setLocationLng,
+    startDate,
+    setStartDate,
+    estimatedHours,
+    setEstimatedHours,
+    phaseId,
+    setPhaseId,
+    sprintId,
+    setSprintId,
+    workflowId,
+    setWorkflowId,
+    showPhases,
+    showSprints,
+    flows,
+    phases,
+    sprints,
+    updateMutation,
+    isFormValid,
+    handleSubmit,
+  } = vm
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -252,90 +160,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
             clicks a date they have already set, so the feature may as well not
             have existed. What a person can set, they must be able to SEE.
           */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">
-                {t("tasks.sidebar.dueDate")}
-              </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "h-10 w-full justify-start text-left font-normal rounded-lg border-border bg-card hover:bg-accent",
-                      !dueDate && "text-muted-foreground"
-                    )}
-                    disabled={updateMutation.isPending}
-                  >
-                    <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
-                    {dueDate ? format(dueDate, "MMM d, yyyy") : t("tasks.create.selectDate")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dueDate}
-                    onSelect={(d) => setDueDate(withTime(d, dueTime))}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-due-time" className="text-sm font-medium text-foreground">
-                {t("tasks.create.beThereAt", "Be there at")}
-              </Label>
-              <div className="flex items-center gap-1.5">
-                <Input
-                  id="edit-due-time"
-                  type="time"
-                  value={dueTime}
-                  onChange={(e) => {
-                    setDueTime(e.target.value)
-                    setDueDate((d) => withTime(d, e.target.value))
-                  }}
-                  disabled={!dueDate || updateMutation.isPending}
-                  className="h-10 rounded-lg"
-                />
-                {dueTime && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="h-10 px-2 text-xs"
-                    onClick={() => {
-                      setDueTime("")
-                      setDueDate((d) => withTime(d, ""))
-                    }}
-                  >
-                    {t("common.clear", "Clear")}
-                  </Button>
-                )}
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                {dueDate
-                  ? t("tasks.create.beThereHint", "The member is told when to set off, allowing for the drive.")
-                  : t("tasks.create.beThereNeedsDate", "Pick a due date first.")}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-estimated-hours" className="text-sm font-medium text-foreground">
-                {t("tasks.sidebar.estimatedHours")}
-              </Label>
-              <Input
-                id="edit-estimated-hours"
-                type="number"
-                min="0"
-                step="0.5"
-                placeholder={t("tasks.fields.estimatedHoursPlaceholder")}
-                value={estimatedHours}
-                onChange={(e) => setEstimatedHours(e.target.value)}
-                disabled={updateMutation.isPending}
-                className="h-10 rounded-lg"
-              />
-            </div>
-          </div>
+          <EditTaskDialogSidebar vm={vm} />
 
           {/*
             Start Date drives the timeline (Gantt) view and nothing else — no

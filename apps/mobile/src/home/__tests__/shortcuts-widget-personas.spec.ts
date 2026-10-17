@@ -36,7 +36,9 @@ describe('Shortcuts widget — every persona', () => {
   const EXPECTED: Record<string, string[]> = {
     client: [
       'manage.approvals.label',
-      'manage.attendance.label', 'manage.timeOff.label', 'manage.members.label', 'manage.customers.label',
+      'manage.attendance.label',
+      'manage.members.label',
+      'manage.customers.label',
       // The workspace's register and client requests — the owner holds everything and the org runs both.
       'manage.equipment.label', 'manage.clientRequests.label',
       'manage.invitations.label', 'manage.schedules.label',
@@ -47,10 +49,21 @@ describe('Shortcuts widget — every persona', () => {
       'manage.approvals.label',
       // Clients: the org-wide legacy bridge (canManageUsers/canViewAllTasks) reads as CRM on the
       // server's reach too (crmReachOfRow → memberAccessOf); `holds('crmViewOwn')` used to miss it.
-      'manage.attendance.label', 'manage.timeOff.label', 'manage.members.label', 'manage.customers.label',
-      'manage.invitations.label', 'manage.schedules.label',
-      'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.logExpense',
-      'shortcuts.newJob', 'shortcuts.scanCard', 'shortcuts.addClient', 'shortcuts.support', 'shortcuts.equipmentLog',
+      'manage.attendance.label',
+      'manage.members.label',
+      'manage.customers.label',
+      'manage.invitations.label',
+      'manage.schedules.label',
+      'shortcuts.documents',
+      'shortcuts.sign',
+      'shortcuts.myEquipment',
+      'shortcuts.sync',
+      'shortcuts.logExpense',
+      'shortcuts.newJob',
+      'shortcuts.scanCard',
+      'shortcuts.addClient',
+      'shortcuts.support',
+      'shortcuts.equipmentLog',
     ],
     dana: [
       'manage.approvals.label',
@@ -59,11 +72,20 @@ describe('Shortcuts widget — every persona', () => {
     ],
     mike: [
       'manage.approvals.label',
-      'manage.attendance.label', 'manage.timeOff.label', 'manage.customers.label',
-    // Schedules follows canViewSpaceAttendance (in a space) — the leader permission Attendance uses.
-    'manage.schedules.label',
-      'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.overtime', 'shortcuts.logExpense',
-      'shortcuts.newJob', 'shortcuts.planRoute', 'shortcuts.support', 'shortcuts.equipmentLog',
+      'manage.attendance.label',
+      'manage.customers.label',
+      // Schedules follows canViewSpaceAttendance (in a space) — the leader permission Attendance uses.
+      'manage.schedules.label',
+      'shortcuts.documents',
+      'shortcuts.sign',
+      'shortcuts.myEquipment',
+      'shortcuts.sync',
+      'shortcuts.overtime',
+      'shortcuts.logExpense',
+      'shortcuts.newJob',
+      'shortcuts.planRoute',
+      'shortcuts.support',
+      'shortcuts.equipmentLog',
     ],
     sales: [
       'manage.customers.label', 'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.overtime',
@@ -74,8 +96,12 @@ describe('Shortcuts widget — every persona', () => {
     'a.test': [
       'manage.approvals.label',
       // An external supervisor sees their ONE workspace's schedule — the server narrows /rota/week to it.
-      'manage.attendance.label', 'manage.timeOff.label', 'manage.schedules.label',
-      'shortcuts.sign', 'shortcuts.sync', 'shortcuts.newJob', 'shortcuts.support',
+      'manage.attendance.label',
+      'manage.schedules.label',
+      'shortcuts.sign',
+      'shortcuts.sync',
+      'shortcuts.newJob',
+      'shortcuts.support',
     ],
   };
 

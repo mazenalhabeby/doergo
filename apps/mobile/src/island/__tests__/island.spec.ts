@@ -6,9 +6,10 @@ import {
 } from '../geometry';
 import { androidCutout, cutoutFromInset } from '../cutout';
 import { TONES, dwellFor, ISLAND } from '../tokens';
+import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
-const read = (p: string) => fs.readFileSync(path.join(SRC, p), 'utf8');
+const read = (p: string) => readSource(path.join(SRC, p), 'utf8');
 const code = (p: string) =>
   read(p).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 

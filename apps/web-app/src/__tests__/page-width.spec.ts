@@ -1,5 +1,6 @@
 import fs from "fs"
 import path from "path"
+import { readSource } from "../test-utils/read-source"
 import { readNavbar } from "./_navbar-screen"
 
 /*
@@ -28,8 +29,7 @@ const SOURCE = path.join(SRC, "components/ui/page-width.ts")
   requiring whitespace alone stops JSX comments being stripped, since those
   open as brace-slash-star. Both traps have been fallen into in this repo.
 */
-const strip = (src: string) =>
-  src.replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
+const strip = (src: string) => src.replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -90,12 +90,7 @@ describe("a full-bleed band holds a contained column", () => {
     creating an invoice and correcting one are one screen — which also means
     getting this right once fixes both, and getting it wrong once breaks both.
   */
-  const shell = strip(
-    fs.readFileSync(
-      path.join(SRC, "app/(dashboard)/invoices/_components/invoice-shell.tsx"),
-      "utf8",
-    ),
-  )
+  const shell = strip(fs.readFileSync(path.join(SRC, "app/(dashboard)/invoices/_components/invoice-shell.tsx"), "utf8"))
 
   it("does not put the sticky bar's border on the contained element", () => {
     const bar = shell.match(/className="sticky top-0 z-30[^"]*"/)?.[0] ?? ""
@@ -121,7 +116,7 @@ describe("a full-bleed band holds a contained column", () => {
       single fix reaches both — and neither can drift away on its own.
     */
     for (const page of ["app/(dashboard)/invoices/new/page.tsx", "app/(dashboard)/invoices/[id]/edit/page.tsx"]) {
-      const src = strip(fs.readFileSync(path.join(SRC, page), "utf8"))
+      const src = strip(readSource(path.join(SRC, page), "utf8"))
       expect(src).toContain("InvoiceTopBar")
       expect(src).toContain("InvoiceWorkbench")
       expect(src).toContain("InvoiceDocument")

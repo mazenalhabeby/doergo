@@ -1,0 +1,134 @@
+<title>No-Shift Reminder Setting</title>
+<style>
+/* Layout: the workspace's Attendance settings card, as the web draws it, with the one new control. */
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --soft:#f1f5f9;
+  --primary:#2563eb; --primarySoft:#2563eb12; --note:#475569; --new:#0d8f72; --newSoft:#0d8f7214;
+  --sans:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#0b0d10; --card:#13161b; --ink:#e7ecf3; --muted:#94a0b0; --line:#262b33; --soft:#1b2027;
+  --primary:#5b8cff; --primarySoft:#5b8cff1c; --note:#a7b2c2; --new:#5fd3b2; --newSoft:#5fd3b21c;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#0b0d10; --card:#13161b; --ink:#e7ecf3; --muted:#94a0b0; --line:#262b33; --soft:#1b2027;
+  --primary:#5b8cff; --primarySoft:#5b8cff1c; --note:#a7b2c2; --new:#5fd3b2; --newSoft:#5fd3b21c;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+.wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:28px 56px;display:flex;flex-direction:column;gap:20px}
+.eyebrow{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+h1{font-size:22px;font-weight:600;margin:4px 0 6px;text-wrap:balance}
+.lede{color:var(--muted);margin:0;max-width:70ch}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.head{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+.ic{width:34px;height:34px;border-radius:9px;background:var(--soft);display:grid;place-items:center;color:var(--primary);flex:none}
+.head h2{font-size:15px;font-weight:600;margin:0}
+.head p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.opts{display:grid;gap:8px;max-width:680px}
+.opt{border:1px solid var(--line);border-radius:12px}
+.opt.on{border-color:var(--primary);background:var(--primarySoft)}
+.opt button.top{all:unset;display:flex;gap:12px;padding:14px 16px;width:100%;box-sizing:border-box;cursor:pointer}
+.radio{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);margin-top:2px;flex:none}
+.on .radio{border-color:var(--primary);box-shadow:inset 0 0 0 3px var(--card);background:var(--primary)}
+.opt b{display:block;font-weight:600;font-size:14px}
+.opt small{display:block;color:var(--muted);font-size:13px}
+.extra{padding:0 16px 16px 44px;display:flex;flex-direction:column;gap:8px}
+.newtag{display:inline-block;font-size:10.5px;letter-spacing:.08em;font-weight:600;color:var(--new);background:var(--newSoft);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.lbl{font-size:13px;font-weight:500}
+.step{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--card)}
+.step button{all:unset;padding:5px 12px;cursor:pointer;font-size:14px}
+.step button:focus-visible,.chip:focus-visible,.opt button.top:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.step span{min-width:56px;text-align:center;border-inline:1px solid var(--line);padding:5px 10px;font-weight:600;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{all:unset;cursor:pointer;font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted)}
+.chip.on{border-color:var(--primary);color:var(--primary);background:var(--primarySoft)}
+.hint{color:var(--note);font-size:12.5px;margin:0}
+.save{all:unset;background:var(--primary);color:#fff;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:500;cursor:pointer}
+.note{font-size:12.5px;color:var(--muted);margin:12px 0 0;max-width:680px}
+.phone{display:flex;gap:16px;flex-wrap:wrap}
+.qa{flex:1 1 300px;min-width:0}
+.qa h3{font-size:14px;margin:0 0 6px}
+.qa ul{margin:0;padding-left:18px;color:var(--note);display:grid;gap:4px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Mockup · Workspace → Attendance</div>
+    <h1>When to ask “forgot to clock out?” without a shift</h1>
+    <p class="lede">Today every workspace waits a fixed 8 hours. This adds one control under “Allow”. Change the hours below to see what members and leaders get.</p>
+  </header>
+
+  <section class="card" aria-label="Clocking in without a shift">
+    <div class="head">
+      <div class="ic" aria-hidden="true">⏱</div>
+      <div><h2>Clocking in without a shift</h2><p>What happens when a member who has no shift today clocks in here.</p></div>
+    </div>
+
+    <div class="opts">
+      <div class="opt on">
+        <button class="top" type="button" aria-pressed="true"><span class="radio"></span><span><b>Allow</b><small>Members clock in and out freely. Every hour counts.</small></span></button>
+        <div class="extra">
+          <div class="row">
+            <span class="lbl">Ask “forgot to clock out?” after<span class="newtag">NEW</span></span>
+            <div class="step">
+              <button type="button" id="less" aria-label="Less">−</button>
+              <span id="val">8 h</span>
+              <button type="button" id="more" aria-label="More">+</button>
+            </div>
+            <div class="chips" id="chips"></div>
+          </div>
+          <p class="hint" id="hint"></p>
+        </div>
+      </div>
+      <div class="opt">
+        <button class="top" type="button"><span class="radio"></span><span><b>Allow up to a number of hours a day</b><small>Time past the limit counts only when a leader approves it as overtime. The limit is also when the reminder comes.</small></span></button>
+      </div>
+      <div class="opt">
+        <button class="top" type="button"><span class="radio"></span><span><b>Only with a shift</b><small>Members without a shift today cannot clock in here.</small></span></button>
+      </div>
+    </div>
+    <p class="note">Members with a shift are not affected: their reminder follows their shift’s end.</p>
+  </section>
+
+  <section class="card phone">
+    <div class="qa">
+      <h3>What the member sees</h3>
+      <ul id="member"></ul>
+    </div>
+    <div class="qa">
+      <h3>Decisions to confirm</h3>
+      <ul>
+        <li>Range 1–16 hours, half-hour steps; quick picks 4, 6, 8, 10, 12 h.</li>
+        <li>Empty = 8 h (today’s behaviour). Existing workspaces keep 8 h until someone changes it.</li>
+        <li>Only the first reminder moves. After it: every hour, and the leader is told after 3 reminders (unchanged).</li>
+        <li>Applies to clock-ins after saving; sessions already open keep their reminder time.</li>
+        <li>Who can change it: whoever manages the workspace’s attendance rules (same as the rule above).</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var MIN=60, MAX=960, v=480, presets=[240,360,480,600,720];
+  var fmt=function(m){var h=m/60;return (Number.isInteger(h)?h:h.toFixed(1))+' h'};
+  var at=function(m){return fmt(m).replace(' h',' hours')};
+  function render(){
+    document.getElementById('val').textContent=fmt(v);
+    var c=document.getElementById('chips'); c.innerHTML='';
+    presets.forEach(function(p){var b=document.createElement('button');b.type='button';b.className='chip'+(p===v?' on':'');b.textContent=fmt(p);b.onclick=function(){v=p;render()};c.appendChild(b)});
+    document.getElementById('less').disabled=v<=MIN; document.getElementById('more').disabled=v>=MAX;
+    var lead=Math.round((v+180)/60);
+    document.getElementById('hint').textContent='First reminder '+at(v)+' after clocking in, then every hour. The leader is told after 3 reminders (about '+lead+' hours in).';
+    document.getElementById('member').innerHTML=
+      '<li>After '+at(v)+': a notification and the Time card “You’ve been clocked in for '+(v/60>=1?Math.floor(v/60):1)+' hours · Did you forget to clock out?”</li>'+
+      '<li>“I forgot to clock out” sets when they really left.</li>'+
+      '<li>“I’m still working” quiets it until the next hourly reminder.</li>';
+  }
+  document.getElementById('less').onclick=function(){v=Math.max(MIN,v-30);render()};
+  document.getElementById('more').onclick=function(){v=Math.min(MAX,v+30);render()};
+  render();
+})();
+</script>

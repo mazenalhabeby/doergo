@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+**/.next
+**/.expo
+**/locales
+**/migrations
+**/generated
+pnpm-lock.yaml
+*.md

@@ -8,7 +8,11 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AUTO_CLOCK_DEFAULTS } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
-import { LocationsService } from '../locations.service';
+import { SpaceUpdateService } from '../space-update.service';
+import { AssignmentTermsService } from '../assignment-terms.service';
+
+/** The workspace edit and a member's terms — two services since the split, one fixture. */
+type Svc = Pick<SpaceUpdateService, 'update'> & Pick<AssignmentTermsService, 'updateAssignment'>;
 
 function build(space: Record<string, unknown> = {}, assignment: Record<string, unknown> = {}) {
   const row = { id: 'loc-1', organizationId: 'org-1', isRemote: false, autoClock: null, ...space };
@@ -31,10 +35,13 @@ function build(space: Record<string, unknown> = {}, assignment: Record<string, u
     $executeRaw: jest.fn().mockResolvedValue(0),
   };
   const client = { emit: jest.fn() };
-  return { prisma, client, svc: new LocationsService(prisma, client as any) };
+  const update = new SpaceUpdateService(prisma, client as any);
+  const terms = new AssignmentTermsService(prisma, client as any);
+  const svc: Svc = { update: update.update.bind(update), updateAssignment: terms.updateAssignment.bind(terms) };
+  return { prisma, client, svc };
 }
 
-const patch = (svc: LocationsService, autoClock: unknown) =>
+const patch = (svc: Svc, autoClock: unknown) =>
   svc.update({ id: 'loc-1', organizationId: 'org-1', userId: 'admin', autoClock } as any);
 
 describe('workspace automatic-clock settings', () => {
@@ -134,7 +141,8 @@ describe('telling a member the switch is there', () => {
 });
 
 describe('how a member is clocked — by shift, or by arriving and leaving', () => {
-  const upd = (svc: LocationsService, body: Record<string, unknown>) => svc.updateAssignment({ assignmentId: 'a1', organizationId: 'org-1', ...body } as any);
+  const upd = (svc: Svc, body: Record<string, unknown>) =>
+    svc.updateAssignment({ assignmentId: 'a1', organizationId: 'org-1', ...body } as any);
 
   it('switching to arriving and leaving fills their usual hours from their own clock-ins here', async () => {
     const { svc, prisma } = build({ autoClock: { enabled: true } }, { autoClockMode: 'SHIFT' });

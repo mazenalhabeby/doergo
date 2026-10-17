@@ -16,7 +16,8 @@ describe('team list scope for an external member', () => {
 
   it('the controller asks the service for "own" when an external member reads the team', async () => {
     const service: any = { getColleagues: jest.fn().mockResolvedValue([]) };
-    const c = new (LocationsController as any)(service);
+    const chatReach = { annotate: async (r: unknown) => r };
+    const c = new (LocationsController as any)(service, undefined, undefined, undefined, undefined, chatReach);
     await c.getTeam({ user: { id: 'u', organizationId: 'o', isExternal: true, enabledModules: { modules: ['tasks'], platforms: 'both' } } });
     expect(service.getColleagues).toHaveBeenCalledWith(expect.objectContaining({ spaceScope: 'own' }));
   });

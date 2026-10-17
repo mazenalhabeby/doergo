@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { BILLABLE_ASSET_WHERE } from '@hbcfield/shared';
 import { AssetsService } from '../assets.service';
+import { assetServicesOf, type AssetsServiceParts } from './assets.service.fixture';
 import { AssetAccessService } from '../asset-access.service';
 import { AssetActivityService } from '../asset-activity.service';
 import { AssetHoldersService } from '../asset-holders.service';
@@ -21,7 +22,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
  * keeps the record and its history *and* stops the billing.
  */
 describe('AssetsService.delete — history is not disposable (AS-B1)', () => {
-  let service: AssetsService;
+  let service: AssetsServiceParts;
 
   const prisma: any = {
     asset: { findUnique: jest.fn(), delete: jest.fn() },
@@ -49,7 +50,7 @@ describe('AssetsService.delete — history is not disposable (AS-B1)', () => {
         { provide: AssetCustodyService, useValue: {} },
       ],
     }).compile();
-    service = module.get(AssetsService);
+    service = assetServicesOf(module);
   });
 
   const del = () =>

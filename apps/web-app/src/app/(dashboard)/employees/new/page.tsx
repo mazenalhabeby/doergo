@@ -27,100 +27,40 @@ import {
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { copyText } from "@/lib/clipboard"
 import { keys } from "@/lib/query-keys"
-
-// Specialty options
-const SPECIALTY_OPTIONS = [
-  { value: "Electrical", label: "Electrical" },
-  { value: "Plumbing", label: "Plumbing" },
-  { value: "Mechanical", label: "Mechanical" },
-  { value: "HVAC", label: "HVAC" },
-  { value: "General", label: "General" },
-  { value: "Other", label: "Other" },
-] as const
+import { useNewTechnicianPage } from "./use-new-technician-page"
+import { SPECIALTY_OPTIONS } from "./new-technician-page-helpers"
+import { NewTechnicianPageCreate } from "./new-technician-page-create"
 
 export default function NewTechnicianPage() {
-  const router = useRouter()
-  const { t } = useTranslation()
-  const { user, hasPermission } = useAuth()
-  const queryClient = useQueryClient()
+  const vm = useNewTechnicianPage()
+  const {
+    t,
+    email,
+    setEmail,
+    firstName,
+    setFirstName,
+    lastName,
+    setLastName,
+    password,
+    setPassword,
+    position,
+    setPosition,
+    specialty,
+    setSpecialty,
+    showPassword,
+    setShowPassword,
+    isSubmitting,
+    successDialog,
+    setSuccessDialog,
+    generatedPassword,
+    copiedPassword,
+    isFormValid,
+    handleSubmit,
+    handleCopyPassword,
+    handleCloseSuccess,
+    canCreateEmployees,
+  } = vm
 
-  // Form state
-  const [email, setEmail] = useState("")
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [password, setPassword] = useState("")
-  const [position, setPosition] = useState<string>("technician")
-  const [specialty, setSpecialty] = useState("")
-
-  // UI state
-  const [showPassword, setShowPassword] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [successDialog, setSuccessDialog] = useState(false)
-  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null)
-  const [copiedPassword, setCopiedPassword] = useState(false)
-
-  // Create mutation
-  const createMutation = useMutation({
-    mutationFn: (data: CreateEmployeeInput) => employeesApi.create(data),
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: keys.employees.all() })
-      if (response?.generatedPassword) {
-        setGeneratedPassword(response.generatedPassword)
-        setSuccessDialog(true)
-      } else {
-        notify.success(t('technicians.create.successMessage'))
-        router.push("/employees")
-      }
-    },
-    onError: (error: Error) => {
-      notify.error(error.message || t('technicians.create.failedToCreate'))
-      setIsSubmitting(false)
-    },
-  })
-
-  // Form validation
-  const isFormValid =
-    email.trim() !== "" &&
-    firstName.trim() !== "" &&
-    lastName.trim() !== ""
-
-  // Submit handler
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!isFormValid) {
-      notify.error(t('validation.fillRequiredFields'))
-      return
-    }
-
-    setIsSubmitting(true)
-    createMutation.mutate({
-      email: email.trim(),
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      password: password.trim() || undefined,
-      
-      specialty: specialty || undefined,
-    })
-  }
-
-  // Copy password handler
-  const handleCopyPassword = async () => {
-    if (generatedPassword) {
-      if (!(await copyText(generatedPassword))) return
-      setCopiedPassword(true)
-      setTimeout(() => setCopiedPassword(false), 2000)
-    }
-  }
-
-  // Close success dialog
-  const handleCloseSuccess = () => {
-    setSuccessDialog(false)
-    router.push("/employees")
-  }
-
-  // Check if user can create employees (ADMIN or can-view-all-tasks)
-  const canCreateEmployees = user?.role === "ADMIN" || hasPermission('canViewAllTasks')
   if (!canCreateEmployees) {
     return (
       <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
@@ -155,167 +95,7 @@ export default function NewTechnicianPage() {
       </Link>
 
       {/* Form */}
-      <Card className="max-w-2xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            {t('technicians.create.title')}
-          </CardTitle>
-          <CardDescription>
-            {t('technicians.create.description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Info */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-foreground">
-                {t('technicians.create.basicInformation')}
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">
-                    {t('technicians.create.firstNameLabel')} <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder={t('employees.new.firstNamePlaceholder')}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">
-                    {t('technicians.create.lastNameLabel')} <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder={t('employees.new.lastNamePlaceholder')}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">
-                  {t('technicians.create.emailLabel')} <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t('employees.new.emailPlaceholder')}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t('technicians.create.emailHint')}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">{t('technicians.create.passwordLabel')}</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('technicians.create.passwordPlaceholder')}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full px-3"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t('technicians.create.passwordHint')}
-                </p>
-              </div>
-            </div>
-
-            {/* Work Details */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-foreground">
-                {t('technicians.create.workDetails')}
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="position">{t('technicians.create.positionLabel')}</Label>
-                  <Input
-                    id="position"
-                    value={position}
-                    onChange={(e) => setPosition(e.target.value)}
-                    placeholder={t('employees.new.positionPlaceholder')}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {t('technicians.create.positionHint')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="specialty">{t('technicians.create.jobTitleLabel')}</Label>
-                  <Input
-                    id="specialty"
-                    placeholder={t('technicians.create.jobTitlePlaceholder')}
-                    value={specialty}
-                    onChange={(e) => setSpecialty(e.target.value)}
-                    list="specialty-suggestions"
-                  />
-                  <datalist id="specialty-suggestions">
-                    {SPECIALTY_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.label} />
-                    ))}
-                  </datalist>
-                  <p className="text-xs text-muted-foreground">
-                    {t('technicians.create.jobTitleHint')}
-                  </p>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Link href="/employees">
-                <Button type="button" variant="outline">
-                  {t('common.cancel')}
-                </Button>
-              </Link>
-              <Button
-                type="submit"
-                disabled={!isFormValid || isSubmitting}
-                className="gap-2"
-              >
-                {isSubmitting ? (
-                  t('common.creating')
-                ) : (
-                  <>
-                    <UserPlus className="h-4 w-4" />
-                    {t('technicians.create.createButton')}
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <NewTechnicianPageCreate vm={vm} />
 
       {/* Success Dialog with Generated Password */}
       <ConfirmDialog

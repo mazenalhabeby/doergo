@@ -7,6 +7,7 @@ import { AUTH_SERVICES } from '../auth-services';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AuditLogService } from '../../audit-log/audit-log.service';
 import { BillingService } from '../../billing/billing.service';
+import { BillingTrialService } from '../../billing/billing-trial.service';
 import { GraceTokenCache } from '../grace-token-cache.service';
 import { Role, Platform } from '@hbcfield/shared';
 
@@ -47,6 +48,7 @@ describe('refresh token presented again after the grace period', () => {
         { provide: ConfigService, useValue: { get: jest.fn(() => 'secret') } },
         { provide: AuditLogService, useValue: { log: jest.fn() } },
         { provide: BillingService, useValue: { startTrial: jest.fn() } },
+        { provide: BillingTrialService, useValue: { startTrial: jest.fn() } },
         { provide: GraceTokenCache, useValue: { get: jest.fn().mockResolvedValue(null), put: jest.fn() } },
       ],
     }).compile();

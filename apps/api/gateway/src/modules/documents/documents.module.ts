@@ -1,6 +1,11 @@
 import { Module } from '@nestjs/common';
 import { SignLinkController } from './sign-link.controller';
 import { DocumentsController } from './documents.controller';
+import { DocumentTypesController } from './document-types.controller';
+import { DocumentComplianceController } from './document-compliance.controller';
+import { DocumentDraftsController } from './document-drafts.controller';
+import { DocumentTemplatesController } from './document-templates.controller';
+import { DocumentSigningController } from './document-signing.controller';
 import { DocumentsGatewayService } from './documents.service';
 
 /**
@@ -9,7 +14,16 @@ import { DocumentsGatewayService } from './documents.service';
  * RPC errors back to real HTTP statuses.
  */
 @Module({
-  controllers: [DocumentsController, SignLinkController],
+  // Static paths first (types, compliance, drafts, templates), `:id/...` last — Express matches in this order.
+  controllers: [
+    DocumentTypesController,
+    DocumentComplianceController,
+    DocumentDraftsController,
+    DocumentTemplatesController,
+    DocumentsController,
+    DocumentSigningController,
+    SignLinkController,
+  ],
   providers: [DocumentsGatewayService],
 })
 export class DocumentsModule {}

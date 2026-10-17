@@ -1,5 +1,6 @@
 import fs from "fs"
 import path from "path"
+import { readSource } from "../../../../test-utils/read-source"
 
 /**
  * The SCREEN, not the file.
@@ -28,7 +29,8 @@ const INVOICES = path.join(__dirname, "..")
 export const strip = (src: string) =>
   src.replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
 
-export const read = (rel: string) => fs.readFileSync(path.join(INVOICES, rel), "utf8")
+// A file with the parts moved out of it when it was split (its hook, sections, helpers).
+export const read = (rel: string) => readSource(path.join(INVOICES, rel), "utf8")
 export const code = (rel: string) => strip(read(rel))
 
 /** Every shared piece an invoice screen is built from. */

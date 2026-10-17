@@ -5,9 +5,10 @@ import {
   stepsFor, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
 } from '../../components/home/my-work';
 import type { ScheduleEntry, Task } from '../api/types';
+import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
-const code = (p: string) => fs.readFileSync(path.join(SRC, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+const code = (p: string) => readSource(path.join(SRC, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 
 const at = (y: number, m: number, d: number, h = 0, min = 0) => new Date(y, m - 1, d, h, min).toISOString();
 const task = (over: Record<string, unknown>): Task => ({

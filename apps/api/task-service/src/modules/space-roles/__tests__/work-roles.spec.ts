@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { SpaceRolesService } from '../space-roles.service';
+import { spaceRoleServices, type SpaceRolesServiceParts } from './space-roles.service.fixture';
 
 /**
  * Work roles, a second role per member, and day rates — the security half.
@@ -12,7 +13,7 @@ import { SpaceRolesService } from '../space-roles.service';
  * only where somebody switched it on.
  */
 describe('SpaceRolesService — work roles', () => {
-  let service: SpaceRolesService;
+  let service: SpaceRolesServiceParts;
 
   const roles: Record<string, any> = {
     mech: { id: 'mech', organizationId: 'org1', name: 'Mechanic', kind: 'WORK', permissions: {}, isSystem: false },
@@ -61,10 +62,7 @@ describe('SpaceRolesService — work roles', () => {
     prisma.accessRole.findMany.mockResolvedValue([]);
     prisma.spaceAssignment.update.mockImplementation(({ data }: any) => Promise.resolve({ ...member(), ...data }));
     tx.rateHistory.findMany.mockResolvedValue([]);
-    const moduleRef = await Test.createTestingModule({
-      providers: [SpaceRolesService, { provide: PrismaService, useValue: prisma }],
-    }).compile();
-    service = moduleRef.get(SpaceRolesService);
+    service = spaceRoleServices(prisma);
   });
 
   describe('a work role grants nothing', () => {

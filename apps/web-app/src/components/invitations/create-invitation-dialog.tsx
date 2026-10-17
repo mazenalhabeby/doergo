@@ -9,7 +9,13 @@ import { Copy, Check, CheckCircle2, Mail, Link2, ChevronDown, ShieldCheck } from
 import { notify } from "@/lib/toast"
 
 import { useAuth } from "@/contexts/auth-context"
-import { invitationsApi, locationsApi, organizationsApi, type CreateInvitationInput, type CompanyLocation, type AccessRole } from "@/lib/api"
+import {
+  invitationsApi,
+  organizationsApi,
+  type CreateInvitationInput,
+  type CompanyLocation,
+  type AccessRole,
+} from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,14 +28,7 @@ import { useSpaceModules } from "@/hooks/use-space-modules"
 import { Segmented } from "@/components/ui/segmented"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   Select,
   SelectContent,
@@ -38,208 +37,57 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { copyText } from "@/lib/clipboard"
-
-// Only an external invitation draws the builder — not loaded until one is.
-const PermissionBuilder = dynamic(
-  () => import("@/components/permissions/permission-builder").then((m) => m.PermissionBuilder),
-  { loading: () => <Skeleton className="h-64 w-full" /> },
-)
-
-interface CreateInvitationDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
+import { useActiveSpaces } from "@/hooks/use-space-directory"
+import { useCreateInvitationDialog, type CreateInvitationDialogProps } from "./use-create-invitation-dialog"
+import { PermissionBuilder } from "./create-invitation-dialog-helpers"
+import { CreateInvitationDialogInviteDialog } from "./create-invitation-dialog-invite-dialog"
 
 export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationDialogProps) {
-  const { t } = useTranslation()
-  const { user } = useAuth()
-  const queryClient = useQueryClient()
-
-  // Form state
-  const [mode, setMode] = useState<"email" | "code">("email")
-  const [email, setEmail] = useState("")
-  const [position, setPosition] = useState("")
-  const [isExternal, setIsExternal] = useState(false)
-  const [scheduleType, setScheduleType] = useState("NONE")
-  const [scheduleRows, setScheduleRows] = useState<EditableScheduleRow[]>(createDefaultSchedule())
-  const [monthlyHourBudget, setMonthlyHourBudget] = useState<number | "">("")
-  const [spaceId, setSpaceId] = useState("none")
-  /*
-    Which kind of outsider.
-
-    An external member's whole authority is one space role, so which one they
-    are IS the invitation. Two answers in practice: a Supervisor who approves
-    our hours and follows the work, and an Observer who watches and can raise a
-    job — no hours, no approvals, no assigning.
-
-    Left unset the server applies its default (Supervisor), so an invite sent
-    without touching this behaves exactly as before.
-  */
-  const [externalRoleId, setExternalRoleId] = useState("default")
-  /*
-    …or what they may do, set area by area (the permission builder), which is
-    the default: the invitation carries the keys (`spacePermissions`) and the
-    server keeps them as this person's own role on accept — or the shared role
-    they exactly match. Starts at Supervisor, today's default.
-  */
-  const [externalMode, setExternalMode] = useState<"builder" | "role">("builder")
-  const [externalChoice, setExternalChoice] = useState<PermissionChoice>(() => presetChoice("supervisor", { isExternal: true }))
-
-  // Access Profile pre-config — applied to the member on accept, so their first
-  // screen already matches their final access (no post-registration change).
-  const [access, setAccess] = useState<AccessDraft>(() => defaultAccessDraft())
-  const [accessOpen, setAccessOpen] = useState(false)
-  const [accessTouched, setAccessTouched] = useState(false)
-  const patchAccess = useCallback((p: Partial<AccessDraft>) => {
-    setAccessTouched(true)
-    setAccess((cur) => ({ ...cur, ...p }))
-  }, [])
-
-  // Success state
-  const [generatedCode, setGeneratedCode] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [codeCopied, setCodeCopied] = useState(false)
-
-  // Fetch spaces
-  const { data: spacesData } = useQuery({
-    queryKey: keys.locations.list(),
-    queryFn: () => locationsApi.list(),
-    staleTime: 60000,
-    enabled: open,
-  })
-  const locations = spacesData?.data || []
-
-  /*
-    An external member works in exactly ONE workspace, and that workspace is
-    what says which client they belong to — so no company is recorded against
-    the person. A second field would restate the workspace by hand and be free
-    to disagree with it.
-  */
-  const hasSpace = isExternal && spaceId !== "none" && !!spaceId
-  // What the chosen workspace runs, so areas it cannot use are greyed out (and not sent).
-  const { enabledModules: spaceModules, isResolved: spaceModulesResolved } = useSpaceModules(hasSpace ? spaceId : null)
-  const builderModules = hasSpace && spaceModulesResolved ? spaceModules : undefined
-  // Space-scoped roles only — an org role reaches every space, which is exactly
-  // what an outsider must never have. The server refuses one regardless.
-  const { data: spaceRoles = [] } = useQuery({
-    queryKey: keys.organization.roles("space"),
-    queryFn: () => organizationsApi.getRoles("space"),
-    staleTime: 300000,
-    enabled: open && isExternal,
-  })
-
-  const createMutation = useMutation({
-    mutationFn: (input: CreateInvitationInput) => invitationsApi.create(input),
-    onSuccess: (data) => {
-      const code = data?.code
-      if (code) {
-        setGeneratedCode(code)
-        setSuccess(true)
-        // A courtesy copy on creation: silent, the Copy button reports for itself.
-        void copyText(code, { silent: true })
-      }
-      queryClient.invalidateQueries({ queryKey: keys.people.invitations() })
-      queryClient.invalidateQueries({ queryKey: keys.people.pendingInvitations() })
-    },
-    onError: (error: Error) => {
-      notify.error(error.message || t("invitations.inviteDialog.failedToCreate"))
-    },
-  })
-
-  const handleSubmit = useCallback(() => {
-    // Invitations are always for Employees; management is granted via permissions.
-    const input: CreateInvitationInput = { targetRole: "EMPLOYEE" }
-    if (mode === "email" && email.trim()) input.email = email.trim()
-    if (position.trim()) input.position = position.trim()
-    if (scheduleType !== "NONE") input.scheduleType = scheduleType
-    if (scheduleType === "FIXED") {
-      input.schedule = scheduleRows.map((r) => ({
-        dayOfWeek: r.dayOfWeek, startTime: r.startTime, endTime: r.endTime, isActive: r.isActive,
-      }))
-    }
-    if (scheduleType === "FLEXIBLE" && monthlyHourBudget !== "") {
-      input.monthlyHourBudget = Number(monthlyHourBudget)
-    }
-    if (spaceId && spaceId !== "none") input.spaceId = spaceId
-    // Pre-assigned role (validated server-side) + pre-configured access → both
-    // applied to the new member on accept, so their first screen already matches.
-    if (isExternal) {
-      // Their authority comes from a SPACE role, never an org-wide one. The
-      // server validates the scope and refuses anything else.
-      input.isExternal = true
-      if (externalMode === "builder") {
-        input.spacePermissions = permissionsFromChoice(withoutMissingModules(externalChoice, builderModules))
-      } else if (externalRoleId !== "default") {
-        input.memberRoleId = externalRoleId
-      }
-    } else if (access.memberRoleId) {
-      input.memberRoleId = access.memberRoleId
-    }
-    input.accessProfile = serializeAccessDraft(access)
-    createMutation.mutate(input)
-  }, [mode, email, position, scheduleType, scheduleRows, monthlyHourBudget, spaceId, access, isExternal, externalMode, externalChoice, externalRoleId, builderModules, createMutation])
-
-  // Keep the feature tabs in sync with the position until the admin edits access
-  // themselves (then their choices win).
-  const handlePositionChange = useCallback((next: string) => {
-    setPosition(next)
-    if (!accessTouched) setAccess((cur) => ({ ...cur, modules: getDefaultModules(next.trim() || null) }))
-  }, [accessTouched])
-
-  const platformSummary = useMemo(() => {
-    const key = access.platforms === "web"
-      ? "accessBuilder.platforms.webOnly"
-      : access.platforms === "mobile"
-      ? "accessBuilder.platforms.mobileOnly"
-      : "accessBuilder.platforms.both"
-    return t(key)
-  }, [access.platforms, t])
-
-  const handleCopyCode = useCallback(async () => {
-    if (!generatedCode) return
-    if (!(await copyText(generatedCode))) return
-    setCodeCopied(true)
-    notify.success(t("invitations.inviteDialog.codeCopied"))
-    setTimeout(() => setCodeCopied(false), 3000)
-  }, [generatedCode])
-
-  const handleSendAnother = useCallback(() => {
-    setGeneratedCode(null)
-    setSuccess(false)
-    setEmail("")
-    setPosition("")
-    setScheduleType("NONE")
-    setScheduleRows(createDefaultSchedule())
-    setMonthlyHourBudget("")
-    setAccess(defaultAccessDraft())
-    setAccessOpen(false)
-    setAccessTouched(false)
-    setCodeCopied(false)
-    setExternalMode("builder")
-    setExternalChoice(presetChoice("supervisor", { isExternal: true }))
-  }, [])
-
-  const handleClose = useCallback(() => {
-    onOpenChange(false)
-    setTimeout(() => {
-      setMode("email")
-      setEmail("")
-      setPosition("")
-      setScheduleType("NONE")
-    setScheduleRows(createDefaultSchedule())
-    setMonthlyHourBudget("")
-      setSpaceId("none")
-      setAccess(defaultAccessDraft())
-      setAccessOpen(false)
-      setAccessTouched(false)
-      setGeneratedCode(null)
-      setSuccess(false)
-      setCodeCopied(false)
-      setExternalMode("builder")
-      setExternalChoice(presetChoice("supervisor", { isExternal: true }))
-      createMutation.reset()
-    }, 200)
-  }, [onOpenChange, createMutation])
+  const vm = useCreateInvitationDialog({ open, onOpenChange })
+  const {
+    t,
+    mode,
+    setMode,
+    email,
+    setEmail,
+    position,
+    isExternal,
+    setIsExternal,
+    scheduleType,
+    setScheduleType,
+    scheduleRows,
+    setScheduleRows,
+    monthlyHourBudget,
+    setMonthlyHourBudget,
+    spaceId,
+    setSpaceId,
+    externalRoleId,
+    setExternalRoleId,
+    externalMode,
+    setExternalMode,
+    externalChoice,
+    setExternalChoice,
+    access,
+    setAccess,
+    accessOpen,
+    setAccessOpen,
+    patchAccess,
+    generatedCode,
+    success,
+    codeCopied,
+    locations,
+    hasSpace,
+    spaceModules,
+    builderModules,
+    spaceRoles,
+    createMutation,
+    handleSubmit,
+    handlePositionChange,
+    platformSummary,
+    handleCopyCode,
+    handleSendAnother,
+    handleClose,
+  } = vm
 
   // ─── Success view ──────────────────────────────────────────────────────
 
@@ -315,246 +163,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
           <DialogDescription>{t("invitations.inviteDialog.description")}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2 max-h-[65vh] overflow-y-auto pr-1">
-          {/* Method toggle */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">{t("invitations.inviteDialog.methodLabel")}</Label>
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-muted/60 rounded-lg">
-              <button
-                type="button"
-                onClick={() => setMode("email")}
-                className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-md py-2 text-sm font-medium transition-all",
-                  mode === "email" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <Mail className="h-4 w-4" />{t("invitations.inviteDialog.emailLabel")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("code")}
-                className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-md py-2 text-sm font-medium transition-all",
-                  mode === "code" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <Link2 className="h-4 w-4" />{t("invitations.inviteDialog.codeLabel")}
-              </button>
-            </div>
-          </div>
-
-          {/* Email (email mode only) */}
-          {mode === "email" && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">{t("invitations.inviteDialog.emailLabel")}</Label>
-              <Input type="email" placeholder={t("invitations.inviteDialog.emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} className="h-9" />
-            </div>
-          )}
-
-          {/* Position / title */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">
-              {t("invitations.inviteDialog.positionLabel")} <span className="text-muted-foreground/50">{t("invitations.inviteDialog.optional")}</span>
-            </Label>
-            <Input
-              placeholder={t("invitations.inviteDialog.positionPlaceholder")}
-              value={position}
-              onChange={(e) => handlePositionChange(e.target.value)}
-              className="h-9"
-            />
-          </div>
-
-          {/* Staff, or somebody else's */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">
-              {t("members.invite.whoSection")}
-            </Label>
-            <div className="grid grid-cols-2 gap-2">
-              {([
-                { value: false, label: t("members.invite.staffOption"), hint: t("members.invite.staffOptionHint") },
-                { value: true, label: t("members.invite.externalOption"), hint: t("members.invite.externalOptionHint") },
-              ] as const).map((opt) => (
-                <button
-                  key={String(opt.value)}
-                  type="button"
-                  onClick={() => {
-                    setIsExternal(opt.value)
-                    // Schedule is the one control that disappears for an
-                    // external member, so its value is cleared with it — what
-                    // the form stops showing, it stops sending. Access is NOT
-                    // touched: the panel is identical for both, so the
-                    // selections in it must be too.
-                    if (opt.value) {
-                      setScheduleType("NONE")
-                      /*
-                        What the form stops showing, it stops sending.
-
-                        The four hidden sections still hold whatever was set
-                        before the switch, and an invitation carrying an org
-                        role or remote clock-in for an external member would be
-                        refused — or worse, quietly applied. Their space is a
-                        single assignment, so the scope is 'own' by definition.
-                      */
-                      setAccess((cur) => ({
-                        ...cur,
-                        memberRoleId: null,
-                        allowRemote: false,
-                        spaceScope: "own",
-                      }))
-                    }
-                  }}
-                  aria-pressed={isExternal === opt.value}
-                  className={`rounded-lg border p-2.5 text-left transition-colors ${
-                    isExternal === opt.value
-                      ? "border-primary bg-primary/5 ring-1 ring-primary"
-                      : "border-border bg-muted/40 hover:bg-muted"
-                  }`}
-                >
-                  <span className="block text-xs font-medium text-foreground">{opt.label}</span>
-                  <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">{opt.hint}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Schedule — same control as the Edit dialog (type + weekly hours /
-              budget). Not for an external member: a schedule is the hours WE
-              expect somebody to work, and this person's hours are their own
-              employer's business. They come to approve ours, not to file
-              theirs — they never clock in, so a rota line for them would sit
-              permanently unmet and start raising no-shows against a company
-              that owes us no attendance. */}
-          {!isExternal && (
-            <ScheduleFields
-              scheduleType={scheduleType}
-              onScheduleTypeChange={setScheduleType}
-              scheduleRows={scheduleRows}
-              onScheduleRowsChange={setScheduleRows}
-              monthlyHourBudget={monthlyHourBudget}
-              onMonthlyHourBudgetChange={setMonthlyHourBudget}
-            />
-          )}
-
-          {/* Space (optional) */}
-          {locations.length > 0 && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">
-                {t("invitations.inviteDialog.spaceLabel")}{" "}
-                {isExternal ? (
-                  <span className="text-destructive">*</span>
-                ) : (
-                  <span className="text-muted-foreground/50">{t("invitations.inviteDialog.optional")}</span>
-                )}
-              </Label>
-              <Select value={spaceId} onValueChange={setSpaceId}>
-                <SelectTrigger className="h-9"><SelectValue placeholder={t("invitations.inviteDialog.spacePlaceholder")} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t("invitations.inviteDialog.noSpace")}</SelectItem>
-                  {locations.map((loc: CompanyLocation) => (
-                    <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {/* Under the field it is about, and only while it is unmet — this
-                  is the one thing standing between the admin and a disabled
-                  Send button, so it has to say so where they are looking. */}
-              {isExternal && !hasSpace && (
-                <p className="text-[11px] text-amber-600 dark:text-amber-400">
-                  {t("members.invite.externalNeedsSpace")}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/*
-            What an outsider may do — only meaningful for an external invite, and
-            only once the workspace is chosen (the builder greys out what that
-            workspace does not run). Two ways: set it area by area, or use an
-            existing shared role.
-          */}
-          {isExternal && hasSpace && (
-            <div className="space-y-3 rounded-lg border border-border p-3">
-              <Segmented
-                ariaLabel={t("invitations.inviteDialog.externalRoleLabel", "Role in this workspace")}
-                value={externalMode}
-                onChange={setExternalMode}
-                options={[
-                  { value: "builder", label: t("permissionBuilder.invite.custom") },
-                  ...(spaceRoles.length > 0 ? [{ value: "role" as const, label: t("permissionBuilder.invite.useRole") }] : []),
-                ]}
-              />
-              {externalMode === "builder" ? (
-                <PermissionBuilder
-                  name={email.trim() || t("permissionBuilder.invite.name")}
-                  isExternal
-                  value={externalChoice}
-                  onChange={setExternalChoice}
-                  spaceModules={builderModules}
-                  platform={{ value: access.platforms, onChange: (platforms) => patchAccess({ platforms }) }}
-                />
-              ) : (
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">
-                    {t("invitations.inviteDialog.externalRoleLabel", "Role in this workspace")}
-                  </Label>
-                  <Select value={externalRoleId} onValueChange={setExternalRoleId}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="default">
-                        {t("invitations.inviteDialog.externalRoleDefault", "Default (External Supervisor)")}
-                      </SelectItem>
-                      {spaceRoles.map((r: AccessRole) => (
-                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground">
-                    {t(
-                      "invitations.inviteDialog.externalRoleHint",
-                      "An external member's access is this role, in this workspace only.",
-                    )}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Access & permissions — pre-configured so the member's first screen
-              already matches their final access. Collapsed by default with a
-              sensible default; expand to fine-tune. */}
-          <div className="rounded-lg border border-border">
-            <button
-              type="button"
-              onClick={() => setAccessOpen((v) => !v)}
-              className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <ShieldCheck className="h-4 w-4 text-muted-foreground shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">{t("invitations.inviteDialog.accessTitle", "Access & permissions")}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {platformSummary} · {t("invitations.inviteDialog.accessFeatureCount", "{{count}} features", { count: access.modules.length })}
-                    {access.canManageUsers ? ` · ${t("accessBuilder.perms.manage.title")}` : ""}
-                  </p>
-                </div>
-              </div>
-              <ChevronDown className={cn("h-4 w-4 text-muted-foreground shrink-0 transition-transform", accessOpen && "rotate-180")} />
-            </button>
-            {accessOpen && (
-              <div className="border-t border-border px-3 py-4">
-                <AccessFields
-                  value={access}
-                  onChange={patchAccess}
-                  allowAdmin={false}
-                  /* External: only what shapes their screens — where they log
-                     in and which tabs they get. Their powers come from the role
-                     they are given in a space, not from here. */
-                  external={isExternal}
-                />
-              </div>
-            )}
-          </div>
-        </div>
+        <CreateInvitationDialogInviteDialog vm={vm} />
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} className="rounded-lg">{t("common.cancel")}</Button>

@@ -1,41 +1,14 @@
 import { Injectable, Inject, Logger, Optional } from '@nestjs/common';
-import { MEMBER_SELECT } from './attendance-selects';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ShiftResolverService } from './shift-resolver.service';
-import {
-  success,
-  TimeEntryStatus,
-  SHIFT_REMINDER_DEFAULTS,
-  UNSCHEDULED_SESSION_DEFAULTS,
-  clocksByPresence,
-  presenceSessionEnd,
-  SERVICE_NAMES,
-} from '@hbcfield/shared';
-import { localPartsIn } from '@hbcfield/shared';
+import { personName, success, SERVICE_NAMES } from '@hbcfield/shared';
 import { AttendanceRoutingService } from './attendance-routing.service';
 import { AutoClockService } from './auto-clock.service';
 import { NoShowSettleService } from './no-show-settle.service';
+import { shiftNudgeCadence } from './shift-sweep-helpers';
 
-/**
- * A shift's own nudge cadence — gap between nudges and how many before a
- * leader is told — with the defaults where there is no shift row to read.
- *
- * ONE reading for both sweeps (an open shift that will not end, and a shift
- * nobody turned up for). The no-show sweep used to hard-code the defaults, so
- * a shift set to "nudge every 15 min, twice" was nudged every 5, three times,
- * when nobody came — and as configured only when they forgot to leave.
- * (The GRACE before the first nudge is already the shift's: it is baked into
- * `nextRemindAt` when the instance is materialized.)
- */
-export function shiftNudgeCadence(
-  shift?: { reminderIntervalMin?: number | null; maxReminders?: number | null } | null,
-): { intervalMin: number; maxReminders: number } {
-  return {
-    intervalMin: shift?.reminderIntervalMin ?? SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES,
-    maxReminders: shift?.maxReminders ?? SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS,
-  };
-}
+export { shiftNudgeCadence } from './shift-sweep-helpers';
 
 /**
  * The shift engines that run on a clock: reminders on an open shift, the
@@ -58,271 +31,6 @@ export class ShiftSweepService {
     // What the system can prove about a missed shift closes it before anybody is asked.
     @Optional() private readonly noShowSettle?: NoShowSettleService,
   ) {}
-
-  /**
-   * Shift reminder engine — replaces the old force-close auto-clock-out.
-   *
-   * It NEVER clocks anyone out. On a short interval it scans only the open
-   * shifts whose reminder is actually due (`nextRemindAt <= now`, served by the
-   * `[status, nextRemindAt]` index — not every open shift) and either:
-   *   • nudges the worker ("forgot to clock out, or working extra?") and re-arms
-   *     the next reminder, or
-   *   • after `maxReminders` with no response, escalates to a space leader
-   *     (a member whose sub-role grants `canReconcileAttendance`) and stops.
-   *
-   * Entries with no expected end (`nextRemindAt` null — TASK/NONE spaces or an
-   * unresolved shift) are never touched: no reminders and no auto-close.
-   */
-  async runShiftReminders(_data?: { manual?: boolean }) {
-    const now = new Date();
-
-    const dueEntries = await this.prisma.timeEntry.findMany({
-      where: {
-        status: TimeEntryStatus.CLOCKED_IN,
-        nextRemindAt: { not: null, lte: now },
-      },
-      include: {
-        user: { select: MEMBER_SELECT },
-        location: { select: { id: true, name: true, timezone: true } },
-        shift: { select: { reminderIntervalMin: true, maxReminders: true } },
-      },
-      orderBy: { nextRemindAt: 'asc' }, // drain oldest-due first
-      take: 500, // cap per tick; any backlog drains over subsequent ticks
-    });
-
-    if (dueEntries.length === 0) {
-      return success({ remindedCount: 0, escalatedCount: 0, entryIds: [] });
-    }
-
-    // Partition into reminders vs escalations up front.
-    type Due = (typeof dueEntries)[number];
-    const toRemind: { entry: Due; nextCount: number; intervalMin: number; maxReminders: number }[] = [];
-    const toEscalate: Due[] = [];
-    /*
-      ── The automatic clock: still inside after the end ──
-      For a member it is on for, the phone asks the person itself (offline), so
-      the server sends no "forgot to clock out?" nudges: it tells the LEADER once,
-      at the planned end + `leaderAfterMinutes`, through the same routing as any
-      escalation (workspace → the member's watchers → nobody). Due early (an
-      approved extra-time round re-arms the ordinary reminder) → re-armed for
-      that moment. One query for the whole batch.
-    */
-    const autoByEntry = this.autoClock ? await this.autoClock.settingsForEntries(dueEntries, now) : new Map();
-    const rearm: { id: string; at: Date }[] = [];
-    for (const entry of dueEntries) {
-      const auto = autoByEntry.get(entry.id);
-      // Clocked by arriving and leaving with no shift: its course is the workspace's hours, read now.
-      const plannedEnd = entry.expectedClockOutAt ?? (auto && clocksByPresence(auto, entry) ? presenceSessionEnd(entry.clockInAt, auto) : null);
-      if (auto && plannedEnd) {
-        const leaderAt = new Date(plannedEnd.getTime() + auto.leaderAfterMinutes * 60_000);
-        if (now.getTime() < leaderAt.getTime()) rearm.push({ id: entry.id, at: leaderAt });
-        else toEscalate.push(entry);
-        continue;
-      }
-      // No expected end → this was an unscheduled clock-in armed by the safety net;
-      // use the slower unscheduled cadence, not the tight shift cadence.
-      const isUnscheduled = !entry.expectedClockOutAt;
-      const { intervalMin, maxReminders } = isUnscheduled
-        ? {
-            intervalMin: UNSCHEDULED_SESSION_DEFAULTS.REMINDER_INTERVAL_MINUTES,
-            maxReminders: UNSCHEDULED_SESSION_DEFAULTS.MAX_REMINDERS,
-          }
-        : shiftNudgeCadence(entry.shift);
-      const nextCount = entry.reminderCount + 1;
-      if (nextCount <= maxReminders) toRemind.push({ entry, nextCount, intervalMin, maxReminders });
-      else toEscalate.push(entry);
-    }
-
-    // The workspace half is resolved ONCE per distinct escalating space — it is
-    // the same answer for everybody there. The member half, when a space has
-    // nobody, is resolved per entry inside `notifyTargetsFor`.
-    const leadersBySpace = new Map<string, string[]>();
-    const targetsByEntry = new Map<string, string[]>();
-    for (const e of toEscalate) {
-      targetsByEntry.set(e.id, await this.routing.notifyTargetsFor(e, 'canReconcileAttendance', leadersBySpace));
-    }
-
-    // Deferred writes (thunks) so we can cap DB concurrency.
-    const tasks: Array<() => Promise<void>> = [];
-
-    for (const r of rearm) {
-      tasks.push(async () => {
-        // Conditional: a clock-out between the read and this write must not be re-armed.
-        await this.prisma.timeEntry.updateMany({
-          where: { id: r.id, status: TimeEntryStatus.CLOCKED_IN },
-          data: { nextRemindAt: r.at },
-        });
-      });
-    }
-
-    for (const { entry, nextCount, intervalMin, maxReminders } of toRemind) {
-      const userName = `${entry.user.firstName} ${entry.user.lastName}`;
-      const nextRemindAt = new Date(now.getTime() + intervalMin * 60_000);
-      tasks.push(async () => {
-        await this.prisma.timeEntry.update({
-          where: { id: entry.id },
-          data: { reminderState: 'REMINDED', reminderCount: nextCount, nextRemindAt },
-        });
-        this.notificationClient.emit('attendance_shift_reminder', {
-          entryId: entry.id,
-          userId: entry.user.id,
-          userName,
-          locationId: entry.location?.id ?? entry.locationId,
-          locationName: entry.location?.name || 'your shift',
-          expectedClockOutAt: entry.expectedClockOutAt?.toISOString() ?? null,
-          reminderCount: nextCount,
-          unscheduled: !entry.expectedClockOutAt,
-          hoursOpen: Math.round((now.getTime() - entry.clockInAt.getTime()) / 3_600_000),
-          organizationId: entry.organizationId,
-        });
-        this.logger.log(`Shift reminder ${nextCount}/${maxReminders}: entry=${entry.id}, user=${userName}`);
-      });
-    }
-
-    for (const entry of toEscalate) {
-      const userName = `${entry.user.firstName} ${entry.user.lastName}`;
-      const leaderIds = targetsByEntry.get(entry.id) ?? [];
-      tasks.push(async () => {
-        await this.prisma.timeEntry.update({
-          where: { id: entry.id },
-          data: { reminderState: 'ESCALATED', nextRemindAt: null },
-        });
-        this.notificationClient.emit('attendance_shift_escalation', {
-          entryId: entry.id,
-          userId: entry.user.id,
-          userName,
-          locationId: entry.locationId,
-          locationName: entry.location?.name || 'a shift',
-          expectedClockOutAt: entry.expectedClockOutAt?.toISOString() ?? null,
-          unscheduled: !entry.expectedClockOutAt,
-          hoursOpen: Math.round((now.getTime() - entry.clockInAt.getTime()) / 3_600_000),
-          leaderIds,
-          organizationId: entry.organizationId,
-        });
-        this.logger.warn(`Shift escalation: entry=${entry.id}, user=${userName}, leaders=[${leaderIds.join(',')}]`);
-      });
-    }
-
-    // Flush with bounded concurrency so a big burst can't monopolize the pooled
-    // DB connections and starve live clock-in/out requests.
-    const CONCURRENCY = 20;
-    for (let i = 0; i < tasks.length; i += CONCURRENCY) {
-      await Promise.all(tasks.slice(i, i + CONCURRENCY).map((fn) => fn()));
-    }
-
-    return success({
-      remindedCount: toRemind.length,
-      escalatedCount: toEscalate.length,
-      entryIds: [...toRemind.map((r) => r.entry.id), ...toEscalate.map((e) => e.id)],
-      message: `Reminded ${toRemind.length}, escalated ${toEscalate.length}`,
-    });
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // NO-SHOW ENGINE (clock-in parity): materialize expected shifts → fulfill on
-  // clock-in → sweep the unfulfilled ones (remind worker, escalate to a leader).
-  // ──────────────────────────────────────────────────────────────────────────
-
-  /** Local YYYY-MM-DD days (in tz) spanning [from, to] — a 2–3 element set. */
-  private localDaysInWindow(from: Date, to: Date, tz: string): string[] {
-    // The shared zoned-time reader (cached formatter, UTC on an unknown zone).
-    const day = (t: Date) => localPartsIn(t, tz).dateStr;
-    const days = new Set<string>();
-    for (let t = from.getTime(); t <= to.getTime(); t += 6 * 3_600_000) days.add(day(new Date(t)));
-    days.add(day(to));
-    return [...days];
-  }
-
-  /**
-   * Rolling materialization: ensure a ShiftInstance exists for every rota shift
-   * in the next `windowHours`. Idempotent (upsert; never overwrites lifecycle
-   * state). Physical spaces anchor to the site tz; logical to the member's tz
-   * (falling back to org). Bounded scan over active assignments — no per-minute
-   * cost (runs on a slow cron).
-   */
-  async materializeShiftInstances(windowHours = 36) {
-    const now = new Date();
-    const horizon = new Date(now.getTime() + windowHours * 3_600_000);
-
-    // Collect every expected ShiftInstance, then bulk-insert. `skipDuplicates`
-    // reproduces the old per-row upsert's `update: {}` semantics (insert new,
-    // never clobber an existing instance's lifecycle/reminders) — but as chunked
-    // createMany instead of up to ~15k serial upserts occupying the queue slot. (P5)
-    const pending: Array<{
-      organizationId: string;
-      spaceId: string;
-      userId: string;
-      shiftId: string;
-      localDate: string;
-      expectedClockInAt: Date;
-      expectedClockOutAt: Date;
-      nextRemindAt: Date;
-    }> = [];
-
-    // Keyset-paginate ALL active assignments (cursor by id) instead of a silent
-    // `take: 5000` cap that stopped materializing — and therefore stopped
-    // detecting no-shows — for the tail beyond 5000 active rotas. (P4)
-    const BATCH = 1000;
-    let cursor: string | undefined;
-    let processed = 0;
-    for (;;) {
-      const assignments = await this.prisma.shiftAssignment.findMany({
-        where: {
-          isActive: true,
-          effectiveFrom: { lte: horizon },
-          OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }],
-        },
-        include: {
-          shift: true,
-          space: { select: { id: true, organizationId: true, timezone: true, lat: true, lng: true } },
-          user: { select: { id: true, timezone: true, organization: { select: { timezone: true } } } },
-        },
-        orderBy: { id: 'asc' },
-        take: BATCH,
-        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      });
-      if (assignments.length === 0) break;
-      cursor = assignments[assignments.length - 1].id;
-      processed += assignments.length;
-
-      for (const a of assignments) {
-        if (!a.shift?.isActive) continue;
-        const physical = a.space.lat != null && a.space.lng != null;
-        const tz = physical
-          ? a.space.timezone || 'UTC'
-          : a.user.timezone || a.user.organization?.timezone || 'UTC';
-        for (const dateStr of this.localDaysInWindow(now, horizon, tz)) {
-          const win = this.shiftResolver.matchAndWindowForDate(a as any, tz, dateStr);
-          if (!win) continue;
-          if (win.expectedClockOutAt.getTime() < now.getTime()) continue; // already over
-          const graceMin = a.shift.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
-          pending.push({
-            organizationId: a.space.organizationId,
-            spaceId: a.spaceId,
-            userId: a.userId,
-            shiftId: a.shiftId,
-            localDate: dateStr,
-            expectedClockInAt: win.expectedClockInAt,
-            expectedClockOutAt: win.expectedClockOutAt,
-            nextRemindAt: new Date(win.expectedClockInAt.getTime() + graceMin * 60_000),
-          });
-        }
-      }
-
-      if (assignments.length < BATCH) break;
-    }
-
-    let created = 0;
-    const CHUNK = 1000;
-    for (let i = 0; i < pending.length; i += CHUNK) {
-      const res = await this.prisma.shiftInstance.createMany({
-        data: pending.slice(i, i + CHUNK),
-        skipDuplicates: true,
-      });
-      created += res.count;
-    }
-    return success({ processed, created });
-  }
 
   /**
    * Clock-in fulfillment: mark the member's matching expected shift PRESENT.
@@ -364,7 +72,7 @@ export class ShiftSweepService {
       this.notificationClient.emit('attendance_noshow_resolved', {
         instanceId: inst.id,
         userId,
-        userName: member ? `${member.firstName} ${member.lastName}`.trim() : 'A worker',
+        userName: member ? personName(member) : 'A worker',
         spaceId,
         clockInAt: clockInAt.toISOString(),
         timezone: context.timezone,
@@ -414,7 +122,7 @@ export class ShiftSweepService {
         select: { id: true, reminderIntervalMin: true, maxReminders: true },
       }),
     ]);
-    const nameById = new Map(users.map((u) => [u.id, `${u.firstName} ${u.lastName}`]));
+    const nameById = new Map(users.map((u) => [u.id, personName(u)]));
     const shiftById = new Map(shifts.map((s) => [s.id, s]));
 
     const toRemind: { inst: (typeof due)[number]; nextCount: number; intervalMin: number }[] = [];

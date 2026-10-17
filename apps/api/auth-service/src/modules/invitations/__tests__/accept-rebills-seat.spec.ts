@@ -1,4 +1,4 @@
-import { InvitationService } from '../invitation.service';
+import { invitationServices, type InvitationServiceParts } from './invitation.service.fixture';
 
 /*
   Accepting an invitation adds a seat, so the bill is re-synced at once.
@@ -21,11 +21,11 @@ describe('accepting an invitation re-bills the seat', () => {
       $transaction: jest.fn().mockReturnValue(Promise.resolve(claimed ? { id: 'u-new' } : null)),
     };
     const billing = { scheduleReconcile: jest.fn() };
-    const svc = new InvitationService(prisma, { emit: jest.fn() } as any, {} as any, billing as any);
+    const svc = invitationServices(prisma, { emit: jest.fn() } as any, {} as any, billing as any);
     jest.spyOn(svc as any, 'issueJoiningContract').mockResolvedValue(undefined);
     return { svc, billing };
   };
-  const accept = (svc: InvitationService) =>
+  const accept = (svc: InvitationServiceParts) =>
     svc.acceptInvitation({ code: 'ABCDEFGHJK', email: 'new@x.test', password: 'Password123!', firstName: 'N', lastName: 'M' });
 
   it('schedules the reconcile for the organization joined', async () => {

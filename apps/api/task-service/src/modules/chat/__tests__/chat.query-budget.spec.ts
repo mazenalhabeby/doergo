@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SERVICE_NAMES } from '@hbcfield/shared';
-import { ChatService } from '../chat.service';
+import { chatPartsOf, type ChatServiceParts } from './chat.service.fixture';
+import { CHAT_PROVIDERS } from '../chat.module';
+import { chatStorageStubs } from './chat-storage-stubs';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /**
@@ -16,7 +18,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
  * time across PgBouncer. It does not measure row counts or index use.
  */
 describe('query budget for sending a message', () => {
-  let service: ChatService;
+  let service: ChatServiceParts;
   let calls: string[];
 
   const track = (name: string, impl: any) => (...args: any[]) => { calls.push(name); return impl(...args); };
@@ -33,12 +35,13 @@ describe('query budget for sending a message', () => {
     calls = [];
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ChatService,
+        ...CHAT_PROVIDERS,
+        ...chatStorageStubs(),
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: () => {} } },
       ],
     }).compile();
-    service = module.get(ChatService);
+    service = chatPartsOf(module);
   };
 
   const setup = (originSpaceId: string | null, other: string, meScope = 'NONE') => {
@@ -64,6 +67,9 @@ describe('query budget for sending a message', () => {
         ] },
       })),
       update: track('conversationMember.update', () => Promise.resolve({})),
+      updateMany: track('conversationMember.updateMany', () => Promise.resolve({})),
+      findMany: track('counters.findMany', () => Promise.resolve([{ userId: 'me', unreadCount: 0 }])),
+      groupBy: track('counters.groupBy', () => Promise.resolve([])),
     };
     prisma.conversation = { update: track('conversation.update', () => Promise.resolve({})), findFirst: track('conversation.findFirst', () => Promise.resolve(null)) };
     prisma.message = { create: track('message.create', () => Promise.resolve({})) };
@@ -71,7 +77,19 @@ describe('query budget for sending a message', () => {
   };
 
   /** Everything before the write — the cost the permission check adds. */
-  const authCalls = () => calls.filter((c) => !['$transaction', 'message.create', 'conversation.update', 'conversationMember.update'].includes(c));
+  const authCalls = () =>
+    calls.filter(
+      (c) =>
+        ![
+          '$transaction',
+          'message.create',
+          'conversation.update',
+          'conversationMember.update',
+          'conversationMember.updateMany',
+        ].includes(c) && !c.startsWith('counters.'),
+    );
+  /** The unread counters read after the write: a fixed two, never one per message or member. */
+  const counterCalls = () => calls.filter((c) => c.startsWith('counters.'));
 
   it('costs 2 queries for an ordinary in-org send', async () => {
     // The membership read (which brings the counterpart with it) and the
@@ -79,6 +97,7 @@ describe('query budget for sending a message', () => {
     setup(null, 'same', 'ALL'); await build();
     await service.sendMessage({ conversationId: 'c', senderId: 'me', body: 'x' });
     expect(authCalls()).toEqual(['conversationMember.findUnique', 'user.findUnique']);
+    expect(counterCalls()).toEqual(['counters.findMany', 'counters.groupBy']);
   });
 
   it('costs 6 for a member whose reach runs through spaces', async () => {

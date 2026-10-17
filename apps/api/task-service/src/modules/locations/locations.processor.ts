@@ -3,10 +3,20 @@ import { JobProcessor } from '../../common/queue/job-processor';
 import { Job } from 'bullmq';
 import { QUEUE_NAMES, LOCATION_JOB_TYPES } from '@hbcfield/shared';
 import { LocationsService } from './locations.service';
+import { SpaceUpdateService } from './space-update.service';
+import { SpaceLifecycleService } from './space-lifecycle.service';
+import { SpaceMembershipService } from './space-membership.service';
+import { AssignmentTermsService } from './assignment-terms.service';
 
 @Processor(QUEUE_NAMES.LOCATIONS)
 export class LocationsProcessor extends JobProcessor {
-  constructor(private readonly locationsService: LocationsService) {
+  constructor(
+    private readonly locationsService: LocationsService,
+    private readonly spaceUpdate: SpaceUpdateService,
+    private readonly spaceLifecycle: SpaceLifecycleService,
+    private readonly membership: SpaceMembershipService,
+    private readonly assignmentTerms: AssignmentTermsService,
+  ) {
     super();
   }
 
@@ -18,24 +28,24 @@ export class LocationsProcessor extends JobProcessor {
         return this.locationsService.create(data);
 
       case LOCATION_JOB_TYPES.UPDATE:
-        return this.locationsService.update(data);
+        return this.spaceUpdate.update(data);
 
       case LOCATION_JOB_TYPES.DELETE:
-        return this.locationsService.remove(data);
+        return this.spaceLifecycle.remove(data);
       case LOCATION_JOB_TYPES.PURGE:
-        return this.locationsService.purge(data);
+        return this.spaceLifecycle.purge(data);
       case LOCATION_JOB_TYPES.SET_DEFAULT:
-        return this.locationsService.setDefault(data);
+        return this.spaceLifecycle.setDefault(data);
 
       // Member assignment operations
       case LOCATION_JOB_TYPES.ASSIGN_TECHNICIAN:
-        return this.locationsService.assignTechnician(data);
+        return this.membership.assignTechnician(data);
 
       case LOCATION_JOB_TYPES.UPDATE_ASSIGNMENT:
-        return this.locationsService.updateAssignment(data);
+        return this.assignmentTerms.updateAssignment(data);
 
       case LOCATION_JOB_TYPES.REMOVE_ASSIGNMENT:
-        return this.locationsService.removeAssignment(data);
+        return this.membership.removeAssignment(data);
 
       default:
         throw new Error(`Unknown job type: ${job.name}`);

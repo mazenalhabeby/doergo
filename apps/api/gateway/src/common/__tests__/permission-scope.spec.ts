@@ -1,4 +1,6 @@
-import { scopeFor } from '../permission-scope';
+import * as fs from 'fs';
+import * as path from 'path';
+import { scopeFor, scopeIdsFor } from '../permission-scope';
 
 /**
  * scopeFor is THE narrowing rule (common/permission-scope.ts). The case that
@@ -29,5 +31,56 @@ describe('scopeFor', () => {
 
   it('a flat flag set to anything but true does not widen', () => {
     expect(scopeFor({ role: 'EMPLOYEE', canApproveAttendance: 'true', access: access({}) }, 'canApproveAttendance')).toEqual([]);
+  });
+});
+
+describe('scopeIdsFor (the shape the services take)', () => {
+  const access = (org: Record<string, boolean>, perSpace: Record<string, Record<string, boolean>> = {}) => ({ org, perSpace });
+
+  it('an org-wide Manager (canViewAllTasks) sees attendance and cover org-wide, not an empty page', () => {
+    // canViewSpaceAttendance is bridged from canViewAllTasks; the flag carries it, access.org does not.
+    const manager = {
+      role: 'EMPLOYEE',
+      canViewAllTasks: true,
+      canViewSpaceAttendance: true,
+      access: access({ canViewAllTasks: true }),
+    };
+    expect(scopeIdsFor(manager, 'canViewSpaceAttendance')).toBeUndefined();
+  });
+
+  it('a space grant stays narrowed; nowhere stays empty', () => {
+    const lead = { role: 'EMPLOYEE', access: access({}, { A: { canViewSpaceAttendance: true } }) };
+    expect(scopeIdsFor(lead, 'canViewSpaceAttendance')).toEqual(['A']);
+    expect(scopeIdsFor({ role: 'EMPLOYEE', access: access({}) }, 'canViewSpaceAttendance')).toEqual([]);
+  });
+});
+
+describe('ONE narrowing rule in the gateway', () => {
+  /*
+    `isAdmin(u) ? undefined : spacesGranting(...)` by hand skips the org flag and
+    its bridges: the guard lets an org-wide Manager in, the list comes back empty.
+    That was 24 copies; these are the only direct callers left, each with why.
+  */
+  const ALLOWED: Record<string, string> = {
+    'common/permission-scope.ts': 'the rule itself',
+    'common/tracking-visibility.ts': 'also reads the legacy flat column as org-wide',
+    'modules/approvals/approvals.service.ts': 'reads OWN access (a stand-in is never a ceiling)',
+    'modules/locations/locations.controller.ts': 'external members only: closed when nothing is granted',
+    'modules/technicians/technicians.controller.ts':
+      'member card: org-wide is canViewAllTasks/canManageUsers, decided above',
+  };
+  const root = path.resolve(__dirname, '../..');
+  const walk = (dir: string): string[] =>
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) return e.name === '__tests__' ? [] : walk(p);
+      return e.name.endsWith('.ts') ? [p] : [];
+    });
+
+  it('spacesGranting is called only where a reason is named', () => {
+    const callers = walk(root)
+      .filter((f) => /spacesGranting\(/.test(fs.readFileSync(f, 'utf8')))
+      .map((f) => path.relative(root, f));
+    expect(callers.filter((f) => !ALLOWED[f])).toEqual([]);
   });
 });

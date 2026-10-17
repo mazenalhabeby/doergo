@@ -1,4 +1,11 @@
-import { ORG_ACCESS_SELECT, memberAccessOf, ownRequestRoute, type ApprovalKind, type OwnRequestRoute } from '@hbcfield/shared';
+import {
+  activeWindowWhere,
+  ORG_ACCESS_SELECT,
+  memberAccessOf,
+  ownRequestRoute,
+  type ApprovalKind,
+  type OwnRequestRoute,
+} from '@hbcfield/shared';
 
 /**
  * Who is asked about a request somebody makes about their OWN time — the
@@ -28,7 +35,7 @@ export async function askAboutOwnRequest(
     select: {
       ...ORG_ACCESS_SELECT,
       spaceAssignments: {
-        where: { ...(params.spaceIds.length ? { spaceId: { in: params.spaceIds } } : {}), effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] },
+        where: { ...(params.spaceIds.length ? { spaceId: { in: params.spaceIds } } : {}), ...activeWindowWhere(now) },
         select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
       },
     },

@@ -18,12 +18,12 @@ describe('task status lists', () => {
   });
 
   it('job time closes on the shared terminal list', () => {
-    expect(read('modules/tasks/handover/job-time.service.ts')).toMatch(/CLOSED_KEYS: string\[\] = TERMINAL_STATUSES/);
+    expect(read('modules/tasks/handover/job-time-helpers.ts')).toMatch(/CLOSED_KEYS: string\[\] = TERMINAL_STATUSES/);
     expect([...TERMINAL_STATUSES].sort()).toEqual(['CANCELED', 'CLOSED', 'COMPLETED']);
   });
 
   it('the presence panel keeps no local list under a shared name', () => {
-    const src = read('modules/locations/locations.service.ts');
+    const src = read('modules/locations/space-roster.service.ts');
     expect(src).not.toMatch(/const ACTIVE_STATUSES/);
     expect(src).toMatch(/WORKING_NOW_STATUSES/);
   });

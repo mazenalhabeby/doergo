@@ -69,9 +69,23 @@ describe('the collection method is applied where it can be', () => {
   const fs = require('fs') as typeof import('fs');
   const path = require('path') as typeof import('path');
   const read = (p: string) => fs.readFileSync(path.join(__dirname, p), 'utf8');
+  /** The billing service was split by job (2026-10-16): read every part of it as one source. */
+  const BILLING_PARTS = [
+    'billing.service.ts',
+    'billing.base.ts',
+    'subscription.service.ts',
+    'stripe-webhook.service.ts',
+    'billing-trial.service.ts',
+    'usage-sweep.service.ts',
+    'billing-admin.service.ts',
+  ];
+  const billingSource = () => BILLING_PARTS.map((f) => read(`../${f}`)).join('\n');
+  /** The Stripe service, split the same way: every part as one source. */
+  const STRIPE_PARTS = ['stripe.service.ts', 'stripe.base.ts', 'stripe-lines.service.ts', 'stripe-catalog.service.ts'];
+  const stripeSource = () => STRIPE_PARTS.map((f) => read(`../${f}`)).join('\n');
 
   it('is never sent to Checkout', () => {
-    const stripe = read('../stripe.service.ts');
+    const stripe = stripeSource();
     const idx = stripe.indexOf('checkout.sessions.create');
     expect(idx).toBeGreaterThan(-1);
     // The Checkout call itself must not carry it.
@@ -79,7 +93,7 @@ describe('the collection method is applied where it can be', () => {
   });
 
   it('is applied when the subscription arrives from the webhook', () => {
-    const billing = read('../billing.service.ts');
+    const billing = billingSource();
     expect(billing).toContain('setCollectionMethod(sub.id, want');
     // Best-effort: a webhook whose work is recorded must not fail over this,
     // or Stripe retries an event that already succeeded.
@@ -96,10 +110,10 @@ describe('the collection method is applied where it can be', () => {
       The subscription is created through the API instead, where send_invoice
       is accepted and Stripe issues the first invoice itself.
     */
-    const billing = read('../billing.service.ts');
+    const billing = billingSource();
     expect(billing).toContain("if (org.billingMode === 'INVOICE')");
     expect(billing).toContain('createInvoiceSubscription');
-    const stripe = read('../stripe.service.ts');
+    const stripe = stripeSource();
     expect(stripe).toContain("collection_method: 'send_invoice'");
     // days_until_due is required by Stripe whenever the method is send_invoice.
     expect(stripe).toContain('days_until_due');
@@ -112,7 +126,7 @@ describe('the collection method is applied where it can be', () => {
       "customer_tax_location_invalid" — at the moment of billing, for the
       customer who least expects friction.
     */
-    const stripe = read('../stripe.service.ts');
+    const stripe = stripeSource();
     expect(stripe).toContain('customer_tax_location_invalid');
     // Only when a country is known: a partial address without one tells Stripe
     // Tax nothing and reads as a filled-in field that is not.
@@ -127,7 +141,7 @@ describe('the collection method is applied where it can be', () => {
       because nothing ever wrote it across. Happened on the first real invoice
       attempt.
     */
-    const stripe = read('../stripe.service.ts');
+    const stripe = stripeSource();
     expect(stripe).toContain('customers.update(params.customerId, { address })');
     // Only when it would actually change — a write on every checkout is an API
     // call and an event for nothing.
@@ -141,7 +155,7 @@ describe('the collection method is applied where it can be', () => {
       only valid alongside send_invoice; Stripe drops the term itself when the
       collection method changes, so it is omitted, not cleared.
     */
-    const stripe = read('../stripe.service.ts');
+    const stripe = stripeSource();
     expect(stripe).not.toContain('days_until_due: null');
     expect(stripe).toContain("method === 'send_invoice' ? { days_until_due:");
   });
@@ -155,7 +169,10 @@ describe('the collection method is applied where it can be', () => {
       An invoice customer has NEVER been asked for a card: their flow
       deliberately collects none. So this is the normal case, not the edge one.
     */
-    const svc = read('../../platform-admin/platform-admin.service.ts');
+    // The operator's billing mode lives in platform-billing.service since the split.
+    const svc = ['platform-admin.service.ts', 'platform-billing.service.ts']
+      .map((f) => read(`../../platform-admin/${f}`))
+      .join('\n');
     expect(svc).toContain('hasPaymentMethod');
     expect(svc).toContain('no card on file');
     // Never block the switch because Stripe was unreachable — default to
@@ -175,14 +192,14 @@ describe('the collection method is applied where it can be', () => {
       are holding the subscription object. Same `syncSubscription`, which is
       idempotent, so the webhook landing a second later writes the same thing.
     */
-    const billing = read('../billing.service.ts');
+    const billing = billingSource();
     expect(billing).toContain('await this.syncSubscription(created)');
   });
 
   it('refuses a missing country in our words, before Stripe’s', () => {
     // "The customer's location isn't recognized" is accurate and names neither
     // the organization nor the screen that fixes it.
-    const billing = read('../billing.service.ts');
+    const billing = billingSource();
     expect(billing).toContain('if (!org.country)');
     expect(billing).toContain('Settings → General');
   });
@@ -190,7 +207,7 @@ describe('the collection method is applied where it can be', () => {
   it('reports a Checkout rejection instead of a bare 500', () => {
     // The failure reached the customer as "Internal server error" with nothing
     // in any log; the cause had to be reproduced against the live API.
-    const billing = read('../billing.service.ts');
+    const billing = billingSource();
     expect(billing).toContain('Stripe could not start checkout');
   });
 });

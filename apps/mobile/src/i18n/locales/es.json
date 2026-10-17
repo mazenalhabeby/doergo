@@ -1440,7 +1440,9 @@
       "AVAILABLE": "{{count}} disponibles",
       "BUSY": "{{count}} ocupados",
       "AWAY": "{{count}} ausentes"
-    }
+    },
+    "people": "Personas",
+    "notVisible": "Esta persona no está en tu equipo."
   },
   "navTitles": {
     "taskDetails": "Detalles de la tarea",
@@ -1509,7 +1511,74 @@
     "sayHello": "Saluda",
     "new": "Nuevo",
     "send": "Enviar",
-    "noMessagesYet": "Aún no hay mensajes"
+    "noMessagesYet": "Aún no hay mensajes",
+    "attach": "Añadir foto",
+    "camera": "Hacer una foto",
+    "library": "Elegir de la galería",
+    "edit": "Editar",
+    "edited": "editado",
+    "editing": "Editando tu mensaje",
+    "fileOnline": "se abre en línea",
+    "message": "Mensaje",
+    "mute": "Silenciar notificaciones",
+    "muted": "Notificaciones desactivadas",
+    "unmute": "Volver a activar notificaciones",
+    "muteHour": "Durante 1 hora",
+    "muteDay": "Durante 8 horas",
+    "muteWeek": "Durante una semana",
+    "muteAlways": "Hasta que las reactive",
+    "notifications": "Notificaciones",
+    "read": "Leído",
+    "remove": "Eliminar",
+    "removed": "Mensaje eliminado",
+    "seenBy": "Visto por {{count}}",
+    "seenByAll": "Visto por todos",
+    "sent": "Enviado",
+    "status": "Estado",
+    "workspaces": "Espacios de trabajo",
+    "yourMessage": "Tu mensaje",
+    "newGroup": "Nuevo grupo",
+    "groupName": "Nombre del grupo",
+    "createGroup": "Crear ({{count}})",
+    "addPeople": "Añadir personas",
+    "addCount": "Añadir ({{count}})",
+    "leave": "Salir",
+    "leaveGroup": "Salir del grupo",
+    "leaveAsk": "¿Salir de este grupo? Ya no verá sus mensajes.",
+    "removeMember": "Sacar",
+    "removeMemberAsk": "¿Sacar a {{name}} de este grupo?",
+    "rename": "Cambiar nombre",
+    "peopleCount_one": "{{count}} persona",
+    "peopleCount_other": "{{count}} personas",
+    "members": "Miembros",
+    "groupOwner": "Gestiona el grupo",
+    "taskChat": "Chat del trabajo · el equipo y la oficina",
+    "taskChatNote": "Todo el equipo de este trabajo está en este chat.",
+    "openJob": "Abrir el trabajo",
+    "taskChatClosed": "Este trabajo ha terminado, así que su chat está cerrado. Todavía puede leer lo que se dijo.",
+    "messagesFound": "Mensajes",
+    "noMessagesFound": "No hay mensajes con estas palabras.",
+    "system": {
+      "created": "{{actor}} creó el grupo «{{title}}» con {{users}}",
+      "renamed": "{{actor}} cambió el nombre del grupo a «{{title}}»",
+      "added": "{{actor}} añadió a {{users}}",
+      "removed": "{{actor}} sacó a {{users}}",
+      "left": "{{actor}} salió del grupo"
+    },
+    "searchMessages": "Buscar mensajes",
+    "searchOnline": "Para buscar mensajes se necesita conexión.",
+    "removedFromConversation": "Ya no está en esta conversación.",
+    "couldNotOpenJob": "No se pudo abrir el chat de este trabajo. Compruebe su conexión.",
+    "tapToRemove": "Toque a una persona para sacarla.",
+    "jobChatOpen": "Chat del trabajo",
+    "jobChatHint": "El equipo y la oficina",
+    "sayHelloTo": "Salude a {{name}}",
+    "starter": {
+      "hi": "Hola {{name}} 👋",
+      "hiAll": "Hola a todos 👋",
+      "onMyWay": "Voy de camino",
+      "callMe": "¿Puede llamarme?"
+    }
   },
   "locationConsent": {
     "title": "Ubicación en segundo plano",
@@ -5336,5 +5405,8 @@
       "save": "Guardar",
       "fixRota": "Corregir el cuadrante"
     }
+  },
+  "people": {
+    "job": "Puesto"
   }
 }

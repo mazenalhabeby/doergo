@@ -1,6 +1,6 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
+import { keys, invalidateTaskLists } from "@/lib/query-keys"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/auth-context"
@@ -155,8 +155,7 @@ export function useCreateTaskSubmit({
         )
       }
       onOpenChange(false)
-      await queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: keys.tasks.counts() })
+      await invalidateTaskLists(queryClient)
     },
     onError: (error: Error) => {
       notify.error(error.message || t("tasks.create.errorMessage"))

@@ -30,9 +30,9 @@ describe('upload rules', () => {
   });
 
   it.each([
-    'modules/attachments/attachments.service.ts',
-    'modules/worklog/worklog.service.ts',
-    'modules/shift-issues/shift-issues.service.ts',
+    'modules/attachments/attachments-helpers.ts',
+    'modules/worklog/worklog-helpers.ts',
+    'modules/shift-issues/shift-issues-helpers.ts',
   ])('%s keeps no list of its own', (file) => {
     const src = readFileSync(join(__dirname, '..', '..', file), 'utf8');
     expect(src).toMatch(/UPLOAD_RULES\./);

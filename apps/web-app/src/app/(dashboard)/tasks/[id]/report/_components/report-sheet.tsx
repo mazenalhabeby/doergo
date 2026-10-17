@@ -15,12 +15,10 @@ import {
   routePath, safeImageUrl, sectionNumbers, signatureName, signatureRole, statusLabel,
   workSteps, letterhead, reportPills, reportFacts, type HeadToggle, type NumberedSection, type Translate,
 } from "../_lib/report-model"
-
-// The task page's own map, loaded only when a route is shown (Leaflet is not small).
-const RouteMapView = dynamic(() => import("../../_components/route-map-view"), {
-  ssr: false,
-  loading: () => <div className="h-[320px] animate-pulse rounded-xl bg-slate-100" />,
-})
+import { useReportSheet } from "./use-report-sheet"
+import { RouteMapView, Fact, Note, TimeBlock, PhotosBlock, DocumentCard } from "./report-sheet-helpers"
+import { ReportSheetReport } from "./report-sheet-report"
+import { ReportSheetReport2 } from "./report-sheet-report2"
 
 /**
  * The job report as a sheet of paper.
@@ -39,28 +37,20 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy, headO
   /** The top-of-report switches turned off (letterhead lines, labels, detail boxes). */
   headOff: ReadonlySet<HeadToggle>
 }) {
-  const { t, i18n } = useTranslation()
-  const tt = t as unknown as Translate
-  const locale = i18n.language || "en"
-  const tz = r.header.workspace?.timezone ?? null
-  const when = (iso: string | null | undefined) => formatReportDateTime(iso, tz, locale)
-  const numbers = sectionNumbers(visible)
-  const h = r.header
-
-  const section = (key: NumberedSection, title: string, body: ReactNode) => (
-    <section key={key} className="break-inside-avoid-page pt-7" aria-labelledby={`report-${key}`}>
-      <h2 id={`report-${key}`} className="flex items-baseline gap-2 border-b border-slate-200 pb-2 text-[15px] font-semibold text-slate-900">
-        <span className="tabular-nums text-blue-600">{numbers[key]}.</span>
-        {title}
-      </h2>
-      <div className="pt-3 text-sm text-slate-700">{body}</div>
-    </section>
-  )
-
-  const priority = getPriorityConfig(h.priority)
-  const head = letterhead(h.issuer, headOff, tt)
-  const pills = reportPills(r, headOff, tt)
-  const facts = reportFacts(r, headOff, tt, when)
+  const vm = useReportSheet({ report: r, visible, showPrices, generatedBy, headOff })
+  const {
+    t,
+    tt,
+    locale,
+    tz,
+    when,
+    h,
+    section,
+    priority,
+    head,
+    pills,
+    facts,
+  } = vm
 
   return (
     <article className="mx-auto w-full rounded-sm bg-white px-6 py-8 text-slate-800 shadow-sm ring-1 ring-slate-200 sm:px-10 sm:py-10 [color-scheme:light]">
@@ -139,36 +129,7 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy, headO
             return section(key, t("tasks.report.sections.photos"), <PhotosBlock photos={r.photos ?? []} t={tt} when={when} />)
           case "checklist":
             return section(key, t("tasks.report.sections.checklist"), (
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-500">
-                    <th className="w-8 py-2" />
-                    <th className="py-2 font-medium">{t("tasks.report.checklist.item")}</th>
-                    <th className="hidden py-2 font-medium sm:table-cell">{t("tasks.report.checklist.doneBy")}</th>
-                    <th className="py-2 text-right font-medium">{t("tasks.report.checklist.when")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(r.checklist ?? []).map((c) => (
-                    <tr key={c.id} className="border-b border-slate-100 align-top">
-                      <td className="py-2">
-                        <span
-                          className={cn("inline-flex size-4 items-center justify-center rounded border text-[10px] font-bold", c.isCompleted ? "border-green-600 bg-green-600 text-white" : "border-slate-300")}
-                          aria-label={c.isCompleted ? t("tasks.report.checklist.done") : t("tasks.report.checklist.open")}
-                        >
-                          {c.isCompleted ? "✓" : ""}
-                        </span>
-                      </td>
-                      <td className="py-2 pr-3">
-                        <span className={cn(!c.isCompleted && "text-slate-500")}>{c.text}</span>
-                        {c.owner ? <span className="block text-xs text-slate-400">{t("tasks.report.checklist.owner", { name: personName(c.owner) })}</span> : null}
-                      </td>
-                      <td className="hidden py-2 pr-3 sm:table-cell">{personName(c.completedBy) || "—"}</td>
-                      <td className="py-2 text-right text-xs text-slate-500">{c.completedAt ? when(c.completedAt) : "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ReportSheetReport vm={vm} r={r} />
             ))
           case "stepAnswers": {
             const tr = (k: string, fb: string) => t(k, { defaultValue: fb })
@@ -248,26 +209,7 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy, headO
           }
           case "history":
             return section(key, t("tasks.report.sections.history"), (
-              <div className="space-y-4">
-                {r.meta.historyTruncated ? <p className="text-xs text-slate-500">{t("tasks.report.history.truncated")}</p> : null}
-                {groupEventsByDay(r.history, tz).map((day) => (
-                  <div key={day.day}>
-                    <h3 className="mb-1.5 text-xs font-semibold text-slate-900">{formatDayHeading(day.day, locale)}</h3>
-                    <ol className="space-y-1">
-                      {day.items.map(({ event, time }) => (
-                        <li key={event.id} className="grid grid-cols-[3rem_0.75rem_1fr] items-start gap-1.5 text-sm">
-                          <span className="tabular-nums text-xs leading-5 text-slate-400">{time}</span>
-                          <span className="mt-[7px] size-2 rounded-full" style={{ backgroundColor: eventDotHex(event, h.statuses) }} />
-                          <span>
-                            {eventSentence(event, h.statuses, tt)}
-                            {event.actor ? <span className="text-slate-400"> · {personName(event.actor)}</span> : null}
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                ))}
-              </div>
+              <ReportSheetReport2 vm={vm} r={r} />
             ))
           case "comments":
             return section(key, t("tasks.report.sections.comments"), (
@@ -337,153 +279,5 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy, headO
         {[h.issuer.name, h.reference, t("tasks.report.footer", { when: when(r.meta.generatedAt), who: generatedBy })].filter(Boolean).join(" · ")}
       </footer>
     </article>
-  )
-}
-
-function Fact({ label, value, sub }: { label: string; value: string; sub?: string | null }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{label}</dt>
-      <dd className="mt-0.5 break-words text-sm font-medium text-slate-900">{value || "—"}</dd>
-      {sub ? <dd className="break-words text-xs text-slate-500">{sub}</dd> : null}
-    </div>
-  )
-}
-
-function Note({ who, meta, text }: { who: string; meta: string; text: string }) {
-  return (
-    <div className="rounded-lg border border-slate-200 p-3">
-      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2 text-xs">
-        <span className="font-semibold text-slate-900">{who || "—"}</span>
-        <span className="text-slate-500">{meta}</span>
-      </div>
-      <p className="whitespace-pre-wrap">{text}</p>
-    </div>
-  )
-}
-
-const TIME_KINDS = ["working", "travel", "blocked"] as const
-const TIME_BAR = { working: "bg-green-500", travel: "bg-sky-500", blocked: "bg-amber-500" } as const
-const TIME_TEXT = { working: "text-green-700", travel: "text-sky-700", blocked: "text-amber-700" } as const
-
-function TimeBlock({ report: r, t, when }: { report: TaskReport; t: Translate; when: (iso: string | null | undefined) => string }) {
-  const tm = r.time!
-  const people = tm.byPerson ?? []
-  const max = Math.max(1, ...people.map((p) => p.travel + p.working + p.blocked))
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
-        {TIME_KINDS.map((k) => (
-          <div key={k} className="rounded-lg border border-slate-200 p-3">
-            <p className={cn("text-xs font-medium", TIME_TEXT[k])}>{t(`tasks.jobTime.${k}`)}</p>
-            <p className="mt-0.5 text-lg font-semibold tabular-nums text-slate-900">{formatReportMinutes(tm.total[k], t)}</p>
-          </div>
-        ))}
-      </div>
-      {people.length ? (
-        <div className="space-y-2">
-          {people.map((p) => {
-            const sum = p.travel + p.working + p.blocked
-            return (
-              <div key={p.person.id} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 text-sm">
-                <span className="truncate">{personName(p.person)}</span>
-                <span className="flex h-2.5 overflow-hidden rounded-full bg-slate-100">
-                  {TIME_KINDS.map((k) => (p[k] > 0 ? <span key={k} className={TIME_BAR[k]} style={{ width: `${(p[k] / max) * 100}%` }} /> : null))}
-                </span>
-                <span className="tabular-nums text-xs text-slate-500">{formatReportMinutes(sum, t)}</span>
-              </div>
-            )
-          })}
-        </div>
-      ) : null}
-      {tm.ownStops?.length ? (
-        <div>
-          <p className="mb-1 text-xs font-semibold text-slate-900">{t("tasks.report.time.stops")}</p>
-          <ul className="space-y-1 text-sm">
-            {tm.ownStops.map((o, i) => (
-              <li key={i}>
-                <span className="font-medium">{personName(o.person) || "—"}</span>
-                <span className="text-slate-500"> · {when(o.at)}{o.resumedAt ? ` → ${when(o.resumedAt)}` : ""}</span>
-                {o.reason ? <span className="block text-slate-600">“{o.reason}”</span> : null}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
-function Photo({ photo, t, when, tag }: { photo: TaskReportPhoto; t: Translate; when: (iso: string | null | undefined) => string; tag?: "before" | "after" }) {
-  const src = safeImageUrl(photo.url)
-  const meta = [personName(photo.by), when(photo.createdAt)].filter((x) => x && x !== "—").join(" · ")
-  const label = photo.caption ?? (photo.source === "STEP" ? photo.fieldLabel : null)
-  return (
-    <figure className="min-w-0 break-inside-avoid">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-slate-100">
-        {src ? (
-          <a href={src} target="_blank" rel="noopener noreferrer">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt={label ?? photo.fileName} loading="lazy" decoding="async" width={400} height={300} className="size-full object-cover" />
-          </a>
-        ) : (
-          <span className="flex size-full items-center justify-center text-xs text-slate-400">{t("tasks.report.photos.unavailable")}</span>
-        )}
-        {tag ? (
-          <span className={cn("absolute left-2 top-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider", tag === "before" ? "bg-slate-900/75 text-white" : "bg-green-600 text-white")}>
-            {t(tag === "before" ? "tasks.report.photos.before" : "tasks.report.photos.after")}
-          </span>
-        ) : null}
-      </div>
-      <figcaption className="mt-1 text-xs">
-        {label ? <span className="block text-slate-700">{label}</span> : null}
-        {meta ? <span className="block text-slate-400">{meta}</span> : null}
-      </figcaption>
-    </figure>
-  )
-}
-
-function PhotosBlock({ photos, t, when }: { photos: TaskReportPhoto[]; t: Translate; when: (iso: string | null | undefined) => string }) {
-  const { pairs, rest } = pairPhotos(photos)
-  return (
-    <div className="space-y-5">
-      {pairs.map((p) => (
-        <div key={`${p.before.id}-${p.after.id}`} className="grid grid-cols-2 gap-3">
-          <Photo photo={p.before} t={t} when={when} tag="before" />
-          <Photo photo={p.after} t={t} when={when} tag="after" />
-        </div>
-      ))}
-      {rest.length ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {rest.map((p) => (
-            <Photo key={p.id} photo={p} t={t} when={when} tag={p.source === "BEFORE" ? "before" : p.source === "AFTER" ? "after" : undefined} />
-          ))}
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
-function DocumentCard({ file, locale }: { file: TaskReportFile; locale: string }) {
-  const href = safeImageUrl(file.url)
-  const body = (
-    <>
-      <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-md text-[10px] font-bold", isImageFile(file) ? "bg-indigo-50 text-indigo-700" : "bg-blue-50 text-blue-700")}>
-        {fileTypeBadge(file)}
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate font-medium text-slate-900">{file.fileName}</span>
-        <span className="block truncate text-xs text-slate-500">{[formatFileSize(file.fileSize, locale), personName(file.by)].filter(Boolean).join(" · ")}</span>
-      </span>
-    </>
-  )
-  return (
-    <li>
-      {href ? (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg border border-slate-200 p-2.5 hover:bg-slate-50">{body}</a>
-      ) : (
-        <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-2.5">{body}</div>
-      )}
-    </li>
   )
 }

@@ -1,5 +1,6 @@
 import fs from "fs"
 import path from "path"
+import { readSource } from "../test-utils/read-source"
 
 /**
  * The product picks a date ONE way.
@@ -50,8 +51,9 @@ const KNOWN_INLINE_PICKERS = [
   // same ones, moved out of create-task-dialog.tsx when it was split.
   "src/app/(dashboard)/tasks/_components/create-task/schedule-section.tsx",
   "src/app/(dashboard)/tasks/_components/create-task/custom-field-input.tsx",
-  "src/app/(dashboard)/tasks/_components/sprint-management.tsx",
+  "src/app/(dashboard)/tasks/_components/complete-sprint-dialog.tsx", // moved out of sprint-management.tsx
   "src/app/(dashboard)/tasks/[id]/_components/edit-task-dialog.tsx",
+  "src/app/(dashboard)/tasks/[id]/_components/edit-task-dialog-sidebar.tsx", // the same picker, moved out of edit-task-dialog.tsx
   "src/app/(dashboard)/tasks/[id]/_components/inline-edit-field.tsx",
 ]
 
@@ -68,7 +70,7 @@ describe("one date picker", () => {
       same trap as `formatCalendarDate` in shared, where an ISO date rendered
       through `new Date()` prints the day before anywhere west of Greenwich.
     */
-    const src = fs.readFileSync(path.join(SRC, "components/ui/date-picker.tsx"), "utf8")
+    const src = readSource(path.join(SRC, "components/ui/date-picker.tsx"), "utf8")
     expect(src).toMatch(/value: string/)
     expect(src).toMatch(/onChange: \(value: string\) => void/)
     // Built from the LOCAL parts, never toISOString().
@@ -109,7 +111,7 @@ describe("one date picker", () => {
       path.join(NEW, "page.tsx"),
       ...["_components", "_lib"].flatMap((d) =>
         fs.readdirSync(path.join(NEW, d)).filter((f) => /\.tsx?$/.test(f)).sort().map((f) => path.join(NEW, d, f))),
-    ].map((f) => code(fs.readFileSync(f, "utf8"))).join("\n")
+    ].map((f) => code(readSource(f, "utf8"))).join("\n")
     // The period is a range now — the shared PeriodPicker, built on the same Calendar.
     expect(s).toMatch(/<(DatePicker|PeriodPicker)\b/)
     // …and no native date input survived there.

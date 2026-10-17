@@ -1,6 +1,6 @@
 import { PATH_METADATA, METHOD_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common';
-import { AssetsController } from '../assets.controller';
+import { assetHandlers } from './assets-controllers.fixture';
 
 /**
  * Express matches routes in DECLARATION order, so a static path declared after
@@ -13,15 +13,14 @@ import { AssetsController } from '../assets.controller';
  * asserted from the metadata Nest actually registers, not from the source text:
  * moving the method below `:id` fails this test.
  */
-const getRoutes = (target: any): string[] =>
-  Object.getOwnPropertyNames(target.prototype)
-    .filter((name) => name !== 'constructor')
-    .map((name) => target.prototype[name])
-    .filter((fn) => typeof fn === 'function' && Reflect.getMetadata(METHOD_METADATA, fn) === RequestMethod.GET)
+/** Every GET path of every /assets controller, in the order the MODULE registers them (Express's order). */
+const getRoutes = (): string[] =>
+  assetHandlers()
+    .filter((fn) => Reflect.getMetadata(METHOD_METADATA, fn) === RequestMethod.GET)
     .map((fn) => Reflect.getMetadata(PATH_METADATA, fn) as string);
 
 describe('asset route order', () => {
-  const routes = getRoutes(AssetsController);
+  const routes = getRoutes();
 
   it('declares every static GET before the parameter route that would swallow it', () => {
     const paramIndex = routes.indexOf(':id');

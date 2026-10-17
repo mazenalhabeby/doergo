@@ -13,6 +13,8 @@ import type { OrgCostBreakdown, SubscriptionView } from '@hbcfield/shared/client
 import { BillBreakdown } from './_components/bill-breakdown';
 import { OptionsRail } from './_components/options-rail';
 import { dateLocale } from "@/lib/format-date"
+import { useBillingPage } from "./use-billing-page";
+import { STATUS_BADGE } from "./billing-page-helpers";
 
 /**
  * Billing & plan.
@@ -38,78 +40,17 @@ import { dateLocale } from "@/lib/format-date"
  * affects.
  */
 
-const STATUS_BADGE: Record<string, { key: string; fallback: string; cls: string }> = {
-  trialing: { key: 'billing.status.trialing', fallback: 'Trial', cls: 'bg-primary/10 text-primary' },
-  active: { key: 'billing.status.active', fallback: 'Active', cls: 'bg-emerald-500/10 text-emerald-500' },
-  past_due: { key: 'billing.status.pastDue', fallback: 'Payment due', cls: 'bg-amber-500/10 text-amber-500' },
-  canceled: { key: 'billing.status.canceled', fallback: 'Canceled', cls: 'bg-muted text-muted-foreground' },
-  incomplete: { key: 'billing.status.incomplete', fallback: 'Inactive', cls: 'bg-red-500/10 text-red-500' },
-};
-
 export default function BillingPage() {
-  const { t } = useTranslation();
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
-
-  const [sub, setSub] = useState<SubscriptionView | null>(null);
-  const [bill, setBill] = useState<OrgCostBreakdown | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    // Both together: the status comes from Stripe's view of the subscription,
-    // the bill from what the organization has. Neither is derivable from the
-    // other, and a page showing one without the other is half an answer.
-    const [s, b] = await Promise.all([billingApi.getSubscription(), billingApi.getBill()]);
-    setSub(s);
-    setBill(b);
-  }, []);
-
-  useEffect(() => {
-    load()
-      .catch((e) => notify.error(errorMessage(e, t('toast.billingLoadFailed', "Couldn't load billing details."))))
-      .finally(() => setLoading(false));
-  }, [load, t]);
-
-  /**
-   * `done` is what to say when the action finishes HERE rather than at Stripe.
-   *
-   * Most of these redirect, so the message is never seen. Starting invoicing
-   * does not — it creates the subscription server-side and comes back — and it
-   * said "Billing updated.", which is true of everything on this page and
-   * describes nothing. Somebody who has just started being invoiced wants to
-   * know an invoice is coming.
-   */
-  const go = async (fn: () => Promise<{ url?: string } | void>, key: string, done?: string) => {
-    setBusy(key);
-    try {
-      const res = await fn();
-      if (res && 'url' in res && res.url) {
-        window.location.href = res.url;
-        return;
-      }
-      await load();
-      notify.success(done ?? t('toast.billingUpdated', 'Billing updated.'));
-    } catch (e) {
-      notify.error(errorMessage(e));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const saveAddOns = async (keys: string[]) => {
-    try {
-      await billingApi.setAddOns(keys);
-      // Re-read rather than patching local state: the bill moves with the
-      // add-ons, and a total the page computed itself is exactly the drift this
-      // model exists to remove.
-      await load();
-      notify.success(t('toast.addOnsUpdated', 'Options updated.'));
-    } catch (e) {
-      notify.error(errorMessage(e));
-      throw e;
-    }
-  };
+  const {
+    t,
+    isAdmin,
+    sub,
+    bill,
+    loading,
+    busy,
+    go,
+    saveAddOns,
+  } = useBillingPage();
 
   if (loading) {
     return (

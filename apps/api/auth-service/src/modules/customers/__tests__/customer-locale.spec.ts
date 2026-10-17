@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { CustomersService } from '../customers.service';
+import { customerServices, type CustomerServices } from './customer-services.fixture';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /*
@@ -15,7 +16,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 const ORG = 'org-1';
 
 describe('client record language', () => {
-  let service: CustomersService;
+  let service: CustomerServices;
 
   const prisma: Record<string, any> = {
     customer: { findFirst: jest.fn(), findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
@@ -33,10 +34,7 @@ describe('client record language', () => {
       id: 'c1', status: 'LEAD', isPortalResident: false, ownerId: 'u2', managerIds: [], spaceId: null,
     });
     prisma.user.findMany.mockResolvedValue([]);
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [CustomersService, { provide: PrismaService, useValue: prisma }],
-    }).compile();
-    service = module.get(CustomersService);
+    service = customerServices(prisma);
   });
 
   describe('create', () => {

@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 import { EmployeesController } from '../../modules/technicians/technicians.controller';
-import { AuthController } from '../../modules/auth/auth.controller';
+import { AuthSessionsController } from '../../modules/auth/auth-sessions.controller';
 
 /*
   The gateway caches who a session belongs to. A member switched off, or an
@@ -34,7 +34,7 @@ describe('DELETE /auth/sessions', () => {
   it('sends the caller\'s own refresh token so their session can be kept, and drops their cache', async () => {
     const authClient = { send: jest.fn(() => of({ success: true, data: { revoked: 2 } })) };
     const authCache = { invalidateUser: jest.fn(async () => undefined) };
-    const c = new AuthController(authClient as any, {} as any, authCache as any);
+    const c = new AuthSessionsController(authClient as any, authCache as any);
     await c.revokeAllSessions({ id: 'u-1' } as any, { cookies: { refreshToken: 'rt-cookie' } } as any, {} as any);
     expect(authClient.send).toHaveBeenCalledWith({ cmd: 'revoke_all_sessions' }, { userId: 'u-1', currentRefreshToken: 'rt-cookie' });
     expect(authCache.invalidateUser).toHaveBeenCalledWith('u-1');
@@ -42,7 +42,7 @@ describe('DELETE /auth/sessions', () => {
 
   it('the phone sends it in the body', async () => {
     const authClient = { send: jest.fn(() => of({ success: true })) };
-    const c = new AuthController(authClient as any, {} as any, { invalidateUser: jest.fn(async () => undefined) } as any);
+    const c = new AuthSessionsController(authClient as any, { invalidateUser: jest.fn(async () => undefined) } as any);
     await c.revokeAllSessions({ id: 'u-1' } as any, { cookies: {} } as any, { refreshToken: 'rt-body' } as any);
     expect((authClient.send.mock.calls[0] as any)[1].currentRefreshToken).toBe('rt-body');
   });

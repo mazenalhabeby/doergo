@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, TextInput, View, type TextInputProps } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
+import { Bump } from './motion';
 import { AText } from './text';
 
 /**
@@ -42,13 +43,55 @@ export function FilterPill({
  * disabled state. The Members and Team filters were drawn this way before
  * `FilterPill` existed, and a role name they show in full must stay in full.
  */
-export function ChoicePill({ label, on, onPress, dot }: { label: string; on: boolean; onPress: () => void; dot?: string | null }) {
+export function ChoicePill({
+  label,
+  on,
+  onPress,
+  dot,
+  count,
+}: {
+  label: string;
+  on: boolean;
+  onPress: () => void;
+  dot?: string | null;
+  /** Something waiting here (unread): a red count after the label — the same mark as the tab bar's. */
+  count?: number;
+}) {
   const { amazen } = useTheme();
   const c = amazen.color;
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }} style={pillBox(amazen, on)}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: on }}
+      accessibilityLabel={count ? `${label}, ${count}` : undefined}
+      style={pillBox(amazen, on)}
+    >
       {dot ? <PillDot color={dot} /> : null}
       <AText variant="caption" style={{ fontSize: 12.5, color: on ? c.accent : c.ink }}>{label}</AText>
+      {count ? (
+        <Bump value={count}>
+          <View
+            style={{
+              minWidth: 18,
+              height: 18,
+              paddingHorizontal: 5,
+              borderRadius: amazen.radius.full,
+              backgroundColor: c.critical,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <AText
+              variant="caption"
+              numeric
+              style={{ color: c.criticalInk, fontSize: 11, lineHeight: 14, fontFamily: amazen.font.sansMedium }}
+            >
+              {count > 9 ? '9+' : String(count)}
+            </AText>
+          </View>
+        </Bump>
+      ) : null}
     </Pressable>
   );
 }

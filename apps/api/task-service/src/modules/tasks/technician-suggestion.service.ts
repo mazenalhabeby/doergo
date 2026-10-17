@@ -1,7 +1,7 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { workspaceZone } from '../../common/zone.util';
-import { TaskStatus, Role, success, startOfDayIn, endOfDayIn, assertFoundInOrg } from '@hbcfield/shared';
+import { notEndedWhere, TaskStatus, Role, success, startOfDayIn, endOfDayIn, assertFoundInOrg } from '@hbcfield/shared';
 import { assertMayAssign } from './task-scope';
 import {
   calculateDistanceScore,
@@ -71,7 +71,7 @@ export class TechnicianSuggestionService {
           await this.prisma.spaceAssignment.findMany({
             where: {
               spaceId: task.spaceId ?? '',
-              OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
+              ...notEndedWhere(),
             },
             select: { userId: true },
           })
@@ -86,10 +86,7 @@ export class TechnicianSuggestionService {
       },
       take: TechnicianSuggestionService.SUGGESTION_LIMIT, // Cap to prevent unbounded queries in large orgs
       select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
+        id: true, firstName: true, lastName: true, email: true,
         specialty: true,
         rating: true,
         ratingCount: true,
@@ -170,17 +167,17 @@ export class TechnicianSuggestionService {
     const scoredTechnicians = technicians.map((tech) => {
         const todayCompletedCount = completedCountMap.get(tech.id) || 0;
 
-        const activeTaskCount = tech._count.assignedTasks;
-        const todayTaskCount = activeTaskCount + todayCompletedCount;
-        // Automatic capacity (see above); no longer the manual maxDailyJobs field.
-        const maxDailyJobs = derivedCapacityMap.get(tech.id) ?? DEFAULT_CAPACITY;
+          const activeTaskCount = tech._count.assignedTasks;
+          const todayTaskCount = activeTaskCount + todayCompletedCount;
+          // Automatic capacity (see above); no longer the manual maxDailyJobs field.
+          const maxDailyJobs = derivedCapacityMap.get(tech.id) ?? DEFAULT_CAPACITY;
 
-        // Calculate individual scores (0-100 scale)
-        const distanceScore = calculateDistanceScore(task, tech.lastLocation);
-        const availabilityScore = calculateAvailabilityScore(todayTaskCount, maxDailyJobs);
-        const specializationScore = calculateSpecializationScore(task.title, tech.specialty);
-        const workloadScore = calculateWorkloadScore(activeTaskCount);
-        const ratingScore = calculateRatingScore(tech.rating);
+          // Calculate individual scores (0-100 scale)
+          const distanceScore = calculateDistanceScore(task, tech.lastLocation);
+          const availabilityScore = calculateAvailabilityScore(todayTaskCount, maxDailyJobs);
+          const specializationScore = calculateSpecializationScore(task.title, tech.specialty);
+          const workloadScore = calculateWorkloadScore(activeTaskCount);
+          const ratingScore = calculateRatingScore(tech.rating);
 
         // Weighted total score
         const totalScore =
@@ -190,13 +187,13 @@ export class TechnicianSuggestionService {
           workloadScore * 0.15 +
           ratingScore * 0.10;
 
-        // Calculate distance in km
-        const distanceKm = calculateDistance(
-          task.locationLat,
-          task.locationLng,
-          tech.lastLocation?.lat,
-          tech.lastLocation?.lng,
-        );
+          // Calculate distance in km
+          const distanceKm = calculateDistance(
+            task.locationLat,
+            task.locationLng,
+            tech.lastLocation?.lat,
+            tech.lastLocation?.lng,
+          );
 
         return {
           id: tech.id,

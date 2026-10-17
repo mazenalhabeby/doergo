@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { WorkflowsService } from '../workflows.service';
+import { workflowServices } from './workflows.service.fixture';
 
 /**
  * A task type scoped to one space belongs to that space alone.
@@ -49,7 +49,7 @@ describe('attachSpaceWorkflow — scope is enforced, not just defined', () => {
       $transaction: async (ops: any[]) => Promise.all(ops),
     };
     const cache: any = { invalidate: async () => {} };
-    return new WorkflowsService(prisma, cache);
+    return workflowServices(prisma, cache);
   };
 
   it('lets a space offer an organization-wide task type', async () => {
@@ -89,7 +89,7 @@ describe('setDefault — a local task type cannot become the organization defaul
       },
       $transaction: async (ops: any[]) => Promise.all(ops),
     };
-    return new WorkflowsService(prisma, { invalidate: async () => {} } as any);
+    return workflowServices(prisma, { invalidate: async () => {} } as any);
   };
 
   it('refuses one scoped to a single space', async () => {
@@ -126,7 +126,7 @@ describe('remove — a space keeps its default', () => {
         findFirst: async () => (isDefaultSomewhere ? { space: { name: 'Warehouse' } } : null),
       },
     };
-    return new WorkflowsService(prisma, { invalidate: async () => {} } as any);
+    return workflowServices(prisma, { invalidate: async () => {} } as any);
   };
 
   it("refuses while it is a space's default, and names the space", async () => {
@@ -172,7 +172,7 @@ describe('removeStatus — routes to the deleted step go with it', () => {
       task: { count: async () => taskCount },
       $transaction: async (fn: any) => fn(prisma),
     };
-    const svc = new WorkflowsService(prisma, { invalidate: async () => {} } as any);
+    const svc = workflowServices(prisma, { invalidate: async () => {} } as any);
     return { svc, deleted, updated };
   };
 

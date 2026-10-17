@@ -13,6 +13,7 @@
  *
  * Pure. No I/O, no clock.
  */
+import { stripDiacritics } from '../utils/fold';
 
 export type MatchConfidence = 'EXACT' | 'FUZZY' | 'UNMATCHED';
 
@@ -61,9 +62,7 @@ export interface FileMatch {
  * that failed loudly.
  */
 export function tokenize(input: string): string[] {
-  return input
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+  return stripDiacritics(input)
     .replace(/ß/gi, 'ss')
     .toLowerCase()
     .split(/[^a-z0-9]+/)

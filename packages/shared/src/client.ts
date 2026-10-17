@@ -21,6 +21,7 @@ export * from './support';
 
 // Chat (member-to-member conversation/message types) — pure, client-safe
 export * from './chat';
+export * from './icons';
 
 // Setup wizard engine (guided org builder catalog + classifier) — pure, client-safe
 export * from './setup';
@@ -84,6 +85,8 @@ export * from './constants/onboarding';
 // …and the helper that tells the two apart, because the person typing cannot:
 // both onboarding cards say "code", so each entry screen receives the other's.
 export * from './constants/join-code';
+// What a member may upload, and how big — the same rule the server checks.
+export * from './constants/upload-rules';
 
 // Personnel file — document types, retention/credential rules and contract
 // merge fields. Pure data + pure functions, so both entries carry it.

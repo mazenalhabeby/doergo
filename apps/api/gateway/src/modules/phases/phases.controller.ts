@@ -1,21 +1,9 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Request,
-  UseGuards,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Request, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
-import { ModuleGuard } from '../../common/guards/module.guard';
 import { CreatePhaseDto, UpdatePhaseDto } from './dto';
 import { PhasesService } from './phases.service';
 
@@ -39,7 +27,6 @@ export class PhasesController {
 
   @Post()
   @Roles(Role.ADMIN)
-  @UseGuards(ModuleGuard)
   @RequireModule('phases')
   @ApiOperation({ summary: 'Create a new phase' })
   async create(@Body() createPhaseDto: CreatePhaseDto, @Request() req: any) {

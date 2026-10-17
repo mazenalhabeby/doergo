@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { ChatService } from '../chat.service';
+import { chatPartsOf, type ChatServiceParts } from './chat.service.fixture';
+import { CHAT_PROVIDERS } from '../chat.module';
+import { chatStorageStubs } from './chat-storage-stubs';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /**
@@ -11,7 +14,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
  * to keep talking — while what they already said stays readable.
  */
 describe('ChatService — cross-org conversations', () => {
-  let service: ChatService;
+  let service: ChatServiceParts;
 
   const OWNER_ORG = 'org-owner';
   const GUEST_ORG = 'org-guest';
@@ -23,7 +26,14 @@ describe('ChatService — cross-org conversations', () => {
     user: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn() },
     spaceAssignment: { findMany: jest.fn() },
     spaceShare: { findMany: jest.fn(), findFirst: jest.fn() },
-    conversationMember: { findUnique: jest.fn(), update: jest.fn() },
+    conversationMember: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _sum: { unreadCount: 0 } }),
+    },
     conversation: { update: jest.fn(), findFirst: jest.fn(), findMany: jest.fn() },
     message: { create: jest.fn() },
     $transaction: jest.fn(),
@@ -79,12 +89,13 @@ describe('ChatService — cross-org conversations', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ChatService,
+        ...CHAT_PROVIDERS,
+        ...chatStorageStubs(),
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: notificationClient },
       ],
     }).compile();
-    service = module.get<ChatService>(ChatService);
+    service = chatPartsOf(module);
   });
 
   it('lets two people on an actively shared space message each other', async () => {
@@ -153,7 +164,7 @@ describe('ChatService — cross-org conversations', () => {
  * or a closed one looks ordinary until you type into it and get bounced.
  */
 describe('ChatService.listConversations — closed threads are reported', () => {
-  let service: ChatService;
+  let service: ChatServiceParts;
 
   const OWNER_ORG = 'org-owner';
   const GUEST_ORG = 'org-guest';
@@ -201,12 +212,13 @@ describe('ChatService.listConversations — closed threads are reported', () => 
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ChatService,
+        ...CHAT_PROVIDERS,
+        ...chatStorageStubs(),
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
       ],
     }).compile();
-    service = module.get(ChatService);
+    service = chatPartsOf(module);
   });
 
   const list = () => service.listConversations({ userId: ME, organizationId: OWNER_ORG });
@@ -258,7 +270,7 @@ describe('ChatService.listConversations — closed threads are reported', () => 
  * agreement to publish when another company's staff are at their desks.
  */
 describe('ChatService — presence does not cross the organization boundary', () => {
-  let service: ChatService;
+  let service: ChatServiceParts;
 
   const OWNER_ORG = 'org-owner';
   const GUEST_ORG = 'org-guest';
@@ -300,12 +312,13 @@ describe('ChatService — presence does not cross the organization boundary', ()
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ChatService,
+        ...CHAT_PROVIDERS,
+        ...chatStorageStubs(),
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
       ],
     }).compile();
-    service = module.get(ChatService);
+    service = chatPartsOf(module);
   });
 
   const list = () => service.listConversations({ userId: ME, organizationId: OWNER_ORG });

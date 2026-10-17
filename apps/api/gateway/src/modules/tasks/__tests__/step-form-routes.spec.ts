@@ -4,12 +4,12 @@
  */
 import 'reflect-metadata';
 import { ArgumentsHost, ValidationPipe } from '@nestjs/common';
-import { TasksController } from '../tasks.controller';
 import { UpdateStatusDto } from '../dto';
 import { CreateWorkflowStatusDto, UpdateWorkflowStatusDto } from '../../workflows/dto';
 import { GlobalExceptionFilter } from '../../../common/filters/http-exception.filter';
 import { SyncPushService } from '../../sync/sync-push.service';
 import { SYNC_OPERATIONS } from '@hbcfield/shared';
+import { tasksControllers, taskRoute } from './tasks-controllers.fixture';
 
 const pipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });
 
@@ -27,7 +27,7 @@ describe('PATCH /tasks/:id/status carries step-form answers', () => {
 
   it('forwards the answers to the status job, with the caller identity after them', async () => {
     const queue = { updateTaskStatus: jest.fn().mockResolvedValue({ success: true }) };
-    const controller = new TasksController(queue as any, {} as any);
+    const controller = tasksControllers(queue as any, {} as any);
     const req = { user: { id: 'u1', role: 'EMPLOYEE', organizationId: 'o1', canViewAllTasks: false } };
     await controller.updateStatus('t1', { status: 'VISITED', answers: { outcome: 'Won' } } as any, req);
     expect(queue.updateTaskStatus).toHaveBeenCalledWith(expect.objectContaining({
@@ -39,7 +39,7 @@ describe('PATCH /tasks/:id/status carries step-form answers', () => {
 describe('GET /tasks/:id/submissions', () => {
   it('asks task-service with exactly the facts GET /tasks/:id uses (the same access check)', async () => {
     const tasks = { findOne: jest.fn().mockResolvedValue({}), getSubmissions: jest.fn().mockResolvedValue({ data: [] }) };
-    const controller = new TasksController({} as any, tasks as any);
+    const controller = tasksControllers({} as any, tasks as any);
     const req = {
       user: {
         id: 'u1', role: 'EMPLOYEE', organizationId: 'o1', canViewAllTasks: false, canAssignTasks: false,
@@ -55,7 +55,7 @@ describe('GET /tasks/:id/submissions', () => {
   });
 
   it('declares no looser gate than reading the task itself', () => {
-    const proto = TasksController.prototype as any;
+    const proto = new Proxy({}, { get: (_t, name: string) => taskRoute(name) }) as any;
     const keys = (fn: object) => Reflect.getMetadataKeys(fn).filter((k: unknown) => typeof k === 'string' && !String(k).startsWith('swagger') && k !== 'path' && k !== 'method');
     expect(keys(proto.getSubmissions)).toEqual(keys(proto.findOne));
   });

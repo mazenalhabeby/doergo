@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { assertExternalMayWriteTask } from '../external-task-write';
+import { tasksControllerSource } from '../../modules/tasks/__tests__/tasks-controllers.fixture';
 
 /**
  * An external member writes (comment, photo, field value) only on a job they
@@ -43,7 +44,7 @@ describe('assertExternalMayWriteTask', () => {
   });
 
   describe('every task comment / attachment / field-value write asks it', () => {
-    const tasks = readFileSync(join(__dirname, '..', '..', 'modules', 'tasks', 'tasks.controller.ts'), 'utf8');
+    const tasks = tasksControllerSource();
     const fields = readFileSync(join(__dirname, '..', '..', 'modules', 'custom-fields', 'custom-fields.controller.ts'), 'utf8');
     const routes = [
       ...[...tasks.matchAll(/@(Post|Delete)\(':id\/(?:comments|attachments)[^']*'\)[\s\S]*?async (\w+)\([\s\S]*?\{([\s\S]*?)\n {2}\}/g)],

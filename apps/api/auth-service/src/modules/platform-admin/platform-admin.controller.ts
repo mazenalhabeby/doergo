@@ -2,11 +2,17 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PlatformAdminService } from './platform-admin.service';
 import { PlatformAuditService } from './platform-audit.service';
+import { PlatformBillingService } from './platform-billing.service';
+import { PlatformBillingAlertsService } from './platform-billing-alerts.service';
+import { PlatformTrialService } from './platform-trial.service';
 
 @Controller()
 export class PlatformAdminController {
   constructor(
     private readonly svc: PlatformAdminService,
+    private readonly trials: PlatformTrialService,
+    private readonly alertsService: PlatformBillingAlertsService,
+    private readonly platformBilling: PlatformBillingService,
     private readonly audit: PlatformAuditService,
   ) {}
 
@@ -30,22 +36,34 @@ export class PlatformAdminController {
   }
 
   @MessagePattern({ cmd: 'platform_end_trial' })
-  endTrial(@Payload() d: any) { return this.svc.endTrial(d); }
+  endTrial(@Payload() d: any) {
+    return this.trials.endTrial(d);
+  }
 
   @MessagePattern({ cmd: 'platform_billing_alerts' })
-  billingAlerts(@Payload() d: any) { return this.svc.listBillingAlerts(d ?? {}); }
+  billingAlerts(@Payload() d: any) {
+    return this.alertsService.listBillingAlerts(d ?? {});
+  }
 
   @MessagePattern({ cmd: 'platform_ack_billing_alert' })
-  ackBillingAlert(@Payload() d: any) { return this.svc.acknowledgeBillingAlert(d); }
+  ackBillingAlert(@Payload() d: any) {
+    return this.alertsService.acknowledgeBillingAlert(d);
+  }
 
   @MessagePattern({ cmd: 'platform_set_billing_mode' })
-  setBillingMode(@Payload() d: any) { return this.svc.setBillingMode(d); }
+  setBillingMode(@Payload() d: any) {
+    return this.platformBilling.setBillingMode(d);
+  }
 
   @MessagePattern({ cmd: 'platform_set_agreed_price' })
-  setAgreedPrice(@Payload() d: any) { return this.svc.setAgreedPrice(d); }
+  setAgreedPrice(@Payload() d: any) {
+    return this.platformBilling.setAgreedPrice(d);
+  }
 
   @MessagePattern({ cmd: 'platform_clear_agreed_price' })
-  clearAgreedPrice(@Payload() d: any) { return this.svc.clearAgreedPrice(d); }
+  clearAgreedPrice(@Payload() d: any) {
+    return this.platformBilling.clearAgreedPrice(d);
+  }
 
   @MessagePattern({ cmd: 'platform_suspend' })
   suspend(@Payload() d: any) { return this.svc.suspend(d); }
@@ -57,5 +75,7 @@ export class PlatformAdminController {
   reactivate(@Payload() d: any) { return this.svc.reactivate(d); }
 
   @MessagePattern({ cmd: 'platform_extend_trial' })
-  extendTrial(@Payload() d: any) { return this.svc.extendTrial(d); }
+  extendTrial(@Payload() d: any) {
+    return this.trials.extendTrial(d);
+  }
 }

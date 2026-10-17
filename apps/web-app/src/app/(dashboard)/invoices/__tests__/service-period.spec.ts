@@ -2,6 +2,7 @@ import fs from "fs"
 import path from "path"
 
 import { createScreen, editScreen, strip } from "./_screen"
+import { serverModuleSource } from "./server-source"
 
 /*
   AN INVOICE FOR HOURS HAS TO SAY WHICH DAYS.
@@ -30,10 +31,8 @@ import { createScreen, editScreen, strip } from "./_screen"
 */
 
 const WEB = path.join(__dirname, "..")
-const SERVICE = path.join(
-  __dirname,
-  "../../../../../../api/auth-service/src/modules/invoices/invoice.service.ts",
-)
+/** The invoices module folder — its service is split by job, so a rule is read from all of it. */
+const SERVICE_DIR = path.join(__dirname, "../../../../../../api/auth-service/src/modules/invoices")
 
 /*
   The "which jobs, which period" rule moved into work-source.ts so the client
@@ -47,7 +46,7 @@ const WORK_SOURCE = path.join(
 const read = (p: string) => fs.readFileSync(p, "utf8")
 const workSource = () => strip(read(WORK_SOURCE))
 
-const service = () => strip(read(SERVICE))
+const service = () => strip(serverModuleSource(SERVICE_DIR, ["work-source.ts"]))
 /*
   ⚠️ The SCREEN, not the page file. The document moved into `_components/` so
   that creating an invoice and correcting one are the same screen — and these

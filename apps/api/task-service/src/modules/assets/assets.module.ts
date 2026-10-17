@@ -11,6 +11,7 @@ import { AssetUsageService } from './asset-usage.service';
 import { AssetHoldersService } from './asset-holders.service';
 import { AssetCustodyService } from './asset-custody.service';
 import { AssetExpenseService } from './asset-expense.service';
+import { AssetExpenseReviewService } from './asset-expense-review.service';
 import { AssetContractService } from './asset-contract.service';
 import { AssetProposalService } from './asset-proposal.service';
 import { AssetNotifier } from './asset-notifier.service';
@@ -18,7 +19,16 @@ import { AssetResponsibleService } from './asset-responsible.service';
 import { AssetLogService } from './asset-log.service';
 import { AssetLogReminderService } from './asset-log-reminder.service';
 import { AssetsController } from './assets.controller';
+import { AssetMoneyRpcController } from './asset-money.rpc.controller';
+import { AssetIntakeRpcController } from './asset-intake.rpc.controller';
+import { AssetLogRpcController } from './asset-log.rpc.controller';
 import { AssetsProcessor } from './assets.processor';
+import { AssetCreateService } from './asset-create.service';
+import { AssetUpdateService } from './asset-update.service';
+import { ProposalReviewService } from './proposal-review.service';
+import { CustodyReadService } from './custody-read.service';
+import { AssetLogReadService } from './asset-log-read.service';
+import { AssetTypesService } from './asset-types.service';
 
 /**
  * One 1,500-line service became several, split by subject rather than by layer:
@@ -30,7 +40,10 @@ import { AssetsProcessor } from './assets.processor';
 const SERVICES = [
   AssetAccessService,
   AssetCatalogService,
+  AssetTypesService,
   AssetsService,
+  AssetCreateService,
+  AssetUpdateService,
   AssetRowsService,
   AssetLedgerService,
   AssetActivityService,
@@ -38,17 +51,21 @@ const SERVICES = [
   AssetHoldersService,
   // Who held it and when, and what they spent on it while they did.
   AssetCustodyService,
+  CustodyReadService,
   AssetExpenseService,
+  AssetExpenseReviewService,
   // A contract read into a record, a handover and a retirement.
   AssetContractService,
   // A member sends a page in; somebody responsible decides.
   AssetProposalService,
+  ProposalReviewService,
   // Who is told about any of the above — expenses, decisions, handovers.
   AssetNotifier,
   // Who can act on the equipment — for proposals and due reminders alike.
   AssetResponsibleService,
   // What gets done to a thing, and when it is due again.
   AssetLogService,
+  AssetLogReadService,
   AssetLogReminderService,
 ];
 
@@ -60,7 +77,7 @@ const SERVICES = [
     inject it without wiring.
   */
   imports: [ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)])],
-  controllers: [AssetsController],
+  controllers: [AssetsController, AssetMoneyRpcController, AssetIntakeRpcController, AssetLogRpcController],
   providers: [...SERVICES, AssetsProcessor],
   exports: SERVICES,
 })

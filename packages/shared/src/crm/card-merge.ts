@@ -20,6 +20,7 @@
  */
 
 import type { CardLine } from './business-card';
+import { foldText } from '../utils/fold';
 
 /** A line, plus how many passes saw it. */
 export interface MergedCardLine extends CardLine {
@@ -43,10 +44,7 @@ export interface MergedCardLine extends CardLine {
  * lines differ by far more than one character.
  */
 function key(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+  return foldText(text)
     .replace(/[lі|]/g, '1')
     .replace(/[o]/g, '0')
     .replace(/[^a-z0-9@]/g, '');

@@ -292,7 +292,7 @@ describe('the live floor', () => {
 */
 describe('cover is attached only when the gateway said so', () => {
   it('treats a missing withCover flag as no', () => {
-    const src = readFileSync(join(__dirname, '..', 'technicians.service.ts'), 'utf8');
+    const src = readFileSync(join(__dirname, '..', 'leave-records.service.ts'), 'utf8');
     expect(src).toContain('dto.withCover === true');
     // …and the assessment is skipped entirely, so it is not merely hidden.
     expect(src).toContain('withCover ? timeOffs.filter');

@@ -10,9 +10,10 @@ import {
   orgFlagFields,
   resolveTaskCreationScope,
   type ProfileBadgesConfig,
+  hashCode,
 } from '@hbcfield/shared';
 import { HttpStatus } from '@nestjs/common';
-import { randomUUID, createHash } from 'crypto';
+import { randomUUID } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 
 /*
@@ -30,10 +31,8 @@ export function dummyPasswordHash(): Promise<string> {
   return dummyHashPromise;
 }
 
-// Hash a token using SHA-256 for secure storage
-export function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
-}
+// Hash a token using SHA-256 for secure storage (the same digest as invitation codes)
+export const hashToken = hashCode;
 
 // Resolve profile badges: user override > org config > defaults
 export function resolveProfileBadges(

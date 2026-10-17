@@ -9,18 +9,18 @@
  * that asks the wrong key is either a control the server refuses or a grant
  * nobody can use.
  */
-import * as fs from 'fs';
 import * as path from 'path';
+import { readSource } from '../../test-utils/read-source';
 import { holds } from '../permissions';
 
 const SCREEN = path.resolve(__dirname, '../../../app/(app)/manage/attendance.tsx');
 const stripComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
-const src = stripComments(fs.readFileSync(SCREEN, 'utf8'));
+const src = stripComments(readSource(SCREEN, 'utf8'));
 
 describe('attendance review — which grant each control asks', () => {
   it('approving hours and excusing a missed clock-in are decided in Approvals, not here', () => {
     expect(src).not.toMatch(/approveEntry|rejectEntry|resolveNoShow/);
-    expect(src).toContain("/(app)/approvals?kind=noShow");
+    expect(src).toContain('/(app)/approvals?kind=noShow');
   });
 
   it('editing follows canReconcileAttendance', () => {

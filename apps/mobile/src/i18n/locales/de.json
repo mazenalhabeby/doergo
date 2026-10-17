@@ -1440,7 +1440,9 @@
       "AVAILABLE": "{{count}} verfügbar",
       "BUSY": "{{count}} beschäftigt",
       "AWAY": "{{count}} abwesend"
-    }
+    },
+    "people": "Personen",
+    "notVisible": "Diese Person ist nicht in Ihrem Team."
   },
   "navTitles": {
     "taskDetails": "Aufgabendetails",
@@ -1509,7 +1511,74 @@
     "sayHello": "Sagen Sie Hallo",
     "new": "Neu",
     "send": "Senden",
-    "noMessagesYet": "Noch keine Nachrichten"
+    "noMessagesYet": "Noch keine Nachrichten",
+    "attach": "Foto hinzufügen",
+    "camera": "Foto aufnehmen",
+    "library": "Aus Galerie wählen",
+    "edit": "Bearbeiten",
+    "edited": "bearbeitet",
+    "editing": "Nachricht bearbeiten",
+    "fileOnline": "online öffnen",
+    "message": "Nachricht",
+    "mute": "Benachrichtigungen aus",
+    "muted": "Benachrichtigungen aus",
+    "unmute": "Benachrichtigungen wieder an",
+    "muteHour": "Für 1 Stunde",
+    "muteDay": "Für 8 Stunden",
+    "muteWeek": "Für eine Woche",
+    "muteAlways": "Bis ich sie wieder einschalte",
+    "notifications": "Benachrichtigungen",
+    "read": "Gelesen",
+    "remove": "Entfernen",
+    "removed": "Nachricht entfernt",
+    "seenBy": "Gesehen von {{count}}",
+    "seenByAll": "Von allen gesehen",
+    "sent": "Gesendet",
+    "status": "Status",
+    "workspaces": "Arbeitsbereiche",
+    "yourMessage": "Ihre Nachricht",
+    "newGroup": "Neue Gruppe",
+    "groupName": "Gruppenname",
+    "createGroup": "Erstellen ({{count}})",
+    "addPeople": "Personen hinzufügen",
+    "addCount": "Hinzufügen ({{count}})",
+    "leave": "Verlassen",
+    "leaveGroup": "Gruppe verlassen",
+    "leaveAsk": "Diese Gruppe verlassen? Sie sehen ihre Nachrichten dann nicht mehr.",
+    "removeMember": "Entfernen",
+    "removeMemberAsk": "{{name}} aus dieser Gruppe entfernen?",
+    "rename": "Umbenennen",
+    "peopleCount_one": "{{count}} Person",
+    "peopleCount_other": "{{count}} Personen",
+    "members": "Mitglieder",
+    "groupOwner": "Verwaltet die Gruppe",
+    "taskChat": "Auftrags-Chat · Team und Büro",
+    "taskChatNote": "Alle, die an diesem Auftrag arbeiten, sind in diesem Chat.",
+    "openJob": "Auftrag öffnen",
+    "taskChatClosed": "Dieser Auftrag ist abgeschlossen, daher ist sein Chat geschlossen. Das Gesagte können Sie weiterhin lesen.",
+    "messagesFound": "Nachrichten",
+    "noMessagesFound": "Keine Nachrichten mit diesen Wörtern.",
+    "system": {
+      "created": "{{actor}} hat die Gruppe „{{title}}“ mit {{users}} erstellt",
+      "renamed": "{{actor}} hat die Gruppe in „{{title}}“ umbenannt",
+      "added": "{{actor}} hat {{users}} hinzugefügt",
+      "removed": "{{actor}} hat {{users}} entfernt",
+      "left": "{{actor}} hat die Gruppe verlassen"
+    },
+    "searchMessages": "Nachrichten durchsuchen",
+    "searchOnline": "Für die Suche in Nachrichten ist eine Verbindung nötig.",
+    "removedFromConversation": "Sie sind nicht mehr in dieser Unterhaltung.",
+    "couldNotOpenJob": "Der Chat zu diesem Auftrag konnte nicht geöffnet werden. Prüfen Sie Ihre Verbindung.",
+    "tapToRemove": "Tippen Sie auf eine Person, um sie zu entfernen.",
+    "jobChatOpen": "Auftrags-Chat",
+    "jobChatHint": "Team und Büro",
+    "sayHelloTo": "Sagen Sie Hallo zu {{name}}",
+    "starter": {
+      "hi": "Hallo {{name}} 👋",
+      "hiAll": "Hallo zusammen 👋",
+      "onMyWay": "Bin unterwegs",
+      "callMe": "Können Sie mich anrufen?"
+    }
   },
   "locationConsent": {
     "title": "Standort im Hintergrund",
@@ -5336,5 +5405,8 @@
       "save": "Speichern",
       "fixRota": "Dienstplan korrigieren"
     }
+  },
+  "people": {
+    "job": "Tätigkeit"
   }
 }

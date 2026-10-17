@@ -2,10 +2,12 @@
  * Everything a worker creates from the phone is created once, however often
  * the queue sends it — and somebody else's id is never an answer.
  */
-import { ChatService } from '../../modules/chat/chat.service';
+import { ChatMessagesService } from '../../modules/chat/chat-messages.service';
+import {  } from '../../modules/chat/__tests__/chat.service.fixture';
 import { SupportService } from '../../modules/support/support.service';
-import { TechniciansService } from '../../modules/technicians/technicians.service';
+import { TimeOffRequestService } from '../../modules/technicians/time-off-request.service';
 import { AssetExpenseService } from '../../modules/assets/asset-expense.service';
+import {  } from '../../modules/assets/__tests__/asset-expense.service.fixture';
 import { TaskRecordsService } from '../../modules/tasks/task-records.service';
 
 /** A service instance with only the collaborators a test gives it. */
@@ -13,14 +15,21 @@ function withDeps<T extends object>(Cls: new (...a: any[]) => T, deps: Record<st
   return Object.assign(Object.create(Cls.prototype), deps);
 }
 
+/** Chat's files service, neutral: no files, nothing to sign. */
+const CHAT_FILES = { accept: jest.fn(async () => []), signMessages: jest.fn(async (_c: unknown, m: unknown[]) => m) };
+
 describe('chat', () => {
   const membership = { id: 'm1', conversation: { members: [{ userId: 'u1' }, { userId: 'u2' }], organizationId: 'o1', type: 'GROUP' } };
 
   it('returns the delivered message for a resend, before sending anything', async () => {
     const prisma: any = { message: { findUnique: jest.fn(async () => ({ id: 'msg-phone-00000000001', senderId: 'u1', conversationId: 'c1' })) }, $transaction: jest.fn() };
-    const chat = withDeps(ChatService, { prisma, notificationClient: { emit: jest.fn() } });
+    const chat = withDeps(ChatMessagesService, {
+      prisma,
+      notificationClient: { emit: jest.fn() },
+      reach: { assertStillReachable: jest.fn() },
+      files: CHAT_FILES,
+    });
     (chat as any).assertMember = jest.fn(async () => membership);
-    (chat as any).assertStillReachable = jest.fn();
     const res: any = await chat.sendMessage({ conversationId: 'c1', senderId: 'u1', body: 'hi', id: 'msg-phone-00000000001' });
     expect(res.data.id).toBe('msg-phone-00000000001');
     expect(prisma.$transaction).not.toHaveBeenCalled();
@@ -31,12 +40,19 @@ describe('chat', () => {
     const prisma: any = {
       message: { findUnique: jest.fn(async () => null), create: jest.fn((args: any) => { created.push(args.data); return args; }) },
       conversation: { update: jest.fn() },
-      conversationMember: { update: jest.fn() },
+      conversationMember: { update: jest.fn(), updateMany: jest.fn() },
       $transaction: jest.fn(async (ops: any[]) => [{ id: 'x' }]),
     };
-    const chat = withDeps(ChatService, { prisma, notificationClient: { emit: jest.fn() } });
+    const counters = { afterSend: jest.fn(async () => ({ unread: {}, badge: {} })) };
+    const chat = withDeps(ChatMessagesService, {
+      prisma,
+      notificationClient: { emit: jest.fn() },
+      counters,
+      reach: { assertStillReachable: jest.fn() },
+      files: CHAT_FILES,
+      tasks: { assertMayWrite: jest.fn() },
+    });
     (chat as any).assertMember = jest.fn(async () => membership);
-    (chat as any).assertStillReachable = jest.fn();
     await chat.sendMessage({ conversationId: 'c1', senderId: 'u1', body: 'late', sentAt: new Date(Date.now() - 2 * 3600_000).toISOString() });
     await chat.sendMessage({ conversationId: 'c1', senderId: 'u1', body: 'future', sentAt: new Date(Date.now() + 3600_000).toISOString() });
     expect(created[0].sentAt).toBeInstanceOf(Date);
@@ -51,7 +67,7 @@ describe('time off', () => {
       user: { findFirst: jest.fn(async () => ({ id: 'u1' })) },
       timeOff: { findUnique: jest.fn(async () => prior), findFirst: jest.fn(async () => prior), create: jest.fn() },
     };
-    const svc = withDeps(TechniciansService, { prisma });
+    const svc = withDeps(TimeOffRequestService, { prisma });
     const res: any = await svc.requestTimeOff({ id: 'to-phone-0000000001', technicianId: 'u1', organizationId: 'o1', startDate: '2030-01-01', endDate: '2030-01-02' } as any);
     expect(res.data.id).toBe('to-phone-0000000001');
     expect(prisma.timeOff.findFirst).not.toHaveBeenCalled();
@@ -63,7 +79,7 @@ describe('time off', () => {
       user: { findFirst: jest.fn(async () => ({ id: 'u1' })) },
       timeOff: { findUnique: jest.fn(async () => ({ id: 'x', technicianId: 'u2' })) },
     };
-    const svc = withDeps(TechniciansService, { prisma });
+    const svc = withDeps(TimeOffRequestService, { prisma });
     await expect(svc.requestTimeOff({ id: 'to-phone-0000000001', technicianId: 'u1', organizationId: 'o1', startDate: '2030-01-01', endDate: '2030-01-02' } as any)).rejects.toMatchObject({
       response: expect.objectContaining({ code: 'ID_IN_USE' }),
     });

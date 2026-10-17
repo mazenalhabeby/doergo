@@ -1,0 +1,319 @@
+<title>Automatic Clock Without Shifts</title>
+<style>
+/* Layout: the rule on top, then the office setting and the phone side by side, then one night of Juan's on a timeline with scenarios, then decisions. */
+:root{
+  --bg:#f3f6f5; --card:#ffffff; --ink:#10201b; --muted:#5d6d68; --line:#dfe7e4; --soft:#edf3f1;
+  --green:#0d8f72; --greenSoft:#0d8f7217; --mint:#cfe7df; --amber:#a86a12; --amberSoft:#a86a1218;
+  --blue:#2563eb; --blueSoft:#2563eb14; --red:#b42318;
+  --display:"Fraunces",Georgia,serif; --sans:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#0c1210; --card:#141c19; --ink:#e4efeb; --muted:#93a59f; --line:#25312d; --soft:#1a2420;
+  --green:#4fd1ad; --greenSoft:#4fd1ad1f; --mint:#1f3a32; --amber:#e3a94a; --amberSoft:#e3a94a22; --blue:#6f9bff; --blueSoft:#6f9bff1f; --red:#f2836f;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#0c1210; --card:#141c19; --ink:#e4efeb; --muted:#93a59f; --line:#25312d; --soft:#1a2420;
+  --green:#4fd1ad; --greenSoft:#4fd1ad1f; --mint:#1f3a32; --amber:#e3a94a; --amberSoft:#e3a94a22; --blue:#6f9bff; --blueSoft:#6f9bff1f; --red:#f2836f;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:32px 64px;display:flex;flex-direction:column;gap:28px}
+.eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font:600 clamp(26px,4vw,38px)/1.12 var(--display);margin:8px 0 10px;text-wrap:balance;max-width:24ch}
+h2{font:600 20px/1.2 var(--display);margin:0 0 4px;text-wrap:balance}
+h3{font-size:14px;font-weight:600;margin:0}
+p{margin:0}
+.lede{color:var(--muted);max-width:68ch}
+.rule{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.rule div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.rule b{font-size:14px}
+.rule span{color:var(--muted);font-size:13.5px}
+.k{font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--green)}
+.two{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.two{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.sub{color:var(--muted);font-size:13.5px}
+/* office panel */
+.who{display:flex;align-items:center;gap:10px}
+.av{width:34px;height:34px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font:600 12px var(--sans);color:var(--muted);flex:none}
+.opt{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:12px;cursor:pointer;text-align:left;background:none;color:inherit;font:inherit;width:100%}
+.opt:focus-visible,.tab:focus-visible,.step button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.opt.on{border-color:var(--blue);background:var(--blueSoft)}
+.radio{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);margin-top:3px;flex:none}
+.on .radio{border-color:var(--blue);background:var(--blue);box-shadow:inset 0 0 0 3px var(--card)}
+.opt b{display:block;font-size:14px}
+.opt small{display:block;color:var(--muted);font-size:13px}
+.new{font:600 10px/1 var(--mono);letter-spacing:.08em;color:var(--green);background:var(--greenSoft);border-radius:5px;padding:3px 6px;margin-left:6px;vertical-align:2px}
+.rows{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.row > div:first-child{min-width:0;flex:1 1 220px}
+.row small{display:block;color:var(--muted);font-size:12.5px}
+.step{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.step button{border:0;background:var(--card);color:var(--ink);padding:4px 11px;cursor:pointer;font:inherit}
+.step span{min-width:64px;text-align:center;border-inline:1px solid var(--line);padding:4px 8px;font:600 13px var(--mono);font-variant-numeric:tabular-nums}
+.pill{font:500 12.5px var(--mono);background:var(--soft);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.hint{font-size:12.5px;color:var(--muted);background:var(--soft);border-radius:10px;padding:10px 12px}
+/* phone */
+.phone{width:min(300px,100%);margin:0 auto;border-radius:34px;padding:12px;background:#0b0f0e;box-shadow:0 1px 0 var(--line)}
+.screen{border-radius:24px;background:linear-gradient(180deg,#cfe7df,#eef5f2 55%);padding:16px 12px 14px;display:flex;flex-direction:column;gap:10px;color:#10201b;font-family:var(--sans)}
+.screen .t{font:600 22px/1 var(--sans);letter-spacing:.02em}
+.screen .d{font-size:12px;color:#4b5d57}
+.pcard{background:#fff;border-radius:16px;padding:12px 13px;display:flex;flex-direction:column;gap:6px}
+.pcard .lab{font:500 10px/1 var(--mono);letter-spacing:.14em;color:#5d6d68}
+.pcard .tt{font-size:14px;font-weight:600}
+.pcard .bd{font-size:12.5px;color:#4b5d57}
+.sw{width:38px;height:22px;border-radius:999px;background:#0d8f72;position:relative;flex:none}
+.sw::after{content:"";position:absolute;right:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff}
+.flex{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.note{background:#fff;border-radius:14px;padding:10px 12px;font-size:12.5px;display:flex;flex-direction:column;gap:3px;border:1px solid #dfe7e4}
+.note b{font-size:12.5px}
+.note .act{display:flex;gap:14px;margin-top:4px;font-weight:600;color:#0d8f72}
+.big{font:500 34px/1 var(--mono);letter-spacing:-.02em}
+/* timeline */
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.tab.on{color:var(--green);border-color:var(--green);background:var(--greenSoft)}
+.tl{position:relative;padding:28px 0 4px}
+.axis{position:relative;height:46px;border-radius:10px;background:var(--soft);overflow:hidden}
+.band{position:absolute;top:0;bottom:0;border-radius:8px}
+.band.in{background:var(--mint)}
+.band.work{background:var(--greenSoft);border:2px solid var(--green)}
+.band.wait{background:repeating-linear-gradient(135deg,var(--amberSoft) 0 6px,transparent 6px 12px);border:1px dashed var(--amber)}
+.tick{position:absolute;top:-22px;transform:translateX(-50%);font:500 11px var(--mono);color:var(--muted);white-space:nowrap}
+.mark{position:absolute;top:50px;transform:translateX(-50%);font:500 11px/1.3 var(--mono);white-space:nowrap;text-align:center}
+.mark::before{content:"";display:block;width:1px;height:10px;background:currentColor;margin:0 auto 3px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:44px}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.story{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.story li{display:grid;grid-template-columns:62px 1fr;gap:10px;font-size:14px}
+.story time{font:500 13px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.result{display:flex;gap:10px;flex-wrap:wrap}
+.result span{font:500 13px var(--mono);border-radius:8px;padding:6px 10px;background:var(--soft)}
+.result .ok{background:var(--greenSoft);color:var(--green)}
+.result .warn{background:var(--amberSoft);color:var(--amber)}
+.dec{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;color:var(--ink)}
+.dec li::marker{color:var(--green)}
+@media (prefers-reduced-motion:no-preference){.band,.mark{transition:left .35s ease,width .35s ease}}
+
+/* Arabic voice-over */
+.vo{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;box-shadow:0 6px 20px -14px #0006;font-family:var(--sans)}
+.vo-play{width:40px;height:40px;border-radius:50%;border:0;background:var(--green);color:var(--card);display:grid;place-items:center;cursor:pointer;flex:none}
+.vo-play:focus-visible,.vo-stop:focus-visible,.listen:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.vo-text{display:flex;flex-direction:column;min-width:0;flex:1}
+.vo-text b{font-size:14px}
+.vo-text span{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vo-bar{flex:0 1 160px;height:4px;border-radius:2px;background:var(--soft);overflow:hidden}
+.vo-bar i{display:block;height:100%;width:0;background:var(--green)}
+.vo-stop{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+@media (max-width:520px){.vo-bar{display:none}}
+.speaking{outline:2px solid var(--green);outline-offset:6px;border-radius:16px}
+.listen{border:1px solid var(--line);background:var(--card);color:var(--green);border-radius:999px;padding:4px 10px;font:500 12.5px var(--sans);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+@media (prefers-reduced-motion:no-preference){.speaking{transition:outline-color .3s}}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+
+<div class="wrap">
+  <header id="sec-intro" data-clip="intro">
+    <div class="eyebrow">Mockup · Automatic clock · AGRU America, Inc.</div>
+    <h1>Clocking Juan automatically when he has no shift</h1>
+    <p class="lede">Juan comes when he is called. In the last 60 days he worked 49 nights at AGRU, starting between 20:00 and 22:00 and leaving between 05:30 and 08:05, 9.7 hours on average. Today the automatic clock needs a planned shift, so it never runs for him. This adds a second way to clock: by arriving and leaving.</p>
+  </header>
+
+  <div class="vo" id="vo" dir="rtl" lang="ar">
+    <button type="button" class="vo-play" id="voPlay" aria-label="تشغيل الشرح الصوتي"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path id="voIcon" d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
+    <div class="vo-text"><b>شرح صوتي بالعربية</b><span id="voNow">اضغط للاستماع · حوالي ٥ دقائق</span></div>
+    <div class="vo-bar" aria-hidden="true"><i id="voProg"></i></div>
+    <button type="button" class="vo-stop" id="voStop" hidden>إيقاف</button>
+  </div>
+  <section class="rule" id="sec-rule" data-clip="rule" aria-label="The rule">
+    <div><span class="k">Arrive</span><b>Inside the site 10 minutes → clocked in</b><span>Recorded from the moment he arrived, not when it was decided.</span></div>
+    <div><span class="k">Step out</span><b>Away less than 20 minutes → nothing</b><span>A walk to the truck or a call outside is still work.</span></div>
+    <div><span class="k">Leave</span><b>Away 20 minutes → clocked out</b><span>Recorded at the moment he left the site.</span></div>
+    <div><span class="k">Guard</span><b>Outside his usual hours → he is asked first</b><span>A daytime pick-up is never turned into a shift on its own.</span></div>
+  </section>
+
+  <div class="two">
+    <section class="card" id="sec-office" data-clip="office" aria-label="Office setting">
+      <div>
+        <div class="eyebrow">Web · Workspace → Members → Juan</div>
+        <h2>Automatic clock</h2>
+        <p class="sub">How the phone decides when Juan starts and ends work at AGRU America, Inc.</p>
+      </div>
+      <div class="who"><span class="av">JC</span><div><b>Juan Diego Castrillon Salazar</b><div class="sub">No shifts planned here · 49 shifts in 60 days</div></div></div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="opt" type="button" id="mode-shift" aria-pressed="false"><span class="radio"></span><span><b>By his shift</b><small>Clocks in at arrival near the shift start and out after the shift ends. Needs a rota.</small></span></button>
+        <button class="opt on" type="button" id="mode-site" aria-pressed="true"><span class="radio"></span><span><b>By arriving and leaving<span class="new">NEW</span></b><small>For people with no fixed shift. Clocks in when he stays on site, out when he has left.</small></span></button>
+      </div>
+
+      <div class="rows" id="siteRows">
+        <div class="row"><div><b>Stay on site before clocking in</b><small>A drive past or a short stop does not start work.</small></div>
+          <div class="step"><button type="button" id="dwLess" aria-label="Less">−</button><span id="dw">10 min</span><button type="button" id="dwMore" aria-label="More">+</button></div></div>
+        <div class="row"><div><b>Away before clocking out</b><small>Shorter trips outside count as work.</small></div>
+          <div class="step"><button type="button" id="exLess" aria-label="Less">−</button><span id="ex">20 min</span><button type="button" id="exMore" aria-label="More">+</button></div></div>
+        <div class="row"><div><b>His usual start</b><small>Arriving outside this window asks him first instead of clocking in.</small></div>
+          <span class="pill">19:00 – 23:00</span></div>
+        <div class="row"><div><b>Longest session · from the workspace</b><small>AGRU's own "hours without a shift" (Attendance settings). At this point he is asked "Still working?"; no answer within an hour closes the shift for review.</small></div>
+          <div class="step"><button type="button" id="lsLess" aria-label="Less">−</button><span id="ls">8 h</span><button type="button" id="lsMore" aria-label="More">+</button></div></div>
+        <p class="hint" id="lsHint"></p>
+      </div>
+      <p class="hint">The usual start is filled from his last 60 days (first clock-in 20:00, last 22:03, one hour either side). The office can change it or switch the guard off. The workspace geofence is 50 m today; at least 100 m is advised, because GPS at night inside a plant often drifts by 30–60 m.</p>
+    </section>
+
+    <section class="card" id="sec-phone" data-clip="phone" aria-label="Juan's phone">
+      <div>
+        <div class="eyebrow">Phone · Juan, Monday night</div>
+        <h2>What Juan sees</h2>
+      </div>
+      <div class="phone"><div class="screen">
+        <div class="d">Monday, October 12</div>
+        <div class="t">TIME</div>
+        <div class="note"><b>Clocked in at AGRU America, Inc.</b><span>Automatically, from 20:58 when you arrived.</span><div class="act"><span>Not working? Undo</span></div></div>
+        <div class="pcard"><span class="lab">ON THE CLOCK</span><span class="big">2h 14m</span><span class="bd">AGRU America, Inc. · since 20:58</span></div>
+        <div class="pcard"><div class="flex"><div><span class="lab">AUTOMATIC CLOCK</span><div class="tt" style="margin-top:6px">Clock me in and out automatically</div></div><span class="sw" aria-hidden="true"></span></div><span class="bd">On at AGRU America, Inc., by arriving and leaving. Anywhere else you clock in yourself.</span></div>
+      </div></div>
+      <div class="note" style="border-color:var(--line);background:var(--soft);color:var(--ink)"><b>Next morning, 07:31</b><span>Clocked out at AGRU America, Inc. at 07:10, when you left. 10h 12m today.</span><div class="act" style="color:var(--green)"><span>Wrong time? Fix it</span></div></div>
+    </section>
+  </div>
+
+  <section class="card" id="sec-timeline" aria-label="One night on the timeline">
+    <div class="flex" style="flex-wrap:wrap;align-items:flex-end">
+      <div><div class="eyebrow">What happens</div><h2>Try a few nights</h2></div>
+      <div class="tabs" role="tablist">
+        <button class="tab on" type="button" role="tab" id="s-night" aria-selected="true">A normal night</button>
+        <button class="tab" type="button" role="tab" id="s-truck" aria-selected="false">Steps out to the truck</button>
+        <button class="tab" type="button" role="tab" id="s-pickup" aria-selected="false">Daytime pick-up</button>
+        <button class="tab" type="button" role="tab" id="s-forgot" aria-selected="false">Phone off at the gate</button>
+      </div>
+    </div>
+    <div class="tl"><div class="axis" id="axis"></div><div id="marks"></div></div>
+    <div class="legend"><span><i style="background:var(--mint)"></i>On site</span><span><i style="background:var(--greenSoft);border:2px solid var(--green)"></i>Counted as work</span><span><i style="background:var(--amberSoft);border:1px dashed var(--amber)"></i>Waiting for his answer</span></div>
+    <ol class="story" id="story"></ol>
+    <div class="result" id="result"></div>
+  </section>
+
+  <section class="card" id="sec-decisions" data-clip="decisions" aria-label="Decisions">
+    <div><div class="eyebrow">To confirm</div><h2>Choices in this design</h2></div>
+    <ul class="dec">
+      <li>Chosen per person in a workspace, next to "By his shift". Someone who also has rota days keeps clocking by the shift on those days, and by arriving and leaving on the others.</li>
+      <li>Times are recorded from the real moment: arriving, and leaving. The 10 and 20 minutes are only how long the phone waits to be sure.</li>
+      <li>Outside his usual hours the phone asks "Starting work at AGRU?" instead of clocking. No answer within 15 minutes = nothing recorded.</li>
+      <li>An automatic clock-in can be undone for 10 minutes, as today. The office sees the steps marked as automatic.</li>
+      <li>A rest is not placed automatically, because there is no planned shift to centre it in. After 6 hours the phone asks if he took one; the workspace's missed-rest rule applies as today.</li>
+      <li>The longest session is not a number of its own: it is the workspace's hours without a shift (8, 10, 12 — whatever AGRU sets), the same number its long-session reminder already uses. Past it he is asked; with the workspace on "Allow up to a number of hours", time past it counts only when approved as overtime.</li><li>A shift closed for review ends at the last moment the phone saw him on site, never at the limit.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+  // Hours on the axis: 12:00 → 12:00 next day, in AGRU's local time.
+  var START=12, SPAN=24;
+  function pos(h){ var x=h<START?h+24:h; return ((x-START)/SPAN*100).toFixed(2)+'%'; }
+  function w(a,b){ var x=a<START?a+24:a, y=b<START?b+24:b; return ((y-x)/SPAN*100).toFixed(2)+'%'; }
+  function hm(h){ var hh=Math.floor(h)%24, mm=Math.round((h-Math.floor(h))*60); return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0'); }
+  var dwell=10, exit=20, longest=8;
+  var S={
+    night:{bands:function(){return [['in',20.97,7.17],['work',20.97,7.17]];},
+      marks:function(){var m=[[20.97,'arrives'],[7.17,'leaves']]; if(longest<10.2) m.splice(1,0,[(20.97+longest)%24,'still working?']); return m;},
+      story:function(){var r=[['20:58','Arrives at AGRU. Inside his usual start window.'],[hm(20.97+dwell/60),'Still on site after '+dwell+' minutes → clocked in from 20:58. "Not working? Undo" for 10 minutes.']];
+        if(longest<10.2) r.push([hm(20.97+longest),longest+' hours, the workspace\'s limit: the phone asks "Still working?" He taps Yes and carries on.']);
+        r.push(['07:10','Leaves the site.'],[hm(7.17+exit/60),'Away '+exit+' minutes → clocked out at 07:10.']); return r;},
+      result:function(){return [['ok','10h 12m counted'],[longest<10.2?'warn':'',longest<10.2?'1 tap ("Still working?")':'0 taps']];}},
+    truck:{bands:[['in',20.5,1.25],['in',1.42,6.6],['work',20.5,6.6]],
+      marks:[[20.5,'arrives'],[1.25,'to truck'],[1.42,'back'],[6.6,'leaves']],
+      story:function(){return [['20:30','Arrives, clocked in from 20:30 after '+dwell+' minutes.'],['01:15','Walks out to the truck for 10 minutes.'],['01:25','Back inside before '+exit+' minutes → nothing changes, still working.'],['06:36','Leaves; clocked out at 06:36 once he has been away '+exit+' minutes.']];},
+      result:[['ok','10h 06m counted'],['','The 10 minutes outside count as work']]},
+    pickup:{bands:[['in',14.0,14.4],['wait',14.17,14.4]],
+      marks:[[14.0,'arrives'],[14.17,'asked'],[14.4,'leaves']],
+      story:function(){return [['14:00','Arrives to pick up a tool. 14:00 is outside his usual start (19:00–23:00).'],[hm(14+dwell/60),'Phone asks: "Starting work at AGRU?" — Yes / No.'],['14:24','Leaves without answering → nothing is recorded.']];},
+      result:[['','Nothing recorded'],['warn','Inside his hours it would have clocked him in, with Undo']]},
+    forgot:{bands:function(){return [['in',21.0,7.0],['work',21.0,7.0]];},
+      // Asked at the workspace's limit, then every hour; the first question after 07:00 goes unanswered.
+      marks:function(){var k=21+longest; while(k<31) k+=1; var m=[[21.0,'arrives'],[7.0,'phone dies'],[k%24,'no answer'],[(k+1)%24,'closed for review']]; if(21+longest<31) m.splice(1,0,[(21+longest)%24,'yes']); return m;},
+      story:function(){var k=21+longest; while(k<31) k+=1; var r=[['21:00','Arrives, clocked in from 21:00.']];
+        if(21+longest<31) r.push([hm(21+longest),longest+' hours, the workspace\'s limit: "Still working?" He taps Yes.']);
+        r.push(['07:00','Phone battery dies on site. The last time it saw him there was 07:00.'],
+          [hm(k),'"Still working?" again. No answer.'],
+          [hm(k+1),'An hour later → closed for review, ending at 07:00, the last moment he was seen on site. He confirms, the office approves.']); return r;},
+      result:function(){return [['warn','Closed for review, ending 07:00'],['','10h counted once confirmed']];}}
+  };
+  var cur='night';
+  function draw(){
+    var s=S[cur], axis=document.getElementById('axis'), marks=document.getElementById('marks');
+    var F=function(x){return typeof x==='function'?x():x;}; var bands=F(s.bands), mk=F(s.marks), res=F(s.result);
+    var ticks=''; [12,15,18,21,0,3,6,9].forEach(function(h){ticks+='<span class="tick" style="left:'+pos(h)+'">'+String(h).padStart(2,'0')+':00</span>';});
+    axis.innerHTML=ticks+bands.map(function(b){return '<span class="band '+b[0]+'" style="left:'+pos(b[1])+';width:'+w(b[1],b[2])+'"></span>';}).join('');
+    marks.innerHTML=mk.map(function(m,i){return '<span class="mark" style="left:'+pos(m[0])+';top:'+(i%2? 84:50)+'px">'+hm(m[0])+'<br>'+m[1]+'</span>';}).join('');
+    document.getElementById('story').innerHTML=s.story().map(function(r){return '<li><time>'+r[0]+'</time><span>'+r[1]+'</span></li>';}).join('');
+    document.getElementById('result').innerHTML=res.map(function(r){return '<span class="'+r[0]+'">'+r[1]+'</span>';}).join('');
+  }
+  ['night','truck','pickup','forgot'].forEach(function(k){
+    var b=document.getElementById('s-'+k);
+    b.onclick=function(){cur=k;document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');t.setAttribute('aria-selected','false');});b.classList.add('on');b.setAttribute('aria-selected','true');draw();};
+  });
+  function setStep(id,val,min,max,step,cb){
+    document.getElementById(id+'Less').onclick=function(){val=Math.max(min,val-step);cb(val);};
+    document.getElementById(id+'More').onclick=function(){val=Math.min(max,val+step);cb(val);};
+  }
+  setStep('dw',dwell,3,30,1,function(v){dwell=v;document.getElementById('dw').textContent=v+' min';draw();});
+  setStep('ex',exit,5,60,5,function(v){exit=v;document.getElementById('ex').textContent=v+' min';draw();});
+  function lsHint(){document.getElementById('lsHint').textContent = longest<10
+    ? 'AGRU is set to '+longest+' h today. Juan works about 10 h a night, so he would be asked "Still working?" almost every night. 10 or 11 h fits his nights.'
+    : longest+' h covers his usual night of about 10 h: he is asked only when a night runs unusually long.';}
+  setStep('ls',longest,4,16,1,function(v){longest=v;document.getElementById('ls').textContent=v+' h';lsHint();draw();});
+  lsHint();
+  ['shift','site'].forEach(function(k){
+    var b=document.getElementById('mode-'+k);
+    b.onclick=function(){document.querySelectorAll('.opt').forEach(function(o){o.classList.remove('on');o.setAttribute('aria-pressed','false');});b.classList.add('on');b.setAttribute('aria-pressed','true');document.getElementById('siteRows').hidden=(k!=='site');};
+  });
+  draw();
+})();
+</script>
+
+<script>
+(function(){
+  // Voice-over: one clip per part, played from `i` to `last`; scenario clips switch the timeline tab.
+  var ORDER=[['intro','sec-intro','المقدمة'],['rule','sec-rule','القاعدة'],['office','sec-office','إعداد المكتب'],['phone','sec-phone','ما يراه خوان'],
+    ['night','sec-timeline','ليلة عادية','s-night'],['truck','sec-timeline','الخروج إلى الشاحنة','s-truck'],['pickup','sec-timeline','استلام في النهار','s-pickup'],
+    ['forgot','sec-timeline','الهاتف انطفأ','s-forgot'],['decisions','sec-decisions','قرارات للتأكيد']];
+  var audio=new Audio(), i=-1, last=ORDER.length-1, IDLE='اضغط للاستماع · حوالي ٥ دقائق';
+  var play=document.getElementById('voPlay'), icon=document.getElementById('voIcon'), now=document.getElementById('voNow'), prog=document.getElementById('voProg'), stop=document.getElementById('voStop');
+  var PLAY='M8 5v14l11-7z', PAUSE='M7 5h4v14H7zM13 5h4v14h-4z';
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function mark(id){
+    document.querySelectorAll('.speaking').forEach(function(e){e.classList.remove('speaking');});
+    if(!id) return; var el=document.getElementById(id); el.classList.add('speaking');
+    el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'});
+  }
+  function start(from,to){
+    i=from; last=to; var c=ORDER[i];
+    if(c[3]) document.getElementById(c[3]).click();
+    mark(c[1]); now.textContent=(i+1)+' / '+ORDER.length+' · '+c[2];
+    audio.src='audio/'+c[0]+'.mp3'; audio.play().catch(function(){});
+    icon.setAttribute('d',PAUSE); stop.hidden=false;
+  }
+  function end(){ audio.pause(); i=-1; icon.setAttribute('d',PLAY); stop.hidden=true; prog.style.width='0'; now.textContent=IDLE; mark(null); }
+  audio.addEventListener('timeupdate',function(){ if(audio.duration) prog.style.width=(audio.currentTime/audio.duration*100)+'%'; });
+  audio.addEventListener('ended',function(){ if(i<last) start(i+1,last); else end(); });
+  play.onclick=function(){
+    if(i<0) return start(0,ORDER.length-1);
+    if(audio.paused){ audio.play().catch(function(){}); icon.setAttribute('d',PAUSE); } else { audio.pause(); icon.setAttribute('d',PLAY); }
+  };
+  stop.onclick=end;
+  function listenButton(label,onClick){
+    var b=document.createElement('button'); b.type='button'; b.className='listen'; b.lang='ar'; b.dir='rtl';
+    b.innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>'+label;
+    b.onclick=onClick; return b;
+  }
+  // Each part plays on its own; the timeline plays its four cases in a row.
+  ORDER.forEach(function(c,n){
+    if(c[3]) return;
+    var sec=document.getElementById(c[1]); var host=sec.querySelector('.eyebrow')||sec.firstElementChild;
+    host.parentNode.insertBefore(listenButton('استمع',function(){start(n,n);}),host);
+  });
+  var tl=document.querySelector('#sec-timeline .eyebrow');
+  tl.parentNode.insertBefore(listenButton('استمع للحالات الأربع',function(){start(4,7);}),tl);
+})();
+</script>

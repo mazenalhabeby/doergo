@@ -4,8 +4,9 @@ import { ForbiddenException } from '@nestjs/common';
 import { AttendanceService } from '../attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
 import { ClockOutService } from '../clock-out.service';
-import { BreakService } from '../break.service';
-import { ApprovalService } from '../approval.service';
+import { BREAK_SERVICES } from '../break-services';
+import {} from './approval.service.fixture';
+import { ENTRY_SERVICES } from '../entry-services';
 import { AttendanceReportService } from '../attendance-report.service';
 import { ShiftResolverService } from '../shift-resolver.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
@@ -47,7 +48,9 @@ describe('out-of-ring requests: nobody decides their own', () => {
         CountedTimeService,
         AttendanceService, ...ATTENDANCE_SERVICE_PARTS,
         { provide: PresenceService, useValue: {} },
-        BreakService, ApprovalService, AttendanceReportService,
+        ...BREAK_SERVICES,
+        ...ENTRY_SERVICES,
+        AttendanceReportService,
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
         { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn() } },

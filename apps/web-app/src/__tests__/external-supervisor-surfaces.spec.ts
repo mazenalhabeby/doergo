@@ -18,10 +18,11 @@ import { readNavbar } from './_navbar-screen';
  *     while the endpoint accepted the attendance grant).
  */
 const navbar = readNavbar();
-const read = (p: string) => fs.readFileSync(path.join(process.cwd(), p), 'utf8');
+const read = (p: string) => readSource(path.join(process.cwd(), p), 'utf8');
 
 /* The bar reads the route table now; these ask the table about this role. */
 import { ROUTE_RULES, navModelFor, type AccessUser } from '@/lib/route-access';
+import { readSource } from "../test-utils/read-source"
 const supervisor = {
   user: {
     role: 'EMPLOYEE',

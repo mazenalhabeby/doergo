@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, Optional } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import {
+  activeWindowWhere,
+  zoneOf,
   DAILY_WORK_GUIDE_MINUTES,
   isAbsence,
   parseRequestInput,
@@ -12,7 +14,8 @@ import { ApprovalRulesService } from '../../common/approval-rules/approval-rules
 import { ShiftResolverService } from '../attendance/shift-resolver.service';
 import { CoverService } from './cover.service';
 import { LeaveLedgerService } from './leave-ledger.service';
-import { REQUEST_REFUSALS, TechniciansService } from './technicians.service';
+import { TechniciansService } from './technicians.service';
+import { REQUEST_REFUSALS } from './technicians-helpers';
 
 /**
  * THE PRE-CHECK — what a leader would check, answered for the member before
@@ -47,7 +50,7 @@ export class RequestPrecheckService {
       this.technicians.requestClashes(data.userId, value.kind, start, end),
       this.prisma.user.findFirst({
         where: { id: data.userId, organizationId: data.organizationId },
-        select: { spaceAssignments: { where: { effectiveFrom: { lte: new Date() }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }] }, select: { spaceId: true } } },
+        select: { spaceAssignments: { where: { ...activeWindowWhere() }, select: { spaceId: true } } },
       }),
     ]);
     const spaceIds = value.spaceId ? [value.spaceId] : (member?.spaceAssignments ?? []).map((a) => a.spaceId);
@@ -102,10 +105,16 @@ export class RequestPrecheckService {
       const resolver = this.moduleRef.get(ShiftResolverService, { strict: false });
       const now = new Date();
       const places = await this.prisma.spaceAssignment.findMany({
-        where: { userId, organizationId, effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] },
+        where: { userId, organizationId, ...activeWindowWhere(now) },
         select: { space: { select: { id: true, timezone: true, workModel: true, lat: true, lng: true } } },
       });
-      const spaces = places.map((p) => ({ id: p.space.id, timezone: p.space.timezone || 'UTC', workModel: p.space.workModel, lat: p.space.lat, lng: p.space.lng }));
+      const spaces = places.map((p) => ({
+        id: p.space.id,
+        timezone: zoneOf(p.space.timezone),
+        workModel: p.space.workModel,
+        lat: p.space.lat,
+        lng: p.space.lng,
+      }));
       const windows = await resolver.plannedWindows(userId, spaces as never, () => [day]);
       let minutes = 0;
       for (const list of windows.values()) {

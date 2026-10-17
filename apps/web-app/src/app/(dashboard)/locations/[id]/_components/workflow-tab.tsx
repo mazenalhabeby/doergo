@@ -1,6 +1,6 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
+import { keys, invalidateTaskLists } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -54,8 +54,7 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
     mutationFn: () => locationsApi.resyncTasks(space.id),
     onSuccess: (res) => {
       notify.success(t("locations.toast.resyncDone", { count: res?.updated ?? 0 }))
-      queryClient.invalidateQueries({ queryKey: keys.tasks.lists() })
-      queryClient.invalidateQueries({ queryKey: keys.tasks.counts() })
+      invalidateTaskLists(queryClient)
     },
     onError: (err: Error) => notify.error(err.message || t("locations.toast.resyncFailed")),
   })

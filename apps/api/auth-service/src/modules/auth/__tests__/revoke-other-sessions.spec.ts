@@ -3,10 +3,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth.service';
+import { SessionControlService } from '../session-control.service';
+import { combinedServices } from '../../../common/testing/combined-services';
 import { AUTH_SERVICES } from '../auth-services';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { AuditLogService } from '../../audit-log/audit-log.service';
 import { BillingService } from '../../billing/billing.service';
+import { BillingTrialService } from '../../billing/billing-trial.service';
 import { GraceTokenCache } from '../grace-token-cache.service';
 
 /*
@@ -17,7 +20,8 @@ import { GraceTokenCache } from '../grace-token-cache.service';
   sent; without one (sign out everywhere), it is.
 */
 describe('revokeAllSessions — keeping the caller’s session', () => {
-  let service: AuthService;
+  let service: AuthService &
+    Pick<SessionControlService, 'logout' | 'listSessions' | 'revokeSession' | 'revokeAllSessions'>;
   const sessions = { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() };
   const prisma: Record<string, any> = {
     refreshToken: { deleteMany: jest.fn(), count: jest.fn(), findFirst: jest.fn() },
@@ -36,10 +40,12 @@ describe('revokeAllSessions — keeping the caller’s session', () => {
         { provide: ConfigService, useValue: { get: jest.fn(() => undefined) } },
         { provide: AuditLogService, useValue: { log: jest.fn() } },
         { provide: BillingService, useValue: { startTrial: jest.fn() } },
+        { provide: BillingTrialService, useValue: { startTrial: jest.fn() } },
         { provide: GraceTokenCache, useValue: { get: jest.fn(), put: jest.fn() } },
       ],
     }).compile();
-    service = module.get(AuthService);
+    // Signing out and sessions are SessionControlService since the split; one object over both.
+    service = combinedServices(module.get(AuthService), module.get(SessionControlService)) as any;
   });
 
   it('deletes every other session and keeps the named one', async () => {

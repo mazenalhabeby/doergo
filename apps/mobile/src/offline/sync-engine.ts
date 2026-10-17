@@ -1,95 +1,25 @@
-import {
-  SYNC_PULL_SCOPES,
-  type OccurrenceEvidence,
-  type SyncOperationName,
-  type SyncOperationPayload,
-  type SyncOperationResult,
-  type SyncPullResponse,
-  type SyncPullScope,
-} from '@hbcfield/shared/client';
+import { SYNC_PULL_SCOPES } from '@hbcfield/shared/client';
 import { selectBatch } from './outbox/scheduler';
 import { compact } from './outbox/compaction';
-import { applyPushFailure, applyPushResults, failDependency, markInflight, recoverInflight, resumeAuth } from './outbox/transitions';
-import { OPEN_STATES, ATTENTION_STATES, type OutboxOp, type OutboxStore } from './outbox/types';
-
-/** How the engine reaches the server. The real one is the API client (http-transport.ts); tests pass a fake. */
-export interface SyncTransport {
-  push(operations: OutboxOp[]): Promise<
-    { ok: true; results: SyncOperationResult[] } | { ok: false; status: number | null; code?: string }
-  >;
-  pull(scope: SyncPullScope, cursor: string | null): Promise<SyncPullResponse>;
-}
-
-/** Where pulled rows go. RecordsStore on a phone. */
-export interface RecordsSink {
-  applyPull(
-    scope: string,
-    page: SyncPullResponse,
-    options: { keep?: ReadonlySet<string>; firstPage: boolean },
-  ): Promise<void>;
-  cursor(scope: string): Promise<{ cursor: string | null; lastPullAt: number | null }>;
-}
-
-/** What preparing an operation came to. A failure is classified like an HTTP answer. */
-export type PrepareResult =
-  | { ok: true; op: OutboxOp }
-  | { ok: false; status: number | null; code?: string }
-  /** Not now, and not a failure: waiting for something (Wi-Fi). No attempt is counted. */
-  | { ok: false; hold: true; code: string; retryInMs: number };
-
-/**
- * Work an operation needs done before it can be sent — uploading its photo.
- *
- * The engine knows nothing about files: it asks the preparer before sending and
- * tells it when an operation is finished with, so the photo is kept exactly as
- * long as the operation that needs it.
- */
-export interface OperationPreparer {
-  /** Whether this operation has preparation work (which may call the server). */
-  needsPreparation(op: OutboxOp): boolean;
-  prepare(op: OutboxOp): Promise<PrepareResult>;
-  /** Operations that are done or discarded — their local leftovers can go. */
-  release(ops: readonly OutboxOp[]): Promise<void>;
-}
-
-export interface EnqueueInput {
-  op: SyncOperationName;
-  lane: string;
-  entityId?: string;
-  dependsOn?: string[];
-  payload: SyncOperationPayload;
-  evidence?: OccurrenceEvidence;
-  /**
-   * Not to be sent before this moment (epoch ms) — and until then the phone may
-   * still take it back with `cancelPending`. The automatic clock's arrival
-   * waiting out its dwell; see `held` in outbox/types.ts.
-   */
-  holdUntil?: number;
-}
-
-export interface SyncSnapshot {
-  /** Operations still needing the network. */
-  waiting: number;
-  /** Operations a member has to look at. */
-  attention: number;
-  pushing: boolean;
-  pulling: boolean;
-  lastSuccessAt: number | null;
-}
-
-type Listener = (snapshot: SyncSnapshot, ops: readonly OutboxOp[]) => void;
-
-/** Finished operations are kept this long so "sent today" can show them. */
-const DONE_RETENTION_MS = 24 * 60 * 60 * 1000;
-
-/**
- * Failures in which the request never completed — see `cancelPending`.
- *
- * `NETWORK` is what `applyPushFailure` records when the transport itself threw
- * or answered with no status; `UNREACHABLE` is the same thing said by the
- * server-side replay when it could not reach a route.
- */
-const NEVER_REACHED_SERVER: ReadonlySet<string> = new Set(['NETWORK', 'UNREACHABLE']);
+import {
+  applyPushFailure,
+  applyPushResults,
+  failDependency,
+  markInflight,
+  recoverInflight,
+  resumeAuth,
+} from './outbox/transitions';
+import { ATTENTION_STATES, type OutboxOp } from './outbox/types';
+import { type EnqueueInput, DONE_RETENTION_MS, NEVER_REACHED_SERVER } from './sync-engine-types';
+import { SyncEngineBase } from './sync-engine.base';
+export {
+  type SyncTransport,
+  type RecordsSink,
+  type PrepareResult,
+  type OperationPreparer,
+  type EnqueueInput,
+  type SyncSnapshot,
+} from './sync-engine-types';
 
 /**
  * The only part of the app that talks to the network on the offline path.
@@ -98,37 +28,7 @@ const NEVER_REACHED_SERVER: ReadonlySet<string> = new Set(['NETWORK', 'UNREACHAB
  * flush requested while one runs is remembered and run straight after, so a
  * tap during a sync is never lost and never sent twice.
  */
-export class SyncEngine {
-  private flushing: Promise<void> | null = null;
-  private flushAgain = false;
-  private pullingNow = false;
-  /** The pull of each scope that is on its way — see `pull`. */
-  private readonly pulls = new Map<SyncPullScope, Promise<void>>();
-  private lastSuccessAt: number | null = null;
-  private cache: OutboxOp[] = [];
-  private readonly listeners = new Set<Listener>();
-  private wakeTimer: ReturnType<typeof setTimeout> | null = null;
-  /** Stopped for good (sign-out): no new push or pull may touch the database. */
-  private stopped = false;
-
-  constructor(
-    private readonly deps: {
-      userId: string;
-      organizationId: string;
-      store: OutboxStore;
-      transport: SyncTransport;
-      records: RecordsSink;
-      preparer?: OperationPreparer;
-      newId: () => string;
-      now?: () => number;
-      random?: () => number;
-    },
-  ) {}
-
-  private now(): number {
-    return this.deps.now?.() ?? Date.now();
-  }
-
+export class SyncEngine extends SyncEngineBase {
   /** Load the queue and repair anything a crash left in flight. Call once. */
   async start(): Promise<void> {
     const ops = await this.deps.store.list(this.deps.userId);
@@ -195,7 +95,8 @@ export class SyncEngine {
    */
   async enqueueAndSettle(input: EnqueueInput, timeoutMs = 8_000): Promise<OutboxOp> {
     const op = await this.enqueue(input);
-    const settled = (o: OutboxOp | undefined) => !!o && (o.state === 'done' || o.state === 'failed' || o.state === 'conflict');
+    const settled = (o: OutboxOp | undefined) =>
+      !!o && (o.state === 'done' || o.state === 'failed' || o.state === 'conflict');
     const find = () => this.cache.find((o) => o.id === op.id);
     if (settled(find())) return find()!;
     return new Promise<OutboxOp>((resolve) => {
@@ -264,14 +165,18 @@ export class SyncEngine {
     await this.deps.store.save(markInflight(batch, now));
     await this.refreshCache();
 
-    const { ready, held } = this.deps.preparer ? await this.prepareBatch(batch) : { ready: batch, held: [] as OutboxOp[] };
+    const { ready, held } = this.deps.preparer
+      ? await this.prepareBatch(batch)
+      : { ready: batch, held: [] as OutboxOp[] };
     let settled: OutboxOp[] = held;
     if (ready.length) {
       try {
         const res = await this.deps.transport.push(ready);
-        settled = settled.concat('results' in res
-          ? applyPushResults(ready, res.results, this.now(), this.deps.random)
-          : applyPushFailure(ready, res.status, res.code, this.now(), this.deps.random));
+        settled = settled.concat(
+          'results' in res
+            ? applyPushResults(ready, res.results, this.now(), this.deps.random)
+            : applyPushFailure(ready, res.status, res.code, this.now(), this.deps.random),
+        );
       } catch {
         settled = settled.concat(applyPushFailure(ready, null, undefined, this.now(), this.deps.random));
       }
@@ -293,119 +198,12 @@ export class SyncEngine {
       never comes, and a clock-out sat on the phone saying "Weak connection".
     */
     if (!more) {
-      const retries = settled.filter((o) => o.state === 'retry' && o.nextAttemptAt !== undefined).map((o) => o.nextAttemptAt!);
+      const retries = settled
+        .filter((o) => o.state === 'retry' && o.nextAttemptAt !== undefined)
+        .map((o) => o.nextAttemptAt!);
       if (retries.length) this.scheduleWake(Math.min(...retries));
     }
     return more;
-  }
-
-  /**
-   * Run each operation's preparation (its upload) before the push.
-   *
-   * ⚠️ AN OPERATION THAT COULD NOT BE PREPARED HOLDS ITS LANE. The notes after a
-   * photo in the same lane, and anything depending on it, go back to waiting —
-   * sending them without it would deliver the task's story out of order, and
-   * the server would never know a photo was missing. A permanent refusal (the
-   * member may not add photos here) does not hold, matching the scheduler.
-   *
-   * A prepared operation is saved before it is sent, so a crash after a
-   * 10 MB upload does not upload it again.
-   *
-   * ⚠️ PREPARING WAITS FOR DEPENDENCIES TO BE ACCEPTED, not merely sent in the
-   * same batch. Preparation talks to the server BEFORE the push: a report photo
-   * asks for its upload link on a report that, in the same batch, does not
-   * exist yet — a 404, and a photo failed for good. It goes in the next push.
-   */
-  private async prepareBatch(batch: readonly OutboxOp[]): Promise<{ ready: OutboxOp[]; held: OutboxOp[] }> {
-    const preparer = this.deps.preparer;
-    if (!preparer) return { ready: [...batch], held: [] };
-    const ready: OutboxOp[] = [];
-    const held: OutboxOp[] = [];
-    const blockedLanes = new Set<string>();
-    const blockedIds = new Set<string>();
-    for (const op of batch) {
-      const waitsForBatch = preparer.needsPreparation(op) && op.dependsOn.some((d) => batch.some((b) => b.id === d));
-      if (blockedLanes.has(op.lane) || op.dependsOn.some((d) => blockedIds.has(d)) || waitsForBatch) {
-        held.push({ ...op, state: 'pending', updatedAt: this.now() });
-        blockedLanes.add(op.lane);
-        blockedIds.add(op.id);
-        continue;
-      }
-      let result: PrepareResult;
-      try {
-        result = await preparer.prepare(op);
-      } catch {
-        result = { ok: false, status: null, code: 'PREPARE_FAILED' };
-      }
-      // `in`, not `.ok`: the test compiler runs non-strict and does not narrow on a boolean.
-      if ('op' in result) {
-        if (result.op !== op) await this.deps.store.save([result.op]);
-        ready.push(result.op);
-        continue;
-      }
-      if ('hold' in result) {
-        held.push({ ...op, state: 'retry', nextAttemptAt: this.now() + result.retryInMs, lastError: { code: result.code }, updatedAt: this.now() });
-        blockedIds.add(op.id);
-        blockedLanes.add(op.lane);
-        continue;
-      }
-      const [failed] = applyPushFailure([op], result.status, result.code, this.now(), this.deps.random);
-      held.push(failed!);
-      blockedIds.add(op.id);
-      if (failed!.state !== 'failed') blockedLanes.add(op.lane);
-    }
-    return { ready, held };
-  }
-
-  private async release(ops: readonly OutboxOp[]): Promise<void> {
-    if (!ops.length || !this.deps.preparer) return;
-    await this.deps.preparer.release(ops).catch(() => undefined);
-  }
-
-  /**
-   * Bring one scope up to date. Rows about which an operation is still waiting
-   * are never evicted — the phone would otherwise forget a task while its
-   * "arrived" is still on the way.
-   */
-  pull(scope: SyncPullScope): Promise<void> {
-    /*
-      ⚠️ ONE PULL PER SCOPE AT A TIME — a second caller joins the first.
-
-      Reconnecting runs `syncAll`, the home's two task readers each pull on the
-      same focus, and a socket poke can land in the middle: three pulls of one
-      scope with one cursor, each applying the same pages in its own
-      transaction and each announcing a change that re-reads every screen. The
-      answer the late callers want is the one already on its way.
-    */
-    const running = this.pulls.get(scope);
-    if (running) return running;
-    if (this.stopped) return Promise.resolve();
-    const started = this.pullScope(scope).finally(() => this.pulls.delete(scope));
-    this.pulls.set(scope, started);
-    return started;
-  }
-
-  private async pullScope(scope: SyncPullScope): Promise<void> {
-    const keep = new Set(this.cache.filter((o) => OPEN_STATES.has(o.state) && o.entityId).map((o) => o.entityId!));
-    let { cursor } = await this.deps.records.cursor(scope);
-    let firstPage = true;
-    this.pullingNow = true;
-    this.emit();
-    try {
-      for (let page = 0; page < 100; page++) {
-        if (this.stopped) break;
-        const res = await this.deps.transport.pull(scope, cursor);
-        if (this.stopped) break;
-        await this.deps.records.applyPull(scope, res, { keep, firstPage });
-        firstPage = false;
-        cursor = res.cursor;
-        if (!res.hasMore) break;
-      }
-      this.lastSuccessAt = this.now();
-    } finally {
-      this.pullingNow = false;
-      this.emit();
-    }
   }
 
   /** Push, then pull every scope. What pull-to-refresh and reconnecting do. */
@@ -477,30 +275,6 @@ export class SyncEngine {
     void this.flush();
   }
 
-  snapshot(): SyncSnapshot {
-    return {
-      waiting: this.cache.filter((o) => OPEN_STATES.has(o.state)).length,
-      attention: this.cache.filter((o) => ATTENTION_STATES.has(o.state)).length,
-      pushing: this.flushing !== null,
-      pulling: this.pullingNow,
-      lastSuccessAt: this.lastSuccessAt,
-    };
-  }
-
-  operations(): readonly OutboxOp[] {
-    return this.cache;
-  }
-
-  subscribe(listener: Listener): () => void {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  }
-
-  /** Everything still unsent — the sign-out guard asks this. */
-  hasUnsent(): boolean {
-    return this.cache.some((o) => OPEN_STATES.has(o.state) || ATTENTION_STATES.has(o.state));
-  }
-
   private scheduleWake(at: number | undefined): void {
     if (this.wakeTimer) clearTimeout(this.wakeTimer);
     this.wakeTimer = null;
@@ -508,15 +282,5 @@ export class SyncEngine {
     this.wakeTimer = setTimeout(() => void this.flush(), Math.max(0, at - this.now()));
     // A pending retry must never be what keeps a process alive (tests, headless tasks).
     (this.wakeTimer as { unref?: () => void }).unref?.();
-  }
-
-  private async refreshCache(): Promise<void> {
-    this.cache = await this.deps.store.list(this.deps.userId);
-    this.emit();
-  }
-
-  private emit(): void {
-    const snap = this.snapshot();
-    for (const l of this.listeners) l(snap, this.cache);
   }
 }

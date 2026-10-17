@@ -1,6 +1,9 @@
 // Export geofence utilities
 export * from './geofence';
 
+// Text compared without accents (search, matching)
+export * from './fold';
+
 // Distances as a reader says them — "850 m", "9,631 km" (every app, every server sentence)
 export * from './distance';
 

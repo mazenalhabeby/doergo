@@ -1,7 +1,7 @@
 import { REPORT_LABELS, SUPPORTED_LOCALES, isReportLabelKey, localizeReportColumns, reportLabel } from '@hbcfield/shared';
 import { DATASETS, datasetCatalog } from '../registry';
 import { compile } from '../query-engine';
-import { AnalyticsService } from '../analytics.service';
+import { analyticsParts } from './analytics.service.fixture';
 
 /*
   A report's column names are the system's own words, and each reader gets them
@@ -60,7 +60,7 @@ describe('report column names — every registry name is catalogued in five lang
       user: { findFirst: jest.fn().mockResolvedValue({ firstName: 'Ana', lastName: 'Ruiz' }) },
       $queryRawUnsafe: jest.fn().mockResolvedValue([]),
     };
-    const { data } = await new AnalyticsService(prisma as any).timesheetDetail({ organizationId: 'org', userId: 'u1' });
+    const { data } = await analyticsParts(prisma as any).timesheetDetail({ organizationId: 'org', userId: 'u1' });
     expect(data.columns.length).toBeGreaterThan(0);
     for (const c of data.columns) expect(isReportLabelKey(c.labelKey)).toBe(true);
     expect(localizeReportColumns(data.columns, 'de').find((c) => c.key === 'clockIn')?.label).toBe('Einstempeln');

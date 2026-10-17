@@ -1,5 +1,6 @@
 import fs from "fs"
 import path from "path"
+import { readSource } from "../test-utils/read-source"
 
 /**
  * A workspace's Assets tab shows THAT workspace's proposals; "All workspaces"
@@ -15,7 +16,7 @@ import path from "path"
 const SRC = path.join(process.cwd(), "src")
 /** Comments quote the very patterns this looks for. */
 const code = (s: string) => s.replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
-const read = (rel: string) => code(fs.readFileSync(path.join(SRC, rel), "utf8"))
+const read = (rel: string) => code(readSource(path.join(SRC, rel), "utf8"))
 
 describe("the proposal queue asks for the right proposals", () => {
   it("the API sends the workspace as a query, and nothing without one", () => {

@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
+import { readSource } from '../test-utils/read-source'
 
 /**
  * Every screen that shows how long somebody worked must agree.
@@ -39,7 +40,7 @@ describe('hours worked come from one helper', () => {
     const offenders: string[] = []
 
     for (const file of walk(SRC)) {
-      const src = readFileSync(file, 'utf8')
+      const src = readSource(file, 'utf8')
       // Only files that deal in time entries at all.
       if (!/TimeEntry|attendance/i.test(src)) continue
       // Strip comments, so a comment ABOUT the bug is not read as the bug.
@@ -58,7 +59,7 @@ describe('hours worked come from one helper', () => {
       'app/(dashboard)/attendance/_components/tracking-tab.tsx',
       'app/(dashboard)/members/[id]/_components/attendance-tab.tsx',
     ]) {
-      expect(readFileSync(join(SRC, rel), 'utf8')).toContain('workedMinutes(entry)')
+      expect(readSource(join(SRC, rel), 'utf8')).toContain('workedMinutes(entry)')
     }
   })
 })

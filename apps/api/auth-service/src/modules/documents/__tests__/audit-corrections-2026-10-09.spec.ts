@@ -5,7 +5,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';
-import { CredentialExpiryService } from '../credential-expiry.service';
+import { credentialExpiryParts } from './credential-expiry.service.fixture';
 import { OBJECT_STORE } from '../object-store.provider';
 
 /**
@@ -212,7 +212,7 @@ describe('documents — audit corrections 2026-10-09', () => {
 
   describe('compliance obeys the type restriction', () => {
     const board = () =>
-      new CredentialExpiryService(prisma as never, { emit: jest.fn() } as never);
+      credentialExpiryParts(prisma as never, { emit: jest.fn() } as never);
 
     it('scopes the query by the reader’s role', async () => {
       prisma.document.findMany.mockResolvedValue([]);

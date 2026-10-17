@@ -2,11 +2,13 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
 import { BiometricService } from './biometric.service';
+import { SessionControlService } from './session-control.service';
 
 @Controller()
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly sessionControl: SessionControlService,
     private readonly biometric: BiometricService,
   ) {}
 
@@ -34,7 +36,7 @@ export class AuthController {
 
   @MessagePattern({ cmd: 'logout' })
   async logout(@Payload() data: any) {
-    return this.authService.logout(data.refreshToken, data.pushToken);
+    return this.sessionControl.logout(data.refreshToken, data.pushToken);
   }
 
   @MessagePattern({ cmd: 'forgot_password' })
@@ -69,17 +71,17 @@ export class AuthController {
 
   @MessagePattern({ cmd: 'list_sessions' })
   async listSessions(@Payload() data: any) {
-    return this.authService.listSessions(data.userId);
+    return this.sessionControl.listSessions(data.userId);
   }
 
   @MessagePattern({ cmd: 'revoke_session' })
   async revokeSession(@Payload() data: any) {
-    return this.authService.revokeSession(data.userId, data.sessionId);
+    return this.sessionControl.revokeSession(data.userId, data.sessionId);
   }
 
   @MessagePattern({ cmd: 'revoke_all_sessions' })
   async revokeAllSessions(@Payload() data: any) {
-    return this.authService.revokeAllSessions(data.userId, data.exceptSessionId, data.currentRefreshToken);
+    return this.sessionControl.revokeAllSessions(data.userId, data.exceptSessionId, data.currentRefreshToken);
   }
 
   @MessagePattern({ cmd: 'delete_account' })

@@ -10,6 +10,17 @@
  * the UTC day). Day arithmetic itself is the zoned-time helpers — this only
  * picks the zone. Structural `db`: any Prisma client satisfies it.
  */
+/**
+ * The first zone that is set, else UTC — for a caller that already holds the
+ * rows (entry → workspace → organization, in the order given). The ONLY place a
+ * missing zone becomes a default: some copies said UTC and some Europe/Berlin,
+ * so the same workspace could get two different "todays".
+ */
+export function zoneOf(...zones: Array<string | null | undefined>): string {
+  for (const z of zones) if (z) return z;
+  return 'UTC';
+}
+
 export interface WorkspaceZoneDb {
   companyLocation: { findFirst(args: any): Promise<{ timezone: string | null } | null> };
   organization: { findUnique(args: any): Promise<{ timezone: string | null } | null> };
@@ -30,5 +41,5 @@ export async function workspaceZone(
     where: { id: where.organizationId },
     select: { timezone: true },
   });
-  return org?.timezone || 'UTC';
+  return zoneOf(org?.timezone);
 }

@@ -1,0 +1,250 @@
+{
+ "chapters": [
+  {
+   "id": "who",
+   "start": 0.4,
+   "end": 22.351,
+   "phrases": [
+    {
+     "start": 0.4,
+     "end": 9.224,
+     "scene": "who"
+    },
+    {
+     "start": 9.856,
+     "end": 21.652,
+     "scene": "who"
+    }
+   ]
+  },
+  {
+   "id": "scope",
+   "start": 22.351,
+   "end": 41.563,
+   "phrases": [
+    {
+     "start": 22.351,
+     "end": 30.269,
+     "scene": "scope"
+    },
+    {
+     "start": 31.087,
+     "end": 40.863,
+     "scene": "scope"
+    }
+   ]
+  },
+  {
+   "id": "jobs",
+   "start": 41.563,
+   "end": 63.004,
+   "phrases": [
+    {
+     "start": 41.563,
+     "end": 51.571,
+     "scene": "jobs"
+    },
+    {
+     "start": 52.203,
+     "end": 62.304,
+     "scene": "jobs"
+    }
+   ]
+  },
+  {
+   "id": "hours",
+   "start": 63.004,
+   "end": 80.868,
+   "phrases": [
+    {
+     "start": 63.004,
+     "end": 70.725,
+     "scene": "hours"
+    },
+    {
+     "start": 71.392,
+     "end": 80.169,
+     "scene": "hours"
+    }
+   ]
+  },
+  {
+   "id": "power",
+   "start": 80.868,
+   "end": 106.164,
+   "phrases": [
+    {
+     "start": 80.868,
+     "end": 94.185,
+     "scene": "power"
+    },
+    {
+     "start": 94.979,
+     "end": 105.463,
+     "scene": "power"
+    }
+   ]
+  },
+  {
+   "id": "closed",
+   "start": 106.164,
+   "end": 125.05,
+   "phrases": [
+    {
+     "start": 106.164,
+     "end": 117.391,
+     "scene": "closed"
+    },
+    {
+     "start": 118.104,
+     "end": 124.35,
+     "scene": "closed"
+    }
+   ]
+  },
+  {
+   "id": "people",
+   "start": 125.05,
+   "end": 138.567,
+   "phrases": [
+    {
+     "start": 125.05,
+     "end": 137.867,
+     "scene": "people"
+    }
+   ]
+  },
+  {
+   "id": "decide",
+   "start": 138.567,
+   "end": 176.801,
+   "phrases": [
+    {
+     "start": 138.567,
+     "end": 148.575,
+     "scene": "decide"
+    },
+    {
+     "start": 149.253,
+     "end": 159.517,
+     "scene": "decide"
+    },
+    {
+     "start": 160.381,
+     "end": 176.101,
+     "scene": "decide"
+    }
+   ]
+  },
+  {
+   "id": "plan",
+   "start": 176.801,
+   "end": 197.824,
+   "phrases": [
+    {
+     "start": 176.801,
+     "end": 190.036,
+     "scene": "plan"
+    },
+    {
+     "start": 190.692,
+     "end": 197.124,
+     "scene": "plan"
+    }
+   ]
+  },
+  {
+   "id": "builder",
+   "start": 197.824,
+   "end": 224.605,
+   "phrases": [
+    {
+     "start": 197.824,
+     "end": 209.353,
+     "scene": "builder"
+    },
+    {
+     "start": 209.892,
+     "end": 223.905,
+     "scene": "builder"
+    }
+   ]
+  },
+  {
+   "id": "crm",
+   "start": 224.605,
+   "end": 247.811,
+   "phrases": [
+    {
+     "start": 224.605,
+     "end": 237.202,
+     "scene": "crm"
+    },
+    {
+     "start": 237.764,
+     "end": 247.111,
+     "scene": "crm"
+    }
+   ]
+  },
+  {
+   "id": "assets",
+   "start": 247.811,
+   "end": 263.0,
+   "phrases": [
+    {
+     "start": 247.811,
+     "end": 262.3,
+     "scene": "assets"
+    }
+   ]
+  },
+  {
+   "id": "manager",
+   "start": 263.0,
+   "end": 285.277,
+   "phrases": [
+    {
+     "start": 263.0,
+     "end": 279.057,
+     "scene": "manager"
+    },
+    {
+     "start": 279.724,
+     "end": 284.577,
+     "scene": "manager"
+    }
+   ]
+  },
+  {
+   "id": "platform",
+   "start": 285.277,
+   "end": 298.655,
+   "phrases": [
+    {
+     "start": 285.277,
+     "end": 297.955,
+     "scene": "platform"
+    }
+   ]
+  },
+  {
+   "id": "never",
+   "start": 298.655,
+   "end": 326.922,
+   "phrases": [
+    {
+     "start": 298.655,
+     "end": 311.089,
+     "scene": "never"
+    },
+    {
+     "start": 311.756,
+     "end": 326.222,
+     "scene": "never"
+    }
+   ]
+  }
+ ],
+ "duration": 328.42
+}

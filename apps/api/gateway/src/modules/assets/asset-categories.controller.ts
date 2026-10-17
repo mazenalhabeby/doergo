@@ -1,25 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Query,
-  Request,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Request } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { RequirePermissionInSpace } from '../../common/decorators';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
 import { AssetsService } from './assets.service';
 import { AssetsQueueService } from './assets.queue.service';
 import {
@@ -60,7 +41,6 @@ import { assetActor } from './asset-actor';
  */
 @RequireModule('assets')
 @Controller('asset-categories')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class AssetCategoriesController {
   constructor(
     private readonly assetsService: AssetsService,
@@ -182,7 +162,6 @@ export class AssetCategoriesController {
  */
 @RequireModule('assets')
 @Controller('asset-types')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class AssetTypesController {
   constructor(
     private readonly assetsQueueService: AssetsQueueService,

@@ -65,7 +65,9 @@ describe("keys are derived, never typed", () => {
 
 describe("every name is an endpoint in the table", () => {
   it("query-keys.ts names only endpoints that exist", () => {
-    const src = fs.readFileSync(path.join(process.cwd(), "src/lib/query-keys.ts"), "utf8")
+    // query-keys.ts and its area files (query-keys/, split 2026-10-17).
+    const dir = path.join(process.cwd(), "src/lib/query-keys")
+    const src = fs.readdirSync(dir).map((f) => fs.readFileSync(path.join(dir, f), "utf8")).join("\n")
     const names = [...src.matchAll(/queryKey\("([a-zA-Z]+\.[a-zA-Z]+)"/g)].map((m) => m[1]!)
     expect(names.length).toBeGreaterThan(30)
     const missing = names.filter((n) => {
@@ -272,7 +274,7 @@ describe("no screen types a query key by hand", () => {
     const offenders: string[] = []
     for (const f of walk(SRC)) {
       const rel = path.relative(SRC, f)
-      if (rel === path.join("lib", "query-keys.ts") || LOCAL_KEYS[rel]) continue
+      if (rel === path.join("lib", "query-keys.ts") || rel.startsWith(path.join("lib", "query-keys") + path.sep) || LOCAL_KEYS[rel]) continue
       for (const hit of inlineKeys(fs.readFileSync(f, "utf8"))) offenders.push(`${rel}:${hit}`)
     }
     expect(offenders).toEqual([])

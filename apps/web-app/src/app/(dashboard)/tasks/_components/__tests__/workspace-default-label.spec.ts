@@ -1,5 +1,5 @@
-import fs from "fs"
 import path from "path"
+import { readSource } from "../../../../../test-utils/read-source"
 
 /*
   "Workspace default ()": the label looked the workspace's flow up only among the
@@ -7,7 +7,8 @@ import path from "path"
   The form hook now resolves the name (offered list → the organization's list →
   fetched by id) and the picker prints nothing — never "()" — until it is known.
 */
-const read = (p: string) => fs.readFileSync(path.join(__dirname, "..", p), "utf8")
+// readSource: the file plus the parts split out of it (the form hook's task-type part lives beside it).
+const read = (p: string) => readSource(path.join(__dirname, "..", p))
 
 describe("task type picker — the workspace default by name", () => {
   it("the picker reads a resolved name and never prints empty brackets", () => {

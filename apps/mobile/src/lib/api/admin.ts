@@ -86,10 +86,26 @@ export const joinRequestsApi = {
 // MEMBERS API
 // ============================================================================
 
+/** The server's largest page, and a ceiling so a misbehaving answer cannot loop forever (5,000 people). */
+const MEMBER_PAGE = 200;
+const MEMBER_PAGES_MAX = 25;
+
 export const membersApi = {
+  /**
+   * EVERY member. The server pages (10 by default, at most 200), and asking with
+   * no page made Manage → Members stop at the first 10 people with an "All 10"
+   * chip to match. Pages of 200 are read until one comes back short — one
+   * request for almost every organization.
+   */
   list: async (): Promise<OrgMember[]> => {
-    const result = await call(E.organizations.members);
-    return Array.isArray(result) ? result : result?.data || result?.members || [];
+    const all: OrgMember[] = [];
+    for (let page = 1; page <= MEMBER_PAGES_MAX; page++) {
+      const result = await call(E.organizations.members, { page, limit: MEMBER_PAGE });
+      const rows: OrgMember[] = Array.isArray(result) ? result : result?.data || result?.members || [];
+      all.push(...rows);
+      if (rows.length < MEMBER_PAGE) break;
+    }
+    return all;
   },
 
   /**

@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { createHash, randomBytes } from 'crypto';
+import { randomBytes } from 'crypto';
 import {
   ABSENCE_WHERE,
   PrismaService,
@@ -12,11 +12,12 @@ import {
   type IcsEvent,
   type Repeat,
   toISODateString,
+  hashCode,
 } from '@hbcfield/shared';
 import { CalendarRulesService } from './calendar-rules.service';
 
 const TOKEN = /^[A-Za-z0-9_-]{40,64}$/;
-const sha = (t: string) => createHash('sha256').update(t).digest('hex');
+const sha = hashCode;
 
 /**
  * The optional one-way feed: a private link a member pastes into Google, Outlook or the iPhone.

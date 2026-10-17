@@ -8,6 +8,13 @@ import { TaskChecklistService } from './task-checklist.service';
 import { TaskActivityService } from './task-activity.service';
 import { TechnicianSuggestionService } from './technician-suggestion.service';
 import { TaskHierarchyService } from './task-hierarchy.service';
+import { TaskDeclineService } from './task-decline.service';
+import { TaskCrewMembersService } from './task-crew-members.service';
+import { TaskUpdateService } from './task-update.service';
+import { WorkflowResyncService } from './workflow-resync.service';
+import { TaskDetailService } from './task-detail.service';
+import { TaskDependenciesService } from './task-dependencies.service';
+import { TaskTriageService } from './task-triage.service';
 
 /**
  * The collaborators behind the TasksService facade. One list, read by the
@@ -16,12 +23,19 @@ import { TaskHierarchyService } from './task-hierarchy.service';
 export const TASK_SERVICE_PARTS = [
   TaskSupportService,
   TaskRecordsService,
+  TaskUpdateService,
+  WorkflowResyncService,
   TaskPortalService,
+  TaskTriageService,
   TaskQueryService,
+  TaskDetailService,
   TaskStatusService,
   TaskAssignmentService,
+  TaskDeclineService,
+  TaskCrewMembersService,
   TaskChecklistService,
   TaskActivityService,
   TechnicianSuggestionService,
   TaskHierarchyService,
+  TaskDependenciesService,
 ];

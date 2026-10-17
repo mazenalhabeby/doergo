@@ -1,17 +1,21 @@
+import { ApprovalService } from '../approval.service';
+import { entryServices } from './approval.service.fixture';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
-import { ApprovalService } from '../approval.service';
-// AttendanceService hands the entry reads to AttendanceReadService, where they live.
-import { AttendanceReadService } from '../attendance-read.service';
+import { entryServicesOf, type ApprovalServiceParts } from './approval.service.fixture';
+import { ENTRY_SERVICES } from '../entry-services';
+// AttendanceService hands the entry reads to AttendanceEntriesReadService, where they live.
+import { AttendanceEntriesReadService } from '../attendance-entries-read.service';
 import { readAttendanceServiceSource } from './attendance-service-source';
-import { BreakService } from '../break.service';
+import { BREAK_SERVICES } from '../break-services';
+import { breakServicesOf, type BreakServiceParts } from './break.service.fixture';
 import { BreakRulesService } from '../break-rules.service';
 import { BreakReminderService } from '../break-reminder.service';
 import { CountedTimeService } from '../counted-time.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { TechniciansService } from '../../technicians/technicians.service';
-import { AssetExpenseService } from '../../assets/asset-expense.service';
+import { TimeOffDecisionService } from '../../technicians/time-off-decision.service';
+import { assetExpenseParts } from '../../assets/__tests__/asset-expense.service.fixture';
 import { clockEventEntry } from '../clock-event';
 
 /**
@@ -111,7 +115,7 @@ describe('break-rule writes are narrowed to the rule\'s workspace', () => {
 // ── #8 A workspace's entries need the attendance permission there ───────────
 describe('GET /attendance/locations/:id/entries', () => {
   function svcWith(activeAssignment: boolean) {
-    const svc = Object.create(AttendanceReadService.prototype) as any;
+    const svc = Object.create(AttendanceEntriesReadService.prototype) as any;
     svc.prisma = {
       companyLocation: { findFirst: jest.fn().mockResolvedValue({ id: 'space-b' }) },
       spaceAssignment: { findFirst: jest.fn().mockResolvedValue(activeAssignment ? { id: 'sa' } : null) },
@@ -153,7 +157,7 @@ describe('GET /attendance/locations/:id/entries', () => {
 // ── The dashboard batch follows the SAME rule as the single workspace read ──
 describe('GET /attendance/entries (batch)', () => {
   function svcWith(activeIn: string[]) {
-    const svc = Object.create(AttendanceReadService.prototype) as any;
+    const svc = Object.create(AttendanceEntriesReadService.prototype) as any;
     svc.prisma = {
       companyLocation: { findMany: jest.fn(({ where }: any) => Promise.resolve(where.id.in.map((id: string) => ({ id })))) },
       spaceAssignment: {
@@ -192,18 +196,21 @@ describe('GET /attendance/entries (batch)', () => {
 
 // ── #14 An entry's breaks: your own, or a space you may read ────────────────
 describe('GET /attendance/entries/:id/breaks', () => {
-  let service: BreakService;
+  let service: BreakServiceParts;
   const prisma: any = { timeEntry: { findFirst: jest.fn().mockResolvedValue(null) }, break: { findMany: jest.fn() } };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        BreakReminderService, BreakRulesService, CountedTimeService, BreakService,
+        BreakReminderService,
+        BreakRulesService,
+        CountedTimeService,
+        ...BREAK_SERVICES,
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();
-    service = module.get(BreakService);
+    service = breakServicesOf(module);
   });
 
   it('asks for the caller\'s own entry OR one in their attendance spaces', async () => {
@@ -221,7 +228,8 @@ describe('self-decisions', () => {
   const notAdmin = { findFirst: jest.fn().mockResolvedValue(null) };
 
   function approval(entry: Record<string, unknown>) {
-    const svc = Object.create(ApprovalService.prototype) as any;
+    // Approve, edit and add-hours live in three services since the split — one object over all of them.
+    const svc = entryServices() as any;
     svc.prisma = {
       user: notAdmin,
       timeEntry: { findFirst: jest.fn().mockResolvedValue(entry), update: jest.fn().mockResolvedValue(entry) },
@@ -251,7 +259,7 @@ describe('self-decisions', () => {
   it('the org owner (ADMIN) still may — nobody is above them', async () => {
     const svc = approval(own);
     svc.prisma.user = { findFirst: jest.fn().mockResolvedValue({ id: 'lead' }) };
-    jest.spyOn(svc, 'emitChanged').mockImplementation(() => undefined);
+    svc.emitChanged = jest.fn(); // on every part (a proxy cannot be spied on)
     svc.logger = { log: jest.fn(), warn: jest.fn() };
     await expect(svc.approveEntry({ entryId: 'e1', approverId: 'lead', organizationId: ORG })).resolves.toBeDefined();
   });
@@ -266,7 +274,7 @@ describe('self-decisions', () => {
   });
 
   it('nobody decides their own leave', async () => {
-    const svc = Object.create(TechniciansService.prototype) as any;
+    const svc = Object.create(TimeOffDecisionService.prototype) as any;
     svc.prisma = {
       user: notAdmin,
       timeOff: {
@@ -284,7 +292,7 @@ describe('self-decisions', () => {
   });
 
   it('nobody accepts their own expense', async () => {
-    const svc = Object.create(AssetExpenseService.prototype) as any;
+    const svc = assetExpenseParts() as any;
     // A manager of the record's workspace — the self-decision rule is what is under test.
     svc.access = { assertMay: jest.fn(), mayIn: () => true };
     svc.notifier = { expenseDecided: jest.fn() };
@@ -301,7 +309,7 @@ describe('self-decisions', () => {
 
 // ── #15 Wall time on a daylight-saving day ──────────────────────────────────
 describe('a back-filled shift on a DST change day', () => {
-  let service: ApprovalService;
+  let service: ApprovalServiceParts;
   const created: any[] = [];
   const tx = {
     timeEntry: {
@@ -322,12 +330,15 @@ describe('a back-filled shift on a DST change day', () => {
     created.length = 0;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        BreakReminderService, BreakRulesService, CountedTimeService, ApprovalService,
+        BreakReminderService,
+        BreakRulesService,
+        CountedTimeService,
+        ...ENTRY_SERVICES,
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
       ],
     }).compile();
-    service = module.get(ApprovalService);
+    service = entryServicesOf(module);
   });
 
   const add = (day: string, start: string, end: string) =>

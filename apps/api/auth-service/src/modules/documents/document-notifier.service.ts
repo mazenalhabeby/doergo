@@ -1,11 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import {
-  SERVICE_NAMES,
-  Role,
-  nextPendingStep,
-  ORG_ACCESS_SELECT,
-  orgAllows,
-} from '@hbcfield/shared';
+import { personName, SERVICE_NAMES, Role, nextPendingStep, ORG_ACCESS_SELECT, orgAllows } from '@hbcfield/shared';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { DocumentLookupService } from './document-lookup.service';
@@ -78,7 +72,7 @@ export class DocumentNotifierService {
         documentId,
         organizationId,
         memberId: member.id,
-        memberName: `${member.firstName} ${member.lastName}`.trim(),
+        memberName: personName(member),
         typeLabel,
         title,
         // Deduplicated by the handler; a reviewer uploading their own
@@ -200,18 +194,17 @@ export class DocumentNotifierService {
         });
       }
 
-      for (const user of users) this.notificationClient.emit('document_awaiting_signature', {
-        documentId,
-        userId: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        title,
-        memberName: document?.user
-          ? `${document.user.firstName} ${document.user.lastName}`.trim()
-          : undefined,
-        step: next.order,
-        totalSteps: steps.length,
-      });
+      for (const user of users)
+        this.notificationClient.emit('document_awaiting_signature', {
+          documentId,
+          userId: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          title,
+          memberName: document?.user ? personName(document.user) : undefined,
+          step: next.order,
+          totalSteps: steps.length,
+        });
     } catch (err) {
       this.logger.warn(`Could not notify the next signer of ${documentId}: ${String(err)}`);
     }

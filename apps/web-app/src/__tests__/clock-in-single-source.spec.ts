@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
+import { readSource } from "../test-utils/read-source"
 
 /*
   There are TWO clock-in controls on the web — the navbar widget and the button
@@ -35,9 +36,10 @@ const files = walk(SRC).filter((f) => !f.includes('__tests__') && !f.endsWith('a
 describe('clocking in has one implementation', () => {
   it('is called from the hook and nowhere else', () => {
     const callers = files
-      .filter((f) => /attendanceApi\.(clockIn|clockOut)\b/.test(readFileSync(f, 'utf8')))
+      .filter((f) => /attendanceApi\.(clockIn|clockOut)\b/.test(require('fs').readFileSync(f, 'utf8')))
       .map((f) => f.slice(SRC.length + 1))
-      .filter((f) => f !== HOOK);
+      // The hook and its first half (use-clock-in-data, split 2026-10-17) are the one implementation.
+      .filter((f) => f !== HOOK && f !== join('hooks', 'use-clock-in-data.ts'));
 
     expect(callers).toEqual([]);
   });
@@ -49,7 +51,7 @@ describe('clocking in has one implementation', () => {
       refuses with "You are not assigned to this location", which reads to them
       as the product being broken.
     */
-    const hook = readFileSync(join(SRC, HOOK), 'utf8');
+    const hook = readSource(join(SRC, HOOK), 'utf8');
     expect(hook).toContain('getClockInLocations');
     expect(hook).not.toContain('attendanceApi.getLocations');
   });
@@ -60,14 +62,14 @@ describe('clocking in has one implementation', () => {
     // certain (one workspace, or inside exactly one area) and only by
     // `chooseClockInLocation`, shared with the phone. Distance maths reappearing
     // next to a clock-in call is the smell.
-    const hook = readFileSync(join(SRC, HOOK), 'utf8');
+    const hook = readSource(join(SRC, HOOK), 'utf8');
     expect(hook).toContain('chooseClockInLocation');
     expect(hook).not.toContain('distanceMeters');
     expect(hook).not.toContain('haversine');
   });
 
   it('opens the picker only when there is a choice', () => {
-    const hook = readFileSync(join(SRC, HOOK), 'utf8');
+    const hook = readSource(join(SRC, HOOK), 'utf8');
     const start = hook.indexOf('const startClockIn');
     expect(start).toBeGreaterThan(-1);
     const body = hook.slice(start, hook.indexOf('setPickerOpen(true)', start) + 20);
@@ -80,16 +82,16 @@ describe('clocking in has one implementation', () => {
   });
 
   it('offers no remote-or-field choice to a member who has workspaces', () => {
-    const widget = readFileSync(join(SRC, 'components', 'clock-widget.tsx'), 'utf8');
-    const page = readFileSync(join(SRC, 'app', '(dashboard)', 'my', 'attendance', 'page.tsx'), 'utf8');
+    const widget = readSource(join(SRC, 'components', 'clock-widget.tsx'), 'utf8');
+    const page = readSource(join(SRC, 'app', '(dashboard)', 'my', 'attendance', 'page.tsx'), 'utf8');
     for (const src of [widget, page]) {
       expect(src).not.toMatch(/startAway|awayPickerProps|clockInAway/);
     }
   });
 
   it('shows the same picker on both surfaces', () => {
-    const widget = readFileSync(join(SRC, 'components', 'clock-widget.tsx'), 'utf8');
-    const page = readFileSync(join(SRC, 'app', '(dashboard)', 'my', 'attendance', 'page.tsx'), 'utf8');
+    const widget = readSource(join(SRC, 'components', 'clock-widget.tsx'), 'utf8');
+    const page = readSource(join(SRC, 'app', '(dashboard)', 'my', 'attendance', 'page.tsx'), 'utf8');
     for (const src of [widget, page]) {
       expect(src).toContain('useClockIn');
       expect(src).toContain('<ClockInPicker');

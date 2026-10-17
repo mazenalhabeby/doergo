@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { LeaveLedgerService } from '../leave-ledger.service';
-import { TechniciansService } from '../technicians.service';
+import { TimeOffRequestService } from '../time-off-request.service';
+import { TimeOffDecisionService } from '../time-off-decision.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { CoverService } from '../cover.service';
 import { CalendarRulesService } from '../../calendar/calendar-rules.service';
@@ -24,7 +25,11 @@ import { PrismaService, SERVICE_NAMES } from '@hbcfield/shared';
  * the only way it was ever seen was somebody opening the availability calendar.
  */
 describe('who is told about a leave request', () => {
-  let service: TechniciansService;
+  /** Asking and deciding are two services since the split; one fixture holds both. */
+  let service: {
+    requestTimeOff: TimeOffRequestService['requestTimeOff'];
+    approveTimeOff: TimeOffDecisionService['approveTimeOff'];
+  };
   let prisma: any;
   let emit: jest.Mock;
   let routing: { resolveWatchers: jest.Mock };
@@ -66,7 +71,8 @@ describe('who is told about a leave request', () => {
     };
     const mod = await Test.createTestingModule({
       providers: [
-        TechniciansService,
+        TimeOffRequestService,
+        TimeOffDecisionService,
         { provide: NotificationRoutingService, useValue: routing },
         { provide: CoverService, useValue: cover },
         // The leave count is the calendar's job; here every request costs its weekdays.
@@ -76,7 +82,12 @@ describe('who is told about a leave request', () => {
         { provide: LeaveLedgerService, useValue: {} },
       ],
     }).compile();
-    service = mod.get(TechniciansService);
+    const requests = mod.get(TimeOffRequestService);
+    const decisions = mod.get(TimeOffDecisionService);
+    service = {
+      requestTimeOff: requests.requestTimeOff.bind(requests),
+      approveTimeOff: decisions.approveTimeOff.bind(decisions),
+    };
   });
 
   const ask = () =>

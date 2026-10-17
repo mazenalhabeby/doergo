@@ -12,9 +12,10 @@
 import { ForbiddenException } from '@nestjs/common';
 import { TimeEntryStatus } from '@hbcfield/shared';
 import { ClockOutService } from '../clock-out.service';
+import { clockOutServices, type ClockOutServiceParts } from './clock-out.service.fixture';
 import { CountedTimeService } from '../counted-time.service';
 import { clockOutTimeFlags, endRunningRests } from '../open-shift-close';
-import { OvertimeService } from '../../overtime/overtime.service';
+import { overtimeServices } from '../../overtime/__tests__/overtime.service.fixture';
 
 const at = (hhmm: string) => new Date(`2026-10-05T${hhmm}:00.000Z`);
 const location = { id: 'loc-1', name: 'Lager', lat: 47.98, lng: 13.82, geofenceRadius: 50, geofencePolygon: null, timezone: 'Europe/Vienna' };
@@ -47,7 +48,7 @@ function build(entry: any) {
   const watchers = { resolveWatchers: jest.fn().mockResolvedValue({ ids: ['w1'], emails: [] }) };
   const routing = { notifyTargetsFor: jest.fn().mockResolvedValue([]) };
   const jobPause = { pauseAtClockOut: jest.fn().mockResolvedValue({ paused: [] }) };
-  const svc = new ClockOutService(
+  const svc = clockOutServices(
     prisma,
     { emit } as any,
     watchers as any,
@@ -124,7 +125,7 @@ describe('"I forgot to clock out"', () => {
   });
   afterAll(() => jest.useRealTimers());
 
-  const forgot = (svc: ClockOutService, time: string) =>
+  const forgot = (svc: ClockOutServiceParts, time: string) =>
     svc.resolveForgotClockOut({ userId: 'u1', entryId: 'e1', clockOutAt: at(time).toISOString(), organizationId: 'org-1' });
 
   it('ends the running rest at the reported time and closes the open excursion', async () => {
@@ -206,7 +207,7 @@ describe('legacy overtime: reject and time-out end the shift through the one clo
       user: { findFirst: jest.fn().mockResolvedValue(opts.approverIsAdmin ? { id: 'tech' } : null) },
     };
     const clockOuts = { closeByDecision: jest.fn().mockResolvedValue(true) };
-    const svc = new OvertimeService(prisma, { emit: jest.fn() } as any, {} as any, {} as any, clockOuts as any);
+    const svc = overtimeServices(prisma, { emit: jest.fn() } as any, {} as any, {} as any, clockOuts as any);
     return { svc, prisma, clockOuts };
   }
 

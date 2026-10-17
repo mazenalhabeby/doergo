@@ -8,10 +8,22 @@ import { EventsService } from './events.service';
 import { HolidaysService } from './holidays.service';
 import { FeedService } from './feed.service';
 import { ReminderSweepService } from './reminder-sweep.service';
+import { EventAnswersService } from './event-answers.service';
+import { EventReadService } from './event-read.service';
+import { AvailabilityService } from './availability.service';
 
 @Module({
   imports: [PrismaModule, CalendarRulesModule, ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)])],
   controllers: [CalendarController],
-  providers: [CalendarService, EventsService, HolidaysService, FeedService, ReminderSweepService],
+  providers: [
+    CalendarService,
+    EventsService,
+    EventAnswersService,
+    EventReadService,
+    AvailabilityService,
+    HolidaysService,
+    FeedService,
+    ReminderSweepService,
+  ],
 })
 export class CalendarModule {}

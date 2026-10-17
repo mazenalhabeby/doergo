@@ -38,8 +38,8 @@ describe('unit routes in the gateway', () => {
   const FILES = [
     'portal/space-units.controller.ts',
     'portal/space-portal.controller.ts',
-    'portal/portal-admin.controller.ts',
-    'customers/customers.controller.ts',
+    'portal/portal-setup.controller.ts',
+    'customers/customer-addresses.controller.ts',
   ];
   const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
@@ -67,7 +67,7 @@ describe('unit routes in the gateway', () => {
   });
 
   it('every CRM address write carries the caller, so the service can ask the reach rule', () => {
-    const code = strip(fs.readFileSync(path.join(ROOT, 'customers/customers.controller.ts'), 'utf8'));
+    const code = strip(fs.readFileSync(path.join(ROOT, 'customers/customer-addresses.controller.ts'), 'utf8'));
     for (const cmd of ['portal_create_unit', 'portal_update_unit', 'portal_set_primary_unit', 'portal_delete_unit']) {
       const at = code.indexOf(`'${cmd}'`);
       expect(at).toBeGreaterThan(-1);

@@ -1,6 +1,6 @@
 import { ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { makeDayRules } from '@hbcfield/shared';
-import { LeaveLedgerService } from '../leave-ledger.service';
+import { leaveLedgerServices } from './leave-ledger.service.fixture';
 import { LeaveCarryOverService } from '../leave-carry-over.service';
 
 /**
@@ -147,7 +147,7 @@ describe('leave ledger — the service', () => {
   describe("Mark's case end to end", () => {
     it('25 − 10 used before HBCField = 15; then a 3-day vacation → 12', async () => {
       const { prisma, db } = fakeDb({ orgs: [org()], users: [ADMIN, MANAGER, person('mark')] });
-      const ledger = new LeaveLedgerService(prisma, calendarRules);
+      const ledger = leaveLedgerServices(prisma, calendarRules);
 
       // Before: the bug — a full year left.
       expect((await ledger.getBalance({ technicianId: 'mark', organizationId: ORG })).remaining).toBe(25);
@@ -168,7 +168,7 @@ describe('leave ledger — the service', () => {
 
     it('saving the same table twice writes once; changing a number replaces the line (never edits it)', async () => {
       const { prisma, db } = fakeDb({ orgs: [org()], users: [ADMIN, MANAGER, person('mark')] });
-      const ledger = new LeaveLedgerService(prisma, calendarRules);
+      const ledger = leaveLedgerServices(prisma, calendarRules);
       await ledger.saveOpening({ organizationId: ORG, callerId: 'anna', on: '2026-08-01', rows: [{ userId: 'mark', used: 10, carried: 2 }] });
       const again = await ledger.saveOpening({ organizationId: ORG, callerId: 'anna', on: '2026-08-01', rows: [{ userId: 'mark', used: 10, carried: 2 }] });
       expect(again).toMatchObject({ written: 0, voided: 0, unchanged: 2 });
@@ -190,7 +190,7 @@ describe('leave ledger — the service', () => {
       { technicianId: p.id, status: 'PENDING', startDate: D('2026-09-07'), endDate: D('2026-09-08') },
     ]);
     const { prisma } = fakeDb({ orgs: [org()], users: [ADMIN, ...team], timeOffs });
-    const ledger = new LeaveLedgerService(prisma, calendarRules);
+    const ledger = leaveLedgerServices(prisma, calendarRules);
     calendarRules.personRulesMany.mockClear();
     await ledger.getBalance({ technicianId: 'p0', organizationId: ORG });
     expect([prisma.user.findFirst.mock.calls.length, prisma.timeOff.findMany.mock.calls.length, prisma.leaveAdjustment.findMany.mock.calls.length]).toEqual([1, 1, 1]);
@@ -212,7 +212,7 @@ describe('leave ledger — the service', () => {
         { technicianId: 'mark', status: 'APPROVED', startDate: D('2026-06-01'), endDate: D('2026-06-05') },
       ],
     });
-    const ledger = new LeaveLedgerService(prisma, calendarRules);
+    const ledger = leaveLedgerServices(prisma, calendarRules);
     const b = await ledger.getBalance({ technicianId: 'mark', organizationId: ORG });
     expect(b.leaveYear).toEqual({ mode: 'WORK_YEAR', start: '2026-03-15', end: '2027-03-14' });
     expect(b).toMatchObject({ year: 2026, taken: 5, remaining: 20, prorated: false });
@@ -224,7 +224,7 @@ describe('leave ledger — the service', () => {
   describe('adjustments: write, read, undo', () => {
     it('a correction with a reason; undoing it keeps the line and gives the days back', async () => {
       const { prisma, db } = fakeDb({ orgs: [org()], users: [ADMIN, MANAGER, person('mark')] });
-      const ledger = new LeaveLedgerService(prisma, calendarRules);
+      const ledger = leaveLedgerServices(prisma, calendarRules);
       const added = await ledger.addAdjustment({ technicianId: 'mark', organizationId: ORG, callerId: 'anna', body: { kind: 'GRANT', days: 2, on: '2026-08-14', reason: 'Wedding' } });
       expect(added.entry).toMatchObject({ kind: 'GRANT', days: 2, source: 'MANUAL', reason: 'Wedding', createdBy: { id: 'anna' }, voidedAt: null, leaveYearStart: '2026-01-01' });
       expect(added.balance.remaining).toBe(27);
@@ -243,7 +243,7 @@ describe('leave ledger — the service', () => {
 
     it('a reason is required for a correction; only manual kinds are accepted', async () => {
       const { prisma } = fakeDb({ orgs: [org()], users: [ADMIN, MANAGER, person('mark')] });
-      const ledger = new LeaveLedgerService(prisma, calendarRules);
+      const ledger = leaveLedgerServices(prisma, calendarRules);
       await expect(ledger.addAdjustment({ technicianId: 'mark', organizationId: ORG, callerId: 'anna', body: { kind: 'CORRECTION', days: -1, on: '2026-08-14' } }))
         .rejects.toMatchObject({ response: { code: 'ADJUSTMENT_REASON_REQUIRED' } });
       await expect(ledger.addAdjustment({ technicianId: 'mark', organizationId: ORG, callerId: 'anna', body: { kind: 'CARRY_OVER', days: 5, on: '2026-08-14' } }))
@@ -254,7 +254,7 @@ describe('leave ledger — the service', () => {
   describe('permissions', () => {
     it('nobody adjusts their own balance — an organization administrator excepted', async () => {
       const { prisma } = fakeDb({ orgs: [org()], users: [ADMIN, MANAGER, person('mark')] });
-      const ledger = new LeaveLedgerService(prisma, calendarRules);
+      const ledger = leaveLedgerServices(prisma, calendarRules);
       const body = { kind: 'GRANT', days: 1, on: '2026-08-14', reason: 'x' };
       await expect(ledger.addAdjustment({ technicianId: 'anna', organizationId: ORG, callerId: 'anna', body })).rejects.toMatchObject({ response: { code: 'SELF_DECISION' } });
       await expect(ledger.saveOpening({ organizationId: ORG, callerId: 'anna', on: '2026-08-01', rows: [{ userId: 'anna', used: 3, carried: 0 }] }))
@@ -265,7 +265,7 @@ describe('leave ledger — the service', () => {
     it("another organization's person or line is 404, not 403", async () => {
       const other = person('eve', { organizationId: 'org-2' });
       const { prisma, db } = fakeDb({ orgs: [org(), org({ id: 'org-2' })], users: [ADMIN, MANAGER, person('mark'), other] });
-      const ledger = new LeaveLedgerService(prisma, calendarRules);
+      const ledger = leaveLedgerServices(prisma, calendarRules);
       await expect(ledger.getBalance({ technicianId: 'eve', organizationId: ORG })).rejects.toBeInstanceOf(NotFoundException);
       await expect(ledger.addAdjustment({ technicianId: 'eve', organizationId: ORG, callerId: 'anna', body: { kind: 'GRANT', days: 1, on: '2026-08-14', reason: 'x' } }))
         .rejects.toBeInstanceOf(NotFoundException);
@@ -280,7 +280,7 @@ describe('leave ledger — the service', () => {
         orgs: [org()], users: [ADMIN, MANAGER, person('mark'), person('lisa')],
         assignments: [{ userId: 'mark', spaceId: 'gmunden' }, { userId: 'lisa', spaceId: 'linz' }],
       });
-      const ledger = new LeaveLedgerService(prisma, calendarRules);
+      const ledger = leaveLedgerServices(prisma, calendarRules);
       const body = { kind: 'GRANT', days: 1, on: '2026-08-14', reason: 'x' };
       await expect(ledger.addAdjustment({ technicianId: 'mark', organizationId: ORG, callerId: 'anna', scopeSpaceIds: ['gmunden'], body })).resolves.toBeDefined();
       await expect(ledger.addAdjustment({ technicianId: 'lisa', organizationId: ORG, callerId: 'anna', scopeSpaceIds: ['gmunden'], body })).rejects.toBeInstanceOf(ForbiddenException);
@@ -294,7 +294,7 @@ describe('leave ledger — the service', () => {
 
   it('starting balances match a pasted table by email, then by full name — never by an id', async () => {
     const { prisma } = fakeDb({ orgs: [org()], users: [ADMIN, MANAGER, person('mark', { lastName: 'Weber' }), person('lisa', { lastName: 'Adler' }), person('sam', { lastName: 'Lee' }), person('sam2', { firstName: 'Sam', lastName: 'Lee' })] });
-    const ledger = new LeaveLedgerService(prisma, calendarRules);
+    const ledger = leaveLedgerServices(prisma, calendarRules);
     const res = await ledger.matchOpening({
       organizationId: ORG,
       text: 'person;used;carried\nMARK@example.com;10;2\nAdler, Lisa;4,5;0\nSam Lee;1;0\nnobody@x.com;1;0\nmark@example.com;3;0\nbroken;-1;0',
@@ -317,8 +317,8 @@ describe('leave ledger — the service', () => {
           { technicianId: 'mark', status: 'APPROVED', startDate: D('2025-09-01'), endDate: D('2025-09-24') },
         ],
       });
-      const ledger = new LeaveLedgerService(prisma, calendarRules);
-      return { db, ledger, sweep: new LeaveCarryOverService(prisma, ledger) };
+      const ledger = leaveLedgerServices(prisma, calendarRules);
+      return { db, ledger, sweep: new LeaveCarryOverService(prisma, ledger as never) };
     };
 
     it('carries once on the new leave year — running twice writes once', async () => {

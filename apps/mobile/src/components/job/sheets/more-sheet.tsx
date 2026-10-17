@@ -3,9 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../contexts/theme-context';
 import { AText } from '../../amazen';
 import { NavigateGlyph } from '../../glyphs';
+import { inkGlyph } from '../../amazen/ink-icon';
 import { EditGlyph, IssueGlyph } from '../job-glyphs';
 import { JobSheet, SheetOption } from '../job-ui';
 import type { MoreOption } from '../job-logic';
+
+const ChatInk = inkGlyph('chat');
 
 /**
  * ⋯ on a job — every onward step that is not the primary, Report an issue and
@@ -21,6 +24,7 @@ export function MoreSheet({
   labelOf,
   assigned,
   onPick,
+  onChat,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -29,12 +33,23 @@ export function MoreSheet({
   labelOf: (key: string) => string;
   assigned: boolean;
   onPick: (o: MoreOption) => void;
+  /** The job's chat — the crew and the office (opened, or created, online). Absent without chat. */
+  onChat?: () => void;
 }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   return (
     <JobSheet visible={visible} onClose={onClose}>
       <AText variant="h3" tone="strong" numberOfLines={2} style={{ fontSize: 16, lineHeight: 22 }}>{title}</AText>
+      {onChat ? (
+        <SheetOption
+          key="chat"
+          Glyph={ChatInk}
+          label={t('chat.jobChatOpen', 'Job chat')}
+          hint={t('chat.jobChatHint', 'The crew and the office')}
+          onPress={onChat}
+        />
+      ) : null}
       {options.map((o) => {
         switch (o.kind) {
           case 'step': return <SheetOption key={`step:${o.to}`} label={labelOf(o.to)} onPress={() => onPick(o)} />;
@@ -47,7 +62,11 @@ export function MoreSheet({
           default: return null;
         }
       })}
-      {options.length === 0 ? <AText variant="caption" tone="ink" style={{ marginBottom: amazen.space(2) }}>{t('job.more.nothing')}</AText> : null}
+      {options.length === 0 && !onChat ? (
+        <AText variant="caption" tone="ink" style={{ marginBottom: amazen.space(2) }}>
+          {t('job.more.nothing')}
+        </AText>
+      ) : null}
     </JobSheet>
   );
 }

@@ -1,5 +1,5 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { PortalService } from '../portal.service';
+import { portalServices } from './portal-services.fixture';
 import { CustomersService } from '../../customers/customers.service';
 
 /*
@@ -24,7 +24,7 @@ function setup() {
     $transaction: jest.fn(),
   };
   const customers = new CustomersService(prisma as any);
-  const service = new PortalService(prisma as any, customers);
+  const service = portalServices(prisma, customers);
   return { prisma, service };
 }
 

@@ -1,20 +1,20 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
-import { PushService } from '../modules/push/push.service';
+import { ApprovalPushService } from './../modules/push/approval-push.service';
 
 /** Approvals inbox events. */
 @Controller()
 export class ApprovalNotificationHandler {
   private readonly logger = new Logger(ApprovalNotificationHandler.name);
 
-  constructor(private readonly pushService: PushService) {}
+  constructor(private readonly approvalPush: ApprovalPushService) {}
 
   /** An office rule's first approval is in: tell the people who give the second. */
   @EventPattern('approval_second_step')
   async handleSecondStep(@Payload() data: { recipientIds?: string[]; kind: string; itemId: string; firstName?: string; subjectName?: string }) {
     if (!data?.recipientIds?.length) return;
     try {
-      await this.pushService.sendApprovalSecondStepPush({
+      await this.approvalPush.sendApprovalSecondStepPush({
         recipientIds: data.recipientIds,
         kind: data.kind,
         itemId: data.itemId,
@@ -31,7 +31,7 @@ export class ApprovalNotificationHandler {
   async handleReminder(@Payload() data: { recipientIds?: string[]; kind: 'overtime' | 'request' | 'expense'; itemId: string; stage: 'REMIND' | 'ESCALATE'; subjectName?: string; hours?: number }) {
     if (!data?.recipientIds?.length) return;
     try {
-      await this.pushService.sendApprovalReminderPush({
+      await this.approvalPush.sendApprovalReminderPush({
         recipientIds: data.recipientIds, kind: data.kind, itemId: data.itemId, stage: data.stage,
         subjectName: data.subjectName ?? '', hours: data.hours ?? 0,
       });

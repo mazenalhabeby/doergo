@@ -24,6 +24,7 @@ import { DocumentRequirementsProvider } from '../../src/contexts/document-requir
 import { useToast } from '../../src/island/island-context';
 import { showUpdatePageNow } from '../../src/components/update-page';
 import { useAuth } from '../../src/contexts/auth-context';
+import { refreshChatBadge, setChatBadge } from '../../src/lib/chat-badge';
 import { activeChat } from '../../src/lib/active-chat';
 import { SocketEvents, personName } from '@hbcfield/shared/client';
 import { SubscriptionGate } from '../../src/components/SubscriptionGate';
@@ -81,6 +82,8 @@ const OWN_HEADER_SCREENS = [
   'send-document',
   'overtime/[id]',
   'overtime/sign/[id]',
+  // A colleague as Team shows them.
+  'person/[id]',
   // A nested stack. It draws the header for every page inside it, so the
   // outer one must be off or every Manage page carries two bars — the inner
   // one titled "Members", the outer one titled "manage".
@@ -157,14 +160,25 @@ function GlobalChatNotifier() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    return subscribe(SocketEvents.CHAT_MESSAGE, (d: any) => {
-      const m = d?.message;
-      if (!m || !m.senderId || m.senderId === user?.id) return;
-      if (d.conversationId && d.conversationId === activeChat.conversationId) return; // already reading it
-      const name = m.sender ? personName(m.sender) : t('chat.title', 'Messages');
-      toast.info(name, (m.body || '').slice(0, 80));
-    });
+    // Connected (or reconnected): anything said meanwhile was not on this socket.
+    void refreshChatBadge(user?.id);
+    const offs = [
+      subscribe(SocketEvents.CHAT_MESSAGE, (d: any) => {
+        if (typeof d?.badge === 'number') setChatBadge(d.badge);
+        const m = d?.message;
+        if (!m || !m.senderId || m.senderId === user?.id) return;
+        if (d.conversationId && d.conversationId === activeChat.conversationId) return; // already reading it
+        const name = m.sender ? personName(m.sender) : t('chat.title', 'Messages');
+        toast.info(name, (m.body || '').slice(0, 80));
+      }),
+      // Read on another screen (or this one): the server sends the new total.
+      subscribe(SocketEvents.CHAT_BADGE, (d: any) => setChatBadge(d?.total)),
+    ];
+    return () => offs.forEach((off) => off());
   }, [isAuthenticated, subscribe, user?.id, toast, t]);
+  useAppResume(() => {
+    void refreshChatBadge(user?.id);
+  });
 
   return null;
 }

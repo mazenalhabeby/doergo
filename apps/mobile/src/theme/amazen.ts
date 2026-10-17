@@ -102,6 +102,15 @@ export interface AmazenGradients {
   groundLocations: readonly number[];
   /** the primary button and the filled disc */
   primary: readonly string[];
+  /**
+   * An icon's ink (top-left → bottom-right): the app's jade, so the shared icon
+   * set reads as THIS app in both modes — never the web's blue.
+   */
+  iconInk: readonly [string, string];
+  /** My chat bubble (and the Send button when there is something to send). */
+  mine: readonly [string, string];
+  /** Text on `mine`. */
+  mineInk: string;
 }
 
 const DARK: AmazenColors = {
@@ -176,6 +185,9 @@ const DARK_GRADIENTS: AmazenGradients = {
   ground: ['#0c4339', '#09291f', '#061a19', '#050c0f', '#040507'],
   groundLocations: [0, 0.26, 0.52, 0.78, 1],
   primary: ['#7fe6c8', '#10b993'],
+  iconInk: ['#9af0d6', '#10b993'],
+  mine: ['#7fe6c8', '#10b993'],
+  mineInk: '#001810',
 };
 
 const LIGHT_GRADIENTS: AmazenGradients = {
@@ -186,6 +198,10 @@ const LIGHT_GRADIENTS: AmazenGradients = {
   // TOKENS §3: NOT accentLift's published light value — white on #14a586 is
   // 3.11:1. This pair is 5.36:1 and 4.82:1 and still reads as a lit jade pill.
   primary: ['#087961', '#0b8168'],
+  iconInk: ['#22b48d', '#0a6f58'],
+  // White on the lighter stop is 4.6:1 — a lit jade bubble that still reads.
+  mine: ['#0f8f72', '#087961'],
+  mineInk: '#ffffff',
 };
 
 // =============================================================================

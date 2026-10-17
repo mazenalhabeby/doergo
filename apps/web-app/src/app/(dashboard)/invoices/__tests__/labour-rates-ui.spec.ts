@@ -2,6 +2,8 @@ import fs from "fs"
 import path from "path"
 
 import { newPage } from "./_screen"
+import { serverModuleSource } from "./server-source"
+import { readSource } from "../../../../test-utils/read-source"
 
 /*
   Two rates on screen — and only where both are true.
@@ -12,7 +14,8 @@ import { newPage } from "./_screen"
   necessary.
 */
 const ROOT = path.join(__dirname, "..")
-const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8")
+// A file with the parts moved out of it when it was split (2026-10-17).
+const read = (p: string) => readSource(path.join(ROOT, p), "utf8")
 const code = (p: string) =>
   read(p).replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
 
@@ -151,19 +154,16 @@ describe("the client-facing rate lives on the assignment", () => {
     expect(guard).toBeGreaterThan(-1)
     expect(member.indexOf("costRateLabel")).toBeGreaterThan(guard)
 
-    const svc = fs.readFileSync(
-      path.join(ROOT, "../../../../../api/task-service/src/modules/space-roles/space-roles.service.ts"),
-      "utf8",
-    ).replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1")
+    const svc = serverModuleSource(path.join(ROOT, "../../../../../api/task-service/src/modules/space-roles")).replace(
+      /(^|[\s{])\/\*[\s\S]*?\*\//g,
+      "$1",
+    )
     expect(svc).toMatch(/member\.user\?\.isExternal/)
   })
 
   it("resolves the inherited rate on the SERVER", () => {
     // The order of the four levels is written down once, in `resolveRate`.
-    const svc = fs.readFileSync(
-      path.join(ROOT, "../../../../../api/task-service/src/modules/space-roles/space-roles.service.ts"),
-      "utf8",
-    )
+    const svc = serverModuleSource(path.join(ROOT, "../../../../../api/task-service/src/modules/space-roles"))
     expect(svc).toContain("inheritedBillRateCents")
     expect(svc).toContain("resolveRate(")
   })

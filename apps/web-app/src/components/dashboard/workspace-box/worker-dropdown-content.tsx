@@ -1,13 +1,12 @@
 "use client"
 
-import { Clock, CalendarOff, ClipboardList, MessageCircle, Phone, Video, User, ArrowUpRight } from "lucide-react"
+import { Clock, CalendarOff, ClipboardList, MessageCircle, User, ArrowUpRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { useContactActions } from "@/hooks/use-contact-actions"
 import { employeesApi } from "@/lib/api"
-import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
 import { hasAccessModule } from "@hbcfield/shared/client"
 import type { PersonNodeProps } from "../person-node"
@@ -245,20 +244,6 @@ export function WorkerDropdownContent({
             >
               <MessageCircle className="size-3.5" />
               {t("workspace.message")}
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); notify.success(t("workspace.voiceCallComingSoon")) }}
-              className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-              title={t("workspace.voiceCall")}
-            >
-              <Phone className="size-3.5" />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); notify.success(t("workspace.videoCallComingSoon")) }}
-              className="size-8 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-              title={t("workspace.videoCall")}
-            >
-              <Video className="size-3.5" />
             </button>
           </div>
 

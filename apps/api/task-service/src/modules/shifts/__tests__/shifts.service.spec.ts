@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ShiftsService } from '../shifts.service';
+import { shiftServices, type ShiftsServiceParts } from './shifts.service.fixture';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 describe('ShiftsService', () => {
-  let service: ShiftsService;
+  let service: ShiftsServiceParts;
 
   const prisma = {
     shift: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
@@ -17,10 +18,7 @@ describe('ShiftsService', () => {
     jest.clearAllMocks();
     prisma.companyLocation.findFirst.mockResolvedValue({ id: 'sp-1' });
     prisma.user.findFirst.mockResolvedValue({ id: 'u-1' });
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [ShiftsService, { provide: PrismaService, useValue: prisma }],
-    }).compile();
-    service = module.get(ShiftsService);
+    service = shiftServices(prisma);
   });
 
   describe('deleteAssignment', () => {

@@ -4,6 +4,7 @@ import { ApprovalRouteService, type ApprovalRouteInput } from '../../common/appr
 import { StandInsService, type StandInCaller } from './stand-ins.service';
 import type { ApprovalRuleInput, RuleKind, StandInInput } from '@hbcfield/shared';
 import { ApprovalRulesService } from '../../common/approval-rules/approval-rules.service';
+import { ApprovalRulesAdminService } from '../../common/approval-rules/approval-rules-admin.service';
 
 /** The approvals inbox's people questions (the inbox itself lives in the gateway). */
 @Controller()
@@ -12,6 +13,7 @@ export class ApprovalsController {
     private readonly routes: ApprovalRouteService,
     private readonly standIns: StandInsService,
     private readonly rules: ApprovalRulesService,
+    private readonly rulesAdmin: ApprovalRulesAdminService,
   ) {}
 
   @MessagePattern({ cmd: 'approval_route' })
@@ -41,16 +43,16 @@ export class ApprovalsController {
 
   @MessagePattern({ cmd: 'approval_rules_list' })
   listRules(@Payload() data: { organizationId: string }) {
-    return this.rules.listRules(data.organizationId);
+    return this.rulesAdmin.listRules(data.organizationId);
   }
 
   @MessagePattern({ cmd: 'approval_rules_save' })
   saveRule(@Payload() data: { organizationId: string; userId: string; input: ApprovalRuleInput; id?: string }) {
-    return this.rules.saveRule(data.organizationId, data.userId, data.input, data.id);
+    return this.rulesAdmin.saveRule(data.organizationId, data.userId, data.input, data.id);
   }
 
   @MessagePattern({ cmd: 'approval_rules_delete' })
   deleteRule(@Payload() data: { organizationId: string; id: string }) {
-    return this.rules.deleteRule(data.organizationId, data.id);
+    return this.rulesAdmin.deleteRule(data.organizationId, data.id);
   }
 }

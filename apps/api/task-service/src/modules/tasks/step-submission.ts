@@ -15,6 +15,7 @@
  */
 import { BadRequestException } from '@nestjs/common';
 import {
+  zoneOf,
   resolveStepForm,
   stepFormCrmAnswers,
   stepFormFileIds,
@@ -186,7 +187,7 @@ export function crmIntents(args: {
       clientId: `${args.submissionId}-followup`,
       type: 'REMINDER',
       body: `${followUp.label}: ${args.taskTitle}`,
-      dueAt: zonedWallTimeToUtc(followUp.date, 9, 0, args.timezone || 'UTC').toISOString(),
+      dueAt: zonedWallTimeToUtc(followUp.date, 9, 0, zoneOf(args.timezone)).toISOString(),
       reminderKind: 'OTHER',
       reminderAssigneeId: args.moverId,
     });

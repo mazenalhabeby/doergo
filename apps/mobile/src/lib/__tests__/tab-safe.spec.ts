@@ -20,9 +20,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { tabPill } from './tab-pill-files';
+import { readSource } from '../../test-utils/read-source';
 
 const TABS = path.resolve(__dirname, '../../../app/(app)/(tabs)');
-const read = (p: string) => fs.readFileSync(p, 'utf8');
+const read = (p: string) => readSource(p, 'utf8');
 
 /** Every tab screen, found rather than listed — a new one is covered on day one. */
 function tabScreens(): string[] {

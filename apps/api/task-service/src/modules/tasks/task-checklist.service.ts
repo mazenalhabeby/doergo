@@ -11,6 +11,7 @@ import { CrewService } from './handover/crew.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import {
+  personName,
   TaskEventType,
   success,
   checklistCompletion,
@@ -155,7 +156,7 @@ export class TaskChecklistService {
         text: item.text,
         fromUserId: existing.assigneeId,
         toUserId: item.assigneeId,
-        toName: item.assignee ? `${item.assignee.firstName} ${item.assignee.lastName}`.trim() : null,
+        toName: item.assignee ? personName(item.assignee) : null,
       });
     }
 

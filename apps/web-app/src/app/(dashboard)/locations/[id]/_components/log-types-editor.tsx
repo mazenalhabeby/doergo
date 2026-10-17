@@ -14,6 +14,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { ChoiceOptionsEditor } from "./choice-options-editor"
+import { useTypeDetails } from "./use-type-details"
+import { fieldTypeLabel, FlagRow, DirBtn } from "./type-details-helpers"
+import { TypeDetailsEditor } from "./type-details-editor"
 
 /**
  * What gets DONE to one of these — Fuel, Oil change, Damage — and what each
@@ -136,48 +139,19 @@ export function LogTypesEditor({
   )
 }
 
-function TypeDetails({ type, onChange }: { type: KindLogType; onChange: (patch: Partial<KindLogType>) => void }) {
-  const { t } = useTranslation()
-
-  const setField = (fi: number, patch: Partial<KindLogField>) =>
-    onChange({ fields: type.fields.map((f, idx) => (idx === fi ? { ...f, ...patch } : f)) })
-  const hasMoney = type.fields.some((f) => f.type === "money")
-  const hasPhoto = type.fields.some((f) => f.type === "photo")
-  const meters = type.fields.filter((f) => f.type === "number" && f.meter && f.label.trim())
-  const due = type.due
-
-  const setDue = (patch: Partial<KindLogDue> | null) =>
-    onChange({
-      due: patch === null ? null : {
-        months: null, units: null, meterKey: null, leadDays: null, leadUnits: null,
-        ...(due ?? {}),
-        ...patch,
-      },
-    })
-
-  /**
-   * Point the rule at a meter. An unsaved meter has no key yet, so it gets the
-   * one its label would get — written in the SAME change as the rule, or the
-   * second update would be applied over a copy that never had the key.
-   */
-  const pointAtMeter = (fi: number) => {
-    const f = type.fields[fi]!
-    let key = f.key
-    if (!key) {
-      const taken = new Set(type.fields.map((x) => x.key).filter(Boolean))
-      key = logKeyFrom(f.label)
-      for (let n = 2; taken.has(key); n++) key = `${logKeyFrom(f.label)}_${n}`
-    }
-    onChange({
-      fields: type.fields.map((x, idx) => (idx === fi ? { ...x, key } : x)),
-      due: { months: null, units: null, leadDays: null, leadUnits: null, ...(due ?? {}), meterKey: key },
-    })
-  }
-
-  const num = (v: string): number | null => {
-    const n = parseInt(v, 10)
-    return Number.isFinite(n) && n > 0 ? n : null
-  }
+export function TypeDetails({ type, onChange }: { type: KindLogType; onChange: (patch: Partial<KindLogType>) => void }) {
+  const vm = useTypeDetails({ type, onChange })
+  const {
+    t,
+    setField,
+    hasMoney,
+    hasPhoto,
+    meters,
+    due,
+    setDue,
+    pointAtMeter,
+    num,
+  } = vm
 
   return (
     <div className="space-y-3 border-t border-border/70 p-3">
@@ -217,106 +191,7 @@ function TypeDetails({ type, onChange }: { type: KindLogType; onChange: (patch: 
       </div>
 
       {/* Fields */}
-      <div>
-        <div className="flex items-center justify-between">
-          <Label className="text-[11px] text-muted-foreground">{t("assetLog.editor.fields", "What an entry asks for")}</Label>
-          <button
-            type="button"
-            disabled={type.fields.length >= KIND_SHAPE_LIMITS.maxLogFields}
-            onClick={() => onChange({ fields: [...type.fields, { key: "", label: "", type: "text", required: false }] })}
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
-          >
-            <Plus className="h-3 w-3" /> {t("common.add", "Add")}
-          </button>
-        </div>
-        <div className="mt-1.5 space-y-2">
-          {type.fields.map((f, fi) => (
-            <div key={fi} className="space-y-1.5 rounded-md bg-muted/40 p-2">
-              <div className="flex items-center gap-1.5">
-                <Input
-                  value={f.label}
-                  onChange={(e) => setField(fi, { label: e.target.value })}
-                  placeholder={t("assetLog.editor.fieldPh", "Odometer")}
-                  maxLength={KIND_SHAPE_LIMITS.maxLabel}
-                  className="h-8 flex-1"
-                />
-                <select
-                  value={f.type}
-                  onChange={(e) => {
-                    const next = e.target.value as LogFieldType
-                    setField(fi, {
-                      type: next,
-                      unit: next === "number" ? f.unit : undefined,
-                      meter: next === "number" ? f.meter : undefined,
-                      options: next === "choice" ? f.options ?? [] : undefined,
-                      direction: next === "money" ? f.direction ?? "out" : undefined,
-                    })
-                  }}
-                  className="h-8 shrink-0 rounded-md border border-border bg-background px-1.5 text-xs text-foreground"
-                >
-                  {LOG_FIELD_TYPES.map((ft) => (
-                    <option
-                      key={ft}
-                      value={ft}
-                      // One amount and one photo per entry: the columns an entry has.
-                      disabled={(ft === "money" && hasMoney && f.type !== "money") || (ft === "photo" && hasPhoto && f.type !== "photo")}
-                    >
-                      {fieldTypeLabel(t, ft)}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const fields = type.fields.filter((_, idx) => idx !== fi)
-                    // A rule counting in a meter that is gone counts in nothing.
-                    const lostMeter = !!f.key && due?.meterKey === f.key
-                    onChange({ fields, ...(lostMeter ? { due: { ...due!, units: null, meterKey: null, leadUnits: null } } : {}) })
-                  }}
-                  className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive"
-                  aria-label={t("common.remove", "Remove")}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-0.5 text-[11px] text-muted-foreground">
-                <label className="inline-flex items-center gap-1.5">
-                  <input type="checkbox" checked={f.required} onChange={(e) => setField(fi, { required: e.target.checked })} />
-                  {t("assetLog.editor.required", "Required")}
-                </label>
-
-                {f.type === "number" && (
-                  <>
-                    <Input
-                      value={f.unit ?? ""}
-                      onChange={(e) => setField(fi, { unit: e.target.value || undefined })}
-                      placeholder={t("assetLog.editor.unitPh", "km")}
-                      maxLength={KIND_SHAPE_LIMITS.maxUnit}
-                      className="h-7 w-20 text-xs"
-                    />
-                    <label className="inline-flex items-center gap-1.5" title={t("assetLog.editor.meterHint", "A counter the asset keeps, like mileage or operating hours. The record shows the latest one, and a due rule can count in it.")}>
-                      <input type="checkbox" checked={!!f.meter} onChange={(e) => setField(fi, { meter: e.target.checked || undefined })} />
-                      {t("assetLog.editor.meter", "It is a counter reading")}
-                    </label>
-                  </>
-                )}
-
-                {f.type === "money" && (
-                  <div className="flex overflow-hidden rounded-md border border-border">
-                    <DirBtn active={f.direction === "in"} onClick={() => setField(fi, { direction: "in" })} icon={ArrowDownLeft} label={t("assetKinds.moneyIn", "Money in")} />
-                    <DirBtn active={f.direction !== "in"} onClick={() => setField(fi, { direction: "out" })} icon={ArrowUpRight} label={t("assetKinds.moneyOut", "Money out")} />
-                  </div>
-                )}
-              </div>
-
-              {f.type === "choice" && (
-                <ChoiceOptionsEditor value={f.options ?? []} onChange={(options) => setField(fi, { options })} />
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      <TypeDetailsEditor vm={vm} type={type} onChange={onChange} />
 
       {/* Next due */}
       <div className="rounded-md border border-border/70 p-2">
@@ -372,43 +247,5 @@ function TypeDetails({ type, onChange }: { type: KindLogType; onChange: (patch: 
         )}
       </div>
     </div>
-  )
-}
-
-function fieldTypeLabel(t: (k: string, d: string) => string, ft: LogFieldType): string {
-  switch (ft) {
-    case "text": return t("assetLog.fieldType.text", "Text")
-    case "number": return t("assetLog.fieldType.number", "Number")
-    case "date": return t("assetLog.fieldType.date", "Date")
-    case "choice": return t("assetLog.fieldType.choice", "Choice")
-    case "photo": return t("assetLog.fieldType.photo", "Photo")
-    case "money": return t("assetLog.fieldType.money", "Amount")
-  }
-}
-
-function FlagRow({ title, hint, checked, onChange }: { title: string; hint: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-foreground">{title}</p>
-        <p className="text-[11px] text-muted-foreground">{hint}</p>
-      </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
-    </div>
-  )
-}
-
-function DirBtn({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: typeof ArrowDownLeft; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium transition-colors",
-        active ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground",
-      )}
-    >
-      <Icon className="h-3 w-3" /> {label}
-    </button>
   )
 }

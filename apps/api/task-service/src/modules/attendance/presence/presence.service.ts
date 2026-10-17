@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
+  zoneOf,
   PRESENCE,
   SERVICE_NAMES,
   TERMINAL_STATUSES,
@@ -233,5 +234,5 @@ function presenceOf(entry: PresenceEntry): PresenceState['presence'] {
 }
 
 function tzOf(entry: PresenceEntry): string {
-  return entry.timezone || entry.location?.timezone || 'UTC';
+  return zoneOf(entry.timezone, entry.location?.timezone);
 }

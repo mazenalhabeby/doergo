@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { totalsRevision } from '../../components/home/shift-state';
+import { readSource } from '../../test-utils/read-source';
 
 /*
   ⑥ "Done for today" showed the shift BEFORE the one just clocked out: the
@@ -23,7 +24,7 @@ describe('totalsRevision', () => {
 
   it('is the ONE key — the Time page and the home card both read it', () => {
     for (const file of ['components/time/time-screen.tsx', 'components/home/shift-clock-card.tsx']) {
-      const code = fs.readFileSync(path.join(__dirname, '../..', file), 'utf8');
+      const code = readSource(path.join(__dirname, '../..', file), 'utf8');
       expect(code).toMatch(/revision:\s*totalsRevision\(/);
     }
   });

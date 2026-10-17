@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus } from '@nestjs/common';
-import { BreakService } from '../break.service';
+import { BREAK_SERVICES } from '../break-services';
+import { breakServicesOf, type BreakServiceParts } from './break.service.fixture';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { CountedTimeService } from '../counted-time.service';
 import { BreakRulesService } from '../break-rules.service';
@@ -20,7 +21,7 @@ import { BreakReminderService } from '../break-reminder.service';
  * approved for have changed.
  */
 describe('addBreakForMember', () => {
-  let service: BreakService;
+  let service: BreakServiceParts;
 
   const prisma: Record<string, any> = {
     timeEntry: { findFirst: jest.fn(), update: jest.fn() },
@@ -68,11 +69,11 @@ describe('addBreakForMember', () => {
         BreakRulesService,
         CountedTimeService,
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
-        BreakService,
+        ...BREAK_SERVICES,
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();
-    service = module.get(BreakService);
+    service = breakServicesOf(module);
   });
 
   it('adds a break inside the shift and records who entered it', async () => {

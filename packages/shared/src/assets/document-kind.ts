@@ -18,6 +18,7 @@
  */
 
 import { parseContract, type ParsedContract } from './contract';
+import { foldText } from '../utils/fold';
 
 export type DocumentKind = 'asset-contract' | 'unknown';
 
@@ -36,7 +37,7 @@ export interface DocumentClassification {
   contract: ParsedContract;
 }
 
-const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const fold = foldText;
 
 /*
   Words that mean "this page is an agreement about a thing", in the five

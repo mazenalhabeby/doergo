@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { EventsService } from '../events.service';
+import { eventServices } from './events.service.fixture';
 import { FeedService } from '../feed.service';
 
 /*
@@ -14,10 +14,7 @@ const soon = () => new Date(Date.now() + 3 * 86400000);
 function make(over: Record<string, any> = {}) {
   const prisma: any = {
     organization: { findUnique: jest.fn().mockResolvedValue({ timezone: 'Europe/Vienna' }) },
-    user: {
-      findMany: jest.fn().mockResolvedValue([]),
-      findUnique: jest.fn().mockResolvedValue({ firstName: 'A', lastName: 'B' }),
-    },
+    user: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn().mockResolvedValue({ firstName: 'A', lastName: 'B' }) },
     spaceAssignment: { findMany: jest.fn().mockResolvedValue([]) },
     companyLocation: { findFirst: jest.fn().mockResolvedValue({ id: 's1' }) },
     customer: { findFirst: jest.fn().mockResolvedValue(null) },
@@ -35,7 +32,7 @@ function make(over: Record<string, any> = {}) {
   };
   const rules: any = { workspacesOf: jest.fn().mockResolvedValue(['s1']), personRules: jest.fn() };
   const notifications: any = { emit: jest.fn() };
-  return { svc: new EventsService(prisma, rules, notifications), prisma, rules, notifications };
+  return { svc: eventServices(prisma, rules, notifications), prisma, rules, notifications };
 }
 
 const input = (extra: Record<string, unknown> = {}) => {

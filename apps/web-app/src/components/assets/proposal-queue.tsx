@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/dialog"
 import { keys } from "@/lib/query-keys"
 import { dateLocale } from "@/lib/format-date"
+import { ProposalRow, Field } from "./proposal-queue-shared"
+import { useReviewDialog } from "./use-review-dialog"
 
 /**
  * Pages members have sent in, waiting on somebody responsible.
@@ -102,43 +104,6 @@ export function ProposalQueue({ kinds, spaceId }: { kinds: AssetCategory[]; spac
   )
 }
 
-function ProposalRow({ proposal, onReview }: { proposal: AssetProposal; onReview: () => void }) {
-  const { t } = useTranslation()
-  const who = proposal.raisedBy
-    ? personName(proposal.raisedBy)
-    : t("expenses.someone", "Someone")
-  const name = nameOf(proposal.fields)
-
-  return (
-    <button
-      onClick={onReview}
-      className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-primary/40"
-    >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
-        {personInitials(who)}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">
-          {name || t("proposals.unnamed", "Something unnamed")}
-          {[proposal.fields.manufacturer, proposal.fields.model].filter(Boolean).length > 0 && (
-            <span className="text-muted-foreground">
-              {" · "}{[proposal.fields.manufacturer, proposal.fields.model].filter(Boolean).join(" ")}
-            </span>
-          )}
-        </p>
-        <p className="truncate text-xs text-muted-foreground">
-          {t("proposals.sentBy", "Sent by {{who}}", { who })} · {new Date(proposal.createdAt).toLocaleDateString(dateLocale())}
-          {/* Why the reader thought this was a contract. A verdict nobody can
-              argue with is one people either trust blindly or ignore. */}
-          {proposal.signals?.length ? ` · ${proposal.signals.join(", ")}` : ""}
-        </p>
-      </div>
-      {proposal.hasDocument && <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />}
-      <span className="shrink-0 text-xs font-semibold text-primary">{t("proposals.review", "Review")}</span>
-    </button>
-  )
-}
-
 /**
  * One page, and what accepting it would do.
  *
@@ -154,71 +119,25 @@ function ReviewDialog({
   kinds: AssetCategory[]
   onClose: () => void
 }) {
-  const { t } = useTranslation()
-  const qc = useQueryClient()
-  const { user } = useAuth()
-
-  /*
-    Only kinds a member can hold, in a workspace THIS reviewer manages. Accepting
-    runs the contract flow, which refuses a kind outside their workspaces as not
-    found — offering one would be a choice that can only fail. Same filter as
-    the contract dialog; an org-wide manager keeps every kind.
-  */
-  const usable = kinds.filter((k) => {
-    const shape = normalizeKindShape(k.config)
-    return shape.holder.enabled && shape.holder.members && canManageAssetsIn(user, k.spaceId)
-  })
-
-  const [categoryId, setCategoryId] = useState("")
-  const [fields, setFields] = useState<ContractFields>({})
-  const [retire, setRetire] = useState(true)
-  const [note, setNote] = useState("")
-  const [refusing, setRefusing] = useState(false)
-
-  // Keyed on the proposal so opening a second one starts clean rather than
-  // carrying the first one's corrections onto somebody else's vehicle.
-  const [seeded, setSeeded] = useState<string | null>(null)
-  if (proposal && seeded !== proposal.id) {
-    setSeeded(proposal.id)
-    setCategoryId(proposal.categoryId ?? (usable.length === 1 ? usable[0]!.id : ""))
-    setFields(proposal.fields ?? {})
-    setRetire(true)
-    setNote("")
-    setRefusing(false)
-  }
-
-  const holderUserId = proposal?.holderUserId ?? proposal?.raisedById ?? ""
-
-  const previewQ = useQuery({
-    queryKey: keys.assets.proposalPreview(proposal?.id, categoryId, retire, JSON.stringify(fields)),
-    queryFn: () => assetsApi.previewContract({ categoryId, holderUserId, fields, retireReplaced: retire }),
-    enabled: !!proposal && !!categoryId && !!holderUserId,
-  })
-  const preview: ContractPreview | undefined = previewQ.data ?? undefined
-
-  const done = () => {
-    qc.invalidateQueries({ queryKey: keys.assets.proposalsPending() })
-    qc.invalidateQueries({ queryKey: keys.assets.kinds() })
-    onClose()
-  }
-
-  const accept = useMutation({
-    mutationFn: () => assetsApi.acceptProposal(proposal!.id, { categoryId, fields, retireReplaced: retire }),
-    onSuccess: () => { notify.success(t("proposals.accepted", "Added and handed over.")); done() },
-    onError: (e: Error) => notify.error(e.message),
-  })
-
-  const reject = useMutation({
-    mutationFn: () => assetsApi.rejectProposal(proposal!.id, note.trim() || undefined),
-    onSuccess: () => { notify.success(t("proposals.refused", "Refused.")); done() },
-    onError: (e: Error) => notify.error(e.message),
-  })
-
-  const openDocument = useMutation({
-    mutationFn: () => assetsApi.getProposalDocumentUrl(proposal!.id),
-    onSuccess: (d) => { if (d?.url) window.open(d.url, "_blank", "noopener,noreferrer") },
-    onError: (e: Error) => notify.error(e.message),
-  })
+  const {
+    t,
+    usable,
+    categoryId,
+    setCategoryId,
+    fields,
+    setFields,
+    retire,
+    setRetire,
+    note,
+    setNote,
+    refusing,
+    setRefusing,
+    previewQ,
+    preview,
+    accept,
+    reject,
+    openDocument,
+  } = useReviewDialog({ proposal, kinds, onClose })
 
   if (!proposal) return null
   const who = proposal.holder ?? proposal.raisedBy
@@ -358,19 +277,5 @@ function ReviewDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
-
-/** What to call it, in the same order the shared rule uses. */
-function nameOf(f: ContractFields): string {
-  return f.name || f.registration || f.serial || [f.manufacturer, f.model].filter(Boolean).join(" ")
-}
-
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <div className="rounded-xl border border-border p-2.5">
-      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</span>
-      <ContractFieldInput value={value} onChange={onChange} />
-    </div>
   )
 }

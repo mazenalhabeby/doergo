@@ -2,9 +2,9 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { BadRequestException } from '@nestjs/common';
 import { workspaceZone } from '../zone.util';
-import { RecurringTasksService } from '../../modules/recurring-tasks/recurring-tasks.service';
+import { recurringParts } from '../../modules/recurring-tasks/__tests__/recurring-tasks.service.fixture';
 import { TASK_SERVICE_FILES } from '../../modules/tasks/__tests__/task-service-source';
-import { SprintsService } from '../../modules/sprints/sprints.service';
+import { SprintReportsService } from '../../modules/sprints/sprint-reports.service';
 
 /**
  * "Today" is the WORKSPACE's day, never the server's. The containers run in
@@ -35,7 +35,7 @@ describe('day boundaries in the workspace’s zone', () => {
 
   describe('a recurring template starting "today"', () => {
     const create = (startDate: string) =>
-      new RecurringTasksService(prisma).create({ title: 'T', frequency: 'DAILY', startDate, organizationId: 'o', createdById: 'u' } as any);
+      recurringParts(prisma).create({ title: 'T', frequency: 'DAILY', startDate, organizationId: 'o', createdById: 'u' } as any);
 
     it('is accepted at 22:00 in New York (already tomorrow in UTC)', async () => {
       jest.useFakeTimers({ now: new Date('2026-10-10T02:00:00Z'), doNotFake: ['nextTick', 'setImmediate'] });
@@ -59,7 +59,7 @@ describe('day boundaries in the workspace’s zone', () => {
         ]),
       },
     };
-    const days = await (new SprintsService(prisma) as any).buildDailyBurndown(
+    const days = await (new SprintReportsService(prisma) as any).buildDailyBurndown(
       tx,
       [{ id: 't1', storyPoints: 5 }],
       new Date('2026-10-04T22:00:00Z'), // 5 Oct 00:00 Vienna

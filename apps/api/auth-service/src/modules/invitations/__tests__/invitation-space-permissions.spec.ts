@@ -1,4 +1,4 @@
-import { InvitationService } from '../invitation.service';
+import { invitationServices } from './invitation.service.fixture';
 import { applyInvitationPlacement, invitationSpaceGrantNow } from '../invitation-apply';
 
 /**
@@ -29,7 +29,7 @@ describe('creating an external invitation with workspace permissions', () => {
         create: jest.fn(async ({ data }: any) => ({ ...data, id: 'inv1', status: 'PENDING', createdAt: new Date(), expiresAt: data.expiresAt, organization: null, createdBy: null })),
       },
     };
-    const svc = new InvitationService(prisma, { emit: jest.fn() } as any, {} as any);
+    const svc = invitationServices(prisma, { emit: jest.fn() } as any, {} as any);
     return { svc, prisma };
   }
   const base = {

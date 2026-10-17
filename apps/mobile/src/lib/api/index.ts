@@ -2,6 +2,7 @@
 export {
   ApiError,
   getAccessToken,
+  getFreshAccessToken,
   getRefreshToken,
   saveTokens,
   clearTokens,

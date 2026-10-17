@@ -2,13 +2,7 @@
 
 import { personName } from "@hbcfield/shared/client"
 import { useTranslation } from "react-i18next"
-import {
-  Check,
-  Phone,
-  MessageSquare,
-  Timer,
-  UserPlus,
-} from "lucide-react"
+import { Check, MessageSquare, Timer, UserPlus } from "lucide-react"
 
 import { type WorkflowStatus } from "@/lib/api"
 import { useContactActions } from "@/hooks/use-contact-actions"
@@ -115,7 +109,7 @@ export function TaskProgressCard({
   // avatar and a stacked avatar).
   const members = assignees.filter(a => a.user.id !== primary?.user.id)
 
-  const { message, call, canMessage } = useContactActions()
+  const { message, canMessage } = useContactActions()
 
   /**
    * Who these buttons reach: the first person on the task who isn't you, lead
@@ -135,7 +129,6 @@ export function TaskProgressCard({
   // Both buttons must reach the SAME person. Only the legacy assignedTo record
   // carries a phone number, so we have one to dial exactly when the contact is
   // that person; otherwise Call says so rather than ringing someone else.
-  const contactPhone = contact && assignedTo?.id === contact.id ? assignedTo?.phone : undefined
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
@@ -188,24 +181,16 @@ export function TaskProgressCard({
             </div>
 
             {contact && (
-            <div className="flex items-center gap-1 ml-1">
-              <button
-                onClick={() => call(contactPhone)}
-                className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
-                title={t("tasks.progress.call")}
-              >
-                <Phone className="size-3" />
-              </button>
-
-              {/* Straight into the conversation — no list, no choosing. */}
-              <button
-                onClick={() => contact.id && message(contact.id)}
-                className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
-                title={t("tasks.progress.message")}
-              >
-                <MessageSquare className="size-3" />
-              </button>
-            </div>
+              <div className="flex items-center gap-1 ml-1">
+                {/* Straight into the conversation — no list, no choosing. */}
+                <button
+                  onClick={() => contact.id && message(contact.id)}
+                  className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
+                  title={t("tasks.progress.message")}
+                >
+                  <MessageSquare className="size-3" />
+                </button>
+              </div>
             )}
           </div>
         ) : (

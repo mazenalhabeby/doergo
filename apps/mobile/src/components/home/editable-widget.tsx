@@ -14,6 +14,8 @@ import { useTheme } from '../../contexts/theme-context';
 import { AText, WidgetBoundary } from '../amazen';
 import { shadowGlass, shadowUnderGlass } from '../amazen/surfaces';
 import { widgetTitle, type WidgetRow } from '../../home/registry';
+import { useEditableWidgetInner, REST } from './use-editable-widget-inner';
+import { RemoveBadge, Arrows } from './editable-widget-inner-helpers';
 
 /**
  * ONE CARD, IN BOTH MODES — AND THEY ARE THE SAME CARD.
@@ -35,9 +37,6 @@ import { widgetTitle, type WidgetRow } from '../../home/registry';
 
 /** How long the arrival ring stays on a widget added from the gallery. */
 export const LANDED_MS = 30_000;
-
-/** Edit mode's resting scale. §3. */
-const REST = 0.965;
 /**
  * The lift is 1.02 ABSOLUTE, and `ScaleDecorator` multiplies whatever this
  * card is already at — so the factor it needs is 1.02 ÷ 0.965.
@@ -46,104 +45,6 @@ const REST = 0.965;
  * getting SMALLER when you pick it up.
  */
 export const LIFT_FACTOR = 1.02 / REST;
-
-/**
- * The neutral ⊖.
- *
- * ⚠️ NEVER RED, AND THIS IS NOT A STYLE NOTE. Removing a widget deletes
- * nothing — the key stays in storage, hidden, and switching it back on returns
- * it to the position it was arranged into. A red badge states a destructive
- * act, so the member either hesitates over a reversible one or learns that red
- * in this app does not mean what it means everywhere else. Both are worse than
- * a grey mark.
- *
- * `raised` surface → `barFill`, the kit's one solid neutral that is made to sit
- * over the gradient. `ink2` stroke → `ink`.
- */
-function RemoveBadge({ label, onPress }: { label: string; onPress: () => void }) {
-  const { amazen, isDark } = useTheme();
-  const c = amazen.color;
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      hitSlop={10}
-      style={({ pressed }) => [
-        {
-          position: 'absolute',
-          top: -9,
-          left: -9,
-          width: 26,
-          height: 26,
-          borderRadius: amazen.radius.full,
-          backgroundColor: c.barFill,
-          borderWidth: StyleSheet.hairlineWidth * 2,
-          borderColor: c.lineWell,
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: pressed ? 0.7 : 1,
-        },
-        shadowGlass(isDark),
-      ]}
-    >
-      {/* The bar of a ⊖, drawn rather than typed: the character's width and
-          optical centre differ on every platform font. */}
-      <View style={{ width: 11, height: 1.8, borderRadius: 1, backgroundColor: c.ink }} />
-    </Pressable>
-  );
-}
-
-/**
- * The up/down arrows — ⚠️ ON SCREEN ONLY WHEN A SCREEN READER IS RUNNING.
- *
- * WCAG 2.5.7 is satisfied by the `accessibilityActions` every card carries,
- * which VoiceOver and TalkBack surface through the rotor and reading controls
- * without anything being drawn. Drawing them for everybody would put two extra
- * controls on every card for something neither platform shows — but a member
- * who is exploring by touch benefits from them being real, hittable targets as
- * well as rotor entries.
- */
-function Arrows({
-  up, down, onUp, onDown, labelUp, labelDown,
-}: {
-  up: boolean; down: boolean;
-  onUp: () => void; onDown: () => void;
-  labelUp: string; labelDown: string;
-}) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
-  const btn = (on: boolean, press: () => void, label: string, mark: string) => (
-    <Pressable
-      onPress={on ? press : undefined}
-      disabled={!on}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !on }}
-      hitSlop={8}
-      style={{
-        width: 32, height: 32,
-        borderRadius: amazen.radius.full,
-        backgroundColor: c.barFill,
-        borderWidth: StyleSheet.hairlineWidth * 2,
-        borderColor: c.lineWell,
-        alignItems: 'center',
-        justifyContent: 'center',
-        /* ⚠️ Dimmed, never removed — a control that disappears makes the row
-           jump under the finger that was about to press the other one. */
-        opacity: on ? 1 : 0.35,
-      }}
-    >
-      <AText variant="body" tone="ink" style={{ lineHeight: 20 }}>{mark}</AText>
-    </Pressable>
-  );
-  return (
-    <View style={{ position: 'absolute', top: -9, right: -4, flexDirection: 'row', gap: 6 }}>
-      {btn(up, onUp, labelUp, '↑')}
-      {btn(down, onDown, labelDown, '↓')}
-    </View>
-  );
-}
 
 function EditableWidgetInner({
   row,
@@ -181,80 +82,16 @@ function EditableWidgetInner({
   /** Just added from the gallery — wears a jade ring for 30 seconds. */
   landed: boolean;
 }) {
-  const { amazen, isDark } = useTheme();
-  const { t } = useTranslation();
-  const c = amazen.color;
-  const title = widgetTitle(row, t);
-
-  /*
-    ⚠️ A TRANSFORM, NEVER A LAYOUT ANIMATION. `scale` moves pixels and touches
-    no layout, so the column's geometry is identical in both modes and the
-    drag's own measurements stay true. A layout animation here would take the
-    card out of layout mid-flight, which is the bug that once left the whole
-    home column stacked on itself until the app was reloaded.
-  */
-  const shrink = useSharedValue(editing ? REST : 1);
-  React.useEffect(() => {
-    shrink.value = withTiming(editing ? REST : 1, {
-      duration: amazen.motion.state,
-      easing: Easing.bezier(...amazen.motion.easing),
-      /* Reduce Motion: the mode still opens, it simply arrives. */
-      reduceMotion: ReduceMotion.System,
-    });
-  }, [editing, shrink, amazen.motion.state, amazen.motion.easing]);
-
-  const shrinkStyle = useAnimatedStyle(() => ({ transform: [{ scale: shrink.value }] }));
-
-  /*
-    THE LIFT'S HALO — `0 0 0 4px rgba(jade,.12)`.
-
-    ⚠️ ABSOLUTELY POSITIONED, OUTSIDE THE FLOW. A 4pt padding would change the
-    cell's measured size the moment the drag began, and the library measures
-    cells to decide where the slot goes — so the halo would move the card it is
-    drawn around.
-
-    ⚠️ IT IS ALSO WHERE THE `glass` SURFACE LANDS. Each widget draws its own
-    Well or GlassCard inside itself, so a lifted card cannot have its surface
-    swapped from out here without rewriting all five. The rim is glass and
-    carries the glass shadow, which is what "lifted, floating" actually reads
-    as — and it does it without a widget having to know it is being dragged.
-  */
-  /*
-    ⚠️ A PLAIN STYLE, NOT A WORKLET. `isActive` is an ordinary React prop, so
-    `useAnimatedStyle` here returned a constant and bought a worklet per card
-    for nothing. The lift is instant on both platforms anyway — it is the
-    moment the card leaves the column, and a fade would make it look uncertain.
-  */
-  const halo = { opacity: isActive ? 1 : 0 };
-
-  /*
-    ⚠️ ENTERING IS AN RNGH GESTURE; DRAGGING IS AN RN PRESSABLE.
-
-    Two different jobs with two different competitors. Entering has to beat the
-    widget's OWN buttons — a card wrapped in a Pressable that opens a screen
-    takes the touch before any parent sees it, which is why a plain
-    `onLongPress` on the wrapper never fired on half the column. An RNGH
-    LongPress is recognised natively and wins that.
-
-    Dragging must NOT beat anything: the list's own Pan is an ancestor, and a
-    gesture of ours activating in the same touch would cancel it, so the card
-    would be "picked up" and then never follow the finger. `drag()` only needs
-    to be called while that Pan is already tracking the touch — which is
-    exactly what a plain Pressable does, and is what the library's own examples
-    use.
-  */
-  const enter = React.useMemo(
-    () =>
-      Gesture.LongPress()
-        .minDuration(500)
-        .maxDistance(12)
-        .enabled(!editing)
-        .onStart(() => {
-          'worklet';
-          runOnJS(onEnterEdit)();
-        }),
-    [editing, onEnterEdit],
-  );
+  const {
+    amazen,
+    isDark,
+    t,
+    c,
+    title,
+    shrinkStyle,
+    halo,
+    enter,
+  } = useEditableWidgetInner({ row, editing, isActive, drag, onEnterEdit, onRemove, onMove, canUp, canDown, screenReader, landed });
 
   return (
     <Animated.View
@@ -397,7 +234,6 @@ export function DropSlot() {
     />
   );
 }
-
 
 /**
  * ⚠️ MEMOIZED, AND THAT IS NOT A MICRO-OPTIMISATION HERE.

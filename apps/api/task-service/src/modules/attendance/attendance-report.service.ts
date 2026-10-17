@@ -2,6 +2,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { MEMBER_SELECT } from './attendance-selects';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
+  personName,
   success,
   buildDateRangeFilter,
   getStartOfWeek,
@@ -245,7 +246,7 @@ export class AttendanceReportService {
 
     const rows = entries.map((entry) => [
       format(entry.clockInAt, 'yyyy-MM-dd'),
-      `${entry.user.firstName} ${entry.user.lastName}`,
+      personName(entry.user),
       entry.user.email,
       entry.location.name,
       format(entry.clockInAt, 'HH:mm:ss'),

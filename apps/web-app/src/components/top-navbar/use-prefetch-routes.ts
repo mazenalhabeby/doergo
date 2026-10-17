@@ -1,11 +1,7 @@
 import { keys, membersPageParams } from "@/lib/query-keys"
 import { useCallback } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import {
-  tasksApi,
-  locationsApi,
-  organizationsApi,
-} from "@/lib/api"
+import { tasksApi, organizationsApi } from "@/lib/api"
 import { fetchSpaceDirectory, spaceDirectoryKey } from "@/lib/space-directory"
 
 // ---------------------------------------------------------------------------
@@ -39,11 +35,11 @@ export function usePrefetchRoutes(mayListOrg: boolean) {
   }, [qc, mayListOrg])
 
   const prefetchSpaces = useCallback(() => {
-    qc.prefetchQuery({ queryKey: keys.locations.list(), queryFn: () => locationsApi.list(), staleTime: PREFETCH_STALE })
+    qc.prefetchQuery({ queryKey: spaceDirectoryKey(), queryFn: fetchSpaceDirectory, staleTime: PREFETCH_STALE })
   }, [qc])
 
   const prefetchAttendance = useCallback(() => {
-    qc.prefetchQuery({ queryKey: keys.locations.list(), queryFn: () => locationsApi.list(), staleTime: PREFETCH_STALE })
+    qc.prefetchQuery({ queryKey: spaceDirectoryKey(), queryFn: fetchSpaceDirectory, staleTime: PREFETCH_STALE })
   }, [qc])
 
   return { prefetchDashboard, prefetchTasks, prefetchTeam, prefetchSpaces, prefetchAttendance }

@@ -21,8 +21,16 @@ const LOCALES = path.join(WEB_SRC, "i18n/locales")
 
 /** Legitimate, named: `file` (relative to apps/web-app/src) + a fragment of the offending line + why. */
 const ALLOWED: { file: string; contains: string; why: string }[] = [
-  { file: "app/(dashboard)/tasks/[id]/_components/route-tracking-section.tsx", contains: "const km = distanceMeters / 1000", why: "average SPEED (km/h), not a distance shown" },
-  { file: "app/(dashboard)/locations/_components/space-form.tsx", contains: "{radius}m", why: "the readout of the radius INPUT slider — the admin sets metres" },
+  {
+    file: "app/(dashboard)/tasks/[id]/_components/route-tracking-values.tsx",
+    contains: "const km = distanceMeters / 1000",
+    why: "average SPEED (km/h), not a distance shown",
+  },
+  {
+    file: "app/(dashboard)/locations/_components/space-form-address.tsx",
+    contains: "{radius}m",
+    why: "the readout of the radius INPUT slider — the admin sets metres",
+  },
 ]
 
 const RULES: { name: string; re: RegExp; ext?: RegExp }[] = [
@@ -61,14 +69,16 @@ function stripComments(src: string): string {
 
 function offencesIn(rel: string, src: string): string[] {
   const found: string[] = []
-  stripComments(src).split("\n").forEach((line, i) => {
-    for (const rule of RULES) {
-      if (rule.ext && !rule.ext.test(rel)) continue
-      if (!rule.re.test(line)) continue
-      if (ALLOWED.some((a) => a.file === rel && line.includes(a.contains))) continue
-      found.push(`${rel}:${i + 1} — ${rule.name}: ${line.trim()}`)
-    }
-  })
+  stripComments(src)
+    .split("\n")
+    .forEach((line, i) => {
+      for (const rule of RULES) {
+        if (rule.ext && !rule.ext.test(rel)) continue
+        if (!rule.re.test(line)) continue
+        if (ALLOWED.some((a) => a.file === rel && line.includes(a.contains))) continue
+        found.push(`${rel}:${i + 1} — ${rule.name}: ${line.trim()}`)
+      }
+    })
   return found
 }
 
@@ -85,9 +95,12 @@ function offences(): string[] {
 function localeOffences(): string[] {
   const found: string[] = []
   for (const f of fs.readdirSync(LOCALES).filter((n) => n.endsWith(".json"))) {
-    fs.readFileSync(path.join(LOCALES, f), "utf8").split("\n").forEach((line, i) => {
-      if (/\{\{(?:distance|radius|span)\}\}\s?-?(?:m|km)(?![\p{L}\d])/u.test(line)) found.push(`${f}:${i + 1}: ${line.trim()}`)
-    })
+    fs.readFileSync(path.join(LOCALES, f), "utf8")
+      .split("\n")
+      .forEach((line, i) => {
+        if (/\{\{(?:distance|radius|span)\}\}\s?-?(?:m|km)(?![\p{L}\d])/u.test(line))
+          found.push(`${f}:${i + 1}: ${line.trim()}`)
+      })
   }
   return found
 }

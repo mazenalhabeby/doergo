@@ -1,3 +1,4 @@
+import { RecurringRunnerService } from '../recurring-runner.service';
 /**
  * A repeating visit remembers which client it repeats for.
  *
@@ -16,9 +17,10 @@ import { Test } from '@nestjs/testing';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { RecurringTasksService } from '../recurring-tasks.service';
+import { recurringPartsOf, type RecurringTasksServiceParts } from './recurring-tasks.service.fixture';
 
 describe('RecurringTasksService — the client survives the repeat', () => {
-  let service: RecurringTasksService;
+  let service: RecurringTasksServiceParts;
 
   const prisma: Record<string, any> = {
     recurringTaskTemplate: {
@@ -38,11 +40,12 @@ describe('RecurringTasksService — the client survives the repeat', () => {
     const module = await Test.createTestingModule({
       providers: [
         RecurringTasksService,
+        RecurringRunnerService,
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
       ],
     }).compile();
-    service = module.get(RecurringTasksService);
+    service = recurringPartsOf(module);
   });
 
   const base = {
