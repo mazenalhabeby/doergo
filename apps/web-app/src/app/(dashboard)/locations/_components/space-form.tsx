@@ -1,32 +1,11 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
-import { useState, useCallback, useRef } from "react"
-import { useAuth } from "@/contexts/auth-context"
-import dynamic from "next/dynamic"
-import { useTranslation } from "react-i18next"
-import { useQuery, useMutation } from "@tanstack/react-query"
-import { Boxes, MapPin, ChevronDown, ChevronRight, Loader2, Briefcase, Building2, Handshake } from "lucide-react"
-import type { LatLng } from "@hbcfield/shared/client"
-import {
-  ATTENDANCE_CONSTANTS,
-  AVAILABLE_MODULES,
-  DEFAULT_ORG_MODULES,
-  MODULE_GROUPS,
-  MODULE_PRESETS,
-  RADIUS_SLIDER_STEPS,
-  radiusToSliderPosition,
-  sliderPositionToRadius
-} from "@hbcfield/shared/client"
-import { locationsApi, workflowsApi, type CreateLocationInput } from "@/lib/api"
-import { ExplainerButton } from "@/components/explainer/explainer-button"
-import { notify } from "@/lib/toast"
+import { OwnershipKindPicker } from "./ownership-kind-picker"
+import { Boxes, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Input, Button, Label } from "@/components/ui"
-import { TimezoneCombobox, fetchTimezone } from "@/components/timezone-combobox"
 import { WorkflowSelector } from "./workflow-selector"
-import { useSpaceForm, GEO_MIN, GEO_MAX, GEO_DEFAULT } from "./use-space-form"
-import { LocationPicker } from "./space-form-helpers"
+import { useSpaceForm } from "./use-space-form"
 import { SpaceFormForm } from "./space-form-form"
 import { SpaceFormAddress } from "./space-form-address"
 
@@ -96,7 +75,9 @@ export function SpaceForm({
     <div className="space-y-5">
       {/* Name */}
       <div className="space-y-2">
-        <Label htmlFor="space-name">{t("locations.name")} <span className="text-red-500">*</span></Label>
+        <Label htmlFor="space-name">
+          {t("locations.name")} <span className="text-red-500">*</span>
+        </Label>
         <Input
           id="space-name"
           data-tour="spaces-dialog-name"
@@ -148,29 +129,7 @@ export function SpaceForm({
       {/* Ownership — my project / my company / customer company (separate axis) */}
       <div className="space-y-2" data-tour="spaces-form-ownership">
         <Label>{t("locations.form.ownership", "Ownership")}</Label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {KIND_OPTIONS.map((opt) => {
-            const Icon = opt.icon
-            const active = kind === opt.value
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setKind(opt.value)}
-                className={cn(
-                  "rounded-xl border p-3 text-left transition-all",
-                  active
-                    ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-200 dark:ring-blue-800"
-                    : "border-border hover:border-muted-foreground/30",
-                )}
-              >
-                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Icon className="h-4 w-4 text-blue-600" /> {opt.label}
-                </div>
-              </button>
-            )
-          })}
-        </div>
+        <OwnershipKindPicker options={KIND_OPTIONS} kind={kind} onPick={setKind} />
       </div>
 
       {/* Customer-company only: contact details */}
@@ -186,7 +145,12 @@ export function SpaceForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="cust-contact-email">{t("locations.form.contactEmail", "Contact email")}</Label>
-              <Input id="cust-contact-email" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
+              <Input
+                id="cust-contact-email"
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cust-contact-phone">{t("locations.form.contactPhone", "Contact phone")}</Label>
@@ -201,7 +165,7 @@ export function SpaceForm({
 
       {/* Workflow */}
       <div data-tour="spaces-form-workflow">
-      {/*
+        {/*
         Choosing a workflow is free; BUILDING one is the Option.
 
         `allowCreate` opened the builder from inside this form — a second way in
@@ -209,12 +173,12 @@ export function SpaceForm({
         the organization already has stays available either way, because that is
         not what was bought.
       */}
-      <WorkflowSelector
-        value={workflowId || defaultWorkflow?.id || ""}
-        onChange={setWorkflowId}
-        workflows={workflows}
-        allowCreate={hasPlanFeature("workflows")}
-      />
+        <WorkflowSelector
+          value={workflowId || defaultWorkflow?.id || ""}
+          onChange={setWorkflowId}
+          workflows={workflows}
+          allowCreate={hasPlanFeature("workflows")}
+        />
       </div>
 
       {/* Advanced — modules (collapsed; sensible defaults already set) */}
@@ -223,7 +187,9 @@ export function SpaceForm({
       {/* Footer */}
       <div className="flex justify-end gap-2 pt-1">
         {onCancel && (
-          <Button variant="outline" onClick={onCancel} disabled={mutation.isPending}>{t("common.cancel")}</Button>
+          <Button variant="outline" onClick={onCancel} disabled={mutation.isPending}>
+            {t("common.cancel")}
+          </Button>
         )}
         <Button data-tour="spaces-form-submit" onClick={handleSubmit} disabled={mutation.isPending}>
           {mutation.isPending ? t("common.creating") : resolvedSubmitLabel}

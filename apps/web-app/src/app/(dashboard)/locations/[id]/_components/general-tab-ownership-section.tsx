@@ -1,8 +1,8 @@
 "use client"
 
+import { OwnershipKindPicker } from "../../_components/ownership-kind-picker"
 import { Handshake } from "lucide-react"
 import { notify } from "@/lib/toast"
-import { cn } from "@/lib/utils"
 import { DatedRateField } from "@/components/rates/dated-rate"
 import { CurrencySetting } from "@/components/rates/currency-setting"
 import { serverErrorMessage } from "@/lib/server-error"
@@ -14,7 +14,13 @@ import type { GeneralTabState } from "./use-general-tab"
 import type { GeneralTab } from "./general-tab"
 
 /** Part of GeneralTab's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function GeneralTabOwnershipSection({ vm, space }: { vm: GeneralTabState; space: Parameters<typeof GeneralTab>[0]['space'] }) {
+export function GeneralTabOwnershipSection({
+  vm,
+  space,
+}: {
+  vm: GeneralTabState
+  space: Parameters<typeof GeneralTab>[0]["space"]
+}) {
   const {
     t,
     KIND_OPTIONS,
@@ -35,45 +41,31 @@ export function GeneralTabOwnershipSection({ vm, space }: { vm: GeneralTabState;
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
           <span
-            className={"flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 " +
-              "text-amber-600 dark:bg-amber-950 dark:text-amber-300"}>
+            className={
+              "flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 " +
+              "text-amber-600 dark:bg-amber-950 dark:text-amber-300"
+            }
+          >
             <Handshake className="h-[18px] w-[18px]" />
           </span>
           <div>
             <CardTitle className="text-base">{t("locations.ownershipSection", "Ownership")}</CardTitle>
-            <CardDescription>{t(
-              "locations.ownershipHint",
-              ("Is this a project, your own company, or a customer company you do work " + "for?"))}</CardDescription>
+            <CardDescription>
+              {t(
+                "locations.ownershipHint",
+                "Is this a project, your own company, or a customer company you do work " + "for?",
+              )}
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {KIND_OPTIONS.map((opt) => {
-            const Icon = opt.icon
-            const active = kind === opt.value
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setKind(opt.value)}
-                className={cn(
-                  "rounded-xl border p-3 text-left transition-all",
-                  active
-                    ? "border-blue-600 bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-900/20 dark:ring-blue-800"
-                    : "border-border hover:border-muted-foreground/30",
-                )}
-              >
-                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Icon className="h-4 w-4 text-blue-600" /> {opt.label}
-                </div>
-              </button>
-            )
-          })}
-        </div>
+        <OwnershipKindPicker options={KIND_OPTIONS} kind={kind} onPick={setKind} />
         {kind === "CUSTOMER" && (
           <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
-            <p className="text-xs font-medium text-muted-foreground">{t("locations.form.customerContact", "Customer contact")}</p>
+            <p className="text-xs font-medium text-muted-foreground">
+              {t("locations.form.customerContact", "Customer contact")}
+            </p>
             <div className="space-y-1.5">
               <Label htmlFor="cfg-contact-name">{t("locations.form.contactName", "Contact name")}</Label>
               <Input id="cfg-contact-name" value={contactName} onChange={(e) => setContactName(e.target.value)} />
@@ -81,7 +73,12 @@ export function GeneralTabOwnershipSection({ vm, space }: { vm: GeneralTabState;
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="cfg-contact-email">{t("locations.form.contactEmail", "Contact email")}</Label>
-                <Input id="cfg-contact-email" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
+                <Input
+                  id="cfg-contact-email"
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="cfg-contact-phone">{t("locations.form.contactPhone", "Contact phone")}</Label>
@@ -115,7 +112,9 @@ export function GeneralTabOwnershipSection({ vm, space }: { vm: GeneralTabState;
                 currentCents={space.billableRateCents ?? null}
                 currency={space.effectiveCurrency ?? orgCurrency}
                 history={spaceRates?.filter((r) => r.kind === "BILL_HOUR")}
-                onSubmit={(c, from) => saveSpaceRate({ billableRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })}
+                onSubmit={(c, from) =>
+                  saveSpaceRate({ billableRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })
+                }
               />
             </div>
           </div>
@@ -126,17 +125,19 @@ export function GeneralTabOwnershipSection({ vm, space }: { vm: GeneralTabState;
           the currency; issued invoices keep the company frozen on them. Hidden while the
           organization has one company.
         */}
-        {kind === "CUSTOMER" && <WorkspaceCompanyField
-          value={space.legalEntityId ?? null}
-          onSave={async (id) => {
-            try {
-              await saveSpaceRate({ legalEntityId: id })
-              notify.success(t("companies.saved"))
-            } catch (e) {
-              notify.error(serverErrorMessage(e, t))
-            }
-          }}
-        />}
+        {kind === "CUSTOMER" && (
+          <WorkspaceCompanyField
+            value={space.legalEntityId ?? null}
+            onSave={async (id) => {
+              try {
+                await saveSpaceRate({ legalEntityId: id })
+                notify.success(t("companies.saved"))
+              } catch (e) {
+                notify.error(serverErrorMessage(e, t))
+              }
+            }}
+          />
+        )}
       </CardContent>
     </Card>
   )

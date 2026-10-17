@@ -1,10 +1,11 @@
 "use client"
 
+import { ownershipKindOptions } from "../../_components/ownership-kind-picker"
 import { keys } from "@/lib/query-keys"
 import { useState, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Building2, Briefcase, Handshake, Contact, Package, LayoutTemplate, FileText } from "lucide-react"
+import { Contact, Package, LayoutTemplate, FileText } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { locationsApi, rateHistoryApi, type CompanyLocation, type UpdateLocationInput } from "@/lib/api"
 import { ATTENDANCE_CONSTANTS, parseGeofencePolygon, type LatLng } from "@hbcfield/shared/client"
@@ -12,11 +13,14 @@ import { fetchTimezone } from "@/components/timezone-combobox"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouteAccess } from "@/hooks/use-route-access"
 
-export const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } =
-  ATTENDANCE_CONSTANTS
+export const {
+  MIN_GEOFENCE_RADIUS: GEO_MIN,
+  MAX_GEOFENCE_RADIUS: GEO_MAX,
+  DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT,
+} = ATTENDANCE_CONSTANTS
 
 /** GeneralTab's state and handlers — everything before its markup, moved here unchanged. */
-export function useGeneralTab({ space }: Pick<{ space: CompanyLocation }, 'space'>) {
+export function useGeneralTab({ space }: Pick<{ space: CompanyLocation }, "space">) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { hasPlanFeature, user } = useAuth()
@@ -62,11 +66,7 @@ export function useGeneralTab({ space }: Pick<{ space: CompanyLocation }, 'space
   const [contactPhone, setContactPhone] = useState(space.contactPhone || "")
 
   const isPhysical = type === "physical"
-  const KIND_OPTIONS = [
-    { value: "PROJECT" as const, icon: Briefcase, label: t("locations.form.kindProject", "My project") },
-    { value: "COMPANY" as const, icon: Building2, label: t("locations.form.kindCompany", "My company") },
-    { value: "CUSTOMER" as const, icon: Handshake, label: t("locations.form.kindCustomer", "Customer company") },
-  ]
+  const KIND_OPTIONS = ownershipKindOptions(t)
   const clampRadius = () => Math.min(GEO_MAX, Math.max(GEO_MIN, parseInt(radius) || GEO_DEFAULT))
 
   // Remember the last coords we auto-derived a timezone for, so a save/re-render
@@ -134,13 +134,23 @@ export function useGeneralTab({ space }: Pick<{ space: CompanyLocation }, 'space
   const mods = (space.enabledModules ?? []) as string[]
   // …and only where the page behind the link would open for this reader (the route table).
   const contentLinks = [
-    { href: "/clients", label: t("customers.title", "Customers"), Icon: Contact, show: mods.includes("crm") && access.may("/clients") },
-    { href: "/assets", label: t("assetKinds.title", "Assets"), Icon: Package, show: mods.includes("assets") && access.may("/assets") },
+    {
+      href: "/clients",
+      label: t("customers.title", "Customers"),
+      Icon: Contact,
+      show: mods.includes("crm") && access.may("/clients"),
+    },
+    {
+      href: "/assets",
+      label: t("assetKinds.title", "Assets"),
+      Icon: Package,
+      show: mods.includes("assets") && access.may("/assets"),
+    },
     {
       href: "/portals",
       label: t("portal.title", "Client portal"),
       Icon: LayoutTemplate,
-      show: mods.includes("b2c_portal") && access.may("/portals")
+      show: mods.includes("b2c_portal") && access.may("/portals"),
     },
     /*
       ⚠️ Invoicing is an organization OPTION, not a per-space module, so it is

@@ -1,46 +1,34 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
-import { useMemo, useState, useEffect } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useTranslation } from "react-i18next"
-import dynamic from "next/dynamic"
 import Link from "next/link"
 import { CHART_COLORS } from "./_components/chart-colors"
-import { Timer, BarChart3, Download, FileText, Play, Clock, Save, Trash2, Pencil, Lock, CalendarClock, ChevronDown, Table2, SlidersHorizontal } from "lucide-react"
-
 import {
-  analyticsApi, customersApi, type ReportDefinition, type ReportResult,
-  type ReportDatePreset, type ReportGranularity, type DatasetMeta, type SavedReport,
-  type ReportCadence,
-} from "@/lib/api"
-import { useOrgLetterhead } from "@/hooks/use-org-letterhead"
-import { useAssignableMembers } from "@/hooks/use-assignable-members"
-import { useAuth } from "@/contexts/auth-context"
-import { useTimeFormat } from "@/hooks/use-time-format"
-import { notify } from "@/lib/toast"
-import { downloadBlob } from "@/lib/download"
-import { formatReportCell, type ReportBranding } from "@/lib/report-pdf-options"
-import { dateLocale } from "@/lib/format-date"
+  Timer,
+  BarChart3,
+  Download,
+  FileText,
+  Save,
+  Pencil,
+  Lock,
+  CalendarClock,
+  ChevronDown,
+  Table2,
+  SlidersHorizontal,
+} from "lucide-react";
+
+import { type ReportBranding } from "@/lib/report-pdf-options";
 import { ReportExportStudio } from "@/components/reports/report-export-studio"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { personName, localizeReportColumns, reportLabel, toCsv, localDateKey, todayKey, toISODateString } from "@hbcfield/shared/client"
-import { useReportsPage, DATE_PRESETS, fmt } from "./use-reports-page"
-import {
-  ReportBarChart,
-  GRANULARITIES,
-  TIMESHEET_COLS,
-  TIMESHEET_LABEL,
-  statCards,
-} from "./reports-page-helpers"
+import { reportLabel } from "@hbcfield/shared/client";
+import { useReportsPage, fmt } from "./use-reports-page";
+import { ReportBarChart, statCards } from "./reports-page-helpers";
 import { ReportsPageDataset } from "./reports-page-dataset"
 import { ReportsPageScheduleTitle } from "./reports-page-schedule-title"
 

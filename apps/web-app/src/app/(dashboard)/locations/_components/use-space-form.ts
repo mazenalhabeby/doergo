@@ -1,18 +1,22 @@
 "use client"
 
+import { ownershipKindOptions } from "./ownership-kind-picker"
 import { keys } from "@/lib/query-keys"
 import { useState, useCallback, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { Briefcase, Building2, Handshake } from "lucide-react"
 import type { LatLng } from "@hbcfield/shared/client"
 import { ATTENDANCE_CONSTANTS, DEFAULT_ORG_MODULES } from "@hbcfield/shared/client"
 import { locationsApi, workflowsApi, type CreateLocationInput } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { fetchTimezone } from "@/components/timezone-combobox"
 
-export const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } = ATTENDANCE_CONSTANTS
+export const {
+  MIN_GEOFENCE_RADIUS: GEO_MIN,
+  MAX_GEOFENCE_RADIUS: GEO_MAX,
+  DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT,
+} = ATTENDANCE_CONSTANTS
 
 /** SpaceForm's state and handlers — everything before its markup, moved here unchanged. */
 export function useSpaceForm({
@@ -20,12 +24,15 @@ export function useSpaceForm({
   onCancel,
   submitLabel,
   autoFocus = false,
-}: Pick<{
-  onCreated: () => void
-  onCancel?: () => void
-  submitLabel?: string
-  autoFocus?: boolean
-}, 'onCreated' | 'onCancel' | 'submitLabel' | 'autoFocus'>) {
+}: Pick<
+  {
+    onCreated: () => void
+    onCancel?: () => void
+    submitLabel?: string
+    autoFocus?: boolean
+  },
+  "onCreated" | "onCancel" | "submitLabel" | "autoFocus"
+>) {
   const { hasPlanFeature } = useAuth()
   const { t } = useTranslation()
   const resolvedSubmitLabel = submitLabel ?? t("locations.createSpace")
@@ -101,9 +108,7 @@ export function useSpaceForm({
       // Geofence only matters for a physical site; clamp to the backend's
       // allowed range so the value can never be rejected. Workspaces omit it
       // (the backend defaults it).
-      geofenceRadius: isPhysical
-        ? Math.min(GEO_MAX, Math.max(GEO_MIN, parseInt(radius) || GEO_DEFAULT))
-        : undefined,
+      geofenceRadius: isPhysical ? Math.min(GEO_MAX, Math.max(GEO_MIN, parseInt(radius) || GEO_DEFAULT)) : undefined,
       // A drawn boundary replaces the radius. Only sent for a physical site —
       // a workspace with no coordinates has nothing to enclose.
       geofencePolygon: isPhysical && polygon && polygon.length >= 3 ? polygon : undefined,
@@ -119,11 +124,7 @@ export function useSpaceForm({
     })
   }
 
-  const KIND_OPTIONS = [
-    { value: "PROJECT" as const, icon: Briefcase, label: t("locations.form.kindProject", "My project") },
-    { value: "COMPANY" as const, icon: Building2, label: t("locations.form.kindCompany", "My company") },
-    { value: "CUSTOMER" as const, icon: Handshake, label: t("locations.form.kindCustomer", "Customer company") },
-  ]
+  const KIND_OPTIONS = ownershipKindOptions(t)
 
   return {
     hasPlanFeature,

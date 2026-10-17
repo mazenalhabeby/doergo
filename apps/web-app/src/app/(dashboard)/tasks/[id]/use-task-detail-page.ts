@@ -1,31 +1,11 @@
 "use client"
 
 import { keys, invalidateTask } from "@/lib/query-keys"
-import { useRouteAccess } from "@/hooks/use-route-access"
 import { useClockGate, useOfficeStart } from "@/hooks"
-import { useState, use, useEffect, useCallback, useMemo } from "react"
-import { useTranslation } from "react-i18next"
-import { useRouter } from "next/navigation"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { STATUS_TRANSITIONS } from "@hbcfield/shared/client"
-import { getStatusConfig } from "@/lib/constants"
-import { useAuth } from "@/contexts/auth-context"
-import { useSpaceModules } from "@/hooks/use-space-modules"
-import { useBreadcrumbOverride } from "@/contexts/breadcrumb-context"
-import { useTaskPermissions } from "@/hooks/use-task-permissions"
-import { assigneeIds } from "@/lib/task-assignment"
-import { useWorkflow, getTransitionsForStatus } from "@/hooks/use-org-workflow"
-import {
-  tasksApi,
-  trackingApi,
-  sprintsApi,
-  phasesApi,
-  epicsApi,
-  type WorkflowStatus,
-  type OnBehalf,
-} from "@/lib/api"
+import { useState, useCallback } from "react"
+import { useMutation } from "@tanstack/react-query"
+import { tasksApi, type OnBehalf } from "@/lib/api"
 import { notify } from "@/lib/toast"
-import { useStepMove } from "@/components/step-forms/use-step-move"
 import { serverErrorMessage } from "@/lib/server-error"
 import { useHandoverPendingText } from "@/components/handover-pending-notice"
 import { useLatched } from "@/hooks/use-latched"
@@ -34,48 +14,14 @@ import { useTaskDetailPageData } from "./use-task-detail-page-data"
 /** TaskDetailPage's state and handlers — everything before its markup, moved here unchanged. */
 export function useTaskDetailPage({
   params,
-}: Pick<{
-  params: Promise<{ id: string }>
-}, 'params'>) {
-  const {
-    id,
-    t,
-    queryClient,
-    user,
-    canAddWork,
-    showAssignModal,
-    setShowAssignModal,
-    activityCount,
-    setActivityCount,
-    showEditDialog,
-    setShowEditDialog,
-    task,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    hasModule,
-    mayReadRoute,
-    routeData,
-    loadingRoute,
-    sprints,
-    phases,
-    epicsData,
-    workflowStatuses,
-    hasWorkflow,
-    moveWorkflow,
-    stepMove,
-    isCanceled,
-    isCompleted,
-    hasAssignee,
-    canEdit,
-    canAssign,
-    canCancel,
-    allowedTransitions,
-    reassignNote,
-    setReassignNote,
-    assignMutation,
-  } = useTaskDetailPageData({ params })
+}: Pick<
+  {
+    params: Promise<{ id: string }>
+  },
+  "params"
+>) {
+  const taskDetailPageData = useTaskDetailPageData({ params })
+  const { id, t, queryClient, showAssignModal, showEditDialog, task, moveWorkflow, stepMove } = taskDetailPageData
 
   const deleteMutation = useMutation({
     mutationFn: () =>
@@ -134,7 +80,10 @@ export function useTaskDetailPage({
   }
   const resumeMutation = useMutation({
     mutationFn: () => tasksApi.resumeWork(id),
-    onSuccess: () => { notify.success(t("tasks.handover.resumed")); refreshTask() },
+    onSuccess: () => {
+      notify.success(t("tasks.handover.resumed"))
+      refreshTask()
+    },
     onError: (e: Error) => {
       if (clockGate.intercept(e, () => resumeMutation.mutate())) return
       notify.error(serverErrorMessage(e, t))
@@ -197,43 +146,7 @@ export function useTaskDetailPage({
   const officeStartMounted = useLatched(officeStart.dialogProps.open)
 
   return {
-    id,
-    t,
-    queryClient,
-    user,
-    canAddWork,
-    showAssignModal,
-    setShowAssignModal,
-    activityCount,
-    setActivityCount,
-    showEditDialog,
-    setShowEditDialog,
-    task,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    hasModule,
-    mayReadRoute,
-    routeData,
-    loadingRoute,
-    sprints,
-    phases,
-    epicsData,
-    workflowStatuses,
-    hasWorkflow,
-    moveWorkflow,
-    stepMove,
-    isCanceled,
-    isCompleted,
-    hasAssignee,
-    canEdit,
-    canAssign,
-    canCancel,
-    allowedTransitions,
-    reassignNote,
-    setReassignNote,
-    assignMutation,
+    ...taskDetailPageData,
     deleteMutation,
     statusChangeMutation,
     clockGate,

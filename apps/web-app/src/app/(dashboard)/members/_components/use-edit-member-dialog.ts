@@ -1,23 +1,10 @@
 "use client"
 
 import { keys } from "@/lib/query-keys"
-import { useCompanies } from "@/components/companies/company-select"
-import { useState, useEffect } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useTranslation } from "react-i18next"
+import { useMutation } from "@tanstack/react-query"
 import { notify } from "@/lib/toast"
-import { createDefaultSchedule, type EditableScheduleRow } from "@/components/schedule-fields"
-import {
-  organizationsApi,
-  employeesApi,
-  type OrgMember,
-  type UpdateMemberInput,
-  type UpdateEmployeeInput,
-  type ScheduleEntryInput,
-} from "@/lib/api"
-import { useAuth } from "@/contexts/auth-context"
+import { employeesApi, type OrgMember, type UpdateEmployeeInput, type ScheduleEntryInput } from "@/lib/api"
 import { copyText } from "@/lib/clipboard"
-import { useMemberEditorData } from "./edit-member-dialog/use-member-editor-data"
 import { useEditMemberDialogData } from "./use-edit-member-dialog-data"
 
 /** EditMemberDialog's state and handlers — everything before its markup, moved here unchanged. */
@@ -26,57 +13,39 @@ export function useEditMemberDialog({
   isSelf,
   onClose,
   onSaved,
-}: Pick<{
-  member: OrgMember | null
-  /** True when editing your own row — you can edit your profile but not your own role. */
-  isSelf?: boolean
-  onClose: () => void
-  onSaved?: () => void
-}, 'member' | 'isSelf' | 'onClose' | 'onSaved'>) {
+}: Pick<
+  {
+    member: OrgMember | null
+    /** True when editing your own row — you can edit your profile but not your own role. */
+    isSelf?: boolean
+    onClose: () => void
+    onSaved?: () => void
+  },
+  "member" | "isSelf" | "onClose" | "onSaved"
+>) {
+  const editMemberDialogData = useEditMemberDialogData({ member, isSelf, onClose, onSaved })
   const {
     t,
     queryClient,
-    user,
-    canViewLabourCost,
     firstName,
-    setFirstName,
     lastName,
-    setLastName,
     email,
-    setEmail,
     position,
-    setPosition,
     employerEntityId,
-    setEmployerEntityId,
-    mainCompany,
     dateOfBirth,
-    setDateOfBirth,
     scheduleType,
-    setScheduleType,
     monthlyHourBudget,
-    setMonthlyHourBudget,
     scheduleRows,
-    setScheduleRows,
     tempPassword,
-    setTempPassword,
-    copied,
     setCopied,
     specialty,
     employmentType,
-    setEmploymentType,
     leaveAllowance,
-    setLeaveAllowance,
     isExternalMember,
     employmentStartDate,
-    setEmploymentStartDate,
-    memberRates,
-    usedPositions,
-    locations,
-    allAssignments,
     workerMutation,
     updateMutation,
-    resetPasswordMutation,
-  } = useEditMemberDialogData({ member, isSelf, onClose, onSaved })
+  } = editMemberDialogData
 
   const saveScheduleMutation = useMutation({
     mutationFn: ({ memberId, schedule }: { memberId: string; schedule: ScheduleEntryInput[] }) =>
@@ -174,44 +143,7 @@ export function useEditMemberDialog({
   }
 
   return {
-    t,
-    user,
-    canViewLabourCost,
-    firstName,
-    setFirstName,
-    lastName,
-    setLastName,
-    email,
-    setEmail,
-    position,
-    setPosition,
-    employerEntityId,
-    setEmployerEntityId,
-    mainCompany,
-    dateOfBirth,
-    setDateOfBirth,
-    scheduleType,
-    setScheduleType,
-    monthlyHourBudget,
-    setMonthlyHourBudget,
-    scheduleRows,
-    setScheduleRows,
-    tempPassword,
-    setTempPassword,
-    copied,
-    employmentType,
-    setEmploymentType,
-    leaveAllowance,
-    setLeaveAllowance,
-    isExternalMember,
-    employmentStartDate,
-    setEmploymentStartDate,
-    memberRates,
-    usedPositions,
-    locations,
-    allAssignments,
-    updateMutation,
-    resetPasswordMutation,
+    ...editMemberDialogData,
     handleSave,
     handleCopyPassword,
     invalidateAssignments,

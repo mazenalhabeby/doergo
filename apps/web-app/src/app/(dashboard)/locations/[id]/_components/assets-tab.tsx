@@ -1,30 +1,21 @@
 "use client"
 
-import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, FileText, Package, Plus, Pencil, Search, Trash2, User } from "lucide-react"
+import { FileText, Package, Plus, Pencil, Trash2 } from "lucide-react"
 
-import { assetsApi, type AssetCategory, type AssetStatus } from "@/lib/api"
-import {
-  normalizeKindShape, kindHolderLabel, detailRowsForKind, type KindShape,
-  canManageAssetsIn, ASSET_STATUS_ORDER,
-} from "@hbcfield/shared/client"
+import { assetsApi, type AssetCategory } from "@/lib/api"
+import { normalizeKindShape, kindHolderLabel, canManageAssetsIn } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SectionHeader, EmptyState } from "./section-header"
 import { AssetKindDialog } from "./asset-kind-dialog"
-import { AssetRecordDialog, type AssetRecord } from "@/components/assets/asset-record-dialog"
 import { ContractDialog } from "@/components/assets/contract-dialog"
 import { ProposalQueue } from "@/components/assets/proposal-queue"
 import { OrphanAssetsCard } from "./orphan-assets-card"
-import { AssetStatusChip, useAssetStatusLabel } from "@/components/assets/asset-status"
-import { AssetRetireDialog } from "@/components/assets/asset-retire-dialog"
 import { keys } from "@/lib/query-keys"
 import { KindContents } from "./kind-contents"
 
@@ -99,7 +90,10 @@ export function AssetsTab({
 
   const del = useMutation({
     mutationFn: (id: string) => assetsApi.deleteCategory(id),
-    onSuccess: () => { notify.success(t("assetKinds.removed", "Removed")); invalidate() },
+    onSuccess: () => {
+      notify.success(t("assetKinds.removed", "Removed"))
+      invalidate()
+    },
     onError: (err: Error) => notify.error(err?.message || t("assetKinds.removeFailed", "Could not remove this type")),
   })
 
@@ -126,21 +120,25 @@ export function AssetsTab({
               apartments with no member holder has nobody to hand one to, and
               offering the button there is a dead end three clicks deep.
             */}
-            {canUseContracts && kinds.some((k: AssetCategory) => {
-              const shape = normalizeKindShape(k.config)
-              return shape.holder.enabled && shape.holder.members
-            }) && (
-              <ContractDialog
-                kinds={kinds}
-                spaceId={spaceId}
-                onCreated={(id) => { invalidate(); router.push(`/assets/${id}`) }}
-                trigger={
-                  <Button size="sm" variant="outline">
-                    <FileText className="mr-1.5 h-4 w-4" /> {t("contract.button", "From a contract")}
-                  </Button>
-                }
-              />
-            )}
+            {canUseContracts &&
+              kinds.some((k: AssetCategory) => {
+                const shape = normalizeKindShape(k.config)
+                return shape.holder.enabled && shape.holder.members
+              }) && (
+                <ContractDialog
+                  kinds={kinds}
+                  spaceId={spaceId}
+                  onCreated={(id) => {
+                    invalidate()
+                    router.push(`/assets/${id}`)
+                  }}
+                  trigger={
+                    <Button size="sm" variant="outline">
+                      <FileText className="mr-1.5 h-4 w-4" /> {t("contract.button", "From a contract")}
+                    </Button>
+                  }
+                />
+              )}
             {/* Creating a type is a write (`canManageAssets` in this workspace); a viewer sees the list only. */}
             {canUseContracts && (
               <AssetKindDialog
@@ -182,7 +180,9 @@ export function AssetsTab({
 
       {kindsQ.isLoading ? (
         <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
         </div>
       ) : kinds.length === 0 ? (
         <EmptyState icon={Package} title={t("assetKinds.empty", "No types yet")} />
@@ -209,12 +209,19 @@ export function AssetsTab({
             return (
               <div
                 key={kind.id}
-                className={"group relative rounded-2xl border border-border bg-card p-4 " + "transition-colors hover:border-primary/40"}>
+                className={
+                  "group relative rounded-2xl border border-border bg-card p-4 " +
+                  "transition-colors hover:border-primary/40"
+                }
+              >
                 <button onClick={() => showKind(kind.id)} className="block w-full text-left">
                   <div className="flex items-start gap-3">
                     <span
-                      className={"flex h-10 w-10 shrink-0 items-center justify-center rounded-xl " +
-                        "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400"}>
+                      className={
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl " +
+                        "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400"
+                      }
+                    >
                       <Package className="h-4.5 w-4.5" />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -235,36 +242,38 @@ export function AssetsTab({
                       <span className="text-[11px] text-muted-foreground/60">
                         {t("assetKinds.summaryNothing", "nothing set up yet")}
                       </span>
-                    ) : bits.map((b) => (
-                      <span key={b} className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                        {b}
-                      </span>
-                    ))}
+                    ) : (
+                      bits.map((b) => (
+                        <span key={b} className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                          {b}
+                        </span>
+                      ))
+                    )}
                   </div>
                 </button>
 
                 {/* Kept out of the button: a link wrapping a button is invalid,
                     and nesting them makes the hit areas fight. */}
                 {canUseContracts && (
-                <div className="absolute right-3 top-3 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                  <AssetKindDialog
-                    spaceId={spaceId}
-                    existing={kind}
-                    onSaved={invalidate}
-                    trigger={
-                      <button className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                    }
-                  />
-                  <button
-                    onClick={() => del.mutate(kind.id)}
-                    className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive"
-                    aria-label={t("common.remove", "Remove")}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                  <div className="absolute right-3 top-3 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    <AssetKindDialog
+                      spaceId={spaceId}
+                      existing={kind}
+                      onSaved={invalidate}
+                      trigger={
+                        <button className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      }
+                    />
+                    <button
+                      onClick={() => del.mutate(kind.id)}
+                      className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive"
+                      aria-label={t("common.remove", "Remove")}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 )}
               </div>
             )
