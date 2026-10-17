@@ -1,5 +1,13 @@
 # Code audit: backend, web, phone, shared
 
+> **Unattended run 2026-10-17 — summary (details §12).** Branch `refactor/code-audit-2026-10`, 16 commits, not
+> pushed, not deployed. Long lines ~4,470 → 581; files over 300 lines 365 → 13; gateway↔service messages typed
+> (string patterns 1,153 → 3, events 215 → 1); 2 performance fixes (clock-out sheet, workspaces page); 52
+> identical UI copies merged. Every package typechecks; every suite green except the two PDF-parsing specs that
+> failed before. **Waiting for you:** the UI look per piece (mockup https://claude.ai/artifact/Gs8d8fBoMYVKa2rkQpxNVk),
+> the scope gap in `get_technician_assignments`, the lost `task_comment_added` notification, join-request
+> `userName`, the Vienna/UTC calendar default, B3 validation, Settings lazy sections.
+
 > 16 Oct 2026. The whole codebase: 2,452 source files, 387,814 lines (tests, locales and
 > migrations excluded). Measured by script, plus four detailed reviews of the largest files.
 > Detailed reports, with file:line for every finding: `docs/audit/2026-10-16/`
@@ -320,3 +328,11 @@ except tasks for a manager (9: the role summary above the list — deferring it 
 Fixed: workspaces 22 → 6 first-second requests, 409 → 231 kB; calendar 303 → 227 kB. For the user: Settings
 (297 kB) could lazy-load each section, but each would show a brief skeleton the first time — a visible change.
 Duplicate refreshes on chat/team are the socket catch-up and are deliberate.
+
+**Phase 4 — UI pieces and repeated logic.** Merged only what renders/behaves identically: web ChoiceChip (5),
+EmptyNote/PageNotice/DashedEmptyBox (15); phone toneColor (16), LoadingLine (14), NotAllowed (2), sheet primitives
+into amazen (105 importers); logic hashCode, read receipts, presence wording, pagination meta, 5 date sites.
+Variants that differ: `docs/design/ui-pieces/variants.md`, `variants-phone.md`, mockup
+https://claude.ai/artifact/Gs8d8fBoMYVKa2rkQpxNVk. Left on purpose (they differ in behaviour): 14 hand-built
+names (`personName` would drop "null"), phone hand-rolled refresh ×18 (each handles 401/dedupe differently),
+task invalidation copies (different key sets), legacy COLORS (fixed hex vs themed tokens).
