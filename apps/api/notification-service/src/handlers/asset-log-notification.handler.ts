@@ -1,17 +1,12 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import { eventPattern, type EventPayload, assetLogDueEvent } from '@hbcfield/shared/microservices';
+import type { AssetLogDueItem } from '@hbcfield/shared/microservices';
+
+type DueItem = AssetLogDueItem;
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { joined, msg, plural, type Msg } from '../i18n/translate';
-
-interface DueItem {
-  logType: string;
-  label: string;
-  stage: 'soon' | 'overdue';
-  daysLeft: number | null;
-  unitsLeft: number | null;
-  unit: string | null;
-}
 
 /**
  * Something on an asset is due: an oil change, a safety check, a service.
@@ -33,8 +28,8 @@ export class AssetLogNotificationHandler {
     private readonly websocketGateway: WebsocketGateway,
   ) {}
 
-  @EventPattern('asset_log_due')
-  async handleDue(@Payload() data: any) {
+  @EventPattern(eventPattern(assetLogDueEvent))
+  async handleDue(@Payload() data: EventPayload<typeof assetLogDueEvent>) {
     const recipientIds: string[] = Array.isArray(data?.recipientIds) ? data.recipientIds : [];
     const items: DueItem[] = Array.isArray(data?.items) ? data.items : [];
     if (recipientIds.length === 0 || items.length === 0) return;

@@ -1,5 +1,13 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  supportMessageEvent,
+  supportSlaBreachedEvent,
+  supportTicketCreatedEvent,
+  supportTicketUpdatedEvent,
+} from '@hbcfield/shared/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { msg, verbatim } from '../i18n/translate';
@@ -18,17 +26,17 @@ export class SupportNotificationHandler {
     private readonly websocketGateway: WebsocketGateway,
   ) {}
 
-  @EventPattern('support_ticket_created')
-  async handleCreated(@Payload() data: { ticket: any }) {
+  @EventPattern(eventPattern(supportTicketCreatedEvent))
+  async handleCreated(@Payload() data: EventPayload<typeof supportTicketCreatedEvent>) {
     this.logger.log(`Support ticket created: ${data.ticket?.id}`);
     // Surface the new ticket + its first message in every agent inbox.
     this.websocketGateway.emitSupportTicketUpdated(data.ticket);
   }
 
-  @EventPattern('support_message')
+  @EventPattern(eventPattern(supportMessageEvent))
   async handleMessage(
     @Payload()
-    data: { ticketId: string; message: any; ticket: any; isInternalNote?: boolean; customerId: string },
+    data: EventPayload<typeof supportMessageEvent>,
   ) {
     this.websocketGateway.emitSupportMessage(data);
     // Push the customer when an agent (not an internal note) replies.
@@ -46,13 +54,13 @@ export class SupportNotificationHandler {
     }
   }
 
-  @EventPattern('support_ticket_updated')
-  handleUpdated(@Payload() data: { ticket: any }) {
+  @EventPattern(eventPattern(supportTicketUpdatedEvent))
+  handleUpdated(@Payload() data: EventPayload<typeof supportTicketUpdatedEvent>) {
     this.websocketGateway.emitSupportTicketUpdated(data.ticket);
   }
 
-  @EventPattern('support_sla_breached')
-  handleSlaBreached(@Payload() data: { ticket: any }) {
+  @EventPattern(eventPattern(supportSlaBreachedEvent))
+  handleSlaBreached(@Payload() data: EventPayload<typeof supportSlaBreachedEvent>) {
     this.websocketGateway.emitSupportSlaBreached(data.ticket);
   }
 }

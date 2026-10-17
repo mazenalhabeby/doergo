@@ -10,4 +10,5 @@ export { BaseGatewayService } from './base-gateway.service';
 export { RpcHttpExceptionFilter } from './rpc-exception.filter';
 export { assertServiceOk, unwrapServiceResult, isServiceRefusal, type ServiceRefusal } from './service-result';
 export { rpc, pattern, sendRpc, type RpcContract, type RpcRequest, type RpcReply } from './contract';
+export { event, eventPattern, emitEvent, type EventContract, type EventPayload } from './event';
 export * from './contracts';

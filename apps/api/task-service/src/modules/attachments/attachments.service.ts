@@ -7,6 +7,7 @@ import { MediaSigner } from '../../common/storage/media-signer.service';
 import { TaskEventType, success } from '@hbcfield/shared';
 import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES, attachmentTypeOf, attachmentKeyPrefixes } from './attachments-helpers';
+import { emitEvent, attachmentAddedEvent } from '@hbcfield/shared/microservices';
 
 export { attachmentTypeOf, attachmentKeyPrefixes } from './attachments-helpers';
 
@@ -55,7 +56,11 @@ export class AttachmentsService {
     } as TaskAccessFacts);
 
     const key = typeof data.fileKey === 'string' && data.fileKey ? data.fileKey : store.keyFromUrl(data.fileUrl);
-    if (!key || key.includes('..') || !attachmentKeyPrefixes(data.organizationId, data.taskId).some((p) => key.startsWith(p))) {
+    if (
+      !key ||
+      key.includes('..') ||
+      !attachmentKeyPrefixes(data.organizationId, data.taskId).some((p) => key.startsWith(p))
+    ) {
       throw new BadRequestException('Invalid file');
     }
     if (!data.fileName || data.fileName.length > 255) {
@@ -92,20 +97,21 @@ export class AttachmentsService {
       id: data.attachmentId,
       find: (id) => this.prisma.attachment.findUnique({ where: { id } }),
       isSame: (a) => a.taskId === data.taskId && a.uploadedById === data.uploadedById,
-      create: () => this.prisma.attachment.create({
-      data: {
-        ...(data.attachmentId ? { id: data.attachmentId } : {}),
-        taskId: data.taskId,
-        uploadedById: data.uploadedById,
-        fileName: data.fileName,
-        fileKey: key,
-        // Written for app 1.0.5 only; nothing server-side reads it any more.
-        fileUrl: store.privateUrl(key),
-        mimeType: data.fileType,
-        fileType: attachmentTypeOf(data.fileType),
-        fileSize: object.sizeBytes,
-      },
-      }),
+      create: () =>
+        this.prisma.attachment.create({
+          data: {
+            ...(data.attachmentId ? { id: data.attachmentId } : {}),
+            taskId: data.taskId,
+            uploadedById: data.uploadedById,
+            fileName: data.fileName,
+            fileKey: key,
+            // Written for app 1.0.5 only; nothing server-side reads it any more.
+            fileUrl: store.privateUrl(key),
+            mimeType: data.fileType,
+            fileType: attachmentTypeOf(data.fileType),
+            fileSize: object.sizeBytes,
+          },
+        }),
     });
     if (!created) return success(await this.media.sign(attachment));
 
@@ -122,17 +128,12 @@ export class AttachmentsService {
     const signed = await this.media.sign(attachment);
 
     // Notify
-    this.notificationClient.emit('attachment_added', { taskId: data.taskId, attachment: signed });
+    emitEvent(this.notificationClient, attachmentAddedEvent, { taskId: data.taskId, attachment: signed });
 
     return success(signed);
   }
 
-  async findByTask(data: {
-    taskId: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
+  async findByTask(data: { taskId: string; userId: string; userRole: string; organizationId: string }) {
     // Verify task access
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) {

@@ -3,6 +3,7 @@ import type { ChatSystemMeta } from '@hbcfield/shared';
 import type { PrismaService } from '../../common/prisma/prisma.service';
 import { CHAT_USER_SELECT } from './chat-shape';
 import type { ChatCountersService } from './chat-counters.service';
+import { emitEvent, chatMembersChangedEvent, chatMessageEvent } from '@hbcfield/shared/microservices';
 
 /** "First Last", for a system line's snapshot of who did what. */
 export { personName } from '@hbcfield/shared';
@@ -29,7 +30,7 @@ export async function writeSystemLine(
     select: { userId: true },
   });
   const { unread, badge } = await deps.counters.afterSend(conversationId);
-  deps.notificationClient.emit('chat_message', {
+  emitEvent(deps.notificationClient, chatMessageEvent, {
     conversationId,
     message,
     recipients: [...new Set([...members.map((m) => m.userId), ...alsoTell])],
@@ -51,7 +52,7 @@ export function announceMembersChanged(
   userIds: string[],
   removedIds: string[] = [],
 ) {
-  notificationClient.emit('chat_members_changed', {
+  emitEvent(notificationClient, chatMembersChangedEvent, {
     conversationId,
     userIds: [...new Set([...userIds, ...removedIds])],
     removedIds,

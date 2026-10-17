@@ -1,5 +1,11 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  approvalReminderEvent,
+  approvalSecondStepEvent,
+} from '@hbcfield/shared/microservices';
 import { ApprovalPushService } from './../modules/push/approval-push.service';
 
 /** Approvals inbox events. */
@@ -10,16 +16,10 @@ export class ApprovalNotificationHandler {
   constructor(private readonly approvalPush: ApprovalPushService) {}
 
   /** An office rule's first approval is in: tell the people who give the second. */
-  @EventPattern('approval_second_step')
+  @EventPattern(eventPattern(approvalSecondStepEvent))
   async handleSecondStep(
     @Payload()
-    data: {
-      recipientIds?: string[];
-      kind: string;
-      itemId: string;
-      firstName?: string;
-      subjectName?: string;
-    },
+    data: EventPayload<typeof approvalSecondStepEvent>,
   ) {
     if (!data?.recipientIds?.length) return;
     try {
@@ -36,17 +36,10 @@ export class ApprovalNotificationHandler {
   }
 
   /** Nobody answered an item under an office rule: a reminder, or it is passed on. */
-  @EventPattern('approval_reminder')
+  @EventPattern(eventPattern(approvalReminderEvent))
   async handleReminder(
     @Payload()
-    data: {
-      recipientIds?: string[];
-      kind: 'overtime' | 'request' | 'expense';
-      itemId: string;
-      stage: 'REMIND' | 'ESCALATE';
-      subjectName?: string;
-      hours?: number;
-    },
+    data: EventPayload<typeof approvalReminderEvent>,
   ) {
     if (!data?.recipientIds?.length) return;
     try {

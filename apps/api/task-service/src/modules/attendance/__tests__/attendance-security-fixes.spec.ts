@@ -50,11 +50,23 @@ describe('list limits', () => {
 // ── #9 The org room hears THAT somebody clocked in, not where ───────────────
 describe('clock-in/out broadcast', () => {
   const row = {
-    id: 'e1', userId: 'u1', status: 'CLOCKED_IN', locationId: 's1', isRemote: true,
-    clockInAt: new Date('2026-10-01T06:00:00Z'), clockOutAt: null,
-    clockInLat: 48.2, clockInLng: 16.37, clockInAccuracy: 5, clockInPlace: 'Hauptstraße 1, Wien',
-    awayReason: 'Doctor', notes: 'private', flagReasons: ['LATE'], breakPlan: [],
-    location: { name: 'Main Office', lat: 1, lng: 2 }, user: { firstName: 'A', lastName: 'B', email: 'a@b.c' },
+    id: 'e1',
+    userId: 'u1',
+    status: 'CLOCKED_IN',
+    locationId: 's1',
+    isRemote: true,
+    clockInAt: new Date('2026-10-01T06:00:00Z'),
+    clockOutAt: null,
+    clockInLat: 48.2,
+    clockInLng: 16.37,
+    clockInAccuracy: 5,
+    clockInPlace: 'Hauptstraße 1, Wien',
+    awayReason: 'Doctor',
+    notes: 'private',
+    flagReasons: ['LATE'],
+    breakPlan: [],
+    location: { name: 'Main Office', lat: 1, lng: 2 },
+    user: { firstName: 'A', lastName: 'B', email: 'a@b.c' },
   };
 
   it('carries no coordinates, reasons, notes or flags', () => {
@@ -69,7 +81,8 @@ describe('clock-in/out broadcast', () => {
 
   it('every clock emit goes through the projector — never the raw row', () => {
     const src = readAttendanceServiceSource();
-    const emits = src.match(/emit\('attendance_clock_(in|out)',\s*\{[\s\S]*?\}\);/g) ?? [];
+    // The emits name their event contract (attendanceClockInEvent / attendanceClockOutEvent).
+    const emits = src.match(/emitEvent\([^,]+,\s*attendanceClock(In|Out)Event,\s*\{[\s\S]*?\}\);/g) ?? [];
     // Every close goes through ClockOutService.closeEntry, so the clock-out emit is ONE place.
     expect(emits.length).toBeGreaterThanOrEqual(3);
     for (const e of emits) expect(e).toMatch(/timeEntry: clockEventEntry\(/);
@@ -77,22 +90,44 @@ describe('clock-in/out broadcast', () => {
 });
 
 // ── #6 Break rules are configured only where the caller manages ─────────────
-describe('break-rule writes are narrowed to the rule\'s workspace', () => {
+describe("break-rule writes are narrowed to the rule's workspace", () => {
   const prisma: any = {
-    breakRule: { findFirst: jest.fn(), update: jest.fn().mockResolvedValue({ id: 'r1' }), create: jest.fn().mockResolvedValue({ id: 'r1', name: 'Rest' }) },
+    breakRule: {
+      findFirst: jest.fn(),
+      update: jest.fn().mockResolvedValue({ id: 'r1' }),
+      create: jest.fn().mockResolvedValue({ id: 'r1', name: 'Rest' }),
+    },
     shift: { findFirst: jest.fn() },
     companyLocation: { findFirst: jest.fn().mockResolvedValue({ id: 'space-b' }) },
   };
   const svc = new BreakRulesService(prisma);
-  const rule = { id: 'r1', organizationId: ORG, spaceId: 'space-b', shiftId: null, trigger: 'AFTER_WORKED', afterMinutes: 240, durationMinutes: 30 };
+  const rule = {
+    id: 'r1',
+    organizationId: ORG,
+    spaceId: 'space-b',
+    shiftId: null,
+    trigger: 'AFTER_WORKED',
+    afterMinutes: 240,
+    durationMinutes: 30,
+  };
   beforeEach(() => jest.clearAllMocks());
 
   it('a manager of A cannot change, remove or add a rest in B', async () => {
     prisma.breakRule.findFirst.mockResolvedValue(rule);
-    await expect(svc.update({ id: 'r1', organizationId: ORG, scopeSpaceIds: ['space-a'] } as any)).rejects.toBeInstanceOf(NotFoundException);
-    await expect(svc.remove({ id: 'r1', organizationId: ORG, scopeSpaceIds: ['space-a'] })).rejects.toBeInstanceOf(NotFoundException);
     await expect(
-      svc.create({ organizationId: ORG, spaceId: 'space-b', trigger: 'AFTER_WORKED', afterMinutes: 60, scopeSpaceIds: ['space-a'] } as any),
+      svc.update({ id: 'r1', organizationId: ORG, scopeSpaceIds: ['space-a'] } as any),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    await expect(svc.remove({ id: 'r1', organizationId: ORG, scopeSpaceIds: ['space-a'] })).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    await expect(
+      svc.create({
+        organizationId: ORG,
+        spaceId: 'space-b',
+        trigger: 'AFTER_WORKED',
+        afterMinutes: 60,
+        scopeSpaceIds: ['space-a'],
+      } as any),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(prisma.breakRule.update).not.toHaveBeenCalled();
     expect(prisma.breakRule.create).not.toHaveBeenCalled();
@@ -101,7 +136,9 @@ describe('break-rule writes are narrowed to the rule\'s workspace', () => {
   it('a rule on an org-wide shift needs an org-wide grant', async () => {
     prisma.breakRule.findFirst.mockResolvedValue({ ...rule, spaceId: null, shiftId: 'sh1' });
     prisma.shift.findFirst.mockResolvedValue({ spaceId: null });
-    await expect(svc.remove({ id: 'r1', organizationId: ORG, scopeSpaceIds: ['space-a'] })).rejects.toBeInstanceOf(NotFoundException);
+    await expect(svc.remove({ id: 'r1', organizationId: ORG, scopeSpaceIds: ['space-a'] })).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 
   it('org-wide (null) and the right workspace still work', async () => {
@@ -135,20 +172,35 @@ describe('GET /attendance/locations/:id/entries', () => {
   it('the permission in the space counts only through an assignment active now', async () => {
     const ended = svcWith(false);
     await expect(
-      ended.getLocationEntries({ locationId: 'space-b', organizationId: ORG, requesterId: 'u', viewScopeSpaceIds: ['space-b'] }),
+      ended.getLocationEntries({
+        locationId: 'space-b',
+        organizationId: ORG,
+        requesterId: 'u',
+        viewScopeSpaceIds: ['space-b'],
+      }),
     ).rejects.toBeInstanceOf(NotFoundException);
     const where = ended.prisma.spaceAssignment.findFirst.mock.calls[0][0].where;
     expect(where.OR).toEqual([{ effectiveTo: null }, { effectiveTo: { gte: expect.any(Date) } }]);
     expect(where.effectiveFrom).toEqual({ lte: expect.any(Date) });
 
     const supervisor = svcWith(true); // an External Supervisor holds exactly this
-    await supervisor.getLocationEntries({ locationId: 'space-b', organizationId: ORG, requesterId: 'u', viewScopeSpaceIds: ['space-b'] });
+    await supervisor.getLocationEntries({
+      locationId: 'space-b',
+      organizationId: ORG,
+      requesterId: 'u',
+      viewScopeSpaceIds: ['space-b'],
+    });
     expect(supervisor.prisma.timeEntry.findMany).toHaveBeenCalled();
   });
 
   it('org-wide reads without an assignment', async () => {
     const svc = svcWith(false);
-    await svc.getLocationEntries({ locationId: 'space-b', organizationId: ORG, requesterId: 'u', viewScopeSpaceIds: null });
+    await svc.getLocationEntries({
+      locationId: 'space-b',
+      organizationId: ORG,
+      requesterId: 'u',
+      viewScopeSpaceIds: null,
+    });
     expect(svc.prisma.spaceAssignment.findFirst).not.toHaveBeenCalled();
     expect(svc.prisma.timeEntry.findMany).toHaveBeenCalled();
   });
@@ -159,10 +211,15 @@ describe('GET /attendance/entries (batch)', () => {
   function svcWith(activeIn: string[]) {
     const svc = Object.create(AttendanceEntriesReadService.prototype) as any;
     svc.prisma = {
-      companyLocation: { findMany: jest.fn(({ where }: any) => Promise.resolve(where.id.in.map((id: string) => ({ id })))) },
+      companyLocation: {
+        findMany: jest.fn(({ where }: any) => Promise.resolve(where.id.in.map((id: string) => ({ id })))),
+      },
       spaceAssignment: {
         findMany: jest.fn(({ where }: any) =>
-          Promise.resolve(where.spaceId.in.filter((id: string) => activeIn.includes(id)).map((spaceId: string) => ({ spaceId })))),
+          Promise.resolve(
+            where.spaceId.in.filter((id: string) => activeIn.includes(id)).map((spaceId: string) => ({ spaceId })),
+          ),
+        ),
       },
       timeEntry: { findMany: jest.fn().mockResolvedValue([]) },
     };
@@ -172,14 +229,24 @@ describe('GET /attendance/entries (batch)', () => {
 
   it('on the roster without the permission (External Observer) reads nothing', async () => {
     const svc = svcWith(['space-a', 'space-b']);
-    const res = await svc.getLocationEntriesBatch({ locationIds: ['space-a', 'space-b'], organizationId: ORG, requesterId: 'u', viewScopeSpaceIds: [] });
+    const res = await svc.getLocationEntriesBatch({
+      locationIds: ['space-a', 'space-b'],
+      organizationId: ORG,
+      requesterId: 'u',
+      viewScopeSpaceIds: [],
+    });
     expect(res.data).toEqual([]);
     expect(svc.prisma.timeEntry.findMany).not.toHaveBeenCalled();
   });
 
   it('the permission in a space counts only there, and only through an assignment active now', async () => {
     const svc = svcWith(['space-a']); // assigned to B too, but that assignment has ended
-    await svc.getLocationEntriesBatch({ locationIds: ['space-a', 'space-b', 'space-c'], organizationId: ORG, requesterId: 'u', viewScopeSpaceIds: ['space-a', 'space-b'] });
+    await svc.getLocationEntriesBatch({
+      locationIds: ['space-a', 'space-b', 'space-c'],
+      organizationId: ORG,
+      requesterId: 'u',
+      viewScopeSpaceIds: ['space-a', 'space-b'],
+    });
     expect(readIds(svc)).toEqual(['space-a']);
     const where = svc.prisma.spaceAssignment.findMany.mock.calls[0][0].where;
     expect(where.spaceId).toEqual({ in: ['space-a', 'space-b'] });
@@ -188,7 +255,12 @@ describe('GET /attendance/entries (batch)', () => {
 
   it('org-wide reads every requested workspace without an assignment', async () => {
     const svc = svcWith([]);
-    await svc.getLocationEntriesBatch({ locationIds: ['space-a', 'space-b'], organizationId: ORG, requesterId: 'u', viewScopeSpaceIds: null });
+    await svc.getLocationEntriesBatch({
+      locationIds: ['space-a', 'space-b'],
+      organizationId: ORG,
+      requesterId: 'u',
+      viewScopeSpaceIds: null,
+    });
     expect(svc.prisma.spaceAssignment.findMany).not.toHaveBeenCalled();
     expect(readIds(svc)).toEqual(['space-a', 'space-b']);
   });
@@ -213,9 +285,14 @@ describe('GET /attendance/entries/:id/breaks', () => {
     service = breakServicesOf(module);
   });
 
-  it('asks for the caller\'s own entry OR one in their attendance spaces', async () => {
+  it("asks for the caller's own entry OR one in their attendance spaces", async () => {
     await expect(
-      service.getBreaksForEntry({ timeEntryId: 'e1', organizationId: ORG, requesterId: 'me', scopeSpaceIds: ['space-a'] }),
+      service.getBreaksForEntry({
+        timeEntryId: 'e1',
+        organizationId: ORG,
+        requesterId: 'me',
+        scopeSpaceIds: ['space-a'],
+      }),
     ).rejects.toBeInstanceOf(NotFoundException);
     const where = prisma.timeEntry.findFirst.mock.calls[0][0].where;
     expect(where.OR).toEqual([{ userId: 'me' }, { locationId: { in: ['space-a'] } }]);
@@ -242,9 +319,21 @@ describe('self-decisions', () => {
 
   it('a shift leader cannot approve, reject or edit their own entry', async () => {
     const svc = approval(own);
-    await expect(svc.approveEntry({ entryId: 'e1', approverId: 'lead', organizationId: ORG })).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(svc.rejectEntry({ entryId: 'e1', approverId: 'lead', organizationId: ORG, reason: 'x' })).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(svc.editEntry({ entryId: 'e1', editorId: 'lead', organizationId: ORG, reason: 'x', clockInAt: '2026-10-01T05:00:00Z' })).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(svc.approveEntry({ entryId: 'e1', approverId: 'lead', organizationId: ORG })).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    await expect(
+      svc.rejectEntry({ entryId: 'e1', approverId: 'lead', organizationId: ORG, reason: 'x' }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      svc.editEntry({
+        entryId: 'e1',
+        editorId: 'lead',
+        organizationId: ORG,
+        reason: 'x',
+        clockInAt: '2026-10-01T05:00:00Z',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
     expect(svc.prisma.timeEntry.update).not.toHaveBeenCalled();
   });
 
@@ -252,7 +341,16 @@ describe('self-decisions', () => {
     const svc = approval(own);
     svc.prisma.user = { findFirst: jest.fn().mockResolvedValueOnce({ id: 'lead' }).mockResolvedValueOnce(null) };
     await expect(
-      svc.addManualEntries({ editorId: 'lead', userId: 'lead', organizationId: ORG, locationId: 's1', startDate: '2026-09-01', endDate: '2026-09-01', startTime: '08:00', endTime: '16:00' }),
+      svc.addManualEntries({
+        editorId: 'lead',
+        userId: 'lead',
+        organizationId: ORG,
+        locationId: 's1',
+        startDate: '2026-09-01',
+        endDate: '2026-09-01',
+        startTime: '08:00',
+        endTime: '16:00',
+      }),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
@@ -279,14 +377,24 @@ describe('self-decisions', () => {
       user: notAdmin,
       timeOff: {
         findUnique: jest.fn().mockResolvedValue({
-          id: 't1', technicianId: 'lead', status: 'PENDING', startDate: new Date(), endDate: new Date(),
+          id: 't1',
+          technicianId: 'lead',
+          status: 'PENDING',
+          startDate: new Date(),
+          endDate: new Date(),
           technician: { organizationId: ORG, spaceAssignments: [{ spaceId: 'space-a' }] },
         }),
         update: jest.fn(),
       },
     };
     await expect(
-      svc.approveTimeOff({ timeOffId: 't1', organizationId: ORG, approverId: 'lead', approved: true, scopeSpaceIds: ['space-a'] }),
+      svc.approveTimeOff({
+        timeOffId: 't1',
+        organizationId: ORG,
+        approverId: 'lead',
+        approved: true,
+        scopeSpaceIds: ['space-a'],
+      }),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(svc.prisma.timeOff.update).not.toHaveBeenCalled();
   });
@@ -313,8 +421,14 @@ describe('a back-filled shift on a DST change day', () => {
   const created: any[] = [];
   const tx = {
     timeEntry: {
-      create: jest.fn(async ({ data }: any) => { created.push(data); return { id: `te-${created.length}`, ...data }; }),
-      createMany: jest.fn(async ({ data }: any) => { created.push(...data); return { count: data.length }; }),
+      create: jest.fn(async ({ data }: any) => {
+        created.push(data);
+        return { id: `te-${created.length}`, ...data };
+      }),
+      createMany: jest.fn(async ({ data }: any) => {
+        created.push(...data);
+        return { count: data.length };
+      }),
       findMany: jest.fn().mockResolvedValue([]),
     },
     break: { create: jest.fn() },
@@ -322,7 +436,9 @@ describe('a back-filled shift on a DST change day', () => {
   const prisma: any = {
     ...tx,
     user: { findFirst: jest.fn().mockResolvedValue({ id: 'u1' }) },
-    companyLocation: { findFirst: jest.fn().mockResolvedValue({ id: 'sp', lat: 1, lng: 2, timezone: 'Europe/Vienna' }) },
+    companyLocation: {
+      findFirst: jest.fn().mockResolvedValue({ id: 'sp', lat: 1, lng: 2, timezone: 'Europe/Vienna' }),
+    },
     $transaction: jest.fn(async (cb: any) => cb(tx)),
   };
 
@@ -343,8 +459,14 @@ describe('a back-filled shift on a DST change day', () => {
 
   const add = (day: string, start: string, end: string) =>
     (service as any).addManualEntries({
-      userId: 'u1', organizationId: ORG, editorId: 'admin', locationId: 'sp',
-      startDate: day, endDate: day, startTime: start, endTime: end,
+      userId: 'u1',
+      organizationId: ORG,
+      editorId: 'admin',
+      locationId: 'sp',
+      startDate: day,
+      endDate: day,
+      startTime: start,
+      endTime: end,
     });
 
   // Spring forward (Vienna, 2026-03-29 02:00 → 03:00): 01:30 is still CET (+1).

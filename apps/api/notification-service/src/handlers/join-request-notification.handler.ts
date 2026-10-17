@@ -1,5 +1,12 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  joinRequestApprovedEvent,
+  joinRequestRejectedEvent,
+  joinRequestSubmittedEvent,
+} from '@hbcfield/shared/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
@@ -15,15 +22,8 @@ export class JoinRequestNotificationHandler {
     private readonly store: NotificationStore,
   ) {}
 
-  @EventPattern('join_request_submitted')
-  async handleSubmitted(@Payload() data: {
-    userId: string;
-    userName: string;
-    organizationId: string;
-    organizationName: string;
-    message?: string;
-    recipientIds?: string[];
-  }) {
+  @EventPattern(eventPattern(joinRequestSubmittedEvent))
+  async handleSubmitted(@Payload() data: EventPayload<typeof joinRequestSubmittedEvent>) {
     this.logger.log(`Join request submitted: user=${data.userName}, org=${data.organizationName}`);
     const payload = {
       userId: data.userId,
@@ -66,15 +66,8 @@ export class JoinRequestNotificationHandler {
     });
   }
 
-  @EventPattern('join_request_approved')
-  async handleApproved(@Payload() data: {
-    userId: string;
-    userName: string;
-    organizationId: string;
-    organizationName: string;
-    role: string;
-    approvedByName: string;
-  }) {
+  @EventPattern(eventPattern(joinRequestApprovedEvent))
+  async handleApproved(@Payload() data: EventPayload<typeof joinRequestApprovedEvent>) {
     this.logger.log(`Join request approved: user=${data.userName}`);
 
     try {
@@ -96,15 +89,8 @@ export class JoinRequestNotificationHandler {
     });
   }
 
-  @EventPattern('join_request_rejected')
-  async handleRejected(@Payload() data: {
-    userId: string;
-    userName: string;
-    organizationId: string;
-    organizationName: string;
-    reason?: string;
-    rejectedByName: string;
-  }) {
+  @EventPattern(eventPattern(joinRequestRejectedEvent))
+  async handleRejected(@Payload() data: EventPayload<typeof joinRequestRejectedEvent>) {
     this.logger.log(`Join request rejected: user=${data.userName}`);
 
     try {

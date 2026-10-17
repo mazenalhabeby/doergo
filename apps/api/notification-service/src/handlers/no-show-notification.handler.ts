@@ -1,5 +1,12 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  attendanceNoshowEscalationEvent,
+  attendanceNoshowReminderEvent,
+  attendanceNoshowResolvedEvent,
+} from '@hbcfield/shared/microservices';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
 import { noShowEscalationText } from '../modules/push/push.service';
@@ -20,18 +27,10 @@ export class NoShowNotificationHandler {
 
   // No-show engine: a worker's shift started but they never clocked in. Nudge the
   // worker (push) + live-update the org dashboard.
-  @EventPattern('attendance_noshow_reminder')
+  @EventPattern(eventPattern(attendanceNoshowReminderEvent))
   async handleNoShowReminder(
     @Payload()
-    data: {
-      instanceId: string;
-      userId: string;
-      userName: string;
-      spaceId: string;
-      expectedClockInAt: string | null;
-      reminderCount: number;
-      organizationId: string;
-    },
+    data: EventPayload<typeof attendanceNoshowReminderEvent>,
   ) {
     this.logger.log(
       `No-show reminder: user=${data.userName}, instance=${data.instanceId}, count=${data.reminderCount}`,
@@ -55,18 +54,10 @@ export class NoShowNotificationHandler {
   }
 
   // Reminders exhausted → notify the space leaders that the worker is a no-show.
-  @EventPattern('attendance_noshow_escalation')
+  @EventPattern(eventPattern(attendanceNoshowEscalationEvent))
   async handleNoShowEscalation(
     @Payload()
-    data: {
-      instanceId: string;
-      userId: string;
-      userName: string;
-      spaceId: string;
-      expectedClockInAt: string | null;
-      leaderIds: string[];
-      organizationId: string;
-    },
+    data: EventPayload<typeof attendanceNoshowEscalationEvent>,
   ) {
     const leaderIds = data.leaderIds || [];
     this.logger.log(
@@ -107,20 +98,10 @@ export class NoShowNotificationHandler {
     same people the escalation alerted, so nobody keeps chasing somebody who was
     at work the whole time.
   */
-  @EventPattern('attendance_noshow_resolved')
+  @EventPattern(eventPattern(attendanceNoshowResolvedEvent))
   async handleNoShowResolved(
     @Payload()
-    data: {
-      instanceId: string;
-      userId: string;
-      userName: string;
-      spaceId: string;
-      clockInAt: string;
-      timezone?: string | null;
-      recordedOffline: boolean;
-      leaderIds: string[];
-      organizationId: string;
-    },
+    data: EventPayload<typeof attendanceNoshowResolvedEvent>,
   ) {
     const leaderIds = data.leaderIds || [];
     const facts = { name: data.userName, time: noShowResolvedTime(data.clockInAt, data.timezone) };

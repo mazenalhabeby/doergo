@@ -5,6 +5,7 @@ import { assertNotSelfDecision } from '../attendance/self-decision';
 import { ApproveTimeOffDto, CancelTimeOffDto } from './dto';
 import { SPACE_BRIEF, requestFacts } from './technicians-helpers';
 import { MemberServiceBase } from './member-service.base';
+import { emitEvent, timeOffDecidedEvent } from '@hbcfield/shared/microservices';
 
 /** Deciding time off: approve or refuse, cancel, change, delete. */
 @Injectable()
@@ -153,7 +154,7 @@ export class TimeOffDecisionService extends MemberServiceBase {
     */
     // Approved automatically: the owner sees it on screen; no push about their own.
     if (!automatic)
-      this.notificationClient.emit('time_off_decided', {
+      emitEvent(this.notificationClient, timeOffDecidedEvent, {
         timeOffId: updated.id,
         organizationId,
         memberId: updated.technicianId,

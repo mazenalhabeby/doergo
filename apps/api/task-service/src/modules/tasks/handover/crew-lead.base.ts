@@ -4,6 +4,7 @@ import { TaskEventType } from '@prisma/client';
 import { CREW_CODES, endOfLocalDay, success, type LeadScope, personName } from '@hbcfield/shared';
 import { CrewActor, cleanReason } from './crew-helpers';
 import { CrewBase } from './crew.base';
+import { emitEvent, taskLeadChangedEvent } from '@hbcfield/shared/microservices';
 
 export abstract class CrewLeadBase extends CrewBase {
   // ─────────────────────────── the lead ───────────────────────────
@@ -104,7 +105,7 @@ export abstract class CrewLeadBase extends CrewBase {
         where: { id: data.userId },
         select: { firstName: true, lastName: true },
       });
-      this.notifications.emit('task_lead_changed', {
+      emitEvent(this.notifications, taskLeadChangedEvent, {
         taskId: task.id,
         taskTitle: task.title,
         toUserId: data.toUserId,

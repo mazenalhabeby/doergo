@@ -10,6 +10,7 @@ import {
 import { judgeOccurrence } from '../../../common/occurrence.util';
 import { CrewTask, evidenceMeta } from './crew-helpers';
 import { CrewLookupBase } from './crew-lookup.base';
+import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 
 /**
  * The crew's facts, read the same way by every crew action: the job (404 when it
@@ -146,7 +147,7 @@ export abstract class CrewBase extends CrewLookupBase {
     void this.prisma.task
       .findUnique({ where: { id: task.id } })
       .then((t) => {
-        if (t) this.notifications.emit('task_updated', { task: t, actorId });
+        if (t) emitEvent(this.notifications, taskUpdatedEvent, { task: t, actorId });
       })
       .catch(() => undefined);
   }

@@ -3,6 +3,7 @@ import { success, TimeEntryStatus } from '@hbcfield/shared';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { decidableExtraTimeWhere, overtimeEndFor } from './extra-time-helpers';
 import { ExtraTimeBase } from './extra-time.base';
+import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
 
 /**
  * The office deciding extra time after the fact: refusing it, taking back approved
@@ -152,7 +153,7 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
     ]);
     await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
 
-    this.notificationClient.emit('attendance_overtime_decision', {
+    emitEvent(this.notificationClient, attendanceOvertimeDecisionEvent, {
       entryId: entry.id,
       userId: entry.userId,
       decision: 'approved',
@@ -216,7 +217,7 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
         : []),
     ]);
 
-    this.notificationClient.emit('attendance_overtime_decision', {
+    emitEvent(this.notificationClient, attendanceOvertimeDecisionEvent, {
       entryId: entry.id,
       userId: entry.userId,
       decision: 'rejected',

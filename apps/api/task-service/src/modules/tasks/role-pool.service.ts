@@ -12,6 +12,7 @@ import {
 import { TaskEventType } from '@prisma/client';
 import { OVER, OpenRole, Facts } from './role-pool-helpers';
 import { RolePoolBase } from './role-pool.base';
+import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 
 export { ROLE_WAVE_CLOSED } from './role-pool-helpers';
 
@@ -91,7 +92,7 @@ export class RolePoolService extends RolePoolBase {
         where: { id: task.id },
         data: { openRoleId: null, openSpots: null, openSpotsLeft: null, openedAt: null, openWave: 0 },
       });
-      this.notifications.emit('task_updated', { task: { id: task.id, organizationId: data.organizationId } });
+      emitEvent(this.notifications, taskUpdatedEvent, { task: { id: task.id, organizationId: data.organizationId } });
       return success({ id: task.id, openRoleId: null });
     }
 
@@ -115,7 +116,7 @@ export class RolePoolService extends RolePoolBase {
       await this.afterOpened(task.id, data.userId, role, asked);
     }
     const after = await this.prisma.task.findUniqueOrThrow({ where: { id: task.id }, select: { openSpots: true, openSpotsLeft: true } });
-    this.notifications.emit('task_updated', { task: { id: task.id, organizationId: data.organizationId } });
+    emitEvent(this.notifications, taskUpdatedEvent, { task: { id: task.id, organizationId: data.organizationId } });
     return success({ id: task.id, openRoleId: role.id, openSpots: after.openSpots, openSpotsLeft: after.openSpotsLeft });
   }
 
@@ -222,7 +223,7 @@ export class RolePoolService extends RolePoolBase {
       where: { id: task.id, status: { in: [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED] }, assignees: { none: {} } },
       data: { status: TaskStatus.NEW, assignedToId: null },
     });
-    this.notifications.emit('task_updated', { task: { id: task.id, organizationId: task.organizationId } });
+    emitEvent(this.notifications, taskUpdatedEvent, { task: { id: task.id, organizationId: task.organizationId } });
     await this.offer(task.id, 0, new Set([data.userId])).catch((e) => this.logger.error(`Re-offer for ${task.id} failed: ${e}`));
     return success({ id: task.id }, 'Returned to the role');
   }

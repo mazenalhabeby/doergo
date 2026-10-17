@@ -12,6 +12,7 @@ import {
   tzOffsetMs,
   TaskStatus,
 } from '@hbcfield/shared';
+import { emitEvent, taskDepartureDueEvent } from '@hbcfield/shared/microservices';
 
 /**
  * Telling somebody to set off, while their phone is in their pocket.
@@ -47,10 +48,8 @@ export class DepartureReminderService {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async sweepCron(): Promise<void> {
-    await runWithCronLock(
-      this.prisma,
-      { name: 'task:departureReminders', ttlSeconds: 240, logger: this.logger },
-      () => this.sweep(),
+    await runWithCronLock(this.prisma, { name: 'task:departureReminders', ttlSeconds: 240, logger: this.logger }, () =>
+      this.sweep(),
     );
   }
 
@@ -76,8 +75,13 @@ export class DepartureReminderService {
         status: { in: [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED, TaskStatus.NEW] },
       },
       select: {
-        id: true, title: true, dueDate: true, assignedToId: true,
-        locationLat: true, locationLng: true, organizationId: true,
+        id: true,
+        title: true,
+        dueDate: true,
+        assignedToId: true,
+        locationLat: true,
+        locationLng: true,
+        organizationId: true,
         space: { select: { timezone: true } },
       },
       // A backstop, not a limit anybody should reach: if this ever truncates,
@@ -114,9 +118,7 @@ export class DepartureReminderService {
       */
       if (!at) continue;
 
-      const travel = straightLineTravel(
-        haversineDistance(at.lat, at.lng, task.locationLat!, task.locationLng!),
-      );
+      const travel = straightLineTravel(haversineDistance(at.lat, at.lng, task.locationLat!, task.locationLng!));
       const leaveAt = leaveAtFor(due, travel.seconds);
       const minutesUntil = (leaveAt.getTime() - now.getTime()) / 60_000;
       if (minutesUntil > DepartureReminderService.LEAD_MINUTES) continue;
@@ -135,10 +137,10 @@ export class DepartureReminderService {
       });
       if (claimed.count === 0) continue;
 
-      this.notificationClient.emit('task_departure_due', {
+      emitEvent(this.notificationClient, taskDepartureDueEvent, {
         taskId: task.id,
         title: task.title,
-        userId: task.assignedToId,
+        userId: task.assignedToId!, // the query selects assigned tasks only (assignedToId: { not: null })
         organizationId: task.organizationId,
         dueDate: due.toISOString(),
         leaveAt: leaveAt.toISOString(),

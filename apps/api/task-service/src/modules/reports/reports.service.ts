@@ -8,6 +8,7 @@ import {
 import { TaskStatus, TaskEventType, success, type OccurrenceEvidence } from '@hbcfield/shared';
 import { judgeOccurrence } from '../../common/occurrence.util';
 import { ReportsBase } from './reports.base';
+import { emitEvent, taskStatusChangedEvent } from '@hbcfield/shared/microservices';
 
 export { reportKeyPrefixes } from './reports-helpers';
 
@@ -54,14 +55,17 @@ export class ReportsService extends ReportsBase {
 
     // The same completion sent again (its answer was lost): the report it made.
     if (data.id && task.serviceReport?.id === data.id) {
-      return success(await this.prisma.serviceReport.findUniqueOrThrow({
-        where: { id: data.id },
-        include: {
-          completedBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-          partsUsed: true,
-          attachments: true,
-        },
-      }), 'Task completed successfully');
+      return success(
+        await this.prisma.serviceReport.findUniqueOrThrow({
+          where: { id: data.id },
+          include: {
+            completedBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+            partsUsed: true,
+            attachments: true,
+          },
+        }),
+        'Task completed successfully',
+      );
     }
 
     // Only an assigned user can complete. Recognise BOTH the LEAD (legacy
@@ -70,7 +74,10 @@ export class ReportsService extends ReportsBase {
     // a member assigned via the multi-assignee system is wrongly rejected.
     const isAssignedUser =
       task.assignedToId === data.userId ||
-      !!(await this.prisma.taskAssignee.findFirst({ where: { taskId: task.id, userId: data.userId }, select: { id: true } }));
+      !!(await this.prisma.taskAssignee.findFirst({
+        where: { taskId: task.id, userId: data.userId },
+        select: { id: true },
+      }));
     if (!isAssignedUser) {
       throw new ForbiddenException({ message: 'You can only complete tasks assigned to you', code: 'TASK_REASSIGNED' });
     }
@@ -90,7 +97,11 @@ export class ReportsService extends ReportsBase {
     }
 
     if (task.serviceReport) {
-      throw new ConflictException({ message: 'A service report already exists for this task', code: 'REPORT_EXISTS', params: { current } });
+      throw new ConflictException({
+        message: 'A service report already exists for this task',
+        code: 'REPORT_EXISTS',
+        params: { current },
+      });
     }
 
     // When the job was finished: the tap, not the moment the phone found signal.
@@ -103,7 +114,7 @@ export class ReportsService extends ReportsBase {
         select: { createdAt: true, metadata: true },
       });
       const previousOccurred = (lastChange?.metadata as { occurredAt?: string } | null)?.occurredAt;
-      previousAt = previousOccurred ? new Date(previousOccurred) : lastChange?.createdAt ?? null;
+      previousAt = previousOccurred ? new Date(previousOccurred) : (lastChange?.createdAt ?? null);
     }
     const occurrence = judgeOccurrence(data.evidence, previousAt);
 
@@ -117,7 +128,10 @@ export class ReportsService extends ReportsBase {
         data: { status: TaskStatus.COMPLETED },
       });
       if (claimed.count === 0) {
-        throw new ConflictException({ message: 'This task was changed at the same moment', code: 'TASK_STATE_CONFLICT' });
+        throw new ConflictException({
+          message: 'This task was changed at the same moment',
+          code: 'TASK_STATE_CONFLICT',
+        });
       }
 
       const report = await tx.serviceReport.create({
@@ -135,17 +149,18 @@ export class ReportsService extends ReportsBase {
           completedById: data.userId,
           organizationId: task.organizationId,
           // Create parts used if provided
-          partsUsed: data.partsUsed && data.partsUsed.length > 0
-            ? {
-                create: data.partsUsed.map(part => ({
-                  name: part.name,
-                  partNumber: part.partNumber,
-                  quantity: part.quantity || 1,
-                  unitCost: part.unitCost,
-                  notes: part.notes,
-                })),
-              }
-            : undefined,
+          partsUsed:
+            data.partsUsed && data.partsUsed.length > 0
+              ? {
+                  create: data.partsUsed.map((part) => ({
+                    name: part.name,
+                    partNumber: part.partNumber,
+                    quantity: part.quantity || 1,
+                    unitCost: part.unitCost,
+                    notes: part.notes,
+                  })),
+                }
+              : undefined,
         },
         include: {
           completedBy: {
@@ -185,7 +200,7 @@ export class ReportsService extends ReportsBase {
     });
 
     // Notify about task completion
-    this.notificationClient.emit('task_status_changed', {
+    emitEvent(this.notificationClient, taskStatusChangedEvent, {
       task: result.task,
       oldStatus: TaskStatus.IN_PROGRESS,
       newStatus: TaskStatus.COMPLETED,

@@ -12,6 +12,7 @@ import {
 import { judgeOccurrence } from '../../../common/occurrence.util';
 import { CrewActor, CrewTask, TASK_SELECT, evidenceMeta, cleanReason } from './crew-helpers';
 import { CrewLeadBase } from './crew-lead.base';
+import { emitEvent, taskCrewIssueEvent, taskCrewStartedEvent } from '@hbcfield/shared/microservices';
 
 export { type CrewActor } from './crew-helpers';
 
@@ -39,12 +40,18 @@ export class CrewService extends CrewLeadBase {
     const crew = await this.crewOf(task);
     const crewIds = crew.map((c) => c.userId);
     const isOffice = this.isOffice(actor, task, 'canAssignTasks');
-    if (isOffice || !crewIds.includes(actor.userId)) return { actorId: actor.userId, isOffice, leaderId: null, crewIds };
+    if (isOffice || !crewIds.includes(actor.userId))
+      return { actorId: actor.userId, isOffice, leaderId: null, crewIds };
     const [timeline, onClock] = await Promise.all([
       this.jobTime.timelinesOf([task.id]).then((m) => m.get(task.id) ?? []),
       this.onClock(crewIds, task.organizationId),
     ]);
-    return { actorId: actor.userId, isOffice, leaderId: this.leaderFrom(task, crew, timeline, onClock).userId, crewIds };
+    return {
+      actorId: actor.userId,
+      isOffice,
+      leaderId: this.leaderFrom(task, crew, timeline, onClock).userId,
+      crewIds,
+    };
   }
 
   /**
@@ -104,7 +111,9 @@ export class CrewService extends CrewLeadBase {
    * member on the clock leaving pauses it, and owes the note — the same pause
    * a clock-out makes.
    */
-  async leave(data: CrewActor & { taskId: string; evidence?: OccurrenceEvidence; forUserId?: string; reason?: string }) {
+  async leave(
+    data: CrewActor & { taskId: string; evidence?: OccurrenceEvidence; forUserId?: string; reason?: string },
+  ) {
     const task = await this.visibleTaskOf(data.taskId, data);
     const forOther = !!data.forUserId && data.forUserId !== data.userId;
     if (forOther && !this.isOffice(data, task, 'canAssignTasks')) throw new NotFoundException('Task not found');
@@ -114,7 +123,10 @@ export class CrewService extends CrewLeadBase {
       throw new BadRequestException({ message: 'They are not on this job.', code: CREW_CODES.NOT_ON_CREW });
 
     const timeline = (await this.jobTime.timelinesOf([task.id])).get(task.id) ?? [];
-    const presence = crewPresence(timeline, crew.map((c) => c.userId));
+    const presence = crewPresence(
+      timeline,
+      crew.map((c) => c.userId),
+    );
     const mine = presence.get(who);
     if (!mine?.joined) return success(await this.viewOf(task));
 
@@ -142,7 +154,10 @@ export class CrewService extends CrewLeadBase {
         },
       });
     });
-    const after = crewPresence((await this.jobTime.timelinesOf([task.id])).get(task.id) ?? [], crew.map((c) => c.userId));
+    const after = crewPresence(
+      (await this.jobTime.timelinesOf([task.id])).get(task.id) ?? [],
+      crew.map((c) => c.userId),
+    );
     const othersJoined = [...after].filter(([id, p]) => id !== who && p.joined).map(([id]) => id);
     const stillOn = await this.onClock(othersJoined, task.organizationId);
     if (stillOn.size === 0) await this.jobPause.pauseOnLeave(task.id, who, task.organizationId, at);
@@ -170,7 +185,7 @@ export class CrewService extends CrewLeadBase {
     const view = await this.viewOf(task);
     if (view.leader.userId && view.leader.userId !== data.userId) {
       const me = view.members.find((m) => m.user.id === data.userId)?.user;
-      this.notifications.emit('task_crew_issue', {
+      emitEvent(this.notifications, taskCrewIssueEvent, {
         taskId: task.id,
         taskTitle: task.title,
         leaderId: view.leader.userId,
@@ -211,7 +226,10 @@ export class CrewService extends CrewLeadBase {
   async assertMayMoveStep(task: CrewTask, actor: CrewActor, isOffice: boolean): Promise<void> {
     // The office — org-wide, or "view all tasks" in THIS job's workspace — always moves it.
     if (isOffice || this.isOffice(actor, task, 'canViewAllTasks')) return;
-    const org = await this.prisma.organization.findUnique({ where: { id: task.organizationId }, select: { crewMode: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: task.organizationId },
+      select: { crewMode: true },
+    });
     if (!org?.crewMode) return;
     const crew = await this.crewOf(task);
     if (crew.length <= 1) return; // a job with one worker: they lead it
@@ -221,10 +239,20 @@ export class CrewService extends CrewLeadBase {
       this.onClock(ids, task.organizationId),
     ]);
     const leader = this.leaderFrom(task, crew, timeline, onClock);
-    const verdict = mayMoveStep({ actorId: actor.userId, isOffice: false, onCrew: ids.includes(actor.userId), crewMode: true, leader });
+    const verdict = mayMoveStep({
+      actorId: actor.userId,
+      isOffice: false,
+      onCrew: ids.includes(actor.userId),
+      crewMode: true,
+      leader,
+    });
     if (!verdict.ok) {
       const name = leader.userId ? await this.nameOf(leader.userId) : '';
-      throw new BadRequestException({ message: `${name || 'The leader'} moves this job's steps.`, code: verdict.code, params: { name } });
+      throw new BadRequestException({
+        message: `${name || 'The leader'} moves this job's steps.`,
+        code: verdict.code,
+        params: { name },
+      });
     }
   }
 
@@ -248,9 +276,12 @@ export class CrewService extends CrewLeadBase {
       const presence = crewPresence(timeline, others);
       const memberIds = others.filter((id) => onClock.has(id) && !presence.get(id)?.joined);
       if (!memberIds.length) return;
-      this.notifications.emit('task_crew_started', {
-        taskId: task.id, taskTitle: task.title, starterName: personName(starter),
-        startedAt: at.toISOString(), memberIds,
+      emitEvent(this.notifications, taskCrewStartedEvent, {
+        taskId: task.id,
+        taskTitle: task.title,
+        starterName: personName(starter),
+        startedAt: at.toISOString(),
+        memberIds,
       });
     } catch (err) {
       this.logger.warn(`Crew start notice failed (task=${taskId}): ${(err as Error).message}`);

@@ -2,6 +2,7 @@ import { SERVICE_NAMES, Role } from '@hbcfield/shared';
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { emitEvent, notificationRoutingChangedEvent } from '@hbcfield/shared/microservices';
 
 /**
  * Who is told about a member: the managers watching them.
@@ -87,7 +88,7 @@ export class MemberWatchersService {
     // it the change took up to the cache TTL to show, so an admin would save,
     // watch the next event go to the old list, and reasonably think it had not
     // worked. Fire-and-forget: if it is lost, the TTL still expires.
-    this.taskClient.emit('notification_routing_changed', { organizationId, subjectUserId });
+    emitEvent(this.taskClient, notificationRoutingChangedEvent, { organizationId, subjectUserId });
 
     return this.getWatchers(subjectUserId, organizationId);
   }

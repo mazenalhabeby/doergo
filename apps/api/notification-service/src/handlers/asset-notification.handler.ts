@@ -1,5 +1,16 @@
 import { Controller, Logger, OnModuleDestroy } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  assetExpenseDecidedEvent,
+  assetExpenseSubmittedEvent,
+  assetHandedOverEvent,
+} from '@hbcfield/shared/microservices';
+import type { ExpenseSubmittedEvent } from '@hbcfield/shared/microservices';
+
+// The payload is the event contract's (shared with the emitters); the spec imports it from here.
+export type { ExpenseSubmittedEvent };
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
@@ -8,42 +19,6 @@ import { msg, plural, type LocalizedText } from '../i18n/translate';
 
 /** A burst of filings about one asset reaches each approver once per window. */
 export const EXPENSE_COALESCE_WINDOW_MS = 60_000;
-
-export interface ExpenseSubmittedEvent {
-  organizationId: string;
-  entryId: string;
-  assetId: string;
-  assetName: string;
-  spaceId?: string | null;
-  authorId: string;
-  authorName?: string;
-  category: string;
-  amountCents: number;
-  occurredAt: string | Date;
-  recipientIds: string[];
-}
-
-interface ExpenseDecidedEvent {
-  organizationId: string;
-  entryId: string;
-  assetId: string;
-  assetName: string;
-  authorId: string;
-  decision: 'accept' | 'reject';
-  note?: string | null;
-  amountCents: number;
-  category: string;
-}
-
-interface HandedOverEvent {
-  organizationId: string;
-  assetId: string;
-  assetName: string;
-  openedUserIds: string[];
-  closedUserIds: string[];
-  byUserId: string;
-  at: string | Date;
-}
 
 const assetLink = (assetId: string) => `/assets/${assetId}`;
 
@@ -68,9 +43,8 @@ export class AssetNotificationHandler implements OnModuleDestroy {
   private readonly logger = new Logger('AssetNotificationHandler');
 
   /** Keyed `recipient:asset`, holding the events folded into that window. */
-  private readonly expenses = new KeyedCoalescer<ExpenseSubmittedEvent>(
-    EXPENSE_COALESCE_WINDOW_MS,
-    (key, held) => this.deliverSummary(key.slice(0, key.indexOf(':')), held),
+  private readonly expenses = new KeyedCoalescer<ExpenseSubmittedEvent>(EXPENSE_COALESCE_WINDOW_MS, (key, held) =>
+    this.deliverSummary(key.slice(0, key.indexOf(':')), held),
   );
 
   constructor(
@@ -85,12 +59,13 @@ export class AssetNotificationHandler implements OnModuleDestroy {
 
   // ── An expense sent in → the office ──────────────────────────────────────
 
-  @EventPattern('asset_expense_submitted')
-  async handleExpenseSubmitted(@Payload() data: ExpenseSubmittedEvent) {
+  @EventPattern(eventPattern(assetExpenseSubmittedEvent))
+  async handleExpenseSubmitted(@Payload() data: EventPayload<typeof assetExpenseSubmittedEvent>) {
     // Never back to the person who sent it, and never twice to one approver.
     const recipients = [...new Set((data.recipientIds ?? []).filter((id) => id && id !== data.authorId))];
     this.websocketGateway.emitToOrganization(data.organizationId, 'asset.expensesChanged', {
-      assetId: data.assetId, entryId: data.entryId,
+      assetId: data.assetId,
+      entryId: data.entryId,
     });
     if (recipients.length === 0) return;
 
@@ -126,7 +101,9 @@ export class AssetNotificationHandler implements OnModuleDestroy {
       }),
     };
     await this.push([recipientId], text, {
-      type: 'asset.expense_submitted', assetId: data.assetId, entryId: data.entryId,
+      type: 'asset.expense_submitted',
+      assetId: data.assetId,
+      entryId: data.entryId,
     });
     await this.store.record({
       recipientIds: [recipientId],
@@ -161,7 +138,10 @@ export class AssetNotificationHandler implements OnModuleDestroy {
           : msg('asset.expense.summaryManySenders', { count: n, asset: last.assetName }),
     };
     await this.push([recipientId], text, {
-      type: 'asset.expense_submitted', assetId: last.assetId, entryId: last.entryId, count: n,
+      type: 'asset.expense_submitted',
+      assetId: last.assetId,
+      entryId: last.entryId,
+      count: n,
     });
     await this.store.record({
       recipientIds: [recipientId],
@@ -175,15 +155,18 @@ export class AssetNotificationHandler implements OnModuleDestroy {
 
   // ── The answer → the member who sent it ──────────────────────────────────
 
-  @EventPattern('asset_expense_decided')
-  async handleExpenseDecided(@Payload() data: ExpenseDecidedEvent) {
+  @EventPattern(eventPattern(assetExpenseDecidedEvent))
+  async handleExpenseDecided(@Payload() data: EventPayload<typeof assetExpenseDecidedEvent>) {
     this.websocketGateway.emitToOrganization(data.organizationId, 'asset.expensesChanged', {
-      assetId: data.assetId, entryId: data.entryId,
+      assetId: data.assetId,
+      entryId: data.entryId,
     });
     if (!data.authorId) return;
 
     const accepted = data.decision === 'accept';
-    const note = String(data.note ?? '').trim().slice(0, 200);
+    const note = String(data.note ?? '')
+      .trim()
+      .slice(0, 200);
     const what = { category: data.category, asset: data.assetName };
     // The reason travels IN the message. A refusal that only says "no" sends
     // somebody to ask the office what happened.
@@ -206,7 +189,10 @@ export class AssetNotificationHandler implements OnModuleDestroy {
       amountCents: data.amountCents,
     });
     await this.push([data.authorId], text, {
-      type: 'asset.expense_decided', assetId: data.assetId, entryId: data.entryId, decision: data.decision,
+      type: 'asset.expense_decided',
+      assetId: data.assetId,
+      entryId: data.entryId,
+      decision: data.decision,
     });
     await this.store.record({
       recipientIds: [data.authorId],
@@ -220,13 +206,15 @@ export class AssetNotificationHandler implements OnModuleDestroy {
 
   // ── A handover → whoever gained or lost the thing ────────────────────────
 
-  @EventPattern('asset_handed_over')
-  async handleHandedOver(@Payload() data: HandedOverEvent) {
+  @EventPattern(eventPattern(assetHandedOverEvent))
+  async handleHandedOver(@Payload() data: EventPayload<typeof assetHandedOverEvent>) {
     this.websocketGateway.emitToOrganization(data.organizationId, 'asset.custodyChanged', { assetId: data.assetId });
 
     // Whoever made the change is looking at the screen that made it.
     const receivers = [...new Set((data.openedUserIds ?? []).filter((id) => id && id !== data.byUserId))];
-    const losers = [...new Set((data.closedUserIds ?? []).filter((id) => id && id !== data.byUserId && !receivers.includes(id)))];
+    const losers = [
+      ...new Set((data.closedUserIds ?? []).filter((id) => id && id !== data.byUserId && !receivers.includes(id))),
+    ];
 
     const asset = { asset: data.assetName };
     const groups: Array<{ ids: string[]; text: LocalizedText; direction: 'to' | 'from' }> = [
@@ -246,11 +234,16 @@ export class AssetNotificationHandler implements OnModuleDestroy {
       if (group.ids.length === 0) continue;
       for (const id of group.ids) {
         this.websocketGateway.emitToUser(id, 'asset.handed_over', {
-          assetId: data.assetId, assetName: data.assetName, direction: group.direction, at: data.at,
+          assetId: data.assetId,
+          assetName: data.assetName,
+          direction: group.direction,
+          at: data.at,
         });
       }
       await this.push(group.ids, group.text, {
-        type: 'asset.handed_over', assetId: data.assetId, direction: group.direction,
+        type: 'asset.handed_over',
+        assetId: data.assetId,
+        direction: group.direction,
       });
       await this.store.record({
         recipientIds: group.ids,

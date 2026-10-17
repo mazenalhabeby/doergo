@@ -31,6 +31,9 @@ import {
   adminResetMemberPassword,
   setMemberHome,
   removeMember,
+  emitEvent,
+  memberAccessUpdatedEvent,
+  userRemovedEvent,
 } from '@hbcfield/shared/microservices';
 import type { Role } from '@hbcfield/shared';
 import { callerOrgId } from '../../common/caller-org';
@@ -109,7 +112,7 @@ export class MemberManagementController {
     // Push a live signal to the member's own sockets (web + mobile) so their
     // nav/screens re-render in place with the new access — no reload, no
     // re-login, and no waiting for the next foreground resume.
-    this.notificationClient.emit('member_access_updated', {
+    emitEvent(this.notificationClient, memberAccessUpdatedEvent, {
       memberId,
       organizationId: user.organizationId,
     });
@@ -232,7 +235,7 @@ export class MemberManagementController {
     await this.authCache.invalidateUser(memberId);
 
     // Force-disconnect removed user's active socket connections
-    this.notificationClient.emit('user_removed', {
+    emitEvent(this.notificationClient, userRemovedEvent, {
       userId: memberId,
       organizationId: user.organizationId,
     });

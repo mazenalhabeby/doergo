@@ -7,6 +7,12 @@ import { AttendanceRoutingService } from './attendance-routing.service';
 import { AutoClockService } from './auto-clock.service';
 import { NoShowSettleService } from './no-show-settle.service';
 import { shiftNudgeCadence } from './shift-sweep-helpers';
+import {
+  emitEvent,
+  attendanceNoshowEscalationEvent,
+  attendanceNoshowReminderEvent,
+  attendanceNoshowResolvedEvent,
+} from '@hbcfield/shared/microservices';
 
 export { shiftNudgeCadence } from './shift-sweep-helpers';
 
@@ -75,7 +81,7 @@ export class ShiftSweepService {
       'canReconcileAttendance',
     );
     for (const inst of escalated) {
-      this.notificationClient.emit('attendance_noshow_resolved', {
+      emitEvent(this.notificationClient, attendanceNoshowResolvedEvent, {
         instanceId: inst.id,
         userId,
         userName: member ? personName(member) : 'A worker',
@@ -156,7 +162,7 @@ export class ShiftSweepService {
           where: { id: inst.id },
           data: { state: 'REMINDED', reminderCount: nextCount, nextRemindAt },
         });
-        this.notificationClient.emit('attendance_noshow_reminder', {
+        emitEvent(this.notificationClient, attendanceNoshowReminderEvent, {
           instanceId: inst.id,
           userId: inst.userId,
           userName,
@@ -175,7 +181,7 @@ export class ShiftSweepService {
           where: { id: inst.id },
           data: { state: 'ESCALATED', nextRemindAt: null },
         });
-        this.notificationClient.emit('attendance_noshow_escalation', {
+        emitEvent(this.notificationClient, attendanceNoshowEscalationEvent, {
           instanceId: inst.id,
           userId: inst.userId,
           userName,

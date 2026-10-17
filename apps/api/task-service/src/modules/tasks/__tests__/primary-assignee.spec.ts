@@ -90,7 +90,8 @@ describe('one writer owns what an assignment implies', () => {
     the person the work was given to. Being added through the picker was silent.
   */
   it('tells the person they have been given work', () => {
-    expect(writer).toContain("emit('task_assigned'");
+    // The emit names the event contract (taskAssignedEvent = 'task_assigned').
+    expect(writer).toMatch(/emitEvent\([^,]+,\s*taskAssignedEvent,/);
   });
 
   it('says nothing when nobody was newly assigned', () => {

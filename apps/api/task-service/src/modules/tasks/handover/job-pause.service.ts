@@ -12,6 +12,7 @@ import {
 } from '@hbcfield/shared';
 import { ClockOutHandover, AUTHOR } from './job-pause-helpers';
 import { JobPauseBase } from './job-pause.base';
+import { emitEvent, taskHandoverAddedEvent, tasksPausedEvent } from '@hbcfield/shared/microservices';
 
 export { type ClockOutHandover } from './job-pause-helpers';
 
@@ -146,7 +147,7 @@ export class JobPauseService extends JobPauseBase {
     }
 
     if (paused.length) {
-      this.notifications.emit('tasks_paused', { taskIds: paused, userId, organizationId, reason: args.reason });
+      emitEvent(this.notifications, tasksPausedEvent, { taskIds: paused, userId, organizationId, reason: args.reason });
     }
     return { paused };
   }
@@ -173,7 +174,7 @@ export class JobPauseService extends JobPauseBase {
         metadata: { reason: 'LEFT', at: at.toISOString(), workedMinutes },
       },
     });
-    this.notifications.emit('tasks_paused', { taskIds: [job.id], userId, organizationId, reason: 'LEFT' });
+    emitEvent(this.notifications, tasksPausedEvent, { taskIds: [job.id], userId, organizationId, reason: 'LEFT' });
     return true;
   }
 
@@ -283,7 +284,7 @@ export class JobPauseService extends JobPauseBase {
         [task.assignedToId, ...crew.map((c) => c.userId)].filter((id): id is string => !!id && id !== data.userId),
       ),
     ];
-    this.notifications.emit('task_handover_added', {
+    emitEvent(this.notifications, taskHandoverAddedEvent, {
       taskId: task.id,
       taskTitle: task.title,
       authorId: data.userId,

@@ -15,6 +15,7 @@ import {
   TASK_CREATE_INCLUDE,
   writeCreateAssignees,
 } from './task-create-steps';
+import { emitEvent, taskAssignedEvent, taskCreatedEvent } from '@hbcfield/shared/microservices';
 
 /**
  * A task as a record: create it, edit it, delete it, and re-point a space's
@@ -177,7 +178,7 @@ export class TaskRecordsService {
     await this.announceCreated(task, data.userId, hasAssignment ? data.assignedToId : null);
 
     // Notify
-    this.notificationClient.emit('task_created', task);
+    emitEvent(this.notificationClient, taskCreatedEvent, task);
 
     // Opened to a role: the record, then the first wave (the free ones now).
     if (openRole) await this.rolePool.afterOpened(task.id, data.userId, openRole, (task as any).openSpots ?? 1);
@@ -199,7 +200,7 @@ export class TaskRecordsService {
         workerName: task.assignedTo ? personName(task.assignedTo) : '',
       });
 
-      this.notificationClient.emit('task_assigned', {
+      emitEvent(this.notificationClient, taskAssignedEvent, {
         task,
         workerId: assignedToId,
         // Who did it — so the person who assigns work to themselves is not emailed about it.

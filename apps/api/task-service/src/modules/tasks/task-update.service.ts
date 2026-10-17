@@ -5,6 +5,7 @@ import { assertSpaceInOrg } from '../../common/tenant-scope.util';
 import { TaskStatus, TaskEventType, success, accessAllowsInSpace, assertFoundInOrg } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { resolveOwnedTaskRefs, assertMayCreateUnder } from './task-scope';
+import { emitEvent, taskDeletedEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 
 /** Changing a task's fields (never its open-role columns or its status), and deleting one. */
 @Injectable()
@@ -181,7 +182,7 @@ export class TaskUpdateService {
     this.support.invalidateStatusCountsCache(task.organizationId);
 
     // Notify via Socket.IO for real-time updates
-    this.notificationClient.emit('task_updated', { task });
+    emitEvent(this.notificationClient, taskUpdatedEvent, { task });
 
     return success(task);
   }
@@ -212,7 +213,7 @@ export class TaskUpdateService {
 
     // Notify via Socket.IO for real-time updates (spaceId lets cross-org shared
     // guests receive the delete on the space room too).
-    this.notificationClient.emit('task_deleted', {
+    emitEvent(this.notificationClient, taskDeletedEvent, {
       taskId: data.id,
       organizationId: task.organizationId,
       spaceId: task.spaceId ?? null,

@@ -14,6 +14,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { judgeOccurrence } from '../../common/occurrence.util';
 import { AUTO_UNDO_EVENT, WORK_EVENTS } from './auto-clock-helpers';
 import { AutoClockService } from './auto-clock.service';
+import { emitEvent, attendanceChangedEvent } from '@hbcfield/shared/microservices';
 
 /**
  * Taking an automatic step back: undoing a drive-past clock-in, and "still
@@ -121,7 +122,7 @@ export class AutoClockUndoService {
       });
     });
     this.logger.log(`Automatic clock-in undone: entry=${entry.id}, user=${data.userId}`);
-    this.notificationClient.emit('attendance_changed', {
+    emitEvent(this.notificationClient, attendanceChangedEvent, {
       organizationId: data.organizationId,
       action: 'auto-undo',
       entryId: entry.id,

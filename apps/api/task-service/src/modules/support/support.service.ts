@@ -11,10 +11,16 @@ import {
 import { findPrior } from '../../common/create-once.util';
 import { Attachment } from './support-helpers';
 import { SupportBase } from './support.base';
+import {
+  emitEvent,
+  supportMessageEvent,
+  supportSlaBreachedEvent,
+  supportTicketCreatedEvent,
+  supportTicketUpdatedEvent,
+} from '@hbcfield/shared/microservices';
 
 @Injectable()
 export class SupportService extends SupportBase {
-
   // ── customer: create ticket ────────────────────────────────────────────────
   async createTicket(data: {
     organizationId: string;
@@ -31,7 +37,11 @@ export class SupportService extends SupportBase {
   }) {
     const prior = await findPrior({
       id: data.id,
-      find: (id) => this.prisma.supportTicket.findUnique({ where: { id }, include: { messages: true, createdBy: this.createdBySelect() } }),
+      find: (id) =>
+        this.prisma.supportTicket.findUnique({
+          where: { id },
+          include: { messages: true, createdBy: this.createdBySelect() },
+        }),
       isSame: (t) => t.createdById === data.createdById,
     });
     if (prior) return { success: true, data: prior };
@@ -82,7 +92,7 @@ export class SupportService extends SupportBase {
       { jobId: this.slaJobId(ticket.id), delay, removeOnComplete: true, removeOnFail: true },
     );
 
-    this.notificationClient.emit('support_ticket_created', { ticket });
+    emitEvent(this.notificationClient, supportTicketCreatedEvent, { ticket });
     return { success: true, data: ticket };
   }
 
@@ -171,7 +181,7 @@ export class SupportService extends SupportBase {
     if (firstAgentReply) await this.cancelSlaJob(ticket.id);
 
     // Real-time + push: internal notes go only to agents.
-    this.notificationClient.emit('support_message', {
+    emitEvent(this.notificationClient, supportMessageEvent, {
       ticketId: ticket.id,
       message,
       ticket: updated,
@@ -180,7 +190,7 @@ export class SupportService extends SupportBase {
       organizationId: ticket.organizationId,
     });
     if (!isInternal) {
-      this.notificationClient.emit('support_ticket_updated', { ticket: updated });
+      emitEvent(this.notificationClient, supportTicketUpdatedEvent, { ticket: updated });
     }
     return { success: true, data: message };
   }
@@ -198,7 +208,7 @@ export class SupportService extends SupportBase {
       where: { id: data.ticketId },
       data: patch,
     });
-    this.notificationClient.emit('support_ticket_updated', { ticket });
+    emitEvent(this.notificationClient, supportTicketUpdatedEvent, { ticket });
     return { success: true, data: ticket };
   }
 
@@ -212,7 +222,7 @@ export class SupportService extends SupportBase {
       where: { id: data.ticketId },
       data: { status: data.status, ...extra },
     });
-    this.notificationClient.emit('support_ticket_updated', { ticket });
+    emitEvent(this.notificationClient, supportTicketUpdatedEvent, { ticket });
     return { success: true, data: ticket };
   }
 
@@ -252,8 +262,8 @@ export class SupportService extends SupportBase {
       data: { slaBreached: true },
     });
     this.logger.warn(`SLA breached on ticket ${ticket.id} (tier ${ticket.planTierAtCreation})`);
-    this.notificationClient.emit('support_sla_breached', { ticket: updated });
-    this.notificationClient.emit('support_ticket_updated', { ticket: updated });
+    emitEvent(this.notificationClient, supportSlaBreachedEvent, { ticket: updated });
+    emitEvent(this.notificationClient, supportTicketUpdatedEvent, { ticket: updated });
     return { success: true, breached: true };
   }
 }

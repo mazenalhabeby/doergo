@@ -1,5 +1,14 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  attendanceLeftEarlyEvent,
+  attendanceShiftClosedProvisionallyEvent,
+  attendanceShiftEscalationEvent,
+  attendanceShiftEscalationResolvedEvent,
+  attendanceShiftReminderEvent,
+} from '@hbcfield/shared/microservices';
 import { MemberEmailsService } from '../modules/email/member-emails.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
@@ -36,19 +45,8 @@ export class AttendanceNotificationHandler {
 
   // Shift reminder engine: a worker's shift ended but they're still clocked in.
   // Push the worker + live-update their org dashboard. Never force-closes.
-  @EventPattern('attendance_shift_reminder')
-  async handleShiftReminder(@Payload() data: {
-    entryId: string;
-    userId: string;
-    userName: string;
-    locationId: string;
-    locationName: string;
-    expectedClockOutAt: string | null;
-    reminderCount: number;
-    unscheduled?: boolean;
-    hoursOpen?: number;
-    organizationId: string;
-  }) {
+  @EventPattern(eventPattern(attendanceShiftReminderEvent))
+  async handleShiftReminder(@Payload() data: EventPayload<typeof attendanceShiftReminderEvent>) {
     this.logger.log(`Shift reminder: user=${data.userName}, entry=${data.entryId}, count=${data.reminderCount}`);
 
     try {
@@ -82,21 +80,9 @@ export class AttendanceNotificationHandler {
    * operational news, and finding out at the end of the month is finding out
    * too late.
    */
-  @EventPattern('attendance_left_early')
-  async handleLeftEarly(@Payload() data: {
-    entryId: string;
-    userId: string;
-    userName: string;
-    locationId: string;
-    locationName: string;
-    shortfallMinutes: number;
-    reason?: string | null;
-    leaderIds: string[];
-    organizationId: string;
-  }) {
-    this.logger.log(
-      `Left early: ${data.userName} at ${data.locationName}, short by ${data.shortfallMinutes}m`,
-    );
+  @EventPattern(eventPattern(attendanceLeftEarlyEvent))
+  async handleLeftEarly(@Payload() data: EventPayload<typeof attendanceLeftEarlyEvent>) {
+    this.logger.log(`Left early: ${data.userName} at ${data.locationName}, short by ${data.shortfallMinutes}m`);
     try {
       await this.attendancePush.sendLeftEarlyPush({
         leaderIds: data.leaderIds ?? [],
@@ -121,19 +107,8 @@ export class AttendanceNotificationHandler {
     });
   }
 
-  @EventPattern('attendance_shift_escalation')
-  async handleShiftEscalation(@Payload() data: {
-    entryId: string;
-    userId: string;
-    userName: string;
-    locationId: string;
-    locationName: string;
-    expectedClockOutAt: string | null;
-    unscheduled?: boolean;
-    hoursOpen?: number;
-    leaderIds: string[];
-    organizationId: string;
-  }) {
+  @EventPattern(eventPattern(attendanceShiftEscalationEvent))
+  async handleShiftEscalation(@Payload() data: EventPayload<typeof attendanceShiftEscalationEvent>) {
     const leaderIds = data.leaderIds || [];
     this.logger.log(`Shift escalation: user=${data.userName}, entry=${data.entryId}, leaders=${leaderIds.length}`);
 
@@ -182,17 +157,8 @@ export class AttendanceNotificationHandler {
     already waiting in approvals, and a push per forgotten clock-out is noise.
     This is the only automatic close the product has.
   */
-  @EventPattern('attendance_shift_closed_provisionally')
-  async handleShiftClosedProvisionally(@Payload() data: {
-    entryId: string;
-    userId: string;
-    clockInAt: string;
-    clockOutAt: string;
-    basis: string;
-    timezone?: string | null;
-    locationName?: string | null;
-    organizationId: string;
-  }) {
+  @EventPattern(eventPattern(attendanceShiftClosedProvisionallyEvent))
+  async handleShiftClosedProvisionally(@Payload() data: EventPayload<typeof attendanceShiftClosedProvisionallyEvent>) {
     const text: LocalizedText = {
       title: msg('attendance.provisional.title'),
       body: msg('attendance.provisional.body', {
@@ -243,22 +209,16 @@ export class AttendanceNotificationHandler {
     itself, arriving late from a phone without signal. Same people as the
     escalation, so nobody phones round about a shift that ended hours ago.
   */
-  @EventPattern('attendance_shift_escalation_resolved')
-  async handleShiftEscalationResolved(@Payload() data: {
-    entryId: string;
-    userId: string;
-    userName: string;
-    clockOutAt: string;
-    timezone?: string | null;
-    recordedOffline: boolean;
-    leaderIds: string[];
-    organizationId: string;
-  }) {
+  @EventPattern(eventPattern(attendanceShiftEscalationResolvedEvent))
+  async handleShiftEscalationResolved(@Payload() data: EventPayload<typeof attendanceShiftEscalationResolvedEvent>) {
     const leaderIds = data.leaderIds || [];
     const facts = { name: data.userName, time: noShowResolvedTime(data.clockOutAt, data.timezone) };
     const text: LocalizedText = {
       title: msg('attendance.clockedOutAfterAll.title'),
-      body: msg(data.recordedOffline ? 'attendance.clockedOutAfterAll.bodyOffline' : 'attendance.clockedOutAfterAll.body', facts),
+      body: msg(
+        data.recordedOffline ? 'attendance.clockedOutAfterAll.bodyOffline' : 'attendance.clockedOutAfterAll.body',
+        facts,
+      ),
     };
     try {
       await this.attendancePush.sendAttendanceResolvedPush({

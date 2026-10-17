@@ -1,5 +1,6 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import { eventPattern, type EventPayload, notificationRoutingChangedEvent } from '@hbcfield/shared/microservices';
 import { NotificationRoutingService } from './notification-routing.service';
 
 /**
@@ -21,8 +22,8 @@ export class NotificationRoutingController {
 
   constructor(private readonly routing: NotificationRoutingService) {}
 
-  @EventPattern('notification_routing_changed')
-  onRoutingChanged(@Payload() data: { organizationId?: string; subjectUserId?: string }) {
+  @EventPattern(eventPattern(notificationRoutingChangedEvent))
+  onRoutingChanged(@Payload() data: EventPayload<typeof notificationRoutingChangedEvent>) {
     if (!data?.organizationId) return;
     const dropped = this.routing.invalidate(data.organizationId, data.subjectUserId);
     this.logger.debug(

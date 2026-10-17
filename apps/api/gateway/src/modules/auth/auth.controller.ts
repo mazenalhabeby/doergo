@@ -24,6 +24,8 @@ import {
   logout,
   forgotPassword,
   resetPassword,
+  emitEvent,
+  presenceChangedEvent,
 } from '@hbcfield/shared/microservices';
 
 export { isBrowserClient, withoutRefreshTokenForBrowser } from './auth-controller-helpers';
@@ -97,7 +99,7 @@ export class AuthController {
     // (Off Duty → Off-shift/Present) in real time.
     const loggedIn = result?.data?.user;
     if (loggedIn?.id && loggedIn?.organizationId) {
-      this.notificationClient.emit('presence_changed', {
+      emitEvent(this.notificationClient, presenceChangedEvent, {
         userId: loggedIn.id,
         presence: loggedIn.presence ?? 'AVAILABLE',
         organizationId: loggedIn.organizationId,
@@ -176,7 +178,7 @@ export class AuthController {
     // 3-minute online window to lapse. Sign-out ≠ clock-out — attendance is
     // untouched.
     if (result?.userId && result?.organizationId) {
-      this.notificationClient.emit('presence_changed', {
+      emitEvent(this.notificationClient, presenceChangedEvent, {
         userId: result.userId,
         presence: null,
         organizationId: result.organizationId,

@@ -1,6 +1,7 @@
 import { Injectable, Inject, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, personNameById } from '@hbcfield/shared';
+import { emitEvent, shiftIssueEventEvent, type EventContract } from '@hbcfield/shared/microservices';
 import { OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { MediaSigner } from '../../common/storage/media-signer.service';
@@ -109,11 +110,11 @@ export abstract class ShiftIssuesBase {
     return ids;
   }
 
-  protected emit(event: string, payload: Record<string, unknown>) {
+  protected emit<P>(contract: EventContract<P>, payload: P) {
     try {
-      this.notificationClient.emit(event, payload);
+      emitEvent(this.notificationClient, contract, payload);
     } catch (e) {
-      this.logger.warn(`emit ${event} failed: ${e}`);
+      this.logger.warn(`emit ${contract.name} failed: ${e}`);
     }
   }
 
@@ -145,7 +146,7 @@ export abstract class ShiftIssuesBase {
       ]),
     ).filter((id) => id !== actorId);
     const actorName = await this.nameOf(actorId);
-    this.emit('shift_issue_event', {
+    this.emit(shiftIssueEventEvent, {
       issueId: issue.id,
       organizationId: issue.organizationId,
       title: issue.title,
@@ -158,7 +159,8 @@ export abstract class ShiftIssuesBase {
         at: event.at,
         actorId,
         actorName,
-        metadata: event.metadata ?? null,
+        // A thread event's metadata is a JSON object (or none) — Prisma types it as any JSON value.
+        metadata: (event.metadata as Record<string, unknown> | null) ?? null,
       },
       actorId,
       actorName,

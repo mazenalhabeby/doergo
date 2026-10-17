@@ -1,5 +1,15 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  geofenceExcursionApprovedEvent,
+  geofenceExcursionExpiredEvent,
+  geofenceExcursionOutEvent,
+  geofenceExcursionRejectedEvent,
+  geofenceExcursionRequestedEvent,
+  geofenceExcursionReturnedEvent,
+} from '@hbcfield/shared/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
@@ -21,13 +31,16 @@ export class ExcursionNotificationHandler {
   // The heartbeat opened an excursion because the worker left their space's ring.
   // Warn the employee (push + their own socket). Also live-update the org so the
   // approver surface reflects the new out-of-ring worker.
-  @EventPattern('geofence_excursion_out')
-  async handleExcursionOut(@Payload() data: GeofenceExcursionEvent) {
+  @EventPattern(eventPattern(geofenceExcursionOutEvent))
+  async handleExcursionOut(@Payload() data: EventPayload<typeof geofenceExcursionOutEvent>) {
     this.logger.log(`Excursion out: user=${data.userName}, space=${data.spaceName}, ${data.distanceM ?? '?'}m`);
     try {
       await this.pushService.sendToUser(
         data.userId,
-        { title: msg('attendance.excursionOut.title'), body: msg('attendance.excursionOut.body', { space: data.spaceName }) },
+        {
+          title: msg('attendance.excursionOut.title'),
+          body: msg('attendance.excursionOut.body', { space: data.spaceName }),
+        },
         { type: 'attendance.geofence_excursion_out', excursionId: data.excursionId },
       );
     } catch (error) {
@@ -37,14 +50,22 @@ export class ExcursionNotificationHandler {
   }
 
   // Employee submitted a reason + duration → notify the responsible person(s).
-  @EventPattern('geofence_excursion_requested')
-  async handleExcursionRequested(@Payload() data: GeofenceExcursionEvent) {
+  @EventPattern(eventPattern(geofenceExcursionRequestedEvent))
+  async handleExcursionRequested(@Payload() data: EventPayload<typeof geofenceExcursionRequestedEvent>) {
     const watcherIds = data.watcherIds || [];
     this.logger.log(`Excursion requested: user=${data.userName}, watchers=${watcherIds.length}`);
-    const facts = { name: data.userName, space: data.spaceName, minutes: data.requestedMinutes ?? '?', reason: data.reason };
+    const facts = {
+      name: data.userName,
+      space: data.spaceName,
+      minutes: data.requestedMinutes ?? '?',
+      reason: data.reason,
+    };
     const text: LocalizedText = {
       title: msg('attendance.excursionRequested.title'),
-      body: msg(data.reason ? 'attendance.excursionRequested.body' : 'attendance.excursionRequested.bodyNoReason', facts),
+      body: msg(
+        data.reason ? 'attendance.excursionRequested.body' : 'attendance.excursionRequested.bodyNoReason',
+        facts,
+      ),
     };
     try {
       await this.pushService.sendToUsers(watcherIds, text, {
@@ -65,8 +86,8 @@ export class ExcursionNotificationHandler {
   }
 
   // Approver granted time → notify the employee (push + their socket) + org.
-  @EventPattern('geofence_excursion_approved')
-  async handleExcursionApproved(@Payload() data: GeofenceExcursionEvent) {
+  @EventPattern(eventPattern(geofenceExcursionApprovedEvent))
+  async handleExcursionApproved(@Payload() data: EventPayload<typeof geofenceExcursionApprovedEvent>) {
     this.logger.log(`Excursion approved: user=${data.userName}, ${data.grantedMinutes ?? '?'} min`);
     try {
       await this.pushService.sendToUser(
@@ -84,8 +105,8 @@ export class ExcursionNotificationHandler {
   }
 
   // Approver rejected → the worker was clocked out. Notify the employee + org.
-  @EventPattern('geofence_excursion_rejected')
-  async handleExcursionRejected(@Payload() data: GeofenceExcursionEvent) {
+  @EventPattern(eventPattern(geofenceExcursionRejectedEvent))
+  async handleExcursionRejected(@Payload() data: EventPayload<typeof geofenceExcursionRejectedEvent>) {
     this.logger.log(`Excursion rejected: user=${data.userName}`);
     try {
       await this.pushService.sendToUser(
@@ -100,15 +121,15 @@ export class ExcursionNotificationHandler {
   }
 
   // Worker came back inside the ring → clear the responsible person's alert.
-  @EventPattern('geofence_excursion_returned')
-  async handleExcursionReturned(@Payload() data: GeofenceExcursionEvent) {
+  @EventPattern(eventPattern(geofenceExcursionReturnedEvent))
+  async handleExcursionReturned(@Payload() data: EventPayload<typeof geofenceExcursionReturnedEvent>) {
     this.logger.log(`Excursion returned: user=${data.userName}`);
     this.emitExcursionSockets('geofence_excursion_returned', data, { toWatchers: true, includeEmployee: true });
   }
 
   // APPROVED grace timer lapsed while still out → alert the responsible person(s).
-  @EventPattern('geofence_excursion_expired')
-  async handleExcursionExpired(@Payload() data: GeofenceExcursionEvent) {
+  @EventPattern(eventPattern(geofenceExcursionExpiredEvent))
+  async handleExcursionExpired(@Payload() data: EventPayload<typeof geofenceExcursionExpiredEvent>) {
     const watcherIds = data.watcherIds || [];
     this.logger.log(`Excursion expired: user=${data.userName}, watchers=${watcherIds.length}`);
     const text: LocalizedText = {

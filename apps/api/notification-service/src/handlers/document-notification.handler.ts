@@ -1,5 +1,14 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  credentialExpiringEvent,
+  documentAwaitingSignatureEvent,
+  documentIssuedEvent,
+  documentReviewedEvent,
+  documentSubmittedEvent,
+} from '@hbcfield/shared/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { msg, verbatim, type LocalizedText } from '../i18n/translate';
@@ -32,24 +41,12 @@ export class DocumentNotificationHandler {
    * is how a certificate lapses anyway: they are on site, while the person who
    * needed to know was planning next month.
    */
-  @EventPattern('credential_expiring')
+  @EventPattern(eventPattern(credentialExpiringEvent))
   async handleExpiring(
     @Payload()
-    data: {
-      documentId: string;
-      organizationId: string;
-      userId: string;
-      userName: string;
-      credential: string;
-      daysLeft: number;
-      expiresOn: string;
-      /** Resolved by the producer; falls back to the member alone. */
-      recipientIds?: string[];
-    },
+    data: EventPayload<typeof credentialExpiringEvent>,
   ) {
-    this.logger.log(
-      `Credential expiring: ${data.credential} for ${data.userName} in ${data.daysLeft}d`,
-    );
+    this.logger.log(`Credential expiring: ${data.credential} for ${data.userName} in ${data.daysLeft}d`);
 
     const facts = { credential: data.credential, date: data.expiresOn, name: data.userName };
     const payload = { ...data, timestamp: new Date().toISOString() };
@@ -75,18 +72,10 @@ export class DocumentNotificationHandler {
     );
   }
 
-  @EventPattern('document_issued')
+  @EventPattern(eventPattern(documentIssuedEvent))
   async handleIssued(
     @Payload()
-    data: {
-      documentId: string;
-      userId: string;
-      email?: string;
-      firstName?: string;
-      typeLabel: string;
-      title: string;
-      needsSignature?: boolean;
-    },
+    data: EventPayload<typeof documentIssuedEvent>,
   ) {
     this.logger.log(`Document issued: ${data.typeLabel} → user=${data.userId}`);
 
@@ -147,19 +136,10 @@ export class DocumentNotificationHandler {
    * work has arrived on their desk, about a person who is not them. Naming the
    * member is the whole content of it.
    */
-  @EventPattern('document_awaiting_signature')
+  @EventPattern(eventPattern(documentAwaitingSignatureEvent))
   async handleAwaitingSignature(
     @Payload()
-    data: {
-      documentId: string;
-      userId: string;
-      email?: string;
-      firstName?: string;
-      title: string;
-      memberName?: string;
-      step?: number;
-      totalSteps?: number;
-    },
+    data: EventPayload<typeof documentAwaitingSignatureEvent>,
   ) {
     this.logger.log(
       `Signature needed: doc=${data.documentId} → user=${data.userId} (step ${data.step ?? '?'}/${data.totalSteps ?? '?'})`,
@@ -196,18 +176,10 @@ export class DocumentNotificationHandler {
     }
   }
 
-  @EventPattern('document_submitted')
+  @EventPattern(eventPattern(documentSubmittedEvent))
   async handleSubmitted(
     @Payload()
-    data: {
-      documentId: string;
-      organizationId: string;
-      memberId: string;
-      memberName: string;
-      typeLabel: string;
-      title: string;
-      recipientIds?: string[];
-    },
+    data: EventPayload<typeof documentSubmittedEvent>,
   ) {
     this.logger.log(`Document submitted: ${data.typeLabel} by ${data.memberName}`);
 
@@ -241,21 +213,12 @@ export class DocumentNotificationHandler {
    * says "not accepted" sends somebody back to upload the same photograph, and
    * one they have to open the app to understand is one they act on a day later.
    */
-  @EventPattern('document_reviewed')
+  @EventPattern(eventPattern(documentReviewedEvent))
   async handleReviewed(
     @Payload()
-    data: {
-      documentId: string;
-      userId: string;
-      firstName?: string;
-      typeLabel: string;
-      accepted: boolean;
-      reason?: string | null;
-    },
+    data: EventPayload<typeof documentReviewedEvent>,
   ) {
-    this.logger.log(
-      `Document reviewed: ${data.typeLabel} → ${data.accepted ? 'accepted' : 'refused'}`,
-    );
+    this.logger.log(`Document reviewed: ${data.typeLabel} → ${data.accepted ? 'accepted' : 'refused'}`);
 
     const payload = {
       documentId: data.documentId,

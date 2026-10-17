@@ -16,6 +16,7 @@ import {
   type PresenceState,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { emitEvent, attendanceChangedEvent } from '@hbcfield/shared/microservices';
 
 /** The columns of an open entry this service reads. */
 interface PresenceEntry {
@@ -224,7 +225,7 @@ export class PresenceService {
     });
     if (!claimed) return;
     // An invalidation, not a payload: each screen refetches through its own scoped read.
-    this.notificationClient.emit('attendance_changed', {
+    emitEvent(this.notificationClient, attendanceChangedEvent, {
       organizationId: entry.organizationId,
       action: 'presence',
       entryId: entry.id,

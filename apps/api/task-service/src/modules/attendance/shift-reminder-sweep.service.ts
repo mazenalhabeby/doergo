@@ -14,6 +14,11 @@ import {
 import { AttendanceRoutingService } from './attendance-routing.service';
 import { AutoClockService } from './auto-clock.service';
 import { shiftNudgeCadence } from './shift-sweep-helpers';
+import {
+  emitEvent,
+  attendanceShiftEscalationEvent,
+  attendanceShiftReminderEvent,
+} from '@hbcfield/shared/microservices';
 
 /** The minute sweep that tells people their shift is about to start or end. */
 @Injectable()
@@ -136,7 +141,7 @@ export class ShiftReminderSweepService {
           where: { id: entry.id },
           data: { reminderState: 'REMINDED', reminderCount: nextCount, nextRemindAt },
         });
-        this.notificationClient.emit('attendance_shift_reminder', {
+        emitEvent(this.notificationClient, attendanceShiftReminderEvent, {
           entryId: entry.id,
           userId: entry.user.id,
           userName,
@@ -160,7 +165,7 @@ export class ShiftReminderSweepService {
           where: { id: entry.id },
           data: { reminderState: 'ESCALATED', nextRemindAt: null },
         });
-        this.notificationClient.emit('attendance_shift_escalation', {
+        emitEvent(this.notificationClient, attendanceShiftEscalationEvent, {
           entryId: entry.id,
           userId: entry.user.id,
           userName,

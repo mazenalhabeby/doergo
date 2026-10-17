@@ -1,12 +1,7 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Inject,
-  Injectable,
-  NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Inject, Injectable, NestInterceptor } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
+import { emitEvent, appVersionSeenEvent } from '@hbcfield/shared/microservices';
 
 /**
  * Remember which build of the app each member is running.
@@ -62,7 +57,7 @@ export class AppVersionInterceptor implements NestInterceptor {
           const rawPlatform = req.headers['x-app-platform'];
           const platform = rawPlatform === 'ios' || rawPlatform === 'android' ? rawPlatform : undefined;
 
-          this.authClient.emit('app_version_seen', { userId, version, platform });
+          emitEvent(this.authClient, appVersionSeenEvent, { userId, version, platform });
         }
       }
     } catch {

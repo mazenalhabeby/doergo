@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { activeWindowWhere, SERVICE_NAMES, type RuleFacts, type RuleKind } from '@hbcfield/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { emitEvent, approvalSecondStepEvent } from '@hbcfield/shared/microservices';
 
 /**
  * What applying and editing office rules share: open steps, the role a step asks
@@ -119,7 +120,7 @@ export abstract class ApprovalRulesBase {
         ...(input.subjectId ? [input.subjectId] : []),
       ]);
       if (!recipientIds.length) return;
-      this.notifications.emit('approval_second_step', {
+      emitEvent(this.notifications, approvalSecondStepEvent, {
         organizationId: input.organizationId,
         recipientIds,
         kind: input.kind,

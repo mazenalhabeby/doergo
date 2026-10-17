@@ -1,5 +1,14 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  chatBadgeEvent,
+  chatMembersChangedEvent,
+  chatMessageChangedEvent,
+  chatMessageEvent,
+  chatReadEvent,
+} from '@hbcfield/shared/microservices';
 import { personName, messagePreview } from '@hbcfield/shared';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
@@ -19,21 +28,10 @@ export class ChatNotificationHandler {
     private readonly websocketGateway: WebsocketGateway,
   ) {}
 
-  @EventPattern('chat_message')
+  @EventPattern(eventPattern(chatMessageEvent))
   async handleMessage(
     @Payload()
-    data: {
-      conversationId: string;
-      message: any;
-      recipients: string[];
-      organizationId: string;
-      unread?: Record<string, number>;
-      badge?: Record<string, number>;
-      /** Members who switched this thread's pushes off. */
-      muted?: string[];
-      /** A SYSTEM line ("Anna added Karim"): drawn on screens, never pushed. */
-      silent?: boolean;
-    },
+    data: EventPayload<typeof chatMessageEvent>,
   ) {
     this.websocketGateway.emitChatMessage(data);
     if (data.silent) return;
@@ -65,15 +63,15 @@ export class ChatNotificationHandler {
   }
 
   /** A thread was read: the reader's other screens drop their badge to the new total. */
-  @EventPattern('chat_badge')
-  handleBadge(@Payload() data: { userId: string; total: number }) {
+  @EventPattern(eventPattern(chatBadgeEvent))
+  handleBadge(@Payload() data: EventPayload<typeof chatBadgeEvent>) {
     if (typeof data?.userId === 'string' && Number.isInteger(data.total))
       this.websocketGateway.emitChatBadge(data.userId, data.total);
   }
 
   /** "Read" for the others in the thread. */
-  @EventPattern('chat_read')
-  handleRead(@Payload() data: { conversationId: string; userId: string; at: string; memberIds: string[] }) {
+  @EventPattern(eventPattern(chatReadEvent))
+  handleRead(@Payload() data: EventPayload<typeof chatReadEvent>) {
     if (typeof data?.conversationId !== 'string' || typeof data.userId !== 'string') return;
     this.websocketGateway.emitChatRead(ids(data.memberIds), {
       conversationId: data.conversationId,
@@ -83,15 +81,15 @@ export class ChatNotificationHandler {
   }
 
   /** A group changed or a job's crew moved: forget the cached members, refresh each list. */
-  @EventPattern('chat_members_changed')
-  handleMembersChanged(@Payload() data: { conversationId: string; userIds: string[]; removedIds?: string[] }) {
+  @EventPattern(eventPattern(chatMembersChangedEvent))
+  handleMembersChanged(@Payload() data: EventPayload<typeof chatMembersChangedEvent>) {
     if (typeof data?.conversationId !== 'string') return;
     this.websocketGateway.emitChatMembersChanged(data.conversationId, ids(data.userIds), ids(data.removedIds));
   }
 
   /** An edit or a removal reaches every member's screen. */
-  @EventPattern('chat_message_changed')
-  handleChanged(@Payload() data: { conversationId: string; message: unknown; memberIds: string[] }) {
+  @EventPattern(eventPattern(chatMessageChangedEvent))
+  handleChanged(@Payload() data: EventPayload<typeof chatMessageChangedEvent>) {
     if (typeof data?.conversationId !== 'string') return;
     this.websocketGateway.emitChatMessageChanged(ids(data.memberIds), {
       conversationId: data.conversationId,

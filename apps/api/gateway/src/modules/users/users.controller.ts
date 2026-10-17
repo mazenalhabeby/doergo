@@ -16,6 +16,9 @@ import {
   getMyNotificationPrefs,
   updateMyNotificationPrefs,
   updateOwnEmail,
+  emitEvent,
+  presenceChangedEvent,
+  userLocaleChangedEvent,
 } from '@hbcfield/shared/microservices';
 
 export { MarkNotificationsReadDto } from './users.dto';
@@ -49,13 +52,13 @@ export class UsersController {
     // notification-service caches languages briefly; tell it so the very next
     // push is written in the one just chosen.
     if (dto.locale !== undefined) {
-      this.notificationClient.emit('user_locale_changed', { userId: user.id });
+      emitEvent(this.notificationClient, userLocaleChangedEvent, { userId: user.id });
     }
 
     // Real-time: broadcast availability changes so teammates' dashboards /
     // contact lists update without a refresh.
     if (dto.presence !== undefined) {
-      this.notificationClient.emit('presence_changed', {
+      emitEvent(this.notificationClient, presenceChangedEvent, {
         userId: user.id,
         presence: dto.presence,
         organizationId: user.organizationId,

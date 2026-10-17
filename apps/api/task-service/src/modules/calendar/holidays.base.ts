@@ -13,6 +13,7 @@ import {
 import { CalendarRulesService } from './calendar-rules.service';
 import { countryList, validCountry, validRegion } from './holiday-library';
 import { Scope, DATE } from './holidays-helpers';
+import { emitEvent, calendarSettingsChangedEvent } from '@hbcfield/shared/microservices';
 
 /** Reading a place's holidays and saving changes — moved here unchanged from holidays.service.ts. */
 @Injectable()
@@ -24,7 +25,7 @@ export abstract class HolidaysBase {
   ) {}
 
   protected changed(organizationId: string) {
-    this.notifications.emit('calendar_settings_changed', { organizationId });
+    emitEvent(this.notifications, calendarSettingsChangedEvent, { organizationId });
   }
 
   protected assertSpaceScope(spaceId: string, scope: Scope) {

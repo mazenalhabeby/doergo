@@ -13,6 +13,7 @@ import {
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { AssetResponsibleService } from './asset-responsible.service';
+import { emitEvent, assetLogDueEvent, type EventPayload } from '@hbcfield/shared/microservices';
 
 /** A backstop per run, not a limit anybody should reach: the next run picks up the rest. */
 const BATCH = 500;
@@ -96,7 +97,7 @@ export class AssetLogReminderService {
     const shape = normalizeKindShape(asset.category?.config);
     const state = readLogState(asset.logState);
 
-    const items: Array<Record<string, unknown>> = [];
+    const items: NonNullable<EventPayload<typeof assetLogDueEvent>['items']> = [];
     for (const s of state.due) {
       const type = findLogType(shape, s.key);
       // A rule removed from the kind since the last write: nothing to say.
@@ -137,7 +138,7 @@ export class AssetLogReminderService {
 
     const recipientIds = await this.recipients(asset.organizationId, asset.id, asset.category?.spaceId ?? null);
     if (recipientIds.length > 0) {
-      this.notifications.emit('asset_log_due', {
+      emitEvent(this.notifications, assetLogDueEvent, {
         assetId: asset.id,
         assetName: asset.name,
         organizationId: asset.organizationId,

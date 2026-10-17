@@ -21,6 +21,7 @@ import { CoverService } from '../technicians/cover.service';
 import { TasksService } from './tasks.service';
 import { holdsOpenRole as holdsOpenRoleRule } from '@hbcfield/shared';
 import { OVER, DAY_MS, ROLE_WAVE_CLOSED, OpenRole } from './role-pool-helpers';
+import { emitEvent, roleTaskOfferedEvent } from '@hbcfield/shared/microservices';
 
 /**
  * What the role-pool services share: who holds a role now, the open role's columns
@@ -258,7 +259,7 @@ export abstract class RolePoolBase {
         metadata: { wave, userIds },
       },
     });
-    this.notifications.emit('role_task_offered', {
+    emitEvent(this.notifications, roleTaskOfferedEvent, {
       task: { id: task.id, title: task.title, organizationId: task.organizationId },
       roleName: task.openRole?.name ?? '',
       userIds,

@@ -1,5 +1,17 @@
 import { Controller, Get, Headers, ForbiddenException, Logger } from '@nestjs/common';
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  customerChangedEvent,
+  invitationCreatedEvent,
+  memberAccessUpdatedEvent,
+  memberChangedEvent,
+  organizationSuspendedEvent,
+  userLocaleChangedEvent,
+  userRemovedEvent,
+  userSessionsRevokedEvent,
+} from '@hbcfield/shared/microservices';
 import { EmailService } from './modules/email/email.service';
 import { PushService } from './modules/push/push.service';
 import { WebsocketGateway } from './modules/websocket/websocket.gateway';
@@ -66,8 +78,8 @@ export class NotificationController {
    * wrote. Forget the cached one here so the next push reads the new value
    * instead of waiting out the cache.
    */
-  @EventPattern('user_locale_changed')
-  handleUserLocaleChanged(@Payload() data: { userId: string }) {
+  @EventPattern(eventPattern(userLocaleChangedEvent))
+  handleUserLocaleChanged(@Payload() data: EventPayload<typeof userLocaleChangedEvent>) {
     if (data?.userId) this.recipientLocales.forget(data.userId);
   }
 
@@ -94,22 +106,22 @@ export class NotificationController {
   // websocket.gateway.ts; the auth service emits them. A socket authenticates
   // once, so without these a removed / deactivated / suspended account would keep
   // receiving the organization's live events until its connection dropped.
-  @EventPattern('user_removed')
-  async handleUserRemoved(@Payload() data: { userId: string; organizationId: string }) {
+  @EventPattern(eventPattern(userRemovedEvent))
+  async handleUserRemoved(@Payload() data: EventPayload<typeof userRemovedEvent>) {
     this.logger.log(`User removed: ${data?.userId} from org ${data?.organizationId}`);
     if (data?.userId) this.websocketGateway.forceDisconnectUser(data.userId, 'removed_from_organization');
   }
 
   /** Deactivated, signed out everywhere, password reset — every session is gone. */
-  @EventPattern('user_sessions_revoked')
-  async handleUserSessionsRevoked(@Payload() data: { userId: string }) {
+  @EventPattern(eventPattern(userSessionsRevokedEvent))
+  async handleUserSessionsRevoked(@Payload() data: EventPayload<typeof userSessionsRevokedEvent>) {
     this.logger.log(`Sessions revoked: ${data?.userId}`);
     if (data?.userId) this.websocketGateway.forceDisconnectUser(data.userId, 'sessions_revoked');
   }
 
   /** The operator switched the organization off. */
-  @EventPattern('organization_suspended')
-  async handleOrganizationSuspended(@Payload() data: { organizationId: string }) {
+  @EventPattern(eventPattern(organizationSuspendedEvent))
+  async handleOrganizationSuspended(@Payload() data: EventPayload<typeof organizationSuspendedEvent>) {
     this.logger.log(`Organization suspended: ${data?.organizationId}`);
     if (data?.organizationId)
       this.websocketGateway.disconnectOrganization(data.organizationId, 'organization_suspended');
@@ -118,8 +130,8 @@ export class NotificationController {
   // An admin changed this member's access/role. Signal the member's own sockets
   // (web + mobile) to re-fetch their profile so nav/screens re-render in place —
   // no reload, no re-login. Reaches ONLY that member via their user room.
-  @EventPattern('member_access_updated')
-  async handleMemberAccessUpdated(@Payload() data: { memberId: string; organizationId: string }) {
+  @EventPattern(eventPattern(memberAccessUpdatedEvent))
+  async handleMemberAccessUpdated(@Payload() data: EventPayload<typeof memberAccessUpdatedEvent>) {
     this.logger.log(`Member access updated: ${data.memberId} in org ${data.organizationId}`);
     this.websocketGateway.emitToUser(data.memberId, 'member.access_updated', {
       organizationId: data.organizationId,
@@ -131,8 +143,8 @@ export class NotificationController {
   // every open admin screen refreshes in place (audit M-D2). The payload carries
   // IDS ONLY: each client re-reads through its own scoped endpoint, so a broadcast
   // can never widen what a viewer is allowed to see.
-  @EventPattern('member_changed')
-  async handleMemberChanged(@Payload() data: { organizationId: string; memberId?: string; reason?: string }) {
+  @EventPattern(eventPattern(memberChangedEvent))
+  async handleMemberChanged(@Payload() data: EventPayload<typeof memberChangedEvent>) {
     this.logger.log(`Member list changed in org ${data.organizationId} (${data.reason || 'update'})`);
     this.websocketGateway.emitToOrganization(data.organizationId, 'member.changed', {
       memberId: data.memberId,
@@ -144,8 +156,8 @@ export class NotificationController {
   // every open CRM screen refreshes in place (audit C-D2). Ids only: reps who
   // cannot reach that client refetch and get back what they are allowed to see —
   // the scoping lives in the endpoint, not in who receives the hint.
-  @EventPattern('customer_changed')
-  async handleCustomerChanged(@Payload() data: { organizationId: string; customerId?: string }) {
+  @EventPattern(eventPattern(customerChangedEvent))
+  async handleCustomerChanged(@Payload() data: EventPayload<typeof customerChangedEvent>) {
     this.websocketGateway.emitToOrganization(data.organizationId, 'customer.changed', {
       customerId: data.customerId,
     });
@@ -155,22 +167,13 @@ export class NotificationController {
   // INVITATION EVENTS
   // =========================================================================
 
-  @EventPattern('invitation_created')
+  @EventPattern(eventPattern(invitationCreatedEvent))
   async handleInvitationCreated(
     @Payload()
-    data: {
-      recipientEmail: string;
-      organizationName: string | null;
-      invitationCode: string;
-      targetRole: string;
-      expiresAt: string;
-      /** The member who created it — their language is the email's fallback. */
-      inviterId?: string | null;
-      /** Already decided by the sender — a client's invitation (see EmailService). */
-      locale?: string | null;
-    },
+    data: EventPayload<typeof invitationCreatedEvent>,
   ) {
     this.logger.log(`Sending invitation email to ${data.recipientEmail} for org ${data.organizationName}`);
-    await this.emailService.sendInvitationEmail(data);
+    // ⚠️ invitationCode may be null (an invitation without a stored code) — passed on as before.
+    await this.emailService.sendInvitationEmail(data as typeof data & { invitationCode: string });
   }
 }

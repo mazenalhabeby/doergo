@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { dueWave, isOpenToRole, minutesWaited, roleOfferTimings, runWithCronLock } from '@hbcfield/shared';
 import { OVER, ROLE_WAVE_CLOSED } from './role-pool-helpers';
 import { RolePoolBase } from './role-pool.base';
+import { emitEvent, roleTaskUnclaimedEvent } from '@hbcfield/shared/microservices';
 
 /** The minute sweep that widens an open role's offer in waves and alerts the creator. */
 @Injectable()
@@ -93,7 +94,7 @@ export class RolePoolSweepService extends RolePoolBase {
       .filter((c) => c.state === 'FREE' || c.state === 'BUSY')
       .slice(0, 3)
       .map((c) => c.name);
-    this.notifications.emit('role_task_unclaimed', {
+    emitEvent(this.notifications, roleTaskUnclaimedEvent, {
       task: { id: task.id, title: task.title, organizationId: task.organizationId },
       roleName: task.openRole?.name ?? '',
       minutes: minutesWaited(task.openedAt, now) ?? 0,

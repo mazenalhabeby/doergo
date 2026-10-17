@@ -11,6 +11,7 @@ import {
   JOIN_REQUEST_MESSAGE_MAX_LENGTH,
   hashCode,
 } from '@hbcfield/shared';
+import { emitEvent, joinRequestSubmittedEvent } from '@hbcfield/shared/microservices';
 
 /**
  * Asking to join an organization by its code — sending the request, telling the
@@ -48,7 +49,7 @@ export class JoinRequestService {
           select: { id: true },
         }),
       ]);
-      this.notificationClient.emit('join_request_submitted', {
+      emitEvent(this.notificationClient, joinRequestSubmittedEvent, {
         userId,
         userName: requester ? personName(requester) : 'Someone',
         organizationId,
@@ -91,7 +92,11 @@ export class JoinRequestService {
     }
 
     if (organization.joinPolicy === 'CLOSED') {
-      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'This organization is not accepting new members' };
+      return {
+        success: false,
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'This organization is not accepting new members',
+      };
     }
 
     // Check user pending request limit
@@ -231,7 +236,11 @@ export class JoinRequestService {
     }
 
     if (request.status !== 'PENDING') {
-      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: `Cannot cancel a request with status: ${request.status}` };
+      return {
+        success: false,
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: `Cannot cancel a request with status: ${request.status}`,
+      };
     }
 
     await this.prisma.joinRequest.update({

@@ -24,6 +24,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { AnalyticsService } from './analytics.service';
 import { ReportDefinition } from './query-engine';
 import type { ReportCadenceMessage, ReportScheduleInputMessage } from '@hbcfield/shared/microservices';
+import { emitEvent, reportEmailEvent } from '@hbcfield/shared/microservices';
 
 type Cadence = ReportCadenceMessage;
 
@@ -150,7 +151,7 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
         })),
         rows: data.rows.slice(0, 200).map((r) => data.columns.map((c) => this.fmt(r[c.key], c.format, locale))),
       });
-      this.notificationClient.emit('report_email', { recipients: group, subject, html });
+      emitEvent(this.notificationClient, reportEmailEvent, { recipients: group, subject, html });
     }
   }
 

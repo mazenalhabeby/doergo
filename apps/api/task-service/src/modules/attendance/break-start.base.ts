@@ -12,6 +12,7 @@ import {
   plannedRestForTap,
   isRemindable,
 } from '@hbcfield/shared';
+import { emitEvent, breakStartedEvent } from '@hbcfield/shared/microservices';
 
 /** Starting a rest — moved here unchanged from break.service.ts. */
 @Injectable()
@@ -160,7 +161,7 @@ export abstract class BreakStartBase {
     });
 
     // Emit break started notification
-    this.notificationClient.emit('break_started', {
+    emitEvent(this.notificationClient, breakStartedEvent, {
       userId: data.userId,
       userName: user ? personName(user) : 'Unknown',
       breakId: breakRecord.id,

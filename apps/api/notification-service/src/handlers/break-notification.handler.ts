@@ -1,5 +1,12 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  attendanceBreakDueEvent,
+  attendanceBreakOverEvent,
+  autoClockOfferedEvent,
+} from '@hbcfield/shared/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
@@ -26,19 +33,8 @@ export class BreakNotificationHandler {
    * it rides the attendance channel, which now carries the importance and the
    * iOS interruption level that let it appear over whatever the member is doing.
    */
-  @EventPattern('attendance_break_due')
-  async handleBreakDue(@Payload() data: {
-    entryId: string;
-    userId: string;
-    ruleId: string;
-    name: string;
-    durationMinutes: number;
-    isPaid: boolean;
-    expiresAt?: string | null;
-    snoozeCount: number;
-    locationName: string;
-    organizationId: string;
-  }) {
+  @EventPattern(eventPattern(attendanceBreakDueEvent))
+  async handleBreakDue(@Payload() data: EventPayload<typeof attendanceBreakDueEvent>) {
     this.logger.log(`Rest due: user=${data.userId} rest=${data.name} asked=${data.snoozeCount}`);
     try {
       await this.attendancePush.sendBreakDuePush({
@@ -69,15 +65,8 @@ export class BreakNotificationHandler {
   }
 
   /** The rest has run its length. One nudge, with a button to come back. */
-  @EventPattern('attendance_break_over')
-  async handleBreakOver(@Payload() data: {
-    entryId: string;
-    userId: string;
-    breakId: string;
-    name: string;
-    durationMinutes: number;
-    organizationId: string;
-  }) {
+  @EventPattern(eventPattern(attendanceBreakOverEvent))
+  async handleBreakOver(@Payload() data: EventPayload<typeof attendanceBreakOverEvent>) {
     this.logger.log(`Rest over: user=${data.userId} rest=${data.name}`);
     try {
       await this.attendancePush.sendBreakOverPush({
@@ -105,19 +94,23 @@ export class BreakNotificationHandler {
     agreed yet. Their phone now shows the switch; this tells them it is there
     and that it is about THIS workspace only. Tapping opens the Time screen.
   */
-  @EventPattern('auto_clock_offered')
-  async handleAutoClockOffered(@Payload() data: { organizationId: string; spaceId: string; spaceName: string; userIds: string[] }) {
+  @EventPattern(eventPattern(autoClockOfferedEvent))
+  async handleAutoClockOffered(@Payload() data: EventPayload<typeof autoClockOfferedEvent>) {
     if (!data.userIds?.length) return;
     const text: LocalizedText = {
       title: msg('attendance.autoClockOffered.title', { workspace: data.spaceName }),
       body: msg('attendance.autoClockOffered.body'),
     };
     try {
-      await this.pushService.sendToUsers(data.userIds, text, { type: 'attendance.auto_clock_offered', spaceId: data.spaceId });
+      await this.pushService.sendToUsers(data.userIds, text, {
+        type: 'attendance.auto_clock_offered',
+        spaceId: data.spaceId,
+      });
     } catch (error) {
       this.logger.error(`Failed to send automatic clock offer push: ${error}`);
     }
-    for (const userId of data.userIds) this.websocketGateway.emitToUser(userId, 'auto_clock_offered', { spaceId: data.spaceId });
+    for (const userId of data.userIds)
+      this.websocketGateway.emitToUser(userId, 'auto_clock_offered', { spaceId: data.spaceId });
     await this.store.record({
       recipientIds: data.userIds,
       organizationId: data.organizationId,

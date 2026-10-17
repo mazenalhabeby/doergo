@@ -1,5 +1,14 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  blockedTasksReminderEvent,
+  commentAddedEvent,
+  taskAssignedEvent,
+  taskDepartureDueEvent,
+  taskStatusChangedEvent,
+} from '@hbcfield/shared/microservices';
 import { MemberEmailsService } from '../modules/email/member-emails.service';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
@@ -30,7 +39,7 @@ export class TaskNotificationHandler {
     event: string,
     payload: any,
     push: { text: LocalizedText; data?: any },
-    exclude?: string,
+    exclude?: string | null,
   ) {
     const ids = [...new Set((watcherIds || []).filter((id) => id && id !== exclude))];
     for (const id of ids) this.websocketGateway.emitToUser(id, event, payload);
@@ -48,8 +57,8 @@ export class TaskNotificationHandler {
    * the positions and due dates are. This only delivers it, so the rule lives
    * in one place and cannot drift.
    */
-  @EventPattern('task_departure_due')
-  async handleDepartureDue(@Payload() data: any) {
+  @EventPattern(eventPattern(taskDepartureDueEvent))
+  async handleDepartureDue(@Payload() data: EventPayload<typeof taskDepartureDueEvent>) {
     this.logger.log(`Departure due: task ${data.taskId} for ${data.userId}`);
     try {
       const due = new Date(data.dueDate);
@@ -67,8 +76,8 @@ export class TaskNotificationHandler {
     }
   }
 
-  @EventPattern('task_assigned')
-  async handleTaskAssigned(@Payload() data: any) {
+  @EventPattern(eventPattern(taskAssignedEvent))
+  async handleTaskAssigned(@Payload() data: EventPayload<typeof taskAssignedEvent>) {
     this.logger.log(`Task assigned: ${data.task.id}`);
     this.websocketGateway.emitTaskAssigned(data.task, data.workerId);
 
@@ -119,8 +128,8 @@ export class TaskNotificationHandler {
     }
   }
 
-  @EventPattern('task_status_changed')
-  async handleTaskStatusChanged(@Payload() data: any) {
+  @EventPattern(eventPattern(taskStatusChangedEvent))
+  async handleTaskStatusChanged(@Payload() data: EventPayload<typeof taskStatusChangedEvent>) {
     this.logger.log(`Task status changed: ${data.task.id} ${data.oldStatus} -> ${data.newStatus}`);
     this.websocketGateway.emitTaskStatusChanged(data.task, data.oldStatus, data.newStatus);
 
@@ -174,8 +183,8 @@ export class TaskNotificationHandler {
     }
   }
 
-  @EventPattern('comment_added')
-  async handleCommentAdded(@Payload() data: any) {
+  @EventPattern(eventPattern(commentAddedEvent))
+  async handleCommentAdded(@Payload() data: EventPayload<typeof commentAddedEvent>) {
     this.logger.log(`Comment added to task: ${data.taskId}`);
     this.websocketGateway.emitCommentAdded(data.taskId, data.comment);
 
@@ -209,15 +218,10 @@ export class TaskNotificationHandler {
     }
   }
 
-  @EventPattern('blocked_tasks_reminder')
-  async handleBlockedTasksReminder(@Payload() data: {
-    userId: string;
-    blockedTasks: { id: string; title: string }[];
-    newTaskId: string;
-    newTaskTitle: string;
-  }) {
+  @EventPattern(eventPattern(blockedTasksReminderEvent))
+  async handleBlockedTasksReminder(@Payload() data: EventPayload<typeof blockedTasksReminderEvent>) {
     const count = data.blockedTasks.length;
-    const taskNames = data.blockedTasks.map(t => t.title).join(', ');
+    const taskNames = data.blockedTasks.map((t) => t.title).join(', ');
 
     try {
       await this.pushService.sendToUser(

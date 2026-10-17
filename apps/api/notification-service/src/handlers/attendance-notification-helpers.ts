@@ -1,5 +1,9 @@
 import type { SupportedLocale } from '@hbcfield/shared';
 import { zoneOf } from '@hbcfield/shared';
+import type { GeofenceExcursionEvent as GeofenceExcursionPayload } from '@hbcfield/shared/microservices';
+
+/** Payload of every geofence_excursion_* event — the event contract's (shared with task-service). */
+type GeofenceExcursionEvent = GeofenceExcursionPayload;
 
 // Labels for attendance approval flags in the SOCKET payload's `flagSummary`,
 // which the web renders as a hint. The push and the bell entry do not use these:
@@ -15,23 +19,6 @@ const FLAG_LABELS: Record<string, string> = {
 };
 
 // Payload for every geofence_excursion_* event emitted by task-service.
-interface GeofenceExcursionEvent {
-  excursionId: string;
-  status: string;
-  userId: string;
-  userName: string;
-  userEmail?: string;
-  spaceId: string;
-  spaceName: string;
-  reason?: string | null;
-  requestedMinutes?: number | null;
-  grantedMinutes?: number | null;
-  expiresAt?: string | null;
-  distanceM?: number | null;
-  watcherIds?: string[];
-  watcherEmails?: string[];
-  organizationId: string;
-}
 
 /**
  * "Monday" / "Montag" / "lunes" — the weekday of a shift, in the entry's own

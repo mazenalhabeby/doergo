@@ -1,5 +1,16 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  taskCrewIssueEvent,
+  taskCrewStartedEvent,
+  taskHandoverAddedEvent,
+  taskLeadChangedEvent,
+  taskLeadNeededEvent,
+  taskStartedForYouEvent,
+  tasksPausedEvent,
+} from '@hbcfield/shared/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { msg } from '../i18n/translate';
@@ -21,16 +32,10 @@ export class CrewNotificationHandler {
    * A worker wrote what they did on a job and what is left — the people who have
    * the job now hear it, including a note written after it was given to them.
    */
-  @EventPattern('task_handover_added')
+  @EventPattern(eventPattern(taskHandoverAddedEvent))
   async handleHandoverAdded(
     @Payload()
-    data: {
-      taskId: string;
-      taskTitle: string;
-      authorName: string;
-      recipientIds: string[];
-      organizationId: string;
-    },
+    data: EventPayload<typeof taskHandoverAddedEvent>,
   ) {
     this.websocketGateway.emitToOrganization(data.organizationId, 'task.handoverAdded', { taskId: data.taskId });
     if (!data.recipientIds?.length) return;
@@ -49,17 +54,10 @@ export class CrewNotificationHandler {
   }
 
   /** The office started somebody's job for them — they hear who, and why. */
-  @EventPattern('task_started_for_you')
+  @EventPattern(eventPattern(taskStartedForYouEvent))
   async handleStartedForYou(
     @Payload()
-    data: {
-      taskId: string;
-      taskTitle: string;
-      userId: string;
-      byName: string;
-      reason: string;
-      organizationId: string;
-    },
+    data: EventPayload<typeof taskStartedForYouEvent>,
   ) {
     try {
       await this.pushService.sendToUser(
@@ -80,10 +78,8 @@ export class CrewNotificationHandler {
    * have not joined are asked "are you with them?" — one tap joins them from
    * the start (shared crew.ts joinMoment). The category carries the button.
    */
-  @EventPattern('task_crew_started')
-  async handleCrewStarted(
-    @Payload() d: { taskId: string; taskTitle: string; starterName: string; startedAt: string; memberIds: string[] },
-  ) {
+  @EventPattern(eventPattern(taskCrewStartedEvent))
+  async handleCrewStarted(@Payload() d: EventPayload<typeof taskCrewStartedEvent>) {
     if (!d.memberIds?.length) return;
     try {
       await this.pushService.sendToUsers(
@@ -100,10 +96,8 @@ export class CrewNotificationHandler {
   }
 
   /** The lead of one job was handed to somebody — they are told, and for how long. */
-  @EventPattern('task_lead_changed')
-  async handleLeadChanged(
-    @Payload() d: { taskId: string; taskTitle: string; toUserId: string; byName: string; scope: 'TODAY' | 'PERMANENT' },
-  ) {
+  @EventPattern(eventPattern(taskLeadChangedEvent))
+  async handleLeadChanged(@Payload() d: EventPayload<typeof taskLeadChangedEvent>) {
     try {
       await this.pushService.sendToUser(
         d.toUserId,
@@ -121,16 +115,10 @@ export class CrewNotificationHandler {
   }
 
   /** The morning notice: a job's leader has approved time off today. */
-  @EventPattern('task_lead_needed')
+  @EventPattern(eventPattern(taskLeadNeededEvent))
   async handleLeadNeeded(
     @Payload()
-    d: {
-      taskId: string;
-      taskTitle: string;
-      recipientIds: string[];
-      leaderName: string;
-      actingName?: string | null;
-    },
+    d: EventPayload<typeof taskLeadNeededEvent>,
   ) {
     if (!d.recipientIds?.length) return;
     try {
@@ -150,10 +138,8 @@ export class CrewNotificationHandler {
   }
 
   /** A crew member stopped on their own ("My issue") — the leader is told why. */
-  @EventPattern('task_crew_issue')
-  async handleCrewIssue(
-    @Payload() d: { taskId: string; taskTitle: string; leaderId: string; name: string; reason: string },
-  ) {
+  @EventPattern(eventPattern(taskCrewIssueEvent))
+  async handleCrewIssue(@Payload() d: EventPayload<typeof taskCrewIssueEvent>) {
     try {
       await this.pushService.sendToUser(
         d.leaderId,
@@ -169,8 +155,8 @@ export class CrewNotificationHandler {
   }
 
   /** Jobs paused at a clock-out — the office's boards refresh and show them paused. */
-  @EventPattern('tasks_paused')
-  async handleTasksPaused(@Payload() data: { taskIds: string[]; userId: string; organizationId: string }) {
+  @EventPattern(eventPattern(tasksPausedEvent))
+  async handleTasksPaused(@Payload() data: EventPayload<typeof tasksPausedEvent>) {
     this.websocketGateway.emitToOrganization(data.organizationId, 'tasks.paused', {
       taskIds: data.taskIds,
       userId: data.userId,

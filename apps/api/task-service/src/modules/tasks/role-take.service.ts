@@ -3,6 +3,7 @@ import { personName, minutesWaited, success } from '@hbcfield/shared';
 import { TaskEventType } from '@prisma/client';
 import { Facts } from './role-pool-helpers';
 import { RolePoolBase } from './role-pool.base';
+import { emitEvent, roleTaskTakenEvent } from '@hbcfield/shared/microservices';
 
 /** Taking a place on a task open to a role — one conditional update, the first to take it gets it. */
 @Injectable()
@@ -105,7 +106,7 @@ export class RoleTakeService extends RolePoolBase {
     await this.tasks.onAssigneesChanged(task.id, [data.userId], data.userId);
 
     if (task.createdById !== data.userId) {
-      this.notifications.emit('role_task_taken', {
+      emitEvent(this.notifications, roleTaskTakenEvent, {
         task: { id: task.id, title: task.title, organizationId: task.organizationId },
         takerName,
         notifyIds: [task.createdById],

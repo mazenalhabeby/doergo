@@ -1,5 +1,13 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  attendanceGeofenceAlertEvent,
+  attendanceOvertimeDecisionEvent,
+  attendanceOvertimeRequestEvent,
+  attendancePendingApprovalEvent,
+} from '@hbcfield/shared/microservices';
 import { EmailService } from '../modules/email/email.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
@@ -25,16 +33,8 @@ export class AttendanceAlertsHandler {
   ) {}
 
   // Worker asked to keep working past their shift → notify overtime approvers.
-  @EventPattern('attendance_overtime_request')
-  async handleOvertimeRequest(@Payload() data: {
-    entryId: string;
-    userId: string;
-    userName: string;
-    locationId: string;
-    locationName: string;
-    leaderIds: string[];
-    organizationId: string;
-  }) {
+  @EventPattern(eventPattern(attendanceOvertimeRequestEvent))
+  async handleOvertimeRequest(@Payload() data: EventPayload<typeof attendanceOvertimeRequestEvent>) {
     const leaderIds = data.leaderIds || [];
     this.logger.log(`Overtime request: user=${data.userName}, entry=${data.entryId}, leaders=${leaderIds.length}`);
 
@@ -72,15 +72,8 @@ export class AttendanceAlertsHandler {
   }
 
   // Leader approved/rejected the extra time → tell the worker.
-  @EventPattern('attendance_overtime_decision')
-  async handleOvertimeDecision(@Payload() data: {
-    entryId: string;
-    userId: string;
-    decision: 'approved' | 'rejected';
-    minutes?: number;
-    newExpectedClockOutAt?: string;
-    organizationId: string;
-  }) {
+  @EventPattern(eventPattern(attendanceOvertimeDecisionEvent))
+  async handleOvertimeDecision(@Payload() data: EventPayload<typeof attendanceOvertimeDecisionEvent>) {
     this.logger.log(`Overtime decision: entry=${data.entryId}, decision=${data.decision}`);
 
     try {
@@ -102,19 +95,8 @@ export class AttendanceAlertsHandler {
     // this audit kept finding.
   }
 
-  @EventPattern('attendance_geofence_alert')
-  async handleGeofenceAlert(@Payload() data: {
-    userId: string;
-    userName: string;
-    userEmail: string;
-    locationName: string;
-    distance: number;
-    allowedRadius: number;
-    action: 'clock_in' | 'clock_out';
-    dispatcherEmails: string[];
-    dispatcherIds: string[];
-    organizationId: string;
-  }) {
+  @EventPattern(eventPattern(attendanceGeofenceAlertEvent))
+  async handleGeofenceAlert(@Payload() data: EventPayload<typeof attendanceGeofenceAlertEvent>) {
     this.logger.log(`Geofence alert: user=${data.userName}, distance=${data.distance}m`);
 
     // `dispatcherIds` and `dispatcherEmails` are the same people in the same
@@ -164,20 +146,11 @@ export class AttendanceAlertsHandler {
     });
   }
 
-  @EventPattern('attendance_pending_approval')
-  async handlePendingApproval(@Payload() data: {
-    entryId: string;
-    userId: string;
-    userName: string;
-    locationName: string;
-    flagReasons: string[];
-    totalMinutes: number;
-    managerIds: string[];
-    organizationId: string;
-  }) {
-    const flagSummary = (data.flagReasons || [])
-      .map((r) => FLAG_LABELS[r] || r.replace(/_/g, ' ').toLowerCase())
-      .join(', ') || 'needs review';
+  @EventPattern(eventPattern(attendancePendingApprovalEvent))
+  async handlePendingApproval(@Payload() data: EventPayload<typeof attendancePendingApprovalEvent>) {
+    const flagSummary =
+      (data.flagReasons || []).map((r) => FLAG_LABELS[r] || r.replace(/_/g, ' ').toLowerCase()).join(', ') ||
+      'needs review';
 
     this.logger.log(`Pending approval: user=${data.userName}, flags=[${flagSummary}]`);
 

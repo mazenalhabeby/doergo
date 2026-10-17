@@ -13,6 +13,7 @@ import {
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { CrewService } from './handover/crew.service';
+import { emitEvent, taskLeadNeededEvent } from '@hbcfield/shared/microservices';
 
 /** Never the jobs nobody is working: drafts, finished, closed, cancelled. */
 const OPEN = { notIn: [TaskStatus.DRAFT, TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELED] as string[] };
@@ -143,7 +144,7 @@ export class LeaderAbsentService {
       );
       if (!recipients.length) continue;
       const acting = view?.leader.acting ? view.members.find((m) => m.user.id === view.leader.userId)?.user : null;
-      this.notifications.emit('task_lead_needed', {
+      emitEvent(this.notifications, taskLeadNeededEvent, {
         taskId: job.id,
         taskTitle: job.title,
         recipientIds: recipients,

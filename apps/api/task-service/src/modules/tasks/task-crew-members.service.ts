@@ -4,10 +4,12 @@ import {
   TaskEventType,
   success,
   canReceiveTasks,
-  TERMINAL_STATUSES, assertFoundInOrg,
+  TERMINAL_STATUSES,
+  assertFoundInOrg,
 } from '@hbcfield/shared';
 import { assertMayAssign, assertTargetIsInSpace } from './task-scope';
 import { TaskAssignmentBase } from './task-assignment.base';
+import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 
 /** Adding and removing people on a job's crew, and releasing a member who left from their open work. */
 @Injectable()
@@ -88,7 +90,7 @@ export class TaskCrewMembersService extends TaskAssignmentBase {
       role,
     });
 
-    this.notificationClient.emit('task_updated', { task: { ...task, id: data.taskId } });
+    emitEvent(this.notificationClient, taskUpdatedEvent, { task: { ...task, id: data.taskId } });
 
     return success(assignee);
   }
@@ -131,7 +133,7 @@ export class TaskCrewMembersService extends TaskAssignmentBase {
       assigneeName: existing.user ? personName(existing.user) : '',
     });
 
-    this.notificationClient.emit('task_updated', { task: { ...task, id: data.taskId } });
+    emitEvent(this.notificationClient, taskUpdatedEvent, { task: { ...task, id: data.taskId } });
 
     return success(null, 'Assignee removed');
   }
@@ -184,10 +186,12 @@ export class TaskCrewMembersService extends TaskAssignmentBase {
     const flowIds = [...new Set(candidates.map((t) => t.workflowId).filter((x): x is string => !!x))];
     const finished = new Set(
       flowIds.length
-        ? (await this.prisma.workflowStatus.findMany({
-            where: { workflowId: { in: flowIds }, OR: [{ isFinal: true }, { isCanceled: true }] },
-            select: { workflowId: true, key: true },
-          })).map((s) => `${s.workflowId}:${s.key}`)
+        ? (
+            await this.prisma.workflowStatus.findMany({
+              where: { workflowId: { in: flowIds }, OR: [{ isFinal: true }, { isCanceled: true }] },
+              select: { workflowId: true, key: true },
+            })
+          ).map((s) => `${s.workflowId}:${s.key}`)
         : [],
     );
     const tasks = candidates.filter((t) => !(t.workflowId && finished.has(`${t.workflowId}:${t.status}`)));
@@ -196,7 +200,10 @@ export class TaskCrewMembersService extends TaskAssignmentBase {
       // The primary column too: a job assigned the old way has no crew row to remove.
       await this.prisma.task.updateMany({ where: { id, assignedToId: userId }, data: { assignedToId: null } });
       await this.afterAssigneesChanged(id, [], actorId);
-      await this.support.createTaskEvent(id, actorId, TaskEventType.ASSIGNEE_REMOVED, { assigneeId: userId, reason: 'MEMBER_LEFT' });
+      await this.support.createTaskEvent(id, actorId, TaskEventType.ASSIGNEE_REMOVED, {
+        assigneeId: userId,
+        reason: 'MEMBER_LEFT',
+      });
     }
     return tasks.length;
   }

@@ -1,5 +1,15 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  attachmentAddedEvent,
+  taskCreatedEvent,
+  taskDeclinedEvent,
+  taskDeletedEvent,
+  taskUpdatedEvent,
+  workerLocationUpdatedEvent,
+} from '@hbcfield/shared/microservices';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 
 /**
@@ -13,38 +23,39 @@ export class TaskLiveHandler {
   constructor(private readonly websocketGateway: WebsocketGateway) {}
 
   /** Something on a job changed — every open screen on it re-reads (websocket.gateway announceTaskChanged). */
-  @EventPattern('task_updated')
-  handleTaskUpdated(@Payload() data: { task?: { id?: string } }) {
+  @EventPattern(eventPattern(taskUpdatedEvent))
+  handleTaskUpdated(@Payload() data: EventPayload<typeof taskUpdatedEvent>) {
     const id = data?.task?.id;
     if (typeof id === 'string' && id) this.websocketGateway.announceTaskChanged(id);
   }
 
-  @EventPattern('task_created')
-  async handleTaskCreated(@Payload() data: any) {
+  @EventPattern(eventPattern(taskCreatedEvent))
+  async handleTaskCreated(@Payload() data: EventPayload<typeof taskCreatedEvent>) {
     this.logger.log(`Task created: ${data.id}`);
     this.websocketGateway.emitTaskCreated(data);
   }
 
-  @EventPattern('task_declined')
-  async handleTaskDeclined(@Payload() data: any) {
+  @EventPattern(eventPattern(taskDeclinedEvent))
+  async handleTaskDeclined(@Payload() data: EventPayload<typeof taskDeclinedEvent>) {
     this.logger.log(`Task declined: ${data.task.id}`);
     this.websocketGateway.emitTaskDeclined(data.task, data.declinedBy);
   }
 
-  @EventPattern('task_deleted')
-  async handleTaskDeleted(@Payload() data: { taskId: string; organizationId: string; spaceId?: string | null }) {
+  @EventPattern(eventPattern(taskDeletedEvent))
+  async handleTaskDeleted(@Payload() data: EventPayload<typeof taskDeletedEvent>) {
     this.logger.log(`Task deleted: ${data.taskId}`);
     this.websocketGateway.emitTaskDeleted(data.taskId, data.organizationId, data.spaceId ?? undefined);
   }
 
-  @EventPattern('attachment_added')
-  async handleAttachmentAdded(@Payload() data: any) {
+  @EventPattern(eventPattern(attachmentAddedEvent))
+  async handleAttachmentAdded(@Payload() data: EventPayload<typeof attachmentAddedEvent>) {
     this.logger.log(`Attachment added to task: ${data.taskId}`);
     this.websocketGateway.emitAttachmentAdded(data.taskId, data.attachment);
   }
 
-  @EventPattern('worker_location_updated')
-  async handleWorkerLocationUpdated(@Payload() data: any) {
-    this.websocketGateway.emitWorkerLocationUpdated(data.organizationId, data.workerId, data.location);
+  @EventPattern(eventPattern(workerLocationUpdatedEvent))
+  async handleWorkerLocationUpdated(@Payload() data: EventPayload<typeof workerLocationUpdatedEvent>) {
+    // ⚠️ tracking-service may send no organization; passed on as before.
+    this.websocketGateway.emitWorkerLocationUpdated(data.organizationId as string, data.workerId, data.location);
   }
 }

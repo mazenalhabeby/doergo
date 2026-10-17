@@ -1,5 +1,19 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  calendarCanceledEvent,
+  calendarChangedEvent,
+  calendarInvitedEvent,
+  calendarReminderEvent,
+  calendarRespondedEvent,
+  calendarSettingsChangedEvent,
+  calendarUpdatedEvent,
+} from '@hbcfield/shared/microservices';
+import type { CalendarEventFacts } from '@hbcfield/shared/microservices';
+
+type EventFacts = CalendarEventFacts;
 import type { SupportedLocale } from '@hbcfield/shared';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
@@ -9,17 +23,6 @@ import { msg, type LocalizedText, type MsgParam } from '../i18n/translate';
 /** The phone's buttons on these pushes (apps/mobile usePushNotifications). */
 export const CALENDAR_REMINDER_CATEGORY = 'calendar_reminder';
 export const CALENDAR_INVITE_CATEGORY = 'calendar_invite';
-
-interface EventFacts {
-  organizationId: string;
-  eventId: string;
-  title: string;
-  startAt: string;
-  allDay?: boolean;
-  timezone?: string;
-  organizerName?: string;
-  userIds: string[];
-}
 
 /** "Sat 31 Oct, 15:00" in the reader's language, in the event's own zone. */
 export function whenText(iso: string, allDay: boolean | undefined, tz: string | undefined): MsgParam {
@@ -79,8 +82,8 @@ export class CalendarNotificationHandler {
     });
   }
 
-  @EventPattern('calendar_invited')
-  async invited(@Payload() d: EventFacts) {
+  @EventPattern(eventPattern(calendarInvitedEvent))
+  async invited(@Payload() d: EventPayload<typeof calendarInvitedEvent>) {
     await this.deliver(
       d.userIds,
       d.organizationId,
@@ -96,8 +99,8 @@ export class CalendarNotificationHandler {
     );
   }
 
-  @EventPattern('calendar_updated')
-  async updated(@Payload() d: EventFacts) {
+  @EventPattern(eventPattern(calendarUpdatedEvent))
+  async updated(@Payload() d: EventPayload<typeof calendarUpdatedEvent>) {
     await this.deliver(
       d.userIds,
       d.organizationId,
@@ -110,8 +113,8 @@ export class CalendarNotificationHandler {
     );
   }
 
-  @EventPattern('calendar_canceled')
-  async canceled(@Payload() d: EventFacts) {
+  @EventPattern(eventPattern(calendarCanceledEvent))
+  async canceled(@Payload() d: EventPayload<typeof calendarCanceledEvent>) {
     await this.deliver(
       d.userIds,
       d.organizationId,
@@ -127,17 +130,10 @@ export class CalendarNotificationHandler {
     );
   }
 
-  @EventPattern('calendar_responded')
+  @EventPattern(eventPattern(calendarRespondedEvent))
   async responded(
     @Payload()
-    d: {
-      organizationId: string;
-      eventId: string;
-      title: string;
-      organizerId: string;
-      responderName?: string;
-      response: 'ACCEPTED' | 'MAYBE' | 'DECLINED';
-    },
+    d: EventPayload<typeof calendarRespondedEvent>,
   ) {
     const key =
       d.response === 'ACCEPTED'
@@ -157,19 +153,10 @@ export class CalendarNotificationHandler {
     );
   }
 
-  @EventPattern('calendar_reminder')
+  @EventPattern(eventPattern(calendarReminderEvent))
   async reminder(
     @Payload()
-    d: {
-      organizationId: string;
-      userId: string;
-      eventId: string;
-      title: string;
-      occurrence: string;
-      allDay?: boolean;
-      timezone?: string;
-      minutes: number;
-    },
+    d: EventPayload<typeof calendarReminderEvent>,
   ) {
     const when = whenText(d.occurrence, d.allDay, d.timezone);
     await this.deliver(
@@ -188,14 +175,14 @@ export class CalendarNotificationHandler {
   }
 
   /** Something on these people's calendars changed — their open screens re-read. No push. */
-  @EventPattern('calendar_changed')
-  changed(@Payload() d: { userIds?: string[] }) {
+  @EventPattern(eventPattern(calendarChangedEvent))
+  changed(@Payload() d: EventPayload<typeof calendarChangedEvent>) {
     for (const id of new Set(d?.userIds ?? [])) this.ws.emitToUser(id, 'calendar.changed', {});
   }
 
   /** Holidays or weekends changed — every screen in the organization re-reads. */
-  @EventPattern('calendar_settings_changed')
-  settingsChanged(@Payload() d: { organizationId?: string }) {
+  @EventPattern(eventPattern(calendarSettingsChangedEvent))
+  settingsChanged(@Payload() d: EventPayload<typeof calendarSettingsChangedEvent>) {
     if (d?.organizationId) this.ws.emitToOrganization(d.organizationId, 'calendar.settingsChanged', {});
   }
 }

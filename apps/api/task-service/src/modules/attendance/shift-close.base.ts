@@ -14,6 +14,8 @@ import { AttendanceGeocoderService } from './attendance-geocoder.service';
 import { ExtraTimeService } from './extra-time.service';
 import { AutoClockService } from './auto-clock.service';
 import { ClosableEntry, CloseSpec, CLOSED_ROW_INCLUDE, ClosedRow } from './clock-out-helpers';
+import { emitEvent, attendanceClockOutEvent } from '@hbcfield/shared/microservices';
+import { attendancePendingApprovalEvent, attendanceShiftClosedProvisionallyEvent } from '@hbcfield/shared/microservices';
 
 /**
  * The ONE way a shift closes (closeEntry), the provisional close, the flag
@@ -74,7 +76,7 @@ export abstract class ShiftCloseBase {
     });
     if (!outcome) return false;
 
-    this.notificationClient.emit('attendance_shift_closed_provisionally', {
+    emitEvent(this.notificationClient, attendanceShiftClosedProvisionallyEvent, {
       entryId: entry.id,
       userId: entry.userId,
       clockInAt: entry.clockInAt.toISOString(),
@@ -230,7 +232,7 @@ export abstract class ShiftCloseBase {
     if (spec.announce) {
       // Real-time event for dashboard/team updates — names only (clock-event.ts).
       const row = result === true ? null : result;
-      this.notificationClient.emit('attendance_clock_out', {
+      emitEvent(this.notificationClient, attendanceClockOutEvent, {
         userId: entry.userId,
         organizationId: entry.organizationId,
         timeEntry: clockEventEntry(
@@ -276,7 +278,7 @@ export abstract class ShiftCloseBase {
         'attendance',
       );
 
-      this.notificationClient.emit('attendance_pending_approval', {
+      emitEvent(this.notificationClient, attendancePendingApprovalEvent, {
         entryId: data.entryId,
         userId: data.userId,
         userName: personName(user),

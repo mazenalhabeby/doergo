@@ -1,6 +1,12 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES } from '@hbcfield/shared';
+import {
+  emitEvent,
+  organizationSuspendedEvent,
+  userSessionsRevokedEvent,
+  type EventContract,
+} from '@hbcfield/shared/microservices';
 
 /**
  * Telling the live connections that a session has ended.
@@ -23,17 +29,20 @@ export class SessionEvents {
 
   /** Every session of this person is over — password change, reset, deactivation, removal. */
   sessionsRevoked(userId: string): void {
-    this.emit('user_sessions_revoked', { userId });
+    this.emit(userSessionsRevokedEvent, { userId });
   }
 
   /** The organization was switched off — every member's connection goes. */
   organizationSuspended(organizationId: string): void {
-    this.emit('organization_suspended', { organizationId });
+    this.emit(organizationSuspendedEvent, { organizationId });
   }
 
-  private emit(event: string, payload: Record<string, string>): void {
+  private emit<P>(contract: EventContract<P>, payload: P): void {
+    const event = contract.name;
     try {
-      this.notifications.emit(event, payload).subscribe({ error: (e) => this.logger.warn(`${event} not delivered: ${e?.message ?? e}`) });
+      emitEvent(this.notifications, contract, payload).subscribe({
+        error: (e) => this.logger.warn(`${event} not delivered: ${e?.message ?? e}`),
+      });
     } catch (e) {
       this.logger.warn(`${event} not delivered: ${(e as Error)?.message ?? e}`);
     }

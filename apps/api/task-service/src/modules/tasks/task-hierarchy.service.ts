@@ -4,14 +4,13 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { TaskStatus, TaskEventType, success, assertFoundInOrg } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { resolveOwnedTaskRefs, assertMayAssign, assertMayCreateUnder, assertTargetIsInSpace } from './task-scope';
+import { emitEvent, taskCreatedEvent } from '@hbcfield/shared/microservices';
 
 /**
  * Work under and around a task: subtasks and dependencies.
  */
 @Injectable()
 export class TaskHierarchyService {
-
-
   constructor(
     private readonly prisma: PrismaService,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
@@ -77,7 +76,8 @@ export class TaskHierarchyService {
       that workspace's roster? Without it, "create tasks" in one site was an
       assign right over the whole organization, by id.
     */
-    const assignedToId: string | null = typeof data.assignedToId === 'string' && data.assignedToId ? data.assignedToId : null;
+    const assignedToId: string | null =
+      typeof data.assignedToId === 'string' && data.assignedToId ? data.assignedToId : null;
     if (assignedToId) {
       const grants = {
         userRole: data.userRole,
@@ -150,7 +150,7 @@ export class TaskHierarchyService {
       parentTitle: parent.title,
     });
 
-    this.notificationClient.emit('task_created', task);
+    emitEvent(this.notificationClient, taskCreatedEvent, task);
     this.support.invalidateStatusCountsCache(task.organizationId);
 
     return success(task);

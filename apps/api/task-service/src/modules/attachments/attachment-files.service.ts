@@ -6,6 +6,7 @@ import { MediaSigner } from '../../common/storage/media-signer.service';
 import { TaskEventType, Role, success } from '@hbcfield/shared';
 import { TaskAccessService } from '../../common/task-access/task-access.service';
 import { UPLOAD_TTL_SECONDS, MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from './attachments-helpers';
+import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 
 /** A task attachment after it is filed: removing it (and its object), and an upload link. */
 @Injectable()
@@ -20,13 +21,7 @@ export class AttachmentFilesService {
     private readonly taskAccess: TaskAccessService,
   ) {}
 
-
-  async remove(data: {
-    id: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
+  async remove(data: { id: string; userId: string; userRole: string; organizationId: string }) {
     const attachment = await this.prisma.attachment.findUnique({
       where: { id: data.id },
       include: { task: true },
@@ -72,7 +67,7 @@ export class AttachmentFilesService {
     // viewer's gallery kept showing a file that no longer exists — and clicking it
     // 404s against S3 (audit T-D1). `task_updated` is what the web client already
     // listens for; the payload is ids only.
-    this.notificationClient.emit('task_updated', { task: { id: attachment.taskId } });
+    emitEvent(this.notificationClient, taskUpdatedEvent, { task: { id: attachment.taskId } });
 
     return success(null, 'Attachment deleted');
   }

@@ -4,6 +4,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, SERVICE_NAMES, haversineDistance, isTaskAssignee } from '@hbcfield/shared';
 import { catchError, of } from 'rxjs';
+import { emitEvent, workerLocationUpdatedEvent } from '@hbcfield/shared/microservices';
 
 /**
  * A phone's buffered route points, flushed in one go: ownership and the en-route
@@ -42,8 +43,12 @@ export class LocationBatchService {
     const valid = points
       .filter(
         (p) =>
-          typeof p.lat === 'number' && typeof p.lng === 'number' &&
-          p.lat >= -90 && p.lat <= 90 && p.lng >= -180 && p.lng <= 180,
+          typeof p.lat === 'number' &&
+          typeof p.lng === 'number' &&
+          p.lat >= -90 &&
+          p.lat <= 90 &&
+          p.lng >= -180 &&
+          p.lng <= 180,
       )
       .sort((a, b) => new Date(a.timestamp ?? 0).getTime() - new Date(b.timestamp ?? 0).getTime());
 
@@ -67,8 +72,11 @@ export class LocationBatchService {
         // same route, and matching assignedToId alone silently discarded every
         // point they recorded — accepted by the API, never stored.
         select: {
-          status: true, assignedToId: true, assignees: { select: { userId: true } },
-          routeStartedAt: true, routeEndedAt: true,
+          status: true,
+          assignedToId: true,
+          assignees: { select: { userId: true } },
+          routeStartedAt: true,
+          routeEndedAt: true,
         },
       });
 
@@ -81,7 +89,13 @@ export class LocationBatchService {
         was built to remove. Points timed inside the route's own window still
         belong to it.
       */
-      if (task && task.status !== 'EN_ROUTE' && isTaskAssignee(task, userId) === true && task.routeStartedAt && task.routeEndedAt) {
+      if (
+        task &&
+        task.status !== 'EN_ROUTE' &&
+        isTaskAssignee(task, userId) === true &&
+        task.routeStartedAt &&
+        task.routeEndedAt
+      ) {
         await this.recordLateRoutePoints(userId, taskId, task.routeStartedAt, task.routeEndedAt, valid);
       }
 
@@ -103,7 +117,9 @@ export class LocationBatchService {
         */
         const earliest = task.routeStartedAt ? task.routeStartedAt.getTime() - 60_000 : -Infinity;
         const cleaned = cleanRoutePoints(valid, {
-          previous: lastPoint ? { lat: lastPoint.lat, lng: lastPoint.lng, timestamp: lastPoint.timestamp.toISOString() } : null,
+          previous: lastPoint
+            ? { lat: lastPoint.lat, lng: lastPoint.lng, timestamp: lastPoint.timestamp.toISOString() }
+            : null,
         }).filter((p) => !p.timestamp || Date.parse(p.timestamp) >= earliest);
 
         const stamped = cleaned.filter((p) => p.timestamp).map((p) => new Date(p.timestamp as string));
@@ -158,13 +174,12 @@ export class LocationBatchService {
     }
 
     // Emit only the latest point to the live map (no need to replay the burst).
-    this.notificationClient
-      .emit('worker_location_updated', {
-        organizationId,
-        workerId: userId,
-        taskId,
-        location: { lat: latest.lat, lng: latest.lng, accuracy: latest.accuracy, timestamp: new Date() },
-      })
+    emitEvent(this.notificationClient, workerLocationUpdatedEvent, {
+      organizationId,
+      workerId: userId,
+      taskId,
+      location: { lat: latest.lat, lng: latest.lng, accuracy: latest.accuracy, timestamp: new Date() },
+    })
       .pipe(
         catchError((err) => {
           this.logger.warn(`Failed to emit location update: ${err.message}`);
@@ -194,7 +209,10 @@ export class LocationBatchService {
   ): Promise<void> {
     const inWindow = cleanRoutePoints(points)
       .map((p) => ({ ...p, at: p.timestamp ? new Date(p.timestamp) : null }))
-      .filter((p): p is typeof p & { at: Date } => !!p.at && !Number.isNaN(p.at.getTime()) && p.at >= startedAt && p.at <= endedAt);
+      .filter(
+        (p): p is typeof p & { at: Date } =>
+          !!p.at && !Number.isNaN(p.at.getTime()) && p.at >= startedAt && p.at <= endedAt,
+      );
     if (!inWindow.length) return;
 
     const existing = await this.prisma.locationHistory.findMany({
@@ -219,6 +237,8 @@ export class LocationBatchService {
       distance += haversineDistance(route[i - 1]!.lat, route[i - 1]!.lng, route[i]!.lat, route[i]!.lng);
     }
     await this.prisma.task.update({ where: { id: taskId }, data: { routeDistance: distance } });
-    this.logger.log(`Late route points: task=${taskId} user=${userId} stored=${fresh.length} distance=${Math.round(distance)}m`);
+    this.logger.log(
+      `Late route points: task=${taskId} user=${userId} stored=${fresh.length} distance=${Math.round(distance)}m`,
+    );
   }
 }

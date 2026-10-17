@@ -3,17 +3,15 @@ import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
 import { assertMayCreateUnder } from './task-scope';
+import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 
 /** One task waiting on another: adding a dependency (never a circle), removing one. */
 @Injectable()
 export class TaskDependenciesService {
-
-
   constructor(
     private readonly prisma: PrismaService,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
   ) {}
-
 
   private static readonly MAX_DEPENDENCY_DEPTH = 100;
 
@@ -58,9 +56,7 @@ export class TaskDependenciesService {
     // Check for circular dependency
     const hasCircular = await this.detectCircularDependency(data.successorId, data.predecessorId);
     if (hasCircular) {
-      throw new BadRequestException(
-        'Adding this dependency would create a circular dependency chain',
-      );
+      throw new BadRequestException('Adding this dependency would create a circular dependency chain');
     }
 
     // Check if dependency already exists
@@ -95,8 +91,8 @@ export class TaskDependenciesService {
     // viewer's task detail kept the old chain (audit T-D1). Nobody had hit it
     // because the route was 402ing for every organization (T-B1) — fixing that
     // is what makes this reachable.
-    this.notificationClient.emit('task_updated', { task: { id: data.predecessorId } });
-    this.notificationClient.emit('task_updated', { task: { id: data.successorId } });
+    emitEvent(this.notificationClient, taskUpdatedEvent, { task: { id: data.predecessorId } });
+    emitEvent(this.notificationClient, taskUpdatedEvent, { task: { id: data.successorId } });
 
     return success(dependency);
   }
@@ -137,8 +133,8 @@ export class TaskDependenciesService {
     });
 
     // Both ends of the removed link need refreshing (T-D1).
-    this.notificationClient.emit('task_updated', { task: { id: dependency.predecessorId } });
-    this.notificationClient.emit('task_updated', { task: { id: dependency.successorId } });
+    emitEvent(this.notificationClient, taskUpdatedEvent, { task: { id: dependency.predecessorId } });
+    emitEvent(this.notificationClient, taskUpdatedEvent, { task: { id: dependency.successorId } });
 
     return success(null, 'Dependency removed successfully');
   }
@@ -178,12 +174,7 @@ export class TaskDependenciesService {
     });
 
     for (const dep of dependencies) {
-      const hasCycle = await this.detectCircularDependency(
-        dep.successorId,
-        targetTaskId,
-        visited,
-        maxDepth - 1,
-      );
+      const hasCycle = await this.detectCircularDependency(dep.successorId, targetTaskId, visited, maxDepth - 1);
       if (hasCycle) {
         return true;
       }

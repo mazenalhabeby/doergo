@@ -15,6 +15,7 @@ import { RequestTimeOffDto } from './dto';
 import { SPACE_BRIEF, REQUEST_REFUSALS, requestFacts } from './technicians-helpers';
 import { MemberServiceBase } from './member-service.base';
 import { TimeOffDecisionService } from './time-off-decision.service';
+import { emitEvent, timeOffRequestedEvent } from '@hbcfield/shared/microservices';
 
 /** A member asking for time off (or another request): what they may ask, and sending it. */
 @Injectable()
@@ -252,7 +253,7 @@ export class TimeOffRequestService extends MemberServiceBase {
     const recipientIds = ask.ids;
 
     if (recipientIds.length > 0) {
-      this.notificationClient.emit('time_off_requested', {
+      emitEvent(this.notificationClient, timeOffRequestedEvent, {
         timeOffId: timeOff.id,
         organizationId,
         memberId: technicianId,

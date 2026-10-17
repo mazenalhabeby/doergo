@@ -6,6 +6,7 @@ import { SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, SERVICE_NAMES } from '@hbcfield/sh
 import { NoShowSettleService } from './no-show-settle.service';
 import { CountedTimeService } from './counted-time.service';
 import { ShiftRematchService } from './shift-rematch.service';
+import { emitEvent, attendanceChangedEvent } from '@hbcfield/shared/microservices';
 
 /**
  * What the time-entry services share: announcing a change, the audit row, and what
@@ -35,7 +36,7 @@ export abstract class EntryServiceBase {
    */
   protected emitChanged(organizationId: string, action: string, entryId?: string) {
     try {
-      this.notificationClient.emit('attendance_changed', { organizationId, action, entryId });
+      emitEvent(this.notificationClient, attendanceChangedEvent, { organizationId, action, entryId });
     } catch (err) {
       this.logger.warn(`attendance_changed emit failed (${action}): ${err}`);
     }

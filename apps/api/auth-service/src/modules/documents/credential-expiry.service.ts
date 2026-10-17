@@ -13,6 +13,7 @@ import {
   toISODateString,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { emitEvent, credentialExpiringEvent } from '@hbcfield/shared/microservices';
 
 /**
  * Credentials that are about to lapse, and ones that already have.
@@ -52,9 +53,7 @@ export class CredentialExpiryService {
         const reminded = await this.sendReminders();
         const pruned = await this.pruneExpiredRetention();
         if (marked || reminded || pruned) {
-          this.logger.log(
-            `Documents: ${marked} expired, ${reminded} reminder(s), ${pruned} pruned`,
-          );
+          this.logger.log(`Documents: ${marked} expired, ${reminded} reminder(s), ${pruned} pruned`);
         }
       },
     );
@@ -68,9 +67,7 @@ export class CredentialExpiryService {
    * naive `< now()` would expire it at 00:01 on the day it is still good for.
    */
   async markExpired(now = new Date()): Promise<number> {
-    const startOfToday = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-    );
+    const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
     const { count } = await this.prisma.document.updateMany({
       where: {
@@ -146,7 +143,7 @@ export class CredentialExpiryService {
       if (reminderDueAt(left) !== left) continue;
 
       try {
-        this.notificationClient.emit('credential_expiring', {
+        emitEvent(this.notificationClient, credentialExpiringEvent, {
           documentId: doc.id,
           organizationId: doc.organizationId,
           userId: doc.user.id,

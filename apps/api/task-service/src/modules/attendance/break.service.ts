@@ -5,10 +5,10 @@ import { judgeOccurrence } from '../../common/occurrence.util';
 import { SAME_TAP_MS } from './attendance-occurrence';
 import { parseBreakPlan, nextBreakRemindAt as nextRestAt, breakTotals } from '@hbcfield/shared';
 import { BreakStartBase } from './break-start.base';
+import { emitEvent, breakEndedEvent } from '@hbcfield/shared/microservices';
 
 @Injectable()
 export class BreakService extends BreakStartBase {
-
   async endBreak(data: {
     userId: string;
     organizationId: string;
@@ -64,9 +64,7 @@ export class BreakService extends BreakStartBase {
 
     const activeBreak = entry.breaks[0];
     const now = judgeOccurrence(data.evidence, activeBreak.startedAt).at;
-    const durationMinutes = Math.round(
-      (now.getTime() - activeBreak.startedAt.getTime()) / (1000 * 60),
-    );
+    const durationMinutes = Math.round((now.getTime() - activeBreak.startedAt.getTime()) / (1000 * 60));
 
     // Update break record
     const updatedBreak = await this.prisma.break.update({
@@ -122,7 +120,7 @@ export class BreakService extends BreakStartBase {
     });
 
     // Emit break ended notification
-    this.notificationClient.emit('break_ended', {
+    emitEvent(this.notificationClient, breakEndedEvent, {
       userId: data.userId,
       userName: user ? personName(user) : 'Unknown',
       breakId: updatedBreak.id,

@@ -5,6 +5,25 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { personName, GEOFENCE_EXCURSION, SERVICE_NAMES } from '@hbcfield/shared';
 import { scopeAllows, type AttendanceScope } from '@hbcfield/shared';
+import {
+  emitEvent,
+  geofenceExcursionOutEvent,
+  geofenceExcursionRequestedEvent,
+  geofenceExcursionApprovedEvent,
+  geofenceExcursionRejectedEvent,
+  geofenceExcursionReturnedEvent,
+  geofenceExcursionExpiredEvent,
+} from '@hbcfield/shared/microservices';
+
+/** The six excursion events share one payload; the callers name the event. */
+const EXCURSION_EVENTS = {
+  geofence_excursion_out: geofenceExcursionOutEvent,
+  geofence_excursion_requested: geofenceExcursionRequestedEvent,
+  geofence_excursion_approved: geofenceExcursionApprovedEvent,
+  geofence_excursion_rejected: geofenceExcursionRejectedEvent,
+  geofence_excursion_returned: geofenceExcursionReturnedEvent,
+  geofence_excursion_expired: geofenceExcursionExpiredEvent,
+} as const;
 import { PresenceService } from './presence/presence.service';
 import { ClockOutService } from './clock-out.service';
 
@@ -94,7 +113,7 @@ export abstract class HeartbeatBase {
         watcherEmails = w.emails;
       }
 
-      this.notificationClient.emit(event, {
+      emitEvent(this.notificationClient, EXCURSION_EVENTS[event], {
         excursionId: excursion.id,
         status: excursion.status,
         userId: entry.userId,

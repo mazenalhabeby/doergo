@@ -1,5 +1,12 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  roleTaskOfferedEvent,
+  roleTaskTakenEvent,
+  roleTaskUnclaimedEvent,
+} from '@hbcfield/shared/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
@@ -25,15 +32,10 @@ export class RoleTaskNotificationHandler {
     Pushes are typed `task_role_*`, so a member who switched job pushes off is
     not buzzed (pushCategory → tasks).
   */
-  @EventPattern('role_task_offered')
+  @EventPattern(eventPattern(roleTaskOfferedEvent))
   async handleRoleTaskOffered(
     @Payload()
-    data: {
-      task: { id: string; title: string; organizationId: string };
-      roleName: string;
-      userIds: string[];
-      wave: number;
-    },
+    data: EventPayload<typeof roleTaskOfferedEvent>,
   ) {
     const ids = [...new Set(data.userIds ?? [])];
     if (ids.length === 0) return;
@@ -58,14 +60,10 @@ export class RoleTaskNotificationHandler {
     });
   }
 
-  @EventPattern('role_task_taken')
+  @EventPattern(eventPattern(roleTaskTakenEvent))
   async handleRoleTaskTaken(
     @Payload()
-    data: {
-      task: { id: string; title: string; organizationId: string };
-      takerName: string;
-      notifyIds: string[];
-    },
+    data: EventPayload<typeof roleTaskTakenEvent>,
   ) {
     const ids = [...new Set(data.notifyIds ?? [])];
     if (ids.length === 0) return;
@@ -88,16 +86,10 @@ export class RoleTaskNotificationHandler {
     });
   }
 
-  @EventPattern('role_task_unclaimed')
+  @EventPattern(eventPattern(roleTaskUnclaimedEvent))
   async handleRoleTaskUnclaimed(
     @Payload()
-    data: {
-      task: { id: string; title: string; organizationId: string };
-      roleName: string;
-      minutes: number;
-      names: string[];
-      notifyIds: string[];
-    },
+    data: EventPayload<typeof roleTaskUnclaimedEvent>,
   ) {
     const ids = [...new Set(data.notifyIds ?? [])];
     if (ids.length === 0) return;

@@ -8,6 +8,7 @@ import { ChatReachService } from './chat-reach.service';
 import { ChatFilesService } from './chat-files.service';
 import { ChatTasksService } from './chat-tasks.service';
 import type { TaskAccessFacts } from '../../common/task-access/task-access.service';
+import { emitEvent, chatMessageChangedEvent } from '@hbcfield/shared/microservices';
 
 /**
  * Changing what you said: edit or remove YOUR message, for a short while after
@@ -79,7 +80,7 @@ export class ChatEditService {
       }),
     ]);
     const [message] = await this.files.signMessages(membership.conversation, [visibleMessage(saved)]);
-    this.notificationClient.emit('chat_message_changed', {
+    emitEvent(this.notificationClient, chatMessageChangedEvent, {
       conversationId: msg.conversationId,
       message,
       memberIds: membership.conversation.members.map((m) => m.userId),

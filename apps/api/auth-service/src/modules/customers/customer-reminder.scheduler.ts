@@ -2,7 +2,8 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { SERVICE_NAMES, runWithCronLock, } from '@hbcfield/shared';
+import { SERVICE_NAMES, runWithCronLock } from '@hbcfield/shared';
+import { emitEvent, customerReminderDueEvent } from '@hbcfield/shared/microservices';
 
 /**
  * Sweeps due customer reminders and notifies every manager assigned to the
@@ -70,7 +71,7 @@ export class CustomerReminderScheduler {
           );
       if (recipients.length > 0) {
         try {
-          this.notificationClient.emit('customer_reminder_due', {
+          emitEvent(this.notificationClient, customerReminderDueEvent, {
             organizationId: r.organizationId,
             userIds: recipients,
             customerId: r.customerId,

@@ -6,6 +6,7 @@ import { ShiftResolverService } from './shift-resolver.service';
 import { CountedTimeService } from './counted-time.service';
 import { BreakRulesService } from './break-rules.service';
 import { approvalFor } from './attendance-occurrence';
+import { emitEvent, attendanceChangedEvent } from '@hbcfield/shared/microservices';
 
 /** Which entries a rota change can reach. Always built on the SERVER from the row just written. */
 export interface RematchScope {
@@ -132,7 +133,10 @@ export class ShiftRematchService implements OnModuleDestroy {
         `Re-matched ${matched}/${entries.length} unscheduled entries for user=${scope.userId} org=${scope.organizationId}`,
       );
       try {
-        this.notificationClient.emit('attendance_changed', { organizationId: scope.organizationId, action: 'rematch' });
+        emitEvent(this.notificationClient, attendanceChangedEvent, {
+          organizationId: scope.organizationId,
+          action: 'rematch',
+        });
       } catch (err) {
         this.logger.warn(`attendance_changed emit failed after re-match: ${err}`);
       }

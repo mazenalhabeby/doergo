@@ -17,6 +17,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ApprovalRouteService } from './approval-route.service';
 import { ApprovalRulesService } from './approval-rules.service';
 import { CoverService } from '../../modules/technicians/cover.service';
+import { emitEvent, approvalReminderEvent } from '@hbcfield/shared/microservices';
 
 /** One sweep looks at no more than this many waiting items per organization and kind. */
 const MAX_ITEMS = 500;
@@ -121,7 +122,7 @@ export class ApprovalEscalationService {
           // Nobody holds the escalation role (here): it must not vanish — the usual deciders hear instead.
           if (!recipientIds.length) recipientIds = await this.usualDeciders(organizationId, kind, item);
           if (!recipientIds.length) continue;
-          this.notifications.emit('approval_reminder', {
+          emitEvent(this.notifications, approvalReminderEvent, {
             organizationId,
             recipientIds,
             kind,

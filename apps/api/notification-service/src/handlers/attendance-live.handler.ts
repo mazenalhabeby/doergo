@@ -1,5 +1,18 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  attendanceChangedEvent,
+  attendanceClockInEvent,
+  attendanceClockOutEvent,
+  breakEndedEvent,
+  breakStartedEvent,
+  documentTypesChangedEvent,
+  presenceChangedEvent,
+  spaceChangedEvent,
+  spaceRosterChangedEvent,
+} from '@hbcfield/shared/microservices';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 
 /** Live updates for open screens: presence, workspaces, rosters, clock-ins, rests. */
@@ -11,9 +24,10 @@ export class AttendanceLiveHandler {
 
   // Availability status (Available/Busy/Away) changed — broadcast so teammates'
   // dashboards / contact lists update in real time.
-  @EventPattern('presence_changed')
-  handlePresenceChanged(@Payload() data: { userId: string; presence: string | null; organizationId: string }) {
-    this.websocketGateway.emitPresenceChanged(data.userId, data.presence, data.organizationId);
+  @EventPattern(eventPattern(presenceChangedEvent))
+  handlePresenceChanged(@Payload() data: EventPayload<typeof presenceChangedEvent>) {
+    // ⚠️ The contract allows a null organization (what the gateway sends); passed on as before.
+    this.websocketGateway.emitPresenceChanged(data.userId, data.presence, data.organizationId as string);
   }
 
   /**
@@ -22,37 +36,37 @@ export class AttendanceLiveHandler {
    * data until someone hits refresh, which was the last case in the app that
    * still required one.
    */
-  @EventPattern('space_changed')
-  async handleSpaceChanged(@Payload() data: { organizationId: string; spaceId?: string | null }) {
+  @EventPattern(eventPattern(spaceChangedEvent))
+  async handleSpaceChanged(@Payload() data: EventPayload<typeof spaceChangedEvent>) {
     this.websocketGateway.emitSpaceChanged(data.organizationId, data.spaceId ?? null);
   }
 
-  @EventPattern('document_types_changed')
-  async handleDocumentTypesChanged(@Payload() data: { organizationId: string; typeId?: string | null }) {
+  @EventPattern(eventPattern(documentTypesChangedEvent))
+  async handleDocumentTypesChanged(@Payload() data: EventPayload<typeof documentTypesChangedEvent>) {
     this.websocketGateway.emitDocumentTypesChanged(data.organizationId, data.typeId ?? null);
   }
 
-  @EventPattern('space_roster_changed')
-  async handleSpaceRosterChanged(@Payload() data: { organizationId: string; spaceId?: string | null }) {
+  @EventPattern(eventPattern(spaceRosterChangedEvent))
+  async handleSpaceRosterChanged(@Payload() data: EventPayload<typeof spaceRosterChangedEvent>) {
     this.websocketGateway.emitSpaceRosterChanged(data.organizationId, data.spaceId ?? null);
   }
 
-  @EventPattern('attendance_clock_in')
-  async handleClockIn(@Payload() data: { userId: string; organizationId: string; timeEntry: any }) {
+  @EventPattern(eventPattern(attendanceClockInEvent))
+  async handleClockIn(@Payload() data: EventPayload<typeof attendanceClockInEvent>) {
     this.logger.log(`Clock-in: user=${data.userId}`);
     this.websocketGateway.emitClockIn(data.userId, data.organizationId, data.timeEntry);
   }
 
-  @EventPattern('attendance_clock_out')
-  async handleClockOut(@Payload() data: { userId: string; organizationId: string; timeEntry: any }) {
+  @EventPattern(eventPattern(attendanceClockOutEvent))
+  async handleClockOut(@Payload() data: EventPayload<typeof attendanceClockOutEvent>) {
     this.logger.log(`Clock-out: user=${data.userId}`);
     this.websocketGateway.emitClockOut(data.userId, data.organizationId, data.timeEntry);
   }
 
   // Admin-side attendance mutation (edit/approve/reject/delete/manual-add) →
   // broadcast so every open attendance view refreshes live, no page reload.
-  @EventPattern('attendance_changed')
-  handleAttendanceChanged(@Payload() data: { organizationId: string; action: string; entryId?: string }) {
+  @EventPattern(eventPattern(attendanceChangedEvent))
+  handleAttendanceChanged(@Payload() data: EventPayload<typeof attendanceChangedEvent>) {
     this.websocketGateway.emitToOrganization(data.organizationId, 'attendance.changed', {
       action: data.action,
       entryId: data.entryId ?? null,
@@ -60,15 +74,8 @@ export class AttendanceLiveHandler {
     });
   }
 
-  @EventPattern('break_started')
-  async handleBreakStarted(@Payload() data: {
-    userId: string;
-    userName: string;
-    breakId: string;
-    breakType: string;
-    startedAt: string;
-    organizationId: string;
-  }) {
+  @EventPattern(eventPattern(breakStartedEvent))
+  async handleBreakStarted(@Payload() data: EventPayload<typeof breakStartedEvent>) {
     this.logger.log(`Break started: user=${data.userName}, type=${data.breakType}`);
     this.websocketGateway.emitBreakStarted(data.userId, data.organizationId, {
       breakId: data.breakId,
@@ -79,17 +86,8 @@ export class AttendanceLiveHandler {
     });
   }
 
-  @EventPattern('break_ended')
-  async handleBreakEnded(@Payload() data: {
-    userId: string;
-    userName: string;
-    breakId: string;
-    breakType: string;
-    startedAt: string;
-    endedAt: string;
-    durationMinutes: number;
-    organizationId: string;
-  }) {
+  @EventPattern(eventPattern(breakEndedEvent))
+  async handleBreakEnded(@Payload() data: EventPayload<typeof breakEndedEvent>) {
     this.logger.log(`Break ended: user=${data.userName}, duration=${data.durationMinutes}min`);
     this.websocketGateway.emitBreakEnded(data.userId, data.organizationId, {
       breakId: data.breakId,

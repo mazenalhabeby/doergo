@@ -4,6 +4,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, SERVICE_NAMES, haversineDistance, isTaskAssignee } from '@hbcfield/shared';
 import { RouteMatchingService } from './route-matching.service';
 import { catchError, of } from 'rxjs';
+import { emitEvent, workerLocationUpdatedEvent } from '@hbcfield/shared/microservices';
 
 @Injectable()
 export class LocationService {
@@ -25,10 +26,7 @@ export class LocationService {
     organizationId?: string,
   ) {
     // Validate coordinate bounds — reject garbage before it pollutes the map/route.
-    if (
-      typeof lat !== 'number' || typeof lng !== 'number' ||
-      lat < -90 || lat > 90 || lng < -180 || lng > 180
-    ) {
+    if (typeof lat !== 'number' || typeof lng !== 'number' || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
       throw new Error('Invalid coordinates');
     }
 
@@ -84,18 +82,15 @@ export class LocationService {
     }
 
     // Emit location update event to notification service (fire-and-forget with error handling)
-    this.notificationClient
-      .emit('worker_location_updated', {
-        organizationId,
-        workerId: userId,
-        taskId,
-        location: { lat, lng, accuracy, timestamp: new Date() },
-      })
+    emitEvent(this.notificationClient, workerLocationUpdatedEvent, {
+      organizationId,
+      workerId: userId,
+      taskId,
+      location: { lat, lng, accuracy, timestamp: new Date() },
+    })
       .pipe(
         catchError((err) => {
-          this.logger.warn(
-            `Failed to emit location update to notification service: ${err.message}`,
-          );
+          this.logger.warn(`Failed to emit location update to notification service: ${err.message}`);
           return of(null);
         }),
       )

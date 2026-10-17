@@ -1,5 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
+import { eventPattern, type EventPayload, appVersionSeenEvent } from '@hbcfield/shared/microservices';
 import { UsersService } from './users.service';
 import {
   CreateEmployeeDto,
@@ -226,8 +227,8 @@ export class UsersController {
    * request should wait on bookkeeping, and losing one is harmless — the next
    * request from that phone records the same thing.
    */
-  @EventPattern('app_version_seen')
-  async appVersionSeen(@Payload() data: { userId: string; version: string; platform?: string }) {
+  @EventPattern(eventPattern(appVersionSeenEvent))
+  async appVersionSeen(@Payload() data: EventPayload<typeof appVersionSeenEvent>) {
     return this.usersService.recordAppVersion(data);
   }
 

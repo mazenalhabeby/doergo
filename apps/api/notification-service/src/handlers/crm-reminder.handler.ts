@@ -1,5 +1,6 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import { eventPattern, type EventPayload, customerReminderDueEvent } from '@hbcfield/shared/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
@@ -18,11 +19,8 @@ export class CrmReminderHandler {
     private readonly store: NotificationStore,
   ) {}
 
-  @EventPattern('customer_reminder_due')
-  async handle(@Payload() data: {
-    organizationId: string; userIds?: string[]; userId?: string; customerId: string; customerName: string;
-    body?: string; reminderKind?: string; dueAt?: string | null;
-  }) {
+  @EventPattern(eventPattern(customerReminderDueEvent))
+  async handle(@Payload() data: EventPayload<typeof customerReminderDueEvent>) {
     // Back-compat: accept either userIds[] (new) or a single userId (old).
     const recipients = Array.from(new Set((data.userIds ?? (data.userId ? [data.userId] : [])).filter(Boolean)));
     if (recipients.length === 0) return;
@@ -40,8 +38,11 @@ export class CrmReminderHandler {
     // Realtime to every recipient, then one push for all of them.
     for (const uid of recipients) {
       this.websocketGateway.emitToUser(uid, 'customer.reminder', {
-        customerId: data.customerId, customerName: data.customerName, body: data.body ?? '',
-        reminderKind: data.reminderKind ?? 'OTHER', timestamp: new Date().toISOString(),
+        customerId: data.customerId,
+        customerName: data.customerName,
+        body: data.body ?? '',
+        reminderKind: data.reminderKind ?? 'OTHER',
+        timestamp: new Date().toISOString(),
       });
     }
     try {

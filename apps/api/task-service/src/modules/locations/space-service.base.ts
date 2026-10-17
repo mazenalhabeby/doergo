@@ -14,6 +14,14 @@ import {
   usableLegalEntityId,
   COMPANY_UNKNOWN_MESSAGE,
 } from '@hbcfield/shared';
+import {
+  emitEvent,
+  autoClockOfferedEvent,
+  spaceChangedEvent,
+  spaceRosterChangedEvent,
+} from '@hbcfield/shared/microservices';
+
+const SPACE_EVENTS = { space_changed: spaceChangedEvent, space_roster_changed: spaceRosterChangedEvent } as const;
 
 /**
  * What every workspace service shares: its dependencies, announcing a change,
@@ -46,7 +54,7 @@ export abstract class SpaceServiceBase {
    */
   protected announce(event: 'space_changed' | 'space_roster_changed', organizationId: string, spaceId?: string | null) {
     try {
-      this.notificationClient.emit(event, { organizationId, spaceId: spaceId ?? null });
+      emitEvent(this.notificationClient, SPACE_EVENTS[event], { organizationId, spaceId: spaceId ?? null });
     } catch (err) {
       this.logger.warn(`Failed to announce ${event} for org ${organizationId}: ${err}`);
     }
@@ -56,11 +64,19 @@ export abstract class SpaceServiceBase {
     try {
       const space = await this.prisma.companyLocation.findFirst({
         where: { id: spaceId, organizationId, isActive: true, isRemote: false },
-        select: { name: true, autoClock: true, enabledModules: true, organization: { select: { enabledModules: true } } },
+        select: {
+          name: true,
+          autoClock: true,
+          enabledModules: true,
+          organization: { select: { enabledModules: true } },
+        },
       });
       if (!space) return;
       if (!autoClockOffered({ settings: space.autoClock, assignmentAutoClock: true })) return;
-      if (!spaceRunsClock(space.enabledModules as string[] | null, space.organization?.enabledModules as string[] | null)) return;
+      if (
+        !spaceRunsClock(space.enabledModules as string[] | null, space.organization?.enabledModules as string[] | null)
+      )
+        return;
       // Assigned here now — the same window the clock-in reads.
       const { userId: _anyone, ...assignedNow } = activeAssignmentWhere('', new Date());
       const rows = await this.prisma.spaceAssignment.findMany({
@@ -75,7 +91,12 @@ export abstract class SpaceServiceBase {
       });
       const userIds = [...new Set(rows.map((r) => r.userId))];
       if (!userIds.length) return;
-      this.notificationClient.emit('auto_clock_offered', { organizationId, spaceId, spaceName: space.name, userIds });
+      emitEvent(this.notificationClient, autoClockOfferedEvent, {
+        organizationId,
+        spaceId,
+        spaceName: space.name,
+        userIds,
+      });
     } catch (err) {
       this.logger.warn(`Failed to offer the automatic clock in ${spaceId}: ${err}`);
     }
@@ -136,8 +157,10 @@ export abstract class SpaceServiceBase {
             effectiveFrom: data.rateEffectiveFrom,
             createdById: createdById ?? null,
           });
-        if (data.billableRateCents !== undefined) patch.billableRateCents = (await write('BILL_HOUR', data.billableRateCents)).nowCents;
-        if (data.costRateCents !== undefined) patch.costRateCents = (await write('COST_HOUR', data.costRateCents)).nowCents;
+        if (data.billableRateCents !== undefined)
+          patch.billableRateCents = (await write('BILL_HOUR', data.billableRateCents)).nowCents;
+        if (data.costRateCents !== undefined)
+          patch.costRateCents = (await write('COST_HOUR', data.costRateCents)).nowCents;
         await tx.companyLocation.update({ where: { id: spaceId }, data: patch });
       });
     } catch (e) {

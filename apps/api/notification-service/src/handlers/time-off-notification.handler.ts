@@ -1,5 +1,14 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  timeOffDecidedEvent,
+  timeOffRequestedEvent,
+} from '@hbcfield/shared/microservices';
+import type { TimeOffRequestFacts } from '@hbcfield/shared/microservices';
+
+type RequestFacts = TimeOffRequestFacts;
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
 import { msg, verbatim, type LocalizedText, type Msg } from '../i18n/translate';
@@ -15,13 +24,6 @@ function leaveKind(type: string | undefined): Msg {
 }
 
 /** What a request that is not leave asks for, as a phrase in the reader's language. */
-interface RequestFacts {
-  kind?: string | null;
-  spaceName?: string | null;
-  startTime?: string | null;
-  endTime?: string | null;
-  minutes?: number | null;
-}
 function requestWhat(f: RequestFacts, range: string): Msg {
   switch (requestKindOf(f.kind)) {
     case 'REMOTE':
@@ -29,11 +31,12 @@ function requestWhat(f: RequestFacts, range: string): Msg {
         ? msg('request.what.REMOTE', { space: f.spaceName, range })
         : msg('request.what.REMOTE_NO_SPACE', { range });
     case 'HOURS': {
-      const hours = f.startTime && f.endTime
-        ? msg('request.hours.both', { start: f.startTime, end: f.endTime })
-        : f.startTime
-          ? msg('request.hours.start', { start: f.startTime })
-          : msg('request.hours.end', { end: f.endTime ?? '' });
+      const hours =
+        f.startTime && f.endTime
+          ? msg('request.hours.both', { start: f.startTime, end: f.endTime })
+          : f.startTime
+            ? msg('request.hours.start', { start: f.startTime })
+            : msg('request.hours.end', { end: f.endTime ?? '' });
       return msg('request.what.HOURS', { range, hours });
     }
     case 'OVERTIME':
@@ -66,26 +69,14 @@ export class TimeOffNotificationHandler {
     private readonly store: NotificationStore,
   ) {}
 
-  @EventPattern('time_off_requested')
+  @EventPattern(eventPattern(timeOffRequestedEvent))
   async handleRequested(
     @Payload()
-    data: {
-      timeOffId: string;
-      organizationId: string;
-      memberId: string;
-      memberName: string;
-      type?: string;
-      startDate: string;
-      endDate: string;
-      reason?: string | null;
-      recipientIds: string[];
-    } & RequestFacts,
+    data: EventPayload<typeof timeOffRequestedEvent>,
   ) {
     // Never back to the person who asked, and never twice to the same watcher
     // who is also on the space's routing.
-    const recipients = [
-      ...new Set((data.recipientIds ?? []).filter((id) => id && id !== data.memberId)),
-    ];
+    const recipients = [...new Set((data.recipientIds ?? []).filter((id) => id && id !== data.memberId))];
     this.logger.log(
       `Time-off request: ${data.memberName} ${data.startDate}→${data.endDate}, recipients=${recipients.length}`,
     );
@@ -100,9 +91,10 @@ export class TimeOffNotificationHandler {
         }
       : {
           title: msg('request.requested.title'),
-          body: requestKindOf(data.kind) === 'OTHER'
-            ? msg('request.requested.bodyOther', { name: data.memberName, reason: verbatim(data.reason, 120), range })
-            : msg('request.requested.body', { name: data.memberName, what: requestWhat(data, range) }),
+          body:
+            requestKindOf(data.kind) === 'OTHER'
+              ? msg('request.requested.bodyOther', { name: data.memberName, reason: verbatim(data.reason, 120), range })
+              : msg('request.requested.body', { name: data.memberName, what: requestWhat(data, range) }),
         };
     const link = '/employees/availability';
 
@@ -147,22 +139,12 @@ export class TimeOffNotificationHandler {
     });
   }
 
-  @EventPattern('time_off_decided')
+  @EventPattern(eventPattern(timeOffDecidedEvent))
   async handleDecided(
     @Payload()
-    data: {
-      timeOffId: string;
-      organizationId: string;
-      memberId: string;
-      approved: boolean;
-      rejectionReason?: string | null;
-      startDate: string;
-      endDate: string;
-    } & RequestFacts,
+    data: EventPayload<typeof timeOffDecidedEvent>,
   ) {
-    this.logger.log(
-      `Time-off ${data.approved ? 'approved' : 'rejected'}: ${data.timeOffId} → ${data.memberId}`,
-    );
+    this.logger.log(`Time-off ${data.approved ? 'approved' : 'rejected'}: ${data.timeOffId} → ${data.memberId}`);
 
     const range = data.startDate === data.endDate ? data.startDate : `${data.startDate} → ${data.endDate}`;
     // The reason travels IN the message when it was refused. A refusal that

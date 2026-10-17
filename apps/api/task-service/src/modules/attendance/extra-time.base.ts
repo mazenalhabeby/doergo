@@ -12,6 +12,7 @@ import { CountedTimeService } from './counted-time.service';
 import { AttendanceRoutingService } from './attendance-routing.service';
 import { askAboutOwnRequest, type OwnRequestAsk } from '../../common/own-request-route';
 import { ExtraTimeDecision, decidableExtraTimeWhere, overtimeEndFor } from './extra-time-helpers';
+import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
 
 /**
  * What the extra-time services share: who is asked, the ONE decision path (office
@@ -177,7 +178,7 @@ export abstract class ExtraTimeBase {
 
     // Approved automatically: the owner asked and is answered on screen, not pushed about their own.
     if (!automatic)
-      this.notificationClient.emit('attendance_overtime_decision', {
+      emitEvent(this.notificationClient, attendanceOvertimeDecisionEvent, {
         entryId: entry.id,
         userId: entry.userId,
         decision: 'approved',

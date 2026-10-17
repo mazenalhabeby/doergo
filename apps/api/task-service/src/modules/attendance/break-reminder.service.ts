@@ -14,6 +14,16 @@ import {
   flagsWithMissedRest,
   type BreakPlanItem,
 } from '@hbcfield/shared';
+import {
+  emitEvent,
+  attendanceBreakDueEvent,
+  attendanceBreakOverEvent,
+  type EventContract,
+  type EventPayload,
+} from '@hbcfield/shared/microservices';
+
+/** Filled in by `emit` from the entry itself. */
+type BreakEntryFields = 'entryId' | 'userId' | 'userName' | 'locationId' | 'locationName' | 'organizationId';
 
 /** How many entries one tick may touch. A backlog drains over later ticks. */
 const SWEEP_LIMIT = 500;
@@ -90,11 +100,9 @@ export class BreakReminderService {
         // ── They are resting. Is it over?
         // Only a rest whose rule asks to be reminded gets "your rest is over".
         const item = plan.find((i) => i.ruleId === openBreak.ruleId && i.state === 'TAKEN' && isRemindable(i));
-        const overAt = item
-          ? new Date(openBreak.startedAt.getTime() + item.durationMinutes * 60_000)
-          : null;
+        const overAt = item ? new Date(openBreak.startedAt.getTime() + item.durationMinutes * 60_000) : null;
         if (overAt && overAt.getTime() <= now.getTime()) {
-          this.emit('attendance_break_over', entry, {
+          this.emit(attendanceBreakOverEvent, entry, {
             breakId: openBreak.id,
             name: item!.name,
             durationMinutes: item!.durationMinutes,
@@ -130,7 +138,7 @@ export class BreakReminderService {
         continue;
       }
 
-      this.emit('attendance_break_due', entry, {
+      this.emit(attendanceBreakDueEvent, entry, {
         ruleId: nextUp.ruleId,
         name: nextUp.name,
         durationMinutes: nextUp.durationMinutes,
@@ -211,8 +219,9 @@ export class BreakReminderService {
     return new Date(now.getTime() + minutes * 60_000);
   }
 
-  private emit(
-    event: 'attendance_break_due' | 'attendance_break_over',
+  /** The entry's facts are added here; the caller gives only what is particular to the rest. */
+  private emit<C extends typeof attendanceBreakDueEvent | typeof attendanceBreakOverEvent>(
+    event: C,
     entry: {
       id: string;
       userId: string;
@@ -221,16 +230,22 @@ export class BreakReminderService {
       location?: { name?: string | null } | null;
       user?: { firstName: string; lastName: string } | null;
     },
-    payload: Record<string, unknown>,
+    payload: Omit<EventPayload<C>, BreakEntryFields>,
   ) {
-    this.notificationClient.emit(event, {
-      entryId: entry.id,
-      userId: entry.userId,
-      userName: entry.user ? personName(entry.user) : '',
-      locationId: entry.locationId,
-      locationName: entry.location?.name ?? 'your shift',
-      organizationId: entry.organizationId,
-      ...payload,
-    });
+    // The spread of a generic payload cannot be proved complete by the compiler; the
+    // Omit above is what checks each caller.
+    emitEvent(
+      this.notificationClient,
+      event as EventContract<EventPayload<C>>,
+      {
+        entryId: entry.id,
+        userId: entry.userId,
+        userName: entry.user ? personName(entry.user) : '',
+        locationId: entry.locationId,
+        locationName: entry.location?.name ?? 'your shift',
+        organizationId: entry.organizationId,
+        ...payload,
+      } as EventPayload<C>,
+    );
   }
 }

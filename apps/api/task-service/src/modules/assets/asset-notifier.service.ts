@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { personName, Role, type HandoverPlan } from '@hbcfield/shared';
 import { AssetNotifierBase } from './asset-notifier.base';
+import {
+  emitEvent,
+  assetExpenseDecidedEvent,
+  assetExpenseSubmittedEvent,
+  assetHandedOverEvent,
+} from '@hbcfield/shared/microservices';
 
 /**
  * Who is told about the organization's things, and with what.
@@ -23,7 +29,6 @@ import { AssetNotifierBase } from './asset-notifier.base';
  */
 @Injectable()
 export class AssetNotifier extends AssetNotifierBase {
-
   // ── Expenses ───────────────────────────────────────────────────────────────
 
   /**
@@ -74,7 +79,7 @@ export class AssetNotifier extends AssetNotifierBase {
       }
       if (recipientIds.length === 0) return;
 
-      this.notifications.emit('asset_expense_submitted', {
+      emitEvent(this.notifications, assetExpenseSubmittedEvent, {
         organizationId: entry.organizationId,
         entryId: entry.id,
         assetId: entry.assetId,
@@ -110,13 +115,16 @@ export class AssetNotifier extends AssetNotifierBase {
       const entry = await this.prisma.assetMoney.findFirst({
         where: { id: input.entryId, organizationId: input.organizationId },
         select: {
-          authorId: true, assetId: true, category: true, amountCents: true,
+          authorId: true,
+          assetId: true,
+          category: true,
+          amountCents: true,
           asset: { select: { name: true } },
         },
       });
       if (!entry?.authorId || entry.authorId === input.reviewerId) return;
 
-      this.notifications.emit('asset_expense_decided', {
+      emitEvent(this.notifications, assetExpenseDecidedEvent, {
         organizationId: input.organizationId,
         entryId: input.entryId,
         assetId: entry.assetId,
@@ -158,9 +166,7 @@ export class AssetNotifier extends AssetNotifierBase {
     try {
       const opened = new Set(plan.opening.map((p) => p.userId).filter((v): v is string => !!v));
       // Somebody re-given the thing they had is a receiver, not a loser.
-      const closed = new Set(
-        plan.closing.map((p) => p.userId).filter((v): v is string => !!v && !opened.has(v)),
-      );
+      const closed = new Set(plan.closing.map((p) => p.userId).filter((v): v is string => !!v && !opened.has(v)));
       opened.delete(input.actorId);
       closed.delete(input.actorId);
       if (opened.size === 0 && closed.size === 0) return;
@@ -188,7 +194,7 @@ export class AssetNotifier extends AssetNotifierBase {
       const closedUserIds = [...closed].filter((id) => members.has(id));
       if (openedUserIds.length === 0 && closedUserIds.length === 0) return;
 
-      this.notifications.emit('asset_handed_over', {
+      emitEvent(this.notifications, assetHandedOverEvent, {
         organizationId: input.organizationId,
         assetId: input.assetId,
         assetName: asset.name,

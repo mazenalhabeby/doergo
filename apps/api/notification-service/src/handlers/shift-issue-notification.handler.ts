@@ -1,5 +1,11 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  shiftIssueCreatedEvent,
+  shiftIssueEventEvent,
+} from '@hbcfield/shared/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { msg, type Msg } from '../i18n/translate';
@@ -19,8 +25,8 @@ export class ShiftIssueNotificationHandler {
     private readonly websocketGateway: WebsocketGateway,
   ) {}
 
-  @EventPattern('shift_issue_created')
-  async handleCreated(@Payload() data: any) {
+  @EventPattern(eventPattern(shiftIssueCreatedEvent))
+  async handleCreated(@Payload() data: EventPayload<typeof shiftIssueCreatedEvent>) {
     const recipientIds: string[] = data.recipientIds ?? [];
     const socketTargets = new Set<string>([...recipientIds, data.reporterId].filter(Boolean));
     for (const id of socketTargets) this.websocketGateway.emitToUser(id, 'shift_issue.created', data);
@@ -44,18 +50,19 @@ export class ShiftIssueNotificationHandler {
     }
   }
 
-  @EventPattern('shift_issue_event')
-  async handleEvent(@Payload() data: any) {
+  @EventPattern(eventPattern(shiftIssueEventEvent))
+  async handleEvent(@Payload() data: EventPayload<typeof shiftIssueEventEvent>) {
     const recipientIds: string[] = data.recipientIds ?? [];
     const socketTargets = new Set<string>([...recipientIds, data.actorId].filter(Boolean));
     for (const id of socketTargets) this.websocketGateway.emitToUser(id, 'shift_issue.event', data);
 
-    const body = data.event?.type === 'MESSAGE'
-      ? msg('issue.event.message', {
-          name: data.actorName || msg('common.someone'),
-          text: String(data.event?.body ?? '').slice(0, 120),
-        })
-      : systemLine(data);
+    const body =
+      data.event?.type === 'MESSAGE'
+        ? msg('issue.event.message', {
+            name: data.actorName || msg('common.someone'),
+            text: String(data.event?.body ?? '').slice(0, 120),
+          })
+        : systemLine(data);
     try {
       await this.pushService.sendToUsers(
         recipientIds,
@@ -76,11 +83,17 @@ function systemLine(data: any): Msg {
   // The reason is what the person typed, attached as written.
   const reason = data.event?.body ? ` — ${String(data.event.body).slice(0, 80)}` : '';
   switch (data.event?.type) {
-    case 'ACKNOWLEDGED': return msg('issue.event.acknowledged', { name });
-    case 'ASSIGNED': return msg('issue.event.assigned', { name: data.event?.metadata?.assignedToName || msg('common.someone') });
-    case 'RESOLVED': return msg('issue.event.resolved', { name, reason });
-    case 'REOPENED': return msg('issue.event.reopened', { name });
-    case 'CLOSED': return msg('issue.event.closed', { name, reason });
-    default: return msg('issue.event.updated', { name, reason });
+    case 'ACKNOWLEDGED':
+      return msg('issue.event.acknowledged', { name });
+    case 'ASSIGNED':
+      return msg('issue.event.assigned', { name: data.event?.metadata?.assignedToName || msg('common.someone') });
+    case 'RESOLVED':
+      return msg('issue.event.resolved', { name, reason });
+    case 'REOPENED':
+      return msg('issue.event.reopened', { name });
+    case 'CLOSED':
+      return msg('issue.event.closed', { name, reason });
+    default:
+      return msg('issue.event.updated', { name, reason });
   }
 }

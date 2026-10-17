@@ -12,6 +12,9 @@ import {
   onboardingListJoinRequests,
   onboardingApproveJoinRequest,
   onboardingRejectJoinRequest,
+  emitEvent,
+  joinRequestApprovedEvent,
+  joinRequestRejectedEvent,
 } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
 
@@ -67,9 +70,9 @@ export class JoinRequestsController {
 
     // Emit notification event
     if (result?.data?.userId) {
-      this.notificationClient.emit('join_request_approved', {
+      emitEvent(this.notificationClient, joinRequestApprovedEvent, {
         userId: result.data.userId,
-        organizationId: user.organizationId,
+        organizationId: callerOrgId(user),
         organizationName: result.data.organizationName || '',
         role: dto.role,
         approvedByName: personName(user),
@@ -104,9 +107,9 @@ export class JoinRequestsController {
 
     // Emit notification event
     if (result?.data?.userId) {
-      this.notificationClient.emit('join_request_rejected', {
+      emitEvent(this.notificationClient, joinRequestRejectedEvent, {
         userId: result.data.userId,
-        organizationId: user.organizationId,
+        organizationId: callerOrgId(user),
         organizationName: result.data.organizationName || '',
         reason: dto.reason || '',
         rejectedByName: personName(user),

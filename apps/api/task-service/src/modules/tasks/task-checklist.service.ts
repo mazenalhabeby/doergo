@@ -23,6 +23,7 @@ import {
   type ResolvedAccess,
 } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
+import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 
 /** Who owns a checklist item and who ticked it — names only, for the screens (shared tasks/checklist.ts). */
 export const CHECKLIST_PEOPLE = {
@@ -85,7 +86,7 @@ export class TaskChecklistService {
       ...(assigneeId ? { assigneeId } : {}),
     });
 
-    this.notificationClient.emit('task_updated', { task: { ...task, id: data.taskId } });
+    emitEvent(this.notificationClient, taskUpdatedEvent, { task: { ...task, id: data.taskId } });
 
     return success(item);
   }
@@ -160,7 +161,7 @@ export class TaskChecklistService {
       });
     }
 
-    this.notificationClient.emit('task_updated', { task: { ...task, id: data.taskId } });
+    emitEvent(this.notificationClient, taskUpdatedEvent, { task: { ...task, id: data.taskId } });
 
     return success(item);
   }
@@ -219,7 +220,7 @@ export class TaskChecklistService {
       text: existing.text,
     });
 
-    this.notificationClient.emit('task_updated', { task: { ...task, id: data.taskId } });
+    emitEvent(this.notificationClient, taskUpdatedEvent, { task: { ...task, id: data.taskId } });
 
     return success(null, 'Checklist item deleted');
   }

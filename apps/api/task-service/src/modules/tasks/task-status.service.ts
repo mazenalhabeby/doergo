@@ -33,6 +33,7 @@ import { assertMayMoveStatus, assertTransitionAllowed, managesBoard, previousCha
 import { assertAtJobSite, assertDueBySiteDay, assertNoOtherActiveTask, officeStartFor } from './task-status-checks';
 import { statusUpdateData, writeStatusMove } from './task-status-write';
 import { afterStatusMove, type AfterMoveDeps } from './task-status-after';
+import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 
 /**
  * Moving a task through its steps: the status change itself (with its step
@@ -93,7 +94,7 @@ export class TaskStatusService {
         // Picked up again: one job at a time for whoever resumed it, and the crew is asked to join.
         await this.crew.leaveOtherJobs(data.userId, task.organizationId, task.id, at);
         void this.crew.announceStart(task.id, data.userId, at);
-        this.notificationClient.emit('task_updated', {
+        emitEvent(this.notificationClient, taskUpdatedEvent, {
           task: await this.prisma.task.findUnique({ where: { id: task.id } }),
           actorId: data.userId,
         });

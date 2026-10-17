@@ -5,6 +5,7 @@ import { remoteApprovedAt, type DayRequestRow } from './approved-requests';
 import { alreadyClockedIn, approvalFor } from './attendance-occurrence';
 import { ClockInBase } from './clock-in.base';
 import type { ClockInInput, ClockInOccurrence } from './clock-in-steps';
+import { emitEvent, attendanceClockInEvent } from '@hbcfield/shared/microservices';
 
 /** A clock-in away from any workspace: the approved remote day, and the org's Remote bucket. */
 @Injectable()
@@ -158,7 +159,7 @@ export abstract class ClockInRemoteBase extends ClockInBase {
       nextBreakRemindAt: remoteRests.nextBreakRemindAt,
     });
     this.logger.log(`Remote clock in: entry=${entry.id}, user=${data.userId}, place=${place ?? 'unknown'}`);
-    this.notificationClient.emit('attendance_clock_in', {
+    emitEvent(this.notificationClient, attendanceClockInEvent, {
       userId: data.userId,
       organizationId: data.organizationId,
       timeEntry: clockEventEntry(entry, 'in'),

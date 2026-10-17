@@ -11,11 +11,11 @@ import {
   type SpaceScopeIds,
 } from '@hbcfield/shared';
 import { TaskPortalBase } from './task-portal.base';
+import { emitEvent, taskAssignedEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 
 /** Turning a client's request into a job, closing it, or sending it back — triage. */
 @Injectable()
 export class TaskTriageService extends TaskPortalBase {
-
   /**
    * Triage a pending portal request → a live task. The admin picks the SPACE
    * (required, so the task is always related to a space), the FLOW (task type /
@@ -69,9 +69,7 @@ export class TaskTriageService extends TaskPortalBase {
     // Flow: explicit choice wins; otherwise inherit the space's default flow.
     // null is a valid explicit choice (canonical NEW/ASSIGNED, no workflow).
     const effWorkflowId: string | null =
-      data.workflowId !== undefined
-        ? data.workflowId
-        : await resolveSpaceDefaultWorkflowId(this.prisma, space.id);
+      data.workflowId !== undefined ? data.workflowId : await resolveSpaceDefaultWorkflowId(this.prisma, space.id);
     if (effWorkflowId) {
       const wf = await this.prisma.statusWorkflow.findFirst({
         where: { id: effWorkflowId, organizationId: data.organizationId },
@@ -108,12 +106,7 @@ export class TaskTriageService extends TaskPortalBase {
         );
       }
       // Qualified for the task type this triage is about to create.
-      await this.assignment.assertAssigneesAreQualified(
-        [worker.id],
-        [worker],
-        effWorkflowId,
-        data.organizationId,
-      );
+      await this.assignment.assertAssigneesAreQualified([worker.id], [worker], effWorkflowId, data.organizationId);
       assignedToId = worker.id;
       workerName = personName(worker);
     }
@@ -172,14 +165,14 @@ export class TaskTriageService extends TaskPortalBase {
         workerId: assignedToId,
         workerName,
       });
-      this.notificationClient.emit('task_assigned', {
+      emitEvent(this.notificationClient, taskAssignedEvent, {
         task: updated,
         workerId: assignedToId,
         actorId: data.userId,
         watcherIds: await this.support.taskWatcherIds(assignedToId, updated.organizationId),
       });
     }
-    this.notificationClient.emit('task_updated', { task: updated });
+    emitEvent(this.notificationClient, taskUpdatedEvent, { task: updated });
     this.support.invalidateStatusCountsCache(updated.organizationId);
 
     return success(updated);

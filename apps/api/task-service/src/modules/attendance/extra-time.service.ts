@@ -5,6 +5,7 @@ import { success, TimeEntryStatus } from '@hbcfield/shared';
 import { endOfLocalDay } from '@hbcfield/shared';
 import { decidableExtraTimeWhere, respondedAt } from './extra-time-helpers';
 import { ExtraTimeBase } from './extra-time.base';
+import { emitEvent, attendanceOvertimeRequestEvent } from '@hbcfield/shared/microservices';
 
 export { decidableExtraTimeWhere, respondedAt } from './extra-time-helpers';
 
@@ -19,7 +20,12 @@ export class ExtraTimeService extends ExtraTimeBase {
    * Worker responds "I'm working extra time". Pauses reminders and routes the
    * request to the space's overtime approvers. The entry stays open.
    */
-  async requestExtraTime(data: { userId: string; entryId: string; organizationId: string; occurredAt?: string | null }) {
+  async requestExtraTime(data: {
+    userId: string;
+    entryId: string;
+    organizationId: string;
+    occurredAt?: string | null;
+  }) {
     const entry = await this.prisma.timeEntry.findFirst({
       where: {
         id: data.entryId,
@@ -78,10 +84,16 @@ export class ExtraTimeService extends ExtraTimeBase {
       const from = entry.expectedClockOutAt ?? respondedAt(data.occurredAt, entry.clockInAt);
       const dayEnd = endOfLocalDay(from, zoneOf(entry.location?.timezone));
       const minutes = Math.max(1, Math.min(1440, Math.round((dayEnd.getTime() - from.getTime()) / 60_000)));
-      await this.decide({ approverId: entry.userId, entryId: entry.id, minutes, organizationId: data.organizationId }, true);
-      return success({ entryId: entry.id, status: 'OVERTIME_APPROVED', cycle, automatic: true }, 'Extra time approved automatically');
+      await this.decide(
+        { approverId: entry.userId, entryId: entry.id, minutes, organizationId: data.organizationId },
+        true,
+      );
+      return success(
+        { entryId: entry.id, status: 'OVERTIME_APPROVED', cycle, automatic: true },
+        'Extra time approved automatically',
+      );
     }
-    this.notificationClient.emit('attendance_overtime_request', {
+    emitEvent(this.notificationClient, attendanceOvertimeRequestEvent, {
       entryId: entry.id,
       userId: entry.userId,
       userName: personName(entry.user),
@@ -135,10 +147,13 @@ export class ExtraTimeService extends ExtraTimeBase {
       // The only administrator: exactly the time worked past the end, approved at once.
       const from = entry.expectedClockOutAt ?? clockOutAt;
       const minutes = Math.max(1, Math.min(1440, Math.ceil((clockOutAt.getTime() - from.getTime()) / 60_000)));
-      await this.decide({ approverId: entry.userId, entryId: entry.id, minutes, organizationId: entry.organizationId }, true);
+      await this.decide(
+        { approverId: entry.userId, entryId: entry.id, minutes, organizationId: entry.organizationId },
+        true,
+      );
       return;
     }
-    this.notificationClient.emit('attendance_overtime_request', {
+    emitEvent(this.notificationClient, attendanceOvertimeRequestEvent, {
       entryId: entry.id,
       userId: entry.userId,
       userName: personName(updated.user),
@@ -164,7 +179,8 @@ export class ExtraTimeService extends ExtraTimeBase {
       // A stand-in decides where the leader they cover does — everywhere, or in those workspaces.
       const standIn = await standInGrant(this.prisma, data.userId, data.organizationId);
       if (!standIn.org.canApproveOvertime) {
-        for (const [spaceId, keys] of Object.entries(standIn.perSpace)) if (keys.canApproveOvertime) spaceIds.push(spaceId);
+        for (const [spaceId, keys] of Object.entries(standIn.perSpace))
+          if (keys.canApproveOvertime) spaceIds.push(spaceId);
         if (spaceIds.length === 0) return success([], 'No pending extra-time requests');
         spaceFilter = { locationId: { in: [...new Set(spaceIds)] } };
       }

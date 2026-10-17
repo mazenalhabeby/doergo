@@ -20,6 +20,7 @@ import {
   type CreateInvitationInput,
   type CreatorPerms,
 } from './invitation-create';
+import { emitEvent, invitationCreatedEvent } from '@hbcfield/shared/microservices';
 
 @Injectable()
 export class InvitationService extends InvitationServiceBase {
@@ -169,7 +170,7 @@ export class InvitationService extends InvitationServiceBase {
       ? await this.clientInviteLocale(data.organizationId, email, data.customerId)
       : undefined;
     try {
-      this.notificationClient.emit('invitation_created', {
+      emitEvent(this.notificationClient, invitationCreatedEvent, {
         recipientEmail: email,
         // No name → the email says "your organization" in the reader's language.
         organizationName: invitation.organization?.name ?? null,

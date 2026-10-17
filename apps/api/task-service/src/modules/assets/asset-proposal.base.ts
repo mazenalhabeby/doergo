@@ -15,6 +15,7 @@ import { assetScope } from './asset-access.service';
 import { AssetNotifier } from './asset-notifier.service';
 import { AssetResponsibleService } from './asset-responsible.service';
 import { Placeable, PROPOSAL_STATUS } from './asset-proposal-helpers';
+import { emitEvent, assetProposalDecidedEvent, assetProposalRaisedEvent } from '@hbcfield/shared/microservices';
 
 /**
  * What both sides of a proposal share: the storage prefix, the fields kept, where
@@ -103,7 +104,7 @@ export abstract class AssetProposalBase {
         select: { firstName: true, lastName: true },
       });
 
-      this.notifications.emit('asset_proposal_raised', {
+      emitEvent(this.notifications, assetProposalRaisedEvent, {
         proposalId,
         organizationId,
         raisedById,
@@ -121,7 +122,16 @@ export abstract class AssetProposalBase {
 
   protected cleanFields(raw: ContractFields | undefined): ContractFields {
     const out: ContractFields = {};
-    for (const key of ['name', 'registration', 'vin', 'serial', 'manufacturer', 'model', 'startsOn', 'endsOn'] as const) {
+    for (const key of [
+      'name',
+      'registration',
+      'vin',
+      'serial',
+      'manufacturer',
+      'model',
+      'startsOn',
+      'endsOn',
+    ] as const) {
       const v = raw?.[key];
       if (typeof v === 'string' && v.trim()) out[key] = v.trim().slice(0, 120);
     }
@@ -159,10 +169,15 @@ export abstract class AssetProposalBase {
     const spacesOf = new Map<string, string[]>();
     for (const a of assignments) spacesOf.set(a.userId, [...(spacesOf.get(a.userId) ?? []), a.spaceId]);
 
-    return new Map(rows.map((r) => [r.id, {
-      kindSpaceId: r.categoryId && kindSpace.has(r.categoryId) ? kindSpace.get(r.categoryId) : undefined,
-      holderSpaceIds: spacesOf.get(r.holderUserId ?? r.raisedById) ?? [],
-    }]));
+    return new Map(
+      rows.map((r) => [
+        r.id,
+        {
+          kindSpaceId: r.categoryId && kindSpace.has(r.categoryId) ? kindSpace.get(r.categoryId) : undefined,
+          holderSpaceIds: spacesOf.get(r.holderUserId ?? r.raisedById) ?? [],
+        },
+      ]),
+    );
   }
 
   protected async reviewable(
@@ -213,8 +228,12 @@ export abstract class AssetProposalBase {
 
   protected tell(userId: string, proposalId: string, organizationId: string, outcome: string, detail: string) {
     try {
-      this.notifications.emit('asset_proposal_decided', {
-        proposalId, organizationId, userId, outcome, detail,
+      emitEvent(this.notifications, assetProposalDecidedEvent, {
+        proposalId,
+        organizationId,
+        userId,
+        outcome,
+        detail,
       });
     } catch (e) {
       this.logger.warn(`asset proposal decision emit failed: ${(e as Error).message}`);

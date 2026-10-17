@@ -7,6 +7,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { personName, TaskStatus, credentialStanding, credentialBlocks } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { syncTaskChatCrew } from '../chat/chat-tasks.service';
+import { emitEvent, taskAssignedEvent } from '@hbcfield/shared/microservices';
 
 /**
  * What the assignment services share: whether the people are qualified, and the
@@ -188,7 +189,7 @@ export abstract class TaskAssignmentBase {
     if (!task) return;
 
     for (const workerId of newlyAssigned) {
-      this.notificationClient.emit('task_assigned', {
+      emitEvent(this.notificationClient, taskAssignedEvent, {
         task,
         workerId,
         actorId,

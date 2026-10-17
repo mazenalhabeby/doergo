@@ -3,6 +3,13 @@ import { personName, SERVICE_NAMES, Role, nextPendingStep, ORG_ACCESS_SELECT, or
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { DocumentLookupService } from './document-lookup.service';
+import {
+  emitEvent,
+  documentAwaitingSignatureEvent,
+  documentIssuedEvent,
+  documentReviewedEvent,
+  documentSubmittedEvent,
+} from '@hbcfield/shared/microservices';
 
 /**
  * Telling people about documents. Every notice is fire-and-forget: a queue that
@@ -68,7 +75,7 @@ export class DocumentNotifierService {
       // permission by being one; an inactive role grants nothing.
       const reviewers = candidates.filter((u) => orgAllows(u, 'canIssueDocuments'));
 
-      this.notificationClient.emit('document_submitted', {
+      emitEvent(this.notificationClient, documentSubmittedEvent, {
         documentId,
         organizationId,
         memberId: member.id,
@@ -80,9 +87,7 @@ export class DocumentNotifierService {
         recipientIds: reviewers.map((r) => r.id),
       });
     } catch (err) {
-      this.logger.warn(
-        `Could not queue submission notice for document ${documentId}: ${(err as Error).message}`,
-      );
+      this.logger.warn(`Could not queue submission notice for document ${documentId}: ${(err as Error).message}`);
     }
   }
 
@@ -95,7 +100,7 @@ export class DocumentNotifierService {
     reason: string | null,
   ) {
     try {
-      this.notificationClient.emit('document_reviewed', {
+      emitEvent(this.notificationClient, documentReviewedEvent, {
         documentId,
         userId: member.id,
         email: member.email,
@@ -107,9 +112,7 @@ export class DocumentNotifierService {
         reason,
       });
     } catch (err) {
-      this.logger.warn(
-        `Could not queue review notice for document ${documentId}: ${(err as Error).message}`,
-      );
+      this.logger.warn(`Could not queue review notice for document ${documentId}: ${(err as Error).message}`);
     }
   }
 
@@ -162,11 +165,7 @@ export class DocumentNotifierService {
         a document appeared on their list unannounced — and would quietly make
         the first person the responsible after all.
       */
-      const audience = next.eligibleUserIds?.length
-        ? next.eligibleUserIds
-        : next.userId
-        ? [next.userId]
-        : [];
+      const audience = next.eligibleUserIds?.length ? next.eligibleUserIds : next.userId ? [next.userId] : [];
       if (audience.length === 0) return; // A step nobody can be told about.
 
       const [users, signerRow, document] = await Promise.all([
@@ -195,7 +194,7 @@ export class DocumentNotifierService {
       }
 
       for (const user of users)
-        this.notificationClient.emit('document_awaiting_signature', {
+        emitEvent(this.notificationClient, documentAwaitingSignatureEvent, {
           documentId,
           userId: user.id,
           email: user.email,
@@ -218,7 +217,7 @@ export class DocumentNotifierService {
     needsSignature: boolean,
   ) {
     try {
-      this.notificationClient.emit('document_issued', {
+      emitEvent(this.notificationClient, documentIssuedEvent, {
         documentId,
         userId: member.id,
         email: member.email,

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { personName, TaskStatus, TaskEventType, success } from '@hbcfield/shared';
 import { TaskAssignmentBase } from './task-assignment.base';
+import { emitEvent, taskDeclinedEvent } from '@hbcfield/shared/microservices';
 
 /** A worker declining a job they were given. */
 @Injectable()
@@ -88,7 +89,7 @@ export class TaskDeclineService extends TaskAssignmentBase {
     });
 
     // Notify dispatcher/client that task was declined
-    this.notificationClient.emit('task_declined', {
+    emitEvent(this.notificationClient, taskDeclinedEvent, {
       task: updatedTask,
       declinedBy: previousWorker,
     });

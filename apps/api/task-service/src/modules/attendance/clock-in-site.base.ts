@@ -25,6 +25,7 @@ import {
   type ClockInOccurrence,
   type ClockInUser,
 } from './clock-in-steps';
+import { emitEvent, attendanceClockInEvent } from '@hbcfield/shared/microservices';
 
 type ShiftStamp = Omit<Awaited<ReturnType<ClockInRemoteBase['buildShiftStamp']>>, 'scheduled' | 'flagToleranceMin'>;
 
@@ -235,7 +236,7 @@ export abstract class ClockInSiteBase extends ClockInRemoteBase {
     }
 
     // Emit real-time event for dashboard/team updates
-    this.notificationClient.emit('attendance_clock_in', {
+    emitEvent(this.notificationClient, attendanceClockInEvent, {
       userId: data.userId,
       organizationId: data.organizationId,
       timeEntry: clockEventEntry(entry, 'in'),

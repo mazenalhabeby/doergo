@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import { clampListLimit } from '@hbcfield/shared';
 import { InvitationServiceBase } from './invitation-service.base';
+import { emitEvent, invitationCreatedEvent } from '@hbcfield/shared/microservices';
 
 /** The office's invitations: the list, sending one again, revoking one. */
 @Injectable()
@@ -31,7 +32,7 @@ export class InvitationAdminService extends InvitationServiceBase {
     if (!customer?.email) {
       return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'This client has no email address' };
     }
-    this.notificationClient.emit('invitation_created', {
+    emitEvent(this.notificationClient, invitationCreatedEvent, {
       recipientEmail: customer.email,
       organizationName: invitation.organization?.name ?? null,
       invitationCode: invitation.code,

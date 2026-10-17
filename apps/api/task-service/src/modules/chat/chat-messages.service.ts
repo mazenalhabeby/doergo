@@ -5,6 +5,7 @@ import { findPrior } from '../../common/create-once.util';
 import { CHAT_USER_SELECT as userSelect, previewOf, visibleMessage } from './chat-shape';
 import type { TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { ChatServiceBase } from './chat-service.base';
+import { emitEvent, chatBadgeEvent, chatMessageEvent, chatReadEvent } from '@hbcfield/shared/microservices';
 
 /** Inside one conversation: its history, sending (with an attachment), marking read, muting. */
 @Injectable()
@@ -149,7 +150,7 @@ export class ChatMessagesService extends ChatServiceBase {
     const muted = (membership.conversation.members as Array<{ userId: string; mutedUntil?: Date | null }>)
       .filter((m) => m.mutedUntil && m.mutedUntil > now)
       .map((m) => m.userId);
-    this.notificationClient.emit('chat_message', {
+    emitEvent(this.notificationClient, chatMessageEvent, {
       muted,
       conversationId: data.conversationId,
       message,
@@ -179,8 +180,8 @@ export class ChatMessagesService extends ChatServiceBase {
     const total = await this.counters.badge(data.userId);
     if (membership.unreadCount > 0) {
       // A real change: the reader's other screens drop their badge, the others see "Read".
-      this.notificationClient.emit('chat_badge', { userId: data.userId, total });
-      this.notificationClient.emit('chat_read', {
+      emitEvent(this.notificationClient, chatBadgeEvent, { userId: data.userId, total });
+      emitEvent(this.notificationClient, chatReadEvent, {
         conversationId: data.conversationId,
         userId: data.userId,
         at: at.toISOString(),

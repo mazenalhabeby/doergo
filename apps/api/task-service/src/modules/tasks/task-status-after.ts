@@ -8,6 +8,12 @@ import type { TaskSupportService } from './task-support.service';
 import type { PreparedStepSubmission } from './step-submission';
 import { applyStepFormCrm } from './task-status-crm';
 import type { OfficeStart, StatusTask, TaskWithPeople, UpdateStatusInput } from './task-status.types';
+import {
+  emitEvent,
+  blockedTasksReminderEvent,
+  taskStartedForYouEvent,
+  taskStatusChangedEvent,
+} from '@hbcfield/shared/microservices';
 
 /** `TaskStatusService`'s own collaborators, as the after-effects of a move use them. */
 export interface AfterMoveDeps {
@@ -50,7 +56,7 @@ export async function afterStatusMove(
       where: { id: data.userId },
       select: { firstName: true, lastName: true },
     });
-    deps.notificationClient.emit('task_started_for_you', {
+    emitEvent(deps.notificationClient, taskStartedForYouEvent, {
       taskId: task.id,
       taskTitle: updatedTask.title,
       userId: officeStart.forUserId,
@@ -78,7 +84,7 @@ export async function afterStatusMove(
   }
 
   // Notify about status change
-  deps.notificationClient.emit('task_status_changed', {
+  emitEvent(deps.notificationClient, taskStatusChangedEvent, {
     task: updatedTask,
     oldStatus: task.status,
     newStatus: data.status,
@@ -105,7 +111,7 @@ export async function afterStatusMove(
         select: { id: true, title: true },
       });
       if (blockedTasks.length > 0) {
-        deps.notificationClient.emit('blocked_tasks_reminder', {
+        emitEvent(deps.notificationClient, blockedTasksReminderEvent, {
           userId: data.userId,
           blockedTasks: blockedTasks.map((t) => ({ id: t.id, title: t.title })),
           newTaskId: data.id,

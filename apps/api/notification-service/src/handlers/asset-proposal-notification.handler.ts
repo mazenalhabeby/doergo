@@ -1,5 +1,11 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import {
+  eventPattern,
+  type EventPayload,
+  assetProposalDecidedEvent,
+  assetProposalRaisedEvent,
+} from '@hbcfield/shared/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { msg, verbatim } from '../i18n/translate';
@@ -28,8 +34,8 @@ export class AssetProposalNotificationHandler {
     private readonly websocketGateway: WebsocketGateway,
   ) {}
 
-  @EventPattern('asset_proposal_raised')
-  async handleRaised(@Payload() data: any) {
+  @EventPattern(eventPattern(assetProposalRaisedEvent))
+  async handleRaised(@Payload() data: EventPayload<typeof assetProposalRaisedEvent>) {
     const recipientIds: string[] = data.recipientIds ?? [];
     const targets = new Set<string>([...recipientIds, data.raisedById].filter(Boolean));
     for (const id of targets) this.websocketGateway.emitToUser(id, 'asset_proposal.raised', data);
@@ -51,8 +57,8 @@ export class AssetProposalNotificationHandler {
     }
   }
 
-  @EventPattern('asset_proposal_decided')
-  async handleDecided(@Payload() data: any) {
+  @EventPattern(eventPattern(assetProposalDecidedEvent))
+  async handleDecided(@Payload() data: EventPayload<typeof assetProposalDecidedEvent>) {
     if (!data.userId) return;
     this.websocketGateway.emitToUser(data.userId, 'asset_proposal.decided', data);
 

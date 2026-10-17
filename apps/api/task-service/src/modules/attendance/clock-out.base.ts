@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { personName, zoneOf } from '@hbcfield/shared';
 import { ShiftCloseBase } from './shift-close.base';
+import {
+  emitEvent,
+  attendanceGeofenceAlertEvent,
+  attendanceLeftEarlyEvent,
+  attendanceShiftEscalationResolvedEvent,
+} from '@hbcfield/shared/microservices';
 
 /** The entry the alerts speak about — what the clock-out read before closing it. */
 interface AlertEntry {
@@ -33,7 +39,7 @@ export abstract class ClockOutAlertsBase extends ShiftCloseBase {
     recordedOffline: boolean,
   ) {
     const leaderIds = await this.routing.notifyTargetsFor(entry, 'canReconcileAttendance');
-    this.notificationClient.emit('attendance_shift_escalation_resolved', {
+    emitEvent(this.notificationClient, attendanceShiftEscalationResolvedEvent, {
       entryId: entry.id,
       userId: entry.userId,
       userName: personName(closed.user),
@@ -55,7 +61,7 @@ export abstract class ClockOutAlertsBase extends ShiftCloseBase {
    */
   protected async announceLeftEarly(entry: AlertEntry, closed: ClosedFacts, shortBy: number, earlyReason: string) {
     const leaderIds = await this.routing.notifyTargetsFor(entry, 'canReconcileAttendance');
-    this.notificationClient.emit('attendance_left_early', {
+    emitEvent(this.notificationClient, attendanceLeftEarlyEvent, {
       entryId: entry.id,
       userId: entry.userId,
       userName: personName(closed.user),
@@ -98,7 +104,7 @@ export abstract class ClockOutAlertsBase extends ShiftCloseBase {
       );
 
       // Emit notification event
-      this.notificationClient.emit('attendance_geofence_alert', {
+      emitEvent(this.notificationClient, attendanceGeofenceAlertEvent, {
         userId: data.userId,
         userName: personName(user),
         userEmail: user.email,

@@ -1,6 +1,12 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
-import { OVERTIME_NOTICE_EVENT, OVERTIME_NOTICE_KINDS, overtimeNoticeKeys, type OvertimeNotice } from '@hbcfield/shared';
+import { eventPattern, type EventPayload, overtimeNoticeEvent } from '@hbcfield/shared/microservices';
+import {
+  OVERTIME_NOTICE_EVENT,
+  OVERTIME_NOTICE_KINDS,
+  overtimeNoticeKeys,
+  type OvertimeNotice,
+} from '@hbcfield/shared';
 import { PushService } from '../modules/push/push.service';
 import { NotificationStore } from '../common/notification-store.service';
 import { msg, type LocalizedText } from '../i18n/translate';
@@ -24,8 +30,8 @@ export class OvertimeNotificationHandler {
     private readonly store: NotificationStore,
   ) {}
 
-  @EventPattern(OVERTIME_NOTICE_EVENT)
-  async handle(@Payload() notice: OvertimeNotice) {
+  @EventPattern(eventPattern(overtimeNoticeEvent))
+  async handle(@Payload() notice: EventPayload<typeof overtimeNoticeEvent>) {
     const ids = [...new Set((notice?.recipientIds ?? []).filter((x) => typeof x === 'string' && x))];
     if (!ids.length || !(OVERTIME_NOTICE_KINDS as readonly string[]).includes(notice.kind)) return;
     const keys = overtimeNoticeKeys(notice.kind);

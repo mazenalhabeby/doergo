@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { success, personName } from '@hbcfield/shared';
 import { newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
+import { shiftIssueCreatedEvent } from '@hbcfield/shared/microservices';
 import {
   MAX_FILE_SIZE,
   ALLOWED_FILE_TYPES,
@@ -95,7 +96,7 @@ export class ShiftIssuesService extends ShiftIssuesBase {
 
     const recipientIds = await this.watcherIds(data.callerUserId, data.organizationId);
     const reporterName = await this.nameOf(data.callerUserId);
-    this.emit('shift_issue_created', {
+    this.emit(shiftIssueCreatedEvent, {
       issueId: issue.id,
       organizationId: data.organizationId,
       title: issue.title,

@@ -59,7 +59,13 @@ function setup(rows: Row[], appUrl: string | null = 'https://app.hbcfield.test.c
   return { service, email, prisma, sent, audienceQueries };
 }
 
-const task = (id: string, title = `Job ${id}`) => ({ id, title, priority: 'HIGH', description: null, locationAddress: null });
+const task = (id: string, title = `Job ${id}`) => ({
+  id,
+  title,
+  priority: 'HIGH',
+  description: null,
+  locationAddress: null,
+});
 
 afterEach(() => {
   jest.useRealTimers();
@@ -70,7 +76,11 @@ describe('who a member email may go to', () => {
     The organization is the ceiling, the member opts out underneath it, and an
     unset key at either level means ON — every combination, for every email.
   */
-  const levels: Array<[string, boolean | undefined]> = [['unset', undefined], ['on', true], ['off', false]];
+  const levels: Array<[string, boolean | undefined]> = [
+    ['unset', undefined],
+    ['on', true],
+    ['off', false],
+  ];
   const cases = MEMBER_EMAILS.flatMap((kind) =>
     levels.flatMap(([orgLabel, org]) =>
       levels.map(([memberLabel, mine]) => [kind, orgLabel, org, memberLabel, mine] as const),
@@ -79,7 +89,10 @@ describe('who a member email may go to', () => {
 
   it.each(cases)('%s: organization %s × member %s', async (kind, _o, org, _m, mine) => {
     const row = member('u1', {
-      organization: { notificationPrefs: org === undefined ? {} : { [ORG_EMAIL_SWITCH[kind]]: org }, suspendedAt: null },
+      organization: {
+        notificationPrefs: org === undefined ? {} : { [ORG_EMAIL_SWITCH[kind]]: org },
+        suspendedAt: null,
+      },
       notificationPrefs: mine === undefined ? null : { [MEMBER_EMAIL_PREF[kind as MemberEmail]]: mine },
     });
     const { service } = setup([row]);
@@ -99,7 +112,9 @@ describe('who a member email may go to', () => {
     const { service, prisma } = setup([member('boss'), member('u1')]);
     expect(await service.recipients('taskAssigned', ['boss'], { actorId: 'boss' })).toEqual([]);
     expect(prisma.user.findMany).not.toHaveBeenCalled();
-    expect((await service.recipients('taskAssigned', ['boss', 'u1'], { actorId: 'boss' })).map((r) => r.id)).toEqual(['u1']);
+    expect((await service.recipients('taskAssigned', ['boss', 'u1'], { actorId: 'boss' })).map((r) => r.id)).toEqual([
+      'u1',
+    ]);
   });
 
   it('never an external member, a portal client, a deactivated account or a switched-off organization', async () => {
@@ -268,7 +283,10 @@ describe('the task handler hands the ids over, never an address', () => {
 
   it('assigned: the worker and the actor', async () => {
     const { h, memberEmails } = handler();
-    await h.handleTaskAssigned({ task: t, workerId: 'tech', actorId: 'boss', workerEmail: 'attacker@evil.com' });
+    // A field nobody declares (an address to send to) must be ignored — passed as a variable so the
+    // compiler lets the stray field through, as the wire would.
+    const sent = { task: t, workerId: 'tech', actorId: 'boss', workerEmail: 'attacker@evil.com' };
+    await h.handleTaskAssigned(sent);
     expect(memberEmails.taskAssigned).toHaveBeenCalledWith({ task: t, recipientId: 'tech', actorId: 'boss' });
   });
 
