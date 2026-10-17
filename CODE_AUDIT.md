@@ -314,3 +314,9 @@ already have matching indexes. Fixed: the clock-out sheet resolved workspace wor
 two queries (~27 → ~15 statements, p50 200 → 106 ms). Not fixed (design changes, for the user): the
 approvals inbox reads each kind's own route (~100 statements; by design); calendar rules read the
 organization/workspace/holidays ~3× per request.
+
+**Phase 3 — web page load** (`tools/video/page-load-check.ts`). All main pages within the ≤ 8 first-second budget
+except tasks for a manager (9: the role summary above the list — deferring it would make the list jump).
+Fixed: workspaces 22 → 6 first-second requests, 409 → 231 kB; calendar 303 → 227 kB. For the user: Settings
+(297 kB) could lazy-load each section, but each would show a brief skeleton the first time — a visible change.
+Duplicate refreshes on chat/team are the socket catch-up and are deliberate.
