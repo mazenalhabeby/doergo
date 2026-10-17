@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
+import { ActivityIndicator, FlatList, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
@@ -10,6 +10,8 @@ import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, SearchF
 import { centeredContent } from '../screen-container';
 import { StatusDot, WellRow } from './well-row';
 import { holderName, statusLabel } from './register-words';
+import { workspaceFilter } from '../workspace-filter';
+import { refreshControl } from '../pull-refresh';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -107,15 +109,7 @@ export function RegisterScreen() {
 
   const header = (
     <View style={{ gap: amazen.space(3), paddingBottom: amazen.space(3) }}>
-      {spaces.length > 1 ? (
-        <FilterRow>
-          {[{ id: null as string | null, name: t('register.allSpaces', 'All workspaces') }, ...spaces].map((s) => (
-            <FilterPill key={s.id ?? 'all'} label={s.name} on={spaceId === s.id} onPress={() => setSpaceId(s.id)} />
-          ))}
-        </FilterRow>
-      ) : spaces.length === 1 ? (
-        <AText variant="caption" tone="onGlass">{spaces[0]!.name}</AText>
-      ) : null}
+      {workspaceFilter({ spaces, spaceId, setSpaceId, t })}
       <SearchField value={search} onChangeText={setSearch} placeholder={t('register.search', 'Search name, serial, model')} />
       {kinds.length > 1 ? (
         <FilterRow>
@@ -148,12 +142,7 @@ export function RegisterScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12) }, wide]}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => void load('refresh')}
-            tintColor={c.accent}
-            colors={[c.accent]}
-          />
+          refreshControl({ refreshing: refreshing, onRefresh: () => void load('refresh'), color: c.accent })
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.4}

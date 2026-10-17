@@ -1,17 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Switch, View } from 'react-native';
-import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import {
-  APPROVAL_KIND_SPECS,
-  NO_SHOW_EXCUSE_REASONS,
-  approvalActionsFor,
-  describeApproval,
-  type ApprovalActionSpec,
-  type ApprovalItem,
-  type ApprovalT,
-  type NoShowExcuseReason,
-} from '@hbcfield/shared/client';
+import { NO_SHOW_EXCUSE_REASONS } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import { approvalsApi } from '../../lib/api';
@@ -20,11 +10,11 @@ import { useResponsive } from '../../lib/responsive';
 import { AText, GhostButton, GlassInput, Ground, HeaderBack, PrimaryButton, ScreenHeader, Pill, SectionLabel } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { JobSheet } from '../job/job-ui';
-import { forgetApproval, knownApproval, loadApprovals } from './approvals-store';
 import { WhoElse } from './who-else';
 import { useApprovalDetail } from './use-approval-detail';
 import { ISO_DAY } from './approval-detail-helpers';
 import { ApprovalDetailView } from './approval-detail-view';
+import { FactsWell } from '../facts-well';
 
 /**
  * ONE WAITING DECISION — its facts, and the kind's own buttons
@@ -86,36 +76,7 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
           <AText variant="body" tone="onGlass">{text.headline}</AText>
           {item.group === 'NOW' ? <Pill label={t('approvals.groups.NOW')} tone="critical" /> : null}
         </View>
-        <View
-          style={{
-            backgroundColor: c.well,
-            borderRadius: amazen.radius.panel,
-            paddingHorizontal: amazen.space(3.5),
-            paddingVertical: amazen.space(1.5),
-          }}>
-          {facts.map(([k, v, tone], i) => (
-            <View
-              key={k}
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                gap: amazen.space(3),
-                paddingVertical: amazen.space(2.25),
-                borderTopWidth: i === 0 ? 0 : 1,
-                borderTopColor: c.lineWell,
-              }}>
-              <AText variant="caption" style={{ color: c.inkMuted, fontSize: 13 }}>{k}</AText>
-              <AText
-                variant="body"
-                tone={tone === 'bad' ? 'critical' : tone === 'warn' ? 'warn' : 'strong'}
-                numberOfLines={3}
-                style={{ fontSize: 13.5, flexShrink: 1, textAlign: 'right' }}
-              >
-                {v}
-              </AText>
-            </View>
-          ))}
-        </View>
+        <FactsWell amazen={amazen} facts={facts} lines={3} />
         {item.step ? (
           <View style={{ backgroundColor: c.accentTint, borderRadius: amazen.radius.panel, padding: amazen.space(3) }}>
             <AText variant="body" tone="strong" style={{ fontSize: 13.5 }}>

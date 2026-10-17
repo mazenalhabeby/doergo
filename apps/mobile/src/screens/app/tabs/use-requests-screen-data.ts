@@ -13,7 +13,7 @@ import { useTimeFormat } from "../../../hooks/useTimeFormat";
 import { useResponsive } from "../../../lib/responsive";
 import { centeredContent } from "../../../components/screen-container";
 import { useTabSafe } from "../../../components/amazen";
-import { datesWithStatus, scheduleDayMap, type RequestFilter } from "../../../components/time-off/helpers";
+import { datesWithStatus, mondayDow, scheduleDayMap, type RequestFilter } from "../../../components/time-off/helpers";
 import {
   daysNotAnswered,
   mapLimited,
@@ -196,6 +196,39 @@ export function useRequestsScreenData() {
     if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); } else setViewMonth(viewMonth - 1);
   };
 
+  const goToNextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); } else setViewMonth(viewMonth + 1);
+  };
+  const goToToday = () => { setViewYear(today.getFullYear()); setViewMonth(today.getMonth()); };
+
+  const handleDayPress = (date: Date) => {
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (date < todayStart) return;
+    const isScheduled = schedule.length === 0 || scheduleDays[mondayDow(date)] === true;
+    if (!isScheduled) return;
+    setFormKind(null);
+    if (!isSelecting || !rangeStart) {
+      setRangeStart(date);
+      setRangeEnd(null);
+      setIsSelecting(true);
+    } else {
+      const start = date < rangeStart ? date : rangeStart;
+      const end = date < rangeStart ? rangeStart : date;
+      setRangeStart(start);
+      setRangeEnd(end);
+      setIsSelecting(false);
+    }
+  };
+
+  const clearSelection = () => {
+    setRangeStart(null);
+    setRangeEnd(null);
+    setIsSelecting(false);
+    setLeaveType('VACATION');
+    setNotes('');
+  };
+
+
   return {
     user,
     amazen,
@@ -254,5 +287,9 @@ export function useRequestsScreenData() {
     handleRefresh,
     canSeeTeamAvailability,
     goToPrevMonth,
+    goToNextMonth,
+    goToToday,
+    handleDayPress,
+    clearSelection,
   };
 }

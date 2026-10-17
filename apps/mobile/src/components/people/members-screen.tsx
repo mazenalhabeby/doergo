@@ -1,26 +1,13 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native';
+import React from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
-import { membersApi, type OrgMember } from '../../lib/api';
 import { useResponsive } from '../../lib/responsive';
-import {
-  AText,
-  ChoicePill,
-  GlassInput,
-  Ground,
-  HeaderBack,
-  PrimaryButton,
-  ScreenHeader,
-  Sunken,
-  Well,
-  WellDivider,
-  Banner,
-} from '../amazen';
+import { AText, GlassInput, Ground, HeaderBack, PrimaryButton, ScreenHeader, Sunken, Well, WellDivider, Banner } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { JobSheet } from '../job/job-ui';
 import { timeAgo } from '../team/helpers';
@@ -29,6 +16,7 @@ import { personName } from '@hbcfield/shared/client';
 import { useMembersScreen } from './use-members-screen';
 import { RoleTag, Line } from './members-screen-helpers';
 import { LoadingLine } from '../loading-line';
+import { pullRefresh } from '../pull-refresh';
 
 /**
  * MEMBERS — everyone in the organization, filtered by the organization's OWN roles.
@@ -89,16 +77,7 @@ export function MembersScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(3) }, wide]}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={async () => {
-              setRefreshing(true);
-              await load();
-              setRefreshing(false);
-            }}
-            tintColor={c.accent}
-            colors={[c.accent]}
-          />
+          pullRefresh({ refreshing, setRefreshing, load, color: c.accent })
         }
       >
         <GlassInput

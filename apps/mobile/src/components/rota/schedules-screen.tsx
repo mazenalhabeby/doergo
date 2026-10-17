@@ -1,18 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Animated, Pressable, ScrollView, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { orgHasAddOn, localDateKey, todayKey } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
-import { rotaApi, type RotaCell, type RotaShift, type RotaWeek } from '../../lib/api';
+import { rotaApi, type RotaCell, type RotaWeek } from '../../lib/api';
 import { useResponsive } from '../../lib/responsive';
-import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well, Banner, SectionLabel } from '../amazen';
+import { AText, Ground, HeaderBack, ScreenHeader, Well, Banner, SectionLabel } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { JobSheet } from '../job/job-ui';
 import { NAME_W, Cell, Legend, RoundArrow, DaySheet } from './day-sheet';
 import { LoadingLine } from '../loading-line';
+import { pullRefresh } from '../pull-refresh';
 
 /**
  * SCHEDULES — who works when, in one workspace, for one week — as the CLOCK-IN
@@ -127,16 +128,7 @@ export function SchedulesScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(3) }, wide]}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={async () => {
-              setRefreshing(true);
-              await load();
-              setRefreshing(false);
-            }}
-            tintColor={c.accent}
-            colors={[c.accent]}
-          />
+          pullRefresh({ refreshing, setRefreshing, load, color: c.accent })
         }
       >
         {failed && !week ? <Banner tone="critical" text={t('rota.failed', 'Could not load the schedule. Pull to try again.')} /> : null}

@@ -1,27 +1,15 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, View } from 'react-native';
+import React from 'react';
+import { FlatList, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import {
-  SocketEvents,
-  applyChangedToConversations,
-  applyRead,
-  applyToConversations,
-  chatSearchQuery,
-  conversationTitle,
-  markReadLocally,
-  chatWhenShort,
-  type ChatConversation,
-  type ChatSearchHit,
-} from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useSocketContext } from '../../contexts/socket-context';
 import { chatApi } from '../../lib/api';
 import { useOffline } from '../../offline/offline-context';
 import { useAppResume } from '../../lib/app-resume';
-import { AText, GlassInput, Well, WellDivider, useTabSafe, Banner } from '../amazen';
-import { ConversationAvatar, ConversationRow } from '../chat/chat-rows';
+import { AText, GlassInput, Well, Banner } from '../amazen';
+import { ConversationRow } from '../chat/chat-rows';
 import { Arrive } from '../amazen/motion';
 import { InkIcon } from '../amazen/ink-icon';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
@@ -29,6 +17,7 @@ import { debounce } from '../chat/live-thread';
 import { refreshChatBadge } from '../../lib/chat-badge';
 import { useTeamMessages } from './use-team-messages';
 import { LoadingLine } from '../loading-line';
+import { pullRefresh } from '../pull-refresh';
 
 /**
  * Team → MESSAGES: every conversation, newest first, with what is unread.
@@ -97,16 +86,7 @@ export function TeamMessages({ header }: { header: React.ReactElement }) {
         )
       }
       refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={async () => {
-            setRefreshing(true);
-            await load();
-            setRefreshing(false);
-          }}
-          tintColor={c.accent}
-          colors={[c.accent]}
-        />
+        pullRefresh({ refreshing, setRefreshing, load, color: c.accent })
       }
       renderItem={({ item, index }) => (
         <Arrive enabled={index < 12 && Date.now() - firstDraw.current < 1500} delay={Math.min(index, 12) * 35}>

@@ -67,7 +67,8 @@ describe('no screen opens a data-built link by hand', () => {
     'src/components/job/job-submissions.tsx',
     'app/(customer)/request/[id].tsx',
     'app/(app)/sign-document.tsx',
-    'src/components/documents/documents-screen.tsx',
+    // The screen's link handling moved into its hook when the screen was split.
+    'src/components/documents/use-documents-screen.tsx',
     'src/components/customer/record/record-hero.tsx',
     'src/components/customer/record/record-about.tsx',
     'src/components/customer/contact-row.tsx',

@@ -1,25 +1,20 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, SectionList, TextInput, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import React from 'react';
+import { SectionList, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { SocketEvents, personName } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useSocketContext } from '../../contexts/socket-context';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
-import { chatApi, teamApi, type Colleague } from '../../lib/api';
 import { useChatBadge } from '../../lib/chat-badge';
-import { loadTeamHalf, openingHalf, rememberTeamHalf, type TeamHalf } from '../../lib/team-half';
 import { TeamMessages } from './team-messages';
 import { useResponsive } from '../../lib/responsive';
 import { tabAccessFor } from '../../lib/tab-layout';
-import { AText, ChoicePill, GlassInput, Ground, ScreenHeader, Well, WellDivider, useTabSafe, RoundButton, SectionLabel } from '../amazen';
+import { Ground, ScreenHeader, SectionLabel } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { MessagesGlyph } from '../glyphs/glyphs';
-import { PersonAvatar, PRESENCE_DOT, presenceKey } from './person-avatar';
-import { TourTarget, useTourScroll } from '../tour/tour-target';
 import { useTeamScreen } from './use-team-screen';
 import { TeamSeparator, TeamRow } from './team-screen-helpers';
+import { pullRefresh } from '../pull-refresh';
 
 /**
  * TEAM — two halves on one tab: PEOPLE (who is here) and MESSAGES (every
@@ -100,16 +95,7 @@ export function TeamScreen() {
           ListEmptyComponent={empty}
           contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe }, wide]}
           refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={async () => {
-                setRefreshing(true);
-                await load();
-                setRefreshing(false);
-              }}
-              tintColor={c.accent}
-              colors={[c.accent]}
-            />
+            pullRefresh({ refreshing, setRefreshing, load, color: c.accent })
           }
           renderSectionHeader={({ section }) => (
             <SectionLabel

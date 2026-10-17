@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, RefreshControl, SectionList, View } from 'react-native';
+import { ActivityIndicator, SectionList, View } from 'react-native';
 import { router, useFocusEffect, type Href, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
@@ -20,6 +20,7 @@ import { centeredContent } from '../screen-container';
 import { WellRow } from '../register/well-row';
 import { approvalKey, loadApprovals } from './approvals-store';
 import { StandInSheet } from './stand-in-sheet';
+import { refreshControl } from '../pull-refresh';
 
 type Filter = ApprovalKind | 'all';
 
@@ -124,12 +125,7 @@ export function ApprovalsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12) }, wide]}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => void load('refresh')}
-            tintColor={c.accent}
-            colors={[c.accent]}
-          />
+          refreshControl({ refreshing: refreshing, onRefresh: () => void load('refresh'), color: c.accent })
         }
         renderSectionHeader={({ section }) => (
           <SectionLabel

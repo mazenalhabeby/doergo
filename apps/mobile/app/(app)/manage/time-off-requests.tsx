@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -13,6 +13,7 @@ import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, Well, u
 import { Initials, QuietButton } from '../../../src/components/job/job-ui';
 import { RequestRow, useRequestWords, type RequestRowData } from '../../../src/components/requests/request-parts';
 import { LoadingLine } from '../../../src/components/loading-line';
+import { pullRefresh } from '../../../src/components/pull-refresh';
 
 type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL';
 const FILTER_KEYS: StatusFilter[] = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
@@ -81,16 +82,7 @@ export default function RequestsToDecideScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) }, wide]}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={async () => {
-              setRefreshing(true);
-              await load();
-              setRefreshing(false);
-            }}
-            tintColor={c.accent}
-            colors={[c.accent]}
-          />
+          pullRefresh({ refreshing, setRefreshing, load, color: c.accent })
         }
       >
         {requests === null ? (

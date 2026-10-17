@@ -1,70 +1,38 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { customersApi, type MobileCustomer, type MobileCustomerActivity } from '../../../lib/api';
-import type { MobileCustomerContact, MobileCustomerAddress } from '../../../lib/api/customers';
 import { ROUTES } from '../../../lib/constants';
 import { useQueuedCreate } from '../../../offline/actions/queued-create';
 import { useQueuedWrite } from '../../../offline/actions/queued-write';
 import { useSyncStatus } from '../../../offline/offline-context';
-import {
-  applyPendingClient,
-  applyPendingContacts,
-  pendingActivityDone,
-  pendingContactLinks,
-} from '../../../offline/crm/client-overlay';
+import { applyPendingContacts, pendingContactLinks } from '../../../offline/crm/client-overlay';
 import { useToast } from '../../../island/island-context';
 import type { PendingActivity } from '../activity-row';
 import type { ComposedActivity } from '../activity-composer';
 import type { ReminderAssignee } from '../reminder-fields';
 import { useAuth } from '../../../contexts/auth-context';
 import type { ContactSide } from '../add-contact-sheet';
-import { type RecordTab, isTab, FILTERS, type ActivityFilter, isOverdue, byDue } from './client-record-helpers';
+import { FILTERS, isOverdue, byDue } from './client-record-helpers';
 import { useClientRecordState } from './use-client-record-state';
 
 /** useClientRecord's state and handlers — everything before its markup, moved here unchanged. */
 export function useClientRecordData(id: string, linkedTab: string | undefined) {
+  const data = useClientRecordState(id, linkedTab);
   const {
     t,
-    toast,
     user,
-    setCustomer,
     activities,
-    setActivities,
     contacts,
-    setContacts,
     companies,
-    setCompanies,
     addresses,
-    loading,
-    refreshing,
-    localeOpen,
-    setLocaleOpen,
-    editing,
-    setEditing,
-    adding,
-    setAdding,
-    busyLink,
-    setBusyLink,
-    removing,
-    setRemoving,
     filter,
-    setFilter,
     showDone,
-    setShowDone,
     tab,
-    seen,
-    selectTab,
     activityCreate,
-    write,
     operations,
-    refreshActivities,
-    refreshCompanies,
-    refreshContacts,
-    onRefresh,
     record,
     doneOffline,
-  } = useClientRecordState(id, linkedTab);
+  } = data;
 
   const shownActivities = useMemo<PendingActivity[]>(() => {
     const known = new Set(activities.map((a) => a.id));
@@ -211,40 +179,7 @@ export function useClientRecordData(id: string, linkedTab: string | undefined) {
   );
 
   return {
-    t,
-    toast,
-    setCustomer,
-    setActivities,
-    setContacts,
-    setCompanies,
-    addresses,
-    loading,
-    refreshing,
-    localeOpen,
-    setLocaleOpen,
-    editing,
-    setEditing,
-    adding,
-    setAdding,
-    busyLink,
-    setBusyLink,
-    removing,
-    setRemoving,
-    filter,
-    setFilter,
-    showDone,
-    setShowDone,
-    tab,
-    seen,
-    selectTab,
-    activityCreate,
-    write,
-    operations,
-    refreshActivities,
-    refreshCompanies,
-    refreshContacts,
-    onRefresh,
-    record,
+    ...data,
     shownContacts,
     shownCompanies,
     feed,

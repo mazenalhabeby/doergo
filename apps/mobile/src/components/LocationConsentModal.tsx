@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -50,25 +50,10 @@ export function LocationConsentModal() {
               {t('locationConsent.introPre')}<Text style={{ fontWeight: FONT_WEIGHT.bold, color: colors.textPrimary }}>{t('locationConsent.introBold')}</Text>{t('locationConsent.introPost')}
             </Text>
 
-            <View style={styles.bullet}>
-              <Ionicons name="car-outline" size={18} color={COLORS.primary} style={styles.bulletIcon} />
-              <Text style={[styles.bulletText, { color: colors.textSecondary }]}>
-                {t('locationConsent.drivePre')}<Text style={{ fontWeight: FONT_WEIGHT.semibold, color: colors.textPrimary }}>{t('locationConsent.driveBold')}</Text>{t('locationConsent.drivePost')}
-              </Text>
-            </View>
-            <View style={styles.bullet}>
-              <Ionicons name="time-outline" size={18} color={COLORS.primary} style={styles.bulletIcon} />
-              <Text style={[styles.bulletText, { color: colors.textSecondary }]}>
-                {t('locationConsent.clockPre')}<Text style={{ fontWeight: FONT_WEIGHT.semibold, color: colors.textPrimary }}>{t('locationConsent.clockBold')}</Text>{t('locationConsent.clockPost')}
-              </Text>
-            </View>
+            <Bullet icon="car-outline" pre={t('locationConsent.drivePre')} bold={t('locationConsent.driveBold')} post={t('locationConsent.drivePost')} />
+            <Bullet icon="time-outline" pre={t('locationConsent.clockPre')} bold={t('locationConsent.clockBold')} post={t('locationConsent.clockPost')} />
             {/* The automatic clock watches arriving BEFORE any clock-in — the disclosure must say so (Play's prominent-disclosure rule). */}
-            <View style={styles.bullet}>
-              <Ionicons name="enter-outline" size={18} color={COLORS.primary} style={styles.bulletIcon} />
-              <Text style={[styles.bulletText, { color: colors.textSecondary }]}>
-                {t('locationConsent.autoPre')}<Text style={{ fontWeight: FONT_WEIGHT.semibold, color: colors.textPrimary }}>{t('locationConsent.autoBold')}</Text>{t('locationConsent.autoPost')}
-              </Text>
-            </View>
+            <Bullet icon="enter-outline" pre={t('locationConsent.autoPre')} bold={t('locationConsent.autoBold')} post={t('locationConsent.autoPost')} />
 
             <Text style={[styles.text, { color: colors.textSecondary, marginTop: SPACING.sm }]}>
               {t('locationConsent.privacyPre')}<Text style={{ color: COLORS.primary }}>{t('locationConsent.privacyLink')}</Text>{t('locationConsent.privacyPost')}
@@ -83,6 +68,19 @@ export function LocationConsentModal() {
           </TouchableOpacity>
         </SheetPanel>
     </BlurSheet>
+  );
+}
+
+/** One line of the disclosure: an icon, then a sentence with its key words in bold. */
+function Bullet({ icon, pre, bold, post }: { icon: ComponentProps<typeof Ionicons>['name']; pre: string; bold: string; post: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.bullet}>
+      <Ionicons name={icon} size={18} color={COLORS.primary} style={styles.bulletIcon} />
+      <Text style={[styles.bulletText, { color: colors.textSecondary }]}>
+        {pre}<Text style={{ fontWeight: FONT_WEIGHT.semibold, color: colors.textPrimary }}>{bold}</Text>{post}
+      </Text>
+    </View>
   );
 }
 

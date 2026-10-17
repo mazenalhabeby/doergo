@@ -1,43 +1,24 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useCallback } from 'react';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { customersApi, type MobileCustomer, type MobileCustomerActivity } from '../../../lib/api';
+import { customersApi, type MobileCustomer } from '../../../lib/api';
 import type { MobileCustomerContact, MobileCustomerAddress } from '../../../lib/api/customers';
-import {
-  customerStageLabel,
-  REMINDER_KIND_KEYS,
-  isReminderKind,
-  reminderLeadKey,
-  reminderRepeatKey,
-} from '@hbcfield/shared/client';
 import { ROUTES } from '../../../lib/constants';
 import { useQueuedCreate } from '../../../offline/actions/queued-create';
 import { useQueuedWrite } from '../../../offline/actions/queued-write';
 import { useSyncStatus } from '../../../offline/offline-context';
 import {
-  clientLane,
-  dependsOnClients,
   updateClientFromPhone,
   updateContactFromPhone,
   removeContactFromPhone,
   discardPendingContact,
-  setActivityDoneFromPhone,
 } from '../../../offline/crm/client-actions';
-import {
-  applyPendingClient,
-  applyPendingContacts,
-  pendingActivityDone,
-  pendingContactLinks,
-  type PendingContactLink,
-} from '../../../offline/crm/client-overlay';
 import { clientLocalePayload } from '../../../lib/client-locale';
 import { useToast } from '../../../island/island-context';
-import type { ActivityTag, PendingActivity } from '../activity-row';
 import type { ComposedActivity } from '../activity-composer';
 import type { ReminderAssignee } from '../reminder-fields';
 import { useAuth } from '../../../contexts/auth-context';
 import type { ContactSide } from '../add-contact-sheet';
-import { type RecordTab, isTab, FILTERS, type ActivityFilter, isOverdue, byDue } from './client-record-helpers';
 import { useClientRecordData } from './use-client-record-data';
 import { useClientRecordActions } from './use-client-record-actions';
 export { type RecordTab, FILTERS, TABS, isWaiting } from './client-record-helpers';
@@ -57,55 +38,22 @@ export { type RecordTab, FILTERS, TABS, isWaiting } from './client-record-helper
 */
 
 export function useClientRecord(id: string, linkedTab: string | undefined) {
+  const data = useClientRecordActions(id, linkedTab);
   const {
     t,
     toast,
     setCustomer,
     setContacts,
     setCompanies,
-    addresses,
-    loading,
-    refreshing,
-    localeOpen,
     setLocaleOpen,
-    editing,
-    setEditing,
-    adding,
-    setAdding,
-    busyLink,
     setBusyLink,
     removing,
     setRemoving,
-    filter,
-    setFilter,
-    showDone,
-    setShowDone,
-    tab,
-    seen,
-    selectTab,
     write,
     refreshActivities,
-    refreshCompanies,
-    refreshContacts,
-    onRefresh,
     record,
-    shownContacts,
-    shownCompanies,
-    feed,
-    openReminders,
-    doneReminders,
-    overdueCount,
-    reminderRows,
-    canEditInfo,
     canWork,
-    assignees,
-    openTask,
-    relTime,
-    toggleDone,
-    headingFor,
-    tagsFor,
-    addActivity,
-  } = useClientRecordActions(id, linkedTab);
+  } = data;
 
   /**
    * ONE way to change this client, whatever moved it — the stage pills, the
@@ -237,52 +185,12 @@ export function useClientRecord(id: string, linkedTab: string | undefined) {
 
   /** The same words the Sync screen and every other queued thing use. */
   return {
-    record,
-    loading,
-    refreshing,
-    onRefresh,
-    refreshActivities,
-    refreshContacts,
-    refreshCompanies,
-    setCustomer,
-    tab,
-    seen,
-    selectTab,
-    canEditInfo,
-    canWork,
-    assignees,
-    shownContacts,
-    shownCompanies,
-    addresses,
-    feed,
-    filter,
-    setFilter,
-    openReminders,
-    doneReminders,
-    overdueCount,
-    reminderRows,
-    showDone,
-    setShowDone,
-    editing,
-    setEditing,
-    adding,
-    setAdding,
-    removing,
-    setRemoving,
-    busyLink,
-    localeOpen,
-    setLocaleOpen,
-    openTask,
-    toggleDone,
-    addActivity,
+    ...data,
     setStage,
     setLocale,
     openRecord,
     makePrimary,
     confirmRemove,
-    headingFor,
-    tagsFor,
-    relTime,
   };
 }
 

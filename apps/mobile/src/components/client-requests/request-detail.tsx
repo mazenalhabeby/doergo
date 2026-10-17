@@ -15,6 +15,7 @@ import { AText, ChoicePill, FilterRow, Ground, HeaderBack, PrimaryButton, Screen
 import { centeredContent } from '../screen-container';
 import { JobSheet } from '../job/job-ui';
 import { knownRequest, requestsOfPortal, type ListedRequest } from './requests-store';
+import { FactsWell } from '../facts-well';
 
 const PRIORITIES: TriageInput['priority'][] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
@@ -121,36 +122,7 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
             <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>{req.description}</AText>
           </View>
         ) : null}
-        <View
-          style={{
-            backgroundColor: c.well,
-            borderRadius: amazen.radius.panel,
-            paddingHorizontal: amazen.space(3.5),
-            paddingVertical: amazen.space(1.5),
-          }}>
-          {facts.map(([k, v], i) => (
-            <View
-              key={k}
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                gap: amazen.space(3),
-                paddingVertical: amazen.space(2.25),
-                borderTopWidth: i === 0 ? 0 : 1,
-                borderTopColor: c.lineWell,
-              }}>
-              <AText variant="caption" style={{ color: c.inkMuted, fontSize: 13 }}>{k}</AText>
-              <AText
-                variant="body"
-                tone="strong"
-                numberOfLines={2}
-                style={{ fontSize: 13.5, flexShrink: 1, textAlign: 'right' }}
-              >
-                {v}
-              </AText>
-            </View>
-          ))}
-        </View>
+        <FactsWell amazen={amazen} facts={facts} lines={2} />
       </ScrollView>
 
       <View

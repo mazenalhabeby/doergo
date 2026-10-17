@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
+import { ActivityIndicator, FlatList, View } from 'react-native';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
@@ -10,6 +10,8 @@ import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, Pill } 
 import { centeredContent } from '../screen-container';
 import { WellRow } from '../register/well-row';
 import { requestsOfSpaces, stageOf, type ListedRequest, type RequestStage } from './requests-store';
+import { workspaceFilter } from '../workspace-filter';
+import { refreshControl } from '../pull-refresh';
 
 const STAGES: RequestStage[] = ['waiting', 'job', 'done'];
 
@@ -68,15 +70,7 @@ export function RequestsScreen() {
 
   const header = (
     <View style={{ gap: amazen.space(3), paddingBottom: amazen.space(3) }}>
-      {spaces.length > 1 ? (
-        <FilterRow>
-          {[{ id: null as string | null, name: t('register.allSpaces', 'All workspaces') }, ...spaces].map((s) => (
-            <FilterPill key={s.id ?? 'all'} label={s.name} on={spaceId === s.id} onPress={() => setSpaceId(s.id)} />
-          ))}
-        </FilterRow>
-      ) : spaces.length === 1 ? (
-        <AText variant="caption" tone="onGlass">{spaces[0]!.name}</AText>
-      ) : null}
+      {workspaceFilter({ spaces, spaceId, setSpaceId, t })}
       <FilterRow>
         {STAGES.map((s) => <FilterPill key={s} label={`${stageWord(s)} ${counts[s]}`} on={stage === s} onPress={() => setStage(s)} />)}
       </FilterRow>
@@ -97,12 +91,7 @@ export function RequestsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12) }, wide]}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => void load('refresh')}
-            tintColor={c.accent}
-            colors={[c.accent]}
-          />
+          refreshControl({ refreshing: refreshing, onRefresh: () => void load('refresh'), color: c.accent })
         }
         ListEmptyComponent={
           <View style={{ paddingVertical: amazen.space(8), alignItems: 'center' }}>

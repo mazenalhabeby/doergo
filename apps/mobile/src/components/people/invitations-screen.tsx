@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Share, View } from 'react-native';
+import { Pressable, ScrollView, Share, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
@@ -23,6 +23,7 @@ import {
 import { centeredContent } from '../screen-container';
 import { JobSheet } from '../job/job-ui';
 import { LoadingLine } from '../loading-line';
+import { pullRefresh } from '../pull-refresh';
 
 /**
  * INVITATIONS — make a code, share it, see what became of the ones sent.
@@ -173,16 +174,7 @@ export function InvitationsScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(3) }, wide]}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={async () => {
-              setRefreshing(true);
-              await load();
-              setRefreshing(false);
-            }}
-            tintColor={c.accent}
-            colors={[c.accent]}
-          />
+          pullRefresh({ refreshing, setRefreshing, load, color: c.accent })
         }
       >
         <GlassCard style={{ gap: amazen.space(2.5) }}>

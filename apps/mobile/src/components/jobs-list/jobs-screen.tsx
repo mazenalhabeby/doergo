@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ActivityIndicator, RefreshControl, SectionList, StyleSheet, View } from 'react-native';
-import { router, type Href } from 'expo-router';
+import React, { type ReactNode } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
@@ -11,20 +10,11 @@ import { drivesRoutes } from '../../lib/member-reach';
 import { ROUTES } from '../../lib/constants';
 import { OfflineBanner } from '../../offline/components/offline-banner';
 import { FreshnessLabel } from '../../offline/components/freshness-label';
-import { Ground, AText, ScreenHeader, WellDivider, useTabSafe, QuietButton, SectionLabel } from '../amazen';
-import { TourTarget, useTourScroll } from '../tour';
+import { Ground, AText } from '../amazen';
 import { centeredContent } from '../screen-container';
-import { isCanceled, isClosed, isMine, isUnderWay, stepLabelFor, stepsFor } from '../home/my-work';
 import { useTaskFlows } from '../home/use-task-flows';
 import type { OpenSheet } from '../job/job-logic';
 import type { WriteStatus } from '../job/use-job-writes';
-import {
-  bandOf, canCreateJobs, chipsFor, effectiveFilter, emptyKind, groupJobs, passesFilter, pickNextUp, placeOf,
-  rowRight, rowWho, showsNextUp, showsRouteRow, PERIODS,
-  type JobBand, type JobFacts, type JobsFilter, type Period,
-} from './jobs-logic';
-import { useJobsList, type ListTask } from './use-jobs-list';
-import { FilterChips, SearchField, Segmented } from './jobs-controls';
 import { JobRow } from './job-row';
 import { NextUp } from './next-up';
 import { RouteRow } from './route-row';

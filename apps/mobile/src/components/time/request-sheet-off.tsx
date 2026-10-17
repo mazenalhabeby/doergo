@@ -1,7 +1,7 @@
 import { Pressable, View } from 'react-native';
 import { AText, Sunken } from '../amazen';
 import { dayKey } from './time-logic';
-import { Legend } from './time-off-section-shared';
+import { LeaveLegend } from './time-off-section-shared';
 import type { RequestSheetState } from './use-request-sheet';
 import type { RequestSheetView } from './request-sheet-view';
 import type { RequestSheet } from './time-off-section';
@@ -118,37 +118,13 @@ export function RequestSheetOff({
           );
         })}
       </View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(3), alignItems: 'center' }}>
-        <Legend
-          swatch={
-            <View
-              style={{
-                width: 9,
-                height: 9,
-                borderRadius: 3,
-                backgroundColor: c.accentTint,
-                borderWidth: 1,
-                borderColor: c.accent,
-              }}
-            />
-          }
-          label={t('time.off.legendApproved', 'Approved')}
-        />
-        <Legend
-          swatch={<View style={{ width: 9, height: 9, borderRadius: 3, borderWidth: 1.5, borderColor: c.warn }} />}
-          label={t('time.off.legendWaiting', 'Waiting')}
-        />
-        {weekdays ? (
-          <Legend
-            swatch={
-              <AText variant="caption" tone="muted" style={{ fontSize: 10, opacity: 0.55 }}>
-                7
-              </AText>
-            }
-            label={t('time.off.legendOff', 'Not a working day')}
-          />
-        ) : null}
-      </View>
+      <LeaveLegend
+        amazen={amazen}
+        approved={t('time.off.legendApproved', 'Approved')}
+        waiting={t('time.off.legendWaiting', 'Waiting')}
+        off={weekdays ? t('time.off.legendOff', 'Not a working day') : null}
+        offOpacity={0.55}
+      />
     </Sunken>
   );
 }

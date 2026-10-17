@@ -1,112 +1,56 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import {
-  hasAccessModule,
-  moduleAnywhere,
-  type DetectedRequest,
-  type LeaveType,
-  type RequestKind,
-} from "@hbcfield/shared/client";
+import { router, useLocalSearchParams } from "expo-router";
+import { hasAccessModule, moduleAnywhere, type DetectedRequest, type RequestKind } from "@hbcfield/shared/client";
 import { useAuth } from "../../../contexts/auth-context";
 import { mayReadTeamAvailability } from "../../../lib/permissions";
 import { useToast } from "../../../island/island-context";
 import { useTheme } from "../../../contexts/theme-context";
 import { useMyTimeOff } from "../../../components/time/use-my-time-off";
 import { useTourScroll } from "../../../components/tour";
-import { availabilityApi, type AvailabilityResponse } from "../../../lib/api";
 import type { ActionOutcome } from "../../../offline/actions/outcome";
 import { useTimeFormat } from "../../../hooks/useTimeFormat";
 import { useResponsive } from "../../../lib/responsive";
 import { centeredContent } from "../../../components/screen-container";
 import { useTabSafe } from "../../../components/amazen";
-import {
-  availabilityInsights as insightsFor,
-  datesWithStatus,
-  filterRequests,
-  getDayCount,
-  mondayDow,
-  scheduleDayMap,
-  timeOffStats,
-  toDateString,
-  type RequestFilter,
-} from "../../../components/time-off/helpers";
-import {
-  daysNotAnswered,
-  mapLimited,
-  mergeAvailability,
-  planAvailabilityFetch,
-  rangeUnsupported,
-} from "../../../components/time-off/availability-plan";
+import { availabilityInsights as insightsFor, filterRequests, getDayCount, timeOffStats, toDateString } from "../../../components/time-off/helpers";
 import { type RequestRowData } from "../../../components/requests/request-parts";
 import { draftToBody, type RequestBody } from "../../../components/requests/request-model";
 import { useRequestOptions } from "../../../components/requests/use-request-options";
 import { useRequestsScreenData } from "./use-requests-screen-data";
-import { useRequestsScreenData2 } from "./use-requests-screen-data2";
 
 /** RequestsScreen's state and handlers — everything before its markup, moved here unchanged. */
 export function useRequestsScreen() {
+  const data = useRequestsScreenData();
   const {
     user,
-    amazen,
-    c,
-    tabSafe,
     toast,
     t,
-    locale,
-    wide,
     leave,
     requests,
     schedule,
-    isLoading,
-    isRefreshing,
-    error,
-    fetchData,
     options,
     offered,
     leaveOffered,
-    otherKinds,
     today,
-    tourScroll,
-    viewYear,
-    viewMonth,
     rangeStart,
     setRangeStart,
     rangeEnd,
     setRangeEnd,
-    isSelecting,
     setIsSelecting,
     availabilityCache,
-    isLoadingAvailability,
-    availabilityError,
     leaveType,
     setLeaveType,
     notes,
     setNotes,
-    isSubmitting,
     setIsSubmitting,
-    chooserOpen,
     setChooserOpen,
-    formKind,
     setFormKind,
-    formInitial,
     setFormInitial,
     requestFilter,
-    setRequestFilter,
-    detail,
-    setDetail,
     scheduleDays,
-    approvedDates,
-    pendingDates,
-    spaceName,
-    handleRefresh,
-    canSeeTeamAvailability,
-    goToPrevMonth,
-    goToNextMonth,
-    goToToday,
-    handleDayPress,
     clearSelection,
-  } = useRequestsScreenData2();
+  } = data;
 
   const availabilityInsights = useMemo(() => {
     if (!rangeStart || !rangeEnd) return null;
@@ -123,7 +67,12 @@ export function useRequestsScreen() {
       setIsSubmitting(true);
       const outcome: ActionOutcome = await leave.request(body);
       if (outcome.kind === 'refused') {
-        toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('timeOff.requestForm.failedToSubmit'));
+        toast.error(
+          t('common.error'),
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+            outcome.message ||
+            t('timeOff.requestForm.failedToSubmit'),
+        );
         return;
       }
       after();
@@ -138,7 +87,13 @@ export function useRequestsScreen() {
 
   const submitLeave = () => {
     if (!user?.id || !rangeStart || !rangeEnd) return;
-    const built = draftToBody({ kind: 'LEAVE', startDate: toDateString(rangeStart), endDate: toDateString(rangeEnd), type: leaveType, reason: notes });
+    const built = draftToBody({
+      kind: 'LEAVE',
+      startDate: toDateString(rangeStart),
+      endDate: toDateString(rangeEnd),
+      type: leaveType,
+      reason: notes,
+    });
     if (!built.ok) { toast.error(t('common.error'), t(`offline.errors.${built.code}`)); return; }
     void send(built.body, clearSelection);
   };
@@ -173,7 +128,14 @@ export function useRequestsScreen() {
     const kind = sug.kind === 'EXTRA_TIME' ? 'OVERTIME' : sug.kind;
     if (kind === 'REMOTE' || kind === 'HOURS' || kind === 'OVERTIME') {
       if (!offeredKind(kind)) { toast.info(t('requests.detect.notOffered')); return; }
-      setFormInitial({ start: sug.startDate, end: sug.endDate, startTime: sug.startTime, endTime: sug.endTime, minutes: sug.minutes, reason });
+      setFormInitial({
+        start: sug.startDate,
+        end: sug.endDate,
+        startTime: sug.startTime,
+        endTime: sug.endTime,
+        minutes: sug.minutes,
+        reason,
+      });
       setFormKind(kind);
     }
   };
@@ -204,7 +166,11 @@ export function useRequestsScreen() {
   const withdraw = async (request: RequestRowData) => {
     const outcome = await leave.cancel(request.id);
     if (outcome.kind === 'refused') {
-      throw new Error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('timeOff.failedToCancel'));
+      throw new Error(
+        (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+          outcome.message ||
+          t('timeOff.failedToCancel'),
+      );
     }
     if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
   };
@@ -219,57 +185,7 @@ export function useRequestsScreen() {
   const rangeDays = hasRangeSelected ? getDayCount(toDateString(rangeStart!), toDateString(rangeEnd!)) : 0;
 
   return {
-    amazen,
-    c,
-    tabSafe,
-    t,
-    locale,
-    wide,
-    requests,
-    schedule,
-    isLoading,
-    isRefreshing,
-    error,
-    fetchData,
-    options,
-    offered,
-    leaveOffered,
-    otherKinds,
-    today,
-    tourScroll,
-    viewYear,
-    viewMonth,
-    rangeStart,
-    rangeEnd,
-    isSelecting,
-    isLoadingAvailability,
-    availabilityError,
-    leaveType,
-    setLeaveType,
-    notes,
-    setNotes,
-    isSubmitting,
-    chooserOpen,
-    setChooserOpen,
-    formKind,
-    setFormKind,
-    formInitial,
-    setFormInitial,
-    requestFilter,
-    setRequestFilter,
-    detail,
-    setDetail,
-    scheduleDays,
-    approvedDates,
-    pendingDates,
-    spaceName,
-    handleRefresh,
-    canSeeTeamAvailability,
-    goToPrevMonth,
-    goToNextMonth,
-    goToToday,
-    handleDayPress,
-    clearSelection,
+    ...data,
     availabilityInsights,
     send,
     submitLeave,

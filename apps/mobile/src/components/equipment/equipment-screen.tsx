@@ -1,35 +1,21 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React from 'react';
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import {
-  normalizeKindShape,
-  custodyDays,
-  logTypesForKind,
-  findLogType,
-  kindMeters,
-  COST_LOG_KEY,
-  orgHasAddOn,
-  formatMoney,
-} from '@hbcfield/shared/client';
+import { custodyDays } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
 import { useResponsive } from '../../lib/responsive';
-import { assetsApi, assetProposalsApi, type HeldAsset, type MyExpense, type DueItem } from '../../lib/api';
 import { logColor, logTypeLabel } from '../../lib/log-display';
 import { formatDay } from '../../lib/money';
-import { sentIn, canTakeBack, type QueuedSend, type SentItem } from '../../lib/sent-in';
 import { forgetHeldAssets } from '../../hooks/use-held-assets';
-import { knownEquipment, rememberEquipment, type EquipmentLoaded } from '../../lib/equipment-cache';
 import { useSyncStatus } from '../../offline/offline-context';
 import { STILL_MINE } from '../../offline/actions/outcome';
-import { overlayMyLog, logEntriesDeliveredSince } from '../../offline/assets/log-overlay';
-import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well, Banner, Pill, SectionLabel, SheetOption } from '../amazen';
+import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Pill, SectionLabel, SheetOption } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { JobSheet } from '../job/job-ui';
-import { useEquipmentScreen, typesFor, logFor } from './use-equipment-screen';
+import { typesFor, logFor } from './use-equipment-screen';
 import { Fact, SentRow } from './equipment-screen-helpers';
 import { useEquipmentScreenLogic } from './use-equipment-screen-logic';
 import { EquipmentScreenStale } from './equipment-screen-stale';
@@ -52,7 +38,6 @@ export function EquipmentScreen() {
     money,
     day,
     data,
-    stale,
     refreshing,
     opened,
     setOpened,
@@ -62,7 +47,6 @@ export function EquipmentScreen() {
     setTakingBack,
     busy,
     load,
-    held,
     items,
     whatOf,
     stateWords,
@@ -72,9 +56,7 @@ export function EquipmentScreen() {
     takeBack,
     fromSheet,
     back,
-    offerContract,
     due,
-    card,
   } = vm;
 
   return (

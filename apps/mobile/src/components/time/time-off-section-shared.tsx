@@ -60,6 +60,61 @@ export function Legend({ swatch, label }: { swatch: React.ReactNode; label: stri
   );
 }
 
+/**
+ * The key under a leave calendar: approved, waiting, and (when the person has working days) the
+ * dimmed "7" for a day off. Labels and the off-day dimming are the caller's — the Time tab's
+ * sheet and the time-off calendar word and dim them differently.
+ */
+export function LeaveLegend({
+  amazen,
+  approved,
+  waiting,
+  off,
+  offOpacity,
+}: {
+  amazen: ReturnType<typeof useTheme>['amazen'];
+  approved: string;
+  waiting: string;
+  /** null = no off-day entry. */
+  off: string | null;
+  offOpacity: number;
+}) {
+  const c = amazen.color;
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(3), alignItems: 'center' }}>
+      <Legend
+        swatch={
+          <View
+            style={{
+              width: 9,
+              height: 9,
+              borderRadius: 3,
+              backgroundColor: c.accentTint,
+              borderWidth: 1,
+              borderColor: c.accent,
+            }}
+          />
+        }
+        label={approved}
+      />
+      <Legend
+        swatch={<View style={{ width: 9, height: 9, borderRadius: 3, borderWidth: 1.5, borderColor: c.warn }} />}
+        label={waiting}
+      />
+      {off !== null ? (
+        <Legend
+          swatch={
+            <AText variant="caption" tone="muted" style={{ fontSize: 10, opacity: offOpacity }}>
+              7
+            </AText>
+          }
+          label={off}
+        />
+      ) : null}
+    </View>
+  );
+}
+
 /** A receipt line; the strong one (the total) is ruled off above. */
 export function Line({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   const { amazen } = useTheme();

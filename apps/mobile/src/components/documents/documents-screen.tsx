@@ -1,38 +1,23 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, RefreshControl, SectionList, View } from 'react-native';
+import React from 'react';
+import { SectionList, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import { useResponsive } from '../../lib/responsive';
 import { useHeldAssets } from '../../hooks/use-held-assets';
-import { documentsApi, type DocumentType, type MemberDocument } from '../../lib/api';
 import { useDocumentRequirements } from '../../contexts/document-requirements-context';
 import { useSyncStatus } from '../../offline/offline-context';
 import { STILL_MINE } from '../../offline/actions/outcome';
-import { stillNeeded, type AskRequirement, type AskedRow } from '../../lib/document-asks';
-import {
-  AText,
-  FilterPill,
-  FilterRow,
-  Ground,
-  HeaderBack,
-  PrimaryButton,
-  ScreenHeader,
-  SearchField,
-  Well,
-  Pill,
-  SectionLabel,
-  SheetOption,
-} from '../amazen';
+import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, SectionLabel, SheetOption } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { JobSheet } from '../job/job-ui';
 import { SupplyDocumentSheet } from '../supply-document-sheet';
-import { DocumentRow, dayOf, useDocumentTag, usePeriod } from './document-row';
-import { httpsUrl, openSafeUrl } from '../../lib/safe-links';
+import { DocumentRow, dayOf } from './document-row';
 import { useDocumentsScreen } from './use-documents-screen';
 import { Fact } from './documents-screen-helpers';
+import { refreshControl } from '../pull-refresh';
 
 /**
  * MY DOCUMENTS — what is asked of the member, what waits on their signature,
@@ -46,126 +31,82 @@ import { Fact } from './documents-screen-helpers';
  * goes there exactly as before.
  */
 export function DocumentsScreen() {
-  const {
-    amazen,
-    c,
-    t,
-    wide,
-    refreshRequirements,
-    canPropose,
-    periodOf,
-    documents,
-    types,
-    requirements,
-    state,
-    setState,
-    refreshing,
-    typeId,
-    setTypeId,
-    year,
-    setYear,
-    picker,
-    setPicker,
-    opened,
-    setOpened,
-    opening,
-    supply,
-    setSupply,
-    load,
-    canAdd,
-    onPaperOf,
-    visible,
-    sections,
-    years,
-    usedTypes,
-    openFile,
-    tapDocument,
-    sendNew,
-    back,
-    filtered,
-    header,
-    countFor,
-    tag,
-  } = useDocumentsScreen();
+  const vm = useDocumentsScreen();
+  const { opened } = vm;
 
   return (
     <Ground style={{ flex: 1 }}>
       <ScreenHeader
-        title={t('profile.documents', 'Documents')}
-        leading={<HeaderBack onPress={back} />}
+        title={vm.t('profile.documents', 'Documents')}
+        leading={<HeaderBack onPress={vm.back} />}
         actions={
-          canAdd
+          vm.canAdd
             ? [
                 {
-                  label: `＋ ${t('documents.add', 'Add')}`,
-                  a11yLabel: t('documents.supply.action'),
-                  onPress: () => setSupply({ typeId: null }),
+                  label: `＋ ${vm.t('documents.add', 'Add')}`,
+                  a11yLabel: vm.t('documents.supply.action'),
+                  onPress: () => vm.setSupply({ typeId: null }),
                 },
               ]
             : undefined
         }
-        style={wide ?? undefined}
+        style={vm.wide ?? undefined}
       />
       <SectionList
-        sections={state === 'ready' ? sections : []}
+        sections={vm.state === 'ready' ? vm.sections : []}
         keyExtractor={(d) => d.id}
         stickySectionHeadersEnabled={false}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
-        contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12) }, wide]}
+        contentContainerStyle={[{ paddingHorizontal: vm.amazen.space(4), paddingBottom: vm.amazen.space(12) }, vm.wide]}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => void load('refresh')}
-            tintColor={c.accent}
-            colors={[c.accent]}
-          />
+          refreshControl({ refreshing: vm.refreshing, onRefresh: () => void vm.load('refresh'), color: vm.c.accent })
         }
-        ListHeaderComponent={header}
+        ListHeaderComponent={vm.header}
         renderSectionHeader={({ section }) => (
           <SectionLabel
             tone={section.tone}
-            style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(4), paddingBottom: amazen.space(2) }}
+            style={{ paddingHorizontal: vm.amazen.space(1), paddingTop: vm.amazen.space(4), paddingBottom: vm.amazen.space(2) }}
           >
             {section.title}
           </SectionLabel>
         )}
         renderItem={({ item, index, section }) => {
-          const r0 = amazen.radius.panel;
+          const r0 = vm.amazen.radius.panel;
           const first = index === 0;
           const last = index === section.data.length - 1;
           return (
             <View style={{
-              backgroundColor: c.well, paddingHorizontal: amazen.space(3.5),
+              backgroundColor: vm.c.well, paddingHorizontal: vm.amazen.space(3.5),
               borderTopLeftRadius: first ? r0 : 0, borderTopRightRadius: first ? r0 : 0,
               borderBottomLeftRadius: last ? r0 : 0, borderBottomRightRadius: last ? r0 : 0,
             }}>
-              <DocumentRow doc={item} first={first} onPaper={onPaperOf(item)} busy={opening === item.id} onPress={tapDocument} />
+              <DocumentRow doc={item} first={first} onPaper={vm.onPaperOf(item)} busy={vm.opening === item.id} onPress={vm.tapDocument} />
             </View>
           );
         }}
         ListEmptyComponent={
-          <View style={{ alignItems: 'center', paddingVertical: amazen.space(8), gap: amazen.space(2) }}>
-            {state === 'loading' ? (
-              <AText variant="caption" tone="onGlass">{t('common.loading', 'Loading…')}</AText>
-            ) : state === 'failed' ? (
+          <View style={{ alignItems: 'center', paddingVertical: vm.amazen.space(8), gap: vm.amazen.space(2) }}>
+            {vm.state === 'loading' ? (
+              <AText variant="caption" tone="onGlass">{vm.t('common.loading', 'Loading…')}</AText>
+            ) : vm.state === 'failed' ? (
               <>
-                <AText variant="body" tone="onGlass">{t('documents.loadFailed')}</AText>
+                <AText variant="body" tone="onGlass">{vm.t('documents.loadFailed')}</AText>
                 <PrimaryButton
-                  label={t('common.retry', 'Try again')}
+                  label={vm.t('common.retry', 'Try again')}
                   onPress={() => {
-                    setState('loading');
-                    void load();
+                    vm.setState('loading');
+                    void vm.load();
                   }}
-                  style={{ alignSelf: 'stretch', marginTop: amazen.space(2) }}
+                  style={{ alignSelf: 'stretch', marginTop: vm.amazen.space(2) }}
                 />
               </>
             ) : (
               <>
-                <AText variant="body" tone="strong">{filtered ? t('documents.noMatches') : t('documents.my.empty')}</AText>
+                <AText variant="body" tone="strong">{vm.filtered ? vm.t('documents.noMatches') : vm.t('documents.my.empty')}</AText>
                 <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
-                  {filtered ? t('documents.noMatchesHint') : t('documents.my.emptyHint')}
+                  {vm.filtered ? vm.t('documents.noMatchesHint') : vm.t('documents.my.emptyHint')}
                 </AText>
               </>
             )}
@@ -174,40 +115,45 @@ export function DocumentsScreen() {
       />
 
       {/* ---------- a document, opened ---------- */}
-      <JobSheet visible={!!opened} onClose={() => setOpened(null)} title={opened?.title}>
+      <JobSheet visible={!!opened} onClose={() => vm.setOpened(null)} title={opened?.title}>
         {opened ? (
           <>
-            <View style={{ backgroundColor: c.sunken, borderRadius: 18, paddingHorizontal: amazen.space(3.5) }}>
-              <Fact first label={t('documents.fact.kind', 'Kind')} value={opened.typeLabel} />
+            <View style={{ backgroundColor: vm.c.sunken, borderRadius: 18, paddingHorizontal: vm.amazen.space(3.5) }}>
+              <Fact first label={vm.t('documents.fact.kind', 'Kind')} value={opened.typeLabel} />
               <Fact
                 label={
                   opened.status === 'PENDING_VERIFICATION' || opened.status === 'REJECTED'
-                    ? t('documents.fact.sentIn', 'Sent in')
-                    : t('documents.fact.issued', 'Issued')
+                    ? vm.t('documents.fact.sentIn', 'Sent in')
+                    : vm.t('documents.fact.issued', 'Issued')
                 }
                 value={dayOf(opened.issuedAt)}
               />
-              {opened.periodMonth || opened.periodYear ? <Fact label={t('documents.fact.period', 'For')} value={periodOf(opened)} /> : null}
-              {opened.expiresOn ? <Fact label={t('documents.fact.validUntil', 'Valid until')} value={dayOf(opened.expiresOn)} /> : null}
-              {tag ? <Fact label={t('documents.fact.state', 'State')} value={tag.label} tone={tag.tone} /> : null}
+              {opened.periodMonth || opened.periodYear ? (
+                <Fact label={vm.t('documents.fact.period', 'For')} value={vm.periodOf(opened)} />
+              ) : null}
+              {opened.expiresOn ? <Fact label={vm.t('documents.fact.validUntil', 'Valid until')} value={dayOf(opened.expiresOn)} /> : null}
+              {vm.tag ? <Fact label={vm.t('documents.fact.state', 'State')} value={vm.tag.label} tone={vm.tag.tone} /> : null}
             </View>
             {opened.status === 'REJECTED' && opened.rejectionReason ? (
-              <View style={{ backgroundColor: c.criticalTint, borderRadius: 16, padding: amazen.space(3.5) }}>
-                <AText variant="body" style={{ color: c.critical, fontSize: 13.5, lineHeight: 19 }}>{`“${opened.rejectionReason}”`}</AText>
+              <View style={{ backgroundColor: vm.c.criticalTint, borderRadius: 16, padding: vm.amazen.space(3.5) }}>
+                <AText
+                  variant="body"
+                  style={{ color: vm.c.critical, fontSize: 13.5, lineHeight: 19 }}
+                >{`“${opened.rejectionReason}”`}</AText>
               </View>
             ) : null}
-            {onPaperOf(opened) ? (
+            {vm.onPaperOf(opened) ? (
               <AText variant="caption" tone="muted">
-                {t('documents.onPaperHint', 'Sign a printed copy and hand it back to the office.')}
+                {vm.t('documents.onPaperHint', 'Sign a printed copy and hand it back to the office.')}
               </AText>
             ) : null}
             <PrimaryButton
-              label={t('documents.openTheFile', 'Open the file')}
-              loading={opening === opened.id}
-              onPress={() => void openFile(opened)}
+              label={vm.t('documents.openTheFile', 'Open the file')}
+              loading={vm.opening === opened.id}
+              onPress={() => void vm.openFile(opened)}
             />
             {opened.status === 'REJECTED' || opened.standing === 'EXPIRED' || opened.standing === 'EXPIRING' ? (
-              <SheetOption label={t('documents.sendNew', 'Send a new one')} tone="accent" onPress={() => sendNew(opened.typeId)} />
+              <SheetOption label={vm.t('documents.sendNew', 'Send a new one')} tone="accent" onPress={() => vm.sendNew(opened.typeId)} />
             ) : null}
           </>
         ) : null}
@@ -215,49 +161,49 @@ export function DocumentsScreen() {
 
       {/* ---------- filter pickers ---------- */}
       <JobSheet
-        visible={!!picker}
-        onClose={() => setPicker(null)}
-        title={picker === 'year' ? t('documents.filter.year') : t('documents.filter.type')}>
-        {picker === 'type' ? (
+        visible={!!vm.picker}
+        onClose={() => vm.setPicker(null)}
+        title={vm.picker === 'year' ? vm.t('documents.filter.year') : vm.t('documents.filter.type')}>
+        {vm.picker === 'type' ? (
           <>
             <SheetOption
-              label={`${t('documents.filter.anyType')} · ${countFor({ typeId: null })}`}
-              tone={typeId ? 'strong' : 'accent'}
+              label={`${vm.t('documents.filter.anyType')} · ${vm.countFor({ typeId: null })}`}
+              tone={vm.typeId ? 'strong' : 'accent'}
               onPress={() => {
-                setTypeId(null);
-                setPicker(null);
+                vm.setTypeId(null);
+                vm.setPicker(null);
               }}
             />
-            {usedTypes.map((ty) => (
+            {vm.usedTypes.map((ty) => (
               <SheetOption
                 key={ty.id}
-                label={`${ty.label} · ${countFor({ typeId: ty.id })}`}
-                tone={typeId === ty.id ? 'accent' : 'strong'}
+                label={`${ty.label} · ${vm.countFor({ typeId: ty.id })}`}
+                tone={vm.typeId === ty.id ? 'accent' : 'strong'}
                 onPress={() => {
-                  setTypeId(ty.id);
-                  setPicker(null);
+                  vm.setTypeId(ty.id);
+                  vm.setPicker(null);
                 }}
               />
             ))}
           </>
-        ) : picker === 'year' ? (
+        ) : vm.picker === 'year' ? (
           <>
             <SheetOption
-              label={`${t('documents.filter.anyYear')} · ${countFor({ year: null })}`}
-              tone={year === null ? 'accent' : 'strong'}
+              label={`${vm.t('documents.filter.anyYear')} · ${vm.countFor({ year: null })}`}
+              tone={vm.year === null ? 'accent' : 'strong'}
               onPress={() => {
-                setYear(null);
-                setPicker(null);
+                vm.setYear(null);
+                vm.setPicker(null);
               }}
             />
-            {years.map((y) => (
+            {vm.years.map((y) => (
               <SheetOption
                 key={y}
-                label={`${y} · ${countFor({ year: y })}`}
-                tone={year === y ? 'accent' : 'strong'}
+                label={`${y} · ${vm.countFor({ year: y })}`}
+                tone={vm.year === y ? 'accent' : 'strong'}
                 onPress={() => {
-                  setYear(y);
-                  setPicker(null);
+                  vm.setYear(y);
+                  vm.setPicker(null);
                 }}
               />
             ))}
@@ -266,16 +212,16 @@ export function DocumentsScreen() {
       </JobSheet>
 
       <SupplyDocumentSheet
-        types={types}
-        visible={!!supply}
-        initialTypeId={supply?.typeId ?? null}
-        requirements={requirements}
-        documents={documents}
-        onClose={() => setSupply(null)}
+        types={vm.types}
+        visible={!!vm.supply}
+        initialTypeId={vm.supply?.typeId ?? null}
+        requirements={vm.requirements}
+        documents={vm.documents}
+        onClose={() => vm.setSupply(null)}
         /* The badge and the home strip read a cached count — supplying is exactly when it stops being true. */
-        onSubmitted={() => { void load(); void refreshRequirements({ force: true }); }}
-        onContract={canPropose ? () => {
-          setSupply(null);
+        onSubmitted={() => { void vm.load(); void vm.refreshRequirements({ force: true }); }}
+        onContract={vm.canPropose ? () => {
+          vm.setSupply(null);
           setTimeout(() => router.push('/(app)/send-document' as never), 280);
         } : undefined}
       />

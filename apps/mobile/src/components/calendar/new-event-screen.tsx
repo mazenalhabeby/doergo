@@ -1,31 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import React from 'react';
+import { Pressable, View } from 'react-native';
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import {
-  MEETING_PROVIDER_NAMES,
-  cleanPhone,
-  meetingProvider,
-  moduleAnywhere,
-  localInstant,
-  spanMinutes,
-  spanProblem,
-  moveEndWithStart,
-  durationText,
-  type CallDirection,
-  type MeetingMode,
-  type PlaceKind,
-  personName,
-} from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
-import { AText, FilterPill, FilterRow, Ground, PrimaryButton, Well, JobField, SectionLabel } from '../amazen';
+import { AText, Ground } from '../amazen';
 import { DaySheet, TimeSheet } from '../new-job/when-sheets';
-import { calendarApi, customersApi, locationsApi, type CalendarPerson, type MobileCustomer } from '../../lib/api';
 import { crmCapsOf } from '../../lib/member-reach';
 import { tabAccessFor } from '../../lib/tab-layout';
-import { dayKey, forgetCalendarPages } from './calendar-data';
+import { dayKey } from './calendar-data';
 import { calendarError } from './errors';
 import { offsetText } from './event-sheet';
 import { useNewEventScreen } from './use-new-event-screen';
@@ -48,64 +32,18 @@ export function NewEventScreen() {
     amazen,
     c,
     t,
-    access,
-    crm,
-    kind,
-    setKind,
-    title,
-    setTitle,
     day,
     time,
     endDay,
     setEndDay,
     endTime,
     setEndTime,
-    mode,
-    setMode,
-    place,
-    setPlace,
-    offices,
-    officeId,
-    setOfficeId,
-    room,
-    setRoom,
-    location,
-    setLocation,
-    meetingUrl,
-    setMeetingUrl,
-    phone,
-    setPhone,
-    callDirection,
-    setCallDirection,
-    client,
-    setClient,
-    clientQ,
-    setClientQ,
-    clients,
-    setClients,
-    addresses,
     people,
-    setPeople,
-    peopleQ,
-    setPeopleQ,
-    found,
-    reminders,
-    setReminders,
     sheet,
     setSheet,
-    busy,
-    provider,
-    phoneOk,
-    start,
-    end,
-    problem,
-    label,
     pickStart,
     canSave,
     save,
-    openJob,
-    openTimeOff,
-    pill,
   } = vm;
 
   return (

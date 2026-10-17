@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
+import { LeaveLegend } from '../time/time-off-section-shared';
 import { isSameDay } from '../../lib/utils';
 import { AText, Well, SectionLabel } from '../amazen';
 import { getMonthGrid, isDateInRange, toDateString } from './helpers';
@@ -155,37 +156,13 @@ export function TimeOffCalendarCard({
         ))}
       </View>
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(3), alignItems: 'center' }}>
-        <Legend
-          swatch={
-            <View
-              style={{
-                width: 9,
-                height: 9,
-                borderRadius: 3,
-                backgroundColor: c.accentTint,
-                borderWidth: 1,
-                borderColor: c.accent,
-              }}
-            />
-          }
-          label={t('timeOff.calendar.legend.approved')}
-        />
-        <Legend
-          swatch={<View style={{ width: 9, height: 9, borderRadius: 3, borderWidth: 1.5, borderColor: c.warn }} />}
-          label={t('timeOff.calendar.legend.pending')}
-        />
-        {scheduleLength > 0 ? (
-          <Legend
-            swatch={
-              <AText variant="caption" tone="muted" style={{ fontSize: 10, opacity: 0.4 }}>
-                7
-              </AText>
-            }
-            label={t('timeOff.calendar.legend.offDay')}
-          />
-        ) : null}
-      </View>
+      <LeaveLegend
+        amazen={amazen}
+        approved={t('timeOff.calendar.legend.approved')}
+        waiting={t('timeOff.calendar.legend.pending')}
+        off={scheduleLength > 0 ? t('timeOff.calendar.legend.offDay') : null}
+        offOpacity={0.4}
+      />
 
       <AText variant="caption" tone="muted" style={{ textAlign: 'center', fontSize: 12 }}>
         {isSelecting && rangeStart && !rangeEnd
@@ -195,14 +172,5 @@ export function TimeOffCalendarCard({
             : ' '}
       </AText>
     </Well>
-  );
-}
-
-function Legend({ swatch, label }: { swatch: React.ReactNode; label: string }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-      {swatch}
-      <AText variant="caption" tone="muted" style={{ fontSize: 10.5 }}>{label}</AText>
-    </View>
   );
 }
