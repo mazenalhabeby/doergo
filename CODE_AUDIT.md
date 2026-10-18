@@ -361,3 +361,17 @@ review on :3000 / Expo before deploy). Performance: approvals inbox 154 → 120 
 read instead of one per portal), calendar 41 → 35, Settings 298 → 175 kB. B3 done: 114 routes validated, 5 loose
 on purpose, `body-dto-guard.spec`. Production (read-only, 2026-10-18): load 0.06/8 cores, DB 36 MB, cache hit 100%,
 no full scans on app tables — no bottleneck at today's size; query texts not read (blocked: they carry customer data).
+
+## 13. Final audit before deploy — 2026-10-18
+
+Unused code removed (verified one by one, not just tool output): API + shared ~2,200 lines (≈200 unused imports,
+73 unused injected services, 157 unused shared exports, 18 dead settings incl. the 30-min late threshold, the dead
+occurrenceNeedsApproval/NEEDS_A_PERSON rule, 3 gateway dev deps); web + console 402 unused exports, 2 dead files,
+dead CSS; phone 92 unused barrel names, ~20 leftover re-exports, dead API wrappers, 2 files. **21 one-off refactor
+scripts were deleted from tools/** (`split-*`, `extract-*`, `collapse-hook*`, `prune-*`, `deany`, `map-class`,
+`move-block`, `unpack-to-object`, `trim-unpack`, `wire-split`, `rename-reviewed-routes`) — §9–§11 name them
+historically. Kept: the ratchets, dry-check, format-changed, wrap/break/split-long-*, verify-move, every e2e script.
+Kept on purpose: plans.ts (operator price book), PENDING_TECHNICIAN (old rounds), Expo/Babel/native deps, i18n keys
+built by name. Security: no secrets on the branch, no .env tracked; the 6 new migrations are additive only.
+Known test-environment failures (not production): pdf-receipt + background-reader load pdf.js as ESM, which Jest
+cannot without --experimental-vm-modules; tools/video/video-guides.test reads an older tour registry format.

@@ -204,7 +204,7 @@
   "long": 2
  },
  "apps/mobile/src/lib/api/assets.ts": {
-  "lines": 112,
+  "lines": 111,
   "long": 1
  },
  "apps/mobile/src/lib/api/client.ts": {
@@ -328,7 +328,7 @@
   "long": 0
  },
  "packages/shared/src/icons/index.ts": {
-  "lines": 95,
+  "lines": 93,
   "long": 22
  },
  "packages/shared/src/mail/email-messages.ts": {
