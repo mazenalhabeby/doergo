@@ -19,7 +19,6 @@ import type { Response } from 'express';
 import { Public } from '../../common/decorators';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { BlogGatewayService } from './blog.service';
-import type { RpcRequest, blogCreate } from '@hbcfield/shared/microservices';
 import { CreateBlogPostDto, BlogImageDto } from './dto/blog-bodies.dto';
 
 /**

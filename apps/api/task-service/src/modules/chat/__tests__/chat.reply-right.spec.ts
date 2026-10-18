@@ -2,7 +2,7 @@ import { chatPartsOf, type ChatServiceParts } from './chat.service.fixture';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
-import { ChatService, CONVERSATION_LIST_ORDER } from '../chat.service';
+import { CONVERSATION_LIST_ORDER } from '../chat.service';
 import { CHAT_PROVIDERS } from '../chat.module';
 import { chatStorageStubs } from './chat-storage-stubs';
 import { PrismaService } from '../../../common/prisma/prisma.service';

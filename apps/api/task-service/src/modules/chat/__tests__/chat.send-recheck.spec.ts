@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
-import { ChatService } from '../chat.service';
 import { chatPartsOf, type ChatServiceParts } from './chat.service.fixture';
 import { CHAT_PROVIDERS } from '../chat.module';
 import { chatStorageStubs } from './chat-storage-stubs';

@@ -3,7 +3,6 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import { orgHasAddOn, slaBusinessMinutes } from '@hbcfield/shared';
-import { Public } from '../../common/decorators';
 import { SupportService } from './support.service';
 import { CreateTicketDto, AddMessageDto } from './dto';
 import type { SupportAttachmentMessage } from '@hbcfield/shared/microservices';

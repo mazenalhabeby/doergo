@@ -15,7 +15,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiConsumes } from '@nes
 import { firstValueFrom } from 'rxjs';
 import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'fs/promises';
-import { SERVICE_NAMES, CurrentUser, CurrentUserData, AllowCustomer } from '@hbcfield/shared';
+import { SERVICE_NAMES, CurrentUser, AllowCustomer } from '@hbcfield/shared';
 import { StorageService } from '../../common/storage/storage.service';
 import { RegisterPushTokenDto } from './users.dto';
 import {

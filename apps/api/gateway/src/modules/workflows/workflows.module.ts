@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule } from '@nestjs/microservices';
 import { WorkflowsController } from './workflows.controller';
 import { WorkflowStepsController } from './workflow-steps.controller';
 import { SpaceWorkflowsController } from './space-workflows.controller';

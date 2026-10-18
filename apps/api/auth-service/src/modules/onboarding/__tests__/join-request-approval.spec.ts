@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 import { Role } from '@hbcfield/shared';
-import { onboardingServices, type OnboardingServiceParts } from './onboarding.service.fixture';
+import { onboardingServices } from './onboarding.service.fixture';
 import { claimInvitation, InvitationAlreadyClaimedError } from '../../invitations/invitation-apply';
 
 /*

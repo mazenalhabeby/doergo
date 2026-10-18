@@ -1,6 +1,5 @@
 import {
   activeWindowWhere,
-  buildResolvedAccess,
   canAccessTask,
   holdsOpenRole,
   platformEnrolmentRequired,
@@ -31,7 +30,6 @@ export interface SocketAccess {
   role: string;
   access: ResolvedAccess;
 }
-
 
 type PrismaLike = {
   user: { findUnique: (args: any) => Promise<any> };

@@ -1,12 +1,7 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { eventPattern, type EventPayload, overtimeNoticeEvent } from '@hbcfield/shared/microservices';
-import {
-  OVERTIME_NOTICE_EVENT,
-  OVERTIME_NOTICE_KINDS,
-  overtimeNoticeKeys,
-  type OvertimeNotice,
-} from '@hbcfield/shared';
+import { OVERTIME_NOTICE_KINDS, overtimeNoticeKeys } from '@hbcfield/shared';
 import { PushService } from '../modules/push/push.service';
 import { NotificationStore } from '../common/notification-store.service';
 import { msg, type LocalizedText } from '../i18n/translate';

@@ -6,14 +6,7 @@ import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.int
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import {
-  SERVICE_NAMES,
-  CurrentUser,
-  CurrentUserData,
-  RequirePermissionInSpace,
-  isAdmin,
-  spacesGranting,
-} from '@hbcfield/shared';
+import { SERVICE_NAMES, CurrentUser, RequirePermissionInSpace, isAdmin, spacesGranting } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { CreateEmployeeDto, UpdateEmployeeDto, ListEmployeesDto } from './dto';
 import { scopeIdsFor } from '../../common/permission-scope';

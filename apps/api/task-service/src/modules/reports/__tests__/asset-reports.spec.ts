@@ -9,7 +9,6 @@
  */
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { TaskAccessService } from '../../../common/task-access/task-access.service';
-import { ReportsService } from '../reports.service';
 import { reportServices } from './reports.service.fixture';
 
 const ORG = 'org_1';

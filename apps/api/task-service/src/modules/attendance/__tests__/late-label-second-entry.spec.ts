@@ -34,7 +34,6 @@ const SHIFT = {
   flagToleranceMin: 5,
 };
 const SITE = { lat: 47.9813, lng: 13.8269 };
-const AWAY = { lat: 48.2082, lng: 16.3738 }; // Vienna city, ~200 km from the site
 const location = {
   id: 'loc-1',
   name: 'Main Office',

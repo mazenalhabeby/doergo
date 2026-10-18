@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { CustomersService } from '../customers.service';
-import { customerServices, type CustomerServices } from './customer-services.fixture';
+import { customerServices } from './customer-services.fixture';
 
 /*
   The Clients widget against a REAL database (the seeded dev org) — real role

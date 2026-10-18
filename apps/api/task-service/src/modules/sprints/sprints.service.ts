@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { assertSpaceInOrg } from '../../common/tenant-scope.util';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
@@ -10,8 +10,6 @@ import type { Prisma, SprintStatus } from '@prisma/client';
 export class SprintsService {
 
   @Inject(SprintReportsService) private readonly sprintReports!: SprintReportsService;
-
-  private readonly logger = new Logger(SprintsService.name);
 
   constructor(private readonly prisma: PrismaService) {}
 

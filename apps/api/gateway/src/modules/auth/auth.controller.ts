@@ -7,14 +7,7 @@ import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { LoginDto, RegisterDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
 import { Public } from '../../common/decorators';
-import {
-  CurrentUser,
-  CurrentUserData,
-  SkipOnboardingCheck,
-  AllowCustomer,
-  SERVICE_NAMES,
-  assertServiceOk,
-} from '@hbcfield/shared';
+import { CurrentUser, SkipOnboardingCheck, AllowCustomer, SERVICE_NAMES, assertServiceOk } from '@hbcfield/shared';
 import { setRefreshCookie, isBrowserClient, withoutRefreshTokenForBrowser } from './auth-controller-helpers';
 import {
   sendRpc,

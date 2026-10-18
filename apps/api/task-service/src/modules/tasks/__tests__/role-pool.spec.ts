@@ -1,6 +1,6 @@
 import { rolePoolServices } from './role-pool.service.fixture';
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import { RolePoolService, ROLE_WAVE_CLOSED } from '../role-pool.service';
+import { ROLE_WAVE_CLOSED } from '../role-pool.service';
 
 /*
   A task open to a WORK role — the server's rules that the e2e script cannot

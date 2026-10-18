@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { personName, signatureStrength, type SignerStep } from '@hbcfield/shared';
-import { documentKey, signatureKey, sha256 } from '@hbcfield/shared/storage';
+import { documentKey, sha256 } from '@hbcfield/shared/storage';
 import { sealSignedPdf } from './contract-pdf';
 import { type RequestContext, type SealSigner, CONSENT_TEXT, roleLabel, eventContext } from './document-common';
 import { DocumentSigningBase } from './document-signing.base';

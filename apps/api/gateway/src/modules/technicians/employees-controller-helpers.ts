@@ -1,4 +1,4 @@
-import { Role, CurrentUserData } from '@hbcfield/shared';
+import { Role } from '@hbcfield/shared';
 import { scopeFor } from '../../common/permission-scope';
 import type { SessionUser } from '../../common/request.types';
 

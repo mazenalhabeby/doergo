@@ -1,14 +1,4 @@
-import {
-  stripeCatalog,
-  stripeLinesForBill,
-  stripeLookupKey,
-  orgMonthlyCost,
-  AVAILABLE_MODULES,
-  AVAILABLE_ADD_ONS,
-  MODULE_MONTHLY_CENTS,
-  SEAT_MONTHLY_CENTS,
-  OBSERVER_SEAT_MONTHLY_CENTS,
-} from '@hbcfield/shared';
+import { stripeCatalog, stripeLinesForBill, stripeLookupKey, orgMonthlyCost, AVAILABLE_ADD_ONS, SEAT_MONTHLY_CENTS, OBSERVER_SEAT_MONTHLY_CENTS } from '@hbcfield/shared';
 
 /** unit price of a lookup key, from the catalogue */
 const priceOf = (lookupKey: string) =>

@@ -1,5 +1,4 @@
 import { overtimeRoundMinutes, overtimeRoundState } from '@hbcfield/shared';
-import { OvertimeRecordService } from '../overtime-record.service';
 import { overtimeRecordParts, type OvertimeRecordServiceParts } from './overtime-record.service.fixture';
 
 /*

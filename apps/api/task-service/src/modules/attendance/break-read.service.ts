@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, paginated, SERVICE_NAMES, buildDateRangeFilter, buildSingleDayFilter } from '@hbcfield/shared';
@@ -10,7 +10,6 @@ import type { Prisma, BreakType } from '@prisma/client';
 /** Reading rests: one entry's, who is resting now, the history, the summary. */
 @Injectable()
 export class BreakReadService {
-  private readonly logger = new Logger(BreakReadService.name);
 
   constructor(
     private readonly prisma: PrismaService,

@@ -13,12 +13,3 @@ export function assetCatalogParts(...args: unknown[]): AssetCatalogServiceParts 
   const assetTypesService = new (AssetTypesService as unknown as new (...a: unknown[]) => object)(...args) as any;
   return combinedServices<AssetCatalogServiceParts>(assetCatalogService, assetTypesService);
 }
-
-/** The same, from a Nest test module that registered them all. */
-export function assetCatalogPartsOf(mod: { get<T>(cls: new (...a: never[]) => T): T }): AssetCatalogServiceParts {
-  // Only the services this test module registered — a test that provides one of them still works.
-  const parts = [AssetCatalogService, AssetTypesService].flatMap((C) => {
-    try { return [mod.get(C as unknown as new (...a: never[]) => object)]; } catch { return []; }
-  });
-  return combinedServices<AssetCatalogServiceParts>(...parts);
-}

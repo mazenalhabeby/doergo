@@ -21,9 +21,6 @@ jest.mock('bcryptjs');
 describe('AuthService', () => {
   let service: AuthService &
     Pick<SessionControlService, 'logout' | 'listSessions' | 'revokeSession' | 'revokeAllSessions'>;
-  let prismaService: jest.Mocked<PrismaService>;
-  let jwtService: jest.Mocked<JwtService>;
-  let configService: jest.Mocked<ConfigService>;
 
   const mockUser = {
     id: 'user-123',
@@ -129,9 +126,6 @@ describe('AuthService', () => {
     // Signing out and sessions are SessionControlService since the split; one object over both.
 
     service = combinedServices(module.get(AuthService), module.get(SessionControlService)) as any;
-    prismaService = module.get(PrismaService);
-    jwtService = module.get(JwtService);
-    configService = module.get(ConfigService);
   });
 
   describe('register', () => {

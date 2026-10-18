@@ -1,4 +1,4 @@
-import { frameToImageCrop, rectToPixels, clampRect, isUsefulCrop } from '@hbcfield/shared';
+import { frameToImageCrop, rectToPixels, isUsefulCrop } from '@hbcfield/shared';
 
 /**
  * The frame somebody aimed with, as a rectangle of the photograph.

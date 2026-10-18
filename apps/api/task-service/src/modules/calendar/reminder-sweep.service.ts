@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService, runWithCronLock } from '@hbcfield/shared';
-import { EventsService } from './events.service';
 import { EventAnswersService } from './event-answers.service';
 
 /** Every minute, under the shared lease: send what is due (EventsService.sweepDue claims each row). */

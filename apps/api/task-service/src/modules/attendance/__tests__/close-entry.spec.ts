@@ -11,7 +11,6 @@
  */
 import { ForbiddenException } from '@nestjs/common';
 import { TimeEntryStatus } from '@hbcfield/shared';
-import { ClockOutService } from '../clock-out.service';
 import { clockOutServices, type ClockOutServiceParts } from './clock-out.service.fixture';
 import { CountedTimeService } from '../counted-time.service';
 import { clockOutTimeFlags, endRunningRests } from '../open-shift-close';

@@ -1,6 +1,5 @@
 /** Module-level helpers of sync-pull.service.ts — moved here unchanged. */
-import { TaskStatus, type SyncPullScope } from '@hbcfield/shared';
-import { type TaskVisibilityFacts } from '../tasks/task-visibility';
+import { TaskStatus } from '@hbcfield/shared';
 import type { SyncPullRequest } from '@hbcfield/shared/microservices';
 
 /** Closed work stays on the phone this long, so yesterday's job can still be looked up in a basement. */

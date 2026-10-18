@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { personName, periodIsValid, retentionUntil, isBlocking, Role } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
@@ -26,7 +26,6 @@ import { DocumentRoutingService } from './document-routing.service';
  */
 @Injectable()
 export class DocumentIssuingService {
-  private readonly logger = new Logger(DocumentIssuingService.name);
 
   constructor(
     private readonly prisma: PrismaService,

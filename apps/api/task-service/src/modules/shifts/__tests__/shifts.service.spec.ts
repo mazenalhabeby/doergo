@@ -1,8 +1,6 @@
-import { Test, TestingModule } from '@nestjs/testing';
+
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { ShiftsService } from '../shifts.service';
 import { shiftServices, type ShiftsServiceParts } from './shifts.service.fixture';
-import { PrismaService } from '../../../common/prisma/prisma.service';
 
 describe('ShiftsService', () => {
   let service: ShiftsServiceParts;

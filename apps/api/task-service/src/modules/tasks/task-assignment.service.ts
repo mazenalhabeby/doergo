@@ -1,14 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import {
-  personName,
-  notEndedWhere,
-  TaskStatus,
-  TaskEventType,
-  success,
-  accessAllowsInSpace,
-  canReceiveTasks,
-  type ResolvedAccess,
-} from '@hbcfield/shared';
+import { personName, notEndedWhere, TaskStatus, TaskEventType, success, accessAllowsInSpace, canReceiveTasks } from '@hbcfield/shared';
 import { assertMayAssign, assertTargetIsInSpace } from './task-scope';
 import { TaskAssignmentBase } from './task-assignment.base';
 import { TASK_JOBS, type JobData } from '@hbcfield/shared';

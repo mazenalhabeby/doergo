@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   normalizeTemplateStatuses,
   validateWorkflow,
@@ -16,7 +16,6 @@ import { TEMPLATE_SOURCE_SELECT } from './workflow-library-helpers';
  */
 @Injectable()
 export class LibraryCurationService {
-  private readonly logger = new Logger(LibraryCurationService.name);
 
   constructor(private readonly prisma: PrismaService) {}
 

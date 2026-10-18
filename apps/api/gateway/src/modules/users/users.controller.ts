@@ -2,7 +2,7 @@ import { Controller, Get, Post, Patch, Query, Body, Inject } from '@nestjs/commo
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { SERVICE_NAMES, CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { SERVICE_NAMES, CurrentUser } from '@hbcfield/shared';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { TasksQueueService } from '../tasks/tasks.queue.service';
 import { StorageService } from '../../common/storage/storage.service';

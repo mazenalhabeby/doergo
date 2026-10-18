@@ -1,16 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { notEndedWhere, daysUntil, credentialStanding, visibleDocumentWhere } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 /** The credential board: every member's required papers, and what is missing, expiring or expired. */
 @Injectable()
 export class ComplianceBoardService {
-  private readonly logger = new Logger(ComplianceBoardService.name);
 
   constructor(
     private readonly prisma: PrismaService,
   ) {}
-
 
   /**
    * The compliance board: everything an organization needs to chase.

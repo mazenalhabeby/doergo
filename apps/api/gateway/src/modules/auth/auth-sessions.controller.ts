@@ -6,7 +6,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { RefreshTokenDto, ChangePasswordDto, DeleteAccountDto } from './dto';
-import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
+import { CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import {
   sendRpc,
   changePassword,

@@ -13,12 +13,3 @@ export function shiftIssuesParts(...args: unknown[]): ShiftIssuesServiceParts {
   const shiftIssueActionsService = new (ShiftIssueActionsService as unknown as new (...a: unknown[]) => object)(...args) as any;
   return combinedServices<ShiftIssuesServiceParts>(shiftIssuesService, shiftIssueActionsService);
 }
-
-/** The same, from a Nest test module that registered them all. */
-export function shiftIssuesPartsOf(mod: { get<T>(cls: new (...a: never[]) => T): T }): ShiftIssuesServiceParts {
-  // Only the services this test module registered — a test that provides one of them still works.
-  const parts = [ShiftIssuesService, ShiftIssueActionsService].flatMap((C) => {
-    try { return [mod.get(C as unknown as new (...a: never[]) => object)]; } catch { return []; }
-  });
-  return combinedServices<ShiftIssuesServiceParts>(...parts);
-}

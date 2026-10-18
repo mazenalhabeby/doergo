@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   zoneOf,
   activeAssignmentWhere,
@@ -25,7 +25,6 @@ import { dedupeById } from './auto-clock-helpers';
  */
 @Injectable()
 export class AutoClockPlanService {
-  private readonly logger = new Logger(AutoClockPlanService.name);
 
   constructor(
     private readonly prisma: PrismaService,

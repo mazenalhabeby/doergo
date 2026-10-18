@@ -1,6 +1,5 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { CustomersService } from '../customers.service';
-import { customerServices, type CustomerServices } from './customer-services.fixture';
+import { customerServices } from './customer-services.fixture';
 
 /*
   CRM permissions honoured PER WORKSPACE — through the real CustomersService,

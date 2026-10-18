@@ -1,11 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success } from '@hbcfield/shared';
 
 /** Operator billing alerts: bills that fell and syncs that failed, and marking one as looked at. */
 @Injectable()
 export class PlatformBillingAlertsService {
-  private readonly logger = new Logger(PlatformBillingAlertsService.name);
 
   constructor(private readonly prisma: PrismaService) {}
 

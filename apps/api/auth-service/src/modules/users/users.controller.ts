@@ -2,14 +2,6 @@ import { Controller } from '@nestjs/common';
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { eventPattern, type EventPayload, appVersionSeenEvent } from '@hbcfield/shared/microservices';
 import { UsersService } from './users.service';
-import {
-  CreateEmployeeDto,
-  UpdateEmployeeDto,
-  ListEmployeesDto,
-  GetEmployeeDetailDto,
-  ListOrgMembersDto,
-  UpdateMemberProfileDto,
-} from './dto';
 
 import {
   pattern,

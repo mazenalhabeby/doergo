@@ -1,5 +1,4 @@
 import { Test } from '@nestjs/testing';
-import sharp from 'sharp';
 import { ForbiddenException, BadRequestException } from '@nestjs/common';
 import { SERVICE_NAMES, mrzCheckDigit } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';

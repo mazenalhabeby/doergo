@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
@@ -6,7 +6,6 @@ import type { Prisma, CustomFieldType } from '@prisma/client';
 
 @Injectable()
 export class CustomFieldsService {
-  private readonly logger = new Logger(CustomFieldsService.name);
 
   constructor(
     private readonly prisma: PrismaService,

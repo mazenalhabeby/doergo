@@ -2,7 +2,7 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { TaskEventType } from '@prisma/client';
 import { CREW_CODES, endOfLocalDay, success, type LeadScope, personName } from '@hbcfield/shared';
-import { CrewActor, cleanReason } from './crew-helpers';
+import { cleanReason } from './crew-helpers';
 import { CrewBase } from './crew.base';
 import { emitEvent, taskLeadChangedEvent } from '@hbcfield/shared/microservices';
 import { TASK_JOBS, type JobData } from '@hbcfield/shared';

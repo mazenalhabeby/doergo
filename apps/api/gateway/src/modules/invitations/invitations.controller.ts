@@ -3,7 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
-import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
+import { CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import {
   sendRpc,
   createInvitation,

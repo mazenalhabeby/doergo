@@ -2,7 +2,7 @@ import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BillingService } from '../billing/billing.service';
-import { SERVICE_NAMES, Role, DEFAULT_PERMISSIONS, normalizeAccessProfile, hashCode } from '@hbcfield/shared';
+import { SERVICE_NAMES, Role, normalizeAccessProfile, hashCode } from '@hbcfield/shared';
 import {
   memberFieldsFromInvitation,
   claimInvitation,
@@ -57,7 +57,6 @@ export class InvitationOnboardingService {
     }
 
     const role = invitation.targetRole as Role;
-    const defaultPerms = DEFAULT_PERMISSIONS[role];
     const isTechnician = role === Role.EMPLOYEE;
 
     // Pre-configured Access Profile (EMPLOYEE only) — when the admin set access on

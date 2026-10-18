@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Req } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentUser, type CurrentUserData } from '@hbcfield/shared';
+import { CurrentUser } from '@hbcfield/shared';
 import { DocumentsGatewayService } from './documents.service';
 import { RequirePermission } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';

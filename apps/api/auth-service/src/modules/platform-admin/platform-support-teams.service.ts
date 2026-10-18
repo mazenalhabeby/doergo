@@ -1,5 +1,5 @@
 import type { Prisma } from '@prisma/client';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { isTeamColor, type RoutingConditions } from '@hbcfield/shared';
 
@@ -13,7 +13,6 @@ const fail = (message: string, statusCode = 400) => ({ success: false, statusCod
  */
 @Injectable()
 export class PlatformSupportTeamsService {
-  private readonly logger = new Logger(PlatformSupportTeamsService.name);
   constructor(private readonly prisma: PrismaService) {}
 
   /** Active platform staff — for the "add member" picker (manageSupportTeams). */

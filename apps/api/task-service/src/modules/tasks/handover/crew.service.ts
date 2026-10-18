@@ -1,14 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { TaskEventType } from '@prisma/client';
-import {
-  CREW_CODES,
-  crewPresence,
-  mayMoveStep,
-  success,
-  type ChecklistAuthority,
-  type OccurrenceEvidence,
-  personName,
-} from '@hbcfield/shared';
+import { CREW_CODES, crewPresence, mayMoveStep, success, type ChecklistAuthority, personName } from '@hbcfield/shared';
 import { judgeOccurrence } from '../../../common/occurrence.util';
 import { CrewActor, CrewTask, TASK_SELECT, evidenceMeta, cleanReason } from './crew-helpers';
 import { CrewLeadBase } from './crew-lead.base';

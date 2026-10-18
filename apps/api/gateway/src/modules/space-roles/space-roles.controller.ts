@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { isAdmin, mayViewLabourCost, type PermissionSet, type RoleKindValue, ownAccess } from '@hbcfield/shared';
+import { isAdmin, mayViewLabourCost, ownAccess } from '@hbcfield/shared';
 import { assertMayGrant } from './space-member-access';
 import { MergeRoleDto, RateHistoryQueryDto, SetDayRateDto } from './space-roles.dto';
 import { RequirePermission } from '../../common/decorators';

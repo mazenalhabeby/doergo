@@ -23,14 +23,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import {
-  Role,
-  SERVICE_NAMES,
-  CurrentUser,
-  CurrentUserData,
-  RequireAccessModule,
-  RequirePermissionInSpace,
-} from '@hbcfield/shared';
+import { Role, SERVICE_NAMES, CurrentUser, RequireAccessModule, RequirePermissionInSpace } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { scopeIdsFor } from '../../common/permission-scope';
 import type { SessionUser } from '../../common/request.types';

@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import {
   personName,
   reportLabelEn,
@@ -14,7 +14,6 @@ import { TEMPLATES } from './templates';
 
 @Injectable()
 export class AnalyticsService {
-  private readonly logger = new Logger(AnalyticsService.name);
 
   constructor(private readonly prisma: PrismaService) {}
 

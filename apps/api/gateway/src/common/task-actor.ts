@@ -1,4 +1,4 @@
-import { isAdmin, type ResolvedAccess } from '@hbcfield/shared';
+import { type ResolvedAccess } from '@hbcfield/shared';
 import { scopeIdsFor } from './permission-scope';
 import type { SessionUser } from './request.types';
 

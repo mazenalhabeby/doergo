@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentUser, type CurrentUserData, isAdmin } from '@hbcfield/shared';
+import { CurrentUser } from '@hbcfield/shared';
 import { DocumentsGatewayService } from './documents.service';
 import { RequirePermission } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';

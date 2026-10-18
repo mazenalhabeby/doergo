@@ -2,7 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Inject, HttpS
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, CurrentUser, CurrentUserData, stripLabourCost, assertServiceOk } from '@hbcfield/shared';
+import { Role, CurrentUser, stripLabourCost, assertServiceOk } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
@@ -18,7 +18,6 @@ import {
   invoiceDelete,
   invoiceAddItem,
   invoiceRemoveItem,
-  type RpcRequest,
 } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
 import type { SessionUser } from '../../common/request.types';

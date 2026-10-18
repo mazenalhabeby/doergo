@@ -1,7 +1,7 @@
 import { scopeIdsFor } from '../../common/permission-scope';
 import { Controller, Get, Post, Patch, Delete, Body, Param, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { Role, isAdmin } from '@hbcfield/shared';
+import { Role } from '@hbcfield/shared';
 import { RequirePermissionInSpace } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';

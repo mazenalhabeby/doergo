@@ -1,6 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { writeRateChange, RateChangeError, parseCurrency, CURRENCY_INVALID_MESSAGE } from '@hbcfield/shared';
-import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
+import { Injectable, HttpStatus, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BillingService } from '../billing/billing.service';
@@ -10,7 +10,6 @@ import { leavePolicyOf } from './onboarding-helpers';
 /** The organization's profile: name, address, logo, contact details. */
 @Injectable()
 export class OrgProfileService {
-  private readonly logger = new Logger(OrgProfileService.name);
 
   constructor(
     private readonly prisma: PrismaService,

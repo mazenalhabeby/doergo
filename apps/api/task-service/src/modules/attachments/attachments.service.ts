@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { OBJECT_STORE, ObjectStore, requireObjectStore } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -14,7 +14,6 @@ export { attachmentTypeOf, attachmentKeyPrefixes } from './attachments-helpers';
 
 @Injectable()
 export class AttachmentsService {
-  private readonly logger = new Logger(AttachmentsService.name);
 
   constructor(
     private readonly prisma: PrismaService,

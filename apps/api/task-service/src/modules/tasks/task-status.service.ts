@@ -15,13 +15,11 @@ import { ClockGateService } from './handover/clock-gate.service';
 import { CrewService } from './handover/crew.service';
 import { PresenceService } from '../attendance/presence/presence.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { prepareStepSubmission, type PreparedStepSubmission } from './step-submission';
 import {
   TaskStatus,
   TaskEventType,
   success,
-  type OccurrenceEvidence,
   type ResolvedAccess,
   stepCapabilities,
   stepStartsWork,

@@ -14,12 +14,3 @@ export function supportParts(...args: unknown[]): SupportServiceParts {
     new (SupportInboxService as unknown as new (...a: unknown[]) => object)(...args),
   );
 }
-
-/** The same, from a Nest test module that registered them all. */
-export function supportPartsOf(mod: { get<T>(cls: new (...a: never[]) => T): T }): SupportServiceParts {
-  // Only the services this test module registered — a test that provides one of them still works.
-  const parts = [SupportService, SupportInboxService].flatMap((C) => {
-    try { return [mod.get(C as unknown as new (...a: never[]) => object)]; } catch { return []; }
-  });
-  return combinedServices<SupportServiceParts>(...parts);
-}

@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { success } from '@hbcfield/shared';
-import { CalendarService, type ItemsQuery } from './calendar.service';
-import { EventsService, type Caller, type EventInput } from './events.service';
+import { CalendarService } from './calendar.service';
+import { EventsService } from './events.service';
 import { HolidaysService } from './holidays.service';
 import { FeedService } from './feed.service';
 import { EventAnswersService } from './event-answers.service';

@@ -5,7 +5,6 @@ import { RequirePermission } from '../../common/decorators';
 import { taskActor } from '../../common/task-actor';
 import { assertExternalMayWriteTask } from '../../common/external-task-write';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { CreateCustomFieldDto, UpdateCustomFieldDto, SetCustomFieldValuesDto } from './dto';
 import { CustomFieldsService } from './custom-fields.service';

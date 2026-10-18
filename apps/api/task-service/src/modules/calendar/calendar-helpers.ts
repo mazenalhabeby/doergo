@@ -1,6 +1,5 @@
 /** Module-level helpers of calendar.service.ts — moved here unchanged. */
 import { TaskStatus } from '@hbcfield/shared';
-import { type Caller } from './events.service';
 import type { CalendarItemsQuery } from '@hbcfield/shared/microservices';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;

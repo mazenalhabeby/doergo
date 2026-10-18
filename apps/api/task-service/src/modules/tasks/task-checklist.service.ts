@@ -20,7 +20,6 @@ import {
   CHECKLIST_CODES,
   type ChecklistAuthority,
   type ChecklistVerdict,
-  type ResolvedAccess,
 } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';

@@ -14,10 +14,9 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
+import { CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import { SpaceModulesService } from '../../common/space-modules.service';
 import { RequirePermission } from '../../common/decorators';
-import { Roles } from '../../common/decorators/roles.decorator';
 import { OrgEventsService } from '../../common/events/org-events.service';
 import type { SessionUser } from '../../common/request.types';
 import {

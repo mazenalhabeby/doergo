@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success } from '@hbcfield/shared';
 import { RouteMatchingService } from './route-matching.service';
@@ -7,7 +7,6 @@ import { taskInScope } from './location-helpers';
 /** Routes: a job's whole route, and a worker's route in progress. */
 @Injectable()
 export class RouteReadService {
-  private readonly logger = new Logger(RouteReadService.name);
 
   constructor(
     private readonly prisma: PrismaService,

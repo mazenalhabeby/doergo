@@ -20,7 +20,7 @@ import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
-import { Role, CurrentUser, CurrentUserData, ADD_ON_KEYS, assertServiceOk } from '@hbcfield/shared';
+import { Role, CurrentUser, ADD_ON_KEYS, assertServiceOk } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators';
 import { SetAddOnsDto } from './dto';

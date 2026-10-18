@@ -1,4 +1,4 @@
-import { Role } from '@hbcfield/shared';
+
 import {
   type UpdateMemberProfileDto,
   type ListOrgMembersDto,

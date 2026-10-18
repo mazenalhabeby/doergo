@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { MEMBER_SELECT } from './attendance-selects';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
@@ -17,7 +17,6 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AttendanceReportService {
-  private readonly logger = new Logger(AttendanceReportService.name);
 
   constructor(private readonly prisma: PrismaService) {}
 

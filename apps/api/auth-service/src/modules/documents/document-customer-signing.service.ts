@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { personName, nextPendingStep, type SignableDocument, type SignerStep } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CUSTOMER_LINK_STATUSES, canRenderInline, roleLabel, downloadName } from './document-common';
@@ -14,7 +14,6 @@ import { DocumentSealService } from './document-seal.service';
  */
 @Injectable()
 export class DocumentCustomerSigningService {
-  private readonly logger = new Logger(DocumentCustomerSigningService.name);
 
   constructor(
     private readonly prisma: PrismaService,

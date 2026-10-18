@@ -10,7 +10,7 @@ import { attachmentsParts } from './attachments.service.fixture';
  *  - reads hand out signed links, never the stored provider URL;
  *  - rows written before keys existed (full URL only) still read and delete.
  */
-import { AttachmentsService, attachmentKeyPrefixes } from '../attachments.service';
+import { attachmentKeyPrefixes } from '../attachments.service';
 import { TaskAccessService } from '../../../common/task-access/task-access.service';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
 

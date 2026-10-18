@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule } from '@nestjs/microservices';
 import { RecurringTasksController } from './recurring-tasks.controller';
 import { RecurringTasksService } from './recurring-tasks.service';
 

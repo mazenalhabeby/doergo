@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
@@ -6,13 +6,11 @@ import { success, assertFoundInOrg } from '@hbcfield/shared';
 /** Writing a task's custom field values, each checked against its field. */
 @Injectable()
 export class CustomFieldValuesService {
-  private readonly logger = new Logger(CustomFieldValuesService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly taskAccess: TaskAccessService,
   ) {}
-
 
   /**
    * Set/update custom field values for a task (batch upsert)

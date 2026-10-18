@@ -1,5 +1,5 @@
 import { formatDistance, labelWord, type SupportedLocale } from '@hbcfield/shared';
-import { msg, render, type LocalizedText, type Msg } from '../../i18n/translate';
+import { msg, type LocalizedText, type Msg } from '../../i18n/translate';
 
 /**
  * Every push this product sends.

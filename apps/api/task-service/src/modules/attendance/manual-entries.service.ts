@@ -12,7 +12,6 @@ import {
   manualTargetDates,
   type ManualEntriesInput,
 } from './manual-entries-steps';
-import type { Prisma } from '@prisma/client';
 
 /** Hours the office adds by hand ("they were here") — one person or several, one day or many. */
 @Injectable()

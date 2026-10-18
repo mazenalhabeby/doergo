@@ -3,7 +3,7 @@ import { trackingVisibility } from '../../common/tracking-visibility';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData } from '@hbcfield/shared';
+import { Role, SERVICE_NAMES, CurrentUser } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { sendRpc, getWorkers, findUser, getWorkerTasks } from '@hbcfield/shared/microservices';

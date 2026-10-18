@@ -1,7 +1,7 @@
 import { scopeIdsFor } from '../../common/permission-scope';
 import { Body, Controller, Get, Param, Post, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentUser, type CurrentUserData } from '@hbcfield/shared';
+import { CurrentUser } from '@hbcfield/shared';
 import { DocumentsGatewayService } from './documents.service';
 import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';

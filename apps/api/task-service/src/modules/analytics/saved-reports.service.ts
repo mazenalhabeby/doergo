@@ -1,16 +1,14 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { compile, ReportDefinition } from './query-engine';
 
 /** Reports a member saved: listing, saving, editing and deleting their own. */
 @Injectable()
 export class SavedReportsService {
-  private readonly logger = new Logger(SavedReportsService.name);
 
   constructor(
     private readonly prisma: PrismaService,
   ) {}
-
 
   // ── Saved reports (custom builder, Pro+) ────────────────────────────────────
   private savedSelect = {

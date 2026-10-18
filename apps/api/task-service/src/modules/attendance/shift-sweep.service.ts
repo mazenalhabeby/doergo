@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger, Optional } from '@nestjs/common';
+import { Injectable, Inject, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ShiftResolverService } from './shift-resolver.service';
@@ -23,7 +23,6 @@ export { shiftNudgeCadence } from './shift-sweep-helpers';
  */
 @Injectable()
 export class ShiftSweepService {
-  private readonly logger = new Logger(ShiftSweepService.name);
 
   constructor(
     private readonly prisma: PrismaService,

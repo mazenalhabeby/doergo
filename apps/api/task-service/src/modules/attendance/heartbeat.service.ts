@@ -120,7 +120,6 @@ export class HeartbeatService extends HeartbeatBase {
     // circle and for a drawn shape.
     const isBackInRing = !hasRing || (raw?.inside ?? true);
     const isOutPastBuffer = hasRing && (raw?.metresOutside ?? 0) > GEOFENCE_EXCURSION.RING_HYSTERESIS_M;
-    const inRing = isBackInRing;
 
     // Latest active excursion for this session (OUT_UNREPORTED / PENDING / APPROVED)
     const active = await this.getActiveExcursion(entry.id);

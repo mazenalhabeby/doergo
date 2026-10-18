@@ -3,7 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
-import { SkipOnboardingCheck, CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
+import { SkipOnboardingCheck, CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { CreateOrganizationDto, SubmitJoinRequestDto, AcceptInvitationExistingUserDto } from './dto';
 import {

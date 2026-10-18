@@ -29,7 +29,7 @@ import { BREAK_SERVICES } from '../break-services';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { PresenceService } from '../presence/presence.service';
-import { AutoClockService, AUTO_UNDO_EVENT } from '../auto-clock.service';
+import { AUTO_UNDO_EVENT } from '../auto-clock.service';
 import { clockOutServices } from './clock-out.service.fixture';
 import { shiftSweepParts } from './shift-sweep.service.fixture';
 

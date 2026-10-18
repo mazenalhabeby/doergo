@@ -5,7 +5,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { Public } from '../../common/decorators';
-import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
+import { CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import {
   sendRpc,
   biometricEnroll,
@@ -13,7 +13,6 @@ import {
   biometricVerify,
   biometricDevices,
   biometricRevoke,
-  type RpcRequest,
 } from '@hbcfield/shared/microservices';
 import type { SessionUser } from '../../common/request.types';
 import { BiometricEnrollDto, BiometricChallengeDto, BiometricVerifyDto } from './dto/biometric.dto';

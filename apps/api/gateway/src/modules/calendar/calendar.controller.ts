@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { scopeFor, scopeIdsFor } from '../../common/permission-scope';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Role, CurrentUser, CurrentUserData, crmReachOf, crmCanAccess, moduleAnywhere } from '@hbcfield/shared';
+import { Role, CurrentUser, crmReachOf, crmCanAccess, moduleAnywhere } from '@hbcfield/shared';
 import { DenyExternal, RequirePermission, Roles } from '../../common/decorators';
 import { CalendarGatewayService } from './calendar.service';
 import { callerOrgId } from '../../common/caller-org';

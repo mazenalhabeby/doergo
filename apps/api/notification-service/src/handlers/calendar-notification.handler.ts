@@ -11,9 +11,7 @@ import {
   calendarSettingsChangedEvent,
   calendarUpdatedEvent,
 } from '@hbcfield/shared/microservices';
-import type { CalendarEventFacts } from '@hbcfield/shared/microservices';
 
-type EventFacts = CalendarEventFacts;
 import type { SupportedLocale } from '@hbcfield/shared';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';

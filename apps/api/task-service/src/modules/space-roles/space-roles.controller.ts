@@ -21,8 +21,7 @@ import {
   updateSpaceRole,
   type RpcRequest,
 } from '@hbcfield/shared/microservices';
-import { SpaceRolesService, type SpaceMemberAuthority } from './space-roles.service';
-import type { PermissionSet } from '@hbcfield/shared';
+import { SpaceRolesService } from './space-roles.service';
 import { RoleAdminService } from './role-admin.service';
 import { SpaceMembersService } from './space-members.service';
 import { MemberRolesService } from './member-roles.service';

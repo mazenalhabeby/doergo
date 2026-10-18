@@ -1,4 +1,4 @@
-import { CREW_REASON_MAX, type OccurrenceEvidence, type ResolvedAccess } from '@hbcfield/shared';
+import { CREW_REASON_MAX, type OccurrenceEvidence } from '@hbcfield/shared';
 
 /** Who is asking, as the gateway resolved it — the crew jobs' caller (shared queues/task-jobs-types.ts). */
 export type { CrewActor } from '@hbcfield/shared';

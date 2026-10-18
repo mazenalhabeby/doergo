@@ -2,13 +2,7 @@ import * as bcrypt from 'bcryptjs';
 import { Injectable } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import { hashCode } from '@hbcfield/shared';
-import {
-  BCRYPT_COST_FACTOR,
-  DEFAULT_PERMISSIONS,
-  normalizeAccessProfile,
-  Role,
-  normalizeEmail,
-} from '@hbcfield/shared';
+import { BCRYPT_COST_FACTOR, normalizeAccessProfile, Role, normalizeEmail } from '@hbcfield/shared';
 import { memberFieldsFromInvitation, claimInvitation, InvitationAlreadyClaimedError, applyInvitationPlacement } from './invitation-apply';
 import { InvitationServiceBase } from './invitation-service.base';
 
@@ -111,7 +105,6 @@ export class InvitationAcceptService extends InvitationServiceBase {
 
     // Get default permissions for role
     const role = invitation.targetRole as Role;
-    const defaultPerms = DEFAULT_PERMISSIONS[role];
 
     // Pre-configured Access Profile (EMPLOYEE only). When present it OVERRIDES the
     // role defaults, so the member's very first screen already matches their final

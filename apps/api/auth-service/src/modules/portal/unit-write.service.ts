@@ -1,6 +1,5 @@
 import type { Prisma } from '@prisma/client';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { keepOrgUserIds } from '../../common/records/org-user-ids';
 import { type CrmCaller } from '../customers/customers.service';
 import { type SpaceScopeIds, activeAssignmentWhere } from '@hbcfield/shared';
 import { sanitizeUnitDetails } from './portal-helpers';

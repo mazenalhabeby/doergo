@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
   AUTO_REST_FLAG,
@@ -17,7 +17,6 @@ export { AUTO_UNDO_EVENT } from './auto-clock-helpers';
 
 @Injectable()
 export class AutoClockService {
-  private readonly logger = new Logger(AutoClockService.name);
 
   constructor(
     private readonly prisma: PrismaService,

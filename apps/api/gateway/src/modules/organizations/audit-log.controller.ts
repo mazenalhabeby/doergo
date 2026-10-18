@@ -14,7 +14,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { OrgEventsService } from '../../common/events/org-events.service';
-import { Role, CurrentUser, CurrentUserData, addOnDef } from '@hbcfield/shared';
+import { Role, CurrentUser, addOnDef } from '@hbcfield/shared';
 import { isFeatureEntitled } from '../../common/entitlements';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';

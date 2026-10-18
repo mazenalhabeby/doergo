@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { spaceRoleServices, type SpaceRolesServiceParts } from './space-roles.service.fixture';
+import { spaceRoleServices } from './space-roles.service.fixture';
 
 /**
  * A member's routing may only name roles and people of the SAME organization.

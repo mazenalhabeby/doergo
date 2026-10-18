@@ -2,7 +2,7 @@ import { Controller, Get, Patch, Body, Param, Query, Inject, HttpStatus } from '
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { personName, CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
+import { personName, CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { OrgEventsService } from '../../common/events/org-events.service';

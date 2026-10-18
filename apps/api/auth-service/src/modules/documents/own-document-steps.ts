@@ -1,7 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
-import { retentionUntil, type Rect, type checkScan } from '@hbcfield/shared';
+import { retentionUntil, type checkScan } from '@hbcfield/shared';
 import { MAX_PAGES } from './pages-pdf';
-import type { DocumentActor, RequestContext } from './document-common';
 
 import { type SubmitOwnDocumentInput } from '@hbcfield/shared/microservices';
 /** The message contract's type (shared with the gateway). */

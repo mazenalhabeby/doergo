@@ -3,7 +3,7 @@ import { reportServices } from './reports.service.fixture';
  * Service report photos on the shared object store — the same rules as task
  * attachments, because a report photo ends up in a PDF sent to the customer.
  */
-import { ReportsService, reportKeyPrefixes } from '../reports.service';
+import { reportKeyPrefixes } from '../reports.service';
 import { TaskAccessService } from '../../../common/task-access/task-access.service';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
 

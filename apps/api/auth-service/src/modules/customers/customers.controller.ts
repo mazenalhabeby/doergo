@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { CustomersService, CustomerInput, CrmCaller } from './customers.service';
+import { CustomersService } from './customers.service';
 import { ContactImportService } from './contact-import.service';
 import { CustomerWriteService } from './customer-write.service';
 import { CustomerContactsService } from './customer-contacts.service';

@@ -1,7 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AutoClockService } from './auto-clock.service';
-import type { OccurrenceEvidence } from '@hbcfield/shared';
 import { AutoClockPlanService } from './auto-clock-plan.service';
 import { AutoClockUndoService } from './auto-clock-undo.service';
 import {

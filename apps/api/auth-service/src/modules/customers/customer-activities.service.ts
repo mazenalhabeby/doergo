@@ -1,6 +1,5 @@
 import type { CustomerActivityType } from '@prisma/client';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { keepOrgUserIds } from '../../common/records/org-user-ids';
 import { findPrior } from '@hbcfield/shared';
 import {
   CLIENT_ID,

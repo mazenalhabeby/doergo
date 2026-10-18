@@ -1,7 +1,5 @@
-import { Test } from '@nestjs/testing';
-import { CustomersService } from '../customers.service';
+
 import { customerServices, type CustomerServices } from './customer-services.fixture';
-import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /*
   GET /customers/due — the home Clients widget. What the query is ASKED, for

@@ -1,8 +1,6 @@
-import { Test, TestingModule } from '@nestjs/testing';
+
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { CustomersService } from '../customers.service';
 import { customerServices, type CustomerServices } from './customer-services.fixture';
-import { PrismaService } from '../../../common/prisma/prisma.service';
 import { BILLABLE_CLIENT_WHERE } from '@hbcfield/shared';
 
 /*

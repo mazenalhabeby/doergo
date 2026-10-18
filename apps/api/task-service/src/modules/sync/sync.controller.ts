@@ -1,7 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { SyncPullService, type PullRequest } from './sync-pull.service';
-import type { TaskVisibilityFacts } from '../tasks/task-visibility';
+import { SyncPullService } from './sync-pull.service';
 import { pattern, type RpcRequest, syncPull, syncMediaLinks } from '@hbcfield/shared/microservices';
 
 @Controller()

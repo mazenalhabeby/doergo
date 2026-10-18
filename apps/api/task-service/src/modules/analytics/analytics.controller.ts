@@ -17,8 +17,6 @@ import {
 } from '@hbcfield/shared/microservices';
 import { AnalyticsService } from './analytics.service';
 import { ReportScheduleService } from './report-schedule.service';
-import { ReportDefinition } from './query-engine';
-import type { SpaceScopeIds } from '@hbcfield/shared';
 import { SavedReportsService } from './saved-reports.service';
 
 @Controller()

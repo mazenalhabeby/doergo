@@ -3,7 +3,7 @@ import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.int
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData, RequireAccessModule } from '@hbcfield/shared';
+import { Role, SERVICE_NAMES, CurrentUser, RequireAccessModule } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequestTimeOffDto } from './dto';
 import { LeaveCountQueryDto } from '../calendar/calendar.dto';

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ShiftResolverService } from './shift-resolver.service';
 import { notEndedWhere, zoneOf, success, SHIFT_REMINDER_DEFAULTS } from '@hbcfield/shared';
@@ -7,13 +7,11 @@ import { localPartsIn } from '@hbcfield/shared';
 /** Writing the expected shifts (instances) for the days ahead, from the rota and the weekly schedule. */
 @Injectable()
 export class ShiftInstancesService {
-  private readonly logger = new Logger(ShiftInstancesService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly shiftResolver: ShiftResolverService,
   ) {}
-
 
   // ──────────────────────────────────────────────────────────────────────────
   // NO-SHOW ENGINE (clock-in parity): materialize expected shifts → fulfill on

@@ -21,16 +21,3 @@ export function rolePoolServices(...args: unknown[]): RolePoolServiceParts {
     new (RolePoolSweepService as unknown as new (...a: unknown[]) => object)(...args),
   );
 }
-
-/** The same, from a Nest test module that registered them all. */
-export function rolePoolServicesOf(mod: { get<T>(cls: new (...a: never[]) => T): T }): RolePoolServiceParts {
-  // Only the services this test module registered — a test that provides one of them still works.
-  const parts = [RolePoolService, RoleTakeService, RoleStatsService, RolePoolSweepService].flatMap((C) => {
-    try {
-      return [mod.get(C as unknown as new (...a: never[]) => object)];
-    } catch {
-      return [];
-    }
-  });
-  return combinedServices<RolePoolServiceParts>(...parts);
-}

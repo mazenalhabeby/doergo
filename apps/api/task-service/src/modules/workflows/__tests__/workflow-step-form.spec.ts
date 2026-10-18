@@ -1,6 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { WorkflowsService } from '../workflows.service';
 import { workflowServices } from './workflows.service.fixture';
 
 /**

@@ -3,7 +3,6 @@ import {
   SUPPORT_JOB_TYPES,
   supportPriority,
   slaFirstResponseDueAt,
-  resolveTeamForOrg,
   type SupportAuthorType,
   type SupportStatus,
   type SupportAgentScope,

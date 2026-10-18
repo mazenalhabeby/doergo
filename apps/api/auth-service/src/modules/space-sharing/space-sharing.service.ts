@@ -1,5 +1,5 @@
 import type { Prisma, ShareRequestStatus } from '@prisma/client';
-import { Injectable, HttpStatus, Logger } from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { MemberOffboarding } from '../../common/member-offboarding/member-offboarding.service';
 
@@ -14,7 +14,6 @@ const LEVELS: Level[] = ['VIEW', 'CONTRIBUTE', 'CONTROL'];
  */
 @Injectable()
 export class SpaceSharingService {
-  private readonly logger = new Logger(SpaceSharingService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly offboarding: MemberOffboarding,

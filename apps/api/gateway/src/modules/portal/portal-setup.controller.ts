@@ -13,7 +13,6 @@ import {
   portalUpdateUnit,
   portalDeleteUnit,
   portalAdminListUnits,
-  type RpcRequest,
 } from '@hbcfield/shared/microservices';
 
 import type { AuthedRequest } from '../../common/request.types';

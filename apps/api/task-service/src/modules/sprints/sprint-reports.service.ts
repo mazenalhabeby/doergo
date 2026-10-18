@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   success,
@@ -19,12 +19,10 @@ type SprintReportTask = { id: string; status: string; storyPoints: number | null
 
 @Injectable()
 export class SprintReportsService {
-  private readonly logger = new Logger(SprintReportsService.name);
 
   constructor(
     private readonly prisma: PrismaService,
   ) {}
-
 
   /**
    * Generate a sprint report with burndown data, committed/completed stats

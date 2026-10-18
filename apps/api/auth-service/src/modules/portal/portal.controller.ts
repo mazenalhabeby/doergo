@@ -1,6 +1,5 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import type { SpaceScopeIds } from '@hbcfield/shared';
 import { PortalService } from './portal.service';
 import { SpacePortalService } from './space-portal.service';
 import { PortalUnitsService } from './portal-units.service';
@@ -41,7 +40,6 @@ import {
   portalDeleteCategory,
   portalReorderCategories,
   type RpcRequest,
-  type Scoped,
 } from '@hbcfield/shared/microservices';
 /*
   `scopeSpaceIds` on an office payload = the workspaces in which the caller holds

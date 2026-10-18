@@ -13,7 +13,6 @@ import {
   personName,
   sortDeciders,
   type ApprovalDecider,
-  type ApprovalKind,
   type ApprovalRouting,
 } from '@hbcfield/shared';
 import { PrismaService } from '../prisma/prisma.service';
