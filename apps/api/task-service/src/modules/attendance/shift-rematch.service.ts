@@ -6,6 +6,7 @@ import { ShiftResolverService } from './shift-resolver.service';
 import { CountedTimeService } from './counted-time.service';
 import { BreakRulesService } from './break-rules.service';
 import { approvalFor } from './attendance-occurrence';
+import { rematchLabels } from './rematch-labels';
 import { emitEvent, attendanceChangedEvent } from '@hbcfield/shared/microservices';
 import type { Prisma } from '@prisma/client';
 
@@ -160,16 +161,20 @@ export class ShiftRematchService implements OnModuleDestroy {
     if (!resolved) return false;
 
     const toleranceMin = resolved.flagToleranceMin;
+    // Label rules (new entries): agreed hours, first arrival only, the rest. Old entries: as before.
+    const labeled = await rematchLabels(this.prisma, entry, resolved);
+    if (labeled) Object.assign(resolved, { expectedClockInAt: labeled.expectedClockInAt, expectedClockOutAt: labeled.expectedClockOutAt });
     const flags = [
       ...new Set([
-        ...(entry.flagReasons as string[]).filter((f) => !SCHEDULE_FLAGS.has(f)),
-        ...computeScheduleFlags({
-          clockInAt: entry.clockInAt,
-          clockOutAt: entry.clockOutAt,
-          expectedClockInAt: resolved.expectedClockInAt,
-          expectedClockOutAt: resolved.expectedClockOutAt,
-          toleranceMin,
-        }),
+        ...(entry.flagReasons as string[]).filter((f) => !SCHEDULE_FLAGS.has(f) && !(labeled && f === 'LATE_FROM_REST')),
+        ...(labeled?.flags ??
+          computeScheduleFlags({
+            clockInAt: entry.clockInAt,
+            clockOutAt: entry.clockOutAt,
+            expectedClockInAt: resolved.expectedClockInAt,
+            expectedClockOutAt: resolved.expectedClockOutAt,
+            toleranceMin,
+          })),
       ]),
     ];
 
@@ -226,6 +231,7 @@ export class ShiftRematchService implements OnModuleDestroy {
         expectedClockOutAt: resolved.expectedClockOutAt,
         endIsDailyLimit: false,
         flagReasons: flags,
+        ...(labeled ? { labelFacts: labeled.labelFacts } : {}),
         ...(counted ?? {}),
         ...(open ? { nextRemindAt: resolved.nextRemindAt } : {}),
         ...(restPlan
