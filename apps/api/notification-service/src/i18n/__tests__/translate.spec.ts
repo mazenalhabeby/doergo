@@ -38,7 +38,9 @@ describe('render', () => {
   });
 
   it('renders an empty fact as nothing rather than "undefined"', () => {
-    expect(render('en', msg('issue.event.resolved', { name: 'Ali', reason: undefined }))).toBe('Ali marked it resolved');
+    expect(render('en', msg('issue.event.resolved', { name: 'Ali', reason: undefined }))).toBe(
+      'Ali marked it resolved',
+    );
   });
 
   it('joins phrases in the reader’s language', () => {
@@ -59,22 +61,35 @@ describe('phrases with rules of their own', () => {
     expect(render('de', msg('task.watch.status.body', { task: 'Pumpe', status: taskStatus('IN_PROGRESS') }))).toBe(
       '„Pumpe“ → In Bearbeitung',
     );
-    expect(render('de', msg('task.watch.status.body', { task: 'Pumpe', status: taskStatus('WAITING_FOR_PARTS') }))).toBe(
-      '„Pumpe“ → WAITING FOR PARTS',
-    );
+    expect(
+      render('de', msg('task.watch.status.body', { task: 'Pumpe', status: taskStatus('WAITING_FOR_PARTS') })),
+    ).toBe('„Pumpe“ → WAITING FOR PARTS');
   });
 
   it('keeps a German noun capitalised and lower-cases it elsewhere', () => {
     expect(render('de', msg('attendance.breakDue.title', { rest: restName('Mittagspause') }))).toBe(
       'Zeit für Ihre Pause: Mittagspause',
     );
-    expect(render('en', msg('attendance.breakDue.title', { rest: restName('Lunch break') }))).toBe('Time for your lunch break');
+    expect(render('en', msg('attendance.breakDue.title', { rest: restName('Lunch break') }))).toBe(
+      'Time for your lunch break',
+    );
   });
 
   it('lists approval flags in the reader’s language, and still names one it does not know', () => {
-    const text = pendingApprovalText('Sam', ['LATE_ARRIVAL', 'OUTSIDE_GEOFENCE_IN', 'OUTSIDE_GEOFENCE_OUT', 'NEW_FLAG']);
-    expect(renderText('en', text).body).toBe('Sam’s time entry needs review (late arrival, out of geofence, new flag)');
-    expect(renderText('fr', text).body).toBe('Le pointage de Sam doit être vérifié (arrivée tardive, hors zone, new flag)');
+    const text = pendingApprovalText('Sam', [
+      'LATE_ARRIVAL',
+      'OUTSIDE_GEOFENCE_IN',
+      'OUTSIDE_GEOFENCE_OUT',
+      'NEW_FLAG',
+    ]);
+    // The shared label catalogue's words, mid-sentence (lower case; German keeps its nouns).
+    expect(renderText('en', text).body).toBe(
+      'Sam’s time entry needs review (late, clock-in outside zone, clock-out outside zone, new flag)',
+    );
+    expect(renderText('fr', text).body).toBe(
+      'Le pointage de Sam doit être vérifié (en retard, entrée hors zone, sortie hors zone, new flag)',
+    );
+    expect(renderText('de', pendingApprovalText('Sam', ['LATE_FROM_REST'])).body).toContain('Zu spät aus der Pause');
     expect(renderText('en', pendingApprovalText('Sam', [])).body).toBe('Sam’s time entry needs review (needs review)');
   });
 });
@@ -144,7 +159,9 @@ describe('PushService — one text, many languages', () => {
   // `user` answers the member's own push switches (none set here → everyone gets it).
   const prisma = { userPushToken: { findMany: jest.fn() }, user: { findMany: jest.fn(async () => []) } };
   const localeOf: Record<string, string> = {};
-  const locales = { localesFor: jest.fn(async (ids: string[]) => new Map(ids.map((id) => [id, localeOf[id] ?? 'en']))) };
+  const locales = {
+    localesFor: jest.fn(async (ids: string[]) => new Map(ids.map((id) => [id, localeOf[id] ?? 'en']))),
+  };
   let service: PushService;
   let expoSends: any[][];
 
@@ -169,7 +186,14 @@ describe('PushService — one text, many languages', () => {
     ids.forEach((id, i) => (localeOf[id] = langs[i % 5]));
     prisma.userPushToken.findMany.mockResolvedValue(ids.map((userId, i) => ({ userId, token: token(i) })));
 
-    await service.sendToUsers(ids, { title: msg('attendance.noShowEscalation.title'), body: msg('attendance.noShowEscalation.body', { name: 'Ali' }) }, { type: 'noshow_escalation' });
+    await service.sendToUsers(
+      ids,
+      {
+        title: msg('attendance.noShowEscalation.title'),
+        body: msg('attendance.noShowEscalation.body', { name: 'Ali' }),
+      },
+      { type: 'noshow_escalation' },
+    );
 
     expect(prisma.userPushToken.findMany).toHaveBeenCalledTimes(1);
     expect(locales.localesFor).toHaveBeenCalledTimes(1);
@@ -194,14 +218,25 @@ describe('PushService — one text, many languages', () => {
 describe('NotificationStore — the bell in the reader’s language', () => {
   it('writes each recipient’s row in their own language', async () => {
     const prisma = { notificationDelivery: { createMany: jest.fn() } };
-    const locales = { localesFor: jest.fn(async () => new Map([['a', 'de'], ['b', 'en']])) };
+    const locales = {
+      localesFor: jest.fn(
+        async () =>
+          new Map([
+            ['a', 'de'],
+            ['b', 'en'],
+          ]),
+      ),
+    };
     const store = new NotificationStore(prisma as any, locales as any);
 
     await store.record({
       recipientIds: ['a', 'b'],
       organizationId: 'org',
       eventType: 'time_off_decided',
-      text: { title: msg('timeOff.decided.titleApproved'), body: msg('timeOff.decided.bodyApproved', { range: '1–3 Okt' }) },
+      text: {
+        title: msg('timeOff.decided.titleApproved'),
+        body: msg('timeOff.decided.bodyApproved', { range: '1–3 Okt' }),
+      },
     });
 
     const rows = prisma.notificationDelivery.createMany.mock.calls[0][0].data;

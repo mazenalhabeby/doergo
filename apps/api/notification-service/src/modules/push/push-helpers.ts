@@ -1,4 +1,4 @@
-import { formatDistance, type SupportedLocale } from '@hbcfield/shared';
+import { formatDistance, labelWord, type SupportedLocale } from '@hbcfield/shared';
 import { msg, render, type LocalizedText, type Msg } from '../../i18n/translate';
 
 /**
@@ -72,31 +72,13 @@ export function geofenceAlertText(data: {
   };
 }
 
-const KNOWN_FLAGS = new Set([
-  'OVERTIME',
-  'MISSED_CLOCK_OUT',
-  'OUTSIDE_GEOFENCE_IN',
-  'OUTSIDE_GEOFENCE_OUT',
-  'LATE_ARRIVAL',
-  'EARLY_DEPARTURE',
-  'UNSCHEDULED_DAY',
-]);
-
 export function pendingApprovalText(userName: string, flagReasons: string[]): LocalizedText {
   const reasons = flagReasons ?? [];
-  // A flag this catalogue does not know yet still says SOMETHING: its own name,
-  // readable, rather than a missing-key error on a manager's lock screen.
+  // The shared label catalogue's words (every label, five languages), written
+  // mid-sentence like a rest's name. A code it does not know yet still says
+  // SOMETHING — its own name, readable — never a missing-key error on a lock screen.
   const flags = reasons.length
-    ? (locale: SupportedLocale) =>
-        [
-          ...new Set(
-            reasons.map((r) =>
-              KNOWN_FLAGS.has(r)
-                ? render(locale, msg(`attendance.flag.${r}` as 'attendance.flag.OVERTIME'))
-                : r.replace(/_/g, ' ').toLowerCase(),
-            ),
-          ),
-        ].join(', ')
+    ? (locale: SupportedLocale) => [...new Set(reasons.map((r) => restName(labelWord(r, locale))(locale)))].join(', ')
     : msg('attendance.flag.needsReview');
   return { title: msg('attendance.approval.title'), body: msg('attendance.approval.body', { name: userName, flags }) };
 }
@@ -141,4 +123,4 @@ export function duration(totalMinutes: number): Msg {
   return h > 0 ? msg('common.durationHm', { h, m }) : msg('common.durationM', { m });
 }
 
-export { PushTarget, KNOWN_FLAGS, KNOWN_STATUSES };
+export { PushTarget, KNOWN_STATUSES };
