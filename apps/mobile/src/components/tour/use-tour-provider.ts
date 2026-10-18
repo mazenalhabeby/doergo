@@ -274,14 +274,11 @@ export function useTourProvider({ children }: Pick<{ children: ReactNode }, 'chi
     return { position, total };
   }, [tour, shown, reachable]);
 
-  const value: TourContextValue = {
-    start,
-    stop,
-    availableTours,
-    contextualTourId,
-    activeTourId: tourId,
+  // One object per change of its parts, so `useTour()` readers re-render only when one moves.
+  const value = useMemo<TourContextValue>(() => ({
+    start, stop, availableTours, contextualTourId, activeTourId: tourId,
     isTourCompleted: (id) => storage.isCompleted(id),
-  };
+  }), [start, stop, availableTours, contextualTourId, tourId]);
 
   return {
     api,
