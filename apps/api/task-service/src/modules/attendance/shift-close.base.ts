@@ -1,4 +1,4 @@
-import { endRunningRests, provisionalClockOut, type RestRow } from './open-shift-close';
+import { closedHowOfBasis, endRunningRests, provisionalClockOut, type RestRow } from './open-shift-close';
 import { Injectable, Inject, Logger, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -13,7 +13,7 @@ import { AttendanceRoutingService } from './attendance-routing.service';
 import { AttendanceGeocoderService } from './attendance-geocoder.service';
 import { ExtraTimeService } from './extra-time.service';
 import { AutoClockService } from './auto-clock.service';
-import { ClosableEntry, CloseSpec, CLOSED_ROW_INCLUDE, ClosedRow } from './clock-out-helpers';
+import { ClosableEntry, CloseSpec, CLOSED_ROW_INCLUDE, ClosedRow, closingLabelColumns } from './clock-out-helpers';
 import { emitEvent, attendanceClockOutEvent } from '@hbcfield/shared/microservices';
 import { attendancePendingApprovalEvent, attendanceShiftClosedProvisionallyEvent } from '@hbcfield/shared/microservices';
 
@@ -24,7 +24,6 @@ import { attendancePendingApprovalEvent, attendanceShiftClosedProvisionallyEvent
 @Injectable()
 export abstract class ShiftCloseBase {
   protected readonly logger = new Logger(this.constructor.name);
-
   constructor(
     protected readonly prisma: PrismaService,
     @Inject(SERVICE_NAMES.NOTIFICATION)
@@ -68,7 +67,7 @@ export abstract class ShiftCloseBase {
       at,
       from: 'OPEN',
       fields: { clockOutProvisional: true, clockOutBasis: basis, flagReasons: flags, approvalStatus: 'PENDING' },
-      // The jobs stop at the same guess; the member's real clock-out moves them.
+      labels: { closedHow: closedHowOfBasis(basis) }, // the jobs stop at the same guess; the real clock-out moves them
       pause: { reason: 'AUTO_CLOSE', sinceClockIn: false },
       announce: false,
       readBack: false,
@@ -185,6 +184,7 @@ export abstract class ShiftCloseBase {
           nextRemindAt: null,
           nextBreakRemindAt: null,
           ...spec.fields,
+          ...closingLabelColumns(entry, spec.labels),
           ...(flagsChanged ? { flagReasons: closeFlags, approvalStatus: closeApproval } : {}),
         },
       });

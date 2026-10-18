@@ -24,15 +24,8 @@ import { AttendanceRoutingService } from './attendance-routing.service';
 import { AttendanceGeocoderService } from './attendance-geocoder.service';
 import { ExtraTimeService } from './extra-time.service';
 import { AutoClockService } from './auto-clock.service';
-import {
-  alreadyClosedAnswer,
-  clockOutMessage,
-  geofenceAtOut,
-  lastRestEnd,
-  notesWithEarlyReason,
-  priorClockOutFlags,
-  type ClockOutInput,
-} from './clock-out-steps';
+import { alreadyClosedAnswer, clockOutLabelSpec, clockOutMessage, geofenceAtOut, lastRestEnd } from './clock-out-steps';
+import { notesWithEarlyReason, priorClockOutFlags, type ClockOutInput } from './clock-out-steps';
 
 export { CLOSE_ENTRY_INCLUDE } from './clock-out-helpers';
 
@@ -179,6 +172,7 @@ export class ClockOutService extends ShiftCloseBase {
       at: clockOutTime,
       from: replacingProvisional ? 'PROVISIONAL' : 'OPEN',
       toleranceMin,
+      labels: clockOutLabelSpec(entry, data, autoOut),
       fields: {
         clockOutLat: data.lat ?? null,
         clockOutLng: data.lng ?? null,

@@ -1,5 +1,14 @@
 import { ConflictException } from '@nestjs/common';
-import { isAtSite, parseGeofencePolygon, success, type ClockTrigger, type OccurrenceEvidence } from '@hbcfield/shared';
+import {
+  isAtSite,
+  judgePosition,
+  parseGeofencePolygon,
+  success,
+  type ClockTrigger,
+  type ClosedHow,
+  type OccurrenceEvidence,
+  type PositionFact,
+} from '@hbcfield/shared';
 import { type ClockOutHandover } from '../tasks/handover/job-pause.service';
 import { SAME_TAP_MS } from './attendance-occurrence';
 import { CLOCK_OUT_TIME_FLAGS, PROVISIONAL_FLAGS } from './open-shift-close';
@@ -148,4 +157,22 @@ export function clockOutMessage(
     ? `Clocked out from ${locationName}. ${ph}h ${pm}m counted — ` +
         `${Math.floor(shortBy / 60)}h ${shortBy % 60}m short of your shift.`
     : `Clocked out from ${locationName}. ${ph}h ${pm}m counted.`;
+}
+
+/**
+ * How a clock-out closed and where, for the label facts of a new entry: judged
+ * with the SAME accuracy limit as clock-in (a too-coarse fix is "not judged",
+ * never "on site"); an away day or an automatic clock-out is not judged at all.
+ */
+export function clockOutLabelSpec(
+  entry: { isRemote?: boolean | null; location: SiteFacts },
+  fix: { lat?: number; lng?: number; accuracy?: number },
+  autoOut: boolean,
+): { closedHow: ClosedHow; clockOut: PositionFact } {
+  const site = { ...entry.location, geofencePolygon: parseGeofencePolygon(entry.location.geofencePolygon) };
+  const skip = entry.isRemote ? 'AWAY_DAY' : autoOut ? 'AUTO_CLOCK_OUT' : undefined;
+  return {
+    closedHow: autoOut ? 'AUTO_CLOCK_OUT' : 'CLOCKED_OUT',
+    clockOut: judgePosition(fix, site, skip).fact,
+  };
 }

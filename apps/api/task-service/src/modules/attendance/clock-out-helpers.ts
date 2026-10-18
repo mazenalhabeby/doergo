@@ -1,7 +1,14 @@
 import { Prisma } from '@prisma/client';
 import { OPEN_EXCURSION_STATUSES, type RestRow } from './open-shift-close';
 import { type ClockOutHandover } from '../tasks/handover/job-pause.service';
-import { TimeEntryStatus } from '@hbcfield/shared';
+import {
+  TimeEntryStatus,
+  judgedByLabelRules,
+  readLabelFacts,
+  withClosing,
+  type ClosedHow,
+  type PositionFact,
+} from '@hbcfield/shared';
 
 /**
  * What every close reads in the SAME query as the entry: all its rests (the
@@ -37,6 +44,9 @@ interface ClosableEntry {
   /** The rests planned at clock-in — a required one still not taken at the close is missed. */
   breakPlan?: Prisma.JsonValue | null;
   flagReasons?: string[] | null;
+  /** Label rules version; null = an old entry, closed exactly as before. */
+  labelRules?: number | null;
+  labelFacts?: Prisma.JsonValue | null;
 }
 
 /** How a shift is being closed. Everything the close itself works out is NOT here. */
@@ -51,6 +61,8 @@ interface CloseSpec {
   fields: Prisma.TimeEntryUpdateManyMutationInput;
   /** Pass it when already looked up (the clock-out needs it for its flags). */
   toleranceMin?: number;
+  /** How it closed and where — recorded in the label facts of a new entry (never an old one). */
+  labels?: { closedHow: ClosedHow; clockOut?: PositionFact };
   pause: {
     reason: 'CLOCK_OUT' | 'AUTO_CLOSE' | 'FORGOT' | 'OFFICE_CLOSE';
     handovers?: ClockOutHandover[];
@@ -71,4 +83,15 @@ const CLOSED_ROW_INCLUDE = {
 
 type ClosedRow = Prisma.TimeEntryGetPayload<{ include: typeof CLOSED_ROW_INCLUDE }>;
 
-export { ClosableEntry, CloseSpec, CLOSED_ROW_INCLUDE, ClosedRow };
+/** The label-facts column for a close: only for entries judged by the label rules. */
+function closingLabelColumns(
+  entry: ClosableEntry,
+  labels: CloseSpec['labels'],
+): Prisma.TimeEntryUpdateManyMutationInput {
+  if (!labels || !judgedByLabelRules(entry)) return {};
+  const facts = readLabelFacts(entry.labelFacts);
+  if (!facts) return {};
+  return { labelFacts: withClosing(facts, labels) as unknown as Prisma.InputJsonValue };
+}
+
+export { ClosableEntry, CloseSpec, CLOSED_ROW_INCLUDE, ClosedRow, closingLabelColumns };

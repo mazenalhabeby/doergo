@@ -127,3 +127,8 @@ export function clockOutTimeFlags(
   const flags = computeScheduleFlags({ clockOutAt, expectedClockOutAt: entry.expectedClockOutAt, toleranceMin });
   return flagsAgainstDailyLimit(flags, entry.endIsDailyLimit);
 }
+
+/** How a temporary close is recorded in the label facts. */
+export function closedHowOfBasis(basis: string): 'LEFT_SITE' | 'LAST_SEEN' | 'SHIFT_END' | 'SESSION_HOURS' {
+  return basis === 'LEFT_SITE' || basis === 'LAST_SEEN' || basis === 'SHIFT_END' ? basis : 'SESSION_HOURS';
+}

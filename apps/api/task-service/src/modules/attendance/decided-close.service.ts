@@ -30,7 +30,10 @@ export class DecidedCloseService extends ShiftCloseBase {
         organizationId: data.organizationId,
         // Open — or closed by the sweep with a temporary time, which is exactly
         // what "when did you leave?" is asking the member to correct.
-        OR: [{ status: TimeEntryStatus.CLOCKED_IN }, { status: TimeEntryStatus.CLOCKED_OUT, clockOutProvisional: true }],
+        OR: [
+          { status: TimeEntryStatus.CLOCKED_IN },
+          { status: TimeEntryStatus.CLOCKED_OUT, clockOutProvisional: true },
+        ],
       },
       include: { location: true, ...CLOSE_ENTRY_INCLUDE },
     });
@@ -53,9 +56,15 @@ export class DecidedCloseService extends ShiftCloseBase {
     const totalMinutes = Math.round((clockOutTime.getTime() - entry.clockInAt.getTime()) / 60_000);
 
     // Not before a rest in the shift ended (the sweep may have ended one).
-    const lastRestEnd = (entry.breaks ?? []).reduce<number>((t, b) => (b.endedAt ? Math.max(t, b.endedAt.getTime()) : t), 0);
+    const lastRestEnd = (entry.breaks ?? []).reduce<number>(
+      (t, b) => (b.endedAt ? Math.max(t, b.endedAt.getTime()) : t),
+      0,
+    );
     if (clockOutTime.getTime() < lastRestEnd) {
-      throw new BadRequestException({ message: 'Clock-out time is before a rest in this shift ended', code: 'OUT_OF_ORDER' });
+      throw new BadRequestException({
+        message: 'Clock-out time is before a rest in this shift ended',
+        code: 'OUT_OF_ORDER',
+      });
     }
 
     const base = wasProvisional
@@ -77,6 +86,7 @@ export class DecidedCloseService extends ShiftCloseBase {
       at: clockOutTime,
       from: wasProvisional ? 'PROVISIONAL' : 'OPEN',
       toleranceMin,
+      labels: { closedHow: 'CONFIRMED' },
       fields: {
         notes: 'Self-reported clock-out (forgot to clock out)',
         flagReasons: uniqueFlags,
@@ -88,7 +98,10 @@ export class DecidedCloseService extends ShiftCloseBase {
       now,
     });
     if (!updated) {
-      throw new ConflictException({ message: 'This shift was closed at the same moment', code: 'ENTRY_ALREADY_CLOSED' });
+      throw new ConflictException({
+        message: 'This shift was closed at the same moment',
+        code: 'ENTRY_ALREADY_CLOSED',
+      });
     }
 
     await this.sendPendingApprovalAlert({
@@ -136,7 +149,11 @@ export class DecidedCloseService extends ShiftCloseBase {
     const entry = await this.prisma.timeEntry.findFirst({
       where: { id: input.entryId, organizationId: input.organizationId, status: TimeEntryStatus.CLOCKED_IN },
       // The two display labels the clock-out event carries ride in the same read.
-      include: { ...CLOSE_ENTRY_INCLUDE, location: { select: { name: true } }, user: { select: { firstName: true, lastName: true } } },
+      include: {
+        ...CLOSE_ENTRY_INCLUDE,
+        location: { select: { name: true } },
+        user: { select: { firstName: true, lastName: true } },
+      },
     });
     if (!entry) return false;
     const now = new Date();
@@ -150,6 +167,7 @@ export class DecidedCloseService extends ShiftCloseBase {
       from: 'OPEN',
       status: TimeEntryStatus.AUTO_OUT,
       toleranceMin,
+      labels: { closedHow: 'OVERTIME_DECISION' },
       fields: {
         // Added to what is already written about the day, never replacing it.
         notes: [entry.notes, input.note].filter(Boolean).join(' · '),
