@@ -1,0 +1,264 @@
+<title>Attendance Clock Delivered</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: a delivery report — the four steps as done cards with before → after, the worker's day as phone frames, the office and the nightly check, then the proof and a review checklist. */
+:root{
+  --bg:#eef2f5; --card:#ffffff; --ink:#0f1d2b; --muted:#5a6879; --line:#d9e0e8; --soft:#f5f7fa;
+  --brand:#2563eb; --brandSoft:#2563eb14; --amber:#b45309; --amberSoft:#b4530916; --green:#047857; --greenSoft:#04785716;
+  --red:#b42318; --redSoft:#b4231814; --teal:#0f766e; --tealSoft:#0f766e16; --phone:#0f1724; --screen:#f7f9fb; --note:#ffffff;
+  --tip:#0f1d2b; --tipInk:#f3f6f9;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif; --sans:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace; --ar:"IBM Plex Sans Arabic","Geeza Pro","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#0b1118; --card:#121b25; --ink:#e3ebf3; --muted:#93a3b5; --line:#223042; --soft:#16212d;
+  --brand:#6b9bff; --brandSoft:#6b9bff1f; --amber:#f0a94a; --amberSoft:#f0a94a1f; --green:#4fc79c; --greenSoft:#4fc79c1f;
+  --red:#f2836f; --redSoft:#f2836f1f; --teal:#5fd3c4; --tealSoft:#5fd3c41f; --phone:#05090e; --screen:#18222e; --note:#202c3a;
+  --tip:#e3ebf3; --tipInk:#0b1118;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#0b1118; --card:#121b25; --ink:#e3ebf3; --muted:#93a3b5; --line:#223042; --soft:#16212d;
+  --brand:#6b9bff; --brandSoft:#6b9bff1f; --amber:#f0a94a; --amberSoft:#f0a94a1f; --green:#4fc79c; --greenSoft:#4fc79c1f;
+  --red:#f2836f; --redSoft:#f2836f1f; --teal:#5fd3c4; --tealSoft:#5fd3c41f; --phone:#05090e; --screen:#18222e; --note:#202c3a;
+  --tip:#e3ebf3; --tipInk:#0b1118;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:36px 140px;display:flex;flex-direction:column;gap:24px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(32px,5.5vw,52px);font-weight:800;letter-spacing:-.02em;line-height:1.04}
+h2{font-size:clamp(21px,3vw,27px);font-weight:700}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.lede{font-size:18px;color:var(--muted);max-width:64ch}
+.lede b{color:var(--ink);font-weight:600}
+section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:16px;scroll-margin:24px;transition:box-shadow .3s}
+section.speaking{box-shadow:0 0 0 3px var(--brand)}
+section > header{display:flex;flex-direction:column;gap:6px;max-width:72ch}
+section > header p{color:var(--muted)}
+.hero{background:transparent;border:0;padding:0;gap:16px}
+.listen{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-family:var(--ar);font-size:13px;background:var(--brandSoft);color:var(--brand);border:0;border-radius:999px;padding:5px 12px;cursor:pointer}
+button:focus-visible,label:focus-within{outline:2px solid var(--brand);outline-offset:2px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.step{border-radius:12px;padding:12px 14px;background:var(--greenSoft);display:flex;flex-direction:column;gap:2px}
+.step .s{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--green);font-weight:600}
+.step p{font-size:14px;color:var(--muted)}
+.done{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11.5px;color:var(--green);font-weight:600}
+.done::before{content:"";width:14px;height:14px;border-radius:50%;background:var(--green);-webkit-mask:radial-gradient(circle,#000 0,#000 100%);display:inline-block}
+.list{display:flex;flex-direction:column}
+.li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;padding:12px 0;border-bottom:1px solid var(--line);align-items:start}
+.li:last-child{border-bottom:0}
+@media (max-width:680px){.li{grid-template-columns:minmax(0,1fr)}}
+.was{color:var(--muted);font-size:14.5px}
+.was b{color:var(--red);font-weight:600}
+.now{font-size:14.5px}
+.now b{color:var(--green);font-weight:600}
+.chip{display:inline-block;font-size:12px;border-radius:999px;padding:2px 9px;font-weight:600;white-space:nowrap}
+.chip.amber{background:var(--amberSoft);color:var(--amber)} .chip.teal{background:var(--tealSoft);color:var(--teal)} .chip.green{background:var(--greenSoft);color:var(--green)}
+.band{display:flex;flex-wrap:wrap;align-items:center;gap:12px;border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--soft)}
+.cut{font-family:var(--mono);font-size:12px;border-radius:8px;padding:6px 10px}
+.cut.old{background:var(--card);border:1px solid var(--line);color:var(--muted)} .cut.day{background:var(--brand);color:#fff;font-weight:600} .cut.new{background:var(--greenSoft);color:var(--green);font-weight:600}
+.tipwrap{position:relative;display:inline-block}
+.tip{display:block;margin-top:10px;background:var(--tip);color:var(--tipInk);border-radius:10px;padding:10px 12px;font-size:13px;max-width:320px;line-height:1.45}
+.tip .facts{font-family:var(--mono);font-size:11.5px;opacity:.85}
+.langs{display:flex;flex-wrap:wrap;gap:8px}
+.lang{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13.5px;display:flex;flex-direction:column;gap:2px;min-width:150px}
+.lang span{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.phones{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.phone{background:var(--phone);border-radius:28px;padding:9px}
+.screen{background:var(--screen);border-radius:21px;padding:12px;min-height:220px;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.status{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.note{background:var(--note);border-radius:13px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;box-shadow:0 1px 0 var(--line)}
+.note .app{font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;justify-content:space-between}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.btn{border-radius:9px;padding:6px 10px;font-size:12.5px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.cap{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center}
+.item{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between;background:var(--soft)}
+.item .who{display:flex;align-items:center;gap:10px;min-width:0}
+.mono{width:34px;height:34px;border-radius:50%;background:var(--brandSoft);color:var(--brand);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.small{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--soft)}
+.stat .n{font-family:var(--display);font-size:28px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .l{font-size:13.5px;color:var(--muted)}
+.check{display:grid;gap:8px}
+.check label{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.check input{margin-top:3px;accent-color:var(--brand)}
+.check label span b{font-weight:600}
+.check label span{font-size:14.5px}
+.check .where{font-family:var(--mono);font-size:11px;color:var(--muted);display:block}
+.player{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line);z-index:5}
+.player .inner{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.pbtn{width:42px;height:42px;border-radius:50%;border:0;background:var(--brand);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+.pstop{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:6px 12px;font-family:var(--ar);cursor:pointer}
+.pmeta{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.pnow{font-family:var(--ar);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:var(--brand)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <section class="hero" id="sec-intro">
+    <span class="eyebrow">Attendance · delivered on the branch, 18 Oct · not deployed</span>
+    <h1>The plan is built. Your turn to look.</h1>
+    <p class="lede">All four steps of the attendance plan are built and tested on the local system. Nothing is published until you have looked at it on <b>:3000</b> and in <b>Expo</b>.</p>
+    <div class="steps">
+      <div class="step"><span class="s">Step 1 · done</span><h3>Five screen bugs</h3><p>Web and phone</p></div>
+      <div class="step"><span class="s">Step 2 · done</span><h3>Correct labels</h3><p>Rules, words, explanations</p></div>
+      <div class="step"><span class="s">Step 3 · done</span><h3>A smarter day</h3><p>Worker and office</p></div>
+      <div class="step"><span class="s">Step 4 · done</span><h3>Nightly check</h3><p>Already caught one bug</p></div>
+    </div>
+  </section>
+
+  <section id="sec-past">
+    <header><span class="eyebrow">Your rule</span><h2>The past was not touched</h2><p>Old entries keep their times, labels and behaviour — even when edited or when the rota changes. Tests prove it. The two database changes only add new columns and tables.</p></header>
+    <div class="band"><span class="cut old">Every entry before the update · as it was</span><span class="cut day">Update day</span><span class="cut new">New entries · new rules</span></div>
+  </section>
+
+  <section id="sec-bugs">
+    <header><span class="eyebrow">Step 1</span><h2>Five screen bugs fixed</h2></header>
+    <div class="list">
+      <div class="li"><span class="was"><b>Web:</b> “Clock out early” in the navbar did nothing</span><span class="now"><b>Works</b> — and the toast says “Clocked out”</span></div>
+      <div class="li"><span class="was"><b>Phone:</b> clock-out sheet said “late” after 1 minute; the server waits 10</span><span class="now"><b>Same grace</b> on the phone as on the server</span></div>
+      <div class="li"><span class="was"><b>Phone:</b> offered workspaces the server then refused</span><span class="now"><b>Only workspaces</b> the server will accept</span></div>
+      <div class="li"><span class="was"><b>Phone:</b> “Your shift starts in N minutes” never appeared</span><span class="now"><b>Shows</b> before the shift</span></div>
+      <div class="li"><span class="was"><b>Web:</b> clock-out needed browser location; disabled under the billing lock</span><span class="now"><b>Clock-out always works</b>, like the phone</span></div>
+    </div>
+  </section>
+
+  <section id="sec-labels">
+    <header><span class="eyebrow">Step 2</span><h2>Labels you can trust</h2></header>
+    <div class="list">
+      <div class="li"><span class="was">Back from lunch → <b>“Late 5 h”</b></span><span class="now"><span class="chip amber">Late</span> only for the <b>first arrival</b> of a shift</span></div>
+      <div class="li"><span class="was">Rest overrun mixed into “Late”</span><span class="now"><span class="chip teal">Late back from rest · 18m</span> — <b>its own label</b>, sent to review</span></div>
+      <div class="li"><span class="was">Split or night shift matched to <b>the wrong one</b></span><span class="now">Matched to the shift the clock-in <b>falls in</b></span></div>
+      <div class="li"><span class="was">An office edit <b>wiped a real “Late”</b>; status never re-decided</span><span class="now">Edits <b>keep labels</b> and <b>decide the status again</b></span></div>
+      <div class="li"><span class="was">Matias: an <b>11-second duplicate</b> labelled “Left early”</span><span class="now"><b>One entry per shift</b> — fixed on the phone and the server</span></div>
+      <div class="li"><span class="was">Closed shifts <b>didn’t say how</b>; poor GPS counted as on site</span><span class="now">Every close records <b>how</b>; poor GPS is “not judged”</span></div>
+    </div>
+  </section>
+
+  <section id="sec-words">
+    <header><span class="eyebrow">Step 2 · words</span><h2>One set of words, five languages, a reason on hover</h2></header>
+    <div class="langs">
+      <div class="lang"><span>English</span>Late back from rest</div>
+      <div class="lang"><span>Deutsch</span>Zu spät aus der Pause</div>
+      <div class="lang"><span>Español</span>Tarde al volver del descanso</div>
+      <div class="lang"><span>Français</span>Retour de pause en retard</div>
+      <div class="lang"><span>Italiano</span>Rientro dalla pausa in ritardo</div>
+    </div>
+    <div><span class="chip amber">Late · 15m</span>
+      <span class="tip"><b>15m after the shift start</b><br><span class="facts">Night shift starts 18:00 · grace 10m</span></span></div>
+    <p class="small">Same words on Attendance Management, the member page, the phone and notifications · durations in hours and minutes · no raw codes, no “AUTO”.</p>
+  </section>
+
+  <section id="sec-smart">
+    <header><span class="eyebrow">Step 3 · the worker</span><h2>A smarter, lighter day</h2></header>
+    <div class="phones">
+      <div><div class="phone"><div class="screen"><div class="status"><span>07:55</span><span>Home</span></div>
+        <div class="note"><div class="app"><span>Shift clock</span><span>now</span></div><b>You’re at the Warehouse</b><span>Your shift starts at 08:00.</span><div class="acts"><span class="btn primary">Clock in</span></div></div>
+        <div class="note"><div class="app"><span>Outside a strict site</span></div><b>640 m from the Warehouse</b><div class="acts"><span class="btn primary">Ask to clock in from here</span></div></div>
+      </div></div><p class="cap">Arriving · one tap</p></div>
+      <div><div class="phone"><div class="screen"><div class="status"><span>12:08</span><span>Lock screen</span></div>
+        <div class="note"><div class="app"><span>HBCField</span><span>12:08</span></div><b>Your Lunch has started</b><span>Recorded as your rest.</span></div>
+        <div class="note"><div class="app"><span>HBCField</span><span>12:39</span></div><b>Back at work</b><span>31m rest recorded.</span></div>
+      </div></div><p class="cap">Lunch off site · zero taps</p></div>
+      <div><div class="phone"><div class="screen"><div class="status"><span>16:35</span><span>Time</span></div>
+        <div class="note"><div class="app"><span>Your shift ended at 16:30</span></div><b>Still at the Warehouse?</b><div class="acts"><span class="btn primary">Clock out</span><span class="btn">Ask for more time</span></div></div>
+        <div class="note"><div class="app"><span>If not approved</span></div><span>Time after 16:30 isn’t counted — you stay clocked in.</span></div>
+      </div></div><p class="cap">End of shift · one question</p></div>
+      <div><div class="phone"><div class="screen"><div class="status"><span>17:07</span><span>Lock screen</span></div>
+        <div class="note"><div class="app"><span>HBCField</span><span>now</span></div><b>You left the Warehouse at 16:42</b><span>Clock out at 16:42?</span><div class="acts"><span class="btn primary">Yes, 16:42</span><span class="btn">Other time</span></div></div>
+        <div class="note"><span class="small">At most 4 clock pushes a day</span></div>
+      </div></div><p class="cap">Forgot to clock out · one tap</p></div>
+    </div>
+  </section>
+
+  <section id="sec-office">
+    <header><span class="eyebrow">Step 3 · the office</span><h2>One item per person per day</h2></header>
+    <div class="item"><div class="who"><span class="mono">MW</span><div><b>Mike Weber</b><div class="small">Thu · Warehouse · 08:12–17:40</div></div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip amber">Late · 12m</span><span class="chip teal">Late back from rest · 9m</span><span class="chip green">Rest taken</span></div>
+      <div style="display:flex;gap:6px"><span class="btn primary">Approve day</span><span class="btn">Review</span></div></div>
+    <p class="small">Each part is still decided through its own rules · the worker gets “Thursday approved · 9h 20m counted”.</p>
+  </section>
+
+  <section id="sec-check">
+    <header><span class="eyebrow">Step 4</span><h2>A check every night — it already found a bug</h2><p>Every night, yesterday’s new labels are worked out again from their saved facts. A mismatch is reported to us, never to customers, never changed silently.</p></header>
+    <div class="list">
+      <div class="li"><span class="was">First local run: <b>a 1-second break wiped a rest overrun</b> the “Late back from rest” label stood on</span><span class="now"><b>Fixed</b> — the facts keep the worst rest of the shift; a test pins it</span></div>
+    </div>
+  </section>
+
+  <section id="sec-verify">
+    <header><span class="eyebrow">Proof</span><h2>How we know it works</h2></header>
+    <div class="stats">
+      <div class="stat"><div class="n">0</div><div class="l">type errors in 9 packages</div></div>
+      <div class="stat"><div class="n">~11,000</div><div class="l">tests pass (only 2 old PDF tests fail)</div></div>
+      <div class="stat"><div class="n">7 / 7</div><div class="l">live scripts on the local system</div></div>
+      <div class="stat"><div class="n">39 / 39</div><div class="l">clock audit checks</div></div>
+    </div>
+    <div class="check" id="review">
+      <label><input type="checkbox" id="r1"><span><b>Attendance Management</b> — labels in your language, reason on hover<span class="where">:3000 · /attendance</span></span></label>
+      <label><input type="checkbox" id="r2"><span><b>Approvals</b> — day rows and “Approve day”<span class="where">:3000 · /approvals</span></span></label>
+      <label><input type="checkbox" id="r3"><span><b>Ask for more time</b> — clock widget and My attendance<span class="where">:3000</span></span></label>
+      <label><input type="checkbox" id="r4"><span><b>Home clock card</b> before a shift, and clocking in from outside a strict site<span class="where">Expo</span></span></label>
+      <label><input type="checkbox" id="r5"><span><b>Time tab</b> after the shift ends, and “You left at…”<span class="where">Expo</span></span></label>
+      <label><input type="checkbox" id="r6"><span><b>Manage → Attendance</b> labels and “Auto-approved”<span class="where">Expo</span></span></label>
+    </div>
+  </section>
+</div>
+
+<div class="player" role="region" aria-label="Narration">
+  <div class="inner">
+    <button class="pbtn" id="voPlay" type="button" aria-label="Play narration"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path id="voIcon" d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
+    <div class="pmeta"><div class="pnow" id="voNow" lang="ar" dir="rtl"></div><div class="pbar"><i id="voProg"></i></div></div>
+    <button class="pstop" id="voStop" type="button" hidden>إيقاف</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // The review checklist is remembered in this browser only.
+  document.querySelectorAll('#review input').forEach(function(box){
+    try { box.checked = localStorage.getItem('clock-done-'+box.id) === '1'; } catch(e) {}
+    box.addEventListener('change', function(){ try { localStorage.setItem('clock-done-'+box.id, box.checked ? '1' : '0'); } catch(e) {} });
+  });
+  var ORDER=[['intro','sec-intro','المقدمة'],['past','sec-past','الماضي لم يُلمس'],['bugs','sec-bugs','الأخطاء الخمسة'],['labels','sec-labels','العلامات'],
+    ['words','sec-words','الكلمات والشرح'],['smart','sec-smart','يوم أذكى'],['office','sec-office','المكتب'],['check','sec-check','الفحص الليلي'],['verify','sec-verify','الإثبات ودورك']];
+  var audio=new Audio(), i=-1, last=ORDER.length-1, IDLE='اضغط للاستماع · حوالي ثلاث دقائق';
+  var play=document.getElementById('voPlay'), icon=document.getElementById('voIcon'), now=document.getElementById('voNow'), prog=document.getElementById('voProg'), stop=document.getElementById('voStop');
+  var PLAY='M8 5v14l11-7z', PAUSE='M7 5h4v14H7zM13 5h4v14h-4z';
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  now.textContent=IDLE;
+  function mark(id){
+    document.querySelectorAll('.speaking').forEach(function(e){e.classList.remove('speaking');});
+    if(!id) return; var el=document.getElementById(id); el.classList.add('speaking');
+    el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+  }
+  function start(from,to){
+    i=from; last=to; var c=ORDER[i];
+    mark(c[1]); now.textContent=(i+1)+' / '+ORDER.length+' · '+c[2];
+    audio.src='audio/'+c[0]+'.mp3'; audio.play().catch(function(){});
+    icon.setAttribute('d',PAUSE); stop.hidden=false;
+  }
+  function end(){ audio.pause(); i=-1; icon.setAttribute('d',PLAY); stop.hidden=true; prog.style.width='0'; now.textContent=IDLE; mark(null); }
+  audio.addEventListener('timeupdate',function(){ if(audio.duration) prog.style.width=(audio.currentTime/audio.duration*100)+'%'; });
+  audio.addEventListener('ended',function(){ if(i<last) start(i+1,last); else end(); });
+  play.onclick=function(){
+    if(i<0) return start(0,ORDER.length-1);
+    if(audio.paused){ audio.play().catch(function(){}); icon.setAttribute('d',PAUSE); } else { audio.pause(); icon.setAttribute('d',PLAY); }
+  };
+  stop.onclick=end;
+  ORDER.forEach(function(c,n){
+    var sec=document.getElementById(c[1]); var b=document.createElement('button');
+    b.type='button'; b.className='listen'; b.lang='ar'; b.dir='rtl';
+    b.innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>استمع';
+    b.onclick=function(){start(n,n);};
+    sec.insertBefore(b, sec.firstElementChild);
+  });
+})();
+</script>
