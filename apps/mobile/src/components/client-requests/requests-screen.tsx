@@ -12,6 +12,7 @@ import { WellRow } from '../register/well-row';
 import { requestsOfSpaces, stageOf, type ListedRequest, type RequestStage } from './requests-store';
 import { workspaceFilter } from '../workspace-filter';
 import { refreshControl } from '../pull-refresh';
+import { useFetchData } from '../../hooks/useFetchData';
 
 const STAGES: RequestStage[] = ['waiting', 'job', 'done'];
 
@@ -30,23 +31,30 @@ export function RequestsScreen() {
   const { spaces, loaded } = useReachSpaces('b2c_portal', 'canViewPortal');
   const [spaceId, setSpaceId] = useState<string | null>(null);
   const [stage, setStage] = useState<RequestStage>('waiting');
-  const [items, setItems] = useState<ListedRequest[] | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
 
   const ids = useMemo(() => (spaceId ? [spaceId] : spaces.map((s) => s.id)), [spaceId, spaces]);
 
-  const load = useCallback(async (mode: 'first' | 'refresh') => {
-    if (mode === 'refresh') setRefreshing(true);
-    try {
-      setItems(await requestsOfSpaces(ids));
-    } catch {
-      setItems([]);
-    } finally {
-      setRefreshing(false);
-    }
-  }, [ids]);
+  const fetcher = useCallback(() => requestsOfSpaces(ids), [ids]);
+  const fetched = useFetchData<ListedRequest[]>({
+    fetcher,
+    // Every ask goes out, as before; ANY failure (a 401 included) shows an empty list.
+    dedupe: false,
+    ignore401: false,
+    onError: () => [],
+  });
+  const items = fetched.data ?? null;
+  const { fetchData, refresh, setData } = fetched;
+  const load = useCallback(
+    (mode: 'first' | 'refresh') => (mode === 'refresh' ? refresh() : fetchData()),
+    [refresh, fetchData],
+  );
 
-  useEffect(() => { if (loaded) { setItems(null); void load('first'); } }, [loaded, load]);
+  useEffect(() => {
+    if (loaded) {
+      setData(undefined);
+      void load('first');
+    }
+  }, [loaded, load, setData]);
   /* Back from a request just turned into a job — it moves tabs. */
   useFocusEffect(
     useCallback(() => {
@@ -61,18 +69,28 @@ export function RequestsScreen() {
   }, [items]);
   const shown = useMemo(() => (items ?? []).filter((x) => stageOf(x) === stage), [items, stage]);
   const stageWord = (s: RequestStage) =>
-    s === 'waiting' ? t('clientRequests.waiting', 'Waiting') : s === 'job' ? t('clientRequests.becameJob', 'Became a job') : t('clientRequests.done', 'Done');
+    s === 'waiting'
+      ? t('clientRequests.waiting', 'Waiting')
+      : s === 'job'
+        ? t('clientRequests.becameJob', 'Became a job')
+        : t('clientRequests.done', 'Done');
 
   const open = useCallback((x: ListedRequest) => {
     if (x.triaged) router.push(`/(app)/task/${x.id}` as Href);
-    else router.push({ pathname: '/(app)/client-request/[id]', params: { id: x.id, portalId: x.portalId, spaceId: x.portalSpaceId } } as never);
+    else
+      router.push({
+        pathname: '/(app)/client-request/[id]',
+        params: { id: x.id, portalId: x.portalId, spaceId: x.portalSpaceId },
+      } as never);
   }, []);
 
   const header = (
     <View style={{ gap: amazen.space(3), paddingBottom: amazen.space(3) }}>
       {workspaceFilter({ spaces, spaceId, setSpaceId, t })}
       <FilterRow>
-        {STAGES.map((s) => <FilterPill key={s} label={`${stageWord(s)} ${counts[s]}`} on={stage === s} onPress={() => setStage(s)} />)}
+        {STAGES.map((s) => (
+          <FilterPill key={s} label={`${stageWord(s)} ${counts[s]}`} on={stage === s} onPress={() => setStage(s)} />
+        ))}
       </FilterRow>
     </View>
   );
@@ -81,7 +99,11 @@ export function RequestsScreen() {
     <Ground style={{ flex: 1 }}>
       <ScreenHeader
         title={t('clientRequests.title', 'Client requests')}
-        leading={<HeaderBack onPress={() => (router.canGoBack() ? router.back() : router.navigate('/(app)/(tabs)/manage' as Href))} />}
+        leading={
+          <HeaderBack
+            onPress={() => (router.canGoBack() ? router.back() : router.navigate('/(app)/(tabs)/manage' as Href))}
+          />
+        }
         style={wide ?? undefined}
       />
       <FlatList
@@ -90,20 +112,22 @@ export function RequestsScreen() {
         ListHeaderComponent={header}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12) }, wide]}
-        refreshControl={
-          refreshControl({ refreshing: refreshing, onRefresh: () => void load('refresh'), color: c.accent })
-        }
+        refreshControl={refreshControl({
+          refreshing: fetched.isRefreshing,
+          onRefresh: () => void load('refresh'),
+          color: c.accent,
+        })}
         ListEmptyComponent={
           <View style={{ paddingVertical: amazen.space(8), alignItems: 'center' }}>
-            {!items || !loaded
-              ? <ActivityIndicator color={c.accent} />
-              : (
-                  <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>
-                    {stage === 'waiting'
-                      ? t('clientRequests.noneWaiting', 'Nothing is waiting for an answer.')
-                      : t('clientRequests.none', 'Nothing here.')}
-                  </AText>
-                )}
+            {!items || !loaded ? (
+              <ActivityIndicator color={c.accent} />
+            ) : (
+              <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>
+                {stage === 'waiting'
+                  ? t('clientRequests.noneWaiting', 'Nothing is waiting for an answer.')
+                  : t('clientRequests.none', 'Nothing here.')}
+              </AText>
+            )}
           </View>
         }
         renderItem={({ item, index }) => (
@@ -111,7 +135,9 @@ export function RequestsScreen() {
             first={index === 0}
             last={index === shown.length - 1}
             title={item.title}
-            detail={[item.unitName, item.customerName, formatDay(item.createdAt, i18n.language)].filter(Boolean).join(' · ')}
+            detail={[item.unitName, item.customerName, formatDay(item.createdAt, i18n.language)]
+              .filter(Boolean)
+              .join(' · ')}
             trailing={
               <Pill
                 label={stageWord(stageOf(item))}

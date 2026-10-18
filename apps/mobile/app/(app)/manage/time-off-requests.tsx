@@ -9,11 +9,21 @@ import { useToast } from '../../../src/island/island-context';
 import { timeOffApi } from '../../../src/lib/api';
 import { useResponsive } from '../../../src/lib/responsive';
 import { centeredContent } from '../../../src/components/screen-container';
-import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, Well, useTabSafe } from '../../../src/components/amazen';
+import {
+  AText,
+  FilterPill,
+  FilterRow,
+  Ground,
+  HeaderBack,
+  ScreenHeader,
+  Well,
+  useTabSafe,
+} from '../../../src/components/amazen';
 import { Initials, QuietButton } from '../../../src/components/job/job-ui';
 import { RequestRow, useRequestWords, type RequestRowData } from '../../../src/components/requests/request-parts';
 import { LoadingLine } from '../../../src/components/loading-line';
-import { pullRefresh } from '../../../src/components/pull-refresh';
+import { refreshControl } from '../../../src/components/pull-refresh';
+import { useFetchData } from '../../../src/hooks/useFetchData';
 
 type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL';
 const FILTER_KEYS: StatusFilter[] = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
@@ -44,25 +54,31 @@ export default function RequestsToDecideScreen() {
   const r = useResponsive();
   const wide = r.isTablet ? centeredContent(720) : null;
   const w = useRequestWords();
-  const [requests, setRequests] = useState<RequestRowData[] | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<StatusFilter>('ALL');
 
-  const load = useCallback(async () => {
-    try {
-      const rows = await timeOffApi.listOrg();
-      setRequests([...rows].sort(byWaitingThenNewest));
-    } catch (err: unknown) {
-      if ((err as { statusCode?: number })?.statusCode === 401) return;
-      setRequests((cur) => cur ?? []);
+  const listSorted = useCallback(async () => [...(await timeOffApi.listOrg())].sort(byWaitingThenNewest), []);
+  const fetched = useFetchData<RequestRowData[]>({
+    fetcher: listSorted,
+    // Every focus and every pull asks, as before; a failure shows what is there, or an empty list.
+    dedupe: false,
+    onError: (err, cur) => {
       toast.error(t('common.error'), (err as Error)?.message || t('manage.timeOffRequestsScreen.failedToLoad'));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      return cur ?? [];
+    },
+  });
+  const requests = fetched.data ?? null;
+  const load = fetched.fetchData;
 
-  useFocusEffect(useCallback(() => { void load(); }, [load]));
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
 
-  const filtered = useMemo(() => (requests ?? []).filter((x) => filter === 'ALL' || x.status === filter), [requests, filter]);
+  const filtered = useMemo(
+    () => (requests ?? []).filter((x) => filter === 'ALL' || x.status === filter),
+    [requests, filter],
+  );
   const filterLabel = (f: StatusFilter) => t(`manage.timeOffRequestsScreen.filters.${f.toLowerCase()}`);
 
   const back = () => {
@@ -72,18 +88,29 @@ export default function RequestsToDecideScreen() {
 
   return (
     <Ground style={{ flex: 1 }}>
-      <ScreenHeader title={t('manage.titles.timeOffRequests')} leading={<HeaderBack onPress={back} />} style={wide ?? undefined} />
+      <ScreenHeader
+        title={t('manage.titles.timeOffRequests')}
+        leading={<HeaderBack onPress={back} />}
+        style={wide ?? undefined}
+      />
       <View style={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(2) }, wide]}>
         <FilterRow>
-          {FILTER_KEYS.map((f) => <FilterPill key={f} label={filterLabel(f)} on={filter === f} onPress={() => setFilter(f)} />)}
+          {FILTER_KEYS.map((f) => (
+            <FilterPill key={f} label={filterLabel(f)} on={filter === f} onPress={() => setFilter(f)} />
+          ))}
         </FilterRow>
       </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) }, wide]}
-        refreshControl={
-          pullRefresh({ refreshing, setRefreshing, load, color: c.accent })
-        }
+        contentContainerStyle={[
+          { paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) },
+          wide,
+        ]}
+        refreshControl={refreshControl({
+          refreshing: fetched.isRefreshing,
+          onRefresh: () => void fetched.refresh(),
+          color: c.accent,
+        })}
       >
         {requests === null ? (
           <LoadingLine onGlass padUnits={4} />
@@ -94,7 +121,8 @@ export default function RequestsToDecideScreen() {
               paddingHorizontal: amazen.space(5),
               alignItems: 'center',
               gap: amazen.space(2),
-            }}>
+            }}
+          >
             <View
               style={{
                 width: 64,
@@ -103,8 +131,11 @@ export default function RequestsToDecideScreen() {
                 backgroundColor: c.accentTint,
                 alignItems: 'center',
                 justifyContent: 'center',
-              }}>
-              <AText variant="h2" tone="accent">✓</AText>
+              }}
+            >
+              <AText variant="h2" tone="accent">
+                ✓
+              </AText>
             </View>
             <AText variant="body" tone="ink" style={{ textAlign: 'center' }}>
               {filter !== 'ALL'
@@ -124,12 +155,17 @@ export default function RequestsToDecideScreen() {
                     variant="body"
                     tone="strong"
                     numberOfLines={1}
-                    style={{ flex: 1, fontSize: 15, fontFamily: amazen.font.sansMedium }}>
+                    style={{ flex: 1, fontSize: 15, fontFamily: amazen.font.sansMedium }}
+                  >
                     {personName(item.technician) || t('shiftReminder.unknownWorker')}
                   </AText>
                 </View>
                 <RequestRow request={item} />
-                {note ? <AText variant="body" tone="ink" numberOfLines={4} style={{ fontSize: 13.5, lineHeight: 20 }}>{note}</AText> : null}
+                {note ? (
+                  <AText variant="body" tone="ink" numberOfLines={4} style={{ fontSize: 13.5, lineHeight: 20 }}>
+                    {note}
+                  </AText>
+                ) : null}
                 {item.rejectionReason ? (
                   <AText variant="caption" tone="critical" style={{ fontSize: 13 }}>
                     {item.rejectionReason}
@@ -147,7 +183,6 @@ export default function RequestsToDecideScreen() {
           })
         )}
       </ScrollView>
-
     </Ground>
   );
 }

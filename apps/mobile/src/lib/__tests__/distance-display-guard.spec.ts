@@ -50,7 +50,7 @@ const ALLOWED: { file: string; contains: string; why: string }[] = [
     why: 'log line for operators',
   },
   {
-    file: 'apps/api/task-service/src/modules/attendance/clock-out.base.ts',
+    file: 'apps/api/task-service/src/modules/attendance/clock-out-alerts.service.ts',
     contains: 'distance=${data.distance}m, allowed=${data.allowedRadius}m',
     why: 'log line for operators',
   },

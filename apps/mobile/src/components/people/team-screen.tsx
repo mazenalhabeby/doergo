@@ -14,7 +14,7 @@ import { centeredContent } from '../screen-container';
 import { MessagesGlyph } from '../glyphs/glyphs';
 import { useTeamScreen } from './use-team-screen';
 import { TeamSeparator, TeamRow } from './team-screen-helpers';
-import { pullRefresh } from '../pull-refresh';
+import { refreshControl } from '../pull-refresh';
 
 /**
  * TEAM — two halves on one tab: PEOPLE (who is here) and MESSAGES (every
@@ -41,8 +41,7 @@ export function TeamScreen() {
     canChat,
     half,
     refreshing,
-    setRefreshing,
-    load,
+    refresh,
     tourScroll,
     message,
     profile,
@@ -94,9 +93,7 @@ export function TeamScreen() {
           }
           ListEmptyComponent={empty}
           contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe }, wide]}
-          refreshControl={
-            pullRefresh({ refreshing, setRefreshing, load, color: c.accent })
-          }
+          refreshControl={refreshControl({ refreshing, onRefresh: () => void refresh(), color: c.accent })}
           renderSectionHeader={({ section }) => (
             <SectionLabel
               style={{

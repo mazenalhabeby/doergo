@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { useSocketContext } from '../../contexts/socket-context';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
+import { useFetchData } from '../../hooks/useFetchData';
 import { chatApi, teamApi, type Colleague } from '../../lib/api';
 import { useChatBadge } from '../../lib/chat-badge';
 import { loadTeamHalf, openingHalf, rememberTeamHalf, type TeamHalf } from '../../lib/team-half';
@@ -21,6 +22,9 @@ import { LoadingLine } from '../loading-line';
 export type Filter = 'all' | 'AVAILABLE' | 'BUSY' | 'AWAY';
 
 /** TeamScreen's state and handlers — everything before its markup, moved here unchanged. */
+/** One empty list, so the managers memo does not recompute on every render before the first answer. */
+const NO_COLLEAGUES: Colleague[] = [];
+
 export function useTeamScreen() {
   const { amazen } = useTheme();
   const c = amazen.color;
@@ -62,32 +66,34 @@ export function useTeamScreen() {
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.half, canChat]);
-  const [colleagues, setColleagues] = useState<Colleague[] | null>(null);
-  const [managerList, setManagerList] = useState<Colleague[]>([]);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
-  const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async () => {
+  // Each half falls back to an empty list on its own, so this never fails.
+  const loadTeam = useCallback(async () => {
     const [team, mgrs] = await Promise.all([
       teamApi.list().catch(() => [] as Colleague[]),
       teamApi.managers().catch(() => [] as Colleague[]),
     ]);
-    setColleagues(team);
-    setManagerList(mgrs);
+    return { team, mgrs };
   }, []);
+  // Every trigger asks (live refresh and pull), as before.
+  const fetched = useFetchData({ fetcher: loadTeam, dedupe: false });
+  const colleagues = fetched.data?.team ?? null;
+  const managerList = fetched.data?.mgrs ?? NO_COLLEAGUES;
+  const load = fetched.fetchData;
+  const setTeam = fetched.setData;
   useLiveRefresh(load, null);
 
   // Live presence: patch the one person whose status changed.
   useEffect(() => {
     if (!isAuthenticated) return;
     return subscribe(SocketEvents.PRESENCE_CHANGED, (d: { userId: string; presence: string | null }) => {
-      const patch = (prev: Colleague[] | null) =>
-        prev?.map((x) => (x.id === d.userId ? { ...x, presence: d.presence as Colleague['presence'] } : x)) ?? prev;
-      setColleagues(patch);
-      setManagerList((p) => patch(p) ?? p);
+      const patch = (prev: Colleague[]) =>
+        prev.map((x) => (x.id === d.userId ? { ...x, presence: d.presence as Colleague['presence'] } : x));
+      setTeam((cur) => cur && { team: patch(cur.team), mgrs: patch(cur.mgrs) });
     });
-  }, [isAuthenticated, subscribe]);
+  }, [isAuthenticated, subscribe, setTeam]);
 
   // Managers are the org-wide contact list; the team is everyone else.
   const { managers, members, all } = useMemo(() => {
@@ -97,13 +103,19 @@ export function useTeamScreen() {
   }, [managerList, colleagues]);
 
   const q = query.trim().toLowerCase();
-  const keep = useCallback((x: Colleague) =>
-    (filter === 'all' || presenceKey(x.presence) === filter)
-    && (!q || `${personName(x)} ${x.position ?? ''} ${x.spaceName ?? ''}`.toLowerCase().includes(q)), [filter, q]);
+  const keep = useCallback(
+    (x: Colleague) =>
+      (filter === 'all' || presenceKey(x.presence) === filter) &&
+      (!q || `${personName(x)} ${x.position ?? ''} ${x.spaceName ?? ''}`.toLowerCase().includes(q)),
+    [filter, q],
+  );
   const count = (k: Filter) => all.filter((x) => presenceKey(x.presence) === k).length;
   const tourScroll = useTourScroll();
   // Stable, so `memo(TeamRow)` holds: a presence change redraws one row, not the list.
-  const message = useCallback((id: string) => router.push({ pathname: '/chat', params: { userId: id } } as never), [router]);
+  const message = useCallback(
+    (id: string) => router.push({ pathname: '/chat', params: { userId: id } } as never),
+    [router],
+  );
   const profile = useCallback(
     (id: string) => router.push({ pathname: '/(app)/person/[id]', params: { id } } as never),
     [router],
@@ -130,47 +142,54 @@ export function useTeamScreen() {
   const listHeader = (
     <View style={{ gap: amazen.space(3) }}>
       <TourTarget name="team-search">
-      <GlassInput
-        value={query}
-        onChangeText={setQuery}
-        placeholder={t('team.search', 'Search the team')}
-      />
+        <GlassInput value={query} onChangeText={setQuery} placeholder={t('team.search', 'Search the team')} />
       </TourTarget>
       <TourTarget name="team-filters">
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: amazen.space(1.5) }}>
-        {(['all', 'AVAILABLE', 'BUSY', 'AWAY'] as const).map((k) => {
-          const on = k === filter;
-          const n = k === 'all' ? all.length : count(k);
-          return (
-            <ChoicePill
-              key={k}
-              on={on}
-              onPress={() => setFilter(k)}
-              dot={k !== 'all' ? PRESENCE_DOT[k] : null}
-              label={k === 'all' ? t('team.filter.all', { count: n, defaultValue: 'All {{count}}' }) : t(`team.filter.${k}`, { count: n })}
-            />
-          );
-        })}
-      </ScrollView>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: amazen.space(1.5) }}
+        >
+          {(['all', 'AVAILABLE', 'BUSY', 'AWAY'] as const).map((k) => {
+            const on = k === filter;
+            const n = k === 'all' ? all.length : count(k);
+            return (
+              <ChoicePill
+                key={k}
+                on={on}
+                onPress={() => setFilter(k)}
+                dot={k !== 'all' ? PRESENCE_DOT[k] : null}
+                label={
+                  k === 'all'
+                    ? t('team.filter.all', { count: n, defaultValue: 'All {{count}}' })
+                    : t(`team.filter.${k}`, { count: n })
+                }
+              />
+            );
+          })}
+        </ScrollView>
       </TourTarget>
     </View>
   );
 
-  const empty = colleagues === null ? (
-    <LoadingLine onGlass padUnits={6} />
-  ) : all.length === 0 ? (
-    <Well style={{ padding: amazen.space(6), alignItems: 'center', marginTop: amazen.space(3) }}>
-      <AText variant="body" tone="ink">{t('team.empty')}</AText>
-    </Well>
-  ) : (
-    <AText
-      variant="caption"
-      tone="onGlass"
-      style={{ textAlign: 'center', paddingVertical: amazen.space(4), marginTop: amazen.space(3) }}
-    >
-      {t('team.noMatch', 'Nobody matches.')}
-    </AText>
-  );
+  const empty =
+    colleagues === null ? (
+      <LoadingLine onGlass padUnits={6} />
+    ) : all.length === 0 ? (
+      <Well style={{ padding: amazen.space(6), alignItems: 'center', marginTop: amazen.space(3) }}>
+        <AText variant="body" tone="ink">
+          {t('team.empty')}
+        </AText>
+      </Well>
+    ) : (
+      <AText
+        variant="caption"
+        tone="onGlass"
+        style={{ textAlign: 'center', paddingVertical: amazen.space(4), marginTop: amazen.space(3) }}
+      >
+        {t('team.noMatch', 'Nobody matches.')}
+      </AText>
+    );
 
   const switcher = canChat ? (
     <TourTarget name="team-messages">
@@ -215,9 +234,8 @@ export function useTeamScreen() {
     wide,
     canChat,
     half,
-    refreshing,
-    setRefreshing,
-    load,
+    refreshing: fetched.isRefreshing,
+    refresh: fetched.refresh,
     tourScroll,
     message,
     profile,

@@ -7,7 +7,18 @@ import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { useResponsive } from '../../lib/responsive';
-import { AText, GlassInput, Ground, HeaderBack, PrimaryButton, ScreenHeader, Sunken, Well, WellDivider, Banner } from '../amazen';
+import {
+  AText,
+  GlassInput,
+  Ground,
+  HeaderBack,
+  PrimaryButton,
+  ScreenHeader,
+  Sunken,
+  Well,
+  WellDivider,
+  Banner,
+} from '../amazen';
 import { centeredContent } from '../screen-container';
 import { JobSheet } from '../job/job-ui';
 import { timeAgo } from '../team/helpers';
@@ -16,7 +27,7 @@ import { personName } from '@hbcfield/shared/client';
 import { useMembersScreen } from './use-members-screen';
 import { RoleTag, Line } from './members-screen-helpers';
 import { LoadingLine } from '../loading-line';
-import { pullRefresh } from '../pull-refresh';
+import { refreshControl } from '../pull-refresh';
 
 /**
  * MEMBERS — everyone in the organization, filtered by the organization's OWN roles.
@@ -47,8 +58,7 @@ export function MembersScreen() {
     setConfirmRemove,
     busy,
     refreshing,
-    setRefreshing,
-    load,
+    refresh,
     list,
     roles,
     noRole,
@@ -62,7 +72,11 @@ export function MembersScreen() {
     <Ground style={{ flex: 1 }}>
       <ScreenHeader
         title={t('manage.members.label', 'Members')}
-        leading={<HeaderBack onPress={() => (router.canGoBack() ? router.back() : router.navigate('/(app)/(tabs)/more' as Href))} />}
+        leading={
+          <HeaderBack
+            onPress={() => (router.canGoBack() ? router.back() : router.navigate('/(app)/(tabs)/more' as Href))}
+          />
+        }
         actions={[
           {
             label: `＋ ${t('members.invite', 'Invite')}`,
@@ -75,10 +89,11 @@ export function MembersScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(3) }, wide]}
-        refreshControl={
-          pullRefresh({ refreshing, setRefreshing, load, color: c.accent })
-        }
+        contentContainerStyle={[
+          { paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(3) },
+          wide,
+        ]}
+        refreshControl={refreshControl({ refreshing, onRefresh: () => void refresh(), color: c.accent })}
       >
         <GlassInput
           value={query}
@@ -86,7 +101,11 @@ export function MembersScreen() {
           placeholder={t('members.search', 'Search by name or email')}
           autoCapitalize="none"
         />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: amazen.space(1.5) }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: amazen.space(1.5) }}
+        >
           {chip(
             'all',
             t('members.all', { count: list.length, defaultValue: 'All {{count}}' }),
@@ -133,14 +152,20 @@ export function MembersScreen() {
             {shown.map((m, i) => (
               <React.Fragment key={m.id}>
                 {i > 0 ? <WellDivider /> : null}
-                <Pressable onPress={() => { setOpen(m); setConfirmRemove(false); }} accessibilityRole="button"
+                <Pressable
+                  onPress={() => {
+                    setOpen(m);
+                    setConfirmRemove(false);
+                  }}
+                  accessibilityRole="button"
                   style={({ pressed }) => ({
                     flexDirection: 'row',
                     alignItems: 'center',
                     gap: amazen.space(3),
                     paddingVertical: amazen.space(2.75),
                     opacity: pressed ? 0.85 : 1,
-                  })}>
+                  })}
+                >
                   <PersonAvatar person={m} presence={m.presence ?? null} />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -165,7 +190,9 @@ export function MembersScreen() {
                     </AText>
                   </View>
                   <RoleTag member={m} />
-                  <AText variant="body" tone="muted">›</AText>
+                  <AText variant="body" tone="muted">
+                    ›
+                  </AText>
                 </Pressable>
               </React.Fragment>
             ))}
@@ -178,14 +205,25 @@ export function MembersScreen() {
           <>
             <Sunken style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
               <Line label={t('members.email', 'Email')} value={open.email} />
-              <Line label={t('members.role', 'Role')} value={open.isExternal ? t('members.externalOne', 'External') : open.memberRole?.name ?? t('members.noRoleOne', 'No role')} />
+              <Line
+                label={t('members.role', 'Role')}
+                value={
+                  open.isExternal
+                    ? t('members.externalOne', 'External')
+                    : (open.memberRole?.name ?? t('members.noRoleOne', 'No role'))
+                }
+              />
               {open.position ? <Line label={t('members.position', 'Position')} value={open.position} /> : null}
-              {open.lastActiveAt ? <Line label={t('members.lastActive', 'Last active')} value={timeAgo(open.lastActiveAt)} /> : null}
+              {open.lastActiveAt ? (
+                <Line label={t('members.lastActive', 'Last active')} value={timeAgo(open.lastActiveAt)} />
+              ) : null}
             </Sunken>
             <AText variant="caption" tone="muted" style={{ textAlign: 'center' }}>
               {t('members.changeOnWeb', 'Change roles and access on the web.')}
             </AText>
-            {confirmRemove ? <Banner tone="critical" text={t('manage.membersScreen.removeMessage', { name: personName(open) })} /> : null}
+            {confirmRemove ? (
+              <Banner tone="critical" text={t('manage.membersScreen.removeMessage', { name: personName(open) })} />
+            ) : null}
             <PrimaryButton
               label={confirmRemove ? t('common.cancel', 'Cancel') : t('common.done', 'Done')}
               onPress={() => (confirmRemove ? setConfirmRemove(false) : setOpen(null))}
@@ -195,9 +233,12 @@ export function MembersScreen() {
                 onPress={() => (confirmRemove ? void remove() : setConfirmRemove(true))}
                 disabled={busy}
                 accessibilityRole="button"
-                style={{ alignSelf: 'center', padding: amazen.space(2) }}>
+                style={{ alignSelf: 'center', padding: amazen.space(2) }}
+              >
                 <AText variant="body" tone="critical" style={{ fontSize: 14.5 }}>
-                  {confirmRemove ? t('members.removeConfirm', 'Yes, remove them') : t('members.remove', 'Remove from the organization')}
+                  {confirmRemove
+                    ? t('members.removeConfirm', 'Yes, remove them')
+                    : t('members.remove', 'Remove from the organization')}
                 </AText>
               </Pressable>
             ) : null}
