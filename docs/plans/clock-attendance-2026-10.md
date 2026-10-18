@@ -71,3 +71,14 @@ day, night shift, night → day, no shift, offline, automatic + manual together,
 closed overnight, away allowed, outside boundary, daylight-saving day. Old-entry tests prove nothing changes when
 `labelRules` is null. Live: `clock-audit.py`, `auto-clock-e2e.py --no-sweep`, `clock-in-day-e2e.py`,
 `no-shows-e2e.py`, `approvals-e2e.py`. All suites, typecheck, ratchets, web `build:check`.
+
+## Status — 2026-10-18 (local, branch only, not deployed)
+
+All four steps built. Typecheck 0 in 9 packages; ~11,000 tests green (only the two old PDF specs fail); size,
+rpc/event/job and clone ratchets ok; live: clock-audit 39/39, clock-in-day, auto-clock, no-shows, approvals,
+leader-requests, chat — all pass. The nightly check found one real bug on its first local run (a short break
+wiped an overrun's rest facts) — fixed in `be5fec3f`.
+
+Migrations (additive, local only): `20261018150000_label_rules_facts`, `20261018180000_label_check`.
+Deviation: the phone's "more time" sheet has no 30 min / 1 h / 2 h choice — the extra-time route takes no amount;
+the leader sets it when approving.
