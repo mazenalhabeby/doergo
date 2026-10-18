@@ -13,7 +13,7 @@
  },
  "apps/api/notification-service/src/i18n/push-messages.ts": {
   "lines": 1345,
-  "long": 36
+  "long": 33
  },
  "apps/mobile/app/(app)/_layout.tsx": {
   "lines": 386,
