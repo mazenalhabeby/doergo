@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
-import { checkEntryLabels, localDateKey, runWithCronLock, zonedParts } from '@hbcfield/shared';
+import { checkEntryLabels, localDateKey, runWithCronLock, zonedParts, zoneOf } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 /** The local hour from which last night is checked (the first sweep at or after it claims the night). */
@@ -51,7 +51,7 @@ export class LabelCheckService {
     });
     const done: LabelCheckRunResult[] = [];
     for (const org of orgs) {
-      const tz = org.timezone || 'UTC';
+      const tz = zoneOf(org.timezone);
       if (zonedParts(now, tz).hour < LABEL_CHECK_LOCAL_HOUR) continue;
       const localDate = localDateKey(new Date(now.getTime() - 24 * HOUR_MS), tz);
       try {
