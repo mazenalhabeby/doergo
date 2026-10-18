@@ -94,6 +94,18 @@ export const attendanceBreakOverEvent = event<
   } & SentNotRead<'userName' | 'locationId' | 'locationName'>
 >('attendance_break_over');
 
+/** A planned rest started because the member left the site inside its window (rest-away.service). */
+export const attendanceRestStartedEvent = event<{
+  entryId: string;
+  userId: string;
+  organizationId: string;
+  restName: string;
+  plannedMinutes: number;
+  isPaid: boolean;
+  startedAt: string;
+  locationName: string | null;
+}>('attendance_rest_started');
+
 export const autoClockOfferedEvent = event<{
   organizationId: string;
   spaceId: string;

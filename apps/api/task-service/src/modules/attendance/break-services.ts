@@ -3,6 +3,7 @@ import { BreakStartService } from './break-start.service';
 import { BreakStatusService } from './break-status.service';
 import { BreakReadService } from './break-read.service';
 import { OfficeBreaksService } from './office-breaks.service';
+import { RestAwayService } from './rest-away.service';
 
 /**
  * Rests, by job — one list read by the module and by every test that builds
@@ -14,4 +15,6 @@ export const BREAK_SERVICES = [
   BreakStatusService,
   BreakReadService,
   OfficeBreaksService,
+  // Lunch off site is the rest — the heartbeat asks it, optionally (rest-away.service).
+  RestAwayService,
 ];

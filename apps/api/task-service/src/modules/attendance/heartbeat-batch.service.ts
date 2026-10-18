@@ -31,7 +31,10 @@ export class HeartbeatBatchService extends HeartbeatBase {
   }) {
     const entry = await this.prisma.timeEntry.findFirst({
       where: { userId: data.userId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_IN },
-      include: { location: { select: ATTENDANCE_LOCATION_SELECT } },
+      include: {
+        location: { select: ATTENDANCE_LOCATION_SELECT },
+        breaks: { where: { endedAt: null }, select: { id: true, reason: true }, take: 1 },
+      },
     });
     if (!entry || !entry.location) return success({ recorded: 0, opened: false, returned: false });
 
@@ -115,6 +118,13 @@ export class HeartbeatBatchService extends HeartbeatBase {
             data: { lastDistanceM: period.maxDistanceM },
           });
         }
+        continue;
+      }
+      // Left inside a planned rest window: that rest, from when they left until they came back.
+      const rest = await this.restAway?.onLeftSite(entry, period.leftAt);
+      if (rest?.isRest) {
+        if (period.backAt && rest.startedBreakId)
+          await this.restAway!.endRest(entry, rest.startedBreakId, period.backAt);
         continue;
       }
       if (period.backAt) {

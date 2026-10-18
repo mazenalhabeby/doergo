@@ -1,5 +1,5 @@
 import { OPEN_EXCURSION_STATUSES } from './open-shift-close';
-import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, Logger, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
@@ -26,6 +26,7 @@ const EXCURSION_EVENTS = {
 } as const;
 import { PresenceService } from './presence/presence.service';
 import { ClockOutService } from './clock-out.service';
+import { RestAwayService } from './rest-away.service';
 
 /**
  * What the presence services share: a member's open away-from-site excursion, its
@@ -43,6 +44,8 @@ export abstract class HeartbeatBase {
     // Where they are working now — display only, and never in the way of a clock-in.
     protected readonly presence: PresenceService,
     protected readonly clockOuts: ClockOutService,
+    // Lunch off site is the rest (rest-away.service); optional so a bare test construction still runs.
+    @Optional() protected readonly restAway?: RestAwayService,
   ) {}
 
   /** Latest active excursion for a session (OUT_UNREPORTED / PENDING / APPROVED). */

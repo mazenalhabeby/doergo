@@ -42,7 +42,11 @@ export class HeartbeatService extends HeartbeatBase {
         userId: data.userId,
         status: TimeEntryStatus.CLOCKED_IN,
       },
-      include: { location: { select: ATTENDANCE_LOCATION_SELECT } },
+      include: {
+        location: { select: ATTENDANCE_LOCATION_SELECT },
+        // The rest running now, if any — whether leaving or coming back is a rest (rest-away.service).
+        breaks: { where: { endedAt: null }, select: { id: true, reason: true }, take: 1 },
+      },
     });
 
     if (!entry || !entry.location) {
@@ -179,7 +183,14 @@ export class HeartbeatService extends HeartbeatBase {
       );
     }
 
-    // No active excursion. Open one only once clearly past the buffer.
+    // No active excursion. Leaving inside a planned rest window is that rest, not an excursion.
+    if (isOutPastBuffer && (await this.restAway?.onLeftSite(entry, new Date()))?.isRest) {
+      return success(
+        { withinGeofence: false, inRing: false, distance: distanceM, autoClockedOut: false, activeExcursion: null },
+        'Left the site for a planned rest',
+      );
+    }
+    // Otherwise open one only once clearly past the buffer.
     if (isOutPastBuffer) {
       const created = await this.prisma.geofenceExcursion.create({
         data: {
@@ -197,6 +208,9 @@ export class HeartbeatService extends HeartbeatBase {
         'Left the ring',
       );
     }
+
+    // Back on site: a rest that started by leaving ends now.
+    if (isBackInRing) await this.restAway?.onBackOnSite(entry, new Date());
 
     return success(
       { withinGeofence: true, inRing: true, distance: distanceM, autoClockedOut: false, activeExcursion: null },

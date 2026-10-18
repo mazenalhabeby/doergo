@@ -367,7 +367,7 @@ describe('AttendanceService', () => {
       expect(result.success).toBe(true);
       expect(result.data.isClockedIn).toBe(true);
       // The running entry, plus the tolerance its clock-out is judged by (no shift → the default).
-      expect(result.data.currentEntry).toEqual({ ...mockTimeEntry, flagToleranceMin: 10 });
+      expect(result.data.currentEntry).toEqual({ ...mockTimeEntry, flagToleranceMin: 10, leftSiteAt: null });
     });
 
     it('should return not clocked in status', async () => {
@@ -464,6 +464,28 @@ describe('AttendanceService', () => {
       expect(updateArg.data.nextRemindAt).toBeInstanceOf(Date);
       expect(updateArg.data.status).toBeUndefined();
       expect(updateArg.data.clockOutAt).toBeUndefined();
+    });
+
+    it('a NEW entry gets one end-of-shift question: the first reminder only, later cycles silent', async () => {
+      mockPrismaService.timeEntry.update.mockResolvedValue({});
+      mockPrismaService.timeEntry.findMany.mockResolvedValue([dueEntry({ labelRules: 1, reminderCount: 0 })]);
+      await service.runShiftReminders();
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith('attendance_shift_reminder', expect.any(Object));
+
+      mockNotificationClient.emit.mockClear();
+      mockPrismaService.timeEntry.findMany.mockResolvedValue([dueEntry({ labelRules: 1, reminderCount: 1 })]);
+      const second = (await service.runShiftReminders()) as any;
+      // Still counted (the leader is told on the same schedule), but nothing is sent to the worker.
+      expect(second.data.remindedCount).toBe(1);
+      expect(mockPrismaService.timeEntry.update.mock.calls.at(-1)[0].data.reminderCount).toBe(2);
+      expect(mockNotificationClient.emit).not.toHaveBeenCalledWith('attendance_shift_reminder', expect.anything());
+    });
+
+    it('an OLD entry (no label rules) keeps every reminder, as before', async () => {
+      mockPrismaService.timeEntry.update.mockResolvedValue({});
+      mockPrismaService.timeEntry.findMany.mockResolvedValue([dueEntry({ labelRules: null, reminderCount: 1 })]);
+      await service.runShiftReminders();
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith('attendance_shift_reminder', expect.any(Object));
     });
 
     it('escalates to a space leader after max reminders, then stops nudging', async () => {
@@ -687,7 +709,7 @@ describe('AttendanceService', () => {
     describe('rejectExtraTime', () => {
       it('re-arms an immediate reminder and notifies the worker', async () => {
         mockPrismaService.timeEntry.findFirst.mockResolvedValue({ id: 'entry-123', locationId: 'loc-123', userId: 'tech-123' });
-        mockPrismaService.timeEntry.update.mockResolvedValue({});
+        mockPrismaService.timeEntry.updateMany.mockResolvedValue({ count: 1 });
         mockPrismaService.spaceAssignment.findFirst.mockResolvedValue({
           role: { permissions: { canApproveOvertime: true } },
         });
@@ -699,7 +721,10 @@ describe('AttendanceService', () => {
         })) as any;
 
         expect(result.success).toBe(true);
-        const data = mockPrismaService.timeEntry.update.mock.calls[0][0].data;
+        // The shared refusal nudge: only a shift still open is re-armed (refusalNudge).
+        const nudge = mockPrismaService.timeEntry.updateMany.mock.calls.at(-1)[0];
+        expect(nudge.where).toEqual({ id: 'entry-123', status: 'CLOCKED_IN' });
+        const data = nudge.data;
         expect(data.reminderState).toBe('REMINDED');
         expect(data.nextRemindAt).toBeInstanceOf(Date);
         expect(mockNotificationClient.emit).toHaveBeenCalledWith(

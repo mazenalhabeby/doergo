@@ -98,13 +98,7 @@ const TIME_SENSITIVE_PREFIXES = [
  * is urgent AND about a task, and filing it under attendance would put it on a
  * channel a member may reasonably have muted.
  */
-const ATTENDANCE_PREFIXES = [
-  'attendance',
-  'shift_',
-  'break_',
-  'overtime',
-  'noshow',
-] as const;
+const ATTENDANCE_PREFIXES = ['attendance', 'shift_', 'break_', 'overtime', 'noshow'] as const;
 
 /**
  * The one routing decision, read by the notification service when it sends and
@@ -153,3 +147,12 @@ export function memberWantsPush(memberPrefs: unknown, type?: string | null): boo
   if (!cat || !memberPrefs || typeof memberPrefs !== 'object') return true;
   return (memberPrefs as Record<string, unknown>)[cat] !== false;
 }
+
+/**
+ * The end-of-shift push's buttons (decided 2026-10-18): ONE "Your shift has ended"
+ * with "Clock out" and "Ask for more time" instead of three "Still clocked in?".
+ * The server names the category; the app registers it with these action ids —
+ * one constant, so the two cannot disagree.
+ */
+export const SHIFT_ENDED_CATEGORY = 'shift_ended';
+export const SHIFT_ENDED_ACTIONS = { CLOCK_OUT: 'clock_out', ASK_FOR_MORE_TIME: 'ask_more_time' } as const;

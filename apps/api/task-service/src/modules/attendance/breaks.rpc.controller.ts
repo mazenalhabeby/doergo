@@ -45,7 +45,9 @@ export class BreaksRpcController {
     @Payload()
     data: RpcRequest<typeof startBreak>,
   ) {
-    return this.breakService.startBreak(data);
+    // `reason` marks a rest the SYSTEM started (rest-away.service) — never taken from a request.
+    const { reason: _systemOnly, ...tap } = data as RpcRequest<typeof startBreak> & { reason?: unknown };
+    return this.breakService.startBreak(tap);
   }
 
   /** "Later." Moves the rest out by its own interval; the COUNT is kept here. */

@@ -5,6 +5,7 @@ import {
   type EventPayload,
   attendanceBreakDueEvent,
   attendanceBreakOverEvent,
+  attendanceRestStartedEvent,
   autoClockOfferedEvent,
 } from '@hbcfield/shared/microservices';
 import { PushService } from '../modules/push/push.service';
@@ -85,6 +86,27 @@ export class BreakNotificationHandler {
       breakId: data.breakId,
       name: data.name,
       timestamp: new Date().toISOString(),
+    });
+  }
+
+  /** Left the site inside a planned rest's window: the rest started — said once, and to the open app. */
+  @EventPattern(eventPattern(attendanceRestStartedEvent))
+  async handleRestStarted(@Payload() data: EventPayload<typeof attendanceRestStartedEvent>) {
+    try {
+      await this.attendancePush.sendRestStartedPush({
+        userId: data.userId,
+        entryId: data.entryId,
+        name: data.restName,
+        durationMinutes: data.plannedMinutes,
+        isPaid: data.isPaid,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send rest-started push: ${error}`);
+    }
+    this.websocketGateway.emitToUser(data.userId, 'attendance_rest_started', {
+      entryId: data.entryId,
+      name: data.restName,
+      startedAt: data.startedAt,
     });
   }
 

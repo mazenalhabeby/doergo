@@ -50,6 +50,8 @@ export class BreakStartService {
     entryId?: string;
     /** When the tap happened, for a break recorded offline. */
     evidence?: OccurrenceEvidence;
+    /** Why the system started it (a label code, e.g. AUTO_REST) — never sent by a client. */
+    reason?: string;
   }) {
     this.logger.log(`Start break: user=${data.userId}, type=${data.type || 'SHORT'}`);
 
@@ -129,6 +131,7 @@ export class BreakStartService {
         type: (data.type as BreakType) || 'SHORT',
         startedAt,
         notes: data.notes,
+        ...(data.reason ? { reason: data.reason } : {}),
         ruleId: planned?.ruleId ?? null,
         isPaid: planned?.isPaid ?? false,
       },

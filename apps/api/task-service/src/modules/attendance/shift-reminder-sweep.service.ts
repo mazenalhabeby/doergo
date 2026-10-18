@@ -10,6 +10,7 @@ import {
   clocksByPresence,
   presenceSessionEnd,
   SERVICE_NAMES,
+  judgedByLabelRules,
 } from '@hbcfield/shared';
 import { AttendanceRoutingService } from './attendance-routing.service';
 import { AutoClockService } from './auto-clock.service';
@@ -141,6 +142,13 @@ export class ShiftReminderSweepService {
           where: { id: entry.id },
           data: { reminderState: 'REMINDED', reminderCount: nextCount, nextRemindAt },
         });
+        /*
+          One question at the end of a shift (decided 2026-10-18): a new entry with a
+          planned end gets the FIRST reminder only — "Your shift has ended", with Clock
+          out / Ask for more time. The later cycles still count, so the leader is told
+          on the same schedule as before; the worker is not asked again.
+        */
+        if (judgedByLabelRules(entry) && entry.expectedClockOutAt && nextCount > 1) return;
         emitEvent(this.notificationClient, attendanceShiftReminderEvent, {
           entryId: entry.id,
           userId: entry.user.id,

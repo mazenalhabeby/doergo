@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { SHIFT_ENDED_CATEGORY } from '@hbcfield/shared';
 import { msg, type LocalizedText } from '../../i18n/translate';
 import {
   shiftEscalationText,
@@ -42,13 +43,18 @@ export class AttendancePushService {
       {
         title: msg('attendance.shiftReminder.title'),
         body: data.unscheduled
-          ? msg('attendance.shiftReminder.bodyUnscheduled', { location: data.locationName, hours: data.hoursOpen ?? '?' })
+          ? msg('attendance.shiftReminder.bodyUnscheduled', {
+              location: data.locationName,
+              hours: data.hoursOpen ?? '?',
+            })
           : msg('attendance.shiftReminder.body', { location: data.locationName }),
       },
       {
         type: 'shift_reminder',
         entryId: data.entryId,
         reminderCount: data.reminderCount,
+        // A planned end: the buttons "Clock out" / "Ask for more time" (the app registers SHIFT_ENDED_CATEGORY).
+        ...(data.unscheduled ? {} : { category: SHIFT_ENDED_CATEGORY }),
       },
     );
   }
@@ -91,6 +97,28 @@ export class AttendancePushService {
     );
   }
 
+  /**
+   * A planned rest started because the member left the site inside its window — said
+   * once, so they know the time is counted as their rest (rest-away.service).
+   */
+  async sendRestStartedPush(data: {
+    userId: string;
+    entryId: string;
+    name: string;
+    durationMinutes: number;
+    isPaid: boolean;
+  }) {
+    const cost = msg(data.isPaid ? 'attendance.breakDue.counted' : 'attendance.breakDue.notCounted');
+    return this.push.sendToUser(
+      data.userId,
+      {
+        title: msg('attendance.restStarted.title', { rest: restName(data.name) }),
+        body: msg('attendance.breakDue.body', { minutes: data.durationMinutes, cost }),
+      },
+      { type: 'attendance.rest_started', entryId: data.entryId },
+    );
+  }
+
   /** The rest has run its length — one nudge, then silence. */
   async sendBreakOverPush(data: {
     userId: string;
@@ -101,7 +129,10 @@ export class AttendancePushService {
   }) {
     return this.push.sendToUser(
       data.userId,
-      { title: msg('attendance.breakOver.title', { rest: restName(data.name) }), body: msg('attendance.breakOver.body') },
+      {
+        title: msg('attendance.breakOver.title', { rest: restName(data.name) }),
+        body: msg('attendance.breakOver.body'),
+      },
       { type: 'break_over', entryId: data.entryId, breakId: data.breakId },
     );
   }
@@ -170,7 +201,12 @@ export class AttendancePushService {
   }
 
   /** An attendance alert answered by what the member actually did, arriving late. */
-  async sendAttendanceResolvedPush(data: { recipientIds: string[]; text: LocalizedText; type: string; entryId: string }) {
+  async sendAttendanceResolvedPush(data: {
+    recipientIds: string[];
+    text: LocalizedText;
+    type: string;
+    entryId: string;
+  }) {
     return this.push.sendToUsers(data.recipientIds, data.text, { type: data.type, entryId: data.entryId });
   }
 

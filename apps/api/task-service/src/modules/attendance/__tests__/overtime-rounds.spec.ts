@@ -36,7 +36,7 @@ describe('overtime rounds', () => {
 
   beforeEach(async () => {
     prisma = {
-      timeEntry: { findFirst: jest.fn().mockResolvedValue(ENTRY), update: jest.fn().mockResolvedValue({}) },
+      timeEntry: { findFirst: jest.fn().mockResolvedValue(ENTRY), update: jest.fn().mockResolvedValue({}), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
       overtimeRequest: {
         findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 'ot1' }),
