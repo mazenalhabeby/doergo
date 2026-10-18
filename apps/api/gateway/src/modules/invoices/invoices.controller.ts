@@ -22,6 +22,7 @@ import {
 } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
 import type { SessionUser } from '../../common/request.types';
+import { CreateInvoiceDto, UpdateInvoiceDto, InvoiceStatusDto, InvoiceItemDto } from './dto/invoice-bodies.dto';
 
 @ApiTags('invoices')
 @RequirePlan('invoicing') // Professional+ (write routes; reads pass through)
@@ -73,10 +74,7 @@ export class InvoicesController {
   @Post()
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Create invoice' })
-  async create(
-    @Body() body: Omit<RpcRequest<typeof invoiceCreate>, 'organizationId' | 'createdById'>,
-    @CurrentUser() user: SessionUser,
-  ) {
+  async create(@Body() body: CreateInvoiceDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, invoiceCreate, {
         ...body,
@@ -193,18 +191,14 @@ export class InvoicesController {
   @Patch(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update draft invoice' })
-  async update(
-    @Param('id') id: string,
-    @Body() body: Omit<RpcRequest<typeof invoiceUpdate>, 'id' | 'organizationId'>,
-    @CurrentUser() user: SessionUser,
-  ) {
+  async update(@Param('id') id: string, @Body() body: UpdateInvoiceDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, invoiceUpdate, {
         ...body,
-        // id + org LAST so a malicious body cannot override the tenant scope
-        // (body is untyped, so ValidationPipe's whitelist doesn't strip them).
+        // id + org LAST so a body can never override the tenant scope (the DTO refuses
+        // keys it does not declare, but the order is the rule that does not depend on it).
         id,
-        organizationId: user.organizationId,
+        organizationId: callerOrgId(user),
       }),
     );
 
@@ -216,7 +210,7 @@ export class InvoicesController {
   @Patch(':id/status')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Change invoice status' })
-  async updateStatus(@Param('id') id: string, @Body() body: { status: string }, @CurrentUser() user: SessionUser) {
+  async updateStatus(@Param('id') id: string, @Body() body: InvoiceStatusDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, invoiceUpdateStatus, {
         id,
@@ -249,15 +243,11 @@ export class InvoicesController {
   @Post(':id/items')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Add line item to invoice' })
-  async addItem(
-    @Param('id') invoiceId: string,
-    @Body() body: RpcRequest<typeof invoiceAddItem>['item'],
-    @CurrentUser() user: SessionUser,
-  ) {
+  async addItem(@Param('id') invoiceId: string, @Body() body: InvoiceItemDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, invoiceAddItem, {
         invoiceId,
-        organizationId: user.organizationId,
+        organizationId: callerOrgId(user),
         item: body,
       }),
     );

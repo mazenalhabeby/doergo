@@ -14,6 +14,7 @@ import {
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { InviteCustomerDto } from './dto/customer-bodies.dto';
 /** /customers/:id — inviting a client into the portal, and sending the invitation again. */
 @ApiTags('customers')
 @ApiBearerAuth()
@@ -23,11 +24,7 @@ export class CustomerInviteController extends CustomersControllerBase {
   // Bringing a client into the app is the organization's act, not a workspace's.
   @DenyExternal()
   @ApiOperation({ summary: 'Invite this customer to the app (B2C Portal) — returns a code' })
-  async invite(
-    @Param('id') id: string,
-    @Body() body: { email?: string; portalId?: string },
-    @Request() req: AuthedRequest,
-  ) {
+  async invite(@Param('id') id: string, @Body() body: InviteCustomerDto, @Request() req: AuthedRequest) {
     const orgId = callerOrgId(req.user);
     /*
       Both reads and the write below carry the CALLER, like every other CRM

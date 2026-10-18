@@ -8,6 +8,7 @@ import { RequireModule } from '../../common/decorators/require-module.decorator'
 import { assetActor } from './asset-actor';
 
 import type { AuthedRequest } from '../../common/request.types';
+import { AssetActivityDto, AssetMoneyDto } from './dto/decision-bodies.dto';
 /** /assets/:id — an asset's activity, money and rows. */
 @ApiTags('assets')
 @ApiBearerAuth()
@@ -41,7 +42,7 @@ export class AssetRecordsController {
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Write a note against this asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async addActivity(@Param('id') id: string, @Body() body: { body?: string }, @Request() req: AuthedRequest) {
+  async addActivity(@Param('id') id: string, @Body() body: AssetActivityDto, @Request() req: AuthedRequest) {
     return this.assetsService.addActivity({
       id,
       body: body?.body ?? '',
@@ -68,11 +69,7 @@ export class AssetRecordsController {
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Log money against this asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async addMoney(
-    @Param('id') id: string,
-    @Body() body: { category?: string; amountCents?: number; note?: string; occurredAt?: string },
-    @Request() req: AuthedRequest,
-  ) {
+  async addMoney(@Param('id') id: string, @Body() body: AssetMoneyDto, @Request() req: AuthedRequest) {
     return this.assetsService.addMoney({
       id,
       category: body?.category ?? '',

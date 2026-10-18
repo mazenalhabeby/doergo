@@ -19,6 +19,7 @@ import {
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { InviteResidentDto } from './dto/portal-bodies.dto';
 /** /portal/admin — residents: who can be invited, inviting, sending again, removing. */
 @ApiTags('portal-admin')
 @ApiBearerAuth()
@@ -87,15 +88,7 @@ export class PortalResidentsController extends PortalAdminControllerBase {
   })
   async inviteResident(
     @Body()
-    body: {
-      portalId: string;
-      customerId?: string;
-      name?: string;
-      email?: string;
-      unitId?: string;
-      unitName?: string;
-      unitAddress?: string;
-    },
+    body: InviteResidentDto,
     @Request() req: AuthedRequest,
   ) {
     const orgId = callerOrgId(req.user);

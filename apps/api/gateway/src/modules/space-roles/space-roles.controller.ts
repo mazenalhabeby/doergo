@@ -24,6 +24,7 @@ import { SpaceRolesControllerBase } from './space-roles-controller.base';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { CreateSpaceRoleDto, UpdateSpaceRoleDto } from './dto/role-bodies.dto';
 // The ceiling (`actorPermsForSpace` / `assertMayGrant`) and the three trusts over
 // a workspace's people live in ./space-member-access, shared with the builder
 // and the location member routes.
@@ -52,15 +53,7 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
   @ApiOperation({ summary: 'Create a space sub-role' })
   createRole(
     @Body()
-    body: {
-      name: string;
-      description?: string;
-      color?: string;
-      permissions?: PermissionSet;
-      kind?: RoleKindValue;
-      /** Made from a workspace: a work role is switched on there at once. */
-      spaceId?: string;
-    },
+    body: CreateSpaceRoleDto,
     @Request() req: AuthedRequest,
   ) {
     assertMayGrant(req.user, body.permissions);
@@ -82,14 +75,7 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
   updateRole(
     @Param('id') roleId: string,
     @Body()
-    body: {
-      name?: string;
-      description?: string;
-      color?: string;
-      permissions?: PermissionSet;
-      isActive?: boolean;
-      kind?: RoleKindValue;
-    },
+    body: UpdateSpaceRoleDto,
     @Request() req: AuthedRequest,
   ) {
     if (body.permissions !== undefined) assertMayGrant(req.user, body.permissions);

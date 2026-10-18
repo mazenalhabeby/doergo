@@ -24,6 +24,8 @@ import {
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { CreatePortalDto, UpdateSpacePortalDto, AssignUnitCustomerDto } from './dto/portal-bodies.dto';
+import { UnitBodyDto } from '../../common/dto/unit-body.dto';
 /**
  * Per-space B2C portal: configuration + unit/apartment catalog. The portal lives
  * IN the space (Portal.spaceId). A "unit" is the portal's entity — an apartment
@@ -78,11 +80,7 @@ export class SpacePortalController {
   // buying another is the organization's decision.
   @DenyExternal()
   @ApiOperation({ summary: 'Create a new client portal for this space' })
-  async createPortal(
-    @Param('spaceId') spaceId: string,
-    @Body() body: { templateKey?: string; name?: string },
-    @Request() req: AuthedRequest,
-  ) {
+  async createPortal(@Param('spaceId') spaceId: string, @Body() body: CreatePortalDto, @Request() req: AuthedRequest) {
     await this.requirePortalModule(spaceId, callerOrgId(req.user));
     return this.auth(portalCreateSpace, {
       organizationId: callerOrgId(req.user),
@@ -106,11 +104,7 @@ export class SpacePortalController {
   @Patch()
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: "Set the space portal's entity type" })
-  async update(
-    @Param('spaceId') spaceId: string,
-    @Body() body: { templateKey?: string },
-    @Request() req: AuthedRequest,
-  ) {
+  async update(@Param('spaceId') spaceId: string, @Body() body: UpdateSpacePortalDto, @Request() req: AuthedRequest) {
     await this.requirePortalModule(spaceId, callerOrgId(req.user));
     return this.auth(portalUpdateForSpace, {
       organizationId: callerOrgId(req.user),
@@ -129,11 +123,7 @@ export class SpacePortalController {
 
   @Post('units')
   @RequirePermissionInSpace('canManagePortals')
-  async addUnit(
-    @Param('spaceId') spaceId: string,
-    @Body() body: { name?: string; address?: string; lat?: number; lng?: number },
-    @Request() req: AuthedRequest,
-  ) {
+  async addUnit(@Param('spaceId') spaceId: string, @Body() body: UnitBodyDto, @Request() req: AuthedRequest) {
     const orgId = callerOrgId(req.user);
     await this.requirePortalModule(spaceId, orgId);
     const portal: any = await this.auth(portalGetForSpace, { organizationId: orgId, spaceId });
@@ -154,7 +144,7 @@ export class SpacePortalController {
   async updateUnit(
     @Param('spaceId') spaceId: string,
     @Param('unitId') unitId: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: UnitBodyDto,
     @Request() req: AuthedRequest,
   ) {
     await this.requirePortalModule(spaceId, callerOrgId(req.user));
@@ -195,7 +185,7 @@ export class SpacePortalController {
   async assign(
     @Param('spaceId') spaceId: string,
     @Param('unitId') unitId: string,
-    @Body() body: { customerId: string },
+    @Body() body: AssignUnitCustomerDto,
     @Request() req: AuthedRequest,
   ) {
     const orgId = callerOrgId(req.user);

@@ -10,6 +10,7 @@ import {
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { AddCustomerContactDto } from './dto/customer-bodies.dto';
 /**
  * /customers/:id — contact people: who works at a company, which companies a
  * person contacts, attaching one, making one a client.
@@ -43,12 +44,7 @@ export class CustomerContactsController extends CustomersControllerBase {
   async addContact(
     @Param('id') id: string,
     @Body()
-    body: {
-      personId?: string;
-      person?: { name?: string; email?: string; phone?: string };
-      role?: string;
-      isPrimary?: boolean;
-    },
+    body: AddCustomerContactDto,
     @Request() req: AuthedRequest,
   ) {
     return this.auth(addCustomerContact, {

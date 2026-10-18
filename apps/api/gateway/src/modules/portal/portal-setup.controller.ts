@@ -18,6 +18,8 @@ import {
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { CreatePortalCategoryDto, UpdatePortalCategoryDto, ReorderPortalCategoriesDto } from './dto/portal-bodies.dto';
+import { UnitBodyDto } from '../../common/dto/unit-body.dto';
 /** /portal/admin — a portal's request categories and its units. */
 @ApiTags('portal-admin')
 @ApiBearerAuth()
@@ -29,10 +31,7 @@ export class PortalSetupController extends PortalAdminControllerBase {
 
   @Post('categories')
   @RequirePermissionInSpace('canManagePortals')
-  createCategory(
-    @Body() body: Omit<RpcRequest<typeof portalCreateCategory>, 'organizationId' | 'scopeSpaceIds'>,
-    @Request() req: AuthedRequest,
-  ) {
+  createCategory(@Body() body: CreatePortalCategoryDto, @Request() req: AuthedRequest) {
     return this.auth(portalCreateCategory, {
       ...body,
       organizationId: callerOrgId(req.user),
@@ -42,11 +41,7 @@ export class PortalSetupController extends PortalAdminControllerBase {
 
   @Patch('categories/:id')
   @RequirePermissionInSpace('canManagePortals')
-  updateCategory(
-    @Param('id') id: string,
-    @Body() body: Omit<RpcRequest<typeof portalUpdateCategory>, 'id' | 'organizationId' | 'scopeSpaceIds'>,
-    @Request() req: AuthedRequest,
-  ) {
+  updateCategory(@Param('id') id: string, @Body() body: UpdatePortalCategoryDto, @Request() req: AuthedRequest) {
     return this.auth(portalUpdateCategory, {
       ...body,
       id,
@@ -67,7 +62,7 @@ export class PortalSetupController extends PortalAdminControllerBase {
 
   @Post('categories/reorder')
   @RequirePermissionInSpace('canManagePortals')
-  reorderCategories(@Body() body: { portalId: string; orderedIds: string[] }, @Request() req: AuthedRequest) {
+  reorderCategories(@Body() body: ReorderPortalCategoriesDto, @Request() req: AuthedRequest) {
     return this.auth(portalReorderCategories, {
       portalId: body?.portalId,
       orderedIds: Array.isArray(body?.orderedIds) ? body.orderedIds : [],
@@ -80,7 +75,7 @@ export class PortalSetupController extends PortalAdminControllerBase {
 
   @Post('units')
   @RequirePermissionInSpace('canManagePortals')
-  createUnit(@Body() body: Record<string, unknown>, @Request() req: AuthedRequest) {
+  createUnit(@Body() body: UnitBodyDto, @Request() req: AuthedRequest) {
     // Whitelisted like every unit route (pickUnitFields); identity last.
     return this.auth(portalCreateUnit, {
       ...unitFieldsFor(portalCreateUnit, body),
@@ -94,7 +89,7 @@ export class PortalSetupController extends PortalAdminControllerBase {
 
   @Patch('units/:id')
   @RequirePermissionInSpace('canManagePortals')
-  updateUnit(@Param('id') id: string, @Body() body: Record<string, unknown>, @Request() req: AuthedRequest) {
+  updateUnit(@Param('id') id: string, @Body() body: UnitBodyDto, @Request() req: AuthedRequest) {
     // Whitelisted: a spread body could carry scopeCustomerId, actorId or a CRM caller.
     return this.auth(portalUpdateUnit, {
       ...unitFieldsFor(portalUpdateUnit, body),

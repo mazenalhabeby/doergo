@@ -19,6 +19,7 @@ import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../common/decorators';
 import { sendRpc, appUpdateNotice } from '@hbcfield/shared/microservices';
+import { AppUpdateNotifyDto } from './dto/notify.dto';
 
 /**
  * What version of the mobile app is still allowed to talk to this API.
@@ -78,7 +79,7 @@ export class AppUpdateNoticeController {
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('notify')
   @ApiOperation({ summary: 'Notify people on an older app version (once per version)' })
-  async notify(@Body() body: { dryRun?: boolean }) {
+  async notify(@Body() body: AppUpdateNotifyDto) {
     const version = process.env.MOBILE_LATEST_VERSION;
     if (!version) throw new HttpException({ message: 'MOBILE_LATEST_VERSION is not set' }, HttpStatus.BAD_REQUEST);
     return firstValueFrom(

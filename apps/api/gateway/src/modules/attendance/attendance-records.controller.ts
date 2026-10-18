@@ -7,6 +7,7 @@ import { AttendanceControllerBase } from './attendance-controller.base';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { ResolveNoShowDto } from './dto/decision-bodies.dto';
 /** /attendance — the record: history, entries, who is clocked in, no-shows. */
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -212,11 +213,7 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
   @ApiOperation({
     summary: 'Decide a no-show: excused (with what happened), absent, or reopen — one day or its whole run',
   })
-  async resolveNoShow(
-    @Param('id') id: string,
-    @Body() body: { action: 'excuse' | 'absent' | 'reopen'; reasonCode?: string; reason?: string; wholeRun?: boolean },
-    @Request() req: AuthedRequest,
-  ) {
+  async resolveNoShow(@Param('id') id: string, @Body() body: ResolveNoShowDto, @Request() req: AuthedRequest) {
     const action = body?.action === 'reopen' || body?.action === 'absent' ? body.action : 'excuse';
     return this.attendanceService.resolveNoShow({
       id,

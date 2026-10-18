@@ -13,6 +13,14 @@ import { PlatformAuditInterceptor } from '../../common/interceptors/platform-aud
 import { PlatformAdminService } from './platform-admin.service';
 
 import type { PlatformRequest } from '../../common/request.types';
+import {
+  StaffLoginDto,
+  StaffCreateDto,
+  StaffChangePasswordDto,
+  StaffCodeDto,
+  StaffPatchDto,
+  StaffResetPasswordDto,
+} from './dto/platform-bodies.dto';
 /**
  * Only these fields of a staff edit are read. The PATH id is the target; a body
  * `id` (or `byUserId`) is ignored rather than spread over it.
@@ -57,7 +65,7 @@ export class PlatformAuthController {
   /** Staff login — open but tightly rate-limited (brute-force + lockout in the service). */
   @Post('auth/login')
   @Throttle({ default: { limit: 8, ttl: 60_000 } })
-  async login(@Body() body: { email?: string; password?: string; code?: string }) {
+  async login(@Body() body: StaffLoginDto) {
     return this.unwrap(
       await this.svc.login({ email: body?.email ?? '', password: body?.password ?? '', code: body?.code }),
     );
@@ -67,7 +75,7 @@ export class PlatformAuthController {
   @Post('auth/bootstrap')
   @UseGuards(PlatformAdminGuard)
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
-  async bootstrap(@Body() body: Record<string, unknown>) {
+  async bootstrap(@Body() body: StaffCreateDto) {
     return this.unwrap(await this.svc.bootstrapOwner(pickStaffCreate(body, undefined)));
   }
 
@@ -103,10 +111,7 @@ export class PlatformAuthController {
   @UseGuards(PlatformAuthGuard)
   @PlatformEnrolmentAllowed()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async changePassword(
-    @Body() body: { currentPassword?: string; newPassword?: string },
-    @Request() req: PlatformRequest,
-  ) {
+  async changePassword(@Body() body: StaffChangePasswordDto, @Request() req: PlatformRequest) {
     return this.unwrap(
       await this.svc.changePassword({
         userId: this.actor(req),
@@ -122,7 +127,7 @@ export class PlatformAuthController {
   @UseGuards(PlatformAuthGuard)
   @PlatformEnrolmentAllowed()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async setup2fa(@Body() body: { code?: string }, @Request() req: PlatformRequest) {
+  async setup2fa(@Body() body: StaffCodeDto, @Request() req: PlatformRequest) {
     return this.unwrap(
       await this.svc.setup2fa({ userId: this.actor(req), code: body?.code, authTime: this.session(req).authTime }),
     );
@@ -132,7 +137,7 @@ export class PlatformAuthController {
   @UseGuards(PlatformAuthGuard)
   @PlatformEnrolmentAllowed()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async enable2fa(@Body() body: { code?: string }, @Request() req: PlatformRequest) {
+  async enable2fa(@Body() body: StaffCodeDto, @Request() req: PlatformRequest) {
     return this.unwrap(
       await this.svc.enable2fa({ userId: this.actor(req), code: body?.code, authTime: this.session(req).authTime }),
     );
@@ -142,7 +147,7 @@ export class PlatformAuthController {
   @UseGuards(PlatformAuthGuard)
   @PlatformEnrolmentAllowed()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async disable2fa(@Body() body: { code?: string }, @Request() req: PlatformRequest) {
+  async disable2fa(@Body() body: StaffCodeDto, @Request() req: PlatformRequest) {
     return this.unwrap(
       await this.svc.disable2fa({ userId: this.actor(req), code: body?.code, authTime: this.session(req).authTime }),
     );
@@ -159,21 +164,21 @@ export class PlatformAuthController {
   @Post('users')
   @UseGuards(PlatformAuthGuard)
   @RequirePlatformPerm('managePlatformUsers')
-  async createUser(@Body() body: Record<string, unknown>, @Request() req: PlatformRequest) {
+  async createUser(@Body() body: StaffCreateDto, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.createUser(pickStaffCreate(body, this.actor(req))));
   }
 
   @Patch('users/:id')
   @UseGuards(PlatformAuthGuard)
   @RequirePlatformPerm('managePlatformUsers')
-  async updateUser(@Param('id') id: string, @Body() body: Record<string, unknown>, @Request() req: PlatformRequest) {
+  async updateUser(@Param('id') id: string, @Body() body: StaffPatchDto, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.updateUser(pickStaffPatch(id, body, this.actor(req))));
   }
 
   @Post('users/:id/reset-password')
   @UseGuards(PlatformAuthGuard)
   @RequirePlatformPerm('managePlatformUsers')
-  async resetPassword(@Param('id') id: string, @Body() body: { password?: string }, @Request() req: PlatformRequest) {
+  async resetPassword(@Param('id') id: string, @Body() body: StaffResetPasswordDto, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.resetPassword({ id, password: body?.password, byUserId: this.actor(req) }));
   }
 

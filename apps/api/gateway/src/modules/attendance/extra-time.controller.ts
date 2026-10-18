@@ -9,6 +9,7 @@ import { AttendanceControllerBase } from './attendance-controller.base';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { ForgotClockOutDto } from './dto/decision-bodies.dto';
 /** /attendance — forgot to clock out, extra time and overtime on a shift. */
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -23,7 +24,7 @@ export class ExtraTimeController extends AttendanceControllerBase {
   @ApiOperation({ summary: 'Resolve a forgotten clock-out with a self-reported leave time' })
   async resolveForgotClockOut(
     @Param('id') entryId: string,
-    @Body() body: { clockOutAt: string },
+    @Body() body: ForgotClockOutDto,
     @Request() req: AuthedRequest,
   ) {
     return this.extraTimeGateway.resolveForgotClockOut({

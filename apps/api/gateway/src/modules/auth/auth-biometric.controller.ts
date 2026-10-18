@@ -16,6 +16,7 @@ import {
   type RpcRequest,
 } from '@hbcfield/shared/microservices';
 import type { SessionUser } from '../../common/request.types';
+import { BiometricEnrollDto, BiometricChallengeDto, BiometricVerifyDto } from './dto/biometric.dto';
 
 /**
  * /auth — signing in with Face ID / fingerprint: enrolling a device, the
@@ -37,10 +38,7 @@ export class AuthBiometricController {
   @Post('biometric/enroll')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Bind this device to the signed-in member' })
-  async biometricEnroll(
-    @CurrentUser() user: SessionUser,
-    @Body() body: Omit<RpcRequest<typeof biometricEnroll>, 'userId'>,
-  ) {
+  async biometricEnroll(@CurrentUser() user: SessionUser, @Body() body: BiometricEnrollDto) {
     const result = await firstValueFrom(sendRpc(this.authClient, biometricEnroll, { ...body, userId: user.id }));
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
@@ -58,7 +56,7 @@ export class AuthBiometricController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Get a one-time challenge to sign' })
-  async biometricChallenge(@Body() body: { deviceId: string }) {
+  async biometricChallenge(@Body() body: BiometricChallengeDto) {
     return firstValueFrom(sendRpc(this.authClient, biometricChallenge, body));
   }
 
@@ -68,7 +66,7 @@ export class AuthBiometricController {
   // Same ceiling as password login: this mints a full session.
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Sign in with a device signature' })
-  async biometricVerify(@Body() body: { deviceId: string; signature: string }, @Req() req: Request) {
+  async biometricVerify(@Body() body: BiometricVerifyDto, @Req() req: Request) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, biometricVerify, {
         ...body,

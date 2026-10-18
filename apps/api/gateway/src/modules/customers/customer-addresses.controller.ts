@@ -17,6 +17,8 @@ import {
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { UnitBodyDto } from '../../common/dto/unit-body.dto';
+import { AddCustomerActivityDto, UpdateCustomerActivityDto } from './dto/customer-bodies.dto';
 /** /customers/:id — a client's addresses and its activity timeline. */
 @ApiTags('customers')
 @ApiBearerAuth()
@@ -47,15 +49,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
   addAddress(
     @Param('id') id: string,
     @Body()
-    body: {
-      name?: string;
-      address?: string;
-      lat?: number;
-      lng?: number;
-      isPrimary?: boolean;
-      contactName?: string;
-      contactPhone?: string;
-    },
+    body: UnitBodyDto,
     @Request() req: AuthedRequest,
   ) {
     const fields = unitFieldsFor(portalCreateUnit, body, { relations: false });
@@ -72,7 +66,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
   updateAddress(
     @Param('id') id: string,
     @Param('unitId') unitId: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: UnitBodyDto,
     @Request() req: AuthedRequest,
   ) {
     // scopeCustomerId binds the unit to THIS customer (no cross-customer edits).
@@ -122,16 +116,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
   addActivity(
     @Param('id') id: string,
     @Body()
-    body: {
-      id?: string;
-      type?: string;
-      body?: string;
-      dueAt?: string;
-      reminderKind?: string;
-      remindBeforeMin?: number;
-      reminderAssigneeId?: string | null;
-      repeat?: string;
-    },
+    body: AddCustomerActivityDto,
     @Request() req: AuthedRequest,
   ) {
     return this.authMutation(
@@ -160,15 +145,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
     @Param('id') id: string,
     @Param('activityId') activityId: string,
     @Body()
-    body: {
-      body?: string;
-      dueAt?: string | null;
-      done?: boolean;
-      reminderKind?: string;
-      remindBeforeMin?: number;
-      reminderAssigneeId?: string | null;
-      repeat?: string;
-    },
+    body: UpdateCustomerActivityDto,
     @Request() req: AuthedRequest,
   ) {
     return this.authMutation(

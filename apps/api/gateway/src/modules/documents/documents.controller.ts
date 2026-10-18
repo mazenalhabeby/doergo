@@ -19,6 +19,7 @@ import { OrgEventsService } from '../../common/events/org-events.service';
 
 import type { AuthedRequest } from '../../common/request.types';
 import type { SessionUser } from '../../common/request.types';
+import { ExportDocumentsDto } from './dto/link-bodies.dto';
 /**
  * The personnel file, over HTTP.
  *
@@ -134,7 +135,7 @@ export class DocumentsController {
   @Post('export')
   @Throttle({ default: { limit: 3, ttl: 3_600_000 } })
   @ApiOperation({ summary: 'Export every document in a member’s file' })
-  async export(@CurrentUser() user: SessionUser, @Body() body: { userId?: string }, @Req() req: AuthedRequest) {
+  async export(@CurrentUser() user: SessionUser, @Body() body: ExportDocumentsDto, @Req() req: AuthedRequest) {
     return this.documents.export({
       actor: documentActor(user),
       targetUserId: body?.userId,

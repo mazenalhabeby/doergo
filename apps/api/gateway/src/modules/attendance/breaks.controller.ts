@@ -10,6 +10,7 @@ import { AttendanceControllerBase } from './attendance-controller.base';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { DecisionNotesDto } from './dto/decision-bodies.dto';
 /** /attendance — rests: taking one, the rules, a member's breaks. */
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -249,11 +250,7 @@ export class BreaksController extends AttendanceControllerBase {
   @Post('breaks/:id/end')
   @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'End a break manually (manager action)' })
-  async endBreakManually(
-    @Param('id') breakId: string,
-    @Body() body: { notes?: string } | undefined,
-    @Request() req: AuthedRequest,
-  ) {
+  async endBreakManually(@Param('id') breakId: string, @Body() body: DecisionNotesDto, @Request() req: AuthedRequest) {
     return this.breaksGateway.endBreakManually({
       breakId,
       adminId: req.user.id,

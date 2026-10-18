@@ -13,6 +13,7 @@ import { callerOrgId } from '../../common/caller-org';
 
 import type { AuthedRequest } from '../../common/request.types';
 import type { SessionUser } from '../../common/request.types';
+import { VerifyDocumentDto } from './dto/link-bodies.dto';
 /** /documents — the credential board, what is required and pending, and the verification queue. */
 @ApiTags('documents')
 @ApiBearerAuth()
@@ -100,7 +101,7 @@ export class DocumentComplianceController {
       read. The reviewer has the image in front of them; the member, standing
       somewhere with a phone, did not.
     */
-    @Body() body: { expiresOn?: string | null },
+    @Body() body: VerifyDocumentDto,
     @Req() req: AuthedRequest,
   ) {
     return this.documents.verifyDocument({

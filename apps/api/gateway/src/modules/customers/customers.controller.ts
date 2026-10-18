@@ -20,6 +20,7 @@ import {
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { UpdateCustomerContactDto } from './dto/customer-bodies.dto';
 /**
  * Customers. Two overlapping uses on ONE model:
  *  - org-level customer CRUD (portal residents management — reads with
@@ -173,7 +174,7 @@ export class CustomersController extends CustomersControllerBase {
   @ApiOperation({ summary: 'Change a contact’s role, or make them the primary contact' })
   async updateContact(
     @Param('linkId') linkId: string,
-    @Body() body: { role?: string | null; isPrimary?: boolean },
+    @Body() body: UpdateCustomerContactDto,
     @Request() req: AuthedRequest,
   ) {
     return this.auth(updateCustomerContact, {

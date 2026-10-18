@@ -18,6 +18,7 @@ import {
   addLeaveAdjustment,
 } from '@hbcfield/shared/microservices';
 import type { SessionUser } from '../../common/request.types';
+import { MatchLeaveOpeningDto, SaveLeaveOpeningDto, LeaveAdjustmentDto } from './dto/leave-bodies.dto';
 
 /**
  * /employees — the leave ledger: opening balances and adjustments. ⚠️ Registered
@@ -61,7 +62,7 @@ export class LeaveLedgerController {
     summary: 'Read a pasted table and match each line to a member (email, then full name). Writes nothing.',
   })
   @RequirePermissionInSpace('canManageRota')
-  async matchLeaveOpening(@Body() body: { text?: string }, @CurrentUser() user: SessionUser) {
+  async matchLeaveOpening(@Body() body: MatchLeaveOpeningDto, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.taskClient, matchLeaveOpening, {
         organizationId: callerOrgId(user),
@@ -75,10 +76,7 @@ export class LeaveLedgerController {
   @DenyExternal()
   @ApiOperation({ summary: 'Save starting balances (used before HBCField, carried) — one transaction, ≤ 500 people' })
   @RequirePermissionInSpace('canManageRota')
-  async saveLeaveOpening(
-    @Body() body: { on?: string; rows?: Array<{ userId: string; used: number; carried: number }> },
-    @CurrentUser() user: SessionUser,
-  ) {
+  async saveLeaveOpening(@Body() body: SaveLeaveOpeningDto, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.taskClient, saveLeaveOpening, {
         organizationId: callerOrgId(user),
@@ -141,7 +139,7 @@ export class LeaveLedgerController {
   @RequirePermissionInSpace('canManageRota')
   async addLeaveAdjustment(
     @Param('id') id: string,
-    @Body() body: { kind?: string; days?: number; on?: string; reason?: string | null },
+    @Body() body: LeaveAdjustmentDto,
     @CurrentUser() user: SessionUser,
   ) {
     return firstValueFrom(

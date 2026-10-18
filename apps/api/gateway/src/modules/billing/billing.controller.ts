@@ -40,6 +40,7 @@ import {
 
 import type { AuthedRequest } from '../../common/request.types';
 import type { SessionUser } from '../../common/request.types';
+import { AdminOrgAddOnsDto } from './dto/admin-add-ons.dto';
 @ApiTags('billing')
 @Controller('billing')
 export class BillingController {
@@ -220,7 +221,7 @@ export class BillingController {
   @Post('admin/org-add-ons')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Operator: grant an org its capabilities (secret-gated, not a customer route)' })
-  async adminSetOrgAddOns(@Body() dto: { organizationId?: string; addOns?: string[] }, @Req() req: AuthedRequest) {
+  async adminSetOrgAddOns(@Body() dto: AdminOrgAddOnsDto, @Req() req: AuthedRequest) {
     this.assertPlatformKey(req);
     if (!dto?.organizationId) {
       throw new HttpException({ message: 'organizationId is required' }, HttpStatus.BAD_REQUEST);

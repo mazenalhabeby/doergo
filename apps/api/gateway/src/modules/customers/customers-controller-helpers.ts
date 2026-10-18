@@ -1,3 +1,4 @@
+import type { CustomerDto } from './dto/customer-bodies.dto';
 import { BadRequestException } from '@nestjs/common';
 import {
   parseClientLocale,
@@ -5,36 +6,6 @@ import {
   parseCurrency,
   CURRENCY_INVALID_MESSAGE,
 } from '@hbcfield/shared';
-
-interface CustomerDto {
-  /** Made on the phone when creating: a client added twice is one client. Ignored on update. */
-  id?: string;
-  name?: string;
-  contactName?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  address?: string | null;
-  notes?: string | null;
-  isActive?: boolean;
-  spaceId?: string | null; // per-space CRM
-  ownerId?: string | null; // sales owner
-  managerIds?: string[] | null; // assigned sales managers
-  status?: string; // CRM lifecycle stage
-  // Person vs Company + B2B company fields
-  type?: string; // PERSON | COMPANY
-  legalName?: string | null;
-  website?: string | null;
-  industry?: string | null;
-  vatId?: string | null;
-  regNumber?: string | null;
-  /** The language email to this client is written in. null / "" = not set. */
-  locale?: string | null;
-  /** Invoice currency outside a workspace. null / "" = the organization's. */
-  currency?: string | null;
-  /** The company that invoices this client outside a workspace. null / "" = the main one. */
-  legalEntityId?: string | null;
-  details?: { label: string; value: string }[] | null;
-}
 
 /**
  * Refuse a language that is not on the list before anything is forwarded.
@@ -52,4 +23,5 @@ function assertClientLocale(dto: CustomerDto): void {
   }
 }
 
-export { CustomerDto, assertClientLocale };
+export { assertClientLocale };
+export { CustomerDto } from './dto/customer-bodies.dto';

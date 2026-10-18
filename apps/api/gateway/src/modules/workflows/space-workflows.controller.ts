@@ -6,6 +6,7 @@ import { WorkflowsService } from './workflows.service';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { AttachSpaceWorkflowDto } from './dto/attach.dto';
 /**
  * /workflows/spaces/:spaceId — the workflows a workspace runs: attaching,
  * detaching, its own copy, its default.
@@ -37,7 +38,7 @@ export class SpaceWorkflowsController {
   attachSpaceWorkflow(
     @Param('spaceId') spaceId: string,
     @Param('workflowId') workflowId: string,
-    @Body() body: { makeDefault?: boolean },
+    @Body() body: AttachSpaceWorkflowDto,
     @Request() req: AuthedRequest,
   ) {
     return this.workflowsService.attachSpaceWorkflow({

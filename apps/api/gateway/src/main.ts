@@ -7,6 +7,7 @@ import { join } from 'path';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { VALIDATION_PIPE_OPTIONS } from './common/validation-options';
 import { GlobalExceptionFilter } from './common/filters';
 import { spacesGranting, safeEqual, redactUrlForLog } from '@hbcfield/shared';
 import type { NextFunction, Request, Response } from 'express';
@@ -187,16 +188,7 @@ async function bootstrap() {
   });
 
   // Global validation pipe
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
 
   // Global exception filter for consistent error responses
   app.useGlobalFilters(new GlobalExceptionFilter());

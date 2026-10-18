@@ -5,7 +5,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { OrgEventsService } from '../../common/events/org-events.service';
-import { Role, CurrentUser, CurrentUserData, assertServiceOk, type LeavePolicyInput } from '@hbcfield/shared';
+import { Role, CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
@@ -31,6 +31,7 @@ import {
 } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
 import type { SessionUser } from '../../common/request.types';
+import { LeavePolicyDto, ProfileBadgesDto } from './dto/org-bodies.dto';
 
 @ApiTags('organizations')
 @UseInterceptors(LabourCostInterceptor)
@@ -81,7 +82,7 @@ export class OrganizationsController {
       "The organization's leave policy: annual days, leave year, carry-over, " +
       'when HBCField started counting (ADMIN only)',
   })
-  async updateLeavePolicy(@Body() dto: LeavePolicyInput, @CurrentUser() user: SessionUser) {
+  async updateLeavePolicy(@Body() dto: LeavePolicyDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, onboardingUpdateLeavePolicy, {
         organizationId: callerOrgId(user),
@@ -129,10 +130,7 @@ export class OrganizationsController {
   @Patch('profile-badges')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update org profile badge visibility config' })
-  async updateProfileBadges(
-    @Body() body: { showRole: boolean; showSpecialty: boolean },
-    @CurrentUser() user: SessionUser,
-  ) {
+  async updateProfileBadges(@Body() body: ProfileBadgesDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, updateProfileBadges, {
         organizationId: callerOrgId(user),

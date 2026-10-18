@@ -16,6 +16,7 @@ import { assetActor } from './asset-actor';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { RejectProposalDto } from './dto/decision-bodies.dto';
 /** /assets — pages members send in (proposals) and contracts read into a new asset. */
 @ApiTags('assets')
 @ApiBearerAuth()
@@ -128,7 +129,7 @@ export class AssetIntakeController {
   @DenyExternal()
   @ApiOperation({ summary: 'Refuse it, with a reason the member reads' })
   @ApiParam({ name: 'id', description: 'Proposal ID' })
-  async rejectProposal(@Param('id') id: string, @Body() body: { note?: string }, @Request() req: AuthedRequest) {
+  async rejectProposal(@Param('id') id: string, @Body() body: RejectProposalDto, @Request() req: AuthedRequest) {
     return this.assetsService.proposalReject({
       id,
       note: body?.note,

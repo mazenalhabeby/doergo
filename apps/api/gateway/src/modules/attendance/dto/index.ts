@@ -8,3 +8,4 @@ export * from './break-rule.dto';
 export * from './worklog.dto';
 export * from './auto-clock.dto';
 export * from './manual-entries.dto';
+export * from './decision-bodies.dto';

@@ -7,6 +7,7 @@ import { PlatformSupportService } from './platform-support.service';
 import type { RpcRequest, supportInbox, supportAddMessage, supportSetStatus } from '@hbcfield/shared/microservices';
 
 import type { PlatformRequest } from '../../common/request.types';
+import { SupportReplyDto, SupportStatusDto, SupportAssignDto } from './dto/platform-bodies.dto';
 /*
   ⚠️ Contract mismatches, kept as they are — the handler declares narrower types than arrive:
   the inbox `view` and a ticket `status` are the client's raw strings (or absent), the agent id
@@ -79,11 +80,7 @@ export class PlatformSupportController {
   }
 
   @Post('tickets/:id/messages')
-  async reply(
-    @Param('id') id: string,
-    @Body() body: { body?: string; attachments?: any[]; isInternalNote?: boolean },
-    @Request() req: PlatformRequest,
-  ) {
+  async reply(@Param('id') id: string, @Body() body: SupportReplyDto, @Request() req: PlatformRequest) {
     const scope = supportScopeOf(req);
     return this.unwrap(
       await this.svc.reply({
@@ -100,17 +97,13 @@ export class PlatformSupportController {
   }
 
   @Post('tickets/:id/status')
-  async status(@Param('id') id: string, @Body() body: { status?: string }, @Request() req: PlatformRequest) {
+  async status(@Param('id') id: string, @Body() body: SupportStatusDto, @Request() req: PlatformRequest) {
     const status = asWire<typeof supportSetStatus, 'status'>(body?.status);
     return this.unwrap(await this.svc.setStatus({ ticketId: id, status, scope: supportScopeOf(req) }));
   }
 
   @Post('tickets/:id/assign')
-  async assign(
-    @Param('id') id: string,
-    @Body() body: { agentId?: string | null; teamId?: string | null },
-    @Request() req: PlatformRequest,
-  ) {
+  async assign(@Param('id') id: string, @Body() body: SupportAssignDto, @Request() req: PlatformRequest) {
     const scope = supportScopeOf(req);
     // Build a sparse patch: only keys present are changed. With neither field the
     // acting agent self-claims the ticket.
@@ -118,9 +111,10 @@ export class PlatformSupportController {
       ticketId: id,
       scope,
     };
-    if (body && 'teamId' in body) payload.teamId = body.teamId ?? null;
-    if (body && 'agentId' in body) payload.agentId = body.agentId ?? null;
-    else if (!(body && 'teamId' in body)) payload.agentId = scope.platformUserId; // self-claim
+    // `!== undefined`, not `in`: a DTO class declares every field (JSON cannot send undefined, so it is the same test).
+    if (body?.teamId !== undefined) payload.teamId = body.teamId ?? null;
+    if (body?.agentId !== undefined) payload.agentId = body.agentId ?? null;
+    else if (body?.teamId === undefined) payload.agentId = scope.platformUserId; // self-claim
     return this.unwrap(await this.svc.assign(payload));
   }
 

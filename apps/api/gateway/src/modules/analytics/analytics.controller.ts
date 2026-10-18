@@ -38,6 +38,13 @@ import {
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import {
+  RunReportDto,
+  CreateSavedReportDto,
+  UpdateSavedReportDto,
+  CreateReportScheduleDto,
+  UpdateReportScheduleDto,
+} from './dto/analytics-bodies.dto';
 /*
   ⚠️ Contract mismatch, kept as it is: the definition is the request body, unchecked
   here — the service's query engine refuses an unknown dataset, dimension or measure.
@@ -80,7 +87,7 @@ export class AnalyticsController {
 
   @Post('run')
   @ApiOperation({ summary: 'Run a report definition (always scoped to your organization)' })
-  async run(@Body() body: { definition: unknown }, @Request() req: AuthedRequest) {
+  async run(@Body() body: RunReportDto, @Request() req: AuthedRequest) {
     return firstValueFrom(
       this.taskClient.send(pattern(analyticsRun), {
         organizationId: callerOrgId(req.user),
@@ -124,10 +131,7 @@ export class AnalyticsController {
   @Post('reports')
   @RequirePlan('reports_builder')
   @ApiOperation({ summary: 'Save a custom report (Pro+)' })
-  async createSaved(
-    @Body() body: { name: string; description?: string; config: unknown; isShared?: boolean },
-    @Request() req: AuthedRequest,
-  ) {
+  async createSaved(@Body() body: CreateSavedReportDto, @Request() req: AuthedRequest) {
     return firstValueFrom(
       this.taskClient.send(pattern(analyticsCreateSaved), {
         organizationId: callerOrgId(req.user),
@@ -143,11 +147,7 @@ export class AnalyticsController {
   @Patch('reports/:id')
   @RequirePlan('reports_builder')
   @ApiOperation({ summary: 'Update a saved report (Pro+)' })
-  async updateSaved(
-    @Param('id') id: string,
-    @Body() body: { name?: string; description?: string; config?: unknown; isShared?: boolean },
-    @Request() req: AuthedRequest,
-  ) {
+  async updateSaved(@Param('id') id: string, @Body() body: UpdateSavedReportDto, @Request() req: AuthedRequest) {
     return firstValueFrom(
       this.taskClient.send(pattern(analyticsUpdateSaved), {
         id,
@@ -191,10 +191,7 @@ export class AnalyticsController {
   @Post('schedules')
   @RequirePlan('report_scheduling')
   @ApiOperation({ summary: 'Schedule a report for email delivery (Business+)' })
-  async createSchedule(
-    @Body() body: Omit<RpcRequest<typeof analyticsCreateSchedule>, 'organizationId' | 'userId'>,
-    @Request() req: AuthedRequest,
-  ) {
+  async createSchedule(@Body() body: CreateReportScheduleDto, @Request() req: AuthedRequest) {
     assertOrgWideReports(req);
     return firstValueFrom(
       this.taskClient.send(pattern(analyticsCreateSchedule), {
@@ -208,11 +205,7 @@ export class AnalyticsController {
   @Patch('schedules/:id')
   @RequirePlan('report_scheduling')
   @ApiOperation({ summary: 'Update a report schedule (Business+)' })
-  async updateSchedule(
-    @Param('id') id: string,
-    @Body() body: Omit<RpcRequest<typeof analyticsUpdateSchedule>, 'id' | 'organizationId'>,
-    @Request() req: AuthedRequest,
-  ) {
+  async updateSchedule(@Param('id') id: string, @Body() body: UpdateReportScheduleDto, @Request() req: AuthedRequest) {
     assertOrgWideReports(req);
     return firstValueFrom(
       this.taskClient.send(pattern(analyticsUpdateSchedule), {

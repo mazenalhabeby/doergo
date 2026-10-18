@@ -38,6 +38,7 @@ import {
 import type { Role } from '@hbcfield/shared';
 import { callerOrgId } from '../../common/caller-org';
 import type { SessionUser } from '../../common/request.types';
+import { MemberWatchersDto } from './dto/org-bodies.dto';
 
 /**
  * /organizations/members/:id — changing a member: profile, watchers, password
@@ -141,7 +142,7 @@ export class MemberManagementController {
   @ApiOperation({ summary: 'Set who is notified about this member (empty = default space/admin routing)' })
   async setMemberWatchers(
     @Param('id') memberId: string,
-    @Body() dto: { watcherIds: string[] },
+    @Body() dto: MemberWatchersDto,
     @CurrentUser() user: SessionUser,
   ) {
     return firstValueFrom(

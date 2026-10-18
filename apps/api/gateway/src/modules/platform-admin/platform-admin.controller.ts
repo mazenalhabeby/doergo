@@ -24,6 +24,7 @@ import { PlatformAuditInterceptor } from '../../common/interceptors/platform-aud
 import { SetAddOnsDto } from '../billing/dto';
 
 import type { PlatformRequest } from '../../common/request.types';
+import { ExtendTrialDto, AgreedPriceDto, BillingModeDto } from './dto/platform-bodies.dto';
 /*
   Offline mode on or off.
 
@@ -132,7 +133,7 @@ export class PlatformAdminController {
 
   @Post('orgs/:id/extend-trial')
   @RequirePlatformPerm('extendTrial')
-  async extendTrial(@Param('id') id: string, @Body() body: { days?: number }, @Request() req: PlatformRequest) {
+  async extendTrial(@Param('id') id: string, @Body() body: ExtendTrialDto, @Request() req: PlatformRequest) {
     return this.unwrap(
       await this.svc.extendTrial({ organizationId: id, days: Number(body?.days) || 14, byUserId: this.actor(req) }),
     );
@@ -159,11 +160,7 @@ export class PlatformAdminController {
    */
   @Post('orgs/:id/agreed-price')
   @RequirePlatformPerm('billingOps')
-  async setAgreedPrice(
-    @Param('id') id: string,
-    @Body() body: { monthlyCents?: number; until?: string | null; note?: string | null },
-    @Request() req: PlatformRequest,
-  ) {
+  async setAgreedPrice(@Param('id') id: string, @Body() body: AgreedPriceDto, @Request() req: PlatformRequest) {
     return this.unwrap(
       await this.svc.setAgreedPrice({
         organizationId: id,
@@ -236,11 +233,7 @@ export class PlatformAdminController {
    */
   @Post('orgs/:id/billing-mode')
   @RequirePlatformPerm('billingOps')
-  async setBillingMode(
-    @Param('id') id: string,
-    @Body() body: { mode?: string; invoiceDueDays?: number },
-    @Request() req: PlatformRequest,
-  ) {
+  async setBillingMode(@Param('id') id: string, @Body() body: BillingModeDto, @Request() req: PlatformRequest) {
     const mode = String(body?.mode ?? '').toUpperCase();
     // Validated here as well as in the service: an unknown mode must never
     // reach a Stripe call, and the enum is the whole safety of this endpoint.

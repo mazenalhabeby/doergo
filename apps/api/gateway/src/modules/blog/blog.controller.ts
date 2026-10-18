@@ -20,6 +20,7 @@ import { Public } from '../../common/decorators';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { BlogGatewayService } from './blog.service';
 import type { RpcRequest, blogCreate } from '@hbcfield/shared/microservices';
+import { CreateBlogPostDto, BlogImageDto } from './dto/blog-bodies.dto';
 
 /**
  * The only kinds of picture a blog post may carry.
@@ -100,7 +101,7 @@ export class BlogController {
   @UseGuards(PlatformAdminGuard)
   @UseInterceptors(PlatformAuditInterceptor)
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  async create(@Body() body: RpcRequest<typeof blogCreate>) {
+  async create(@Body() body: CreateBlogPostDto) {
     return this.unwrap(await this.svc.create(body ?? {}));
   }
 
@@ -124,7 +125,7 @@ export class BlogController {
   @UseGuards(PlatformAdminGuard)
   @UseInterceptors(PlatformAuditInterceptor)
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  async uploadImage(@Body() body: { dataBase64?: string; mime?: string; fileName?: string }) {
+  async uploadImage(@Body() body: BlogImageDto) {
     const mime = blogImageMime(body?.mime);
     if (!mime) throw new BadRequestException('A blog image must be PNG, JPEG, WebP or GIF.');
     return this.unwrap(await this.svc.saveImage({ ...(body ?? {}), mime }));

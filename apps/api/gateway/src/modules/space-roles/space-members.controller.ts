@@ -26,6 +26,7 @@ import { SpaceRolesControllerBase } from './space-roles-controller.base';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { AssignSpaceMemberDto, MemberRoutingDto } from './dto/role-bodies.dto';
 /**
  * /spaces/:spaceId/members — a workspace's people: the list, assigning, their
  * roles, their routing, their rate, removing.
@@ -95,11 +96,7 @@ export class SpaceMembersController extends SpaceRolesControllerBase {
    */
   @Post('spaces/:spaceId/members')
   @ApiOperation({ summary: 'Assign a member to a space with a role' })
-  assignMember(
-    @Param('spaceId') spaceId: string,
-    @Body() body: { userId: string; spaceRoleId?: string | null },
-    @Request() req: AuthedRequest,
-  ) {
+  assignMember(@Param('spaceId') spaceId: string, @Body() body: AssignSpaceMemberDto, @Request() req: AuthedRequest) {
     const authority = spaceMemberAuthority(req.user, spaceId);
     assertAnyAuthority(authority);
     return this.thenRebill(
@@ -144,14 +141,7 @@ export class SpaceMembersController extends SpaceRolesControllerBase {
     @Param('spaceId') spaceId: string,
     @Param('memberId') memberId: string,
     @Body()
-    body: {
-      notifyRoleIds?: string[];
-      notifyUserIds?: string[];
-      contactRoleIds?: string[];
-      contactUserIds?: string[];
-      approveRoleIds?: string[];
-      approveUserIds?: string[];
-    },
+    body: MemberRoutingDto,
     @Request() req: AuthedRequest,
   ) {
     assertCanManageSpace(req.user, spaceId);

@@ -6,6 +6,7 @@ import { DocumentsGatewayService } from './documents.service';
 import { requestContext } from './documents.actor';
 
 import type { AuthedRequest } from '../../common/request.types';
+import { LinkOpenDto, LinkFileDto, LinkSubmitDto, LinkResendDto } from './dto/link-bodies.dto';
 /**
  * The client's way in — a token from an email, and nothing else.
  *
@@ -42,7 +43,7 @@ export class SignLinkController {
   @Post()
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: "A client's documents, by emailed token (public)" })
-  open(@Body() body: { token: string }) {
+  open(@Body() body: LinkOpenDto) {
     return this.documents.linkOpen({ token: body?.token ?? '' });
   }
 
@@ -51,7 +52,7 @@ export class SignLinkController {
   @Post('file')
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Open one document from a signing link (public)' })
-  file(@Body() body: { token: string; signerId: string }) {
+  file(@Body() body: LinkFileDto) {
     return this.documents.linkFile({ token: body?.token ?? '', signerId: body?.signerId });
   }
 
@@ -68,14 +69,7 @@ export class SignLinkController {
   @ApiOperation({ summary: 'Sign one or more documents from a signing link (public)' })
   submit(
     @Body()
-    body: {
-      token: string;
-      signerIds: string[];
-      signatureImage: string;
-      name: string;
-      role?: string | null;
-      idempotencyKey: string;
-    },
+    body: LinkSubmitDto,
     @Req() req: AuthedRequest,
   ) {
     return this.documents.linkSign({
@@ -103,7 +97,7 @@ export class SignLinkController {
   @Post('resend')
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @ApiOperation({ summary: 'Ask for a fresh signing link by email (public)' })
-  resend(@Body() body: { email: string }) {
+  resend(@Body() body: LinkResendDto) {
     return this.documents.linkReissue({ email: body?.email ?? '' });
   }
 }

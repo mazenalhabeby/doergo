@@ -8,6 +8,7 @@ import { RequireModule } from '../../common/decorators/require-module.decorator'
 import { assetActor } from './asset-actor';
 
 import type { AuthedRequest } from '../../common/request.types';
+import { ReviewExpenseDto } from './dto/decision-bodies.dto';
 /** /assets — expenses: filing one with its slip, the office's queue and decision, a receipt link. */
 @ApiTags('assets')
 @ApiBearerAuth()
@@ -46,7 +47,7 @@ export class AssetExpensesController {
   @ApiOperation({ summary: 'Accept or refuse a submitted expense' })
   async reviewExpense(
     @Param('entryId') entryId: string,
-    @Body() body: { decision?: 'accept' | 'reject'; note?: string },
+    @Body() body: ReviewExpenseDto,
     @Request() req: AuthedRequest,
   ) {
     return this.assetsService.expenseReview({

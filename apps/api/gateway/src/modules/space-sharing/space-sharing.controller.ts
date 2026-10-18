@@ -20,6 +20,13 @@ import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { OrgEventsService } from '../../common/events/org-events.service';
 import type { SessionUser } from '../../common/request.types';
+import {
+  CreateShareDto,
+  UpdateShareDto,
+  ResolveShareRequestDto,
+  RespondToShareDto,
+  CreateShareRequestDto,
+} from './dto/share-bodies.dto';
 
 /**
  * Cross-org space sharing. OWNER routes (`/locations/:spaceId/shares…`) require
@@ -83,11 +90,7 @@ export class SpaceSharingController {
   @Post('locations/:spaceId/shares')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Share this space with another org (invite)' })
-  async createShare(
-    @Param('spaceId') spaceId: string,
-    @Body() body: Record<string, unknown>,
-    @CurrentUser() u: SessionUser,
-  ) {
+  async createShare(@Param('spaceId') spaceId: string, @Body() body: CreateShareDto, @CurrentUser() u: SessionUser) {
     await this.requireModule(spaceId, u.organizationId);
     return this.sendShareMutation(
       'space_share_create',
@@ -120,7 +123,7 @@ export class SpaceSharingController {
   updateShare(
     @Param('spaceId') spaceId: string,
     @Param('shareId') shareId: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: UpdateShareDto,
     @CurrentUser() u: SessionUser,
   ) {
     // Whitelist mutable fields explicitly — never spread the untyped body, which
@@ -165,7 +168,7 @@ export class SpaceSharingController {
   @ApiOperation({ summary: 'Approve/reject a guest request' })
   resolveRequest(
     @Param('requestId') requestId: string,
-    @Body() body: { approve: boolean },
+    @Body() body: ResolveShareRequestDto,
     @CurrentUser() u: SessionUser,
   ) {
     return this.sendShareMutation(
@@ -186,7 +189,7 @@ export class SpaceSharingController {
   @Post('shared-spaces/:shareId/respond')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Accept or decline a share invite' })
-  respond(@Param('shareId') shareId: string, @Body() body: { accept: boolean }, @CurrentUser() u: SessionUser) {
+  respond(@Param('shareId') shareId: string, @Body() body: RespondToShareDto, @CurrentUser() u: SessionUser) {
     return this.sendShareMutation(
       'space_share_respond',
       { guestOrgId: u.organizationId, shareId, accept: !!body.accept, userId: u.id },
@@ -197,11 +200,7 @@ export class SpaceSharingController {
   @Post('shared-spaces/:shareId/requests')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Request more tasks/workers on a shared space' })
-  createRequest(
-    @Param('shareId') shareId: string,
-    @Body() body: Record<string, unknown>,
-    @CurrentUser() u: SessionUser,
-  ) {
+  createRequest(@Param('shareId') shareId: string, @Body() body: CreateShareRequestDto, @CurrentUser() u: SessionUser) {
     return this.send('space_share_request_create', {
       guestOrgId: u.organizationId,
       userId: u.id,

@@ -174,7 +174,7 @@ export const assetsEndpoints = defineEndpoints('assets', {
     method: 'POST',
     path: (a) => path`/assets/proposals/${a.id}/accept`,
   }),
-  rejectProposal: endpoint<Id, unknown, { reason?: string }>({
+  rejectProposal: endpoint<Id, unknown, { note?: string }>({
     method: 'POST',
     path: (a) => path`/assets/proposals/${a.id}/reject`,
   }),

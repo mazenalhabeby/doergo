@@ -6,6 +6,7 @@ import { AttendanceControllerBase } from './attendance-controller.base';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { EditEntryDto } from './dto/decision-bodies.dto';
 /** /attendance/entries — correcting, inspecting, deleting and adding entries by hand. */
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -14,18 +15,7 @@ export class EntryEditsController extends AttendanceControllerBase {
   @Put('entries/:id/edit')
   @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Edit a time entry (manager correction)' })
-  async editEntry(
-    @Param('id') entryId: string,
-    @Body()
-    body: {
-      clockInAt?: string;
-      clockOutAt?: string;
-      notes?: string;
-      timezone?: string;
-      reason: string;
-    },
-    @Request() req: AuthedRequest,
-  ) {
+  async editEntry(@Param('id') entryId: string, @Body() body: EditEntryDto, @Request() req: AuthedRequest) {
     return this.entryDecisions.editEntry({
       entryId,
       editorId: req.user.id,

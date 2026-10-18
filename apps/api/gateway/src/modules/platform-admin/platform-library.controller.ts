@@ -26,6 +26,7 @@ import {
   curateUpsertWorkflowTemplate,
   type RpcRequest,
 } from '@hbcfield/shared/microservices';
+import { LibraryTemplateDto, LibraryPublishDto, LibraryImportDto } from './dto/platform-bodies.dto';
 
 /** Gateway → task-service proxy for curating the shared task-type library. */
 @Injectable()
@@ -91,19 +92,19 @@ export class PlatformLibraryController {
 
   @Post('templates')
   @RequirePlatformPerm('manageLibrary')
-  async create(@Body() body: Omit<Parameters<PlatformLibraryService['upsert']>[0], 'id'>) {
+  async create(@Body() body: LibraryTemplateDto) {
     return this.unwrap(await this.svc.upsert({ ...body, id: undefined }));
   }
 
   @Patch('templates/:id')
   @RequirePlatformPerm('manageLibrary')
-  async update(@Param('id') id: string, @Body() body: Omit<Parameters<PlatformLibraryService['upsert']>[0], 'id'>) {
+  async update(@Param('id') id: string, @Body() body: LibraryTemplateDto) {
     return this.unwrap(await this.svc.upsert({ ...body, id }));
   }
 
   @Patch('templates/:id/publish')
   @RequirePlatformPerm('manageLibrary')
-  async publish(@Param('id') id: string, @Body() body: { isPublished?: boolean }) {
+  async publish(@Param('id') id: string, @Body() body: LibraryPublishDto) {
     return this.unwrap(await this.svc.setPublished({ id, isPublished: body?.isPublished === true }));
   }
 
@@ -121,7 +122,7 @@ export class PlatformLibraryController {
    */
   @Post('templates/import/:workflowId')
   @RequirePlatformPerm('manageLibrary')
-  async importFromOrg(@Param('workflowId') workflowId: string, @Body() body: { slug?: string; industry?: string }) {
+  async importFromOrg(@Param('workflowId') workflowId: string, @Body() body: LibraryImportDto) {
     return this.unwrap(
       await this.svc.importFromOrg({ workflowId, slug: body?.slug, industry: body?.industry ?? null }),
     );

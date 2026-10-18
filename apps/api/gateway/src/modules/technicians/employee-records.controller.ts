@@ -25,6 +25,7 @@ import {
   setTechnicianSchedule,
 } from '@hbcfield/shared/microservices';
 import type { SessionUser } from '../../common/request.types';
+import { SetScheduleDto } from './dto/leave-bodies.dto';
 
 /** /employees/:id — one member's record: performance, jobs, attendance, workspaces, working week. */
 @ApiTags('employees')
@@ -181,9 +182,7 @@ export class EmployeeRecordsController {
   async setEmployeeSchedule(
     @Param('id') id: string,
     @Body()
-    body: {
-      schedule: Array<{ dayOfWeek: number; startTime: string; endTime: string; isActive?: boolean; notes?: string }>;
-    },
+    body: SetScheduleDto,
     @CurrentUser() user: SessionUser,
   ) {
     return firstValueFrom(

@@ -19,6 +19,13 @@ import {
   platformSupportTeamPinnedOrgs,
   type RpcRequest,
 } from '@hbcfield/shared/microservices';
+import {
+  SupportTeamCreateDto,
+  SupportTeamUpdateDto,
+  SupportTeamMemberDto,
+  SupportRuleDto,
+  PinOrgDto,
+} from './dto/platform-bodies.dto';
 
 /** Gateway → auth-service proxy for support-team administration. */
 @Injectable()
@@ -87,15 +94,12 @@ export class PlatformSupportTeamsController {
   }
 
   @Post()
-  async create(@Body() body: RpcRequest<typeof platformSupportTeamCreate>) {
+  async create(@Body() body: SupportTeamCreateDto) {
     return this.unwrap(await this.svc.createTeam(body));
   }
 
   @Put(':teamId')
-  async update(
-    @Param('teamId') teamId: string,
-    @Body() body: Omit<RpcRequest<typeof platformSupportTeamUpdate>, 'teamId'>,
-  ) {
+  async update(@Param('teamId') teamId: string, @Body() body: SupportTeamUpdateDto) {
     return this.unwrap(await this.svc.updateTeam({ ...body, teamId }));
   }
 
@@ -105,10 +109,7 @@ export class PlatformSupportTeamsController {
   }
 
   @Post(':teamId/members')
-  async addMember(
-    @Param('teamId') teamId: string,
-    @Body() body: { platformUserId: string; teamRole?: 'MANAGER' | 'AGENT' },
-  ) {
+  async addMember(@Param('teamId') teamId: string, @Body() body: SupportTeamMemberDto) {
     return this.unwrap(await this.svc.addMember({ ...body, teamId }));
   }
 
@@ -118,10 +119,7 @@ export class PlatformSupportTeamsController {
   }
 
   @Post(':teamId/rules')
-  async upsertRule(
-    @Param('teamId') teamId: string,
-    @Body() body: Omit<RpcRequest<typeof platformSupportRuleUpsert>, 'teamId'>,
-  ) {
+  async upsertRule(@Param('teamId') teamId: string, @Body() body: SupportRuleDto) {
     return this.unwrap(await this.svc.upsertRule({ ...body, teamId }));
   }
 
@@ -136,7 +134,7 @@ export class PlatformSupportTeamsController {
   }
 
   @Post('pin-org')
-  async pinOrg(@Body() body: { organizationId: string; teamId: string | null }) {
+  async pinOrg(@Body() body: PinOrgDto) {
     return this.unwrap(await this.svc.pinOrg(body));
   }
 }

@@ -30,6 +30,7 @@ import {
 } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
 import type { SessionUser } from '../../common/request.types';
+import { CreateOrgRoleDto, UpdateOrgRoleDto } from './dto/org-bodies.dto';
 
 /** /organizations/roles — the organization's access roles. */
 @ApiTags('organizations')
@@ -61,10 +62,7 @@ export class OrgRolesController {
   @Post('roles')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Create a custom org-wide role' })
-  async createRole(
-    @Body() body: { name: string; description?: string; color?: string; permissions?: Record<string, boolean> },
-    @CurrentUser() user: SessionUser,
-  ) {
+  async createRole(@Body() body: CreateOrgRoleDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, createAccessRole, { ...body, organizationId: callerOrgId(user), requesterId: user.id }),
     );
@@ -75,11 +73,7 @@ export class OrgRolesController {
   @Patch('roles/:id')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update a role (name/color/permissions)' })
-  async updateRole(
-    @Param('id') roleId: string,
-    @Body() body: { name?: string; description?: string; color?: string; permissions?: Record<string, boolean> },
-    @CurrentUser() user: SessionUser,
-  ) {
+  async updateRole(@Param('id') roleId: string, @Body() body: UpdateOrgRoleDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, updateAccessRole, {
         ...body,

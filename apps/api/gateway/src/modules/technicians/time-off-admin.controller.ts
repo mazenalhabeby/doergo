@@ -19,6 +19,7 @@ import {
   cancelTimeOff,
 } from '@hbcfield/shared/microservices';
 import type { SessionUser } from '../../common/request.types';
+import { ApproveTimeOffDto, AddTimeOffDto, UpdateTimeOffDto } from './dto/leave-bodies.dto';
 
 /**
  * /employees/time-off — the organization's leave: the list, approving, entering,
@@ -95,7 +96,7 @@ export class TimeOffAdminController {
   @RequirePermissionInSpace('canManageRota')
   async approveTimeOff(
     @Param('timeOffId') timeOffId: string,
-    @Body() body: { approved: boolean; rejectionReason?: string },
+    @Body() body: ApproveTimeOffDto,
     @CurrentUser() user: SessionUser,
   ) {
     return firstValueFrom(
@@ -113,10 +114,7 @@ export class TimeOffAdminController {
   @Post('time-off/manual')
   @ApiOperation({ summary: 'Admin: add an already-approved day off for an employee' })
   @RequirePermission('canManageRota')
-  async addTimeOff(
-    @Body() body: { technicianId: string; startDate: string; endDate: string; reason?: string },
-    @CurrentUser() user: SessionUser,
-  ) {
+  async addTimeOff(@Body() body: AddTimeOffDto, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.taskClient, addTimeOff, {
         editorId: user.id,
@@ -135,7 +133,7 @@ export class TimeOffAdminController {
   @RequirePermission('canManageRota')
   async updateTimeOff(
     @Param('timeOffId') timeOffId: string,
-    @Body() body: { startDate?: string; endDate?: string; reason?: string | null },
+    @Body() body: UpdateTimeOffDto,
     @CurrentUser() user: SessionUser,
   ) {
     return firstValueFrom(

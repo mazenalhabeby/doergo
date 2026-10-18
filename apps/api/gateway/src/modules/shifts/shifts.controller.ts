@@ -8,6 +8,7 @@ import { scopeFor } from '../../common/permission-scope';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { CreateShiftDto, UpdateShiftDto, SetRotaDayDto, CreateRotaDto, UpdateRotaDto } from './dto/shift-bodies.dto';
 /**
  * Shift definitions + the rota (member → shift). All mutations require
  * canManageUsers; organizationId is always taken from the caller's token.
@@ -46,10 +47,7 @@ export class ShiftsController {
   @Post('shifts')
   @RequirePermissionInSpace('canManageRota')
   @ApiOperation({ summary: 'Create a shift definition' })
-  createShift(
-    @Body() body: Omit<Parameters<ShiftsService['createShift']>[0], 'organizationId' | 'scopeSpaceIds'>,
-    @Request() req: AuthedRequest,
-  ) {
+  createShift(@Body() body: CreateShiftDto, @Request() req: AuthedRequest) {
     return this.service.createShift({
       ...body,
       organizationId: callerOrgId(req.user),
@@ -60,11 +58,7 @@ export class ShiftsController {
   @Patch('shifts/:id')
   @RequirePermissionInSpace('canManageRota')
   @ApiOperation({ summary: 'Update a shift definition' })
-  updateShift(
-    @Param('id') shiftId: string,
-    @Body() body: Omit<Parameters<ShiftsService['updateShift']>[0], 'shiftId' | 'organizationId' | 'scopeSpaceIds'>,
-    @Request() req: AuthedRequest,
-  ) {
+  updateShift(@Param('id') shiftId: string, @Body() body: UpdateShiftDto, @Request() req: AuthedRequest) {
     return this.service.updateShift({
       ...body,
       shiftId,
@@ -115,10 +109,7 @@ export class ShiftsController {
   @Post('rota/day')
   @RequirePermissionInSpace('canManageRota')
   @ApiOperation({ summary: "Set one member's shift for one day, once or weekly" })
-  setRotaDay(
-    @Body() body: { spaceId: string; userId: string; date: string; shiftId?: string | null; repeat: 'once' | 'weekly' },
-    @Request() req: AuthedRequest,
-  ) {
+  setRotaDay(@Body() body: SetRotaDayDto, @Request() req: AuthedRequest) {
     return this.service.setRotaDay({
       organizationId: callerOrgId(req.user),
       editScope: this.scope(req, 'canManageRota'),
@@ -153,10 +144,7 @@ export class ShiftsController {
   createAssignment(
     @Param('spaceId') spaceId: string,
     @Body()
-    body: Omit<
-      Parameters<ShiftsService['createAssignment']>[0],
-      'spaceId' | 'organizationId' | 'scopeSpaceIds' | 'createdById'
-    >,
+    body: CreateRotaDto,
     @Request() req: AuthedRequest,
   ) {
     return this.service.createAssignment({
@@ -174,10 +162,7 @@ export class ShiftsController {
   updateAssignment(
     @Param('id') assignmentId: string,
     @Body()
-    body: Omit<
-      Parameters<ShiftsService['updateAssignment']>[0],
-      'assignmentId' | 'organizationId' | 'actorId' | 'scopeSpaceIds'
-    >,
+    body: UpdateRotaDto,
     @Request() req: AuthedRequest,
   ) {
     return this.service.updateAssignment({

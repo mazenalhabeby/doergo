@@ -8,6 +8,7 @@ import { AttendanceControllerBase } from './attendance-controller.base';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { DecisionNotesDto, RejectEntryDto, ReportExcursionDto, ApproveExcursionDto } from './dto/decision-bodies.dto';
 /** /attendance — approving hours and away-from-site excursions. */
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -56,11 +57,7 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   @Post('approvals/:id/approve')
   @RequirePermissionInSpace('canApproveAttendance')
   @ApiOperation({ summary: 'Approve a time entry' })
-  async approveEntry(
-    @Param('id') entryId: string,
-    @Body() body: { notes?: string } | undefined,
-    @Request() req: AuthedRequest,
-  ) {
+  async approveEntry(@Param('id') entryId: string, @Body() body: DecisionNotesDto, @Request() req: AuthedRequest) {
     return this.entryDecisions.approveEntry({
       entryId,
       approverId: req.user.id,
@@ -73,7 +70,7 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   @Post('approvals/:id/reject')
   @RequirePermissionInSpace('canApproveAttendance')
   @ApiOperation({ summary: 'Reject a time entry' })
-  async rejectEntry(@Param('id') entryId: string, @Body() body: { reason: string }, @Request() req: AuthedRequest) {
+  async rejectEntry(@Param('id') entryId: string, @Body() body: RejectEntryDto, @Request() req: AuthedRequest) {
     return this.entryDecisions.rejectEntry({
       entryId,
       approverId: req.user.id,
@@ -88,7 +85,7 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   @Post('excursions/report')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Report a reason + duration for being outside the ring' })
-  async reportExcursion(@Body() body: { reason: string; requestedMinutes: number }, @Request() req: AuthedRequest) {
+  async reportExcursion(@Body() body: ReportExcursionDto, @Request() req: AuthedRequest) {
     return this.entryDecisions.reportExcursion({
       userId: req.user.id,
       organizationId: callerOrgId(req.user),
@@ -117,7 +114,7 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   @ApiOperation({ summary: 'Approve an out-of-ring request (optionally adjust the granted time)' })
   async approveExcursion(
     @Param('id') excursionId: string,
-    @Body() body: { grantedMinutes?: number } | undefined,
+    @Body() body: ApproveExcursionDto,
     @Request() req: AuthedRequest,
   ) {
     return this.entryDecisions.approveExcursion({

@@ -21,6 +21,8 @@ import {
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { UnitBodyDto } from '../../common/dto/unit-body.dto';
+import { AssignUnitMemberDto, UnitActivityDto } from './dto/portal-bodies.dto';
 /**
  * Apartments / Units directory for a space (the `apartments` module). The unit
  * is the hub: a resident lives in it — a MEMBER (residentUserId) for staff
@@ -83,17 +85,7 @@ export class SpaceUnitsController {
   async create(
     @Param('spaceId') spaceId: string,
     @Body()
-    body: {
-      name?: string;
-      address?: string;
-      lat?: number;
-      lng?: number;
-      contactName?: string;
-      contactPhone?: string;
-      residentUserId?: string | null;
-      customerId?: string | null;
-      details?: any[];
-    },
+    body: UnitBodyDto,
     @Request() req: AuthedRequest,
   ) {
     await this.requireModule(spaceId, callerOrgId(req.user));
@@ -109,7 +101,8 @@ export class SpaceUnitsController {
       residentUserId: body.residentUserId,
       // null is sent as null; createUnit reads it like absent (`!data.customerId`).
       customerId: body.customerId as string | undefined,
-      details: body.details,
+      // As sent (null included) — the old `any[]` type passed it the same way.
+      details: body.details as unknown[] | undefined,
       actorId: req.user.id,
       // The client named as resident must be in reach too, not merely the org's.
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
@@ -122,7 +115,7 @@ export class SpaceUnitsController {
   async update(
     @Param('spaceId') spaceId: string,
     @Param('unitId') unitId: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: UnitBodyDto,
     @Request() req: AuthedRequest,
   ) {
     await this.requireModule(spaceId, callerOrgId(req.user));
@@ -160,7 +153,7 @@ export class SpaceUnitsController {
   @ApiOperation({ summary: "Set a member's apartment in this space (unitId null = vacate)" })
   async assignMember(
     @Param('spaceId') spaceId: string,
-    @Body() body: { userId: string; unitId?: string | null },
+    @Body() body: AssignUnitMemberDto,
     @Request() req: AuthedRequest,
   ) {
     await this.requireModule(spaceId, callerOrgId(req.user));
@@ -217,7 +210,7 @@ export class UnitDetailController {
   @Post(':id/activities')
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: 'Add a note to an apartment' })
-  addActivity(@Param('id') id: string, @Body() body: { body?: string }, @Request() req: AuthedRequest) {
+  addActivity(@Param('id') id: string, @Body() body: UnitActivityDto, @Request() req: AuthedRequest) {
     return firstValueFrom(
       sendRpc(this.authClient, portalAddUnitActivity, {
         id,

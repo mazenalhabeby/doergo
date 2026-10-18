@@ -11,6 +11,7 @@ import { ReportsQueueService } from './reports.queue.service';
 import { CompleteTaskDto, UpdateReportDto } from './dto';
 
 import type { AuthedRequest } from '../../common/request.types';
+import { AddPartDto, UpdatePartDto } from './dto/part-bodies.dto';
 @ApiTags('reports')
 @ApiBearerAuth()
 @Controller()
@@ -146,13 +147,7 @@ export class ReportsController {
   async addPart(
     @Param('id') id: string,
     @Body()
-    body: {
-      name: string;
-      partNumber?: string;
-      quantity: number;
-      unitCost?: number;
-      notes?: string;
-    },
+    body: AddPartDto,
     @Request() req: AuthedRequest,
   ) {
     return this.reportsQueueService.addPart({
@@ -171,13 +166,7 @@ export class ReportsController {
     @Param('id') id: string,
     @Param('partId') partId: string,
     @Body()
-    body: {
-      name?: string;
-      partNumber?: string;
-      quantity?: number;
-      unitCost?: number;
-      notes?: string;
-    },
+    body: UpdatePartDto,
     @Request() req: AuthedRequest,
   ) {
     return this.reportsQueueService.updatePart({

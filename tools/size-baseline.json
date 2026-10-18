@@ -36,7 +36,7 @@
   "long": 6
  },
  "apps/mobile/src/components/amazen/filter.tsx": {
-  "lines": 153,
+  "lines": 151,
   "long": 1
  },
  "apps/mobile/src/components/amazen/ink-icon.tsx": {
@@ -149,10 +149,6 @@
  },
  "apps/mobile/src/components/onboarding/pass-badge.tsx": {
   "lines": 137,
-  "long": 1
- },
- "apps/mobile/src/components/people/invitations-screen.tsx": {
-  "lines": 200,
   "long": 1
  },
  "apps/mobile/src/components/register/register-screen.tsx": {
