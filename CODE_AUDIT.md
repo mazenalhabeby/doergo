@@ -355,3 +355,9 @@ chains → injected collaborators (⚠️ `dep?: T | undefined` compiles to Obje
 `injectable-metadata.spec` guards it); task-queue jobs typed (`job<Data, Result>()`, 26 jobs; job ratchet = 33 untyped
 in the other queues). Single-child "base" splits elsewhere (calendar, crew, chat reach, sync pull, task query…)
 and real shared templates (ShiftCloseBase, EntryServiceBase…) left as they are. Files over a limit: 91.
+
+**Round 4 (user: "make them all, best performance").** Approved mockup looks built (web b9fd3fef, phone c3dfe904 —
+review on :3000 / Expo before deploy). Performance: approvals inbox 154 → 120 statements (one waiting-requests
+read instead of one per portal), calendar 41 → 35, Settings 298 → 175 kB. B3 done: 114 routes validated, 5 loose
+on purpose, `body-dto-guard.spec`. Production (read-only, 2026-10-18): load 0.06/8 cores, DB 36 MB, cache hit 100%,
+no full scans on app tables — no bottleneck at today's size; query texts not read (blocked: they carry customer data).
