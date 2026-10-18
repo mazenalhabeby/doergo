@@ -16,6 +16,8 @@ import {
 import { accessAllows, isAdmin, isApprovalKind, ownAccess } from '@hbcfield/shared';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DecideApprovalDto } from './dto/decide.dto';
+import { DecideDayDto } from './dto/decide-day.dto';
+import { ApprovalDaysService } from './approval-days.service';
 import { ApprovalsService } from './approvals.service';
 import { ApprovalRouteService } from './approval-route.service';
 import { StandInsService } from './stand-ins.service';
@@ -41,6 +43,7 @@ export class ApprovalsController {
     private readonly routes: ApprovalRouteService,
     private readonly standIns: StandInsService,
     private readonly rules: ApprovalRulesClient,
+    private readonly days: ApprovalDaysService,
   ) {}
 
   @Get()
@@ -129,6 +132,13 @@ export class ApprovalsController {
       success: true,
       data: { decided: true, ...('stage' in r && r.stage ? { stage: r.stage, waitingFor: r.waitingFor } : {}) },
     };
+  }
+
+  @Post('decide-day')
+  @HttpCode(200)
+  @ApiOperation({ summary: "Approve a person's working day — each item through its own route, as the caller" })
+  async decideDay(@Body() dto: DecideDayDto, @Request() req: AuthedRequest) {
+    return { success: true, data: await this.days.approveDay(caller(req), dto.members) };
   }
 }
 

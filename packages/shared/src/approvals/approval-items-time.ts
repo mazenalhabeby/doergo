@@ -48,6 +48,8 @@ export const timeApprovals = {
         requestedMinutes: r.requestedMinutes ?? null,
         reason: r.reason ?? null,
         distanceM: r.lastDistanceM ?? null,
+        // Which day it belongs to (a person's working day groups it with their hours).
+        timezone: r.space?.timezone ?? r.timezone ?? null,
       },
     });
   },
@@ -85,6 +87,7 @@ export const timeApprovals = {
         cycle: r.cycle ?? null,
         reason: r.technicianReason ?? null,
         overtimeStartAt: iso(r.overtimeStartAt),
+        timezone: r.location?.timezone ?? null,
       },
     });
   },

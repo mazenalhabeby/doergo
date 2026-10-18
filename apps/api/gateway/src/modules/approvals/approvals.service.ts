@@ -2,6 +2,7 @@ import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   APPROVAL_KIND_SPECS,
+  approvalDays,
   approvalRoute,
   countApprovals,
   dedupeApprovals,
@@ -14,7 +15,7 @@ import {
   type ApprovalItem,
   type ApprovalKind,
   type ApprovalsCount,
-  type ApprovalsResponse,
+  type ApprovalInbox,
 } from '@hbcfield/shared';
 import { ApprovalRulesClient } from './approval-rules.client';
 import { selfDispatchBase, selfDispatchHeaders } from '../../common/self-dispatch';
@@ -63,7 +64,7 @@ export class ApprovalsService {
   /** The last inbox each person read, by `kind:id` — "who else can decide" answers only for these. */
   private readonly known = new Map<string, { at: number; items: Map<string, ApprovalItem> }>();
 
-  async list(caller: ApprovalCaller): Promise<ApprovalsResponse> {
+  async list(caller: ApprovalCaller): Promise<ApprovalInbox> {
     const user = caller.user;
     const ctx: ApprovalContext = {
       now: new Date(),
@@ -169,7 +170,8 @@ export class ApprovalsService {
     this.counts.set(user.id, { at: Date.now(), value: countApprovals(decidable) });
     if (this.known.size > 2000) this.known.clear();
     this.known.set(user.id, { at: Date.now(), items: new Map(decidable.map((i) => [`${i.kind}:${i.id}`, i])) });
-    return { items: decidable, unavailable: [...new Set(unavailable)], generatedAt: ctx.now.toISOString() };
+    const generatedAt = ctx.now.toISOString();
+    return { items: decidable, days: approvalDays(decidable), unavailable: [...new Set(unavailable)], generatedAt };
   }
 
   /** Items half-way through an office rule's two approvals: who went first, who must finish. */

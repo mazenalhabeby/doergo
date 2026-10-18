@@ -211,6 +211,7 @@ export const EXTERNAL_OPEN_ROUTES: Record<string, string> = {
   // ApprovalsController: reads the existing pending lists and calls their existing actions AS the caller — every guard re-runs
   'ApprovalsController.count': 'ApprovalsController',
   'ApprovalsController.decide': 'ApprovalsController',
+  'ApprovalsController.decideDay': 'ApprovalsController',
   'ApprovalsController.list': 'ApprovalsController',
   'ApprovalsController.route': 'ApprovalsController',
   'ApprovalsController.listStandIns': 'ApprovalsController',
