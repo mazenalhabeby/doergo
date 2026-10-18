@@ -39,21 +39,21 @@ export class CalendarService extends CalendarSourcesBase {
         (CALENDAR_LAYERS as readonly string[]).includes(l),
       ),
     );
-    const org = await this.prisma.organization.findUnique({
-      where: { id: q.organizationId },
-      select: { timezone: true },
-    });
+    const spaceId = q.spaceId || null;
+    // The organization's zone and the workspace check are independent reads: asked together.
+    const [org, space] = await Promise.all([
+      this.prisma.organization.findUnique({ where: { id: q.organizationId }, select: { timezone: true } }),
+      spaceId
+        ? this.prisma.companyLocation.findFirst({
+            where: { id: spaceId, organizationId: q.organizationId },
+            select: { id: true },
+          })
+        : null,
+    ]);
+    if (spaceId && !space) throw new BadRequestException('Workspace not found');
     const tz = org?.timezone || 'Europe/Vienna';
     const fromAt = zonedWallTimeToUtc(q.from, 0, 0, tz);
     const toAt = zonedWallTimeToUtc(addDaysStr(q.to, 1), 0, 0, tz);
-    const spaceId = q.spaceId || null;
-    if (spaceId) {
-      const s = await this.prisma.companyLocation.findFirst({
-        where: { id: spaceId, organizationId: q.organizationId },
-        select: { id: true },
-      });
-      if (!s) throw new BadRequestException('Workspace not found');
-    }
 
     // Days: shaded for the workspace being looked at, or for the caller themselves.
     const daysP = (async (): Promise<{ places: PlaceCalendar[]; days: { day: string; kind: DayKind }[] }> => {

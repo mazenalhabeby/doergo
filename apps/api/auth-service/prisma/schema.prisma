@@ -1291,6 +1291,7 @@ model Task {
   @@index([assetId])
   @@index([createdAt])
   @@index([organizationId, status, createdAt])
+  @@index([organizationId, createdAt]) // the default task list: one organization, newest first (no status filter)
   @@index([assignedToId, status, updatedAt]) // suggested-tech 30d/percentile capacity query (assignedToId + status + updatedAt range)
   @@index([dueDate]) // due date filtering/sorting
   @@index([parentId]) // subtask queries

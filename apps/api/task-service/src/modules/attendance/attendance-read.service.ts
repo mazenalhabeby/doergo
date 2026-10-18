@@ -13,7 +13,6 @@ import type { Prisma } from '@prisma/client';
  */
 @Injectable()
 export class AttendanceReadService extends AttendanceReadBase {
-
   /**
    * The day's changes of where somebody worked, for one entry in the caller's
    * spaces. Group, reason and time — never a position. Outside the caller's
@@ -33,47 +32,101 @@ export class AttendanceReadService extends AttendanceReadBase {
    * Get current attendance status for a technician
    */
   async getStatus(data: { userId: string; organizationId: string }) {
-    // Get current clock-in entry if any
-    const currentEntry = await this.prisma.timeEntry.findFirst({
-      where: {
-        userId: data.userId,
-        organizationId: data.organizationId,
-        status: TimeEntryStatus.CLOCKED_IN,
-      },
-      include: {
-        location: { select: ATTENDANCE_LOCATION_SELECT },
-        /*
-          The rest in progress, if there is one.
-
-          Only the OPEN one: a closed break is history and the status endpoint
-          answers "what is happening right now". Both clients read this to decide
-          between "start your rest" and "back to work", which is the whole of the
-          rest UI — without it each would need a second request on every poll.
-        */
-        breaks: {
-          where: { endedAt: null },
-          select: { id: true, startedAt: true, ruleId: true, isPaid: true, type: true },
-          take: 1,
+    /*
+      Three independent reads, asked together: the open shift (with its rest in
+      progress), the workspaces the member is assigned to, and a shift the sweep
+      closed provisionally. One after another they cost three round trips on the
+      endpoint the phone polls all day; the answer is the same either way.
+    */
+    const [currentEntry, assignments, unconfirmedClockOut] = await Promise.all([
+      // Get current clock-in entry if any
+      this.prisma.timeEntry.findFirst({
+        where: {
+          userId: data.userId,
+          organizationId: data.organizationId,
+          status: TimeEntryStatus.CLOCKED_IN,
         },
-      },
-    });
+        include: {
+          location: { select: ATTENDANCE_LOCATION_SELECT },
+          /*
+            The rest in progress, if there is one.
 
-    // Get assigned locations
-    const assignments = await this.prisma.spaceAssignment.findMany({
-      where: {
-        userId: data.userId,
-        ...notEndedWhere(),
-      },
-      // `allowRemote` rides along on rows this endpoint already reads. Without
-      // it, tagging the workspaces below re-queries this very table — a second
-      // trip for a column that was one word away, on the endpoint a phone polls
-      // all day.
-      include: {
-        space: { select: ATTENDANCE_LOCATION_SELECT },
-      },
-      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
-    });
+            Only the OPEN one: a closed break is history and the status endpoint
+            answers "what is happening right now". Both clients read this to decide
+            between "start your rest" and "back to work", which is the whole of the
+            rest UI — without it each would need a second request on every poll.
+          */
+          breaks: {
+            where: { endedAt: null },
+            select: { id: true, startedAt: true, ruleId: true, isPaid: true, type: true },
+            take: 1,
+          },
+        },
+      }),
+      // Get assigned locations
+      this.prisma.spaceAssignment.findMany({
+        where: {
+          userId: data.userId,
+          ...notEndedWhere(),
+        },
+        // `allowRemote` rides along on rows this endpoint already reads. Without
+        // it, tagging the workspaces below re-queries this very table — a second
+        // trip for a column that was one word away, on the endpoint a phone polls
+        // all day.
+        include: {
+          space: { select: ATTENDANCE_LOCATION_SELECT },
+        },
+        orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+      }),
+      /*
+        A shift the sweep closed with a temporary time, still waiting for the
+        member to say when they left. One indexed read (partial, provisional
+        rows only), newest within two weeks.
+      */
+      this.prisma.timeEntry.findFirst({
+        where: {
+          userId: data.userId,
+          organizationId: data.organizationId,
+          clockOutProvisional: true,
+          clockOutAt: { gte: new Date(Date.now() - 14 * 86_400_000) },
+        },
+        orderBy: { clockOutAt: 'desc' },
+        select: {
+          id: true,
+          clockInAt: true,
+          clockOutAt: true,
+          clockOutBasis: true,
+          expectedClockOutAt: true,
+          timezone: true,
+          location: { select: { id: true, name: true, timezone: true } },
+        },
+      }),
+    ]);
 
+    // The workspace tags and the active excursion depend on the reads above, not on each other.
+    const [assignedLocations, activeExcursion] = await Promise.all([
+      this.tagStatusLocations(currentEntry !== null, assignments, data),
+      // Active out-of-ring excursion for the current session (drives mobile UI).
+      currentEntry ? this.heartbeats.getActiveExcursion(currentEntry.id) : null,
+    ]);
+
+    return success({
+      isClockedIn: !!currentEntry,
+      currentEntry,
+      assignedLocations,
+      activeExcursion,
+      unconfirmedClockOut,
+    });
+  }
+
+  /** The member's workspaces, tagged for the clock-in choice (status read, see getStatus). */
+  private async tagStatusLocations(
+    clockedIn: boolean,
+    assignments: Prisma.SpaceAssignmentGetPayload<{
+      include: { space: { select: typeof ATTENDANCE_LOCATION_SELECT } };
+    }>[],
+    data: { userId: string; organizationId: string },
+  ) {
     /*
       …and whether each would take a clock-in from off site.
 
@@ -90,44 +143,14 @@ export class AttendanceReadService extends AttendanceReadBase {
       new Map(assignments.map((a) => [a.spaceId, a.allowRemote])),
     );
     // Only asked when it could matter: a member on the clock is not choosing where to clock in.
-    const assignedLocations = currentEntry
+    return clockedIn
       ? awayTagged
-      : await this.clockInLocations.tagClockInContext(
+      : this.clockInLocations.tagClockInContext(
           awayTagged,
           data.userId,
           new Date(),
           new Set(assignments.filter((a) => a.isPrimary).map((a) => a.spaceId)),
         );
-
-    // Active out-of-ring excursion for the current session (drives mobile UI).
-    const activeExcursion = currentEntry ? await this.heartbeats.getActiveExcursion(currentEntry.id) : null;
-
-    /*
-      A shift the sweep closed with a temporary time, still waiting for the
-      member to say when they left. One indexed read (partial, provisional
-      rows only), newest within two weeks.
-    */
-    const unconfirmedClockOut = await this.prisma.timeEntry.findFirst({
-      where: {
-        userId: data.userId,
-        organizationId: data.organizationId,
-        clockOutProvisional: true,
-        clockOutAt: { gte: new Date(Date.now() - 14 * 86_400_000) },
-      },
-      orderBy: { clockOutAt: 'desc' },
-      select: {
-        id: true, clockInAt: true, clockOutAt: true, clockOutBasis: true, expectedClockOutAt: true, timezone: true,
-        location: { select: { id: true, name: true, timezone: true } },
-      },
-    });
-
-    return success({
-      isClockedIn: !!currentEntry,
-      currentEntry,
-      assignedLocations,
-      activeExcursion,
-      unconfirmedClockOut,
-    });
   }
 
   /**
