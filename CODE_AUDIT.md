@@ -347,3 +347,11 @@ socket payloads, native-module interfaces. Left (documented in place): external 
 (no queue contracts yet), runtime-loaded pdf.js, the API clients' generic boundary, approvals' loose `Row`.
 Also fixed: a cleared site boundary stored JSON `null` instead of NULL (`Prisma.DbNull` + data migration
 `20261017210000_geofence_polygon_db_null`, applied locally only).
+
+**Round 3 (user asked: the four structural items).** Web: logic out of ~18 big components, web long lines 265 → 19.
+Phone: 4 screens on `useFetchData` (+ dedupe / ignore401 / onError options, defaults unchanged); 17 left because
+converting them changes what the user sees or when they refetch. API: clock-in / clock-out-alerts / break-start
+chains → injected collaborators (⚠️ `dep?: T | undefined` compiles to Object — Nest injects nothing;
+`injectable-metadata.spec` guards it); task-queue jobs typed (`job<Data, Result>()`, 26 jobs; job ratchet = 33 untyped
+in the other queues). Single-child "base" splits elsewhere (calendar, crew, chat reach, sync pull, task query…)
+and real shared templates (ShiftCloseBase, EntryServiceBase…) left as they are. Files over a limit: 91.
