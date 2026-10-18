@@ -125,6 +125,10 @@ export const portalListRequestsByPortal = rpc<{
   portalId: string;
   scopeSpaceIds?: SpaceScopeIds;
 }>('portal_list_requests_by_portal');
+/** Every request waiting for triage across the caller's portals (the approvals inbox). */
+export const portalListWaitingRequests = rpc<{ organizationId: string; scopeSpaceIds?: SpaceScopeIds }>(
+  'portal_list_waiting_requests',
+);
 export const portalGetRequest = rpc<{ id: string; organizationId: string; customerId: string }>('portal_get_request');
 export const portalTriageRequest = rpc<{
   id: string;

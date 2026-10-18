@@ -22,7 +22,6 @@ import {
   SOURCE_TIMEOUT_MS,
   COUNT_TTL_MS,
   KNOWN_TTL_MS,
-  MAX_PORTALS,
   MAX_SHARED_SPACES,
   ApprovalCaller,
   Row,
@@ -125,17 +124,13 @@ export class ApprovalsService {
     add('join', async () =>
       rows(await get('/join-requests?status=PENDING&limit=50')).map((r) => toApproval.join(r, ctx)),
     );
-    add('clientRequest', async () => {
-      const portals = rows(await get('/portal/admin/portals')).slice(0, MAX_PORTALS);
-      const lists = await Promise.all(
-        portals.map(async (p) =>
-          rows(await get(`/portal/admin/portals/${encodeURIComponent(p.id)}/requests`))
-            .filter((r) => r.triaged === false)
-            .map((r) => toApproval.clientRequest(r, ctx, String(p.id))),
-        ),
-      );
-      return lists.flat();
-    });
+    // One read across the caller's portals (portal by portal, newest first), through the portal
+    // route's own gate and scope — it used to be one read per portal.
+    add('clientRequest', async () =>
+      rows(await get('/portal/admin/requests/waiting'))
+        .filter((r) => r.triaged === false)
+        .map((r) => toApproval.clientRequest(r, ctx, String(r.portalId))),
+    );
     add('guestRequest', async () => {
       const shared = (await spaces())
         .filter((s) => Array.isArray(s.enabledModules) && s.enabledModules.includes('space_sharing'))

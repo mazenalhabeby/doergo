@@ -24,9 +24,7 @@ const COUNT_TTL_MS = 20_000;
 /** How long a read inbox vouches for its items ("who else can decide" asks about one of them). */
 const KNOWN_TTL_MS = 10 * 60_000;
 
-/** Fan-outs are bounded: a portal or a shared workspace past this is reached through its own page. */
-const MAX_PORTALS = 20;
-
+/** Fan-outs are bounded: a shared workspace past this is reached through its own page (portals: task-service). */
 const MAX_SHARED_SPACES = 20;
 
 export interface ApprovalCaller extends SelfDispatchCaller {
@@ -110,7 +108,6 @@ export {
   SOURCE_TIMEOUT_MS,
   COUNT_TTL_MS,
   KNOWN_TTL_MS,
-  MAX_PORTALS,
   MAX_SHARED_SPACES,
   Row,
   rows,

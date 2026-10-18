@@ -21,7 +21,6 @@ export { type PlaceCalendar } from './calendar-rules-helpers';
  */
 @Injectable()
 export class CalendarRulesService extends CalendarRulesBase {
-
   /**
    * Several people's days at once — the invite dialog asks for up to twenty. A fixed number of
    * queries however many people: their workspaces, their weeks, their rotas, then every place once.
@@ -37,9 +36,27 @@ export class CalendarRulesService extends CalendarRulesBase {
     from: string,
     to: string,
   ): Promise<Map<string, { rules: DayRules; roster?: RosterFn; spaceIds: string[] }>> {
+    return (await this.rulesAndPlaces(organizationId, userIds, from, to)).byUser;
+  }
+
+  /**
+   * `personRulesMany`, also handing back the places it loaded — so a caller that shows them (the
+   * calendar's shaded days and holidays) does not load the organization, the workspaces and the
+   * holiday overrides a second time. `lang` only names the holidays; the days off are the same.
+   */
+  private async rulesAndPlaces(
+    organizationId: string,
+    userIds: string[],
+    from: string,
+    to: string,
+    lang?: string,
+  ): Promise<{
+    byUser: Map<string, { rules: DayRules; roster?: RosterFn; spaceIds: string[] }>;
+    places: Map<string | null, PlaceCalendar> | null;
+  }> {
     const ids = [...new Set(userIds)];
     const out = new Map<string, { rules: DayRules; roster?: RosterFn; spaceIds: string[] }>();
-    if (!ids.length) return out;
+    if (!ids.length) return { byUser: out, places: null };
     const [spacesOf, users, rotas] = await Promise.all([
       this.workspacesOfMany(organizationId, ids),
       this.prisma.user.findMany({
@@ -67,20 +84,27 @@ export class CalendarRulesService extends CalendarRulesBase {
       }),
     ]);
     const allSpaces = [...new Set([...spacesOf.values()].flat())];
-    const places = await this.places(organizationId, allSpaces, from, to);
+    const places = await this.places(organizationId, allSpaces, from, to, lang);
     for (const u of users) {
       const spaceIds = spacesOf.get(u.id) ?? [];
-      const list = (spaceIds.length ? spaceIds.map((id) => places.get(id)) : [places.get(null)]).filter(Boolean) as PlaceCalendar[];
+      const list = (spaceIds.length ? spaceIds.map((id) => places.get(id)) : [places.get(null)]).filter(
+        Boolean,
+      ) as PlaceCalendar[];
       const rules = intersectDayRules(list.map((p) => p.rules));
       const person: CoverPerson = {
-        id: u.id, firstName: u.firstName, lastName: u.lastName, spaceId: '', specialty: u.specialty, position: u.position,
+        id: u.id,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        spaceId: '',
+        specialty: u.specialty,
+        position: u.position,
         scheduleDows: [...new Set(u.schedules.map((x) => x.dayOfWeek))],
         shiftRules: rotas.filter((r) => r.userId === u.id).map(shiftRuleOf),
         restDows: [...rules.weekend],
       };
       out.set(u.id, { rules, roster: personRoster(person), spaceIds });
     }
-    return out;
+    return { byUser: out, places };
   }
 
   /** One person's days — `personRulesMany` for one. */
@@ -94,6 +118,25 @@ export class CalendarRulesService extends CalendarRulesBase {
     if (r) return r;
     const org = (await this.places(organizationId, [], from, to)).get(null);
     return { rules: org?.rules ?? intersectDayRules([]), spaceIds: [] };
+  }
+
+  /**
+   * One person's days AND the places they work in, named in `lang` — what the calendar shades. One
+   * load of the organization, the workspaces and the overrides instead of two.
+   */
+  async personRulesWithPlaces(
+    organizationId: string,
+    userId: string,
+    from: string,
+    to: string,
+    lang?: string,
+  ): Promise<{ rules: DayRules; roster?: RosterFn; spaceIds: string[]; places: Map<string | null, PlaceCalendar> }> {
+    const { byUser, places } = await this.rulesAndPlaces(organizationId, [userId], from, to, lang);
+    const r = byUser.get(userId);
+    if (r && places) return { ...r, places };
+    const map = places ?? (await this.places(organizationId, [], from, to, lang));
+    if (r) return { ...r, places: map };
+    return { rules: map.get(null)?.rules ?? intersectDayRules([]), spaceIds: [], places: map };
   }
 
   /** What leave from `from` to `to` costs this person. */

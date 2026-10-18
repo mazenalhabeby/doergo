@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { success, scopeAllows, type SpaceScopeIds } from '@hbcfield/shared';
+import { success, scopeAllows, scopeWhereOn, type SpaceScopeIds } from '@hbcfield/shared';
 import { TaskPortalBase } from './task-portal.base';
 
 /**
@@ -8,9 +8,11 @@ import { TaskPortalBase } from './task-portal.base';
  * office's view of a whole portal, and triage — a pending request routed into
  * a space as live work.
  */
+/** The approvals inbox reads at most this many portals (oldest first). */
+const WAITING_REQUESTS_MAX_PORTALS = 20;
+
 @Injectable()
 export class TaskPortalService extends TaskPortalBase {
-
   /**
    * One client's requests (newest first) — the customer's own list, and the
    * office's view of one resident (`scopeSpaceIds` set by the office route
@@ -87,6 +89,66 @@ export class TaskPortalService extends TaskPortalBase {
     );
   }
 
+  /**
+   * The approvals inbox's read: every request still waiting for triage, across the portals the
+   * caller reads requests in. One read instead of one per portal. The portals are exactly the ones
+   * `portal_list` gives the caller (active, in their workspaces, oldest first, the inbox's cap of
+   * 20), and each row is what `portal_list_requests_by_portal` answers for it, plus `portalId`.
+   */
+  async listWaitingPortalRequests(data: { organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
+    const portals = await this.prisma.portal.findMany({
+      where: { organizationId: data.organizationId, isActive: true, ...scopeWhereOn('spaceId', data.scopeSpaceIds) },
+      orderBy: { createdAt: 'asc' },
+      take: WAITING_REQUESTS_MAX_PORTALS,
+      select: { id: true, spaceId: true },
+    });
+    if (portals.length === 0) return success([]);
+    const spaceIds = [...new Set(portals.map((p) => p.spaceId).filter((id): id is string => !!id))];
+    const [spaces, tasks] = await Promise.all([
+      spaceIds.length
+        ? this.prisma.companyLocation.findMany({
+            where: { id: { in: spaceIds }, organizationId: data.organizationId },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
+      this.prisma.task.findMany({
+        where: {
+          organizationId: data.organizationId,
+          source: 'CUSTOMER_PORTAL',
+          triaged: false,
+          customer: { portalId: { in: portals.map((p) => p.id) } },
+        },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          unit: { select: { id: true, name: true, address: true } },
+          customer: { select: { id: true, name: true, portalId: true } },
+          space: { select: { id: true, name: true } },
+          workflow: { select: { statuses: { orderBy: { position: 'asc' } } } },
+        },
+      }),
+    ]);
+    const spaceById = new Map(spaces.map((s) => [s.id, s]));
+    // Portal by portal in the list's order, each portal's requests newest first — the order the
+    // inbox got from one read per portal.
+    return success(
+      portals.flatMap((p) => {
+        const suggested = p.spaceId ? spaceById.get(p.spaceId) : undefined;
+        return tasks
+          .filter((t) => t.customer?.portalId === p.id)
+          .map((t) => ({
+            ...this.portalRequestShape(t),
+            description: t.description ?? null,
+            customerId: t.customerId ?? null,
+            customerName: t.customer?.name ?? null,
+            unitAddress: t.unit?.address ?? null,
+            suggestedSpaceId: suggested?.id ?? null,
+            suggestedSpaceName: suggested?.name ?? null,
+            portalId: p.id,
+          }));
+      }),
+    );
+  }
+
   /** One of the customer's own requests — 404 if it isn't theirs. */
   async getPortalRequest(data: { id: string; organizationId: string; customerId: string }) {
     const task = await this.prisma.task.findFirst({
@@ -99,7 +161,9 @@ export class TaskPortalService extends TaskPortalBase {
       include: {
         unit: { select: { id: true, name: true } },
         workflow: { select: { statuses: { orderBy: { position: 'asc' } } } },
-        attachments: { select: { id: true, fileUrl: true, fileKey: true, mimeType: true, fileType: true, fileName: true } },
+        attachments: {
+          select: { id: true, fileUrl: true, fileKey: true, mimeType: true, fileType: true, fileName: true },
+        },
       },
     });
     if (!task) {

@@ -28,7 +28,6 @@ export { type ItemsQuery } from './calendar-helpers';
  */
 @Injectable()
 export class CalendarService extends CalendarSourcesBase {
-
   async items(q: ItemsQuery) {
     if (!DATE.test(q.from ?? '') || !DATE.test(q.to ?? '') || q.to < q.from)
       throw new BadRequestException('from and to are days, from first');
@@ -36,9 +35,14 @@ export class CalendarService extends CalendarSourcesBase {
       throw new BadRequestException(`At most ${CALENDAR_MAX_RANGE_DAYS} days at a time`);
     }
     const layers = new Set<CalendarLayer>(
-      (q.layers?.length ? q.layers : CALENDAR_LAYERS).filter((l): l is CalendarLayer => (CALENDAR_LAYERS as readonly string[]).includes(l)),
+      (q.layers?.length ? q.layers : CALENDAR_LAYERS).filter((l): l is CalendarLayer =>
+        (CALENDAR_LAYERS as readonly string[]).includes(l),
+      ),
     );
-    const org = await this.prisma.organization.findUnique({ where: { id: q.organizationId }, select: { timezone: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: q.organizationId },
+      select: { timezone: true },
+    });
     const tz = org?.timezone || 'Europe/Vienna';
     const fromAt = zonedWallTimeToUtc(q.from, 0, 0, tz);
     const toAt = zonedWallTimeToUtc(addDaysStr(q.to, 1), 0, 0, tz);
@@ -55,10 +59,18 @@ export class CalendarService extends CalendarSourcesBase {
     const daysP = (async (): Promise<{ places: PlaceCalendar[]; days: { day: string; kind: DayKind }[] }> => {
       if (spaceId) {
         const p = await this.rules.place(q.organizationId, spaceId, q.from, q.to, q.lang);
-        return { places: p ? [p] : [], days: eachDay(q.from, q.to).map((day) => ({ day, kind: p ? dayKind(day, p.rules) : 'work' })) };
+        return {
+          places: p ? [p] : [],
+          days: eachDay(q.from, q.to).map((day) => ({ day, kind: p ? dayKind(day, p.rules) : 'work' })),
+        };
       }
-      const [{ rules, roster, spaceIds }] = await Promise.all([this.rules.personRules(q.organizationId, q.userId, q.from, q.to)]);
-      const map = await this.rules.places(q.organizationId, spaceIds, q.from, q.to, q.lang);
+      // The person's days and the places they work in, from one load (they used to be loaded twice).
+      const {
+        rules,
+        roster,
+        spaceIds,
+        places: map,
+      } = await this.rules.personRulesWithPlaces(q.organizationId, q.userId, q.from, q.to, q.lang);
       const places = spaceIds.length
         ? (spaceIds.map((id) => map.get(id)).filter(Boolean) as PlaceCalendar[])
         : [map.get(null)!].filter(Boolean);
@@ -83,8 +95,16 @@ export class CalendarService extends CalendarSourcesBase {
           if (seen.has(key)) continue;
           seen.add(key);
           holidays.push({
-            id: `holiday:${p.place.spaceId ?? 'org'}:${h.key}`, kind: 'holiday', layer: 'holidays', title: h.name,
-            start: h.date, end: h.endDate, allDay: true, spaceId: p.place.spaceId, status: h.status, halfDay: h.halfDay,
+            id: `holiday:${p.place.spaceId ?? 'org'}:${h.key}`,
+            kind: 'holiday',
+            layer: 'holidays',
+            title: h.name,
+            start: h.date,
+            end: h.endDate,
+            allDay: true,
+            spaceId: p.place.spaceId,
+            status: h.status,
+            halfDay: h.halfDay,
             note: shade.places.length > 1 ? p.place.name : h.kind === 'COMPANY' ? 'COMPANY' : null,
           });
         }

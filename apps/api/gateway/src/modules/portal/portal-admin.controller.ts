@@ -26,12 +26,14 @@ import { portalList, portalCreate, portalGet, portalUpdate, portalDelete } from 
 import {
   sendRpc,
   portalListRequestsByPortal,
+  portalListWaitingRequests,
   portalTriageRequest,
   portalListRequests,
 } from '@hbcfield/shared/microservices';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
+import { CreatePortalDto, TriageRequestDto, UpdatePortalDto } from './dto/portal-bodies.dto';
 /**
  * Office-facing multi-portal management. Org always from the token. An org can
  * run several portals; categories & residents belong to a portal (portalId in
@@ -81,7 +83,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @RequirePermission('canManagePortals')
   @DenyExternal()
   @ApiOperation({ summary: 'Create a portal (from a template)' })
-  createPortal(@Body() body: { templateKey?: string; name?: string }, @Request() req: AuthedRequest) {
+  createPortal(@Body() body: CreatePortalDto, @Request() req: AuthedRequest) {
     return this.auth(portalCreate, {
       templateKey: body?.templateKey,
       name: body?.name,
@@ -108,6 +110,19 @@ export class PortalAdminController extends PortalAdminControllerBase {
       sendRpc(this.taskClient, portalListRequestsByPortal, {
         organizationId: callerOrgId(req.user),
         portalId: id,
+        scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
+      }),
+    );
+  }
+
+  @Get('requests/waiting')
+  @RequirePermissionInSpace('canViewPortal')
+  @ApiOperation({ summary: 'Requests waiting for triage across the portals the caller reads (approvals inbox)' })
+  waitingRequests(@Request() req: AuthedRequest) {
+    // The same gate and scope as portals/:id/requests, over every portal the caller reads.
+    return firstValueFrom(
+      sendRpc(this.taskClient, portalListWaitingRequests, {
+        organizationId: callerOrgId(req.user),
         scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
       }),
     );
@@ -184,11 +199,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
   // be held THERE; the service also checks the request's own portal is in reach.
   @RequirePermissionInSpace('canAnswerPortal')
   @ApiOperation({ summary: 'Triage a portal request into a live task' })
-  triageRequest(
-    @Param('id') id: string,
-    @Body() body: { spaceId: string; workflowId?: string | null; priority?: string; assignedToId?: string | null },
-    @Request() req: AuthedRequest,
-  ) {
+  triageRequest(@Param('id') id: string, @Body() body: TriageRequestDto, @Request() req: AuthedRequest) {
     const scopeSpaceIds = portalScope(req.user, 'canAnswerPortal');
     return firstValueFrom(
       sendRpc(this.taskClient, portalTriageRequest, {
@@ -217,18 +228,15 @@ export class PortalAdminController extends PortalAdminControllerBase {
   // re-checked by the service: a scoped manager cannot carry it out of reach.
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: 'Update a portal (name / switch type)' })
-  updatePortal(
-    @Param('id') id: string,
-    @Body() body: { name?: string; templateKey?: string; reseed?: boolean; spaceId?: string | null },
-    @Request() req: AuthedRequest,
-  ) {
+  updatePortal(@Param('id') id: string, @Body() body: UpdatePortalDto, @Request() req: AuthedRequest) {
     // Whitelisted: a spread body also carried `coverImageUrl` (any string, onto
     // a page every resident opens) — the cover has its own upload route.
     return this.auth(portalUpdate, {
       name: body?.name,
       templateKey: body?.templateKey,
       reseed: body?.reseed,
-      ...(body && 'spaceId' in body ? { spaceId: body.spaceId ?? null } : {}),
+      // `!== undefined`, not `in`: a DTO class declares every field, so `in` is always true.
+      ...(body?.spaceId !== undefined ? { spaceId: body.spaceId ?? null } : {}),
       id,
       organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),

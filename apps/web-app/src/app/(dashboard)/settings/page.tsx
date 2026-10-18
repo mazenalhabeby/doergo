@@ -4,17 +4,20 @@ import { useState, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
-import { HolidaysSection } from "./_components/holidays-section"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { resolveSettingsSection } from "@/lib/route-access"
-import { CompaniesSection } from "./_components/companies-section"
-import { GeneralSection } from "./_components/general-section"
-import { MembersSection } from "./_components/members-section"
-import { NotificationsSection } from "./_components/notifications-section"
-import { MyEmailNotificationsSection } from "./_components/my-emails-section"
-import { ProfileSection } from "./_components/profile-section"
-import { SecuritySection } from "./_components/security-section"
-import { ClockInSection } from "./_components/clock-in-section"
+// Each section loads when it is opened (see lazy-sections.tsx).
+import {
+  ClockInSection,
+  CompaniesSection,
+  GeneralSection,
+  HolidaysSection,
+  MembersSection,
+  MyEmailNotificationsSection,
+  NotificationsSection,
+  ProfileSection,
+  SecuritySection,
+} from "./_components/lazy-sections"
 import { useClockInPickOffered } from "./_components/use-clock-in-pick-offered"
 import { LazyAuditLog } from "./_components/lazy-audit-log"
 import { ORG_NAV_ITEMS, PERSONAL_NAV_ITEMS, type SettingsSection } from "./_lib/settings-nav"
@@ -55,13 +58,15 @@ export default function SettingsPage() {
   const orgNavItems = ORG_NAV_ITEMS.filter((i) => allowed.includes(i.key))
   // "Clock in" only for somebody with more than one workspace to clock in at.
   const clockInOffered = useClockInPickOffered(allowed.includes("clock-in"))
-  const personalNavItems = PERSONAL_NAV_ITEMS.filter((i) => allowed.includes(i.key) && (i.key !== "clock-in" || clockInOffered))
+  const personalNavItems = PERSONAL_NAV_ITEMS.filter(
+    (i) => allowed.includes(i.key) && (i.key !== "clock-in" || clockInOffered),
+  )
   const showOrgGroup = orgNavItems.length > 0
 
   // The first section this member may open; a ?section they may not open falls back to it.
-  const initialSection = (routeAccess.ctx
-    ? resolveSettingsSection(searchParams.get("section"), routeAccess.ctx)
-    : "profile") as SettingsSection
+  const initialSection = (
+    routeAccess.ctx ? resolveSettingsSection(searchParams.get("section"), routeAccess.ctx) : "profile"
+  ) as SettingsSection
   const [activeSection, setActiveSection] = useState<SettingsSection>(initialSection)
   const router = useRouter()
 
@@ -100,10 +105,13 @@ export default function SettingsPage() {
                 <>
                   <p
                     data-tour="settings-org-group"
-                    className={"px-3.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wider " + "text-muted-foreground"}>
+                    className={
+                      "px-3.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wider " + "text-muted-foreground"
+                    }
+                  >
                     {t("settings.nav.organizationGroup")}
                   </p>
-                  {orgNavItems.map(item => {
+                  {orgNavItems.map((item) => {
                     const isActive = activeSection === item.key
                     return (
                       <button
@@ -130,7 +138,7 @@ export default function SettingsPage() {
                   {t("settings.nav.personalGroup")}
                 </p>
               </div>
-              {personalNavItems.map(item => {
+              {personalNavItems.map((item) => {
                 const isActive = activeSection === item.key
                 return (
                   <button
@@ -153,7 +161,7 @@ export default function SettingsPage() {
 
           {/* Mobile Tab Bar */}
           <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border px-4 py-2 flex gap-1 overflow-x-auto">
-            {[...orgNavItems, ...personalNavItems].map(item => {
+            {[...orgNavItems, ...personalNavItems].map((item) => {
               const isActive = activeSection === item.key
               return (
                 <button
@@ -173,20 +181,62 @@ export default function SettingsPage() {
           {/* Content Area */}
           <div className="flex-1 min-w-0">
             {/* Organization sections — inline */}
-            {!allowed.includes(activeSection) ? null : <>
-            {activeSection === "general" && <div data-tour="settings-general"><GeneralSection /></div>}
-            {activeSection === "members" && <div data-tour="settings-members"><MembersSection /></div>}
-            {activeSection === "notifications" && <div data-tour="settings-notifications"><NotificationsSection /></div>}
-            {/* Organization sections — lazy loaded from sub-pages */}
-            {activeSection === "holidays" && <div data-tour="settings-holidays"><HolidaysSection /></div>}
-            {activeSection === "companies" && isAdmin && <div data-tour="settings-companies"><CompaniesSection /></div>}
-            {activeSection === "audit-log" && <div data-tour="settings-audit"><LazyAuditLog /></div>}
-            {/* Personal sections */}
-            {activeSection === "profile" && <div data-tour="settings-profile"><ProfileSection /></div>}
-            {activeSection === "security" && <div data-tour="settings-security"><SecuritySection /></div>}
-            {activeSection === "my-emails" && <div data-tour="settings-my-emails"><MyEmailNotificationsSection /></div>}
-            {activeSection === "clock-in" && <div data-tour="settings-clock-in"><ClockInSection /></div>}
-            </>}
+            {!allowed.includes(activeSection) ? null : (
+              <>
+                {activeSection === "general" && (
+                  <div data-tour="settings-general">
+                    <GeneralSection />
+                  </div>
+                )}
+                {activeSection === "members" && (
+                  <div data-tour="settings-members">
+                    <MembersSection />
+                  </div>
+                )}
+                {activeSection === "notifications" && (
+                  <div data-tour="settings-notifications">
+                    <NotificationsSection />
+                  </div>
+                )}
+                {/* Organization sections — lazy loaded from sub-pages */}
+                {activeSection === "holidays" && (
+                  <div data-tour="settings-holidays">
+                    <HolidaysSection />
+                  </div>
+                )}
+                {activeSection === "companies" && isAdmin && (
+                  <div data-tour="settings-companies">
+                    <CompaniesSection />
+                  </div>
+                )}
+                {activeSection === "audit-log" && (
+                  <div data-tour="settings-audit">
+                    <LazyAuditLog />
+                  </div>
+                )}
+                {/* Personal sections */}
+                {activeSection === "profile" && (
+                  <div data-tour="settings-profile">
+                    <ProfileSection />
+                  </div>
+                )}
+                {activeSection === "security" && (
+                  <div data-tour="settings-security">
+                    <SecuritySection />
+                  </div>
+                )}
+                {activeSection === "my-emails" && (
+                  <div data-tour="settings-my-emails">
+                    <MyEmailNotificationsSection />
+                  </div>
+                )}
+                {activeSection === "clock-in" && (
+                  <div data-tour="settings-clock-in">
+                    <ClockInSection />
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>

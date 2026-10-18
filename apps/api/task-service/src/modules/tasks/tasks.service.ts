@@ -91,6 +91,10 @@ export class TasksService {
     return this.portal.listPortalRequestsByPortal(...args);
   }
 
+  listWaitingPortalRequests(...args: Parameters<TaskPortalService['listWaitingPortalRequests']>) {
+    return this.portal.listWaitingPortalRequests(...args);
+  }
+
   getPortalRequest(...args: Parameters<TaskPortalService['getPortalRequest']>) {
     return this.portal.getPortalRequest(...args);
   }
