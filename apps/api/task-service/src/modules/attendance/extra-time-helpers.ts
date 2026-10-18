@@ -56,3 +56,18 @@ function overtimeEndFor(input: {
 }
 
 export { ExtraTimeDecision, EXTRA_TIME_DECIDABLE_AFTER_CLOSE_MS, overtimeEndFor };
+
+/**
+ * After more time is refused — by the office, or by nobody confirming a signature in
+ * time — the member is NOT clocked out (decided 2026-10-18): what counts already stops
+ * at the planned end, because a refused round never moved it. A fresh reminder cycle
+ * starts so they are nudged to clock out now; the count is reset so a member whose
+ * reminders ran out earlier gets a clean nudge, not an instant escalation. One write,
+ * shared by every refusal path; an already-closed shift is left alone.
+ */
+export function refusalNudge(entryId: string, now: Date = new Date()): Prisma.TimeEntryUpdateManyArgs {
+  return {
+    where: { id: entryId, status: TimeEntryStatus.CLOCKED_IN },
+    data: { reminderState: 'REMINDED', reminderCount: 0, nextRemindAt: now },
+  };
+}

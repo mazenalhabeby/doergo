@@ -14,6 +14,7 @@ import {
   type OvertimeNotice,
 } from '@hbcfield/shared';
 import { DecidedCloseService } from './../attendance/decided-close.service';
+import { refusalNudge } from '../attendance/extra-time-helpers';
 
 /**
  * What the overtime services share: telling people, finding a pending approval the
@@ -102,11 +103,23 @@ export abstract class OvertimeBase {
       notes: approval.notes ?? null,
     });
     if (approval.leaderName) {
-      await this.prisma.overtimeRequest.update({ where: { id: request.id }, data: { leaderName: approval.leaderName } });
+      await this.prisma.overtimeRequest.update({
+        where: { id: request.id },
+        data: { leaderName: approval.leaderName },
+      });
     }
 
     this.logger.log(`Overtime ${request.id} approved: ${minutes} min by ${approval.approverId} via ${approval.method}`);
     return result;
+  }
+
+  /**
+   * More time refused (a leader's no, or nobody confirming in time): the member stays
+   * clocked in and is nudged to clock out now — what counts already stops at the
+   * planned end. Never a clock-out (decided 2026-10-18).
+   */
+  protected async afterRefusal(timeEntryId: string, now: Date = new Date()): Promise<void> {
+    await this.prisma.timeEntry.updateMany(refusalNudge(timeEntryId, now));
   }
 
   /**

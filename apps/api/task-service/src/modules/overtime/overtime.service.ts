@@ -128,13 +128,8 @@ export class OvertimeService extends OvertimeBase {
         data: { status: 'EXPIRED_NO_RESPONSE' },
       });
       if (claim.count === 0) continue;
-      await this.endShift(
-        req.timeEntryId,
-        req.organizationId,
-        'Auto clock-out: no response to overtime prompt',
-        'AUTO_CLOSE',
-        now,
-      );
+      // Unanswered: still clocked in, nudged; nothing after the planned end counts.
+      await this.afterRefusal(req.timeEntryId, now);
 
       this.notify({
         recipientIds: [req.technicianId],
@@ -162,16 +157,11 @@ export class OvertimeService extends OvertimeBase {
       if (claim.count === 0) continue;
       /*
         Path B: the signature drawn on the technician's phone was never confirmed
-        in time. The shift ends at the sweep — and what COUNTS still stops at the
-        planned end, because a request nobody approved never moved it.
+        in time. The member stays clocked in (decided 2026-10-18) and is nudged;
+        what COUNTS still stops at the planned end, because a request nobody
+        approved never moved it.
       */
-      await this.endShift(
-        req.timeEntryId,
-        req.organizationId,
-        'Auto clock-out: overtime approval expired',
-        'AUTO_CLOSE',
-        now,
-      );
+      await this.afterRefusal(req.timeEntryId, now);
 
       this.notify({
         recipientIds: [req.technicianId],

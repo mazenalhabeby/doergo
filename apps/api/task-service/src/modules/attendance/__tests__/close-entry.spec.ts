@@ -195,7 +195,7 @@ describe('a close by decision (the legacy overtime flow)', () => {
   });
 });
 
-describe('legacy overtime: reject and time-out end the shift through the one close', () => {
+describe('legacy overtime: a refusal or a time-out never clocks anyone out (decided 2026-10-18)', () => {
   const round = { id: 'ot1', technicianId: 'tech', timeEntryId: 'e1', locationId: 'loc-1', organizationId: 'org-1', status: 'PENDING_APPROVAL' };
   function overtime(opts: { approverIsAdmin?: boolean } = {}) {
     const prisma: any = {
@@ -204,49 +204,56 @@ describe('legacy overtime: reject and time-out end the shift through the one clo
         findMany: jest.fn(async ({ where }: any) => (where.status === 'PENDING_APPROVAL' ? [round] : [])),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
+      timeEntry: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
       user: { findFirst: jest.fn().mockResolvedValue(opts.approverIsAdmin ? { id: 'tech' } : null) },
     };
     const clockOuts = { closeByDecision: jest.fn().mockResolvedValue(true) };
     const svc = overtimeServices(prisma, { emit: jest.fn() } as any, {} as any, {} as any, clockOuts as any);
     return { svc, prisma, clockOuts };
   }
+  const nudged = (prisma: any) =>
+    expect(prisma.timeEntry.updateMany).toHaveBeenCalledWith({
+      where: { id: 'e1', status: TimeEntryStatus.CLOCKED_IN },
+      data: { reminderState: 'REMINDED', reminderCount: 0, nextRemindAt: expect.any(Date) },
+    });
 
-  it('a rejection closes through closeByDecision, at the decision', async () => {
+  it('a rejection keeps the member clocked in and nudges them — counting stops at the planned end', async () => {
     const { svc, prisma, clockOuts } = overtime();
     await svc.leaderReject({ overtimeRequestId: 'ot1', approverId: 'leader', reason: 'Not needed', organizationId: 'org-1' });
     expect(prisma.overtimeRequest.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'ot1', status: 'PENDING_APPROVAL' } }));
-    expect(clockOuts.closeByDecision).toHaveBeenCalledWith(expect.objectContaining({
-      entryId: 'e1', organizationId: 'org-1', reason: 'OFFICE_CLOSE', note: 'Overtime rejected: Not needed', at: expect.any(Date),
-    }));
+    expect(clockOuts.closeByDecision).not.toHaveBeenCalled();
+    nudged(prisma);
   });
 
-  it('nobody rejects their own overtime (and so clocks themselves out "by decision")', async () => {
-    const { svc, prisma, clockOuts } = overtime();
+  it('nobody rejects their own overtime', async () => {
+    const { svc, prisma } = overtime();
     await expect(
       svc.leaderReject({ overtimeRequestId: 'ot1', approverId: 'tech', reason: 'x', organizationId: 'org-1' }),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(prisma.overtimeRequest.updateMany).not.toHaveBeenCalled();
-    expect(clockOuts.closeByDecision).not.toHaveBeenCalled();
+    expect(prisma.timeEntry.updateMany).not.toHaveBeenCalled();
   });
 
   it('a true org admin is exempt, as everywhere', async () => {
-    const { svc, clockOuts } = overtime({ approverIsAdmin: true });
+    const { svc, prisma, clockOuts } = overtime({ approverIsAdmin: true });
     await svc.leaderReject({ overtimeRequestId: 'ot1', approverId: 'tech', reason: 'x', organizationId: 'org-1' });
-    expect(clockOuts.closeByDecision).toHaveBeenCalled();
+    expect(clockOuts.closeByDecision).not.toHaveBeenCalled();
+    nudged(prisma);
   });
 
   it('a request decided meanwhile is not rejected twice', async () => {
-    const { svc, prisma, clockOuts } = overtime();
+    const { svc, prisma } = overtime();
     prisma.overtimeRequest.updateMany.mockResolvedValue({ count: 0 });
     await expect(svc.leaderReject({ overtimeRequestId: 'ot1', approverId: 'leader', reason: 'x', organizationId: 'org-1' })).rejects.toBeDefined();
-    expect(clockOuts.closeByDecision).not.toHaveBeenCalled();
+    expect(prisma.timeEntry.updateMany).not.toHaveBeenCalled();
   });
 
-  it('a lapsed approval window (Path B unconfirmed) closes the same way, claimed', async () => {
+  it('a lapsed approval window (Path B unconfirmed) is claimed, then nudges — never a clock-out', async () => {
     const { svc, prisma, clockOuts } = overtime();
     await svc.checkTimeouts();
     expect(prisma.overtimeRequest.updateMany).toHaveBeenCalledWith({ where: { id: 'ot1', status: 'PENDING_APPROVAL' }, data: { status: 'EXPIRED_NO_APPROVAL' } });
-    expect(clockOuts.closeByDecision).toHaveBeenCalledWith(expect.objectContaining({ entryId: 'e1', reason: 'AUTO_CLOSE' }));
+    expect(clockOuts.closeByDecision).not.toHaveBeenCalled();
+    nudged(prisma);
   });
 });
 

@@ -177,9 +177,8 @@ export class OvertimeDecisionService extends OvertimeBase {
     const request = await this.findPendingApproval(data.overtimeRequestId, data.organizationId, data.scopeSpaceIds);
 
     /*
-      Nobody refuses their own overtime — and here refusing ENDS the shift, so a
-      shift leader could otherwise clock themselves out "by decision" with an
-      AUTO_OUT that reads as the system's. The approve path has carried the
+      Nobody refuses their own overtime — a leader deciding about their own time is
+      no decision at all (refusing once ENDED the shift, which made it worse). The approve path has carried the
       second-party rule since AT-B1 (through attendance's approveExtraTime);
       the reject path never did. A true org admin is exempt, as everywhere.
     */
@@ -205,14 +204,8 @@ export class OvertimeDecisionService extends OvertimeBase {
       throw new NotFoundException('Overtime request not found or not pending approval');
     }
 
-    // This product's rule: a refusal ends the shift, at the decision.
-    await this.endShift(
-      request.timeEntryId,
-      data.organizationId,
-      `Overtime rejected: ${data.reason}`,
-      'OFFICE_CLOSE',
-      now,
-    );
+    // A refusal never clocks anyone out: the time after the planned end is not counted, and they are nudged.
+    await this.afterRefusal(request.timeEntryId, now);
 
     // Notify technician
     this.notify({

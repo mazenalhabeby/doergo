@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { success, TimeEntryStatus } from '@hbcfield/shared';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
-import { decidableExtraTimeWhere, overtimeEndFor } from './extra-time-helpers';
+import { decidableExtraTimeWhere, overtimeEndFor, refusalNudge } from './extra-time-helpers';
 import { ExtraTimeBase } from './extra-time.base';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
@@ -197,14 +197,7 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
     // the day, and a request that vanishes when the answer is no is not a record.
     await this.prisma.$transaction([
       // A closed shift has nobody to nudge; only the round records the answer.
-      ...(closed
-        ? []
-        : [
-            this.prisma.timeEntry.update({
-              where: { id: entry.id },
-              data: { reminderState: 'REMINDED', reminderCount: 0, nextRemindAt: new Date() },
-            }),
-          ]),
+      ...(closed ? [] : [this.prisma.timeEntry.updateMany(refusalNudge(entry.id))]),
       ...(round
         ? [
             this.prisma.overtimeRequest.update({
