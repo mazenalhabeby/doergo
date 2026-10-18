@@ -6,8 +6,17 @@ import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import {
-  ArrowLeft, Search, Loader2, Eye, PenLine, MailOpen, CheckCircle2,
-  FileText, Inbox, ChevronLeft, ChevronRight, FolderTree, ListChecks,
+  ArrowLeft,
+  Search,
+  Loader2,
+  Eye,
+  PenLine,
+  MailOpen,
+  CheckCircle2,
+  FileText,
+  Inbox,
+  FolderTree,
+  ListChecks,
 } from "lucide-react"
 import { documentsApi, type IssuedRegister, type IssuedRow, type DocumentChain } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -17,14 +26,20 @@ import { useOpenDocument } from "@/hooks/use-open-document"
 import { cn } from "@/lib/utils"
 import { FolderBrowser } from "./_components/folder-browser"
 import {
-  DocumentActionDialogs, DocumentRowMenu, SelectionBar, VisibilityChip,
-  useDocumentControl, useRowSelection, type DocumentAction,
+  DocumentActionDialogs,
+  DocumentRowMenu,
+  SelectionBar,
+  VisibilityChip,
+  useDocumentControl,
+  useRowSelection,
+  type DocumentAction,
 } from "./_components/document-control"
 import { Checkbox } from "@/components/ui/checkbox"
 import { keys } from "@/lib/query-keys"
 import { useSentDocumentsPage, type Tab } from "./use-sent-documents-page"
 import { TABS, Shimmer, periodLabel, ChainLine, StateChip } from "./sent-documents-page-helpers"
 import { SentDocumentsPageControl } from "./sent-documents-page-control"
+import { ListPager } from "@/components/ui/list-pager"
 
 export default function SentDocumentsPage() {
   const vm = useSentDocumentsPage()
@@ -72,11 +87,7 @@ export default function SentDocumentsPage() {
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
               {t("documents.all.title", "Sent documents")}
-              {counts != null && (
-                <span className="ml-2 text-lg font-normal text-muted-foreground">
-                  ({counts.all})
-                </span>
-              )}
+              {counts != null && <span className="ml-2 text-lg font-normal text-muted-foreground">({counts.all})</span>}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {t("documents.all.subtitle", "Everything issued to members, and where it got to.")}
@@ -86,18 +97,18 @@ export default function SentDocumentsPage() {
 
         {/* Which way of looking */}
         <div className="mb-6 inline-flex rounded-lg border border-border/80 bg-card p-0.5">
-          {([
-            ["attention", ListChecks],
-            ["files", FolderTree],
-          ] as const).map(([key, Icon]) => (
+          {(
+            [
+              ["attention", ListChecks],
+              ["files", FolderTree],
+            ] as const
+          ).map(([key, Icon]) => (
             <button
               key={key}
               onClick={() => setView(key)}
               className={cn(
                 "inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
-                view === key
-                  ? "bg-accent text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
+                view === key ? "bg-accent text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
               )}
             >
               <Icon className="h-4 w-4" />
@@ -163,26 +174,18 @@ export default function SentDocumentsPage() {
             <SentDocumentsPageControl vm={vm} />
 
             {data && data.total > data.limit && (
-              <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                <span className="tabular-nums">{t("documents.all.count", { count: data.total })}</span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline" size="sm"
-                    disabled={page <= 1 || isFetching}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <span className="tabular-nums">{page} / {totalPages}</span>
-                  <Button
-                    variant="outline" size="sm"
-                    disabled={page >= totalPages || isFetching}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <ListPager
+                page={page}
+                totalPages={totalPages}
+                setPage={setPage}
+                framed={false}
+                disabled={isFetching}
+                label={
+                  <>
+                    {t("documents.all.count", { count: data.total })} · {t("common.page", { page, totalPages })}
+                  </>
+                }
+              />
             )}
           </>
         )}

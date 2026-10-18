@@ -8,6 +8,7 @@ import { attendanceApi } from "@/lib/api"
 import { cn, formatTimeOfDay } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { keys } from "@/lib/query-keys"
+import { toneSolid, type Tone } from "@/lib/status-tones"
 
 type Presence = "ON_SITE" | "FIELD" | "REMOTE"
 interface PresenceChangeRow {
@@ -17,11 +18,11 @@ interface PresenceChangeRow {
   sentLate: boolean
 }
 
-const TONE: Record<Presence, { bar: string; dot: string }> = {
-  ON_SITE: { bar: "bg-green-500", dot: "bg-green-500" },
-  FIELD: { bar: "bg-amber-500", dot: "bg-amber-500" },
-  REMOTE: { bar: "bg-indigo-500", dot: "bg-indigo-500" },
-}
+/** Where somebody was, as one of the six tones (lib/status-tones); bar and dot share the colour. */
+const PRESENCE_TONE: Record<Presence, Tone> = { ON_SITE: "success", FIELD: "warning", REMOTE: "primary" }
+const TONE = Object.fromEntries(
+  Object.entries(PRESENCE_TONE).map(([p, tone]) => [p, { bar: toneSolid(tone), dot: toneSolid(tone) }]),
+) as Record<Presence, { bar: string; dot: string }>
 
 /**
  * Where somebody worked through one shift: a bar across the shift and the
@@ -80,19 +81,28 @@ export function PresenceDay({
       <div
         className="relative h-3 overflow-hidden rounded-full bg-muted"
         role="img"
-        aria-label={t("attendance.presence.title", "Where they worked")}>
+        aria-label={t("attendance.presence.title", "Where they worked")}
+      >
         {segments.map((s) => (
-          <div key={s.at} className={cn("absolute inset-y-0", TONE[s.presence].bar)} style={{ left: `${s.left}%`, width: `${s.width}%` }} />
+          <div
+            key={s.at}
+            className={cn("absolute inset-y-0", TONE[s.presence].bar)}
+            style={{ left: `${s.left}%`, width: `${s.width}%` }}
+          />
         ))}
       </div>
       <ol className="divide-y rounded-lg border">
         {changes.map((c) => (
           <li key={c.at} className="grid grid-cols-[4rem_0.75rem_1fr_auto] items-start gap-3 px-3 py-2 text-sm">
-            <time className="tabular-nums text-muted-foreground">{formatTimeOfDay(c.at, hour12, locale, timezone)}</time>
+            <time className="tabular-nums text-muted-foreground">
+              {formatTimeOfDay(c.at, hour12, locale, timezone)}
+            </time>
             <span className={cn("mt-1.5 h-2 w-2 rounded-full", TONE[c.presence].dot)} aria-hidden />
             <span>
               <span className="font-medium text-foreground">{label(c.presence)}</span>
-              <span className="block text-xs text-muted-foreground">{t(`attendance.presence.reasons.${c.reason}`, c.reason)}</span>
+              <span className="block text-xs text-muted-foreground">
+                {t(`attendance.presence.reasons.${c.reason}`, c.reason)}
+              </span>
             </span>
             {c.sentLate && (
               <span className="rounded-full border px-2 py-0.5 text-[11px] text-muted-foreground">

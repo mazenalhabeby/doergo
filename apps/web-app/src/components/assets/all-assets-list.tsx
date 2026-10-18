@@ -5,15 +5,15 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
-import { ChevronLeft, ChevronRight, Package, Search, User } from "lucide-react"
+import { Package, Search, User } from "lucide-react"
 
 import { assetsApi } from "@/lib/api"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AssetStatusChip } from "@/components/assets/asset-status"
 import { keys } from "@/lib/query-keys"
+import { ListPager } from "@/components/ui/list-pager"
 
 const PAGE_SIZE = 50
 
@@ -83,7 +83,13 @@ export function AllAssetsList({ spaceNames }: { spaceNames: Record<string, strin
           />
         </div>
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Checkbox checked={showRetired} onCheckedChange={(v) => { setShowRetired(v === true); setPage(1) }} />
+          <Checkbox
+            checked={showRetired}
+            onCheckedChange={(v) => {
+              setShowRetired(v === true)
+              setPage(1)
+            }}
+          />
           {t("assets.all.showRetired", "Show retired")}
         </label>
       </div>
@@ -103,29 +109,29 @@ export function AllAssetsList({ spaceNames }: { spaceNames: Record<string, strin
             {isLoading &&
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="border-t border-border">
-                  <td colSpan={5} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
+                  <td colSpan={5} className="px-4 py-3">
+                    <Skeleton className="h-4 w-full" />
+                  </td>
                 </tr>
               ))}
             {!isLoading && rows.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
                   <Package className="mx-auto mb-2 h-6 w-6 opacity-50" />
-                  {search
-                    ? t("assets.all.noMatch", "Nothing matches that")
-                    : t("assets.all.empty", "No assets yet")}
+                  {search ? t("assets.all.noMatch", "Nothing matches that") : t("assets.all.empty", "No assets yet")}
                 </td>
               </tr>
             )}
             {rows.map((a) => {
               const holders = a.holders ?? []
               const first = holders[0]
-              const firstName = first?.user
-                ? personName(first.user)
-                : first?.customer?.name ?? ""
+              const firstName = first?.user ? personName(first.user) : (first?.customer?.name ?? "")
               return (
                 <tr key={a.id} className="border-t border-border hover:bg-muted/30">
                   <td className="px-4 py-2.5 font-medium text-foreground">
-                    <Link href={`/assets/${a.id}`} className="hover:underline">{a.name}</Link>
+                    <Link href={`/assets/${a.id}`} className="hover:underline">
+                      {a.name}
+                    </Link>
                   </td>
                   <td className="px-4 py-2.5 text-muted-foreground">{a.category?.name ?? "—"}</td>
                   <td className="px-4 py-2.5 text-muted-foreground">
@@ -142,7 +148,9 @@ export function AllAssetsList({ spaceNames }: { spaceNames: Record<string, strin
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5"><AssetStatusChip status={a.status} /></td>
+                  <td className="px-4 py-2.5">
+                    <AssetStatusChip status={a.status} />
+                  </td>
                 </tr>
               )
             })}
@@ -150,27 +158,7 @@ export function AllAssetsList({ spaceNames }: { spaceNames: Record<string, strin
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-            aria-label={t("common.previous", "Previous")}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="tabular-nums">{page} / {totalPages}</span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            aria-label={t("common.next", "Next")}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
+      <ListPager page={page} totalPages={totalPages} setPage={setPage} framed={false} className="mt-0" />
     </div>
   )
 }

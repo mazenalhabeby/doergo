@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useFormatDistance } from "@/hooks/use-format-distance"
-import { Check, Loader2, MapPin, Navigation } from "lucide-react"
+import { Loader2, MapPin, Navigation } from "lucide-react"
 import { rankClockInLocations } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { OptionCard, OptionRadio } from "@/components/ui/option-card"
 
 export type ClockLocation = {
   id: string
@@ -87,7 +88,8 @@ export function ClockInPicker({
           <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-muted-foreground">
             {t(
               "attendance.my.picker.noFix",
-              ("Your location could not be read. You can still choose — your site is " + "checked when you clock in."))}
+              "Your location could not be read. You can still choose — your site is " + "checked when you clock in.",
+            )}
           </p>
         )}
 
@@ -95,25 +97,12 @@ export function ClockInPicker({
           {ranked.map(({ location: l, distanceM, inside }) => {
             const selected = chosen === l.id
             const hasCoords = l.lat != null && l.lng != null
-            const tooFar = !inside && !l.awayAllowed && hasCoords && distanceM != null && distanceM > (l.geofenceRadius ?? 0)
+            const tooFar =
+              !inside && !l.awayAllowed && hasCoords && distanceM != null && distanceM > (l.geofenceRadius ?? 0)
             return (
               <li key={l.id}>
-                <button
-                  type="button"
-                  onClick={() => setChosen(l.id)}
-                  aria-pressed={selected}
-                  className={`flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition ${
-                    selected ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-                  }`}
-                >
-                  <span
-                    aria-hidden
-                    className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border ${
-                      selected ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"
-                    }`}
-                  >
-                    {selected && <Check className="h-3 w-3" />}
-                  </span>
+                <OptionCard size="sm" selected={selected} aria-pressed={selected} onClick={() => setChosen(l.id)}>
+                  <OptionRadio selected={selected} />
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center gap-1.5">
                       <span className="truncate text-sm font-medium text-foreground">{l.name}</span>
@@ -144,7 +133,7 @@ export function ClockInPicker({
                       )}
                     </span>
                   </span>
-                </button>
+                </OptionCard>
               </li>
             )
           })}

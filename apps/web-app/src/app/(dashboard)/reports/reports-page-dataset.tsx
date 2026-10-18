@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
 import { personName, reportLabel } from "@hbcfield/shared/client"
 import { DATE_PRESETS } from "./use-reports-page"
 import { GRANULARITIES, TIMESHEET_COLS, TIMESHEET_LABEL } from "./reports-page-helpers"
 import type { ReportsPageState } from "./use-reports-page"
 import { ChoiceChip } from "@/components/ui/choice-chip"
+import { Segmented } from "@/components/ui/segmented"
 
 /** Part of ReportsPage's markup, moved here unchanged; it reads the page's state from `s`. */
 export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
@@ -70,19 +70,15 @@ export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
           {isAttendance && (
             <div className="flex items-center gap-3">
               <Label className="text-xs w-20 shrink-0">{t("reports.view", "View")}</Label>
-              <div className="flex gap-1">
-                {([["summary", "Summary"], ["detail", "Detailed"]] as const).map(([v, label]) => {
-                  const on = (v === "detail") === isDetail
-                  return <button
-                    key={v}
-                    onClick={() => setActive((a) => (a ? { ...a, detail: v === "detail" } : a))}
-                    className={cn(
-                      "rounded-lg border px-2.5 py-1 text-xs transition-colors",
-                      on
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:text-foreground")}>{t(`reports.view_${v}`, label)}</button>
-                })}
-              </div>
+              <Segmented
+                ariaLabel={t("reports.view", "View")}
+                value={isDetail ? "detail" : "summary"}
+                onChange={(v) => setActive((a) => (a ? { ...a, detail: v === "detail" } : a))}
+                options={[
+                  { value: "summary", label: t("reports.view_summary", "Summary") },
+                  { value: "detail", label: t("reports.view_detail", "Detailed") },
+                ]}
+              />
               {isDetail &&
                 <span
                   className="text-[11px] text-muted-foreground">{t("reports.detailHint", "Day-by-day clock-in/out for one person")}</span>}

@@ -6,10 +6,18 @@ import { type DocumentTypeRow, type MatchCandidateRow } from "@/lib/api"
 import { personName } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { PdfPreview } from "./pdf-preview"
+import { EmptyNote } from "@/components/ui/empty-note"
 
 /** The right-hand pane: what the member will actually receive, as text or as the real PDF. */
 export function TemplatePreviewPane({
-  previewMode, setPreviewMode, sample, body, preview, types, typeId, name,
+  previewMode,
+  setPreviewMode,
+  sample,
+  body,
+  preview,
+  types,
+  typeId,
+  name,
 }: {
   previewMode: "text" | "pdf"
   setPreviewMode: (m: "text" | "pdf") => void
@@ -65,22 +73,24 @@ export function TemplatePreviewPane({
       </p>
 
       {previewMode === "pdf" ? (
-        <PdfPreview
-          body={body}
-          title={types.find((ty) => ty.id === typeId)?.label || name}
-          memberId={sample?.id}
-        />
+        <PdfPreview body={body} title={types.find((ty) => ty.id === typeId)?.label || name} memberId={sample?.id} />
       ) : (
         /* A page, not a code block: the point is that it reads like the
            letter somebody receives, with the tokens already gone. */
         <div
-          className={"max-h-[70vh] overflow-y-auto rounded-lg border border-slate-200 bg-white " +
-            "p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"}>
+          className={
+            "max-h-[70vh] overflow-y-auto rounded-lg border border-slate-200 bg-white " +
+            "p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+          }
+        >
           {body.trim() ? (
             <>
               <p
-                className={"mb-4 border-b border-slate-200 pb-3 text-lg font-semibold text-slate-900 " +
-                  "dark:border-slate-800 dark:text-slate-100"}>
+                className={
+                  "mb-4 border-b border-slate-200 pb-3 text-lg font-semibold text-slate-900 " +
+                  "dark:border-slate-800 dark:text-slate-100"
+                }
+              >
                 {types.find((ty) => ty.id === typeId)?.label || name || t("documents.templates.untitled")}
               </p>
               <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">
@@ -88,16 +98,12 @@ export function TemplatePreviewPane({
               </pre>
             </>
           ) : (
-            <p className="py-10 text-center text-sm text-slate-400">
-              {t("documents.templates.previewEmpty")}
-            </p>
+            <EmptyNote>{t("documents.templates.previewEmpty")}</EmptyNote>
           )}
         </div>
       )}
 
-      <p className="mt-2 text-xs leading-relaxed text-slate-400">
-        {t("documents.templates.notAdvice")}
-      </p>
+      <p className="mt-2 text-xs leading-relaxed text-slate-400">{t("documents.templates.notAdvice")}</p>
     </aside>
   )
 }

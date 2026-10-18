@@ -8,7 +8,6 @@ import { Loader2, Timer } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { locationsApi } from "@/lib/api"
-import { cn } from "@/lib/utils"
 import { PolicyOptionContent } from "./policy-option"
 import {
   DEFAULT_NO_SHIFT_POLICY,
@@ -19,6 +18,8 @@ import {
 } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { SectionHeader } from "./section-header"
+import { OptionFrame } from "@/components/ui/option-card"
+import { ChoiceChip } from "@/components/ui/choice-chip"
 
 /**
  * Clocking in here with no shift: allow it, allow up to a number of hours a
@@ -38,7 +39,9 @@ export function NoShiftSection({
 }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  const savedPolicy: NoShiftPolicy = isNoShiftPolicy(space.noShiftPolicy) ? space.noShiftPolicy : DEFAULT_NO_SHIFT_POLICY
+  const savedPolicy: NoShiftPolicy = isNoShiftPolicy(space.noShiftPolicy)
+    ? space.noShiftPolicy
+    : DEFAULT_NO_SHIFT_POLICY
   const savedMinutes = clampDailyMinutes(space.noShiftDailyMinutes)
   const [policy, setPolicy] = useState<NoShiftPolicy>(savedPolicy)
   const [hours, setHours] = useState(savedMinutes / 60)
@@ -48,7 +51,8 @@ export function NoShiftSection({
   useEffect(() => setHours(savedMinutes / 60), [savedMinutes])
 
   const save = useMutation({
-    mutationFn: (next: { noShiftPolicy?: NoShiftPolicy; noShiftDailyMinutes?: number }) => locationsApi.update(space.id, next),
+    mutationFn: (next: { noShiftPolicy?: NoShiftPolicy; noShiftDailyMinutes?: number }) =>
+      locationsApi.update(space.id, next),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
       qc.invalidateQueries({ queryKey: keys.locations.lists() })
@@ -65,7 +69,11 @@ export function NoShiftSection({
   const choose = (next: NoShiftPolicy) => {
     if (next === policy || save.isPending) return
     setPolicy(next)
-    save.mutate(next === "LIMIT" ? { noShiftPolicy: next, noShiftDailyMinutes: clampDailyMinutes(hours * 60) } : { noShiftPolicy: next })
+    save.mutate(
+      next === "LIMIT"
+        ? { noShiftPolicy: next, noShiftDailyMinutes: clampDailyMinutes(hours * 60) }
+        : { noShiftPolicy: next },
+    )
   }
 
   const minutes = clampDailyMinutes(Math.round(hours * 60))
@@ -102,20 +110,17 @@ export function NoShiftSection({
       <SectionHeader
         icon={Timer}
         title={t("attendance.noShift.title", "Clocking in without a shift")}
-        description={t("attendance.noShift.subtitle", "What happens when a member who has no shift today clocks in here.")}
+        description={t(
+          "attendance.noShift.subtitle",
+          "What happens when a member who has no shift today clocks in here.",
+        )}
       />
 
       <div className="grid gap-2" style={{ maxWidth: 680 }}>
         {OPTIONS.map((o) => {
           const active = policy === o.value
           return (
-            <div
-              key={o.value}
-              className={cn(
-                "rounded-xl border transition-colors",
-                active ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40",
-              )}
-            >
+            <OptionFrame key={o.value} selected={active}>
               <button
                 type="button"
                 onClick={() => choose(o.value)}
@@ -139,8 +144,10 @@ export function NoShiftSection({
                       −
                     </button>
                     <span
-                      className={"min-w-16 border-x px-3 py-1.5 text-center text-sm font-semibold " +
-                        "tabular-nums"}>{formatHours(minutes)}</span>
+                      className={"min-w-16 border-x px-3 py-1.5 text-center text-sm font-semibold " + "tabular-nums"}
+                    >
+                      {formatHours(minutes)}
+                    </span>
                     <button
                       type="button"
                       className="px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-40"
@@ -153,21 +160,17 @@ export function NoShiftSection({
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {NO_SHIFT_LIMIT.PRESETS_MINUTES.map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setHours(m / 60)}
-                        className={cn(
-                          "rounded-full border px-2.5 py-0.5 text-xs",
-                          m === minutes ? "border-primary text-primary" : "text-muted-foreground hover:border-muted-foreground/40",
-                        )}
-                      >
+                      <ChoiceChip key={m} type="button" on={m === minutes} onClick={() => setHours(m / 60)}>
                         {formatHours(m)}
-                      </button>
+                      </ChoiceChip>
                     ))}
                   </div>
                   {hoursDirty && (
-                    <Button size="sm" onClick={() => save.mutate({ noShiftDailyMinutes: minutes })} disabled={save.isPending}>
+                    <Button
+                      size="sm"
+                      onClick={() => save.mutate({ noShiftDailyMinutes: minutes })}
+                      disabled={save.isPending}
+                    >
                       {save.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                       {t("common.save")}
                     </Button>
@@ -179,15 +182,15 @@ export function NoShiftSection({
                   )}
                 </div>
               )}
-            </div>
+            </OptionFrame>
           )
         })}
 
         <p className="mt-1 text-xs leading-snug text-muted-foreground">
           {t(
             "attendance.noShift.note",
-            ("Members with a shift are not affected. The limit counts every hour the " +
-              "member worked today, at any workspace, in this workspace's time zone."),
+            "Members with a shift are not affected. The limit counts every hour the " +
+              "member worked today, at any workspace, in this workspace's time zone.",
           )}
         </p>
       </div>

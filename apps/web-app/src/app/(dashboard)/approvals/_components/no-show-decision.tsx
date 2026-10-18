@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { keys } from "@/lib/query-keys"
 import { cn } from "@/lib/utils"
+import { ChoiceChip } from "@/components/ui/choice-chip"
 
 const AddAttendanceDialog = dynamic(
   () => import("../../members/[id]/_components/add-attendance-dialog").then((m) => m.AddAttendanceDialog),
@@ -90,17 +91,9 @@ export function NoShowDecision({
         {choice === "excuse" && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {NO_SHOW_EXCUSE_REASONS.map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setReasonCode(r)}
-                className={cn(
-                  "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                  reasonCode === r ? "border-primary bg-primary/10 text-primary" : "border-border text-foreground hover:bg-muted",
-                )}
-              >
+              <ChoiceChip key={r} type="button" on={reasonCode === r} onClick={() => setReasonCode(r)}>
                 {t(`approvals.noShow.reasons.${r}`)}
-              </button>
+              </ChoiceChip>
             ))}
           </div>
         )}
@@ -193,9 +186,9 @@ function ChoiceCard({
         }
       }}
       className={cn(
-        ("flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 " +
+        "flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 " +
           "transition-colors focus-visible:outline-none focus-visible:ring-2 " +
-          "focus-visible:ring-ring"),
+          "focus-visible:ring-ring",
         selected ? "border-primary bg-primary/5" : "border-border hover:bg-muted/60",
       )}
     >

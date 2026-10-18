@@ -8,17 +8,26 @@ import type { OvertimeRequest } from "@/lib/api"
 import { overtimeApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { UserAvatar } from "@/components/user-avatar"
 import { clock, headline, methodWords, mins, roundOf, STATE_PILL } from "../_lib/round-words"
+import { ListPager } from "@/components/ui/list-pager"
 
 type Filters = { from: string; to: string; spaceId?: string; technicianId?: string }
 const PAGE = 20
 
 /** Every round in the period, newest first, grouped by day — each one a sentence. */
-export function RoundsList(
-  { filters, now, selected, onSelect }: { filters: Filters; now: Date; selected: string | null; onSelect: (id: string) => void }) {
+export function RoundsList({
+  filters,
+  now,
+  selected,
+  onSelect,
+}: {
+  filters: Filters
+  now: Date
+  selected: string | null
+  onSelect: (id: string) => void
+}) {
   const { t, i18n } = useTranslation()
   const [page, setPage] = useState(1)
   useEffect(() => setPage(1), [filters.from, filters.to, filters.spaceId, filters.technicianId])
@@ -31,10 +40,12 @@ export function RoundsList(
   const rows: OvertimeRequest[] = data?.data ?? []
   const meta = data?.meta
   const dayOf = (r: OvertimeRequest) =>
-    new Intl.DateTimeFormat(
-      i18n.language,
-      { weekday: "long", day: "numeric", month: "short", timeZone: r.location?.timezone || undefined }).format(
-      new Date(r.createdAt))
+    new Intl.DateTimeFormat(i18n.language, {
+      weekday: "long",
+      day: "numeric",
+      month: "short",
+      timeZone: r.location?.timezone || undefined,
+    }).format(new Date(r.createdAt))
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -43,7 +54,11 @@ export function RoundsList(
         <p className="text-xs text-muted-foreground">{t("overtimePage.list.sub")}</p>
       </div>
       {isLoading ? (
-        <div className="space-y-2 p-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
+        <div className="space-y-2 p-4">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-14 w-full" />
+          ))}
+        </div>
       ) : rows.length === 0 ? (
         <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
           <Clock className="size-7 text-muted-foreground" />
@@ -65,13 +80,21 @@ export function RoundsList(
               (r.cycle ?? 1) > 1 ? t("overtimePage.round", { n: r.cycle }) : null,
               state === "REFUSED" && r.rejectionReason ? `“${r.rejectionReason}”` : null,
             ].filter(Boolean)
-            const [first, ...rest] = (r.technician ? `${r.technician.firstName} ${r.technician.lastName}` : "").split(" ")
+            const [first, ...rest] = (r.technician ? `${r.technician.firstName} ${r.technician.lastName}` : "").split(
+              " ",
+            )
             return (
               <Fragment key={r.id}>
-                {newDay &&
+                {newDay && (
                   <div
-                    className={"border-t border-border bg-muted/40 px-4 py-1.5 text-xs font-semibold " +
-                      "text-muted-foreground first:border-t-0"}>{day}</div>}
+                    className={
+                      "border-t border-border bg-muted/40 px-4 py-1.5 text-xs font-semibold " +
+                      "text-muted-foreground first:border-t-0"
+                    }
+                  >
+                    {day}
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={() => onSelect(r.id)}
@@ -89,37 +112,32 @@ export function RoundsList(
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm text-foreground">{headline(t, r, state, worked, agreed)}</span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground [overflow-wrap:anywhere]">{subBits.join(" · ")}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground [overflow-wrap:anywhere]">
+                      {subBits.join(" · ")}
+                    </span>
                   </span>
                   <span className="shrink-0 text-right">
-                    <span className="block text-sm font-semibold tabular-nums text-foreground">{worked > 0 ? mins(worked) : "—"}</span>
-                    {overBy > 0 &&
-                      <span
-                        className="block text-[11px] text-amber-600 dark:text-amber-400">{t(
-                          "overtimePage.overBy",
-                          { minutes: mins(overBy) })}</span>}
+                    <span className="block text-sm font-semibold tabular-nums text-foreground">
+                      {worked > 0 ? mins(worked) : "—"}
+                    </span>
+                    {overBy > 0 && (
+                      <span className="block text-[11px] text-amber-600 dark:text-amber-400">
+                        {t("overtimePage.overBy", { minutes: mins(overBy) })}
+                      </span>
+                    )}
                   </span>
                   <span
-                    className={cn(
-                      "shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                      STATE_PILL[state])}>{t(`overtimePage.state.${state}`)}</span>
+                    className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold", STATE_PILL[state])}
+                  >
+                    {t(`overtimePage.state.${state}`)}
+                  </span>
                 </button>
               </Fragment>
             )
           })}
         </div>
       )}
-      {meta && meta.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 border-t border-border py-3">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>{t("common.previous")}</Button>
-          <span className="text-sm text-muted-foreground">{t("common.page", { page, totalPages: meta.totalPages })}</span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page >= meta.totalPages}
-            onClick={() => setPage(page + 1)}>{t("common.next")}</Button>
-        </div>
-      )}
+      {meta && <ListPager page={page} totalPages={meta.totalPages} setPage={setPage} />}
     </section>
   )
 }

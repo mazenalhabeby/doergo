@@ -28,7 +28,7 @@ import { RequestFields, type RequestFieldsValue } from "@/components/requests/re
 import { LeaveBalanceBreakdown } from "@/components/leave/leave-balance-breakdown"
 import { balanceView, leaveYearLabel } from "@/lib/leave-ledger"
 import { useMyTimeOffPage, toISO, sameDay, REASON_TYPES } from "./use-my-time-off-page"
-import { STATUS_STYLES, fmt, Stat, Legend } from "./my-time-off-page-helpers"
+import { fmt, Legend } from "./my-time-off-page-helpers"
 import { MyTimeOffPageAllowanceTitleWork } from "./my-time-off-page-allowance-title-work"
 import { MyTimeOffPageMy } from "./my-time-off-page-my"
 import { MyTimeOffPageMy2 } from "./my-time-off-page-my2"

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { keys } from "@/lib/query-keys"
+import { ListPager } from "@/components/ui/list-pager"
 
 /**
  * One table on a record — a machine's parts, an apartment's keys.
@@ -40,7 +41,10 @@ export function AssetListTable({ assetId, list }: { assetId: string; list: KindL
 
   const add = useMutation({
     mutationFn: () => assetsApi.addRow(assetId, list.label, draft),
-    onSuccess: () => { setDraft({}); refresh() },
+    onSuccess: () => {
+      setDraft({})
+      refresh()
+    },
     onError: (e: Error) => notify.error(e.message),
   })
 
@@ -63,7 +67,10 @@ export function AssetListTable({ assetId, list }: { assetId: string; list: KindL
     <div className="space-y-3">
       {list.shared && (
         <p className="text-[11px] text-muted-foreground">
-          {t("assetLists.sharedNote", "This is the kind's catalogue — every one of them reads it, and a change here changes it for all.")}
+          {t(
+            "assetLists.sharedNote",
+            "This is the kind's catalogue — every one of them reads it, and a change here changes it for all.",
+          )}
         </p>
       )}
 
@@ -72,7 +79,10 @@ export function AssetListTable({ assetId, list }: { assetId: string; list: KindL
           <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
             placeholder={t("assetLists.search", "Search…")}
             className="h-8 pl-8 text-sm"
           />
@@ -92,9 +102,7 @@ export function AssetListTable({ assetId, list }: { assetId: string; list: KindL
                 <th key={c.label} className="px-3 py-2 text-left font-medium">
                   {c.label}
                   {keyColumn(list)?.label === c.label && (
-                    <span className="ml-1 text-[9px] text-muted-foreground/60">
-                      {t("assetLists.isKey", "code")}
-                    </span>
+                    <span className="ml-1 text-[9px] text-muted-foreground/60">{t("assetLists.isKey", "code")}</span>
                   )}
                 </th>
               ))}
@@ -136,7 +144,9 @@ export function AssetListTable({ assetId, list }: { assetId: string; list: KindL
                   <Input
                     value={draft[c.label] ?? ""}
                     onChange={(e) => setDraft((d) => ({ ...d, [c.label]: e.target.value }))}
-                    onKeyDown={(e) => { if (e.key === "Enter" && canAdd) add.mutate() }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && canAdd) add.mutate()
+                    }}
                     placeholder={c.label}
                     className="h-8 text-sm"
                   />
@@ -152,24 +162,17 @@ export function AssetListTable({ assetId, list }: { assetId: string; list: KindL
         </table>
       </div>
 
-      {meta && meta.totalPages > 1 && (
-        <div className="flex items-center justify-end gap-2">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-            {t("common.previous", "Previous")}
-          </Button>
-          <span className="text-xs text-muted-foreground tabular-nums">{page} / {meta.totalPages}</span>
-          <Button variant="outline" size="sm" disabled={page >= meta.totalPages} onClick={() => setPage((p) => p + 1)}>
-            {t("common.next", "Next")}
-          </Button>
-        </div>
-      )}
+      {meta && <ListPager page={page} totalPages={meta.totalPages} setPage={setPage} framed={false} className="mt-0" />}
     </div>
   )
 }
 
 /** One row, edited in place and saved when the cell loses focus. */
 function Row({
-  row, list, onSave, onRemove,
+  row,
+  list,
+  onSave,
+  onRemove,
 }: {
   row: AssetListRow
   list: KindList

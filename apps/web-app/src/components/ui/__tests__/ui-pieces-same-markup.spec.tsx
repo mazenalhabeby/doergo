@@ -92,8 +92,9 @@ describe("shared UI pieces render what their copies rendered", () => {
           aria-pressed={on}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+            // The approved single look (docs/design/ui-pieces/variants.md §3): on = primary text too.
             on
-              ? "border-primary bg-primary/10 text-foreground"
+              ? "border-primary bg-primary/10 text-primary"
               : "border-border text-muted-foreground hover:text-foreground",
           )}
         >

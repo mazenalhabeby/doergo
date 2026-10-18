@@ -20,6 +20,7 @@ import { AttachmentPicker, ImageLightbox, PendingFileChips } from "@/components/
 import { Textarea } from "@/components/ui/textarea"
 import { keys } from "@/lib/query-keys"
 import { SEV_DOT, SEV_TEXT, RESOLVE_REASONS, fmt, isImg, Chip } from "./issues-helpers"
+import { ChoiceChip } from "@/components/ui/choice-chip"
 
 /** One shift issue's thread, moved here unchanged from the issues page. */
 export function IssueThread(
@@ -124,12 +125,9 @@ export function IssueThread(
                     <p className="mb-2 text-xs font-semibold text-muted-foreground">Reason (optional)</p>
                     <div className="mb-2 flex flex-wrap gap-1.5">
                       {RESOLVE_REASONS.map((r) => (
-                        <button key={r} type="button" onClick={() => setReason(r)}
-                          className={cn(
-                            "rounded-full border px-2.5 py-1 text-[11px] transition-colors",
-                            reason === r
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border text-muted-foreground hover:bg-accent")}>{r}</button>
+                        <ChoiceChip key={r} type="button" on={reason === r} onClick={() => setReason(r)}>
+                          {r}
+                        </ChoiceChip>
                       ))}
                     </div>
                     <Textarea

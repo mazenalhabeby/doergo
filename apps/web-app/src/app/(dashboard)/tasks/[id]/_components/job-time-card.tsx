@@ -5,14 +5,21 @@ import { Timer } from "lucide-react"
 import { personName, formatDuration } from "@hbcfield/shared/client"
 import { useJobTime } from "@/hooks/use-job-time"
 import { UserAvatar } from "@/components/user-avatar"
+import { toneSolid, toneText, type Tone } from "@/lib/status-tones"
 
 const KINDS = ["travel", "working", "blocked"] as const
-const TONE = { travel: "bg-sky-500", working: "bg-green-500", blocked: "bg-amber-500" } as const
+/** Each kind of job time as one of the six tones (lib/status-tones): bars and figures share it. */
+const KIND_TONE = { travel: "info", working: "success", blocked: "warning" } as const satisfies Record<string, Tone>
+const TONE = {
+  travel: toneSolid(KIND_TONE.travel),
+  working: toneSolid(KIND_TONE.working),
+  blocked: toneSolid(KIND_TONE.blocked),
+}
 const TEXT = {
-  travel: "text-sky-600 dark:text-sky-400",
-  working: "text-green-600 dark:text-green-400",
-  blocked: "text-amber-600 dark:text-amber-400"
-} as const
+  travel: toneText(KIND_TONE.travel),
+  working: toneText(KIND_TONE.working),
+  blocked: toneText(KIND_TONE.blocked),
+}
 
 /**
  * Job time on the task page (packages/shared/src/tasks/job-time.ts): WORKING
@@ -79,7 +86,9 @@ export function JobTimeCard({ taskId, paused }: { taskId: string; paused: boolea
                   w.travel ? t("tasks.jobTime.travelShort", { time: formatDuration(w.travel) }) : null,
                   // A crew member's own stop is their blocked time — said on their row, or it reads as nothing.
                   w.blocked ? t("tasks.jobTime.blockedShort", { time: formatDuration(w.blocked) }) : null,
-                ].filter(Boolean).join(" · ")}
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
             </div>
           ))}
@@ -90,9 +99,10 @@ export function JobTimeCard({ taskId, paused }: { taskId: string; paused: boolea
         <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">
           {[
             t("tasks.jobTime.startedFor", { name: personName(started.user), for: personName(started.forUser) }),
-            started.reason ? `“${started.reason}”` : null].filter(
-            Boolean).join(
-            " · ")}
+            started.reason ? `“${started.reason}”` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
       ) : null}
       <p className="mt-3 text-xs text-muted-foreground">{t("tasks.jobTime.onlyInShift")}</p>

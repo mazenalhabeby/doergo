@@ -2,7 +2,8 @@
 
 import { CalendarDays, Clock3 } from "lucide-react"
 import { ProgressRing } from "@/components/progress-ring"
-import { fmt, Stat } from "./my-time-off-page-helpers"
+import { fmt } from "./my-time-off-page-helpers"
+import { StatTile } from "@/components/ui/stat-tile"
 import type { MyTimeOffPageState } from "./use-my-time-off-page"
 
 /** Part of MyTimeOffPage's markup, moved here unchanged; it reads the page's state from `vm`. */
@@ -59,11 +60,19 @@ export function MyTimeOffPageAllowanceTitleWork({ vm }: { vm: MyTimeOffPageState
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Stat icon={Clock3} value={String(stats.pending)} label={t("timeOff.my.statPending")}
-              tone={stats.pending > 0 ? "amber" : undefined} />
-        <Stat icon={CalendarDays} small
-              value={stats.next ? fmt(stats.next.startDate) : "—"}
-              label={t("timeOff.my.statNext")} />
+        <StatTile
+          icon={Clock3}
+          value={String(stats.pending)}
+          label={t("timeOff.my.statPending")}
+          tone={stats.pending > 0 ? "warning" : "neutral"}
+          iconTone={stats.pending > 0 ? "warning" : "neutral"}
+        />
+        <StatTile
+          icon={CalendarDays}
+          iconTone="neutral"
+          value={<span className="text-sm">{stats.next ? fmt(stats.next.startDate) : "—"}</span>}
+          label={t("timeOff.my.statNext")}
+        />
       </div>
     </div>
   )

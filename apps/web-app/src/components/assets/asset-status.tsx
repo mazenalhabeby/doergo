@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next"
 import { ASSET_STATUS_ORDER, type AssetStatusKey } from "@hbcfield/shared/client"
 
 import { cn } from "@/lib/utils"
+import { ChoiceChip } from "@/components/ui/choice-chip"
+import { toneChip } from "@/lib/status-tones"
 
 /*
   One look per state, and one place that decides it.
@@ -13,9 +15,9 @@ import { cn } from "@/lib/utils"
   saying one thing and the record it opens another.
 */
 const TONE: Record<AssetStatusKey, string> = {
-  ACTIVE: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
-  MAINTENANCE: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
-  INACTIVE: "bg-muted text-muted-foreground",
+  ACTIVE: toneChip("success"),
+  MAINTENANCE: toneChip("warning"),
+  INACTIVE: toneChip("neutral"),
   // Retired reads as set aside, not as a warning: nothing is wrong with it.
   RETIRED: "border border-dashed border-border bg-transparent text-muted-foreground",
 }
@@ -26,7 +28,10 @@ export const asStatus = (value: unknown): AssetStatusKey =>
 export function useAssetStatusLabel() {
   const { t } = useTranslation()
   const fallback: Record<AssetStatusKey, string> = {
-    ACTIVE: "Active", MAINTENANCE: "In maintenance", INACTIVE: "Inactive", RETIRED: "Retired",
+    ACTIVE: "Active",
+    MAINTENANCE: "In maintenance",
+    INACTIVE: "Inactive",
+    RETIRED: "Retired",
   }
   return (status: AssetStatusKey) => t(`assetFacts.status.${status}`, fallback[status])
 }
@@ -62,23 +67,23 @@ export function AssetStatusPicker({
   const label = useAssetStatusLabel()
   return (
     <div className="space-y-1.5">
-      <div role="radiogroup" aria-label={t("assetFacts.status.label", "Status")} className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+      <div
+        role="radiogroup"
+        aria-label={t("assetFacts.status.label", "Status")}
+        className="grid grid-cols-2 gap-1.5 sm:grid-cols-4"
+      >
         {ASSET_STATUS_ORDER.map((s) => (
-          <button
+          <ChoiceChip
             key={s}
             type="button"
             role="radio"
             aria-checked={value === s}
+            on={value === s}
             onClick={() => onChange(s)}
-            className={cn(
-              "h-8 rounded-md border px-2 text-xs font-medium transition-colors",
-              value === s
-                ? "border-primary bg-primary/10 text-foreground"
-                : "border-border text-muted-foreground hover:text-foreground",
-            )}
+            className="h-8 font-medium"
           >
             {label(s)}
-          </button>
+          </ChoiceChip>
         ))}
       </div>
       {/* Said every time Retired is chosen, because it is the one choice here

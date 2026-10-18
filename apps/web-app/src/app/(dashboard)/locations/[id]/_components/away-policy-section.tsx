@@ -10,9 +10,9 @@ import { MapPin } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { locationsApi } from "@/lib/api"
 import { DEFAULT_GEOFENCE_POLICY, type GeofencePolicy } from "@hbcfield/shared/client"
-import { cn } from "@/lib/utils"
 import { PolicyOptionContent } from "./policy-option"
 import { SectionHeader } from "./section-header"
+import { OptionCard } from "@/components/ui/option-card"
 
 /**
  * The CEILING on working away from this site.
@@ -26,7 +26,14 @@ import { SectionHeader } from "./section-header"
 export function AwayPolicySection({
   space,
 }: {
-  space: { id: string; name: string; lat?: number | null; lng?: number | null; geofenceRadius?: number; geofencePolicy?: string | null }
+  space: {
+    id: string
+    name: string
+    lat?: number | null
+    lng?: number | null
+    geofenceRadius?: number
+    geofencePolicy?: string | null
+  }
 }) {
   const { t } = useTranslation()
   const formatDistance = useFormatDistance()
@@ -71,9 +78,9 @@ export function AwayPolicySection({
       title: t("attendance.away.allowed", "Away is possible here"),
       body: t(
         "attendance.away.allowedHint",
-        ("Only for members who are individually allowed it. Everyone else is still " +
+        "Only for members who are individually allowed it. Everyone else is still " +
           "refused outside the ring. The day keeps its shift and its rests, and is " +
-          "flagged for review."),
+          "flagged for review.",
       ),
     },
     {
@@ -93,7 +100,10 @@ export function AwayPolicySection({
             ? t("attendance.away.subtitle", "What happens when somebody is not inside the {{radius}} ring.", {
                 radius: formatDistance(space.geofenceRadius ?? 0),
               })
-            : t("attendance.away.noPin", "This workspace has no location on the map, so there is no ring to be outside of.")
+            : t(
+                "attendance.away.noPin",
+                "This workspace has no location on the map, so there is no ring to be outside of.",
+              )
         }
       />
 
@@ -102,20 +112,9 @@ export function AwayPolicySection({
           {OPTIONS.map((o) => {
             const active = policy === o.value
             return (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => choose(o.value)}
-                disabled={save.isPending}
-                className={cn(
-                  "flex items-start gap-3 rounded-xl border p-4 text-left transition-colors disabled:opacity-60",
-                  active
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-muted-foreground/40",
-                )}
-              >
+              <OptionCard key={o.value} selected={active} onClick={() => choose(o.value)} disabled={save.isPending}>
                 <PolicyOptionContent active={active} title={o.title} body={o.body} saving={save.isPending} />
-              </button>
+              </OptionCard>
             )
           })}
 

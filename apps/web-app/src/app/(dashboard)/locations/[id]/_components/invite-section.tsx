@@ -3,18 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  Share2,
-  Send,
-  Loader2,
-  Inbox,
-  Users,
-  Clock3,
-  MapPin,
-  FileText,
-  ListChecks,
-  UserPlus,
-} from "lucide-react"
+import { Share2, Send, Loader2, Inbox, Users, Clock3, MapPin, FileText, ListChecks, UserPlus } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { spaceSharingApi, type SpaceShareLevel, type SpaceShareStatus } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -27,14 +16,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SectionHeader, EmptyState } from "./section-header"
 import { keys } from "@/lib/query-keys"
 import Link from "next/link"
+import type { Tone } from "@/lib/status-tones"
 
 export const LEVELS: SpaceShareLevel[] = ["VIEW", "CONTRIBUTE", "CONTROL"]
 
-export const STATUS_STYLES: Record<SpaceShareStatus, string> = {
-  PENDING: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  ACTIVE: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
-  REVOKED: "border-border bg-muted text-muted-foreground",
-  DECLINED: "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300",
+/** A share's state as one of the six tones (lib/status-tones). */
+export const STATUS_TONE: Record<SpaceShareStatus, Tone> = {
+  PENDING: "warning",
+  ACTIVE: "success",
+  REVOKED: "neutral",
+  DECLINED: "danger",
 }
 
 // Visibility scope flags → icon + i18n key. Kept as data so the invite form and
@@ -98,7 +89,9 @@ export function InviteSection({ spaceId, spaceName }: { spaceId: string; spaceNa
       <div className="rounded-xl border bg-muted/20 p-4 space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="guest-code" className="text-xs">{t("spaceSharing.fields.guestCode")}</Label>
+            <Label htmlFor="guest-code" className="text-xs">
+              {t("spaceSharing.fields.guestCode")}
+            </Label>
             <Input
               id="guest-code"
               value={code}
@@ -132,25 +125,27 @@ export function InviteSection({ spaceId, spaceName }: { spaceId: string; spaceNa
             {SCOPE_FLAGS.map(({ key, icon: Icon, label }) => (
               <label
                 key={key}
-                className={"flex items-center justify-between gap-3 rounded-lg border bg-card p-3 " +
-                  "cursor-pointer hover:bg-muted/40 transition-colors"}
+                className={
+                  "flex items-center justify-between gap-3 rounded-lg border bg-card p-3 " +
+                  "cursor-pointer hover:bg-muted/40 transition-colors"
+                }
               >
                 <span className="flex items-center gap-2 text-sm text-foreground">
                   <Icon className="h-4 w-4 text-muted-foreground" />
                   {t(`spaceSharing.scope.${label}`)}
                 </span>
-                <Switch
-                  checked={scope[key]}
-                  onCheckedChange={(v) => setScope((prev) => ({ ...prev, [key]: v }))}
-                />
+                <Switch checked={scope[key]} onCheckedChange={(v) => setScope((prev) => ({ ...prev, [key]: v }))} />
               </label>
             ))}
           </div>
         </div>
 
         <label
-          className={"flex items-center justify-between gap-3 rounded-lg border bg-card p-3 " +
-            "cursor-pointer hover:bg-muted/40 transition-colors"}>
+          className={
+            "flex items-center justify-between gap-3 rounded-lg border bg-card p-3 " +
+            "cursor-pointer hover:bg-muted/40 transition-colors"
+          }
+        >
           <span className="min-w-0">
             <span className="flex items-center gap-2 text-sm text-foreground">
               <ListChecks className="h-4 w-4 text-muted-foreground" />
@@ -212,8 +207,11 @@ export function RequestsSection({ spaceId }: { spaceId: string }) {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 min-w-0">
                   <span
-                    className={"flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 " +
-                      "text-amber-600 dark:bg-amber-950 dark:text-amber-300"}>
+                    className={
+                      "flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 " +
+                      "text-amber-600 dark:bg-amber-950 dark:text-amber-300"
+                    }
+                  >
                     {req.type === "WORKER" ? <UserPlus className="h-4 w-4" /> : <ListChecks className="h-4 w-4" />}
                   </span>
                   <div className="min-w-0">
@@ -225,9 +223,12 @@ export function RequestsSection({ spaceId }: { spaceId: string }) {
                     </div>
                     {req.note && <p className="mt-1 text-xs text-muted-foreground">{req.note}</p>}
                     <p className="mt-1 text-[11px] text-muted-foreground/70">
-                      {new Date(req.createdAt).toLocaleString(
-                        i18n.language,
-                        { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      {new Date(req.createdAt).toLocaleString(i18n.language, {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
                   </div>
                 </div>

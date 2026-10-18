@@ -1,7 +1,7 @@
 import React from "react"
 import { cn } from "@/lib/utils"
 import { type TimeEntry } from "@/lib/api"
-import { Button } from "@/components/ui/button"
+import { ListPager } from "@/components/ui/list-pager"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ChevronRight, ListChecks } from "lucide-react"
 import { WorkLogTimeline } from "@/components/worklog-timeline"
@@ -183,37 +183,17 @@ export function TrackingEntriesTable({
           </TableBody>
         </Table>
 
-        {/* Pagination */}
-        {meta && meta.totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-3 border-t border-border">
-            <p className="text-sm text-muted-foreground">
-              {t("attendance.tracking.showingEntries", {
-                start: (page - 1) * limit + 1,
-                end: Math.min(page * limit, meta.total),
-                total: meta.total,
-              })}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                {t("common.previous")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-                onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
-                disabled={page === meta.totalPages}
-              >
-                {t("common.next")}
-              </Button>
-            </div>
-          </div>
+        {meta && (
+          <ListPager
+            page={page}
+            totalPages={meta.totalPages}
+            setPage={setPage}
+            label={t("attendance.tracking.showingEntries", {
+              start: (page - 1) * limit + 1,
+              end: Math.min(page * limit, meta.total),
+              total: meta.total,
+            })}
+          />
         )}
       </>
     </>

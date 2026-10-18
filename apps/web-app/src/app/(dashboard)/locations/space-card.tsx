@@ -22,7 +22,7 @@ import {
 import { AVAILABLE_MODULES } from "@hbcfield/shared/client"
 import { locationsApi, type CompanyLocation, type StatusWorkflow } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { CenteredNotice } from "@/components/space-page"
+import { EmptyState as SharedEmptyState } from "@/components/ui/empty-state"
 import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
@@ -67,19 +67,17 @@ export function EmptyState({
 }) {
   const { t } = useTranslation()
   return (
-    <CenteredNotice
+    <SharedEmptyState
       icon={Building2}
-      className="py-20"
       title={t("locations.empty.title")}
       description={t("locations.empty.description")}
-    >
-      {isAdmin && (
-        <Button onClick={onCreateClick} disabled={locked} title={locked ? lockReason : undefined} className="mt-6 gap-2">
+      action={isAdmin && (
+        <Button onClick={onCreateClick} disabled={locked} title={locked ? lockReason : undefined} className="gap-2">
           <Plus className="h-4 w-4" />
           {t("locations.createSpace")}
         </Button>
       )}
-    </CenteredNotice>
+    />
   )
 }
 

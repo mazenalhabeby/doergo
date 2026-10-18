@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { AlertTriangle, Download, FileText } from "lucide-react"
+import { AlertTriangle, Download } from "lucide-react"
 
 import { organizationsApi } from "@/lib/api"
 import { formatMoney, MONEY_LOCALE } from "@/lib/money"
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Skeleton } from "@/components/ui/skeleton"
 import { keys } from "@/lib/query-keys"
+import { EmptyNote } from "@/components/ui/empty-note"
 
 /**
  * A worker's statement: their hours, per workspace, at THEIR rate with us.
@@ -55,7 +56,10 @@ export function StatementTab({ memberId }: { memberId: string }) {
     queryFn: () => organizationsApi.getStatement(memberId, { from, to }),
   })
 
-  const money = useMemo(() => (cents: number) => formatMoney(cents, data?.currency ?? "EUR", MONEY_LOCALE), [data?.currency])
+  const money = useMemo(
+    () => (cents: number) => formatMoney(cents, data?.currency ?? "EUR", MONEY_LOCALE),
+    [data?.currency],
+  )
   const period = `${formatDayKey(from, i18n.language)} – ${formatDayKey(to, i18n.language)}`
 
   const download = async () => {
@@ -96,7 +100,13 @@ export function StatementTab({ memberId }: { memberId: string }) {
           <h3 className="text-base font-semibold text-foreground">{t("members.statement.title")}</h3>
           <p className="text-sm text-muted-foreground">{t("members.statement.intro")}</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={download} disabled={!data || data.lines.length === 0}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={download}
+          disabled={!data || data.lines.length === 0}
+        >
           <Download className="h-4 w-4" />
           {t("members.statement.downloadPdf")}
         </Button>
@@ -106,7 +116,8 @@ export function StatementTab({ memberId }: { memberId: string }) {
         <div
           role="radiogroup"
           aria-label={t("members.statement.period")}
-          className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/50 p-0.5">
+          className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/50 p-0.5"
+        >
           {(["lastMonth", "thisMonth", "custom"] as const).map((p) => (
             <button
               key={p}
@@ -115,9 +126,11 @@ export function StatementTab({ memberId }: { memberId: string }) {
               aria-checked={preset === p}
               onClick={() => setPreset(p)}
               className={cn(
-                ("rounded-md px-3 py-1 text-[13px] transition-colors " +
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"),
-                preset === p ? "bg-card font-semibold text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                "rounded-md px-3 py-1 text-[13px] transition-colors " +
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                preset === p
+                  ? "bg-card font-semibold text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {t(`members.statement.${p}`)}
@@ -126,9 +139,17 @@ export function StatementTab({ memberId }: { memberId: string }) {
         </div>
         {preset === "custom" && (
           <div className="flex items-center gap-2">
-            <DatePicker value={custom[0]} onChange={(v) => v && setCustom(([, b]) => [v, b < v ? v : b])} className="w-40" />
+            <DatePicker
+              value={custom[0]}
+              onChange={(v) => v && setCustom(([, b]) => [v, b < v ? v : b])}
+              className="w-40"
+            />
             <span className="text-muted-foreground">–</span>
-            <DatePicker value={custom[1]} onChange={(v) => v && setCustom(([a]) => [a > v ? v : a, v])} className="w-40" />
+            <DatePicker
+              value={custom[1]}
+              onChange={(v) => v && setCustom(([a]) => [a > v ? v : a, v])}
+              className="w-40"
+            />
           </div>
         )}
         {preset !== "custom" && <span className="text-sm text-muted-foreground">{period}</span>}
@@ -137,15 +158,14 @@ export function StatementTab({ memberId }: { memberId: string }) {
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         {isLoading ? (
           <div className="space-y-2 p-5">
-            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-8 w-full" />
+            ))}
           </div>
         ) : error ? (
           <p className="p-6 text-sm text-red-600">{(error as Error).message}</p>
         ) : !data || data.lines.length === 0 ? (
-          <div className="py-12 text-center">
-            <FileText className="mx-auto mb-3 size-10 text-muted-foreground/20" />
-            <p className="text-sm text-muted-foreground">{t("members.statement.empty")}</p>
-          </div>
+          <EmptyNote>{t("members.statement.empty")}</EmptyNote>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[34rem] text-sm">
@@ -162,24 +182,32 @@ export function StatementTab({ memberId }: { memberId: string }) {
                 {data.lines.map((l, i) => (
                   <tr key={`${l.spaceId}-${l.rateCents}-${i}`} className="border-b border-border/50 last:border-0">
                     <td className="px-5 py-2.5">
-                      <span className="font-medium text-foreground">{l.spaceName ?? t("members.statement.noWorkspace")}</span>
+                      <span className="font-medium text-foreground">
+                        {l.spaceName ?? t("members.statement.noWorkspace")}
+                      </span>
                       <span className="block text-xs text-muted-foreground">
                         {l.basis === "days"
                           ? t("members.statement.daysRun", { count: l.days ?? 0 })
                           : t("members.statement.jobs", { count: l.jobs })}
-                        {" · "}{formatDayKey(l.fromDay, i18n.language, { year: false })}
+                        {" · "}
+                        {formatDayKey(l.fromDay, i18n.language, { year: false })}
                         {l.toDay !== l.fromDay && ` – ${formatDayKey(l.toDay, i18n.language, { year: false })}`}
                       </span>
                     </td>
                     <td className="px-2 py-2.5 text-right tabular-nums text-muted-foreground">
-                      {l.basis === "days" ? l.days : l.spaceId != null ? data.daysBySpace[l.spaceId] ?? 0 : ""}
+                      {l.basis === "days" ? l.days : l.spaceId != null ? (data.daysBySpace[l.spaceId] ?? 0) : ""}
                     </td>
                     <td className="px-2 py-2.5 text-right tabular-nums">
                       {l.basis === "days" ? (
                         <span
                           className="text-muted-foreground"
-                          title={t("members.statement.onSite", { hours: formatHoursMinutes(l.hours) })}>{formatHoursMinutes(l.hours)}</span>
-                      ) : formatHoursMinutes(l.hours)}
+                          title={t("members.statement.onSite", { hours: formatHoursMinutes(l.hours) })}
+                        >
+                          {formatHoursMinutes(l.hours)}
+                        </span>
+                      ) : (
+                        formatHoursMinutes(l.hours)
+                      )}
                     </td>
                     <td className="px-2 py-2.5 text-right tabular-nums">
                       {l.rateCents == null ? (
@@ -187,7 +215,9 @@ export function StatementTab({ memberId }: { memberId: string }) {
                       ) : (
                         <>
                           {money(l.rateCents)}
-                          {l.basis === "days" && <span className="text-[11px] text-muted-foreground"> {t("rates.perDay")}</span>}
+                          {l.basis === "days" && (
+                            <span className="text-[11px] text-muted-foreground"> {t("rates.perDay")}</span>
+                          )}
                           {l.rateLevel && (
                             <span className="block text-[11px] text-muted-foreground">{t(LEVEL_KEY[l.rateLevel])}</span>
                           )}
@@ -214,8 +244,11 @@ export function StatementTab({ memberId }: { memberId: string }) {
 
       {data?.missingRate && (
         <p
-          className={"flex items-start gap-2 rounded-lg border border-amber-500/30 " +
-            "bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300"}>
+          className={
+            "flex items-start gap-2 rounded-lg border border-amber-500/30 " +
+            "bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300"
+          }
+        >
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {t("members.statement.missingRate")}
         </p>

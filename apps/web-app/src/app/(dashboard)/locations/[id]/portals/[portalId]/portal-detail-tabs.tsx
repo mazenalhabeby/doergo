@@ -7,8 +7,9 @@ import { personInitials } from "@hbcfield/shared/client"
 import { getPriorityConfig } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsContent } from "@/components/ui/tabs"
-import { STATUS_STYLES, TabTrigger, Panel, EmptyState, Loading } from "./portal-detail-page-helpers"
+import { STATUS_TONE, TabTrigger, Panel, EmptyState, Loading } from "./portal-detail-page-helpers"
 import type { PortalDetailPageState } from "./use-portal-detail-page"
+import { toneChip } from "@/lib/status-tones"
 
 /** Part of the parent component's markup, moved here unchanged; it reads the state from `vm`. */
 export function PortalDetailTabs({ vm }: { vm: PortalDetailPageState }) {
@@ -90,7 +91,7 @@ export function PortalDetailTabs({ vm }: { vm: PortalDetailPageState }) {
                         <span
                           className={
                             `text-[11px] font-semibold capitalize rounded-full px-2.5 py-1 shrink-0 ` +
-                            `${STATUS_STYLES[r.status] ?? "bg-slate-500/10 text-slate-600 dark:text-slate-400"}`
+                            toneChip(STATUS_TONE[r.status] ?? "neutral")
                           }
                         >
                           {r.status.replace(/_/g, " ").toLowerCase()}

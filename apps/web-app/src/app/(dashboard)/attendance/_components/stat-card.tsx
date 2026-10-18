@@ -9,6 +9,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { personName, countryFromTz } from "@hbcfield/shared/client"
 import { EditHistoryDialog } from "./edit-history-dialog"
 import { FLAG_BADGE_CONFIG } from "./stat-card-parts"
+import { StatTile } from "@/components/ui/stat-tile"
 export { FLAG_BADGE_CONFIG } from "./stat-card-parts"
 
 export function FlagReasonBadges({ reasons }: { reasons?: string[] }) {
@@ -17,7 +18,10 @@ export function FlagReasonBadges({ reasons }: { reasons?: string[] }) {
   return (
     <div className="flex flex-wrap gap-1">
       {reasons.map((reason) => {
-        const config = FLAG_BADGE_CONFIG[reason] || { label: reason, className: "bg-muted text-muted-foreground border-border" }
+        const config = FLAG_BADGE_CONFIG[reason] || {
+          label: reason,
+          className: "bg-muted text-muted-foreground border-border",
+        }
         return (
           <span
             key={reason}
@@ -63,19 +67,10 @@ export function WorkerCell({ entry }: { entry: TimeEntry }) {
   const { t } = useTranslation()
   return (
     <div className="flex items-center gap-3">
-      <UserAvatar
-        firstName={entry.user?.firstName}
-        lastName={entry.user?.lastName}
-        seed={entry.user?.id}
-        size="md"
-      />
+      <UserAvatar firstName={entry.user?.firstName} lastName={entry.user?.lastName} seed={entry.user?.id} size="md" />
       <div>
-        <p className="font-medium text-foreground">
-          {personName(entry.user)}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {entry.location?.name || t("attendance.unknownLocation")}
-        </p>
+        <p className="font-medium text-foreground">{personName(entry.user)}</p>
+        <p className="text-xs text-muted-foreground">{entry.location?.name || t("attendance.unknownLocation")}</p>
       </div>
     </div>
   )
@@ -182,10 +177,12 @@ export function EditedBadge({ entry }: { entry: TimeEntry }) {
           setHistoryOpen(true)
         }}
         title={editor ? t("attendance.edited.by", { name: editor, defaultValue: `Edited by ${editor}` }) : undefined}
-        className={"inline-flex w-fit items-center gap-1 rounded-full border " +
+        className={
+          "inline-flex w-fit items-center gap-1 rounded-full border " +
           "border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium " +
           "text-amber-600 dark:text-amber-400 transition-colors " +
-          "hover:bg-amber-500/20 cursor-pointer"}
+          "hover:bg-amber-500/20 cursor-pointer"
+        }
       >
         <Pencil className="size-2.5" />
         {t("attendance.edited.badge", "Edited")}
@@ -195,38 +192,21 @@ export function EditedBadge({ entry }: { entry: TimeEntry }) {
   )
 }
 
-/** Stat card used across the attendance tabs. */
+/** Stat card used across the attendance tabs — the shared StatTile; the colour is the icon's. */
+const STAT_CARD_TONE = { blue: "primary", green: "success", amber: "warning", slate: "neutral" } as const
+
 export function StatCard({
   title,
   value,
-  icon: Icon,
+  icon,
   color,
 }: {
   title: string
   value: string | number
   icon: LucideIcon
-  color: "blue" | "green" | "amber" | "slate"
+  color: keyof typeof STAT_CARD_TONE
 }) {
-  const colorClasses = {
-    blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-    green: "bg-green-500/10 text-green-600 dark:text-green-400",
-    amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-    slate: "bg-muted text-muted-foreground",
-  }
-
-  return (
-    <div className="bg-card rounded-2xl border border-border/60 p-5 shadow-sm hover:shadow-md transition-shadow duration-200">
-      <div className="flex items-center gap-4">
-        <div className={cn("p-3 rounded-xl", colorClasses[color])}>
-          <Icon className="size-5" />
-        </div>
-        <div>
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{title}</p>
-          <p className="text-2xl font-bold text-foreground mt-0.5">{value}</p>
-        </div>
-      </div>
-    </div>
-  )
+  return <StatTile label={title} value={value} icon={icon} iconTone={STAT_CARD_TONE[color]} />
 }
 
 /**
@@ -244,9 +224,11 @@ export function NoteCell({ note, maxWidth = 180 }: { note?: string | null; maxWi
         <button
           type="button"
           style={{ maxWidth }}
-          className={"block truncate text-left text-sm text-muted-foreground underline " +
+          className={
+            "block truncate text-left text-sm text-muted-foreground underline " +
             "decoration-dotted decoration-muted-foreground/40 underline-offset-4 " +
-            "transition-colors hover:text-foreground cursor-help"}
+            "transition-colors hover:text-foreground cursor-help"
+          }
         >
           {note}
         </button>

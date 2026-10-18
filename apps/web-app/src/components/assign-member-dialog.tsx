@@ -5,13 +5,7 @@ import React, { useState, useMemo, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { Search, Check, Loader2 } from "lucide-react"
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -20,6 +14,7 @@ import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { UserAvatar } from "@/components/user-avatar"
 import { useAssignMemberDialog, type AssignMemberDialogProps } from "./use-assign-member-dialog"
 import { MemberRow } from "./assign-member-dialog-helpers"
+import { EmptyNote } from "@/components/ui/empty-note"
 
 // =============================================================================
 // MOCK DATA
@@ -72,7 +67,7 @@ export function AssignMemberDialog({
     onAssign,
     onRemove,
     isAssigning,
-    notice
+    notice,
   })
 
   return (
@@ -121,9 +116,7 @@ export function AssignMemberDialog({
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="text-sm text-muted-foreground">{t("assignMembers.noMembersFound")}</p>
-            </div>
+            <EmptyNote>{t("assignMembers.noMembersFound")}</EmptyNote>
           ) : (
             <>
               {/* Space members section */}

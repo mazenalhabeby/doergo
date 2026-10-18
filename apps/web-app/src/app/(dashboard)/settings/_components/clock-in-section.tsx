@@ -8,10 +8,10 @@ import { notify } from "@/lib/toast"
 import { errorMessage } from "@/lib/errors"
 import { useAuth } from "@/contexts/auth-context"
 import { usersApi } from "@/lib/api"
-import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SettingCard } from "./setting-card"
 import { useClockInLocations } from "./use-clock-in-pick-offered"
+import { OptionCard, OptionRadio } from "@/components/ui/option-card"
 
 /**
  * Clock in where I stand, or always choose — the member's own setting
@@ -53,9 +53,11 @@ export function ClockInSection() {
       iconBg="bg-emerald-50 dark:bg-emerald-950/40"
       title={t("settings.clockIn.title")}
       description={
-        isLoading ? undefined
-          : names.length > 1 ? t("settings.clockIn.workspaces", { n: names.length, names: names.join(", ") })
-          : t("settings.clockIn.oneWorkspace")
+        isLoading
+          ? undefined
+          : names.length > 1
+            ? t("settings.clockIn.workspaces", { n: names.length, names: names.join(", ") })
+            : t("settings.clockIn.oneWorkspace")
       }
     >
       {isLoading ? (
@@ -67,30 +69,20 @@ export function ClockInSection() {
             {options.map((o) => {
               const on = current === o.key
               return (
-                <button
+                <OptionCard
                   key={o.key}
-                  type="button"
                   role="radio"
                   aria-checked={on}
+                  selected={on}
                   disabled={!!saving}
                   onClick={() => choose(o.key)}
-                  className={cn(
-                    "flex items-start gap-3 rounded-xl border p-4 text-left transition-colors disabled:opacity-70",
-                    on ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50",
-                  )}
                 >
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      "mt-0.5 size-[18px] shrink-0 rounded-full border bg-background",
-                      on ? "border-[6px] border-primary" : "border-muted-foreground/50",
-                    )}
-                  />
+                  <OptionRadio selected={on} />
                   <span className="space-y-1">
                     <span className="block text-sm font-semibold text-foreground">{o.title}</span>
                     <span className="block text-[13px] leading-snug text-muted-foreground">{o.hint}</span>
                   </span>
-                </button>
+                </OptionCard>
               )
             })}
           </div>

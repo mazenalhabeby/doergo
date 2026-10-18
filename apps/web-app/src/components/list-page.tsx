@@ -1,17 +1,11 @@
 "use client"
 
-import type { Dispatch, ReactNode, SetStateAction } from "react"
+import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { AlertCircle, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
+import { AlertCircle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
 /**
@@ -51,9 +45,7 @@ export function ListPageHeader({
           <h1 data-tour={tour} className="text-3xl font-bold text-foreground tracking-tight">
             {title}
           </h1>
-          <p className="mt-1.5 text-muted-foreground">
-            {subtitle}
-          </p>
+          <p className="mt-1.5 text-muted-foreground">{subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
           {/* Status Filter */}
@@ -120,44 +112,5 @@ export function ListTableError({ title, error, onRetry }: { title: ReactNode; er
 }
 
 /** Previous / Next under the table; renders nothing for a single page. */
-export function ListPager({
-  page,
-  totalPages,
-  setPage,
-}: {
-  page: number
-  totalPages: number
-  setPage: Dispatch<SetStateAction<number>>
-}) {
-  const { t } = useTranslation()
-  if (totalPages <= 1) return null
-  return (
-    <div className="flex items-center justify-between px-6 py-3 border-t border-border">
-      <p className="text-sm text-muted-foreground">
-        {t("common.page", { page, totalPages })}
-      </p>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="rounded-lg"
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page === 1}
-        >
-          <ChevronLeft className="h-4 w-4" />
-          {t("common.previous")}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="rounded-lg"
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          disabled={page >= totalPages}
-        >
-          {t("common.next")}
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  )
-}
+/** The pager — one look everywhere; see components/ui/list-pager.tsx. */
+export { ListPager } from "@/components/ui/list-pager"

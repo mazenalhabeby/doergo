@@ -7,11 +7,11 @@ import { Package } from "lucide-react"
 
 import { assetsApi, type CustodyPeriodDto } from "@/lib/api"
 import { custodyDays, formatCents } from "@hbcfield/shared/client"
-import { cn } from "@/lib/utils"
 import { CustodySpan, HasItNowBadge } from "@/components/assets/custody-parts"
 import { Skeleton } from "@/components/ui/skeleton"
 import { keys } from "@/lib/query-keys"
 import { DashedEmptyBox } from "@/components/ui/empty-note"
+import { StatTile } from "@/components/ui/stat-tile"
 
 /**
  * What this member has, and what they have had.
@@ -62,9 +62,14 @@ export function HoldingsTab({ memberId }: { memberId: string }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-2 sm:grid-cols-3">
-        <Stat label={t("custody.holdingNow", "Holding now")} value={String(now.length)} />
-        <Stat label={t("custody.everHeld", "Held in total")} value={String(periods.length)} />
-        <Stat label={t("custody.spendTotal", "Spent on them")} value={formatCents(spend)} tone="out" />
+        <StatTile size="sm" label={t("custody.holdingNow", "Holding now")} value={String(now.length)} />
+        <StatTile size="sm" label={t("custody.everHeld", "Held in total")} value={String(periods.length)} />
+        <StatTile
+          size="sm"
+          label={t("custody.spendTotal", "Spent on them")}
+          value={formatCents(spend)}
+          tone="warning"
+        />
       </div>
 
       {now.length > 0 && (
@@ -90,22 +95,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div className="space-y-2">
       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
       {children}
-    </div>
-  )
-}
-
-function Stat({ label, value, tone }: { label: string; value: string; tone?: "out" }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-3">
-      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p
-        className={cn(
-          "text-lg font-semibold tabular-nums",
-          tone === "out" ? "text-amber-600 dark:text-amber-400" : "text-foreground",
-        )}
-      >
-        {value}
-      </p>
     </div>
   )
 }

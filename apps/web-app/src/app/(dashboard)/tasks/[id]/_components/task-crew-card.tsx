@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useJobTime } from "@/hooks/use-job-time"
 import { tasksApi, type CrewView } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { OptionCard } from "@/components/ui/option-card"
 
 type Member = CrewView["members"][number]
 
@@ -163,21 +164,19 @@ function ChangeLeaderDialog({ open, onClose, taskId, crew }: { open: boolean; on
           <div className="space-y-1.5" role="radiogroup" aria-label={t("tasks.crew.newLeader")}>
             <Label>{t("tasks.crew.newLeader")}</Label>
             {others.map((m) => (
-              <button
+              <OptionCard
                 key={m.user.id}
-                type="button"
+                size="sm"
                 role="radio"
                 aria-checked={to === m.user.id}
+                selected={to === m.user.id}
                 onClick={() => setTo(m.user.id)}
-                className={cn(("flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left " +
-                  "text-sm transition-colors focus-visible:outline-none " +
-                  "focus-visible:ring-2 focus-visible:ring-ring"),
-                  to === m.user.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50")}
+                className="items-center gap-2.5 text-sm"
               >
                 <UserAvatar firstName={m.user.firstName} lastName={m.user.lastName} seed={m.user.id} size="xs" />
                 <span className="flex-1 truncate text-foreground">{personName(m.user)}</span>
                 <span className="text-xs text-muted-foreground">{m.joined ? t("tasks.crew.onJobShort") : t("tasks.crew.notOnJob")}</span>
-              </button>
+              </OptionCard>
             ))}
           </div>
           <div className="flex rounded-full border border-border p-0.5" role="radiogroup" aria-label={t("tasks.crew.howLong")}>

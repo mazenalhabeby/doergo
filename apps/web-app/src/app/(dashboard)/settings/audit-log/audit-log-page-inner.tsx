@@ -4,7 +4,7 @@ import { personName } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Shield, Filter, ChevronLeft, ChevronRight } from "lucide-react"
+import { Shield, Filter } from "lucide-react"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Combobox } from "@/components/ui/combobox"
 import { auditDetail, EVENT_COLORS, EVENT_TYPES } from "./page-parts"
+import { ListPager } from "@/components/ui/list-pager"
 
 export function AuditLogPageInner() {
   const { t } = useTranslation()
@@ -55,14 +56,15 @@ export function AuditLogPageInner() {
 
   const { data, isLoading } = useQuery({
     queryKey: keys.reports.auditLogs(page, eventFilter, userFilter, startDate, endDate),
-    queryFn: () => organizationsApi.getAuditLogs({
-      page,
-      limit: 50,
-      eventType: eventFilter !== "__all__" ? eventFilter : undefined,
-      userId: userFilter !== "__all__" ? userFilter : undefined,
-      startDate: startDate ? new Date(startDate).toISOString() : undefined,
-      endDate: endDate ? new Date(endDate + "T23:59:59").toISOString() : undefined,
-    }),
+    queryFn: () =>
+      organizationsApi.getAuditLogs({
+        page,
+        limit: 50,
+        eventType: eventFilter !== "__all__" ? eventFilter : undefined,
+        userId: userFilter !== "__all__" ? userFilter : undefined,
+        startDate: startDate ? new Date(startDate).toISOString() : undefined,
+        endDate: endDate ? new Date(endDate + "T23:59:59").toISOString() : undefined,
+      }),
     enabled: isAdmin,
   })
 
@@ -97,7 +99,10 @@ export function AuditLogPageInner() {
           <Filter className="size-4 text-muted-foreground" />
           <Combobox
             value={eventFilter}
-            onChange={(v) => { setEventFilter(v); setPage(1) }}
+            onChange={(v) => {
+              setEventFilter(v)
+              setPage(1)
+            }}
             options={eventOptions}
             placeholder={t("auditLog.allEvents")}
             searchPlaceholder={t("auditLog.searchEvents")}
@@ -106,7 +111,10 @@ export function AuditLogPageInner() {
           />
           <Combobox
             value={userFilter}
-            onChange={(v) => { setUserFilter(v); setPage(1) }}
+            onChange={(v) => {
+              setUserFilter(v)
+              setPage(1)
+            }}
             options={userOptions}
             placeholder={t("auditLog.allUsers")}
             searchPlaceholder={t("auditLog.searchUsers")}
@@ -116,7 +124,10 @@ export function AuditLogPageInner() {
           <Input
             type="date"
             value={startDate}
-            onChange={(e) => { setStartDate(e.target.value); setPage(1) }}
+            onChange={(e) => {
+              setStartDate(e.target.value)
+              setPage(1)
+            }}
             className="h-8 text-sm w-[150px]"
             title={t("auditLog.fromDate")}
           />
@@ -124,7 +135,10 @@ export function AuditLogPageInner() {
           <Input
             type="date"
             value={endDate}
-            onChange={(e) => { setEndDate(e.target.value); setPage(1) }}
+            onChange={(e) => {
+              setEndDate(e.target.value)
+              setPage(1)
+            }}
             className="h-8 text-sm w-[150px]"
             title={t("auditLog.toDate")}
           />
@@ -133,13 +147,21 @@ export function AuditLogPageInner() {
               variant="ghost"
               size="sm"
               className="h-8 text-xs"
-              onClick={() => { setStartDate(""); setEndDate(""); setEventFilter("__all__"); setUserFilter("__all__"); setPage(1) }}
+              onClick={() => {
+                setStartDate("")
+                setEndDate("")
+                setEventFilter("__all__")
+                setUserFilter("__all__")
+                setPage(1)
+              }}
             >
               {t("auditLog.clear")}
             </Button>
           )}
           {meta && (
-            <span className="text-xs text-muted-foreground ml-auto">{t("auditLog.totalEvents", { count: meta.total })}</span>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {t("auditLog.totalEvents", { count: meta.total })}
+            </span>
           )}
         </div>
 
@@ -147,9 +169,12 @@ export function AuditLogPageInner() {
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           {/* Header */}
           <div
-            className={"grid grid-cols-[1fr_140px_140px_100px] gap-3 px-4 py-2.5 bg-muted/30 " +
+            className={
+              "grid grid-cols-[1fr_140px_140px_100px] gap-3 px-4 py-2.5 bg-muted/30 " +
               "text-[11px] font-medium text-muted-foreground uppercase tracking-wider " +
-              "border-b border-border/30"}>
+              "border-b border-border/30"
+            }
+          >
             <div>{t("auditLog.event")}</div>
             <div>{t("auditLog.user")}</div>
             <div>{t("auditLog.resource")}</div>
@@ -159,7 +184,9 @@ export function AuditLogPageInner() {
           {/* Rows */}
           {isLoading ? (
             <div className="p-4 space-y-3">
-              {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full rounded-lg" />
+              ))}
             </div>
           ) : logs.length === 0 ? (
             <div className="text-center py-12">
@@ -172,9 +199,12 @@ export function AuditLogPageInner() {
               return (
                 <div
                   key={log.id}
-                  className={"grid grid-cols-[1fr_140px_140px_100px] gap-3 px-4 py-2.5 border-b " +
+                  className={
+                    "grid grid-cols-[1fr_140px_140px_100px] gap-3 px-4 py-2.5 border-b " +
                     "border-border/20 last:border-0 hover:bg-muted/20 transition-colors " +
-                    "text-sm"}>
+                    "text-sm"
+                  }
+                >
                   {/* Event */}
                   <div className="flex items-center gap-2 min-w-0">
                     <span className={cn("text-xs font-semibold", evt.color)}>{evt.label}</span>
@@ -192,7 +222,8 @@ export function AuditLogPageInner() {
                     {log.user ? (
                       <Link
                         href={`/members/${log.user.id}`}
-                        className="text-xs text-foreground truncate hover:text-blue-600 transition-colors">
+                        className="text-xs text-foreground truncate hover:text-blue-600 transition-colors"
+                      >
                         {personName(log.user)}
                       </Link>
                     ) : (
@@ -202,49 +233,18 @@ export function AuditLogPageInner() {
 
                   {/* Resource */}
                   <div className="text-xs text-muted-foreground truncate">
-                    {log.resourceType && log.resourceId
-                      ? `${log.resourceType}:${log.resourceId.slice(0, 8)}`
-                      : "—"}
+                    {log.resourceType && log.resourceId ? `${log.resourceType}:${log.resourceId.slice(0, 8)}` : "—"}
                   </div>
 
                   {/* Time */}
-                  <div className="text-xs text-muted-foreground text-right">
-                    {formatTimeAgo(log.createdAt)}
-                  </div>
+                  <div className="text-xs text-muted-foreground text-right">{formatTimeAgo(log.createdAt)}</div>
                 </div>
               )
             })
           )}
         </div>
 
-        {/* Pagination */}
-        {meta && meta.totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4">
-            <span className="text-xs text-muted-foreground">
-              {t("common.page", { page: meta.page, totalPages: meta.totalPages })}
-            </span>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 w-7 p-0"
-                disabled={page <= 1}
-                onClick={() => setPage(p => p - 1)}
-              >
-                <ChevronLeft className="size-3.5" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 w-7 p-0"
-                disabled={page >= meta.totalPages}
-                onClick={() => setPage(p => p + 1)}
-              >
-                <ChevronRight className="size-3.5" />
-              </Button>
-            </div>
-          </div>
-        )}
+        {meta && <ListPager page={page} totalPages={meta.totalPages} setPage={setPage} framed={false} />}
       </div>
     </div>
   )

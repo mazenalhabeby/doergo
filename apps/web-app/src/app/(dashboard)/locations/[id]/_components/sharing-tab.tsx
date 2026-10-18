@@ -19,12 +19,7 @@ import {
 } from "lucide-react"
 
 import { notify } from "@/lib/toast"
-import {
-  spaceSharingApi,
-  type SpaceShare,
-  type SpaceShareLevel,
-  type SpaceShareStatus,
-} from "@/lib/api"
+import { spaceSharingApi, type SpaceShare, type SpaceShareLevel, type SpaceShareStatus } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -33,18 +28,13 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ConfirmTargetDialog } from "@/components/confirm-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
 import { keys } from "@/lib/query-keys"
 import Link from "next/link"
-import { LEVELS, STATUS_STYLES, SCOPE_FLAGS, InviteSection, RequestsSection } from "./invite-section"
+import { LEVELS, STATUS_TONE, SCOPE_FLAGS, InviteSection, RequestsSection } from "./invite-section"
+import { toneChip } from "@/lib/status-tones"
 
 export function SharingTab({ spaceId, spaceName }: { spaceId: string; spaceName: string }) {
   return (
@@ -129,14 +119,23 @@ function SharesSection({ spaceId }: { spaceId: string }) {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3 min-w-0">
                     <span
-                      className={"flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 " +
-                        "text-blue-600 dark:bg-blue-950 dark:text-blue-300"}>
+                      className={
+                        "flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 " +
+                        "text-blue-600 dark:bg-blue-950 dark:text-blue-300"
+                      }
+                    >
                       <Building2 className="h-4 w-4" />
                     </span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold text-foreground truncate">{share.guestOrgName}</span>
-                        <Badge variant="outline" className={cn("text-[11px] font-medium", STATUS_STYLES[share.status])}>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "border-transparent text-[11px] font-medium",
+                            toneChip(STATUS_TONE[share.status]),
+                          )}
+                        >
                           {t(`spaceSharing.statuses.${share.status}`)}
                         </Badge>
                       </div>
@@ -153,8 +152,11 @@ function SharesSection({ spaceId }: { spaceId: string }) {
                           ))}
                           {share.allowRequests && (
                             <span
-                              className={"inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 " +
-                                "text-[11px] text-muted-foreground"}>
+                              className={
+                                "inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 " +
+                                "text-[11px] text-muted-foreground"
+                              }
+                            >
                               <ListChecks className="h-3 w-3" />
                               {t("spaceSharing.scope.requestsAllowed")}
                             </span>

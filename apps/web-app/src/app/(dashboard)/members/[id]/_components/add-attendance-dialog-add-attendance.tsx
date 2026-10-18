@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { WEEKDAY_ORDER } from "./add-attendance-dialog-helpers"
 import type { AddAttendanceDialogState } from "./use-add-attendance-dialog"
+import { Segmented } from "@/components/ui/segmented"
 
 /** Part of AddAttendanceDialog's markup, moved here unchanged; it reads the page's state from `vm`. */
 export function AddAttendanceDialogAddAttendance({ vm }: { vm: AddAttendanceDialogState }) {
@@ -59,16 +60,11 @@ export function AddAttendanceDialogAddAttendance({ vm }: { vm: AddAttendanceDial
       {!fixedEmployee && (
         <div className="space-y-1.5">
           <Label>{t("technicians.addAttendance.employee")}</Label>
-          <Select
-            value={selectedEmployeeId}
-            onValueChange={setSelectedEmployeeId}
-          >
+          <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
             <SelectTrigger>
               <SelectValue
                 placeholder={
-                  employeesLoading
-                    ? t("common.loading")
-                    : t("technicians.addAttendance.employeePlaceholder")
+                  employeesLoading ? t("common.loading") : t("technicians.addAttendance.employeePlaceholder")
                 }
               />
             </SelectTrigger>
@@ -84,30 +80,15 @@ export function AddAttendanceDialogAddAttendance({ vm }: { vm: AddAttendanceDial
       )}
 
       {/* Mode toggle */}
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => setMode("single")}
-          className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-            mode === "single"
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-input text-muted-foreground hover:bg-muted"
-          }`}
-        >
-          {t("technicians.addAttendance.modeSingle")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("range")}
-          className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-            mode === "range"
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-input text-muted-foreground hover:bg-muted"
-          }`}
-        >
-          {t("technicians.addAttendance.modeRange")}
-        </button>
-      </div>
+      <Segmented
+        ariaLabel={t("technicians.addAttendance.modeSingle") + " / " + t("technicians.addAttendance.modeRange")}
+        value={mode}
+        onChange={setMode}
+        options={[
+          { value: "single", label: t("technicians.addAttendance.modeSingle") },
+          { value: "range", label: t("technicians.addAttendance.modeRange") },
+        ]}
+      />
 
       {/* Location */}
       <div className="space-y-1.5">
@@ -115,11 +96,7 @@ export function AddAttendanceDialogAddAttendance({ vm }: { vm: AddAttendanceDial
         <Select value={locationId} onValueChange={setLocationId}>
           <SelectTrigger>
             <SelectValue
-              placeholder={
-                locationsLoading
-                  ? t("common.loading")
-                  : t("technicians.addAttendance.locationPlaceholder")
-              }
+              placeholder={locationsLoading ? t("common.loading") : t("technicians.addAttendance.locationPlaceholder")}
             />
           </SelectTrigger>
           <SelectContent>
@@ -136,23 +113,13 @@ export function AddAttendanceDialogAddAttendance({ vm }: { vm: AddAttendanceDial
       {mode === "single" ? (
         <div className="space-y-1.5">
           <Label>{t("technicians.addAttendance.date")}</Label>
-          <Input
-            type="date"
-            value={startDate}
-            max={today}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
+          <Input type="date" value={startDate} max={today} onChange={(e) => setStartDate(e.target.value)} />
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label>{t("technicians.addAttendance.startDate")}</Label>
-            <Input
-              type="date"
-              value={startDate}
-              max={today}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
+            <Input type="date" value={startDate} max={today} onChange={(e) => setStartDate(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label>{t("technicians.addAttendance.endDate")}</Label>
@@ -187,9 +154,7 @@ export function AddAttendanceDialogAddAttendance({ vm }: { vm: AddAttendanceDial
               </button>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">
-            {t("technicians.addAttendance.weekdaysHint")}
-          </p>
+          <p className="text-xs text-muted-foreground">{t("technicians.addAttendance.weekdaysHint")}</p>
         </div>
       )}
 
@@ -197,19 +162,11 @@ export function AddAttendanceDialogAddAttendance({ vm }: { vm: AddAttendanceDial
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label>{t("technicians.addAttendance.startTime")}</Label>
-          <Input
-            type="time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-          />
+          <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label>{t("technicians.addAttendance.endTime")}</Label>
-          <Input
-            type="time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-          />
+          <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
         </div>
       </div>
 
@@ -235,9 +192,7 @@ export function AddAttendanceDialogAddAttendance({ vm }: { vm: AddAttendanceDial
             min={startTime || undefined}
             max={endTime || undefined}
             error={
-              breakInvalid
-                ? t("technicians.addAttendance.breakOutside", "The break must sit inside the shift.")
-                : null
+              breakInvalid ? t("technicians.addAttendance.breakOutside", "The break must sit inside the shift.") : null
             }
             hint={t(
               "technicians.addAttendance.breakHint",

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ChoiceChip } from "@/components/ui/choice-chip"
 
 export type BreakKind = "SHORT" | "LUNCH" | "OTHER"
 
@@ -100,20 +101,9 @@ export function BreakFields({
         <Label>{t("attendance.addBreak.type", "Type")}</Label>
         <div className="flex gap-1.5">
           {(["SHORT", "LUNCH", "OTHER"] as const).map((bt) => (
-            <button
-              key={bt}
-              type="button"
-              aria-pressed={kind === bt}
-              onClick={() => onKind(bt)}
-              className={cn(
-                "rounded-md border px-2.5 py-1 text-xs transition-colors",
-                kind === bt
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:text-foreground",
-              )}
-            >
+            <ChoiceChip key={bt} type="button" aria-pressed={kind === bt} on={kind === bt} onClick={() => onKind(bt)}>
               {t(`attendance.breaks.typeBreak.${bt.toLowerCase()}`, bt)}
-            </button>
+            </ChoiceChip>
           ))}
         </div>
       </div>
@@ -142,12 +132,7 @@ export function BreakFields({
  * Minutes since midnight, so it works on `HH:mm` and on the time half of a
  * `datetime-local` without either caller parsing dates.
  */
-export function breakFitsShift(
-  breakStart: string,
-  breakEnd: string,
-  shiftStart: string,
-  shiftEnd: string,
-): boolean {
+export function breakFitsShift(breakStart: string, breakEnd: string, shiftStart: string, shiftEnd: string): boolean {
   const mins = (v: string) => {
     const [h, m] = v.slice(-5).split(":").map(Number)
     return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : NaN

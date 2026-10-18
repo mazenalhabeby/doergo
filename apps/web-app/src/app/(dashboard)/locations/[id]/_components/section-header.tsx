@@ -41,29 +41,5 @@ export function SectionHeader({
   )
 }
 
-/**
- * Polished empty state: a large muted icon chip, heading, hint, and an optional
- * primary action — replaces the bare "no items yet" text blocks.
- */
-export function EmptyState({
-  icon: Icon,
-  title,
-  description,
-  action,
-}: {
-  icon: LucideIcon
-  title: string
-  description?: string
-  action?: React.ReactNode
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-muted/20 px-6 py-12 text-center">
-      <span className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-        <Icon className="h-6 w-6" />
-      </span>
-      <p className="mt-4 text-sm font-semibold text-foreground">{title}</p>
-      {description && <p className="mt-1 text-xs text-muted-foreground max-w-sm">{description}</p>}
-      {action && <div className="mt-4">{action}</div>}
-    </div>
-  )
-}
+/** The empty state — one look everywhere; see components/ui/empty-state.tsx. */
+export { EmptyState } from "@/components/ui/empty-state"

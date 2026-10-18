@@ -11,18 +11,13 @@ import type { AccessDraft, MobileModule, SpaceScope, AccessPlatform } from "@hbc
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { UserAvatar } from "@/components/user-avatar"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { useAccessFields, Field } from "./use-access-fields"
 import { FEATURE_TABS, PLATFORMS, SCOPES, TASK_SCOPES } from "./access-fields-helpers"
 import { AccessFieldsPermissions } from "./access-fields-permissions"
 import { AccessFieldsContactAccess } from "./access-fields-contact-access"
+import { ChoiceChip } from "@/components/ui/choice-chip"
 export { Field } from "./use-access-fields"
 
 /**
@@ -73,15 +68,7 @@ export function AccessFields({
   external?: boolean
 }) {
   const vm = useAccessFields({ value, onChange, excludeContactId, showRole, lockRole, allowAdmin, roleOnly, external })
-  const {
-    t,
-    candidateContacts,
-    selectedRole,
-    permView,
-    seesAllSpacesAnyway,
-    toggleModule,
-    roleField,
-  } = vm
+  const { t, candidateContacts, selectedRole, permView, seesAllSpacesAnyway, toggleModule, roleField } = vm
 
   if (roleOnly) return <div className="space-y-6">{roleField}</div>
 
@@ -99,7 +86,9 @@ export function AccessFields({
               onClick={() => onChange({ platforms: p.key })}
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                value.platforms === p.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+                value.platforms === p.key
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <p.icon className="h-3.5 w-3.5" />
@@ -135,17 +124,9 @@ export function AccessFields({
           {FEATURE_TABS.filter((m) => !external || moduleAllowedForExternal(m.key)).map((m) => {
             const on = value.modules.includes(m.key)
             return (
-              <button
-                key={m.key}
-                type="button"
-                onClick={() => toggleModule(m.key)}
-                className={cn(
-                  "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
-                  on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
-                )}
-              >
+              <ChoiceChip key={m.key} type="button" variant="iconPill" on={on} onClick={() => toggleModule(m.key)}>
                 {t(m.labelKey)} {on ? "✓" : ""}
-              </button>
+              </ChoiceChip>
             )
           })}
         </div>
@@ -154,70 +135,78 @@ export function AccessFields({
       {/* Attendance — remote clock-in. Always shown; disabled with a hint when
           the Clock module is off (remote clock-in needs clock access). */}
       {!external && (
-      <Field dataTour="access-attendance" label={t("accessBuilder.attendance", "Attendance")}>
-        <div className={cn(
-          "flex items-center justify-between rounded-xl border border-border px-4 py-3",
-          !value.modules.includes("clock") && "opacity-70",
-        )}>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground">{t("members.memberEditor.allowRemote", "Allow remote clock-in")}</p>
-            <p className="text-xs text-muted-foreground">
-              {value.modules.includes("clock")
-                ? t(
-                  "members.memberEditor.allowRemoteHint",
-                  ("Can clock in from anywhere (WFH/on the road) without a site geofence. " + "Location is still captured."))
-                : t("accessBuilder.allowRemoteNeedsClock", "Enable the Clock module above to use remote clock-in.")}
-            </p>
+        <Field dataTour="access-attendance" label={t("accessBuilder.attendance", "Attendance")}>
+          <div
+            className={cn(
+              "flex items-center justify-between rounded-xl border border-border px-4 py-3",
+              !value.modules.includes("clock") && "opacity-70",
+            )}
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">
+                {t("members.memberEditor.allowRemote", "Allow remote clock-in")}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {value.modules.includes("clock")
+                  ? t(
+                      "members.memberEditor.allowRemoteHint",
+                      "Can clock in from anywhere (WFH/on the road) without a site geofence. " +
+                        "Location is still captured.",
+                    )
+                  : t("accessBuilder.allowRemoteNeedsClock", "Enable the Clock module above to use remote clock-in.")}
+              </p>
+            </div>
+            <Switch
+              checked={value.allowRemote}
+              onCheckedChange={(v) => onChange({ allowRemote: v })}
+              disabled={!value.modules.includes("clock")}
+            />
           </div>
-          <Switch
-            checked={value.allowRemote}
-            onCheckedChange={(v) => onChange({ allowRemote: v })}
-            disabled={!value.modules.includes("clock")}
-          />
-        </div>
-      </Field>
+        </Field>
       )}
 
       {/* Space scope */}
       {!external && (
-      <Field dataTour="access-spaces" label={t("accessBuilder.spaceVisibility")}>
-        <div className="space-y-2">
-          {/* "View all tasks" is what the space list is scoped against, so a
+        <Field dataTour="access-spaces" label={t("accessBuilder.spaceVisibility")}>
+          <div className="space-y-2">
+            {/* "View all tasks" is what the space list is scoped against, so a
               member who holds it sees every workspace whatever is picked here.
               Saying so beats leaving an admin to set a restriction that never
               takes effect. */}
-          {seesAllSpacesAnyway && (
-            <p className="rounded-lg border border-amber-600/40 bg-amber-600/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-500">
-              {t(
-                "accessBuilder.spaceVisibilityOverridden",
-                ("This member can view all tasks, so they see every workspace regardless " +
-                  "of the choice below. Remove that permission from their role to make this " +
-                  "take effect."),
-              )}
-            </p>
-          )}
-          {SCOPES.map((s) => (
-            <button
-              key={s.key}
-              type="button"
-              onClick={() => onChange({ spaceScope: s.key })}
-              className={cn(
-                "flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
-                value.spaceScope === s.key ? "border-primary bg-primary/[0.07]" : "border-border hover:bg-accent/40",
-              )}
-            >
-              <span className={cn(
-                "mt-0.5 h-4 w-4 shrink-0 rounded-full border-2",
-                value.spaceScope === s.key ? "border-primary bg-primary" : "border-muted-foreground/40",
-              )} />
-              <span>
-                <span className="block text-sm font-medium text-foreground">{t(s.labelKey)}</span>
-                <span className="block text-xs text-muted-foreground">{t(s.descKey)}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-      </Field>
+            {seesAllSpacesAnyway && (
+              <p className="rounded-lg border border-amber-600/40 bg-amber-600/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-500">
+                {t(
+                  "accessBuilder.spaceVisibilityOverridden",
+                  "This member can view all tasks, so they see every workspace regardless " +
+                    "of the choice below. Remove that permission from their role to make this " +
+                    "take effect.",
+                )}
+              </p>
+            )}
+            {SCOPES.map((s) => (
+              <button
+                key={s.key}
+                type="button"
+                onClick={() => onChange({ spaceScope: s.key })}
+                className={cn(
+                  "flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
+                  value.spaceScope === s.key ? "border-primary bg-primary/[0.07]" : "border-border hover:bg-accent/40",
+                )}
+              >
+                <span
+                  className={cn(
+                    "mt-0.5 h-4 w-4 shrink-0 rounded-full border-2",
+                    value.spaceScope === s.key ? "border-primary bg-primary" : "border-muted-foreground/40",
+                  )}
+                />
+                <span>
+                  <span className="block text-sm font-medium text-foreground">{t(s.labelKey)}</span>
+                  <span className="block text-xs text-muted-foreground">{t(s.descKey)}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </Field>
       )}
 
       {/* Messaging — ONE symmetric switch: being able to reach teammates and

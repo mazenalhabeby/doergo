@@ -3,11 +3,17 @@
 import { ArrowDownLeft, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Switch } from "@/components/ui/switch"
+import { ChoiceChip } from "@/components/ui/choice-chip"
 
 /** AssetKindDialog's module-level helpers, moved here unchanged so its sections can read them too. */
 /** One switchable part of the record. */
 export function Row({
-  icon: Icon, title, hint, checked, onChange, bare,
+  icon: Icon,
+  title,
+  hint,
+  checked,
+  onChange,
+  bare,
 }: {
   icon: typeof MapPin
   title: string
@@ -33,24 +39,19 @@ export function Row({
 /** A two-state chip — members, clients, or both. */
 export function Pick({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-        active
-          ? "border-primary bg-primary/10 text-foreground"
-          : "border-border text-muted-foreground hover:text-foreground",
-      )}
-    >
+    <ChoiceChip type="button" variant="iconPill" on={active} onClick={onClick}>
       {label}
-    </button>
+    </ChoiceChip>
   )
 }
 
 /** In or out, for one money heading. */
 export function DirBtn({
-  active, onClick, icon: Icon, label, tone,
+  active,
+  onClick,
+  icon: Icon,
+  label,
+  tone,
 }: {
   active: boolean
   onClick: () => void
@@ -79,17 +80,8 @@ export function DirBtn({
 /** Typed once for the kind, or filled in per record. */
 export function OwnerBtn({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-3 py-1 text-[11px] font-medium transition-colors",
-        active
-          ? "border-primary bg-primary/10 text-foreground"
-          : "border-border text-muted-foreground hover:text-foreground",
-      )}
-    >
+    <ChoiceChip type="button" on={active} onClick={onClick}>
       {label}
-    </button>
+    </ChoiceChip>
   )
 }

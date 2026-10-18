@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { Loader2, AlertTriangle, Download } from "lucide-react"
 import { documentsApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { EmptyNote } from "@/components/ui/empty-note"
 
 /**
  * The draft, rendered by the server into the PDF a member would receive.
@@ -17,15 +18,7 @@ import { cn } from "@/lib/utils"
  * Debounced rather than live: a render is real work at both ends, and a
  * contract is read in pauses, not per keystroke.
  */
-export function PdfPreview({
-  body,
-  title,
-  memberId,
-}: {
-  body: string
-  title: string
-  memberId?: string
-}) {
+export function PdfPreview({ body, title, memberId }: { body: string; title: string; memberId?: string }) {
   const { t } = useTranslation()
   const [url, setUrl] = useState<string | null>(null)
   const [missing, setMissing] = useState<string[]>([])
@@ -78,14 +71,17 @@ export function PdfPreview({
 
   // The last render is revoked when the pane goes away, not before — switching
   // back to Text and returning should not have to re-render.
-  useEffect(() => () => { if (url) URL.revokeObjectURL(url) }, [url])
+  useEffect(
+    () => () => {
+      if (url) URL.revokeObjectURL(url)
+    },
+    [url],
+  )
 
   if (!body.trim()) {
     return (
       <div className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-        <p className="py-10 text-center text-sm text-slate-400">
-          {t("documents.templates.previewEmpty")}
-        </p>
+        <EmptyNote>{t("documents.templates.previewEmpty")}</EmptyNote>
       </div>
     )
   }
@@ -109,10 +105,14 @@ export function PdfPreview({
             />
           )}
           {(loading || !url) && (
-            <div className={cn(
-              "flex items-center justify-center gap-2 rounded-lg text-sm text-slate-400",
-              url ? "absolute inset-0 bg-white/60 dark:bg-slate-950/60" : "h-[70vh] border border-slate-200 dark:border-slate-800",
-            )}>
+            <div
+              className={cn(
+                "flex items-center justify-center gap-2 rounded-lg text-sm text-slate-400",
+                url
+                  ? "absolute inset-0 bg-white/60 dark:bg-slate-950/60"
+                  : "h-[70vh] border border-slate-200 dark:border-slate-800",
+              )}
+            >
               <Loader2 className="h-4 w-4 animate-spin" />
               {t("documents.templates.previewRendering")}
             </div>
@@ -127,15 +127,16 @@ export function PdfPreview({
       */}
       {missing.length > 0 && !error && (
         <div
-          className={"flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 " +
-            "p-3 dark:border-amber-900 dark:bg-amber-950/40"}>
+          className={
+            "flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 " +
+            "p-3 dark:border-amber-900 dark:bg-amber-950/40"
+          }
+        >
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
           <p className="text-sm text-slate-700 dark:text-slate-300">
             {t("documents.templates.previewMissing", {
               count: missing.length,
-              fields: missing
-                .map((f) => t(`documents.templates.fieldLabels.${f}`, { defaultValue: f }))
-                .join(", "),
+              fields: missing.map((f) => t(`documents.templates.fieldLabels.${f}`, { defaultValue: f })).join(", "),
             })}
           </p>
         </div>
