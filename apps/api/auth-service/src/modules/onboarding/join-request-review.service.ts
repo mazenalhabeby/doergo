@@ -3,7 +3,14 @@ import { clampListLimit } from '@hbcfield/shared';
 import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BillingService } from '../billing/billing.service';
-import { Role, DEFAULT_PERMISSIONS, mayGrantBaseRole, loadOrgPermissionCeiling, permissionsExceed, permissionsFromUserFlags } from '@hbcfield/shared';
+import {
+  Role,
+  DEFAULT_PERMISSIONS,
+  mayGrantBaseRole,
+  loadOrgPermissionCeiling,
+  permissionsExceed,
+  permissionsFromUserFlags,
+} from '@hbcfield/shared';
 import { permissionColumns } from '../../common/records/permission-columns';
 
 /** The office deciding join requests: the list, approving (with a role), refusing. */
