@@ -9,7 +9,7 @@ import { toneChip, toneSolid, type Tone } from "@/lib/status-tones"
 import { formatAge, reasonsOf } from "@/lib/phone-sync"
 
 /** A phone's sync state as one of the six tones (lib/status-tones). */
-export const SYNC_TONE: Record<SyncHealthState, Tone> = {
+const SYNC_TONE: Record<SyncHealthState, Tone> = {
   stuck: "danger",
   needs_member: "warning",
   sending: "primary",

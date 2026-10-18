@@ -110,7 +110,7 @@ export function autoClockFieldError(field: AutoClockField, form: AutoClockForm):
  * - `noCoordinates`: a workspace with no map point has no area to arm; said, not hidden,
  *   so the office knows what to fix (General → address / map point).
  */
-export type AutoClockAvailability = "ok" | "remote" | "noCoordinates"
+type AutoClockAvailability = "ok" | "remote" | "noCoordinates"
 
 export function autoClockAvailability(
   space: { isRemote?: boolean | null; lat?: number | null; lng?: number | null }): AutoClockAvailability {
@@ -123,7 +123,7 @@ export function autoClockAvailability(
  * A member's consent as the office reads it. `unknown` when the server did not
  * send the field (an older server) — say nothing rather than claim "not agreed".
  */
-export type AutoClockConsent = { state: "agreed"; at: string } | { state: "notAgreed" } | { state: "unknown" }
+type AutoClockConsent = { state: "agreed"; at: string } | { state: "notAgreed" } | { state: "unknown" }
 
 export function autoClockConsent(
   row: { autoClockConsentAt?: string | null; user?: { autoClockConsentAt?: string | null } | null } | null | undefined): AutoClockConsent {

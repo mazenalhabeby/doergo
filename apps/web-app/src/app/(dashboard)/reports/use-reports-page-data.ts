@@ -20,7 +20,7 @@ import { useTimeFormat } from "@/hooks/use-time-format"
 import { notify } from "@/lib/toast"
 import { localDateKey } from "@hbcfield/shared/client"
 
-export const TIMESHEET_DEFAULT = [
+const TIMESHEET_DEFAULT = [
   "date",
   "day",
   "shiftStart",
@@ -32,7 +32,7 @@ export const TIMESHEET_DEFAULT = [
   "hoursInShift",
   "status"]
 
-export interface ActiveReport {
+interface ActiveReport {
   def: ReportDefinition
   name: string
   builder: boolean // editable measures/dimensions/dataset

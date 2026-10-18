@@ -20,7 +20,7 @@ export interface ValidationErrors {
 // Sub-components for form fields
 // ============================================================================
 
-export interface EmailFieldProps {
+interface EmailFieldProps {
   value: string;
   onChange: (value: string) => void;
   error?: string;
@@ -90,7 +90,7 @@ export function EmailField({
   );
 }
 
-export interface PasswordFieldProps {
+interface PasswordFieldProps {
   value: string;
   onChange: (value: string) => void;
   error?: string;

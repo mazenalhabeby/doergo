@@ -5,7 +5,7 @@ import type { TFunction } from "i18next"
 import { cn } from "@/lib/utils"
 
 /** Who a workspace belongs to — my project / my company / a customer company (a separate axis from its type). */
-export type OwnershipKind = "PROJECT" | "COMPANY" | "CUSTOMER"
+type OwnershipKind = "PROJECT" | "COMPANY" | "CUSTOMER"
 
 /** The three choices, read by the new-workspace form and a workspace's General tab. */
 export function ownershipKindOptions(t: TFunction) {

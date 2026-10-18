@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 
-import { code, listPage, strip } from "./_screen"
+import { listPage, strip } from "./_screen"
 import { readSource } from "../../../../test-utils/read-source"
 
 /*

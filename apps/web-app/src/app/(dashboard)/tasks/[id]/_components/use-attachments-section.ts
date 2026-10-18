@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { taskAttachmentsApi, uploadToS3, type Attachment } from "@/lib/api"
 
-export const MAX_FILE_SIZE = 20 * 1024 * 1024
+const MAX_FILE_SIZE = 20 * 1024 * 1024
 
  // 20MB
 export const ALLOWED_TYPES = [
@@ -23,7 +23,7 @@ export const ALLOWED_TYPES = [
   "text/plain",
 ]
 
-export interface UploadingFile {
+interface UploadingFile {
   id: string
   file: File
   progress: number

@@ -5,9 +5,9 @@ import { getToken, getTokenAt, setToken } from './api/client';
 import { authApi } from './api/endpoints';
 
 /** Signed out after this long with no keyboard, mouse or touch. Matches the server's token lifetime. */
-export const IDLE_LIMIT_MS = 30 * 60 * 1000;
+const IDLE_LIMIT_MS = 30 * 60 * 1000;
 /** A token older than this is swapped for a fresh one while somebody is working. */
-export const REFRESH_AFTER_MS = 10 * 60 * 1000;
+const REFRESH_AFTER_MS = 10 * 60 * 1000;
 const TICK_MS = 30 * 1000;
 const ACTIVITY = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel'] as const;
 

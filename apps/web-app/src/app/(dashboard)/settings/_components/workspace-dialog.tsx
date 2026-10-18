@@ -67,12 +67,12 @@ export function WeekendPicker({ value, onChange, disabled }: { value: number[]; 
   )
 }
 
-export function useCountries() {
+function useCountries() {
   const lang = useLang()
   return useQuery({ queryKey: keys.calendar.countries(lang), queryFn: () => calendarApi.countries(lang), staleTime: Infinity })
 }
 
-export function useRegions(country: string | null) {
+function useRegions(country: string | null) {
   const lang = useLang()
   return useQuery({
     queryKey: keys.calendar.regions(country, lang),

@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils"
 
 /** The red the product has always used for a destructive confirm. */
-export const DESTRUCTIVE_CONFIRM_CLASS = "bg-red-600 hover:bg-red-700"
+const DESTRUCTIVE_CONFIRM_CLASS = "bg-red-600 hover:bg-red-700"
 
 export interface ConfirmDialogProps {
   /** Controlled open state; leave both out when a `trigger` opens it. */

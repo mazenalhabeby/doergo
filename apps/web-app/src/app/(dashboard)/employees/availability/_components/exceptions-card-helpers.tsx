@@ -44,7 +44,7 @@ export function Bar({ space, t: c }: { space: FloorSpace; t: FloorTally }) {
   )
 }
 
-export function Fraction({ t: c }: { t: FloorTally }) {
+function Fraction({ t: c }: { t: FloorTally }) {
   return (
     <span className="flex items-baseline gap-0.5 tabular-nums">
       <span className="text-[23px] font-bold leading-none tracking-tight">{c.here}</span>

@@ -9,21 +9,21 @@ import { formatMonthYear } from "@/lib/format-date"
 
 export type TimeScale = "day" | "week" | "month"
 
-export function getMonthLabel(d: Date): string {
+function getMonthLabel(d: Date): string {
   return formatMonthYear(d)
 }
 
 export const ROW_HEIGHT = 36
 
-export const MIN_COL_WIDTH_DAY = 120
+const MIN_COL_WIDTH_DAY = 120
 
-export const MIN_COL_WIDTH_WEEK = 44
+const MIN_COL_WIDTH_WEEK = 44
 
-export const MIN_COL_WIDTH_MONTH = 14
+const MIN_COL_WIDTH_MONTH = 14
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-export interface TimelineGroup {
+interface TimelineGroup {
   label: string
   color?: string
   tasks: Task[]

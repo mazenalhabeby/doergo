@@ -112,5 +112,3 @@ export function useTaskFilters() {
     mineOnly, setMineOnly,
   }
 }
-
-export type TaskFilters = ReturnType<typeof useTaskFilters>

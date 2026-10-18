@@ -9,7 +9,7 @@ import { GEOFENCE_POLYGON_LIMITS } from "@hbcfield/shared/client"
 import type { LocationPickerProps } from "./location-picker"
 
 /** Where the map opens: with no pin yet, and its zoom once there is one. */
-export const VIEW = {
+const VIEW = {
   site: { center: [48.1351, 11.582] as [number, number], emptyZoom: 12, pinnedZoom: 16 },
   address: { center: [52.52, 13.405] as [number, number], emptyZoom: 4, pinnedZoom: 15 },
 }

@@ -1,15 +1,4 @@
-/**
- * The web's API, one module per domain (`./tasks.ts`, `./attendance.ts`, …),
- * every request through the shared client and endpoint table:
- * `call(tasksEndpoints.get, { id })` — `tasksEndpoints` IS `apiEndpoints.tasks`,
- * imported by its own name so a page bundles only the domains it calls
- * (next.config marks lib/api side-effect free; see the bundle note there).
- *
- * Screens import from here — `import { tasksApi, type Task } from "@/lib/api"` —
- * exactly the names the single 8,000-line api.ts exported before the split.
- */
-export { API_BASE_URL } from '../endpoints';
-export type { ApiResponse, RequestOptions } from '../http-client';
+
 export { authApi } from './auth';
 export { analyticsApi } from './analytics';
 export { approvalsApi } from './approvals';
@@ -25,7 +14,6 @@ export { employeesApi } from './employees';
 export { epicsApi } from './epics';
 export { invitationsApi } from './invitations';
 export { invoicesApi } from './invoices';
-export { joinRequestsApi } from './join-requests';
 export { leaveLedgerApi } from './leave-ledger';
 export { legalEntitiesApi } from './legal-entities';
 export { locationsApi } from './locations';
@@ -58,7 +46,6 @@ export { trackingApi } from './tracking';
 export type {
   DatasetMeta,
   ReportCadence,
-  ReportColumn,
   ReportDatePreset,
   ReportDefinition,
   ReportGranularity,
@@ -66,10 +53,8 @@ export type {
   SavedReport
 } from './types/analytics';
 export type {
-  Asset,
   AssetActivity,
   AssetCategory,
-  AssetExpenseStatus,
   AssetListRow,
   AssetLogDue,
   AssetLogEntry,
@@ -79,25 +64,13 @@ export type {
   ContractFields,
   ContractPreview,
   ContractReading,
-  ContractStep,
-  CustodyHolderRef,
   CustodyPeriodDto,
   MaintenanceHistoryItem,
-  OrphanAsset,
-  PendingExpense
+  OrphanAsset
 } from './types/assets';
-export type { BreakPlanRow, BreakRuleRow, BreakSummary, EntryEditChange, EntryEditHistoryItem, NoShowRow } from './types/attendance';
-export type {
-  CalendarAttendee,
-  CalendarAvailability,
-  CalendarEventDetail,
-  CalendarEventInput,
-  CalendarPerson,
-  CalendarRange,
-  CalendarSettings,
-  LeaveCountResult
-} from './types/calendar';
-export type { CustomFieldDefinition, CustomFieldType, CustomFieldValue } from './types/custom-fields';
+export type { BreakPlanRow, BreakRuleRow, BreakSummary, EntryEditChange, EntryEditHistoryItem } from './types/attendance';
+export type { CalendarEventDetail, CalendarEventInput, CalendarPerson, CalendarSettings } from './types/calendar';
+export type { CustomFieldDefinition, CustomFieldType } from './types/custom-fields';
 export type { Customer, CustomerActivity, CustomerAddress, CustomerContactLink, CustomerDetail } from './types/customers';
 export type {
   BrowseFolder,
@@ -111,31 +84,18 @@ export type {
   IssuedRow,
   MatchCandidateRow,
   MemberDocumentRow,
-  PendingReviewRow,
-  RequirementRow,
-  RouteCandidateStep
+  RequirementRow
 } from './types/documents';
 export type {
-  CoverDay,
   CoverVerdict,
   FloorPerson,
   FloorSpace,
   OrgTimeOffRequest,
   ScheduleEntry,
   ScheduleEntryInput,
-  TimeOffRequest,
   TimeOffStatus
 } from './types/employees';
-export type { LeaveBalance } from './types/employees';
-export type {
-  LeaveAdjustmentDto,
-  LeaveBalanceLedgerFields,
-  LeaveLedger,
-  LeaveOpening,
-  LeavePolicyFields,
-  OpeningBalanceMatch,
-  OpeningBalanceRowDto
-} from './types/leave-ledger';
+export type { LeaveAdjustmentDto, LeavePolicyFields, OpeningBalanceMatch } from './types/leave-ledger';
 export type { Epic } from './types/epics';
 export type { Invoice, InvoiceItem, InvoiceItemInput, InvoiceStatus } from './types/invoices';
 export type { LegalEntity, LegalEntityBankAccount, LegalEntityInput } from './types/legal-entities';
@@ -145,12 +105,12 @@ export type { OvertimeRequest, OvertimeRoundDetail, PaginationMeta } from './typ
 export type { Phase } from './types/phases';
 export type { PortalCategoryInput, PortalRequestView } from './types/portal-admin';
 export type { RecurringFrequency, RecurringTaskTemplate } from './types/recurring-tasks';
-export type { ReportAttachment, ReportAttachmentType } from './types/report-attachments';
-export type { PartUsed, ServiceReport, ServiceReportSummary } from './types/reports';
+export type { ReportAttachment } from './types/report-attachments';
+export type { PartUsed, ServiceReportSummary } from './types/reports';
 export type { CreateRotaInput } from './types/rota';
-export type { ShiftIssue, ShiftIssueEvent, ShiftIssueSeverity, ShiftIssueStatus, WorkLogAttachmentInput } from './types/shift-issues';
+export type { ShiftIssue, ShiftIssueEvent, WorkLogAttachmentInput } from './types/shift-issues';
 export type { CreateShiftInput } from './types/shifts';
-export type { LinkDocumentRow, LinkOpenResult, LinkRefusal } from './types/sign-link';
+export type { LinkDocumentRow, LinkOpenResult } from './types/sign-link';
 export type { PortalSummary } from './types/space-portal';
 export type { SpaceShare, SpaceShareLevel, SpaceShareRequestStatus, SpaceShareRequestType, SpaceShareStatus } from './types/space-sharing';
 export type { SpaceUnit } from './types/space-units';
@@ -159,30 +119,20 @@ export type { Attachment } from './types/task-attachments';
 export type {
   CandidateState,
   ChecklistItem,
-  ChecklistPerson,
-  Comment,
   CreateTaskInput,
   CrewView,
-  JobTimeReport,
-  JobTimeSplit,
-  JobTimeView,
   OnBehalf,
-  OpenRoleTask,
   RoleOption,
-  RolePreview,
-  RoleStats,
   Task,
-  TaskAssignee,
   TaskDependency,
   TaskEvent,
-  TaskHandover,
   TaskStepSubmission,
   TasksListResponse,
   UpdateTaskInput
 } from './types/tasks';
 export type { InboxNotification } from './types/users';
 export type { StatusWorkflow, WorkflowStatus } from './types/workflows';
-export type { WorkLogAttachment, WorkLogNote } from './types/worklog';
+export type { WorkLogNote } from './types/worklog';
 export { uploadToS3 } from './uploads';
 export { STORY_POINT_OPTIONS, usersApi } from './users';
 export { workflowsApi } from './workflows';
@@ -190,9 +140,16 @@ export { worklogApi } from './worklog';
 
 // Shared types and helpers screens have always imported from here.
 export type {
-  BreakStatus, Break, CompanyLocation, CreateEmployeeInput, CreateInvitationInput, EmployeeListItem, EmployeeProfile,
-  EmployeeStats, EmployeesQueryParams, Invitation, InvitationValidation, JoinRequest, OnboardingStatus, OrgCodeValidation,
-  PaginatedResponse, PerformanceMetrics, TimeEntry, UpdateEmployeeInput,
-  IntakeCategory as PortalIntakeCategory, CustomerUnit as PortalCustomerUnit,
+  Break,
+  CompanyLocation,
+  CreateEmployeeInput,
+  CreateInvitationInput,
+  EmployeeListItem,
+  Invitation,
+  OrgCodeValidation,
+  PerformanceMetrics,
+  TimeEntry,
+  UpdateEmployeeInput,
+  IntakeCategory as PortalIntakeCategory
 } from '@hbcfield/shared/client';
-export { isBreakActive, TimeEntryStatus, BreakType, InvitationStatus, JoinRequestStatus, JoinPolicy } from '@hbcfield/shared/client';
+export { TimeEntryStatus, BreakType, InvitationStatus, JoinPolicy } from '@hbcfield/shared/client';

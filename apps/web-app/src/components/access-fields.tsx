@@ -2,7 +2,7 @@
 
 import { MessageCircle } from "lucide-react"
 import { moduleAllowedForExternal } from "@hbcfield/shared/client"
-import type { AccessDraft, MobileModule, SpaceScope, AccessPlatform } from "@hbcfield/shared/client"
+import type { AccessDraft } from "@hbcfield/shared/client"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { useAccessFields, Field } from "./use-access-fields"

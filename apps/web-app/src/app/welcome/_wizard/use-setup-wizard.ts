@@ -7,7 +7,7 @@ import { locationsApi } from "@/lib/api"
 import { INDUSTRY_CARDS, classifyWork, planFromIndustry, toolsFromModules, type WorkPlan } from "@/lib/setup"
 import { buildOrg, type BuildStep } from "@/lib/setup/build"
 
-export type Grouping = "byType" | "byPlace" | "byTeam" | "pickForMe"
+type Grouping = "byType" | "byPlace" | "byTeam" | "pickForMe"
 
 export const BUILD_STEPS: BuildStep[] = ["company", "spaces", "tools", "finish"]
 

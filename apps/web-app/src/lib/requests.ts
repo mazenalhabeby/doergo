@@ -1,5 +1,4 @@
 import {
-  LEAVE_TYPES,
   REQUEST_KINDS,
   isAbsence,
   isRequestKind,
@@ -8,7 +7,7 @@ import {
   type LeaveType,
   type RequestInput,
   type RequestInputError,
-  type RequestKind,
+  type RequestKind
 } from "@hbcfield/shared/client"
 
 /**
@@ -46,7 +45,6 @@ export const LEAVE_TYPE_REASON_KEY: Record<LeaveType, "vacation" | "sickLeave" |
   FAMILY: "family",
   OTHER: "other",
 }
-export { LEAVE_TYPES }
 
 /** The two kinds that are about ONE day: a changed day, and overtime agreed in advance. */
 export function isOneDayKind(kind: RequestKind): boolean {
@@ -71,7 +69,7 @@ export function formatRequestMinutes(minutes: number, t: Translate): string {
 }
 
 /** The part of a request that is not its dates — the thing actually being asked. */
-export interface RequestFacts {
+interface RequestFacts {
   kind?: string | null
   type?: string | null
   space?: { id?: string; name: string } | null
@@ -107,7 +105,7 @@ export function requestDetail(r: RequestFacts, t: Translate): string | null {
 }
 
 /** What the request form holds, whatever the kind. */
-export interface RequestDraft {
+interface RequestDraft {
   kind: RequestKind
   startDate: string | null
   endDate: string | null

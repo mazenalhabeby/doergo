@@ -36,7 +36,7 @@ export interface Props {
   onTimeOff?: (day: string) => void
 }
 
-export const pad = (n: number) => String(n).padStart(2, "0")
+const pad = (n: number) => String(n).padStart(2, "0")
 
 export const hm = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`
 
@@ -46,7 +46,7 @@ export function at(date: string, time: string): Date {
   return new Date(y!, m! - 1, d!, h ?? 0, mi ?? 0)
 }
 
-export function roundUp(d: Date): Date {
+function roundUp(d: Date): Date {
   const x = new Date(d)
   x.setMinutes(Math.ceil((x.getMinutes() + 1) / 30) * 30, 0, 0)
   return x

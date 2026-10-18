@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "fs"
+import { readdirSync } from "fs"
 import { join } from "path"
 import { readSource } from "../test-utils/read-source"
 

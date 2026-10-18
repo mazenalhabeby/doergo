@@ -1,4 +1,4 @@
-import fs from 'fs';
+
 import path from 'path';
 import { BUILTIN_ROLES, EXTERNAL_DEFAULT_ROLE_SLUG } from '@hbcfield/shared/client';
 import { readNavbar } from './_navbar-screen';

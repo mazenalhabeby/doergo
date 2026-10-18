@@ -172,7 +172,7 @@ export function TaskDetailPageSkeleton() {
 }
 
 /** Create task page */
-export function TaskNewPageSkeleton() {
+function TaskNewPageSkeleton() {
   return (
     <div className={PAGE_OUTER}>
       <div className="mx-auto max-w-4xl px-6 py-8 space-y-6">

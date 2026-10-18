@@ -22,7 +22,7 @@
  */
 import { formatMoney, toCents } from "@hbcfield/shared/client"
 
-export { formatMoney, toCents, fromCents, currencySymbol } from "@hbcfield/shared/client"
+export { formatMoney, currencySymbol } from "@hbcfield/shared/client"
 
 /** The pinned locale money is written in on screens that show records (invoices, rates, statements). */
 export const MONEY_LOCALE = "en-IE"

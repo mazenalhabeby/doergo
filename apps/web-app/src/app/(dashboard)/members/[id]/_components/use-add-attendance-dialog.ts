@@ -22,7 +22,7 @@ export interface AddAttendanceDialogProps {
   onAdded?: () => void
 }
 
-export type Mode = "single" | "range"
+type Mode = "single" | "range"
 
 /** AddAttendanceDialog's state and handlers — everything before its markup, moved here unchanged. */
 export function useAddAttendanceDialog({

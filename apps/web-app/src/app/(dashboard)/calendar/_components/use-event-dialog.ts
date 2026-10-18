@@ -10,7 +10,7 @@ import { calendarApi, type CalendarEventInput } from "@/lib/api"
 import { serverErrorMessage } from "@/lib/server-error"
 import { dayKey } from "../_lib/layout"
 import { useEventDialogData, hm, at, type Props } from "./use-event-dialog-data"
-export { hm, at, type Props, roundUp, pad } from "./use-event-dialog-data"
+export { hm, at, type Props } from "./use-event-dialog-data"
 
 /** EventDialog's state and handlers — everything before its markup, moved here unchanged. */
 export function useEventDialog({

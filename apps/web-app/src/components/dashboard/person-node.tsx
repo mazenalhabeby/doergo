@@ -4,7 +4,7 @@ import React from "react"
 import { cn } from "@/lib/utils"
 import { WorkerAvatar, type WorkerAvatarProps } from "./worker-avatar"
 
-export type TagVariant = "task" | "hrs" | "hrs-warn"
+type TagVariant = "task" | "hrs" | "hrs-warn"
 
 export interface PersonNodeTag {
   text: string

@@ -8,7 +8,7 @@ import { formatMonthYear } from "@/lib/format-date"
 
 export const DAY_WIDTH = 16
 
-export const DONE_STATUSES = ["COMPLETED", "CLOSED"]
+const DONE_STATUSES = ["COMPLETED", "CLOSED"]
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -21,7 +21,7 @@ export interface EpicRoadmapProps {
   onEpicClick?: (epicId: string | null) => void
 }
 
-export interface EpicRow {
+interface EpicRow {
   epic: Epic
   totalTasks: number
   completedTasks: number

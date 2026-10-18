@@ -14,7 +14,7 @@ import { createTaskIndicators } from "./create-task-indicators"
 import { useCreateTaskType, useSpaceTaskType } from "./use-create-task-type"
 import { useCreateTaskAssignment } from "./use-create-task-assignment"
 import type { CreateTaskDialogProps } from "./create-task-types"
-export type { CreateTaskDialogProps, AssigneeOption } from "./create-task-types"
+export type { CreateTaskDialogProps } from "./create-task-types"
 import { useRepeatState, useTaskSpaces } from "./create-task-sections"
 
 /**

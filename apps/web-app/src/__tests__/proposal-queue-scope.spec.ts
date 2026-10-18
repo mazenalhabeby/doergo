@@ -1,4 +1,4 @@
-import fs from "fs"
+
 import path from "path"
 import { readSource } from "../test-utils/read-source"
 

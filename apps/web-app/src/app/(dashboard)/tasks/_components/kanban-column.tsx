@@ -9,7 +9,7 @@ import { TaskCard } from "./task-card"
 /** One column of the kanban board — moved here unchanged. */
 // ─── Column ──────────────────────────────────────────────────────────────────
 
-export interface KanbanColumnProps {
+interface KanbanColumnProps {
   label: string
   dotColor: string
   tasks: Task[]

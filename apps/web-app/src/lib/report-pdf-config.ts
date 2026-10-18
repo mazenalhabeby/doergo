@@ -11,10 +11,10 @@ import {
 } from "./report-pdf-options"
 
 /** The look of an exported report PDF (presets, colours) and its small formatters — moved here unchanged from report-pdf.ts. */
-export interface RGB { r: number; g: number; b: number }
+interface RGB { r: number; g: number; b: number }
 
 /** Fully-resolved render config. Templates are presets over this shape. */
-export interface PdfConfig {
+interface PdfConfig {
   accent: RGB
   orientation: "portrait" | "landscape"
   paper: PaperSize
@@ -33,21 +33,21 @@ export interface PdfConfig {
   note?: string // short intro / disclaimer under the title
 }
 
-export const BLUE: RGB = { r: 37, g: 99, b: 235 } // #2563EB (blue-600)
+const BLUE: RGB = { r: 37, g: 99, b: 235 } // #2563EB (blue-600)
 
-export const SLATE: RGB = { r: 51, g: 65, b: 85 } // slate-700
+const SLATE: RGB = { r: 51, g: 65, b: 85 } // slate-700
 
 export const INK: RGB = { r: 30, g: 41, b: 59 } // slate-800
 
 export const MUTED: RGB = { r: 100, g: 116, b: 139 } // slate-500
 
-export function hexToRgb(hex: string): RGB {
+function hexToRgb(hex: string): RGB {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex.trim())
   if (!m) return BLUE
   return { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) }
 }
 
-export function baseCfg(): Omit<PdfConfig, "accent"> {
+function baseCfg(): Omit<PdfConfig, "accent"> {
   return {
     orientation: "portrait", paper: "a4", font: "helvetica", density: "comfortable", headerStyle: "line",
     logo: true, summary: false, summaryPosition: "top", chart: true, table: true, signature: false, pageNumbers: true,

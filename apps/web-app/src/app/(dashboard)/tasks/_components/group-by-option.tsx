@@ -9,7 +9,7 @@ import type { TaskContextMenuActions } from "./task-context-menu"
 
 export type GroupByOption = "none" | "sprint" | "epic" | "assignee" | "priority" | "space"
 
-export interface GroupDef {
+interface GroupDef {
   key: string
   label: string
   sublabel?: string

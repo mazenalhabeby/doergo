@@ -215,7 +215,7 @@ export function HolidayList({ settings, year: thisYear }: { settings: CalendarSe
   )
 }
 
-export function HolidayDialog({ open, row, onClose, onSave }: {
+function HolidayDialog({ open, row, onClose, onSave }: {
   open: boolean
   row: Row | null
   onClose: () => void

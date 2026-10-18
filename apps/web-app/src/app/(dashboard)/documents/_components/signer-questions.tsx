@@ -19,7 +19,7 @@ import { personName } from "@hbcfield/shared/client"
   actually needed never learns it existed.
 */
 /** One answer to "who signs this step" — a person on file, or one typed in. */
-export type SignerChoice = { userId?: string; customerId?: string; email?: string; name?: string }
+type SignerChoice = { userId?: string; customerId?: string; email?: string; name?: string }
 
 export function SignerQuestions({
   drafts,

@@ -13,7 +13,7 @@ export const APPLE_EASE = "cubic-bezier(0.32, 0.72, 0, 1)"
 
 export const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
-export const MAX_VISIBLE_PILLS = 3
+const MAX_VISIBLE_PILLS = 3
 
 // ─── Tooltip ────────────────────────────────────────────────────────────────
 
@@ -54,7 +54,7 @@ export const PillTooltip = React.memo(function PillTooltip({
 
 // ─── Calendar Cell (memoized) ──────────────────────────────────────────────
 
-export interface CalendarCellProps {
+interface CalendarCellProps {
   day: Date
   dayInWeek: number
   isCurrentMonth: boolean

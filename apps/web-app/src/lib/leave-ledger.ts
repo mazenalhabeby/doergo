@@ -25,7 +25,7 @@ export const LEAVE_LINE_LABEL_KEY: Record<LeaveBalanceLine["key"], string> = {
   TAKEN: "leaveLedger.lines.TAKEN",
 }
 
-export interface BalanceView {
+interface BalanceView {
   lines: LeaveBalanceLine[]
   allowance: number
   remaining: number
@@ -88,7 +88,7 @@ export function formatDays(days: number, locale?: string): string {
  * How to name the leave year: the calendar year by its number, a work year by
  * its two ends ("15 Apr – 14 Apr"). `dayMonth` formats a YYYY-MM-DD as day+month.
  */
-export type LeaveYearLabel =
+type LeaveYearLabel =
   | { kind: "calendar"; year: number }
   | { kind: "work"; from: string; to: string }
 

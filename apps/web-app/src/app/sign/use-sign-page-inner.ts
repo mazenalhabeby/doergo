@@ -20,7 +20,7 @@ import { notify } from "@/lib/toast"
   choice for the same reason.
 */
 
-export type Step = "list" | "agree" | "draw" | "done"
+type Step = "list" | "agree" | "draw" | "done"
 
 /** SignPageInner's state and handlers — everything before its markup, moved here unchanged. */
 export function useSignPageInner() {

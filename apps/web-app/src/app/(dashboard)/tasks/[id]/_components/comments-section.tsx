@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { formatTimeAgo } from "@/lib/format-date"
 import { UserAvatar } from "@/components/user-avatar"
 
-export interface CommentData {
+interface CommentData {
   id: string
   content: string
   createdAt: string

@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 // Module color mapping for pills
-export const MODULE_COLORS: Record<string, string> = {
+const MODULE_COLORS: Record<string, string> = {
   time_tracking: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
   sprints: "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
   story_points: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
@@ -41,7 +41,7 @@ export const MODULE_COLORS: Record<string, string> = {
   custom_fields: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 }
 
-export function getModuleLabel(key: string): string {
+function getModuleLabel(key: string): string {
   return AVAILABLE_MODULES.find((m) => m.key === key)?.label || key
 }
 

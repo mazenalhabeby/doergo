@@ -8,7 +8,7 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { SignaturePad } from "@/components/signature-pad"
 import { cn } from "@/lib/utils"
 import { useStepMoveDialogData, PHOTO_TYPES, type StepMoveDialogProps } from "./use-step-move-dialog-data"
-export { PHOTO_TYPES, type StepMoveDialogProps, MAX_PHOTO_BYTES } from "./use-step-move-dialog-data"
+export { type StepMoveDialogProps } from "./use-step-move-dialog-data"
 
 /** StepMoveDialog's state and handlers — everything before its markup, moved here unchanged. */
 export function useStepMoveDialog(

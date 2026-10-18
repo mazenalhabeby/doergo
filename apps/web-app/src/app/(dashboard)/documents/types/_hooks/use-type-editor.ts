@@ -148,6 +148,3 @@ export function useTypeEditor({
     route, setRoute, retentionMonths, setRetentionMonths,
   }
 }
-
-/** What TypeEditor and its sections read. */
-export type TypeEditorState = ReturnType<typeof useTypeEditor>

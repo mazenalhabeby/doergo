@@ -20,36 +20,6 @@ export interface GeoTimezoneAnswer {
   timezone?: unknown
 }
 
-export interface NominatimAddress {
-  road?: string
-  pedestrian?: string
-  footway?: string
-  house_number?: string
-  suburb?: string
-  neighbourhood?: string
-  city?: string
-  town?: string
-  village?: string
-  municipality?: string
-  hamlet?: string
-  postcode?: string
-  county?: string
-  state?: string
-  country?: string
-}
-
-/** Compose "Street Number, Postcode City" from Nominatim's structured address. */
-export function formatNominatimAddress(a?: NominatimAddress | null, fallback?: string): string {
-  if (!a) return fallback ?? ""
-  const street = a.road || a.pedestrian || a.footway || ""
-  // Austrian/German order: street then house number ("Kapellenstraße 30").
-  const line1 = [street, a.house_number].filter(Boolean).join(" ")
-  const city = a.city || a.town || a.village || a.municipality || a.hamlet || a.suburb || ""
-  const line2 = [a.postcode, city].filter(Boolean).join(" ")
-  const out = [line1, line2].filter(Boolean).join(", ")
-  return out || fallback || ""
-}
-
 /**
  * Every call to the gateway's `/geo/*` proxy goes through here — the same
  * request pipeline as every other API call: the caller's bearer token (and a

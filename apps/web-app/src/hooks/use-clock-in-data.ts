@@ -24,7 +24,7 @@ export type BrowserPosition = Awaited<ReturnType<typeof getBrowserPosition>>
  * Exported because two surfaces show it and it was written twice — the copies
  * had already drifted in wording by the time they were merged.
  */
-export function geoErrorMessage(t: TFunction, reason: GeolocationFailure): string {
+function geoErrorMessage(t: TFunction, reason: GeolocationFailure): string {
   switch (reason) {
     case "denied":
       return t(

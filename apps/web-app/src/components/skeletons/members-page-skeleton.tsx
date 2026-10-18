@@ -85,22 +85,6 @@ export function InvitationsPageSkeleton() {
   )
 }
 
-/** Join requests page */
-export function JoinRequestsPageSkeleton() {
-  return (
-    <div className={PAGE_OUTER}>
-      <div className={PAGE_INNER}>
-        <PageHeader titleW="w-44" controls={1} hasAction={false} />
-        <SummaryLine />
-        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-          <SimpleTableSkeleton cols={6} rows={5} />
-          <PaginationBar />
-        </div>
-      </div>
-    </div>
-  )
-}
-
 /** Settings page */
 export function SettingsPageSkeleton() {
   return (

@@ -15,7 +15,7 @@ import { apiError } from "../server-error"
  * arrives, the caller gets the payload.
  */
 /** The payload a documents answer carries: `X` from `{ success, data: X }`, or the bare answer itself. */
-export type DocumentsPayload<R> = R extends { data: infer D } ? D : R
+type DocumentsPayload<R> = R extends { data: infer D } ? D : R
 
 /**
  * `unwrapDocuments<X>(response)` names the payload; `unwrapDocuments(response)` reads it off the

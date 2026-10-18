@@ -1,7 +1,7 @@
 import { formatHoursMinutes } from "@hbcfield/shared/client"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
-import { PDF_PALETTE, PDF_TABLE_THEME, loadLogo } from "./pdf-common"
+import { PDF_TABLE_THEME, loadLogo } from "./pdf-common"
 import { dayKeyOf, fileNamePart, pdfFileName, periodPart } from "./pdf-filename"
 import {
   documentUpper, fillLabel, formatDocumentDate, formatDocumentMoney, formatDocumentQuantity,
@@ -17,19 +17,6 @@ import {
   drawStatusStamp,
 } from "./invoice-branding"
 export { type InvoiceBranding, type InvoicePdfData } from "./invoice-branding"
-
-/**
- * Client-side invoice PDF, mirroring the "PDF studio" approach in report-pdf.ts
- * (jsPDF + jspdf-autotable, org letterhead with logo/address, graceful fallback
- * to name-only if the logo is CORS-blocked). Kept self-contained so it does not
- * depend on api.ts types (which change independently).
- *
- * Written in the CLIENT's language (`locale`) — every label, date and amount;
- * see `invoice-document-locale.ts`. Descriptions, notes and names go as written.
- */
-
-/** The document palette — lives in pdf-common.ts; re-exported for callers that import it from here. */
-export { PDF_PALETTE }
 
 /** The document itself — exported so a test can read what a client receives. */
 export async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): Promise<jsPDF> {

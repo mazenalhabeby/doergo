@@ -4,9 +4,6 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { getPriorityConfig, type TaskPriority } from "@/lib/constants"
 
-// Re-export for backwards compatibility
-export type { TaskPriority }
-
 interface PriorityBadgeProps {
   priority: TaskPriority | string
   className?: string

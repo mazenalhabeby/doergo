@@ -14,7 +14,7 @@ import { pdfLocaleFor } from "@/lib/invoice-document-locale"
 import type { SupportedLocale } from "@hbcfield/shared/client"
 import { type LifecycleStep } from "../_lib/lifecycle"
 
-export function toPdfData(inv: Invoice, locale: SupportedLocale): InvoicePdfData {
+function toPdfData(inv: Invoice, locale: SupportedLocale): InvoicePdfData {
   return {
     locale,
     invoiceNumber: inv.invoiceNumber,

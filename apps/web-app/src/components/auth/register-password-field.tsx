@@ -21,7 +21,7 @@ export interface InputClassFn {
   (field: string, hasError: boolean): string;
 }
 
-export interface NameFieldsProps {
+interface NameFieldsProps {
   firstName: string;
   lastName: string;
   onFirstNameChange: (value: string) => void;
@@ -101,7 +101,7 @@ export function NameFields({
   );
 }
 
-export interface EmailFieldProps {
+interface EmailFieldProps {
   value: string;
   onChange: (value: string) => void;
   error?: string;
@@ -159,7 +159,7 @@ export function EmailField({
   );
 }
 
-export interface PasswordFieldProps {
+interface PasswordFieldProps {
   value: string;
   onChange: (value: string) => void;
   error?: string;

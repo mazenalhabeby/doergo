@@ -18,7 +18,7 @@ import { useNotificationBellData } from "./use-notification-bell-data"
   catching a typo'd field name, which `any` never did.
 */
 
-export interface ChatEventPayload {
+interface ChatEventPayload {
   message?: {
     senderId?: string
     body?: string
@@ -26,14 +26,14 @@ export interface ChatEventPayload {
   } | null
 }
 
-export interface JoinRequestEventPayload {
+interface JoinRequestEventPayload {
   userName?: string
   userEmail?: string
   organizationName?: string
   reason?: string
 }
 
-export interface AttendanceEventPayload {
+interface AttendanceEventPayload {
   userName?: string
   flagSummary?: string
   timeEntry?: {
@@ -43,7 +43,7 @@ export interface AttendanceEventPayload {
   } | null
 }
 
-export interface BreakEventPayload {
+interface BreakEventPayload {
   break?: { userName?: string } | null
 }
 
@@ -52,11 +52,11 @@ export interface BreakEventPayload {
 // are emitted as the RAW task object, others (statusChanged, declined, comment,
 // attachment) are wrapped as { task, ... } or carry a flat taskId. Read the id
 // and title tolerantly so the deep-link never becomes "/tasks/undefined".
-export const evTaskId = (d: TaskEventPayload): string | undefined => d?.task?.id ?? d?.taskId ?? d?.id
+const evTaskId = (d: TaskEventPayload): string | undefined => d?.task?.id ?? d?.taskId ?? d?.id
 
-export const evTaskTitle = (d: TaskEventPayload): string => d?.task?.title ?? d?.title ?? ""
+const evTaskTitle = (d: TaskEventPayload): string => d?.task?.title ?? d?.title ?? ""
 
-export const taskLink = (d: TaskEventPayload): string | undefined => {
+const taskLink = (d: TaskEventPayload): string | undefined => {
   const id = evTaskId(d)
   return id ? `/tasks/${id}` : undefined
 }
@@ -66,7 +66,7 @@ export const taskLink = (d: TaskEventPayload): string | undefined => {
 // The clock event no longer carries the reverse-geocoded clock-in/-out address
 // (a member's whereabouts do not travel to every screen in the organization):
 // away from a site reads "Remote", at a site its name.
-export const attendanceInfo = (d: AttendanceEventPayload, t: TFunction) => {
+const attendanceInfo = (d: AttendanceEventPayload, t: TFunction) => {
   const te = d?.timeEntry
   const u = te?.user
   const name = d?.userName || personName(u)

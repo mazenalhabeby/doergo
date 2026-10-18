@@ -26,7 +26,7 @@ import { WEEKDAY_KEYS } from "./use-rota-tab"
 export { RECURRENCE_BADGE } from "./rota-tab-helpers-parts"
 
 /** RotaTab's module-level helpers, moved here unchanged so its sections can read them too. */
-export const RECURRENCES: ShiftRecurrence[] = [
+const RECURRENCES: ShiftRecurrence[] = [
   ShiftRecurrence.DAILY,
   ShiftRecurrence.WEEKLY,
   ShiftRecurrence.MONTHLY,

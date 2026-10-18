@@ -68,7 +68,7 @@ export const StepReportsSection = dynamic(
   { ssr: false })
 
 /** The shape a lazily loaded section holds while its code arrives. */
-export function SectionPlaceholder({ rows }: { rows: number }) {
+function SectionPlaceholder({ rows }: { rows: number }) {
   return (
     <div className="space-y-2" aria-hidden>
       {Array.from({ length: rows }).map((_, i) => (

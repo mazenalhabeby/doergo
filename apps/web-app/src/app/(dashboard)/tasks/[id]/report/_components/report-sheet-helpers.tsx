@@ -47,11 +47,11 @@ export function Note({ who, meta, text }: { who: string; meta: string; text: str
   )
 }
 
-export const TIME_KINDS = ["working", "travel", "blocked"] as const
+const TIME_KINDS = ["working", "travel", "blocked"] as const
 
-export const TIME_BAR = { working: "bg-green-500", travel: "bg-sky-500", blocked: "bg-amber-500" } as const
+const TIME_BAR = { working: "bg-green-500", travel: "bg-sky-500", blocked: "bg-amber-500" } as const
 
-export const TIME_TEXT = { working: "text-green-700", travel: "text-sky-700", blocked: "text-amber-700" } as const
+const TIME_TEXT = { working: "text-green-700", travel: "text-sky-700", blocked: "text-amber-700" } as const
 
 export function TimeBlock({ report: r, t, when }: { report: TaskReport; t: Translate; when: (iso: string | null | undefined) => string }) {
   const tm = r.time!
@@ -103,7 +103,7 @@ export function TimeBlock({ report: r, t, when }: { report: TaskReport; t: Trans
   )
 }
 
-export function Photo(
+function Photo(
   {
     photo,
     t,

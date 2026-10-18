@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { keys } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
 import { mayAskMoreTime } from "./ask-more-time-rule"
-export { mayAskMoreTime } from "./ask-more-time-rule"
 
 /**
  * "Ask for more time" — the ONE extra-time request (the same route the phone

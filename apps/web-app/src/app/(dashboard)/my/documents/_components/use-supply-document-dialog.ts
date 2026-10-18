@@ -8,7 +8,7 @@ import { documentsApi, uploadToS3, type DocumentTypeRow } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { keys } from "@/lib/query-keys"
 
-export const MAX_BYTES = 20 * 1024 * 1024
+const MAX_BYTES = 20 * 1024 * 1024
 
 /** SupplyDocumentDialog's state and handlers — everything before its markup, moved here unchanged. */
 export function useSupplyDocumentDialog({

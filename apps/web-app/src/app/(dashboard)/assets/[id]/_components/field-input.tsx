@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 /** The photo formats the server accepts for a logbook photo. */
-export const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf"
+const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf"
 
 /** Today as a LOCAL day — the one the person's wall calendar shows. */
 export const todayIso = () => localDayKey(new Date())
@@ -104,7 +104,7 @@ export function FieldInput({
   )
 }
 
-export function problemText(t: (k: string, d: string) => string, p: LogValueProblem): string {
+function problemText(t: (k: string, d: string) => string, p: LogValueProblem): string {
   switch (p.code) {
     case "required": return t("assetLog.problem.required", "This is needed")
     case "not-a-number": return t("assetLog.problem.notANumber", "That is not a number")

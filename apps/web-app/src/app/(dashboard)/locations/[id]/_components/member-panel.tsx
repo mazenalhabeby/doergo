@@ -7,7 +7,6 @@ import { type SpaceMember, type SpaceRoleInSpace } from "@hbcfield/shared/client
 import { Sheet } from "@/components/ui/sheet"
 import { useMemberPanel } from "./use-member-panel"
 import { MemberPanelMembers } from "./member-panel-members"
-export { CostFromProfile } from "./member-panel-helpers"
 
 /** Everything about one person in this workspace — what the row only shows. */
 export function MemberPanel({

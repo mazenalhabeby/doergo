@@ -27,7 +27,7 @@ import {
   B2cPortal,
 } from './time-tracking';
 
-export const SpaceSharing = () => (
+const SpaceSharing = () => (
   <Frame h={96}>
     <circle cx="74" cy="48" r="28" className={INK} strokeWidth="1.6" />
     <circle cx="326" cy="48" r="28" className={DONE} strokeWidth="1.6" />
@@ -44,7 +44,7 @@ export const SpaceSharing = () => (
 
 /* ── options ──────────────────────────────────────────────────────────────── */
 
-export const Workflows = () => (
+const Workflows = () => (
   <Frame h={96}>
     {[0, 1, 2, 3].map((i) => (
       <g key={i}>
@@ -59,7 +59,7 @@ export const Workflows = () => (
   </Frame>
 );
 
-export const Recurring = () => (
+const Recurring = () => (
   <Frame h={100}>
     <rect x="70" y="10" width="260" height="82" rx="9" className={GHOST} strokeWidth="1.4" />
     <line x1="70" y1="30" x2="330" y2="30" className={LINE} strokeWidth="1.2" />
@@ -72,7 +72,7 @@ export const Recurring = () => (
   </Frame>
 );
 
-export const ShiftScheduling = () => (
+const ShiftScheduling = () => (
   <Frame h={100}>
     {[0, 1, 2, 3, 4].map((c) => (
       <line key={c} x1={92 + c * 60} y1="12" x2={92 + c * 60} y2="92" className={LINE} strokeWidth="1" opacity="0.4" />
@@ -87,7 +87,7 @@ export const ShiftScheduling = () => (
   </Frame>
 );
 
-export const Overtime = () => (
+const Overtime = () => (
   <Frame h={92}>
     <rect x="30" y="34" width="200" height="20" rx="6" className={INK} strokeWidth="1.4" />
     <rect x="230" y="34" width="66" height="20" rx="6" className={WARN} strokeWidth="1.4" strokeDasharray="4 3" />
@@ -104,7 +104,7 @@ export const Overtime = () => (
   </Frame>
 );
 
-export const Invoicing = () => (
+const Invoicing = () => (
   <Frame h={104}>
     <rect x="112" y="6" width="176" height="92" rx="9" className={GHOST} strokeWidth="1.5" />
     {[0, 1, 2].map((i) => (
@@ -119,7 +119,7 @@ export const Invoicing = () => (
   </Frame>
 );
 
-export const ReportsBuilder = () => (
+const ReportsBuilder = () => (
   <Frame h={100}>
     <rect x="20" y="14" width="104" height="74" rx="9" className={GHOST} strokeWidth="1.4" />
     {[0, 1, 2].map((i) => (
@@ -139,7 +139,7 @@ export const ReportsBuilder = () => (
   </Frame>
 );
 
-export const ReportScheduling = () => (
+const ReportScheduling = () => (
   <Frame h={96}>
     <rect x="112" y="14" width="128" height="74" rx="9" className={INK} strokeWidth="1.5" />
     <path d="M112 20 l64 44 l64 -44" className="stroke-primary/55" strokeWidth="1.8" fill="none" />
@@ -151,7 +151,7 @@ export const ReportScheduling = () => (
   </Frame>
 );
 
-export const AuditLog = () => (
+const AuditLog = () => (
   <Frame h={100}>
     {[0, 1, 2, 3].map((i) => (
       <g key={i} opacity={1 - i * 0.16}>
@@ -169,7 +169,7 @@ export const AuditLog = () => (
   </Frame>
 );
 
-export const Documents = () => (
+const Documents = () => (
   <Frame h={104}>
     <rect x="118" y="6" width="164" height="92" rx="9" className={GHOST} strokeWidth="1.5" />
     {[0, 1, 2].map((i) => <Bar key={i} x={134} y={20 + i * 12} w={i === 2 ? 74 : 130} h={5} />)}
@@ -186,7 +186,7 @@ export const Documents = () => (
   </Frame>
 );
 
-export const PriorityRouting = () => (
+const PriorityRouting = () => (
   <Frame h={96}>
     {[0, 1, 2, 3].map((i) => (
       <rect key={i} x={148 + i * 62} y="52" width="52" height="30" rx="7" className={GHOST} strokeWidth="1.3" />
@@ -205,7 +205,7 @@ export const PriorityRouting = () => (
   </Frame>
 );
 
-export const LiveChat = () => (
+const LiveChat = () => (
   <Frame h={96}>
     <path d="M52 16 h150 a9 9 0 0 1 9 9 v26 a9 9 0 0 1 -9 9 h-118 l-18 14 v-14 h-14 a9 9 0 0 1 -9 -9 v-26 a9 9 0 0 1 9 -9z"
       className={GHOST} strokeWidth="1.5" />
@@ -218,7 +218,7 @@ export const LiveChat = () => (
   </Frame>
 );
 
-export const DedicatedSupport = () => (
+const DedicatedSupport = () => (
   <Frame h={96}>
     <circle cx="128" cy="48" r="30" className={INK} strokeWidth="1.7" />
     <circle cx="128" cy="40" r="9" className="fill-current" opacity="0.35" />

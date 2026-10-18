@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 // Form Component
 // ============================================================================
 
-export interface ResetPasswordFormProps {
+interface ResetPasswordFormProps {
   password: string;
   confirmPassword: string;
   setPassword: (password: string) => void;
@@ -209,7 +209,7 @@ export function SuccessState() {
 // Loading Spinner
 // ============================================================================
 
-export function LoadingSpinner() {
+function LoadingSpinner() {
   return (
     <div className="flex items-center justify-center">
       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

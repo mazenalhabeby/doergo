@@ -6,7 +6,7 @@ import type { TFunction } from "i18next"
 import { StoreBadges } from "./StoreBadges"
 
 /** The marketing type faces (the same strings home-client-helpers declares). */
-export const FOOTER_DISPLAY = "font-[family:var(--font-familjen)]"
+const FOOTER_DISPLAY = "font-[family:var(--font-familjen)]"
 export const FOOTER_MONO = "font-[family:var(--font-martian)]"
 
 /** The footer's Company column — the same links on every marketing page. */

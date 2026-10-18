@@ -14,7 +14,7 @@ import {
   hasFacts,
   type AssetRecord,
 } from "./use-asset-record-dialog-data"
-export { encodeHolders, type Facts, factsOf, hasFacts, type AssetRecord, dayOf } from "./use-asset-record-dialog-data"
+export { type AssetRecord } from "./use-asset-record-dialog-data"
 
 /**
  * What a save sends for the plate.

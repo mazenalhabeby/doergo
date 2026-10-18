@@ -18,7 +18,7 @@
  * `hooks/use-after-first-load.ts` binds it to React Query.
  */
 
-export interface DeferredGateOptions {
+interface DeferredGateOptions {
   minDelayMs: number
   maxDelayMs: number
   /** Is anything still loading? (React Query: `isFetching() > 0`.) */

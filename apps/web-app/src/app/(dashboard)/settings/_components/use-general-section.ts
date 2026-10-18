@@ -12,7 +12,7 @@ import { type ComboboxOption } from "@/components/ui/combobox"
 import { getCountries } from "@/lib/countries"
 import { resizeImageToDataUrl } from "../_lib/resize-image"
 
-export const INDUSTRY_OPTIONS = [
+const INDUSTRY_OPTIONS = [
   "hvac", "plumbing", "electrical", "generalContracting",
   "cleaning", "security", "itServices", "other",
 ] as const

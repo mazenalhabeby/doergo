@@ -5,17 +5,7 @@ import { isSameAppPath } from "@/lib/safe-links"
 import { usersApi } from "@/lib/api"
 import { type Notification } from "./use-notification-bell-data"
 import { useNotificationBellData2 } from "./use-notification-bell-data2"
-export {
-  evTaskTitle,
-  taskLink,
-  type ChatEventPayload,
-  type JoinRequestEventPayload,
-  type AttendanceEventPayload,
-  attendanceInfo,
-  type BreakEventPayload,
-  evTaskId
-} from "./use-notification-bell-data2"
-export { type Notification, mapInboxItem, type NotificationType, eventTypeToNotifType } from "./use-notification-bell-data"
+export { type NotificationType } from "./use-notification-bell-data"
 
 /** NotificationBell's state and handlers — everything before its markup, moved here unchanged. */
 export function useNotificationBell() {

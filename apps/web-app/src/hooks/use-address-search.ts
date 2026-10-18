@@ -13,7 +13,7 @@ export interface AddressSearchResult {
   placeId?: string
 }
 
-export interface ResolvedAddress {
+interface ResolvedAddress {
   label: string
   lat: number
   lng: number

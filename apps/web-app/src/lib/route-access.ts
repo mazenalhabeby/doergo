@@ -38,8 +38,7 @@ export {
   type DenyReason,
   type AccessVerdict,
   holdsGrant,
-  evaluateRule,
-  crmAccess,
+  evaluateRule
 } from './route-access/rules';
 export { ROUTE_RULES } from './route-access/table';
 export {

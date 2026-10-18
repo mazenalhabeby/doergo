@@ -10,7 +10,7 @@ import { useCompanies } from "@/components/companies/company-select"
 import { clientLocaleFormValue, clientLocalePayload } from "@/lib/client-locale"
 import { useActiveSpaces } from "@/hooks/use-space-directory"
 
-export const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 
 /** CustomerForm's state and handlers — everything before its markup, moved here unchanged. */
 export function useCustomerForm({ spaceId, existing, onSaved, trigger, personOnly }: Pick<{

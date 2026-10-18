@@ -26,7 +26,7 @@ export function fmt(value: unknown, format?: string): string {
 }
 
 // Through the shared builder: every cell quoted, formula-looking cells defused.
-export function toCSV(result: ReportResult): string {
+function toCSV(result: ReportResult): string {
   return toCsv(
     result.rows,
     result.columns.map((c) => ({ header: c.label, value: (r: (typeof result.rows)[number]) => r[c.key] })),

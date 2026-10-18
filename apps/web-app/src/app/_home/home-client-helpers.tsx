@@ -18,7 +18,7 @@ import { useReveal } from './use-reveal';
  * firm rather than a flattering one — the per-person price only improves from
  * there.
  */
-export const FIELD_STACK_TEAM = 6;
+const FIELD_STACK_TEAM = 6;
 
 export const FIELD_STACK_PER_PERSON = Math.round(
   orgMonthlyCost({

@@ -13,7 +13,7 @@ export function isSameMonth(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()
 }
 
-export function getCalendarDays(year: number, month: number): Date[] {
+function getCalendarDays(year: number, month: number): Date[] {
   const firstDay = new Date(year, month, 1)
   const startDate = new Date(firstDay)
   startDate.setDate(startDate.getDate() - startDate.getDay()) // Start from Sunday

@@ -47,7 +47,7 @@ export function ProposalRow({ proposal, onReview }: { proposal: AssetProposal; o
 }
 
 /** What to call it, in the same order the shared rule uses. */
-export function nameOf(f: ContractFields): string {
+function nameOf(f: ContractFields): string {
   return f.name || f.registration || f.serial || [f.manufacturer, f.model].filter(Boolean).join(" ")
 }
 

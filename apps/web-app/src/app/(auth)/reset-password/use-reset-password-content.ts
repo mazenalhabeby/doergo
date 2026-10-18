@@ -7,7 +7,7 @@ import { notify } from '@/lib/toast';
 import { z } from 'zod';
 import { authApi } from '@/lib/api';
 
-export const passwordSchema = z.object({
+const passwordSchema = z.object({
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')

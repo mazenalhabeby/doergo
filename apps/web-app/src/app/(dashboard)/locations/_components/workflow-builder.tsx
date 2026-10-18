@@ -294,4 +294,3 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
 })
 
 export { WorkflowBuilder }
-export type { WorkflowBuilderProps }

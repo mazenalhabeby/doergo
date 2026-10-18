@@ -21,7 +21,7 @@ import {
 /** The photo types a step-form photo may be — the server wants an image. */
 export const PHOTO_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif"]
 
-export const MAX_PHOTO_BYTES = 20 * 1024 * 1024
+const MAX_PHOTO_BYTES = 20 * 1024 * 1024
 
 export interface StepMoveDialogProps {
   open: boolean

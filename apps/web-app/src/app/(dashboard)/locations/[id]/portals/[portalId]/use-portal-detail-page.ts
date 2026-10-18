@@ -21,7 +21,7 @@ import { accessAllows, isAdmin } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { useActiveSpaces } from "@/hooks/use-space-directory"
 import { TPL_BY_KEY, EMPTY_CAT } from "./portal-templates"
-export { TPL_BY_KEY, EMPTY_CAT, TEMPLATES } from "./portal-templates"
+export { TEMPLATES } from "./portal-templates"
 
 /** PortalDetailPage's state and handlers — everything before its markup, moved here unchanged. */
 export function usePortalDetailPage() {

@@ -19,13 +19,6 @@ import { PRIORITY_COLORS, STATUS_COLORS } from "@hbcfield/shared/constants"
 */
 import i18n from "i18next"
 
-// =============================================================================
-// TASK STATUS
-// =============================================================================
-
-// Re-export TaskStatus from shared for convenience
-export { TaskStatus } from "@hbcfield/shared/types"
-
 export const TASK_STATUSES = [
   "DRAFT",
   "NEW",

@@ -16,7 +16,7 @@ export const STATE_PILL: Record<OvertimeRoundState, string> = {
 }
 
 /** The round's facts as the shared rule reads them. */
-export function factsOf(r: OvertimeRequest) {
+function factsOf(r: OvertimeRequest) {
   return {
     status: r.status,
     maxDurationMinutes: r.maxDurationMinutes ?? null,

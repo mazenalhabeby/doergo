@@ -16,15 +16,12 @@
  * ⚠️ Nothing else in apps/admin calls `fetch` (admin-fetch-guard.spec.ts).
  */
 import {
-  ApiError,
   PLATFORM_2FA_ENROLMENT_REQUIRED,
   createApiClient,
   isApiError,
   type ApiClient,
   type ApiClientConfig,
 } from '@hbcfield/shared/client';
-
-export { ApiError };
 
 /** The API base. Same-origin `/api/v1` in production (admin.hbcfield.com proxies it). */
 export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '/api/v1').replace(/\/$/, '');

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { STEP_FORM_LIMITS, type StepFormField, type StepFormFieldType } from "@hbcfield/shared/client"
 import { definitionErrors, type DefinitionErrors, type StepFormDraft } from "@/lib/step-forms"
 
-export const TYPE_NAME: Record<StepFormFieldType, string> = {
+const TYPE_NAME: Record<StepFormFieldType, string> = {
   note: "Note",
   choice: "Choice",
   photos: "Photos",

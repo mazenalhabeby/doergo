@@ -36,14 +36,14 @@ import { useAssignableMembers } from "@/hooks/use-assignable-members"
  * retire could retire any record.
  */
 
-export type Stage = "paste" | "fields" | "confirm"
+type Stage = "paste" | "fields" | "confirm"
 
-export const FIELD_KEYS = ["registration", "vin", "manufacturer", "model", "startsOn", "endsOn"] as const
+const FIELD_KEYS = ["registration", "vin", "manufacturer", "model", "startsOn", "endsOn"] as const
 
-export type FieldKey = (typeof FIELD_KEYS)[number]
+type FieldKey = (typeof FIELD_KEYS)[number]
 
 /** Blank strings must not reach the server as empty values it then stores. */
-export function clean(fields: ContractFields): ContractFields {
+function clean(fields: ContractFields): ContractFields {
   const out: ContractFields = {}
   for (const [k, v] of Object.entries(fields)) {
     const trimmed = typeof v === "string" ? v.trim() : v

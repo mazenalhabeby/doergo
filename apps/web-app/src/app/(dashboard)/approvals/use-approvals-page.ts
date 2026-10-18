@@ -3,20 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  APPROVAL_KINDS,
-  type ApprovalDecision,
-  type ApprovalItem,
-  type ApprovalKind,
-  type ApprovalInbox,
-} from "@hbcfield/shared/client"
+import { APPROVAL_KINDS, type ApprovalDecision, type ApprovalItem, type ApprovalKind, type ApprovalInbox } from "@hbcfield/shared/client"
 import { approvalsApi } from "@/lib/api"
 import { keys, invalidateTimeOff } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouteAccess } from "@/hooks/use-route-access"
 
-export { KIND_KEYS, itemKey, type Filter } from "./approval-keys"
+export { itemKey } from "./approval-keys"
 import { KIND_KEYS, itemKey, type Filter } from "./approval-keys"
 import { useApprovalDays } from "./use-approval-days"
 

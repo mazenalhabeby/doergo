@@ -258,7 +258,7 @@ export function KindContents({
 }
 
 /** Who has this one — under whatever the type calls them, and how many. */
-export function HolderBadge({ record, shape }: { record: AssetRecord; shape: KindShape }) {
+function HolderBadge({ record, shape }: { record: AssetRecord; shape: KindShape }) {
   const { t } = useTranslation()
   const label = kindHolderLabel(shape, t("assetRecords.holder", "Held by"))
   // Falls back to the old single columns for a record the list has not

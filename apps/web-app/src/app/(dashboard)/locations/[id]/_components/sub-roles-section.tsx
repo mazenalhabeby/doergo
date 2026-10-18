@@ -26,7 +26,7 @@ import { useSubRolesSection } from "./use-sub-roles-section"
 // "who is a Mechanic at BILLA" is answered on the card rather than by reading
 // down the member list.
 
-export const formatMoneyCents = (cents: number, currency: string) => formatMoney(cents, currency, MONEY_LOCALE)
+const formatMoneyCents = (cents: number, currency: string) => formatMoney(cents, currency, MONEY_LOCALE)
 
 export function SubRolesSection({ spaceId }: { spaceId: string }) {
   const {

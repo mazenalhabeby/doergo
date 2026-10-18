@@ -62,7 +62,7 @@ export interface DocumentRow {
  * So a charged labour line carries a HOURS / DAYS tag, its quantity carries
  * its unit ("200 h", "20 days") and its price says per hour or per day.
  */
-export function useUnits(showTags = true) {
+function useUnits(showTags = true) {
   const { t } = useTranslation()
   return {
     tag: (row: DocumentRow) =>

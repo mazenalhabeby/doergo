@@ -2,13 +2,7 @@ import type { DayKind } from '@hbcfield/shared/client';
 
 // The range, event and people shapes are the shared HTTP layer's (http/types.ts),
 // so the web and the phone read one definition of what the API returns.
-export type {
-  CalendarAttendee,
-  CalendarEventDetail,
-  CalendarEventInput,
-  CalendarPerson,
-  CalendarRange,
-} from '@hbcfield/shared/client';
+export type { CalendarEventDetail, CalendarEventInput, CalendarPerson, CalendarRange } from '@hbcfield/shared/client';
 
 
 export interface CalendarAvailability {

@@ -8,7 +8,7 @@ import { SideStatusBox } from "./side-status-box"
 import { OffDutyRow } from "./off-duty-row"
 import { ExpandedWorkerCell } from "./expanded-worker-cell"
 
-export interface ExpandedViewProps {
+interface ExpandedViewProps {
   people: PersonNodeProps[]
   onRoadPeople: PersonNodeProps[]
   remotePeople: PersonNodeProps[]

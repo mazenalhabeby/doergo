@@ -141,7 +141,7 @@ export const EMPTY_TOKEN_INFO: TokenInfo = {
   refreshTokenExp: null,
 }
 
-export type MeResponse = NonNullable<Awaited<ReturnType<typeof authApi.getMe>>>
+type MeResponse = NonNullable<Awaited<ReturnType<typeof authApi.getMe>>>
 
 /**
  * The session's user as the client holds it.

@@ -2,7 +2,7 @@ import React from "react"
 import { useTranslation } from "react-i18next"
 import { CheckCircle2, Clock, XCircle, StickyNote, Pencil, type LucideIcon } from "lucide-react"
 import { format, parseISO } from "date-fns"
-import { cn, formatTimeOfDay } from "@/lib/utils"
+import { formatTimeOfDay } from "@/lib/utils"
 import { type TimeEntry } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
@@ -14,7 +14,7 @@ import { LabelChip } from "@/components/attendance-label-chip"
 import { useTimeFormat } from "@/hooks/use-time-format"
 
 /** An entry's labels — the one catalogue's words, order and colours, with each reason on hover. */
-export function FlagReasonBadges({ entry }: { entry: TimeEntry }) {
+function FlagReasonBadges({ entry }: { entry: TimeEntry }) {
   const reader = useTimeFormat()
   const chips = deriveAttendanceFlags(entry, reader)
   if (chips.length === 0) return null
@@ -149,7 +149,7 @@ export function ApprovalCell({ entry }: { entry: TimeEntry }) {
  * original → new times, and the reason (all already on the entry). Renders
  * nothing for untouched entries.
  */
-export function EditedBadge({ entry }: { entry: TimeEntry }) {
+function EditedBadge({ entry }: { entry: TimeEntry }) {
   const { t } = useTranslation()
   const [historyOpen, setHistoryOpen] = React.useState(false)
   if (!entry.isEdited) return null

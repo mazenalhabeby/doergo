@@ -10,7 +10,7 @@ import type { AccessDraft, MobileModule } from "@hbcfield/shared/client"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Permission key → short label (for the "Grants: …" role summary line).
-export const ORG_PERM_LABEL: Record<string, string> = Object.fromEntries(
+const ORG_PERM_LABEL: Record<string, string> = Object.fromEntries(
   ACCESS_PERMISSION_SCHEMA.map((p) => [p.key, p.label]),
 )
 

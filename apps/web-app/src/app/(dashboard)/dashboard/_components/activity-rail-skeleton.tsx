@@ -23,7 +23,7 @@ export function dashboardVariant(
 export const CARD_SHAPE = [4, 2, 3, 1, 2, 1, 1, 4, 1, 1, 2, 1, 1, 1]
 
 /** Word-widths for activity lines, so the feed doesn't read as identical bars. */
-export const ACTIVITY_LINES = [
+const ACTIVITY_LINES = [
   ["82%", "38%"],
   ["66%", "44%"],
   ["91%", "31%"],

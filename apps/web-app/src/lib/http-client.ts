@@ -38,9 +38,9 @@ import {
 } from "@hbcfield/shared/client"
 import { API_BASE_URL, AUTH_BASE_URL, serverApiBaseUrl } from "./endpoints"
 import { getAccessToken, refreshAccessToken, type RefreshOutcome } from "./auth-session"
-import { TRANSPORT_MESSAGES, isTransportMessage } from "./transport-messages"
+import { TRANSPORT_MESSAGES } from "./transport-messages"
 
-export { TRANSPORT_MESSAGES, isTransportMessage }
+export { TRANSPORT_MESSAGES }
 
 const DEFAULT_TIMEOUT_MS = 30_000
 /** Sign-in, register, reset: a hung gateway must not hold the sign-in button for half a minute. */
@@ -98,7 +98,7 @@ export function authClientConfig(): ApiClientConfig {
   }
 }
 
-export const http: ApiClient = createApiClient(webClientConfig())
+const http: ApiClient = createApiClient(webClientConfig())
 export const authHttp: ApiClient = createApiClient(authClientConfig())
 
 /**

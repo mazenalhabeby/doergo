@@ -31,7 +31,7 @@ import { DEFAULT_ROLE_COLOR, roleQueryKey, useCents, useSpaceCurrency } from "./
 */
 export const SPACE_PERMISSIONS = ACCESS_PERMISSION_SCHEMA.filter((p) => p.scopes.includes("space"))
 
-export const emptyPermissions = (): PermissionSet =>
+const emptyPermissions = (): PermissionSet =>
   SPACE_PERMISSIONS.reduce((acc, p) => {
     acc[p.key] = false
     return acc

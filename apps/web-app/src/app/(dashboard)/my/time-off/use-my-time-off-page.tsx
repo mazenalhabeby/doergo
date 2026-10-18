@@ -9,24 +9,10 @@ import { keys } from "@/lib/query-keys"
 import { serverErrorMessage } from "@/lib/server-error"
 import { LEAVE_TYPE_REASON_KEY, draftToRequest, isOneDayKind, type RequestKind } from "@/lib/requests"
 import { useMyTimeOffPageData, EMPTY_FIELDS, type ReasonKey, dayDiff, addDays, toISO } from "./use-my-time-off-page-data"
-export {
-  EMPTY_FIELDS,
-  type ReasonKey,
-  dayDiff,
-  addDays,
-  toISO,
-  startOfDay,
-  monthGrid,
-  bookedDays,
-  REASON_TYPES,
-  SunGlyph,
-  PulseGlyph,
-  FamilyGlyph,
-  DotsGlyph
-} from "./use-my-time-off-page-data"
+export { toISO, REASON_TYPES } from "./use-my-time-off-page-data"
 
 /** UI key → stored enum (the inverse of the shared web map). Only VACATION is deducted from the allowance. */
-export const REASON_TO_TYPE = Object.fromEntries(
+const REASON_TO_TYPE = Object.fromEntries(
   Object.entries(LEAVE_TYPE_REASON_KEY).map(([type, key]) => [key, type]),
 ) as Record<ReasonKey, LeaveType>
 

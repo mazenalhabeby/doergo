@@ -11,9 +11,8 @@ import {
   type Box,
   type Viewport,
 } from "./measure"
-import type { TourDef, TourGateContext, TourStep } from "./types"
+import type { TourDef } from "./types"
 import { useTourProviderData, routeMatches, storage } from "./use-tour-provider-data"
-export { routeMatches, storage } from "./use-tour-provider-data"
 
 export interface TourContextValue {
   /** Start a tour by id (used by the Help launcher and programmatic triggers). */
@@ -37,7 +36,7 @@ export interface TourContextValue {
  * mistake the two pre-animation frames for the final position. It replaces the
  * 820ms guess that used to stand in for the whole wait.
  */
-export const ENTER_ANIMATION_START_MS = 120
+const ENTER_ANIMATION_START_MS = 120
 
 /**
  * How long to keep looking for a target that isn't in the DOM yet, before
@@ -45,7 +44,7 @@ export const ENTER_ANIMATION_START_MS = 120
  * replaces (22/45 tries at 100ms) — an `optional` step gives up sooner because
  * its target legitimately may not exist at all.
  */
-export const ABSENT_BUDGET_MS = { optional: 2200, required: 4500 }
+const ABSENT_BUDGET_MS = { optional: 2200, required: 4500 }
 
 /**
  * Once a position is settled we stop polling and listen for real change
@@ -54,7 +53,7 @@ export const ABSENT_BUDGET_MS = { optional: 2200, required: 4500 }
  * 250ms timer re-rendering the whole tour for its entire life. It only calls
  * setState when the rectangle actually moved.
  */
-export const IDLE_RECHECK_MS = 1000
+const IDLE_RECHECK_MS = 1000
 
 /**
  * Scrolling a target into view may need a second go: a panel above it finishes
@@ -63,17 +62,17 @@ export const IDLE_RECHECK_MS = 1000
  * cooldown — a smooth scroll runs ~300ms and re-issuing one mid-flight fights
  * the animation, which is its own kind of never settling.
  */
-export const MAX_SCROLL_ATTEMPTS = 3
+const MAX_SCROLL_ATTEMPTS = 3
 
-export const SCROLL_COOLDOWN_TICKS = 8
+const SCROLL_COOLDOWN_TICKS = 8
 
 /** The element's rectangle, in the plain shape `measure.ts` reasons about. */
-export function boxOf(el: HTMLElement): Box {
+function boxOf(el: HTMLElement): Box {
   const r = el.getBoundingClientRect()
   return { x: r.left, y: r.top, width: r.width, height: r.height }
 }
 
-export function viewportOf(): Viewport {
+function viewportOf(): Viewport {
   return { width: window.innerWidth, height: window.innerHeight }
 }
 

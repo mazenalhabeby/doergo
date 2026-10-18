@@ -40,7 +40,7 @@ export interface Notification {
 }
 
 // Map a persisted delivery eventType → the bell's NotificationType (for icon/color).
-export function eventTypeToNotifType(eventType: string): NotificationType {
+function eventTypeToNotifType(eventType: string): NotificationType {
   const map: Record<string, NotificationType> = {
     "task.assigned": "task_assigned",
     "task.statusChanged": "task_status_changed",
@@ -60,7 +60,7 @@ export function eventTypeToNotifType(eventType: string): NotificationType {
   return map[eventType] || "task_status_changed"
 }
 
-export function mapInboxItem(item: InboxNotification): Notification {
+function mapInboxItem(item: InboxNotification): Notification {
   return {
     id: item.id,
     type: eventTypeToNotifType(item.eventType),

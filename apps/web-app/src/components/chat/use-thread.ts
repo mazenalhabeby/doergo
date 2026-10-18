@@ -13,7 +13,7 @@ import { chatApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
 import type { Thread } from "./use-chat-live"
 
-export type Shown = ChatMessage & { pending?: boolean }
+type Shown = ChatMessage & { pending?: boolean }
 
 /**
  * One conversation's messages: the newest page, older pages on request, and

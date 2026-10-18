@@ -61,7 +61,7 @@ export function ensure(c: PdfCursor, h: number) {
 
 export const lines = (c: PdfCursor, text: string, width: number) => c.doc.splitTextToSize(s(text), width) as string[]
 
-export const lineH = (size: number) => size * 0.42
+const lineH = (size: number) => size * 0.42
 
 export function paragraph(c: PdfCursor, text: string, size = 9, color: Rgb = INK, x = c.margin, width = c.contentW) {
   font(c, "normal", size, color)

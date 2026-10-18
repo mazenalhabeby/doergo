@@ -14,9 +14,6 @@ import { z } from 'zod';
 /** Name validation: only letters, spaces, hyphens, and apostrophes */
 const NAME_REGEX = /^[a-zA-Z\s\-']+$/;
 
-/** Company name: letters, numbers, spaces, and common punctuation */
-const COMPANY_REGEX = /^[a-zA-Z0-9\s\-'&.,]+$/;
-
 /** Password requirements pattern */
 const PASSWORD_PATTERNS = {
   uppercase: /[A-Z]/,
@@ -60,14 +57,6 @@ const lastNameSchema = z
   .min(2, 'Last name must be at least 2 characters')
   .max(50, 'Last name must not exceed 50 characters')
   .regex(NAME_REGEX, 'Last name can only contain letters, spaces, hyphens, and apostrophes')
-  .transform((val) => val.trim().toLowerCase());
-
-const companyNameSchema = z
-  .string()
-  .min(1, 'Company name is required')
-  .min(2, 'Company name must be at least 2 characters')
-  .max(100, 'Company name must not exceed 100 characters')
-  .regex(COMPANY_REGEX, 'Company name contains invalid characters')
   .transform((val) => val.trim().toLowerCase());
 
 // ============================================================================

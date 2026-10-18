@@ -4,7 +4,7 @@ import React, { useMemo, useState, useCallback, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { WorkspaceBox, WORKSPACE_CARD, previewMembers, type WorkspaceBoxProps } from "./workspace-box"
 
-export interface WorkspaceGridProps {
+interface WorkspaceGridProps {
   boxes: WorkspaceBoxProps[]
   className?: string
   /** When there is exactly one box, open it by default (employee single-space view). */

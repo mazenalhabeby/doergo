@@ -39,7 +39,7 @@ export const PRESET_ORDER: readonly PermissionPresetId[] = ["observer", "supervi
  * carries a key they may not hold (levels are cumulative, so nothing above it
  * could be held either). `null` when nothing beyond "none" is left.
  */
-export function areaFor(area: PermissionArea, isExternal: boolean): PermissionArea | null {
+function areaFor(area: PermissionArea, isExternal: boolean): PermissionArea | null {
   if (!isExternal) return area
   const levels = []
   for (const level of area.levels) {
@@ -95,7 +95,7 @@ export function presetChoice(
 }
 
 /** The keys a choice grants, as a sorted list (what the seat price reads). */
-export function heldKeys(perms: PermissionSet): string[] {
+function heldKeys(perms: PermissionSet): string[] {
   return PERMISSION_KEYS.filter((k) => perms[k] === true)
 }
 

@@ -46,7 +46,7 @@ import {
  * the line flips to the full seat.
  */
 
-export interface PermissionBuilderProps {
+interface PermissionBuilderProps {
   /** The person's first name or full name, for the summary heading. */
   name: string
   isExternal: boolean

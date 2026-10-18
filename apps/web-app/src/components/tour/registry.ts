@@ -4,7 +4,7 @@
  * and i18n keys) — no engine changes. Gates reuse the same client permission
  * helpers the navigation uses, so users only get tours for screens they have.
  */
-import type { TourDef, TourGateContext } from "./types"
+import type { TourDef } from "./types"
 import { WELCOME_TOURS } from "./welcome-tours"
 import { PAGE_TOURS } from "./page-tours"
 

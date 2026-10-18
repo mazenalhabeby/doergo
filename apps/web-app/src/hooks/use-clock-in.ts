@@ -6,7 +6,6 @@ import { chooseClockInLocation, parseClockInPick } from "@hbcfield/shared/client
 import { getBrowserPosition } from "@/lib/geolocation"
 import type { ClockLocation } from "@/components/clock-in-picker"
 import { useClockInData, type BrowserPosition, type ClockAction } from "./use-clock-in-data"
-export { type ClockAction, geoErrorMessage } from "./use-clock-in-data"
 
 /**
  * Clocking in and out — the whole behaviour, in one place.

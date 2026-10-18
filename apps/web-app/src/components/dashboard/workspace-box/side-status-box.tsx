@@ -1,26 +1,10 @@
 "use client"
 
 import React from "react"
-import { Circle, Briefcase, WifiOff } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import type { PersonNodeProps } from "../person-node"
 import { WorkerAvatar } from "../worker-avatar"
-
-export const StatusIcon = React.memo(function StatusIcon({ status }: { status: string }) {
-  switch (status) {
-    case "on":
-      return <Circle className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500" />
-    case "busy":
-      return <Briefcase className="h-3.5 w-3.5 text-blue-500" />
-    case "away":
-      return <Circle className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-    case "off":
-      return <WifiOff className="h-3.5 w-3.5 text-muted-foreground" />
-    default:
-      return <Circle className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500" />
-  }
-})
 
 export const SideStatusBox = React.memo(function SideStatusBox(
   {

@@ -1,4 +1,4 @@
-import fs from "fs"
+
 import path from "path"
 
 import { code, createScreen, newPage } from "./_screen"

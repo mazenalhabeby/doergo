@@ -75,7 +75,7 @@ export function pdfLocaleFor(inv: { documentLocale?: string | null }, override: 
   en-GB dates: "05 Sep 2026", "€1,234.50"); the others take their home country's
   conventions, which is what a reader of that language expects on an invoice.
 */
-export const INTL_LOCALE: Record<SupportedLocale, { money: string; date: string }> = {
+const INTL_LOCALE: Record<SupportedLocale, { money: string; date: string }> = {
   en: { money: "en-IE", date: "en-GB" },
   de: { money: "de-DE", date: "de-DE" },
   es: { money: "es-ES", date: "es-ES" },
@@ -145,7 +145,7 @@ export function fillLabel(template: string, values: Record<string, string | numb
 }
 
 /** The org-profile shape the letterhead fell back to before companies existed. */
-export interface LetterheadFallback {
+interface LetterheadFallback {
   name?: string | null
   logoUrl?: string | null
   addressLine1?: string | null
@@ -158,7 +158,7 @@ export interface LetterheadFallback {
   vatId?: string | null
 }
 
-export interface DocumentIssuer {
+interface DocumentIssuer {
   name: string | null
   logoUrl: string | null
   addressLines: string[]

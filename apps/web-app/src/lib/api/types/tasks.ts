@@ -16,8 +16,6 @@ export {
   type TaskDependency,
   type TaskHandover,
   type Comment,
-  type ChecklistPerson,
-  type JobTimeSplit,
   type JobTimeView,
   type CrewView,
   type JobTimeReport,
@@ -32,7 +30,7 @@ export {
   type UpdateTaskInput,
   type TasksQueryParams,
   type StatusCountsResponse,
-  type TaskStepSubmission,
+  type TaskStepSubmission
 } from './task-assignee';
 
 export interface Task {

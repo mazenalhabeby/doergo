@@ -29,7 +29,7 @@ export function stepConfig(status: string, statuses?: readonly WorkflowStatus[] 
 }
 
 /** The caller's `t`, as `workflowStatusLabel` takes it. */
-export type StepTranslate = (key: string, opts: { defaultValue: string }) => string
+type StepTranslate = (key: string, opts: { defaultValue: string }) => string
 
 /**
  * A step's name in the reader's language: a step from a shipped template is

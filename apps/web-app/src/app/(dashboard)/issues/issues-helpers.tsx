@@ -26,7 +26,7 @@ const STATUS_TONE: Record<string, Tone> = {
   CLOSED: "neutral",
   CANCELED: "neutral",
 }
-export const STATUS: Record<string, string> = Object.fromEntries(
+const STATUS: Record<string, string> = Object.fromEntries(
   Object.entries(STATUS_TONE).map(([status, tone]) => [status, cn("border-transparent", toneChip(tone))]),
 )
 

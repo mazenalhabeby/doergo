@@ -10,7 +10,7 @@ import { createContext, useContext } from "react"
   the whole drawer into its bundle — socket.io-client, the drawer UI and its
   queries — although the drawer is mounted once, by the dashboard layout.
 */
-export interface ChatContextValue {
+interface ChatContextValue {
   openMessages: () => void;
   openChatWith: (userId: string) => void;
   /**

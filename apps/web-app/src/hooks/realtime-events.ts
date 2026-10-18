@@ -3,13 +3,12 @@
 import { keys } from "@/lib/query-keys"
 import type { QueryKey } from "@tanstack/react-query"
 import { Events } from "./realtime-event-names"
-export { Events } from "./realtime-event-names"
 
 // The /attendance PAGE query keys (Time → tracking / approvals / breaks / no-shows
 // / days-off / availability). Distinct from the DASHBOARD keys below — both must
 // refresh on a clock or an admin edit, so keep this list as the single source and
 // spread it into every attendance-affecting event (DRY).
-export const ATTENDANCE_PAGE_KEYS: QueryKey[] = [
+const ATTENDANCE_PAGE_KEYS: QueryKey[] = [
   keys.attendance.list(), // main tracking list — ["attendance", loc, status, ...] (prefix match)
   keys.attendance.approvals(),
   keys.attendance.activeBreaks(),
@@ -21,7 +20,7 @@ export const ATTENDANCE_PAGE_KEYS: QueryKey[] = [
 ]
 
 // The DASHBOARD attendance keys (presence tiles + per-location batch + approvals).
-export const DASHBOARD_ATTENDANCE_KEYS: QueryKey[] = [
+const DASHBOARD_ATTENDANCE_KEYS: QueryKey[] = [
   keys.attendance.active(),
   keys.attendance.locationBatch(),
   keys.attendance.pendingApprovals(),
@@ -30,7 +29,7 @@ export const DASHBOARD_ATTENDANCE_KEYS: QueryKey[] = [
 ]
 
 // Everything that must refresh when attendance changes (clock or admin edit).
-export const ALL_ATTENDANCE_KEYS: QueryKey[] = [
+const ALL_ATTENDANCE_KEYS: QueryKey[] = [
   // The "on the floor right now" panel on /employees/availability. It reports
   // the clock, so every clock event moves it.
   keys.attendance.floorNow(),...DASHBOARD_ATTENDANCE_KEYS, ...ATTENDANCE_PAGE_KEYS]
@@ -38,7 +37,7 @@ export const ALL_ATTENDANCE_KEYS: QueryKey[] = [
 // Everywhere a member, an invitation or a join request is rendered. One list, so
 // the four server call sites that emit `member.changed` cannot drift from what the
 // screens actually read (DRY).
-export const MEMBER_KEYS: QueryKey[] = [
+const MEMBER_KEYS: QueryKey[] = [
   keys.members.lists(),        // every member list — the /members page, the directory, the pickers
   keys.members.details(),      // /members/[id] detail
   keys.people.contacts(),             // chat / contact directory

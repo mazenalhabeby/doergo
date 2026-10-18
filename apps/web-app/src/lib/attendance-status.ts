@@ -30,7 +30,7 @@ export interface AttendanceChip {
   explanation?: string | null
 }
 
-export interface LabelReader {
+interface LabelReader {
   locale?: string | null
   hour12?: boolean
 }

@@ -8,11 +8,8 @@ import en from './locales/en.json';
   languages exist" is how one of them starts offering a language the other
   cannot load.
 */
-import { LANGUAGE_KEY, SUPPORTED, isSupported, supportedLanguages, type Supported } from './languages';
+import { LANGUAGE_KEY, SUPPORTED, isSupported, type Supported } from './languages'
 import { refusalSentence, setRefusalTranslator } from '../lib/refusal-text';
-
-export { supportedLanguages };
-export type { Supported };
 
 /*
   ENGLISH IS BUNDLED; THE OTHER FOUR ARE FETCHED WHEN ASKED FOR.

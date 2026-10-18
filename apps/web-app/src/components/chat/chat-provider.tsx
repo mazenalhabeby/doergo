@@ -11,8 +11,6 @@ import { ChatContext } from "./chat-context"
 import { chatViewing } from "./chat-viewing"
 import { useChatBadge, useChatLive } from "./use-chat-live"
 
-export { useChat } from "./chat-context"
-
 /** One pop-up per conversation: a second message replaces it, opening the thread closes it. */
 export const chatToastId = (conversationId: string) => `chat:${conversationId}`
 

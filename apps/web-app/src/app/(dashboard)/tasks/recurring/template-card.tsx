@@ -28,14 +28,14 @@ export const PRIORITIES = [
 
 export const DAY_KEYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
 
-export type TFn = (key: string, opts?: Record<string, unknown>) => string
+type TFn = (key: string, opts?: Record<string, unknown>) => string
 
-export function getFrequencyLabel(freq: RecurringFrequency, customDays: number | null | undefined, t: TFn): string {
+function getFrequencyLabel(freq: RecurringFrequency, customDays: number | null | undefined, t: TFn): string {
   if (freq === "CUSTOM" && customDays) return t("tasks.recurring.everyNDaysValue", { count: customDays })
   return t(`tasks.recurring.frequencies.${freq}`)
 }
 
-export function getPriorityColor(priority: string): string {
+function getPriorityColor(priority: string): string {
   return PRIORITIES.find((p) => p.value === priority)?.color || PRIORITIES[0]!.color
 }
 

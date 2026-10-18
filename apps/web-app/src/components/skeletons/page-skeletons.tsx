@@ -4,20 +4,14 @@ export {
   AvailabilityPageSkeleton,
   MembersPageSkeleton,
   InvitationsPageSkeleton,
-  JoinRequestsPageSkeleton,
   SettingsPageSkeleton,
   ProfilePageSkeleton,
   AttendancePageSkeleton,
   GenericListPageSkeleton,
   SchedulePageSkeleton,
-  SprintsPageSkeleton,
+  SprintsPageSkeleton
 } from "./members-page-skeleton";
-export {
-  TaskDetailPageSkeleton,
-  TaskNewPageSkeleton,
-  EmployeeDetailPageSkeleton,
-  EmployeeNewPageSkeleton,
-} from "./employee-detail-page-skeleton";
+export { TaskDetailPageSkeleton, EmployeeDetailPageSkeleton, EmployeeNewPageSkeleton } from "./employee-detail-page-skeleton";
 
 // ============================================================================
 // Base Shimmer Block

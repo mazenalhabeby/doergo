@@ -19,7 +19,7 @@ import { keys } from "@/lib/query-keys"
  * Callers wanting only the active ones filter `isActive` themselves — the
  * server's default list is exactly that subset.
  */
-export const SPACE_DIRECTORY_PAGE = 200
+const SPACE_DIRECTORY_PAGE = 200
 
 export const spaceDirectoryKey = () => keys.locations.list({ directory: true })
 
@@ -31,7 +31,7 @@ export function fetchSpaceDirectory(): Promise<CompanyLocation[]> {
 
 export const SPACE_DIRECTORY_STALE_MS = 60_000
 
-export interface EffectiveSpaceModules {
+interface EffectiveSpaceModules {
   enabledModules: string[]
   workflowId?: string | null
 }

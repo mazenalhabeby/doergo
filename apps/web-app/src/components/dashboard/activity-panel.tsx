@@ -28,7 +28,7 @@ export interface PendingAction {
   onMessage?: () => void
 }
 
-export interface ActivityPanelProps {
+interface ActivityPanelProps {
   events: LiveEvent[]
   pending: PendingAction[]
   className?: string

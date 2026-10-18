@@ -25,7 +25,7 @@ import { CountryChip } from "@/components/companies/company-select"
  */
 export const ALL_KEY = keys.companies.includingInactive()
 
-export function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
   if (!value) return null
   return (
     <div className="grid grid-cols-[7.5rem_1fr] gap-3 py-1.5 text-sm">
@@ -35,7 +35,7 @@ export function Row({ label, value }: { label: string; value: React.ReactNode })
   )
 }
 
-export function bankLine(b: LegalEntityBankAccount): string {
+function bankLine(b: LegalEntityBankAccount): string {
   const parts = [
     b.iban && `IBAN ${b.iban.replace(/(.{4})/g, "$1 ").trim()}`,
     b.bic && `BIC ${b.bic}`,

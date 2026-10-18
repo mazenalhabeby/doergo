@@ -19,7 +19,7 @@ export const DISPLAY = 'font-[family:var(--font-familjen)]';
 
 export const MONO = 'font-[family:var(--font-martian)]';
 
-export const ACCENT = '#5B9BD5';
+const ACCENT = '#5B9BD5';
 
 /* ── pieces ──────────────────────────────────────────────────────────────── */
 
@@ -195,7 +195,7 @@ export function SiteCard({
   );
 }
 
-export function CountRow({ moduleKey, value, onChange }: { moduleKey: string; value: number; onChange: (n: number) => void }) {
+function CountRow({ moduleKey, value, onChange }: { moduleKey: string; value: number; onChange: (n: number) => void }) {
   const { t } = useTranslation();
   const price = usagePriceFor(moduleKey);
   if (!price) return null;

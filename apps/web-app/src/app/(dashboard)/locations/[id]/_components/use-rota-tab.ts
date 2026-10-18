@@ -17,7 +17,7 @@ export const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as
  * against the effective window. Date comparisons are done on yyyy-MM-dd strings
  * to sidestep timezone drift (matches how the day is displayed to the admin).
  */
-export function assignmentAppliesOn(a: ShiftAssignment, day: Date, dayStr: string): boolean {
+function assignmentAppliesOn(a: ShiftAssignment, day: Date, dayStr: string): boolean {
   const from = a.effectiveFrom?.slice(0, 10)
   const to = a.effectiveTo?.slice(0, 10)
   if (from && dayStr < from) return false
@@ -37,14 +37,14 @@ export function assignmentAppliesOn(a: ShiftAssignment, day: Date, dayStr: strin
 }
 
 /** "HH:MM" → minutes since midnight. */
-export function hhmmToMin(hhmm?: string): number {
+function hhmmToMin(hhmm?: string): number {
   if (!hhmm) return 0
   const [h, m] = hhmm.split(":").map(Number)
   return (h || 0) * 60 + (m || 0)
 }
 
 /** A shift's [start, end) window in minutes; night shifts extend past 1440. */
-export function shiftWindow(shift?: { startLocal: string; endLocal: string; crossesMidnight?: boolean }): [number, number] {
+function shiftWindow(shift?: { startLocal: string; endLocal: string; crossesMidnight?: boolean }): [number, number] {
   if (!shift) return [0, 0]
   const s = hhmmToMin(shift.startLocal)
   let e = hhmmToMin(shift.endLocal)

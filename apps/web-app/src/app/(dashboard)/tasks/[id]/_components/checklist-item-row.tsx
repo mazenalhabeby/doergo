@@ -18,7 +18,7 @@ export const APPLE_EASE = "cubic-bezier(0.32, 0.72, 0, 1)"
 
 // ── Single checklist item ───────────────────────────────────────────────────
 
-export interface ChecklistItemRowProps {
+interface ChecklistItemRowProps {
   item: ChecklistItem
   taskId: string
   onToggle: (itemId: string, isCompleted: boolean) => void

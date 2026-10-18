@@ -6,7 +6,7 @@ import { Input, Label } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { type InputClassFn } from './register-password-field';
 
-export interface ConfirmPasswordFieldProps {
+interface ConfirmPasswordFieldProps {
   value: string;
   onChange: (value: string) => void;
   error?: string;

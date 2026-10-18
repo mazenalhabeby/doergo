@@ -14,7 +14,6 @@ export {
 export {
   type AssetStatus,
   type AssetMoneyEntry,
-  type CustodyHolderRef,
   type ContractFields,
   type AssetCategory,
   type Asset,
@@ -30,9 +29,8 @@ export {
   type CustodyPeriodDto,
   type CustodyTimeline,
   type ContractReading,
-  type ContractStep,
   type ContractPreview,
-  type ContractProposalInput,
+  type ContractProposalInput
 } from './asset-status'
 
 export interface CreateAssetInput {

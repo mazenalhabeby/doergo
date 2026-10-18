@@ -201,7 +201,7 @@ export function IssueThread(
   )
 }
 
-export function ThreadItem({ e, mine, onOpenImage }: { e: ShiftIssueEvent; mine: boolean; onOpenImage: (uri: string) => void }) {
+function ThreadItem({ e, mine, onOpenImage }: { e: ShiftIssueEvent; mine: boolean; onOpenImage: (uri: string) => void }) {
   if (e.type === "MESSAGE") {
     return (
       <div className={cn("flex flex-col", mine ? "items-end" : "items-start")}>

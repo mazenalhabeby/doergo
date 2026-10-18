@@ -40,7 +40,7 @@ import { balanceView, leaveYearLabel } from "@/lib/leave-ledger"
   than four unrelated pictures. The colour does most of the work: after the
   first use, people pick by hue, not by squinting at a small drawing.
 */
-export function SunGlyph(p: React.SVGProps<SVGSVGElement>) {
+function SunGlyph(p: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.75" strokeLinecap="round" {...p}>
       <circle cx="12" cy="11" r="4" />
@@ -50,7 +50,7 @@ export function SunGlyph(p: React.SVGProps<SVGSVGElement>) {
   )
 }
 
-export function PulseGlyph(p: React.SVGProps<SVGSVGElement>) {
+function PulseGlyph(p: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <path d="M3 12h3.5l2-5 3 10 2.5-5H21" />
@@ -58,7 +58,7 @@ export function PulseGlyph(p: React.SVGProps<SVGSVGElement>) {
   )
 }
 
-export function FamilyGlyph(p: React.SVGProps<SVGSVGElement>) {
+function FamilyGlyph(p: React.SVGProps<SVGSVGElement>) {
   /*
     Two figures, not one.
 
@@ -78,7 +78,7 @@ export function FamilyGlyph(p: React.SVGProps<SVGSVGElement>) {
   )
 }
 
-export function DotsGlyph(p: React.SVGProps<SVGSVGElement>) {
+function DotsGlyph(p: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.75" strokeLinecap="round" {...p}>
       <circle cx="12" cy="12" r="8.5" strokeDasharray="3 3.2" />
@@ -112,13 +112,13 @@ export const EMPTY_FIELDS: RequestFieldsValue = { spaceId: "", startTime: "", en
 
 export const toISO = (d: Date) => localDateKey(d)
 
-export const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
 
 export const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
 
 export const dayDiff = (a: Date, b: Date) => Math.round((b.getTime() - a.getTime()) / 86400000)
 
-export function monthGrid(year: number, month: number): (Date | null)[][] {
+function monthGrid(year: number, month: number): (Date | null)[][] {
   const first = new Date(year, month, 1)
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const lead = (first.getDay() + 6) % 7 // Monday = 0
@@ -131,7 +131,7 @@ export function monthGrid(year: number, month: number): (Date | null)[][] {
 }
 
 /** ISO day → the request occupying it. Cheap lookup while rendering the grid. */
-export function bookedDays(list: TimeOffRequest[]): Map<string, TimeOffRequest> {
+function bookedDays(list: TimeOffRequest[]): Map<string, TimeOffRequest> {
   const map = new Map<string, TimeOffRequest>()
   for (const r of list) {
     if (r.status === "REJECTED" || r.status === "CANCELED") continue

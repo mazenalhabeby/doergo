@@ -148,4 +148,3 @@ const WorkflowSelector = memo(function WorkflowSelector({
 })
 
 export { WorkflowSelector }
-export type { WorkflowSelectorProps }

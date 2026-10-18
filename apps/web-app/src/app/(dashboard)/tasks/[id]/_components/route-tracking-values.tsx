@@ -22,7 +22,7 @@ export interface RouteData {
 }
 
 // Calculate average speed in km/h
-export function calculateAverageSpeed(distanceMeters: number | null, durationMs: number | null): string {
+function calculateAverageSpeed(distanceMeters: number | null, durationMs: number | null): string {
   if (!distanceMeters || !durationMs || durationMs === 0) return "—"
   const hours = durationMs / (1000 * 60 * 60)
   const km = distanceMeters / 1000
@@ -32,7 +32,7 @@ export function calculateAverageSpeed(distanceMeters: number | null, durationMs:
 }
 
 // Live elapsed time hook
-export function useLiveElapsedTime(startTime: string | null, isLive: boolean) {
+function useLiveElapsedTime(startTime: string | null, isLive: boolean) {
   const [elapsed, setElapsed] = useState<number>(0)
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export function useLiveElapsedTime(startTime: string | null, isLive: boolean) {
   readouts depend on it, so only they own the ticker; the map renders when the
   route data changes.
 */
-export function useDisplayDuration(routeData: RouteData, isLive: boolean): number {
+function useDisplayDuration(routeData: RouteData, isLive: boolean): number {
   const liveElapsed = useLiveElapsedTime(routeData.startTime || null, isLive)
   // API returns duration in seconds, convert to milliseconds for consistency.
   // Live elapsed is already in milliseconds.

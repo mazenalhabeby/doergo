@@ -37,7 +37,7 @@ import { invoiceTotals } from "@hbcfield/shared/client"
   offers. Anything else quietly rewrites a document a customer is holding.
 */
 
-export const toLine = (i: InvoiceItem): EditableLine => ({
+const toLine = (i: InvoiceItem): EditableLine => ({
   id: i.id,
   description: i.description,
   quantity: String(i.quantity),
@@ -45,7 +45,7 @@ export const toLine = (i: InvoiceItem): EditableLine => ({
 })
 
 /** Same shape the server stores, so a line counts as changed only when it is. */
-export const sameLine = (a: EditableLine, b: InvoiceItem) =>
+const sameLine = (a: EditableLine, b: InvoiceItem) =>
   a.description.trim() === b.description && num(a.quantity) === b.quantity && num(a.unitPrice) === b.unitPrice
 
 /** EditInvoiceInner's state and handlers — everything before its markup, moved here unchanged. */

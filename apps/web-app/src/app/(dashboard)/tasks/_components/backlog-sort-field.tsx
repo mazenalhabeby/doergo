@@ -33,7 +33,7 @@ export const SORT_OPTIONS: { value: BacklogSortField; labelKey: string; icon: ty
   { value: "title", labelKey: "tasks.backlog.sort.title", icon: Type },
 ]
 
-export const PRIORITY_ORDER: Record<string, number> = {
+const PRIORITY_ORDER: Record<string, number> = {
   URGENT: 0,
   HIGH: 1,
   MEDIUM: 2,

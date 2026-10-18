@@ -40,7 +40,7 @@ export interface AssetRecord {
 }
 
 /** A stored date -> what `<input type="date">` holds. */
-export const dayOf = (v?: string | null) => (v ? v.slice(0, 10) : "")
+const dayOf = (v?: string | null) => (v ? v.slice(0, 10) : "")
 
 /** The plate as the form holds it: every fact a string, empty meaning unset. */
 export const factsOf = (r?: AssetRecord) => ({

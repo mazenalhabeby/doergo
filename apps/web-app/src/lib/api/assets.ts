@@ -2,33 +2,15 @@ import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
 import type {
   Asset,
-  AssetActivity,
   AssetCategory,
-  AssetExpenseStatus,
-  AssetListRow,
-  AssetLogEntry,
-  AssetLogPage,
-  AssetLogSummary,
-  AssetMoneyEntry,
-  AssetMoneySummary,
-  AssetProposal,
   AssetUsage,
   AssetsQueryParams,
-  ContractFields,
-  ContractPreview,
-  ContractProposalInput,
-  ContractReading,
   CreateAssetCategoryInput,
   CreateAssetInput,
-  CreateAssetLogInput,
-  CustodyPeriodDto,
-  CustodyTimeline,
-  MaintenanceHistoryItem,
   OrphanAsset,
-  PendingExpense,
   UpdateAssetCategoryInput,
   UpdateAssetInput
-} from './types/assets';
+} from './types/assets'
 import { assetCategoriesEndpoints, assetsEndpoints } from '@hbcfield/shared/client';
 import { assetRecordsApi } from './assets-records';
 import { assetReviewApi } from './assets-review';

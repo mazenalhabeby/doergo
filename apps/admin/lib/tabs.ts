@@ -8,7 +8,7 @@ export type TabKey = 'orgs' | 'revenue' | 'pricing' | 'library' | 'support' | 't
  * server would refuse is not offered: the Revenue tab reads billing alerts,
  * which need `manageOrgs`, so a support agent never sees it.
  */
-export const TABS: ReadonlyArray<{ key: TabKey; label: string; cap: Cap }> = [
+const TABS: ReadonlyArray<{ key: TabKey; label: string; cap: Cap }> = [
   { key: 'orgs', label: 'Organizations', cap: 'view' },
   { key: 'revenue', label: 'Revenue', cap: 'manageOrgs' },
   { key: 'pricing', label: 'Pricing', cap: 'view' },

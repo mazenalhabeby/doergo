@@ -16,7 +16,7 @@ export type SettingsSection =
   // Personal
   | "profile" | "security" | "notifications" | "my-emails" | "clock-in"
 
-export interface NavItem {
+interface NavItem {
   key: SettingsSection
   icon: typeof Building2
   labelKey: string

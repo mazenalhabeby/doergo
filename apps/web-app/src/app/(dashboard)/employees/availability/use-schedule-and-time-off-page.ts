@@ -33,7 +33,7 @@ import { keys } from "@/lib/query-keys"
  * decision being made on the other tab. The answer now travels with the request.
  */
 
-export type Range = "fortnight" | "month"
+type Range = "fortnight" | "month"
 
 /** ScheduleAndTimeOffPage's state and handlers — everything before its markup, moved here unchanged. */
 export function useScheduleAndTimeOffPage() {
