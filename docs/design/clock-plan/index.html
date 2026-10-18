@@ -1,0 +1,262 @@
+<title>Attendance Clock Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: a work plan — one fixed rule (the past stays), then what changes for labels, the rest-vs-morning split drawn on a day strip, explainable labels, the smarter day, the guarantee, the order, two decisions. */
+:root{
+  --bg:#eef2f5; --card:#ffffff; --ink:#0f1d2b; --muted:#5a6879; --line:#d9e0e8; --soft:#f5f7fa;
+  --brand:#2563eb; --brandSoft:#2563eb14; --amber:#b45309; --amberSoft:#b4530916; --green:#047857; --greenSoft:#04785716;
+  --red:#b42318; --redSoft:#b4231814; --teal:#0f766e; --tealSoft:#0f766e16; --tip:#0f1d2b; --tipInk:#f3f6f9;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif; --sans:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace; --ar:"IBM Plex Sans Arabic","Geeza Pro","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#0b1118; --card:#121b25; --ink:#e3ebf3; --muted:#93a3b5; --line:#223042; --soft:#16212d;
+  --brand:#6b9bff; --brandSoft:#6b9bff1f; --amber:#f0a94a; --amberSoft:#f0a94a1f; --green:#4fc79c; --greenSoft:#4fc79c1f;
+  --red:#f2836f; --redSoft:#f2836f1f; --teal:#5fd3c4; --tealSoft:#5fd3c41f; --tip:#e3ebf3; --tipInk:#0b1118;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#0b1118; --card:#121b25; --ink:#e3ebf3; --muted:#93a3b5; --line:#223042; --soft:#16212d;
+  --brand:#6b9bff; --brandSoft:#6b9bff1f; --amber:#f0a94a; --amberSoft:#f0a94a1f; --green:#4fc79c; --greenSoft:#4fc79c1f;
+  --red:#f2836f; --redSoft:#f2836f1f; --teal:#5fd3c4; --tealSoft:#5fd3c41f; --tip:#e3ebf3; --tipInk:#0b1118;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:36px 140px;display:flex;flex-direction:column;gap:26px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(32px,5.5vw,52px);font-weight:800;letter-spacing:-.02em;line-height:1.04}
+h2{font-size:clamp(21px,3vw,27px);font-weight:700}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.lede{font-size:18px;color:var(--muted);max-width:64ch}
+.lede b{color:var(--ink);font-weight:600}
+section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:16px;scroll-margin:24px;transition:box-shadow .3s}
+section.speaking{box-shadow:0 0 0 3px var(--brand)}
+section > header{display:flex;flex-direction:column;gap:6px;max-width:72ch}
+section > header p{color:var(--muted)}
+.hero{background:transparent;border:0;padding:0;gap:16px}
+.listen{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-family:var(--ar);font-size:13px;background:var(--brandSoft);color:var(--brand);border:0;border-radius:999px;padding:5px 12px;cursor:pointer}
+button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.rule-band{display:flex;flex-wrap:wrap;align-items:center;gap:14px;border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--soft)}
+.rule-band .cut{font-family:var(--mono);font-size:12px;border-radius:8px;padding:6px 10px}
+.cut.old{background:var(--card);border:1px solid var(--line);color:var(--muted)}
+.cut.new{background:var(--greenSoft);color:var(--green);font-weight:600}
+.cut.day{background:var(--brand);color:#fff;font-weight:600}
+.arrow{color:var(--muted)}
+
+.table{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.scroll{overflow-x:auto}
+.scroll .table{min-width:680px}
+.tr{display:grid;grid-template-columns:minmax(150px,1fr) minmax(0,1.5fr) minmax(0,1.5fr);gap:12px;padding:11px 14px;border-top:1px solid var(--line);font-size:14.5px;align-items:start}
+.tr:first-child{border-top:0;background:var(--soft);font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tr .now{color:var(--muted)}
+.tr .now b{color:var(--red);font-weight:600}
+.tr .new b{color:var(--green);font-weight:600}
+.chip{display:inline-block;font-size:12px;border-radius:999px;padding:2px 9px;font-weight:600;white-space:nowrap}
+.chip.amber{background:var(--amberSoft);color:var(--amber)}
+.chip.teal{background:var(--tealSoft);color:var(--teal)}
+.chip.red{background:var(--redSoft);color:var(--red)}
+.chip.muted{background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+
+/* Day strip for rest vs morning */
+.daystrip{display:flex;flex-direction:column;gap:14px}
+.lane{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:center}
+.lane .lbl{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.track{position:relative;height:46px;border-radius:10px;background:var(--soft);border:1px solid var(--line);overflow:hidden}
+.seg{position:absolute;top:8px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden}
+.seg.work{background:var(--brand)} .seg.rest{background:var(--teal)} .seg.plan{background:transparent;border:2px dashed var(--muted);color:var(--muted)}
+.pin{position:absolute;top:2px;bottom:2px;width:2px;background:var(--ink)}
+.ticks{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px}
+.ticks div{position:relative;height:16px}
+.ticks span{position:absolute;transform:translateX(-50%);font-family:var(--mono);font-size:11px;color:var(--muted)}
+.verdicts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:720px){.verdicts{grid-template-columns:minmax(0,1fr)}}
+.verdict{border-radius:12px;padding:14px;border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.verdict.now{background:var(--redSoft);border-color:transparent}
+.verdict.new{background:var(--greenSoft);border-color:transparent}
+.verdict .k{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.verdict.now .k{color:var(--red)} .verdict.new .k{color:var(--green)}
+.verdict p{font-size:14.5px}
+
+/* Explain tooltip */
+.explain{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.rowmock{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;flex:1;min-width:260px}
+.rowmock .t{font-family:var(--mono);font-size:13px}
+.tipwrap{position:relative;display:inline-block}
+.tip{position:absolute;left:0;top:calc(100% + 10px);background:var(--tip);color:var(--tipInk);border-radius:10px;padding:10px 12px;font-size:13px;width:270px;line-height:1.45;z-index:1}
+.tip::before{content:"";position:absolute;top:-6px;left:22px;width:12px;height:12px;background:var(--tip);transform:rotate(45deg)}
+.tip b{font-weight:600}
+.tip .facts{font-family:var(--mono);font-size:11.5px;opacity:.85;margin-top:4px}
+.spacer{height:96px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--soft);display:flex;flex-direction:column;gap:6px;min-width:0}
+.card p{font-size:14.5px;color:var(--muted)}
+.tests{display:flex;flex-wrap:wrap;gap:6px}
+.tests span{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--card)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;counter-reset:s}
+.step{border-top:3px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:4px}
+.step.done{border-color:var(--green)}
+.step .s{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.step.done .s{color:var(--green)}
+.step p{font-size:14.5px;color:var(--muted)}
+.qs{display:grid;gap:10px}
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13.5px}
+.opt.rec{border-color:var(--brand);background:var(--brandSoft);color:var(--brand);font-weight:600}
+
+.player{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line);z-index:5}
+.player .inner{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.pbtn{width:42px;height:42px;border-radius:50%;border:0;background:var(--brand);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+.pstop{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:6px 12px;font-family:var(--ar);cursor:pointer}
+.pmeta{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.pnow{font-family:var(--ar);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:var(--brand)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <section class="hero" id="sec-intro">
+    <span class="eyebrow">Attendance · the plan, after the audit of clock-in, clock-out and every label</span>
+    <h1>Every new label right, and able to explain itself.</h1>
+    <p class="lede">We checked the code and <b>331 real entries</b>. This is what we will do: fix every mistake we found, make the worker’s day <b>smarter and lighter</b>, separate <b>late back from rest</b> from <b>late in the morning</b>, and check every new label every day so a wrong one is caught before anyone sees it.</p>
+  </section>
+
+  <section id="sec-past">
+    <header><span class="eyebrow">Rule 1</span><h2>The past stays exactly as it is</h2><p>No old entry is rewritten — not its times, not its labels, not even a wrong one. The new rules apply from the day of the update, to new entries only.</p></header>
+    <div class="rule-band" role="img" aria-label="Entries before the update unchanged; entries after follow the new rules">
+      <span class="cut old">Jul · Aug · Sep · Oct entries</span><span class="arrow">kept as they are</span>
+      <span class="cut day">Update day</span>
+      <span class="arrow">→</span><span class="cut new">New entries · new rules</span>
+    </div>
+  </section>
+
+  <section id="sec-labels">
+    <header><span class="eyebrow">Labels</span><h2>One rule per label, worked out once, never wiped by an edit</h2></header>
+    <div class="scroll"><div class="table">
+      <div class="tr"><span>Label</span><span>Found</span><span>New entries</span></div>
+      <div class="tr"><span class="chip amber">Late</span><span class="now"><b>Back from lunch → “Late 300 min”</b>; split or night shift matched to the wrong one</span><span class="new"><b>Only the first arrival of a shift.</b> Matched to the shift the clock-in falls in, or the next to start.</span></div>
+      <div class="tr"><span class="chip teal">Late back from rest</span><span class="now">Does not exist — mixed into “Late”</span><span class="new"><b>New.</b> Rest longer than planned + grace, with the real length.</span></div>
+      <div class="tr"><span class="chip muted">Any label after an edit</span><span class="now"><b>An office edit of seconds wiped a real “Late”</b>; four edits left an entry with none</span><span class="new"><b>Kept</b> unless the edit removes its reason; the edit history says what changed.</span></div>
+      <div class="tr"><span class="chip amber">Left early</span><span class="now"><b>An 11-second duplicate labelled “Left early”</b> (automatic + manual clock-in offline)</span><span class="new"><b>One open entry per shift:</b> two clock-ins arriving together join.</span></div>
+      <div class="tr"><span class="chip red">Unscheduled</span><span class="now"><b>18 entries at workspaces with no shifts</b> sent to review (rule fixed 11 Oct; old labels stay)</span><span class="new">Only where the workspace plans shifts — already true since 11 Oct.</span></div>
+      <div class="tr"><span class="chip red">Missed clock-out</span><span class="now"><b>24 don’t say how the shift was closed</b></span><span class="new">Always records how: left the site, last seen, shift end, or confirmed by the person.</span></div>
+      <div class="tr"><span class="chip amber">Clock-out outside zone</span><span class="now"><b>3 clock-outs ~30 km away with no label</b> (closed outside the normal clock-out)</span><span class="new">Judged on every way a shift closes, or says it was not judged and why.</span></div>
+      <div class="tr"><span class="chip muted">Reports · No-shows</span><span class="now"><b>Count late their own way</b> (no grace; fixed 10 min)</span><span class="new">Read the same label and the same grace.</span></div>
+      <div class="tr"><span class="chip muted">Workspace setup</span><span class="now"><b>Binderholz’s pin is 9 m outside its own boundary</b></span><span class="new">The workspace page warns when the pin is outside the drawn area.</span></div>
+    </div></div>
+  </section>
+
+  <section id="sec-rest">
+    <header><span class="eyebrow">The point you noticed</span><h2>Late back from rest is not late in the morning</h2><p>Shift 08:00–16:30 with a planned 30-minute lunch from 12:00. The worker arrives 07:58, takes lunch 12:00–12:48.</p></header>
+    <div class="daystrip" role="img" aria-label="A day: work from 07:58, lunch from 12:00 to 12:48, back to work until 16:30; planned lunch 12:00 to 12:30">
+      <div class="lane"><span class="lbl">Planned</span><div class="track"><div class="seg plan" style="left:3%;width:39%">08:00 shift</div><div class="seg plan" style="left:42%;width:5.5%">rest</div><div class="seg plan" style="left:47.5%;width:49%">until 16:30</div></div></div>
+      <div class="lane"><span class="lbl">Actual</span><div class="track"><div class="seg work" style="left:2.6%;width:39.4%">07:58 in</div><div class="seg rest" style="left:42%;width:8.7%">rest 48m</div><div class="seg work" style="left:50.7%;width:45.8%">12:48 back</div><div class="pin" style="left:47.5%"></div></div></div>
+      <div class="ticks"><span></span><div><span style="left:3%">08:00</span><span style="left:42%">12:00</span><span style="left:47.5%">12:30</span><span style="left:50.7%">12:48</span><span style="left:96.5%">16:30</span></div></div>
+    </div>
+    <div class="verdicts">
+      <div class="verdict now"><span class="k">Today</span><p>If the lunch is a clock-out and a new clock-in, the 12:48 entry is compared with <b>08:00</b> → <span class="chip amber">Late · 288 min</span>, sent to review.</p></div>
+      <div class="verdict new"><span class="k">New</span><p>Morning arrival on time — no “Late”. The rest ran 18 min over the planned 30 → <span class="chip teal">Late back from rest · 18 min</span>.</p></div>
+    </div>
+  </section>
+
+  <section id="sec-explain">
+    <header><span class="eyebrow">Explainable</span><h2>Every label says why, with the numbers</h2><p>To make this possible, each new entry keeps what it was compared against: the shift, the grace minutes, the planned rest, the distance from the site.</p></header>
+    <div class="explain">
+      <div class="rowmock"><span class="t">Tue 6 Oct · 18:15 → 06:02</span>
+        <span class="tipwrap"><span class="chip amber">Late · 15 min</span>
+          <span class="tip"><b>Arrived 15 min after the shift start.</b><span class="facts">Night shift · starts 18:00 · grace 10 min<br>Clocked in 18:15 · first arrival of the shift</span></span>
+        </span>
+      </div>
+    </div>
+    <div class="spacer" aria-hidden="true"></div>
+  </section>
+
+  <section id="sec-smart">
+    <header><span class="eyebrow">The worker’s day</span><h2>Smarter and lighter — as approved</h2></header>
+    <div class="grid">
+      <div class="card"><h3>Arrive</h3><p>One card, one tap — or none with the automatic clock. A refusal offers “Ask to clock in from here”.</p></div>
+      <div class="card"><h3>Lunch off site</h3><p>Leaving inside the planned rest window is the rest. No “you left the work area”.</p></div>
+      <div class="card"><h3>End of shift</h3><p>One question: Clock out, or Ask for more time. A “no” never clocks anyone out.</p></div>
+      <div class="card"><h3>Forgot to clock out</h3><p>“You left at 16:42 — clock out then?” from the moment the phone saw them leave.</p></div>
+      <div class="card"><h3>Fewer pushes</h3><p>At most four clock pushes a day; a reminder repeats only if the first wasn’t opened.</p></div>
+      <div class="card"><h3>The office</h3><p>One item per person per day; the worker hears the decision.</p></div>
+    </div>
+  </section>
+
+  <section id="sec-guarantee">
+    <header><span class="eyebrow">No mistakes</span><h2>Tests for every case, and a daily check</h2></header>
+    <div class="tests"><span>early</span><span>on time</span><span>within grace</span><span>late</span><span>back from lunch</span><span>rest over plan</span><span>two shifts a day</span><span>night shift</span><span>night → day</span><span>no shift</span><span>offline</span><span>automatic + manual together</span><span>office edit</span><span>forgot clock-out</span><span>closed overnight</span><span>away allowed</span><span>outside boundary</span><span>daylight-saving day</span></div>
+    <div class="grid">
+      <div class="card"><h3>One place for the rules</h3><p>Every label is worked out by one shared rule — the screen, the reports and the no-shows record read it, never their own copy.</p></div>
+      <div class="card"><h3>A check every night</h3><p>Yesterday’s new entries are worked out again from their saved facts. A label that doesn’t match is reported to us at once, before anyone sees it.</p></div>
+    </div>
+  </section>
+
+  <section id="sec-order">
+    <header><span class="eyebrow">Order of work</span><h2>Four steps, each seen by you before anything is published</h2></header>
+    <div class="steps">
+      <div class="step done"><span class="s">Step 1 · done locally</span><h3>Five screen bugs</h3><p>Early clock-out on the web, the wrong toast, the phone’s late tolerance, workspaces the server refuses, “shift starts in N min”.</p></div>
+      <div class="step"><span class="s">Step 2</span><h3>Correct labels</h3><p>First arrival only, late back from rest, right shift match, edits keep labels, one entry per shift, how a shift closed.</p></div>
+      <div class="step"><span class="s">Step 3</span><h3>The smarter day</h3><p>Arrival card, lunch as rest, one more-time request, forgot-clock-out from the phone, push budget, one office item.</p></div>
+      <div class="step"><span class="s">Step 4</span><h3>The nightly check</h3><p>Every new label worked out again and compared.</p></div>
+    </div>
+  </section>
+
+  <section id="sec-decisions">
+    <header><span class="eyebrow">Your decisions</span><h2>Two questions about late back from rest</h2></header>
+    <div class="qs">
+      <div class="q"><h3>Does it send the day to review, like a late morning?</h3><div class="opts"><span class="opt rec">Yes, to review</span><span class="opt">Only shown, no review</span></div></div>
+      <div class="q"><h3>How many grace minutes after a rest?</h3><div class="opts"><span class="opt rec">Same as the shift (usually 10)</span><span class="opt">5 minutes</span><span class="opt">None</span></div></div>
+    </div>
+  </section>
+</div>
+
+<div class="player" role="region" aria-label="Narration">
+  <div class="inner">
+    <button class="pbtn" id="voPlay" type="button" aria-label="Play narration"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path id="voIcon" d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
+    <div class="pmeta"><div class="pnow" id="voNow" lang="ar" dir="rtl"></div><div class="pbar"><i id="voProg"></i></div></div>
+    <button class="pstop" id="voStop" type="button" hidden>إيقاف</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var ORDER=[['intro','sec-intro','المقدمة'],['past','sec-past','الماضي لا نلمسه'],['labels','sec-labels','العلامات'],['rest','sec-rest','تأخر الاستراحة'],
+    ['explain','sec-explain','علامة تشرح نفسها'],['smart','sec-smart','يوم أذكى'],['guarantee','sec-guarantee','بلا أخطاء'],['order','sec-order','ترتيب العمل'],['decisions','sec-decisions','قراراتك']];
+  var audio=new Audio(), i=-1, last=ORDER.length-1, IDLE='اضغط للاستماع · حوالي ثلاث دقائق ونصف';
+  var play=document.getElementById('voPlay'), icon=document.getElementById('voIcon'), now=document.getElementById('voNow'), prog=document.getElementById('voProg'), stop=document.getElementById('voStop');
+  var PLAY='M8 5v14l11-7z', PAUSE='M7 5h4v14H7zM13 5h4v14h-4z';
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  now.textContent=IDLE;
+  function mark(id){
+    document.querySelectorAll('.speaking').forEach(function(e){e.classList.remove('speaking');});
+    if(!id) return; var el=document.getElementById(id); el.classList.add('speaking');
+    el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+  }
+  function start(from,to){
+    i=from; last=to; var c=ORDER[i];
+    mark(c[1]); now.textContent=(i+1)+' / '+ORDER.length+' · '+c[2];
+    audio.src='audio/'+c[0]+'.mp3'; audio.play().catch(function(){});
+    icon.setAttribute('d',PAUSE); stop.hidden=false;
+  }
+  function end(){ audio.pause(); i=-1; icon.setAttribute('d',PLAY); stop.hidden=true; prog.style.width='0'; now.textContent=IDLE; mark(null); }
+  audio.addEventListener('timeupdate',function(){ if(audio.duration) prog.style.width=(audio.currentTime/audio.duration*100)+'%'; });
+  audio.addEventListener('ended',function(){ if(i<last) start(i+1,last); else end(); });
+  play.onclick=function(){
+    if(i<0) return start(0,ORDER.length-1);
+    if(audio.paused){ audio.play().catch(function(){}); icon.setAttribute('d',PAUSE); } else { audio.pause(); icon.setAttribute('d',PLAY); }
+  };
+  stop.onclick=end;
+  ORDER.forEach(function(c,n){
+    var sec=document.getElementById(c[1]); var b=document.createElement('button');
+    b.type='button'; b.className='listen'; b.lang='ar'; b.dir='rtl';
+    b.innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>استمع';
+    b.onclick=function(){start(n,n);};
+    sec.insertBefore(b, sec.firstElementChild);
+  });
+})();
+</script>

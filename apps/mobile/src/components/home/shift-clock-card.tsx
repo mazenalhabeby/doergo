@@ -31,6 +31,7 @@ import type { NoShiftNote } from '../time/time-logic';
 import { useShiftClockCardView, type ShiftClockCardViewProps } from './use-shift-clock-card-view';
 import { ShiftClockCardViewView } from './shift-clock-card-view-view';
 import { ShiftClockCardViewQueued } from './shift-clock-card-view-queued';
+import { clockableLocations } from '../../lib/clockable';
 
 /**
  * ONE GLASS SURFACE, IN EVERY STATE.
@@ -158,7 +159,8 @@ export function ShiftClockCardView({
     alone and must never wait for a courtesy total.
   */
   if (!status?.isClockedIn && !totals.ready) return null;
-  const somewhereToClockIn = (status?.assignedLocations?.length ?? 0) > 0 || !!user?.allowRemote;
+  // Somewhere a clock-in would be TAKEN now — not merely a workspace on the list (lib/clockable.ts).
+  const somewhereToClockIn = clockableLocations(status?.assignedLocations).length > 0 || !!user?.allowRemote;
   if (known && !somewhereToClockIn && !status?.isClockedIn && st.kind !== 'unconfirmed') return null;
 
   /*
@@ -232,6 +234,9 @@ export function ShiftClockCardView({
             shiftEndAt: status.currentEntry.expectedClockOutAt
               ? new Date(status.currentEntry.expectedClockOutAt)
               : null,
+            // The server's own tolerance and limit rule, so the sheet agrees with the flags.
+            toleranceMin: status.currentEntry.flagToleranceMin,
+            endIsDailyLimit: status.currentEntry.endIsDailyLimit,
             /*
               ④ — how far outside the ring the phone last was. The excursion is
               the server's own answer; the sheet never re-derives a geofence.

@@ -27,9 +27,9 @@ describe('readClockOut — the rostered end decides overtime', () => {
     expect(v.face).toBe('onTime');
   });
 
-  it('no rostered end → the total decides, as before', () => {
+  it('no rostered end → nothing to be late against (the server has no end to flag either)', () => {
     const v = readClockOut({ ...base, shiftEndAt: null, countedMinutes: 650, now: end } as never);
-    expect(v.face).toBe('late');
-    expect(v.overBy).toBe(50);
+    expect(v.face).toBe('onTime');
+    expect(v.overBy).toBe(0);
   });
 });

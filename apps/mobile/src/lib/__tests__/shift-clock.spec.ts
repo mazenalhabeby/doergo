@@ -55,7 +55,9 @@ describe('§1 — the eight states, and no ninth', () => {
       is not what they opened the app for.
     */
     const st = readShiftState({
-      status: status({ currentEntry: entry({ expectedClockInAt: AT(7).toISOString(), expectedClockOutAt: AT(15).toISOString() }) }),
+      // Clocked out, so no running entry — the planned shift comes with the status (it used to be
+      // read off an entry the server never sends before clock-in, so this line never showed).
+      status: status({ nextShift: { startAt: AT(7).toISOString(), endAt: AT(15).toISOString(), spaceId: 's', spaceName: 'BILLA AG' } }),
       breaks: null,
       declaredSchedule: 'FIXED',
       now: AT(6, 48),
@@ -867,9 +869,12 @@ describe('§11 — the clock-out sheet', () => {
   });
 
   it('§11.5 — four faces, and NONE can only be ①', () => {
+    // Judged by the END, with the server's tolerance — exactly as at clock-out.
     expect(readClockOut(shift({ countedMinutes: 480 })).face).toBe('onTime');
-    expect(readClockOut(shift({ countedMinutes: 424 })).face).toBe('early');
-    expect(readClockOut(shift({ countedMinutes: 582 })).face).toBe('late');
+    expect(readClockOut(shift({ now: AT(13, 50) })).face).toBe('early');
+    expect(readClockOut(shift({ now: AT(16, 42) })).face).toBe('late');
+    // Leaving AT the end is on time whatever the total — a late arrival is its own flag.
+    expect(readClockOut(shift({ countedMinutes: 424 })).face).toBe('onTime');
     /*
       ⚠️ NULL TARGET IS THE WHOLE REASON ② AND ③ CANNOT HAPPEN ON `NONE`.
       Nothing is promised, so there is nothing to be early or late against — a
@@ -880,11 +885,19 @@ describe('§11 — the clock-out sheet', () => {
     expect(readClockOut(shift({ targetMinutes: null, countedMinutes: 900 })).bar.over).toBe(0);
   });
 
-  it('§11.5 — a minute either side is not a variance', () => {
+  it('§11.5 — the shift’s tolerance either side is not a variance (the server’s, default 10)', () => {
     // Without a tolerance the sheet calls a shift "early" for finishing 40
-    // seconds before the hour, which turns a daily act into a daily apology.
-    expect(readClockOut(shift({ countedMinutes: 479 })).face).toBe('onTime');
-    expect(readClockOut(shift({ countedMinutes: 481 })).face).toBe('onTime');
+    // seconds before the hour, which turns a daily act into a daily apology —
+    // and with a SMALLER one than the server's, "Clock out & ask" promised a
+    // request the server never created.
+    expect(readClockOut(shift({ now: AT(14, 51) })).face).toBe('onTime');
+    expect(readClockOut(shift({ now: AT(15, 9) })).face).toBe('onTime');
+    expect(readClockOut(shift({ now: AT(15, 11) })).face).toBe('late');
+    expect(readClockOut(shift({ now: AT(14, 49) })).face).toBe('early');
+    // The shift's own tolerance, when the server sends it.
+    expect(readClockOut(shift({ now: AT(15, 4), toleranceMin: 3 })).face).toBe('late');
+    // A daily allowance is not a shift end: leaving before it is not early.
+    expect(readClockOut(shift({ now: AT(13, 0), endIsDailyLimit: true })).face).toBe('onTime');
   });
 
   it('§11.5 ④ — recorded, never refused', () => {

@@ -8,16 +8,13 @@ import type { TFunction } from "i18next"
 import type { TimeEntry } from "@hbcfield/shared"
 import { attendanceApi } from "@/lib/api"
 import { serverErrorMessage } from "@/lib/server-error"
-import {
-  shortfallMinutes,
-  SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
-  mayClockInRemotely,
-} from "@hbcfield/shared/client"
+import { shortfallMinutes, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, mayClockInRemotely } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { getBrowserPosition, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
 import type { ClockLocation } from "@/components/clock-in-picker"
 import { keys } from "@/lib/query-keys"
 import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
+import { clockOutPosition, isClockOutAction } from "./clock-action"
 
 export type BrowserPosition = Awaited<ReturnType<typeof getBrowserPosition>>
 
@@ -30,7 +27,10 @@ export type BrowserPosition = Awaited<ReturnType<typeof getBrowserPosition>>
 export function geoErrorMessage(t: TFunction, reason: GeolocationFailure): string {
   switch (reason) {
     case "denied":
-      return t("attendance.my.geo.denied", "Location permission denied. Allow location access in your browser to clock in.")
+      return t(
+        "attendance.my.geo.denied",
+        "Location permission denied. Allow location access in your browser to clock in.",
+      )
     case "insecure":
       return t("attendance.my.geo.insecure", "Clock-in requires a secure (HTTPS) connection.")
     case "unsupported":
@@ -55,16 +55,19 @@ export type ClockAction =
 export function useClockInData({
   enabled = true,
   locationsNow = false,
-}: Pick<{
-  enabled?: boolean
-  /**
-   * Read the clock-in sites with the page, not after it. For a surface whose
-   * screen IS the clock (the shift page). The navbar pill only needs them at the
-   * tap, so it lets the page load first; `startClockIn` reads them itself if
-   * the tap comes sooner.
-   */
-  locationsNow?: boolean
-}, 'enabled' | 'locationsNow'>) {
+}: Pick<
+  {
+    enabled?: boolean
+    /**
+     * Read the clock-in sites with the page, not after it. For a surface whose
+     * screen IS the clock (the shift page). The navbar pill only needs them at the
+     * tap, so it lets the page load first; `startClockIn` reads them itself if
+     * the tap comes sooner.
+     */
+    locationsNow?: boolean
+  },
+  "enabled" | "locationsNow"
+>) {
   const { t, i18n } = useTranslation()
   const qc = useQueryClient()
   const { user } = useAuth()
@@ -147,7 +150,8 @@ export function useClockInData({
   const shortfall = shortfallMinutes({
     clockOutAt: new Date(),
     // A daily limit is an allowance, not a shift: leaving before it is not early.
-    expectedEndAt: activeEntry?.expectedClockOutAt && !activeEntry.endIsDailyLimit ? new Date(activeEntry.expectedClockOutAt) : null,
+    expectedEndAt:
+      activeEntry?.expectedClockOutAt && !activeEntry.endIsDailyLimit ? new Date(activeEntry.expectedClockOutAt) : null,
     // The tolerance the flags use. Not carried on the entry, so the shared
     // default stands in: a client asking a few minutes early is a nuisance, and
     // the server measures it again with the shift's own value regardless.
@@ -156,15 +160,15 @@ export function useClockInData({
 
   const clock = useMutation({
     mutationFn: async (action: ClockAction) => {
-      const pos = (typeof action === "object" && "locationId" in action && action.pos) || (await getBrowserPosition())
-      if (action === "out" || (typeof action === "object" && "out" in action)) {
+      if (isClockOutAction(action)) {
+        // Without a position the shift still ends (the server skips the geofence check).
+        const at = await clockOutPosition(getBrowserPosition)
         return attendanceApi.clockOut({
-          lat: pos.lat,
-          lng: pos.lng,
-          accuracy: pos.accuracy,
+          ...(at ? { lat: at.lat, lng: at.lng, accuracy: at.accuracy } : {}),
           earlyReason: typeof action === "object" && "out" in action ? action.earlyReason : undefined,
         })
       }
+      const pos = (typeof action === "object" && "locationId" in action && action.pos) || (await getBrowserPosition())
       if (action === "remote") {
         // No workspace — geofence-exempt; the server captures a coarse place.
         return attendanceApi.clockIn({ isRemote: true, lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
@@ -177,14 +181,19 @@ export function useClockInData({
         at whichever one the GPS preferred — a payroll error that surfaces weeks
         later on a queried timesheet, if at all.
       */
-      return attendanceApi.clockIn({ locationId: action.locationId, lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
+      return attendanceApi.clockIn({
+        locationId: action.locationId,
+        lat: pos.lat,
+        lng: pos.lng,
+        accuracy: pos.accuracy,
+      })
     },
     onSuccess: (data, action) => {
       setPickerOpen(false)
       qc.invalidateQueries({ queryKey: keys.attendance.myStatus() })
       qc.invalidateQueries({ queryKey: keys.attendance.myHistory() })
 
-      if (action === "out") {
+      if (isClockOutAction(action)) {
         // The server's own message carries the counted hours and any shortfall,
         // which is more use than "Clocked out" — and it is the figure that will
         // appear on the timesheet, said once, at the moment it is decided.
@@ -202,9 +211,10 @@ export function useClockInData({
         out too late to explain it.
       */
       const entry = (data as { isRemote?: boolean } | undefined) ?? {}
-      const name = typeof action === "object" && "locationId" in action
-        ? locations.find((l) => l.id === action.locationId)?.name
-        : undefined
+      const name =
+        typeof action === "object" && "locationId" in action
+          ? locations.find((l) => l.id === action.locationId)?.name
+          : undefined
       toast.success(
         entry.isRemote
           ? t("attendance.my.clockedInAwayToast", "Clocked in — away from the site. This shift will be reviewed.")

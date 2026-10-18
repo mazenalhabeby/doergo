@@ -81,6 +81,12 @@ export interface CompanyLocation {
    * together, not a property of the place.
    */
   awayAllowed?: boolean;
+  /**
+   * Would this workspace take the CALLER's clock-in now — assignment started,
+   * workspace active, Time Tracking on? On the status read only; undefined
+   * elsewhere (and from an older server), which reads as "yes".
+   */
+  clockable?: boolean;
   /** Clocking in here with no shift: ALLOW | LIMIT | SHIFT_ONLY — see attendance/no-shift-limit.ts. */
   noShiftPolicy?: string | null;
   noShiftDailyMinutes?: number | null;

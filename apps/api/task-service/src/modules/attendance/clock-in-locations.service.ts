@@ -4,6 +4,8 @@ import { ResolverSpace, ShiftResolverService } from './shift-resolver.service';
 import {
   zoneOf,
   success,
+  addDaysStr,
+  localPartsIn,
   activeAssignmentWhere,
   resolveAwayAccess,
   memberDayZone,
@@ -18,6 +20,7 @@ import {
   type DayRequestRow,
 } from './approved-requests';
 import { ClockInContextService } from './clock-in-context.service';
+import { pickNextShift, type NextShift } from './next-shift';
 
 /**
  * Where the caller may clock in right now, each workspace tagged with whether away
@@ -240,5 +243,24 @@ export class ClockInLocationsService {
     const tagged = await this.tagAwayAllowed(clockable, data.userId, data.organizationId, overrideBySpace);
     const primary = new Set(assignments.filter((a) => a.isPrimary).map((a) => a.spaceId));
     return success(await this.tagClockInContext(tagged, data.userId, new Date(), primary));
+  }
+
+  /**
+   * The next planned shift today (or one running now) across these workspaces —
+   * the clock card's "starts in N minutes" before clock-in. The same reader as
+   * the automatic clock's plan: two queries, none when no workspace runs shifts.
+   */
+  async nextShiftToday(
+    userId: string,
+    spaces: (ResolverSpace & { name?: string | null })[],
+    now: Date,
+  ): Promise<NextShift | null> {
+    // Today and yesterday (a night shift still running), in each workspace's own zone.
+    const daysOf = (s: ResolverSpace) => {
+      const today = localPartsIn(now, zoneOf(s.timezone)).dateStr;
+      return [addDaysStr(today, -1), today];
+    };
+    const windows = await this.shiftResolver.plannedWindows(userId, spaces, daysOf).catch(() => new Map());
+    return pickNextShift(windows, new Map(spaces.map((s) => [s.id, s.name ?? null])), now);
   }
 }

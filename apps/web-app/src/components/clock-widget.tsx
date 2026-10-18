@@ -53,13 +53,11 @@ export function ClockWidget() {
   // backend already allows both ADMIN and EMPLOYEE clock-in.
   const canClock = !!user && hasAccessModule(user, "clock")
 
-  const {
-    clockedIn, activeEntry, pending, startClockIn, clockOut, pickerProps, earlyProps,
-  } = useClockIn({
+  const { clockedIn, activeEntry, pending, startClockIn, clockOut, pickerProps, earlyProps } = useClockIn({
     enabled: canClock,
   })
 
-  const elapsed = useElapsed(clockedIn ? activeEntry?.clockInAt ?? null : null)
+  const elapsed = useElapsed(clockedIn ? (activeEntry?.clockInAt ?? null) : null)
 
   const where = activeEntry?.isRemote
     ? `${t("attendance.my.remote", "Remote")}${activeEntry.clockInPlace ? ` · ${activeEntry.clockInPlace}` : ""}`
@@ -70,28 +68,41 @@ export function ClockWidget() {
   // ── Clocked in → live timer + Clock Out ─────────────────────────────
   if (clockedIn) {
     return (
-      <div
-        className="flex items-center gap-1.5 rounded-full border border-green-600/30 bg-green-600/10 pl-2.5 pr-1 py-0.5"
-        title={where ? `${t("attendance.my.clockedIn", "Clocked in")} · ${where}` : t("attendance.my.clockedIn", "Clocked in")}
-      >
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
-        </span>
-        <span className="text-xs font-semibold tabular-nums text-green-700 dark:text-green-400">{elapsed}</span>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-6 gap-1 px-2 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
-          disabled={pending || billingLocked}
-          title={billingLocked ? billingLockReason : undefined}
-          onClick={clockOut}
+      <>
+        {/* Short of the shift end, Clock Out asks first — the dialog must be HERE, where it is opened. */}
+        <ClockOutEarlyDialog {...earlyProps} />
+        <div
+          className="flex items-center gap-1.5 rounded-full border border-green-600/30 bg-green-600/10 pl-2.5 pr-1 py-0.5"
+          title={
+            where
+              ? `${t("attendance.my.clockedIn", "Clocked in")} · ${where}`
+              : t("attendance.my.clockedIn", "Clocked in")
+          }
         >
-          {pending
-            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            : <><LogOut className="h-3.5 w-3.5" />{t("attendance.my.clockOut", "Clock Out")}</>}
-        </Button>
-      </div>
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
+          </span>
+          <span className="text-xs font-semibold tabular-nums text-green-700 dark:text-green-400">{elapsed}</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 gap-1 px-2 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            // Never billing-locked: the server lets a shift end on a read-only account (@AllowWhenLocked).
+            disabled={pending}
+            onClick={clockOut}
+          >
+            {pending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <>
+                <LogOut className="h-3.5 w-3.5" />
+                {t("attendance.my.clockOut", "Clock Out")}
+              </>
+            )}
+          </Button>
+        </div>
+      </>
     )
   }
 
@@ -99,7 +110,6 @@ export function ClockWidget() {
     <>
       {/* One button. Where they are is decided from evidence, not chosen here. */}
       <ClockInPicker {...pickerProps} />
-      <ClockOutEarlyDialog {...earlyProps} />
       <Button
         size="sm"
         className="h-8 gap-1 bg-green-600 text-white hover:bg-green-700"

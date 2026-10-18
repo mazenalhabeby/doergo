@@ -189,7 +189,11 @@ describe('AttendanceService', () => {
         // assertions are unaffected. Shift resolution is covered by its own spec.
         {
           provide: ShiftResolverService,
-          useValue: { resolveForClockIn: jest.fn().mockResolvedValue(null) },
+          useValue: {
+            resolveForClockIn: jest.fn().mockResolvedValue(null),
+            // The status read's next planned shift (none here).
+            plannedWindows: jest.fn().mockResolvedValue(new Map()),
+          },
         },
       ],
     }).compile();
@@ -350,8 +354,9 @@ describe('AttendanceService', () => {
   describe('getStatus', () => {
     it('should return clocked in status', async () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockTimeEntry);
+      // Prisma's include names the relation `space` (the status read tags each one `clockable`).
       mockPrismaService.spaceAssignment.findMany.mockResolvedValue([
-        { ...mockAssignment, location: mockLocation },
+        { ...mockAssignment, spaceId: mockLocation.id, space: { ...mockLocation, isActive: true, isRemote: false } },
       ]);
 
       const result = await service.getStatus({
@@ -361,7 +366,8 @@ describe('AttendanceService', () => {
 
       expect(result.success).toBe(true);
       expect(result.data.isClockedIn).toBe(true);
-      expect(result.data.currentEntry).toEqual(mockTimeEntry);
+      // The running entry, plus the tolerance its clock-out is judged by (no shift → the default).
+      expect(result.data.currentEntry).toEqual({ ...mockTimeEntry, flagToleranceMin: 10 });
     });
 
     it('should return not clocked in status', async () => {

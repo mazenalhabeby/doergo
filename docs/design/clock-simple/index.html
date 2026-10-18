@@ -1,0 +1,353 @@
+<title>Simpler Shift Clock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: a field worker's day as the spine — today's prompts on one rail, then each moment of the day shown as "today" beside "simpler", ending in fixes and decisions. */
+:root{
+  --bg:#eef2f5; --card:#ffffff; --ink:#0f1d2b; --muted:#5a6879; --line:#d9e0e8; --soft:#f5f7fa;
+  --brand:#2563eb; --brandSoft:#2563eb14; --amber:#b45309; --amberSoft:#b4530916; --green:#047857; --greenSoft:#04785716;
+  --red:#b42318; --redSoft:#b4231814; --phone:#0f1724; --screen:#f7f9fb; --note:#ffffff;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif; --sans:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace; --ar:"IBM Plex Sans Arabic","Geeza Pro","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#0b1118; --card:#121b25; --ink:#e3ebf3; --muted:#93a3b5; --line:#223042; --soft:#16212d;
+  --brand:#6b9bff; --brandSoft:#6b9bff1f; --amber:#f0a94a; --amberSoft:#f0a94a1f; --green:#4fc79c; --greenSoft:#4fc79c1f;
+  --red:#f2836f; --redSoft:#f2836f1f; --phone:#05090e; --screen:#18222e; --note:#202c3a;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#0b1118; --card:#121b25; --ink:#e3ebf3; --muted:#93a3b5; --line:#223042; --soft:#16212d;
+  --brand:#6b9bff; --brandSoft:#6b9bff1f; --amber:#f0a94a; --amberSoft:#f0a94a1f; --green:#4fc79c; --greenSoft:#4fc79c1f;
+  --red:#f2836f; --redSoft:#f2836f1f; --phone:#05090e; --screen:#18222e; --note:#202c3a;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:16px;padding-block:36px 140px;display:flex;flex-direction:column;gap:30px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(34px,6vw,58px);font-weight:800;letter-spacing:-.02em;line-height:1.02}
+h2{font-size:clamp(22px,3vw,28px);font-weight:700;letter-spacing:-.01em}
+h3{font-size:17px;font-weight:700}
+p{margin:0}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.lede{font-size:18px;color:var(--muted);max-width:62ch}
+.lede b{color:var(--ink);font-weight:600}
+section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:18px;scroll-margin:24px;transition:box-shadow .3s}
+section.speaking{box-shadow:0 0 0 3px var(--brand)}
+section > header{display:flex;flex-direction:column;gap:6px;max-width:70ch}
+section > header p{color:var(--muted)}
+.hero{background:transparent;border:0;padding:0;gap:16px}
+.hero .clockline{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13.5px}
+.chip b{font-family:var(--mono);font-weight:600}
+.listen{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-family:var(--ar);font-size:13px;background:var(--brandSoft);color:var(--brand);border:0;border-radius:999px;padding:5px 12px;cursor:pointer}
+.listen:focus-visible,button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+/* Day rail */
+.rail{position:relative;overflow-x:auto;padding-bottom:6px}
+.rail-inner{min-width:760px;position:relative;height:178px}
+.rail-axis{position:absolute;left:0;right:0;top:120px;height:2px;background:var(--line)}
+.rail-shift{position:absolute;top:114px;height:14px;border-radius:7px;background:var(--brandSoft);border:1px solid var(--brand)}
+.tick{position:absolute;top:134px;font-family:var(--mono);font-size:11px;color:var(--muted);transform:translateX(-50%)}
+.ping{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;width:118px;text-align:center}
+.ping .dot{width:12px;height:12px;border-radius:50%;background:var(--amber);border:2px solid var(--card);box-shadow:0 0 0 1px var(--amber)}
+.ping .dot.tap{background:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+.ping span{font-size:12px;line-height:1.25;color:var(--ink)}
+.ping.up{top:6px;flex-direction:column}
+.ping.up .stem{width:1px;height:calc(108px - var(--h,60px));background:var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:6px;vertical-align:-1px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--soft)}
+.stat .n{font-family:var(--display);font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat .l{font-size:13.5px;color:var(--muted)}
+
+/* Problems */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.problem{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--soft);min-width:0}
+.problem .tagline{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:6px;background:var(--card);border:1px solid var(--line);color:var(--muted);overflow-wrap:anywhere}
+.problem p{font-size:14.5px;color:var(--muted)}
+
+/* Principles */
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.rule{border-top:3px solid var(--brand);padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.rule p{color:var(--muted);font-size:15px}
+
+/* Before / after phones */
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+@media (max-width:720px){.pair{grid-template-columns:minmax(0,1fr)}}
+.side{display:flex;flex-direction:column;gap:10px;min-width:0}
+.side .label{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.side .label .pill{border-radius:999px;padding:2px 9px;font-weight:600}
+.side.now .pill{background:var(--amberSoft);color:var(--amber)}
+.side.new .pill{background:var(--greenSoft);color:var(--green)}
+.phone{background:var(--phone);border-radius:30px;padding:10px;width:100%;max-width:320px}
+.screen{background:var(--screen);border-radius:22px;padding:14px 12px;min-height:300px;display:flex;flex-direction:column;gap:9px;font-size:13.5px}
+.status{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted);padding:0 4px 4px}
+.note{background:var(--note);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;box-shadow:0 1px 0 var(--line)}
+.note .app{font-family:var(--mono);font-size:10.5px;color:var(--muted);display:flex;justify-content:space-between}
+.note b{font-weight:600}
+.note .acts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.btn{border-radius:10px;padding:7px 11px;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.ghost{background:transparent}
+.card{background:var(--card);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--line)}
+.card .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.big{font-family:var(--display);font-size:22px;font-weight:700;line-height:1.15}
+.row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row span:first-child{color:var(--muted)}
+.row span:last-child{font-variant-numeric:tabular-nums;font-weight:600}
+.field{border:1px solid var(--line);border-radius:10px;padding:8px 10px;color:var(--muted);background:var(--card)}
+.count{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.count b{color:var(--ink)}
+.why{font-size:14.5px;color:var(--muted);max-width:60ch}
+.why b{color:var(--ink)}
+
+/* Office */
+.inbox{display:flex;flex-direction:column;gap:8px}
+.item{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between;background:var(--soft)}
+.item .who{display:flex;align-items:center;gap:10px;min-width:0}
+.mono{width:34px;height:34px;border-radius:50%;background:var(--brandSoft);color:var(--brand);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.flags{display:flex;flex-wrap:wrap;gap:6px}
+.flag{font-size:12px;border-radius:999px;padding:2px 9px;background:var(--amberSoft);color:var(--amber);font-weight:600}
+.flag.ok{background:var(--greenSoft);color:var(--green)}
+
+/* Fixes + decisions */
+.fix{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.fix:last-child{border-bottom:0}
+.fix .sev{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:6px;background:var(--redSoft);color:var(--red);height:fit-content;font-weight:600}
+.fix .sev.med{background:var(--amberSoft);color:var(--amber)}
+.fix p{color:var(--muted);font-size:14.5px}
+.fix code{font-family:var(--mono);font-size:12px;color:var(--ink);overflow-wrap:anywhere}
+.decide{display:grid;gap:10px}
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;background:var(--soft)}
+.q p{color:var(--muted);font-size:14.5px}
+
+/* Narration bar */
+.player{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;z-index:5}
+.player .inner{max-width:1100px;margin:0 auto;width:100%;display:flex;align-items:center;gap:12px}
+.pbtn{width:42px;height:42px;border-radius:50%;border:0;background:var(--brand);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+.pstop{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:6px 12px;font-family:var(--ar);cursor:pointer}
+.pmeta{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.pnow{font-family:var(--ar);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:var(--brand)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+  <section class="hero" id="sec-intro">
+    <span class="eyebrow">Shift clock · how it works today, and a simpler way</span>
+    <h1>One tap, or none.</h1>
+    <p class="lede">The clock is precise and the office rules behind it are sound. For the person in the field it has grown complicated: up to <b>15 prompts</b> on an ordinary day, and questions the phone could already answer. This page shows a day today, the five sources of the complexity, and a simpler day that keeps every rule the office relies on.</p>
+    <div class="clockline">
+      <span class="chip">Narrated in Arabic · <b>4½ min</b></span>
+      <span class="chip">Mapped from the code · <b>phone, web, server</b></span>
+      <span class="chip">Nothing built yet</span>
+    </div>
+  </section>
+
+  <section id="sec-today">
+    <header><span class="eyebrow">A day today · rota shift 08:00–16:30, one workspace</span><h2>Eight to fifteen interruptions for an ordinary day</h2></header>
+    <div class="rail" role="img" aria-label="Timeline of an ordinary day with the prompts and taps a worker meets today">
+      <div class="rail-inner">
+        <div class="rail-axis"></div>
+        <div class="rail-shift" style="left:9%;width:79%"></div>
+        <div class="tick" style="left:4%">07:30</div><div class="tick" style="left:9%">08:00</div><div class="tick" style="left:27.5%">10:00</div>
+        <div class="tick" style="left:46%">12:00</div><div class="tick" style="left:64.5%">14:00</div><div class="tick" style="left:88%">16:30</div><div class="tick" style="left:97%">17:00</div>
+        <div class="ping up" style="left:8%;--h:58px"><span>Clock in</span><div class="dot tap"></div><div class="stem"></div></div>
+        <div class="ping up" style="left:46%;--h:84px"><span>“Time for your lunch” ×up to 4</span><div class="dot"></div><div class="stem"></div></div>
+        <div class="ping up" style="left:53%;--h:58px"><span>“You left the work area” → reason, duration</span><div class="dot"></div><div class="stem"></div></div>
+        <div class="ping up" style="left:59%;--h:84px"><span>“Lunch is over”</span><div class="dot"></div><div class="stem"></div></div>
+        <div class="ping up" style="left:89%;--h:84px"><span>“Still clocked in?” ×3</span><div class="dot"></div><div class="stem"></div></div>
+        <div class="ping up" style="left:96%;--h:58px"><span>Clock out · receipt</span><div class="dot tap"></div><div class="stem"></div></div>
+      </div>
+    </div>
+    <div class="legend"><span><i style="background:var(--brand)"></i>Worker taps</span><span><i style="background:var(--amber)"></i>Prompt or push</span><span><i style="background:var(--brandSoft);border:1px solid var(--brand);border-radius:3px"></i>Planned shift</span></div>
+    <div class="stats">
+      <div class="stat"><div class="n">8–15</div><div class="l">prompts and pushes on an ordinary day</div></div>
+      <div class="stat"><div class="n">6</div><div class="l">clock-card states, 20+ flag reasons</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">pushes when the office approves or rejects the hours</div></div>
+      <div class="stat"><div class="n">4–5</div><div class="l">permission taps the first time ever</div></div>
+    </div>
+  </section>
+
+  <section id="sec-problems">
+    <header><span class="eyebrow">Where the complexity comes from</span><h2>Five things that make it hard</h2></header>
+    <div class="grid">
+      <div class="problem"><h3>“Away” means six things</h3><div class="tagline"><span class="tag">Remote bucket</span><span class="tag">away day</span><span class="tag">REMOTE request</span><span class="tag">allowRemote</span><span class="tag">presence REMOTE</span><span class="tag">approval “away”</span></div><p>The last one is really “left the site area during the shift”. Workers and leaders meet the same word for different rules.</p></div>
+      <div class="problem"><h3>Four answers to “is there a shift?”</h3><div class="tagline"><span class="tag">workModel</span><span class="tag">rota</span><span class="tag">weekly schedule</span><span class="tag">scheduleType</span></div><p>Plus the no-shift policy and the automatic clock’s mode on top. A rota at a workspace set to “no model” is ignored by the clock but may still chase a no-show.</p></div>
+      <div class="problem"><h3>Twice the same idea</h3><div class="tagline"><span class="tag">rest rules</span><span class="tag">auto rest</span><span class="tag">extra time</span><span class="tag">overtime</span></div><p>Two rest systems. Two routes for the same overtime round, behind two different options. Rejecting one only nudges; rejecting the other clocks the worker out.</p></div>
+      <div class="problem"><h3>Asking what it already knows</h3><div class="tagline"><span class="tag">left at 16:42</span><span class="tag">shift here</span><span class="tag">lunch window</span></div><p>“When did you leave?” — the phone saw it. “Which workspace?” — the rota says. “Why did you leave?” — it is lunch time.</p></div>
+      <div class="problem"><h3>Dead-end refusals</h3><div class="tagline"><span class="tag">OUTSIDE_GEOFENCE</span><span class="tag">AWAY_NOT_ALLOWED</span><span class="tag">GPS accuracy too low</span></div><p>Standing at a customer’s site, the worker is told no — with nothing they can do next except phone the office.</p></div>
+    </div>
+  </section>
+
+  <section id="sec-principle">
+    <header><span class="eyebrow">The idea</span><h2>The phone knows where you are. The server knows your shift.</h2><p>So the worker is asked only what nobody else knows. Every office rule stays: geofence, rota, rests, approvals, two clocks.</p></header>
+    <div class="rules">
+      <div class="rule"><h3>Ask only what we can’t know</h3><p>Place, shift, the moment you left: inferred. A reason for something unusual: asked, once.</p></div>
+      <div class="rule"><h3>One “away”</h3><p>On site, on a planned rest, or away during work — three states a worker can read. The old words stay in the database, not on the screen.</p></div>
+      <div class="rule"><h3>One request for more time</h3><p>Extra time and overtime become one request. A “no” means the time after the shift is not counted — never a surprise clock-out.</p></div>
+      <div class="rule"><h3>A daily prompt budget</h3><p>At most four pushes about the clock in a normal day. A reminder repeats only when the worker hasn’t seen the first one.</p></div>
+    </div>
+  </section>
+
+  <section id="sec-arrive">
+    <header><span class="eyebrow">07:55 · arriving</span><h2>Arrive, and the clock is ready</h2></header>
+    <div class="pair">
+      <div class="side now"><div class="label"><span class="pill">Today</span><span class="count"><b>1–3</b> taps · refusal can end the flow</span></div>
+        <div class="phone"><div class="screen"><div class="status"><span>07:55</span><span>Home</span></div>
+          <div class="card"><span class="k">Not on the clock</span><div class="big">Clock in</div><span class="count">“Shift starts in 5 min” never shows today</span></div>
+          <div class="card"><span class="k">Where are you clocking in?</span><div class="row"><span>Warehouse</span><span>Shift today</span></div><div class="row"><span>Main Office</span><span>3.2 km away</span></div></div>
+          <div class="note"><div class="app"><span>HBCField</span><span>now</span></div><b>Can’t clock in here</b><span>Warehouse only accepts clock-ins on site. You are 640 m away.</span></div>
+        </div></div>
+      </div>
+      <div class="side new"><div class="label"><span class="pill">Simpler</span><span class="count"><b>1</b> tap · or <b>0</b> with the automatic clock</span></div>
+        <div class="phone"><div class="screen"><div class="status"><span>07:55</span><span>Lock screen</span></div>
+          <div class="note"><div class="app"><span>HBCField</span><span>now</span></div><b>You’re at the Warehouse</b><span>Your shift starts at 08:00.</span><div class="acts"><span class="btn primary">Clock in</span></div></div>
+          <div class="card"><span class="k">Not on site yet</span><div class="big">640 m from the Warehouse</div><span class="count">The Warehouse only takes clock-ins on site.</span><div class="acts" style="display:flex;gap:6px;flex-wrap:wrap"><span class="btn primary">Ask to clock in from here</span><span class="btn ghost">Directions</span></div></div>
+        </div></div>
+      </div>
+    </div>
+    <p class="why">The rota already names the workspace, so <b>no picker</b> when the shift is in one place. A refusal becomes <b>a request the leader answers with one tap</b>, recorded the same way an approved remote day is today.</p>
+  </section>
+
+  <section id="sec-lunch">
+    <header><span class="eyebrow">12:10 · lunch off site</span><h2>A planned rest is not “leaving the work area”</h2></header>
+    <div class="pair">
+      <div class="side now"><div class="label"><span class="pill">Today</span><span class="count"><b>3–4</b> taps · leader decides</span></div>
+        <div class="phone"><div class="screen"><div class="status"><span>12:10</span><span>Lock screen</span></div>
+          <div class="note"><div class="app"><span>HBCField</span><span>12:00</span></div><b>Time for your Lunch</b><span>Reminder 2 of 4</span></div>
+          <div class="note"><div class="app"><span>HBCField</span><span>now</span></div><b>You left the work area</b><span>Tell us why you’re away.</span></div>
+          <div class="card"><span class="k">How long?</span><div class="acts" style="display:flex;gap:6px;flex-wrap:wrap"><span class="btn">15</span><span class="btn">30</span><span class="btn">60</span><span class="btn">120</span></div><div class="field">Reason (required)…</div><span class="btn primary" style="text-align:center">Send</span></div>
+        </div></div>
+      </div>
+      <div class="side new"><div class="label"><span class="pill">Simpler</span><span class="count"><b>0</b> taps</span></div>
+        <div class="phone"><div class="screen"><div class="status"><span>12:10</span><span>Lock screen</span></div>
+          <div class="note"><div class="app"><span>HBCField</span><span>now</span></div><b>Your lunch started at 12:08</b><span>Enjoy it. We’ll count it as your 30-minute rest.</span></div>
+          <div class="note"><div class="app"><span>HBCField</span><span>12:41</span></div><b>Welcome back · rest ended 12:39</b><span>31 min rest recorded.</span></div>
+        </div></div>
+      </div>
+    </div>
+    <p class="why">Leaving the site <b>inside the planned rest window</b> starts the rest; coming back ends it. Leaving <b>during work</b> still asks — one sheet, a reason suggested from the time of day, duration inferred from when they return.</p>
+  </section>
+
+  <section id="sec-late">
+    <header><span class="eyebrow">16:35 · the shift has ended</span><h2>One question instead of three reminders</h2></header>
+    <div class="pair">
+      <div class="side now"><div class="label"><span class="pill">Today</span><span class="count"><b>3</b> pushes · two different rules</span></div>
+        <div class="phone"><div class="screen"><div class="status"><span>16:45</span><span>Lock screen</span></div>
+          <div class="note"><div class="app"><span>HBCField</span><span>16:35</span></div><b>Still clocked in?</b></div>
+          <div class="note"><div class="app"><span>HBCField</span><span>16:40</span></div><b>Still clocked in?</b></div>
+          <div class="note"><div class="app"><span>HBCField</span><span>16:45</span></div><b>Still clocked in?</b><span>Your leader will be told at 16:50.</span></div>
+          <div class="card"><span class="k">Your shift has ended</span><div class="acts" style="display:flex;gap:6px;flex-wrap:wrap"><span class="btn">I forgot to clock out</span><span class="btn">I’m working extra time</span><span class="btn ghost">I’m still working</span></div></div>
+        </div></div>
+      </div>
+      <div class="side new"><div class="label"><span class="pill">Simpler</span><span class="count"><b>1</b> push · <b>1</b> tap</span></div>
+        <div class="phone"><div class="screen"><div class="status"><span>16:35</span><span>Lock screen</span></div>
+          <div class="note"><div class="app"><span>HBCField</span><span>now</span></div><b>Your shift ended at 16:30</b><span>Still at the Warehouse.</span><div class="acts"><span class="btn primary">Clock out</span><span class="btn">Ask for more time</span></div></div>
+          <div class="card"><span class="k">Ask for more time</span><div class="acts" style="display:flex;gap:6px;flex-wrap:wrap"><span class="btn">30 min</span><span class="btn primary">1 h</span><span class="btn">2 h</span></div><span class="count">Anna decides. If she says no, time after 16:30 isn’t counted — you stay clocked in.</span></div>
+        </div></div>
+      </div>
+    </div>
+    <p class="why">The reminder repeats <b>only if the first was not opened</b>. The leader hears about it once, after the worker had their chance — not at a fixed minute.</p>
+  </section>
+
+  <section id="sec-leave">
+    <header><span class="eyebrow">16:42 · leaving — or forgetting to</span><h2>The phone remembers when you left</h2></header>
+    <div class="pair">
+      <div class="side now"><div class="label"><span class="pill">Today</span><span class="count">Next day: <b>3</b> taps, from memory</span></div>
+        <div class="phone"><div class="screen"><div class="status"><span>04:30</span><span>Next day</span></div>
+          <div class="note"><div class="app"><span>HBCField</span><span>04:30</span></div><b>Shift closed — confirm your time</b><span>Also sent by email.</span></div>
+          <div class="card"><span class="k">Needs your time</span><div class="big">When did you finish?</div><div class="field">— : —</div><span class="btn primary" style="text-align:center">Save</span></div>
+        </div></div>
+      </div>
+      <div class="side new"><div class="label"><span class="pill">Simpler</span><span class="count"><b>1</b> tap, the same evening</span></div>
+        <div class="phone"><div class="screen"><div class="status"><span>17:05</span><span>Lock screen</span></div>
+          <div class="note"><div class="app"><span>HBCField</span><span>now</span></div><b>You left the Warehouse at 16:42</b><span>Clock out at 16:42?</span><div class="acts"><span class="btn primary">Yes, 16:42</span><span class="btn">Other time</span></div></div>
+          <div class="card"><span class="k">Clocked out · today</span><div class="row"><span>On the clock</span><span>08:02–16:42</span></div><div class="row"><span>Counted</span><span>8 h 0 m</span></div><div class="row"><span>Rest</span><span>31 min</span></div><div class="row"><span>Jobs paused</span><span>1 · note added</span></div></div>
+        </div></div>
+      </div>
+    </div>
+    <p class="why">The heartbeat already records the last moment on site — today it is used only for the overnight temporary close. Offering it <b>25 minutes after leaving</b> fixes most forgotten clock-outs before anyone has to review them.</p>
+  </section>
+
+  <section id="sec-office">
+    <header><span class="eyebrow">The office</span><h2>One decision per person per day</h2><p>Today a late arrival, a missed rest and an overtime round arrive as separate items, and the worker never hears the outcome.</p></header>
+    <div class="inbox">
+      <div class="item"><div class="who"><span class="mono">MW</span><div><b>Mike Weber</b><div class="count">Thu 16 Oct · Warehouse · 08:12–17:40</div></div></div><div class="flags"><span class="flag">Late 12 min</span><span class="flag">Extra 1 h 10 m asked</span><span class="flag ok">Rest taken</span></div><div style="display:flex;gap:6px"><span class="btn primary">Approve day</span><span class="btn">Review</span></div></div>
+      <div class="item"><div class="who"><span class="mono">SW</span><div><b>Sarah Wagner</b><div class="count">Thu 16 Oct · Service Center · 07:58–16:31</div></div></div><div class="flags"><span class="flag">Rest missed</span></div><div style="display:flex;gap:6px"><span class="btn primary">Approve day</span><span class="btn">Review</span></div></div>
+    </div>
+    <p class="why">Each item still decides through the existing routes and rules — this only <b>groups</b> them. The worker gets one push when the day is decided: “Thursday approved · 9 h 20 m counted”.</p>
+  </section>
+
+  <section id="sec-fixes">
+    <header><span class="eyebrow">Bugs found while mapping · fixable now, no design change</span><h2>Five things that are simply wrong today</h2></header>
+    <div>
+      <div class="fix"><span class="sev">Web</span><div><h3>Early clock-out from the navbar does nothing</h3><p>The dialog is only rendered when clocked out. <code>apps/web-app/src/components/clock-widget.tsx</code></p></div></div>
+      <div class="fix"><span class="sev">Web</span><div><h3>“Clocked in” toast after an early clock-out</h3><p>The success handler only checks <code>action === "out"</code>; the early path falls through. <code>hooks/use-clock-in.ts</code></p></div></div>
+      <div class="fix"><span class="sev med">Phone</span><div><h3>Clock-out sheet says “late” after 1 minute; the server waits 10</h3><p>“Clock out & ask” promises a request the server never creates. <code>M/components/home/clock-out-state.ts</code></p></div></div>
+      <div class="fix"><span class="sev med">Phone</span><div><h3>Offers workspaces the server then refuses</h3><p>The phone reads <code>status.assignedLocations</code> (no start date, no Time Tracking filter) instead of the clock-in list. <code>attendance-read.service.ts:66</code></p></div></div>
+      <div class="fix"><span class="sev med">Phone</span><div><h3>“Your shift starts in N minutes” never appears</h3><p>It reads the running entry, which is empty before clock-in. <code>M/components/home/shift-state/read.ts</code></p></div></div>
+    </div>
+  </section>
+
+  <section id="sec-decisions">
+    <header><span class="eyebrow">Your decisions</span><h2>Four questions before anything is built</h2></header>
+    <div class="decide">
+      <div class="q"><h3>1 · Lunch off site counts as the rest?</h3><p>Leaving inside the planned rest window starts the rest automatically; no “you left the work area”.</p></div>
+      <div class="q"><h3>2 · One request for more time, never a forced clock-out?</h3><p>Merge extra time and overtime; a “no” stops counting after the shift end instead of ending the shift.</p></div>
+      <div class="q"><h3>3 · A daily budget of four clock pushes?</h3><p>Repeat a reminder only when the first wasn’t opened; tell the leader once.</p></div>
+      <div class="q"><h3>4 · Fix the five bugs first?</h3><p>They need no design decision and make today’s flow honest while the rest is built.</p></div>
+    </div>
+  </section>
+</div>
+
+<div class="player" role="region" aria-label="Narration">
+  <div class="inner">
+    <button class="pbtn" id="voPlay" type="button" aria-label="Play narration"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path id="voIcon" d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
+    <div class="pmeta"><div class="pnow" id="voNow" lang="ar" dir="rtl"></div><div class="pbar"><i id="voProg"></i></div></div>
+    <button class="pstop" id="voStop" type="button" hidden>إيقاف</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var ORDER=[['intro','sec-intro','المقدمة'],['today','sec-today','يوم عادي اليوم'],['problems','sec-problems','أين التعقيد'],['principle','sec-principle','الفكرة'],
+    ['arrive','sec-arrive','الوصول'],['lunch','sec-lunch','الغداء'],['late','sec-late','نهاية الوردية'],['leave','sec-leave','الخروج'],
+    ['office','sec-office','المكتب'],['fixes','sec-fixes','أخطاء للإصلاح'],['decisions','sec-decisions','قراراتك']];
+  var audio=new Audio(), i=-1, last=ORDER.length-1, IDLE='اضغط للاستماع · حوالي ٤ دقائق ونصف';
+  var play=document.getElementById('voPlay'), icon=document.getElementById('voIcon'), now=document.getElementById('voNow'), prog=document.getElementById('voProg'), stop=document.getElementById('voStop');
+  var PLAY='M8 5v14l11-7z', PAUSE='M7 5h4v14H7zM13 5h4v14h-4z';
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  now.textContent=IDLE;
+  function mark(id){
+    document.querySelectorAll('.speaking').forEach(function(e){e.classList.remove('speaking');});
+    if(!id) return; var el=document.getElementById(id); el.classList.add('speaking');
+    el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+  }
+  function start(from,to){
+    i=from; last=to; var c=ORDER[i];
+    mark(c[1]); now.textContent=(i+1)+' / '+ORDER.length+' · '+c[2];
+    audio.src='audio/'+c[0]+'.mp3'; audio.play().catch(function(){});
+    icon.setAttribute('d',PAUSE); stop.hidden=false; play.setAttribute('aria-label','Pause narration');
+  }
+  function end(){ audio.pause(); i=-1; icon.setAttribute('d',PLAY); stop.hidden=true; prog.style.width='0'; now.textContent=IDLE; mark(null); play.setAttribute('aria-label','Play narration'); }
+  audio.addEventListener('timeupdate',function(){ if(audio.duration) prog.style.width=(audio.currentTime/audio.duration*100)+'%'; });
+  audio.addEventListener('ended',function(){ if(i<last) start(i+1,last); else end(); });
+  play.onclick=function(){
+    if(i<0) return start(0,ORDER.length-1);
+    if(audio.paused){ audio.play().catch(function(){}); icon.setAttribute('d',PAUSE); } else { audio.pause(); icon.setAttribute('d',PLAY); }
+  };
+  stop.onclick=end;
+  ORDER.forEach(function(c,n){
+    var sec=document.getElementById(c[1]); var b=document.createElement('button');
+    b.type='button'; b.className='listen'; b.lang='ar'; b.dir='rtl';
+    b.innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>استمع';
+    b.onclick=function(){start(n,n);};
+    sec.insertBefore(b, sec.firstElementChild);
+  });
+})();
+</script>

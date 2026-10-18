@@ -1,3 +1,5 @@
+import { SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, shortfallMinutes } from '@hbcfield/shared/client';
+
 /**
  * THE SHIFT AS A RECEIPT — decided once, before anything is drawn.
  *
@@ -45,6 +47,13 @@ export interface ClockOutShift {
   awayMetres?: number | null;
   /** Who would approve extra time, when the server has said. */
   approver?: string | null;
+  /**
+   * The shift's tolerance — the minutes either side the SERVER does not count as
+   * early or late. Absent (older server, no shift): the shared default.
+   */
+  toleranceMin?: number;
+  /** The end is a daily allowance, not a shift: leaving before it is not early. */
+  endIsDailyLimit?: boolean;
   /** The moment of the clock-out (tests pass it; the sheet reads the clock). */
   now?: Date;
 }
@@ -75,22 +84,25 @@ export function readClockOut(shift: ClockOutShift): ClockOutView {
   const target = shift.targetMinutes && shift.targetMinutes > 0 ? shift.targetMinutes : null;
 
   /*
-    ⚠️ ONE MINUTE EITHER SIDE IS NOT A VARIANCE. Without a tolerance the sheet
-    would call a shift "early" for finishing 40 seconds before the hour, which
-    turns a daily act into a daily apology.
+    ⚠️ THE SERVER'S RULE, NOT A ROUNDER ONE. The sheet used one minute either
+    side while the server judges by the shift's own tolerance (ten by default):
+    "Clock out & ask" then promised a request the server never created, and
+    "Finishing early" asked a reason for a departure nobody was told about. Late
+    = past the end by MORE than the tolerance; early = the shared shortfall rule
+    (never against a daily allowance) — both exactly as at clock-out.
+
+    ⚠️ PAST THE ROSTERED END IS OVERTIME, WHATEVER THE TOTAL: somebody who
+    arrived 2 h late and stayed 44 minutes past the end is asked about the extra
+    time, which is what the approval exists for.
   */
-  const TOLERANCE = 1;
-  /*
-    ⚠️ PAST THE ROSTERED END IS OVERTIME, WHATEVER THE TOTAL. Judged by duration
-    alone, somebody who arrived 2h late and stayed 44 minutes past the end read
-    "short" (513 of 600) and was never asked about the extra time — the time
-    the approval exists for. The END decides; the total decides only when
-    nobody is past it.
-  */
+  const tolerance = shift.toleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN;
   const now = shift.now ?? (shift.clockOutAt ? new Date(shift.clockOutAt) : new Date());
-  const pastEnd = shift.shiftEndAt ? Math.floor((now.getTime() - shift.shiftEndAt.getTime()) / 60_000) : 0;
-  const overBy = pastEnd > TOLERANCE ? pastEnd : target && counted > target + TOLERANCE ? counted - target : 0;
-  const shortBy = overBy === 0 && target && counted < target - TOLERANCE ? target - counted : 0;
+  const pastEndExact = shift.shiftEndAt ? (now.getTime() - shift.shiftEndAt.getTime()) / 60_000 : 0;
+  const overBy = pastEndExact > tolerance ? Math.floor(pastEndExact) : 0;
+  const shortBy =
+    overBy === 0 && target && !shift.endIsDailyLimit
+      ? shortfallMinutes({ clockOutAt: now, expectedEndAt: shift.shiftEndAt, toleranceMin: tolerance })
+      : 0;
   const face: ClockOutFace = overBy > 0 ? 'late' : shortBy > 0 ? 'early' : 'onTime';
 
   const metres = shift.awayMetres ?? null;

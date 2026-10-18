@@ -11,14 +11,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { AttendanceStatus, BreakStatus, TimeEntry } from '@hbcfield/shared/client';
 import { shiftCard } from './shift-card-files';
-import {
-  readShiftState, targetLabel, heroParts, workingDaysLeftIn,
-} from '../../components/home/shift-state';
+import { readShiftState, targetLabel, heroParts, workingDaysLeftIn } from '../../components/home/shift-state';
 import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const code = (p: string) =>
-  readSource(path.join(SRC, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  readSource(path.join(SRC, p), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 const Z = (s: string) => new Date(`2026-09-26T${s}:00.000Z`);
 const RULE = 'cmtq95s22000le3liunwgrkwy';
@@ -34,19 +34,41 @@ function entry(over: Partial<TimeEntry> & Record<string, unknown> = {}): TimeEnt
     unpaidBreakMinutes: 0,
     expectedClockInAt: '2026-09-26T19:16:00.000Z',
     expectedClockOutAt: '2026-09-27T05:16:00.000Z',
-    breakPlan: [{
-      name: 'Breather', dueAt: '2026-09-26T19:18:00.000Z', state: 'PENDING', isPaid: true,
-      ruleId: RULE, required: false, expiresAt: null, snoozeMin: 5, maxSnoozes: 3, snoozeCount: 0, durationMinutes: 10,
-    }],
+    breakPlan: [
+      {
+        name: 'Breather',
+        dueAt: '2026-09-26T19:18:00.000Z',
+        state: 'PENDING',
+        isPaid: true,
+        ruleId: RULE,
+        required: false,
+        expiresAt: null,
+        snoozeMin: 5,
+        maxSnoozes: 3,
+        snoozeCount: 0,
+        durationMinutes: 10,
+      },
+    ],
     ...over,
   } as unknown as TimeEntry;
 }
 const on = (e: TimeEntry, over: Partial<AttendanceStatus> = {}): AttendanceStatus =>
   ({ isClockedIn: true, currentEntry: e, assignedLocations: [{ id: 'w1' }], ...over }) as unknown as AttendanceStatus;
 const off = (over: Partial<AttendanceStatus> = {}): AttendanceStatus =>
-  ({ isClockedIn: false, currentEntry: null, assignedLocations: [{ id: 'w1' }], ...over }) as unknown as AttendanceStatus;
+  ({
+    isClockedIn: false,
+    currentEntry: null,
+    assignedLocations: [{ id: 'w1' }],
+    ...over,
+  }) as unknown as AttendanceStatus;
 const resting = (b: Record<string, unknown>): BreakStatus =>
-  ({ isClockedIn: true, isOnBreak: true, currentBreak: { id: 'b1', type: 'SHORT', ...b }, todayBreaks: [], totalBreakMinutes: 0 }) as unknown as BreakStatus;
+  ({
+    isClockedIn: true,
+    isOnBreak: true,
+    currentBreak: { id: 'b1', type: 'SHORT', ...b },
+    todayBreaks: [],
+    totalBreakMinutes: 0,
+  }) as unknown as BreakStatus;
 
 // ── the rest that fell due before anybody arrived ──────────────────────────
 describe('rest overdue — measured from when it fell due ON THE CLOCK', () => {
@@ -66,7 +88,21 @@ describe('rest overdue — measured from when it fell due ON THE CLOCK', () => {
 
   it('a rest due AFTER the clock-in is still measured from its own dueAt', () => {
     const e = entry({
-      breakPlan: [{ name: 'Lunch', dueAt: '2026-09-26T23:00:00.000Z', state: 'PENDING', isPaid: false, ruleId: 'r2', durationMinutes: 30, snoozeMin: 5, maxSnoozes: 3, snoozeCount: 0, required: true, expiresAt: null }],
+      breakPlan: [
+        {
+          name: 'Lunch',
+          dueAt: '2026-09-26T23:00:00.000Z',
+          state: 'PENDING',
+          isPaid: false,
+          ruleId: 'r2',
+          durationMinutes: 30,
+          snoozeMin: 5,
+          maxSnoozes: 3,
+          snoozeCount: 0,
+          required: true,
+          expiresAt: null,
+        },
+      ],
     });
     expect(readShiftState({ status: on(e), breaks: null, now: Z('22:59') }).kind).toBe('working');
     const late = readShiftState({ status: on(e), breaks: null, now: Z('23:07') });
@@ -111,7 +147,7 @@ describe('③ — does the rest count?', () => {
     expect(a.backAt).toBeNull(); // taken outside any plan — no promised length
   });
 
-  it('a rest with no isPaid of its own takes its rule\'s answer', () => {
+  it("a rest with no isPaid of its own takes its rule's answer", () => {
     const b = resting({ startedAt: '2026-09-26T22:00:00.000Z', ruleId: RULE });
     expect(readShiftState({ status: on(e), breaks: b, now: Z('22:03') }).restCounts).toBe(true);
   });
@@ -135,7 +171,12 @@ describe('③ — does the rest count?', () => {
 // ── ② across midnight, overtime, DST ───────────────────────────────────────
 describe('② — the figures are instants, never wall clocks', () => {
   it('a night shift across midnight keeps counting through it', () => {
-    const st = readShiftState({ status: on(entry()), breaks: null, declaredSchedule: 'FIXED', now: new Date('2026-09-27T01:26:01.264Z') });
+    const st = readShiftState({
+      status: on(entry()),
+      breaks: null,
+      declaredSchedule: 'FIXED',
+      now: new Date('2026-09-27T01:26:01.264Z'),
+    });
     expect(st.minutes).toBe(240);
     // counted from the LATER of arriving and the roster start
     expect(st.countedMinutes).toBe(240);
@@ -144,13 +185,23 @@ describe('② — the figures are instants, never wall clocks', () => {
 
   it('past the rostered end the bar goes past its target (overtime is owed, not wrong)', () => {
     const e = entry({ clockInAt: '2026-09-26T19:16:00.000Z', breakPlan: [] });
-    const st = readShiftState({ status: on(e), breaks: null, declaredSchedule: 'FIXED', now: new Date('2026-09-27T06:00:00.000Z') });
+    const st = readShiftState({
+      status: on(e),
+      breaks: null,
+      declaredSchedule: 'FIXED',
+      now: new Date('2026-09-27T06:00:00.000Z'),
+    });
     expect(st.progress).toEqual({ done: 644, target: 600, past: true });
   });
 
   it('BUG FIXED: a LATE arrival working past the rostered end is past it — overtime, though the total is short', () => {
     // In 2h10 late, out 44 min past the rostered end: 513 of 600, and PAST the end.
-    const st = readShiftState({ status: on(entry()), breaks: null, declaredSchedule: 'FIXED', now: new Date('2026-09-27T06:00:00.000Z') });
+    const st = readShiftState({
+      status: on(entry()),
+      breaks: null,
+      declaredSchedule: 'FIXED',
+      now: new Date('2026-09-27T06:00:00.000Z'),
+    });
     expect(st.progress).toEqual({ done: 513, target: 600, past: true });
   });
 
@@ -171,16 +222,28 @@ describe('② — the figures are instants, never wall clocks', () => {
   it('DST: the night the clocks go back is 10 hours of instants, not 9 or 11', () => {
     // Europe: 25 Oct 2026, 03:00 CEST → 02:00 CET.
     const e = entry({
-      clockInAt: '2026-10-24T20:00:00.000Z', expectedClockInAt: '2026-10-24T20:00:00.000Z',
-      expectedClockOutAt: '2026-10-25T06:00:00.000Z', breakPlan: [],
+      clockInAt: '2026-10-24T20:00:00.000Z',
+      expectedClockInAt: '2026-10-24T20:00:00.000Z',
+      expectedClockOutAt: '2026-10-25T06:00:00.000Z',
+      breakPlan: [],
     });
-    const st = readShiftState({ status: on(e), breaks: null, declaredSchedule: 'FIXED', now: new Date('2026-10-25T06:00:00.000Z') });
+    const st = readShiftState({
+      status: on(e),
+      breaks: null,
+      declaredSchedule: 'FIXED',
+      now: new Date('2026-10-25T06:00:00.000Z'),
+    });
     expect(st.minutes).toBe(600);
     expect(st.progress).toEqual({ done: 600, target: 600, past: false });
   });
 
   it('DST: the spring-forward night too', () => {
-    const e = entry({ clockInAt: '2026-03-28T21:00:00.000Z', expectedClockInAt: null, expectedClockOutAt: null, breakPlan: [] });
+    const e = entry({
+      clockInAt: '2026-03-28T21:00:00.000Z',
+      expectedClockInAt: null,
+      expectedClockOutAt: null,
+      breakPlan: [],
+    });
     const st = readShiftState({ status: on(e), breaks: null, now: new Date('2026-03-29T05:00:00.000Z') });
     expect(st.minutes).toBe(480);
   });
@@ -213,7 +276,9 @@ describe('away from a site is a MODE, not a place', () => {
 describe('⑥ — three approval outcomes, not two', () => {
   const done = (approvalStatus: string) =>
     readShiftState({
-      status: off(), breaks: null, now: Z('23:00'),
+      status: off(),
+      breaks: null,
+      now: Z('23:00'),
       lastToday: entry({ clockOutAt: '2026-09-26T22:30:00.000Z', paidMinutes: 60, approvalStatus } as never),
     }).finished!;
   it('PENDING waits', () => expect(done('PENDING')).toMatchObject({ awaitingApproval: true, approved: false }));
@@ -231,7 +296,17 @@ describe('⑥ — three approval outcomes, not two', () => {
 describe('⑦ — a shift closed at a temporary time wins over everything', () => {
   it('beats ⑥ and ①', () => {
     const st = readShiftState({
-      status: off({ unconfirmedClockOut: { id: 'u', clockInAt: Z('08:00'), clockOutAt: Z('16:00'), clockOutBasis: 'SHIFT_END', expectedClockOutAt: null, timezone: null, location: { id: 'w1', name: 'Main Office' } } }),
+      status: off({
+        unconfirmedClockOut: {
+          id: 'u',
+          clockInAt: Z('08:00'),
+          clockOutAt: Z('16:00'),
+          clockOutBasis: 'SHIFT_END',
+          expectedClockOutAt: null,
+          timezone: null,
+          location: { id: 'w1', name: 'Main Office' },
+        },
+      }),
       breaks: null,
       lastToday: entry({ clockOutAt: '2026-09-26T16:00:00.000Z' }),
       now: Z('20:00'),
@@ -244,14 +319,18 @@ describe('⑦ — a shift closed at a temporary time wins over everything', () =
 // ── ⑧ and the frames that know nothing ─────────────────────────────────────
 describe('whether the card draws at all (read from the card — it is JSX-side)', () => {
   const card = shiftCard(code);
-  it('nothing before the first answer', () =>
-    expect(card).toMatch(/if \(shift\.source === 'pending'\) return null;/));
-  it('clocked out waits for today\'s total, on the clock never does', () =>
+  it('nothing before the first answer', () => expect(card).toMatch(/if \(shift\.source === 'pending'\) return null;/));
+  it("clocked out waits for today's total, on the clock never does", () =>
     expect(card).toMatch(/if \(!status\?\.isClockedIn && !totals\.ready\) return null;/));
   it('an away grant is somewhere to clock in', () =>
-    expect(card).toMatch(/somewhereToClockIn = \(status\?\.assignedLocations\?\.length \?\? 0\) > 0 \|\| !!user\?\.allowRemote/));
+    // Somewhere a clock-in would be TAKEN (clockable workspaces), or an away grant.
+    expect(card).toMatch(
+      /somewhereToClockIn = clockableLocations\(status\?\.assignedLocations\)\.length > 0 \|\| !!user\?\.allowRemote/,
+    ));
   it('⑧ hides only when KNOWN, not on the clock, and nothing left open (⑦ still draws)', () =>
-    expect(card).toMatch(/if \(known && !somewhereToClockIn && !status\?\.isClockedIn && st\.kind !== 'unconfirmed'\) return null;/));
+    expect(card).toMatch(
+      /if \(known && !somewhereToClockIn && !status\?\.isClockedIn && st\.kind !== 'unconfirmed'\) return null;/,
+    ));
   it('offline with nothing kept (`none`) is not known', () =>
     expect(card).toMatch(/const known = shift\.source !== 'none' && shift\.source !== 'pending';/));
 });
@@ -272,7 +351,14 @@ describe('⑤ — queued is a chip on ②, not a state', () => {
 
 // ── the labels ─────────────────────────────────────────────────────────────
 describe('what a target reads as', () => {
-  it.each([[480, '8h'], [450, '7h 30m'], [380, '6h 20m'], [600, '10h'], [45, '45m'], [0, '0m']])('%i → %s', (m, s) => {
+  it.each([
+    [480, '8h'],
+    [450, '7h 30m'],
+    [380, '6h 20m'],
+    [600, '10h'],
+    [45, '45m'],
+    [0, '0m'],
+  ])('%i → %s', (m, s) => {
     expect(targetLabel(m)).toBe(s);
   });
   it('the card no longer rounds a target to whole hours', () => {
@@ -282,7 +368,10 @@ describe('what a target reads as', () => {
   });
   it('heroParts pads minutes only after an hour', () => {
     expect(heroParts(5)).toEqual([{ value: '5', unit: 'm' }]);
-    expect(heroParts(65)).toEqual([{ value: '1', unit: 'h' }, { value: '05', unit: 'm' }]);
+    expect(heroParts(65)).toEqual([
+      { value: '1', unit: 'h' },
+      { value: '05', unit: 'm' },
+    ]);
   });
 });
 

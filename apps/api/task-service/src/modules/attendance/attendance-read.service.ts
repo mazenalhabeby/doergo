@@ -1,8 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { notEndedWhere, success, paginated, TimeEntryStatus, buildDateRangeFilter } from '@hbcfield/shared';
+import {
+  notEndedWhere,
+  success,
+  paginated,
+  TimeEntryStatus,
+  buildDateRangeFilter,
+  SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
+  zoneOf,
+} from '@hbcfield/shared';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { ATTENDANCE_LOCATION_SELECT } from './attendance-selects';
+import { isClockableAssignment, STATUS_SPACE_SELECT, statusSpace } from './status-clockable';
 import { AttendanceReadBase } from './attendance-read.base';
 import type { Prisma } from '@prisma/client';
 
@@ -61,6 +70,8 @@ export class AttendanceReadService extends AttendanceReadBase {
             select: { id: true, startedAt: true, ruleId: true, isPaid: true, type: true },
             take: 1,
           },
+          // The shift's tolerance — the one the server judges early/late by at clock-out.
+          shift: { select: { flagToleranceMin: true } },
         },
       }),
       // Get assigned locations
@@ -74,7 +85,7 @@ export class AttendanceReadService extends AttendanceReadBase {
         // trip for a column that was one word away, on the endpoint a phone polls
         // all day.
         include: {
-          space: { select: ATTENDANCE_LOCATION_SELECT },
+          space: { select: STATUS_SPACE_SELECT },
         },
         orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
       }),
@@ -103,17 +114,50 @@ export class AttendanceReadService extends AttendanceReadBase {
       }),
     ]);
 
+    // Which workspaces would take a clock-in NOW — the clock-in check's own rule (status-clockable.ts).
+    const now = new Date();
+    const clockableIds = new Set(
+      assignments.filter((a) => isClockableAssignment(a, data.organizationId, now)).map((a) => a.spaceId),
+    );
+    const listed = assignments.map((a) => ({ ...a, space: statusSpace(a.space) }));
+
     // The workspace tags and the active excursion depend on the reads above, not on each other.
-    const [assignedLocations, activeExcursion] = await Promise.all([
-      this.tagStatusLocations(currentEntry !== null, assignments, data),
+    const [tagged, activeExcursion] = await Promise.all([
+      this.tagStatusLocations(currentEntry !== null, listed, data),
       // Active out-of-ring excursion for the current session (drives mobile UI).
       currentEntry ? this.heartbeats.getActiveExcursion(currentEntry.id) : null,
     ]);
 
+    const assignedLocations = tagged.map((l) => ({ ...l, clockable: clockableIds.has(l.id) }));
+    // Before clock-in only: the planned shift the card counts down to (next-shift.ts).
+    const nextShift = currentEntry
+      ? null
+      : await this.clockInLocations.nextShiftToday(
+          data.userId,
+          listed
+            .filter((a) => clockableIds.has(a.spaceId))
+            .map((a) => ({ ...a.space, timezone: zoneOf(a.space.timezone) })),
+          now,
+        );
+
+    /*
+      The tolerance the clock-out will be judged by, sent with the shift so the
+      phone's sheet says "late" / "finishing early" exactly when the server will
+      flag it. Without it the sheet used one minute against the server's ten, and
+      "Clock out & ask" promised a request the server never created.
+    */
+    const runningEntry = currentEntry
+      ? (({ shift, ...e }) => ({
+          ...e,
+          flagToleranceMin: shift?.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
+        }))(currentEntry)
+      : null;
+
     return success({
       isClockedIn: !!currentEntry,
-      currentEntry,
+      currentEntry: runningEntry,
       assignedLocations,
+      nextShift,
       activeExcursion,
       unconfirmedClockOut,
     });

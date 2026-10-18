@@ -64,6 +64,12 @@ export interface TimeEntry {
   expectedClockOutAt?: string | null;
   /** The planned end is the workspace's daily limit for clocking in with no shift, not a shift end. */
   endIsDailyLimit?: boolean;
+  /**
+   * Minutes either side of the shift's start/end that are not a variance — the
+   * shift's own tolerance, the one the server flags late/early/overtime by.
+   * Sent on the running entry of the status read only.
+   */
+  flagToleranceMin?: number;
   /** Where they are working now: ON_SITE | FIELD | REMOTE — see attendance/presence.ts. Null on older entries. */
   presence?: string | null;
   presenceReason?: string | null;
@@ -117,6 +123,12 @@ export interface AttendanceStatus {
    * because it was left open — "when did you actually leave?". Null when none.
    */
   unconfirmedClockOut?: UnconfirmedClockOut | null;
+  /**
+   * Before clock-in only: the next planned shift today (or one running now)
+   * from the rota / weekly schedule — what the clock card counts down to.
+   * Null when clocked in, or when nothing is planned.
+   */
+  nextShift?: { startAt: string; endAt: string; spaceId: string; spaceName: string | null } | null;
 }
 
 /** A shift left open and closed with a temporary clock-out, waiting for the member's real time. */
@@ -135,13 +147,7 @@ export interface UnconfirmedClockOut {
 // GEOFENCE EXCURSION ("OUT OF RING")
 // ============================================================================
 
-export type GeofenceExcursionStatus =
-  | 'OUT_UNREPORTED'
-  | 'PENDING'
-  | 'APPROVED'
-  | 'REJECTED'
-  | 'RETURNED'
-  | 'EXPIRED';
+export type GeofenceExcursionStatus = 'OUT_UNREPORTED' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'EXPIRED';
 
 export interface GeofenceExcursion {
   id: string;

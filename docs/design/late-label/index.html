@@ -1,0 +1,256 @@
+<title>Late Label Check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: a verdict up top, then each case as the real timesheet row today beside the row after the fix, with the shift drawn on a time strip. */
+:root{
+  --bg:#eef2f5; --card:#ffffff; --ink:#0f1d2b; --muted:#5a6879; --line:#d9e0e8; --soft:#f5f7fa;
+  --brand:#2563eb; --brandSoft:#2563eb14; --amber:#b45309; --amberSoft:#b4530916; --green:#047857; --greenSoft:#04785716;
+  --red:#b42318; --redSoft:#b4231814; --purple:#6d28d9; --purpleSoft:#6d28d914;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif; --sans:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace; --ar:"IBM Plex Sans Arabic","Geeza Pro","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#0b1118; --card:#121b25; --ink:#e3ebf3; --muted:#93a3b5; --line:#223042; --soft:#16212d;
+  --brand:#6b9bff; --brandSoft:#6b9bff1f; --amber:#f0a94a; --amberSoft:#f0a94a1f; --green:#4fc79c; --greenSoft:#4fc79c1f;
+  --red:#f2836f; --redSoft:#f2836f1f; --purple:#b69cff; --purpleSoft:#b69cff1f;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#0b1118; --card:#121b25; --ink:#e3ebf3; --muted:#93a3b5; --line:#223042; --soft:#16212d;
+  --brand:#6b9bff; --brandSoft:#6b9bff1f; --amber:#f0a94a; --amberSoft:#f0a94a1f; --green:#4fc79c; --greenSoft:#4fc79c1f;
+  --red:#f2836f; --redSoft:#f2836f1f; --purple:#b69cff; --purpleSoft:#b69cff1f;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:36px 140px;display:flex;flex-direction:column;gap:26px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(32px,5.5vw,52px);font-weight:800;letter-spacing:-.02em;line-height:1.04}
+h2{font-size:clamp(21px,3vw,27px);font-weight:700}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.lede{font-size:18px;color:var(--muted);max-width:64ch}
+.lede b{color:var(--ink);font-weight:600}
+section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:16px;scroll-margin:24px;transition:box-shadow .3s}
+section.speaking{box-shadow:0 0 0 3px var(--brand)}
+section > header{display:flex;flex-direction:column;gap:6px;max-width:72ch}
+section > header p{color:var(--muted)}
+.hero{background:transparent;border:0;padding:0;gap:16px}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.v{border-radius:14px;padding:14px 16px;border:1px solid var(--line);background:var(--card)}
+.v .n{font-family:var(--display);font-size:34px;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums}
+.v .l{font-size:14px;color:var(--muted)}
+.v.ok .n{color:var(--green)} .v.bad .n{color:var(--red)} .v.warn .n{color:var(--amber)}
+.listen{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-family:var(--ar);font-size:13px;background:var(--brandSoft);color:var(--brand);border:0;border-radius:999px;padding:5px 12px;cursor:pointer}
+button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+/* Timesheet rows */
+.sheet{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.sheet .h,.sheet .r{display:grid;grid-template-columns:minmax(110px,1.1fr) minmax(90px,.8fr) minmax(120px,1fr) minmax(0,1.6fr);gap:10px;padding:10px 14px;align-items:center}
+.sheet .h{background:var(--soft);font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sheet .r{border-top:1px solid var(--line);font-size:14.5px}
+.sheet .r.dim{opacity:.55}
+.t{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;border-radius:999px;padding:2px 9px;font-weight:600;white-space:nowrap}
+.chip.late{background:var(--amberSoft);color:var(--amber)}
+.chip.early{background:var(--amberSoft);color:var(--amber)}
+.chip.miss{background:var(--redSoft);color:var(--red)}
+.chip.info{background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+.chip.ok{background:var(--greenSoft);color:var(--green)}
+.chip.none{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+.scroll{overflow-x:auto}
+.scroll .sheet{min-width:600px}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.pair{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:8px;min-width:0}
+.tagline{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.tagline .p{border-radius:999px;padding:2px 9px;font-weight:600}
+.tagline .p.now{background:var(--redSoft);color:var(--red)} .tagline .p.fix{background:var(--greenSoft);color:var(--green)}
+
+/* Time strip */
+.strip{position:relative;height:64px;margin-top:4px}
+.strip .axis{position:absolute;left:0;right:0;top:30px;height:2px;background:var(--line)}
+.strip .shift{position:absolute;top:24px;height:14px;border-radius:7px;background:var(--brandSoft);border:1px solid var(--brand)}
+.strip .grace{position:absolute;top:24px;height:14px;background:repeating-linear-gradient(45deg,var(--greenSoft) 0 4px,transparent 4px 8px);border:1px dashed var(--green);border-radius:4px}
+.strip .mark{position:absolute;top:14px;width:2px;height:34px;background:var(--ink);transform:translateX(-1px)}
+.strip .mark span{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:11px;white-space:nowrap;color:var(--ink)}
+.strip .tick{position:absolute;top:44px;font-family:var(--mono);font-size:11px;color:var(--muted);transform:translateX(-50%)}
+.why{font-size:15px;color:var(--muted);max-width:68ch}
+.why b{color:var(--ink)}
+
+.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.case{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--soft);display:flex;flex-direction:column;gap:8px;min-width:0}
+.case p{font-size:14.5px;color:var(--muted)}
+.case .result{font-family:var(--mono);font-size:12.5px;color:var(--amber)}
+.fixes{display:flex;flex-direction:column}
+.fix{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.fix:last-child{border-bottom:0}
+.fix .num{width:26px;height:26px;border-radius:50%;background:var(--brandSoft);color:var(--brand);display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600}
+.fix p{color:var(--muted);font-size:14.5px}
+.choice{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.opt{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.opt.rec{border-color:var(--brand);background:var(--brandSoft)}
+.opt .k{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--brand)}
+.opt p{color:var(--muted);font-size:14.5px}
+
+.player{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line);z-index:5}
+.player .inner{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.pbtn{width:42px;height:42px;border-radius:50%;border:0;background:var(--brand);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+.pstop{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:6px 12px;font-family:var(--ar);cursor:pointer}
+.pmeta{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.pnow{font-family:var(--ar);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:var(--brand)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <section class="hero" id="sec-intro">
+    <span class="eyebrow">Attendance management · checked against your real data, 18 Oct</span>
+    <h1>Is “Late” telling the truth?</h1>
+    <p class="lede">Mostly, yes. We read the code end to end and then <b>205 real entries from the last 60 days</b> in your account. The label is right in almost every case. Three entries show a real mistake, and three more cases in the code will show up as soon as people work the way they could.</p>
+    <div class="verdict">
+      <div class="v ok"><div class="n">74 / 74</div><div class="l">on-time or early arrivals with no “Late”</div></div>
+      <div class="v ok"><div class="n">6 / 6</div><div class="l">“Late” labels since September that are real</div></div>
+      <div class="v bad"><div class="n">3</div><div class="l">wrong in the data today</div></div>
+      <div class="v warn"><div class="n">3</div><div class="l">wrong cases waiting in the code</div></div>
+    </div>
+  </section>
+
+  <section id="sec-correct">
+    <header><span class="eyebrow">What is right</span><h2>The night shift’s late labels are all real</h2><p>Binderholz night shift starts at 18:00 New York time, with 10 minutes of grace. Every “Late” is more than 10 minutes after 18:00.</p></header>
+    <div class="scroll"><div class="sheet">
+      <div class="h"><span>Who · day</span><span>Shift starts</span><span>Clocked in</span><span>Label</span></div>
+      <div class="r"><span>David · Tue 6 Oct</span><span class="t">18:00</span><span class="t">18:15 · 15 min</span><span class="chips"><span class="chip late">Late</span></span></div>
+      <div class="r"><span>David · Sat 3 Oct</span><span class="t">18:00</span><span class="t">18:58 · 59 min</span><span class="chips"><span class="chip late">Late</span></span></div>
+      <div class="r"><span>David · Mon 28 Sep</span><span class="t">18:00</span><span class="t">18:13 · 14 min</span><span class="chips"><span class="chip late">Late</span></span></div>
+      <div class="r"><span>Matias · Thu 24 Sep</span><span class="t">18:00</span><span class="t">18:29 · 30 min</span><span class="chips"><span class="chip late">Late</span></span></div>
+      <div class="r"><span>Matias · Sun 20 Sep</span><span class="t">18:00</span><span class="t">18:27 · 27 min</span><span class="chips"><span class="chip late">Late</span></span></div>
+      <div class="r"><span>David · Sat 5 Sep</span><span class="t">18:00</span><span class="t">20:32 · 2 h 33</span><span class="chips"><span class="chip late">Late</span></span></div>
+    </div></div>
+    <p class="why">The workspace’s time zone (New York) matches the site in Enfield, CT, so the 18:00 is read in the right zone.</p>
+  </section>
+
+  <section id="sec-edit">
+    <header><span class="eyebrow">Mistake 1 · in your data</span><h2>An office edit removed a real “Late”</h2></header>
+    <div class="strip" role="img" aria-label="Shift starting 18:00 with 10 minutes grace; clock-in at 18:54">
+      <div class="axis"></div><div class="shift" style="left:20%;width:78%"></div><div class="grace" style="left:20%;width:7%"></div>
+      <div class="mark" style="left:58%"><span>clocked in 18:54</span></div>
+      <div class="tick" style="left:5%">17:30</div><div class="tick" style="left:20%">18:00</div><div class="tick" style="left:27%">18:10</div><div class="tick" style="left:58%">18:54</div><div class="tick" style="left:95%">19:30</div>
+    </div>
+    <div class="pair">
+      <div class="col"><div class="tagline"><span class="p now">Today</span>David · Tue 29 Sep</div>
+        <div class="sheet"><div class="r" style="border-top:0"><span class="t">18:54 → 07:08</span><span class="chips"><span class="chip none">no Late</span><span class="chip info">Clock-out outside zone</span></span></div></div>
+      </div>
+      <div class="col"><div class="tagline"><span class="p fix">After the fix</span>Same entry</div>
+        <div class="sheet"><div class="r" style="border-top:0"><span class="t">18:54 → 07:08</span><span class="chips"><span class="chip late">Late · 54 min</span><span class="chip info">Clock-out outside zone</span></span></div></div>
+      </div>
+    </div>
+    <p class="why">On 1 Oct the entry was edited with the reason “Einstempeln vergessen”. The edit only rounded the seconds off (18:54:25 → 18:54:00), but working out the labels again <b>dropped “Late”</b>. An edit should keep “Late” as long as the clock-in is still past the grace minutes.</p>
+  </section>
+
+  <section id="sec-duplicate">
+    <header><span class="eyebrow">Mistake 2 · in your data</span><h2>A duplicate of 0 minutes labelled “Left early”</h2></header>
+    <div class="pair">
+      <div class="col"><div class="tagline"><span class="p now">Today</span>Matias · Tue 13 Oct · phone offline</div>
+        <div class="sheet">
+          <div class="r" style="border-top:0"><span class="t">17:56:44 → 06:05</span><span class="chips"><span class="chip info">Recorded offline</span></span></div>
+          <div class="r"><span class="t">17:56:24 → 17:56:35</span><span class="chips"><span class="chip early">Left early</span><span class="chip info">Automatic</span><span class="chip ok">Approved</span></span></div>
+        </div>
+      </div>
+      <div class="col"><div class="tagline"><span class="p fix">After the fix</span>One entry</div>
+        <div class="sheet"><div class="r" style="border-top:0"><span class="t">17:56 → 06:05</span><span class="chips"><span class="chip info">Recorded offline</span><span class="chip info">Automatic</span></span></div></div>
+      </div>
+    </div>
+    <p class="why">With no signal, the <b>automatic clock-in and his own tap both</b> went into the phone’s queue. When it reconnected, the second closed the first after 11 seconds and opened a new entry. When two clock-ins for the same shift arrive together, the second should <b>join the first</b>, not make a new entry.</p>
+  </section>
+
+  <section id="sec-old">
+    <header><span class="eyebrow">Mistake 3 · in your data</span><h2>Old “Late” labels with nothing to compare against</h2></header>
+    <div class="scroll"><div class="sheet">
+      <div class="h"><span>Who · day</span><span>Shift starts</span><span>Clocked in</span><span>Label</span></div>
+      <div class="r dim"><span>Juan Diego · 19 Aug</span><span class="t">not saved</span><span class="t">07:38</span><span class="chips"><span class="chip late">Late</span></span></div>
+      <div class="r dim"><span>Juan Diego · 20 Aug</span><span class="t">not saved</span><span class="t">07:26</span><span class="chips"><span class="chip late">Late</span></span></div>
+      <div class="r dim"><span>Juan Diego · 26 · 28 · 31 Aug</span><span class="t">not saved</span><span class="t">07:11–07:13</span><span class="chips"><span class="chip late">Late</span></span></div>
+      <div class="r dim"><span>David · 27 Aug</span><span class="t">not saved</span><span class="t">18:30</span><span class="chips"><span class="chip late">Late</span></span></div>
+    </div></div>
+    <p class="why">Before 6 Sep the shift’s start was worked out at clock-in and then <b>thrown away</b>. These labels were probably right at the time, but nobody can see any more what they were late against.</p>
+  </section>
+
+  <section id="sec-code">
+    <header><span class="eyebrow">In the code · not in your data yet</span><h2>Three ways an on-time worker will be shown “Late”</h2></header>
+    <div class="cases">
+      <div class="case"><h3>Back from lunch</h3><p>Shift 08:00–16:00. On time at 07:58, clocks out at 12:00, back in at 13:00. The 13:00 entry is compared with 08:00.</p><span class="result">→ “Late 300 min”, sent to review</span></div>
+      <div class="case"><h3>Two shifts in a day</h3><p>08:00–12:00 and 13:00–17:00. Back at 12:05 for the afternoon: matched to the morning shift.</p><span class="result">→ “Late 245 min”, wrong end and reminders</span></div>
+      <div class="case"><h3>Night, then day</h3><p>22:00–06:00 and 07:00–15:00. Arrives 06:05 for the day shift: matched to last night’s.</p><span class="result">→ “Late ~8 h”</span></div>
+      <div class="case"><h3>Two other screens count differently</h3><p>Reports count “late” from 1 minute with no grace, and add every entry. The No-shows record always uses 10 minutes.</p><span class="result">→ numbers that disagree with the label</span></div>
+    </div>
+  </section>
+
+  <section id="sec-fixes">
+    <header><span class="eyebrow">The fixes</span><h2>Five changes, each proven by a test</h2></header>
+    <div class="fixes">
+      <div class="fix"><span class="num">1</span><div><h3>An office edit keeps “Late”</h3><p>When the clock-in is still past the grace minutes after the edit.</p></div></div>
+      <div class="fix"><span class="num">2</span><div><h3>Two clock-ins arriving together make one entry</h3><p>An automatic and a manual clock-in for the same shift join; no 0-minute “Left early”.</p></div></div>
+      <div class="fix"><span class="num">3</span><div><h3>Only the first clock-in of a shift can be “Late”</h3><p>Coming back after lunch, or after a short trip, never is.</p></div></div>
+      <div class="fix"><span class="num">4</span><div><h3>A clock-in matches the shift it falls in</h3><p>Or the next one to start — never a shift that is already over.</p></div></div>
+      <div class="fix"><span class="num">5</span><div><h3>Reports and No-shows count late like the label</h3><p>Same grace minutes, only the first entry of each shift.</p></div></div>
+    </div>
+  </section>
+
+  <section id="sec-decision">
+    <header><span class="eyebrow">Your decision</span><h2>The old August labels</h2></header>
+    <div class="choice">
+      <div class="opt rec"><span class="k">Recommended</span><h3>Leave them as they are</h3><p>Changing old records is not safe; they were probably right at the time.</p></div>
+      <div class="opt"><span class="k">Alternative</span><h3>Hide “Late” without a saved start</h3><p>Only the label is hidden on the 6 old entries; nothing is deleted.</p></div>
+    </div>
+  </section>
+</div>
+
+<div class="player" role="region" aria-label="Narration">
+  <div class="inner">
+    <button class="pbtn" id="voPlay" type="button" aria-label="Play narration"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path id="voIcon" d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
+    <div class="pmeta"><div class="pnow" id="voNow" lang="ar" dir="rtl"></div><div class="pbar"><i id="voProg"></i></div></div>
+    <button class="pstop" id="voStop" type="button" hidden>إيقاف</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var ORDER=[['intro','sec-intro','المقدمة'],['correct','sec-correct','ما هو صحيح'],['edit','sec-edit','الخطأ الأول: تعديل المكتب'],
+    ['duplicate','sec-duplicate','الخطأ الثاني: تسجيل مكرر'],['old','sec-old','الخطأ الثالث: تسجيلات قديمة'],['code','sec-code','حالات في الكود'],
+    ['fixes','sec-fixes','الإصلاحات'],['decision','sec-decision','قرارك']];
+  var audio=new Audio(), i=-1, last=ORDER.length-1, IDLE='اضغط للاستماع · حوالي ثلاث دقائق ونصف';
+  var play=document.getElementById('voPlay'), icon=document.getElementById('voIcon'), now=document.getElementById('voNow'), prog=document.getElementById('voProg'), stop=document.getElementById('voStop');
+  var PLAY='M8 5v14l11-7z', PAUSE='M7 5h4v14H7zM13 5h4v14h-4z';
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  now.textContent=IDLE;
+  function mark(id){
+    document.querySelectorAll('.speaking').forEach(function(e){e.classList.remove('speaking');});
+    if(!id) return; var el=document.getElementById(id); el.classList.add('speaking');
+    el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+  }
+  function start(from,to){
+    i=from; last=to; var c=ORDER[i];
+    mark(c[1]); now.textContent=(i+1)+' / '+ORDER.length+' · '+c[2];
+    audio.src='audio/'+c[0]+'.mp3'; audio.play().catch(function(){});
+    icon.setAttribute('d',PAUSE); stop.hidden=false;
+  }
+  function end(){ audio.pause(); i=-1; icon.setAttribute('d',PLAY); stop.hidden=true; prog.style.width='0'; now.textContent=IDLE; mark(null); }
+  audio.addEventListener('timeupdate',function(){ if(audio.duration) prog.style.width=(audio.currentTime/audio.duration*100)+'%'; });
+  audio.addEventListener('ended',function(){ if(i<last) start(i+1,last); else end(); });
+  play.onclick=function(){
+    if(i<0) return start(0,ORDER.length-1);
+    if(audio.paused){ audio.play().catch(function(){}); icon.setAttribute('d',PAUSE); } else { audio.pause(); icon.setAttribute('d',PLAY); }
+  };
+  stop.onclick=end;
+  ORDER.forEach(function(c,n){
+    var sec=document.getElementById(c[1]); var b=document.createElement('button');
+    b.type='button'; b.className='listen'; b.lang='ar'; b.dir='rtl';
+    b.innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>استمع';
+    b.onclick=function(){start(n,n);};
+    sec.insertBefore(b, sec.firstElementChild);
+  });
+})();
+</script>

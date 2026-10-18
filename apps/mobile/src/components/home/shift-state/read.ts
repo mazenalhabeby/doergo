@@ -105,12 +105,21 @@ export function readShiftState(input: {
       on track*. NONE gets what they have actually worked, because nothing is
       promised in either direction and a record is still a fact.
     */
-    const nextStart = input.status?.currentEntry?.expectedClockInAt ?? null;
-    if (schedule === 'FIXED' && nextStart) {
-      const at = new Date(nextStart);
+    /*
+      ⚠️ THE PLANNED SHIFT, NOT THE RUNNING ENTRY. This read
+      `currentEntry.expectedClockInAt` — which does not exist before clock-in,
+      the only moment this branch runs — so "starts in N minutes" never showed.
+      The server now sends the next planned shift (rota or weekly schedule)
+      with the status. And a planned shift IS the roster: shown whatever the
+      declared schedule says (most rota workers are declared NONE).
+    */
+    const planned = input.status?.nextShift ?? null;
+    if (planned) {
+      const at = new Date(planned.startAt);
       return {
         ...base,
         at,
+        workspace: planned.spaceName ?? base.workspace,
         startsInMinutes: Math.round((at.getTime() - now.getTime()) / MIN),
       };
     }
@@ -170,9 +179,7 @@ export function readShiftState(input: {
     the stale `dueAt`.
   */
   const overdueBy = nextRest
-    ? Math.floor(
-        (now.getTime() - Math.max(new Date(nextRest.dueAt).getTime(), clockIn.getTime())) / MIN,
-      )
+    ? Math.floor((now.getTime() - Math.max(new Date(nextRest.dueAt).getTime(), clockIn.getTime())) / MIN)
     : 0;
 
   const progress = progressFor(
@@ -200,9 +207,7 @@ export function readShiftState(input: {
     const current = input.breaks.currentBreak;
     const ruleId = (current as { ruleId?: string | null }).ruleId ?? null;
     const planned = plan.find((b) => b.ruleId === ruleId) ?? null;
-    const backAt = planned?.durationMinutes
-      ? new Date(started.getTime() + planned.durationMinutes * MIN)
-      : null;
+    const backAt = planned?.durationMinutes ? new Date(started.getTime() + planned.durationMinutes * MIN) : null;
     const frozen = Math.max(
       0,
       Math.floor((started.getTime() - counted.countedStartAt.getTime()) / MIN) - (entry.unpaidBreakMinutes ?? 0),
@@ -213,8 +218,7 @@ export function readShiftState(input: {
       a rest started offline carries no answer yet, and freezing is the
       claim that can only under-state.
     */
-    const restCounts =
-      (current as { isPaid?: boolean | null }).isPaid ?? planned?.isPaid ?? false;
+    const restCounts = (current as { isPaid?: boolean | null }).isPaid ?? planned?.isPaid ?? false;
     return {
       ...base,
       kind: 'resting',

@@ -1,13 +1,19 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import type * as Location from 'expo-location';
 import { evidenceFix, getFix } from '../lib/location-fix';
 import { useTranslation } from 'react-i18next';
 import type { CompanyLocation } from '../lib/api';
+import { clockableLocations } from '../lib/clockable';
 import { useAuth } from '../contexts/auth-context';
 import { useToast } from '../island/island-context';
 import { startBackgroundHeartbeat } from '../services/background-heartbeat';
 import { startGeofenceForSpace } from '../services/background-geofence';
-import { chooseClockInLocation, haversineDistance, mayClockInRemotely, parseClockInPick } from '@hbcfield/shared/client';
+import {
+  chooseClockInLocation,
+  haversineDistance,
+  mayClockInRemotely,
+  parseClockInPick,
+} from '@hbcfield/shared/client';
 import { connectivity } from '../offline/offline-context';
 import { useShiftActions } from '../offline/attendance/use-shift';
 import { checkClockInLocally } from '../offline/attendance/clock-in-check';
@@ -77,60 +83,72 @@ export function useClockIn(opts: {
     Clock in at a workspace — or, with `null`, the org's Remote bucket for
     somebody who has no workspace at all. The one path every tap ends in.
   */
-  const clockInAt = useCallback(async (location: CompanyLocation | null, fix: Coords) => {
-    setIsClockingIn(true);
-    setLocationModalVisible(false);
-    try {
-      /*
+  const clockInAt = useCallback(
+    async (location: CompanyLocation | null, fix: Coords) => {
+      setIsClockingIn(true);
+      setLocationModalVisible(false);
+      try {
+        /*
         With no connection the phone is the only one who can answer, so it asks
         the same rules the server will — and a refusal here is the refusal the
         member would have had online. With a connection the server answers.
       */
-      if (connectivity.state !== 'online') {
-        const verdict = checkClockInLocally({ location, fix, alreadyClockedIn: !!opts.isClockedIn });
-        if (!verdict.ok) {
-          toast.error(
-            t('attendance.offline.notHere', 'Not clocked in'),
-            t(`attendance.offline.refused.${verdict.code}`, {
-              distance: formatDistance(verdict.distanceM),
-              radius: formatDistance(verdict.radiusM),
-              location: location?.name ?? '',
-              hours: verdict.hours ?? '',
-            }),
-          );
+        if (connectivity.state !== 'online') {
+          const verdict = checkClockInLocally({ location, fix, alreadyClockedIn: !!opts.isClockedIn });
+          if (!verdict.ok) {
+            toast.error(
+              t('attendance.offline.notHere', 'Not clocked in'),
+              t(`attendance.offline.refused.${verdict.code}`, {
+                distance: formatDistance(verdict.distanceM),
+                radius: formatDistance(verdict.radiusM),
+                location: location?.name ?? '',
+                hours: verdict.hours ?? '',
+              }),
+            );
+            return;
+          }
+        }
+
+        const outcome = await actions.clockIn({
+          ...(location ? { locationId: location.id } : { isRemote: true }),
+          fix,
+        });
+        if (outcome.kind === 'refused') {
+          toast.error(t('common.error'), refusalText(t, outcome, t('attendance.failedToClockIn')));
           return;
         }
+        await startBackgroundHeartbeat();
+        // Best-performance out-of-ring detection: monitor the space's ring natively
+        // so the OS wakes us on exit even when the app is killed (skips for remote
+        // or logical spaces with no coordinates). Runs after the heartbeat grants
+        // the "Always" permission geofencing also needs.
+        if (location) await startGeofenceForSpace(location);
+        await onClockedInRef.current?.();
+        if (outcome.kind === 'queued') {
+          toast.info(
+            t('attendance.offline.clockedInSaved', 'Clocked in · saved on this phone'),
+            t(
+              'attendance.offline.clockedInSavedBody',
+              'Recorded with the time and your location. It is sent when you are back ' + 'online.',
+            ),
+          );
+        } else {
+          toast.success(
+            t('common.success'),
+            !location
+              ? t('attendance.clockedInRemotely', 'Clocked in remotely')
+              : t('attendance.clockedInAt', { location: location.name }),
+          );
+        }
+      } catch (err) {
+        toast.error(t('common.error'), err instanceof Error ? err.message : t('attendance.failedToClockIn'));
+      } finally {
+        setIsClockingIn(false);
+        setSelectedLocation(null);
       }
-
-      const outcome = await actions.clockIn({ ...(location ? { locationId: location.id } : { isRemote: true }), fix });
-      if (outcome.kind === 'refused') {
-        toast.error(t('common.error'), refusalText(t, outcome, t('attendance.failedToClockIn')));
-        return;
-      }
-      await startBackgroundHeartbeat();
-      // Best-performance out-of-ring detection: monitor the space's ring natively
-      // so the OS wakes us on exit even when the app is killed (skips for remote
-      // or logical spaces with no coordinates). Runs after the heartbeat grants
-      // the "Always" permission geofencing also needs.
-      if (location) await startGeofenceForSpace(location);
-      await onClockedInRef.current?.();
-      if (outcome.kind === 'queued') {
-        toast.info(t('attendance.offline.clockedInSaved', 'Clocked in · saved on this phone'), t('attendance.offline.clockedInSavedBody', ('Recorded with the time and your location. It is sent when you are back ' + 'online.')));
-      } else {
-        toast.success(
-          t('common.success'),
-          !location
-            ? t('attendance.clockedInRemotely', 'Clocked in remotely')
-            : t('attendance.clockedInAt', { location: location.name }),
-        );
-      }
-    } catch (err) {
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('attendance.failedToClockIn'));
-    } finally {
-      setIsClockingIn(false);
-      setSelectedLocation(null);
-    }
-  }, [opts.isClockedIn, actions, t, toast]);
+    },
+    [opts.isClockedIn, actions, t, toast],
+  );
 
   /**
    * One button: clock in.
@@ -144,24 +162,34 @@ export function useClockIn(opts: {
    * they may be away is the server's, and where they are working is decided
    * from evidence afterwards.
    */
+  // Only where a clock-in would be taken now (lib/clockable.ts) — never a workspace the server refuses.
+  const clockable = useMemo(() => clockableLocations(opts.assignedLocations), [opts.assignedLocations]);
+
   const openClockInModal = useCallback(async () => {
     if (isClockingIn) return;
     const fix = await getCurrentLocation();
     if (!fix) return;
     // The member's own choice: clock in where they stand, or always choose (Profile › Clock in).
-    const choice = chooseClockInLocation(opts.assignedLocations ?? [], fix, parseClockInPick(user?.clockInPick));
+    const choice = chooseClockInLocation(clockable, fix, parseClockInPick(user?.clockInPick));
     if (choice.kind === 'auto') {
       await clockInAt(choice.location, fix);
       return;
     }
     if (choice.kind === 'none') {
       if (mayClockInRemotely(user)) await clockInAt(null, fix);
-      else toast.error(t('common.error'), t('attendance.noAssignedLocations', ('You are not assigned to a workspace yet. Ask your admin to add you to ' + 'one.')));
+      else
+        toast.error(
+          t('common.error'),
+          t(
+            'attendance.noAssignedLocations',
+            'You are not assigned to a workspace yet. Ask your admin to add you to ' + 'one.',
+          ),
+        );
       return;
     }
     setSelectedLocation(choice.ranked[0]!.location);
     setLocationModalVisible(true);
-  }, [isClockingIn, getCurrentLocation, opts.assignedLocations, clockInAt, user, t, toast]);
+  }, [isClockingIn, getCurrentLocation, clockable, clockInAt, user, t, toast]);
 
   const confirmClockIn = useCallback(async () => {
     if (!currentLocation || !selectedLocation) return;
@@ -182,7 +210,7 @@ export function useClockIn(opts: {
   // Spread straight into <LocationPickerSheet {...pickerProps} />.
   const pickerProps = {
     visible: locationModalVisible,
-    locations: opts.assignedLocations,
+    locations: clockable,
     selectedLocation,
     onSelect: (loc: CompanyLocation) => setSelectedLocation(loc),
     onConfirm: confirmClockIn,
