@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { PUSH_MESSAGES } from '../../i18n/push-messages';
+// The merged catalogue: the main file and the small ones beside it (push-catalogue.ts).
+import { PUSH_MESSAGES } from '../../i18n/push-catalogue';
 
 /**
  * Nothing sends a push, or files a bell entry, in a language it chose itself.

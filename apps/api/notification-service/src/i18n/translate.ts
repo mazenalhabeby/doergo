@@ -1,5 +1,5 @@
 import { DEFAULT_LOCALE, formatNumberFor, pluralFormFor, type SupportedLocale } from '@hbcfield/shared';
-import { PUSH_MESSAGES, type PushKey, type PushPluralKey } from './push-messages';
+import { PUSH_MESSAGES, type PushKey, type PushPluralKey } from './push-catalogue';
 
 /**
  * A sentence to be written later, in a language not yet known.
