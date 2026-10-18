@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useMutation, useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   APPROVAL_KINDS,
   type ApprovalDecision,
   type ApprovalItem,
   type ApprovalKind,
-  type ApprovalsResponse,
+  type ApprovalInbox,
 } from "@hbcfield/shared/client"
 import { approvalsApi } from "@/lib/api"
 import { keys, invalidateTimeOff } from "@/lib/query-keys"
@@ -16,24 +16,9 @@ import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouteAccess } from "@/hooks/use-route-access"
 
-export type Filter = ApprovalKind | "all"
-
-/** The kind's own screen reads these — refreshed after a decision made here. */
-export const KIND_KEYS: Partial<Record<ApprovalKind, QueryKey[]>> = {
-  hours: [keys.attendance.approvals(), keys.attendance.pendingApprovals()],
-  away: [keys.attendance.excursions()],
-  extraTime: [keys.overtime.pending()],
-  overtime: [keys.overtime.pending()],
-  noShow: [keys.attendance.noShows()],
-  issue: [keys.shiftIssues.list()],
-  expense: [keys.assets.expensesPending()],
-  assetProposal: [keys.assets.proposalsPending()],
-  document: [keys.documents.awaitingVerification()],
-  join: [keys.people.joinRequests()],
-  clientRequest: [keys.portal.allRequests()],
-}
-
-export const itemKey = (i: Pick<ApprovalItem, "kind" | "id">) => `${i.kind}:${i.id}`
+export { KIND_KEYS, itemKey, type Filter } from "./approval-keys"
+import { KIND_KEYS, itemKey, type Filter } from "./approval-keys"
+import { useApprovalDays } from "./use-approval-days"
 
 /** ApprovalsPage's state and handlers — everything before its markup, moved here unchanged. */
 export function useApprovalsPage() {
@@ -71,14 +56,20 @@ export function useApprovalsPage() {
     for (const i of items) c.set(i.kind, (c.get(i.kind) ?? 0) + 1)
     return c
   }, [items])
-  const visible = useMemo(() => (filter === "all" ? items : items.filter((i) => i.kind === filter)), [items, filter])
+  const dayState = useApprovalDays(data, filter, (key) => setSelected((s) => (s === key ? null : s)))
+  const visible = useMemo(
+    () => (filter === "all" ? items : items.filter((i) => i.kind === filter)).filter((i) => !dayState.grouped.has(itemKey(i))),
+    [items, filter, dayState.grouped],
+  )
+  const currentDay = dayState.visibleDays.find((d) => d.key === selected) ?? null
 
   // The first item is chosen for you on a wide screen; a narrow one starts on the list.
-  const current = visible.find((i) => itemKey(i) === selected) ?? null
+  // A grouped item is opened from its day ("Review"), so it is found in the whole list.
+  const current = visible.find((i) => itemKey(i) === selected) ?? items.find((i) => itemKey(i) === selected) ?? null
   useEffect(() => {
-    if (current || visible.length === 0) return
+    if (current || selected?.startsWith("day:") || visible.length === 0) return
     if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) setSelected(itemKey(visible[0]!))
-  }, [current, visible])
+  }, [current, visible, selected])
 
   // ↑ / ↓ walk the list — a queue is worked through, not clicked through.
   useEffect(() => {
@@ -111,7 +102,7 @@ export function useApprovalsPage() {
       const at = visible.findIndex((i) => i.kind === d.kind && i.id === d.id)
       const next = visible[at + 1] ?? visible[at - 1]
       setSelected(next ? itemKey(next) : null)
-      qc.setQueryData<ApprovalsResponse>(keys.approvals.list(), (old) =>
+      qc.setQueryData<ApprovalInbox>(keys.approvals.list(), (old) =>
         old ? { ...old, items: old.items.filter((i) => !(i.kind === d.kind && i.id === d.id)) } : old,
       )
       notify.success(t("approvals.decided", { name: done?.subject.name || t("approvals.someone") }))
@@ -161,5 +152,7 @@ export function useApprovalsPage() {
     onDecide,
     unavailable,
     covering,
+    currentDay,
+    ...dayState,
   }
 }

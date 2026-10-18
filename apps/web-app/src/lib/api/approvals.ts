@@ -11,13 +11,15 @@ import {
   type StandInView,
   type StandInsResponse,
   type ApprovalsCount,
-  type ApprovalsResponse,
+  type ApprovalInbox,
+  type ApprovalDayMember,
+  type ApproveDayResult,
 } from '@hbcfield/shared/client';
 
 /** The approvals inbox — every kind's own list and action, run as the caller by the gateway. */
 export const approvalsApi = {
-  list: async (): Promise<ApprovalsResponse> => {
-    const res = await call(approvalsEndpoints.list) as ApiResponse<{ data: ApprovalsResponse }>;
+  list: async (): Promise<ApprovalInbox> => {
+    const res = await call(approvalsEndpoints.list) as ApiResponse<{ data: ApprovalInbox }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
@@ -68,5 +70,11 @@ export const approvalsApi = {
       { body: decision }) as ApiResponse<{ data: { stage?: 'FIRST_STEP'; waitingFor?: string } }>;
     if (res.error) throw apiError(res);
     return res.data?.data ?? {};
+  },
+  /** "Approve day": each member through its own route; stops at the first refusal and says which. */
+  decideDay: async (members: ApprovalDayMember[]): Promise<ApproveDayResult> => {
+    const res = await call(approvalsEndpoints.decideDay, undefined, { body: { members } }) as ApiResponse<{ data: ApproveDayResult }>;
+    if (res.error) throw apiError(res);
+    return res.data!.data;
   },
 };

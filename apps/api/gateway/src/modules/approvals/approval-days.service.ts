@@ -1,14 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { DAY_APPROVABLE_KINDS, MAX_DAY_ITEMS, type ApprovalDayMember } from '@hbcfield/shared';
+import { DAY_APPROVABLE_KINDS, MAX_DAY_ITEMS, type ApprovalDayMember, type ApproveDayResult } from '@hbcfield/shared';
 import { ApprovalsService, type ApprovalCaller } from './approvals.service';
-
-export interface DayDecisionResult {
-  kind: ApprovalDayMember['kind'];
-  id: string;
-  ok: boolean;
-  code?: string;
-  message?: string;
-}
 
 /**
  * "Approve day" — a person's working day decided in one press, by replaying each
@@ -22,8 +14,8 @@ export interface DayDecisionResult {
 export class ApprovalDaysService {
   constructor(private readonly approvals: ApprovalsService) {}
 
-  async approveDay(caller: ApprovalCaller, members: ApprovalDayMember[]) {
-    const results: DayDecisionResult[] = [];
+  async approveDay(caller: ApprovalCaller, members: ApprovalDayMember[]): Promise<ApproveDayResult> {
+    const results: ApproveDayResult['results'] = [];
     const unique = [...new Map(members.map((m) => [`${m.kind}:${m.id}`, m])).values()].slice(0, MAX_DAY_ITEMS);
     for (const m of unique) {
       if (!(DAY_APPROVABLE_KINDS as readonly string[]).includes(m.kind)) {

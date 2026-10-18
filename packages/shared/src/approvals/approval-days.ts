@@ -124,3 +124,9 @@ export interface ApprovalInbox extends ApprovalsResponse {
   /** Absent from an older gateway — then every item is shown on its own. */
   days?: ApprovalDay[];
 }
+
+/** "Approve day": what happened to each member, in order; the replay stops at the first refusal. */
+export interface ApproveDayResult {
+  complete: boolean;
+  results: Array<ApprovalDayMember & { ok: boolean; code?: string; message?: string }>;
+}

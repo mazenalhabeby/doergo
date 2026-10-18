@@ -9,6 +9,7 @@ import { hasAccessModule } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { ClockInPicker } from "@/components/clock-in-picker"
 import { ClockOutEarlyDialog } from "@/components/attendance/clock-out-early-dialog"
+import { AskMoreTime } from "@/components/attendance/ask-more-time"
 
 /** Live "HH:MM:SS" elapsed since an ISO timestamp, ticking every second. */
 function useElapsed(sinceIso?: string | null): string {
@@ -84,6 +85,7 @@ export function ClockWidget() {
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
           </span>
           <span className="text-xs font-semibold tabular-nums text-green-700 dark:text-green-400">{elapsed}</span>
+          <AskMoreTime entry={activeEntry} compact />
           <Button
             size="sm"
             variant="ghost"

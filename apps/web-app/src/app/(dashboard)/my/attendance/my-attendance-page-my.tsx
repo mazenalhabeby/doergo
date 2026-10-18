@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { formatDuration } from "@hbcfield/shared/client"
 import { ClockInPicker } from "@/components/clock-in-picker"
 import { ClockOutEarlyDialog } from "@/components/attendance/clock-out-early-dialog"
+import { AskMoreTime } from "@/components/attendance/ask-more-time"
 import { LiveShift } from "./my-attendance-page-helpers"
 import type { MyAttendancePageState } from "./use-my-attendance-page"
 import type { MyAttendancePageView } from "./my-attendance-page-view"
@@ -92,13 +93,16 @@ export function MyAttendancePageMy(
         </div>
 
         {clockedIn ? (
-          <Button onClick={clockOut} disabled={pending} variant="outline" className="mt-4 w-full">
-            {pending ? (
-              <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
-            ) : (
-              <><LogOut className="h-4 w-4" />{t("attendance.my.clockOut", "Clock Out")}</>
-            )}
-          </Button>
+          <div className="mt-4 space-y-2">
+            <Button onClick={clockOut} disabled={pending} variant="outline" className="w-full">
+              {pending ? (
+                <><Loader2 className="h-4 w-4 animate-spin" />{t("attendance.my.locating", "Getting your location…")}</>
+              ) : (
+                <><LogOut className="h-4 w-4" />{t("attendance.my.clockOut", "Clock Out")}</>
+              )}
+            </Button>
+            <div className="flex justify-center"><AskMoreTime entry={activeEntry} /></div>
+          </div>
         ) : (
           <div className="mt-4 space-y-2">
             <Button

@@ -3777,7 +3777,10 @@
         "saved": "Gracias, tu turno se ha actualizado",
         "failed": "No se pudo actualizar el turno",
         "invalid": "Elige una hora posterior a tu entrada y que no sea futura"
-      }
+      },
+      "askMoreTime": "Pedir más tiempo",
+      "askMoreTimeSent": "Se pregunta a su responsable. El tiempo tras el final cuenta cuando lo apruebe.",
+      "askMoreTimeWaiting": "Esperando más tiempo"
     },
     "management": {
       "title": "Gestión de asistencia",
@@ -11085,6 +11088,18 @@
       "wholeRun": "Decidir los {{count}} días a la vez",
       "save": "Guardar",
       "fixRota": "Corregir el cuadrante"
+    },
+    "day": {
+      "label": "Jornada",
+      "count_one": "{{count}} decisión",
+      "count_other": "{{count}} decisiones",
+      "approve": "Aprobar el día",
+      "review": "Revisar",
+      "needsMinutes": "El tiempo extra y las horas extra necesitan minutos: ábrelos uno a uno.",
+      "nothingToApprove": "Aquí no se puede aprobar nada de una vez: abre cada elemento.",
+      "approved": "Día aprobado para {{name}}",
+      "stopped": "Se detuvo en {{what}}: {{reason}}",
+      "members": "En este día"
     }
   },
   "overtimePage": {

@@ -3777,7 +3777,10 @@
         "saved": "Merci — votre poste a été mis à jour",
         "failed": "Impossible de mettre à jour le poste",
         "invalid": "Choisissez une heure après votre arrivée, et pas dans le futur"
-      }
+      },
+      "askMoreTime": "Demander plus de temps",
+      "askMoreTimeSent": "Votre responsable est sollicité. Le temps après la fin compte dès son accord.",
+      "askMoreTimeWaiting": "Plus de temps demandé"
     },
     "management": {
       "title": "Gestion des présences",
@@ -11094,6 +11097,18 @@
       "wholeRun": "Décider les {{count}} jours d’un coup",
       "save": "Enregistrer",
       "fixRota": "Corriger le planning"
+    },
+    "day": {
+      "label": "Journée de travail",
+      "count_one": "{{count}} décision",
+      "count_other": "{{count}} décisions",
+      "approve": "Valider la journée",
+      "review": "Examiner",
+      "needsMinutes": "Le temps supplémentaire et les heures sup. demandent des minutes : ouvrez-les un par un.",
+      "nothingToApprove": "Rien ici ne peut être validé d’un coup : ouvrez chaque élément.",
+      "approved": "Journée validée pour {{name}}",
+      "stopped": "Arrêté à {{what}} : {{reason}}",
+      "members": "Ce jour-là"
     }
   },
   "overtimePage": {

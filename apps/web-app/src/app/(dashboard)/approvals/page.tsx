@@ -12,6 +12,8 @@ import { ListTableError } from "@/components/list-page"
 import { DecisionPanel } from "./_components/decision-panel"
 import { useApprovalsPage, itemKey } from "./use-approvals-page"
 import { RulesDialog, StandInDialog, RailItem, Row } from "./approvals-page-helpers"
+import { DayRow } from "./_components/day-row"
+import { DayPanel } from "./_components/day-panel"
 
 /**
  * Approvals — everything waiting for the member to decide, in one place.
@@ -48,6 +50,10 @@ export default function ApprovalsPage() {
     onDecide,
     unavailable,
     covering,
+    currentDay,
+    visibleDays,
+    membersOf,
+    approveDay,
   } = useApprovalsPage()
 
   return (
@@ -127,12 +133,12 @@ export default function ApprovalsPage() {
             ))}
           </nav>
 
-          <section className={cn("min-w-0", current && "max-lg:hidden")}>
+          <section className={cn("min-w-0", (current || currentDay) && "max-lg:hidden")}>
             {isLoading ? (
               <div className="space-y-2">
                 {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
               </div>
-            ) : visible.length === 0 ? (
+            ) : visible.length === 0 && visibleDays.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border px-6 py-16 text-center">
                 <Inbox className="mx-auto mb-3 size-10 text-muted-foreground/60" />
                 <p className="font-medium text-foreground">{t("approvals.empty")}</p>
@@ -142,7 +148,8 @@ export default function ApprovalsPage() {
               <div className="space-y-6">
                 {APPROVAL_GROUPS.map((g) => {
                   const rows = visible.filter((i) => i.group === g)
-                  if (rows.length === 0) return null
+                  const dayRows = visibleDays.filter((d) => d.group === g)
+                  if (rows.length === 0 && dayRows.length === 0) return null
                   return (
                     <div key={g}>
                       <h2
@@ -153,9 +160,12 @@ export default function ApprovalsPage() {
                       >
                         {g === "NOW" && <span className="size-1.5 rounded-full bg-red-600" aria-hidden />}
                         {t(`approvals.groups.${g}`)}
-                        <span className="tabular-nums font-normal">{rows.length}</span>
+                        <span className="tabular-nums font-normal">{rows.length + dayRows.length}</span>
                       </h2>
                       <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+                        {dayRows.map((d) => (
+                          <DayRow key={d.key} day={d} active={d.key === selected} onSelect={() => setSelected(d.key)} />
+                        ))}
                         {rows.map((i) => (
                           <Row
                             key={itemKey(i)}
@@ -173,9 +183,20 @@ export default function ApprovalsPage() {
             )}
           </section>
 
-          <aside className={cn("min-w-0", !current && "max-lg:hidden")}>
+          <aside className={cn("min-w-0", !current && !currentDay && "max-lg:hidden")}>
             <div className="lg:sticky lg:top-28">
-              {current ? (
+              {currentDay ? (
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                  <DayPanel
+                    day={currentDay}
+                    members={membersOf(currentDay)}
+                    busy={approveDay.isPending}
+                    onApprove={() => approveDay.mutate(currentDay)}
+                    onReview={(i) => { setFilter("all"); setSelected(`${i.kind}:${i.id}`) }}
+                    orgCurrency={user?.orgCurrency}
+                  />
+                </div>
+              ) : current ? (
                 <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
                   <Button
                     variant="ghost"

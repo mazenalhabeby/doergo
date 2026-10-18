@@ -3777,7 +3777,10 @@
         "saved": "Grazie, il tuo turno è stato aggiornato",
         "failed": "Impossibile aggiornare il turno",
         "invalid": "Scegli un orario dopo la tua entrata e non nel futuro"
-      }
+      },
+      "askMoreTime": "Chiedi più tempo",
+      "askMoreTimeSent": "Viene chiesto al tuo responsabile. Il tempo dopo la fine conta quando approva.",
+      "askMoreTimeWaiting": "In attesa di più tempo"
     },
     "management": {
       "title": "Gestione delle presenze",
@@ -11094,6 +11097,18 @@
       "wholeRun": "Decidi tutti i {{count}} giorni insieme",
       "save": "Salva",
       "fixRota": "Correggi il turno"
+    },
+    "day": {
+      "label": "Giornata di lavoro",
+      "count_one": "{{count}} decisione",
+      "count_other": "{{count}} decisioni",
+      "approve": "Approva la giornata",
+      "review": "Esamina",
+      "needsMinutes": "Tempo extra e straordinari richiedono i minuti: aprili uno per uno.",
+      "nothingToApprove": "Qui niente si approva in un colpo solo: apri ogni elemento.",
+      "approved": "Giornata approvata per {{name}}",
+      "stopped": "Interrotto a {{what}}: {{reason}}",
+      "members": "In questo giorno"
     }
   },
   "overtimePage": {

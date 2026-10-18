@@ -7,7 +7,9 @@ import type {
   ApprovalKind,
   ApprovalRouting,
   ApprovalsCount,
-  ApprovalsResponse,
+  ApprovalInbox,
+  ApprovalDayMember,
+  ApproveDayResult,
   StandInInput,
   StandInView,
   StandInsResponse,
@@ -19,7 +21,7 @@ import { path, withQuery } from '../core/path';
 
 export const approvalsEndpoints = defineEndpoints('approvals', {
   /** Live data, never kept offline: a decision made elsewhere must not reappear. */
-  list: endpoint<void, ApprovalsResponse>({ method: 'GET', path: () => '/approvals', keep: false }),
+  list: endpoint<void, ApprovalInbox>({ method: 'GET', path: () => '/approvals', keep: false }),
   count: endpoint<void, ApprovalsCount>({ method: 'GET', path: () => '/approvals/count', keep: false }),
   /** Who else can decide one item of the caller's inbox, and who is told. */
   route: endpoint<{ kind: ApprovalKind; id: string }, ApprovalRouting>({
@@ -48,5 +50,10 @@ export const approvalsEndpoints = defineEndpoints('approvals', {
   decide: endpoint<void, { decided: true; stage?: 'FIRST_STEP'; waitingFor?: string }, ApprovalDecision>({
     method: 'POST',
     path: () => '/approvals/decide',
+  }),
+  /** A person's working day: each member decided through its own route, as the caller. */
+  decideDay: endpoint<void, ApproveDayResult, { members: ApprovalDayMember[] }>({
+    method: 'POST',
+    path: () => '/approvals/decide-day',
   }),
 });

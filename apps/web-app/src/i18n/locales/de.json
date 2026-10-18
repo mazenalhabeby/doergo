@@ -3777,7 +3777,10 @@
         "saved": "Danke — Ihre Schicht wurde aktualisiert",
         "failed": "Die Schicht konnte nicht aktualisiert werden",
         "invalid": "Wählen Sie eine Zeit nach dem Einstempeln, die nicht in der Zukunft liegt"
-      }
+      },
+      "askMoreTime": "Mehr Zeit anfragen",
+      "askMoreTimeSent": "Ihre Leitung wird gefragt. Zeit nach dem Ende zählt, sobald sie zustimmt.",
+      "askMoreTimeWaiting": "Mehr Zeit angefragt"
     },
     "management": {
       "title": "Anwesenheitsverwaltung",
@@ -11085,6 +11088,18 @@
       "wholeRun": "Alle {{count}} Tage auf einmal entscheiden",
       "save": "Speichern",
       "fixRota": "Dienstplan korrigieren"
+    },
+    "day": {
+      "label": "Arbeitstag",
+      "count_one": "{{count}} Entscheidung",
+      "count_other": "{{count}} Entscheidungen",
+      "approve": "Tag bestätigen",
+      "review": "Prüfen",
+      "needsMinutes": "Mehrarbeit und Überstunden brauchen Minuten — öffnen Sie sie einzeln.",
+      "nothingToApprove": "Hier lässt sich nichts auf einmal bestätigen — öffnen Sie jeden Eintrag.",
+      "approved": "Tag für {{name}} bestätigt",
+      "stopped": "Angehalten bei {{what}}: {{reason}}",
+      "members": "An diesem Tag"
     }
   },
   "overtimePage": {

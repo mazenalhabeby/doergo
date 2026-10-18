@@ -71,6 +71,14 @@ export const attendanceApi = {
     if (response.error) throw apiError(response)
     return (response.data as { data?: unknown })?.data ?? response.data
   },
+  /** "Ask for more time" — the one extra-time request; a leader answers it in Approvals. */
+  requestExtraTime: async (entryId: string) => {
+    const response = (await call(attendanceEndpoints.requestExtraTime, { id: entryId })) as ApiResponse<{
+      data?: { entryId: string; status: string }
+    }>
+    if (response.error) throw apiError(response)
+    return response.data?.data
+  },
   ...attendanceBreaksApi,
   ...attendanceEntriesApi,
   ...attendanceReviewApi,
