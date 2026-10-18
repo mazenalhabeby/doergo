@@ -12,7 +12,10 @@ import type {
 } from './types/assets';
 import { assetsEndpoints } from '@hbcfield/shared/client';
 
-/** What the office decides: pages members send in, contracts, expenses, and the asset's history. Part of `assetsApi`, moved here unchanged. */
+/**
+ * What the office decides: pages members send in, contracts, expenses, and the asset's history. Part of `assetsApi`,
+ * moved here unchanged.
+ */
 export const assetReviewApi = {
   // ============================================
   // PROPOSALS — a member sends a page, the office decides

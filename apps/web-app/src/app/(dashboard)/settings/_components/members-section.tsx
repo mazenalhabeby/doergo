@@ -176,11 +176,13 @@ export function MembersSection() {
                 onClick={() => isOrgAdmin && setSelectedPolicy(option.value)}
                 disabled={!isOrgAdmin}
                 aria-disabled={!isOrgAdmin}
-                className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={(`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ` +
+                  `disabled:cursor-not-allowed disabled:opacity-60 ` +
+                  `${
                   isActive
                     ? "border-blue-400 bg-blue-50/60 shadow-sm"
                     : "border-border bg-card hover:border-border hover:bg-accent/50"
-                }`}
+                }`)}
               >
                 <div className="flex items-center gap-3">
                   <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${

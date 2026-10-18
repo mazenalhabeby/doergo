@@ -44,7 +44,16 @@ export function useStepFormEditor(
     crmAvailable,
     serverErrors,
     standardAvailable
-  }: Pick<StepFormEditorProps, 'stepName' | 'mode' | 'draft' | 'onChange' | 'editable' | 'crmAvailable' | 'serverErrors' | 'standardAvailable'>) {
+  }: Pick<StepFormEditorProps,
+    | 'stepName'
+    | 'mode'
+    | 'draft'
+    | 'onChange'
+    | 'editable'
+    | 'crmAvailable'
+    | 'serverErrors'
+    | 'standardAvailable'
+  >) {
   const { t } = useTranslation()
   const tr = (key: string, fallback: string) => t(key, { defaultValue: fallback })
   const [dragFrom, setDragFrom] = useState<number | null>(null)

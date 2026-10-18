@@ -19,7 +19,10 @@ import {
   type TaskReportCopy,
 } from '@hbcfield/shared/client';
 
-/** Working a task: job time, an open role, the crew lead, resuming, the hand-over, step answers, the full report. Part of `tasksApi`, moved here unchanged. */
+/**
+ * Working a task: job time, an open role, the crew lead, resuming, the hand-over, step answers, the full report. Part of `tasksApi`,
+ * moved here unchanged.
+ */
 export const taskWorkApi = {
   /** A job's time: travel, working, blocked — per worker, and who started it. */
   jobTime: async (id: string): Promise<JobTimeView | undefined> => {

@@ -1,29 +1,19 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
-import { useState } from "react"
-import { useTranslation } from "react-i18next"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Blocks, Sparkles, Plus, Minus } from "lucide-react"
+import { Blocks } from "lucide-react";
 
-import { notify } from "@/lib/toast"
-import { assetsApi, locationsApi, type CompanyLocation } from "@/lib/api"
+import { type CompanyLocation } from "@/lib/api";
 import {
   AVAILABLE_MODULES,
   MODULE_GROUPS,
-  MODULE_PRESETS,
   moduleI18n,
   moduleRequires,
-  resolveModuleDependencies,
   moduleMonthlyCents,
-  spaceMonthlyCost,
   formatCents,
-  SEAT_MONTHLY_CENTS,
   billsByUsage,
   includedUnits,
   marginalUnitCents,
-} from "@hbcfield/shared/client"
-import { Button } from "@/components/ui/button"
+} from "@hbcfield/shared/client";
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { SectionHeader } from "./section-header"
@@ -31,27 +21,20 @@ import { ModuleUsageTabs } from "./module-usage-tabs"
 import { ExplainerButton } from "@/components/explainer/explainer-button"
 import { useModulesTab } from "./use-modules-tab"
 import { MODULE_LABEL } from "./modules-tab-helpers"
+import { ModulesTabSpaceCostLabel } from "./modules-tab-space-cost-label"
+import { ModulesTabUnsavedCount } from "./modules-tab-unsaved-count"
+import { ModulesTabPresets } from "./modules-tab-presets"
 
 export function ModulesTab({ space }: { space: CompanyLocation }) {
+  const vm = useModulesTab({ space })
   const {
     t,
-    saved,
     enabledModules,
-    setEnabledModules,
-    mutation,
-    liveCost,
-    savedCost,
-    costChanged,
     usageModules,
     usageData,
     unitsFor,
-    liveUsageCents,
     toggleModule,
-    applyPreset,
-    added,
-    removed,
-    dirty,
-  } = useModulesTab({ space })
+  } = vm
 
   return (
     <div className="space-y-4">
@@ -75,41 +58,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
         hesitate over a switch, and a total underneath a long list is read after
         the decision instead of during it.
       */}
-      <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl border border-border bg-muted/30 px-4 py-3">
-        <div>
-          <p className="text-xs text-muted-foreground">
-            {t("billing.spaceCostLabel", "This workspace costs")}
-          </p>
-          <p className="text-2xl font-semibold tabular-nums text-foreground">
-            {formatCents(liveCost.monthlyCents + liveUsageCents)}
-            <span className="ml-1 text-sm font-normal text-muted-foreground">
-              {t("billing.perMonth", "/month")}
-            </span>
-          </p>
-        </div>
-        <div className="text-right text-xs text-muted-foreground">
-          {costChanged ? (
-            // Named as not-yet-charged, because a number that changes on screen
-            // reads as a number already applied.
-            <p className="text-amber-600 dark:text-amber-500">
-              {t("billing.spaceCostPending", "Was {{was}} — saved when you save modules", {
-                was: formatCents(savedCost.monthlyCents + (saved.includes("assets") ? liveUsageCents : 0)),
-              })}
-            </p>
-          ) : (
-            <p>
-              {usageModules.length > 0
-                ? t("billing.usage.includesCounted", "Includes what this space's assets add")
-                : t("billing.spaceCostPerModule", "Each module adds its own price")}
-            </p>
-          )}
-          <p className="mt-0.5">
-            {t("billing.seatLine", "Users are billed separately at {{price}} each", {
-              price: formatCents(SEAT_MONTHLY_CENTS),
-            })}
-          </p>
-        </div>
-      </div>
+      <ModulesTabSpaceCostLabel vm={vm} />
 
       {/* The counted modules, priced in full. Directly under the space total,
           because that total is only their BASE and a number that is not the
@@ -117,35 +66,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
       {usageData && <ModuleUsageTabs moduleKeys={usageModules} unitsFor={unitsFor} />}
 
       {/* Presets — one click to set a sensible bundle */}
-      <div className="space-y-1.5">
-        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          <Sparkles className="h-3 w-3" />
-          {t("locations.presets")}
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {MODULE_PRESETS.map((p) => {
-            const active =
-              p.modules.length === enabledModules.length &&
-              p.modules.every((m) => enabledModules.includes(m))
-            return (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => applyPreset(p.modules)}
-                className={cn(
-                  "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                  active
-                    ? ("border-emerald-600 bg-emerald-50 text-emerald-700 " +
-                      "dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300")
-                    : "border-border text-muted-foreground hover:bg-muted/50",
-                )}
-              >
-                {t(moduleI18n.presetLabel(p.key), { defaultValue: p.label })}
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      <ModulesTabPresets vm={vm} />
 
       {/* Grouped modules with a one-line description per group */}
       {MODULE_GROUPS.map((grp) => (
@@ -237,7 +158,10 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                       { defaultValue: mod.description })}</p>
                   {locked && (
                     <p className="text-[11px] font-medium text-amber-600 dark:text-amber-500 mt-1">
-                      🔒 {t("locations.moduleRequires", "Requires {{modules}}", { modules: unmet.map((r) => t(moduleI18n.label(r), { defaultValue: MODULE_LABEL[r] || r })).join(", ") })}
+                      🔒 {t(
+                        "locations.moduleRequires",
+                        "Requires {{modules}}",
+                        { modules: unmet.map((r) => t(moduleI18n.label(r), { defaultValue: MODULE_LABEL[r] || r })).join(", ") })}
                     </p>
                   )}
                 </div>
@@ -251,7 +175,11 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                     className="sr-only peer"
                   />
                   <div
-                    className={"w-9 h-5 bg-muted rounded-full peer peer-checked:bg-emerald-600 " + "peer-disabled:opacity-50 transition-colors after:content-[''] " + "after:absolute after:top-0.5 after:left-[2px] after:bg-white " + "after:rounded-full after:h-4 after:w-4 after:transition-all " + "peer-checked:after:translate-x-full"}
+                    className={"w-9 h-5 bg-muted rounded-full peer peer-checked:bg-emerald-600 " +
+                      "peer-disabled:opacity-50 transition-colors after:content-[''] " +
+                      "after:absolute after:top-0.5 after:left-[2px] after:bg-white " +
+                      "after:rounded-full after:h-4 after:w-4 after:transition-all " +
+                      "peer-checked:after:translate-x-full"}
                   />
                 </div>
               </label>
@@ -263,38 +191,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
       {/* Sticky unsaved-changes bar — always visible while there are pending
           edits, no matter how long the list. Shows the exact diff so nobody
           thinks a toggle auto-saved. */}
-      {dirty && (
-        <div className="sticky bottom-3 z-20 pt-2">
-          <div className={"flex flex-wrap items-center gap-3 rounded-xl border border-border " + "bg-card/95 p-3 shadow-lg backdrop-blur " + "supports-[backdrop-filter]:bg-card/80"}>
-            <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                <span className="flex h-1.5 w-1.5 rounded-full bg-amber-500" />
-                {t("locations.unsavedCount", "{{count}} unsaved change", { count: added.length + removed.length })}
-              </p>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {added.map((m) => (
-                  <span key={m} className={"inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 " + "py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400"}>
-                    <Plus className="h-3 w-3" />{t(moduleI18n.label(m), { defaultValue: MODULE_LABEL[m] || m })}
-                  </span>
-                ))}
-                {removed.map((m) => (
-                  <span key={m} className={"inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 " + "text-[11px] font-medium text-red-600 dark:text-red-400"}>
-                    <Minus className="h-3 w-3" />{t(moduleI18n.label(m), { defaultValue: MODULE_LABEL[m] || m })}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setEnabledModules(saved)} disabled={mutation.isPending}>
-                {t("common.discard", "Discard")}
-              </Button>
-              <Button size="sm" onClick={() => mutation.mutate(enabledModules)} disabled={mutation.isPending}>
-                {mutation.isPending ? t("common.saving") : t("common.saveChanges")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ModulesTabUnsavedCount vm={vm} />
     </div>
   )
 }

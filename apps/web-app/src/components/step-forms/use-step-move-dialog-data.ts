@@ -46,7 +46,15 @@ export function useStepMoveDialogData(
     legacy,
     onSubmit,
     onCancel
-  }: Pick<Pick<StepMoveDialogProps, 'open' | 'taskId' | 'stepName' | 'form' | 'legacy' | 'onSubmit' | 'onCancel'>, 'open' | 'taskId' | 'stepName' | 'form' | 'legacy' | 'onSubmit' | 'onCancel'>) {
+  }: Pick<Pick<StepMoveDialogProps, 'open' | 'taskId' | 'stepName' | 'form' | 'legacy' | 'onSubmit' | 'onCancel'>,
+    | 'open'
+    | 'taskId'
+    | 'stepName'
+    | 'form'
+    | 'legacy'
+    | 'onSubmit'
+    | 'onCancel'
+  >) {
   const { t, i18n } = useTranslation()
   const tr = (key: string, fallback: string) => t(key, { defaultValue: fallback })
 

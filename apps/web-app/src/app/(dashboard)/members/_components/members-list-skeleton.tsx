@@ -11,7 +11,10 @@ export function MembersListSkeleton() {
                 {["w-32", "w-20", "w-16", "w-20", "w-28", "w-6"].map((w, i) => (
                   <div
                     key={i}
-                    className={`relative overflow-hidden rounded bg-muted h-3 ${w} before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent`}
+                    className={(`relative overflow-hidden rounded bg-muted h-3 ${w} before:absolute ` +
+                      `before:inset-0 before:-translate-x-full ` +
+                      `before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r ` +
+                      `before:from-transparent before:via-foreground/5 before:to-transparent`)}
                   />
                 ))}
               </div>

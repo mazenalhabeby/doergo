@@ -39,7 +39,23 @@ export function useBreaksTab({
   setBreakTypeFilter,
   endBreakManually,
   canReconcile,
-}: Pick<BreaksTabProps, 'isAdmin' | 'breakSummary' | 'loadingBreakSummary' | 'activeBreaks' | 'loadingActiveBreaks' | 'refetchActiveBreaks' | 'breakHistoryData' | 'loadingBreakHistory' | 'refetchBreakHistory' | 'breakDate' | 'setBreakDate' | 'breakTypeFilter' | 'setBreakTypeFilter' | 'endBreakManually' | 'canReconcile'>) {
+}: Pick<BreaksTabProps,
+  | 'isAdmin'
+  | 'breakSummary'
+  | 'loadingBreakSummary'
+  | 'activeBreaks'
+  | 'loadingActiveBreaks'
+  | 'refetchActiveBreaks'
+  | 'breakHistoryData'
+  | 'loadingBreakHistory'
+  | 'refetchBreakHistory'
+  | 'breakDate'
+  | 'setBreakDate'
+  | 'breakTypeFilter'
+  | 'setBreakTypeFilter'
+  | 'endBreakManually'
+  | 'canReconcile'
+>) {
   const { t } = useTranslation()
   const { hour12, locale } = useTimeFormat()
   const breakTypeKey = (type: string) => type.toLowerCase()

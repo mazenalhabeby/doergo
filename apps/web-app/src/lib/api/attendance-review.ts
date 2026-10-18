@@ -10,7 +10,10 @@ import {
   type TimeEntry,
 } from '@hbcfield/shared/client';
 
-/** What the office reviews: no-shows, approvals, excursions, the rests running and their history. Part of `attendanceApi`, moved here unchanged. */
+/**
+ * What the office reviews: no-shows, approvals, excursions, the rests running and their history. Part of `attendanceApi`,
+ * moved here unchanged.
+ */
 export const attendanceReviewApi = {
   // No-shows: scheduled shifts with no clock-in (reminded/escalated/excused).
   listNoShows: async (params?: { days?: number; spaceId?: string }) => {

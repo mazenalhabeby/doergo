@@ -80,10 +80,12 @@ export function ContactsPicker({
               </span>
               {multi && (
                 <span
-                  className={`flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 ${selected!.has(
+                  className={(`flex size-5 shrink-0 items-center justify-center rounded-full border ` +
+                    `transition-colors duration-200 ` +
+                    `${selected!.has(
                     u.id)
                     ? ("border-transparent bg-gradient-to-br from-sky-400 to-indigo-500 " + "text-white")
-                    : "border-border"}`}
+                    : "border-border"}`)}
                 >
                   {selected!.has(u.id) && <Check className="motion-chip size-3.5" />}
                 </span>

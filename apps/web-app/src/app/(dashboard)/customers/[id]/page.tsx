@@ -22,7 +22,7 @@ import { ClientRecordSkeleton } from "@/components/skeletons/crm"
 import { ManagersPanel } from "./customer-managers"
 import { clientRecordActions } from "@/lib/crm-record-actions"
 import { clientLocaleName } from "@/lib/client-locale"
-import { type FeedItem, gradientFor, fmtDate } from "./customer-record-lib"
+import { gradientFor, fmtDate, customerRecordView } from "./customer-record-lib";
 import { StatusPill, IconBtn, Panel, PanelHead, PropRow } from "./customer-record-bits"
 import { Composer, QuickRemind } from "./customer-composer"
 import { Timeline } from "./customer-timeline"
@@ -69,10 +69,8 @@ export default function CustomerRecordPage() {
     return <div className="mx-auto max-w-6xl p-6 text-center text-muted-foreground">{t("customers.notFound", "Customer not found")}</div>
   }
 
-  const activities = activityQ.data ?? []
-  const tasks = tasksQ.data?.data ?? []
-  const openReminders = activities.filter((a) => a.type === "REMINDER" && !a.doneAt)
-  const overdue = openReminders.filter((a) => a.dueAt && new Date(a.dueAt).getTime() < Date.now())
+  const { openReminders, overdue, feed, staleDays, showNoNextStep, showStale, filtered } =
+    customerRecordView(activityQ.data, tasksQ.data?.data, customer, tab)
   const status = customer.status || "LEAD"
   /*
     What this member may do HERE — the caps the server sent with the record, read
@@ -85,29 +83,6 @@ export default function CustomerRecordPage() {
   const isCompany = customer.type === "COMPANY"
   const website = customer.website
   const websiteHref = website ? (website.startsWith("http") ? website : `https://${website}`) : undefined
-
-  // Unified feed: activities + this customer's tasks, newest first.
-  const taskItems: FeedItem[] = tasks.map((tk) => ({
-    id: `task-${tk.id}`,
-    type: "TASK",
-    createdAt: tk.createdAt,
-    task: tk,
-  }))
-  const feed: FeedItem[] = [...activities, ...taskItems].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  )
-
-  // Smart nudges (only while sales works the customer — not an app customer).
-  const lastAt = activities[0]?.createdAt ? new Date(activities[0].createdAt).getTime() : 0
-  const staleDays = lastAt ? Math.floor((Date.now() - lastAt) / 86400000) : null
-  const showNoNextStep = !customer.isPortalResident && openReminders.length === 0
-  const showStale = !customer.isPortalResident && staleDays != null && staleDays >= 14
-
-  const filtered = tab === "activity"
-    ? feed
-    : tab === "reminders"
-      ? activities.filter((a) => a.type === "REMINDER")
-      : activities.filter((a) => a.type === "NOTE")
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
@@ -257,15 +232,25 @@ export default function CustomerRecordPage() {
 
           {/* Smart nudges — keep the relationship moving. */}
           {showNoNextStep && (
-            <div className={"flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 " + "bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-900/50 " + "dark:bg-amber-950/30 dark:text-amber-300"}>
+            <div
+              className={"flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 " +
+                "bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-900/50 " +
+                "dark:bg-amber-950/30 dark:text-amber-300"}>
               <Bell className="h-4 w-4 shrink-0" />
-              <span className="flex-1">{t("customers.nudgeNoNext", "No follow-up scheduled.")}{staleDays != null && staleDays > 0 ? ` ${t("customers.lastActivityDays", "Last activity {{d}}d ago.", { d: staleDays })}` : ""}</span>
+              <span
+                className="flex-1">{t(
+                  "customers.nudgeNoNext",
+                  "No follow-up scheduled.")}{staleDays != null && staleDays > 0
+                    ? ` ${t("customers.lastActivityDays", "Last activity {{d}}d ago.", { d: staleDays })}`
+                    : ""}</span>
               {can.work && <QuickRemind customerId={id} onAdded={refresh} />}
             </div>
           )}
           {showStale && !showNoNextStep && (
             <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4 shrink-0" /> {t("customers.nudgeStale", "No activity in {{d}} days — time to check in?", { d: staleDays })}
+              <Clock
+                className="h-4 w-4 shrink-0"
+              /> {t("customers.nudgeStale", "No activity in {{d}} days — time to check in?", { d: staleDays })}
             </div>
           )}
 
@@ -280,19 +265,31 @@ export default function CustomerRecordPage() {
                   tab === key ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
                 {label}
                 {count != null && <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
-                  key === "reminders" && overdue.length ? "bg-red-100 text-red-600 dark:bg-red-950/50" : "bg-muted text-muted-foreground")}>{count}</span>}
+                  key === "reminders" && overdue.length
+                    ? "bg-red-100 text-red-600 dark:bg-red-950/50"
+                    : "bg-muted text-muted-foreground")}>{count}</span>}
                 {tab === key && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />}
               </button>
             ))}
           </div>
 
           {overdue.length > 0 && tab !== "reminders" && (
-            <div className={"flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 " + "py-2.5 text-sm font-medium text-red-700 dark:border-red-900/50 " + "dark:bg-red-950/30 dark:text-red-400"}>
+            <div
+              className={"flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 " +
+                "py-2.5 text-sm font-medium text-red-700 dark:border-red-900/50 " +
+                "dark:bg-red-950/30 dark:text-red-400"}>
               <AlertTriangle className="h-4 w-4" /> {t("customers.overdueCount", "{{count}} overdue follow-up", { count: overdue.length })}
             </div>
           )}
 
-          <Timeline customerId={id} loading={activityQ.isLoading} activities={filtered} empty={tab} onChanged={refresh} canWork={can.work} />
+          <Timeline
+            customerId={id}
+            loading={activityQ.isLoading}
+            activities={filtered}
+            empty={tab}
+            onChanged={refresh}
+            canWork={can.work}
+          />
         </main>
       </div>
     </div>

@@ -1,16 +1,17 @@
 "use client"
 
-import { Mail, Link2, ChevronDown, ShieldCheck } from "lucide-react"
+import { Mail, Link2 } from "lucide-react";
 import { type CompanyLocation, type AccessRole } from "@/lib/api"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScheduleFields } from "@/components/schedule-fields"
-import { AccessFields } from "@/components/access-fields"
 import { Segmented } from "@/components/ui/segmented"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PermissionBuilder } from "./create-invitation-dialog-helpers"
 import type { CreateInvitationDialogState } from "./use-create-invitation-dialog"
+import { InviteAccessSection } from "./invite-access-section"
+import { InvitePositionField } from "./invite-position-field"
 
 /** Part of CreateInvitationDialog's markup, moved here unchanged; it reads the page's state from `vm`. */
 export function CreateInvitationDialogInviteDialog({ vm }: { vm: CreateInvitationDialogState }) {
@@ -20,8 +21,6 @@ export function CreateInvitationDialogInviteDialog({ vm }: { vm: CreateInvitatio
     mode,
     email,
     setEmail,
-    position,
-    handlePositionChange,
     setIsExternal,
     setScheduleType,
     setAccess,
@@ -45,9 +44,6 @@ export function CreateInvitationDialogInviteDialog({ vm }: { vm: CreateInvitatio
     patchAccess,
     externalRoleId,
     setExternalRoleId,
-    setAccessOpen,
-    platformSummary,
-    accessOpen,
   } = vm
   return (
     <div className="space-y-4 py-2 max-h-[65vh] overflow-y-auto pr-1">
@@ -92,18 +88,7 @@ export function CreateInvitationDialogInviteDialog({ vm }: { vm: CreateInvitatio
         </div>
       )}
 
-      {/* Position / title */}
-      <div className="space-y-1.5">
-        <Label className="text-xs font-medium text-muted-foreground">
-          {t("invitations.inviteDialog.positionLabel")} <span className="text-muted-foreground/50">{t("invitations.inviteDialog.optional")}</span>
-        </Label>
-        <Input
-          placeholder={t("invitations.inviteDialog.positionPlaceholder")}
-          value={position}
-          onChange={(e) => handlePositionChange(e.target.value)}
-          className="h-9"
-        />
-      </div>
+      <InvitePositionField vm={vm} />
 
       {/* Staff, or somebody else's */}
       <div className="space-y-1.5">
@@ -260,41 +245,7 @@ export function CreateInvitationDialogInviteDialog({ vm }: { vm: CreateInvitatio
         </div>
       )}
 
-      {/* Access & permissions — pre-configured so the member's first screen
-          already matches their final access. Collapsed by default with a
-          sensible default; expand to fine-tune. */}
-      <div className="rounded-lg border border-border">
-        <button
-          type="button"
-          onClick={() => setAccessOpen((v) => !v)}
-          className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <ShieldCheck className="h-4 w-4 text-muted-foreground shrink-0" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">{t("invitations.inviteDialog.accessTitle", "Access & permissions")}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {platformSummary} · {t("invitations.inviteDialog.accessFeatureCount", "{{count}} features", { count: access.modules.length })}
-                {access.canManageUsers ? ` · ${t("accessBuilder.perms.manage.title")}` : ""}
-              </p>
-            </div>
-          </div>
-          <ChevronDown className={cn("h-4 w-4 text-muted-foreground shrink-0 transition-transform", accessOpen && "rotate-180")} />
-        </button>
-        {accessOpen && (
-          <div className="border-t border-border px-3 py-4">
-            <AccessFields
-              value={access}
-              onChange={patchAccess}
-              allowAdmin={false}
-              /* External: only what shapes their screens — where they log
-                 in and which tabs they get. Their powers come from the role
-                 they are given in a space, not from here. */
-              external={isExternal}
-            />
-          </div>
-        )}
-      </div>
+      <InviteAccessSection vm={vm} />
     </div>
   )
 }

@@ -2,34 +2,18 @@
 
 import { personName, isOpenToRole } from "@hbcfield/shared/client"
 import { OpenRoleChip } from "./open-role-chip"
-import { flowIdOf, stepConfig, useStepLabel } from "@/hooks/use-step-config"
 import { PausedChip } from "@/components/paused-chip"
 import React from "react"
-import {
-  isTaskOverdue,
-  isFinishedStatus,
-  mayChangeStatus,
-  hasAnyTransition,
-  STATUS_TRANSITIONS,
-} from "@hbcfield/shared/client"
-import { useWorkflow } from "@/hooks/use-org-workflow"
-import { useRouter } from "next/navigation"
-import { useTranslation } from "react-i18next"
+import { mayChangeStatus } from "@hbcfield/shared/client";
 import { GripVertical, UserPlus, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TaskAssigneesStack, TaskPersonAvatar } from "./task-avatars"
-import { useAuth } from "@/contexts/auth-context"
-import { useSpaceModules } from "@/hooks/use-space-modules"
-import { getStatusConfig, getPriorityConfig, TASK_STATUSES } from "@/lib/constants"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { Task, Sprint, Phase, Epic } from "@/lib/api"
-import { type TaskContextMenuActions } from "./task-context-menu"
-import { dateLocale } from "@/lib/format-date"
 import { useTaskTableRowInnerData, type TaskTableRowProps } from "./use-task-table-row-inner-data"
 export { type TaskTableRowProps } from "./use-task-table-row-inner-data"
 
@@ -48,7 +32,21 @@ export function useTaskTableRowInner({
   draggable = false,
   onDragStart,
   isDragging = false,
-}: Pick<TaskTableRowProps, 'task' | 'index' | 'canAssign' | 'onAssign' | 'sprints' | 'phases' | 'epics' | 'spaces' | 'contextActions' | 'recentAssignees' | 'draggable' | 'onDragStart' | 'isDragging'>) {
+}: Pick<TaskTableRowProps,
+  | 'task'
+  | 'index'
+  | 'canAssign'
+  | 'onAssign'
+  | 'sprints'
+  | 'phases'
+  | 'epics'
+  | 'spaces'
+  | 'contextActions'
+  | 'recentAssignees'
+  | 'draggable'
+  | 'onDragStart'
+  | 'isDragging'
+>) {
   const {
     t,
     user,

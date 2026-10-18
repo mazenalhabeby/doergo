@@ -48,7 +48,8 @@ export function IndustriesHub({ lang }: { lang: string }) {
                 <h2 className={`${DISPLAY} text-[22px] leading-snug tracking-[-0.01em] text-[#f2f2f0]`}>{f.name}</h2>
                 <p className="mt-3 text-[14.5px] leading-relaxed text-white/55">{f.benefit}</p>
                 <span
-                  className={`${MONO} mt-5 inline-block text-[10px] uppercase tracking-[0.18em] text-white/40 transition-colors group-hover:text-[#f2f2f0]`}>
+                  className={(`${MONO} mt-5 inline-block text-[10px] uppercase tracking-[0.18em] ` +
+                    `text-white/40 transition-colors group-hover:text-[#f2f2f0]`)}>
                   {home.nav?.industries ?? "Industries"} →
                 </span>
               </Link>

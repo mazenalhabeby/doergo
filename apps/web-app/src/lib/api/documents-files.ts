@@ -3,7 +3,10 @@ import type { MemberDocumentRow, PendingDocumentsSummary, PendingReviewRow, Requ
 import { documentsEndpoints } from "@hbcfield/shared/client"
 import { unwrapDocuments } from "./documents-response"
 
-/** Documents themselves: the list, links, uploading, visibility, what is required and waiting, verification, a member supplying their own. Part of `documentsApi`, moved here unchanged. */
+/**
+ * Documents themselves: the list, links, uploading, visibility, what is required and waiting, verification, a member supplying their
+ * own. Part of `documentsApi`, moved here unchanged.
+ */
 export const documentsFilesApi = {
   /** Omit `userId` for your own file. */
   list: async (params?: { userId?: string; typeId?: string; year?: number; search?: string }) => {

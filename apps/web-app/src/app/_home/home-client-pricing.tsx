@@ -74,7 +74,9 @@ export function HomeClientPricing({ vm }: { vm: HomeClientState }) {
           <a
             href="#contact"
             onClick={navTo('#contact')}
-            className={`${MONO} inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-6 py-3.5 text-[11px] uppercase tracking-[0.2em] text-background transition-colors hover:bg-foreground/90`}
+            className={(`${MONO} inline-flex items-center justify-center gap-2 rounded-full ` +
+              `bg-foreground px-6 py-3.5 text-[11px] uppercase tracking-[0.2em] ` +
+              `text-background transition-colors hover:bg-foreground/90`)}
           >
             {t('home.pricing.cta')}
           </a>
@@ -88,7 +90,10 @@ export function HomeClientPricing({ vm }: { vm: HomeClientState }) {
           */}
           <Link
             href="/pricing"
-            className={`${MONO} group inline-flex items-center justify-center gap-2 rounded-full border border-foreground/20 px-6 py-3.5 text-[11px] uppercase tracking-[0.2em] text-foreground/80 transition-colors hover:border-foreground/50 hover:text-foreground`}
+            className={(`${MONO} group inline-flex items-center justify-center gap-2 ` +
+              `rounded-full border border-foreground/20 px-6 py-3.5 text-[11px] ` +
+              `uppercase tracking-[0.2em] text-foreground/80 transition-colors ` +
+              `hover:border-foreground/50 hover:text-foreground`)}
           >
             {t('home.pricing.seePrices', 'See every price')}
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />

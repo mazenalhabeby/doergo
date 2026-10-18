@@ -26,7 +26,10 @@ export function SiteFooter() {
             <p className="mt-6 text-[15px] leading-relaxed text-foreground/45">{t("home.footer.tagline")}</p>
             <a
               href="mailto:office@hbcfield.com"
-              className={`${MONO} group mt-7 inline-flex items-center gap-2 border-b border-foreground/25 pb-1 text-[12px] tracking-[0.12em] text-foreground/70 transition-colors hover:border-foreground hover:text-foreground`}
+              className={(`${MONO} group mt-7 inline-flex items-center gap-2 border-b ` +
+                `border-foreground/25 pb-1 text-[12px] tracking-[0.12em] ` +
+                `text-foreground/70 transition-colors hover:border-foreground ` +
+                `hover:text-foreground`)}
             >
               office@hbcfield.com
               <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

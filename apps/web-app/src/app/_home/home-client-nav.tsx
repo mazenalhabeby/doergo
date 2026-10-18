@@ -104,7 +104,9 @@ export function HomeClientNav({ vm }: { vm: HomeClientState }) {
           </span>
           <Link
             href="/login"
-            className={`${MONO} inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.2em] transition-colors ${navBtnTone}`}>
+            className={(`${MONO} inline-flex shrink-0 items-center gap-2 whitespace-nowrap ` +
+              `rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.2em] ` +
+              `transition-colors ${navBtnTone}`)}>
             {t('home.nav.signIn')}
           </Link>
         </div>

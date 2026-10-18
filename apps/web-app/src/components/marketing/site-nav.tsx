@@ -76,7 +76,10 @@ export function SiteNav({ active }: { active?: 'blog' | 'industries' }) {
           </span>
           <Link
             href="/login"
-            className={`${MONO} inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-foreground/25 px-4 py-2 text-[11px] uppercase tracking-[0.2em] text-foreground/80 transition-colors hover:border-foreground/60 hover:text-foreground`}
+            className={(`${MONO} inline-flex shrink-0 items-center gap-2 whitespace-nowrap ` +
+              `rounded-full border border-foreground/25 px-4 py-2 text-[11px] ` +
+              `uppercase tracking-[0.2em] text-foreground/80 transition-colors ` +
+              `hover:border-foreground/60 hover:text-foreground`)}
           >
             {t('home.nav.signIn')}
           </Link>

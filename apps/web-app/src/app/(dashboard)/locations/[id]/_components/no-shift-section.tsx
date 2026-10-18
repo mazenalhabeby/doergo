@@ -69,7 +69,8 @@ export function NoShiftSection({
   }
 
   const minutes = clampDailyMinutes(Math.round(hours * 60))
-  // One number, two meanings: a cap under LIMIT; under ALLOW, when "forgot to clock out?" is asked (and the automatic clock's longest session).
+  // One number, two meanings: a cap under LIMIT; under ALLOW, when "forgot to clock out?" is asked (and the automatic clock's longest
+  // session).
   const hasHours = policy === "LIMIT" || policy === "ALLOW"
   const hoursDirty = hasHours && policy === savedPolicy && minutes !== savedMinutes
   const step = (delta: number) => setHours((h) => clampDailyMinutes(Math.round((h + delta) * 60)) / 60)

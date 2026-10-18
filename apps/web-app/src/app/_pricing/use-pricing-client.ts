@@ -25,3 +25,6 @@ export function usePricingClient() {
 
   return { t, resolvedTheme, setTheme, orphans, rules };
 }
+
+/** What PricingClient and its sections read. */
+export type PricingClientState = ReturnType<typeof usePricingClient>;

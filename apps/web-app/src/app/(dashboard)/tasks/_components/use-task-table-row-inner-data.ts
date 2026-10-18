@@ -53,7 +53,21 @@ export function useTaskTableRowInnerData({
   draggable = false,
   onDragStart,
   isDragging = false,
-}: Pick<Pick<TaskTableRowProps, 'task' | 'index' | 'canAssign' | 'onAssign' | 'sprints' | 'phases' | 'epics' | 'spaces' | 'contextActions' | 'recentAssignees' | 'draggable' | 'onDragStart' | 'isDragging'>, 'task' | 'index' | 'canAssign' | 'onAssign' | 'sprints' | 'phases' | 'epics' | 'spaces' | 'contextActions' | 'recentAssignees' | 'draggable' | 'onDragStart' | 'isDragging'>) {
+}: Pick<Pick<TaskTableRowProps, 'task' | 'index' | 'canAssign' | 'onAssign' | 'sprints' | 'phases' | 'epics' | 'spaces' | 'contextActions' | 'recentAssignees' | 'draggable' | 'onDragStart' | 'isDragging'>,
+  | 'task'
+  | 'index'
+  | 'canAssign'
+  | 'onAssign'
+  | 'sprints'
+  | 'phases'
+  | 'epics'
+  | 'spaces'
+  | 'contextActions'
+  | 'recentAssignees'
+  | 'draggable'
+  | 'onDragStart'
+  | 'isDragging'
+>) {
   const { t } = useTranslation()
 /*
     Modules are the SPACE's, and a board can show tasks from several spaces at

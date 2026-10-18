@@ -20,16 +20,8 @@ import { notify } from "@/lib/toast"
 import { accessAllows, isAdmin } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { useActiveSpaces } from "@/hooks/use-space-directory"
-
-export const TEMPLATES = [
-  { key: "rental", label: "Rental / Property", badge: "Rental", accent: "emerald" },
-  { key: "logistics", label: "Logistics / Delivery", badge: "Logistics", accent: "orange" },
-  { key: "workplace", label: "Workplace / Facilities", badge: "Workplace", accent: "cyan" },
-]
-
-export const TPL_BY_KEY = Object.fromEntries(TEMPLATES.map((x) => [x.key, x]))
-
-export const EMPTY_CAT: PortalCategoryInput = { label: "", icon: "plus", color: "slate", urgent: false, team: "", issues: [] }
+import { TPL_BY_KEY, EMPTY_CAT } from "./portal-templates"
+export { TPL_BY_KEY, EMPTY_CAT, TEMPLATES } from "./portal-templates"
 
 /** PortalDetailPage's state and handlers — everything before its markup, moved here unchanged. */
 export function usePortalDetailPage() {
@@ -133,7 +125,12 @@ export function usePortalDetailPage() {
   const [triageReq, setTriageReq] = useState<PortalRequestView | null>(null)
   const [
     triageForm,
-    setTriageForm] = useState<{ spaceId: string; workflowId: string; priority: string; assignedToId: string }>({ spaceId: "", workflowId: "", priority: "", assignedToId: "" })
+    setTriageForm] = useState<{
+      spaceId: string;
+      workflowId: string;
+      priority: string;
+      assignedToId: string
+    }>({ spaceId: "", workflowId: "", priority: "", assignedToId: "" })
   const openTriage = (r: PortalRequestView) => {
     // Pre-route to the portal's linked space (if any) so the admin only confirms
     // the flow + assigns — no re-picking the space for every request.
@@ -169,7 +166,8 @@ export function usePortalDetailPage() {
       priority: triageForm.priority || undefined,
       assignedToId: triageForm.assignedToId || undefined,
     }),
-    onSuccess: () => { inv(keys.portal.allRequests(portalId)); setTriageReq(null); notify.success(t("portal.requestRouted", "Request routed")) },
+    onSuccess: () => { inv(
+      keys.portal.allRequests(portalId)); setTriageReq(null); notify.success(t("portal.requestRouted", "Request routed")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
@@ -190,7 +188,8 @@ export function usePortalDetailPage() {
   const [clientToRemove, setClientToRemove] = useState<Customer | null>(null)
   const removeClientM = useMutation({
     mutationFn: (cid: string) => portalAdminApi.removeResident(cid),
-    onSuccess: () => { inv(keys.portal.residents(portalId)); setClientToRemove(null); notify.success(t("portal.clientRemoved", "Client removed")) },
+    onSuccess: () => { inv(
+      keys.portal.residents(portalId)); setClientToRemove(null); notify.success(t("portal.clientRemoved", "Client removed")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 

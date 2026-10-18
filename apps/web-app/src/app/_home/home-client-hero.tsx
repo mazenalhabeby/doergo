@@ -31,7 +31,9 @@ export function HomeClientHero({ vm }: { vm: HomeClientState }) {
         <Reveal delay={0.15} className="pointer-events-auto mt-8 hidden sm:block">
           <Link
             href="/login?mode=register"
-            className={`${MONO} group inline-flex items-center gap-3 border-b border-white/25 pb-1 text-[12px] uppercase tracking-[0.22em] text-white/80 transition-colors hover:border-white hover:text-white`}>
+            className={(`${MONO} group inline-flex items-center gap-3 border-b border-white/25 ` +
+              `pb-1 text-[12px] uppercase tracking-[0.22em] text-white/80 ` +
+              `transition-colors hover:border-white hover:text-white`)}>
             {t('home.hero.requestDemo')}
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
           </Link>
@@ -43,7 +45,10 @@ export function HomeClientHero({ vm }: { vm: HomeClientState }) {
       <div className="pointer-events-none absolute inset-x-6 bottom-8 flex justify-end sm:hidden">
         <Link
           href="/login?mode=register"
-          className={`${MONO} group pointer-events-auto inline-flex items-center gap-2.5 whitespace-nowrap border-b border-white/25 pb-1 text-[11px] uppercase tracking-[0.18em] text-white/80 transition-colors hover:border-white hover:text-white`}>
+          className={(`${MONO} group pointer-events-auto inline-flex items-center gap-2.5 ` +
+            `whitespace-nowrap border-b border-white/25 pb-1 text-[11px] uppercase ` +
+            `tracking-[0.18em] text-white/80 transition-colors hover:border-white ` +
+            `hover:text-white`)}>
           {t('home.hero.requestDemo')}
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
         </Link>

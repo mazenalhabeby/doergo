@@ -32,7 +32,19 @@ export function useTaskDetailSidebar({
   sprints = [],
   phases = [],
   epics = [],
-}: Pick<TaskDetailSidebarProps, 'task' | 'canEdit' | 'canAssign' | 'hasModule' | 'onFieldSave' | 'onAssignClick' | 'onRemoveAssignee' | 'onSetLead' | 'sprints' | 'phases' | 'epics'>) {
+}: Pick<TaskDetailSidebarProps,
+  | 'task'
+  | 'canEdit'
+  | 'canAssign'
+  | 'hasModule'
+  | 'onFieldSave'
+  | 'onAssignClick'
+  | 'onRemoveAssignee'
+  | 'onSetLead'
+  | 'sprints'
+  | 'phases'
+  | 'epics'
+>) {
   const { t } = useTranslation()
   const hasAgile = hasModule("sprints") || hasModule("phases") || hasModule("epics") || hasModule("story_points")
   const assignees = task.assignees || []

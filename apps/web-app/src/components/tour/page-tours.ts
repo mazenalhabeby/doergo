@@ -1,7 +1,10 @@
 import type { TourDef } from "./types"
 import { step, pageTour } from "./tour-steps"
 
-/** The tours of single pages: members, workspaces, attendance, reports, a task, leave, settings, availability, a member. Part of `TOURS`, moved here unchanged. */
+/**
+ * The tours of single pages: members, workspaces, attendance, reports, a task, leave, settings, availability, a member. Part of
+ * `TOURS`, moved here unchanged.
+ */
 export const PAGE_TOURS: TourDef[] = [
   // ── DEEPER: Members screen — grow your team ──
   {

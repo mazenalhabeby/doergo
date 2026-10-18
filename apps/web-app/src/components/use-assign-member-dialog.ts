@@ -41,7 +41,19 @@ export function useAssignMemberDialog({
   onRemove,
   isAssigning = false,
   notice,
-}: Pick<AssignMemberDialogProps, 'open' | 'onOpenChange' | 'taskId' | 'spaceId' | 'currentAssigneeId' | 'currentAssigneeIds' | 'onSave' | 'onAssign' | 'onRemove' | 'isAssigning' | 'notice'>) {
+}: Pick<AssignMemberDialogProps,
+  | 'open'
+  | 'onOpenChange'
+  | 'taskId'
+  | 'spaceId'
+  | 'currentAssigneeId'
+  | 'currentAssigneeIds'
+  | 'onSave'
+  | 'onAssign'
+  | 'onRemove'
+  | 'isAssigning'
+  | 'notice'
+>) {
   const { t } = useTranslation()
   const isMultiMode = !!onSave || !!onRemove
   const [search, setSearch] = useState("")

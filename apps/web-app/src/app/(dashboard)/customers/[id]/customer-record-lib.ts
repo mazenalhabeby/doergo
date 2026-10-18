@@ -101,3 +101,43 @@ export function leadLabel(min?: number | null) {
   if (!min) return null
   return LEAD_OPTIONS.find((o) => o.v === min)?.label ?? `${min} min before`
 }
+
+/**
+ * What the record page derives from the client's activities and tasks: the feed, the open and
+ * overdue reminders, the two nudges and the list the chosen tab shows. Moved here unchanged from
+ * the page (same order, same render).
+ */
+export function customerRecordView(
+  activityData: CustomerActivity[] | undefined,
+  taskData: Task[] | undefined,
+  customer: { isPortalResident?: boolean | null },
+  tab: "activity" | "notes" | "reminders",
+) {
+  const activities = activityData ?? []
+  const tasks = taskData ?? []
+  const openReminders = activities.filter((a) => a.type === "REMINDER" && !a.doneAt)
+  const overdue = openReminders.filter((a) => a.dueAt && new Date(a.dueAt).getTime() < Date.now())
+  // Unified feed: activities + this customer's tasks, newest first.
+  const taskItems: FeedItem[] = tasks.map((tk) => ({
+    id: `task-${tk.id}`,
+    type: "TASK",
+    createdAt: tk.createdAt,
+    task: tk,
+  }))
+  const feed: FeedItem[] = [...activities, ...taskItems].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  )
+
+  // Smart nudges (only while sales works the customer — not an app customer).
+  const lastAt = activities[0]?.createdAt ? new Date(activities[0].createdAt).getTime() : 0
+  const staleDays = lastAt ? Math.floor((Date.now() - lastAt) / 86400000) : null
+  const showNoNextStep = !customer.isPortalResident && openReminders.length === 0
+  const showStale = !customer.isPortalResident && staleDays != null && staleDays >= 14
+
+  const filtered = tab === "activity"
+    ? feed
+    : tab === "reminders"
+      ? activities.filter((a) => a.type === "REMINDER")
+      : activities.filter((a) => a.type === "NOTE")
+  return { activities, openReminders, overdue, feed, staleDays, showNoNextStep, showStale, filtered }
+}

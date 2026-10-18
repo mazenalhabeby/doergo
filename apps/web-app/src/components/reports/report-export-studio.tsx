@@ -5,28 +5,20 @@ import { useTranslation } from "react-i18next"
 import { FileText, Printer, X, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
 // The choices only: the renderer (and jsPDF, ~350 kB) loads when the dialog
 // first previews or exports — see loadRenderer below.
 import {
-  PDF_TEMPLATES, CUSTOM_PDF_TEMPLATE, DEFAULT_CUSTOM_PDF,
-  type ReportBranding, type PdfTemplate, type CustomPdfOptions,
-} from "@/lib/report-pdf-options"
-import type { ReportPdfMeta } from "@/lib/report-pdf"
-import type { ReportResult } from "@/lib/api"
-import {
-  loadRenderer,
-  ACCENTS,
-  Seg,
-  Group,
-  Field,
-  type ReportExportStudioProps,
-} from "./report-export-studio-shared"
+  PDF_TEMPLATES,
+  CUSTOM_PDF_TEMPLATE,
+  DEFAULT_CUSTOM_PDF,
+  type PdfTemplate,
+  type CustomPdfOptions,
+} from "@/lib/report-pdf-options";
+import { loadRenderer, type ReportExportStudioProps } from "./report-export-studio-shared";
 import { TemplateThumb } from "./template-thumb"
+import { CustomPdfPanel } from "./custom-pdf-panel"
 
 export function ReportExportStudio({ open, onOpenChange, result, meta, branding, canCustom, defaultName }: ReportExportStudioProps) {
   const { t } = useTranslation()
@@ -166,7 +158,11 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
                   <button
                     key={tpl.key}
                     onClick={() => setTemplate(tpl.key)}
-                    className={cn("group text-left rounded-xl border p-2 transition-all", on ? "border-primary ring-2 ring-primary/20 bg-primary/[0.04]" : "border-border hover:border-primary/40 hover:bg-accent/30")}
+                    className={cn(
+                      "group text-left rounded-xl border p-2 transition-all",
+                      on
+                        ? "border-primary ring-2 ring-primary/20 bg-primary/[0.04]"
+                        : "border-border hover:border-primary/40 hover:bg-accent/30")}
                   >
                     <div className="rounded-lg bg-slate-50 p-2.5 mb-1.5">
                       <TemplateThumb template={tpl.key} accent={tpl.key === "custom" ? custom.accent : "#2563EB"} />
@@ -174,89 +170,23 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
                     <div className="flex items-center gap-1 px-0.5">
                       <span className="text-xs font-medium text-foreground truncate">{t(`reports.pdfTpl.${tpl.key}.name`, tpl.name)}</span>
                       {tpl.key === "custom" &&
-                        <span className={"rounded-full bg-primary/10 text-primary text-[9px] px-1.5 py-0.5 " + "font-semibold shrink-0"}>PRO</span>}
+                        <span
+                          className={"rounded-full bg-primary/10 text-primary text-[9px] px-1.5 py-0.5 " +
+                            "font-semibold shrink-0"}>PRO</span>}
                     </div>
                   </button>
                 )
               })}
             </div>
-            <p className="text-[11px] text-muted-foreground mt-2 px-0.5 leading-snug">{t(`reports.pdfTpl.${template}.desc`, templates.find((x) => x.key === template)?.description || "")}</p>
+            <p
+              className="text-[11px] text-muted-foreground mt-2 px-0.5 leading-snug">{t(
+                `reports.pdfTpl.${template}.desc`,
+                templates.find((x) => x.key === template)?.description || "")}</p>
           </div>
 
           {/* Custom options (progressive disclosure) */}
           {template === "custom" && canCustom && (
-            <div className="space-y-3">
-              {/* STYLE */}
-              <Group title={t("reports.pdfGroupStyle", "Style")}>
-                <Field label={t("reports.pdfAccent", "Accent color")}>
-                  <div className="flex items-center gap-1.5">
-                    {ACCENTS.map((hex) => (
-                      <button key={hex} type="button" onClick={() => setC({ accent: hex })} className={cn("h-6 w-6 rounded-full border-2 transition-transform hover:scale-110", custom.accent.toLowerCase() === hex.toLowerCase() ? "border-foreground" : "border-transparent")} style={{ backgroundColor: hex }} aria-label={hex} />
-                    ))}
-                    <label className={"relative h-6 w-6 rounded-full overflow-hidden border-2 border-dashed " + "border-border cursor-pointer grid place-items-center"} title={t("reports.pdfCustomColor", "Custom color")}>
-                      <span className="h-3 w-3 rounded-full" style={{ background: "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)" }} />
-                      <input type="color" value={custom.accent} onChange={(e) => setC({ accent: e.target.value })} className="absolute inset-0 opacity-0 cursor-pointer" />
-                    </label>
-                  </div>
-                </Field>
-                <Field label={t("reports.pdfFont", "Font")}>
-                  <Seg value={custom.font} onChange={(v) => setC({ font: v })} options={[{ v: "sans", label: t("reports.pdfSans", "Sans") }, { v: "serif", label: t("reports.pdfSerif", "Serif") }]} />
-                </Field>
-                <Field label={t("reports.pdfHeader", "Header style")}>
-                  <Seg value={custom.headerStyle} onChange={(v) => setC({ headerStyle: v })} options={[{ v: "line", label: t("reports.pdfHdrLine", "Line") }, { v: "band", label: t("reports.pdfHdrBand", "Band") }, { v: "minimal", label: t("reports.pdfHdrMin", "Minimal") }]} />
-                </Field>
-              </Group>
-
-              {/* LAYOUT */}
-              <Group title={t("reports.pdfGroupLayout", "Layout")}>
-                <Field label={t("reports.pdfOrientation", "Orientation")}>
-                  <Seg value={custom.orientation} onChange={(v) => setC({ orientation: v })} options={[{ v: "portrait", label: t("reports.pdf_portrait", "Portrait") }, { v: "landscape", label: t("reports.pdf_landscape", "Landscape") }]} />
-                </Field>
-                <div className="grid grid-cols-2 gap-2">
-                  <Field label={t("reports.pdfPaper", "Paper")}>
-                    <Seg value={custom.paper} onChange={(v) => setC({ paper: v })} options={[{ v: "a4", label: "A4" }, { v: "letter", label: t("reports.pdfLetter", "Letter") }]} />
-                  </Field>
-                  <Field label={t("reports.pdfDensity", "Density")}>
-                    <Seg value={custom.density} onChange={(v) => setC({ density: v })} options={[{ v: "comfortable", label: t("reports.pdfRoomy", "Roomy") }, { v: "compact", label: t("reports.pdfCompact", "Compact") }]} />
-                  </Field>
-                </div>
-              </Group>
-
-              {/* SECTIONS */}
-              <Group title={t("reports.pdfGroupSections", "Sections")}>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                  {([["logo", "Company logo"], ["summary", "KPI summary"], ["chart", "Chart"], ["table", "Data table"], ["signature", "Signature block"], ["pageNumbers", "Page numbers"]] as const).map(([key, label]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <Label className="text-[11px]">{t(`reports.pdfInc_${key}`, label)}</Label>
-                      <Switch checked={custom[key]} onCheckedChange={(v) => setC({ [key]: v } as Partial<CustomPdfOptions>)} />
-                    </div>
-                  ))}
-                </div>
-                {custom.summary && (
-                  <Field label={t("reports.pdfSummaryPos", "Summary position")}>
-                    <Seg value={custom.summaryPosition} onChange={(v) => setC({ summaryPosition: v })} options={[{ v: "top", label: t("reports.pdfSummaryTop", "Top") }, { v: "bottom", label: t("reports.pdfSummaryBottom", "End of table") }]} />
-                  </Field>
-                )}
-                {custom.signature && (
-                  <Field label={t("reports.pdfSignatureDate", "Signature date")}>
-                    <div className="flex gap-1.5">
-                      <Input value={custom.signatureDate ?? ""} onChange={(e) => setC({ signatureDate: e.target.value })} placeholder={t("reports.pdfSignatureDatePlaceholder", "Empty = sign by hand")} className="h-9" />
-                      <Button type="button" variant="outline" size="sm" className="h-9 shrink-0" onClick={() => { const d = new Date(); setC({ signatureDate: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}` }) }}>{t("reports.pdfToday", "Today")}</Button>
-                    </div>
-                  </Field>
-                )}
-              </Group>
-
-              {/* TEXT */}
-              <Group title={t("reports.pdfGroupText", "Text")}>
-                <Field label={t("reports.pdfHeading", "Custom heading (optional)")}>
-                  <Input value={custom.heading} onChange={(e) => setC({ heading: e.target.value })} placeholder={defaultName} className="h-9" />
-                </Field>
-                <Field label={t("reports.pdfNote", "Note / disclaimer (optional)")}>
-                  <Input value={custom.note} onChange={(e) => setC({ note: e.target.value })} placeholder={t("reports.pdfNotePlaceholder", "e.g. Confidential — internal use only")} className="h-9" />
-                </Field>
-              </Group>
-            </div>
+            <CustomPdfPanel custom={custom} setC={setC} defaultName={defaultName} />
           )}
         </div>
 
@@ -267,14 +197,18 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
             title={t("reports.pdfPreview", "PDF preview")}
             src={slotA ? `${slotA}#view=FitH` : undefined}
             onLoad={() => promote("a")}
-            className={cn("absolute inset-0 w-full h-full transition-opacity duration-200", front === "a" && slotA ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none")}
+            className={cn(
+              "absolute inset-0 w-full h-full transition-opacity duration-200",
+              front === "a" && slotA ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none")}
           />
           <iframe
             ref={bRef}
             title={t("reports.pdfPreview", "PDF preview")}
             src={slotB ? `${slotB}#view=FitH` : undefined}
             onLoad={() => promote("b")}
-            className={cn("absolute inset-0 w-full h-full transition-opacity duration-200", front === "b" && slotB ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none")}
+            className={cn(
+              "absolute inset-0 w-full h-full transition-opacity duration-200",
+              front === "b" && slotB ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none")}
           />
           {!hasPreview && (
             // Skeleton page while the first preview builds.
@@ -283,13 +217,22 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
                 <div className="h-3 w-24 rounded bg-muted animate-pulse" />
                 <div className="h-6 w-2/3 rounded bg-muted animate-pulse" />
                 <div className="h-2 w-1/2 rounded bg-muted animate-pulse" />
-                <div className="grid grid-cols-4 gap-2 pt-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 rounded bg-muted animate-pulse" />)}</div>
-                <div className="space-y-2 pt-2">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-3 rounded bg-muted animate-pulse" />)}</div>
+                <div
+                  className="grid grid-cols-4 gap-2 pt-2">{Array.from({
+                    length: 4
+                  }).map((_, i) => <div key={i} className="h-12 rounded bg-muted animate-pulse" />)}</div>
+                <div
+                  className="space-y-2 pt-2">{Array.from({
+                    length: 6
+                  }).map((_, i) => <div key={i} className="h-3 rounded bg-muted animate-pulse" />)}</div>
               </div>
             </div>
           )}
           {busy && hasPreview && (
-            <div className={"absolute top-3 right-3 z-20 flex items-center gap-1.5 rounded-md " + "bg-background/90 border border-border px-2.5 py-1.5 text-[11px] " + "text-muted-foreground shadow-sm"}>
+            <div
+              className={"absolute top-3 right-3 z-20 flex items-center gap-1.5 rounded-md " +
+                "bg-background/90 border border-border px-2.5 py-1.5 text-[11px] " +
+                "text-muted-foreground shadow-sm"}>
               <Loader2 className="h-3 w-3 animate-spin" />{t("reports.pdfUpdating", "Updating…")}
             </div>
           )}

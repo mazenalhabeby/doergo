@@ -11,7 +11,10 @@ import type {
 import { LEAVE_ONLY_OPTIONS, normalizeRequestOptions, type RequestOptions } from '../requests';
 import { employeesEndpoints, timeOffEndpoints, type RequestInput } from '@hbcfield/shared/client';
 
-/** Leave and cover: the organization's time off, the floor, a member's requests and their decisions. Part of `employeesApi`, moved here unchanged. */
+/**
+ * Leave and cover: the organization's time off, the floor, a member's requests and their decisions. Part of `employeesApi`,
+ * moved here unchanged.
+ */
 export const employeeLeaveApi = {
   // ========================================================================
   // TIME-OFF MANAGEMENT

@@ -59,7 +59,38 @@ export function useTrackingTab({
   selectedDate, setSelectedDate, endDate, setEndDate, searchQuery, setSearchQuery,
   page, setPage, limit, daysOff, locations, isAdmin, canReconcile, canDelete,
   sort, onSort,
-}: Pick<TrackingTabProps, 'stats' | 'entries' | 'geofenceViolations' | 'filteredEntries' | 'loadingEntries' | 'loadingLocations' | 'isError' | 'error' | 'refetch' | 'meta' | 'selectedLocationId' | 'setSelectedLocationId' | 'selectedStatus' | 'setSelectedStatus' | 'selectedDate' | 'setSelectedDate' | 'endDate' | 'setEndDate' | 'searchQuery' | 'setSearchQuery' | 'page' | 'setPage' | 'limit' | 'daysOff' | 'locations' | 'isAdmin' | 'canReconcile' | 'canDelete' | 'sort' | 'onSort'>) {
+}: Pick<TrackingTabProps,
+  | 'stats'
+  | 'entries'
+  | 'geofenceViolations'
+  | 'filteredEntries'
+  | 'loadingEntries'
+  | 'loadingLocations'
+  | 'isError'
+  | 'error'
+  | 'refetch'
+  | 'meta'
+  | 'selectedLocationId'
+  | 'setSelectedLocationId'
+  | 'selectedStatus'
+  | 'setSelectedStatus'
+  | 'selectedDate'
+  | 'setSelectedDate'
+  | 'endDate'
+  | 'setEndDate'
+  | 'searchQuery'
+  | 'setSearchQuery'
+  | 'page'
+  | 'setPage'
+  | 'limit'
+  | 'daysOff'
+  | 'locations'
+  | 'isAdmin'
+  | 'canReconcile'
+  | 'canDelete'
+  | 'sort'
+  | 'onSort'
+>) {
   const { t } = useTranslation()
   const { hour12, locale } = useTimeFormat()
   // Overtime on a closed shift: the approval permission and the Option its route

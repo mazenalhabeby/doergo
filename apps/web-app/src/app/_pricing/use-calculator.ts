@@ -89,3 +89,6 @@ export function useCalculator() {
     toggleGroup,
   };
 }
+
+/** What Calculator and its sections read. */
+export type CalculatorState = ReturnType<typeof useCalculator>;

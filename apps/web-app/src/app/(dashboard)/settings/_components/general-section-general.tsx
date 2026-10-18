@@ -1,46 +1,28 @@
 "use client"
 
-import {
-  Loader2,
-  Tag,
-  Building2,
-  Globe,
-  Phone,
-  Mail,
-  Link2,
-  MapPin,
-  Clock,
-  Image as ImageIcon,
-  Upload,
-  Trash2,
-  Receipt,
-} from "lucide-react"
+import { Tag, Building2, Phone, Mail, Link2, Clock, Receipt } from "lucide-react";
 import { SettingCard } from "./setting-card"
 import { DatedRateField } from "@/components/rates/dated-rate"
 import { CurrencySetting } from "@/components/rates/currency-setting"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
 import { Switch } from "@/components/ui/switch"
 import { Combobox } from "@/components/ui/combobox"
 import { PhoneInput } from "@/components/ui/phone-input"
 import { FormField, SaveBar } from "./settings-form-bits"
 import type { GeneralSectionState } from "./use-general-section"
+import { GeneralAddressFields } from "./general-address-fields"
+import { GeneralLogoField } from "./general-logo-field"
 
 /** Part of GeneralSection's markup, moved here unchanged; it reads the page's state from `vm`. */
 export function GeneralSectionGeneral({ vm }: { vm: GeneralSectionState }) {
   const {
     t,
     profile,
-    logoBusy,
-    onLogoPick,
-    saveLogo,
     form,
     set,
     industryOptions,
     setForm,
     timezoneOptions,
-    countryOptions,
     orgRates,
     saveOrgRate,
     refreshUser,
@@ -55,44 +37,7 @@ export function GeneralSectionGeneral({ vm }: { vm: GeneralSectionState }) {
       description={t("settings.general.description")}
     >
       <div className="space-y-5">
-        <FormField icon={ImageIcon} label={t("settings.general.logo", "Company logo")}>
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 shrink-0 rounded-xl border border-border bg-muted/40 grid place-items-center overflow-hidden">
-              {profile?.logoUrl
-                ? /* eslint-disable-next-line @next/next/no-img-element */ <img
-                  src={profile.logoUrl}
-                  alt="Logo"
-                  decoding="async"
-                  className="h-full w-full object-contain"
-                />
-                : <ImageIcon className="h-6 w-6 text-muted-foreground/50" />}
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <label
-                  className={cn(
-                    ("inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border " +
-                      "border-border text-sm font-medium cursor-pointer hover:bg-accent/50 " +
-                      "transition-colors"),
-                    logoBusy && "opacity-60 pointer-events-none")}>
-                  {logoBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-                  {profile?.logoUrl ? t("settings.general.logoReplace", "Replace") : t("settings.general.logoUpload", "Upload logo")}
-                  <input type="file" accept="image/*" className="hidden" disabled={logoBusy}
-                    onChange={e => { onLogoPick(e.target.files?.[0]); e.target.value = "" }} />
-                </label>
-                {profile?.logoUrl && (
-                  <Button type="button" variant="ghost" size="sm" className="h-9 gap-1.5 text-red-600 hover:text-red-700" disabled={logoBusy} onClick={() => saveLogo("")}>
-                    <Trash2 className="h-3.5 w-3.5" />{t("settings.general.logoRemove", "Remove")}
-                  </Button>
-                )}
-              </div>
-              <p
-                className="text-xs text-muted-foreground mt-1.5">{t(
-                  "settings.general.logoHint",
-                  "PNG or JPG. Shows on report & statement PDFs. Saved instantly.")}</p>
-            </div>
-          </div>
-        </FormField>
+        <GeneralLogoField vm={vm} />
 
         <FormField icon={Building2} label={t("settings.general.orgName")}>
           <Input
@@ -126,7 +71,9 @@ export function GeneralSectionGeneral({ vm }: { vm: GeneralSectionState }) {
             <p className="mt-1 text-xs text-muted-foreground">
               {t(
                 "settings.general.externalWorkers.hint",
-                ("Turn on to mark field technicians as in-house or external. In-house " + "field seats are billed at the discounted €9 rate; external at €15. Leave " + "off if all your field techs are the same."),
+                ("Turn on to mark field technicians as in-house or external. In-house " +
+                  "field seats are billed at the discounted €9 rate; external at €15. Leave " +
+                  "off if all your field techs are the same."),
               )}
             </p>
           </div>
@@ -161,47 +108,7 @@ export function GeneralSectionGeneral({ vm }: { vm: GeneralSectionState }) {
           </FormField>
         </div>
 
-        <FormField icon={MapPin} label={t("settings.general.streetAddress", "Street address")}>
-          <Input
-            value={form.addressLine1}
-            onChange={e => set("addressLine1", e.target.value)}
-            placeholder={t("settings.general.streetAddressPlaceholder", "e.g. Arbeiterheimstraße 32")}
-            className="h-11 rounded-xl"
-          />
-        </FormField>
-
-        <FormField label={t("settings.general.addressLine2", "Address line 2 (optional)")}>
-          <Input
-            value={form.addressLine2}
-            onChange={e => set("addressLine2", e.target.value)}
-            placeholder={t("settings.general.addressLine2Placeholder", "Suite, floor, unit…")}
-            className="h-11 rounded-xl"
-          />
-        </FormField>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <FormField label={t("settings.general.city", "City")}>
-            <Input value={form.city} onChange={e => set("city", e.target.value)} placeholder={t("settings.general.cityPlaceholder", "e.g. Vienna")} className="h-11 rounded-xl" />
-          </FormField>
-          <FormField label={t("settings.general.state", "State / Province / Region")}>
-            <Input value={form.state} onChange={e => set("state", e.target.value)} placeholder={t("settings.general.statePlaceholder", "e.g. Upper Austria")} className="h-11 rounded-xl" />
-          </FormField>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <FormField label={t("settings.general.postalCode", "Postal / ZIP code")}>
-            <Input value={form.postalCode} onChange={e => set("postalCode", e.target.value)} placeholder={t("settings.general.postalCodePlaceholder", "e.g. 4663")} className="h-11 rounded-xl" />
-          </FormField>
-          <FormField icon={Globe} label={t("settings.general.country", "Country")}>
-            <Combobox
-              value={form.country}
-              onChange={v => set("country", v)}
-              options={countryOptions}
-              maxResults={countryOptions.length}
-              placeholder={t("settings.general.selectCountry", "Select country")}
-            />
-          </FormField>
-        </div>
+        <GeneralAddressFields vm={vm} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <FormField icon={Phone} label={t("settings.general.phone")}>

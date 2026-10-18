@@ -115,3 +115,6 @@ export function useModulesTab({ space }: Pick<{ space: CompanyLocation }, 'space
     dirty,
   }
 }
+
+/** What ModulesTab and its sections read. */
+export type ModulesTabState = ReturnType<typeof useModulesTab>

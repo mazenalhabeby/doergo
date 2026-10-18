@@ -14,7 +14,8 @@ export function HomeClientWhy({ vm }: { vm: HomeClientState }) {
       <div className="mx-auto max-w-[1600px]">
         <Label className="mb-10 block">{t('home.why.label')}</Label>
         <h2
-          className={`${DISPLAY} max-w-[20ch] text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-foreground`}>
+          className={(`${DISPLAY} max-w-[20ch] text-[clamp(1.8rem,5vw,3.6rem)] font-normal ` +
+            `leading-[1.02] tracking-[-0.02em] text-foreground`)}>
           {t('home.why.heading')}
         </h2>
         <p className="mt-6 max-w-[54ch] text-[15px] leading-relaxed text-foreground/50">{t('home.why.lead')}</p>

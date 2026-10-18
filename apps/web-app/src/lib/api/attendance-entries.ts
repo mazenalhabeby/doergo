@@ -13,7 +13,10 @@ import {
   type TimeEntry,
 } from '@hbcfield/shared/client';
 
-/** Entries: history, a workspace's list, adding hours by hand, a rest on an entry, editing, overtime, deleting, the record. Part of `attendanceApi`, moved here unchanged. */
+/**
+ * Entries: history, a workspace's list, adding hours by hand, a rest on an entry, editing, overtime, deleting, the record. Part of
+ * `attendanceApi`, moved here unchanged.
+ */
 export const attendanceEntriesApi = {
   // Employee self-service: my own time-entry history (paginated envelope)
   /**

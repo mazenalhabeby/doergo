@@ -98,7 +98,9 @@ export function FeatureMatrix() {
 
       <Link
         href="/pricing"
-        className={`${MONO} group mt-8 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-foreground/45 transition-colors hover:text-foreground`}
+        className={(`${MONO} group mt-8 inline-flex items-center gap-2 text-[11px] uppercase ` +
+          `tracking-[0.16em] text-foreground/45 transition-colors ` +
+          `hover:text-foreground`)}
       >
         {t('home.estimator.seeAll', 'See every price')}
         <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />

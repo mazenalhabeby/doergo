@@ -118,7 +118,9 @@ export function BillingBanner() {
           ? ('group flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 ' +
             'border-b border-red-600 bg-red-600 px-4 py-2.5 text-white ' +
             'transition-colors hover:bg-red-700')
-          : `group flex items-center justify-center gap-2.5 border-b ${variant.border} bg-gradient-to-r ${variant.grad} to-transparent px-4 py-2 backdrop-blur-sm transition-colors`
+          : (`group flex items-center justify-center gap-2.5 border-b ` +
+            `${variant.border} bg-gradient-to-r ${variant.grad} to-transparent px-4 ` +
+            `py-2 backdrop-blur-sm transition-colors`)
       }
     >
       <span

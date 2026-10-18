@@ -173,7 +173,8 @@ export function PricingEstimator() {
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p
-              className={`${DISPLAY} text-[clamp(2.6rem,8vw,4rem)] font-normal leading-none tracking-[-0.02em] text-foreground [font-variant-numeric:tabular-nums]`}>
+              className={(`${DISPLAY} text-[clamp(2.6rem,8vw,4rem)] font-normal leading-none ` +
+                `tracking-[-0.02em] text-foreground [font-variant-numeric:tabular-nums]`)}>
               {formatCents(perPerson)}
             </p>
             <p className={`${MONO} mt-2 text-[12px] text-foreground/45`}>

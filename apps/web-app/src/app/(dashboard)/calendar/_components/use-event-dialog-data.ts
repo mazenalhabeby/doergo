@@ -64,7 +64,17 @@ export function useEventDialogData(
     crm = false,
     onNewJob,
     onTimeOff
-  }: Pick<Pick<Props, 'open' | 'onOpenChange' | 'start' | 'event' | 'spaceId' | 'offices' | 'crm' | 'onNewJob' | 'onTimeOff'>, 'open' | 'onOpenChange' | 'start' | 'event' | 'spaceId' | 'offices' | 'crm' | 'onNewJob' | 'onTimeOff'>) {
+  }: Pick<Pick<Props, 'open' | 'onOpenChange' | 'start' | 'event' | 'spaceId' | 'offices' | 'crm' | 'onNewJob' | 'onTimeOff'>,
+    | 'open'
+    | 'onOpenChange'
+    | 'start'
+    | 'event'
+    | 'spaceId'
+    | 'offices'
+    | 'crm'
+    | 'onNewJob'
+    | 'onTimeOff'
+  >) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const editing = !!event
