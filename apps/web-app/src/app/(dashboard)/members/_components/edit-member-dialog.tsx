@@ -1,22 +1,8 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
-import { useCompanies } from "@/components/companies/company-select"
-import { useState, useEffect } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useTranslation } from "react-i18next"
-import { notify } from "@/lib/toast"
 import { UserAvatar } from "@/components/user-avatar"
-import { ScheduleFields, createDefaultSchedule, type EditableScheduleRow } from "@/components/schedule-fields"
-import {
-  organizationsApi,
-  employeesApi,
-  type OrgMember,
-  type UpdateMemberInput,
-  type UpdateEmployeeInput,
-  type ScheduleEntryInput,
-} from "@/lib/api"
-import { useAuth } from "@/contexts/auth-context"
+import { ScheduleFields } from "@/components/schedule-fields"
+import { type OrgMember } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -29,13 +15,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { copyText } from "@/lib/clipboard"
 import { personName } from "@hbcfield/shared/client"
 import { EditSection } from "./edit-member-dialog/edit-section"
 import { EmploymentFields } from "./edit-member-dialog/employment-fields"
 import { MemberSpacesSection } from "./edit-member-dialog/member-spaces-section"
 import { MemberSecuritySection } from "./edit-member-dialog/member-security-section"
-import { useMemberEditorData } from "./edit-member-dialog/use-member-editor-data"
 import { useEditMemberDialog } from "./use-edit-member-dialog"
 
 // Pieces live in ./edit-member-dialog/ — the position combobox, the profile

@@ -1,15 +1,9 @@
 "use client"
 
-import type { ReactNode } from "react"
 
-import { useTranslation } from "react-i18next"
 
 import { cn } from "@/lib/utils"
-import type { OrganizationProfile } from "@/lib/api"
-import { formatAmount, formatMoney, MONEY_LOCALE } from "@/lib/money"
-import { hoursAndDaysTotals, formatHoursMinutes, lineAmount as roundedLineAmount, type IssuerSnapshot } from "@hbcfield/shared/client"
-import { documentIssuer, invoiceDayInstant, invoiceDocumentLabels } from "@/lib/invoice-document-locale"
-import { useInvoiceDocument, type DocumentView, type DocumentRow, type InvoiceDocumentProps } from "./use-invoice-document"
+import { useInvoiceDocument, type InvoiceDocumentProps } from "./use-invoice-document"
 import { isHeading, HoursDaysSummary, money, fmtDate, ViewToggle } from "./invoice-document-helpers"
 import { InvoiceDocumentCreate } from "./invoice-document-create"
 export { money, fmtDate } from "./invoice-document-helpers"

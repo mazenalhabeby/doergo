@@ -1,20 +1,8 @@
 "use client"
 
-import { personName, todayKey } from "@hbcfield/shared/client"
-import { useMemo, useState, type ReactNode } from "react"
-import { BreakFields, breakFitsShift, type BreakKind } from "@/components/attendance/break-fields"
-import { Checkbox } from "@/components/ui/checkbox"
-import { cn } from "@/lib/utils"
-import { useTranslation } from "react-i18next"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { CalendarPlus, Loader2 } from "lucide-react"
-import { toast } from "sonner"
 
-import { attendanceApi, employeesApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -24,16 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { keys } from "@/lib/query-keys"
 import { useAddAttendanceDialog, type AddAttendanceDialogProps } from "./use-add-attendance-dialog"
-import { WEEKDAY_ORDER } from "./add-attendance-dialog-helpers"
 import { AddAttendanceDialogAddAttendance } from "./add-attendance-dialog-add-attendance"
 
 export function AddAttendanceDialog({

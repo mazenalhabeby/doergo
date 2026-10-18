@@ -1,31 +1,8 @@
 "use client"
 
-import { personInitials, personName } from "@hbcfield/shared/client"
-import Link from "next/link"
-import type { Task } from "@/lib/api"
-import { useTranslation } from "react-i18next"
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  User,
-  Users,
-  Plus,
-  Target,
-  Layers,
-  Zap,
-  X,
-  Crown,
-  ExternalLink,
-  type LucideIcon,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { Target, Layers, Zap } from "lucide-react"
 import { InlineEditField } from "./inline-edit-field"
-import { LeaveByLine } from "./leave-by-line"
-import { OpenToRoleAction } from "./open-to-role-dialog"
 import { STORY_POINT_OPTIONS } from "@/lib/api"
-import { dateLocale } from "@/lib/format-date"
 import { useTaskDetailSidebar, type TaskDetailSidebarProps } from "./use-task-detail-sidebar"
 import { SidebarRow } from "./task-detail-sidebar-helpers"
 import { TaskDetailSidebarSidebar } from "./task-detail-sidebar-sidebar"

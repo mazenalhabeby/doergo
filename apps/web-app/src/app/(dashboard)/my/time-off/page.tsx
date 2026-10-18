@@ -1,34 +1,15 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { useTranslation } from "react-i18next"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  CalendarDays, ChevronLeft, ChevronRight, Check, X,
-  Loader2, AlertTriangle, Clock3,
-} from "lucide-react"
-import { useAuth } from "@/contexts/auth-context"
-import { calendarApi, employeesApi } from "@/lib/api"
+import { ChevronLeft, ChevronRight, Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ProgressRing } from "@/components/progress-ring"
-import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
-import { hasAccessModule, localDateKey, type LeaveType, leaveCostInBalanceYear } from "@hbcfield/shared/client"
-import type { TimeOffRequest } from "@hbcfield/shared"
-import { keys } from "@/lib/query-keys"
-import { formatDayMonth, formatMediumDate, formatMonthYear } from "@/lib/format-date"
-import { serverErrorMessage } from "@/lib/server-error"
-import { useRequestOptions } from "@/hooks/use-request-options"
-import {
-  LEAVE_TYPE_REASON_KEY, absencesOnly, draftToRequest, isAbsence, isOneDayKind, requestDetail, requestKindEffectKey,
-  type RequestKind,
-} from "@/lib/requests"
-import { RequestKindChip, RequestKindPicker } from "@/components/requests/request-kind"
-import { RequestFields, type RequestFieldsValue } from "@/components/requests/request-fields"
+import { formatMonthYear } from "@/lib/format-date"
+import { isAbsence, isOneDayKind } from "@/lib/requests"
+import { RequestKindPicker } from "@/components/requests/request-kind"
+import { RequestFields } from "@/components/requests/request-fields"
 import { LeaveBalanceBreakdown } from "@/components/leave/leave-balance-breakdown"
-import { balanceView, leaveYearLabel } from "@/lib/leave-ledger"
 import { useMyTimeOffPage, toISO, sameDay, REASON_TYPES } from "./use-my-time-off-page"
-import { fmt, Legend } from "./my-time-off-page-helpers"
+import { Legend } from "./my-time-off-page-helpers"
 import { MyTimeOffPageAllowanceTitleWork } from "./my-time-off-page-allowance-title-work"
 import { MyTimeOffPageMy } from "./my-time-off-page-my"
 import { MyTimeOffPageMy2 } from "./my-time-off-page-my2"

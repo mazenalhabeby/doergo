@@ -1,55 +1,13 @@
 import React from "react"
-import type { PaginationMeta } from "@/lib/api"
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, subMonths } from "date-fns"
 import { cn } from "@/lib/utils"
-import { type TimeEntry, type CompanyLocation } from "@/lib/api"
+import { type TimeEntry } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  MapPin,
-  RefreshCw,
-  Search,
-  Calendar,
-  Users,
-  ArrowRight,
-  CalendarOff,
-  ArrowUp,
-  ArrowDown,
-  ChevronsUpDown,
-  ChevronRight,
-  ListChecks
-} from "lucide-react"
-import { WorkLogTimeline } from "@/components/worklog-timeline"
-import { useTranslation } from "react-i18next"
-import {
-  StatCard,
-  toDate,
-  formatTime,
-  formatDateInZone,
-  StatusBadge,
-  WorkerCell,
-  ClockCell,
-  ApprovalCell,
-  NoteCell
-} from "./attendance-helpers"
-import { formatDuration, personName, countryFromTz } from "@hbcfield/shared/client"
-import { EditEntryDialog } from "./edit-entry-dialog"
-import { AddOvertimeDialog } from "./add-overtime-dialog"
-import { useOvertimeAction } from "@/hooks/use-overtime-action"
-import { EditDayOffDialog } from "./edit-dayoff-dialog"
+import { AlertCircle, CheckCircle2, Clock, MapPin, Users, CalendarOff } from "lucide-react"
+import { StatCard, formatTime, formatDateInZone, StatusBadge } from "./attendance-helpers"
+import { personName, countryFromTz } from "@hbcfield/shared/client"
 import { OutOfRingPanel } from "./out-of-ring-panel"
-import { PresenceDay } from "@/components/attendance/presence-day"
-import { useTimeFormat } from "@/hooks"
-import { workedMinutes, formatHours } from "@hbcfield/shared/client"
+import { formatHours } from "@hbcfield/shared/client"
 import { useTrackingTab, type TrackingTabProps } from "./use-tracking-tab"
-import { SortHead } from "./tracking-tab-helpers"
 import { TrackingTabTracking } from "./tracking-tab-tracking"
 import { TrackingTabTracking2 } from "./tracking-tab-tracking2"
 

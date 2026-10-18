@@ -2,63 +2,24 @@
 
 import { keys, invalidateTaskLists } from "@/lib/query-keys"
 import { useRouteAccess } from "@/hooks/use-route-access"
-import { useState, memo } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  Loader2,
-  Plus,
-  MoreHorizontal,
-  Users,
-  Settings2,
-  ToggleRight,
-  ToggleLeft,
-  Building2,
-  ChevronRight,
-  RefreshCw,
-  SlidersHorizontal,
-  Handshake,
-  Briefcase,
-  Share2,
-  Check,
-  X,
-  Inbox,
-} from "lucide-react"
+import { Loader2, Plus, RefreshCw } from "lucide-react"
 import { notify } from "@/lib/toast"
-import { AVAILABLE_MODULES, canManageSpace } from "@hbcfield/shared/client"
+import { canManageSpace } from "@hbcfield/shared/client"
 
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceLifecycle } from "./_hooks/use-space-lifecycle"
 import { SpaceLifecycleDialog } from "./_components/space-lifecycle-dialog"
-import {
-  locationsApi,
-  workflowsApi,
-  spaceSharingApi,
-  type CompanyLocation,
-  type StatusWorkflow,
-} from "@/lib/api"
+import { locationsApi, workflowsApi, type CompanyLocation } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { CenteredNotice } from "@/components/space-page"
-import { Badge } from "@/components/ui/badge"
 import { useBillingLock } from "@/hooks/use-billing-lock"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PAGE_SHELL } from "@/components/ui/page-width"
 import { useSpaceDirectory } from "@/hooks/use-space-directory"
-import { EmptyState, SpaceCard, LEVEL_BADGE } from "./space-card"
+import { EmptyState, SpaceCard } from "./space-card"
 import { SharedWithUsSection } from "./shared-with-us-section"
 import dynamic from "next/dynamic"
 import { useLatched } from "@/hooks/use-latched"

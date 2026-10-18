@@ -1,26 +1,12 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { useTranslation } from "react-i18next"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  Search, Download, Loader2, FileText, Image as ImageIcon,
-  ShieldCheck, ShieldAlert, ShieldX, PenLine, Trash2, Inbox, DownloadCloud, Upload, Clock, XCircle, AlertTriangle,
-} from "lucide-react"
-import { useRouter } from "next/navigation"
-import { documentsApi, type MemberDocumentRow, type DocumentTypeRow, type RequirementRow } from "@/lib/api"
-import { formatFileSize, memberMayDelete, waitingOnMember } from "@hbcfield/shared/client"
+import { Search, Loader2, PenLine, DownloadCloud, Upload, AlertTriangle } from "lucide-react"
+import { waitingOnMember } from "@hbcfield/shared/client"
 import { SupplyDocumentDialog } from "./_components/supply-document-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { notify } from "@/lib/toast"
-import { useOpenDocument } from "@/hooks/use-open-document"
 import { cn } from "@/lib/utils"
-import { useAuth } from "@/contexts/auth-context"
-import { keys } from "@/lib/query-keys"
-import { dateLocale } from "@/lib/format-date"
 import { useMyDocumentsPage } from "./use-my-documents-page"
-import { MONTHS_KEY, StandingChip } from "./my-documents-page-helpers"
 import { MyDocumentsPageMy } from "./my-documents-page-my"
 
 /*

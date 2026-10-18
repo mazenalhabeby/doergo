@@ -1,67 +1,10 @@
 "use client"
 
-import { personName } from "@hbcfield/shared/client"
-import { useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { format, differenceInCalendarDays } from "date-fns"
-import type { DateRange } from "react-day-picker"
-import {
-  CalendarOff,
-  Plus,
-  MoreHorizontal,
-  CalendarDays,
-} from "lucide-react"
-import { notify } from "@/lib/toast"
-import { useTranslation } from "react-i18next"
 
-import { useTimeFormat } from "@/hooks"
 
-import {
-  employeesApi,
-  type TimeOffStatus,
-} from "@/lib/api"
-import { useRouteAccess } from "@/hooks/use-route-access"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Calendar } from "@/components/ui/calendar"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { keys, invalidateTimeOff } from "@/lib/query-keys"
-import { serverErrorMessage } from "@/lib/server-error"
-import { isAbsence, requestDetail } from "@/lib/requests"
-import { RequestKindChip } from "@/components/requests/request-kind"
 import { LeaveLedgerPanel } from "@/components/leave/leave-ledger-panel"
-import Link from "next/link"
-import { Inbox } from "lucide-react"
 import { useTimeOffTab, type TimeOffTabProps } from "./use-time-off-tab"
-import { STATUS_PILLS, getDurationDays } from "./time-off-tab-helpers"
 import { TimeOffTabTimeOffTab } from "./time-off-tab-time-off-tab"
 
 export function TimeOffTab({ employeeId, employeeName, canManage }: TimeOffTabProps) {

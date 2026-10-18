@@ -5,7 +5,6 @@
  * helpers the navigation uses, so users only get tours for screens they have.
  */
 import type { TourDef, TourGateContext } from "./types"
-import { step, pageTour } from "./tour-steps"
 import { WELCOME_TOURS } from "./welcome-tours"
 import { PAGE_TOURS } from "./page-tours"
 

@@ -5,20 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { notify } from '@/lib/toast';
-import { Eye, EyeOff, Mail, Lock, User, Check } from 'lucide-react';
-import { Button, Input, Label, Checkbox, Spinner } from '@/components/ui';
+import { Button, Label, Checkbox, Spinner } from '@/components/ui';
 import { useAuth } from '@/contexts/auth-context';
 import { authApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { registerSchema, passwordRequirements, type RegisterFormData } from '@/lib/validation';
-import {
-  type RegisterFormProps,
-  type ValidationErrors,
-  type InputClassFn,
-  NameFields,
-  EmailField,
-  PasswordField,
-} from './register-password-field';
+import { registerSchema, type RegisterFormData } from '@/lib/validation';
+import { type RegisterFormProps, type ValidationErrors, NameFields, EmailField, PasswordField } from './register-password-field';
 import { ConfirmPasswordField } from './confirm-password-field';
 
 export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) {

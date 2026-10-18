@@ -1,7 +1,6 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { PAGE_WIDTH } from "@/components/ui/page-width";
 
 // Leaf skeleton pieces with no dependencies of their own. They live apart from
 // dashboard-skeleton.tsx so RouteSkeleton can use the generic content shape

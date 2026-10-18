@@ -1,59 +1,12 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
-import { useMemo, useState } from "react"
-import { useTranslation } from "react-i18next"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { addDays, format, startOfWeek } from "date-fns"
-import {
-  AlertTriangle,
-  Plus,
-  CalendarClock,
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  Pencil,
-  Trash2,
-  Loader2,
-  User,
-  Users
-} from "lucide-react"
+import { Plus, CalendarDays } from "lucide-react"
 
-import { notify } from "@/lib/toast"
-import {
-  rotaApi,
-  shiftsApi,
-  employeesApi,
-  spaceMembersApi,
-  type CreateRotaInput,
-} from "@/lib/api"
-import { UserAvatar } from "@/components/user-avatar"
-import { personName, type ShiftAssignment, ShiftRecurrence } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { ConfirmTargetDialog } from "@/components/confirm-dialog"
-import { SectionHeader, EmptyState } from "./section-header"
-import { useRotaTab, cellHasConflict, WEEKDAY_KEYS } from "./use-rota-tab"
-import { RECURRENCE_BADGE, RotaDialog } from "./rota-tab-helpers"
+import { SectionHeader } from "./section-header"
+import { useRotaTab } from "./use-rota-tab"
+import { RotaDialog } from "./rota-tab-helpers"
 import { RotaTabRota } from "./rota-tab-rota"
 
 export function RotaTab({ spaceId }: { spaceId: string }) {

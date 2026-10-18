@@ -6,11 +6,7 @@ import { Calendar, Pencil, Save, X } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { useTranslation } from "react-i18next"
 
-import {
-  employeesApi,
-  type ScheduleEntry,
-  type ScheduleEntryInput,
-} from "@/lib/api"
+import { employeesApi, type ScheduleEntryInput } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"

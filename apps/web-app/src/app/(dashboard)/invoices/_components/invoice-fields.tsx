@@ -1,17 +1,12 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { Plus, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { DatePicker } from "@/components/ui/date-picker"
-import { money } from "./invoice-document"
 import { CurrencySelect } from "@/components/rates/currency-setting"
-import { CompanySelect, companyName, useCompanies } from "@/components/companies/company-select"
 import { formatDayKey } from "@/lib/day-key"
 import type { ExchangeRateState } from "../_lib/use-exchange-rate"
 export { ClientFields, type EditableLine, num, LineEditor, IssuedByField } from "./line-editor"

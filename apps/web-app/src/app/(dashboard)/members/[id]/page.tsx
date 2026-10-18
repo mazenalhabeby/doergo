@@ -1,75 +1,19 @@
 "use client"
 
-import { personName } from "@hbcfield/shared/client"
-import { use, useEffect, useState, type ReactNode } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useTranslation } from "react-i18next"
-import {
-  ArrowLeft,
-  Mail,
-  Cake,
-  MapPin,
-  Pencil,
-  Clock,
-  Timer,
-  LayoutGrid,
-  ShieldCheck,
-  ClipboardList,
-  Calendar,
-  Umbrella,
-  BarChart3,
-  Package,
-  Receipt,
-  MessageSquare,
-} from "lucide-react"
-import { useAuth } from "@/contexts/auth-context"
-import { StatementTab } from "./_components/statement-tab"
+import { ArrowLeft } from "lucide-react"
 
-import { useMemberData } from "./_lib/use-member-data"
-import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
-import { roleBadge, ROLE_COLOR_FALLBACK } from "@/lib/role-badge"
-import { useTimeFormat } from "@/hooks"
 
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
-import dynamic from "next/dynamic"
 // Worker tabs — consolidated from the retired /employees page (single member page).
 // Imported from the leaf modules, NOT the barrel: `_components/index.ts` also
 // re-exports PerformanceTab, so importing through it risks pulling recharts back
 // into this chunk and undoing the split above.
-import { TasksTab } from "./_components/tasks-tab"
-import { AttendanceTab } from "./_components/attendance-tab"
-import { LocationsTab } from "./_components/locations-tab"
-import { ScheduleTab } from "./_components/schedule-tab"
-import { HoldingsTab } from "./_components/holdings-tab"
-import {
-  type Task,
-  type ScheduleEntry,
-} from "@/lib/api"
-import { getStatusConfig } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { formatRelativeDay, formatDayMonth, dateLocale } from "@/lib/format-date"
 import { PAGE_SHELL } from "@/components/ui/page-width"
-import { useContactActions } from "@/hooks/use-contact-actions"
 import { useMemberProfilePage } from "./use-member-profile-page"
-import {
-  PerformanceTab,
-  AccessBuilder,
-  EditMemberDialog,
-  AuditTrail,
-  TimeOffTab,
-  TASKS_PAGE_SIZE,
-  DAY_KEYS,
-  MemberNotice,
-} from "./member-profile-page-helpers"
-import { MemberProfilePageDetail } from "./member-profile-page-detail"
-import { MemberProfilePageDetail2 } from "./member-profile-page-detail2"
-import { MemberProfilePagePart } from "./member-profile-page-part"
-import { MemberProfilePagePrevious } from "./member-profile-page-previous"
+import { MemberNotice } from "./member-profile-page-helpers"
 import { MemberProfilePageView } from "./member-profile-page-view"
 import { MemberProfilePageDetail3 } from "./member-profile-page-detail3"
 import { MemberProfilePageActive } from "./member-profile-page-active"

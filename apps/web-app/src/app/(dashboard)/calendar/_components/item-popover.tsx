@@ -26,12 +26,10 @@ import {
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { dateLocale } from "@/lib/format-date"
 import { calendarApi} from "@/lib/api"
 import { keys} from "@/lib/query-keys"
 import { serverErrorMessage } from "@/lib/server-error"
 import { KIND_COLOR } from "../_lib/kinds"
-import { fromKey } from "../_lib/layout"
 import { Inbox } from "lucide-react"
 import { whenText } from "./item-popover-parts"
 

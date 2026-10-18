@@ -1,17 +1,12 @@
 "use client"
 
-import { absencesOnly } from "@/lib/requests"
 import { keys } from "@/lib/query-keys"
-import { useState, useMemo, useEffect } from "react"
-import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query"
+import { useState, useMemo } from "react"
+import { useQuery, useMutation, keepPreviousData } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { notify } from "@/lib/toast"
-import { useAuth } from "@/contexts/auth-context"
-import { attendanceApi, employeesApi, type TimeEntry, type TimeEntryStatus, type BreakType } from "@/lib/api"
-import { useTranslation } from "react-i18next"
-import { personName, workedMinutes } from "@hbcfield/shared/client"
-import { useActiveSpaces } from "@/hooks/use-space-directory"
+import { attendanceApi, type TimeEntry, type BreakType } from "@/lib/api"
+import { workedMinutes } from "@hbcfield/shared/client"
 import { useAttendancePageData } from "./use-attendance-page-data"
 
 /** AttendancePage's state and handlers — everything before its markup, moved here unchanged. */

@@ -2,7 +2,7 @@
 
 import React from "react"
 import { useTranslation } from "react-i18next"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { MapPin, Timer, Navigation } from "lucide-react"
 import { personName, type GeofenceExcursion } from "@hbcfield/shared/client"
 

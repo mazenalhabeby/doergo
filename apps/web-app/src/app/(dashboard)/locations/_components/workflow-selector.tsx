@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useCallback, memo } from "react"
-import { useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Plus, ChevronDown, Check } from "lucide-react"
 

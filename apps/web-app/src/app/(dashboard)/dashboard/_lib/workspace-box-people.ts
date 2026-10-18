@@ -1,4 +1,4 @@
-import i18n from "@/i18n"
+import i18n from "i18next"
 import type { OrgMember } from "@/lib/api"
 import type { PersonNodeProps, WorkspaceBoxProps } from "@/components/dashboard"
 

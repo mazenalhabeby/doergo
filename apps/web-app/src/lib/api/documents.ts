@@ -1,5 +1,4 @@
 import { call, type ApiResponse } from "../http-client"
-import { apiError } from "../server-error"
 import type {
   BrowseLevel,
   ComplianceRow,

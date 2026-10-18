@@ -1,4 +1,4 @@
-import i18n from "@/i18n"
+import i18n from "i18next"
 import { personInitials } from "@hbcfield/shared/client"
 import type { PersonNodeProps } from "@/components/dashboard"
 

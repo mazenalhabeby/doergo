@@ -24,7 +24,7 @@ import type {
   TasksQueryParams,
   UpdateTaskInput
 } from './types/tasks';
-import { tasksEndpoints, type ClientCopyOption, type StepFormAnswers, type TaskReport, type TaskReportCopy } from '@hbcfield/shared/client';
+import { tasksEndpoints, type StepFormAnswers } from '@hbcfield/shared/client';
 import { taskWorkApi } from './tasks-work';
 import { taskPartsApi } from './tasks-parts';
 

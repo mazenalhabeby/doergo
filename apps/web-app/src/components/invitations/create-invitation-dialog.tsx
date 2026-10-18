@@ -1,45 +1,10 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
-import { useState, useCallback, useMemo } from "react"
-import dynamic from "next/dynamic"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useTranslation } from "react-i18next"
-import { Copy, Check, CheckCircle2, Mail, Link2, ChevronDown, ShieldCheck } from "lucide-react"
-import { notify } from "@/lib/toast"
+import { Copy, Check, CheckCircle2, Link2 } from "lucide-react"
 
-import { useAuth } from "@/contexts/auth-context"
-import {
-  invitationsApi,
-  organizationsApi,
-  type CreateInvitationInput,
-  type CompanyLocation,
-  type AccessRole,
-} from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { ScheduleFields, createDefaultSchedule, type EditableScheduleRow } from "@/components/schedule-fields"
-import { AccessFields } from "@/components/access-fields"
-import { defaultAccessDraft, serializeAccessDraft, getDefaultModules, permissionsFromChoice } from "@hbcfield/shared/client"
-import type { AccessDraft, PermissionChoice } from "@hbcfield/shared/client"
-import { presetChoice, withoutMissingModules } from "@/lib/permission-builder"
-import { useSpaceModules } from "@/hooks/use-space-modules"
-import { Segmented } from "@/components/ui/segmented"
-import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { copyText } from "@/lib/clipboard"
-import { useActiveSpaces } from "@/hooks/use-space-directory"
 import { useCreateInvitationDialog, type CreateInvitationDialogProps } from "./use-create-invitation-dialog"
-import { PermissionBuilder } from "./create-invitation-dialog-helpers"
 import { CreateInvitationDialogInviteDialog } from "./create-invitation-dialog-invite-dialog"
 
 export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationDialogProps) {

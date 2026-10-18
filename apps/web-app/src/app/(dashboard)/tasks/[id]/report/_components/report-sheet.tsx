@@ -1,19 +1,14 @@
 "use client"
 
-import dynamic from "next/dynamic"
-import { Fragment, type ReactNode } from "react"
-import { useTranslation } from "react-i18next"
-import { formatFileSize, personName, type TaskReport, type TaskReportFile, type TaskReportPhoto } from "@hbcfield/shared/client"
+import { Fragment } from "react"
+import { personName, type TaskReport } from "@hbcfield/shared/client"
 
 import { cn } from "@/lib/utils"
 import { formatAmount } from "@/lib/money"
-import { getPriorityConfig } from "@/lib/constants"
 import { stepFieldLabel } from "@/lib/step-forms"
 import {
-  answerText, eventDotHex, eventSentence, fileTypeBadge, formatDayHeading, formatReportDateTime,
-  formatReportDistance, formatReportMinutes, groupEventsByDay, isImageFile, pairPhotos, partsTotal,
-  routePath, safeImageUrl, sectionNumbers, signatureName, signatureRole, statusLabel,
-  workSteps, letterhead, reportPills, reportFacts, type HeadToggle, type NumberedSection, type Translate,
+  answerText, formatReportDistance, formatReportMinutes, partsTotal, routePath, safeImageUrl,
+  signatureName, signatureRole, statusLabel, workSteps, type HeadToggle, type NumberedSection,
 } from "../_lib/report-model"
 import { useReportSheet } from "./use-report-sheet"
 import { RouteMapView, Fact, Note, TimeBlock, PhotosBlock, DocumentCard } from "./report-sheet-helpers"

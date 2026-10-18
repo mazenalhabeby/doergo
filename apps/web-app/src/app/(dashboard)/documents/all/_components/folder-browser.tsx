@@ -3,20 +3,13 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
-import {
-  Folder, FolderOpen, FileText, ChevronRight, Eye, Loader2,
-  User, Calendar, Layers, Clock,
-} from "lucide-react"
+import { Folder, ChevronRight, Clock } from "lucide-react"
 import { documentsApi, type BrowseLevel, type BrowseFolder, type IssuedRow } from "@/lib/api"
-import { Button } from "@/components/ui/button"
 import { UserAvatar } from "@/components/user-avatar"
 import { useOpenDocument } from "@/hooks/use-open-document"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DocumentActionDialogs, DocumentRowMenu, SelectionBar, VisibilityChip,
-  useDocumentControl, useRowSelection, type DocumentAction,
-} from "./document-control"
+import { DocumentActionDialogs, SelectionBar, useDocumentControl, useRowSelection, type DocumentAction } from "./document-control"
 import { keys } from "@/lib/query-keys"
 import { type GroupBy, type Crumb, GROUPS, Shimmer, Empty, DocumentRow } from "./document-row"
 

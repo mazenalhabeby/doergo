@@ -1,6 +1,5 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
 
 // Color per event type — labels are translated via t("auditLog.events.<TYPE>").
 /**

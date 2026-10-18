@@ -1,8 +1,6 @@
 import { formatHoursMinutes } from "@hbcfield/shared/client"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
-import type { IssuerSnapshot, SupportedLocale } from "@hbcfield/shared/client"
-import { invoiceStamp } from "./invoice-status"
 import { PDF_PALETTE, PDF_TABLE_THEME, loadLogo } from "./pdf-common"
 import { dayKeyOf, fileNamePart, pdfFileName, periodPart } from "./pdf-filename"
 import {

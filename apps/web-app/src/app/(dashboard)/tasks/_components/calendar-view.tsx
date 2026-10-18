@@ -1,19 +1,13 @@
 "use client"
 
-import { personName } from "@hbcfield/shared/client"
-import React, { useMemo, useState, useCallback } from "react"
-import { useTranslation } from "react-i18next"
+import React from "react"
 import ReactDOM from "react-dom"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { startOfDay, diffDays, isSameDay, isWeekend } from "@/lib/local-days"
-import type { StatusConfig } from "@/lib/constants"
-import { useStepConfigs } from "@/hooks/use-step-config"
-import type { Task } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { dateLocale } from "@/lib/format-date"
-import { useCalendarView, type MultiDayBar, isSameMonth, type CalendarViewProps } from "./use-calendar-view"
+import { useCalendarView, isSameMonth, type CalendarViewProps } from "./use-calendar-view"
 import { APPLE_EASE, WEEKDAYS, PillTooltip, CalendarCell } from "./calendar-view-helpers"
 
 // ─── Component ──────────────────────────────────────────────────────────────

@@ -1,20 +1,10 @@
 "use client";
 
-import { keys } from "@/lib/query-keys";
-import { useMemo, useCallback, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/auth-context";
-import { locationsApi } from "@/lib/api";
-import { isAssignedTo } from "@/lib/task-assignment";
-import { notify } from "@/lib/toast";
+import { useMemo } from "react";
 import { type WorkspaceBoxProps, type LiveEvent, type PendingAction } from "@/components/dashboard";
-import { useTour } from "@/components/tour";
 import { getGreeting } from "./helpers";
 import { buildRecentActivity, buildPendingActions } from "./dashboard-activity";
 import { buildWorkspaceBoxes } from "../_lib/build-workspace-boxes";
-import { useDashboardData } from "../_lib/use-dashboard-data";
 import { useClientDashboardData } from "./use-client-dashboard-data";
 
 /** ClientDashboard's state and handlers — everything before its markup, moved here unchanged. */

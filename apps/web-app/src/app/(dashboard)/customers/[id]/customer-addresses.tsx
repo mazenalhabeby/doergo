@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { MapPin, Plus, Star, Trash2, Pencil, ChevronDown, ChevronUp, Home, User, Phone } from "lucide-react"
 
-import { customersApi, spacePortalApi, portalAdminApi, type CustomerAddress, type SpaceUnit } from "@/lib/api"
+import { customersApi, spacePortalApi, portalAdminApi, type CustomerAddress } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"

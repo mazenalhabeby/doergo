@@ -1,34 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, UserPlus, Eye, EyeOff, Copy, Check } from "lucide-react"
-import { notify } from "@/lib/toast"
+import { ArrowLeft, Copy, Check } from "lucide-react"
 
-import { useTranslation } from "react-i18next"
-import { useAuth } from "@/contexts/auth-context"
-import {
-  employeesApi,
-  type CreateEmployeeInput,
-
-} from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { ConfirmDialog } from "@/components/confirm-dialog"
-import { copyText } from "@/lib/clipboard"
-import { keys } from "@/lib/query-keys"
 import { useNewTechnicianPage } from "./use-new-technician-page"
-import { SPECIALTY_OPTIONS } from "./new-technician-page-helpers"
 import { NewTechnicianPageCreate } from "./new-technician-page-create"
 
 export default function NewTechnicianPage() {

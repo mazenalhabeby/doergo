@@ -1,27 +1,18 @@
 "use client"
 
-import { useState } from "react"
-import { useTranslation } from "react-i18next"
-import { useMutation } from "@tanstack/react-query"
-import { ArrowDownLeft, ArrowUpRight, ListPlus, Loader2, MapPin, Plus, Table2, Trash2, User, Wallet } from "lucide-react"
+import { ListPlus, Loader2, MapPin, Plus, Trash2 } from "lucide-react"
 
-import { assetsApi, type AssetCategory } from "@/lib/api"
-import {
-  normalizeKindShape, KIND_SHAPE_LIMITS, KIND_TEMPLATES, keyColumn, linkTargets,
-  type KindShape, type MoneyDirection, type KindColumn, type KindColumnType,
-} from "@hbcfield/shared/client"
-import { notify } from "@/lib/toast"
+import { type AssetCategory } from "@/lib/api"
+import { normalizeKindShape, KIND_SHAPE_LIMITS, KIND_TEMPLATES } from "@hbcfield/shared/client"
 import { LogTypesEditor } from "./log-types-editor"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog"
 import { useAssetKindDialog } from "./use-asset-kind-dialog"
-import { Row, Pick, DirBtn, OwnerBtn } from "./asset-kind-dialog-helpers"
+import { Row } from "./asset-kind-dialog-helpers"
 import { AssetKindDialogLists } from "./asset-kind-dialog-lists"
 import { AssetKindDialogHasHolder } from "./asset-kind-dialog-has-holder"
 import { AssetKindDialogMoney } from "./asset-kind-dialog-money"

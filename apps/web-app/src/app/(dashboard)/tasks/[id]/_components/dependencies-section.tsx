@@ -4,37 +4,16 @@ import { keys } from "@/lib/query-keys"
 import { useState, memo, useMemo } from "react"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  Plus,
-  X,
-  Search,
-  ArrowRight,
-  ArrowLeft,
-  Loader2,
-} from "lucide-react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { Plus, X, ArrowRight, ArrowLeft } from "lucide-react"
 
-import { tasksApi, type Task, type TaskDependency, type WorkflowStatus } from "@/lib/api"
+import { tasksApi, type TaskDependency, type WorkflowStatus } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Dialog } from "@/components/ui/dialog"
 import { notify } from "@/lib/toast"
-import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { stepConfig, useRelatedStepConfigs } from "@/hooks/use-step-config"
+import { stepConfig } from "@/hooks/use-step-config"
 import { useAddDependencyDialog } from "./use-add-dependency-dialog"
-import { DEP_TYPE_LABELS, DEP_TYPE_KEYS } from "./add-dependency-dialog-helpers"
+import { DEP_TYPE_LABELS } from "./add-dependency-dialog-helpers"
 import { AddDependencyDialogDependencies } from "./add-dependency-dialog-dependencies"
 
 // ---------------------------------------------------------------------------

@@ -1,43 +1,12 @@
 "use client"
 
-import { personName } from "@hbcfield/shared/client"
-import { useState, useEffect, useCallback, useRef } from "react"
-import type { TaskEventPayload } from "@/types/socket-events"
-import {
-  Bell,
-  UserPlus,
-  ClipboardList,
-  MessageSquare,
-  CheckCircle,
-  Clock,
-  MapPin,
-  Coffee,
-  Paperclip,
-  XCircle,
-  Send,
-  ClipboardCheck,
-  PenLine,
-  CalendarDays,
-  Receipt,
-  Package,
-} from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useTranslation } from "react-i18next"
+import { Bell } from "lucide-react"
 import { formatTimeAgo } from "@/lib/format-date"
-import { isSameAppPath } from "@/lib/safe-links"
-import type { TFunction } from "i18next"
-import { useQuery } from "@tanstack/react-query"
 
-import { usersApi, type InboxNotification } from "@/lib/api"
-import { useAuth } from "@/contexts/auth-context"
-import { useSocketContext } from "@/contexts/socket-context"
-import { useChat } from "@/components/chat/chat-context"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
-import { keys } from "@/lib/query-keys"
-import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
-import { useNotificationBell, type NotificationType } from "./use-notification-bell"
+import { useNotificationBell } from "./use-notification-bell"
 import { TYPE_CONFIG } from "./notification-bell-helpers"
 import { EmptyNote } from "@/components/ui/empty-note"
 

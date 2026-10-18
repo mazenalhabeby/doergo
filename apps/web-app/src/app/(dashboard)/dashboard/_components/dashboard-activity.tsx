@@ -1,5 +1,5 @@
 import React from "react"
-import i18n from "@/i18n"
+import i18n from "i18next"
 import type { Task, OrgMember } from "@/lib/api"
 import type { TimeEntry } from "@hbcfield/shared"
 import { flagsForReview, personInitials } from "@hbcfield/shared/client"

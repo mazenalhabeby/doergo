@@ -1,19 +1,14 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
-import { useTranslation } from "react-i18next"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Upload, Loader2, FileText, AlertTriangle, ShieldCheck, CalendarDays, Pencil } from "lucide-react"
-import { documentTitleFromText, expiryPrompt, expiryReady, formatCalendarDate, suggestExpiry } from "@hbcfield/shared/client"
-import { documentsApi, uploadToS3, type DocumentTypeRow } from "@/lib/api"
+import { formatCalendarDate } from "@hbcfield/shared/client"
+import { type DocumentTypeRow } from "@/lib/api"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
-import { keys } from "@/lib/query-keys"
 import { useSupplyDocumentDialog } from "./use-supply-document-dialog"
 import { ACCEPT } from "./supply-document-dialog-helpers"
 

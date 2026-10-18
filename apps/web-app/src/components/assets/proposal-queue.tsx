@@ -3,7 +3,7 @@
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import {
   Check,
   ChevronDown,
@@ -14,14 +14,9 @@ import {
   X,
 } from "lucide-react"
 
-import {
-  assetsApi,
-  type AssetCategory, type AssetProposal, type ContractFields, type ContractPreview,
-} from "@/lib/api"
-import { personInitials, personName, normalizeKindShape, canManageAssetsIn } from "@hbcfield/shared/client"
-import { useAuth } from "@/contexts/auth-context"
-import { notify } from "@/lib/toast"
-import { ContractFieldInput, StepIcon } from "./contract-parts"
+import { assetsApi, type AssetCategory, type AssetProposal } from "@/lib/api"
+import { personName } from "@hbcfield/shared/client"
+import { StepIcon } from "./contract-parts"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,7 +25,6 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog"
 import { keys } from "@/lib/query-keys"
-import { dateLocale } from "@/lib/format-date"
 import { ProposalRow, Field } from "./proposal-queue-shared"
 import { useReviewDialog } from "./use-review-dialog"
 

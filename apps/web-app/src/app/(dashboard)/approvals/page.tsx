@@ -1,35 +1,15 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { useTranslation } from "react-i18next"
-import { useMutation, useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query"
-import dynamic from "next/dynamic"
 import { AlertTriangle, ChevronLeft, Inbox, RefreshCw, ScrollText, UserRoundCheck } from "lucide-react"
-import {
-  APPROVAL_GROUPS,
-  APPROVAL_KINDS,
-  type ApprovalDecision,
-  type ApprovalItem,
-  type ApprovalKind,
-  type ApprovalsResponse,
-  type ApprovalT,
-  describeApproval,
-} from "@hbcfield/shared/client"
+import { APPROVAL_GROUPS, APPROVAL_KINDS, type ApprovalT, describeApproval } from "@hbcfield/shared/client"
 
-import { approvalsApi } from "@/lib/api"
-import { keys, invalidateTimeOff } from "@/lib/query-keys"
-import { notify } from "@/lib/toast"
 import { dateLocale, formatTimeAgo } from "@/lib/format-date"
 import { cn } from "@/lib/utils"
-import { useAuth } from "@/contexts/auth-context"
-import { useRouteAccess } from "@/hooks/use-route-access"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PAGE_SHELL } from "@/components/ui/page-width"
 import { ListTableError } from "@/components/list-page"
-import { UserAvatar } from "@/components/user-avatar"
 import { DecisionPanel } from "./_components/decision-panel"
-import { nameParts } from "./_components/name-parts"
 import { useApprovalsPage, itemKey } from "./use-approvals-page"
 import { RulesDialog, StandInDialog, RailItem, Row } from "./approvals-page-helpers"
 

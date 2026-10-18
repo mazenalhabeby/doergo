@@ -1,8 +1,5 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
-import { useState, useCallback, useRef } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Upload,
   Trash2,
@@ -10,10 +7,8 @@ import {
   Download,
   Loader2,
 } from "lucide-react"
-import { toast } from "sonner"
-import { useTranslation } from "react-i18next"
 import { formatFileSize } from "@hbcfield/shared/client"
-import { taskAttachmentsApi, uploadToS3, type Attachment } from "@/lib/api"
+import { type Attachment } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { useAttachmentsSection, ALLOWED_TYPES } from "./use-attachments-section"

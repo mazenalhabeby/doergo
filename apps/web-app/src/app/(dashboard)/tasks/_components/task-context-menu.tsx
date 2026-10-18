@@ -1,9 +1,6 @@
 "use client"
 
-import { flowIdOf, stepConfig } from "@/hooks/use-step-config"
 import React from "react"
-import { useTranslation } from "react-i18next"
-import { useRouter } from "next/navigation"
 import {
   ExternalLink,
   Trash2,
@@ -11,7 +8,6 @@ import {
   Archive,
   MapPin,
 } from "lucide-react"
-import { UserAvatar } from "@/components/user-avatar"
 import {
   ContextMenu,
   ContextMenuContent,
@@ -22,12 +18,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
-import { useAuth } from "@/contexts/auth-context"
-import { useSpaceModules } from "@/hooks/use-space-modules"
-import { useWorkflow } from "@/hooks/use-org-workflow"
-import { personName, mayChangeStatus, isFinishedStatus, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
-import { getStatusConfig, getPriorityConfig, TASK_STATUSES, TASK_PRIORITIES } from "@/lib/constants"
-import type { Task, Sprint, Phase, Epic } from "@/lib/api"
+import { getPriorityConfig, TASK_PRIORITIES } from "@/lib/constants"
 import { STORY_POINT_OPTIONS } from "@/lib/api"
 import { useTaskContextMenuInner, type TaskContextMenuProps } from "./use-task-context-menu-inner"
 import { TaskContextMenuInnerMenu } from "./task-context-menu-inner-menu"

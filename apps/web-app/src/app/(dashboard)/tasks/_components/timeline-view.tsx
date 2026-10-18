@@ -1,26 +1,10 @@
 "use client"
 
-import React, { useMemo, useRef, useEffect, useState, useCallback } from "react"
-import { personName, isTaskOverdue } from "@hbcfield/shared/client"
+import React from "react"
 import ReactDOM from "react-dom"
-import { useTranslation } from "react-i18next"
-import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { startOfDay, addDays, diffDays, isSameDay, isWeekend } from "@/lib/local-days"
-import { TaskPersonAvatar } from "./task-avatars"
-import type { StatusConfig } from "@/lib/constants"
-import { useStepConfigs } from "@/hooks/use-step-config"
-import type { Task, Phase } from "@/lib/api"
-import { dateLocale } from "@/lib/format-date"
 import { useTimelineView, type TimeScale, ROW_HEIGHT, type TimelineViewProps } from "./use-timeline-view"
-import {
-  APPLE_EASE,
-  formatHeaderDate,
-  HEADER_HEIGHT,
-  LEFT_PANEL_WIDTH,
-  TaskTooltip,
-  TaskRow,
-} from "./timeline-view-helpers"
+import { APPLE_EASE, HEADER_HEIGHT, LEFT_PANEL_WIDTH, TaskTooltip, TaskRow } from "./timeline-view-helpers"
 import { TimelineViewToday } from "./timeline-view-today"
 
 // ─── Component ──────────────────────────────────────────────────────────────

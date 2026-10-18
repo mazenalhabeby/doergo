@@ -1,16 +1,10 @@
 "use client"
 
-import { formatDuration, personName } from "@hbcfield/shared/client"
-import { useMemo, useState } from "react"
-import { BreakFields, type BreakKind } from "@/components/attendance/break-fields"
-import { useTranslation } from "react-i18next"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Pencil, Loader2, Trash2, Coffee, UtensilsCrossed, Pause, Plus } from "lucide-react"
+import { personName } from "@hbcfield/shared/client"
+import { Pencil, Loader2, Trash2 } from "lucide-react"
 
-import { attendanceApi, type TimeEntry } from "@/lib/api"
-import { notify } from "@/lib/toast"
-import { cn, utcToZonedInput, zonedInputToUtc } from "@/lib/utils"
-import { useAuth } from "@/contexts/auth-context"
+import { type TimeEntry } from "@/lib/api"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -26,7 +20,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { keys } from "@/lib/query-keys"
 import { useEditEntryDialog } from "./use-edit-entry-dialog"
 import { REASON_PRESETS } from "./edit-entry-dialog-helpers"
 import { EditEntryDialogAddBreak } from "./edit-entry-dialog-add-break"

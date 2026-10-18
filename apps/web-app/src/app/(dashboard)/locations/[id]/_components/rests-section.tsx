@@ -4,24 +4,17 @@ import { formatDuration } from "@hbcfield/shared/client"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Coffee, Pencil, Trash2, Loader2, BellRing, BellOff } from "lucide-react"
+import { Plus, Coffee, Pencil, Trash2, BellRing, BellOff } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { attendanceApi, type BreakRuleRow } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Switch } from "@/components/ui/switch"
-import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog"
-import { cn } from "@/lib/utils"
+import { Dialog } from "@/components/ui/dialog"
 import { SectionHeader, EmptyState } from "./section-header"
 import { keys } from "@/lib/query-keys"
 import { useRestDialog } from "./use-rest-dialog"
-import { ToggleRow } from "./rest-dialog-helpers"
 import { RestDialogRests } from "./rest-dialog-rests"
 
 /**

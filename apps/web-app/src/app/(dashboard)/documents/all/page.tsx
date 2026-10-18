@@ -1,43 +1,13 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { useTranslation } from "react-i18next"
-import { useQuery } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
-import {
-  ArrowLeft,
-  Search,
-  Loader2,
-  Eye,
-  PenLine,
-  MailOpen,
-  CheckCircle2,
-  FileText,
-  Inbox,
-  FolderTree,
-  ListChecks,
-} from "lucide-react"
-import { documentsApi, type IssuedRegister, type IssuedRow, type DocumentChain } from "@/lib/api"
+import { ArrowLeft, Search, FolderTree, ListChecks } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { UserAvatar } from "@/components/user-avatar"
-import { useOpenDocument } from "@/hooks/use-open-document"
 import { cn } from "@/lib/utils"
 import { FolderBrowser } from "./_components/folder-browser"
-import {
-  DocumentActionDialogs,
-  DocumentRowMenu,
-  SelectionBar,
-  VisibilityChip,
-  useDocumentControl,
-  useRowSelection,
-  type DocumentAction,
-} from "./_components/document-control"
-import { Checkbox } from "@/components/ui/checkbox"
-import { keys } from "@/lib/query-keys"
-import { useSentDocumentsPage, type Tab } from "./use-sent-documents-page"
-import { TABS, Shimmer, periodLabel, ChainLine, StateChip } from "./sent-documents-page-helpers"
+import { DocumentActionDialogs } from "./_components/document-control"
+import { useSentDocumentsPage } from "./use-sent-documents-page"
+import { TABS } from "./sent-documents-page-helpers"
 import { SentDocumentsPageControl } from "./sent-documents-page-control"
 import { ListPager } from "@/components/ui/list-pager"
 

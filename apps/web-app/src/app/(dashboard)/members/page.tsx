@@ -1,34 +1,7 @@
 "use client"
 
-import { keys, membersPageParams } from "@/lib/query-keys"
-import { useSpaceDirectory } from "@/hooks/use-space-directory"
-import { useState, useMemo, useEffect } from "react"
-import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import Link from "next/link"
-import dynamic from "next/dynamic"
-import { useRouter } from "next/navigation"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { Search, UserPlus, Smartphone, Shield } from "lucide-react"
-import { useTranslation } from "react-i18next"
-import { useBillingLock } from "@/hooks/use-billing-lock"
+import { keys } from "@/lib/query-keys"
 
-import { useAuth } from "@/contexts/auth-context"
-import {
-  organizationsApi,
-  type AccessRole,
-  invitationsApi,
-  locationsApi,
-  type OrgMember,
-} from "@/lib/api"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -36,12 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { PAGE_SHELL } from "@/components/ui/page-width";
 import { MemberBulkActionBar } from "./_components/member-bulk-action-bar"
-import { MembersTable } from "./_components/members-table"
-import { PendingInvitations } from "./_components/pending-invitations"
 import { MemberConfirmDialogs } from "./_components/member-confirm-dialogs"
-import { useMemberActions } from "./_lib/use-member-actions"
 import { useMembersPage } from "./use-members-page";
 import {
   CreateInvitationDialog,

@@ -1,27 +1,13 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { useTranslation } from "react-i18next"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useAuth } from "@/contexts/auth-context"
+import { useMemo } from "react"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import { calendarApi, employeesApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
-import { hasAccessModule, localDateKey, type LeaveType } from "@hbcfield/shared/client"
-import type { TimeOffRequest } from "@hbcfield/shared"
+import { type LeaveType } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
-import { formatDayMonth } from "@/lib/format-date"
 import { serverErrorMessage } from "@/lib/server-error"
-import { useRequestOptions } from "@/hooks/use-request-options"
-import {
-  LEAVE_TYPE_REASON_KEY,
-  absencesOnly,
-  draftToRequest,
-  isAbsence,
-  isOneDayKind,
-  type RequestKind,
-} from "@/lib/requests"
-import { type RequestFieldsValue } from "@/components/requests/request-fields"
-import { balanceView, leaveYearLabel } from "@/lib/leave-ledger"
+import { LEAVE_TYPE_REASON_KEY, draftToRequest, isOneDayKind, type RequestKind } from "@/lib/requests"
 import { useMyTimeOffPageData, EMPTY_FIELDS, type ReasonKey, dayDiff, addDays, toISO } from "./use-my-time-off-page-data"
 export {
   EMPTY_FIELDS,

@@ -1,23 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { useTranslation } from "react-i18next"
 import { Loader2, PenLine, ArrowRight } from "lucide-react"
 
-import { useAuth } from "@/contexts/auth-context"
-import { locationsApi } from "@/lib/api"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  AREAS,
-  INDUSTRY_CARDS,
-  classifyWork,
-  planFromIndustry,
-  toolsFromModules,
-  type WorkPlan,
-} from "@/lib/setup"
-import { buildOrg, type BuildStep } from "@/lib/setup/build"
+import { INDUSTRY_CARDS } from "@/lib/setup"
 import { WizardShell } from "./wizard-shell"
 import { ChoiceCard } from "./choice-card"
 import { WizardIcon } from "./wizard-icons"

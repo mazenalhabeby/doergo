@@ -1,12 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { notify } from '@/lib/toast';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import { Button, Input, Label, Spinner } from '@/components/ui';
+import { Button, Spinner } from '@/components/ui';
 import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 import { loginSchema } from '@/lib/validation';

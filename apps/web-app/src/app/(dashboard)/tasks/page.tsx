@@ -3,49 +3,14 @@
 import { OfficeStartDialog } from "@/components/office-start-dialog"
 import { ClockGateDialog } from "@/components/clock-gate-dialog"
 
-import { useState, useMemo, useRef } from "react"
-import dynamic from "next/dynamic"
-import { useQueryClient } from "@tanstack/react-query"
 
-import { keys } from "@/lib/query-keys"
 
-import { useAuth } from "@/contexts/auth-context"
-import { useBillingLock } from "@/hooks/use-billing-lock"
-import type { Task } from "@/lib/api"
-import { useSpaceModules } from "@/hooks/use-space-modules"
-import { TasksViewSkeleton } from "./_components/tasks-skeleton"
-import { SpaceTabs } from "@/components/space-tabs"
 
-import { RoleJobsSummary } from "./_components/role-jobs-summary"
 import { BulkActionBar } from "./_components/bulk-action-bar"
-import { BacklogToolbar, sortBacklogTasks } from "./_components/backlog-toolbar"
-import { SprintCapacityBar } from "./_components/sprint-capacity"
-import { TasksPageHeader } from "./_components/tasks-page-header"
-import { MineScopeToggle } from "./_components/mine-scope-toggle"
-import { GroupByTabs } from "./_components/group-by-tabs"
-import { TasksErrorState, TasksEmptyState } from "./_components/tasks-states"
-import { TaskListView } from "./_components/task-list-view"
-import { TaskBoardView } from "./_components/task-board-view"
-import { TaskScheduleView } from "./_components/task-schedule-view"
-import { TasksPagination } from "./_components/tasks-pagination"
 import { TaskPlanningDialogs } from "./_components/task-planning-dialogs"
 import { TaskAssignDialog } from "./_components/task-assign-dialog"
-import { useTaskFilters } from "./_hooks/use-task-filters"
-import { useTaskStatusTabs, useBoardWorkflow } from "./_hooks/use-task-workflow"
-import { useTaskListData } from "./_hooks/use-task-list-data"
-import { useSprintPlanning } from "./_hooks/use-sprint-planning"
-import { useTaskAssign } from "./_hooks/use-task-assign"
-import { useTaskStatusChange } from "./_hooks/use-task-status-change"
-import { useTaskRowActions } from "./_hooks/use-task-row-actions"
-import { useTaskSelection } from "./_hooks/use-task-selection"
-import { useTaskBulkActions } from "./_hooks/use-task-bulk-actions"
-import { useTaskCommands } from "./_hooks/use-task-commands"
-import { useGroupByOptions } from "./_hooks/use-group-by-options"
-import { PRIORITY_ORDER, type TaskViewContext } from "./_lib/task-list"
-import { hasAccessModule } from "@hbcfield/shared/client"
-import { PAGE_SHELL } from "@/components/ui/page-width";
 import { useTasksPage } from "./use-tasks-page";
-import { RecurringPanel, CreateTaskDialog } from "./tasks-page-helpers";
+import { CreateTaskDialog } from "./tasks-page-helpers";
 import { TasksPagePart } from "./tasks-page-part";
 
 // ─── Main Page ───────────────────────────────────────────────────────────────

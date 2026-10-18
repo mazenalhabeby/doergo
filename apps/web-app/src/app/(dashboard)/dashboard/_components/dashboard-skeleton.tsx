@@ -1,10 +1,8 @@
 "use client"
 
-import { getSpaceScope } from "@hbcfield/shared/client"
 
-import { WORKSPACE_CARD, workspaceCardCols } from "@/components/dashboard"
+import { WORKSPACE_CARD } from "@/components/dashboard"
 import { Shimmer as S } from "@/components/skeletons/primitives"
-import { cn } from "@/lib/utils"
 import { PAGE_SHELL } from "@/components/ui/page-width";
 import {
   CARD_SHAPE,

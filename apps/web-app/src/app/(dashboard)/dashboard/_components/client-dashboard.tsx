@@ -1,41 +1,14 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
-import { useMemo, useCallback, useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useTranslation } from "react-i18next"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Plus } from "lucide-react"
 
 import { canManageSpace } from "@hbcfield/shared/client"
-import { useAuth } from "@/contexts/auth-context"
-import {
-  locationsApi,
-  type Task,
-} from "@/lib/api"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
 import { isAssignedTo } from "@/lib/task-assignment"
-import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
-import {
-  WorkspaceGrid,
-  ActivityPanel,
-  RecentTasks,
-  ManagementContacts,
-  type RecentTask,
-  type WorkspaceBoxProps,
-  type LiveEvent,
-  type PendingAction,
-} from "@/components/dashboard"
+import { WorkspaceGrid, ActivityPanel, RecentTasks, ManagementContacts } from "@/components/dashboard"
 import { ActivityPanelToggle } from "@/components/activity-panel-toggle"
-import { useTour } from "@/components/tour"
-import {
-  getGreeting,
-} from "./helpers"
-import { buildRecentActivity, buildPendingActions } from "./dashboard-activity"
-import { buildWorkspaceBoxes } from "../_lib/build-workspace-boxes"
-import { useDashboardData } from "../_lib/use-dashboard-data"
 import { EmptyWorkspace } from "./empty-workspace"
 import { DashboardPageSkeleton, dashboardVariant } from "./dashboard-skeleton"
 import { DocumentsReminderBanner } from "@/components/documents-reminder-banner"

@@ -1,28 +1,15 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
-import { useState } from "react"
-import dynamic from "next/dynamic"
-import { useTranslation } from "react-i18next"
-import { useQuery, useMutation } from "@tanstack/react-query"
-import { Building2, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react"
+import { Building2 } from "lucide-react"
 
-import { assetsApi, type AssetCategory } from "@/lib/api"
-import { HolderPicker, decodeHolders, encodeHolderList, type HolderKey } from "./holder-picker"
-import { fieldsDroppedByMove } from "@hbcfield/shared/client"
-import {
-  normalizeKindShape, detailRowsForKind, kindHolderLabel, kindNameLabel, type DetailRow,
-  ASSET_RECORD_LIMITS, assetDateProblems, type AssetStatusKey,
-} from "@hbcfield/shared/client"
-import { notify } from "@/lib/toast"
-import { cn } from "@/lib/utils"
+import { type AssetCategory } from "@/lib/api"
+import { HolderPicker } from "./holder-picker"
+import { kindNameLabel } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { AssetStatusPicker, asStatus } from "./asset-status"
+import { AssetStatusPicker } from "./asset-status"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
-import { useActiveSpaces } from "@/hooks/use-space-directory"
 import { useAssetRecordDialog, type AssetRecord } from "./use-asset-record-dialog"
 import { LocationPicker } from "./asset-record-dialog-helpers"
 import { AssetRecordDialogFields } from "./asset-record-dialog-fields"

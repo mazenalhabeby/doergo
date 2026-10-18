@@ -1,15 +1,16 @@
-import jsPDF from "jspdf"
-import { loadLogo } from "./pdf-common"
-import { dateLocale } from "./format-date"
-import { todayKey } from "@hbcfield/shared/client"
-import autoTable from "jspdf-autotable"
 import type { ReportResult } from "@/lib/api"
 import {
-  DEFAULT_CUSTOM_PDF, PDF_TEMPLATES, CUSTOM_PDF_TEMPLATE, formatReportCell,
-  type ReportBranding, type PdfTemplate, type PaperSize, type HeaderStyle, type Density,
-  type CustomPdfOptions, type PdfTemplateMeta,
+  DEFAULT_CUSTOM_PDF,
+  PDF_TEMPLATES,
+  CUSTOM_PDF_TEMPLATE,
+  type ReportBranding,
+  type PdfTemplate,
+  type PaperSize,
+  type HeaderStyle,
+  type Density,
+  type CustomPdfOptions,
+  type PdfTemplateMeta
 } from "./report-pdf-options"
-import { INK, MUTED, presetFor, fmt, summarize, addressLines } from "./report-pdf-config"
 import { type ReportPdfMeta, buildDoc } from "./report-pdf-doc"
 export { type ReportPdfMeta } from "./report-pdf-doc"
 

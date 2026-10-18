@@ -1,14 +1,13 @@
 "use client"
 
-import { useId, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Building2, MoreHorizontal, Pencil, Plus, Power, Star, Trash2 } from "lucide-react"
-import { invoiceNumberPrefix, issuerAddressLines, MAX_BANK_ACCOUNTS } from "@hbcfield/shared/client"
+import { Building2, Plus, Trash2 } from "lucide-react"
+import { invoiceNumberPrefix, MAX_BANK_ACCOUNTS } from "@hbcfield/shared/client"
 
 import { legalEntitiesApi, type LegalEntity, type LegalEntityBankAccount, type LegalEntityInput } from "@/lib/api"
 import { notify } from "@/lib/toast"
-import { keys } from "@/lib/query-keys"
 import { serverErrorMessage } from "@/lib/server-error"
 import { getCountries } from "@/lib/countries"
 import { cn } from "@/lib/utils"
@@ -17,15 +16,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Combobox } from "@/components/ui/combobox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { CurrencySelect } from "@/components/rates/currency-setting"
-import { COMPANIES_QUERY_KEY, CountryChip } from "@/components/companies/company-select"
+import { COMPANIES_QUERY_KEY } from "@/components/companies/company-select"
 import { SettingCard } from "./setting-card"
 import { ALL_KEY, CompanyCard, type Form, EMPTY_BANK, formOf, BankInput } from "./company-card"
 

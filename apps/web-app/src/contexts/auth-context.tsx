@@ -8,7 +8,6 @@ import {
   getAccessToken, restoreSession, refreshAccessToken, onSessionEvent, decodeJwtPayload, tokenExpiresWithin,
 } from '@/lib/auth-session';
 import { hasFeatureModule, orgHasAddOn, isAddOn, isAdmin, accessAllowsAnywhere } from '@hbcfield/shared/client';
-import { BootScreen } from '@/components/skeletons/boot-screen';
 import {
   type User, type TokenInfo, EMPTY_TOKEN_INFO, sessionUserFrom, loginPathFor, type AuthContextType, AuthContext, type AuthProviderProps,
 } from './auth-user';

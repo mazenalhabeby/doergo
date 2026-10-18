@@ -1,15 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { EyeOff, Eye, MoreHorizontal, RefreshCw, Trash2, Loader2, Upload, Check } from "lucide-react"
-import { documentsApi, uploadToS3, type IssuedRow } from "@/lib/api"
-import { useAuth } from "@/contexts/auth-context"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { Loader2, Check } from "lucide-react"
+import { documentsApi, type IssuedRow } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -18,17 +15,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { keys } from "@/lib/query-keys"
-import { type DocumentAction, useDocumentControl, useRefreshDocuments } from "./document-row-menu"
+import { type DocumentAction, useRefreshDocuments } from "./document-row-menu"
 import { DeleteDialog, ReplaceDialog } from "./delete-dialog"
 import { ChoiceChip } from "@/components/ui/choice-chip"
 export { useRowSelection } from "./delete-dialog"

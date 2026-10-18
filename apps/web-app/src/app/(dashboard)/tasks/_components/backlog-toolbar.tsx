@@ -1,17 +1,7 @@
 "use client"
 
 import React, { useMemo } from "react"
-import {
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  ChevronDown,
-  Hash,
-  AlertTriangle,
-  Calendar,
-  Type,
-  MoveRight,
-} from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, MoveRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -21,7 +11,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useTranslation } from "react-i18next"
 import { getPriorityConfig } from "@/lib/constants"
-import type { Task, Sprint } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { type BacklogToolbarProps, FIBONACCI, SORT_OPTIONS, PRIORITY_KEYS } from "./backlog-sort-field"
 export { type BacklogSortField, type BacklogSortDir, sortBacklogTasks } from "./backlog-sort-field"

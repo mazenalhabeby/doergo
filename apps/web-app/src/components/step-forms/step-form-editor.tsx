@@ -1,50 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import { useTranslation } from "react-i18next"
-import {
-  AlignLeft,
-  ArrowDown,
-  ArrowUp,
-  Calendar,
-  CircleDot,
-  GripVertical,
-  Hash,
-  Image as ImageIcon,
-  PenLine,
-  Plus,
-  ToggleLeft,
-  Type,
-  X,
-  AlertCircle,
-  FileText,
-  type LucideIcon,
-} from "lucide-react"
-import {
-  STEP_FORM_FIELD_TYPES,
-  STEP_FORM_LIMITS,
-  STEP_FORM_PRESET_IDS,
-  type StepFormField,
-  type StepFormFieldType,
-  type StepFormPresetId,
-} from "@hbcfield/shared/client"
+import { FileText } from "lucide-react"
 
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
-import {
-  askNothingDraft,
-  crmLinkFor,
-  crmLinkFree,
-  definitionErrors,
-  moveField,
-  newField,
-  presetDraft,
-  stepFieldLabel,
-  type DefinitionErrors,
-  type StepFormDraft,
-} from "@/lib/step-forms"
+import { askNothingDraft, presetDraft } from "@/lib/step-forms"
 import { useStepFormEditor, type StepFormEditorProps } from "./use-step-form-editor"
-import { FIELD_TYPE_ICON, PRESET_NAME, OptionsEditor, StepFormPreview } from "./step-form-editor-helpers"
+import { StepFormPreview } from "./step-form-editor-helpers"
 import { StepFormEditorStartFrom } from "./step-form-editor-start-from"
 
 /**

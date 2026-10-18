@@ -1,12 +1,9 @@
 "use client"
 
-import React, { useMemo, useRef, useState, useCallback, useEffect } from "react"
-import { useTranslation } from "react-i18next"
+import React from "react"
 import { Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { startOfDay, addDays, diffDays } from "@/lib/local-days"
-import type { Task, Epic } from "@/lib/api"
-import { formatDayMonth, formatMonthYear } from "@/lib/format-date"
+import { formatDayMonth } from "@/lib/format-date"
 import { useEpicRoadmap, DAY_WIDTH, type EpicRoadmapProps } from "./use-epic-roadmap"
 import { ROW_HEIGHT, HEADER_HEIGHT, LEFT_PANEL_WIDTH } from "./epic-roadmap-helpers"
 

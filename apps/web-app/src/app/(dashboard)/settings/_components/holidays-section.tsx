@@ -1,34 +1,20 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
-import type { ResolvedHoliday } from "@hbcfield/shared/client"
-import { Building, CalendarDays, CalendarPlus, Check, CornerDownRight, Globe2, Link2, Pencil, RotateCcw, Trash2 } from "lucide-react"
-import { calendarApi, type CalendarSettings } from "@/lib/api"
+import { Building, CornerDownRight, Globe2, Link2, Pencil } from "lucide-react"
+import { calendarApi } from "@/lib/api"
 import { serverErrorMessage } from "@/lib/server-error"
-import { dateLocale } from "@/lib/format-date"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Combobox } from "@/components/ui/combobox"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { SettingCard } from "./setting-card"
 import { keys } from "@/lib/query-keys"
-import {
-  WEEK,
-  dayName,
-  useLang,
-  WeekendPicker,
-  PlacePicker,
-  type Ws,
-  WorkspaceDialog,
-  type Row,
-} from "./workspace-dialog"
+import { WEEK, dayName, useLang, WeekendPicker, PlacePicker, type Ws, WorkspaceDialog } from "./workspace-dialog"
 import { HolidayList } from "./holiday-list"
 
 /** Holidays & weekends — the settings behind the calendar and every leave count. */

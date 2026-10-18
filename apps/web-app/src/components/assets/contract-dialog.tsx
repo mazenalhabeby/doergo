@@ -1,8 +1,5 @@
 "use client"
 
-import { useState } from "react"
-import { useTranslation } from "react-i18next"
-import { useMutation } from "@tanstack/react-query"
 import {
   ArrowRight,
   Check,
@@ -11,24 +8,15 @@ import {
   Wand2,
 } from "lucide-react"
 
-import {
-  assetsApi,
-  type AssetCategory, type ContractFields, type ContractPreview, type ContractReading,
-} from "@/lib/api"
-import {
-  normalizeKindShape, kindHolderLabel, assetManageSpaces, canManageAssetsIn, personName,
-} from "@hbcfield/shared/client"
-import { useAuth } from "@/contexts/auth-context"
-import { notify } from "@/lib/toast"
-import { cn } from "@/lib/utils"
-import { ContractFieldInput, StepIcon } from "./contract-parts"
+import { type AssetCategory } from "@/lib/api"
+import { kindHolderLabel, personName } from "@hbcfield/shared/client"
+import { StepIcon } from "./contract-parts"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog"
-import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { useContractDialog } from "./use-contract-dialog"
 import { ReadField } from "./contract-dialog-helpers"
 

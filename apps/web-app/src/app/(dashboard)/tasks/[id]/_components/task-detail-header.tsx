@@ -1,12 +1,8 @@
 "use client"
 
-import type { Task } from "@/lib/api"
-import { formatDuration } from "@hbcfield/shared/client"
-import { useJobTime } from "@/hooks/use-job-time"
-import type { User as AuthUser } from "@/contexts/auth-context"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
-import { Calendar, Pencil, MoreHorizontal, Trash2, MapPin, ChevronRight, Clock, FileText } from "lucide-react"
+import { Calendar, Pencil, MoreHorizontal, Trash2, MapPin, ChevronRight, FileText } from "lucide-react"
 import { GradientIcon } from "@/components/ui/gradient-icon"
 import { useRouteAccess } from "@/hooks/use-route-access"
 
@@ -25,7 +21,6 @@ import { useStepConfigs } from "@/hooks/use-step-config"
 import { getRequestId } from "@/lib/utils"
 import { formatMediumDate as formatShortDate } from "@/lib/format-date"
 import { InlineEditField } from "./inline-edit-field"
-import type { WorkflowStatus } from "@/lib/api"
 import { type TaskDetailHeaderProps, TaskTimer } from "./task-timer"
 
 export function TaskDetailHeader({

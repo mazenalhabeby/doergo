@@ -3,7 +3,6 @@ import type { Phase } from './phases';
 import type { Sprint } from './sprints';
 import type { Attachment } from './task-attachments';
 import type { WorkflowStatus } from './workflows';
-import type { StepFormAnswers } from '@hbcfield/shared/client';
 import {
   type TaskAssignee,
   type ChecklistItem,

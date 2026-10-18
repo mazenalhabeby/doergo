@@ -1,38 +1,17 @@
 "use client"
 
-import { useRouteAccess } from "@/hooks/use-route-access"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import dynamic from "next/dynamic"
-import { useQuery, keepPreviousData } from "@tanstack/react-query"
-import { useTranslation } from "react-i18next"
-import {
-  addDays,
-  addMonths,
-  eachDayOfInterval,
-  endOfMonth,
-  format,
-  startOfMonth,
-  startOfWeek,
-  subMonths,
-} from "date-fns"
+import { format } from "date-fns"
 import { AlertCircle, CalendarDays, ChevronLeft, ChevronRight, House, RefreshCw } from "lucide-react"
 
-import { useAuth } from "@/contexts/auth-context"
-import { calendarApi, employeesApi, type OrgTimeOffRequest } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SpaceTabs } from "@/components/space-tabs"
-import { useSpaceScope } from "@/hooks/use-space-scope"
-import { useLatched } from "@/hooks/use-latched"
 import { PAGE_WIDTH } from "@/components/ui/page-width"
 import { cn } from "@/lib/utils"
 
 import { FloorNowPanel } from "./_components/floor-now-panel"
 import { LeaveWallchart } from "./_components/leave-wallchart"
-import { COVER_TONE } from "./_lib/cover-labels"
-import { keys } from "@/lib/query-keys"
 import { useScheduleAndTimeOffPage } from "./use-schedule-and-time-off-page"
 import { LeaveDecisionDrawer, Stat } from "./schedule-and-time-off-page-helpers"
 

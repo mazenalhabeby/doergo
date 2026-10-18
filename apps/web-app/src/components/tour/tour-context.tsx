@@ -1,24 +1,9 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { useContext } from "react"
 
-import { useAuth } from "@/contexts/auth-context"
-import { usersApi } from "@/lib/api"
-import { TOURS } from "./registry"
-import { createLocalTourStorage } from "./tour-storage"
 import { TourOverlay } from "./tour-overlay"
-import {
-  beginSettle,
-  boxesAgree,
-  isDrawableBox,
-  settleTick,
-  MEASURE_INTERVAL_MS,
-  type Box,
-  type Viewport,
-} from "./measure"
-import type { TourDef, TourGateContext, TourStep } from "./types"
-import { useTourProvider, type TourContextValue } from "./use-tour-provider"
+import { useTourProvider } from "./use-tour-provider"
 import { Ctx } from "./tour-provider-helpers"
 
 export function TourProvider({ children }: { children: React.ReactNode }) {

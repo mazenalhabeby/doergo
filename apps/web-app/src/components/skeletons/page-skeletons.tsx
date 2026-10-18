@@ -1,18 +1,5 @@
 import { Shimmer as S } from './primitives';
-import { cn } from "@/lib/utils"
-import { PAGE_WIDTH } from "@/components/ui/page-width"
-import {
-  PAGE_OUTER,
-  PAGE_INNER,
-  PageHeader,
-  SummaryLine,
-  TabStrip,
-  SimpleTableSkeleton,
-  StatsRow,
-  CardSkeleton,
-  PaginationBar,
-  CalendarGridSkeleton,
-} from "./employee-detail-page-skeleton";
+import { PAGE_OUTER, PAGE_INNER, PageHeader, SummaryLine, PaginationBar } from "./employee-detail-page-skeleton";
 export {
   AvailabilityPageSkeleton,
   MembersPageSkeleton,

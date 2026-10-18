@@ -1,21 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { BadgeCheck, Boxes, Users, Eye, UserCog } from 'lucide-react';
-import {
-  AVAILABLE_MODULES,
-  formatCents,
-  moduleI18n,
-  SEAT_MONTHLY_CENTS,
-  OBSERVER_SEAT_MONTHLY_CENTS,
-  type OrgCostBreakdown,
-} from '@hbcfield/shared/client';
+import { formatCents, SEAT_MONTHLY_CENTS, OBSERVER_SEAT_MONTHLY_CENTS, type OrgCostBreakdown } from '@hbcfield/shared/client';
 
 import { cn } from '@/lib/utils';
-import { dateLocale } from "@/lib/format-date"
 import { useBillBreakdown } from "./use-bill-breakdown";
-import { SectionHead, Legend, Tile, PersonRow } from "./bill-breakdown-helpers";
+import { SectionHead, PersonRow } from "./bill-breakdown-helpers";
 import { BillBreakdownBill } from "./bill-breakdown-bill";
 
 /**

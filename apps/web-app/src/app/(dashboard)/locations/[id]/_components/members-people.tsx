@@ -2,54 +2,23 @@
 
 import { keys } from "@/lib/query-keys"
 import { useMemo, useState } from "react"
-import Link from "next/link"
 import { useTranslation } from "react-i18next"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Home, Loader2, Search, Trash2, UserPlus, Users } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { Home, Search, UserPlus, Users } from "lucide-react"
 
-import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
-import { fetchAllPages } from "@/lib/paginate"
-import { useAuth } from "@/contexts/auth-context"
-import { mayListOrgMembers, type AssignablePerson } from "@/lib/assignable-members"
-import { useAssignableMembers } from "@/hooks/use-assignable-members"
-import {
-  locationsApi,
-  type LocationAssignment,
-  organizationsApi,
-  rateHistoryApi,
-  spaceMembersApi,
-  spaceRolesApi,
-  spaceUnitsApi,
-  type SpaceUnit,
-} from "@/lib/api"
-import {
-  personInitials,
-  personName,
-  jobTitleOf,
-  mayGrantSpaceRoles,
-  mayManageSpaceMembers,
-  type SpaceMember,
-  type SpaceRoleInSpace
-} from "@hbcfield/shared/client"
+import { locationsApi, spaceMembersApi, spaceRolesApi, spaceUnitsApi, type SpaceUnit } from "@/lib/api"
+import { personInitials, personName } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ConfirmDialog } from "@/components/confirm-dialog"
-import { DatedRateField } from "@/components/rates/dated-rate"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EmptyState } from "./section-header"
-import { MemberRoutingEditor } from "./member-routing-editor"
-import { MemberAutoClock, useWorkspaceAutoClock } from "./member-auto-clock"
-import { MemberPermissions } from "./member-permissions"
-import { BILL_BY, roleQueryKey, Segmented, useBillByLabel, useCents, useSpaceCurrency, type BillBy } from "./work-roles"
-import { NONE, RoleTag } from "./members-people-helpers"
+import { useWorkspaceAutoClock } from "./member-auto-clock"
+import { BILL_BY, roleQueryKey, useBillByLabel, useCents, useSpaceCurrency, type BillBy } from "./work-roles"
+import { RoleTag } from "./members-people-helpers"
 import { AddMemberDialog } from "./add-member-dialog"
 import { MemberPanel } from "./member-panel"
 

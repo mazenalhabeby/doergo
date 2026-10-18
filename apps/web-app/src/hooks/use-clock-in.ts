@@ -1,25 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
-import type { TFunction } from "i18next"
-import type { TimeEntry } from "@hbcfield/shared"
-import { attendanceApi } from "@/lib/api"
 import { serverErrorMessage } from "@/lib/server-error"
-import {
-  shortfallMinutes,
-  SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
-  mayClockInRemotely,
-  chooseClockInLocation,
-  parseClockInPick
-} from "@hbcfield/shared/client"
-import { useAuth } from "@/contexts/auth-context"
-import { getBrowserPosition, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
+import { chooseClockInLocation, parseClockInPick } from "@hbcfield/shared/client"
+import { getBrowserPosition } from "@/lib/geolocation"
 import type { ClockLocation } from "@/components/clock-in-picker"
-import { keys } from "@/lib/query-keys"
-import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 import { useClockInData, type BrowserPosition, type ClockAction } from "./use-clock-in-data"
 export { type ClockAction, geoErrorMessage } from "./use-clock-in-data"
 

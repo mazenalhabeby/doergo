@@ -1,72 +1,15 @@
 "use client"
 
 import { personName } from "@hbcfield/shared/client"
-import { keys } from "@/lib/query-keys"
-import { useState } from "react"
-import { useParams } from "next/navigation"
-import { useTranslation } from "react-i18next"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  Building2,
-  Loader2,
-  Share2,
-  ClipboardList,
-  Plus,
-  ListChecks,
-  UserPlus,
-  ShieldAlert,
-  MapPin,
-} from "lucide-react"
+import { ClipboardList, ListChecks, UserPlus, ShieldAlert, MapPin } from "lucide-react"
 
-import { useAuth } from "@/contexts/auth-context"
-import { notify } from "@/lib/toast"
-import {
-  tasksApi,
-  spaceSharingApi,
-  locationsApi,
-  attendanceApi,
-  trackingApi,
-  employeesApi,
-  type Task,
-  type SpaceShareRequestType,
-  type SpaceShareRequestStatus,
-  type TimeEntry,
-  type EmployeeListItem,
-} from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
-import { PriorityBadge } from "@/components/tasks/priority-badge"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { BackToSpaces, CenteredNotice } from "@/components/space-page"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { dateLocale } from "@/lib/format-date"
 import { useSharedSpaceViewPage } from "./use-shared-space-view-page"
-import {
-  LEVEL_STYLES,
-  REQUEST_STATUS_STYLES,
-  AddWorkerDialog,
-  CreateTaskDialog,
-  RequestMoreDialog,
-} from "./shared-space-view-page-helpers"
+import { REQUEST_STATUS_STYLES, AddWorkerDialog, CreateTaskDialog, RequestMoreDialog } from "./shared-space-view-page-helpers"
 import { SharedSpaceViewPageGuest } from "./shared-space-view-page-guest"
 import { SharedSpaceViewPageGuest2 } from "./shared-space-view-page-guest2"
 

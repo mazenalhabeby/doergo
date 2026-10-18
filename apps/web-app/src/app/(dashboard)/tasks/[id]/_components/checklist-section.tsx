@@ -4,19 +4,15 @@ import { keys } from "@/lib/query-keys"
 import React, { useState, useCallback } from "react"
 import type { Task } from "@/lib/api"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Check, Plus, Trash2 } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { notify } from "@/lib/toast"
 
-import { tasksApi, type ChecklistItem, type CrewView } from "@/lib/api"
+import { tasksApi, type ChecklistItem } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
 import { useJobTime } from "@/hooks/use-job-time"
 import { useTaskPermissions } from "@/hooks/use-task-permissions"
-import { personName, tickedByOther } from "@hbcfield/shared/client"
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { APPLE_EASE, ChecklistItemRow, type ChecklistSectionProps } from "./checklist-item-row"
 
 export const ChecklistSection = React.memo(function ChecklistSection({

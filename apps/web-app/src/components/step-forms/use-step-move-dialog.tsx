@@ -1,27 +1,11 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { useTranslation } from "react-i18next"
 import { ImagePlus, X } from "lucide-react"
-import {
-  STEP_FORM_LIMITS,
-  type StepForm,
-  type StepFormAnswers,
-  type StepFormField,
-} from "@hbcfield/shared/client"
+import { STEP_FORM_LIMITS, type StepFormField } from "@hbcfield/shared/client"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { DatePicker } from "@/components/ui/date-picker"
 import { SignaturePad } from "@/components/signature-pad"
-import { serverErrorMessage } from "@/lib/server-error"
-import { uploadTaskFile, dataUrlToFile } from "@/lib/task-file-upload"
-import {
-  answerRefusal,
-  buildAnswers,
-  checkAnswers,
-  type AnswerErrors,
-  type DraftValue,
-} from "@/lib/step-forms"
 import { cn } from "@/lib/utils"
 import { useStepMoveDialogData, PHOTO_TYPES, type StepMoveDialogProps } from "./use-step-move-dialog-data"
 export { PHOTO_TYPES, type StepMoveDialogProps, MAX_PHOTO_BYTES } from "./use-step-move-dialog-data"

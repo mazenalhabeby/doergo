@@ -1,4 +1,6 @@
-import i18n from '@/i18n';
+// The global instance (the root layout initializes it): importing '@/i18n' would pull the whole English
+// catalogue into every route that opens an explainer.
+import i18n from 'i18next';
 
 /**
  * Explainer copy, fetched on demand.

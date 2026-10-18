@@ -1,5 +1,5 @@
 import type { TimeEntry } from "@hbcfield/shared"
-import i18n from "@/i18n"
+import i18n from "i18next"
 
 /**
  * Helper function to get greeting based on time of day

@@ -1,22 +1,9 @@
 "use client"
 
-import { absencesOnly } from "@/lib/requests"
-import { keys } from "@/lib/query-keys"
-import dynamic from "next/dynamic"
 
-import { useState, useMemo, useEffect } from "react"
-import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query"
 import { Clock, XCircle, Coffee, UserX } from "lucide-react"
-import { format } from "date-fns"
-import { notify } from "@/lib/toast"
 
-import { useAuth } from "@/contexts/auth-context"
-import { attendanceApi, employeesApi, type TimeEntry, type TimeEntryStatus, type BreakType } from "@/lib/api"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { useTranslation } from "react-i18next"
-import { personName, workedMinutes } from "@hbcfield/shared/client"
-import { useActiveSpaces } from "@/hooks/use-space-directory"
 import { useAttendancePage } from "./use-attendance-page"
 import {
   BreaksTab,

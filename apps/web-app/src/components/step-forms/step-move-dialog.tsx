@@ -1,26 +1,10 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { useTranslation } from "react-i18next"
-import { ImagePlus, Loader2, X, AlertCircle } from "lucide-react"
-import { STEP_FORM_LIMITS, type StepForm, type StepFormAnswers, type StepFormField } from "@hbcfield/shared/client"
+import { Loader2, AlertCircle } from "lucide-react"
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { DatePicker } from "@/components/ui/date-picker"
-import { SignaturePad } from "@/components/signature-pad"
-import { serverErrorMessage } from "@/lib/server-error"
-import { uploadTaskFile, dataUrlToFile } from "@/lib/task-file-upload"
-import {
-  answerRefusal,
-  buildAnswers,
-  checkAnswers,
-  stepFieldLabel,
-  type AnswerErrors,
-  type DraftValue,
-} from "@/lib/step-forms"
+import { stepFieldLabel } from "@/lib/step-forms"
 import { cn } from "@/lib/utils"
 import { useStepMoveDialog, type StepMoveDialogProps } from "./use-step-move-dialog"
 

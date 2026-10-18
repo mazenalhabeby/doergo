@@ -1,74 +1,20 @@
 "use client"
 
-import { keys, invalidateTask } from "@/lib/query-keys"
-import { useRouteAccess } from "@/hooks/use-route-access"
-import { useClockGate, useOfficeStart } from "@/hooks"
+import { keys } from "@/lib/query-keys"
 
-import { useState, use, useEffect, useCallback, useMemo } from "react"
-import { useTranslation } from "react-i18next"
-import { useRouter } from "next/navigation"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  RefreshCw,
-  AlertCircle,
-  ListChecks,
-  Paperclip,
-  MessageCircle,
-  Clock,
-  GitBranch,
-  Link2,
-  FileText,
-  MapPin
-} from "lucide-react"
+import { RefreshCw, AlertCircle } from "lucide-react"
 
-import { STATUS_TRANSITIONS } from "@hbcfield/shared/client"
-import { getStatusConfig } from "@/lib/constants"
-import { useAuth } from "@/contexts/auth-context"
-import { useSpaceModules } from "@/hooks/use-space-modules"
-import { useBreadcrumbOverride } from "@/contexts/breadcrumb-context"
 import { TaskDetailPageSkeleton } from "@/components/skeletons/page-skeletons"
-import { useTaskPermissions } from "@/hooks/use-task-permissions"
-import { assigneeIds } from "@/lib/task-assignment"
-import { useWorkflow, getTransitionsForStatus } from "@/hooks/use-org-workflow"
-import { tasksApi, trackingApi, sprintsApi, phasesApi, epicsApi, type WorkflowStatus, type OnBehalf } from "@/lib/api"
+import { tasksApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 import { notify } from "@/lib/toast"
-import { useStepMove } from "@/components/step-forms/use-step-move"
-import { serverErrorMessage } from "@/lib/server-error"
 
 // Each from its own file, not the `./_components` barrel: app code is assumed to
 // have side effects, so importing one name through the barrel kept EVERY section
 // (the lazily loaded ones below included) in the page bundle.
-import { TaskProgressCard } from "./_components/task-progress-card"
-import { CommentsSection } from "./_components/comments-section"
-import { CollapsibleSection } from "./_components/collapsible-section"
-import { TaskDetailHeader } from "./_components/task-detail-header"
-import { TaskDetailSidebar } from "./_components/task-detail-sidebar"
-import { DescriptionSection } from "./_components/description-section"
-import { HandoverCard } from "./_components/handover-card"
-import { JobTimeCard } from "./_components/job-time-card"
-import { TaskCrewCard } from "./_components/task-crew-card"
-import { OpenRoleCard } from "./_components/open-role-card"
-import { HandoverPendingNotice, useHandoverPendingText } from "@/components/handover-pending-notice"
-import { useLatched } from "@/hooks/use-latched"
-import dynamic from "next/dynamic"
+import { HandoverPendingNotice } from "@/components/handover-pending-notice"
 import { useTaskDetailPage } from "./use-task-detail-page"
-import {
-  EditTaskDialog,
-  AssignMemberDialog,
-  ClockGateDialog,
-  OfficeStartDialog,
-  ServiceReportSection,
-  RouteTrackingSection,
-  SubtasksSection,
-  ChecklistSection,
-  AttachmentsSection,
-  DependenciesSection,
-  ActivitySection,
-  CustomFieldsSection,
-  StepReportsSection,
-} from "./task-detail-page-helpers"
+import { EditTaskDialog, AssignMemberDialog, ClockGateDialog, OfficeStartDialog } from "./task-detail-page-helpers"
 import { TaskDetailPageView } from "./task-detail-page-view"
 import { TaskDetailPageSections } from "./task-detail-page-sections"
 

@@ -2,20 +2,15 @@
 
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { ArrowDownLeft, ArrowUpRight, BookOpen, ChevronDown, ChevronRight, ChevronUp, Plus, Trash2 } from "lucide-react"
+import { BookOpen, ChevronDown, ChevronRight, ChevronUp, Plus, Trash2 } from "lucide-react"
 
-import {
-  KIND_SHAPE_LIMITS, LOG_COLORS, LOG_FIELD_TYPES, logKeyFrom,
-  type KindLogDue, type KindLogField, type KindLogType, type LogFieldType,
-} from "@hbcfield/shared/client"
+import { KIND_SHAPE_LIMITS, LOG_COLORS, type KindLogType } from "@hbcfield/shared/client"
 import { LOG_COLOR_CLASSES } from "@/components/assets/log-style"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { ChoiceOptionsEditor } from "./choice-options-editor"
 import { useTypeDetails } from "./use-type-details"
-import { fieldTypeLabel, FlagRow, DirBtn } from "./type-details-helpers"
+import { FlagRow } from "./type-details-helpers"
 import { TypeDetailsEditor } from "./type-details-editor"
 
 /**

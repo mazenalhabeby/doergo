@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { SupportMessage } from "@hbcfield/shared/client"
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Headset, ChevronLeft, Send, Loader2, Circle } from 'lucide-react';
-import { SocketEvents, isSupportOpen, type SupportTicket } from '@hbcfield/shared/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Headset, ChevronLeft, Circle } from 'lucide-react';
+import { SocketEvents } from '@hbcfield/shared/client';
 import { supportApi } from '@/lib/api';
 import { useSocketContext } from '@/contexts/socket-context';
 import { useAuth } from '@/contexts/auth-context';

@@ -1,12 +1,4 @@
-import {
-  DEFAULT_LOCALE,
-  normalizeLocale,
-  issuerAddressLines,
-  toISODateString,
-  type IssuerSnapshot,
-  type SupportedLocale
-} from "@hbcfield/shared/client"
-import { formatAmount } from "./money"
+import { type SupportedLocale } from "@hbcfield/shared/client"
 import {
   type InvoiceDocumentLabels,
   documentLocaleOf,

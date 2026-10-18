@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation } from "@tanstack/react-query"
-import { Camera, Loader2, Plus, X } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
 
 import {
   logTypesForKind,
@@ -12,15 +12,12 @@ import {
   assetEntryDateExempt,
   assetEntryDayBounds,
   assetEntryOccurredAt,
-  localDayKey,
-  type KindLogField,
-  type KindLogType,
   type KindShape,
-  type LogValueProblem,
+  type LogValueProblem
 } from "@hbcfield/shared/client"
 import { assetsApi, uploadToS3 } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
-import { logColor, logFieldLabel, logTypeLabel } from "@/components/assets/log-style"
+import { logColor, logTypeLabel } from "@/components/assets/log-style"
 import { entryDateText } from "@/components/assets/entry-date"
 import { DatePicker } from "@/components/ui/date-picker"
 import { notify } from "@/lib/toast"

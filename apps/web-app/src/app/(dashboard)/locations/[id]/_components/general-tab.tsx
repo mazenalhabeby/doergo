@@ -1,6 +1,5 @@
 "use client"
 
-import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Building2, CheckCircle2, Loader2, PauseCircle, ChevronRight } from "lucide-react";
 

@@ -1,22 +1,10 @@
 "use client"
 
 import { keys } from "@/lib/query-keys"
-import { useState, useCallback, memo } from "react"
+import { useState, memo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import {
-  Plus,
-  Trash2,
-  Pencil,
-  Hash,
-  Calendar,
-  Link2,
-  Mail,
-  CheckSquare,
-  Type,
-  ChevronDown,
-  X,
-} from "lucide-react"
+import { Plus, Trash2, Pencil, Type } from "lucide-react"
 import { notify } from "@/lib/toast"
 
 import {
@@ -25,24 +13,8 @@ import {
   type CustomFieldType,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { SaveDialogFooter } from "@/components/save-dialog-footer"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog } from "@/components/ui/dialog"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { useFieldDialog } from "./use-field-dialog"
 import { FIELD_TYPES } from "./field-dialog-helpers"

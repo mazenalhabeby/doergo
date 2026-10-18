@@ -3,16 +3,12 @@
 import { keys } from "@/lib/query-keys"
 import { useState, useCallback } from "react"
 import { useTranslation } from "react-i18next"
-import { format, addWeeks, addDays } from "date-fns"
+import { addWeeks, addDays } from "date-fns"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  Loader2,
-  CheckCircle2,
-  Calendar,
-} from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { notify } from "@/lib/toast"
 
-import { sprintsApi, epicsApi, type Sprint, type Epic, type Task } from "@/lib/api"
+import { sprintsApi, type Sprint } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,16 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { ConfirmDialog } from "@/components/confirm-dialog"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Calendar as CalendarPicker } from "@/components/ui/calendar"
-import { Checkbox } from "@/components/ui/checkbox"
-import { cn } from "@/lib/utils"
-import { DateField, EPIC_COLORS } from "./complete-sprint-dialog"
+import { DateField } from "./complete-sprint-dialog"
 export { EpicFormDialog, DeleteSprintDialog } from "./epic-form-dialog"
 export { CompleteSprintDialog } from "./complete-sprint-dialog"
 

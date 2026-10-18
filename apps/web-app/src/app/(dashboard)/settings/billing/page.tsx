@@ -1,14 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { notify } from '@/lib/toast';
-import { errorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/auth-context';
 import { billingApi } from '@/lib/api';
-import type { OrgCostBreakdown, SubscriptionView } from '@hbcfield/shared/client';
 
 import { BillBreakdown } from './_components/bill-breakdown';
 import { OptionsRail } from './_components/options-rail';

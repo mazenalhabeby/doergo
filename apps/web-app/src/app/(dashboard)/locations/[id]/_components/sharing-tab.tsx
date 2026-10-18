@@ -3,36 +3,19 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  Share2,
-  Send,
-  Trash2,
-  Loader2,
-  Inbox,
-  Users,
-  Clock3,
-  MapPin,
-  FileText,
-  Building2,
-  ListChecks,
-  UserPlus,
-} from "lucide-react"
+import { Share2, Trash2, Users, Building2, ListChecks } from "lucide-react"
 
 import { notify } from "@/lib/toast"
-import { spaceSharingApi, type SpaceShare, type SpaceShareLevel, type SpaceShareStatus } from "@/lib/api"
+import { spaceSharingApi, type SpaceShare, type SpaceShareLevel } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ConfirmTargetDialog } from "@/components/confirm-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
 import { keys } from "@/lib/query-keys"
-import Link from "next/link"
 import { LEVELS, STATUS_TONE, SCOPE_FLAGS, InviteSection, RequestsSection } from "./invite-section"
 import { toneChip } from "@/lib/status-tones"
 

@@ -1,13 +1,7 @@
 import React from "react"
 import { useTranslation } from "react-i18next"
-import { AlertCircle, CheckCircle2, Clock, XCircle, StickyNote, Pencil, type LucideIcon } from "lucide-react"
-import { format, parseISO } from "date-fns"
-import { cn, formatTimeOfDay } from "@/lib/utils"
-import { type TimeEntry } from "@/lib/api"
-import { UserAvatar } from "@/components/user-avatar"
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
-import { personName, countryFromTz } from "@hbcfield/shared/client"
-import { EditHistoryDialog } from "./edit-history-dialog"
+import { AlertCircle, CheckCircle2, Clock } from "lucide-react"
+import { cn } from "@/lib/utils"
 export {
   toDate,
   formatTime,

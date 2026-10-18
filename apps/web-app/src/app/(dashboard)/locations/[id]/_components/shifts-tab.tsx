@@ -3,28 +3,14 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus, Clock, Pencil, Trash2, Loader2, Moon, CalendarRange, Coffee } from "lucide-react"
+import { Plus, Clock, Pencil, Trash2, Moon, CalendarRange, Coffee } from "lucide-react"
 
 import { notify } from "@/lib/toast"
-import {
-  shiftsApi,
-  type CreateShiftInput,
-} from "@/lib/api"
+import { shiftsApi } from "@/lib/api"
 import { shiftCrossesMidnight, type Shift } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { ConfirmTargetDialog } from "@/components/confirm-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
 import { keys } from "@/lib/query-keys"

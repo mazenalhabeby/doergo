@@ -2,30 +2,18 @@
 
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { AlertTriangle, Gauge, Loader2, Receipt, Trash2 } from "lucide-react"
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Gauge, Loader2 } from "lucide-react"
 
-import {
-  formatCents,
-  kindMeters,
-  logTypesForKind,
-  findLogType,
-  personName,
-  logValueLines,
-  type KindShape,
-} from "@hbcfield/shared/client"
-import { assetsApi, type AssetLogDue, type AssetLogEntry } from "@/lib/api"
+import { formatCents, kindMeters, logTypesForKind, findLogType, personName, type KindShape } from "@hbcfield/shared/client"
+import { assetsApi } from "@/lib/api"
 import { logColor, logTypeLabel } from "@/components/assets/log-style"
 import { useAuth } from "@/contexts/auth-context"
-import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { LogEntryDialog } from "./log-entry-dialog"
 import { keys } from "@/lib/query-keys"
-import { dateLocale } from "@/lib/format-date"
-import Link from "next/link"
-import { Inbox } from "lucide-react"
 import { logbookKeys, Kpi, DueRow, EntryRow } from "./entry-row"
 import { EmptyNote } from "@/components/ui/empty-note"
 

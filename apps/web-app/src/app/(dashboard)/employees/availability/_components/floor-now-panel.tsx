@@ -11,22 +11,7 @@ import { employeesApi, type FloorPerson, type FloorSpace } from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useTimeFormat } from "@/hooks/use-time-format"
-import { FLOOR_TONE, floorLabel } from "../_lib/cover-labels"
-import {
-  LATE_RING,
-  LATE_TEXT,
-  STATE_RING,
-  byUsefulness,
-  isExpected,
-  isPresent,
-  lateLabel,
-  lateness,
-  readStoredFloorView,
-  storeFloorView,
-  tally,
-  type FloorTally,
-  type FloorView,
-} from "../_lib/floor-view"
+import { LATE_TEXT, byUsefulness, lateness, readStoredFloorView, storeFloorView, tally, type FloorView } from "../_lib/floor-view"
 import { keys } from "@/lib/query-keys"
 import { useExceptionsCard, useLine, type Fmt } from "./use-exceptions-card"
 import { Bar, Avatar, CardHead } from "./exceptions-card-helpers"

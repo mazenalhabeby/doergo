@@ -1,24 +1,6 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type {
-  AttendanceListResponse,
-  AttendanceQueryParams,
-  BreakRuleRow,
-  BreakSummary,
-  EntryBreak,
-  EntryEditHistoryItem,
-  NoShowRow
-} from './types/attendance';
-import {
-  BreakType,
-  attendanceEndpoints,
-  locationsEndpoints,
-  type Break,
-  type CompanyLocation,
-  type GeofenceExcursion,
-  type NoShowPersonSummary,
-  type TimeEntry
-} from '@hbcfield/shared/client';
+import { attendanceEndpoints } from '@hbcfield/shared/client';
 import { attendanceBreaksApi } from './attendance-breaks';
 import { attendanceEntriesApi } from './attendance-entries';
 import { attendanceReviewApi } from './attendance-review';

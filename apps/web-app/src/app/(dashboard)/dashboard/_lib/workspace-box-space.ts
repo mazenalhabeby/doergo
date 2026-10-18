@@ -1,4 +1,4 @@
-import i18n from "@/i18n"
+import i18n from "i18next"
 import { isTaskOverdue, canManageSpace, canManageMembersInSpace } from "@hbcfield/shared/client"
 import type { PersonNodeProps, WorkspaceBoxProps } from "@/components/dashboard"
 

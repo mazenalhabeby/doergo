@@ -1,16 +1,9 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { useTranslation } from 'react-i18next';
-import { notify } from '@/lib/toast';
-import { Lock, ArrowLeft, CheckCircle, Eye, EyeOff, KeyRound } from 'lucide-react';
-import { Button, Input, Label } from '@/components/ui';
+import { ArrowLeft } from 'lucide-react';
 import { AnimatedLogo } from '@/components/auth';
-import { cn } from '@/lib/utils';
-import { z } from 'zod';
-import { authApi } from '@/lib/api';
 import { useResetPasswordContent } from './use-reset-password-content';
 import { ResetPasswordForm, SuccessState } from './reset-password-content-helpers';
 

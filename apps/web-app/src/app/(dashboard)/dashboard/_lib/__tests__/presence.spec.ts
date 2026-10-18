@@ -1,3 +1,5 @@
+// The app's root layout initializes i18next; these modules read the global instance.
+import '@/i18n'
 import { ONLINE_WINDOW_MS, getEmployeeStatus, isOnline, memberToPersonNode } from '../presence'
 
 /**

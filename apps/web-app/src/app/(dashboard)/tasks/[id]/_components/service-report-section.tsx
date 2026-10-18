@@ -2,36 +2,12 @@
 
 import { formatDurationSeconds, personName } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
-import { useState, useCallback, useRef } from "react"
-import { errorMessage } from "@/lib/errors"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  CheckCircle2,
-  Clock,
-  User,
-  Wrench,
-  Camera,
-  PenTool,
-  ChevronLeft,
-  ChevronRight,
-  ZoomIn,
-  AlertCircle,
-  Upload,
-  Loader2,
-  X,
-} from "lucide-react"
-import { reportsApi, reportAttachmentsApi, uploadToS3, type ReportAttachment, type PartUsed } from "@/lib/api"
+import { useQuery } from "@tanstack/react-query"
+import { CheckCircle2, Clock, User, Wrench, Camera, PenTool, AlertCircle } from "lucide-react"
+import { reportsApi } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
-import { formatAmount } from "@/lib/money"
-import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
-import { cn } from "@/lib/utils"
-import {
-  type ServiceReportSectionProps,
-  SignatureDisplay,
-  AttachmentDeleteButton,
-} from "./service-report-section-shared"
+import { type ServiceReportSectionProps, SignatureDisplay } from "./service-report-section-shared"
 import { PhotoGallery } from "./photo-gallery"
 import { PartsTable } from "./parts-table"
 import { AttachmentUpload } from "./attachment-upload"

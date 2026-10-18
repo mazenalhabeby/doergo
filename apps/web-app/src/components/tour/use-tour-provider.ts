@@ -1,11 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { usePathname, useRouter } from "next/navigation"
-import { useAuth } from "@/contexts/auth-context"
+import { useEffect, useMemo, useRef } from "react"
 import { usersApi } from "@/lib/api"
-import { TOURS } from "./registry"
-import { createLocalTourStorage } from "./tour-storage"
 import {
   beginSettle,
   boxesAgree,

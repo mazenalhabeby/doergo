@@ -1,20 +1,9 @@
 "use client"
 
-import { personName } from "@hbcfield/shared/client"
-import { useState, useEffect, useCallback, useRef } from "react"
-import type { TaskEventPayload } from "@/types/socket-events"
-import { useRouter } from "next/navigation"
-import { useTranslation } from "react-i18next"
+import { useCallback } from "react"
 import { isSameAppPath } from "@/lib/safe-links"
-import type { TFunction } from "i18next"
-import { useQuery } from "@tanstack/react-query"
-import { usersApi, type InboxNotification } from "@/lib/api"
-import { useAuth } from "@/contexts/auth-context"
-import { useSocketContext } from "@/contexts/socket-context"
-import { useChat } from "@/components/chat/chat-context"
-import { keys } from "@/lib/query-keys"
-import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
-import { useNotificationBellData, type Notification } from "./use-notification-bell-data"
+import { usersApi } from "@/lib/api"
+import { type Notification } from "./use-notification-bell-data"
 import { useNotificationBellData2 } from "./use-notification-bell-data2"
 export {
   evTaskTitle,

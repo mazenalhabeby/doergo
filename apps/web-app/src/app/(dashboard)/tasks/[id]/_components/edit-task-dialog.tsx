@@ -1,19 +1,14 @@
 "use client"
 
-import { keys, invalidateTask } from "@/lib/query-keys"
-import { useState, useEffect, lazy, Suspense } from "react"
-import { useTranslation } from "react-i18next"
+import { Suspense } from "react"
 import { format } from "date-fns"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react"
 
-import { tasksApi, phasesApi, sprintsApi, workflowsApi, type Task, type UpdateTaskInput } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PhaseSelectContent, SprintSelectContent } from "../../_components/planning-select-options"
 import { Textarea } from "@/components/ui/textarea"
-import { timeOf, withTime } from "@/lib/due-time"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   Popover,
@@ -29,9 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { notify } from "@/lib/toast"
 import { PrioritySelector } from "@/components/tasks"
-import { useSpaceModules } from "@/hooks/use-space-modules"
 import { useEditTaskDialog, type EditTaskDialogProps } from "./use-edit-task-dialog"
 import { LocationPicker } from "./edit-task-dialog-helpers"
 import { EditTaskDialogSidebar } from "./edit-task-dialog-sidebar"
