@@ -12,12 +12,8 @@
   "long": 0
  },
  "apps/api/notification-service/src/i18n/push-messages.ts": {
-  "lines": 1380,
+  "lines": 1345,
   "long": 36
- },
- "apps/api/task-service/src/modules/analytics/analytics.service.ts": {
-  "lines": 254,
-  "long": 1
  },
  "apps/mobile/app/(app)/_layout.tsx": {
   "lines": 386,
@@ -202,10 +198,6 @@
  "apps/mobile/src/home/remember/use-remembered.ts": {
   "lines": 126,
   "long": 1
- },
- "apps/mobile/src/hooks/useClockIn.ts": {
-  "lines": 205,
-  "long": 2
  },
  "apps/mobile/src/island/use-island-view.ts": {
   "lines": 273,
