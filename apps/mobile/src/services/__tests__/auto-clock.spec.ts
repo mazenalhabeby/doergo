@@ -14,7 +14,7 @@ import { MemoryOutboxStore } from '../../offline/outbox/memory-store';
 import type { OutboxOp } from '../../offline/outbox/types';
 import { selectBatch } from '../../offline/outbox/scheduler';
 import { applyPushResults } from '../../offline/outbox/transitions';
-import { autoClockInFromPhone, undoAutoClockInFromPhone } from '../../offline/attendance/shift-actions';
+import { autoClockInFromPhone, clockInFromPhone, undoAutoClockInFromPhone } from '../../offline/attendance/shift-actions';
 import { MAX_OS_REGIONS, autoRegionId, entered, exited, remindersFor, selectAutoRegions, shiftForArrival, spaceOfRegion } from '../auto-clock/rules';
 import { onRegionEvent, reevaluate, standDown, type AutoClockDeps } from '../auto-clock/runner';
 import type { AutoClockNotifier } from '../auto-clock/notifications';
@@ -465,5 +465,85 @@ describe('clocked by arriving and leaving (no fixed shift)', () => {
     w.at(T0 + min(130));
     await onRegionEvent(w.deps, 'enter', 'hall', new Date(T0 + min(130)));
     expect(w.ops('attendance.clockOut').every((o) => o.state !== 'held' && o.state !== 'pending')).toBe(true);
+  });
+});
+
+/* ---------------------------------------------------------------- one entry per shift */
+
+describe('one entry per shift (13 Oct: an 11-second "Left early" entry beside the real one)', () => {
+  // Clocked by presence on other days, but with a rota shift today 08:00–16:00.
+  const both = () =>
+    place({ presence: { startWindow: null, timezone: 'Europe/Vienna', noShiftMinutes: 600, noShiftLimit: false } });
+  const presenceOnly = () =>
+    place({ shifts: [], presence: { startWindow: null, timezone: 'Europe/Vienna', noShiftMinutes: 600, noShiftLimit: false } });
+
+  async function arrivedOffline(w: Awaited<ReturnType<typeof world>>, at: number) {
+    w.at(at);
+    await onRegionEvent(w.deps, 'enter', 'hall', new Date(at));
+    const [op] = w.ops('attendance.clockIn');
+    const entryId = (op!.payload.body as { id: string }).id;
+    w.at(at + min(4)); // past the dwell, still offline: the clock-in waits in the outbox
+    await w.engine.flush();
+    // What the overlay shows for it: no expectedClockInAt — only the server stamps that.
+    w.clockedIn({ id: entryId, locationId: 'hall', clockInAt: new Date(at).toISOString() });
+    return entryId;
+  }
+
+  it('a queued automatic clock-in on a rota day: leaving minutes later is an excursion, never a clock-out', async () => {
+    const w = await world({ places: [both()] });
+    await arrivedOffline(w, T0 + min(55)); // 07:55
+    const out = T0 + min(60); // 08:00 — out to the van
+    w.at(out);
+    await onRegionEvent(w.deps, 'exit', 'hall', new Date(out));
+    expect(w.ops('attendance.clockOut')).toHaveLength(0);
+  });
+
+  it('a rota day is judged by the shift even after the Undo window — leaving before the end files nothing', async () => {
+    const w = await world({ places: [both()] });
+    await arrivedOffline(w, T0 + min(55));
+    w.at(T0 + min(200));
+    await onRegionEvent(w.deps, 'exit', 'hall', new Date(T0 + min(200)));
+    expect(w.ops('attendance.clockOut')).toHaveLength(0);
+  });
+
+  it('clocked by presence with no shift: gone inside the Undo window — the clock-in is undone, no clock-out', async () => {
+    const w = await world({ places: [presenceOnly()] });
+    const entryId = await arrivedOffline(w, T0);
+    w.at(T0 + min(6));
+    await onRegionEvent(w.deps, 'exit', 'hall', new Date(T0 + min(6)));
+    expect(w.ops('attendance.clockOut')).toHaveLength(0);
+    // Still on the phone, so Undo simply takes it back: the server never hears of it.
+    expect(w.ops('attendance.clockIn')[0]!.state).toBe('discarded');
+    expect(w.notifier.log).toContain(`cancel:${entryId}:all`);
+    expect((await w.state()).places.hall?.inOp).toBeUndefined();
+  });
+
+  it('a tap while the automatic clock-in is still queued is the same arrival — one clock-in', async () => {
+    const w = await world({ places: [both()] });
+    const entryId = await arrivedOffline(w, T0 + min(55));
+    const tap = await clockInFromPhone(w.engine, { locationId: 'hall', fix: { lat: SITE.lat, lng: SITE.lng, accuracy: 8, fixAt: new Date().toISOString() } });
+    expect(tap.entryId).toBe(entryId);
+    expect(tap.outcome).toEqual({ kind: 'queued' });
+    expect(w.ops('attendance.clockIn')).toHaveLength(1);
+  });
+
+  it('a tap after an automatic departure that has not left the phone takes the departure back', async () => {
+    const w = await world({ places: [both()] });
+    const entryId = await arrivedOffline(w, T0 + min(55));
+    const left = T0 + min(60 + 480 + 5); // 16:05, after the end
+    w.at(left);
+    await onRegionEvent(w.deps, 'exit', 'hall', new Date(left));
+    expect(w.ops('attendance.clockOut')[0]!.state).toBe('held');
+    const tap = await clockInFromPhone(w.engine, { locationId: 'hall', fix: { lat: SITE.lat, lng: SITE.lng, accuracy: 8, fixAt: new Date().toISOString() } });
+    expect(tap.entryId).toBe(entryId);
+    expect(w.ops('attendance.clockOut')[0]!.state).toBe('discarded');
+    expect(w.ops('attendance.clockIn')).toHaveLength(1);
+  });
+
+  it('a tap at another workspace is a new clock-in, as before', async () => {
+    const w = await world({ places: [both()] });
+    await arrivedOffline(w, T0 + min(55));
+    await clockInFromPhone(w.engine, { locationId: 'office', fix: { lat: SITE.lat, lng: SITE.lng, accuracy: 8, fixAt: new Date().toISOString() } });
+    expect(w.ops('attendance.clockIn')).toHaveLength(2);
   });
 });

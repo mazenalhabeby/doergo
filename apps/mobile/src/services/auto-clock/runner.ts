@@ -1,6 +1,5 @@
 import {
   autoClockUndoDeadline,
-  clocksByPresence,
   decideAutoClockIn,
   decideAutoClockOut,
   decidePresenceClockIn,
@@ -11,10 +10,11 @@ import {
   type OccurrenceFix,
 } from '@hbcfield/shared/client';
 import { checkClockInLocally } from '../../offline/attendance/clock-in-check';
-import { autoClockInFromPhone, autoClockOutFromPhone } from '../../offline/attendance/shift-actions';
+import { autoClockInFromPhone, autoClockOutFromPhone, undoAutoClockInFromPhone } from '../../offline/attendance/shift-actions';
 import type { SyncEngine } from '../../offline/sync-engine';
 import type { AutoClockNotifier } from './notifications';
-import { entered, exited, placeAsLocation, presenceSettings, remindersFor, shiftForArrival, shiftForEntry, type PlaceState } from './rules';
+import { departureBasis, entered, exited, placeAsLocation, presenceSettings, remindersFor } from './rules';
+import { shiftForArrival, shiftForEntry, type PlaceState } from './rules';
 import type { AutoClockState, AutoClockStore } from './store';
 
 /*
@@ -108,7 +108,9 @@ async function arrive(deps: AutoClockDeps, state: AutoClockState, place: AutoClo
 async function depart(deps: AutoClockDeps, state: AutoClockState, place: AutoClockPlace, at: number, shift: () => Promise<AttendanceStatus | null>) {
   const ps: PlaceState = exited(state.places[place.spaceId], at);
   // Out again inside the dwell: that was a drive-past — the held clock-in goes, unsent.
-  if (ps.inOp) {
+  // ⚠️ Only inside the dwell: offline, a clock-in past its dwell is still cancellable, and taking it back
+  // on a walk to the van made the shift's clock-in vanish. Later exits are judged by tryDeparture.
+  if (ps.inOp && at < ps.inOp.holdUntil) {
     const { opId, entryId } = ps.inOp;
     if (await deps.engine.cancelPending(opId)) await deps.notifier.cancel(entryId);
     delete ps.inOp;
@@ -194,15 +196,17 @@ async function tryDeparture(deps: AutoClockDeps, state: AutoClockState, place: A
   const entry = status?.isClockedIn ? status.currentEntry : null;
   if (!entry || (entry.locationId ?? entry.location?.id) !== place.spaceId) return;
   const now = deps.now();
-  // Approved extra time MOVES the expected end — read it first, the plan second.
-  const expected = (entry as { expectedClockOutAt?: string | null }).expectedClockOutAt;
-  // Clocked by arriving and leaving with no shift: leaving at any time after clocking in is going home.
-  const plannedEnd = clocksByPresence(presenceSettings(place), entry as { expectedClockInAt?: string | null })
-    ? new Date(entry.clockInAt)
-    : expected
-      ? new Date(expected)
-      : shiftForEntry(place, new Date(entry.clockInAt))?.end ?? null;
   const exitedAt = new Date(ps.exitedAt);
+  const basis = departureBasis(place, entry, ps.inOp, exitedAt);
+  if (basis.kind === 'undo') {
+    // Clocked by presence and gone inside the Undo window: they never stayed — undone, as Undo would.
+    await undoAutoClockInFromPhone(deps.engine, { entryId: entry.id });
+    await deps.notifier.cancel(entry.id);
+    delete ps.inOp;
+    return;
+  }
+  if (basis.kind === 'excursion') return;
+  const plannedEnd = basis.plannedEnd;
   const decision = decideAutoClockOut({ settings: place.settings, now, exitedAt, stillOutside: true, plannedEnd, clockedIn: true });
   if (decision.action === 'SKIP') return;
   const holdUntil = decision.action === 'WAIT' ? decision.until.getTime() : now.getTime();

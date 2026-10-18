@@ -1,5 +1,7 @@
 import {
+  autoClockUndoDeadline,
   autoRestPlan,
+  clocksByPresence,
   haversineDistance,
   type AutoClockPlace,
   type AutoClockSettings,
@@ -109,12 +111,18 @@ export function shiftForArrival(place: AutoClockPlace, now: Date): Shift | null 
   return shiftsOf(place).find((s) => s.end.getTime() > t && s.start.getTime() - lead - ARRIVAL_AHEAD_MS <= t) ?? null;
 }
 
+/** The planned shift whose window (from its lead before the start, to its end) holds a clock-in — or null. */
+export function shiftHolding(place: AutoClockPlace, clockInAt: Date): Shift | null {
+  const t = clockInAt.getTime();
+  const lead = place.settings.leadMinutes * 60_000;
+  return shiftsOf(place).find((s) => s.start.getTime() - lead <= t && t < s.end.getTime()) ?? null;
+}
+
 /** The planned shift a running entry belongs to: the one whose window holds its clock-in, else the nearest. */
 export function shiftForEntry(place: AutoClockPlace, clockInAt: Date): Shift | null {
   const t = clockInAt.getTime();
-  const lead = place.settings.leadMinutes * 60_000;
   const all = shiftsOf(place);
-  const holding = all.find((s) => s.start.getTime() - lead <= t && t < s.end.getTime());
+  const holding = shiftHolding(place, clockInAt);
   if (holding) return holding;
   let best: Shift | null = null;
   for (const s of all) {
@@ -213,4 +221,38 @@ export function placeAsLocation(place: AutoClockPlace): CompanyLocation {
     geofencePolygon: place.polygon ?? null,
     awayAllowed: false,
   } as unknown as CompanyLocation;
+}
+
+/** How a departure from a running entry is judged. */
+export type DepartureBasis = { kind: 'undo' } | { kind: 'excursion' } | { kind: 'judge'; plannedEnd: Date | null };
+
+/**
+ * The basis a departure is judged on.
+ *
+ * ⚠️ A clock-in still on the phone (queued offline) has no expectedClockInAt —
+ * only the server stamps it — so "no expected start" is not "no shift": the
+ * plan's own shift holding the clock-in rules first, and a rota day goes by
+ * the shift even for somebody otherwise clocked by presence. (13 Oct: a queued
+ * automatic clock-in was read as a presence session; an exit 11 s later filed
+ * an automatic clock-out and the server made an 11-second "Left early" entry.)
+ *
+ * Leaving inside the Undo window of our own automatic clock-in is never going
+ * home: by presence they never stayed (undo, as the server's Undo removes it);
+ * on a shift it is an excursion.
+ */
+export function departureBasis(
+  place: AutoClockPlace,
+  entry: { id: string; clockInAt: string; expectedClockInAt?: string | null; expectedClockOutAt?: string | null },
+  ownClockIn: { entryId: string; at: number } | undefined,
+  exitedAt: Date,
+): DepartureBasis {
+  const clockInAt = new Date(entry.clockInAt);
+  const byPresence = !shiftHolding(place, clockInAt) && clocksByPresence(presenceSettings(place), entry);
+  if (ownClockIn?.entryId === entry.id && exitedAt.getTime() < autoClockUndoDeadline(new Date(ownClockIn.at), place.settings).getTime()) {
+    return byPresence ? { kind: 'undo' } : { kind: 'excursion' };
+  }
+  // Approved extra time MOVES the expected end — read it first, the plan second.
+  if (byPresence) return { kind: 'judge', plannedEnd: clockInAt };
+  if (entry.expectedClockOutAt) return { kind: 'judge', plannedEnd: new Date(entry.expectedClockOutAt) };
+  return { kind: 'judge', plannedEnd: shiftForEntry(place, clockInAt)?.end ?? null };
 }

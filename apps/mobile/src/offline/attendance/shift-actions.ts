@@ -5,6 +5,7 @@ import { uuidv7 } from '../ids';
 import type { EnqueueInput, SyncEngine } from '../sync-engine';
 import { openOpFor } from '../outbox/open-ops';
 import { OPEN_STATES, type OutboxOp } from '../outbox/types';
+import { sameArrival } from './same-arrival';
 
 /*
   Every action on a shift goes into ONE lane, `shift:<entryId>`, so a clock-in,
@@ -99,6 +100,11 @@ export async function clockInFromPhone(
   engine: SyncEngine,
   input: ClockInStep,
 ): Promise<{ entryId: string; outcome: ActionOutcome }> {
+  // The automatic clock's arrival here is still on the phone: the same arrival, not a second shift.
+  const same = input.isRemote ? null : await sameArrival(engine, input.locationId);
+  if (same) {
+    return { entryId: same.entryId, outcome: same.reachedServer ? { kind: 'done', response: same.response } : { kind: 'queued' } };
+  }
   const entryId = uuidv7();
   const op = await engine.enqueueAndSettle(clockInRequest(engine, entryId, input));
   return { entryId, outcome: await outcomeOf(engine, op) };
