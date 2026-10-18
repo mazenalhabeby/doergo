@@ -29,8 +29,8 @@ export interface TourStep {
   /**
    * Name of a registered ACTION to run when this step becomes active — used to
    * set the screen up for the step (e.g. switch a tab / open a sheet). Unlike
-   * the web engine (which clicked a DOM node), RN registers a callback via
-   * `useTourAction(name, fn)`; the engine invokes it on step entry.
+   * the web engine (which clicked a DOM node), RN registers a callback with the
+   * provider's `registerAction(name, fn)`; the engine invokes it on step entry.
    */
   enter?: string;
   /**

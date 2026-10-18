@@ -57,9 +57,6 @@ function phoneBuffer(): SecureBuffer {
   return phone;
 }
 
-/** Seal `value` under `key` for `owner`. Throws when it cannot be sealed — plaintext is never written instead. */
-export const writeSecure = (key: string, value: string, owner: string) => phoneBuffer().write(key, value, owner);
-
 /** The value, or null (missing / not sealed / wrong owner / altered / no key). Never throws. */
 export const readSecure = (key: string, owner: string) => phoneBuffer().read(key, owner);
 

@@ -56,16 +56,6 @@ export function isReady(c: Capability): c is Extract<Capability, { kind: 'ready'
   return c.kind === 'ready';
 }
 
-/**
- * Is the switch worth showing at all?
- *
- * `unavailable` is hidden rather than disabled: a control that can never work
- * on this hardware is not a setting, it is a dead end with a label.
- */
-export function isOfferable(c: Capability): boolean {
-  return c.kind !== 'unavailable';
-}
-
 export async function resolveCapability(): Promise<Capability> {
   try {
     // A binary built before the key library shipped can hold no key, however

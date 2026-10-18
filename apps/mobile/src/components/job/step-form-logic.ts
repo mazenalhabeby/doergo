@@ -17,7 +17,6 @@
  */
 /* ---------------- reading submissions ---------------- */
 
-export type { StepSubmission } from '../../lib/api/types';
 
 export {
   type WorkflowWithForms,

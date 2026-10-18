@@ -22,7 +22,7 @@
  * envelope's shape to be read as "nothing" rather than returned whole.
  */
 
-export { isEnvelope, unwrapEnvelope, envelopeMeta, readBody, type PageMeta } from '@hbcfield/shared/client';
+export { isEnvelope, unwrapEnvelope, envelopeMeta, readBody } from '@hbcfield/shared/client';
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === 'object' && !Array.isArray(v);

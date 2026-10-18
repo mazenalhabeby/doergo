@@ -32,7 +32,6 @@ import { restoreRoute } from '../../offline/routes/saved-route';
 import { planDay } from '../../offline/routes/plan-route';
 import { isStalePlan } from '../../lib/route-day';
 import { useRoutePlannerScreenData } from './use-route-planner-screen-data';
-export { type LatLng } from './use-route-planner-screen-data';
 
 /** RoutePlannerScreen's state and handlers — everything before its markup, moved here unchanged. */
 export function useRoutePlannerScreen() {

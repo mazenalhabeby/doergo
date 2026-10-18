@@ -24,7 +24,6 @@ import type {
 } from '@hbcfield/shared/client';
 export {
   type TimeOffRequest,
-  type TechnicianAvailability,
   type AvailabilityResponse,
   type ScheduleEntry,
 } from './time-off-request';
@@ -34,19 +33,14 @@ export {
   type HandoverJob,
   type MyHandovers,
   type Task,
-  type ChecklistPerson,
   type ChecklistItem,
   type Comment,
   type TaskEvent,
   type LocationUpdate,
-  type LocationPoint,
   type LocationBatchUpdate,
   type LocationResponse,
-  type PartUsedInput,
-  type CompleteTaskInput,
   type StepSubmission,
   type ServiceReport,
-  type RegisterPushTokenInput,
 } from './create-task-input';
 
 // Re-export shared enums

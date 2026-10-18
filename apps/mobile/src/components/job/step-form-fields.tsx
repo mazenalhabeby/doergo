@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { STEP_FORM_LIMITS, type StepFormField } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { AText, Well } from '../amazen';
-export { FieldInput, PhotoTiles, InlineDay } from './step-form-field-input';
+export { FieldInput } from './step-form-field-input';
 
 /** One step form's fields — moved here unchanged from step-form-sheet.tsx. */
 /** The numbers a sentence names — the limit a note or name may not pass. */

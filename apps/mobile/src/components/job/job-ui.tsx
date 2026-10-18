@@ -6,27 +6,14 @@ import { SheetPanel } from '../sheet-panel';
 import { AText, LiveDot } from '../amazen';
 import type { GlyphProps } from '../glyphs/glyphs';
 import { personInitials } from '@hbcfield/shared/client';
-export { SectionLabel, StateEyebrow, Initials } from '../amazen/state-eyebrow';
-export {
-  ReceiptRow,
-  SheetOption,
-  RoundButton,
-  type Tone,
-  Banner,
-  Pill,
-  Dot,
-  JobField,
-  ChoiceRow,
-  QuietButton,
-} from '../amazen/sheet-option';
+export { Initials } from '../amazen/state-eyebrow';
+export { SheetOption, type Tone, QuietButton } from '../amazen/sheet-option';
 
 /**
  * The job page's small parts — `docs/design/job-flow.html`, `.disc`, `.banner`,
  * `.pill`, `.field`, `.opt`, `.sev`. Everything here reads `useTheme().amazen`;
  * no colour is written down, so light and dark follow the member's setting.
  */
-
-/* ---------------- a receipt line ---------------- */
 
 /* ---------------- the one sheet ---------------- */
 

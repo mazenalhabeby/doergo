@@ -200,24 +200,6 @@ export interface LocationResponse {
 // Report Types
 // ============================================================================
 
-export interface PartUsedInput {
-  name: string;
-  partNumber?: string;
-  quantity: number;
-  unitCost?: number;
-  notes?: string;
-}
-
-export interface CompleteTaskInput {
-  summary: string;
-  workPerformed?: string;
-  workDuration: number; // in seconds
-  technicianSignature?: string;
-  customerSignature?: string;
-  customerName?: string;
-  partsUsed?: PartUsedInput[];
-}
-
 /** One row of `GET /tasks/:id/submissions` — the answers a job was moved into a step with. */
 export interface StepSubmission {
   id: string;
@@ -243,14 +225,4 @@ export interface ServiceReport {
   customerName?: string;
   completedAt: string;
   completedById: string;
-}
-
-// ============================================================================
-// Push Types
-// ============================================================================
-
-export interface RegisterPushTokenInput {
-  token: string;
-  platform: 'ios' | 'android' | 'web';
-  deviceId?: string;
 }

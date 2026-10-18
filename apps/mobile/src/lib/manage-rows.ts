@@ -7,8 +7,6 @@ export {
   type Destination,
   type ManageRow,
   type BadgeSource,
-  type ExtraGate,
-  decidesAnything,
   manageRowsFor,
   hasManageSurface,
 } from './manage-row';

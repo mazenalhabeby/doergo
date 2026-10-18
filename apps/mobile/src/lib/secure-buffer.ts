@@ -3,10 +3,8 @@ export {
   ENVELOPE,
   type PlainStorage,
   type KeyVault,
-  type SecureBufferDeps,
   KeyUnavailableError,
   createSecureBuffer,
-  type SecureBuffer,
 } from './secure-buffer/buffer';
 export {
   toBase64,
@@ -18,4 +16,4 @@ export {
   utf8EncodeJs,
   utf8DecodeJs,
 } from './secure-buffer/encoding';
-export { writeSecure, readSecure, forgetSecure, secureStorage, sealPlaintext } from './secure-buffer/phone';
+export { readSecure, forgetSecure, secureStorage, sealPlaintext } from './secure-buffer/phone';

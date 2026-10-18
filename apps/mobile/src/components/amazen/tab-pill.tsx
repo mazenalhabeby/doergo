@@ -13,7 +13,7 @@ import { TabSlot } from './tab-pill/tab-slot';
 import { useTabPill, type TabPillItem } from './use-tab-pill';
 export { type TabPillItem } from './use-tab-pill';
 
-export { tabSafeFor, useTabSafe, slotWidths } from './tab-pill/geometry';
+export { useTabSafe, slotWidths } from './tab-pill/geometry';
 
 export function TabPill({
   items,

@@ -17,7 +17,6 @@ export function useSupplyPalette() {
   return { amazen, a, colors, COLORS: accent };
 }
 
-export type SupplyPalette = ReturnType<typeof useSupplyPalette>;
 
 export const s = StyleSheet.create({
   scroll: { flexShrink: 1 },

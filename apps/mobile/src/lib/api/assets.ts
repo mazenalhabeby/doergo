@@ -21,7 +21,6 @@ export {
   REGISTER_PAGE_SIZE,
   assetRegisterApi,
   type MyProposal,
-  type RaiseProposalInput,
   assetProposalsApi,
 } from './held-asset';
 

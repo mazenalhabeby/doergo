@@ -21,7 +21,7 @@ import { useAuth } from '../../../contexts/auth-context';
 import type { ContactSide } from '../add-contact-sheet';
 import { useClientRecordData } from './use-client-record-data';
 import { useClientRecordActions } from './use-client-record-actions';
-export { type RecordTab, FILTERS, TABS, isWaiting } from './client-record-helpers';
+export { type RecordTab, FILTERS, isWaiting } from './client-record-helpers';
 
 /*
   THE CLIENT RECORD — its data and every act on it, with no drawing.

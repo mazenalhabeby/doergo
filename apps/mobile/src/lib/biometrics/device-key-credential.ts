@@ -24,7 +24,6 @@ export {
   classifySignFailure,
   getKeyOwner,
   serverRevokedKey,
-  BIOMETRIC_REQUEST_TIMEOUT_MS,
 } from './sign-failure';
 
 /**

@@ -29,7 +29,6 @@ export {
   heartbeatDue,
   graceCountdown,
   waitingText,
-  type OvertimePlaceLine,
   overtimePlaceLine,
 } from './place-relation';
 

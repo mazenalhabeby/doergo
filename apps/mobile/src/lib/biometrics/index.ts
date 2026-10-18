@@ -1,21 +1,9 @@
-export {
-  resolveCapability,
-  isReady,
-  isOfferable,
-  enrolmentSettingsUrl,
-  type Capability,
-  type BiometricMethod,
-} from './capability';
+export { resolveCapability, isReady, enrolmentSettingsUrl, type Capability, type BiometricMethod } from './capability';
 
-export {
-  BiometricError,
-  type BiometricCredential,
-  type BiometricFailure,
-  type KeyOwner,
-} from './types';
+export { BiometricError, type BiometricFailure } from './types';
 
 export { confirmWithBiometrics } from './credential';
-export { DeviceKeyCredential, getKeyOwner, classifySignFailure } from './device-key-credential';
+export { getKeyOwner } from './device-key-credential';
 
 import { DeviceKeyCredential } from './device-key-credential';
 import type { BiometricCredential } from './types';
@@ -44,7 +32,9 @@ export function getBiometricCredential(): BiometricCredential {
  * on each call, so it is still lazy and still one instance.
  */
 export const biometricCredential: BiometricCredential = {
-  get kind() { return getBiometricCredential().kind; },
+  get kind() {
+    return getBiometricCredential().kind;
+  },
   isEnrolled: (u) => getBiometricCredential().isEnrolled(u),
   enroll: (o) => getBiometricCredential().enroll(o),
   unlock: () => getBiometricCredential().unlock(),

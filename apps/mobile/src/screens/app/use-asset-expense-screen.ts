@@ -7,7 +7,6 @@ import { moneyToCents } from '@hbcfield/shared/client';
 import { submitExpenseFromPhone } from '../../offline/assets/expense-actions';
 import { useAssetExpenseScreenData } from './use-asset-expense-screen-data';
 import { caught } from '../../lib/caught';
-export { type Stage } from './use-asset-expense-screen-data';
 
 /** AssetExpenseScreen's state and handlers — everything before its markup, moved here unchanged. */
 export function useAssetExpenseScreen() {

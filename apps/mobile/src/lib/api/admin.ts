@@ -11,22 +11,6 @@ export type { OrgMember, Colleague };
 // TYPES
 // ============================================================================
 
-export interface JoinRequest {
-  id: string;
-  userId: string;
-  organizationId: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
-  rejectionReason?: string;
-  createdAt: string;
-  updatedAt: string;
-  user: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-  };
-}
-
 export interface Invitation {
   id: string;
   targetRole: string;
@@ -57,30 +41,6 @@ export interface CreateInvitationInput {
   /** Pre-assigned space (CompanyLocation id) — user is assigned to it on accept. */
   spaceId?: string;
 }
-
-// ============================================================================
-// JOIN REQUESTS API
-// ============================================================================
-
-export const joinRequestsApi = {
-  list: async (params?: { status?: string }): Promise<JoinRequest[]> => {
-    const result = await call(E.joinRequests.list, { ...params });
-    return Array.isArray(result) ? result : result?.data || [];
-  },
-
-  approve: async (id: string, data: {
-    role: string;
-    platform?: string;
-    workMode?: string;
-    specialty?: string;
-  }): Promise<void> => {
-    await call(E.joinRequests.approve, { id }, { body: data });
-  },
-
-  reject: async (id: string, reason?: string): Promise<void> => {
-    await call(E.joinRequests.reject, { id }, { body: { reason } });
-  },
-};
 
 // ============================================================================
 // MEMBERS API
@@ -141,30 +101,6 @@ export const adminInvitationsApi = {
 
   revoke: async (id: string): Promise<void> => {
     await call(E.invitations.revoke, { id });
-  },
-};
-
-// ============================================================================
-// ORGANIZATION SETTINGS API
-// ============================================================================
-
-/** The organization's roles (org scope) — the names the Members screen filters by and approving assigns. */
-export interface OrgRole { id: string; name: string; slug?: string; color?: string | null; scope: string; isSystem?: boolean }
-export const rolesApi = {
-  list: async (): Promise<OrgRole[]> => {
-    const result = await call(E.organizations.roles);
-    return Array.isArray(result) ? result : result?.data ?? [];
-  },
-};
-
-export const orgSettingsApi = {
-  /** ⚠️ The server answers `joinCode`, not `code` — the old type named a field that never arrived. */
-  getJoinCode: async (): Promise<{ hasJoinCode: boolean; joinPolicy: string; joinCode?: string | null }> => {
-    return call(E.organizations.joinCode);
-  },
-
-  regenerateJoinCode: async (): Promise<{ code: string }> => {
-    return call(E.organizations.regenerateJoinCode);
   },
 };
 

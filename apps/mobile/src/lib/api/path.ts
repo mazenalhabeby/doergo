@@ -8,4 +8,4 @@
  * be the segment it was put in. A request path is never written by hand in this
  * app — it comes from `apiEndpoints` (api-path-guard.spec.ts).
  */
-export { path, withQuery } from '@hbcfield/shared/client';
+export { path } from '@hbcfield/shared/client';

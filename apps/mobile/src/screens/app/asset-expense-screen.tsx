@@ -8,7 +8,6 @@ import { MediaAccessScreen } from '../../permissions/media-access-screen';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, type FieldColors } from '../../lib/constants';
 import { useAssetExpenseScreen } from './use-asset-expense-screen';
 import { NotAllowed } from '../../components/not-allowed';
-export { type Stage } from './use-asset-expense-screen';
 
 /** The asset-expense screen — moved here unchanged from app/(app)/asset-expense.tsx (a route keeps only its export). */
 export function AssetExpenseScreen() {

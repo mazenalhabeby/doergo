@@ -6,32 +6,15 @@
  * `src/components/home/` and are one family with one construction law.
  */
 export { Ground } from './ground';
-export {
-  GlassCard,
-  Well,
-  Sunken,
-  WellDivider,
-  shadowGlass,
-  shadowUnderGlass,
-  shadowDisc,
-  shadowDiscPrimary,
-  CardSurface,
-  SurfaceProvider,
-  useSurface,
-  type SurfaceKind,
-} from './surfaces';
-export { AText, Eyebrow, type Tone, type TypeVariant, type ATextProps } from './text';
-export { Hero, type HeroPart } from './hero';
+export { GlassCard, Well, Sunken, WellDivider, shadowDiscPrimary, CardSurface, SurfaceProvider } from './surfaces';
+export { AText, Eyebrow, type Tone } from './text';
+export { Hero } from './hero';
 export { Disc, DiscRow } from './disc';
 export { PrimaryButton, GhostButton, Chip } from './button';
 export { LiveDot } from './live-dot';
-export { CountBadge } from './count-badge';
-export { FactRow } from './fact-row';
-export { Monogram } from './monogram';
-export { EmptyState } from './empty-state';
 export { WidgetBoundary } from './widget-frame';
-export { TabPill, useTabSafe, tabSafeFor, type TabPillItem } from './tab-pill';
-export { ScreenHeader, HeaderBack, type HeaderAction } from './screen-header';
+export { TabPill, useTabSafe } from './tab-pill';
+export { ScreenHeader, HeaderBack } from './screen-header';
 export { ChoicePill, FilterPill, ActionPill, FilterRow, GlassInput, SearchField } from './filter';
 // The job page's small parts, moved here unchanged — job/job-ui.tsx still re-exports them.
 export { SectionLabel, StateEyebrow, Initials } from './state-eyebrow';
@@ -45,7 +28,6 @@ export {
   JobField,
   ChoiceRow,
   QuietButton,
-  type Tone as OptionTone,
 } from './sheet-option';
 
 /*

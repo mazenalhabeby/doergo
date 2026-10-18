@@ -159,18 +159,6 @@ export function useTourTarget(name: string) {
 }
 
 /**
- * Register an entry action for a step's `enter` (tab switch, open a sheet, …).
- * `fn` must be stable (wrap in useCallback) to avoid re-registering each render.
- */
-export function useTourAction(name: string, fn: () => void) {
-  const reg = useContext(Ctx);
-  useEffect(() => {
-    reg?.registerAction(name, fn);
-    return () => reg?.registerAction(name, null);
-  }, [reg, name, fn]);
-}
-
-/**
  * Make a screen's list scrollable BY THE TOUR: `<FlatList {...useTourScroll()} …>`
  * (works for `ScrollView` too — the same two props, and we call whichever
  * scroll method the component has).
