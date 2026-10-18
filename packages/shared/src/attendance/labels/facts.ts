@@ -35,8 +35,16 @@ export function shiftFact(input: {
 }
 
 /** The facts after a close: how it closed and where. Never drops what the clock-in recorded. */
-export function withClosing(facts: LabelFacts, closing: { closedHow: ClosedHow; clockOut?: PositionFact }): LabelFacts {
-  return { ...facts, closedHow: closing.closedHow, ...(closing.clockOut ? { clockOut: closing.clockOut } : {}) };
+export function withClosing(
+  facts: LabelFacts,
+  closing: { closedHow: ClosedHow; clockOut?: PositionFact; departureByPhone?: boolean },
+): LabelFacts {
+  return {
+    ...facts,
+    closedHow: closing.closedHow,
+    ...(closing.clockOut ? { clockOut: closing.clockOut } : {}),
+    ...(closing.departureByPhone ? { departureByPhone: true } : {}),
+  };
 }
 
 /** The facts after a planned end moved (approved extra time, agreed hours). */

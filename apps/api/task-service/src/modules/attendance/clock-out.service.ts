@@ -24,6 +24,7 @@ import { AttendanceRoutingService } from './attendance-routing.service';
 import { AttendanceGeocoderService } from './attendance-geocoder.service';
 import { ExtraTimeService } from './extra-time.service';
 import { AutoClockService } from './auto-clock.service';
+import { joinedIntoWhere } from './clock-in-join';
 import { alreadyClosedAnswer, clockOutLabelSpec, clockOutMessage, geofenceAtOut, lastRestEnd } from './clock-out-steps';
 import { notesWithEarlyReason, priorClockOutFlags, type ClockOutInput } from './clock-out-steps';
 
@@ -172,7 +173,7 @@ export class ClockOutService extends ShiftCloseBase {
       at: clockOutTime,
       from: replacingProvisional ? 'PROVISIONAL' : 'OPEN',
       toleranceMin,
-      labels: clockOutLabelSpec(entry, data, autoOut),
+      labels: clockOutLabelSpec(entry, data, autoOut, data.trigger),
       fields: {
         clockOutLat: data.lat ?? null,
         clockOutLng: data.lng ?? null,
@@ -253,12 +254,13 @@ export class ClockOutService extends ShiftCloseBase {
     );
   }
 
-  /** The shift this clock-out closes: the one named, else the one running. */
+  /** The shift this clock-out closes: the one named (or the one its clock-in joined), else the one running. */
   private entryToClose(data: ClockOutInput) {
     const include = { location: true, ...CLOSE_ENTRY_INCLUDE } as const;
+    const own = { userId: data.userId, organizationId: data.organizationId };
     return data.entryId
       ? this.prisma.timeEntry.findFirst({
-          where: { id: data.entryId, userId: data.userId, organizationId: data.organizationId },
+          where: { ...own, OR: [{ id: data.entryId }, joinedIntoWhere(data.entryId)] },
           include,
         })
       : this.prisma.timeEntry.findFirst({

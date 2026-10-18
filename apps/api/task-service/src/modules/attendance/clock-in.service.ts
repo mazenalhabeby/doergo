@@ -25,6 +25,7 @@ import { ClockInRemoteService } from './clock-in-remote.service';
 import { ClockInSiteWriter } from './clock-in-site.writer';
 import { AutoClockService } from './auto-clock.service';
 import { CLOCK_IN_USER_SELECT, gpsAccuracyRefusal, outsideSiteRefusal, type ClockInInput } from './clock-in-steps';
+import { joinedIntoWhere } from './clock-in-join';
 
 /**
  * Starting a shift: where a member may clock in, the clock-in itself, and the
@@ -71,8 +72,7 @@ export class ClockInService {
       const joinedInto = await this.prisma.timeEntry.findFirst({
         where: {
           userId: data.userId,
-          clockInAt: { gte: new Date(Date.now() - 2 * 86_400_000) },
-          labelFacts: { path: ['joinedClockInIds'], array_contains: [data.id] },
+          ...joinedIntoWhere(data.id),
         },
         include: { location: true },
       });

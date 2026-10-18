@@ -12,6 +12,7 @@ const base: FragmentCandidate = {
     firstOfShift: true,
     clockIn: { judged: true, metresOutside: 0 },
     closedHow: 'CLOCKED_OUT',
+    departureByPhone: true,
   },
   breakPlan: [],
 };
@@ -33,6 +34,10 @@ describe('one entry per shift — which earlier entry is joined', () => {
     expect(isJoinableFragment({ ...base, labelRules: null }, at)).toBe(false);
     expect(isJoinableFragment(null, at)).toBe(false);
   });
+  it("the person's own clock-out is real — a clock-in after it opens a new entry", () => {
+    const facts = { ...(base.labelFacts as object), departureByPhone: undefined };
+    expect(isJoinableFragment({ ...base, labelFacts: facts }, at)).toBe(false);
+  });
 });
 
 describe('one entry per shift — the join', () => {
@@ -53,6 +58,7 @@ describe('one entry per shift — the join', () => {
     expect(data.approvalStatus).toBe('AUTO');
     expect(data.labelFacts.joinedClockInIds).toEqual(['tap-2']);
     expect(data.labelFacts.closedHow).toBeUndefined();
+    expect(data.labelFacts.departureByPhone).toBeUndefined();
   });
   it('a lost claim (somebody else changed it) returns null — the clock-in is recorded as before', async () => {
     const prisma = { timeEntry: { updateMany: jest.fn().mockResolvedValue({ count: 0 }), findUnique: jest.fn() } };

@@ -243,7 +243,9 @@ describe('attendance recorded offline', () => {
       const { service, prisma } = await build();
       prisma.timeEntry.findFirst.mockResolvedValue(open());
       await service.clockOut(clockOut());
-      expect(prisma.timeEntry.findFirst.mock.calls[0][0].where).toMatchObject({ id: 'e1', userId: 'u1' });
+      const named = prisma.timeEntry.findFirst.mock.calls[0][0].where;
+      expect(named).toMatchObject({ userId: 'u1' });
+      expect(named.OR).toContainEqual({ id: 'e1' }); // …or the entry its clock-in joined (clock-in-join.ts)
       expect(prisma.timeEntry.updateMany).toHaveBeenCalledWith({ where: { id: 'e1', status: TimeEntryStatus.CLOCKED_IN }, data: expect.objectContaining({ clockOutAt: TAP }) });
       const data = prisma.timeEntry.updateMany.mock.calls[0][0].data;
       expect(data.clockOutAt).toEqual(TAP);

@@ -103,6 +103,12 @@ export interface LabelFacts {
   clockIn: PositionFact;
   clockOut?: PositionFact;
   closedHow?: ClosedHow;
+  /**
+   * The departure was filed by the phone's automatic clock (trigger AUTO), even
+   * when the server recorded it as an ordinary step. Only such a close can be a
+   * fragment a following clock-in joins — a person's own clock-out never is.
+   */
+  departureByPhone?: boolean;
   /** The workspace's boundary changed between the tap and its arrival (offline only). */
   boundaryChangedSinceTap?: boolean;
   /**

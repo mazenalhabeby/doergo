@@ -62,7 +62,7 @@ interface CloseSpec {
   /** Pass it when already looked up (the clock-out needs it for its flags). */
   toleranceMin?: number;
   /** How it closed and where — recorded in the label facts of a new entry (never an old one). */
-  labels?: { closedHow: ClosedHow; clockOut?: PositionFact };
+  labels?: { closedHow: ClosedHow; clockOut?: PositionFact; departureByPhone?: boolean };
   pause: {
     reason: 'CLOCK_OUT' | 'AUTO_CLOSE' | 'FORGOT' | 'OFFICE_CLOSE';
     handovers?: ClockOutHandover[];

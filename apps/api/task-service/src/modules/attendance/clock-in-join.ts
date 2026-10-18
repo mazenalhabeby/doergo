@@ -31,6 +31,8 @@ export function isJoinableFragment(prior: FragmentCandidate | null, clockInAt: D
   if (!prior || prior.labelRules == null) return false;
   const flags = prior.flagReasons ?? [];
   if (!flags.includes('AUTO_CLOCK_IN') || flags.includes('AUTO_CLOCK_OUT')) return false;
+  // Only a departure the PHONE filed; the person's own clock-out is a real one.
+  if (!readLabelFacts(prior.labelFacts)?.departureByPhone) return false;
   const length = prior.clockOutAt.getTime() - prior.clockInAt.getTime();
   const gap = clockInAt.getTime() - prior.clockOutAt.getTime();
   return length >= 0 && length < FRAGMENT_MAX_MS && gap >= 0 && gap <= JOIN_WITHIN_MS;
@@ -57,6 +59,7 @@ export async function joinFragment(
         ...facts,
         closedHow: undefined,
         clockOut: undefined,
+        departureByPhone: undefined,
         joinedClockInIds: [...(facts.joinedClockInIds ?? []), ...(join.clockInId ? [join.clockInId] : [])],
       }
     : undefined;
@@ -84,4 +87,12 @@ export async function joinFragment(
   });
   if (claim.count === 0) return null;
   return prisma.timeEntry.findUnique({ where: { id: fragment.id }, include: { location: true } });
+}
+
+/** The entry a clock-in (by its phone-made id) was joined into, looked up within two days. */
+export function joinedIntoWhere(clockInId: string): Prisma.TimeEntryWhereInput {
+  return {
+    clockInAt: { gte: new Date(Date.now() - 2 * 86_400_000) },
+    labelFacts: { path: ['joinedClockInIds'], array_contains: [clockInId] },
+  };
 }

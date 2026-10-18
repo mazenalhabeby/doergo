@@ -168,11 +168,13 @@ export function clockOutLabelSpec(
   entry: { isRemote?: boolean | null; location: SiteFacts },
   fix: { lat?: number; lng?: number; accuracy?: number },
   autoOut: boolean,
-): { closedHow: ClosedHow; clockOut: PositionFact } {
+  trigger?: string,
+): { closedHow: ClosedHow; clockOut: PositionFact; departureByPhone?: boolean } {
   const site = { ...entry.location, geofencePolygon: parseGeofencePolygon(entry.location.geofencePolygon) };
   const skip = entry.isRemote ? 'AWAY_DAY' : autoOut ? 'AUTO_CLOCK_OUT' : undefined;
   return {
     closedHow: autoOut ? 'AUTO_CLOCK_OUT' : 'CLOCKED_OUT',
     clockOut: judgePosition(fix, site, skip).fact,
+    ...(trigger === 'AUTO' ? { departureByPhone: true } : {}),
   };
 }
