@@ -1,0 +1,203 @@
+<title>Desktop App or Web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: a decision brief — the question and the short answer, then speed (memory bars), offline, who needs it, cost, what leaders do, the three-step plan, sources. */
+:root{
+  --bg:#eef2f5; --card:#ffffff; --ink:#0f1d2b; --muted:#5a6879; --line:#d9e0e8; --soft:#f5f7fa;
+  --brand:#2563eb; --brandSoft:#2563eb14; --amber:#b45309; --amberSoft:#b4530916; --green:#047857; --greenSoft:#04785716;
+  --red:#b42318; --redSoft:#b4231814; --bar1:#94a3b8; --bar2:#2563eb; --bar3:#047857;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif; --sans:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace; --ar:"IBM Plex Sans Arabic","Geeza Pro","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#0b1118; --card:#121b25; --ink:#e3ebf3; --muted:#93a3b5; --line:#223042; --soft:#16212d;
+  --brand:#6b9bff; --brandSoft:#6b9bff1f; --amber:#f0a94a; --amberSoft:#f0a94a1f; --green:#4fc79c; --greenSoft:#4fc79c1f;
+  --red:#f2836f; --redSoft:#f2836f1f; --bar1:#64748b; --bar2:#6b9bff; --bar3:#4fc79c;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#0b1118; --card:#121b25; --ink:#e3ebf3; --muted:#93a3b5; --line:#223042; --soft:#16212d;
+  --brand:#6b9bff; --brandSoft:#6b9bff1f; --amber:#f0a94a; --amberSoft:#f0a94a1f; --green:#4fc79c; --greenSoft:#4fc79c1f;
+  --red:#f2836f; --redSoft:#f2836f1f; --bar1:#64748b; --bar2:#6b9bff; --bar3:#4fc79c;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:36px 140px;display:flex;flex-direction:column;gap:24px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(30px,5vw,48px);font-weight:800;letter-spacing:-.02em;line-height:1.06}
+h2{font-size:clamp(21px,3vw,27px);font-weight:700}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.lede{font-size:18px;color:var(--muted);max-width:64ch}
+.lede b{color:var(--ink);font-weight:600}
+section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:16px;scroll-margin:24px;transition:box-shadow .3s}
+section.speaking{box-shadow:0 0 0 3px var(--brand)}
+section > header{display:flex;flex-direction:column;gap:6px;max-width:72ch}
+section > header p{color:var(--muted)}
+.hero{background:transparent;border:0;padding:0;gap:14px}
+.q{font-size:17px;border-left:3px solid var(--line);padding-left:12px;color:var(--muted);max-width:66ch}
+.listen{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-family:var(--ar);font-size:13px;background:var(--brandSoft);color:var(--brand);border:0;border-radius:999px;padding:5px 12px;cursor:pointer}
+button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.v{border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.v.no{background:var(--redSoft)} .v.yes{background:var(--greenSoft)}
+.v .k{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.v.no .k{color:var(--red)} .v.yes .k{color:var(--green)}
+.v p{font-size:14.5px;color:var(--muted)}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bar{display:grid;grid-template-columns:150px minmax(0,1fr) 92px;gap:10px;align-items:center;font-size:14px}
+@media (max-width:560px){.bar{grid-template-columns:110px minmax(0,1fr) 74px}}
+.track{height:16px;background:var(--soft);border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.fill{height:100%;border-radius:8px}
+.num{font-family:var(--mono);font-size:12.5px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.note{font-size:13.5px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.box{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--soft);display:flex;flex-direction:column;gap:6px;min-width:0}
+.box p{font-size:14.5px;color:var(--muted)}
+.box ul{margin:0;padding-left:18px;font-size:14.5px;color:var(--muted);display:grid;gap:3px}
+.tag{font-family:var(--mono);font-size:11px;border-radius:6px;padding:2px 8px;align-self:flex-start;font-weight:600}
+.tag.on{background:var(--greenSoft);color:var(--green)} .tag.live{background:var(--brandSoft);color:var(--brand)} .tag.cost{background:var(--amberSoft);color:var(--amber)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.step{border-top:3px solid var(--brand);padding-top:10px;display:flex;flex-direction:column;gap:4px}
+.step .s{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--brand)}
+.step p{font-size:14.5px;color:var(--muted)}
+.step.later{border-color:var(--line)} .step.later .s{color:var(--muted)}
+.src{display:grid;gap:6px;font-size:13.5px}
+.src a{color:var(--brand);overflow-wrap:anywhere}
+.player{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line);z-index:5}
+.player .inner{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.pbtn{width:42px;height:42px;border-radius:50%;border:0;background:var(--brand);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+.pstop{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:6px 12px;font-family:var(--ar);cursor:pointer}
+.pmeta{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.pnow{font-family:var(--ar);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:var(--brand)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <section class="hero" id="sec-question">
+    <span class="eyebrow">Your question · researched 18 Oct 2026</span>
+    <h1>Replace the web with a desktop app?</h1>
+    <p class="q">The phone works offline because it is an app. Should the web move to a desktop app, so everything works offline on desktop and phone, and we stop using the web? Is desktop faster than web?</p>
+  </section>
+
+  <section id="sec-answer">
+    <header><span class="eyebrow">Short answer</span><h2>Keep the web. Make it work offline where it helps.</h2></header>
+    <div class="verdict">
+      <div class="v no"><span class="k">Not recommended</span><h3>Dropping the web for a desktop app</h3><p>Not faster, costs more, and loses clients, sign links and the operator console.</p></div>
+      <div class="v yes"><span class="k">Recommended</span><h3>Web first, offline where useful</h3><p>Installable web app, local copy + queued writes like the phone, and a thin desktop wrapper only if customers ask.</p></div>
+    </div>
+  </section>
+
+  <section id="sec-speed">
+    <header><span class="eyebrow">Speed</span><h2>A desktop app runs the same web engine</h2><p>Electron ships a whole Chrome; Tauri uses the system’s browser engine. The screens render the same way — what makes an app fast is its data and requests, which the last audit already tuned.</p></header>
+    <div class="bars" role="img" aria-label="Idle memory: Electron 200 to 300 MB, Tauri 30 to 40 MB, browser tab shares the browser">
+      <div class="bar"><span>Electron app</span><div class="track"><div class="fill" style="width:100%;background:var(--bar1)"></div></div><span class="num">200–300 MB</span></div>
+      <div class="bar"><span>Tauri app</span><div class="track"><div class="fill" style="width:14%;background:var(--bar3)"></div></div><span class="num">30–40 MB</span></div>
+      <div class="bar"><span>Browser tab</span><div class="track"><div class="fill" style="width:22%;background:var(--bar2)"></div></div><span class="num">shared</span></div>
+    </div>
+    <p class="note">Idle memory, published comparisons (indicative; one 2026 benchmark reports 168 MB Electron vs 42 MB Tauri). A browser tab shares the browser that is already open.</p>
+  </section>
+
+  <section id="sec-offline">
+    <header><span class="eyebrow">Offline</span><h2>The web can work offline too</h2><p>Linear works offline inside the browser: a local copy of the data, edits saved locally first and sent when the connection returns — the same idea as our phone’s offline engine.</p></header>
+    <div class="cols">
+      <div class="box"><span class="tag on">Office PCs · Chrome / Edge</span><h3>Works well</h3><p>Local database in the browser (IndexedDB), installable app window, storage that is not cleared while the app is used.</p></div>
+      <div class="box"><span class="tag cost">iPhone Safari</span><h3>The hard limits are here</h3><p>No background sync, storage can be cleared after days of not opening. Our field workers use the native app, so this does not touch them.</p></div>
+    </div>
+  </section>
+
+  <section id="sec-who">
+    <header><span class="eyebrow">Who needs offline</span><h2>The field, not the office</h2></header>
+    <div class="cols">
+      <div class="box"><span class="tag on">Offline matters</span><h3>Workers in the field</h3><ul><li>Clock in and out, rests</li><li>Job steps, photos, signatures</li><li>Already covered by the phone app</li></ul></div>
+      <div class="box"><span class="tag live">Needs live data</span><h3>Managers and dispatchers</h3><ul><li>Live map, who is on site now</li><li>Approvals, chat, the team’s state</li><li>Meaningless without the internet</li></ul></div>
+    </div>
+    <p class="note">Field-service leaders follow this pattern: offline-first mobile app + web for the office (Salesforce Field Service, FieldPulse, FieldAware, Fieldbase).</p>
+  </section>
+
+  <section id="sec-cost">
+    <header><span class="eyebrow">What dropping the web costs</span><h2>Things that must open in a browser</h2></header>
+    <div class="cols">
+      <div class="box"><h3>Must stay web</h3><ul><li>Client portal</li><li>Signing links sent to customers</li><li>Operator console</li><li>Office staff on shared or locked-down PCs</li></ul></div>
+      <div class="box"><span class="tag cost">Desktop overhead</span><h3>Running a desktop app</h3><ul><li>Code signing: Apple $99/year, Windows certificate ~$200–700/year</li><li>First signing + update pipeline: ~2–3 weeks</li><li>Every update goes through installation; the web updates for everyone at once</li></ul></div>
+    </div>
+  </section>
+
+  <section id="sec-leaders">
+    <header><span class="eyebrow">What the leaders do</span><h2>Desktop is an addition, never a replacement</h2><p>Linear, Slack and Notion kept their websites. Their desktop apps are a thin wrapper around the same web code.</p></header>
+  </section>
+
+  <section id="sec-plan">
+    <header><span class="eyebrow">Our recommendation</span><h2>Three steps — the best of both</h2></header>
+    <div class="steps">
+      <div class="step"><span class="s">Step 1</span><h3>Installable web app</h3><p>Opens from the desktop with its own icon and window — no store, no signing cost.</p></div>
+      <div class="step"><span class="s">Step 2</span><h3>Offline where it helps</h3><p>Read recent jobs, rota and timesheets offline; keep safe edits until the connection returns — the phone engine’s idea.</p></div>
+      <div class="step later"><span class="s">Only if customers ask</span><h3>Thin desktop wrapper</h3><p>Tauri around the same web app, for tray, start-up and system notifications.</p></div>
+    </div>
+  </section>
+
+  <section id="sec-sources" aria-label="Sources">
+    <header><span class="eyebrow">Sources</span></header>
+    <div class="src">
+      <a href="https://www.raftlabs.com/blog/tauri-vs-electron-pros-cons">Tauri vs Electron — RaftLabs</a>
+      <a href="https://tech-insider.org/tauri-vs-electron-2026/">Tauri vs Electron 2026 — Tech Insider</a>
+      <a href="https://magenest.com/en/pwa-vs-electron/">PWA vs Electron — Magenest</a>
+      <a href="https://edana.ch/en/2026/04/05/can-a-web-app-pwa-really-work-offline-like-a-native-app/">Can a PWA really work offline like a native app — Edana</a>
+      <a href="https://www.magicbell.com/blog/pwa-ios-limitations-safari-support-complete-guide">PWA iOS limitations — MagicBell</a>
+      <a href="https://news.ycombinator.com/threads?id=jorde">Linear founder on offline in the browser — Hacker News</a>
+      <a href="https://slack.engineering/building-hybrid-applications-with-electron/">Building hybrid applications with Electron — Slack Engineering</a>
+      <a href="https://www.fieldpulse.com/features/mobile-app">FieldPulse mobile app (offline)</a>
+      <a href="https://forasoft.com/blog/article/publishing-desktop-apps-on-macos-290">Publishing desktop apps on macOS — Fora Soft</a>
+      <a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/code-signing.html">Code signing costs — shinyelectron</a>
+    </div>
+  </section>
+</div>
+
+<div class="player" role="region" aria-label="Narration">
+  <div class="inner">
+    <button class="pbtn" id="voPlay" type="button" aria-label="Play narration"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path id="voIcon" d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
+    <div class="pmeta"><div class="pnow" id="voNow" lang="ar" dir="rtl"></div><div class="pbar"><i id="voProg"></i></div></div>
+    <button class="pstop" id="voStop" type="button" hidden>إيقاف</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var ORDER=[['question','sec-question','السؤال'],['answer','sec-answer','الجواب المختصر'],['speed','sec-speed','السرعة'],['offline','sec-offline','بدون إنترنت'],
+    ['who','sec-who','من يحتاجه'],['cost','sec-cost','ماذا نخسر'],['leaders','sec-leaders','الشركات الكبرى'],['plan','sec-plan','اقتراحنا']];
+  var audio=new Audio(), i=-1, last=ORDER.length-1, IDLE='اضغط للاستماع · حوالي ثلاث دقائق ونصف';
+  var play=document.getElementById('voPlay'), icon=document.getElementById('voIcon'), now=document.getElementById('voNow'), prog=document.getElementById('voProg'), stop=document.getElementById('voStop');
+  var PLAY='M8 5v14l11-7z', PAUSE='M7 5h4v14H7zM13 5h4v14h-4z';
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  now.textContent=IDLE;
+  function mark(id){
+    document.querySelectorAll('.speaking').forEach(function(e){e.classList.remove('speaking');});
+    if(!id) return; var el=document.getElementById(id); el.classList.add('speaking');
+    el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+  }
+  function start(from,to){
+    i=from; last=to; var c=ORDER[i];
+    mark(c[1]); now.textContent=(i+1)+' / '+ORDER.length+' · '+c[2];
+    audio.src='audio/'+c[0]+'.mp3'; audio.play().catch(function(){});
+    icon.setAttribute('d',PAUSE); stop.hidden=false;
+  }
+  function end(){ audio.pause(); i=-1; icon.setAttribute('d',PLAY); stop.hidden=true; prog.style.width='0'; now.textContent=IDLE; mark(null); }
+  audio.addEventListener('timeupdate',function(){ if(audio.duration) prog.style.width=(audio.currentTime/audio.duration*100)+'%'; });
+  audio.addEventListener('ended',function(){ if(i<last) start(i+1,last); else end(); });
+  play.onclick=function(){
+    if(i<0) return start(0,ORDER.length-1);
+    if(audio.paused){ audio.play().catch(function(){}); icon.setAttribute('d',PAUSE); } else { audio.pause(); icon.setAttribute('d',PLAY); }
+  };
+  stop.onclick=end;
+  ORDER.forEach(function(c,n){
+    var sec=document.getElementById(c[1]); var b=document.createElement('button');
+    b.type='button'; b.className='listen'; b.lang='ar'; b.dir='rtl';
+    b.innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>استمع';
+    b.onclick=function(){start(n,n);};
+    sec.insertBefore(b, sec.firstElementChild);
+  });
+})();
+</script>
