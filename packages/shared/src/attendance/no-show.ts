@@ -151,8 +151,11 @@ export const NO_SHOW_LATE_AFTER_MINUTES = 10;
 export function noShowDayMark(
   inst: { state: string; expectedClockInAt: string | Date },
   clockInAt?: string | Date | null,
+  /** The linked entry. One judged by the label rules is "late" exactly when it carries LATE_ARRIVAL. */
+  entry?: { labelRules?: number | null; flagReasons?: readonly string[] | null } | null,
 ): NoShowDayMark {
   if (inst.state === 'PRESENT') {
+    if (entry?.labelRules != null) return (entry.flagReasons ?? []).includes('LATE_ARRIVAL') ? 'late' : 'worked';
     if (!clockInAt) return 'worked';
     const late = new Date(clockInAt).getTime() - new Date(inst.expectedClockInAt).getTime();
     return late > NO_SHOW_LATE_AFTER_MINUTES * 60_000 ? 'late' : 'worked';

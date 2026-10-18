@@ -115,6 +115,11 @@ export class AnalyticsService {
       ),
       te_local AS (
         SELECT r.*,
+               -- Label rules (new entries only): a later entry of the same shift is never late and its
+               -- planned time starts at its own clock-in; within the shift's grace is not late.
+               r."labelRules" IS NOT NULL AS judged,
+               (r."labelRules" IS NOT NULL AND (r."labelFacts"->>'firstOfShift')::boolean IS FALSE) AS later_entry,
+               COALESCE((r."labelFacts"->'shift'->>'toleranceMin')::int, 0) AS grace_min,
                r.rota_start + ((r.rota_end_local::time - r.rota_start_local::time)
                  + CASE WHEN r.rota_end_local::time <= r.rota_start_local::time THEN interval '24 hours' ELSE interval '0' END) AS rota_end,
                -- Unpaid rest, from the break ROWS (the source of truth: each
@@ -148,9 +153,12 @@ export class AnalyticsService {
                */
                SUM(CASE WHEN te.rota_start IS NULL OR te.rota_end IS NULL
                         THEN GREATEST(COALESCE(te."totalMinutes", 0) - te.unpaid_break, 0)
-                        ELSE GREATEST(EXTRACT(EPOCH FROM (LEAST(COALESCE(te."clockOutAt", (now() AT TIME ZONE 'UTC')), te.rota_end) - te.rota_start)) / 60 - te.unpaid_break, 0)
+                        ELSE GREATEST(EXTRACT(EPOCH FROM (LEAST(COALESCE(te."clockOutAt", (now() AT TIME ZONE 'UTC')), te.rota_end)
+                               - CASE WHEN te.later_entry THEN GREATEST(te."clockInAt", te.rota_start) ELSE te.rota_start END)) / 60
+                               - te.unpaid_break, 0)
                    END) AS planned_minutes,
-               SUM(CASE WHEN te.rota_start IS NULL OR te.rota_end IS NULL THEN 0
+               SUM(CASE WHEN te.rota_start IS NULL OR te.rota_end IS NULL OR te.later_entry THEN 0
+                        WHEN te.judged AND EXTRACT(EPOCH FROM (te."clockInAt" - te.rota_start)) / 60 <= te.grace_min THEN 0
                         ELSE GREATEST(EXTRACT(EPOCH FROM (LEAST(te."clockInAt", te.rota_end) - te.rota_start)) / 60, 0)
                    END) AS late_minutes,
                SUM(CASE WHEN te.rota_end IS NULL OR te."expectedClockOutAt" IS NULL OR te."clockOutAt" IS NULL THEN 0

@@ -82,6 +82,16 @@ describe('the record and the decision', () => {
     const at = '2026-10-14T07:00:00Z';
     expect(noShowDayMark({ state: 'PRESENT', expectedClockInAt: at }, '2026-10-14T07:09:00Z')).toBe('worked');
     expect(noShowDayMark({ state: 'PRESENT', expectedClockInAt: at }, '2026-10-14T07:42:00Z')).toBe('late');
+    // New entries read the label itself: the shift's own grace, and only the first entry is ever late.
+    expect(
+      noShowDayMark({ state: 'PRESENT', expectedClockInAt: at }, '2026-10-14T07:12:00Z', { labelRules: 1, flagReasons: [] }),
+    ).toBe('worked');
+    expect(
+      noShowDayMark({ state: 'PRESENT', expectedClockInAt: at }, '2026-10-14T07:06:00Z', {
+        labelRules: 1,
+        flagReasons: ['LATE_ARRIVAL'],
+      }),
+    ).toBe('late');
     expect(noShowDayMark({ state: 'ABSENT', expectedClockInAt: at })).toBe('absent');
     expect(noShowDayMark({ state: 'ESCALATED', expectedClockInAt: at })).toBe('open');
   });

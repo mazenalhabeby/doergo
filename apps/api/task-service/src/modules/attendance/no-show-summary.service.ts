@@ -55,10 +55,14 @@ export class NoShowSummaryService extends NoShowRecordBase {
         all.map((r) => r.spaceId),
       ),
       entryIds.length
-        ? this.prisma.timeEntry.findMany({ where: { id: { in: entryIds } }, select: { id: true, clockInAt: true } })
+        ? this.prisma.timeEntry.findMany({
+            where: { id: { in: entryIds } },
+            select: { id: true, clockInAt: true, labelRules: true, flagReasons: true },
+          })
         : Promise.resolve([]),
     ]);
     const clockIn = new Map(entries.map((e) => [e.id, e.clockInAt]));
+    const linked = new Map(entries.map((e) => [e.id, e]));
 
     const out: NoShowPersonSummary[] = [];
     for (const u of users) {
@@ -69,7 +73,11 @@ export class NoShowSummaryService extends NoShowRecordBase {
         settled = 0,
         open = 0;
       for (const r of mine) {
-        const mark = noShowDayMark(r, r.timeEntryId ? clockIn.get(r.timeEntryId) : null);
+        const mark = noShowDayMark(
+          r,
+          r.timeEntryId ? clockIn.get(r.timeEntryId) : null,
+          r.timeEntryId ? linked.get(r.timeEntryId) : null,
+        );
         const prev = byDay.get(r.localDate);
         if (!prev || MARK_RANK[mark] < MARK_RANK[prev.mark]) byDay.set(r.localDate, { mark, instanceId: r.id });
         if (r.state === 'ABSENT') absent++;
