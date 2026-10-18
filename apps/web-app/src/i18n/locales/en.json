@@ -8007,12 +8007,6 @@
       "parts_one": "{{count}} part",
       "parts_other": "{{count}} parts",
       "worked": "{{duration}} of work"
-    },
-    "refuse": {
-      "title": "Refuse this expense",
-      "why": "Why (the member sees this)",
-      "whyPh": "e.g. Not a fuel receipt, wrong vehicle…",
-      "confirm": "Refuse"
     }
   },
   "assetMoney": {

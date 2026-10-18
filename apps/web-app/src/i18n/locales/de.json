@@ -8007,12 +8007,6 @@
       "parts_one": "{{count}} Teil",
       "parts_other": "{{count}} Teile",
       "worked": "{{duration}} Arbeitszeit"
-    },
-    "refuse": {
-      "title": "Diese Ausgabe ablehnen",
-      "why": "Warum (das Mitglied sieht das)",
-      "whyPh": "z. B. Kein Tankbeleg, falsches Fahrzeug…",
-      "confirm": "Ablehnen"
     }
   },
   "assetMoney": {

@@ -8016,12 +8016,6 @@
       "parts_one": "{{count}} ricambio",
       "parts_other": "{{count}} ricambi",
       "worked": "{{duration}} di lavoro"
-    },
-    "refuse": {
-      "title": "Rifiuta questa spesa",
-      "why": "Perché (il membro lo vedrà)",
-      "whyPh": "es. Non è uno scontrino carburante, veicolo sbagliato…",
-      "confirm": "Rifiuta"
     }
   },
   "assetMoney": {

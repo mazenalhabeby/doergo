@@ -8016,12 +8016,6 @@
       "parts_one": "{{count}} pièce",
       "parts_other": "{{count}} pièces",
       "worked": "{{duration}} de travail"
-    },
-    "refuse": {
-      "title": "Refuser cette dépense",
-      "why": "Pourquoi (le membre le verra)",
-      "whyPh": "p. ex. Pas un ticket de carburant, mauvais véhicule…",
-      "confirm": "Refuser"
     }
   },
   "assetMoney": {

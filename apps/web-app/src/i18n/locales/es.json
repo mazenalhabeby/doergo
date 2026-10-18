@@ -8007,12 +8007,6 @@
       "parts_one": "{{count}} pieza",
       "parts_other": "{{count}} piezas",
       "worked": "{{duration}} de trabajo"
-    },
-    "refuse": {
-      "title": "Rechazar este gasto",
-      "why": "Por qué (el miembro lo verá)",
-      "whyPh": "p. ej. No es un ticket de combustible, vehículo equivocado…",
-      "confirm": "Rechazar"
     }
   },
   "assetMoney": {

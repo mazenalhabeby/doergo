@@ -32,8 +32,6 @@ import { handoverAt, toLocalInput } from '@/components/assets/asset-handover-dia
 import { workDurationLabel } from '@/components/assets/asset-service-reports'
 // eslint-disable-next-line import/first
 import { AssetStatusChip, AssetStatusPicker } from '@/components/assets/asset-status'
-// eslint-disable-next-line import/first
-import { ExpenseRefuseDialog } from '@/components/assets/expense-refuse-dialog'
 
 let container: HTMLDivElement
 let root: Root
@@ -124,39 +122,5 @@ describe('status on screen', () => {
 
     await act(async () => { root.render(<AssetStatusPicker value="RETIRED" onChange={onChange} />) })
     expect(container.textContent).toContain('stops it counting on the bill')
-  })
-})
-
-describe('refusing an expense asks why', () => {
-  it('sends the reason the member will read', async () => {
-    const onRefuse = jest.fn()
-    await act(async () => {
-      root.render(<ExpenseRefuseDialog onRefuse={onRefuse} trigger={<button>refuse</button>} />)
-    })
-    await act(async () => { container.querySelector('button')!.click() })
-
-    const box = document.body.querySelector('textarea') as HTMLTextAreaElement
-    expect(box).toBeTruthy()
-    // React tracks the value through its own setter, so set it the way a keystroke would.
-    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!
-    await act(async () => {
-      setter.call(box, '  Not a fuel receipt  ')
-      box.dispatchEvent(new Event('input', { bubbles: true }))
-    })
-
-    const confirm = [...document.body.querySelectorAll('button')].find((b) => b.textContent === 'Refuse')!
-    await act(async () => { confirm.click() })
-    expect(onRefuse).toHaveBeenCalledWith('Not a fuel receipt')
-  })
-
-  it('still refuses with no reason — sometimes "duplicate" is all there is', async () => {
-    const onRefuse = jest.fn()
-    await act(async () => {
-      root.render(<ExpenseRefuseDialog onRefuse={onRefuse} trigger={<button>refuse</button>} />)
-    })
-    await act(async () => { container.querySelector('button')!.click() })
-    const confirm = [...document.body.querySelectorAll('button')].find((b) => b.textContent === 'Refuse')!
-    await act(async () => { confirm.click() })
-    expect(onRefuse).toHaveBeenCalledWith(undefined)
   })
 })
