@@ -16,7 +16,7 @@ import { JobSheet } from '../job/job-ui';
 import { SupplyDocumentSheet } from '../supply-document-sheet';
 import { DocumentRow, dayOf } from './document-row';
 import { useDocumentsScreen } from './use-documents-screen';
-import { Fact } from './documents-screen-helpers';
+import { FactRow } from '../amazen/fact-row';
 import { refreshControl } from '../pull-refresh';
 
 /**
@@ -119,8 +119,8 @@ export function DocumentsScreen() {
         {opened ? (
           <>
             <View style={{ backgroundColor: vm.c.sunken, borderRadius: 18, paddingHorizontal: vm.amazen.space(3.5) }}>
-              <Fact first label={vm.t('documents.fact.kind', 'Kind')} value={opened.typeLabel} />
-              <Fact
+              <FactRow first label={vm.t('documents.fact.kind', 'Kind')} value={opened.typeLabel} />
+              <FactRow
                 label={
                   opened.status === 'PENDING_VERIFICATION' || opened.status === 'REJECTED'
                     ? vm.t('documents.fact.sentIn', 'Sent in')
@@ -129,10 +129,12 @@ export function DocumentsScreen() {
                 value={dayOf(opened.issuedAt)}
               />
               {opened.periodMonth || opened.periodYear ? (
-                <Fact label={vm.t('documents.fact.period', 'For')} value={vm.periodOf(opened)} />
+                <FactRow label={vm.t('documents.fact.period', 'For')} value={vm.periodOf(opened)} />
               ) : null}
-              {opened.expiresOn ? <Fact label={vm.t('documents.fact.validUntil', 'Valid until')} value={dayOf(opened.expiresOn)} /> : null}
-              {vm.tag ? <Fact label={vm.t('documents.fact.state', 'State')} value={vm.tag.label} tone={vm.tag.tone} /> : null}
+              {opened.expiresOn ? (
+                <FactRow label={vm.t('documents.fact.validUntil', 'Valid until')} value={dayOf(opened.expiresOn)} />
+              ) : null}
+              {vm.tag ? <FactRow label={vm.t('documents.fact.state', 'State')} value={vm.tag.label} tone={vm.tag.tone} /> : null}
             </View>
             {opened.status === 'REJECTED' && opened.rejectionReason ? (
               <View style={{ backgroundColor: vm.c.criticalTint, borderRadius: 16, padding: vm.amazen.space(3.5) }}>

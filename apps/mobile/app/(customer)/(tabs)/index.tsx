@@ -23,6 +23,7 @@ import { portalApi } from '../../../src/lib/api/portal';
 import { resolveMediaUrl } from '../../../src/lib/api';
 import { initialOf } from '../../../src/lib/people';
 import { RequestRow } from '../../../src/components/customer/request-bits';
+import { CountBadge } from '../../../src/components/amazen/count-badge';
 import {
   ReportGlyph,
   RequestsGlyph,
@@ -134,9 +135,7 @@ export default function CustomerHome() {
                   <View style={[styles.tileIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#ffffffcc' }]}>
                     <tile.Glyph size={28} color={a.fg} />
                     {tile.badge ? (
-                      <View style={[styles.tileBadge, { backgroundColor: a.fg }]}>
-                        <Text style={styles.tileBadgeText}>{tile.badge > 9 ? '9+' : tile.badge}</Text>
-                      </View>
+                      <CountBadge count={tile.badge} style={{ position: 'absolute', top: -6, right: -6 }} />
                     ) : null}
                   </View>
                   <Text

@@ -19,6 +19,7 @@ import {
   WellDivider,
   JobField,
   SectionLabel,
+  ChoicePill,
 } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { JobSheet } from '../job/job-ui';
@@ -192,17 +193,7 @@ export function InvitationsScreen() {
               ].map((s) => {
                 const on = spaceId === s.id;
                 return (
-                  <Pressable key={s.id ?? 'none'} onPress={() => setSpaceId(s.id)} accessibilityRole="button" accessibilityState={{ selected: on }}
-                    style={{
-                      borderRadius: amazen.radius.full,
-                      paddingHorizontal: amazen.space(3),
-                      paddingVertical: amazen.space(1.75),
-                      backgroundColor: on ? c.accentTint : c.tile,
-                      borderWidth: 1.5,
-                      borderColor: on ? c.accent : 'transparent',
-                    }}>
-                    <AText variant="caption" numberOfLines={1} style={{ fontSize: 12.5, color: on ? c.accent : c.ink }}>{s.name}</AText>
-                  </Pressable>
+                  <ChoicePill key={s.id ?? 'none'} label={s.name} on={on} onPress={() => setSpaceId(s.id)} truncate />
                 );
               })}
             </ScrollView>

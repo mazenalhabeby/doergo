@@ -34,6 +34,7 @@ import { useOffline } from '../../src/offline/offline-context';
 import { logFromPhone } from '../../src/offline/assets/log-actions';
 import { useAssetLogScreen } from '../../src/screens/app/use-asset-log-screen';
 import { FieldInput, s } from '../../src/screens/app/asset-log-screen-helpers';
+import { NotAllowed } from '../../src/components/not-allowed';
 
 /**
  * Opened from a home shortcut there is no equipment in the link: ask which one
@@ -86,12 +87,13 @@ function AssetLogScreen() {
     // Reachable by deep link whatever a button points at; the server refuses too.
     return (
       <EquipmentFrame title={title}>
-        <View style={s.centre}>
-          <Ionicons name="lock-closed-outline" size={40} color={colors.textMuted} />
-          <Text style={[s.hint, { color: colors.textMuted }]}>
-            {held ? tt('logbook.unknownType', 'This kind no longer logs that.') : tt('expenses.notYours', 'You do not have this one.')}
-          </Text>
-        </View>
+        <NotAllowed
+          message={
+            held
+              ? tt('logbook.unknownType', 'This kind no longer logs that.')
+              : tt('expenses.notYours', 'You do not have this one.')
+          }
+        />
       </EquipmentFrame>
     );
   }

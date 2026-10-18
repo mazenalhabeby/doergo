@@ -1,26 +1,39 @@
 import React from 'react';
 import { Pressable, ScrollView, TextInput, View, type TextInputProps } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
-import { Bump } from './motion';
+import { CountBadge } from './count-badge';
 import { AText } from './text';
 
 /**
- * A choice in a filter row — "All 10", "Companies", a workspace.
+ * The one on/off pill — a filter choice ("All 10", "Companies", a workspace) or a
+ * picked option. Tile when off, jade outline when on.
  *
  * It was written out by hand on every new screen, and the copies had already
- * begun to differ in padding and in whether a dot was allowed. One pill, one
- * look: tile when off, jade outline when on.
+ * begun to differ in padding and in whether a dot was allowed.
+ *
+ * - `truncate`: one line, capped at 220 — for workspace and client names in a
+ *   scrolling filter row. Off by default: a role name the Members and Team
+ *   filters show in full must stay in full.
+ * - `disabled`: shown, not offered — a value somebody may read and not change.
+ * - `count`: something waiting here (unread) — the same red count as the tab bar's.
  */
-export function FilterPill({
-  label, on, onPress, dot, disabled,
+export function ChoicePill({
+  label,
+  on,
+  onPress,
+  dot,
+  count,
+  disabled,
+  truncate = false,
 }: {
   label: string;
   on: boolean;
   onPress: () => void;
-  /** Shown, not offered — a value somebody may read and not change. */
-  disabled?: boolean;
   /** A colour mark before the label — a role's colour, a presence. */
   dot?: string | null;
+  count?: number;
+  disabled?: boolean;
+  truncate?: boolean;
 }) {
   const { amazen } = useTheme();
   const c = amazen.color;
@@ -30,68 +43,48 @@ export function FilterPill({
       disabled={disabled}
       accessibilityRole="button"
       accessibilityState={{ selected: on, disabled: !!disabled }}
-      style={{ opacity: disabled && !on ? 0.5 : 1, ...pillBox(amazen, on), maxWidth: 220 }}
+      accessibilityLabel={count ? `${label}, ${count}` : undefined}
+      style={{
+        ...pillBox(amazen, on),
+        ...(disabled && !on ? { opacity: 0.5 } : null),
+        ...(truncate ? { maxWidth: 220 } : null),
+      }}
     >
       {dot ? <PillDot color={dot} /> : null}
-      <AText variant="caption" numberOfLines={1} style={{ fontSize: 12.5, color: on ? c.accent : c.ink }}>{label}</AText>
+      <AText
+        variant="caption"
+        numberOfLines={truncate ? 1 : undefined}
+        style={{ fontSize: 12.5, color: on ? c.accent : c.ink }}
+      >
+        {label}
+      </AText>
+      {count ? <CountBadge count={count} /> : null}
     </Pressable>
   );
 }
 
+/** The same pill on one line, for names in a scrolling filter row. */
+export function FilterPill(props: Omit<React.ComponentProps<typeof ChoicePill>, 'truncate'>) {
+  return <ChoicePill {...props} truncate />;
+}
+
 /**
- * The same pill with its label shown whole — no width cap, no truncation, no
- * disabled state. The Members and Team filters were drawn this way before
- * `FilterPill` existed, and a role name they show in full must stay in full.
+ * A one-tap action that sits among pills — a quick phrase, "Add note". Drawn
+ * exactly like an unselected ChoicePill so a row of both reads as one family;
+ * it has no on state because it does something rather than picking something.
+ * (`Chip` stays a status label, never a control.)
  */
-export function ChoicePill({
-  label,
-  on,
-  onPress,
-  dot,
-  count,
-}: {
-  label: string;
-  on: boolean;
-  onPress: () => void;
-  dot?: string | null;
-  /** Something waiting here (unread): a red count after the label — the same mark as the tab bar's. */
-  count?: number;
-}) {
+export function ActionPill({ label, onPress }: { label: string; onPress: () => void }) {
   const { amazen } = useTheme();
-  const c = amazen.color;
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityState={{ selected: on }}
-      accessibilityLabel={count ? `${label}, ${count}` : undefined}
-      style={pillBox(amazen, on)}
+      style={({ pressed }) => ({ ...pillBox(amazen, false), opacity: pressed ? 0.75 : 1 })}
     >
-      {dot ? <PillDot color={dot} /> : null}
-      <AText variant="caption" style={{ fontSize: 12.5, color: on ? c.accent : c.ink }}>{label}</AText>
-      {count ? (
-        <Bump value={count}>
-          <View
-            style={{
-              minWidth: 18,
-              height: 18,
-              paddingHorizontal: 5,
-              borderRadius: amazen.radius.full,
-              backgroundColor: c.critical,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <AText
-              variant="caption"
-              numeric
-              style={{ color: c.criticalInk, fontSize: 11, lineHeight: 14, fontFamily: amazen.font.sansMedium }}
-            >
-              {count > 9 ? '9+' : String(count)}
-            </AText>
-          </View>
-        </Bump>
-      ) : null}
+      <AText variant="caption" style={{ fontSize: 12.5, color: amazen.color.ink }}>
+        {label}
+      </AText>
     </Pressable>
   );
 }

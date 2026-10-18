@@ -4,12 +4,12 @@ import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withDela
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { AText } from '../amazen';
+import { Monogram } from '../amazen/monogram';
 import { over } from '../../theme/amazen';
 import { CallGlyph } from '../glyphs/work-glyphs';
 import { EmailGlyph, ClientCompanyGlyph, ClientPersonGlyph } from '../glyphs/crm-glyphs';
 import type { DueReminder } from '../../lib/api/customers';
 import { DoneRing } from './done-ring';
-import { personInitials } from '@hbcfield/shared/client';
 
 /** How long Undo is offered before the tick is sent. */
 export const UNDO_MS = 4000;
@@ -100,19 +100,7 @@ export function ReminderRow({
         >
           {/* A company is a rounded square, a person a circle — the rule `ClientAvatar` uses — with the kind as a badge. */}
           <View style={{ width: 36, height: 36 }}>
-            <View
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: company ? 11 : 18,
-                backgroundColor: c.tile,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-              <AText variant="caption" tone="ink" style={{ fontSize: 11.5, fontFamily: amazen.font.sansMedium }}>
-                {personInitials(r.name, '·')}
-              </AText>
-            </View>
+            <Monogram name={r.name} size={36} company={company} tone="tile" />
             <View
               style={{
                 position: 'absolute',

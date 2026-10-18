@@ -4,7 +4,7 @@ import { ScreenHeader } from '../../../src/components';
 import { type NoShow } from '../../../src/lib/api';
 import type { TimeEntry } from '../../../src/lib/api/types';
 import { localDateKey } from '@hbcfield/shared/client';
-import { FilterChip } from '../../../src/components/filter-chip';
+import { ChoicePill } from '../../../src/components/amazen';
 import { Skeleton, ScreenContainer, AttendanceEditSheet } from '../../../src/components';
 import { DatePickerModal } from '../../../src/components/date-picker-modal';
 import { COLORS, SPACING } from '../../../src/lib/constants';
@@ -69,7 +69,7 @@ export default function AttendanceReviewScreen() {
       <ScreenHeader title={t('manage.titles.attendance')} />
       <View style={s.filterRow}>
         {SEGMENTS.map((seg) => (
-          <FilterChip key={seg} label={segmentLabel(seg)} active={segment === seg} onPress={() => show(seg)} />
+          <ChoicePill key={seg} label={segmentLabel(seg)} on={segment === seg} onPress={() => show(seg)} />
         ))}
       </View>
 
@@ -96,7 +96,7 @@ export default function AttendanceReviewScreen() {
           </View>
           <View style={s.periodRow}>
             {PERIODS.map((p) => (
-              <FilterChip
+              <ChoicePill
                 key={p}
                 /* The custom chip carries the days it holds, so the list never
                    shows a window whose name does not say what it is. */
@@ -105,7 +105,7 @@ export default function AttendanceReviewScreen() {
                     ? `${shortDay(customFrom)} – ${shortDay(customTo)}`
                     : t(`attendanceReview.period.${p}`)
                 }
-                active={period === p}
+                on={period === p}
                 onPress={() => {
                   setPeriod(p);
                   if (p === 'custom') setPickingRange('from');

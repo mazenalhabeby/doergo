@@ -254,6 +254,4 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
   },
 
-  empty: { alignItems: 'center', gap: SPACING.md, paddingVertical: SPACING.xxxl },
-  emptyText: { fontSize: FONT_SIZE.base, textAlign: 'center', paddingHorizontal: SPACING.lg },
 });

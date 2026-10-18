@@ -14,7 +14,7 @@ import { slide, tint } from './motion';
 import { Bump } from '../motion';
 import type { TabPillItem } from '../tab-pill';
 import { useTabSlot } from './use-tab-slot';
-import { Badge } from './tab-slot-helpers';
+import { CountBadge } from '../count-badge';
 
 /*
   ⚠️ THERE IS NO `AnimatedPressable` HERE, AND THAT WAS TRIED FIRST.
@@ -221,13 +221,13 @@ export function TabSlot({
           pointerEvents="none"
           style={[{ position: 'absolute', top: 0, left: markWidth / 2 + 1 }, markBadgeStyle]}
         >
-          <Badge count={item.badge} ring={c.barFill} />
+          <CountBadge count={item.badge} ring={c.barFill} />
         </Animated.View>
       ) : null}
       {/* The open tab's count: on the capsule's top-right corner, cross-faded with the mark's. */}
       {item.badge ? (
         <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: -7, right: -3 }, capsuleBadgeStyle]}>
-          <Badge count={item.badge} ring={c.barFill} glow />
+          <CountBadge count={item.badge} ring={c.barFill} glow />
         </Animated.View>
       ) : null}
     </Animated.View>

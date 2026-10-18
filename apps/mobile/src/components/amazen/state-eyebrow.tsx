@@ -2,8 +2,8 @@ import { type ReactNode } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
 import { AText } from './text';
+import { Monogram } from './monogram';
 import { LiveDot } from './live-dot';
-import { personInitials } from '@hbcfield/shared/client';
 import { toneColor } from '../../theme/tone-color';
 
 /** The mockup's mono eyebrow — `.ey`. */
@@ -62,22 +62,7 @@ export function StateEyebrow({
   );
 }
 
-/** Initials in a jade circle — `.av`. */
+/** Initials in a jade circle — `.av`. The Monogram, named for the job page's callers. */
 export function Initials({ first, last, size = 30 }: { first?: string | null; last?: string | null; size?: number }) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
-  const text = personInitials({ firstName: first, lastName: last }, '·');
-  return (
-    <View
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        backgroundColor: c.accentTint,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-      <AText variant="caption" tone="accent" style={{ fontSize: 11, fontFamily: amazen.font.sansMedium }}>{text}</AText>
-    </View>
-  );
+  return <Monogram name={{ firstName: first, lastName: last }} size={size} />;
 }

@@ -25,7 +25,8 @@ import { timeAgo } from '../team/helpers';
 import { PersonAvatar } from './person-avatar';
 import { personName } from '@hbcfield/shared/client';
 import { useMembersScreen } from './use-members-screen';
-import { RoleTag, Line } from './members-screen-helpers';
+import { RoleTag } from './members-screen-helpers';
+import { FactRow } from '../amazen/fact-row';
 import { LoadingLine } from '../loading-line';
 import { refreshControl } from '../pull-refresh';
 
@@ -203,9 +204,9 @@ export function MembersScreen() {
       <JobSheet visible={!!open} onClose={() => setOpen(null)} busy={busy} title={open ? personName(open) : undefined}>
         {open ? (
           <>
-            <Sunken style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
-              <Line label={t('members.email', 'Email')} value={open.email} />
-              <Line
+            <Sunken style={{ paddingHorizontal: amazen.space(3.5), paddingVertical: amazen.space(1) }}>
+              <FactRow first label={t('members.email', 'Email')} value={open.email} />
+              <FactRow
                 label={t('members.role', 'Role')}
                 value={
                   open.isExternal
@@ -213,9 +214,9 @@ export function MembersScreen() {
                     : (open.memberRole?.name ?? t('members.noRoleOne', 'No role'))
                 }
               />
-              {open.position ? <Line label={t('members.position', 'Position')} value={open.position} /> : null}
+              {open.position ? <FactRow label={t('members.position', 'Position')} value={open.position} /> : null}
               {open.lastActiveAt ? (
-                <Line label={t('members.lastActive', 'Last active')} value={timeAgo(open.lastActiveAt)} />
+                <FactRow label={t('members.lastActive', 'Last active')} value={timeAgo(open.lastActiveAt)} />
               ) : null}
             </Sunken>
             <AText variant="caption" tone="muted" style={{ textAlign: 'center' }}>

@@ -1,10 +1,11 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { CUSTOMER_STAGES, customerStageLabel, isCompany, personInitials } from '@hbcfield/shared/client';
+import { CUSTOMER_STAGES, customerStageLabel, isCompany } from '@hbcfield/shared/client';
 import { useTheme } from '../../../contexts/theme-context';
 import type { MobileCustomer } from '../../../lib/api';
 import { AText, GlassCard, RoundButton } from '../../amazen';
+import { Monogram } from '../../amazen/monogram';
 import { CallGlyph, NavigateGlyph } from '../../glyphs/work-glyphs';
 import { EmailGlyph, ReminderGlyph } from '../../glyphs/crm-glyphs';
 import { geoUrl, mailtoUrl, openSafeUrl, telUrl } from '../../../lib/safe-links';
@@ -80,17 +81,7 @@ export function RecordHero({
   return (
     <GlassCard style={{ gap: amazen.space(4) }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3.5) }}>
-        <View
-          style={{
-            width: 58,
-            height: 58,
-            borderRadius: company ? 18 : 29,
-            backgroundColor: c.accentTint,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-          <AText style={{ color: c.accent, fontFamily: amazen.font.sansMedium, fontSize: 19 }}>{personInitials(record.name, '·')}</AText>
-        </View>
+        <Monogram name={record.name} size={58} company={company} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <AText variant="h2" tone="strong" numberOfLines={2} style={{ fontSize: 22, lineHeight: 26 }}>{record.name}</AText>
           <AText

@@ -16,7 +16,8 @@ import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Pill, SectionLa
 import { centeredContent } from '../screen-container';
 import { JobSheet } from '../job/job-ui';
 import { typesFor, logFor } from './use-equipment-screen';
-import { Fact, SentRow } from './equipment-screen-helpers';
+import { SentRow } from './equipment-screen-helpers';
+import { FactRow } from '../amazen/fact-row';
 import { useEquipmentScreenLogic } from './use-equipment-screen-logic';
 import { EquipmentScreenStale } from './equipment-screen-stale';
 
@@ -124,7 +125,7 @@ export function EquipmentScreen() {
           return (
             <>
               <View style={{ backgroundColor: c.sunken, borderRadius: 18, paddingHorizontal: amazen.space(3.5) }}>
-                {facts.map(([k, v], i) => <Fact key={k} first={i === 0} label={k} value={v} />)}
+                {facts.map(([k, v], i) => <FactRow numeric key={k} first={i === 0} label={k} value={v} />)}
               </View>
               <View style={{ flexDirection: 'row', gap: amazen.space(2) }}>
                 {[
@@ -143,7 +144,7 @@ export function EquipmentScreen() {
                   <SectionLabel tone="warn">{t('equipment.due', 'Due')}</SectionLabel>
                   <View style={{ backgroundColor: c.sunken, borderRadius: 18, paddingHorizontal: amazen.space(3.5) }}>
                     {mineDue.map((d, i) => (
-                      <Fact
+                      <FactRow numeric
                         key={d.key}
                         first={i === 0}
                         label={d.label}
@@ -160,7 +161,7 @@ export function EquipmentScreen() {
                   <SectionLabel>{t('equipment.lastEntries', 'Your last entries')}</SectionLabel>
                   <View style={{ backgroundColor: c.sunken, borderRadius: 18, paddingHorizontal: amazen.space(3.5) }}>
                     {mineItems.map((i, n) => (
-                      <Fact
+                      <FactRow numeric
                         key={i.key}
                         first={n === 0}
                         label={`${whatOf(i)} · ${day(i.at)}`}

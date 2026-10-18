@@ -1,6 +1,5 @@
-import { View, Text, StyleSheet } from 'react-native';
 import { clientKind, type ClientKind, personInitials } from '@hbcfield/shared/client';
-import { COLORS, FONT_WEIGHT, RADIUS } from '../../lib/constants';
+import { Monogram } from '../amazen/monogram';
 
 /**
  * The client's mark: a SHAPE that says what kind of thing this is.
@@ -25,33 +24,5 @@ export function ClientAvatar({
   size?: number;
 }) {
   const kind: ClientKind = clientKind(customer);
-  return (
-    <View
-      style={[
-        s.base,
-        {
-          width: size,
-          height: size,
-          // A square is only a square once its corners are much smaller than
-          // half its side; at size/2 the two shapes are the same circle.
-          borderRadius: kind === 'COMPANY' ? Math.max(RADIUS.md, size * 0.28) : size / 2,
-        },
-      ]}
-    >
-      <Text style={[s.text, { fontSize: Math.round(size * 0.36) }]} numberOfLines={1}>
-        {personInitials(customer?.name, '')}
-      </Text>
-    </View>
-  );
+  return <Monogram initials={personInitials(customer?.name, '')} size={size} company={kind === 'COMPANY'} />;
 }
-
-const s = StyleSheet.create({
-  base: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    // The brand green is one colour in both themes — the documented exception
-    // to taking every surface from the theme.
-    backgroundColor: COLORS.primary,
-  },
-  text: { color: COLORS.white, fontWeight: FONT_WEIGHT.bold, letterSpacing: 0.5 },
-});

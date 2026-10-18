@@ -4,48 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/theme-context';
 import { canTakeBack, type SentItem } from '../../lib/sent-in';
 import { AText } from '../amazen';
-import { toneColor } from '../../theme/tone-color';
 
 /** EquipmentScreen's module-level helpers, moved here unchanged so its sections can read them too. */
-export function Fact({
-  label,
-  value,
-  first,
-  tone,
-  onPress,
-}: {
-  label: string;
-  value: string;
-  first?: boolean;
-  tone?: 'warn' | 'critical';
-  onPress?: () => void;
-}) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
-  const body = (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        gap: 12,
-        paddingVertical: amazen.space(2.75),
-        borderTopWidth: first ? 0 : 1,
-        borderTopColor: c.lineWell,
-      }}>
-      <AText variant="body" tone="muted" numberOfLines={1} style={{ fontSize: 13.5, flexShrink: 1 }}>{label}</AText>
-      <AText
-        variant="body"
-        numeric
-        style={{
-          fontSize: 13.5,
-          textAlign: 'right',
-          color: toneColor(c, tone, c.inkStrong),
-        }}
-      >{`${value}${onPress ? '  ›' : ''}`}</AText>
-    </View>
-  );
-  return onPress ? <Pressable onPress={onPress} accessibilityRole="button">{body}</Pressable> : body;
-}
 
 /**
  * One thing sent in — its slice of the "Sent in" well. Memoised on what it

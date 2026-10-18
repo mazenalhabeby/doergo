@@ -4,15 +4,6 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../../lib/co
 export const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: SPACING.md },
-  emptyText: { fontSize: FONT_SIZE.lg, marginTop: SPACING.md },
-  backBtn: {
-    marginTop: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.md,
-  },
-  backBtnText: { color: '#fff', fontWeight: FONT_WEIGHT.semibold },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -47,18 +47,6 @@ export const styles = StyleSheet.create({
   tile: { borderRadius: 22, overflow: 'hidden' },
   tileBg: { minHeight: 132, borderRadius: 22, padding: SPACING.md, justifyContent: 'space-between' },
   tileIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  tileBadge: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 5,
-  },
-  tileBadgeText: { color: '#fff', fontFamily: 'Outfit_800ExtraBold', fontSize: 11 },
   tileLabel: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.base, lineHeight: 20, marginTop: SPACING.sm },
 
   // Sections

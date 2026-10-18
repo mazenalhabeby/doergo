@@ -15,6 +15,7 @@ import { formatDuration } from '@hbcfield/shared/client';
 import { overtimePlaceLine, waitingText } from '../../../src/components/time/time-logic';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 import { styles } from '../../../src/screens/app/overtime/overtime-request-styles';
+import { EmptyState } from '../../../src/components/amazen/empty-state';
 
 export default function OvertimeRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -103,12 +104,13 @@ export default function OvertimeRequestScreen() {
 
   if (!request) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.surface }]}>
-        <Ionicons name="time-outline" size={48} color={colors.textMuted} />
-        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t('overtime.noActiveRequest')}</Text>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backBtnText}>{t('common.back')}</Text>
-        </TouchableOpacity>
+      <View style={{ flex: 1, backgroundColor: colors.surface }}>
+        <EmptyState
+          fill
+          icon="time-outline"
+          text={t('overtime.noActiveRequest')}
+          action={{ label: t('common.back'), onPress: () => router.back() }}
+        />
       </View>
     );
   }

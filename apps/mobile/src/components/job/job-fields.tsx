@@ -5,7 +5,7 @@ import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import { customFieldsApi, type MobileCustomFieldDefinition, type MobileCustomFieldValue } from '../../lib/api';
 import { knownOffline } from '../../offline/connectivity';
-import { AText, PrimaryButton, JobField, SectionLabel } from '../amazen';
+import { AText, ChoicePill, PrimaryButton, JobField, SectionLabel } from '../amazen';
 import { JobSheet } from './job-ui';
 
 /**
@@ -126,22 +126,7 @@ function FieldEditor({ def, value, onChange }: { def: MobileCustomFieldDefinitio
         {(def.options || []).map((opt) => {
           const on = value === opt;
           return (
-            <Pressable
-              key={opt}
-              onPress={() => onChange(on ? '' : opt)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: on }}
-              style={{
-                borderRadius: amazen.radius.full,
-                paddingHorizontal: amazen.space(3.25),
-                paddingVertical: amazen.space(1.75),
-                backgroundColor: on ? c.accentTint : c.tile,
-                borderWidth: 1.5,
-                borderColor: on ? c.accent : 'transparent',
-              }}
-            >
-              <AText variant="caption" style={{ color: on ? c.accent : c.ink, fontSize: 12.5 }}>{opt}</AText>
-            </Pressable>
+            <ChoicePill key={opt} label={opt} on={on} onPress={() => onChange(on ? '' : opt)} />
           );
         })}
       </View>

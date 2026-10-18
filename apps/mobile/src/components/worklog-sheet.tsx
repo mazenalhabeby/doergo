@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
 import { useTimeFormat } from '../hooks/useTimeFormat';
-import { AText, Sunken, JobField, Pill, ReceiptRow, RoundButton, StateEyebrow } from './amazen';
+import { ActionPill, AText, Sunken, JobField, Pill, ReceiptRow, RoundButton, StateEyebrow } from './amazen';
 import { JobSheet } from './job/job-ui';
 import { CameraGlyph, CloseGlyph, GalleryGlyph, SendGlyph } from './job/job-glyphs';
 import { DayBar } from './time/day-bar';
@@ -162,20 +162,11 @@ export function WorkLogSheet({
                 contentContainerStyle={{ gap: amazen.space(1.5) }}
                 keyboardShouldPersistTaps="handled">
                 {QUICK.map((k) => (
-                  <Pressable
+                  <ActionPill
                     key={k}
+                    label={t(`worklog.quick.${k}`)}
                     onPress={() => setDraft((d) => (d.trim() ? `${d.trim()} · ` : '') + t(`worklog.quick.${k}`))}
-                    accessibilityRole="button"
-                    style={({ pressed }) => ({
-                      borderRadius: amazen.radius.full,
-                      paddingHorizontal: amazen.space(3),
-                      paddingVertical: amazen.space(1.75),
-                      backgroundColor: c.tile,
-                      opacity: pressed ? 0.75 : 1,
-                    })}
-                  >
-                    <AText variant="caption" tone="ink" style={{ fontSize: 12.5 }}>{t(`worklog.quick.${k}`)}</AText>
-                  </Pressable>
+                  />
                 ))}
               </ScrollView>
 

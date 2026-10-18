@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { CachedImage } from '../cached-image';
 import { useTheme } from '../../contexts/theme-context';
 import { resolveMediaUrl } from '../../lib/api';
-import { AText } from '../amazen';
+import { Monogram } from '../amazen/monogram';
 import { personInitials } from '@hbcfield/shared/client';
 
 export type Presence = 'AVAILABLE' | 'BUSY' | 'AWAY' | string | null | undefined;
@@ -43,17 +43,7 @@ export function PersonAvatar({
       {img ? (
         <CachedImage uri={img} style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: c.tile }} />
       ) : (
-        <View
-          style={{
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            backgroundColor: c.accentTint,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-          <AText style={{ color: c.accent, fontFamily: amazen.font.sansMedium, fontSize: Math.round(size * 0.32) }}>{initials}</AText>
-        </View>
+        <Monogram initials={initials} size={size} />
       )}
       {presence !== undefined ? (
         <View

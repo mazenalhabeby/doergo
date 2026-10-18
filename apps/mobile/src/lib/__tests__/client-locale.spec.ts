@@ -85,7 +85,8 @@ describe('client language — wired into the screens', () => {
     // (crm/client-overlay). The gate is the same one, asked of the same record —
     // so a language chosen with no signal shows while it waits.
     expect(about).toMatch(/const editLocale = canEditClientLocale\(record\)/);
-    expect(about).toMatch(/disabled=\{!editLocale\}/);
+    // The row is a button only when the gate allows it (no onPress = nothing to tap).
+    expect(about).toMatch(/onPress=\{editLocale \? onLanguage : undefined\}/);
     const src = read('src/components/customer/record/use-client-record.ts');
     // ONE body for the queued change and the direct call, exactly as the add
     // form: a language that reached one path and not the other is what this pins.

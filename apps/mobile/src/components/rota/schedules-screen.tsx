@@ -8,7 +8,7 @@ import { useTheme } from '../../contexts/theme-context';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { rotaApi, type RotaCell, type RotaWeek } from '../../lib/api';
 import { useResponsive } from '../../lib/responsive';
-import { AText, Ground, HeaderBack, ScreenHeader, Well, Banner, SectionLabel } from '../amazen';
+import { AText, ChoicePill, Ground, HeaderBack, ScreenHeader, Well, Banner, SectionLabel } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { JobSheet } from '../job/job-ui';
 import { NAME_W, Cell, Legend, RoundArrow, DaySheet } from './day-sheet';
@@ -138,17 +138,7 @@ export function SchedulesScreen() {
             {week.spaces.map((s) => {
               const on = s.id === (spaceId ?? week.space?.id);
               return (
-                <Pressable key={s.id} onPress={() => setSpaceId(s.id)} accessibilityRole="button" accessibilityState={{ selected: on }}
-                  style={{
-                    borderRadius: amazen.radius.full,
-                    paddingHorizontal: amazen.space(3),
-                    paddingVertical: amazen.space(2),
-                    backgroundColor: on ? c.accentTint : c.tile,
-                    borderWidth: 1.5,
-                    borderColor: on ? c.accent : 'transparent',
-                  }}>
-                  <AText variant="caption" numberOfLines={1} style={{ fontSize: 13, color: on ? c.accent : c.ink }}>{s.name}</AText>
-                </Pressable>
+                <ChoicePill key={s.id} label={s.name} on={on} onPress={() => setSpaceId(s.id)} truncate />
               );
             })}
           </ScrollView>

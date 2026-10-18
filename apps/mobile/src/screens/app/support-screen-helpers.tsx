@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { type SupportTicket } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
+import { CountBadge } from '../../components/amazen/count-badge';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
 
 /** SupportScreen's module-level helpers, moved here unchanged so its sections can read them too. */
@@ -36,7 +37,7 @@ export const TicketRow = memo(function TicketRow({ ticket: tk, onOpen }: { ticke
           {pendingSync ? t('offline.chip.waiting') : t(`support.status.${tk.status}`, tk.status)}
         </Text>
       </View>
-      {!!tk.unreadForCustomer && <View style={styles.badge}><Text style={styles.badgeText}>{tk.unreadForCustomer}</Text></View>}
+      {!!tk.unreadForCustomer && <CountBadge count={tk.unreadForCustomer} />}
     </TouchableOpacity>
   );
 });
@@ -87,8 +88,6 @@ export const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4 },
   ticketSubject: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.medium },
   ticketMeta: { fontSize: FONT_SIZE.xs, marginTop: 2 },
-  badge: { backgroundColor: COLORS.primary, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1 },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: FONT_WEIGHT.bold },
   primaryBtn: { backgroundColor: COLORS.primary, margin: SPACING.md, borderRadius: RADIUS.md, paddingVertical: 14, alignItems: 'center' },
   primaryBtnText: { color: '#fff', fontWeight: FONT_WEIGHT.semibold, fontSize: FONT_SIZE.md },
   input: {

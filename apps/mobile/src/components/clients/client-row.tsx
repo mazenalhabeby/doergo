@@ -1,9 +1,10 @@
 import React, { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
-import { isCompany, personInitials } from '@hbcfield/shared/client';
+import { isCompany } from '@hbcfield/shared/client';
 import type { MobileCustomer } from '../../lib/api';
 import { AText } from '../amazen';
+import { Monogram } from '../amazen/monogram';
 import { CallGlyph } from '../glyphs/work-glyphs';
 import { openSafeUrl, telUrl } from '../../lib/safe-links';
 
@@ -58,19 +59,7 @@ export const ClientRow = memo(function ClientRow({
           borderTopWidth: first ? 0 : 1, borderTopColor: c.lineWell, opacity: pressed ? 0.75 : contact ? 0.62 : 1,
         })}
       >
-        <View
-          style={{
-            width: 42,
-            height: 42,
-            borderRadius: company ? 13 : 21,
-            backgroundColor: c.accentTint,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-          <AText variant="caption" style={{ fontSize: 13.5, color: c.accent, fontFamily: amazen.font.sansMedium }}>
-            {personInitials(client.name, '·')}
-          </AText>
-        </View>
+        <Monogram name={client.name} size={42} company={company} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{client.name}</AText>
           <AText variant="caption" numberOfLines={1} style={{ color: c.inkMuted }}>

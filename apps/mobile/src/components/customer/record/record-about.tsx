@@ -5,6 +5,7 @@ import { COMPANY_FIELD_KEYS, COMPANY_ONLY_FIELDS, isCompany, type CompanyOnlyFie
 import { useTheme } from '../../../contexts/theme-context';
 import { canEditClientLocale, clientLocaleName } from '../../../lib/client-locale';
 import { AText, Well, SectionLabel } from '../../amazen';
+import { FactRow } from '../../amazen/fact-row';
 import { ContactRow } from '../contact-row';
 import { AddressRow } from '../address-row';
 import { isWaiting, type ClientRecordModel } from './use-client-record';
@@ -142,22 +143,20 @@ export function RecordAbout({
       </SectionLabel>
       <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
         {facts.map((f, i) => (
-          <Fact key={f.key} first={i === 0} label={f.label} value={f.value} action={f.action} />
+          <FactRow key={f.key} first={i === 0} label={f.label} value={f.value} action={f.action} selectable />
         ))}
-        <Fact
+        <FactRow
           first={facts.length === 0}
           label={t('customers.fWorkspace')}
           value={spaceName ?? t('customers.noSpace')}
           muted={!spaceName}
         />
         {/* Language for emails — always shown: "same as the organization" still decides something. */}
-        <Pressable onPress={onLanguage} disabled={!editLocale} accessibilityRole={editLocale ? 'button' : 'text'}>
-          <Fact
-            label={t('customers.record.emailsIn', 'Emails in')}
-            value={clientLocaleName(record.locale) ?? t('customers.localeSame')}
-            chevron={editLocale}
-          />
-        </Pressable>
+        <FactRow
+          label={t('customers.record.emailsIn', 'Emails in')}
+          value={clientLocaleName(record.locale) ?? t('customers.localeSame')}
+          onPress={editLocale ? onLanguage : undefined}
+        />
       </Well>
 
       {model.addresses.length > 0 ? (
@@ -171,50 +170,6 @@ export function RecordAbout({
         </>
       ) : null}
       <View style={{ height: amazen.space(6) }} />
-    </View>
-  );
-}
-
-function Fact({ label, value, action, first, muted, chevron }: {
-  label: string; value: string; action?: { label: string; onPress: () => void }; first?: boolean; muted?: boolean; chevron?: boolean;
-}) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: amazen.space(3),
-        paddingVertical: amazen.space(3),
-        borderTopWidth: first ? 0 : 1,
-        borderTopColor: c.lineWell,
-      }}>
-      <AText
-        numberOfLines={2}
-        style={{
-          width: 86,
-          color: c.inkMuted,
-          fontFamily: amazen.font.mono,
-          fontSize: 10,
-          letterSpacing: 1.1,
-          textTransform: 'uppercase',
-        }}
-      >
-        {label}
-      </AText>
-      <AText
-        variant="body"
-        selectable
-        style={{ flex: 1, minWidth: 0, fontSize: 14, lineHeight: 19, color: muted ? c.inkMuted : c.inkStrong }}
-      >
-        {value}
-      </AText>
-      {action ? (
-        <Pressable onPress={action.onPress} hitSlop={8} accessibilityRole="button">
-          <AText variant="caption" style={{ color: c.accent, fontSize: 13 }}>{action.label}</AText>
-        </Pressable>
-      ) : chevron ? <AText variant="body" tone="muted">›</AText> : null}
     </View>
   );
 }

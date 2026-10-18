@@ -5,7 +5,7 @@ import type { TimeEntry } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { attendanceApi } from '../../lib/api/attendance';
-import { AText, Chip, Well, WellDivider, SectionLabel } from '../amazen';
+import { AText, Chip, ChoicePill, Well, WellDivider, SectionLabel } from '../amazen';
 import { JobSheet } from '../job/job-ui';
 import { WorkLogSheet } from '../worklog-sheet';
 import { DateTileRow } from './date-tile-row';
@@ -170,22 +170,7 @@ function AllShiftsSheet({
         {(['week', 'lastWeek', 'month'] as const).map((p) => {
           const on = p === period;
           return (
-            <Pressable
-              key={p}
-              onPress={() => setPeriod(p)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: on }}
-              style={{
-                borderRadius: amazen.radius.full,
-                paddingHorizontal: amazen.space(3),
-                paddingVertical: amazen.space(1.75),
-                backgroundColor: on ? c.accentTint : c.tile,
-                borderWidth: 1.5,
-                borderColor: on ? c.accent : 'transparent',
-              }}
-            >
-              <AText variant="caption" style={{ fontSize: 13, color: on ? c.accent : c.ink }}>{t(`time.history.period.${p}`)}</AText>
-            </Pressable>
+            <ChoicePill key={p} label={t(`time.history.period.${p}`)} on={on} onPress={() => setPeriod(p)} />
           );
         })}
       </View>

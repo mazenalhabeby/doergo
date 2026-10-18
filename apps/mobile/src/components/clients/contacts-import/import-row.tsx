@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { ClassifiedContact, PickSection } from '@hbcfield/shared/client';
 import { useTheme } from '../../../contexts/theme-context';
 import { AText, type Tone } from '../../amazen';
+import { Monogram } from '../../amazen/monogram';
 import { personInitials } from '@hbcfield/shared/client';
 
 /** Fixed, so the list can be measured without rendering — see `ROW_HEIGHT` use in the pick step. */
@@ -57,12 +58,7 @@ export const ImportRow = memo(function ImportRow({
         opacity: pressed ? 0.7 : 1,
       })}
     >
-      <View style={{
-        width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: c.tile,
-        borderRadius: contact.kind === 'COMPANY' ? amazen.radius.tile : amazen.radius.full,
-      }}>
-        <AText variant="caption" tone="ink" style={{ fontSize: 13 }}>{initials}</AText>
-      </View>
+      <Monogram initials={initials} size={40} company={contact.kind === 'COMPANY'} tone="tile" />
       <View style={{ flex: 1, minWidth: 0 }}>
         <AText variant="body" tone="strong" numberOfLines={1}>{contact.name}</AText>
         {sub ? <AText variant="caption" tone="muted" numberOfLines={1}>{sub}</AText> : null}

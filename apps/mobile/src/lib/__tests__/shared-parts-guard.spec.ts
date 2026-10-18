@@ -134,8 +134,15 @@ describe('the parts kept what their callers relied on', () => {
       expect(src).toMatch(/<GlassInput\b/);
     }
     const filter = read('src/components/amazen/filter.tsx');
-    const choice = filter.slice(filter.indexOf('export function ChoicePill'), filter.indexOf('type Amazen'));
-    expect(choice).not.toMatch(/maxWidth|numberOfLines/);
+    const choice = filter.slice(filter.indexOf('export function ChoicePill'), filter.indexOf('export function FilterPill'));
+    // Whole by default: the cap and the one-line clamp exist only behind `truncate`, which defaults to false…
+    expect(choice).toMatch(/truncate = false/);
+    expect(choice.replace(/truncate \? \{ maxWidth: 220 \} : null/, '').replace(/numberOfLines=\{truncate \? 1 : undefined\}/, ''))
+      .not.toMatch(/maxWidth|numberOfLines/);
+    // …and Members and Team never ask for it.
+    for (const f of ['src/components/people/members-screen.tsx', 'src/components/people/team-screen.tsx']) {
+      expect(read(f)).not.toMatch(/<ChoicePill\b[^>]*\btruncate\b/);
+    }
   });
 
   it('Edit profile saves only a change; Change password whenever it is valid', () => {

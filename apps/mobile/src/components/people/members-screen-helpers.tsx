@@ -43,11 +43,3 @@ export function RoleTag({ member }: { member: OrgMember }) {
   );
 }
 
-export function Line({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-      <AText variant="caption" tone="muted" style={{ fontSize: 13.5 }}>{label}</AText>
-      <AText variant="caption" tone="ink" numberOfLines={1} style={{ fontSize: 13.5, flexShrink: 1, textAlign: 'right' }}>{value}</AText>
-    </View>
-  );
-}

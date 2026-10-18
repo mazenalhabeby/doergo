@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import { DetentSheet } from '../../components/route/detent-sheet';
 import { PressableScale } from '../../components/pressable-scale';
+import { EmptyState } from '../../components/amazen/empty-state';
 import { Ionicons } from '@expo/vector-icons';
 import { type Task } from '../../lib/api';
 import { COLORS, SPACING } from '../../lib/constants';
@@ -136,12 +137,10 @@ export function RoutePlannerScreenYourRoute({ vm }: { vm: RoutePlannerScreenStat
         ListEmptyComponent={loading ? (
           <ActivityIndicator style={{ marginVertical: SPACING.xl }} color={COLORS.primary} />
         ) : (
-          <View style={styles.empty}>
-            <Ionicons name="map-outline" size={40} color={colors.textMuted} />
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-              {t('route.noStops', 'No tasks with a location. Add a location to a task to route to it.')}
-            </Text>
-          </View>
+          <EmptyState
+            icon="map-outline"
+            text={t('route.noStops', 'No tasks with a location. Add a location to a task to route to it.')}
+          />
         )}
         renderItem={({ item, index }) => {
           if (result) {

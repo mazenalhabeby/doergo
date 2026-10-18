@@ -21,7 +21,8 @@ import {
 import { useInGallery, usePitch } from '../../home/pitch';
 import { loadShortcuts, saveShortcuts, onShortcutsChanged } from '../../home/layout-store';
 import { useShortcutsEditor } from './use-shortcuts-editor';
-import { Badge, GROUPS } from './shortcuts-editor-helpers';
+import { GROUPS } from './shortcuts-editor-helpers';
+import { CountBadge } from '../amazen/count-badge';
 import { useShortcutsEditorLogic } from './use-shortcuts-editor-logic';
 import { ShortcutsEditorShortcutsCard } from './shortcuts-editor-shortcuts-card';
 
@@ -181,7 +182,7 @@ function Tile({
       >
         {label}
       </AText>
-      {count ? <Badge n={count} ring={c.well} /> : null}
+      {count ? <CountBadge count={count} ring={c.well} style={{ position: 'absolute', top: 6, right: 6 }} /> : null}
     </Pressable>
   );
 }

@@ -4,7 +4,6 @@ export { ScreenContainer, centeredContent } from './screen-container';
 export { ScreenHeader, goBack } from './screen-header';
 export type { ScreenHeaderProps } from './screen-header';
 export { AnimatedSplash } from './animated-splash';
-export { FilterChip } from './filter-chip';
 export { PressableScale } from './pressable-scale';
 export type { PressableScaleProps } from './pressable-scale';
 export { BlurSheet } from './blur-sheet';

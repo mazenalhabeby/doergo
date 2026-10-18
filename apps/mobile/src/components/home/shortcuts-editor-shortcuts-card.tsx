@@ -5,7 +5,8 @@ import { AText, Eyebrow, PrimaryButton } from '../amazen';
 import { SheetPanel } from '../sheet-panel';
 import { SHORTCUT_GLYPHS } from './shortcut-glyphs';
 import { SLOTS, badgeOf, groupOf, smartPicks } from '../../home/shortcuts';
-import { Badge, GROUPS } from './shortcuts-editor-helpers';
+import { GROUPS } from './shortcuts-editor-helpers';
+import { CountBadge } from '../amazen/count-badge';
 import type { ShortcutsEditorState } from './use-shortcuts-editor-logic';
 import type { ShortcutsEditor } from './shortcuts-card';
 
@@ -150,7 +151,7 @@ export function ShortcutsEditorShortcutsCard({
                         justifyContent: 'center',
                       }}>
                       {Glyph ? <Glyph size={20} color={c.ink} contrast={slotBg} /> : null}
-                      {n ? <Badge n={n} ring={surface} style={{ top: -5, right: -7 }} /> : null}
+                      {n ? <CountBadge count={n} ring={surface} style={{ position: 'absolute', top: -5, right: -7 }} /> : null}
                     </View>
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 19 }}>

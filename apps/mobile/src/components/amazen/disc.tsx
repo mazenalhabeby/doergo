@@ -3,6 +3,7 @@ import { Pressable, View, StyleSheet, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/theme-context';
 import { AText } from './text';
+import { CountBadge } from './count-badge';
 import { shadowDisc, shadowDiscPrimary } from './surfaces';
 import type { GlyphProps } from '../glyphs/glyphs';
 
@@ -91,26 +92,7 @@ export function Disc({
           color={filled ? c.accentInk : c.inkStrong}
           contrast={filled ? filledContrast : restContrast}
         />
-        {badge && badge > 0 ? (
-          <View
-            style={{
-              position: 'absolute',
-              top: 4,
-              right: 4,
-              minWidth: 18,
-              height: 18,
-              paddingHorizontal: 5,
-              borderRadius: amazen.radius.full,
-              backgroundColor: c.warn,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <AText variant="caption" tone="warn" numeric style={{ color: c.warnInk, lineHeight: 18 }}>
-              {badge > 99 ? '99+' : String(badge)}
-            </AText>
-          </View>
-        ) : null}
+        {badge && badge > 0 ? <CountBadge count={badge} style={{ position: 'absolute', top: 4, right: 4 }} /> : null}
       </View>
       <AText
         variant="caption"

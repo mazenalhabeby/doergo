@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import { AText, PrimaryButton, Sunken, QuietButton, SectionLabel } from '../amazen';
+import { FactRow } from '../amazen/fact-row';
 import { JobSheet } from '../job/job-ui';
 import { MEETING_PROVIDER_NAMES, meetingProvider } from '@hbcfield/shared/client';
 import { calendarApi, type CalendarEventDetail } from '../../lib/api';
@@ -80,36 +81,36 @@ export function EventSheet({ eventId, onClose, onChanged }: { eventId: string | 
     >
       {ev ? (
         <>
-          <Sunken style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
-            <Row label={t('calendar.when', 'When')} value={when} />
+          <Sunken style={{ paddingHorizontal: amazen.space(3.5), paddingVertical: amazen.space(1) }}>
+            <FactRow first label={t('calendar.when', 'When')} value={when} />
             {ev.meetingMode === 'IN_PERSON' && ev.placeKind === 'OFFICE' && ev.placeSpace ? (
-              <Row
+              <FactRow
                 label={t('calendar.place.OFFICE', 'Our office')}
                 value={[ev.placeSpace.name, ev.room].filter(Boolean).join(' · ')}
               />
             ) : null}
-            {ev.location && ev.meetingMode !== 'PHONE' ? <Row label={t('calendar.where', 'Where')} value={ev.location} /> : null}
+            {ev.location && ev.meetingMode !== 'PHONE' ? <FactRow label={t('calendar.where', 'Where')} value={ev.location} /> : null}
             {ev.meetingMode === 'ONLINE' && meetingProvider(ev.meetingUrl) ? (
-              <Row
+              <FactRow
                 label={t('calendar.mode.ONLINE', 'Online')}
                 value={MEETING_PROVIDER_NAMES[meetingProvider(ev.meetingUrl)!]}
               />
             ) : null}
             {ev.meetingMode === 'PHONE' && ev.phone ? (
-              <Row
+              <FactRow
                 label={t('calendar.mode.PHONE', 'Phone')}
                 value={`${ev.phone} · ${t(`calendar.call.${ev.callDirection ?? 'OUTGOING'}`)}`}
               />
             ) : null}
-            {ev.customer ? <Row label={t('calendar.client', 'Client')} value={ev.customer.name} /> : null}
+            {ev.customer ? <FactRow label={t('calendar.client', 'Client')} value={ev.customer.name} /> : null}
             {ev.reminders.length ? (
-              <Row
+              <FactRow
                 label={t('calendar.remind', 'Remind')}
                 value={ev.reminders.map((m) => offsetText(m, t)).join(', ')}
               />
             ) : null}
             {ev.attendees.length > 1 ? (
-              <Row
+              <FactRow
                 label={t('calendar.people', 'People')}
                 value={t('calendar.going', { count: going, total: ev.attendees.length })}
               />
@@ -239,15 +240,6 @@ export function EventSheet({ eventId, onClose, onChanged }: { eventId: string | 
         <View style={{ height: 160 }} />
       ) : null}
     </JobSheet>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={{ flexDirection: 'row', gap: 12 }}>
-      <AText variant="caption" tone="muted" style={{ width: 70, fontSize: 12.5 }}>{label}</AText>
-      <AText variant="caption" tone="strong" style={{ flex: 1, fontSize: 13.5 }}>{value}</AText>
-    </View>
   );
 }
 
