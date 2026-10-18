@@ -10,33 +10,6 @@ export interface Organization extends BaseEntity {
   enabledModules?: ModuleKey[] | null;
 }
 
-// CompanyLocation, Break, TimeEntry, AttendanceStatus
-// are defined in ./attendance.ts and re-exported below via `export * from './attendance'`
-
-// Employee Assignment interface (many-to-many: User ↔ CompanyLocation)
-export interface EmployeeAssignment extends BaseEntity {
-  userId: string;
-  locationId: string;
-  isPrimary: boolean;
-  schedule: string[];
-  effectiveFrom: Date;
-  effectiveTo?: Date;
-  location?: {
-    id: string;
-    name: string;
-    address?: string;
-    lat: number;
-    lng: number;
-    geofenceRadius: number;
-  };
-  user?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-}
-
 // Organization Access (delegation between orgs)
 export interface OrganizationAccess extends BaseEntity {
   grantorOrgId: string;    // The org granting access

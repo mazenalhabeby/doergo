@@ -8,7 +8,7 @@ export {
   DependencyType, SprintStatus,
   CustomFieldType, RecurrenceFrequency,
   TaskCreationScope, TimeOffStatus, InvoiceStatus,
-  WorkModel, SpaceKind, ShiftReminderState, ShiftRecurrence,
+  WorkModel, SpaceKind,  ShiftRecurrence,
 } from './enums';
 export {
   getDefaultModules, hasModule, hasAccessModule, canReceiveTasks, byAssignableFirst, canUsePlatform,
@@ -65,7 +65,7 @@ export {
 } from './entities/org-modules';
 export type {
   Organization,
-  EmployeeAssignment,
+  
   OrganizationAccess,
 } from './entities/organization';
 export {

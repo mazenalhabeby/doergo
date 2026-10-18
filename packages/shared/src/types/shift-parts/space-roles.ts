@@ -1,31 +1,6 @@
 /** Moved here unchanged from shift.ts. */
 import type { PermissionSet } from '../permissions';
 
-// ============================================================================
-// DYNAMIC PER-SPACE SUB-ROLES
-// ============================================================================
-
-// Enforced space-role permissions. Kept minimal + real: each maps to a concrete
-// server-side check (approval routing, rota mutation, attendance reconcile/view).
-export const SPACE_ROLE_PERMISSION_SCHEMA = [
-  {
-    key: 'canApproveOvertime',
-    label: 'Approve overtime',
-    description: 'Can approve extra-time requests for this space',
-  },
-  { key: 'canManageRota', label: 'Manage rota', description: 'Can create shifts and assign members to shifts' },
-  {
-    key: 'canReconcileAttendance',
-    label: 'Reconcile attendance',
-    description: 'Receives escalations and can close/fix open entries',
-  },
-  {
-    key: 'canViewSpaceAttendance',
-    label: 'View space attendance',
-    description: 'Can see attendance for everyone in this space',
-  },
-] as const;
-
 /**
  * What a space role grants.
  *

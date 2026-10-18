@@ -17,12 +17,11 @@ export type {
   UpdateEmployeeInput,
   EmployeesQueryParams,
   EmployeesListResponse,
-  EmployeeDetailResponse,
-  EmployeePerformanceResponse,
+
   EmployeeAvailability,
 } from './technician/inputs';
 export {
-  isEmployeeOnline,
+  
   SPECIALTY_OPTIONS,
   type TechnicianListItem,
   type TechniciansListResponse,

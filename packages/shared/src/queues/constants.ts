@@ -19,16 +19,6 @@ export const QUEUE_NAMES = {
   SUPPORT: 'support',
 } as const;
 
-export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
-
-// Billing queue job types
-export const BILLING_JOB_TYPES = {
-  PROCESS_WEBHOOK: 'billing.processWebhook', // handle a verified Stripe event async
-  RECONCILE_SEATS: 'billing.reconcileSeats', // recompute office/field seats → sync Stripe qty
-  NIGHTLY_RECONCILE: 'billing.nightlyReconcile', // backstop full sweep for missed webhooks
-  DUNNING_NOTIFY: 'billing.dunningNotify', // notify admin of failed payment / trial end
-} as const;
-
 // Task queue job types
 export const TASK_JOB_TYPES = {
   CREATE: 'task.create',
@@ -144,13 +134,6 @@ export const REPORT_JOB_TYPES = {
   ADD_PART: 'report.addPart',
   UPDATE_PART: 'report.updatePart',
   DELETE_PART: 'report.deletePart',
-} as const;
-
-// Notification queue job types
-export const NOTIFICATION_JOB_TYPES = {
-  SEND_EMAIL: 'notification.sendEmail',
-  SEND_PUSH: 'notification.sendPush',
-  SEND_SMS: 'notification.sendSms',
 } as const;
 
 // Default job options for different scenarios

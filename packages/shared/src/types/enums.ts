@@ -179,17 +179,6 @@ export enum SpaceKind {
   CUSTOMER = 'CUSTOMER',
 }
 
-// Lifecycle of a still-open clock-in relative to its expected shift end.
-// The engine NEVER force-closes — it nudges and escalates.
-export enum ShiftReminderState {
-  NONE = 'NONE',
-  REMINDED = 'REMINDED',
-  OVERTIME_PENDING = 'OVERTIME_PENDING',
-  OVERTIME_APPROVED = 'OVERTIME_APPROVED',
-  ESCALATED = 'ESCALATED',
-  RESOLVED = 'RESOLVED',
-}
-
 // Recurrence pattern for a rota assignment (member → shift within a space).
 export enum ShiftRecurrence {
   DAILY = 'DAILY',

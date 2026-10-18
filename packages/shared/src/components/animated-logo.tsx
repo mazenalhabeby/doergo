@@ -107,4 +107,3 @@ export function AnimatedLogo({
 }
 
 export { FieldArrowIcon };
-export default AnimatedLogo;

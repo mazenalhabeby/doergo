@@ -49,6 +49,3 @@ export interface FetchInit {
 export type FetchLike = (url: string, init?: any) => Promise<ResponseLike>;
 
 export type HttpMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-
-/** A value a query string may carry. Arrays are joined with commas. */
-export type QueryValue = string | number | boolean | null | undefined | ReadonlyArray<string | number>;

@@ -2,22 +2,6 @@
 import type { EmployeeAvailability, EmployeesListResponse } from './inputs';
 import type { EmployeeListItem } from './profile';
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * Check if an employee is considered "online"
- * Online = location updated within the last 5 minutes
- */
-export function isEmployeeOnline(
-  lastLocationUpdatedAt: string | null | undefined
-): boolean {
-  if (!lastLocationUpdatedAt) return false;
-  const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-  return new Date(lastLocationUpdatedAt).getTime() > fiveMinutesAgo;
-}
-
 /**
  * Common job title suggestions for autocomplete
  * Admins/dispatchers can type any custom title

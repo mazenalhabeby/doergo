@@ -51,24 +51,7 @@ export type DocumentStatus =
   | 'SIGNED' // signed and sealed; frozen forever
   | 'EXPIRED' // a credential past its expiry date
   | 'SUPERSEDED' // replaced by a newer document (see Document.supersedesId)
-  | 'REVOKED'; // withdrawn by the issuer
-
-/**
- * The evidence trail. Append-only: every entry is a fact that happened at a
- * point in time, so there is no update path and no service method exposes one.
- */
-export type DocumentEventType =
-  | 'ISSUED'
-  | 'DELIVERED' // notification accepted for delivery
-  | 'OPENED' // a download URL was minted for the member
-  | 'DOWNLOADED'
-  | 'CONSENTED' // "I agree to sign electronically" — its own act
-  | 'SIGNED'
-  | 'SEALED' // certificate appended, bytes frozen
-  | 'ACKNOWLEDGED'
-  | 'VERIFIED' // an admin confirmed a supplied credential is genuine
-  | 'REVOKED'
-  | 'SUPERSEDED';
+  | 'REVOKED';
 
 /** A document type, defined per organization. */
 export interface DocumentTypeDef {

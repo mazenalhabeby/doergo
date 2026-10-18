@@ -1,5 +1,5 @@
 /** Creating, editing and listing members; their availability. */
-import type { EmployeeListItem, EmployeeProfile, EmployeeStats, PerformanceMetrics } from './profile';
+import type { EmployeeListItem } from './profile';
 
 // ============================================================================
 // API INPUTS
@@ -102,24 +102,6 @@ export interface EmployeesListResponse {
     total: number;
     totalPages: number;
   };
-}
-
-/**
- * Response for getting a single employee
- */
-export interface EmployeeDetailResponse {
-  success: boolean;
-  data: EmployeeProfile & {
-    stats: EmployeeStats;
-  };
-}
-
-/**
- * Response for employee performance metrics
- */
-export interface EmployeePerformanceResponse {
-  success: boolean;
-  data: PerformanceMetrics;
 }
 
 // ============================================================================

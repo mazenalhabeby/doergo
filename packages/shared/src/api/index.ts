@@ -3,7 +3,7 @@ export {
   error,
   paginated,
   parsePaginationParams,
-  ErrorCodes,
+  
 } from './responses';
 export type { PaginationMeta,  } from './responses';
 export { mapPrismaException, sanitizeErrorMessage } from './prisma-error';

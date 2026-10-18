@@ -91,29 +91,3 @@ export function parsePaginationParams(
     sortOrder: query.sortOrder === 'asc' ? 'asc' : 'desc',
   };
 }
-
-/**
- * Common error codes used across services
- */
-export const ErrorCodes = {
-  // Auth errors
-  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
-  TOKEN_EXPIRED: 'TOKEN_EXPIRED',
-  TOKEN_INVALID: 'TOKEN_INVALID',
-  UNAUTHORIZED: 'UNAUTHORIZED',
-  FORBIDDEN: 'FORBIDDEN',
-  ACCOUNT_LOCKED: 'ACCOUNT_LOCKED',
-
-  // Resource errors
-  NOT_FOUND: 'NOT_FOUND',
-  ALREADY_EXISTS: 'ALREADY_EXISTS',
-  CONFLICT: 'CONFLICT',
-
-  // Validation errors
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
-  INVALID_INPUT: 'INVALID_INPUT',
-
-  // Server errors
-  INTERNAL_ERROR: 'INTERNAL_ERROR',
-  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
-} as const;

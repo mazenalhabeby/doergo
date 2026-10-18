@@ -74,16 +74,3 @@ export interface ShiftAssignment {
   shift?: Pick<Shift, 'id' | 'name' | 'startLocal' | 'endLocal' | 'crossesMidnight' | 'color'>;
   user?: { id: string; firstName: string; lastName: string; email?: string };
 }
-
-export interface CreateShiftAssignmentInput {
-  userId: string;
-  spaceId: string;
-  shiftId: string;
-  recurrence: ShiftRecurrence;
-  daysOfWeek?: number[];
-  daysOfMonth?: number[];
-  dates?: string[];
-  effectiveFrom?: string;
-  effectiveTo?: string | null;
-  priority?: number;
-}

@@ -23,8 +23,3 @@ export const OvertimeRequestStatus = {
   COMPLETED: 'COMPLETED',
   CANCELED: 'CANCELED',
 } as const;
-
-export const OvertimeApprovalMethod = {
-  REMOTE: 'REMOTE',
-  SIGNATURE: 'SIGNATURE',
-} as const;
