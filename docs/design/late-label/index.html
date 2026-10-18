@@ -127,7 +127,7 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
       <div class="r"><span>David · Mon 28 Sep</span><span class="t">18:00</span><span class="t">18:13 · 14 min</span><span class="chips"><span class="chip late">Late</span></span></div>
       <div class="r"><span>Matias · Thu 24 Sep</span><span class="t">18:00</span><span class="t">18:29 · 30 min</span><span class="chips"><span class="chip late">Late</span></span></div>
       <div class="r"><span>Matias · Sun 20 Sep</span><span class="t">18:00</span><span class="t">18:27 · 27 min</span><span class="chips"><span class="chip late">Late</span></span></div>
-      <div class="r"><span>David · Sat 5 Sep</span><span class="t">18:00</span><span class="t">20:32 · 2 h 33</span><span class="chips"><span class="chip late">Late</span></span></div>
+      <div class="r"><span>David · Sat 5 Sep</span><span class="t">18:00</span><span class="t">20:32 · 2 h 32 min</span><span class="chips"><span class="chip late">Late</span></span></div>
     </div></div>
     <p class="why">The workspace’s time zone (New York) matches the site in Enfield, CT, so the 18:00 is read in the right zone.</p>
   </section>
@@ -181,9 +181,9 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
   <section id="sec-code">
     <header><span class="eyebrow">In the code · not in your data yet</span><h2>Three ways an on-time worker will be shown “Late”</h2></header>
     <div class="cases">
-      <div class="case"><h3>Back from lunch</h3><p>Shift 08:00–16:00. On time at 07:58, clocks out at 12:00, back in at 13:00. The 13:00 entry is compared with 08:00.</p><span class="result">→ “Late 300 min”, sent to review</span></div>
-      <div class="case"><h3>Two shifts in a day</h3><p>08:00–12:00 and 13:00–17:00. Back at 12:05 for the afternoon: matched to the morning shift.</p><span class="result">→ “Late 245 min”, wrong end and reminders</span></div>
-      <div class="case"><h3>Night, then day</h3><p>22:00–06:00 and 07:00–15:00. Arrives 06:05 for the day shift: matched to last night’s.</p><span class="result">→ “Late ~8 h”</span></div>
+      <div class="case"><h3>Back from lunch</h3><p>Shift 08:00–16:00. On time at 07:58, clocks out at 12:00, back in at 13:00. The 13:00 entry is compared with 08:00.</p><span class="result">→ “Late 5 h”, sent to review</span></div>
+      <div class="case"><h3>Two shifts in a day</h3><p>08:00–12:00 and 13:00–17:00. Back at 12:05 for the afternoon: matched to the morning shift.</p><span class="result">→ “Late 4 h 05 min”, wrong end and reminders</span></div>
+      <div class="case"><h3>Night, then day</h3><p>22:00–06:00 and 07:00–15:00. Arrives 06:05 for the day shift: matched to last night’s.</p><span class="result">→ “Late ~8 h 05 min”</span></div>
       <div class="case"><h3>Two other screens count differently</h3><p>Reports count “late” from 1 minute with no grace, and add every entry. The No-shows record always uses 10 minutes.</p><span class="result">→ numbers that disagree with the label</span></div>
     </div>
   </section>

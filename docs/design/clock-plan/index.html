@@ -138,7 +138,7 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
     <header><span class="eyebrow">Labels</span><h2>One rule per label, worked out once, never wiped by an edit</h2></header>
     <div class="scroll"><div class="table">
       <div class="tr"><span>Label</span><span>Found</span><span>New entries</span></div>
-      <div class="tr"><span class="chip amber">Late</span><span class="now"><b>Back from lunch → “Late 300 min”</b>; split or night shift matched to the wrong one</span><span class="new"><b>Only the first arrival of a shift.</b> Matched to the shift the clock-in falls in, or the next to start.</span></div>
+      <div class="tr"><span class="chip amber">Late</span><span class="now"><b>Back from lunch → “Late 5 h”</b>; split or night shift matched to the wrong one</span><span class="new"><b>Only the first arrival of a shift.</b> Matched to the shift the clock-in falls in, or the next to start.</span></div>
       <div class="tr"><span class="chip teal">Late back from rest</span><span class="now">Does not exist — mixed into “Late”</span><span class="new"><b>New.</b> Rest longer than planned + grace, with the real length.</span></div>
       <div class="tr"><span class="chip muted">Any label after an edit</span><span class="now"><b>An office edit of seconds wiped a real “Late”</b>; four edits left an entry with none</span><span class="new"><b>Kept</b> unless the edit removes its reason; the edit history says what changed.</span></div>
       <div class="tr"><span class="chip amber">Left early</span><span class="now"><b>An 11-second duplicate labelled “Left early”</b> (automatic + manual clock-in offline)</span><span class="new"><b>One open entry per shift:</b> two clock-ins arriving together join.</span></div>
@@ -162,7 +162,7 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
       <div class="ticks"><span></span><div><span style="left:3%">08:00</span><span style="left:42%">12:00</span><span style="left:47.5%">12:30</span><span style="left:50.7%">12:48</span><span style="left:96.5%">16:30</span></div></div>
     </div>
     <div class="verdicts">
-      <div class="verdict now"><span class="k">Today</span><p>If the lunch is a clock-out and a new clock-in, the 12:48 entry is compared with <b>08:00</b> → <span class="chip amber">Late · 288 min</span>, sent to review.</p></div>
+      <div class="verdict now"><span class="k">Today</span><p>If the lunch is a clock-out and a new clock-in, the 12:48 entry is compared with <b>08:00</b> → <span class="chip amber">Late · 4 h 48 min</span>, sent to review.</p></div>
       <div class="verdict new"><span class="k">New</span><p>Morning arrival on time — no “Late”. The rest ran 18 min over the planned 30 → <span class="chip teal">Late back from rest · 18 min</span>.</p></div>
     </div>
   </section>
