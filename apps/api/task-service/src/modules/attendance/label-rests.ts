@@ -73,9 +73,12 @@ export function restColumnsAtBreakEnd(
     toleranceMin: facts.shift?.toleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
   });
   if (!judged) return {};
+  // The facts keep the WORST rest of the shift: a later short break must not replace an overrun the
+  // label already stands on (the nightly label check found exactly that — a 1-second break wiping it).
+  const kept = facts.rest && facts.rest.overMin >= judged.overMin ? facts.rest : judged;
   const flags = entry.flagReasons ?? [];
   return {
-    labelFacts: { ...facts, rest: judged } as unknown as Prisma.InputJsonValue,
+    labelFacts: { ...facts, rest: kept } as unknown as Prisma.InputJsonValue,
     ...(restFlags(judged).length && !flags.includes('LATE_FROM_REST')
       ? { flagReasons: [...flags, 'LATE_FROM_REST'] }
       : {}),

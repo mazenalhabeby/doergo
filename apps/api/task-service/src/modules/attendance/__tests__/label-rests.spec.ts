@@ -31,6 +31,15 @@ describe('a rest taken with the Break button', () => {
     );
     expect(cols.flagReasons).toBeUndefined();
   });
+  it('a later short break never replaces an overrun the label stands on (found by the nightly check)', () => {
+    const overrun = { ...facts, rest: { plannedMin: 30, takenMin: 48, overMin: 8 } };
+    const cols = restColumnsAtBreakEnd(
+      { labelRules: 1, labelFacts: overrun, flagReasons: ['LATE_FROM_REST'], breakPlan: plan },
+      { startedAt: new Date('2026-10-13T12:00:00Z'), endedAt: new Date('2026-10-13T12:00:01Z') },
+    );
+    expect((cols.labelFacts as { rest: unknown }).rest).toEqual({ plannedMin: 30, takenMin: 48, overMin: 8 });
+    expect(cols.flagReasons).toBeUndefined();
+  });
   it('no planned rest, or an old entry: nothing', () => {
     const rest = { startedAt: new Date('2026-10-13T10:00:00Z'), endedAt: new Date('2026-10-13T11:30:00Z') };
     expect(restColumnsAtBreakEnd({ labelRules: 1, labelFacts: facts, breakPlan: [] }, rest)).toEqual({});
