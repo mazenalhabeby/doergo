@@ -3,6 +3,7 @@ import { success, TimeEntryStatus } from '@hbcfield/shared';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { decidableExtraTimeWhere, overtimeEndFor } from './extra-time-helpers';
 import { ExtraTimeBase } from './extra-time.base';
+import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
 
 /**
@@ -61,6 +62,7 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
     ]);
     // A closed shift was counted with the approval — count it again without.
     if (entry.clockOutAt) await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: back });
+    await relabelAfterEndMoved(this.prisma, entry, back);
 
     return success(
       { entryId: entry.id, removedMinutes: minutes, expectedClockOutAt: back?.toISOString() ?? null },
@@ -152,6 +154,7 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
       }),
     ]);
     await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
+    await relabelAfterEndMoved(this.prisma, entry, newExpected);
 
     emitEvent(this.notificationClient, attendanceOvertimeDecisionEvent, {
       entryId: entry.id,

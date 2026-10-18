@@ -12,6 +12,7 @@ import { CountedTimeService } from './counted-time.service';
 import { AttendanceRoutingService } from './attendance-routing.service';
 import { askAboutOwnRequest, type OwnRequestAsk } from '../../common/own-request-route';
 import { ExtraTimeDecision, decidableExtraTimeWhere, overtimeEndFor } from './extra-time-helpers';
+import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
 
 /**
@@ -175,6 +176,7 @@ export abstract class ExtraTimeBase {
 
     // Closed: the timesheet already counted it — count it again with the approval.
     if (closed) await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
+    await relabelAfterEndMoved(this.prisma, entry, newExpected); // new entries: facts + departure labels
 
     // Approved automatically: the owner asked and is answered on screen, not pushed about their own.
     if (!automatic)
