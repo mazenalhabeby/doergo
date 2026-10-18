@@ -66,21 +66,6 @@ export const TASK_REPORT_SECTIONS = [
 
 export type TaskReportSection = (typeof TASK_REPORT_SECTIONS)[number];
 
-/**
- * The workspace module a section needs, where the job page needs one. A section
- * not named here is always present. Photos and signatures are MIXED (a report
- * photo needs service_reports, a task photo attachments, a step-form photo
- * nothing) — the service gates each source on its own module.
- */
-export const REPORT_SECTION_MODULE: Partial<Record<TaskReportSection, string>> = {
-  work: 'service_reports',
-  parts: 'service_reports',
-  checklist: 'checklists',
-  documents: 'attachments',
-  details: 'custom_fields',
-  route: 'tracking',
-};
-
 /** What the client copy leaves out — the decision, written down once. */
 export const CLIENT_COPY_HIDDEN = {
   /** Whole sections. */

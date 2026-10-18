@@ -6,7 +6,6 @@
  * config keys). The Prisma enums are UPPERCASE; the backend maps between them.
  */
 
-
 /** Subscription lifecycle status. */
 export type SubStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'incomplete';
 
@@ -53,18 +52,6 @@ export interface SubscriptionView {
   /** Payment terms in INVOICE mode. Meaningless in the others. */
   invoiceDueDays: number;
 }
-
-/**
- * Client → server: start checkout.
- *
- * No tier — there is nothing to choose. The purchase is whatever the
- * organization already has switched on, computed server-side at checkout, so a
- * client cannot subscribe itself to a cheaper bill than the one it is using.
- *
- * No interval either — billing is monthly, full stop. The request carries
- * nothing at all, which is the point: there is no billing decision left to make.
- */
-export type CheckoutRequest = Record<string, never>;
 
 /** Statuses that lock the org to read-only. */
 export function isLocked(status: SubStatus): boolean {

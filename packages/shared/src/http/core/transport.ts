@@ -52,4 +52,3 @@ export type HttpMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 /** A value a query string may carry. Arrays are joined with commas. */
 export type QueryValue = string | number | boolean | null | undefined | ReadonlyArray<string | number>;
-export type QueryParams = { readonly [key: string]: QueryValue };

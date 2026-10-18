@@ -120,11 +120,6 @@ export function openPeriods(periods: CustodyPeriod[]): CustodyPeriod[] {
   return periods.filter(isOpen);
 }
 
-/** Newest first — the order every timeline is read in. */
-export function byNewest(periods: CustodyPeriod[]): CustodyPeriod[] {
-  return [...periods].sort((a, b) => ms(b.startedAt) - ms(a.startedAt));
-}
-
 /**
  * How long a period lasted, in whole days, counting today for an open one.
  *

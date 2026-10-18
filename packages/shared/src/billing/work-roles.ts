@@ -19,8 +19,6 @@
 
 export type RoleKindValue = 'WORK' | 'MANAGEMENT';
 export type BillByValue = 'HOUR' | 'DAY' | 'BOTH';
-
-export const ROLE_KINDS: readonly RoleKindValue[] = ['WORK', 'MANAGEMENT'] as const;
 export const BILL_BY_VALUES: readonly BillByValue[] = ['HOUR', 'DAY', 'BOTH'] as const;
 
 export function isRoleKind(v: unknown): v is RoleKindValue {

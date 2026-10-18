@@ -79,19 +79,6 @@ export function paginated<T>(
 }
 
 /**
- * Calculate pagination offset from page and limit
- */
-export function calculateOffset(params: PaginationParams): { skip: number; take: number } {
-  const page = params.page || 1;
-  const limit = params.limit || 10;
-
-  return {
-    skip: (page - 1) * limit,
-    take: limit,
-  };
-}
-
-/**
  * Parse and validate pagination parameters with defaults
  */
 export function parsePaginationParams(
@@ -130,5 +117,3 @@ export const ErrorCodes = {
   INTERNAL_ERROR: 'INTERNAL_ERROR',
   SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
 } as const;
-
-export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

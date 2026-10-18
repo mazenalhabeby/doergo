@@ -91,5 +91,3 @@ export function iconMarkup(name: IconName, paint = 'currentColor'): string {
   const body = SOLAR_ICONS[name];
   return paint === 'currentColor' ? body : body.split('currentColor').join(paint);
 }
-
-export const ICON_CREDIT = 'Icons: Solar by 480 Design, CC BY 4.0';

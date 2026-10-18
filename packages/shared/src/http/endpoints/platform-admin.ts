@@ -64,5 +64,4 @@ export {
   platformStaffEndpoints,
   platformAuditEndpoints,
   platformEndpoints,
-  type PlatformEndpoints,
 } from './platform-admin/routes';

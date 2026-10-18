@@ -41,8 +41,6 @@ export interface CreateShiftInput {
   flagToleranceMin?: number;
 }
 
-export type UpdateShiftInput = Partial<CreateShiftInput> & { isActive?: boolean };
-
 // True when a shift's local end time is at/before its start → it crosses midnight.
 export function shiftCrossesMidnight(startLocal: string, endLocal: string): boolean {
   return endLocal <= startLocal;
@@ -89,5 +87,3 @@ export interface CreateShiftAssignmentInput {
   effectiveTo?: string | null;
   priority?: number;
 }
-
-export type UpdateShiftAssignmentInput = Partial<CreateShiftAssignmentInput> & { isActive?: boolean };

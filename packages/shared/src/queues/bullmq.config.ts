@@ -18,11 +18,11 @@
  *   async process(job: Job) { ... }
  * }
  */
-import { BullRootModuleOptions, RegisterQueueOptions } from '@nestjs/bullmq';
+import { BullRootModuleOptions } from '@nestjs/bullmq';
 import type { FactoryProvider, ModuleMetadata } from '@nestjs/common';
 import { ConfigService, ConfigModule } from '@nestjs/config';
 import { getRedisConfig } from '../microservices/redis.config';
-import { QueueName, DEFAULT_JOB_OPTIONS } from './constants';
+import { DEFAULT_JOB_OPTIONS } from './constants';
 
 /**
  * BullMQ's Redis connection — the same Redis, the same rule (host, port, and a
@@ -62,18 +62,5 @@ export function createBullMQConfig(): {
       };
     },
     inject: [ConfigService],
-  };
-}
-
-/**
- * Create queue registration options for a specific queue
- */
-export function createQueueOptions(
-  queueName: QueueName,
-  options?: Partial<RegisterQueueOptions>,
-): RegisterQueueOptions {
-  return {
-    name: queueName,
-    ...options,
   };
 }

@@ -26,25 +26,6 @@ export interface ScheduleEntryInput {
   notes?: string;
 }
 
-/** Reusable schedule template */
-export interface ScheduleTemplate {
-  id: string;
-  name: string;           // "Morning Shift", "Night Shift", etc.
-  description?: string;
-  entries: ScheduleEntryInput[];
-  organizationId: string;
-  isDefault?: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** Input for creating a schedule template */
-export interface CreateScheduleTemplateInput {
-  name: string;
-  description?: string;
-  entries: ScheduleEntryInput[];
-}
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // TIME-OFF TYPES
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -83,19 +64,6 @@ export interface TimeOffRequest {
   updatedAt: string;
 }
 
-/** Input for requesting time off */
-export interface RequestTimeOffInput {
-  startDate: string;
-  endDate: string;
-  reason?: string;
-}
-
-/** Input for approving/rejecting time off */
-export interface ApproveTimeOffInput {
-  approved: boolean;
-  rejectionReason?: string;
-}
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // AVAILABILITY TYPES
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -118,43 +86,6 @@ export interface AvailabilityResponse {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// COVERAGE TYPES
-// ═══════════════════════════════════════════════════════════════════════════════
-
-/** Coverage gap — a date where a worker is off and no replacement is assigned */
-export interface CoverageGap {
-  date: string;
-  workerOff: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  };
-  timeOff: {
-    id: string;
-    startDate: string;
-    endDate: string;
-    reason?: string;
-  };
-  availableReplacements: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  }[];
-}
-
-/** Time-off conflict — when a request overlaps with existing approved time-off for the same period */
-export interface TimeOffConflict {
-  type: 'OVERLAP' | 'COVERAGE_GAP' | 'MULTIPLE_OFF';
-  message: string;
-  affectedDates: string[];
-  details?: {
-    existingTimeOff?: TimeOffRequest;
-    otherWorkersOff?: string[];
-    coveragePercent?: number;
-  };
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
 // VALIDATION HELPERS
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -163,24 +94,3 @@ export function isValidTimeFormat(time: string): boolean {
   const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(time);
   return !!match;
 }
-
-/** Validate schedule entry times are logical */
-export function isValidScheduleEntry(entry: ScheduleEntryInput): { valid: boolean; error?: string } {
-  if (entry.dayOfWeek < 0 || entry.dayOfWeek > 6) {
-    return { valid: false, error: 'dayOfWeek must be 0-6' };
-  }
-  if (!isValidTimeFormat(entry.startTime)) {
-    return { valid: false, error: `Invalid start time format: ${entry.startTime}` };
-  }
-  if (!isValidTimeFormat(entry.endTime)) {
-    return { valid: false, error: `Invalid end time format: ${entry.endTime}` };
-  }
-  if (entry.startTime >= entry.endTime) {
-    return { valid: false, error: 'Start time must be before end time' };
-  }
-  return { valid: true };
-}
-
-/** Day of week labels */
-export const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
-export const DAY_LABELS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;

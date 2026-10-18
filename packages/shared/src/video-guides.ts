@@ -95,27 +95,3 @@ export function videoGuideFor(tourId: string): VideoGuide | undefined {
   const guide = VIDEO_GUIDES[tourId as TourId];
   return guide?.youtubeId ? guide : undefined;
 }
-
-export function hasVideoGuide(tourId: string): boolean {
-  return videoGuideFor(tourId) !== undefined;
-}
-
-/** Watch-page URL. Undefined when unpublished, so a link cannot be built. */
-export function videoGuideUrl(tourId: string): string | undefined {
-  const guide = videoGuideFor(tourId);
-  return guide ? `https://www.youtube.com/watch?v=${guide.youtubeId}` : undefined;
-}
-
-/** Privacy-preserving embed host — no cookie until the viewer presses play. */
-export function videoGuideEmbedUrl(tourId: string): string | undefined {
-  const guide = videoGuideFor(tourId);
-  return guide ? `https://www.youtube-nocookie.com/embed/${guide.youtubeId}` : undefined;
-}
-
-/** "2:01" for a badge beside the link. */
-export function formatVideoLength(seconds: number | null): string | null {
-  if (!seconds || seconds <= 0) return null;
-  const m = Math.floor(seconds / 60);
-  const s = Math.round(seconds % 60);
-  return `${m}:${String(s).padStart(2, '0')}`;
-}

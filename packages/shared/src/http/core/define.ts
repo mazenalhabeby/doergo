@@ -70,11 +70,6 @@ export function defineEndpoints<T extends Record<string, AnyEndpoint>>(domain: s
   return defs;
 }
 
-/** The path an endpoint builds for these arguments — for code that must hand a path to something else (a prefetch, a link). */
-export function endpointPath<A>(def: Endpoint<A, unknown, unknown>, args: A): string {
-  return def.path(args);
-}
-
 /** Argument / result / body types of a defined endpoint. */
 export type EndpointArgs<D> = D extends Endpoint<infer A, infer _R, infer _B> ? A : never;
 export type EndpointResult<D> = D extends Endpoint<infer _A, infer R, infer _B> ? R : never;

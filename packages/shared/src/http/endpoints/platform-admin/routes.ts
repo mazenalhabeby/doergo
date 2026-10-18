@@ -252,5 +252,3 @@ export const platformEndpoints = {
   staff: platformStaffEndpoints,
   audit: platformAuditEndpoints,
 } as const;
-
-export type PlatformEndpoints = typeof platformEndpoints;

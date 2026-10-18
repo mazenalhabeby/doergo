@@ -37,9 +37,6 @@ export interface EmployeeAssignment extends BaseEntity {
   };
 }
 
-/** @deprecated Use EmployeeAssignment */
-export type TechnicianAssignment = EmployeeAssignment;
-
 // Organization Access (delegation between orgs)
 export interface OrganizationAccess extends BaseEntity {
   grantorOrgId: string;    // The org granting access

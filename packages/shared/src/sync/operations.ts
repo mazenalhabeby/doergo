@@ -1,21 +1,4 @@
-/**
- * Every operation a phone may queue, and the existing API route it replays.
- *
- * ⚠️ AN ALLOW-LIST, AND THE ONLY PLACE ONE IS DEFINED.
- *
- * `/sync/push` does not call services itself. Each operation is sent to the
- * gateway's own route for it — the same URL a phone calls when online — so
- * every guard (role, permission, module, plan, external member), every DTO and
- * every audit entry applies unchanged. A second code path for "the same action,
- * but offline" is exactly how an offline write would one day skip a permission
- * check that the online one enforces.
- *
- * An operation not listed here is refused. Adding one is adding a row, and the
- * route it names must already exist.
- */
 
-import type { OccurrenceEvidence } from './occurrence';
-import type { StepFormAnswers } from '../workflows/step-form';
 
 export interface SyncOperationRoute {
   method: 'POST' | 'PATCH' | 'PUT' | 'DELETE';
@@ -105,26 +88,6 @@ export const SYNC_OPERATIONS = {
 } as const satisfies Record<string, SyncOperationRoute>;
 
 export type SyncOperationName = keyof typeof SYNC_OPERATIONS;
-
-/**
- * The body of `task.status` — what PATCH /tasks/:taskId/status accepts.
- *
- * `answers` are the step form's answers when the step moved into asks for them
- * (see `workflows/step-form`). Photo and signature answers name ATTACHMENT IDS
- * of this job: queued offline, they are the ids the phone gave its
- * `task.attachment` operations, and the status operation must `dependsOn` them
- * so it never arrives before its files.
- */
-export interface TaskStatusOperationBody {
-  status: string;
-  expectedFrom?: string;
-  reason?: string;
-  lat?: number;
-  lng?: number;
-  accuracy?: number;
-  evidence?: OccurrenceEvidence;
-  answers?: StepFormAnswers;
-}
 
 /** What an operation's payload looks like on the wire. */
 export interface SyncOperationPayload {

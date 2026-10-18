@@ -48,11 +48,6 @@ export const PRIORITY_ORDER: Record<TaskPriority, number> = {
   [TaskPriority.LOW]: 3,
 };
 
-/**
- * Default priority for new tasks
- */
-export const DEFAULT_PRIORITY = TaskPriority.MEDIUM;
-
 // =============================================================================
 // VALIDATION LIMITS
 // =============================================================================
@@ -66,16 +61,6 @@ export const TASK_TITLE_MAX_LENGTH = 200;
  * Maximum description length
  */
 export const TASK_DESCRIPTION_MAX_LENGTH = 5000;
-
-/**
- * Maximum comment length
- */
-export const COMMENT_MAX_LENGTH = 2000;
-
-/**
- * Maximum attachments per task
- */
-export const MAX_ATTACHMENTS_PER_TASK = 20;
 
 // =============================================================================
 // ACTIVE/TERMINAL STATUSES

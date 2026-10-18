@@ -44,7 +44,6 @@ export {
   daysBrief,
   type CoverRangeDay,
   verdictOf,
-  coverNeedsAttention,
   floorStatus,
   MIN_COVER_MAX,
   validateMinCover,

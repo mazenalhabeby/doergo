@@ -153,8 +153,3 @@ export function buildLabourLines(
 export function labourTotalCents(lines: LabourLine[]): number {
   return lines.reduce((sum, l) => sum + (l.descriptive ? 0 : l.amountCents), 0);
 }
-
-/** Day entries' total, for the summary above the lines. */
-export function daysTotal(days: DayEntry[]): number {
-  return days.reduce((s, d) => s + (d.days > 0 ? d.days : 0), 0);
-}

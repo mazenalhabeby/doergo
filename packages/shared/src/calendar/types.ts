@@ -12,7 +12,6 @@ export type CalendarLayer = (typeof CALENDAR_LAYERS)[number];
 export type CalendarItemKind = 'job' | 'event' | 'reminder' | 'crm' | 'shift' | 'leave' | 'remote' | 'holiday' | 'document';
 
 export type RsvpResponse = 'PENDING' | 'ACCEPTED' | 'MAYBE' | 'DECLINED';
-export const RSVP_RESPONSES: readonly RsvpResponse[] = ['PENDING', 'ACCEPTED', 'MAYBE', 'DECLINED'];
 
 export type EventVisibility = 'BUSY' | 'DETAILS';
 

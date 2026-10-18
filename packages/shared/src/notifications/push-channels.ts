@@ -155,4 +155,3 @@ export function memberWantsPush(memberPrefs: unknown, type?: string | null): boo
  * one constant, so the two cannot disagree.
  */
 export const SHIFT_ENDED_CATEGORY = 'shift_ended';
-export const SHIFT_ENDED_ACTIONS = { CLOCK_OUT: 'clock_out', ASK_FOR_MORE_TIME: 'ask_more_time' } as const;

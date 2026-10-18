@@ -140,25 +140,6 @@ export const WORK_BAND_KEY: Record<WorkBand, string> = {
 export const WORK_BANDS: WorkBand[] = ['doing', 'blocked', 'overdue', 'today', 'upcoming'];
 
 /**
- * Group a person's work into bands, in order, dropping the empty ones.
- *
- * Returned rather than computed per band by the caller, so a screen renders
- * `bandsOf(tasks)` and cannot accidentally show a heading with nothing under it
- * or order the bands differently from the ranking itself.
- */
-export function bandsOf<T extends WorkItem>(
-  tasks: T[],
-  now: Date = new Date(),
-): Array<{ band: WorkBand; key: string; items: T[] }> {
-  const ranked = rankMyWork(tasks, now);
-  return WORK_BANDS.map((band) => ({
-    band,
-    key: WORK_BAND_KEY[band],
-    items: ranked.filter((t) => !isOver(t.status) && workBand(t, now) === band),
-  })).filter((g) => g.items.length > 0);
-}
-
-/**
  * How late something is, in whole days. Negative is still to come.
  *
  * Whole DAYS rather than hours, because "2 days late" is what a person says and

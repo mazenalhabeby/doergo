@@ -3,11 +3,6 @@ import type { LatLng } from '../geo-point';
 
 export type NavApp = 'google' | 'waze' | 'apple';
 
-export interface NavStop extends LatLng {
-  label?: string;
-  address?: string;
-}
-
 const ll = (p: LatLng) => `${p.lat},${p.lng}`;
 
 /**

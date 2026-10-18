@@ -1,7 +1,7 @@
 /** The HTTP client's configuration, options, hooks and the client's own shape. */
 import type { AbortSignalLike, FetchInit, FetchLike, HeadersLike, HttpMethod } from '../transport';
 import { ApiError } from '../api-error';
-import type { Page, PageMeta } from '../envelope';
+import type { Page } from '../envelope';
 import type { AnyEndpoint, EndpointArgs, EndpointBody, EndpointResult } from '../define';
 
 // ── configuration ─────────────────────────────────────────────────────────────
@@ -154,15 +154,6 @@ export interface RequestOptions {
   /** Merge with an identical GET in flight. Default: the client's `dedupeGets` (never with a `signal`). */
   dedupe?: boolean;
   unwrap?: UnwrapMode;
-}
-
-/** `unwrap: 'response'`. */
-export interface FullResponse<T> {
-  status: number;
-  data: T;
-  meta: PageMeta | null;
-  body: unknown;
-  headers: HeadersLike;
 }
 
 /** Options for an endpoint call: the body travels here, typed by the endpoint. */

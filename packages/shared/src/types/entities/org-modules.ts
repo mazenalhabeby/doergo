@@ -120,8 +120,6 @@ export const CUSTOMER_STAGES = [
   { key: 'INACTIVE', label: 'Inactive', tone: 'gray' },
 ] as const;
 
-export type CustomerStageKey = (typeof CUSTOMER_STAGES)[number]['key'];
-
 export function customerStageLabel(key: string): string {
   return CUSTOMER_STAGES.find((s) => s.key === key)?.label ?? key;
 }

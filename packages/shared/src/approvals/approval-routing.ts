@@ -17,13 +17,6 @@ import { APPROVAL_KIND_SPECS, type ApprovalKind } from './approval-kinds';
  */
 export type DecideVia = 'ADMIN' | 'ORG' | 'SPACE' | 'ASSIGNED' | 'DELEGATED';
 
-/** Why the reader of an item may decide it — carried on each item of the inbox. */
-export interface ApprovalWhy {
-  via: DecideVia;
-  /** DELEGATED: whose decisions these are. */
-  fromName?: string | null;
-}
-
 /** One person who could decide an item, as "who else can decide" lists them. */
 export interface ApprovalDecider {
   id: string;

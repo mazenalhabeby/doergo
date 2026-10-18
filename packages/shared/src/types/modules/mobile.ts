@@ -10,9 +10,6 @@
 /** Available mobile modules (tab identifiers) */
 export type MobileModule = 'tasks' | 'clock' | 'time_off' | 'create_task' | 'manage';
 
-/** All available modules */
-export const ALL_MODULES: MobileModule[] = ['tasks', 'clock', 'time_off', 'create_task', 'manage'];
-
 /**
  * Modules an EXTERNAL member cannot hold, whatever an admin ticks.
  *

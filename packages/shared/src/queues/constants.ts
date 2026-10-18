@@ -29,8 +29,6 @@ export const BILLING_JOB_TYPES = {
   DUNNING_NOTIFY: 'billing.dunningNotify', // notify admin of failed payment / trial end
 } as const;
 
-export type BillingJobType = (typeof BILLING_JOB_TYPES)[keyof typeof BILLING_JOB_TYPES];
-
 // Task queue job types
 export const TASK_JOB_TYPES = {
   CREATE: 'task.create',
@@ -66,8 +64,6 @@ export const TASK_JOB_TYPES = {
   CREW_CHANGE_LEAD: 'task.crewChangeLead',
 } as const;
 
-export type TaskJobType = (typeof TASK_JOB_TYPES)[keyof typeof TASK_JOB_TYPES];
-
 // Asset queue job types
 export const ASSET_JOB_TYPES = {
   // Categories
@@ -84,8 +80,6 @@ export const ASSET_JOB_TYPES = {
   DELETE: 'asset.delete',
 } as const;
 
-export type AssetJobType = (typeof ASSET_JOB_TYPES)[keyof typeof ASSET_JOB_TYPES];
-
 // Location queue job types (company locations for attendance)
 export const LOCATION_JOB_TYPES = {
   CREATE: 'location.create',
@@ -99,8 +93,6 @@ export const LOCATION_JOB_TYPES = {
   UPDATE_ASSIGNMENT: 'location.updateAssignment',
   REMOVE_ASSIGNMENT: 'location.removeAssignment',
 } as const;
-
-export type LocationJobType = (typeof LOCATION_JOB_TYPES)[keyof typeof LOCATION_JOB_TYPES];
 
 // Attendance queue job types (clock-in/clock-out)
 export const ATTENDANCE_JOB_TYPES = {
@@ -129,8 +121,6 @@ export const OVERTIME_JOB_TYPES = {
   CHECK_TIMEOUTS: 'overtime.checkTimeouts',
 } as const;
 
-export type OvertimeJobType = (typeof OVERTIME_JOB_TYPES)[keyof typeof OVERTIME_JOB_TYPES];
-
 export const SUPPORT_JOB_TYPES = {
   CREATE_TICKET: 'support.createTicket',
   ADD_MESSAGE: 'support.addMessage',
@@ -139,10 +129,6 @@ export const SUPPORT_JOB_TYPES = {
   MARK_READ: 'support.markRead',
   SLA_BREACH_CHECK: 'support.slaBreachCheck', // delayed job fired at the SLA deadline
 } as const;
-
-export type SupportJobType = (typeof SUPPORT_JOB_TYPES)[keyof typeof SUPPORT_JOB_TYPES];
-
-export type AttendanceJobType = (typeof ATTENDANCE_JOB_TYPES)[keyof typeof ATTENDANCE_JOB_TYPES];
 
 // Report queue job types
 export const REPORT_JOB_TYPES = {
@@ -160,16 +146,12 @@ export const REPORT_JOB_TYPES = {
   DELETE_PART: 'report.deletePart',
 } as const;
 
-export type ReportJobType = (typeof REPORT_JOB_TYPES)[keyof typeof REPORT_JOB_TYPES];
-
 // Notification queue job types
 export const NOTIFICATION_JOB_TYPES = {
   SEND_EMAIL: 'notification.sendEmail',
   SEND_PUSH: 'notification.sendPush',
   SEND_SMS: 'notification.sendSms',
 } as const;
-
-export type NotificationJobType = (typeof NOTIFICATION_JOB_TYPES)[keyof typeof NOTIFICATION_JOB_TYPES];
 
 // Default job options for different scenarios
 export const DEFAULT_JOB_OPTIONS = {

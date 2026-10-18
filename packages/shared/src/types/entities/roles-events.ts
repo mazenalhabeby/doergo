@@ -1,16 +1,6 @@
 /** Legacy role names → the surviving roles, and the socket event names. */
 import { Role } from '../enums';
 
-// Legacy role aliases → the two surviving roles (managers are now flagged employees).
-export const LegacyRoleMap = {
-  PARTNER: Role.ADMIN,
-  OFFICE: Role.EMPLOYEE,
-  WORKER: Role.EMPLOYEE,
-  CLIENT: Role.ADMIN,
-  DISPATCHER: Role.EMPLOYEE,
-  TECHNICIAN: Role.EMPLOYEE,
-} as const;
-
 // Normalize any (incl. legacy) role string to one of the two surviving roles.
 // ADMIN/CLIENT/PARTNER → ADMIN; everything else (EMPLOYEE + legacy
 // MANAGER/OFFICE/DISPATCHER/TECHNICIAN/WORKER) → EMPLOYEE.

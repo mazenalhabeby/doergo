@@ -1,6 +1,5 @@
 export {
   type MobileModule,
-  ALL_MODULES,
   EXTERNAL_FORBIDDEN_MODULES,
   moduleAllowedForExternal,
   filterExternalModules,

@@ -131,5 +131,3 @@ export const apiEndpoints = {
   search: searchWebEndpoints,
   blog: blogWebEndpoints,
 } as const;
-
-export type ApiEndpoints = typeof apiEndpoints;

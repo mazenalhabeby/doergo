@@ -9,7 +9,6 @@ export {
   type MoneyDirection,
   type KindMoneyCategory,
   type KindList,
-  FAULT_COLUMNS,
   type KindMoney,
   type LogFieldType,
   LOG_FIELD_TYPES,

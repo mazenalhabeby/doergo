@@ -32,8 +32,6 @@ export const SOCIAL_NETWORKS = [
   { key: 'whatsapp', host: /(?:^|\.)wa\.me$|(?:^|\.)whatsapp\.com$/i, labelKey: 'customers.social.whatsapp' },
 ] as const;
 
-export type SocialKey = (typeof SOCIAL_NETWORKS)[number]['key'];
-
 /** The host of a URL-ish string, without protocol, `www.`, path or port. */
 export function hostOf(value: string): string | null {
   const trimmed = value

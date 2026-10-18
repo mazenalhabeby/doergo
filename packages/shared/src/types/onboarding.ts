@@ -56,32 +56,6 @@ export interface OrgCodeValidation {
   message?: string;
 }
 
-// Create organization input (onboarding Path A)
-export interface CreateOrganizationInput {
-  name: string;
-  address?: string;
-  industry?: string;
-}
-
-// Submit join request input (onboarding Path B)
-export interface SubmitJoinRequestInput {
-  orgCode: string;
-  message?: string;
-}
-
-// Approve join request input (admin action)
-export interface ApproveJoinRequestInput {
-  role: string;
-  workMode?: string;
-  specialty?: string;
-  maxDailyJobs?: number;
-}
-
-// Reject join request input (admin action)
-export interface RejectJoinRequestInput {
-  reason?: string;
-}
-
 // Onboarding status response
 export interface OnboardingStatus {
   needsOnboarding: boolean;

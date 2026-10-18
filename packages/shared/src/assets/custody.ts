@@ -32,7 +32,6 @@ export {
   holdersOn,
   holderOn,
   openPeriods,
-  byNewest,
   custodyDays,
   type CustodyTotals,
   totalsByPeriod,

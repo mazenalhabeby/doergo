@@ -128,8 +128,6 @@ export interface CarryOverRule {
   expiresAfterMonths?: number | null;
 }
 
-export const DEFAULT_CARRY_OVER_RULE: CarryOverRule = { mode: 'NONE', maxDays: null, expiresAfterMonths: null };
-
 /** Half days, never rounding a person's days away. */
 const half = (n: number) => Math.round(n * 2) / 2;
 

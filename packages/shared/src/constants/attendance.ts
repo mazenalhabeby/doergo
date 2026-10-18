@@ -151,26 +151,3 @@ export const ATTENDANCE_FLAG_REASONS = {
   // offline from an out-of-date list (a day worked is never thrown away); a person decides.
   REMOTE_WITH_WORKSPACE: 'REMOTE_WITH_WORKSPACE',
 } as const;
-
-export type AttendanceFlagReason = typeof ATTENDANCE_FLAG_REASONS[keyof typeof ATTENDANCE_FLAG_REASONS];
-
-// Human-readable labels for flag reasons
-export const FLAG_REASON_LABELS: Record<string, string> = {
-  OVERTIME: 'Overtime',
-  MISSED_CLOCK_OUT: 'Missed Clock-Out',
-  CLOCK_OUT_PROVISIONAL: 'Clock-out not confirmed',
-  PAST_DAILY_LIMIT: "Past today's limit",
-  OUTSIDE_GEOFENCE_IN: 'Outside Geofence (In)',
-  OUTSIDE_GEOFENCE_OUT: 'Outside Geofence (Out)',
-  LATE_ARRIVAL: 'Late Arrival',
-  EARLY_DEPARTURE: 'Early Departure',
-  UNSCHEDULED_DAY: 'Unscheduled Day',
-  RECORDED_OFFLINE: 'Recorded offline',
-  UNANCHORED: 'Phone clock not checked',
-  CLOCK_SUSPECT: 'Phone clock changed',
-  STALE: 'Sent over a week late',
-  FIX_MOCKED: 'Mock location',
-  BOUNDARY_CHANGED: 'Site boundary changed since',
-  MISSED_BREAK: 'Required rest not taken',
-  REMOTE_WITH_WORKSPACE: 'Remote while assigned to a workspace',
-};

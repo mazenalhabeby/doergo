@@ -133,34 +133,8 @@ export interface SprintReport {
   createdAt: string;
 }
 
-// Definition of Done interface
-export interface DefinitionOfDone {
-  id: string;
-  organizationId: string;
-  workflowId: string | null;
-  items: { text: string; isRequired: boolean }[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Velocity data point for charts
-export interface VelocityDataPoint {
-  sprintName: string;
-  committedPoints: number;
-  completedPoints: number;
-  velocity: number;
-}
-
 /** Fibonacci story point options */
 export const STORY_POINT_OPTIONS = [1, 2, 3, 5, 8, 13, 21] as const;
-
-/** Schedule type options for members */
-export const SCHEDULE_TYPES = [
-  { key: 'NONE', label: 'No tracking', description: 'Time is not tracked' },
-  { key: 'FIXED', label: 'Fixed schedule', description: 'Set working hours (e.g., Mon-Fri 9:00-17:00)' },
-  { key: 'FLEXIBLE', label: 'Flexible hours', description: 'Monthly hour budget (e.g., 160h/month)' },
-] as const;
 
 /** Common position/title suggestions */
 export const POSITION_SUGGESTIONS = [

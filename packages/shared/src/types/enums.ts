@@ -10,8 +10,6 @@ export enum Role {
   // retired. normalizeRole() still collapses any legacy string → ADMIN/EMPLOYEE.
 }
 
-export const WORKER_ROLE = 'WORKER' as const;
-
 export enum Platform {
   WEB = 'WEB',
   MOBILE = 'MOBILE',
@@ -89,23 +87,6 @@ export enum ReportAttachmentType {
   AFTER = 'AFTER',
 }
 
-export enum ContractType {
-  FIXED_SCHEDULE = 'FIXED_SCHEDULE',
-  HOUR_BUDGET = 'HOUR_BUDGET',
-}
-
-export enum OvertimePolicy {
-  PRE_APPROVED = 'PRE_APPROVED',
-  REAL_TIME = 'REAL_TIME',
-  POST_APPROVAL = 'POST_APPROVAL',
-}
-
-export enum OvertimeDetectionSource {
-  MANUAL = 'MANUAL',
-  AUTO_BUDGET = 'AUTO_BUDGET',
-  AUTO_SCHEDULE = 'AUTO_SCHEDULE',
-}
-
 export enum TimeEntryStatus {
   CLOCKED_IN = 'CLOCKED_IN',
   CLOCKED_OUT = 'CLOCKED_OUT',
@@ -136,12 +117,6 @@ export enum SprintStatus {
   PLANNING = 'PLANNING',
   ACTIVE = 'ACTIVE',
   COMPLETED = 'COMPLETED',
-}
-
-export enum EpicStatus {
-  OPEN = 'OPEN',
-  IN_PROGRESS = 'IN_PROGRESS',
-  DONE = 'DONE',
 }
 
 export enum TaskCreationScope {

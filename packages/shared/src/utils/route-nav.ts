@@ -13,7 +13,6 @@ export type { LatLng } from './geo-point';
 
 export {
   type NavApp,
-  type NavStop,
   buildGoogleMapsUrl,
   buildWazeUrl,
   buildAppleMapsUrl,

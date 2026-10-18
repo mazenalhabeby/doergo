@@ -34,8 +34,6 @@ export const isNoShowExcuseReason = (v: unknown): v is NoShowExcuseReason =>
 export const NO_SHOW_AUTO_REASONS = ['LEAVE', 'ELSEWHERE', 'HOLIDAY', 'SHIFT_REMOVED', 'LEFT'] as const;
 export type NoShowAutoReason = (typeof NO_SHOW_AUTO_REASONS)[number];
 
-export type NoShowCloseReason = NoShowExcuseReason | NoShowAutoReason;
-
 /** What was found about one missed shift. Every field is read by the caller, in batch. */
 export interface NoShowFacts {
   /** Clock-ins (not rejected) overlapping the shift's window, anywhere. */

@@ -49,18 +49,11 @@ export function isCustomer(user: { role: string }): boolean {
   return normalizeRole(user.role) === Role.CUSTOMER;
 }
 
-/** True for internal staff (ADMIN or EMPLOYEE) — i.e. NOT an external customer */
-export function isStaff(user: { role: string }): boolean {
-  return !isCustomer(user);
-}
-
 // ── Legacy aliases (backward compat) ──
 /** @deprecated Use isAdmin() */
 export function isClient(user: { role: string }): boolean { return isAdmin(user); }
 /** @deprecated Use isEmployee() */
 export function isTechnician(user: { role: string }): boolean { return isEmployee(user); }
-/** @deprecated Use isEmployee() */
-export function isWorker(user: { role: string }): boolean { return isEmployee(user); }
 
 // ============================================
 // Permission-based helpers
@@ -113,19 +106,4 @@ export function canManageUsers(user: UserWithPermissions): boolean {
   if (user.canManageUsers !== undefined) return user.canManageUsers;
   // Default: Only ADMIN can manage users
   return isAdmin(user);
-}
-
-// ============================================
-// Task creation scope helpers
-// ============================================
-
-const SCOPE_HIERARCHY = ['NONE', 'SELF', 'SPACE', 'ORG'] as const;
-
-/**
- * Check if user's taskCreationScope is at least the given scope level.
- * Falls back to 'NONE' if taskCreationScope is not set.
- */
-export function canCreateTaskFor(user: UserWithPermissions, scope: 'SELF' | 'SPACE' | 'ORG'): boolean {
-  const userScope = user?.taskCreationScope || 'NONE';
-  return SCOPE_HIERARCHY.indexOf(userScope as typeof SCOPE_HIERARCHY[number]) >= SCOPE_HIERARCHY.indexOf(scope);
 }

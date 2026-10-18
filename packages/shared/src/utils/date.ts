@@ -131,21 +131,6 @@ export function formatShortDate(dateInput: Date | string | null | undefined): st
 }
 
 /**
- * Get relative day label (Today, Yesterday, or formatted date)
- */
-export function getRelativeDayLabel(dateInput: Date | string): string {
-  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  if (date.toDateString() === today.toDateString()) return 'Today';
-  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-
-  return formatShortDate(dateInput);
-}
-
-/**
  * The UTC calendar day of a Date, as "YYYY-MM-DD".
  *
  * Right for a Postgres `DATE` (Prisma reads it back as UTC midnight, so the UTC
@@ -220,7 +205,6 @@ export function formatCalendarDate(iso: string | null | undefined): string {
   if (!y || !m || !d) return '-';
   return new Date(y, m - 1, d).toLocaleDateString();
 }
-
 
 /**
  * The calendar day an instant falls on, as "YYYY-MM-DD" — in `timeZone` when

@@ -1,6 +1,5 @@
 /** Moved here unchanged from shift.ts. */
 import type { PermissionSet } from '../permissions';
-import { ShiftReminderState, WorkModel } from '../enums';
 
 // ============================================================================
 // DYNAMIC PER-SPACE SUB-ROLES
@@ -26,8 +25,6 @@ export const SPACE_ROLE_PERMISSION_SCHEMA = [
     description: 'Can see attendance for everyone in this space',
   },
 ] as const;
-
-export type SpaceRolePermissionKey = (typeof SPACE_ROLE_PERMISSION_SCHEMA)[number]['key'];
 
 /**
  * What a space role grants.
@@ -154,70 +151,3 @@ export interface SpaceMember {
   approveRoleIds?: string[];
   approveUserIds?: string[];
 }
-
-// Built-in space roles seeded per org (isSystem). Editable but not deletable.
-// Slugs are stable identifiers used by seeds + routing.
-export const BUILTIN_SPACE_ROLES: {
-  slug: string;
-  name: string;
-  description: string;
-  color: string;
-  permissions: SpaceRolePermissions;
-}[] = [
-  {
-    slug: 'space-manager',
-    name: 'Space Manager',
-    description: 'Full attendance authority for the space',
-    color: '#2563eb',
-    permissions: {
-      canApproveOvertime: true,
-      canManageRota: true,
-      canReconcileAttendance: true,
-      canViewSpaceAttendance: true,
-    },
-  },
-  {
-    slug: 'shift-leader',
-    name: 'Shift Leader',
-    description: 'Approves overtime and reconciles open shifts',
-    color: '#16a34a',
-    permissions: {
-      canApproveOvertime: true,
-      canManageRota: false,
-      canReconcileAttendance: true,
-      canViewSpaceAttendance: true,
-    },
-  },
-  {
-    slug: 'team-leader',
-    name: 'Team Leader',
-    description: 'Approves overtime for their team',
-    color: '#ca8a04',
-    permissions: {
-      canApproveOvertime: true,
-      canManageRota: false,
-      canReconcileAttendance: false,
-      canViewSpaceAttendance: true,
-    },
-  },
-];
-
-// ============================================================================
-// WORK MODEL LABELS
-// ============================================================================
-
-export const WORK_MODEL_LABELS: Record<WorkModel, string> = {
-  [WorkModel.NONE]: 'No time expectations',
-  [WorkModel.SHIFT]: 'Shift-based',
-  [WorkModel.FIXED]: 'Fixed weekly schedule',
-  [WorkModel.TASK]: 'Task-based',
-};
-
-export const SHIFT_REMINDER_STATE_LABELS: Record<ShiftReminderState, string> = {
-  [ShiftReminderState.NONE]: 'On shift',
-  [ShiftReminderState.REMINDED]: 'Reminder sent',
-  [ShiftReminderState.OVERTIME_PENDING]: 'Overtime pending',
-  [ShiftReminderState.OVERTIME_APPROVED]: 'Overtime approved',
-  [ShiftReminderState.ESCALATED]: 'Escalated',
-  [ShiftReminderState.RESOLVED]: 'Resolved',
-};

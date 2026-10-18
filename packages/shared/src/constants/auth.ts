@@ -58,43 +58,8 @@ export const REFRESH_TOKEN_GRACE_PERIOD_SECONDS = 60;
  */
 export const DEFAULT_REFRESH_TOKEN_TTL = '90d';
 
-// =============================================================================
-// PASSWORD REQUIREMENTS
-// =============================================================================
-
-/**
- * Minimum password length
- */
-export const PASSWORD_MIN_LENGTH = 8;
-
-/**
- * Maximum password length
- */
-export const PASSWORD_MAX_LENGTH = 128;
-
 /**
  * Bcrypt cost factor for password hashing
  * Higher = more secure but slower
  */
 export const BCRYPT_COST_FACTOR = 12;
-
-// =============================================================================
-// RATE LIMITING
-// =============================================================================
-
-/**
- * Rate limit windows (in seconds)
- */
-export const RATE_LIMIT = {
-  /** Short burst limit */
-  SHORT_WINDOW: 1,
-  SHORT_LIMIT: 3,
-
-  /** Medium window limit */
-  MEDIUM_WINDOW: 10,
-  MEDIUM_LIMIT: 20,
-
-  /** Long window limit */
-  LONG_WINDOW: 60,
-  LONG_LIMIT: 100,
-} as const;

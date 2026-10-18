@@ -1,16 +1,4 @@
-/** Small rules both apps read: is a rest running, may this person clock in away, minutes worked. */
-import type { Break } from './breaks-inputs';
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * Check if a break is currently active (not ended)
- */
-export function isBreakActive(breakItem: Break): boolean {
-  return breakItem.endedAt === null;
-}
 
 /**
  * May this person clock in from anywhere, without a geofence?

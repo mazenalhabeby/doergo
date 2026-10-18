@@ -206,14 +206,3 @@ export function needsTravelEstimate(task: {
   if (!hasAppointmentTime(due, siteOffsetMinutes)) return false;
   return sameSiteDay(now, due, siteOffsetMinutes);
 }
-
-/** The i18n key for each state, so the phone and the web say the same thing. */
-export const DEPARTURE_STATE_KEY: Record<DepartureState, string> = {
-  'no-time': 'tasks.beThere.noTime',
-  'not-today': 'tasks.beThere.notToday',
-  plenty: 'tasks.beThere.plenty',
-  soon: 'tasks.beThere.soon',
-  go: 'tasks.beThere.go',
-  late: 'tasks.beThere.late',
-  arrived: 'tasks.beThere.arrived',
-};

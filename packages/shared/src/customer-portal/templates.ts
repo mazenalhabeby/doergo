@@ -278,5 +278,3 @@ export const PORTAL_TEMPLATES: Record<string, PortalTemplate> = {
     ],
   },
 };
-
-export const PORTAL_TEMPLATE_KEYS = Object.keys(PORTAL_TEMPLATES);

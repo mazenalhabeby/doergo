@@ -36,9 +36,3 @@ export function assertServiceOk<T>(result: T, defaultStatus: number = HttpStatus
     statusCode || defaultStatus,
   );
 }
-
-/** The same, for replies whose payload sits under `data`. */
-export function unwrapServiceResult<T = unknown>(result: unknown, defaultStatus: number = HttpStatus.BAD_REQUEST): T {
-  const ok = assertServiceOk(result, defaultStatus) as { data?: T } | T;
-  return ((ok as { data?: T })?.data ?? ok) as T;
-}

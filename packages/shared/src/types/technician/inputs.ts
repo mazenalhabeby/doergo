@@ -148,18 +148,3 @@ export interface EmployeeAvailability {
   maxDailyJobs: number;
   hasTimeEntry: boolean; // Has clocked in that day
 }
-
-/**
- * Calendar view data for availability management
- */
-export interface AvailabilityCalendarData {
-  startDate: string;
-  endDate: string;
-  technicians: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    specialty: string | null;
-  }[];
-  availability: EmployeeAvailability[];
-}

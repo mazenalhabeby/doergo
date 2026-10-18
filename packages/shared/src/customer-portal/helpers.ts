@@ -2,12 +2,6 @@
  * @hbcfield/shared — customer-portal helpers (pure, client-safe).
  */
 import type { IntakeCategory, PortalTemplate } from './types';
-import { PORTAL_TEMPLATES } from './templates';
-
-/** Resolve a built-in template by key (rental | logistics | workplace). */
-export function resolvePortalTemplate(key: string): PortalTemplate | undefined {
-  return PORTAL_TEMPLATES[key];
-}
 
 /**
  * Expand a template into IntakeCategory seed rows (minus id/organizationId,

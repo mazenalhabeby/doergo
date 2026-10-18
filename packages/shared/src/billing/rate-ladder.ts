@@ -28,7 +28,6 @@
 export {
   type RateKind,
   type RateLevel,
-  RATE_LEVELS,
   COST_ON_PROFILE_MESSAGE,
   PRICE_ON_WORKSPACE_MESSAGE,
   LEVELS_BY_KIND,

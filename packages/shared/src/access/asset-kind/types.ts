@@ -136,9 +136,6 @@ export interface KindList {
   shared: boolean;
 }
 
-/** The columns a fault-code table needs to be worth looking at. */
-export const FAULT_COLUMNS = ['Code', 'Meaning', 'Cause', 'Fix', 'Part', 'Safety'] as const;
-
 export interface KindMoney {
   /** Does this kind cost or earn anything worth recording? */
   enabled: boolean;

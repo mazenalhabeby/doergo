@@ -28,7 +28,6 @@ export {
   isJobFinished,
   TASK_REPORT_SECTIONS,
   type TaskReportSection,
-  REPORT_SECTION_MODULE,
   CLIENT_COPY_HIDDEN,
   CLIENT_COPY_OPTIONS,
   type ClientCopyOption,

@@ -26,11 +26,7 @@ export const OvertimeRequestStatus = {
   CANCELED: 'CANCELED',
 } as const;
 
-export type OvertimeRequestStatusType = typeof OvertimeRequestStatus[keyof typeof OvertimeRequestStatus];
-
 export const OvertimeApprovalMethod = {
   REMOTE: 'REMOTE',
   SIGNATURE: 'SIGNATURE',
 } as const;
-
-export type OvertimeApprovalMethodType = typeof OvertimeApprovalMethod[keyof typeof OvertimeApprovalMethod];

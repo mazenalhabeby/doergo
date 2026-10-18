@@ -22,7 +22,6 @@ export function job<Data, Result = unknown>(name: string): JobContract<Data, Res
 }
 
 export type JobData<C> = C extends JobContract<infer Data, unknown> ? Data : never;
-export type JobResult<C> = C extends JobContract<unknown, infer Result> ? Result : never;
 
 /** A processor's table: one handler per contract, each typed by that contract's data. */
 export type JobHandlers<M extends Record<string, JobContract<unknown, unknown>>> = {

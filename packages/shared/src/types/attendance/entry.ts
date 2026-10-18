@@ -189,12 +189,3 @@ export interface GeofenceExcursion {
   };
   space?: Pick<CompanyLocation, 'id' | 'name'> | null;
 }
-
-export interface ReportExcursionInput {
-  reason: string;
-  requestedMinutes: number;
-}
-
-export interface ApproveExcursionInput {
-  grantedMinutes?: number;
-}

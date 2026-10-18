@@ -191,11 +191,6 @@ export function verdictOf(a: CoverAssessment): CoverVerdict {
   };
 }
 
-/** Does this level warrant a mark on the bar itself? */
-export function coverNeedsAttention(level: CoverLevel): boolean {
-  return level !== 'ok';
-}
-
 /** How a live headcount compares to the floor. Shared by the "right now" panel. */
 export function floorStatus(here: number, minCover: number): 'ok' | 'tight' | 'short' {
   if (minCover <= 0) return 'ok';

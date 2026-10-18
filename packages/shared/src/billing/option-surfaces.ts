@@ -1,4 +1,4 @@
-import { ADD_ON_KEYS } from './add-ons';
+
 
 /**
  * Where each Option shows itself — one table, read by every surface.
@@ -51,13 +51,3 @@ export const SPACE_TAB_OPTION: Readonly<Record<string, string>> = {
 export const SETTINGS_OPTION: Readonly<Record<string, string>> = {
   'audit-log': 'audit_log',
 } as const;
-
-/** Every Option that owns at least one surface — what the test walks. */
-export function optionsWithSurfaces(): string[] {
-  const keys = new Set<string>([
-    ...Object.values(NAV_OPTION),
-    ...Object.values(SPACE_TAB_OPTION),
-    ...Object.values(SETTINGS_OPTION),
-  ]);
-  return [...keys].filter((k) => (ADD_ON_KEYS as readonly string[]).includes(k));
-}

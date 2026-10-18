@@ -118,15 +118,6 @@ export interface ClockOutHandoverInput {
   note: string;
 }
 
-export interface StartBreakInput {
-  type?: BreakType;
-  notes?: string;
-}
-
-export interface EndBreakInput {
-  notes?: string;
-}
-
 // ============================================================================
 // QUERY PARAMS
 // ============================================================================
@@ -143,69 +134,6 @@ export interface AttendanceQueryParams {
   status?: TimeEntryStatus;
   page?: number;
   limit?: number;
-}
-
-export interface BreakHistoryParams {
-  date?: string;
-  type?: BreakType;
-  userId?: string;
-  page?: number;
-  limit?: number;
-}
-
-export interface BreakSummaryParams {
-  startDate: string;
-  endDate: string;
-  userId?: string;
-}
-
-// ============================================================================
-// REPORTS
-// ============================================================================
-
-export interface AttendanceSummary {
-  period: {
-    startDate: string;
-    endDate: string;
-    workDays: number;
-  };
-  summary: {
-    totalShifts: number;
-    totalHours: number;
-    standardHours: number;
-    overtimeHours: number;
-    averageShiftHours: number;
-    autoClockOuts: number;
-  };
-  byUser: Array<{
-    user: {
-      id: string;
-      firstName: string;
-      lastName: string;
-      email: string;
-    };
-    totalHours: number;
-    shifts: number;
-    averageShiftHours: number;
-    autoClockOuts: number;
-    locations: string[];
-  }>;
-  byLocation: Array<{
-    location: {
-      id: string;
-      name: string;
-    };
-    totalHours: number;
-    shifts: number;
-    uniqueTechnicians: number;
-  }>;
-}
-
-export interface CSVExportResult {
-  filename: string;
-  mimeType: string;
-  content: string;
-  recordCount: number;
 }
 
 // ============================================================================

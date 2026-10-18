@@ -11,7 +11,6 @@ export const TASK_SOURCE = {
   INTERNAL: 'INTERNAL',
   CUSTOMER_PORTAL: 'CUSTOMER_PORTAL',
 } as const;
-export type TaskSource = (typeof TASK_SOURCE)[keyof typeof TASK_SOURCE];
 
 /** A unit/site an external customer is tied to (apartment / order / workspace). */
 export interface CustomerUnit {
@@ -69,16 +68,6 @@ export const DEFAULT_PORTAL_FEATURES: PortalFeatureFlags = {
   ratings: true,
 };
 
-/** Everything the portal client needs to render intake for one org. */
-export interface PortalIntakeConfig {
-  entityLabel: string; // "Apartment" | "Order" | "Workspace"
-  brandName?: string | null;
-  accent?: string | null;
-  features: PortalFeatureFlags;
-  categories: IntakeCategory[];
-  contactLabel?: string | null; // "Leasing Office" | "Support" | "Facilities"
-}
-
 export type PreferredTime = 'MORNING' | 'AFTERNOON' | 'EVENING';
 export type ContactPreference = 'PUSH' | 'EMAIL' | 'PHONE';
 
@@ -121,14 +110,6 @@ export interface CustomerRequestView {
   unitAddress?: string | null;
   suggestedSpaceId?: string | null;
   suggestedSpaceName?: string | null;
-}
-
-/** Create a customer portal invitation (office → resident). */
-export interface CreateCustomerInviteInput {
-  customerId: string;
-  unitId?: string;
-  email?: string;
-  expiresInHours?: number;
 }
 
 /** A portal template blueprint (used to seed an org's intake config). */

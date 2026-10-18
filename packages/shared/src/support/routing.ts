@@ -1,18 +1,4 @@
-/**
- * @hbcfield/shared — support team routing.
- *
- * Pure resolver that decides WHICH support team owns a customer organization's
- * tickets. Shared so the create-time path (task-service) and the backfill script
- * (auth-service) can never drift. No I/O — callers pass the org attributes + the
- * team's rules; this only decides.
- *
- * Precedence (Zendesk-style "manual wins over automation"):
- *   1. org.supportTeamId (manual pin)  → that team
- *   2. first active routing rule (by order) whose conditions all match  → its team
- *   3. null  → unassigned "triage" queue (everyone with manageSupport sees it)
- */
 
-export type SupportTeamRole = 'MANAGER' | 'AGENT';
 
 /** Attributes of the customer org a rule can predicate on. All optional. */
 export interface OrgRoutingAttributes {

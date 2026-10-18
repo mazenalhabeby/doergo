@@ -43,8 +43,3 @@ export function queryKey(def: AnyEndpoint | string, args?: unknown): QueryKey {
   if (!empty) parts.push(stable);
   return parts;
 }
-
-/** The prefix every key of one domain starts with — for invalidating all of it. */
-export function domainKey(domain: string): QueryKey {
-  return [domain];
-}

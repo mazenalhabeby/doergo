@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 
 /**
  * Bearer secrets that travel by email — reset links, signing links.
@@ -34,11 +34,4 @@ export function generateSecret(bytes = 32): string {
  */
 export function hashSecret(secret: string): string {
   return createHash('sha256').update(secret).digest('hex');
-}
-
-/** Compare a presented secret against a stored digest, without leaking timing. */
-export function verifySecret(secret: string, storedHash: string): boolean {
-  const a = Buffer.from(hashSecret(secret), 'hex');
-  const b = Buffer.from(storedHash, 'hex');
-  return a.length === b.length && timingSafeEqual(a, b);
 }

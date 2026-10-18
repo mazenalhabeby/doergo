@@ -44,7 +44,6 @@ export {
   type ApiClientConfig,
   type UnwrapMode,
   type RequestOptions,
-  type FullResponse,
   type CallOptions,
   type CallArgs,
   type ApiClient,

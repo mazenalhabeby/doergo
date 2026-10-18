@@ -34,7 +34,6 @@ export {
   CARRY_OVER_MODES,
   type CarryOverMode,
   type CarryOverRule,
-  DEFAULT_CARRY_OVER_RULE,
   carryOverDays,
   carryExpiryDate,
 } from './ledger/ledger-years';

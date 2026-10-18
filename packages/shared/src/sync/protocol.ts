@@ -101,10 +101,6 @@ export interface SyncOperationResult {
   current?: unknown;
 }
 
-export interface SyncPushRequest {
-  operations: SyncOperation[];
-}
-
 export interface SyncPushResponse {
   results: SyncOperationResult[];
   serverTime: string;

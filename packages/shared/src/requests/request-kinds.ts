@@ -46,11 +46,6 @@ export function isAbsence(kind: string | null | undefined): boolean {
 /** Prisma `where` fragment for "absences only" — spread it into every leave query. */
 export const ABSENCE_WHERE = { kind: 'LEAVE' } as const;
 
-/** Does approving this kind change how a day's attendance is judged? */
-export function shapesAttendance(kind: RequestKind): boolean {
-  return kind === 'REMOTE' || kind === 'HOURS' || kind === 'OVERTIME';
-}
-
 /**
  * The kinds a member may ask for here.
  *

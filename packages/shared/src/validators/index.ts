@@ -113,11 +113,6 @@ export const COMPANY_REGEX = /^[a-zA-Z0-9\s\-'&.,]+$/;
  */
 export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
 
-/**
- * UUID v4 format
- */
-export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 // =============================================================================
 // COMPOSITE VALIDATION DECORATORS
 // =============================================================================
@@ -250,31 +245,5 @@ export function TokenField(fieldName = 'Token') {
   return applyDecorators(
     IsString(),
     IsNotEmpty({ message: `${fieldName} is required` }),
-  );
-}
-
-/**
- * Optional string field with sanitization
- * - Optional
- * - Trimmed
- */
-export function OptionalStringField() {
-  return applyDecorators(
-    IsOptional(),
-    IsString(),
-    Transform(({ value }: { value: unknown }) => sanitizeString(value)),
-  );
-}
-
-/**
- * Required string field with sanitization
- * - Required
- * - Trimmed
- */
-export function RequiredStringField(fieldName = 'Field') {
-  return applyDecorators(
-    IsString(),
-    IsNotEmpty({ message: `${fieldName} is required` }),
-    Transform(({ value }: { value: unknown }) => sanitizeString(value)),
   );
 }

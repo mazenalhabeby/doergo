@@ -4,9 +4,8 @@
 export {
   Role, Platform, AccessLevel, TaskStatus, TaskPriority, TaskEventType,
   AttachmentType, AssetStatus, ReportAttachmentType, TaskAssigneeRole,
-  ContractType, OvertimePolicy, OvertimeDetectionSource,
-  TimeEntryStatus, BreakType, ApprovalStatus, WORKER_ROLE,
-  DependencyType, SprintStatus, EpicStatus,
+  TimeEntryStatus, BreakType, ApprovalStatus,
+  DependencyType, SprintStatus,
   CustomFieldType, RecurrenceFrequency,
   TaskCreationScope, TimeOffStatus, InvoiceStatus,
   WorkModel, SpaceKind, ShiftReminderState, ShiftRecurrence,
@@ -17,7 +16,7 @@ export {
   getSpaceScope, getAccessPlatforms, canContactColleagues,
   getFeatureModules, hasFeatureModule, DEFAULT_ORG_MODULES,
   type MobileModule, type AccessProfile, type SpaceScope, type AccessPlatform,
-  DEFAULT_MODULES, ALL_MODULES,
+  DEFAULT_MODULES,
   // Modules an external member cannot hold — clock and time_off describe an
   // employment we do not have with them.
   filterExternalModules, moduleAllowedForExternal, EXTERNAL_FORBIDDEN_MODULES,
@@ -41,7 +40,7 @@ export * from './onboarding';
 // Export route-planning types (mobile field feature)
 export * from './crm';
 
-export { LegacyRoleMap, normalizeRole, SocketEvents } from './entities/roles-events';
+export { normalizeRole, SocketEvents } from './entities/roles-events';
 export {
   type ApiResponse,
   type PaginationParams,
@@ -58,7 +57,6 @@ export {
   MODULE_DEPENDENCIES,
   moduleRequires,
   CUSTOMER_STAGES,
-  type CustomerStageKey,
   customerStageLabel,
   resolveModuleDependencies,
   effectiveSpaceModules,
@@ -68,7 +66,6 @@ export {
 export type {
   Organization,
   EmployeeAssignment,
-  TechnicianAssignment,
   OrganizationAccess,
 } from './entities/organization';
 export {
@@ -79,10 +76,7 @@ export {
   type Sprint,
   type Epic,
   type SprintReport,
-  type DefinitionOfDone,
-  type VelocityDataPoint,
   STORY_POINT_OPTIONS,
-  SCHEDULE_TYPES,
   POSITION_SUGGESTIONS,
   type TaskDependency,
   type TaskDependencyWithTask,
@@ -95,12 +89,10 @@ export type {
   AssetCategory,
   AssetType,
   Asset,
-  AssetWithHistory,
   ServiceReportSummary,
   ServiceReport,
   ReportAttachment,
   PartUsed,
-  CompleteTaskInput,
 } from './entities/asset';
 export {
   type StatusWorkflow,

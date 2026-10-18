@@ -41,18 +41,6 @@ export type RateKind = 'bill' | 'cost';
  */
 export type RateLevel = 'contract' | 'member' | 'client' | 'organization';
 
-/** The rungs, most specific first. Order is the rule. */
-export const RATE_LEVELS: readonly RateLevel[] = [
-  // This member, at this client. The negotiated exception.
-  'contract',
-  // What this person bills and costs, wherever they work.
-  'member',
-  // One rate for everyone at this client — the contract rate.
-  'client',
-  // The fallback when nothing else is set.
-  'organization',
-] as const;
-
 /**
  * ⚠️ WHERE EACH KIND MAY COME FROM — the rule people work by:
  * WHAT A PERSON COSTS lives on the person (their profile), else the

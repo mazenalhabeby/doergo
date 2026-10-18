@@ -66,7 +66,6 @@ export {
   type AutoClockPlace,
   type AutoClockPlan,
   showAutoClockSwitch,
-  type AutoClockErrorCode,
   autoClockActive,
   autoClockOffered,
   type AutoClockMemberInput,

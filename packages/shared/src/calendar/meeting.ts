@@ -21,7 +21,6 @@ export const CALL_DIRECTIONS = ['OUTGOING', 'INCOMING'] as const;
 export type CallDirection = (typeof CALL_DIRECTIONS)[number];
 
 export const ROOM_MAX = 80;
-export const LOCATION_MAX = 200;
 
 export type MeetingProvider = 'TEAMS' | 'MEET' | 'ZOOM' | 'WEBEX' | 'WHEREBY' | 'JITSI';
 
@@ -118,20 +117,4 @@ export function meetingFieldsFor(f: MeetingFields): MeetingFields {
     default:
       return { ...none, mode: null, location: f.location, meetingUrl: f.meetingUrl };
   }
-}
-
-/** One line for a list or a push: "Main Office · Room 1", "Microsoft Teams", "Call +43 1 234". */
-export function meetingSummary(
-  f: Pick<MeetingFields, 'mode' | 'place' | 'room' | 'location' | 'meetingUrl' | 'phone'> & {
-    spaceName?: string | null;
-  },
-): string | null {
-  if (f.mode === 'ONLINE') {
-    const p = meetingProvider(f.meetingUrl);
-    return p ? MEETING_PROVIDER_NAMES[p] : f.meetingUrl ? 'Online' : null;
-  }
-  if (f.mode === 'PHONE') return f.phone ?? null;
-  if (f.mode === 'IN_PERSON' && f.place === 'OFFICE')
-    return [f.spaceName, f.room].filter(Boolean).join(' · ') || f.location || null;
-  return f.location ?? null;
 }

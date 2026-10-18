@@ -24,15 +24,3 @@ export interface RequestPrecheck {
 
 /** The working-day guide a day's planned time + overtime is compared with (a warning, never a refusal). */
 export const DAILY_WORK_GUIDE_MINUTES = 600;
-
-/** The headline of a pre-check: the worst thing in it, for one line on the form. */
-export function precheckWorst(p: RequestPrecheck | null): 'clash' | 'negative' | 'short' | 'tight' | 'overLimit' | 'second' | null {
-  if (!p) return null;
-  if (p.clashes.length) return 'clash';
-  if (p.balance && p.balance.after < 0) return 'negative';
-  if (p.cover === 'short' || p.cover === 'skill') return 'short';
-  if (p.dailyLimit?.over) return 'overLimit';
-  if (p.cover === 'tight') return 'tight';
-  if (p.secondApproval) return 'second';
-  return null;
-}

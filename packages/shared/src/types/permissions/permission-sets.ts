@@ -36,11 +36,6 @@ export function permissionsFromOrgRole(raw: unknown): PermissionSet {
   return pickPermissions(raw);
 }
 
-/** Legacy `SpaceRole.permissions` JSON → unified set (attendance keys). */
-export function permissionsFromSpaceRole(raw: unknown): PermissionSet {
-  return pickPermissions(raw);
-}
-
 /** Union several permission sets (later sets do NOT override earlier trues). */
 export function mergePermissions(...sets: (PermissionSet | null | undefined)[]): PermissionSet {
   const out: PermissionSet = {};

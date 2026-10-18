@@ -22,9 +22,6 @@
 import { getAccessPlatforms } from '../types/modules';
 import type { SeatType } from './plans';
 
-/** A member employed in-house by the org gets the discounted field seat. */
-export type EmploymentType = 'IN_HOUSE' | 'EXTERNAL';
-
 /**
  * Trades that commonly mix EMPLOYED + FREELANCE field workers → the sensible
  * DEFAULT for `Organization.usesExternalWorkers` at setup. IT / logistics /
@@ -97,17 +94,6 @@ export function classifySeat(user: SeatClassifiable, opts?: SeatOptions): SeatTy
   // an admin scopes them to mobile-only.
   if (getAccessPlatforms(user) !== 'mobile') return 'office';
   return opts?.usesExternalWorkers && isInHouse(user) ? 'field_inhouse' : 'field';
-}
-
-/**
- * Is this member a FIELD worker (mobile-only access)? The single source of truth
- * for "office vs field" everywhere — billing seats AND the dashboards' on-site vs
- * in-field grouping. Derived from the Access Profile (the removed `workMode` /
- * `technicianType` are NOT used). Admins + anyone with web access → office/false;
- * mobile-only → field/true. Reuses classifySeat so it can never drift from billing.
- */
-export function isFieldWorker(user: SeatClassifiable): boolean {
-  return classifySeat(user) !== 'office';
 }
 
 /**

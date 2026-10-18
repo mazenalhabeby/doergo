@@ -39,11 +39,6 @@ export interface Asset extends BaseEntity {
   type?: AssetType;
 }
 
-// Asset with maintenance history (using ServiceReports)
-export interface AssetWithHistory extends Asset {
-  serviceReports: ServiceReportSummary[];
-}
-
 // Service Report Summary (for asset maintenance history list)
 export interface ServiceReportSummary {
   id: string;
@@ -104,21 +99,4 @@ export interface PartUsed extends BaseEntity {
   quantity: number;
   unitCost?: number;
   notes?: string;
-}
-
-// Complete Task DTO (for creating report when completing task)
-export interface CompleteTaskInput {
-  summary: string;
-  workPerformed?: string;
-  workDuration: number;
-  technicianSignature?: string;
-  customerSignature?: string;
-  customerName?: string;
-  partsUsed?: {
-    name: string;
-    partNumber?: string;
-    quantity: number;
-    unitCost?: number;
-    notes?: string;
-  }[];
 }

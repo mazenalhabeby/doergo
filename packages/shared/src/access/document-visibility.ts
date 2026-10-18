@@ -222,9 +222,3 @@ export function visibleDocumentWhere(viewer: DocumentViewer): object | undefined
     ],
   };
 }
-
-/**
- * For reads confined to the caller's OWN documents (their signing queue, their
- * reminders, what is still asked of them): leave out what was hidden from them.
- */
-export const NOT_HIDDEN_FROM_MEMBER = { hiddenFromMember: false } as const;

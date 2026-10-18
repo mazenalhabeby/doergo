@@ -92,14 +92,6 @@ export function showAutoClockSwitch(plan: { consentAt: string | null; offered?: 
   return plan.offered === undefined || plan.offered > 0;
 }
 
-/** Codes the automatic clock answers with. */
-export type AutoClockErrorCode =
-  | 'AUTO_CLOCK_SETTING_INVALID'
-  /** Undo refused: not an automatic clock-in, too late, or work already recorded on it. */
-  | 'AUTO_CLOCK_UNDO_NOT_ALLOWED'
-  /** A clock-in resent with the id of an automatic clock-in its owner already undid. */
-  | 'AUTO_CLOCK_UNDONE';
-
 /* ------------------------------------------------------------------ server re-check */
 
 /**

@@ -18,7 +18,6 @@ export {
 export {
   permissionsFromUserFlags,
   permissionsFromOrgRole,
-  permissionsFromSpaceRole,
   mergePermissions,
   permissionsExceed,
 } from './permissions/permission-sets';
