@@ -144,7 +144,8 @@ export class PortalController {
       customerId: req.user.customerId, // from the verified token, never the body
       unitId, // validated to belong to this customer above
       assetId, // ditto — dropped in task-service if they do not hold it
-      organizationId: req.user.organizationId,
+      // ⚠️ This route skips the onboarding check; a CUSTOMER session always carries its organization.
+      organizationId: req.user.organizationId as string,
       userId: req.user.id,
     });
 

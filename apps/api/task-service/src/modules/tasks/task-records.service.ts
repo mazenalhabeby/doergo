@@ -16,7 +16,8 @@ import {
   writeCreateAssignees,
 } from './task-create-steps';
 import { emitEvent, taskAssignedEvent, taskCreatedEvent } from '@hbcfield/shared/microservices';
-import type { Prisma } from '@prisma/client';
+import type { Prisma, TaskPriority } from '@prisma/client';
+import type { TaskCreateJob } from '@hbcfield/shared';
 
 /**
  * A task as a record: create it, edit it, delete it, and re-point a space's
@@ -36,7 +37,7 @@ export class TaskRecordsService {
   /**
    * Create a new task (CLIENT or DISPATCHER)
    */
-  async create(data: any) {
+  async create(data: TaskCreateJob) {
     // The same task sent again from the phone's queue: the task it made.
     const prior = await findPrior({
       id: data.id,
@@ -129,7 +130,9 @@ export class TaskRecordsService {
       no workspace was named). Not refused: the task is still raised, unopened,
       exactly as the gateway strips it when the named workspace is not theirs.
     */
-    const mayOpenHere = !Array.isArray(data.roleAssignSpaceIds) || data.roleAssignSpaceIds.includes(data.spaceId);
+    const mayOpenHere =
+      !Array.isArray(data.roleAssignSpaceIds) ||
+      (data.spaceId != null && data.roleAssignSpaceIds.includes(data.spaceId));
     const openRole =
       openRoleId && mayOpenHere ? await this.rolePool.resolveOpenRole(effectiveOrgId, data.spaceId, openRoleId) : null;
 
@@ -140,7 +143,8 @@ export class TaskRecordsService {
           ...(openRole ? this.rolePool.openColumns(openRole.id, data.openSpots) : {}),
           title: data.title,
           description: data.description,
-          priority: data.priority || 'MEDIUM',
+          // The gateway's DTO checks it (@IsEnum); Prisma refuses anything else, as before.
+          priority: (data.priority || 'MEDIUM') as TaskPriority,
           status: initialStatus,
           workflowId: effWorkflowId,
           dueDate: data.dueDate ? new Date(data.dueDate) : null,
@@ -193,7 +197,7 @@ export class TaskRecordsService {
   private async announceCreated(
     task: Prisma.TaskGetPayload<{ include: typeof TASK_CREATE_INCLUDE }>,
     userId: string,
-    assignedToId: string | null,
+    assignedToId: string | null | undefined,
   ) {
     // Create task event
     await this.support.createTaskEvent(task.id, userId, TaskEventType.CREATED);

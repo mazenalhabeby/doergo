@@ -1,15 +1,33 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { success, TimeEntryStatus, ATTENDANCE_FLAG_REASONS } from '@hbcfield/shared';
+import { Injectable, BadRequestException, Inject, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { success, TimeEntryStatus, ATTENDANCE_FLAG_REASONS, SERVICE_NAMES } from '@hbcfield/shared';
+import { PrismaService } from '../../common/prisma/prisma.service';
 import { clockEventEntry } from './clock-event';
 import { remoteApprovedAt, type DayRequestRow } from './approved-requests';
 import { alreadyClockedIn, approvalFor } from './attendance-occurrence';
-import { ClockInBase } from './clock-in.base';
+import { ClockInContextService } from './clock-in-context.service';
+import { BreakRulesService } from './break-rules.service';
+import { PresenceService } from './presence/presence.service';
+import { AttendanceGeocoderService } from './attendance-geocoder.service';
 import type { ClockInInput, ClockInOccurrence } from './clock-in-steps';
 import { emitEvent, attendanceClockInEvent } from '@hbcfield/shared/microservices';
 
 /** A clock-in away from any workspace: the approved remote day, and the org's Remote bucket. */
 @Injectable()
-export abstract class ClockInRemoteBase extends ClockInBase {
+export class ClockInRemoteService {
+  // Named after the clock-in, whose log lines these always were.
+  private readonly logger = new Logger('ClockInService');
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION)
+    private readonly notificationClient: ClientProxy,
+    private readonly context: ClockInContextService,
+    private readonly breakRules: BreakRulesService,
+    private readonly presence: PresenceService,
+    private readonly geocoder: AttendanceGeocoderService,
+  ) {}
+
   /*
     ⚠️ An approved REMOTE day at one of their workspaces: the member pressed "Clock in remotely"
     (or an old phone sent `isRemote`), and the approver already said yes to exactly that. It is
@@ -18,14 +36,18 @@ export abstract class ClockInRemoteBase extends ClockInBase {
 
     Rewrites `data.locationId` / `data.isRemote` when it applies.
   */
-  protected async moveApprovedRemoteToWorkspace(
+  async moveApprovedRemoteToWorkspace(
     data: ClockInInput,
     dayRequests: DayRequestRow[],
     occurrence: ClockInOccurrence,
     orgTz: string,
   ): Promise<void> {
     if (!(data.isRemote && dayRequests.some((r) => r.kind === 'REMOTE' && r.spaceId))) return;
-    const { locations: workspaces } = await this.clockableWorkspaces(data.userId, data.organizationId, occurrence.at);
+    const { locations: workspaces } = await this.context.clockableWorkspaces(
+      data.userId,
+      data.organizationId,
+      occurrence.at,
+    );
     const approvedHere = workspaces.find((w) =>
       remoteApprovedAt(dayRequests, w.id, occurrence.at, w.timezone || orgTz),
     );
@@ -36,7 +58,7 @@ export abstract class ClockInRemoteBase extends ClockInBase {
   }
 
   // ---- Remote clock-in (WFH/anywhere): geofence-exempt, coarse place captured ----
-  protected async clockInRemote(
+  async clockInRemote(
     data: ClockInInput,
     ctx: {
       mayClockInRemotely: boolean;
@@ -63,7 +85,11 @@ export abstract class ClockInRemoteBase extends ClockInBase {
       The same answer as the list the phone and web choose from, asked of the
       moment of the tap: they only send `isRemote` when that list is empty.
     */
-    const { locations: workspaces } = await this.clockableWorkspaces(data.userId, data.organizationId, occurrence.at);
+    const { locations: workspaces } = await this.context.clockableWorkspaces(
+      data.userId,
+      data.organizationId,
+      occurrence.at,
+    );
     /*
       ⚠️ Recorded OFFLINE, it is kept — never refused. The phone chose from the
       list it had saved; when that list was out of date, refusing at sync would
@@ -85,7 +111,7 @@ export abstract class ClockInRemoteBase extends ClockInBase {
       include: { location: true },
     });
     if (already) throw alreadyClockedIn(already, occurrence.fromEvidence);
-    const bucket = await this.getOrCreateRemoteBucket(data.organizationId);
+    const bucket = await this.context.getOrCreateRemoteBucket(data.organizationId);
     const place = await this.geocoder.reverseGeocode(data.lat, data.lng);
     const remoteClockInAt = occurrence.at;
     // Remote clock-in: the bucket is a logical (pin-less) space, so anchor the
@@ -95,17 +121,17 @@ export abstract class ClockInRemoteBase extends ClockInBase {
       scheduled: _s,
       flagToleranceMin: _ft,
       ...remoteStamp
-    } = await this.buildShiftStamp(
+    } = await this.context.buildShiftStamp(
       data.userId,
       bucket,
       remoteClockInAt,
-      this.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? undefined,
+      this.context.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? undefined,
     );
     // Changed hours / agreed overtime not tied to a workspace apply here too.
-    this.applyDayRequests(remoteStamp, dayRequests, {
+    this.context.applyDayRequests(remoteStamp, dayRequests, {
       spaceId: null,
       at: remoteClockInAt,
-      tz: this.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? orgTz,
+      tz: this.context.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? orgTz,
     });
     /*
       Rests apply to a day worked from home or a car exactly as they do to one
@@ -121,7 +147,7 @@ export abstract class ClockInRemoteBase extends ClockInBase {
       clockInAt: remoteClockInAt,
       expectedStartAt: remoteStamp.expectedClockInAt ?? null,
       expectedEndAt: remoteStamp.expectedClockOutAt ?? null,
-      timezone: this.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? orgTz,
+      timezone: this.context.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? orgTz,
     });
 
     const remoteFlags = [
@@ -134,10 +160,10 @@ export abstract class ClockInRemoteBase extends ClockInBase {
       point: { lat: data.lat, lng: data.lng },
       insideArea: false,
       at: remoteClockInAt,
-      timezone: this.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? orgTz,
+      timezone: this.context.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? orgTz,
       recordedOffline: remoteFlags.includes('RECORDED_OFFLINE'),
     });
-    const entry = await this.createEntryOnce(data.id, data.userId, {
+    const entry = await this.context.createEntryOnce(data.id, data.userId, {
       ...(data.id ? { id: data.id } : {}),
       userId: data.userId,
       locationId: bucket.id,
@@ -149,7 +175,7 @@ export abstract class ClockInRemoteBase extends ClockInBase {
       clockInWithinGeofence: true,
       isRemote: true,
       clockInPlace: place,
-      timezone: this.resolveEntryTimezone(data.lat, data.lng, orgTz),
+      timezone: this.context.resolveEntryTimezone(data.lat, data.lng, orgTz),
       flagReasons: remoteFlags,
       approvalStatus: approvalFor(remoteFlags),
       organizationId: data.organizationId,

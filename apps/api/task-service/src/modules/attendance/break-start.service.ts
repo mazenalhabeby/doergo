@@ -15,17 +15,18 @@ import {
 import { emitEvent, breakStartedEvent } from '@hbcfield/shared/microservices';
 import type { BreakType } from '@prisma/client';
 
-/** Starting a rest — moved here unchanged from break.service.ts. */
+/** Starting a rest. A collaborator of BreakService, which answers `startBreak` through it. */
 @Injectable()
-export abstract class BreakStartBase {
-  protected readonly logger = new Logger(this.constructor.name);
+export class BreakStartService {
+  // Named after BreakService, whose log lines these always were.
+  private readonly logger = new Logger('BreakService');
 
   constructor(
-    protected readonly prisma: PrismaService,
+    private readonly prisma: PrismaService,
     // A break changes breakMinutes, and paid time is computed from it.
-    protected readonly countedTime: CountedTimeService,
+    private readonly countedTime: CountedTimeService,
     @Inject(SERVICE_NAMES.NOTIFICATION)
-    protected readonly notificationClient: ClientProxy,
+    private readonly notificationClient: ClientProxy,
   ) {}
 
   /**

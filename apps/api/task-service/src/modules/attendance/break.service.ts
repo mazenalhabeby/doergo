@@ -1,14 +1,33 @@
-import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
-import { personName, success, TimeEntryStatus } from '@hbcfield/shared';
+import { Injectable, BadRequestException, ConflictException, Inject, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { CountedTimeService } from './counted-time.service';
+import { personName, success, TimeEntryStatus, SERVICE_NAMES } from '@hbcfield/shared';
 import type { OccurrenceEvidence } from '@hbcfield/shared';
 import { judgeOccurrence } from '../../common/occurrence.util';
 import { SAME_TAP_MS } from './attendance-occurrence';
 import { parseBreakPlan, nextBreakRemindAt as nextRestAt, breakTotals } from '@hbcfield/shared';
-import { BreakStartBase } from './break-start.base';
+import { BreakStartService } from './break-start.service';
 import { emitEvent, breakEndedEvent } from '@hbcfield/shared/microservices';
 
 @Injectable()
-export class BreakService extends BreakStartBase {
+export class BreakService {
+  private readonly logger = new Logger(BreakService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    // A break changes breakMinutes, and paid time is computed from it.
+    private readonly countedTime: CountedTimeService,
+    @Inject(SERVICE_NAMES.NOTIFICATION)
+    private readonly notificationClient: ClientProxy,
+    private readonly starter: BreakStartService,
+  ) {}
+
+  /** Start a break during the current shift (BreakStartService). */
+  startBreak(...args: Parameters<BreakStartService['startBreak']>) {
+    return this.starter.startBreak(...args);
+  }
+
   async endBreak(data: {
     userId: string;
     organizationId: string;

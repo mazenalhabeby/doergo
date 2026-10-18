@@ -13,6 +13,7 @@ import {
 import { ClockOutHandover, AUTHOR } from './job-pause-helpers';
 import { JobPauseBase } from './job-pause.base';
 import { emitEvent, taskHandoverAddedEvent, tasksPausedEvent } from '@hbcfield/shared/microservices';
+import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 export { type ClockOutHandover } from './job-pause-helpers';
 
@@ -183,14 +184,7 @@ export class JobPauseService extends JobPauseBase {
    * person who owes it (they may have been taken off it since — the note is
    * exactly what the next person needs). Clears what they owed.
    */
-  async addHandover(data: {
-    id?: string;
-    taskId: string;
-    note: string;
-    attachmentIds?: string[];
-    userId: string;
-    organizationId: string;
-  }) {
+  async addHandover(data: JobData<typeof TASK_JOBS.addHandover>) {
     const note = cleanHandoverNote(data.note);
     const task = await this.prisma.task.findUnique({
       where: { id: data.taskId },

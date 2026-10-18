@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import type { TaskPriority } from '@prisma/client';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TaskStatus, TaskEventType, success, assertFoundInOrg } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { resolveOwnedTaskRefs, assertMayAssign, assertMayCreateUnder, assertTargetIsInSpace } from './task-scope';
 import { emitEvent, taskCreatedEvent } from '@hbcfield/shared/microservices';
+import type { SubtaskCreateJob } from '@hbcfield/shared';
 
 /**
  * Work under and around a task: subtasks and dependencies.
@@ -22,7 +24,7 @@ export class TaskHierarchyService {
   /**
    * Create a subtask under a parent task
    */
-  async createSubtask(data: any) {
+  async createSubtask(data: SubtaskCreateJob) {
     const parent = await this.prisma.task.findUnique({
       where: { id: data.parentId },
     });
@@ -41,7 +43,10 @@ export class TaskHierarchyService {
         throw new BadRequestException('Circular parent-child relationship detected');
       }
       visited.add(current);
-      const p = await this.prisma.task.findUnique({ where: { id: current }, select: { parentId: true } });
+      const p: { parentId: string | null } | null = await this.prisma.task.findUnique({
+        where: { id: current },
+        select: { parentId: true },
+      });
       current = p?.parentId || null;
     }
 
@@ -116,7 +121,8 @@ export class TaskHierarchyService {
       data: {
         title: data.title,
         description: data.description,
-        priority: data.priority || 'MEDIUM',
+        // The gateway's DTO checks it (@IsEnum); Prisma refuses anything else, as before.
+        priority: (data.priority || 'MEDIUM') as TaskPriority,
         status: initialStatus,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         startDate: data.startDate ? new Date(data.startDate) : null,

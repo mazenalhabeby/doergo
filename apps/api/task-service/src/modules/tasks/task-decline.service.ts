@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException, ForbiddenException } 
 import { personName, TaskStatus, TaskEventType, success } from '@hbcfield/shared';
 import { TaskAssignmentBase } from './task-assignment.base';
 import { emitEvent, taskDeclinedEvent } from '@hbcfield/shared/microservices';
+import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 /** A worker declining a job they were given. */
 @Injectable()
@@ -10,15 +11,7 @@ export class TaskDeclineService extends TaskAssignmentBase {
    * Decline task assignment (TECHNICIAN only)
    * Returns task to NEW status and removes assignment
    */
-  async decline(data: {
-    id: string;
-    userId: string;
-    userRole: string;
-    canViewAllTasks?: boolean;
-    organizationId: string;
-    /** Why the worker declines — optional, sent by the gateway. */
-    reason?: string | null;
-  }) {
+  async decline(data: JobData<typeof TASK_JOBS.decline>) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
       include: {

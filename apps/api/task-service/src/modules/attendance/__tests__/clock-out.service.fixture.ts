@@ -1,5 +1,6 @@
 import { combinedServices } from '../../../common/testing/combined-services';
 import { ClockOutService } from '../clock-out.service';
+import { ClockOutAlertsService } from '../clock-out-alerts.service';
 import { DecidedCloseService } from '../decided-close.service';
 import { ShiftCloseSweepService } from '../shift-close-sweep.service';
 
@@ -13,7 +14,13 @@ export type ClockOutServiceParts = Public<ClockOutService> &
 
 export function clockOutServices(...args: unknown[]): ClockOutServiceParts {
   return combinedServices<ClockOutServiceParts>(
-    new (ClockOutService as unknown as new (...a: unknown[]) => object)(...args),
+    // ShiftCloseBase's seven required arguments, the alerts (built from the same doubles), then the two optional ones.
+    new (ClockOutService as unknown as new (...a: unknown[]) => object)(
+      ...Array.from({ length: 7 }, (_, i) => args[i]),
+      new (ClockOutAlertsService as unknown as new (...a: unknown[]) => object)(args[0], args[1], args[2], args[4]),
+      args[7],
+      args[8],
+    ),
     new (DecidedCloseService as unknown as new (...a: unknown[]) => object)(...args),
     new (ShiftCloseSweepService as unknown as new (...a: unknown[]) => object)(...args),
   );

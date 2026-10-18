@@ -11,23 +11,12 @@ import { assertMayAssign, assertTargetIsInSpace } from './task-scope';
 import { TaskAssignmentBase } from './task-assignment.base';
 import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 import type { TaskAssigneeRole } from '@prisma/client';
+import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 /** Adding and removing people on a job's crew, and releasing a member who left from their open work. */
 @Injectable()
 export class TaskCrewMembersService extends TaskAssignmentBase {
-  async addAssignee(data: {
-    taskId: string;
-    userId: string;
-    role?: string;
-    requestUserId: string;
-    userRole: string;
-    canViewAllTasks?: boolean;
-    /** The ORG-wide resolution of canAssignTasks. */
-    canAssignTasks?: boolean;
-    /** Spaces where the caller holds canAssignTasks through a SPACE role. */
-    assignSpaceIds?: string[];
-    organizationId: string;
-  }) {
+  async addAssignee(data: JobData<typeof TASK_JOBS.addAssignee>) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     assertFoundInOrg(task, data.organizationId, 'Task');
     assertMayAssign(task, data);
@@ -99,16 +88,7 @@ export class TaskCrewMembersService extends TaskAssignmentBase {
   /**
    * Remove an assignee from a task
    */
-  async removeAssignee(data: {
-    taskId: string;
-    userId: string;
-    requestUserId: string;
-    userRole: string;
-    canViewAllTasks?: boolean;
-    canAssignTasks?: boolean;
-    assignSpaceIds?: string[];
-    organizationId: string;
-  }) {
+  async removeAssignee(data: JobData<typeof TASK_JOBS.removeAssignee>) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     assertFoundInOrg(task, data.organizationId, 'Task');
     // Taking somebody OFF a job is the same authority as putting them on it.

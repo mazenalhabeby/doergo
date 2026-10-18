@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import type { CompanyLocation, SpaceAssignment } from '@prisma/client';
 import {
   zoneOf,
@@ -6,17 +7,20 @@ import {
   TimeEntryStatus,
   siteEnforcesZone,
   parseGeofencePolygon,
-  SHIFT_REMINDER_DEFAULTS,
-  memberDayZone,
   APPROVED_REMOTE_FLAG,
   autoClockActive,
   clocksByPresence,
+  SERVICE_NAMES,
 } from '@hbcfield/shared';
 import { clockEventEntry } from './clock-event';
-import { agreedOvertimeMinutes, type DayRequestRow } from './approved-requests';
+import type { DayRequestRow } from './approved-requests';
 import { approvalFor } from './attendance-occurrence';
-import { noShiftRefusal } from './clock-in-helpers';
-import { ClockInRemoteBase } from './clock-in-remote.base';
+import { applyNoShiftAllowance } from './clock-in-no-shift';
+import { ClockInContextService } from './clock-in-context.service';
+import { BreakRulesService } from './break-rules.service';
+import { PresenceService } from './presence/presence.service';
+import { AttendanceGeocoderService } from './attendance-geocoder.service';
+import { ShiftSweepService } from './shift-sweep.service';
 import {
   armAutoClockReminder,
   autoClockInFlag,
@@ -26,8 +30,6 @@ import {
   type ClockInUser,
 } from './clock-in-steps';
 import { emitEvent, attendanceClockInEvent } from '@hbcfield/shared/microservices';
-
-type ShiftStamp = Omit<Awaited<ReturnType<ClockInRemoteBase['buildShiftStamp']>>, 'scheduled' | 'flagToleranceMin'>;
 
 /** Everything the on-site checks settled before the entry is shaped and written. */
 export interface OnSiteClockIn {
@@ -49,8 +51,21 @@ export interface OnSiteClockIn {
 
 /** An on-site (or away-from-site) clock-in, once the member may clock in here: shape the entry and write it. */
 @Injectable()
-export abstract class ClockInSiteBase extends ClockInRemoteBase {
-  protected async recordOnSite(data: ClockInInput & { locationId: string }, ctx: OnSiteClockIn) {
+export class ClockInSiteWriter {
+  // Named after the clock-in, whose log lines these always were.
+  private readonly logger = new Logger('ClockInService');
+
+  constructor(
+    @Inject(SERVICE_NAMES.NOTIFICATION)
+    private readonly notificationClient: ClientProxy,
+    private readonly context: ClockInContextService,
+    private readonly breakRules: BreakRulesService,
+    private readonly presence: PresenceService,
+    private readonly geocoder: AttendanceGeocoderService,
+    private readonly shiftSweeps: ShiftSweepService,
+  ) {}
+
+  async recordOnSite(data: ClockInInput & { locationId: string }, ctx: OnSiteClockIn) {
     const { user, location, assignment, occurrence, dayRequests, orgTz, withinGeofence, remoteApproved } = ctx;
     const clockInTime = occurrence.at;
     const flagReasons: string[] = [...occurrence.flags];
@@ -84,13 +99,13 @@ export abstract class ClockInSiteBase extends ClockInRemoteBase {
     // present the worker's actual location wins regardless.
     const spaceIsPhysical = location.lat != null && location.lng != null;
     const fallbackTz = spaceIsPhysical ? location.timezone : orgTz;
-    const workerTz = this.resolveEntryTimezone(data.lat, data.lng, fallbackTz);
+    const workerTz = this.context.resolveEntryTimezone(data.lat, data.lng, fallbackTz);
 
     // Resolve the shift ONCE (rota-aware + timezone-correct) and reuse it for both
     // the flags and the stamp — no separate legacy technicianSchedule query.
     // `scheduled` and `flagToleranceMin` are derived and are not columns;
     // `expectedClockInAt` IS one now and stays in `stampCols`.
-    const { scheduled, flagToleranceMin, ...stampCols } = await this.buildShiftStamp(
+    const { scheduled, flagToleranceMin, ...stampCols } = await this.context.buildShiftStamp(
       data.userId,
       location,
       clockInTime,
@@ -99,7 +114,7 @@ export abstract class ClockInSiteBase extends ClockInRemoteBase {
 
     let { endIsDailyLimit, shapingRequests } = scheduled
       ? { endIsDailyLimit: false, shapingRequests: dayRequests }
-      : await this.applyNoShiftAllowance(data.userId, user, location, workerTz, clockInTime, {
+      : await applyNoShiftAllowance(this.context, data.userId, user, location, workerTz, clockInTime, {
           dayRequests,
           stampCols,
           flagReasons,
@@ -111,7 +126,7 @@ export abstract class ClockInSiteBase extends ClockInRemoteBase {
       rests and counted time all follow the agreed day through the existing rules — and agreed
       overtime is counted exactly as an approved extra-time round is: the planned end moved.
     */
-    const requestShaped = this.applyDayRequests(stampCols, shapingRequests, {
+    const requestShaped = this.context.applyDayRequests(stampCols, shapingRequests, {
       spaceId: location.id,
       at: clockInTime,
       tz: location.timezone || workerTz || orgTz,
@@ -192,7 +207,7 @@ export abstract class ClockInSiteBase extends ClockInRemoteBase {
     });
 
     // Create time entry
-    const entry = await this.createEntryOnce(data.id, data.userId, {
+    const entry = await this.context.createEntryOnce(data.id, data.userId, {
       ...(data.id ? { id: data.id } : {}),
       userId: data.userId,
       locationId: data.locationId,
@@ -243,49 +258,5 @@ export abstract class ClockInSiteBase extends ClockInRemoteBase {
     });
 
     return success(entry, `Clocked in at ${location.name}`);
-  }
-
-  /*
-    ── Clocking in with no shift ──
-    The workspace decides: allow it, allow up to a number of hours a day, or
-    only with a shift. A limit becomes the session's planned end, so counted
-    time, reminders, overtime and the open-shift close all follow it.
-
-    ⚠️ Recorded offline, it is KEPT, never refused: the member already worked
-    it. With no hours left it counts nothing and says so, and time past the
-    limit still needs an approval like any overtime.
-
-    Writes the planned end / reminder into `stampCols` and PAST_DAILY_LIMIT into `flagReasons`.
-  */
-  private async applyNoShiftAllowance(
-    userId: string,
-    user: ClockInUser,
-    location: CompanyLocation,
-    workerTz: string | null,
-    clockInTime: Date,
-    io: { dayRequests: DayRequestRow[]; stampCols: ShiftStamp; flagReasons: string[] },
-  ): Promise<{ endIsDailyLimit: boolean; shapingRequests: DayRequestRow[] }> {
-    const { dayRequests, stampCols, flagReasons } = io;
-    let endIsDailyLimit = false;
-    // Overtime agreed in advance raises a no-shift day's limit INSIDE the allowance — so a member
-    // already at the limit may clock in for it — and is then not added to the end a second time.
-    let shapingRequests = dayRequests;
-    const dayTz = memberDayZone(user.timezone, user.organization?.timezone, location.timezone || workerTz);
-    const agreed = agreedOvertimeMinutes(dayRequests, location.id, clockInTime, dayTz);
-    const allowance = await this.noShiftAllowanceFor(userId, location, clockInTime, dayTz, agreed);
-    if (allowance.kind !== 'free' && agreed > 0) shapingRequests = dayRequests.filter((r) => r.kind !== 'OVERTIME');
-    if (allowance.kind === 'refused' && !flagReasons.includes('RECORDED_OFFLINE')) {
-      throw noShiftRefusal(allowance, location.name);
-    }
-    if (allowance.kind !== 'free') {
-      const end = allowance.kind === 'limited' ? allowance.until : clockInTime;
-      stampCols.expectedClockOutAt = end;
-      stampCols.nextRemindAt = new Date(
-        Math.max(end.getTime(), Date.now()) + SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES * 60_000,
-      );
-      endIsDailyLimit = true;
-      if (allowance.kind === 'refused') flagReasons.push('PAST_DAILY_LIMIT');
-    }
-    return { endIsDailyLimit, shapingRequests };
   }
 }

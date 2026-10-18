@@ -38,24 +38,54 @@ const SHIFT = {
 const SITE = { lat: 47.9813, lng: 13.8269 };
 const AWAY = { lat: 48.2082, lng: 16.3738 }; // Vienna city, ~200 km from the site
 const location = {
-  id: 'loc-1', name: 'Main Office', organizationId: 'org-1', isActive: true, isRemote: false, workModel: 'SHIFT_BASED',
-  ...SITE, geofenceRadius: 50, geofencePolygon: null, geofencePolicy: 'STRICT', timezone: 'Europe/Vienna',
-  noShiftPolicy: 'ALLOW', noShiftDailyMinutes: 480, updatedAt: new Date('2026-09-01T00:00:00.000Z'),
-  enabledModules: ['time_tracking'], organization: { enabledModules: ['time_tracking'] },
+  id: 'loc-1',
+  name: 'Main Office',
+  organizationId: 'org-1',
+  isActive: true,
+  isRemote: false,
+  workModel: 'SHIFT_BASED',
+  ...SITE,
+  geofenceRadius: 50,
+  geofencePolygon: null,
+  geofencePolicy: 'STRICT',
+  timezone: 'Europe/Vienna',
+  noShiftPolicy: 'ALLOW',
+  noShiftDailyMinutes: 480,
+  updatedAt: new Date('2026-09-01T00:00:00.000Z'),
+  enabledModules: ['time_tracking'],
+  organization: { enabledModules: ['time_tracking'] },
 };
 const request = (over: Record<string, unknown>) => ({
-  id: 'req-1', kind: 'REMOTE', spaceId: 'loc-1', startTime: null, endTime: null, minutes: null,
-  startDate: day('2026-09-15'), endDate: day('2026-09-15'), ...over,
+  id: 'req-1',
+  kind: 'REMOTE',
+  spaceId: 'loc-1',
+  startTime: null,
+  endTime: null,
+  minutes: null,
+  startDate: day('2026-09-15'),
+  endDate: day('2026-09-15'),
+  ...over,
 });
 
 async function build(opts: { requests?: any[]; shift?: any } = {}) {
   const prisma: any = {
     user: {
-      findFirst: jest.fn().mockResolvedValue({ id: 'u1', organizationId: 'org-1', allowRemote: false, role: 'EMPLOYEE', organization: { timezone: 'Europe/Vienna' } }),
+      findFirst: jest
+        .fn()
+        .mockResolvedValue({
+          id: 'u1',
+          organizationId: 'org-1',
+          allowRemote: false,
+          role: 'EMPLOYEE',
+          organization: { timezone: 'Europe/Vienna' },
+        }),
       findUnique: jest.fn().mockResolvedValue({ firstName: 'Mike', lastName: 'Weber' }),
       findMany: jest.fn().mockResolvedValue([]),
     },
-    companyLocation: { findFirst: jest.fn().mockResolvedValue(location), findMany: jest.fn().mockResolvedValue([location]) },
+    companyLocation: {
+      findFirst: jest.fn().mockResolvedValue(location),
+      findMany: jest.fn().mockResolvedValue([location]),
+    },
     // The ONE read of approved requests — what Postgres would return for this member.
     timeOff: { findMany: jest.fn().mockResolvedValue(opts.requests ?? []) },
     spaceAssignment: {
@@ -69,14 +99,18 @@ async function build(opts: { requests?: any[]; shift?: any } = {}) {
       create: jest.fn(async ({ data }: any) => ({ id: 'e-new', ...data, location })),
     },
     break: { findMany: jest.fn().mockResolvedValue([]) },
-    shiftInstance: { updateMany: jest.fn().mockResolvedValue({ count: 0 }), findFirst: jest.fn().mockResolvedValue(null) },
+    shiftInstance: {
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
     breakRule: { findMany: jest.fn().mockResolvedValue([]) },
     shift: { findUnique: jest.fn().mockResolvedValue(null), findFirst: jest.fn().mockResolvedValue(null) },
     $transaction: jest.fn((ops: any) => (Array.isArray(ops) ? Promise.all(ops) : ops(prisma))),
   };
   const moduleRef = await Test.createTestingModule({
     providers: [
-      AttendanceService, ...ATTENDANCE_SERVICE_PARTS,
+      AttendanceService,
+      ...ATTENDANCE_SERVICE_PARTS,
       {
         provide: PresenceService,
         useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn(), onBatch: jest.fn() },
@@ -87,19 +121,35 @@ async function build(opts: { requests?: any[]; shift?: any } = {}) {
       BreakReminderService,
       { provide: PrismaService, useValue: prisma },
       { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
-      { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) } },
-      { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) } },
-      { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn().mockResolvedValue(opts.shift === undefined ? SHIFT : opts.shift) } },
+      {
+        provide: getQueueToken(QUEUE_NAMES.OVERTIME),
+        useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) },
+      },
+      {
+        provide: NotificationRoutingService,
+        useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) },
+      },
+      {
+        provide: ShiftResolverService,
+        useValue: { resolveForClockIn: jest.fn().mockResolvedValue(opts.shift === undefined ? SHIFT : opts.shift) },
+      },
     ],
   }).compile();
   const service = moduleRef.get(AttendanceService);
   jest.spyOn(moduleRef.get(AttendanceGeocoderService), 'reverseGeocode').mockResolvedValue('Vienna');
   // Fulfilling the rota instance is not what these tests are about.
-  jest.spyOn((service as any).clockIns.shiftSweeps, 'markShiftInstancePresent').mockResolvedValue(undefined);
+  jest.spyOn((service as any).clockIns.site.shiftSweeps, 'markShiftInstancePresent').mockResolvedValue(undefined);
   return { service, prisma };
 }
 
-const clockIn = (over: Record<string, unknown> = {}) => ({ userId: 'u1', organizationId: 'org-1', locationId: 'loc-1', ...SITE, accuracy: 10, ...over });
+const clockIn = (over: Record<string, unknown> = {}) => ({
+  userId: 'u1',
+  organizationId: 'org-1',
+  locationId: 'loc-1',
+  ...SITE,
+  accuracy: 10,
+  ...over,
+});
 const created = (prisma: any) => prisma.timeEntry.create.mock.calls[0][0].data;
 const at = (iso: string) => {
   jest.setSystemTime(new Date(iso));
@@ -127,7 +177,11 @@ describe('clock-in with an approved request', () => {
       expect(data.approvalStatus).toBe('AUTO');
       // One indexed read, approved remote/hours/overtime only.
       expect(prisma.timeOff.findMany).toHaveBeenCalledTimes(1);
-      expect(prisma.timeOff.findMany.mock.calls[0][0].where).toMatchObject({ technicianId: 'u1', status: 'APPROVED', kind: { in: ['REMOTE', 'HOURS', 'OVERTIME'] } });
+      expect(prisma.timeOff.findMany.mock.calls[0][0].where).toMatchObject({
+        technicianId: 'u1',
+        status: 'APPROVED',
+        kind: { in: ['REMOTE', 'HOURS', 'OVERTIME'] },
+      });
     });
 
     it('covers only WHERE — lateness on a remote day still goes to a person', async () => {
@@ -158,9 +212,16 @@ describe('clock-in with an approved request', () => {
     it('control: without it, the same tap is refused as REMOTE_NOT_FOR_ASSIGNED… for a granted member', async () => {
       at('2026-09-15T06:00:00.000Z');
       const { service, prisma } = await build();
-      prisma.user.findFirst.mockResolvedValue({ id: 'u1', organizationId: 'org-1', allowRemote: true, role: 'EMPLOYEE', organization: { timezone: 'Europe/Vienna' } });
-      await expect(service.clockIn({ userId: 'u1', organizationId: 'org-1', isRemote: true, ...AWAY, accuracy: 10 }))
-        .rejects.toMatchObject({ response: { code: 'REMOTE_NOT_FOR_ASSIGNED' } });
+      prisma.user.findFirst.mockResolvedValue({
+        id: 'u1',
+        organizationId: 'org-1',
+        allowRemote: true,
+        role: 'EMPLOYEE',
+        organization: { timezone: 'Europe/Vienna' },
+      });
+      await expect(
+        service.clockIn({ userId: 'u1', organizationId: 'org-1', isRemote: true, ...AWAY, accuracy: 10 }),
+      ).rejects.toMatchObject({ response: { code: 'REMOTE_NOT_FOR_ASSIGNED' } });
     });
   });
 
@@ -200,7 +261,12 @@ describe('clock-in with an approved request', () => {
       const { service, prisma } = await build({ requests: [later] });
       await service.clockIn(clockIn());
       const data = created(prisma);
-      const counted = computeCountedTime({ clockInAt: data.clockInAt, clockOutAt: new Date('2026-09-15T14:00:00.000Z'), expectedStartAt: data.expectedClockInAt, expectedEndAt: data.expectedClockOutAt });
+      const counted = computeCountedTime({
+        clockInAt: data.clockInAt,
+        clockOutAt: new Date('2026-09-15T14:00:00.000Z'),
+        expectedStartAt: data.expectedClockInAt,
+        expectedEndAt: data.expectedClockOutAt,
+      });
       expect(counted.countedStartAt).toEqual(new Date('2026-09-15T08:00:00.000Z'));
     });
   });
@@ -208,7 +274,9 @@ describe('clock-in with an approved request', () => {
   describe('OVERTIME', () => {
     it('extends the expected end by the agreed minutes, and re-arms the clock-out reminder after it', async () => {
       at('2026-09-15T06:00:00.000Z');
-      const { service, prisma } = await build({ requests: [request({ kind: 'OVERTIME', spaceId: null, minutes: 120 })] });
+      const { service, prisma } = await build({
+        requests: [request({ kind: 'OVERTIME', spaceId: null, minutes: 120 })],
+      });
       await service.clockIn(clockIn());
       const data = created(prisma);
       expect(data.expectedClockOutAt).toEqual(new Date(SHIFT.expectedClockOutAt.getTime() + 120 * MIN));
@@ -236,7 +304,9 @@ describe('the clock-in list with an approved remote day', () => {
 
   it('a remote day on ANOTHER date does not tag it', async () => {
     at('2026-09-15T06:00:00.000Z');
-    const { service } = await build({ requests: [request({ startDate: day('2026-09-16'), endDate: day('2026-09-16') })] });
+    const { service } = await build({
+      requests: [request({ startDate: day('2026-09-16'), endDate: day('2026-09-16') })],
+    });
     const res: any = await service.listClockInLocations({ userId: 'u1', organizationId: 'org-1' });
     expect(res.data[0].awayAllowed).toBe(false);
   });

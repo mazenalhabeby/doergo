@@ -34,6 +34,7 @@ import { assertAtJobSite, assertDueBySiteDay, assertNoOtherActiveTask, officeSta
 import { statusUpdateData, writeStatusMove } from './task-status-write';
 import { afterStatusMove, type AfterMoveDeps } from './task-status-after';
 import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
+import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 /**
  * Moving a task through its steps: the status change itself (with its step
@@ -69,7 +70,7 @@ export class TaskStatusService {
    * Not paused any more (a second tap, an offline replay, or the job was moved
    * meanwhile): answered with the job as it is, nothing written.
    */
-  async resumeWork(data: TaskAccessFacts & { id: string; evidence?: OccurrenceEvidence }) {
+  async resumeWork(data: JobData<typeof TASK_JOBS.resumeWork>) {
     const task = await this.prisma.task.findUnique({ where: { id: data.id } });
     // Before any other read: another organization's task is answered like a missing one.
     assertFoundInOrg(task, data.organizationId, 'Task');

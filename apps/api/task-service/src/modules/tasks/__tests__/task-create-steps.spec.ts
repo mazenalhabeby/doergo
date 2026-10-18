@@ -1,5 +1,9 @@
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import type { TaskCreateJob } from '@hbcfield/shared';
 import { resolveCreatePlacement, settleCreateSpace, writeCreateAssignees } from '../task-create-steps';
+
+/** A step reads only some of the job; the fixtures name only that part. */
+const job = (part: Record<string, unknown>) => part as unknown as TaskCreateJob;
 
 jest.mock('../../../common/space-workflow.util', () => ({
   resolveSpaceDefaultWorkflowId: jest.fn().mockResolvedValue('wf-space'),
@@ -18,7 +22,7 @@ describe('task create steps', () => {
     const two: any = {
       spaceAssignment: { findMany: jest.fn().mockResolvedValue([{ spaceId: 'a' }, { spaceId: 'b' }]) },
     };
-    await expect(settleCreateSpace(two, { taskCreationScope: 'SPACE' }, false)).rejects.toBeInstanceOf(
+    await expect(settleCreateSpace(two, job({ taskCreationScope: 'SPACE' }), false)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
   });
@@ -34,14 +38,17 @@ describe('task create steps', () => {
 
   it('fills the location from the space only when none was given', async () => {
     const prisma: any = { companyLocation: { findUnique: jest.fn().mockResolvedValue(space) } };
-    const p = await resolveCreatePlacement(prisma, { spaceId: 's', organizationId: 'org' });
+    const p = await resolveCreatePlacement(prisma, job({ spaceId: 's', organizationId: 'org' }));
     expect(p).toMatchObject({
       locationLat: 1,
       locationAddress: 'Main St',
       effectiveOrgId: 'org',
       spaceWorkflowId: 'wf-space',
     });
-    const kept = await resolveCreatePlacement(prisma, { spaceId: 's', organizationId: 'org', locationAddress: 'Here' });
+    const kept = await resolveCreatePlacement(
+      prisma,
+      job({ spaceId: 's', organizationId: 'org', locationAddress: 'Here' }),
+    );
     expect(kept.locationAddress).toBe('Here');
     expect(kept.locationLat).toBeUndefined();
   });
@@ -50,11 +57,11 @@ describe('task create steps', () => {
     const prisma: any = {
       companyLocation: { findUnique: jest.fn().mockResolvedValue({ ...space, organizationId: 'owner' }) },
     };
-    await expect(resolveCreatePlacement(prisma, { spaceId: 's', organizationId: 'org' })).rejects.toBeInstanceOf(
+    await expect(resolveCreatePlacement(prisma, job({ spaceId: 's', organizationId: 'org' }))).rejects.toBeInstanceOf(
       NotFoundException,
     );
     const access = { perSpace: { s: { canCreateTasks: true } } };
-    const p = await resolveCreatePlacement(prisma, { spaceId: 's', organizationId: 'org', access });
+    const p = await resolveCreatePlacement(prisma, job({ spaceId: 's', organizationId: 'org', access }));
     expect(p.effectiveOrgId).toBe('owner');
   });
 

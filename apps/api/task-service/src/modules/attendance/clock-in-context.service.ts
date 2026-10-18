@@ -1,5 +1,4 @@
-import { Injectable, Inject, Logger, Optional } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ShiftResolverService, ResolverSpace } from './shift-resolver.service';
 import {
@@ -7,7 +6,6 @@ import {
   activeAssignmentWhere,
   SHIFT_REMINDER_DEFAULTS,
   noShiftReminderAt,
-  SERVICE_NAMES,
   noShiftAllowance,
   effectiveNoShiftPolicy,
   countedMinutesBetween,
@@ -17,34 +15,24 @@ import {
 } from '@hbcfield/shared';
 import { dayRequestEffect, type DayRequestRow } from './approved-requests';
 import { alreadyClockedIn, sameRecordOrRefuse } from './attendance-occurrence';
-import { BreakRulesService } from './break-rules.service';
-import { PresenceService } from './presence/presence.service';
-import { AttendanceGeocoderService } from './attendance-geocoder.service';
-import { ShiftSweepService } from './shift-sweep.service';
-import { AutoClockService } from './auto-clock.service';
 import { tzlookup } from './clock-in-helpers';
 
 /**
  * What a clock-in and the clock-in list share: where the member may clock in, the
  * entry's zone, the shift stamp, the no-shift allowance, approved day requests,
  * and creating the entry once.
+ *
+ * A collaborator, not a base class: ClockInService, its remote and on-site
+ * halves, and ClockInLocationsService each receive it.
  */
 @Injectable()
-export abstract class ClockInBase {
-  protected readonly logger = new Logger(this.constructor.name);
+export class ClockInContextService {
+  // Named after the clock-in, whose log lines these always were.
+  private readonly logger = new Logger('ClockInService');
 
   constructor(
-    protected readonly prisma: PrismaService,
-    @Inject(SERVICE_NAMES.NOTIFICATION)
-    protected readonly notificationClient: ClientProxy,
-    protected readonly shiftResolver: ShiftResolverService,
-    protected readonly breakRules: BreakRulesService,
-    // Where they are working now — display only, and never in the way of a clock-in.
-    protected readonly presence: PresenceService,
-    protected readonly geocoder: AttendanceGeocoderService,
-    protected readonly shiftSweeps: ShiftSweepService,
-    // The automatic clock's re-check. Optional so a clock-in never depends on it: absent, no step is marked automatic.
-    @Optional() protected readonly autoClock?: AutoClockService,
+    readonly prisma: PrismaService,
+    private readonly shiftResolver: ShiftResolverService,
   ) {}
 
   /**
@@ -60,7 +48,7 @@ export abstract class ClockInBase {
    * the entry so display is a zero-cost read — and correct for remote clock-ins.
    * Falls back to the space's timezone when GPS is unavailable/invalid.
    */
-  protected resolveEntryTimezone(
+  resolveEntryTimezone(
     lat: number | null | undefined,
     lng: number | null | undefined,
     spaceTz?: string | null,
@@ -123,7 +111,7 @@ export abstract class ClockInBase {
     };
   }
 
-  protected async buildShiftStamp(
+  async buildShiftStamp(
     userId: string,
     space: ResolverSpace & { noShiftDailyMinutes?: number | null },
     clockInAt: Date,
@@ -164,7 +152,7 @@ export abstract class ClockInBase {
    * expectedClockOutAt null (marks it "unscheduled") but arm nextRemindAt at
    * the workspace's hours without a shift, so the reminder sweep picks it up and can't let it run to 71h.
    */
-  protected unscheduledStamp(clockInAt: Date, space: { noShiftDailyMinutes?: number | null }): { nextRemindAt: Date } {
+  unscheduledStamp(clockInAt: Date, space: { noShiftDailyMinutes?: number | null }): { nextRemindAt: Date } {
     return { nextRemindAt: noShiftReminderAt(clockInAt, space.noShiftDailyMinutes) };
   }
 
@@ -178,7 +166,7 @@ export abstract class ClockInBase {
    * strict site walk around it with `isRemote`; a stricter one would refuse
    * somebody the list shows no workspace at all.
    */
-  protected async clockableWorkspaces(userId: string, organizationId: string, at: Date) {
+  async clockableWorkspaces(userId: string, organizationId: string, at: Date) {
     const assignments = await this.prisma.spaceAssignment.findMany({
       where: activeAssignmentWhere(userId, at),
       // The per-workspace override rides along: it is half of the answer to
@@ -236,7 +224,7 @@ export abstract class ClockInBase {
    * Apply the day's approved changed hours / agreed overtime to a stamp, in place. The rule is
    * the shared `applyApprovedRequests`; a moved end re-arms the clock-out reminder from it.
    */
-  protected applyDayRequests(
+  applyDayRequests(
     stamp: { expectedClockInAt?: Date; expectedClockOutAt?: Date; nextRemindAt?: Date },
     rows: readonly DayRequestRow[],
     at: { spaceId: string | null; at: Date; tz: string },
@@ -268,7 +256,7 @@ export abstract class ClockInBase {
    * One open shift per member (`time_entries_one_open_per_user`): they are
    * already clocked in — a conflict with the open entry, never a second shift.
    */
-  protected async createEntryOnce(id: string | undefined, userId: string, data: Record<string, unknown>) {
+  async createEntryOnce(id: string | undefined, userId: string, data: Record<string, unknown>) {
     const include = { location: true, user: { select: { firstName: true, lastName: true } } } as const;
     try {
       return await this.prisma.timeEntry.create({ data: data as never, include });
@@ -288,7 +276,7 @@ export abstract class ClockInBase {
   }
 
   /** Find or create the org's geofence-exempt "Remote" bucket location. */
-  protected async getOrCreateRemoteBucket(organizationId: string) {
+  async getOrCreateRemoteBucket(organizationId: string) {
     const existing = await this.prisma.companyLocation.findFirst({
       where: { organizationId, isRemote: true },
     });

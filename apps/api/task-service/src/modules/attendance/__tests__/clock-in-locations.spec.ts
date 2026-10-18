@@ -45,12 +45,17 @@ describe('listClockInLocations', () => {
   const companyLocation = { findMany: jest.fn() };
   const prisma = {
     // The member's account-level away grant, read when tagging workspaces.
-    user: { findFirst: jest.fn().mockResolvedValue({ allowRemote: false, role: 'EMPLOYEE' }) }, spaceAssignment,
+    user: { findFirst: jest.fn().mockResolvedValue({ allowRemote: false, role: 'EMPLOYEE' }) },
+    spaceAssignment,
     timeOff: { findMany: jest.fn().mockResolvedValue([]) },
     // Every fixture workspace runs Time Tracking unless it says otherwise — the list only offers those.
     companyLocation: {
-      findMany: (...a: unknown[]) => companyLocation.findMany(...a).then((rows: Array<Record<string, unknown>>) =>
-        (rows ?? []).map((r) => ({ enabledModules: ['time_tracking'], ...r }))),
+      findMany: (...a: unknown[]) =>
+        companyLocation
+          .findMany(...a)
+          .then((rows: Array<Record<string, unknown>>) =>
+            (rows ?? []).map((r) => ({ enabledModules: ['time_tracking'], ...r })),
+          ),
     },
   } as any;
 
@@ -59,8 +64,11 @@ describe('listClockInLocations', () => {
   // shift resolver) to observe one `where` clause would test the harness.
   // (AttendanceService hands listClockInLocations to ClockInLocationsService, where it lives.)
   const { ClockInLocationsService } = require('../clock-in-locations.service');
+  const { ClockInContextService } = require('../clock-in-context.service');
   const service = Object.create(ClockInLocationsService.prototype);
   service.prisma = prisma;
+  // The shared clock-in helpers are a collaborator now; it reads the same prisma double.
+  service.context = Object.assign(Object.create(ClockInContextService.prototype), { prisma });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -144,23 +152,40 @@ describe('listClockInLocations', () => {
 
 describe('listClockInLocations — only where Time Tracking runs', () => {
   const { ClockInLocationsService } = require('../clock-in-locations.service');
+  const { ClockInContextService } = require('../clock-in-context.service');
   const build = (rows: unknown[]) => {
     const service = Object.create(ClockInLocationsService.prototype);
     service.prisma = {
       user: { findFirst: jest.fn().mockResolvedValue({ allowRemote: false, role: 'EMPLOYEE' }) },
       timeOff: { findMany: jest.fn().mockResolvedValue([]) },
-      spaceAssignment: { findMany: jest.fn().mockResolvedValue([{ spaceId: 'on' }, { spaceId: 'off' }, { spaceId: 'inherit' }]) },
+      spaceAssignment: {
+        findMany: jest.fn().mockResolvedValue([{ spaceId: 'on' }, { spaceId: 'off' }, { spaceId: 'inherit' }]),
+      },
       companyLocation: { findMany: jest.fn().mockResolvedValue(rows) },
     };
+    service.context = Object.assign(Object.create(ClockInContextService.prototype), { prisma: service.prisma });
     return service;
   };
   const row = (id: string, enabledModules: string[] | null, org: string[] | null) => ({
-    id, name: id, address: null, lat: null, lng: null, geofenceRadius: 50, geofencePolicy: 'STRICT', timezone: 'Europe/Vienna',
-    isDefault: false, enabledModules, organization: { enabledModules: org },
+    id,
+    name: id,
+    address: null,
+    lat: null,
+    lng: null,
+    geofenceRadius: 50,
+    geofencePolicy: 'STRICT',
+    timezone: 'Europe/Vienna',
+    isDefault: false,
+    enabledModules,
+    organization: { enabledModules: org },
   });
 
   it('BUG FIXED: a workspace with Time Tracking switched off is not offered', async () => {
-    const service = build([row('on', ['time_tracking'], []), row('off', [], ['time_tracking']), row('inherit', null, ['time_tracking'])]);
+    const service = build([
+      row('on', ['time_tracking'], []),
+      row('off', [], ['time_tracking']),
+      row('inherit', null, ['time_tracking']),
+    ]);
     const res = await service.listClockInLocations({ userId: 'u1', organizationId: 'org-1' });
     expect(res.data.map((l: { id: string }) => l.id).sort()).toEqual(['inherit', 'on']);
     // Nothing about modules leaks into the answer.

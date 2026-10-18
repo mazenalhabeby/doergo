@@ -24,6 +24,7 @@ import {
 } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
+import { TASK_JOBS, type JobData, type ChecklistActor } from '@hbcfield/shared';
 
 /** Who owns a checklist item and who ticked it — names only, for the screens (shared tasks/checklist.ts). */
 export const CHECKLIST_PEOPLE = {
@@ -31,8 +32,8 @@ export const CHECKLIST_PEOPLE = {
   completedBy: { select: { id: true, firstName: true, lastName: true } },
 } as const;
 
-/** The grants an owner change is judged on — the gateway forwards them, never the client. */
-export type ChecklistActor = { canAssignTasks?: boolean; access?: ResolvedAccess | null };
+/** The grants an owner change is judged on — the gateway forwards them, never the client (shared). */
+export type { ChecklistActor };
 
 /**
  * A task's checklist: items, their owners on the crew, and who ticked them
@@ -51,18 +52,13 @@ export class TaskChecklistService {
   /**
    * Add a checklist item to a task
    */
-  async addChecklistItem(data: TaskAccessFacts & ChecklistActor & {
-    taskId: string;
-    text: string;
-    position?: number;
-    /** Whose part it is — somebody on the crew, judged like any owner change. */
-    assigneeId?: string | null;
-  }) {
+  async addChecklistItem(data: JobData<typeof TASK_JOBS.addChecklistItem>) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
     await this.support.taskAccess.assert(task, data);
     const assigneeId = data.assigneeId ?? null;
-    if (assigneeId) this.refuseChecklist(mayChangeChecklistOwner(await this.checklistAuthorityOnce(data)(), null, assigneeId));
+    if (assigneeId)
+      this.refuseChecklist(mayChangeChecklistOwner(await this.checklistAuthorityOnce(data)(), null, assigneeId));
 
     // Determine position: use provided or append at end
     let position = data.position;
@@ -94,14 +90,7 @@ export class TaskChecklistService {
   /**
    * Update a checklist item (toggle completion or update text)
    */
-  async updateChecklistItem(data: TaskAccessFacts & ChecklistActor & {
-    taskId: string;
-    itemId: string;
-    text?: string;
-    isCompleted?: boolean;
-    /** A new owner (somebody on the crew), or null for nobody. Absent = unchanged. */
-    assigneeId?: string | null;
-  }) {
+  async updateChecklistItem(data: JobData<typeof TASK_JOBS.updateChecklistItem>) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
     await this.support.taskAccess.assert(task, data);
@@ -117,10 +106,13 @@ export class TaskChecklistService {
     const toggled = data.isCompleted !== undefined && data.isCompleted !== existing.isCompleted;
     // Who leads and who is on the crew — read once, and only when a rule needs it.
     const authority = this.checklistAuthorityOnce(data);
-    if (ownerChange) this.refuseChecklist(mayChangeChecklistOwner(await authority(), existing.assigneeId, data.assigneeId ?? null));
+    if (ownerChange)
+      this.refuseChecklist(mayChangeChecklistOwner(await authority(), existing.assigneeId, data.assigneeId ?? null));
     if (textChange) this.refuseChecklist(mayEditChecklistItem(await authority(), existing.assigneeId));
     if (!ownerChange && !textChange && !toggled) {
-      return success(await this.prisma.checklistItem.findUniqueOrThrow({ where: { id: existing.id }, include: CHECKLIST_PEOPLE }));
+      return success(
+        await this.prisma.checklistItem.findUniqueOrThrow({ where: { id: existing.id }, include: CHECKLIST_PEOPLE }),
+      );
     }
 
     /*
@@ -130,7 +122,12 @@ export class TaskChecklistService {
       the loser is told (409) rather than shown an ownership that is gone.
     */
     const written = await this.prisma.checklistItem.updateMany({
-      where: { id: existing.id, taskId: data.taskId, assigneeId: existing.assigneeId, isCompleted: existing.isCompleted },
+      where: {
+        id: existing.id,
+        taskId: data.taskId,
+        assigneeId: existing.assigneeId,
+        isCompleted: existing.isCompleted,
+      },
       data: {
         ...(textChange ? { text: data.text } : {}),
         // A tick records who and when (shared checklistCompletion), from the token.
@@ -139,9 +136,15 @@ export class TaskChecklistService {
       },
     });
     if (written.count === 0) {
-      throw new ConflictException({ message: 'Somebody changed this item just now. Look again.', code: CHECKLIST_CODES.CHANGED });
+      throw new ConflictException({
+        message: 'Somebody changed this item just now. Look again.',
+        code: CHECKLIST_CODES.CHANGED,
+      });
     }
-    const item = await this.prisma.checklistItem.findUniqueOrThrow({ where: { id: existing.id }, include: CHECKLIST_PEOPLE });
+    const item = await this.prisma.checklistItem.findUniqueOrThrow({
+      where: { id: existing.id },
+      include: CHECKLIST_PEOPLE,
+    });
 
     if (toggled) {
       await this.support.createTaskEvent(data.taskId, data.userId, TaskEventType.CHECKLIST_ITEM_TOGGLED, {
@@ -169,10 +172,14 @@ export class TaskChecklistService {
   /** The crew's authority over this job's checklist, read at most once per request (CrewService). */
   private checklistAuthorityOnce(data: TaskAccessFacts & ChecklistActor & { taskId: string }) {
     let once: Promise<ChecklistAuthority> | null = null;
-    return () => (once ??= this.crew.checklistAuthority(data.taskId, {
-      userId: data.userId, userRole: data.userRole, organizationId: data.organizationId,
-      canAssignTasks: data.canAssignTasks, access: data.access,
-    }));
+    return () =>
+      (once ??= this.crew.checklistAuthority(data.taskId, {
+        userId: data.userId,
+        userRole: data.userRole,
+        organizationId: data.organizationId,
+        canAssignTasks: data.canAssignTasks,
+        access: data.access,
+      }));
   }
 
   /**
@@ -186,9 +193,10 @@ export class TaskChecklistService {
       throw new BadRequestException({ message: 'Choose somebody on this job.', code: verdict.code });
     }
     throw new ForbiddenException({
-      message: verdict.code === CHECKLIST_CODES.ITEM_NOT_YOURS
-        ? 'Only the person it belongs to, the leader of this job, or the office changes this item.'
-        : 'Only the leader of this job, or the office, gives an item to somebody.',
+      message:
+        verdict.code === CHECKLIST_CODES.ITEM_NOT_YOURS
+          ? 'Only the person it belongs to, the leader of this job, or the office changes this item.'
+          : 'Only the leader of this job, or the office, gives an item to somebody.',
       code: verdict.code,
     });
   }
@@ -196,10 +204,7 @@ export class TaskChecklistService {
   /**
    * Delete a checklist item
    */
-  async deleteChecklistItem(data: TaskAccessFacts & ChecklistActor & {
-    taskId: string;
-    itemId: string;
-  }) {
+  async deleteChecklistItem(data: JobData<typeof TASK_JOBS.deleteChecklistItem>) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
     await this.support.taskAccess.assert(task, data);
@@ -228,14 +233,7 @@ export class TaskChecklistService {
   /**
    * Reorder checklist items
    */
-  async reorderChecklist(data: {
-    taskId: string;
-    itemIds: string[];
-    userId: string;
-    userRole: string;
-    canViewAllTasks?: boolean;
-    organizationId: string;
-  }) {
+  async reorderChecklist(data: JobData<typeof TASK_JOBS.reorderChecklist>) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException('Task not found');
     await this.support.taskAccess.assert(task, data);

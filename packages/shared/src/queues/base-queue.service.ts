@@ -24,6 +24,7 @@ import { Queue, QueueEvents, Job } from 'bullmq';
 import { DEFAULT_JOB_OPTIONS } from './constants';
 import { sanitizeErrorMessage } from '../api/prisma-error';
 import { idempotentJobId } from './idempotency-context';
+import type { JobContract } from './job-contract';
 
 interface JobError {
   message?: string;
@@ -65,6 +66,14 @@ export abstract class BaseQueueService {
     });
 
     this.logger.log(`${serviceName} initialized`);
+  }
+
+  /**
+   * Queue a typed job and wait for its result — `addJobAndWait` with the contract's
+   * name and its data type checked (job-contract.ts). Same queue, same options.
+   */
+  protected runJob<Data, Result>(contract: JobContract<Data, Result>, data: Data, timeoutMs?: number): Promise<Result> {
+    return this.addJobAndWait<Result>(contract.name, data as Record<string, unknown>, timeoutMs);
   }
 
   /**

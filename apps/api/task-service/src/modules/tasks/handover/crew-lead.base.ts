@@ -5,6 +5,7 @@ import { CREW_CODES, endOfLocalDay, success, type LeadScope, personName } from '
 import { CrewActor, cleanReason } from './crew-helpers';
 import { CrewBase } from './crew.base';
 import { emitEvent, taskLeadChangedEvent } from '@hbcfield/shared/microservices';
+import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 export abstract class CrewLeadBase extends CrewBase {
   // ─────────────────────────── the lead ───────────────────────────
@@ -15,7 +16,7 @@ export abstract class CrewLeadBase extends CrewBase {
    * tasks, org-wide or in the job's workspace). Nobody is ADDED to a crew
    * here: that stays behind the assign path and its grant ceiling.
    */
-  async changeLead(data: CrewActor & { taskId: string; toUserId: string; scope: LeadScope; reason?: string }) {
+  async changeLead(data: JobData<typeof TASK_JOBS.crewChangeLead>) {
     const task = await this.visibleTaskOf(data.taskId, data);
     const crew = await this.crewOf(task);
     const ids = crew.map((c) => c.userId);

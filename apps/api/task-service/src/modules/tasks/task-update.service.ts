@@ -1,3 +1,4 @@
+import type { Prisma, TaskPriority } from '@prisma/client';
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -6,6 +7,8 @@ import { TaskStatus, TaskEventType, success, accessAllowsInSpace, assertFoundInO
 import { TaskSupportService } from './task-support.service';
 import { resolveOwnedTaskRefs, assertMayCreateUnder } from './task-scope';
 import { emitEvent, taskDeletedEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
+import { TASK_JOBS, type JobData } from '@hbcfield/shared';
+import type { TaskUpdateJob } from '@hbcfield/shared';
 
 /** Changing a task's fields (never its open-role columns or its status), and deleting one. */
 @Injectable()
@@ -19,7 +22,7 @@ export class TaskUpdateService {
   /**
    * Update a task (CLIENT or DISPATCHER - any task in their org)
    */
-  async update(data: any) {
+  async update(data: TaskUpdateJob) {
     // `access` is the caller's resolved grant (for foreign-space authz) — pull it
     // out so it never leaks into the Prisma update payload.
     // The caller's grants come out too, so they can never reach the write or
@@ -136,41 +139,44 @@ export class TaskUpdateService {
       }
     }
 
+    // The write is spelled out field by field; the caller's facts never reach it.
+    const write: Prisma.TaskUncheckedUpdateInput = {
+      ...(updateData.workflowId !== undefined && { workflowId: updateData.workflowId || null }),
+      ...(statusOverride && { status: statusOverride }),
+      ...(closeRole && { openRoleId: null, openSpots: null, openSpotsLeft: null, openedAt: null, openWave: 0 }),
+      ...(updateData.title && { title: updateData.title }),
+      ...(updateData.description !== undefined && { description: updateData.description }),
+      // The gateway's DTO checks it (@IsEnum); Prisma refuses anything else, as before.
+      ...(updateData.priority && { priority: updateData.priority as TaskPriority }),
+      /*
+        Moving the date re-arms the "leave now" nudge.
+
+        Without the reset, rescheduling a job to a different hour leaves it
+        marked as already announced and the member is never told to set off
+        for the NEW time — the silent half of a bug whose loud half would be
+        being told twice.
+      */
+      ...(updateData.dueDate && {
+        dueDate: new Date(updateData.dueDate),
+        departureNotifiedAt: null,
+      }),
+      ...(updateData.startDate !== undefined && {
+        startDate: updateData.startDate ? new Date(updateData.startDate) : null,
+      }),
+      ...(updateData.estimatedHours !== undefined && { estimatedHours: updateData.estimatedHours }),
+      ...(updateData.locationLat !== undefined && { locationLat: updateData.locationLat }),
+      ...(updateData.locationLng !== undefined && { locationLng: updateData.locationLng }),
+      ...(updateData.locationAddress !== undefined && { locationAddress: updateData.locationAddress }),
+      ...(updateData.assetId !== undefined && { assetId: updateData.assetId || null }),
+      ...(updateData.spaceId !== undefined && { spaceId: updateData.spaceId || null }),
+      ...(updateData.phaseId !== undefined && { phaseId: updateData.phaseId || null }),
+      ...(updateData.sprintId !== undefined && { sprintId: updateData.sprintId || null }),
+      ...(updateData.epicId !== undefined && { epicId: updateData.epicId || null }),
+      ...(updateData.storyPoints !== undefined && { storyPoints: updateData.storyPoints }),
+    };
     const task = await this.prisma.task.update({
       where: { id },
-      data: {
-        ...(updateData.workflowId !== undefined && { workflowId: updateData.workflowId || null }),
-        ...(statusOverride && { status: statusOverride }),
-        ...(closeRole && { openRoleId: null, openSpots: null, openSpotsLeft: null, openedAt: null, openWave: 0 }),
-        ...(updateData.title && { title: updateData.title }),
-        ...(updateData.description !== undefined && { description: updateData.description }),
-        ...(updateData.priority && { priority: updateData.priority }),
-        /*
-          Moving the date re-arms the "leave now" nudge.
-
-          Without the reset, rescheduling a job to a different hour leaves it
-          marked as already announced and the member is never told to set off
-          for the NEW time — the silent half of a bug whose loud half would be
-          being told twice.
-        */
-        ...(updateData.dueDate && {
-          dueDate: new Date(updateData.dueDate),
-          departureNotifiedAt: null,
-        }),
-        ...(updateData.startDate !== undefined && {
-          startDate: updateData.startDate ? new Date(updateData.startDate) : null,
-        }),
-        ...(updateData.estimatedHours !== undefined && { estimatedHours: updateData.estimatedHours }),
-        ...(updateData.locationLat !== undefined && { locationLat: updateData.locationLat }),
-        ...(updateData.locationLng !== undefined && { locationLng: updateData.locationLng }),
-        ...(updateData.locationAddress !== undefined && { locationAddress: updateData.locationAddress }),
-        ...(updateData.assetId !== undefined && { assetId: updateData.assetId || null }),
-        ...(updateData.spaceId !== undefined && { spaceId: updateData.spaceId || null }),
-        ...(updateData.phaseId !== undefined && { phaseId: updateData.phaseId || null }),
-        ...(updateData.sprintId !== undefined && { sprintId: updateData.sprintId || null }),
-        ...(updateData.epicId !== undefined && { epicId: updateData.epicId || null }),
-        ...(updateData.storyPoints !== undefined && { storyPoints: updateData.storyPoints }),
-      },
+      data: write,
       include: {
         createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
         assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
@@ -190,13 +196,7 @@ export class TaskUpdateService {
   /**
    * Delete a task (CLIENT only - own tasks)
    */
-  async remove(data: {
-    id: string;
-    userId: string;
-    userRole: string;
-    canViewAllTasks?: boolean;
-    organizationId: string;
-  }) {
+  async remove(data: JobData<typeof TASK_JOBS.remove>) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
     });

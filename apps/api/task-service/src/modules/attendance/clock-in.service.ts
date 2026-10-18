@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+  Logger,
+  Optional,
+} from '@nestjs/common';
 import {
   zoneOf,
   success,
@@ -12,7 +19,11 @@ import {
 import { remoteApprovedAt, approvedRequestsAround, type DayRequestRow } from './approved-requests';
 import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
 import { alreadyClockedIn, sameRecordOrRefuse } from './attendance-occurrence';
-import { ClockInSiteBase } from './clock-in-site.base';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { ClockInContextService } from './clock-in-context.service';
+import { ClockInRemoteService } from './clock-in-remote.service';
+import { ClockInSiteWriter } from './clock-in-site.writer';
+import { AutoClockService } from './auto-clock.service';
 import { CLOCK_IN_USER_SELECT, gpsAccuracyRefusal, outsideSiteRefusal, type ClockInInput } from './clock-in-steps';
 
 /**
@@ -20,11 +31,27 @@ import { CLOCK_IN_USER_SELECT, gpsAccuracyRefusal, outsideSiteRefusal, type Cloc
  * context it is stamped with (shift, no-shift allowance, away, timezone).
  *
  * The steps, in order: a resend → when it happened → who → the day's approved
- * requests → remote (clock-in-remote.base) or on site: may they, here, now →
- * shape and write the entry (clock-in-site.base).
+ * requests → remote (ClockInRemoteService) or on site: may they, here, now →
+ * shape and write the entry (ClockInSiteWriter).
  */
 @Injectable()
-export class ClockInService extends ClockInSiteBase {
+export class ClockInService {
+  private readonly logger = new Logger(ClockInService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly context: ClockInContextService,
+    private readonly remote: ClockInRemoteService,
+    private readonly site: ClockInSiteWriter,
+    // The automatic clock's re-check. Optional so a clock-in never depends on it: absent, no step is marked automatic.
+    @Optional() private readonly autoClock?: AutoClockService,
+  ) {}
+
+  /** What this workspace allows a member with no shift, at this moment (see ClockInContextService). */
+  noShiftAllowanceFor(...args: Parameters<ClockInContextService['noShiftAllowanceFor']>) {
+    return this.context.noShiftAllowanceFor(...args);
+  }
+
   /**
    * Clock in at a company location
    */
@@ -113,10 +140,10 @@ export class ClockInService extends ClockInSiteBase {
     */
     const dayRequests: DayRequestRow[] = await approvedRequestsAround(this.prisma, data.userId, occurrence.at);
 
-    await this.moveApprovedRemoteToWorkspace(data, dayRequests, occurrence, orgTz);
+    await this.remote.moveApprovedRemoteToWorkspace(data, dayRequests, occurrence, orgTz);
 
     if (data.isRemote) {
-      return this.clockInRemote(data, { mayClockInRemotely, occurrence, dayRequests, orgTz });
+      return this.remote.clockInRemote(data, { mayClockInRemotely, occurrence, dayRequests, orgTz });
     }
 
     // ---- On-site clock-in requires a target location ----
@@ -214,7 +241,7 @@ export class ClockInService extends ClockInSiteBase {
 
     if (!withinGeofence && !away.allowed) throw outsideSiteRefusal(away.reason, distance, location);
 
-    return this.recordOnSite(
+    return this.site.recordOnSite(
       { ...data, locationId: data.locationId },
       {
         user,

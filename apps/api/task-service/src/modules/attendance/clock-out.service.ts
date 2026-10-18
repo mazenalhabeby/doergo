@@ -1,5 +1,6 @@
 import { clockOutTimeFlags } from './open-shift-close';
-import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException, Inject, Optional } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import {
   success,
   TimeEntryStatus,
@@ -9,11 +10,20 @@ import {
   autoClockOutAfterEnd,
   clocksByPresence,
 } from '@hbcfield/shared';
-import { flagsWithMissedRest, parseBreakPlan } from '@hbcfield/shared';
+import { flagsWithMissedRest, parseBreakPlan, SERVICE_NAMES } from '@hbcfield/shared';
 import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
 import { approvalFor } from './attendance-occurrence';
 import { CLOSE_ENTRY_INCLUDE } from './clock-out-helpers';
-import { ClockOutAlertsBase } from './clock-out.base';
+import { ShiftCloseBase } from './shift-close.base';
+import { ClockOutAlertsService } from './clock-out-alerts.service';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { NotificationRoutingService } from '../../common/notification-routing.service';
+import { JobPauseService } from '../tasks/handover/job-pause.service';
+import { CountedTimeService } from './counted-time.service';
+import { AttendanceRoutingService } from './attendance-routing.service';
+import { AttendanceGeocoderService } from './attendance-geocoder.service';
+import { ExtraTimeService } from './extra-time.service';
+import { AutoClockService } from './auto-clock.service';
 import {
   alreadyClosedAnswer,
   clockOutMessage,
@@ -32,7 +42,34 @@ export { CLOSE_ENTRY_INCLUDE } from './clock-out-helpers';
  * of them raises.
  */
 @Injectable()
-export class ClockOutService extends ClockOutAlertsBase {
+export class ClockOutService extends ShiftCloseBase {
+  constructor(
+    prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION) notificationClient: ClientProxy,
+    notificationRouting: NotificationRoutingService,
+    countedTime: CountedTimeService,
+    routing: AttendanceRoutingService,
+    geocoder: AttendanceGeocoderService,
+    extraTime: ExtraTimeService,
+    // Who is told what when the shift ends (escalation resolved, left early, outside the site).
+    private readonly alerts: ClockOutAlertsService,
+    // ⚠️ Optional as `?`, never `T | undefined` — Nest would inject nothing (injectable-metadata.spec).
+    @Optional() jobPause?: JobPauseService,
+    @Optional() autoClock?: AutoClockService,
+  ) {
+    super(
+      prisma,
+      notificationClient,
+      notificationRouting,
+      countedTime,
+      routing,
+      geocoder,
+      extraTime,
+      jobPause,
+      autoClock,
+    );
+  }
+
   /**
    * Clock out from current shift
    */
@@ -176,11 +213,11 @@ export class ClockOutService extends ClockOutAlertsBase {
 
     if (entry.reminderState === 'ESCALATED') {
       const recordedOffline = occurrence.flags.includes('RECORDED_OFFLINE');
-      await this.announceEscalationResolved(entry, updatedEntry, clockOutTime, recordedOffline);
+      await this.alerts.announceEscalationResolved(entry, updatedEntry, clockOutTime, recordedOffline);
     }
 
     if (shortBy > 0) {
-      await this.announceLeftEarly(entry, updatedEntry, shortBy, earlyReason);
+      await this.alerts.announceLeftEarly(entry, updatedEntry, shortBy, earlyReason);
     }
 
     const hours = Math.floor(totalMinutes / 60);
@@ -193,7 +230,7 @@ export class ClockOutService extends ClockOutAlertsBase {
 
     // Send geofence alert if clock-out is outside geofence (never on an away day).
     if (outsideAtOut && ATTENDANCE_CONSTANTS.ALERT_ON_GEOFENCE_VIOLATION) {
-      await this.sendGeofenceAlert({
+      await this.alerts.sendGeofenceAlert({
         userId: data.userId,
         organizationId: data.organizationId,
         locationName: entry.location.name,

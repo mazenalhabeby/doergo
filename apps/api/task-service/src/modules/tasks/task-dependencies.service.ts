@@ -5,6 +5,7 @@ import { success, assertFoundInOrg } from '@hbcfield/shared';
 import { assertMayCreateUnder } from './task-scope';
 import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 import type { DependencyType } from '@prisma/client';
+import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 /** One task waiting on another: adding a dependency (never a circle), removing one. */
 @Injectable()
@@ -19,17 +20,7 @@ export class TaskDependenciesService {
   /**
    * Add a dependency between two tasks
    */
-  async addDependency(data: {
-    predecessorId: string;
-    successorId: string;
-    type?: string;
-    lagDays?: number;
-    userId: string;
-    organizationId: string;
-    userRole?: string;
-    canCreateTasks?: boolean;
-    createSpaceIds?: string[];
-  }) {
+  async addDependency(data: JobData<typeof TASK_JOBS.addDependency>) {
     // Validate both tasks exist and belong to the same org
     const [predecessor, successor] = await Promise.all([
       this.prisma.task.findUnique({ where: { id: data.predecessorId } }),
@@ -101,14 +92,7 @@ export class TaskDependenciesService {
   /**
    * Remove a dependency
    */
-  async removeDependency(data: {
-    dependencyId: string;
-    userId: string;
-    organizationId: string;
-    userRole?: string;
-    canCreateTasks?: boolean;
-    createSpaceIds?: string[];
-  }) {
+  async removeDependency(data: JobData<typeof TASK_JOBS.removeDependency>) {
     const dependency = await this.prisma.taskDependency.findUnique({
       where: { id: data.dependencyId },
       include: {

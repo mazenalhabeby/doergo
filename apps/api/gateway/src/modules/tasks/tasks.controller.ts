@@ -99,7 +99,7 @@ export class TasksController extends TasksControllerBase {
       ...createTaskDto,
       ...(roleAssignSpaceIds ? { roleAssignSpaceIds } : {}),
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       access: req.user.access, // server-authoritative; task-service enforces the real space
       /*
         The member's task-creation scope (NONE | SELF | SPACE | ORG), resolved

@@ -2,6 +2,7 @@ import { NotFoundException, BadRequestException, ForbiddenException } from '@nes
 import type { Prisma } from '@prisma/client';
 import { TaskStatus, accessAllowsInSpace, activeAssignmentWhere } from '@hbcfield/shared';
 import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { TaskCreateJob } from '@hbcfield/shared';
 import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { resolveSpaceDefaultWorkflowId, listSpaceWorkflowIds } from '../../common/space-workflow.util';
 
@@ -11,7 +12,11 @@ import { resolveSpaceDefaultWorkflowId, listSpaceWorkflowIds } from '../../commo
  * Which workspace the task goes into, written onto `data.spaceId`.
  * Un-triaged portal requests stay space-less.
  */
-export async function settleCreateSpace(prisma: PrismaService, data: any, isUntriaged: boolean): Promise<void> {
+export async function settleCreateSpace(
+  prisma: PrismaService,
+  data: TaskCreateJob,
+  isUntriaged: boolean,
+): Promise<void> {
   /*
     SPACE-scoped users create inside a workspace they are assigned to.
 
@@ -55,7 +60,7 @@ export interface CreatePlacement {
 }
 
 /** If spaceId provided, validate it belongs to the org and auto-populate location. */
-export async function resolveCreatePlacement(prisma: PrismaService, data: any): Promise<CreatePlacement> {
+export async function resolveCreatePlacement(prisma: PrismaService, data: TaskCreateJob): Promise<CreatePlacement> {
   const placement: CreatePlacement = {
     locationLat: data.locationLat,
     locationLng: data.locationLng,
@@ -114,7 +119,7 @@ export async function assertWorkflowUsable(
   prisma: PrismaService,
   effWorkflowId: string | null,
   effectiveOrgId: string,
-  spaceId: string | undefined,
+  spaceId: string | null | undefined,
 ): Promise<void> {
   /*
     A workflow id arriving from a client says nothing about whose it is.
@@ -183,7 +188,7 @@ export async function writeCreateAssignees(
   tx: Prisma.TransactionClient,
   taskId: string,
   assigneeIds: string[],
-  assignedToId: string | undefined,
+  assignedToId: string | null | undefined,
 ): Promise<void> {
   // Create TaskAssignee records if assigneeIds provided
   if (assigneeIds.length > 0) {

@@ -1,0 +1,54 @@
+import type { CompanyLocation } from '@prisma/client';
+import { SHIFT_REMINDER_DEFAULTS, memberDayZone } from '@hbcfield/shared';
+import { agreedOvertimeMinutes, type DayRequestRow } from './approved-requests';
+import { noShiftRefusal } from './clock-in-helpers';
+import type { ClockInContextService } from './clock-in-context.service';
+import type { ClockInUser } from './clock-in-steps';
+
+/** A clock-in's planned end and reminder, as the stamp the on-site writer shapes. */
+type ShiftStamp = Omit<Awaited<ReturnType<ClockInContextService['buildShiftStamp']>>, 'scheduled' | 'flagToleranceMin'>;
+
+/*
+  ── Clocking in with no shift ──
+  The workspace decides: allow it, allow up to a number of hours a day, or
+  only with a shift. A limit becomes the session's planned end, so counted
+  time, reminders, overtime and the open-shift close all follow it.
+
+  ⚠️ Recorded offline, it is KEPT, never refused: the member already worked
+  it. With no hours left it counts nothing and says so, and time past the
+  limit still needs an approval like any overtime.
+
+  Writes the planned end / reminder into `stampCols` and PAST_DAILY_LIMIT into `flagReasons`.
+*/
+export async function applyNoShiftAllowance(
+  context: ClockInContextService,
+  userId: string,
+  user: ClockInUser,
+  location: CompanyLocation,
+  workerTz: string | null,
+  clockInTime: Date,
+  io: { dayRequests: DayRequestRow[]; stampCols: ShiftStamp; flagReasons: string[] },
+): Promise<{ endIsDailyLimit: boolean; shapingRequests: DayRequestRow[] }> {
+  const { dayRequests, stampCols, flagReasons } = io;
+  let endIsDailyLimit = false;
+  // Overtime agreed in advance raises a no-shift day's limit INSIDE the allowance — so a member
+  // already at the limit may clock in for it — and is then not added to the end a second time.
+  let shapingRequests = dayRequests;
+  const dayTz = memberDayZone(user.timezone, user.organization?.timezone, location.timezone || workerTz);
+  const agreed = agreedOvertimeMinutes(dayRequests, location.id, clockInTime, dayTz);
+  const allowance = await context.noShiftAllowanceFor(userId, location, clockInTime, dayTz, agreed);
+  if (allowance.kind !== 'free' && agreed > 0) shapingRequests = dayRequests.filter((r) => r.kind !== 'OVERTIME');
+  if (allowance.kind === 'refused' && !flagReasons.includes('RECORDED_OFFLINE')) {
+    throw noShiftRefusal(allowance, location.name);
+  }
+  if (allowance.kind !== 'free') {
+    const end = allowance.kind === 'limited' ? allowance.until : clockInTime;
+    stampCols.expectedClockOutAt = end;
+    stampCols.nextRemindAt = new Date(
+      Math.max(end.getTime(), Date.now()) + SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES * 60_000,
+    );
+    endIsDailyLimit = true;
+    if (allowance.kind === 'refused') flagReasons.push('PAST_DAILY_LIMIT');
+  }
+  return { endIsDailyLimit, shapingRequests };
+}

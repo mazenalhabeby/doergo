@@ -1,12 +1,15 @@
 import { Processor } from '@nestjs/bullmq';
 import { JobProcessor } from '../../common/queue/job-processor';
 import { Job } from 'bullmq';
-import { QUEUE_NAMES, TASK_JOB_TYPES } from '@hbcfield/shared';
+import { QUEUE_NAMES, TASK_JOBS, jobKeysByName, type JobHandlers, type TaskJobs } from '@hbcfield/shared';
 import { TasksService } from './tasks.service';
 import { AttachmentsService } from '../attachments/attachments.service';
 import { JobPauseService } from './handover/job-pause.service';
 import { CrewService } from './handover/crew.service';
 import { AttachmentFilesService } from '../attachments/attachment-files.service';
+
+/** The job name on the wire → its contract in TASK_JOBS. */
+const TASK_JOB_KEYS = jobKeysByName(TASK_JOBS);
 
 /**
  * BullMQ Processor for Task Queue
@@ -20,6 +23,12 @@ import { AttachmentFilesService } from '../attachments/attachment-files.service'
  */
 @Processor(QUEUE_NAMES.TASKS, { concurrency: 10 })
 export class TasksProcessor extends JobProcessor {
+  /**
+   * One handler per job, each typed by its contract's data (shared queues/task-jobs.ts):
+   * a handler that stops accepting what the gateway queues no longer compiles.
+   */
+  private readonly handlers: JobHandlers<TaskJobs>;
+
   constructor(
     private readonly tasksService: TasksService,
     private readonly attachmentsService: AttachmentsService,
@@ -28,101 +37,56 @@ export class TasksProcessor extends JobProcessor {
     private readonly crew: CrewService,
   ) {
     super();
+    this.handlers = {
+      // ============ Task Write Operations ============
+      // READ operations (findAll, findOne, getTimeline, getComments) use direct microservice calls
+      create: (data) => this.tasksService.create(data),
+      update: (data) => this.tasksService.update(data),
+      assign: (data) => this.tasksService.assign(data),
+      decline: (data) => this.tasksService.decline(data),
+      updateStatus: (data) => this.tasksService.updateStatus(data),
+      remove: (data) => this.tasksService.remove(data),
+      // ============ Comment Write Operations ============
+      addComment: (data) => this.tasksService.addComment(data),
+      // ============ Paused at clock-out, and the handover ============
+      resumeWork: (data) => this.tasksService.resumeWork(data),
+      addHandover: (data) => this.jobPause.addHandover(data),
+      // ============ A crew on one job ============
+      crewJoin: (data) => this.crew.join(data),
+      crewLeave: (data) => this.crew.leave(data),
+      crewSelfIssue: (data) => this.crew.selfIssue(data),
+      crewSelfResume: (data) => this.crew.selfResume(data),
+      crewChangeLead: (data) => this.crew.changeLead(data),
+      // ============ Assignee Write Operations ============
+      addAssignee: (data) => this.tasksService.addAssignee(data),
+      removeAssignee: (data) => this.tasksService.removeAssignee(data),
+      // ============ Checklist Write Operations ============
+      addChecklistItem: (data) => this.tasksService.addChecklistItem(data),
+      updateChecklistItem: (data) => this.tasksService.updateChecklistItem(data),
+      deleteChecklistItem: (data) => this.tasksService.deleteChecklistItem(data),
+      reorderChecklist: (data) => this.tasksService.reorderChecklist(data),
+      // ============ Subtask & Dependency Write Operations ============
+      createSubtask: (data) => this.tasksService.createSubtask(data),
+      addDependency: (data) => this.tasksService.addDependency(data),
+      removeDependency: (data) => this.tasksService.removeDependency(data),
+      // ============ Attachment Write Operations ============
+      addAttachment: (data) => this.attachmentsService.create(data),
+      deleteAttachment: (data) => this.attachmentFiles.remove(data),
+      getPresignedUrl: (data) => this.attachmentFiles.getPresignedUrl(data),
+    };
   }
 
   /**
    * Route job to appropriate handler based on job name
    */
-  protected async handleJob(job: Job<any, any, string>): Promise<unknown> {
-    const { name, data } = job;
-
-    switch (name) {
-      // ============ Task Write Operations ============
-      // READ operations (findAll, findOne, getTimeline, getComments) use direct microservice calls
-      case TASK_JOB_TYPES.CREATE:
-        return this.tasksService.create(data);
-
-      case TASK_JOB_TYPES.UPDATE:
-        return this.tasksService.update(data);
-
-      case TASK_JOB_TYPES.ASSIGN:
-        return this.tasksService.assign(data);
-
-      case TASK_JOB_TYPES.DECLINE:
-        return this.tasksService.decline(data);
-
-      case TASK_JOB_TYPES.UPDATE_STATUS:
-        return this.tasksService.updateStatus(data);
-
-      case TASK_JOB_TYPES.DELETE:
-        return this.tasksService.remove(data);
-
-      // ============ Comment Write Operations ============
-      case TASK_JOB_TYPES.ADD_COMMENT:
-        return this.tasksService.addComment(data);
-
-      // ============ Paused at clock-out, and the handover ============
-      case TASK_JOB_TYPES.RESUME_WORK:
-        return this.tasksService.resumeWork(data);
-
-      case TASK_JOB_TYPES.ADD_HANDOVER:
-        return this.jobPause.addHandover(data);
-
-      // ============ A crew on one job ============
-      case TASK_JOB_TYPES.CREW_JOIN:
-        return this.crew.join(data);
-      case TASK_JOB_TYPES.CREW_LEAVE:
-        return this.crew.leave(data);
-      case TASK_JOB_TYPES.CREW_SELF_ISSUE:
-        return this.crew.selfIssue(data);
-      case TASK_JOB_TYPES.CREW_SELF_RESUME:
-        return this.crew.selfResume(data);
-      case TASK_JOB_TYPES.CREW_CHANGE_LEAD:
-        return this.crew.changeLead(data);
-
-      // ============ Assignee Write Operations ============
-      case TASK_JOB_TYPES.ADD_ASSIGNEE:
-        return this.tasksService.addAssignee(data);
-
-      case TASK_JOB_TYPES.REMOVE_ASSIGNEE:
-        return this.tasksService.removeAssignee(data);
-
-      // ============ Checklist Write Operations ============
-      case TASK_JOB_TYPES.ADD_CHECKLIST_ITEM:
-        return this.tasksService.addChecklistItem(data);
-
-      case TASK_JOB_TYPES.UPDATE_CHECKLIST_ITEM:
-        return this.tasksService.updateChecklistItem(data);
-
-      case TASK_JOB_TYPES.DELETE_CHECKLIST_ITEM:
-        return this.tasksService.deleteChecklistItem(data);
-
-      case TASK_JOB_TYPES.REORDER_CHECKLIST:
-        return this.tasksService.reorderChecklist(data);
-
-      // ============ Subtask & Dependency Write Operations ============
-      case TASK_JOB_TYPES.CREATE_SUBTASK:
-        return this.tasksService.createSubtask(data);
-
-      case TASK_JOB_TYPES.ADD_DEPENDENCY:
-        return this.tasksService.addDependency(data);
-
-      case TASK_JOB_TYPES.REMOVE_DEPENDENCY:
-        return this.tasksService.removeDependency(data);
-
-      // ============ Attachment Write Operations ============
-      case TASK_JOB_TYPES.ADD_ATTACHMENT:
-        return this.attachmentsService.create(data);
-
-      case TASK_JOB_TYPES.DELETE_ATTACHMENT:
-        return this.attachmentFiles.remove(data);
-
-      case TASK_JOB_TYPES.GET_PRESIGNED_URL:
-        return this.attachmentFiles.getPresignedUrl(data);
-
-      default:
-        this.logger.warn(`Unknown job type: ${name}`);
-        throw new Error(`Unknown job type: ${name}`);
+  protected async handleJob(job: Job<unknown, unknown, string>): Promise<unknown> {
+    const key = TASK_JOB_KEYS.get(job.name);
+    if (!key) {
+      this.logger.warn(`Unknown job type: ${job.name}`);
+      throw new Error(`Unknown job type: ${job.name}`);
     }
+    // The queue carries JSON: what the gateway queued through this same contract (runJob).
+    const handle = this.handlers[key] as (data: unknown) => Promise<unknown> | unknown;
+    return handle(job.data);
   }
 }

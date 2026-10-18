@@ -1,4 +1,5 @@
 import { ClockInLocationsService } from '../clock-in-locations.service';
+import { ClockInContextService } from '../clock-in-context.service';
 
 /*
   One day for the person, at every workspace.
@@ -8,9 +9,15 @@ import { ClockInLocationsService } from '../clock-in-locations.service';
   a Vienna workspace, 11m at a New York one and over 12h at a Chicago one — on
   one screen, with a refusal at one and hours "left" at the next.
 */
-describe('the no-shift limit counts the MEMBER\'s day', () => {
+describe("the no-shift limit counts the MEMBER's day", () => {
   // A session 18:52 → 04:10 UTC (Chicago evening → Vienna early morning).
-  const session = { clockInAt: new Date('2026-10-13T18:52:00Z'), clockOutAt: new Date('2026-10-14T04:10:00Z'), paidMinutes: 558, totalMinutes: 558, unpaidBreakMinutes: 0 };
+  const session = {
+    clockInAt: new Date('2026-10-13T18:52:00Z'),
+    clockOutAt: new Date('2026-10-14T04:10:00Z'),
+    paidMinutes: 558,
+    totalMinutes: 558,
+    unpaidBreakMinutes: 0,
+  };
   const now = new Date('2026-10-14T04:11:00Z');
 
   const harness = (memberTz: string | null, orgTz: string) => {
@@ -22,6 +29,8 @@ describe('the no-shift limit counts the MEMBER\'s day', () => {
     const self: any = Object.create(ClockInLocationsService.prototype);
     self.prisma = prisma;
     self.shiftResolver = { resolveForClockIn: jest.fn().mockResolvedValue(null) };
+    // The shared clock-in helpers are a collaborator now; it reads the same prisma double.
+    self.context = Object.assign(Object.create(ClockInContextService.prototype), { prisma });
     return { self, prisma };
   };
   const spaces = [
@@ -44,7 +53,7 @@ describe('the no-shift limit counts the MEMBER\'s day', () => {
     expect(prisma.user.findUnique).toHaveBeenCalledTimes(1);
   });
 
-  it('a member with no zone of their own counts the organization\'s day', async () => {
+  it("a member with no zone of their own counts the organization's day", async () => {
     const { self } = harness(null, 'America/Chicago');
     const tagged = await self.tagClockInContext(spaces, 'u1', now, new Set());
     // Chicago: the whole session is Oct 13 → 558 minutes, the same everywhere.

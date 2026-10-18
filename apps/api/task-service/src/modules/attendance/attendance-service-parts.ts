@@ -3,9 +3,13 @@ import { AttendanceGeocoderService } from './attendance-geocoder.service';
 import { ShiftSweepService } from './shift-sweep.service';
 import { ExtraTimeService } from './extra-time.service';
 import { ClockOutService } from './clock-out.service';
+import { ClockOutAlertsService } from './clock-out-alerts.service';
 import { DecidedCloseService } from './decided-close.service';
 import { ShiftCloseSweepService } from './shift-close-sweep.service';
 import { ClockInService } from './clock-in.service';
+import { ClockInContextService } from './clock-in-context.service';
+import { ClockInRemoteService } from './clock-in-remote.service';
+import { ClockInSiteWriter } from './clock-in-site.writer';
 import { ClockInLocationsService } from './clock-in-locations.service';
 import { HeartbeatService } from './heartbeat.service';
 import { AttendanceReadService } from './attendance-read.service';
@@ -38,10 +42,15 @@ export const ATTENDANCE_SERVICE_PARTS = [
   NoShowSummaryService,
   ExtraTimeService,
   ExtraTimeDecisionService,
+  ClockOutAlertsService,
   ClockOutService,
   // Closing a shift by an answer, and the sweeps that close what nobody closed.
   DecidedCloseService,
   ShiftCloseSweepService,
+  // A clock-in: what the list and the clock-in share, the remote half, the on-site half, the steps.
+  ClockInContextService,
+  ClockInRemoteService,
+  ClockInSiteWriter,
   ClockInService,
   ClockInLocationsService,
   HeartbeatService,

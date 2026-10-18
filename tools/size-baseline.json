@@ -67,10 +67,6 @@
   "lines": 167,
   "long": 1
  },
- "apps/mobile/src/components/client-requests/requests-screen.tsx": {
-  "lines": 117,
-  "long": 2
- },
  "apps/mobile/src/components/clients/add-client-sheet.tsx": {
   "lines": 169,
   "long": 1
@@ -157,10 +153,6 @@
  },
  "apps/mobile/src/components/people/invitations-screen.tsx": {
   "lines": 200,
-  "long": 1
- },
- "apps/mobile/src/components/people/members-screen.tsx": {
-  "lines": 205,
   "long": 1
  },
  "apps/mobile/src/components/register/register-screen.tsx": {
@@ -283,149 +275,29 @@
   "lines": 374,
   "long": 0
  },
- "apps/web-app/src/app/(dashboard)/attendance/_components/tracking-tab-tracking.tsx": {
-  "lines": 278,
-  "long": 12
- },
  "apps/web-app/src/app/(dashboard)/attendance/_components/tracking-tab.tsx": {
   "lines": 221,
   "long": 1
- },
- "apps/web-app/src/app/(dashboard)/attendance/_components/use-breaks-tab.ts": {
-  "lines": 55,
-  "long": 1
- },
- "apps/web-app/src/app/(dashboard)/attendance/_components/use-tracking-tab.ts": {
-  "lines": 119,
-  "long": 1
- },
- "apps/web-app/src/app/(dashboard)/calendar/_components/event-dialog.tsx": {
-  "lines": 278,
-  "long": 17
- },
- "apps/web-app/src/app/(dashboard)/calendar/_components/use-event-dialog-data.ts": {
-  "lines": 204,
-  "long": 1
- },
- "apps/web-app/src/app/(dashboard)/customers/[id]/page.tsx": {
-  "lines": 272,
-  "long": 6
  },
  "apps/web-app/src/app/(dashboard)/invoices/_components/invoice-shell.tsx": {
   "lines": 217,
   "long": 1
  },
- "apps/web-app/src/app/(dashboard)/issues/page.tsx": {
-  "lines": 288,
-  "long": 26
- },
- "apps/web-app/src/app/(dashboard)/locations/[id]/_components/general-tab.tsx": {
-  "lines": 283,
-  "long": 2
- },
- "apps/web-app/src/app/(dashboard)/locations/[id]/_components/modules-tab.tsx": {
-  "lines": 288,
-  "long": 5
- },
- "apps/web-app/src/app/(dashboard)/locations/[id]/_components/no-shift-section.tsx": {
-  "lines": 192,
-  "long": 1
- },
- "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/page.tsx": {
-  "lines": 297,
-  "long": 33
- },
- "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/portal-detail-page-portal.tsx": {
-  "lines": 292,
-  "long": 28
- },
  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/use-portal-detail-page.ts": {
   "lines": 282,
-  "long": 6
- },
- "apps/web-app/src/app/(dashboard)/members/_components/members-list-skeleton.tsx": {
-  "lines": 31,
-  "long": 1
- },
- "apps/web-app/src/app/(dashboard)/reports/page.tsx": {
-  "lines": 288,
-  "long": 26
- },
- "apps/web-app/src/app/(dashboard)/settings/_components/general-section-general.tsx": {
-  "lines": 287,
-  "long": 5
- },
- "apps/web-app/src/app/(dashboard)/settings/_components/members-section.tsx": {
-  "lines": 206,
-  "long": 1
- },
- "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/use-task-detail-sidebar.ts": {
-  "lines": 46,
-  "long": 1
+  "long": 3
  },
  "apps/web-app/src/app/(dashboard)/tasks/[id]/report/_components/report-sheet.tsx": {
   "lines": 283,
   "long": 2
  },
- "apps/web-app/src/app/(dashboard)/tasks/[id]/task-detail-page-sections.tsx": {
-  "lines": 290,
-  "long": 7
- },
  "apps/web-app/src/app/(dashboard)/tasks/_components/use-task-table-row-inner-data.ts": {
   "lines": 140,
   "long": 1
  },
- "apps/web-app/src/app/(dashboard)/tasks/_components/use-task-table-row-inner.tsx": {
-  "lines": 253,
-  "long": 1
- },
- "apps/web-app/src/app/_home/FeatureMatrix.tsx": {
-  "lines": 108,
-  "long": 1
- },
  "apps/web-app/src/app/_home/HomeClient.tsx": {
-  "lines": 284,
-  "long": 6
- },
- "apps/web-app/src/app/_home/PricingEstimator.tsx": {
-  "lines": 197,
+  "lines": 45,
   "long": 1
- },
- "apps/web-app/src/app/_home/home-client-footer.tsx": {
-  "lines": 51,
-  "long": 1
- },
- "apps/web-app/src/app/_home/home-client-hero.tsx": {
-  "lines": 65,
-  "long": 2
- },
- "apps/web-app/src/app/_home/home-client-industries.tsx": {
-  "lines": 55,
-  "long": 2
- },
- "apps/web-app/src/app/_home/home-client-nav.tsx": {
-  "lines": 72,
-  "long": 1
- },
- "apps/web-app/src/app/_home/home-client-pricing.tsx": {
-  "lines": 100,
-  "long": 2
- },
- "apps/web-app/src/app/_home/home-client-why.tsx": {
-  "lines": 67,
-  "long": 1
- },
- "apps/web-app/src/app/_industries/IndustriesHub.tsx": {
-  "lines": 65,
-  "long": 1
- },
- "apps/web-app/src/app/_pricing/Calculator.tsx": {
-  "lines": 236,
-  "long": 4
- },
- "apps/web-app/src/app/_pricing/PricingClient.tsx": {
-  "lines": 279,
-  "long": 3
  },
  "apps/web-app/src/app/splash-preview/page.tsx": {
   "lines": 135,
@@ -435,84 +307,16 @@
   "lines": 81,
   "long": 1
  },
- "apps/web-app/src/components/billing-banner.tsx": {
-  "lines": 153,
-  "long": 1
- },
- "apps/web-app/src/components/chat/contacts-picker.tsx": {
-  "lines": 96,
-  "long": 1
- },
- "apps/web-app/src/components/chat/conversation-list.tsx": {
-  "lines": 145,
-  "long": 2
- },
  "apps/web-app/src/components/dashboard/workspace-box.tsx": {
   "lines": 295,
-  "long": 1
- },
- "apps/web-app/src/components/invitations/create-invitation-dialog-invite-dialog.tsx": {
-  "lines": 294,
-  "long": 2
- },
- "apps/web-app/src/components/marketing/site-footer.tsx": {
-  "lines": 74,
-  "long": 1
- },
- "apps/web-app/src/components/marketing/site-nav.tsx": {
-  "lines": 83,
-  "long": 1
- },
- "apps/web-app/src/components/rates/dated-rate.tsx": {
-  "lines": 300,
-  "long": 3
- },
- "apps/web-app/src/components/reports/report-export-studio.tsx": {
-  "lines": 285,
-  "long": 23
- },
- "apps/web-app/src/components/step-forms/use-step-form-editor.ts": {
-  "lines": 75,
-  "long": 1
- },
- "apps/web-app/src/components/step-forms/use-step-move-dialog-data.ts": {
-  "lines": 177,
   "long": 1
  },
  "apps/web-app/src/components/top-navbar-sidebar.tsx": {
   "lines": 254,
   "long": 1
  },
- "apps/web-app/src/components/tour/page-tours.ts": {
-  "lines": 239,
-  "long": 1
- },
- "apps/web-app/src/components/use-assign-member-dialog.ts": {
-  "lines": 178,
-  "long": 1
- },
  "apps/web-app/src/lib/api/assets-review.ts": {
   "lines": 137,
-  "long": 2
- },
- "apps/web-app/src/lib/api/attendance-entries.ts": {
-  "lines": 238,
-  "long": 1
- },
- "apps/web-app/src/lib/api/attendance-review.ts": {
-  "lines": 177,
-  "long": 1
- },
- "apps/web-app/src/lib/api/documents-files.ts": {
-  "lines": 192,
-  "long": 1
- },
- "apps/web-app/src/lib/api/employees-leave.ts": {
-  "lines": 172,
-  "long": 1
- },
- "apps/web-app/src/lib/api/tasks-work.ts": {
-  "lines": 139,
   "long": 1
  },
  "apps/web-app/src/lib/auth-session.ts": {

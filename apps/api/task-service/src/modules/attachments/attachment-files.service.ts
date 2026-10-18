@@ -7,6 +7,7 @@ import { TaskEventType, Role, success } from '@hbcfield/shared';
 import { TaskAccessService } from '../../common/task-access/task-access.service';
 import { UPLOAD_TTL_SECONDS, MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from './attachments-helpers';
 import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
+import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 /** A task attachment after it is filed: removing it (and its object), and an upload link. */
 @Injectable()
@@ -21,7 +22,7 @@ export class AttachmentFilesService {
     private readonly taskAccess: TaskAccessService,
   ) {}
 
-  async remove(data: { id: string; userId: string; userRole: string; organizationId: string }) {
+  async remove(data: JobData<typeof TASK_JOBS.deleteAttachment>) {
     const attachment = await this.prisma.attachment.findUnique({
       where: { id: data.id },
       include: { task: true },
@@ -72,14 +73,7 @@ export class AttachmentFilesService {
     return success(null, 'Attachment deleted');
   }
 
-  async getPresignedUrl(data: {
-    taskId: string;
-    fileName: string;
-    fileType: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
+  async getPresignedUrl(data: JobData<typeof TASK_JOBS.getPresignedUrl>) {
     // Verify task exists and belongs to user's org
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     if (!task) {

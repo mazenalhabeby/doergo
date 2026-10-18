@@ -1,44 +1,8 @@
 import { Prisma } from '@prisma/client';
-import type { OccurrenceEvidence, ResolvedAccess } from '@hbcfield/shared';
+import type { TaskStatusJob } from '@hbcfield/shared';
 
-/** What `TaskStatusService.updateStatus` is asked. */
-export interface UpdateStatusInput {
-  id: string;
-  status: string;
-  userId: string;
-  userRole: string;
-  canViewAllTasks?: boolean;
-  organizationId: string;
-  reason?: string;
-  lat?: number;
-  lng?: number;
-  /**
-   * The error radius the device reported, in metres.
-   *
-   * Widens the arrival zone rather than being ignored. Absent means the client
-   * made no claim about accuracy and is treated as zero tolerance, so an older
-   * app that does not send it behaves exactly as it always did.
-   */
-  accuracy?: number;
-  /** The status the phone saw when the member tapped — see the conflict check in updateStatus. */
-  expectedFrom?: string;
-  /** When and where the tap happened, from a phone that may have been offline. */
-  evidence?: OccurrenceEvidence;
-  /**
-   * Answers to the form of the step being moved into — see step-submission.ts.
-   * Untrusted: re-validated here against the step's own definition.
-   */
-  answers?: unknown;
-  // Server-authoritative cross-org grant map (forwarded from the gateway).
-  // Used to allow a guest org to move a task in a space explicitly shared to it.
-  access?: ResolvedAccess | null;
-  /**
-   * The office starting somebody's job for them (packages/shared/src/tasks/job-time.ts):
-   * why — required — and optionally when it really started. Recorded as the
-   * office's action, and the worker is told.
-   */
-  onBehalf?: { reason?: string; at?: string };
-}
+/** What `TaskStatusService.updateStatus` is asked — the `task.updateStatus` job (shared queues/task-jobs-types.ts). */
+export type UpdateStatusInput = TaskStatusJob;
 
 /** The task as updateStatus reads it: with its site's zone. */
 export type StatusTask = Prisma.TaskGetPayload<{ include: { space: { select: { timezone: true } } } }>;

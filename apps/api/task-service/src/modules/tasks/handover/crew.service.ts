@@ -13,6 +13,7 @@ import { judgeOccurrence } from '../../../common/occurrence.util';
 import { CrewActor, CrewTask, TASK_SELECT, evidenceMeta, cleanReason } from './crew-helpers';
 import { CrewLeadBase } from './crew-lead.base';
 import { emitEvent, taskCrewIssueEvent, taskCrewStartedEvent } from '@hbcfield/shared/microservices';
+import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 export { type CrewActor } from './crew-helpers';
 
@@ -77,15 +78,7 @@ export class CrewService extends CrewLeadBase {
    * window), the step the job is already in, or the office for somebody
    * (with a reason). Idempotent while joined. The clock gate applies.
    */
-  async join(
-    data: CrewActor & {
-      taskId: string;
-      evidence?: OccurrenceEvidence;
-      viaLeaderStart?: boolean;
-      forUserId?: string;
-      reason?: string;
-    },
-  ) {
+  async join(data: JobData<typeof TASK_JOBS.crewJoin>) {
     const task = await this.visibleTaskOf(data.taskId, data);
     const forOther = !!data.forUserId && data.forUserId !== data.userId;
     // Putting somebody ON a job is a decision about who works it: assign rights, not "view all".
@@ -111,9 +104,7 @@ export class CrewService extends CrewLeadBase {
    * member on the clock leaving pauses it, and owes the note — the same pause
    * a clock-out makes.
    */
-  async leave(
-    data: CrewActor & { taskId: string; evidence?: OccurrenceEvidence; forUserId?: string; reason?: string },
-  ) {
+  async leave(data: JobData<typeof TASK_JOBS.crewLeave>) {
     const task = await this.visibleTaskOf(data.taskId, data);
     const forOther = !!data.forUserId && data.forUserId !== data.userId;
     if (forOther && !this.isOffice(data, task, 'canAssignTasks')) throw new NotFoundException('Task not found');
@@ -166,7 +157,7 @@ export class CrewService extends CrewLeadBase {
   }
 
   /** "My issue": only this person's time is blocked — the job and the crew carry on. */
-  async selfIssue(data: CrewActor & { taskId: string; reason?: string; evidence?: OccurrenceEvidence }) {
+  async selfIssue(data: JobData<typeof TASK_JOBS.crewSelfIssue>) {
     const task = await this.visibleTaskOf(data.taskId, data);
     const reason = cleanReason(data.reason);
     if (!reason) throw new BadRequestException({ message: 'Say what stopped you.', code: 'REASON_REQUIRED' });
@@ -198,7 +189,7 @@ export class CrewService extends CrewLeadBase {
   }
 
   /** Back to work after their own stop — a move into work, so the clock gate applies. */
-  async selfResume(data: CrewActor & { taskId: string; evidence?: OccurrenceEvidence }) {
+  async selfResume(data: JobData<typeof TASK_JOBS.crewSelfResume>) {
     const task = await this.visibleTaskOf(data.taskId, data);
     const { presence } = await this.mustBeJoined(task, data.userId);
     if (presence.selfBlockedSince == null) return success(await this.viewOf(task));

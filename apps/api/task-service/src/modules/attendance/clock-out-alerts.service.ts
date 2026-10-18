@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { personName, zoneOf } from '@hbcfield/shared';
-import { ShiftCloseBase } from './shift-close.base';
+import { Injectable, Inject, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { personName, zoneOf, SERVICE_NAMES } from '@hbcfield/shared';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { NotificationRoutingService } from '../../common/notification-routing.service';
+import { AttendanceRoutingService } from './attendance-routing.service';
 import {
   emitEvent,
   attendanceGeofenceAlertEvent,
@@ -9,7 +12,7 @@ import {
 } from '@hbcfield/shared/microservices';
 
 /** The entry the alerts speak about — what the clock-out read before closing it. */
-interface AlertEntry {
+export interface AlertEntry {
   id: string;
   userId: string;
   organizationId: string;
@@ -19,20 +22,32 @@ interface AlertEntry {
 }
 
 /** What the close saved, for the names in the alerts. */
-interface ClosedFacts {
+export interface ClosedFacts {
   user: { firstName: string | null; lastName: string | null } | null;
   location: { name: string; timezone: string | null } | null;
 }
 
-/** Who is told what when a shift ends. */
+/** Who is told what when a shift ends. A collaborator of ClockOutService, not a layer of it. */
 @Injectable()
-export abstract class ClockOutAlertsBase extends ShiftCloseBase {
+export class ClockOutAlertsService {
+  // Named after the clock-out, whose log lines these always were.
+  private readonly logger = new Logger('ClockOutService');
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION)
+    private readonly notificationClient: ClientProxy,
+    private readonly notificationRouting: NotificationRoutingService,
+    // Who is told about this member, at this workspace.
+    private readonly routing: AttendanceRoutingService,
+  ) {}
+
   /**
    * The supervisors were told "still clocked in past the end of the shift".
    * The clock-out has now arrived — usually from a phone that had no signal,
    * with the time it was actually tapped. Say so, to the same people.
    */
-  protected async announceEscalationResolved(
+  async announceEscalationResolved(
     entry: AlertEntry,
     closed: ClosedFacts,
     clockOutTime: Date,
@@ -59,7 +74,7 @@ export abstract class ClockOutAlertsBase extends ShiftCloseBase {
    * is operational news: the site is a person short right now, and finding
    * out at the end of the month is finding out too late.
    */
-  protected async announceLeftEarly(entry: AlertEntry, closed: ClosedFacts, shortBy: number, earlyReason: string) {
+  async announceLeftEarly(entry: AlertEntry, closed: ClosedFacts, shortBy: number, earlyReason: string) {
     const leaderIds = await this.routing.notifyTargetsFor(entry, 'canReconcileAttendance');
     emitEvent(this.notificationClient, attendanceLeftEarlyEvent, {
       entryId: entry.id,
@@ -78,7 +93,7 @@ export abstract class ClockOutAlertsBase extends ShiftCloseBase {
   /**
    * Send geofence violation alert to dispatchers and admins
    */
-  protected async sendGeofenceAlert(data: {
+  async sendGeofenceAlert(data: {
     userId: string;
     organizationId: string;
     locationName: string;

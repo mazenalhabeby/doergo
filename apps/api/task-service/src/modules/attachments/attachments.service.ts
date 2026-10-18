@@ -8,6 +8,7 @@ import { TaskEventType, success } from '@hbcfield/shared';
 import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES, attachmentTypeOf, attachmentKeyPrefixes } from './attachments-helpers';
 import { emitEvent, attachmentAddedEvent } from '@hbcfield/shared/microservices';
+import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 export { attachmentTypeOf, attachmentKeyPrefixes } from './attachments-helpers';
 
@@ -23,22 +24,7 @@ export class AttachmentsService {
     private readonly taskAccess: TaskAccessService,
   ) {}
 
-  async create(data: {
-    /** Id made on the phone — see createOnce. */
-    attachmentId?: string;
-    taskId: string;
-    uploadedById: string;
-    userRole?: string;
-    fileName: string;
-    /** The key the presign step returned. Sent by apps newer than 1.0.5. */
-    fileKey?: string;
-    /** LEGACY: the URL app 1.0.5 sends instead of the key. */
-    fileUrl?: string;
-    /** A MIME type, as the client reports it — NOT an AttachmentType. */
-    fileType: string;
-    fileSize: number;
-    organizationId: string;
-  }) {
+  async create(data: JobData<typeof TASK_JOBS.addAttachment>) {
     const store = requireObjectStore(this.store);
 
     // Verify task exists, then apply the SAME access check as upload/list/delete

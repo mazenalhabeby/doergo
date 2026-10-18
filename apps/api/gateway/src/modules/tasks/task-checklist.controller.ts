@@ -14,6 +14,7 @@ import {
 import { TasksControllerBase } from './tasks-controller.base';
 
 import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /** /tasks/:id — checklist items, subtasks and dependencies. */
 @ApiTags('tasks')
 @ApiBearerAuth()
@@ -135,7 +136,7 @@ export class TaskChecklistController extends TasksControllerBase {
       */
       canAssignTasks: req.user.canAssignTasks,
       assignSpaceIds: assignSpaceIds(req),
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -172,7 +173,7 @@ export class TaskChecklistController extends TasksControllerBase {
       userRole: req.user.role,
       canCreateTasks: req.user.canCreateTasks,
       createSpaceIds: grantedSpaceIds(req, 'canCreateTasks'),
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -191,7 +192,7 @@ export class TaskChecklistController extends TasksControllerBase {
       userRole: req.user.role,
       canCreateTasks: req.user.canCreateTasks,
       createSpaceIds: grantedSpaceIds(req, 'canCreateTasks'),
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 }

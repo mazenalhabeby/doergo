@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
-import { QUEUE_NAMES, TASK_JOB_TYPES, BaseQueueService } from '@hbcfield/shared';
+import { QUEUE_NAMES, TASK_JOBS, BaseQueueService, type JobData } from '@hbcfield/shared';
 
 /**
  * Service for managing task-related WRITE jobs via BullMQ
@@ -16,129 +16,126 @@ import { QUEUE_NAMES, TASK_JOB_TYPES, BaseQueueService } from '@hbcfield/shared'
  */
 @Injectable()
 export class TasksQueueService extends BaseQueueService {
-  constructor(
-    @InjectQueue(QUEUE_NAMES.TASKS) tasksQueue: Queue,
-    configService: ConfigService,
-  ) {
+  constructor(@InjectQueue(QUEUE_NAMES.TASKS) tasksQueue: Queue, configService: ConfigService) {
     super(tasksQueue, configService, QUEUE_NAMES.TASKS, TasksQueueService.name);
   }
 
   // ============ Task Write Operations (BullMQ) ============
   // READ operations (findAll, findOne, getTimeline, getComments) are in TasksService
 
-  async createTask(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.CREATE, data);
+  async createTask(data: JobData<typeof TASK_JOBS.create>) {
+    return this.runJob(TASK_JOBS.create, data);
   }
 
-  async updateTask(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.UPDATE, data);
+  async updateTask(data: JobData<typeof TASK_JOBS.update>) {
+    return this.runJob(TASK_JOBS.update, data);
   }
 
-  async assignTask(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.ASSIGN, data);
+  async assignTask(data: JobData<typeof TASK_JOBS.assign>) {
+    return this.runJob(TASK_JOBS.assign, data);
   }
 
-  async updateTaskStatus(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.UPDATE_STATUS, data);
+  async updateTaskStatus(data: JobData<typeof TASK_JOBS.updateStatus>) {
+    return this.runJob(TASK_JOBS.updateStatus, data);
   }
 
-  async declineTask(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.DECLINE, data);
+  async declineTask(data: JobData<typeof TASK_JOBS.decline>) {
+    return this.runJob(TASK_JOBS.decline, data);
   }
 
-  async deleteTask(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.DELETE, data);
+  async deleteTask(data: JobData<typeof TASK_JOBS.remove>) {
+    return this.runJob(TASK_JOBS.remove, data);
   }
 
   // ============ Comment Write Operations (BullMQ) ============
 
-  async addComment(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.ADD_COMMENT, data);
+  async addComment(data: JobData<typeof TASK_JOBS.addComment>) {
+    return this.runJob(TASK_JOBS.addComment, data);
   }
 
-  async resumeWork(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.RESUME_WORK, data);
+  async resumeWork(data: JobData<typeof TASK_JOBS.resumeWork>) {
+    return this.runJob(TASK_JOBS.resumeWork, data);
   }
 
-  async addHandover(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.ADD_HANDOVER, data);
+  async addHandover(data: JobData<typeof TASK_JOBS.addHandover>) {
+    return this.runJob(TASK_JOBS.addHandover, data);
   }
 
   // ============ A crew on one job ============
 
-  async crewJoin(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.CREW_JOIN, data);
+  async crewJoin(data: JobData<typeof TASK_JOBS.crewJoin>) {
+    return this.runJob(TASK_JOBS.crewJoin, data);
   }
 
-  async crewLeave(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.CREW_LEAVE, data);
+  async crewLeave(data: JobData<typeof TASK_JOBS.crewLeave>) {
+    return this.runJob(TASK_JOBS.crewLeave, data);
   }
 
-  async crewSelfIssue(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.CREW_SELF_ISSUE, data);
+  async crewSelfIssue(data: JobData<typeof TASK_JOBS.crewSelfIssue>) {
+    return this.runJob(TASK_JOBS.crewSelfIssue, data);
   }
 
-  async crewSelfResume(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.CREW_SELF_RESUME, data);
+  async crewSelfResume(data: JobData<typeof TASK_JOBS.crewSelfResume>) {
+    return this.runJob(TASK_JOBS.crewSelfResume, data);
   }
 
-  async crewChangeLead(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.CREW_CHANGE_LEAD, data);
+  async crewChangeLead(data: JobData<typeof TASK_JOBS.crewChangeLead>) {
+    return this.runJob(TASK_JOBS.crewChangeLead, data);
   }
 
   // ============ Attachment Operations ============
 
-  async addAttachment(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.ADD_ATTACHMENT, data);
+  async addAttachment(data: JobData<typeof TASK_JOBS.addAttachment>) {
+    return this.runJob(TASK_JOBS.addAttachment, data);
   }
 
-  async deleteAttachment(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.DELETE_ATTACHMENT, data);
+  async deleteAttachment(data: JobData<typeof TASK_JOBS.deleteAttachment>) {
+    return this.runJob(TASK_JOBS.deleteAttachment, data);
   }
 
-  async getPresignedUrl(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.GET_PRESIGNED_URL, data);
+  async getPresignedUrl(data: JobData<typeof TASK_JOBS.getPresignedUrl>) {
+    return this.runJob(TASK_JOBS.getPresignedUrl, data);
   }
 
   // ============ Assignee Operations ============
 
-  async addAssignee(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.ADD_ASSIGNEE, data);
+  async addAssignee(data: JobData<typeof TASK_JOBS.addAssignee>) {
+    return this.runJob(TASK_JOBS.addAssignee, data);
   }
 
-  async removeAssignee(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.REMOVE_ASSIGNEE, data);
+  async removeAssignee(data: JobData<typeof TASK_JOBS.removeAssignee>) {
+    return this.runJob(TASK_JOBS.removeAssignee, data);
   }
 
   // ============ Subtask & Dependency Operations ============
 
-  async createSubtask(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.CREATE_SUBTASK, data);
+  async createSubtask(data: JobData<typeof TASK_JOBS.createSubtask>) {
+    return this.runJob(TASK_JOBS.createSubtask, data);
   }
 
-  async addDependency(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.ADD_DEPENDENCY, data);
+  async addDependency(data: JobData<typeof TASK_JOBS.addDependency>) {
+    return this.runJob(TASK_JOBS.addDependency, data);
   }
 
-  async removeDependency(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.REMOVE_DEPENDENCY, data);
+  async removeDependency(data: JobData<typeof TASK_JOBS.removeDependency>) {
+    return this.runJob(TASK_JOBS.removeDependency, data);
   }
 
   // ============ Checklist Operations ============
 
-  async addChecklistItem(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.ADD_CHECKLIST_ITEM, data);
+  async addChecklistItem(data: JobData<typeof TASK_JOBS.addChecklistItem>) {
+    return this.runJob(TASK_JOBS.addChecklistItem, data);
   }
 
-  async updateChecklistItem(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.UPDATE_CHECKLIST_ITEM, data);
+  async updateChecklistItem(data: JobData<typeof TASK_JOBS.updateChecklistItem>) {
+    return this.runJob(TASK_JOBS.updateChecklistItem, data);
   }
 
-  async deleteChecklistItem(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.DELETE_CHECKLIST_ITEM, data);
+  async deleteChecklistItem(data: JobData<typeof TASK_JOBS.deleteChecklistItem>) {
+    return this.runJob(TASK_JOBS.deleteChecklistItem, data);
   }
 
-  async reorderChecklist(data: Record<string, any>) {
-    return this.addJobAndWait(TASK_JOB_TYPES.REORDER_CHECKLIST, data);
+  async reorderChecklist(data: JobData<typeof TASK_JOBS.reorderChecklist>) {
+    return this.runJob(TASK_JOBS.reorderChecklist, data);
   }
 }

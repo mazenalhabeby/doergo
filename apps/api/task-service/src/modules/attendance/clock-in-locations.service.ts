@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ResolverSpace } from './shift-resolver.service';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { ResolverSpace, ShiftResolverService } from './shift-resolver.service';
 import {
   zoneOf,
   success,
@@ -16,14 +17,20 @@ import {
   remoteApprovedAt,
   type DayRequestRow,
 } from './approved-requests';
-import { ClockInBase } from './clock-in.base';
+import { ClockInContextService } from './clock-in-context.service';
 
 /**
  * Where the caller may clock in right now, each workspace tagged with whether away
  * is allowed and what the clock would do there.
  */
 @Injectable()
-export class ClockInLocationsService extends ClockInBase {
+export class ClockInLocationsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly shiftResolver: ShiftResolverService,
+    private readonly context: ClockInContextService,
+  ) {}
+
   /**
    * Tag each workspace a member may clock in at with what the one-button
    * clock-in needs to choose and to answer before the tap:
@@ -81,12 +88,14 @@ export class ClockInLocationsService extends ClockInBase {
         if (policy === 'LIMIT' && !hasShiftNow) {
           overtimeRows ??= approvedRequestsAround(this.prisma, userId, now, ['OVERTIME']);
           extraMinutes = agreedOvertimeMinutes(await overtimeRows, space.id, now, day);
-          worked ??= this.noShiftAllowanceFor(
-            userId,
-            { noShiftPolicy: 'LIMIT', noShiftDailyMinutes: space.noShiftDailyMinutes, workModel: space.workModel },
-            now,
-            day,
-          ).then((a) => a.workedTodayMinutes);
+          worked ??= this.context
+            .noShiftAllowanceFor(
+              userId,
+              { noShiftPolicy: 'LIMIT', noShiftDailyMinutes: space.noShiftDailyMinutes, workModel: space.workModel },
+              now,
+              day,
+            )
+            .then((a) => a.workedTodayMinutes);
           workedTodayMinutes = await worked;
         }
         const noShift: NoShiftTag = {
@@ -218,7 +227,7 @@ export class ClockInLocationsService extends ClockInBase {
   }
 
   async listClockInLocations(data: { userId: string; organizationId: string }) {
-    const { assignments, locations: clockable } = await this.clockableWorkspaces(
+    const { assignments, locations: clockable } = await this.context.clockableWorkspaces(
       data.userId,
       data.organizationId,
       new Date(),

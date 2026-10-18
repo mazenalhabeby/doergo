@@ -73,7 +73,14 @@ describe('the write path', () => {
 
   it('declares the parameter as the MIME string it actually receives', () => {
     // Typing it `AttachmentType` is what made the bug invisible for months.
+    // The parameter is the `task.addAttachment` job contract's data, declared once in shared.
     const sig = src.slice(src.indexOf('async create('), src.indexOf('async create(') + 400);
-    expect(sig).toMatch(/fileType:\s*string/);
+    expect(sig).toContain('JobData<typeof TASK_JOBS.addAttachment>');
+    const contract = fs.readFileSync(
+      path.join(__dirname, '../../../../../../../packages/shared/src/queues/task-jobs.ts'),
+      'utf8',
+    );
+    const decl = contract.slice(contract.indexOf('addAttachment: job<'), contract.indexOf('addAttachment: job<') + 700);
+    expect(decl).toMatch(/fileType:\s*string/);
   });
 });

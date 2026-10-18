@@ -1,28 +1,7 @@
 "use client"
 
-import Link from "next/link"
-import { CHART_COLORS } from "./_components/chart-colors"
-import {
-  Timer,
-  BarChart3,
-  Download,
-  FileText,
-  Save,
-  Pencil,
-  Lock,
-  CalendarClock,
-  ChevronDown,
-  Table2,
-  SlidersHorizontal,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { reportLabel } from "@hbcfield/shared/client"
 import { fmt } from "./use-reports-page"
-import { ReportBarChart, statCards } from "./reports-page-helpers"
-import { ReportsPageDataset } from "./reports-page-dataset"
 import type { ReportsPageState } from "./use-reports-page"
 
 /** Part of the parent component's markup, moved here unchanged; it reads the state from `vm`. */

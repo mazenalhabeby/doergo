@@ -1,0 +1,7 @@
+{
+  "apps/api/gateway/src/modules/assets/assets.queue.service.ts": 9,
+  "apps/api/gateway/src/modules/attendance/attendance.queue.service.ts": 4,
+  "apps/api/gateway/src/modules/locations/locations.queue.service.ts": 8,
+  "apps/api/gateway/src/modules/overtime/overtime.queue.service.ts": 4,
+  "apps/api/gateway/src/modules/reports/reports.queue.service.ts": 8
+}

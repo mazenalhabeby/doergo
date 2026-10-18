@@ -5,6 +5,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { TaskEventType, success } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { commentAddedEvent, emitEvent } from '@hbcfield/shared/microservices';
+import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 /**
  * What happened on a task: its timeline of events and its comments.
@@ -53,16 +54,7 @@ export class TaskActivityService {
   /**
    * Add a comment to a task
    */
-  async addComment(data: {
-    /** Id made on the phone — see createOnce. */
-    id?: string;
-    taskId: string;
-    content: string;
-    userId: string;
-    userRole: string;
-    canViewAllTasks?: boolean;
-    organizationId: string;
-  }) {
+  async addComment(data: JobData<typeof TASK_JOBS.addComment>) {
     // First verify the task exists and user has access
     const task = await this.prisma.task.findUnique({
       where: { id: data.taskId },

@@ -44,24 +44,44 @@ const SHIFT = {
 };
 const SITE = { lat: 47.9813, lng: 13.8269 };
 const location = {
-  id: 'loc-1', name: 'Halle', organizationId: 'org-1', isActive: true, isRemote: false, workModel: 'SHIFT',
-  ...SITE, geofenceRadius: 50, geofencePolygon: null, geofencePolicy: 'STRICT', timezone: 'Europe/Vienna',
-  noShiftPolicy: 'ALLOW', noShiftDailyMinutes: 480, updatedAt: new Date('2026-09-01T00:00:00.000Z'),
-  enabledModules: ['time_tracking'], organization: { enabledModules: ['time_tracking'] }, autoClock: ON,
+  id: 'loc-1',
+  name: 'Halle',
+  organizationId: 'org-1',
+  isActive: true,
+  isRemote: false,
+  workModel: 'SHIFT',
+  ...SITE,
+  geofenceRadius: 50,
+  geofencePolygon: null,
+  geofencePolicy: 'STRICT',
+  timezone: 'Europe/Vienna',
+  noShiftPolicy: 'ALLOW',
+  noShiftDailyMinutes: 480,
+  updatedAt: new Date('2026-09-01T00:00:00.000Z'),
+  enabledModules: ['time_tracking'],
+  organization: { enabledModules: ['time_tracking'] },
+  autoClock: ON,
 };
 
 async function buildClockIn(opts: { consent?: boolean; chosen?: boolean; undone?: boolean } = {}) {
   const prisma: any = {
     user: {
       findFirst: jest.fn().mockResolvedValue({
-        id: 'u1', organizationId: 'org-1', allowRemote: false, role: 'EMPLOYEE', isExternal: false,
+        id: 'u1',
+        organizationId: 'org-1',
+        allowRemote: false,
+        role: 'EMPLOYEE',
+        isExternal: false,
         organization: { timezone: 'Europe/Vienna' },
         autoClockConsentAt: opts.consent === false ? null : new Date('2026-09-01T00:00:00.000Z'),
       }),
       findUnique: jest.fn().mockResolvedValue({ firstName: 'Mike', lastName: 'Weber' }),
       findMany: jest.fn().mockResolvedValue([]),
     },
-    companyLocation: { findFirst: jest.fn().mockResolvedValue(location), findMany: jest.fn().mockResolvedValue([location]) },
+    companyLocation: {
+      findFirst: jest.fn().mockResolvedValue(location),
+      findMany: jest.fn().mockResolvedValue([location]),
+    },
     timeOff: { findMany: jest.fn().mockResolvedValue([]) },
     spaceAssignment: {
       findFirst: jest.fn().mockResolvedValue({ id: 'a1', allowRemote: null, autoClock: opts.chosen !== false }),
@@ -75,14 +95,18 @@ async function buildClockIn(opts: { consent?: boolean; chosen?: boolean; undone?
     },
     activityLog: { findFirst: jest.fn().mockResolvedValue(opts.undone ? { id: 'log-1' } : null) },
     break: { findMany: jest.fn().mockResolvedValue([]) },
-    shiftInstance: { updateMany: jest.fn().mockResolvedValue({ count: 0 }), findFirst: jest.fn().mockResolvedValue(null) },
+    shiftInstance: {
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
     breakRule: { findMany: jest.fn().mockResolvedValue([]) },
     shift: { findUnique: jest.fn().mockResolvedValue(null), findFirst: jest.fn().mockResolvedValue(null) },
     $transaction: jest.fn((ops: any) => (Array.isArray(ops) ? Promise.all(ops) : ops(prisma))),
   };
   const moduleRef = await Test.createTestingModule({
     providers: [
-      AttendanceService, ...ATTENDANCE_SERVICE_PARTS,
+      AttendanceService,
+      ...ATTENDANCE_SERVICE_PARTS,
       {
         provide: PresenceService,
         useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn(), onBatch: jest.fn() },
@@ -93,19 +117,33 @@ async function buildClockIn(opts: { consent?: boolean; chosen?: boolean; undone?
       BreakReminderService,
       { provide: PrismaService, useValue: prisma },
       { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
-      { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) } },
-      { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) } },
+      {
+        provide: getQueueToken(QUEUE_NAMES.OVERTIME),
+        useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) },
+      },
+      {
+        provide: NotificationRoutingService,
+        useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) },
+      },
       { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn().mockResolvedValue(SHIFT) } },
     ],
   }).compile();
   const service = moduleRef.get(AttendanceService);
   jest.spyOn(moduleRef.get(AttendanceGeocoderService), 'reverseGeocode').mockResolvedValue(null);
-  jest.spyOn((service as any).clockIns.shiftSweeps, 'markShiftInstancePresent').mockResolvedValue(undefined);
+  jest.spyOn((service as any).clockIns.site.shiftSweeps, 'markShiftInstancePresent').mockResolvedValue(undefined);
   return { service, prisma };
 }
 
 const clockIn = (over: Record<string, unknown> = {}) =>
-  ({ userId: 'u1', organizationId: 'org-1', locationId: 'loc-1', ...SITE, accuracy: 10, trigger: 'AUTO', ...over }) as any;
+  ({
+    userId: 'u1',
+    organizationId: 'org-1',
+    locationId: 'loc-1',
+    ...SITE,
+    accuracy: 10,
+    trigger: 'AUTO',
+    ...over,
+  }) as any;
 const created = (prisma: any) => prisma.timeEntry.create.mock.calls[0][0].data;
 
 describe('clock-in sent as AUTO — re-checked, never refused for it', () => {
@@ -160,7 +198,9 @@ describe('clock-in sent as AUTO — re-checked, never refused for it', () => {
   it('a resend of an automatic clock-in its owner undid does not make the shift again', async () => {
     jest.setSystemTime(new Date('2026-09-15T05:50:00.000Z'));
     const { service, prisma } = await buildClockIn({ undone: true });
-    await expect(service.clockIn(clockIn({ id: 'e-undone' }))).rejects.toMatchObject({ response: { code: 'AUTO_CLOCK_UNDONE' } });
+    await expect(service.clockIn(clockIn({ id: 'e-undone' }))).rejects.toMatchObject({
+      response: { code: 'AUTO_CLOCK_UNDONE' },
+    });
     expect(prisma.timeEntry.create).not.toHaveBeenCalled();
   });
 });
@@ -174,9 +214,17 @@ function buildAuto(prisma: any) {
 }
 
 const autoEntry = (over: Record<string, unknown> = {}) => ({
-  id: 'e1', userId: 'u1', locationId: 'loc-1', status: TimeEntryStatus.CLOCKED_IN,
-  clockInAt: new Date('2026-09-15T05:50:00.000Z'), clockOutAt: null, flagReasons: ['AUTO_CLOCK_IN'], shiftId: 'shift-1',
-  location: { autoClock: ON }, _count: { breaks: 0, workLog: 0 }, ...over,
+  id: 'e1',
+  userId: 'u1',
+  locationId: 'loc-1',
+  status: TimeEntryStatus.CLOCKED_IN,
+  clockInAt: new Date('2026-09-15T05:50:00.000Z'),
+  clockOutAt: null,
+  flagReasons: ['AUTO_CLOCK_IN'],
+  shiftId: 'shift-1',
+  location: { autoClock: ON },
+  _count: { breaks: 0, workLog: 0 },
+  ...over,
 });
 
 function undoPrisma(entry: any, opts: { logged?: boolean; worked?: boolean } = {}) {
@@ -201,7 +249,11 @@ describe('undo an automatic clock-in', () => {
     const prisma = undoPrisma(null);
     const { svc } = buildAuto(prisma);
     await expect(undo(svc, { userId: 'intruder' })).rejects.toBeInstanceOf(NotFoundException);
-    expect(prisma.timeEntry.findFirst.mock.calls[0][0].where).toMatchObject({ id: 'e1', userId: 'intruder', organizationId: 'org-1' });
+    expect(prisma.timeEntry.findFirst.mock.calls[0][0].where).toMatchObject({
+      id: 'e1',
+      userId: 'intruder',
+      organizationId: 'org-1',
+    });
     expect(prisma.timeEntry.delete).not.toHaveBeenCalled();
   });
 
@@ -210,7 +262,11 @@ describe('undo an automatic clock-in', () => {
     const { svc, emit } = buildAuto(prisma);
     await expect(undo(svc)).resolves.toMatchObject({ data: { undone: true } });
     expect(prisma.timeEntry.delete).toHaveBeenCalledWith({ where: { id: 'e1' } });
-    expect(prisma.activityLog.create.mock.calls[0][0].data).toMatchObject({ eventType: AUTO_UNDO_EVENT, resourceId: 'e1', userId: 'u1' });
+    expect(prisma.activityLog.create.mock.calls[0][0].data).toMatchObject({
+      eventType: AUTO_UNDO_EVENT,
+      resourceId: 'e1',
+      userId: 'u1',
+    });
     expect(emit).toHaveBeenCalledWith('attendance_changed', expect.objectContaining({ action: 'auto-undo' }));
   });
 
@@ -218,7 +274,11 @@ describe('undo an automatic clock-in', () => {
     const prisma = undoPrisma(null, { logged: true });
     const { svc } = buildAuto(prisma);
     await expect(undo(svc)).resolves.toMatchObject({ data: { undone: true } });
-    expect(prisma.activityLog.findFirst.mock.calls[0][0].where).toMatchObject({ resourceId: 'e1', eventType: AUTO_UNDO_EVENT, userId: 'u1' });
+    expect(prisma.activityLog.findFirst.mock.calls[0][0].where).toMatchObject({
+      resourceId: 'e1',
+      eventType: AUTO_UNDO_EVENT,
+      userId: 'u1',
+    });
   });
 
   it.each([
@@ -230,7 +290,9 @@ describe('undo an automatic clock-in', () => {
   ])('refuses after %s', async (_label, entry, opts, why) => {
     const prisma = undoPrisma(entry, opts as any);
     const { svc } = buildAuto(prisma);
-    await expect(undo(svc)).rejects.toMatchObject({ response: { code: 'AUTO_CLOCK_UNDO_NOT_ALLOWED', params: { why } } });
+    await expect(undo(svc)).rejects.toMatchObject({
+      response: { code: 'AUTO_CLOCK_UNDO_NOT_ALLOWED', params: { why } },
+    });
     expect(prisma.timeEntry.delete).not.toHaveBeenCalled();
   });
 
@@ -247,20 +309,42 @@ describe('undo an automatic clock-in', () => {
 
 function planPrisma(nSpaces: number, consent = true) {
   const spaces = Array.from({ length: nSpaces }, (_, i) => ({
-    ...location, id: `loc-${i}`, name: `Halle ${i}`,
+    ...location,
+    id: `loc-${i}`,
+    name: `Halle ${i}`,
   }));
   const calls = { n: 0 };
-  const counted = (impl: any) => jest.fn(async (...a: any[]) => { calls.n++; return impl(...a); });
+  const counted = (impl: any) =>
+    jest.fn(async (...a: any[]) => {
+      calls.n++;
+      return impl(...a);
+    });
   const prisma: any = {
-    user: { findFirst: counted(() => ({ autoClockConsentAt: consent ? new Date('2026-09-01T00:00:00Z') : null, isExternal: false })) },
+    user: {
+      findFirst: counted(() => ({
+        autoClockConsentAt: consent ? new Date('2026-09-01T00:00:00Z') : null,
+        isExternal: false,
+      })),
+    },
     spaceAssignment: { findMany: counted(() => spaces.map((s) => ({ spaceId: s.id, autoClock: true }))) },
     companyLocation: { findMany: counted(() => spaces) },
     shiftAssignment: {
-      findMany: counted(() => spaces.map((s) => ({
-        id: `ra-${s.id}`, spaceId: s.id, recurrence: 'DAILY', daysOfWeek: [], daysOfMonth: [], dates: [],
-        effectiveFrom: new Date('2026-01-01T00:00:00Z'), effectiveTo: null, priority: 0, isActive: true, shiftId: 'sh',
-        shift: { id: 'sh', isActive: true, startLocal: '08:00', endLocal: '16:00', crossesMidnight: false },
-      }))),
+      findMany: counted(() =>
+        spaces.map((s) => ({
+          id: `ra-${s.id}`,
+          spaceId: s.id,
+          recurrence: 'DAILY',
+          daysOfWeek: [],
+          daysOfMonth: [],
+          dates: [],
+          effectiveFrom: new Date('2026-01-01T00:00:00Z'),
+          effectiveTo: null,
+          priority: 0,
+          isActive: true,
+          shiftId: 'sh',
+          shift: { id: 'sh', isActive: true, startLocal: '08:00', endLocal: '16:00', crossesMidnight: false },
+        })),
+      ),
     },
     technicianSchedule: { findMany: counted(() => []) },
     timeOff: { findMany: counted(() => []) },
@@ -294,7 +378,12 @@ describe('the plan the phone arms from', () => {
   it('no consent → no places and no shifts read, but it says where the office chose them', async () => {
     const { prisma, calls } = planPrisma(3, false);
     const res: any = await buildAuto(prisma).svc.plan({ userId: 'u1', organizationId: 'org-1', now });
-    expect(res.data).toMatchObject({ consentAt: null, places: [], offered: 3, offeredIn: ['Halle 0', 'Halle 1', 'Halle 2'] });
+    expect(res.data).toMatchObject({
+      consentAt: null,
+      places: [],
+      offered: 3,
+      offeredIn: ['Halle 0', 'Halle 1', 'Halle 2'],
+    });
     // The member, their assignments, the workspaces — never the rota or the requests.
     expect(calls.n).toBe(3);
     expect(prisma.shiftAssignment.findMany).not.toHaveBeenCalled();
@@ -302,10 +391,24 @@ describe('the plan the phone arms from', () => {
 
   it('a member clocked by arriving and leaving carries their usual hours, zone and the workspace’s hours', async () => {
     const { prisma } = planPrisma(1);
-    prisma.spaceAssignment.findMany = jest.fn(async () => [{ spaceId: 'loc-0', autoClock: true, autoClockMode: 'PRESENCE', autoClockStartWindow: { from: '19:00', to: '23:00' } }]);
-    prisma.companyLocation.findMany = jest.fn(async () => [{ ...location, id: 'loc-0', name: 'AGRU', noShiftDailyMinutes: 660, noShiftPolicy: 'ALLOW' }]);
+    prisma.spaceAssignment.findMany = jest.fn(async () => [
+      {
+        spaceId: 'loc-0',
+        autoClock: true,
+        autoClockMode: 'PRESENCE',
+        autoClockStartWindow: { from: '19:00', to: '23:00' },
+      },
+    ]);
+    prisma.companyLocation.findMany = jest.fn(async () => [
+      { ...location, id: 'loc-0', name: 'AGRU', noShiftDailyMinutes: 660, noShiftPolicy: 'ALLOW' },
+    ]);
     const res: any = await buildAuto(prisma).svc.plan({ userId: 'u1', organizationId: 'org-1', now });
-    expect(res.data.places[0].presence).toEqual({ startWindow: { from: '19:00', to: '23:00' }, timezone: location.timezone || 'UTC', noShiftMinutes: 660, noShiftLimit: false });
+    expect(res.data.places[0].presence).toEqual({
+      startWindow: { from: '19:00', to: '23:00' },
+      timezone: location.timezone || 'UTC',
+      noShiftMinutes: 660,
+      noShiftLimit: false,
+    });
   });
 
   it('by shift → no presence on the place', async () => {
@@ -338,14 +441,24 @@ function buildClose(entry: any, opts: { auto?: boolean } = {}) {
       findFirst: jest.fn().mockResolvedValue(entry),
       findMany: jest.fn().mockResolvedValue([]),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-      findUnique: jest.fn(async () => ({ ...entry, ...prisma.timeEntry.updateMany.mock.calls.at(-1)[0].data, user: { firstName: 'M', lastName: 'W' } })),
+      findUnique: jest.fn(async () => ({
+        ...entry,
+        ...prisma.timeEntry.updateMany.mock.calls.at(-1)[0].data,
+        user: { firstName: 'M', lastName: 'W' },
+      })),
     },
     spaceAssignment: {
-      findFirst: jest.fn().mockResolvedValue(
-        opts.auto === false
-          ? null
-          : { autoClock: true, space: { autoClock: ON, isRemote: false }, user: { autoClockConsentAt: new Date('2026-09-01'), isExternal: false } },
-      ),
+      findFirst: jest
+        .fn()
+        .mockResolvedValue(
+          opts.auto === false
+            ? null
+            : {
+                autoClock: true,
+                space: { autoClock: ON, isRemote: false },
+                user: { autoClockConsentAt: new Date('2026-09-01'), isExternal: false },
+              },
+        ),
     },
     break: { update: jest.fn(), create: jest.fn() },
     geofenceExcursion: { updateMany: jest.fn() },
@@ -355,20 +468,43 @@ function buildClose(entry: any, opts: { auto?: boolean } = {}) {
   };
   const auto = buildAuto(prisma).svc;
   const svc = clockOutServices(
-    prisma, { emit: jest.fn() } as any, { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) } as any,
-    new CountedTimeService(prisma), { notifyTargetsFor: jest.fn().mockResolvedValue([]) } as any,
-    { reverseGeocode: jest.fn().mockResolvedValue(null) } as any, { requestOvertimeAtClockOut: jest.fn() } as any,
-    { pauseAtClockOut: jest.fn() } as any, auto,
+    prisma,
+    { emit: jest.fn() } as any,
+    { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) } as any,
+    new CountedTimeService(prisma),
+    { notifyTargetsFor: jest.fn().mockResolvedValue([]) } as any,
+    { reverseGeocode: jest.fn().mockResolvedValue(null) } as any,
+    { requestOvertimeAtClockOut: jest.fn() } as any,
+    { pauseAtClockOut: jest.fn() } as any,
+    auto,
   );
   return { svc, prisma };
 }
 
 const shiftEntry = (over: Record<string, unknown> = {}) => ({
-  id: 'e1', userId: 'u1', organizationId: 'org-1', locationId: 'loc-1', status: TimeEntryStatus.CLOCKED_IN,
-  clockInAt: at('05:55'), expectedClockInAt: at('06:00'), expectedClockOutAt: at('14:00'), endIsDailyLimit: false,
-  shiftId: null, isRemote: false, flagReasons: ['AUTO_CLOCK_IN'], notes: null, reminderState: null, timezone: 'Europe/Vienna',
-  breakMinutes: 0, unpaidBreakMinutes: 0, autoRestSkippedAt: null, breakPlan: null, location,
-  breaks: [], geofenceExcursions: [], ...over,
+  id: 'e1',
+  userId: 'u1',
+  organizationId: 'org-1',
+  locationId: 'loc-1',
+  status: TimeEntryStatus.CLOCKED_IN,
+  clockInAt: at('05:55'),
+  expectedClockInAt: at('06:00'),
+  expectedClockOutAt: at('14:00'),
+  endIsDailyLimit: false,
+  shiftId: null,
+  isRemote: false,
+  flagReasons: ['AUTO_CLOCK_IN'],
+  notes: null,
+  reminderState: null,
+  timezone: 'Europe/Vienna',
+  breakMinutes: 0,
+  unpaidBreakMinutes: 0,
+  autoRestSkippedAt: null,
+  breakPlan: null,
+  location,
+  breaks: [],
+  geofenceExcursions: [],
+  ...over,
 });
 
 describe('the automatic rest at the close', () => {
@@ -380,7 +516,14 @@ describe('the automatic rest at the close', () => {
     const t = buildClose(shiftEntry());
     await t.svc.clockOut({ userId: 'u1', organizationId: 'org-1', ...SITE, trigger: 'AUTO' } as any);
     expect(t.prisma.break.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ timeEntryId: 'e1', startedAt: at('09:45'), endedAt: at('10:15'), durationMinutes: 30, isPaid: false, reason: 'AUTO_REST' }),
+      data: expect.objectContaining({
+        timeEntryId: 'e1',
+        startedAt: at('09:45'),
+        endedAt: at('10:15'),
+        durationMinutes: 30,
+        isPaid: false,
+        reason: 'AUTO_REST',
+      }),
     });
     const data = t.prisma.timeEntry.updateMany.mock.calls[0][0].data;
     expect(data).toMatchObject({ breakMinutes: 30, unpaidBreakMinutes: 30 });
@@ -396,7 +539,11 @@ describe('the automatic rest at the close', () => {
   });
 
   it('a rest already taken → none added', async () => {
-    const t = buildClose(shiftEntry({ breaks: [{ id: 'b1', startedAt: at('10:00'), endedAt: at('10:20'), durationMinutes: 20, isPaid: false }] }));
+    const t = buildClose(
+      shiftEntry({
+        breaks: [{ id: 'b1', startedAt: at('10:00'), endedAt: at('10:20'), durationMinutes: 20, isPaid: false }],
+      }),
+    );
     await t.svc.clockOut({ userId: 'u1', organizationId: 'org-1', ...SITE } as any);
     expect(t.prisma.break.create).not.toHaveBeenCalled();
   });
@@ -441,14 +588,39 @@ describe('still clocked in after the end — the workspace’s own thresholds', 
   function sweepPrisma(entries: any[]) {
     const prisma: any = {
       timeEntry: {
-        findMany: jest.fn(async (args: any) => (args.select ? entries.filter((e) => args.where?.expectedClockOutAt !== null || !e.expectedClockOutAt).map(({ id, userId, locationId, clockInAt, expectedClockOutAt, expectedClockInAt }) => ({ id, userId, locationId, clockInAt, expectedClockOutAt, expectedClockInAt })) : args.where?.id ? entries : [])),
+        findMany: jest.fn(async (args: any) =>
+          args.select
+            ? entries
+                .filter((e) => args.where?.expectedClockOutAt !== null || !e.expectedClockOutAt)
+                .map(({ id, userId, locationId, clockInAt, expectedClockOutAt, expectedClockInAt }) => ({
+                  id,
+                  userId,
+                  locationId,
+                  clockInAt,
+                  expectedClockOutAt,
+                  expectedClockInAt,
+                }))
+            : args.where?.id
+              ? entries
+              : [],
+        ),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         update: jest.fn(),
       },
       spaceAssignment: {
-        findMany: jest.fn().mockResolvedValue([
-          { userId: 'u1', spaceId: 'loc-1', autoClock: true, effectiveFrom: new Date('2026-01-01'), effectiveTo: null, space: { autoClock: ON }, user: { autoClockConsentAt: new Date('2026-09-01'), isExternal: false } },
-        ]),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([
+            {
+              userId: 'u1',
+              spaceId: 'loc-1',
+              autoClock: true,
+              effectiveFrom: new Date('2026-01-01'),
+              effectiveTo: null,
+              space: { autoClock: ON },
+              user: { autoClockConsentAt: new Date('2026-09-01'), isExternal: false },
+            },
+          ]),
       },
       break: { update: jest.fn(), create: jest.fn() },
       geofenceExcursion: { updateMany: jest.fn() },
@@ -459,18 +631,33 @@ describe('still clocked in after the end — the workspace’s own thresholds', 
   }
 
   it('closes an automatic member provisionally at plannedEnd + closeAfterMinutes, replaceable like any temporary close', async () => {
-    const entry = { ...shiftEntry({ breaks: [{ id: 'b0', startedAt: at('10:00'), endedAt: at('10:30'), durationMinutes: 30, isPaid: false }] }), user: { firstName: 'M', lastName: 'W' } };
+    const entry = {
+      ...shiftEntry({
+        breaks: [{ id: 'b0', startedAt: at('10:00'), endedAt: at('10:30'), durationMinutes: 30, isPaid: false }],
+      }),
+      user: { firstName: 'M', lastName: 'W' },
+    };
     const prisma = sweepPrisma([entry]);
     const emit = jest.fn();
     const svc = clockOutServices(
-      prisma, { emit } as any, {} as any, new CountedTimeService(prisma), {} as any, {} as any, {} as any,
-      { pauseAtClockOut: jest.fn() } as any, buildAuto(prisma).svc,
+      prisma,
+      { emit } as any,
+      {} as any,
+      new CountedTimeService(prisma),
+      {} as any,
+      {} as any,
+      {} as any,
+      { pauseAtClockOut: jest.fn() } as any,
+      buildAuto(prisma).svc,
     );
     const res: any = await svc.closeAbandonedShifts(now);
     expect(res.data.closed).toBe(1);
     const data = prisma.timeEntry.updateMany.mock.calls[0][0].data;
     expect(data).toMatchObject({ clockOutProvisional: true, clockOutBasis: 'SHIFT_END', clockOutAt: at('14:00') });
-    expect(emit).toHaveBeenCalledWith('attendance_shift_closed_provisionally', expect.objectContaining({ entryId: 'e1' }));
+    expect(emit).toHaveBeenCalledWith(
+      'attendance_shift_closed_provisionally',
+      expect.objectContaining({ entryId: 'e1' }),
+    );
     // The settings for the whole batch in ONE query.
     expect(prisma.spaceAssignment.findMany).toHaveBeenCalledTimes(1);
   });
@@ -494,7 +681,13 @@ describe('still clocked in after the end — the workspace’s own thresholds', 
 
   it('tells the leader (no worker nudges) once plannedEnd + leaderAfterMinutes has passed; re-arms when due early', async () => {
     const due = [
-      { ...shiftEntry({ id: 'late' }), reminderCount: 0, user: { id: 'u1', firstName: 'M', lastName: 'W' }, location: { id: 'loc-1', name: 'Halle', timezone: 'Europe/Vienna' }, shift: null },
+      {
+        ...shiftEntry({ id: 'late' }),
+        reminderCount: 0,
+        user: { id: 'u1', firstName: 'M', lastName: 'W' },
+        location: { id: 'loc-1', name: 'Halle', timezone: 'Europe/Vienna' },
+        shift: null,
+      },
     ];
     const prisma: any = {
       timeEntry: { findMany: jest.fn().mockResolvedValue(due), update: jest.fn(), updateMany: jest.fn() },
@@ -507,12 +700,18 @@ describe('still clocked in after the end — the workspace’s own thresholds', 
     jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] });
     jest.setSystemTime(at('14:03')); // before 14:05 → re-armed, nothing sent
     await sweep.runShiftReminders();
-    expect(prisma.timeEntry.updateMany).toHaveBeenCalledWith({ where: { id: 'late', status: TimeEntryStatus.CLOCKED_IN }, data: { nextRemindAt: at('14:05') } });
+    expect(prisma.timeEntry.updateMany).toHaveBeenCalledWith({
+      where: { id: 'late', status: TimeEntryStatus.CLOCKED_IN },
+      data: { nextRemindAt: at('14:05') },
+    });
     expect(emit).not.toHaveBeenCalled();
 
     jest.setSystemTime(at('14:06'));
     await sweep.runShiftReminders();
-    expect(emit).toHaveBeenCalledWith('attendance_shift_escalation', expect.objectContaining({ entryId: 'late', leaderIds: ['leader-1'] }));
+    expect(emit).toHaveBeenCalledWith(
+      'attendance_shift_escalation',
+      expect.objectContaining({ entryId: 'late', leaderIds: ['leader-1'] }),
+    );
     expect(emit).not.toHaveBeenCalledWith('attendance_shift_reminder', expect.anything());
     jest.useRealTimers();
   });

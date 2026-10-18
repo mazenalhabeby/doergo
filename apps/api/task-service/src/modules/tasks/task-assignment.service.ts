@@ -11,6 +11,7 @@ import {
 } from '@hbcfield/shared';
 import { assertMayAssign, assertTargetIsInSpace } from './task-scope';
 import { TaskAssignmentBase } from './task-assignment.base';
+import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 /**
  * Who is on a task: assigning, declining, adding and removing assignees, the
@@ -76,20 +77,7 @@ export class TaskAssignmentService extends TaskAssignmentBase {
     await this.assertAssigneesAreQualified(unique, users, workflowId, organizationId);
   }
 
-  async assign(data: {
-    id: string;
-    workerId: string;
-    userId: string;
-    userRole: string;
-    canViewAllTasks?: boolean;
-    /** The ORG-wide resolution of canAssignTasks. */
-    canAssignTasks?: boolean;
-    /** Spaces where the caller holds canAssignTasks through a SPACE role. */
-    assignSpaceIds?: string[];
-    organizationId: string;
-    /** The caller's resolved access, forwarded by the gateway (cross-org shared spaces). */
-    access?: ResolvedAccess | null;
-  }) {
+  async assign(data: JobData<typeof TASK_JOBS.assign>) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
     });
@@ -157,12 +145,7 @@ export class TaskAssignmentService extends TaskAssignmentBase {
 
     // …and qualified for THIS task type. Costs one indexed probe that returns
     // nothing unless the organization has made a certificate mandatory.
-    await this.assertAssigneesAreQualified(
-      [worker.id],
-      [worker],
-      task.workflowId,
-      task.organizationId,
-    );
+    await this.assertAssigneesAreQualified([worker.id], [worker], task.workflowId, task.organizationId);
 
     const previousAssignee = task.assignedToId;
     const isReassign = previousAssignee && previousAssignee !== data.workerId;
@@ -235,7 +218,10 @@ export class TaskAssignmentService extends TaskAssignmentBase {
   }
 
   /** For the role pool: may this caller assign work on this task? (the same rule as the picker) */
-  async assertMayAssignTask(taskId: string, data: { userRole: string; canAssignTasks?: boolean; assignSpaceIds?: string[] }) {
+  async assertMayAssignTask(
+    taskId: string,
+    data: { userRole: string; canAssignTasks?: boolean; assignSpaceIds?: string[] },
+  ) {
     const task = await this.prisma.task.findUnique({ where: { id: taskId }, select: { spaceId: true } });
     if (!task) throw new NotFoundException('Task not found');
     assertMayAssign(task, data);

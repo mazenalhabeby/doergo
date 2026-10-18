@@ -15,6 +15,10 @@
  * `this.emit('x', …)` wrapper) and `@EventPattern('x')`. The typed way is an event contract
  * (packages/shared/src/microservices/event.ts). Socket.IO emits in notification-service are
  * not service events and are not counted.
+ *
+ * Queued jobs too (tools/job-baseline.json): a gateway queue service calling the untyped
+ * `this.addJobAndWait(name, data)` instead of `this.runJob(contract, data)` with a job
+ * contract (packages/shared/src/queues/job-contract.ts).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,6 +26,8 @@ import path from 'node:path';
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const BASELINE = path.join(ROOT, 'tools/rpc-baseline.json');
 const EVENT_BASELINE = path.join(ROOT, 'tools/event-baseline.json');
+const JOB_BASELINE = path.join(ROOT, 'tools/job-baseline.json');
+const JOB_PATTERN = /\bthis\.addJobAndWait\(/g;
 const DIRS = ['apps/api'];
 const PATTERN = /\{\s*cmd:\s*['"`]/g;
 const EVENT_PATTERN =
@@ -97,4 +103,10 @@ const eventOk = ratchet(
   "use an event contract (packages/shared/src/microservices/event.ts), not emit('…') / @EventPattern('…')",
   notSocket,
 );
-if (!rpcOk || !eventOk) process.exit(1);
+const jobOk = ratchet(
+  'job',
+  JOB_PATTERN,
+  JOB_BASELINE,
+  'use a job contract with this.runJob (packages/shared/src/queues/job-contract.ts), not this.addJobAndWait',
+);
+if (!rpcOk || !eventOk || !jobOk) process.exit(1);
