@@ -157,6 +157,7 @@ export class ShiftRematchService implements OnModuleDestroy {
       space: entry.location,
       clockInAt: entry.clockInAt,
       clockInTz: entry.timezone ?? undefined,
+      firstMatch: entry.labelRules == null,
     });
     if (!resolved) return false;
 

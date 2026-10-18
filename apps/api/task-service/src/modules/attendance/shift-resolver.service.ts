@@ -30,6 +30,11 @@ export class ShiftResolverService extends ShiftResolverBase {
     /** The worker's own timezone (from their clock-in GPS). Used ONLY for logical
      *  (pin-less) spaces, where shifts are anchored to the worker, not a site. */
     clockInTz?: string;
+    /**
+     * Re-matching an entry written BEFORE the label rules: the first matching rota
+     * row wins, exactly as it did then — the past is not re-judged by the new chooser.
+     */
+    firstMatch?: boolean;
   }): Promise<ResolvedShift | null> {
     const { userId, space, clockInAt } = params;
     // Attendance is per-member: when the space tracks attendance (anything but
@@ -53,7 +58,7 @@ export class ShiftResolverService extends ShiftResolverBase {
     const local = localPartsIn(clockInAt, tz);
 
     // ── 1. Rota assignment ──────────────────────────────────────────────
-    const assignment = await this.resolveAssignment(userId, space.id, clockInAt, tz, local);
+    const assignment = await this.resolveAssignment(userId, space.id, clockInAt, tz, local, params.firstMatch);
     if (assignment) return assignment;
 
     // ── 2. Legacy weekly schedule (FIXED) ───────────────────────────────

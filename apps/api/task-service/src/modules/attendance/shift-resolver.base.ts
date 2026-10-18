@@ -30,6 +30,7 @@ export abstract class ShiftResolverBase {
     clockInAt: Date,
     tz: string,
     local: LocalDate,
+    firstMatch = false,
   ): Promise<ResolvedShift | null> {
     const assignments = await this.prisma.shiftAssignment.findMany({
       where: {
@@ -86,7 +87,8 @@ export abstract class ShiftResolverBase {
       the instance the clock-in falls in, then the next to start. One rota row
       gives one candidate, so a single shift resolves exactly as before.
     */
-    if (candidates.length <= 1) return candidates[0] ?? null;
+    // An OLD entry (no label rules) re-matched keeps the old rule: the first candidate.
+    if (firstMatch || candidates.length <= 1) return candidates[0] ?? null;
     return chooseShiftInstance(
       candidates.map((c) => ({ ...c, toleranceMin: c.flagToleranceMin })),
       clockInAt,
