@@ -16,6 +16,7 @@ import { AttendanceNotificationHandler } from './handlers/attendance-notificatio
 import { BreakNotificationHandler } from './handlers/break-notification.handler';
 import { NoShowNotificationHandler } from './handlers/no-show-notification.handler';
 import { AttendanceAlertsHandler } from './handlers/attendance-alerts.handler';
+import { DayDecidedHandler } from './handlers/day-decided.handler';
 import { ExcursionNotificationHandler } from './handlers/excursion-notification.handler';
 import { AttendanceLiveHandler } from './handlers/attendance-live.handler';
 import { JoinRequestNotificationHandler } from './handlers/join-request-notification.handler';
@@ -57,6 +58,7 @@ import { AppUpdateNotificationHandler } from './handlers/app-update-notification
     BreakNotificationHandler,
     NoShowNotificationHandler,
     AttendanceAlertsHandler,
+    DayDecidedHandler,
     ExcursionNotificationHandler,
     AttendanceLiveHandler,
     JoinRequestNotificationHandler,

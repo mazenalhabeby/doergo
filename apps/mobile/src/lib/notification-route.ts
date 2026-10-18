@@ -83,6 +83,8 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   break_due: CLOCK,
   break_over: CLOCK,
   overtime_decision: CLOCK,
+  // "Thursday approved · 9 h 20 min counted": the Time screen, where the day sits in the history.
+  attendance_day_decided: CLOCK,
   // An office rule's second approval: the inbox, where the item says who went first.
   approval_second_step: () => to('/(app)/approvals'),
   // Nobody answered: a reminder, or it was passed to them.

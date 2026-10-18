@@ -93,6 +93,20 @@ export const attendancePendingApprovalEvent = event<{
   organizationId: string;
 }>('attendance_pending_approval');
 
+/**
+ * A person's working day was decided — the last entry of the day still waiting left review.
+ * `approved` is false when any entry of the day was rejected. Pushed to the person only.
+ */
+export const attendanceDayDecidedEvent = event<{
+  userId: string;
+  organizationId: string;
+  /** The day in the workspace's zone (yyyy-mm-dd). */
+  localDate: string;
+  approved: boolean;
+  /** Counted minutes of the day's entries that were not rejected. */
+  countedMinutes: number;
+}>('attendance_day_decided');
+
 /** ⚠️ organizationId is the caller's, which the type allows to be null (gateway users.controller) — kept as it is. */
 export const presenceChangedEvent = event<{ userId: string; presence: string | null; organizationId: string | null }>(
   'presence_changed',

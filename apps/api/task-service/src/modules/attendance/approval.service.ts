@@ -6,6 +6,7 @@ import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { MEMBER_SELECT } from './attendance-selects';
 import { EntryServiceBase } from './entry-service.base';
 import type { TimeEntryStatus } from '@prisma/client';
+import { announceDayDecided, type DecidedEntry } from './day-decided';
 
 @Injectable()
 export class ApprovalService extends EntryServiceBase {
@@ -134,6 +135,7 @@ export class ApprovalService extends EntryServiceBase {
     );
 
     this.emitChanged(data.organizationId, 'approve', data.entryId);
+    await this.tellDayDecided(entry);
     return success(updated, 'Time entry approved');
   }
 
@@ -200,6 +202,7 @@ export class ApprovalService extends EntryServiceBase {
     );
 
     this.emitChanged(data.organizationId, 'reject', data.entryId);
+    await this.tellDayDecided(entry);
     return success(updated, 'Time entry rejected');
   }
 
@@ -240,5 +243,14 @@ export class ApprovalService extends EntryServiceBase {
 
     if (results.approved.length) this.emitChanged(data.organizationId, 'bulk-approve');
     return success(results, `Approved ${results.approved.length} entries`);
+  }
+
+  /** The person hears when the last waiting entry of their day is decided (day-decided.ts). Never fails the decision. */
+  private async tellDayDecided(entry: DecidedEntry) {
+    try {
+      await announceDayDecided(this.prisma, this.notificationClient, entry);
+    } catch (err) {
+      this.logger.warn(`day-decided push skipped: ${err}`);
+    }
   }
 }
