@@ -2707,6 +2707,40 @@ model ApprovalNotice {
   @@map("approval_notices")
 }
 
+/// The nightly label check (task-service attendance/label-check): one row per
+/// organization and local night, claimed by the insert so a night is checked
+/// ONCE across replicas and hours. Engineering only — never shown to a customer.
+model LabelCheckRun {
+  id             String   @id @default(cuid())
+  organizationId String
+  /// The local day that was checked (yyyy-mm-dd, the organization's zone).
+  localDate      String
+  checked        Int      @default(0)
+  mismatches     Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, localDate])
+  @@map("label_check_runs")
+}
+
+/// An entry whose stored labels or approval the label rules, worked out again
+/// from its own labelFacts, do not explain. Never corrected automatically.
+model LabelCheckFinding {
+  id             String   @id @default(cuid())
+  organizationId String
+  entryId        String
+  localDate      String
+  /// What the rules give: { labels: string[], approval?: string }.
+  expected       Json
+  /// What the entry carries: { labels: string[], approval: string }.
+  actual         Json
+  createdAt      DateTime @default(now())
+
+  @@unique([entryId, localDate])
+  @@index([organizationId, createdAt])
+  @@map("label_check_findings")
+}
+
 model ApprovalDelegation {
   id             String       @id @default(cuid())
   organizationId String

@@ -41,6 +41,7 @@ import { WorklogModule } from './modules/worklog/worklog.module';
 import { ShiftIssuesModule } from './modules/shift-issues/shift-issues.module';
 import { ApprovalsModule } from './modules/approvals/approvals.module';
 import { ApprovalRulesModule } from './common/approval-rules/approval-rules.module';
+import { LabelCheckModule } from './modules/label-check/label-check.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { RetentionService } from './common/retention/retention.service';
 
@@ -109,6 +110,7 @@ import { RetentionService } from './common/retention/retention.service';
     ShiftIssuesModule,
     ApprovalsModule,
     ApprovalRulesModule,
+    LabelCheckModule,
     SyncModule,
   ],
   providers: [RetentionService],
