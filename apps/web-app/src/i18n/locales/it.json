@@ -2304,37 +2304,7 @@
       "durationColumn": "Durata",
       "locationColumn": "Sede",
       "statusColumn": "Stato",
-      "noRecords": "Nessuna registrazione di presenza trovata",
-      "state": {
-        "active": "Attivo",
-        "needsReview": "Da verificare",
-        "approved": "Approvato",
-        "rejected": "Rifiutato",
-        "autoApproved": "Approvata automaticamente"
-      },
-      "flag": {
-        "missedClockOut": "Uscita mancante",
-        "geofenceIn": "Entrata fuori area",
-        "geofenceOut": "Uscita fuori area",
-        "late": "In ritardo",
-        "earlyDeparture": "Uscito prima",
-        "overtime": "Straordinario",
-        "unscheduled": "Non pianificato",
-        "recordedOffline": "Registrato offline",
-        "unanchored": "Orologio del telefono non verificato",
-        "clockSuspect": "Orologio del telefono modificato",
-        "stale": "Inviato con oltre una settimana di ritardo",
-        "fixMocked": "Posizione simulata",
-        "boundaryChanged": "Confine della sede modificato da allora",
-        "clockOutProvisional": "Uscita non confermata",
-        "pastDailyLimit": "Oltre il limite di oggi",
-        "missedRest": "Pausa saltata",
-        "remoteWithWorkspace": "Da remoto con spazio assegnato",
-        "approvedRemote": "Da remoto · approvato in anticipo",
-        "autoClockIn": "Entrata automatica",
-        "autoClockOut": "Uscita automatica",
-        "autoRest": "Pausa automatica"
-      }
+      "noRecords": "Nessuna registrazione di presenza trovata"
     },
     "locationsTab": {
       "title": "Assegnazioni di sede",

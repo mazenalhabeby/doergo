@@ -236,7 +236,7 @@ export default function MyAttendancePage() {
                     look comes first and stays amber; what only says how the
                     entry was made (automatic clock, recorded offline) is neutral.
                   */}
-                  {deriveAttendanceFlags(e).slice(0, 2).map((f) => (
+                  {deriveAttendanceFlags(e, { locale }).slice(0, 2).map((f) => (
                     <span
                       key={f.key}
                       className={cn(
@@ -246,7 +246,7 @@ export default function MyAttendancePage() {
                           : "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400",
                       )}
                     >
-                      {t(f.labelKey, { defaultValue: f.fallback })}
+                      {f.label}
                     </span>
                   ))}
                 </div>

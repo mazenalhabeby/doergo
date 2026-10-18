@@ -1,259 +1,85 @@
 import { type TimeEntry } from "@/lib/api"
+import { approvalText, approvalWord, explainLabel, labelWord, sortedLabels } from "@hbcfield/shared/client"
 
 /**
- * Attendance STATUS derivation — what a time entry actually is, for the status
- * cell of any attendance table.
+ * Attendance STATUS and LABELS for any attendance table — read from the one
+ * catalogue in packages/shared/src/attendance/labels.
  *
  * Replaces the old `clockInWithinGeofence ? "In Zone" : "Out of Zone"` badge,
- * which was structurally incapable of showing its second state: manually-added
- * entries hardcode the flag to `true`, pin-less spaces treat distance as 0, and
- * an out-of-ring clock-in was rejected outright — so no normal path ever wrote
- * `false`. Every row read "In Zone" regardless of what happened.
- *
- * A workspace may now permit a granted member to clock in away from the site, so
- * `false` IS reachable. It still does not belong in a badge of its own: those
- * entries carry OUTSIDE_GEOFENCE_IN and land in the approval queue, which is the
- * signal an admin acts on — a second badge saying the same thing more quietly is
- * how two indicators start disagreeing.
+ * which was structurally incapable of showing its second state (every row read
+ * "In Zone"), and the three label lists that used to disagree (Attendance
+ * Management in English only, this file, the phone).
  *
  * The signal an admin actually wants (does this shift need attention?) is
  * already on the entry: `status`, `approvalStatus` and `flagReasons`. This maps
- * those to one primary state chip plus the flags that explain it.
+ * those to one state chip plus the labels that explain it, in the reader's
+ * language, each with its reason when the entry saved one (`labelFacts`).
  *
- * Pure — no React, no i18n. Callers translate `labelKey` (with `fallback` as
- * the default value) and map `tone` to their own palette.
+ * Pure — no React. Callers pass the reader's language and map `tone` to their palette.
  */
 
-export type AttendanceTone =
-  | "green"
-  | "amber"
-  | "red"
-  | "blue"
-  | "orange"
-  | "purple"
-  | "muted"
+export type AttendanceTone = "green" | "amber" | "red" | "blue" | "orange" | "purple" | "muted"
 
 export interface AttendanceChip {
   /** Stable React key / test hook. */
   key: string
   tone: AttendanceTone
-  /** i18n key. */
-  labelKey: string
-  /** English text used when the key is missing from the bundle. */
-  fallback: string
+  /** The words, in the reader's language. */
+  label: string
+  /** Why — only for entries made under the label rules; null shows the chip alone. */
+  explanation?: string | null
+}
+
+export interface LabelReader {
+  locale?: string | null
+  hour12?: boolean
+}
+
+const STATE_TONE: Record<ReturnType<typeof approvalWord>, AttendanceTone> = {
+  active: "green",
+  needsReview: "amber",
+  approved: "blue",
+  autoApproved: "green",
+  rejected: "red",
+}
+
+const STATE_KEY: Record<ReturnType<typeof approvalWord>, string> = {
+  active: "active",
+  needsReview: "pending",
+  approved: "approved",
+  autoApproved: "auto-approved",
+  rejected: "rejected",
 }
 
 /**
- * The row's primary state, most-urgent-first: an open session is "Active"; a
- * closed one reports where it stands in the approval workflow. `AUTO` means the
- * entry cleared every check without a human looking at it.
+ * The row's primary state: an open session is "Active"; a closed one reports
+ * where it stands — needs review, approved, auto-approved (cleared every check
+ * without a person) or rejected.
  */
-export function deriveAttendanceState(entry: TimeEntry): AttendanceChip {
-  if (entry.status === "CLOCKED_IN") {
-    return {
-      key: "active",
-      tone: "green",
-      labelKey: "technicians.attendanceTab.state.active",
-      fallback: "Active",
-    }
-  }
-
-  switch (entry.approvalStatus) {
-    case "REJECTED":
-      return {
-        key: "rejected",
-        tone: "red",
-        labelKey: "technicians.attendanceTab.state.rejected",
-        fallback: "Rejected",
-      }
-    case "PENDING":
-      return {
-        key: "pending",
-        tone: "amber",
-        labelKey: "technicians.attendanceTab.state.needsReview",
-        fallback: "Needs review",
-      }
-    case "APPROVED":
-      return {
-        key: "approved",
-        tone: "blue",
-        labelKey: "technicians.attendanceTab.state.approved",
-        fallback: "Approved",
-      }
-    default:
-      // AUTO — the entry cleared every check, so no human ever looked at it.
-      // Same wording as the org-wide attendance page's autoApproved badge.
-      return {
-        key: "auto-approved",
-        tone: "green",
-        labelKey: "technicians.attendanceTab.state.autoApproved",
-        fallback: "Auto-approved",
-      }
-  }
+export function deriveAttendanceState(entry: TimeEntry, reader: LabelReader = {}): AttendanceChip {
+  const word = approvalWord(entry)
+  return { key: STATE_KEY[word], tone: STATE_TONE[word], label: approvalText(entry, reader.locale) }
 }
 
 /**
- * Flag chips, in a fixed severity order so a row never reshuffles its badges
- * between renders (the entry's own `flagReasons` order is insertion order and
- * varies by code path). An unknown reason still renders, using its raw code —
- * a new backend flag shows up rather than silently vanishing.
+ * Label chips in the catalogue's fixed order, so a row never reshuffles; an
+ * unknown code still renders, muted, under its own name — a new server label
+ * shows up rather than silently vanishing.
  */
-const FLAG_ORDER: Array<{ reason: string; chip: Omit<AttendanceChip, "key"> }> = [
-  // Closed by the open-shift sweep with a temporary time — the member has not confirmed it.
-  {
-    reason: "CLOCK_OUT_PROVISIONAL",
-    chip: {
-      tone: "amber",
-      labelKey: "technicians.attendanceTab.flag.clockOutProvisional",
-      fallback: "Clock-out not confirmed",
-    },
-  },
-  {
-    reason: "MISSED_CLOCK_OUT",
-    chip: {
-      tone: "red",
-      labelKey: "technicians.attendanceTab.flag.missedClockOut",
-      fallback: "Missed clock-out",
-    },
-  },
-  {
-    reason: "OUTSIDE_GEOFENCE_IN",
-    chip: {
-      tone: "amber",
-      labelKey: "technicians.attendanceTab.flag.geofenceIn",
-      fallback: "Clock-in outside zone",
-    },
-  },
-  {
-    reason: "OUTSIDE_GEOFENCE_OUT",
-    chip: {
-      tone: "amber",
-      labelKey: "technicians.attendanceTab.flag.geofenceOut",
-      fallback: "Clock-out outside zone",
-    },
-  },
-  {
-    reason: "LATE_ARRIVAL",
-    chip: {
-      tone: "amber",
-      labelKey: "technicians.attendanceTab.flag.late",
-      fallback: "Late",
-    },
-  },
-  {
-    reason: "REMOTE_WITH_WORKSPACE",
-    chip: {
-      tone: "amber",
-      labelKey: "technicians.attendanceTab.flag.remoteWithWorkspace",
-      fallback: "Remote, has a workspace",
-    },
-  },
-  {
-    reason: "MISSED_BREAK",
-    chip: {
-      tone: "amber",
-      labelKey: "technicians.attendanceTab.flag.missedRest",
-      fallback: "Missed rest",
-    },
-  },
-  {
-    reason: "EARLY_DEPARTURE",
-    chip: {
-      tone: "amber",
-      labelKey: "technicians.attendanceTab.flag.earlyDeparture",
-      fallback: "Left early",
-    },
-  },
-  {
-    reason: "OVERTIME",
-    chip: {
-      tone: "orange",
-      labelKey: "technicians.attendanceTab.flag.overtime",
-      fallback: "Overtime",
-    },
-  },
-  {
-    reason: "PAST_DAILY_LIMIT",
-    chip: {
-      tone: "orange",
-      labelKey: "technicians.attendanceTab.flag.pastDailyLimit",
-      fallback: "Past today's limit",
-    },
-  },
-  {
-    reason: "UNSCHEDULED_DAY",
-    chip: {
-      tone: "purple",
-      labelKey: "technicians.attendanceTab.flag.unscheduled",
-      fallback: "Unscheduled",
-    },
-  },
-  // How the entry was recorded — see packages/shared/src/sync/occurrence.ts.
-  // Red: a person should look. Amber: worth a glance. Muted: said, not judged.
-  {
-    reason: "FIX_MOCKED",
-    chip: { tone: "red", labelKey: "technicians.attendanceTab.flag.fixMocked", fallback: "Mock location" },
-  },
-  {
-    reason: "CLOCK_SUSPECT",
-    chip: { tone: "red", labelKey: "technicians.attendanceTab.flag.clockSuspect", fallback: "Phone clock changed" },
-  },
-  {
-    reason: "BOUNDARY_CHANGED",
-    chip: { tone: "amber", labelKey: "technicians.attendanceTab.flag.boundaryChanged", fallback: "Site boundary changed since" },
-  },
-  {
-    reason: "STALE",
-    chip: { tone: "amber", labelKey: "technicians.attendanceTab.flag.stale", fallback: "Sent over a week late" },
-  },
-  {
-    reason: "RECORDED_OFFLINE",
-    chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.recordedOffline", fallback: "Recorded offline" },
-  },
-  {
-    reason: "UNANCHORED",
-    chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.unanchored", fallback: "Phone clock not checked" },
-  },
-  // Informational: the away/remote work that day was a request approved in advance — never a reason to review.
-  {
-    reason: "APPROVED_REMOTE",
-    chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.approvedRemote", fallback: "Remote · approved in advance" },
-  },
-  // Informational: made by the automatic clock (shared attendance/auto-clock.ts) — marked, never suspected.
-  {
-    reason: "AUTO_CLOCK_IN",
-    chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.autoClockIn", fallback: "Automatic clock-in" },
-  },
-  {
-    reason: "AUTO_CLOCK_OUT",
-    chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.autoClockOut", fallback: "Automatic clock-out" },
-  },
-  {
-    reason: "AUTO_REST",
-    chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.autoRest", fallback: "Automatic rest" },
-  },
-]
-
-export function deriveAttendanceFlags(entry: TimeEntry): AttendanceChip[] {
-  const reasons = entry.flagReasons ?? []
-  if (reasons.length === 0) return []
-
-  const known = FLAG_ORDER.filter((f) => reasons.includes(f.reason)).map((f) => ({
-    key: f.reason,
-    ...f.chip,
+export function deriveAttendanceFlags(entry: TimeEntry, reader: LabelReader = {}): AttendanceChip[] {
+  const ctx = {
+    locale: reader.locale,
+    hour12: reader.hour12,
+    clockInAt: entry.clockInAt,
+    clockOutAt: entry.clockOutAt,
+    timeZone: entry.timezone ?? entry.location?.timezone ?? null,
+  }
+  return sortedLabels(entry.flagReasons).map((l) => ({
+    key: l.code,
+    tone: l.tone,
+    label: labelWord(l.code, reader.locale),
+    explanation: explainLabel(l.code, entry.labelFacts, ctx),
   }))
-
-  const unknown = reasons
-    .filter((r) => !FLAG_ORDER.some((f) => f.reason === r))
-    .map((r) => ({
-      key: r,
-      tone: "muted" as AttendanceTone,
-      labelKey: `technicians.attendanceTab.flag.${r}`,
-      // Raw code, humanized: OUTSIDE_GEOFENCE_IN → "Outside geofence in".
-      fallback: r.charAt(0) + r.slice(1).toLowerCase().replace(/_/g, " "),
-    }))
-
-  return [...known, ...unknown]
 }
 
 /** Recorded on a phone without signal and sent later — the approvals filter reads this. */

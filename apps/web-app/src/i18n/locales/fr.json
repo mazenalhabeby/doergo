@@ -2304,37 +2304,7 @@
       "durationColumn": "Durée",
       "locationColumn": "Site",
       "statusColumn": "Statut",
-      "noRecords": "Aucun enregistrement de présence trouvé",
-      "state": {
-        "active": "En cours",
-        "needsReview": "À vérifier",
-        "approved": "Approuvé",
-        "rejected": "Refusé",
-        "autoApproved": "Approuvé automatiquement"
-      },
-      "flag": {
-        "missedClockOut": "Sortie manquante",
-        "geofenceIn": "Entrée hors zone",
-        "geofenceOut": "Sortie hors zone",
-        "late": "En retard",
-        "earlyDeparture": "Parti plus tôt",
-        "overtime": "Heures supp.",
-        "unscheduled": "Non planifié",
-        "recordedOffline": "Enregistré hors ligne",
-        "unanchored": "Horloge du téléphone non vérifiée",
-        "clockSuspect": "Horloge du téléphone modifiée",
-        "stale": "Envoyé plus d'une semaine après",
-        "fixMocked": "Position simulée",
-        "boundaryChanged": "Limite du site modifiée depuis",
-        "clockOutProvisional": "Sortie non confirmée",
-        "pastDailyLimit": "Au-delà de la limite du jour",
-        "missedRest": "Pause manquée",
-        "remoteWithWorkspace": "À distance, a un espace",
-        "approvedRemote": "À distance · validé à l’avance",
-        "autoClockIn": "Pointage d’arrivée automatique",
-        "autoClockOut": "Pointage de départ automatique",
-        "autoRest": "Pause automatique"
-      }
+      "noRecords": "Aucun enregistrement de présence trouvé"
     },
     "locationsTab": {
       "title": "Affectations de sites",

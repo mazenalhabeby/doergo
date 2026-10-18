@@ -8,31 +8,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Coffee, UtensilsCrossed, Pause, RefreshCw, Calendar, UserPen } from "lucide-react"
 import { formatTime, NoteCell } from "./attendance-helpers"
-import { formatDuration, personName, countryFromTz } from "@hbcfield/shared/client"
+import { formatDuration, personName, countryFromTz, isLabelCode, labelWord } from "@hbcfield/shared/client"
 import type { BreaksTabState } from "./use-breaks-tab"
 import type { BreaksTab } from "./breaks-tab"
 
 /** Part of BreaksTab's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function BreaksTabBreaks(
-  {
-    vm,
-    breakTypeFilter,
-    setBreakTypeFilter,
-    breakDate,
-    setBreakDate,
-    refetchBreakHistory,
-    loadingBreakHistory,
-    breakHistoryData
-  }: {
-    vm: BreaksTabState;
-    breakTypeFilter: Parameters<typeof BreaksTab>[0]['breakTypeFilter'];
-    setBreakTypeFilter: Parameters<typeof BreaksTab>[0]['setBreakTypeFilter'];
-    breakDate: Parameters<typeof BreaksTab>[0]['breakDate'];
-    setBreakDate: Parameters<typeof BreaksTab>[0]['setBreakDate'];
-    refetchBreakHistory: Parameters<typeof BreaksTab>[0]['refetchBreakHistory'];
-    loadingBreakHistory: Parameters<typeof BreaksTab>[0]['loadingBreakHistory'];
-    breakHistoryData: Parameters<typeof BreaksTab>[0]['breakHistoryData']
-  }) {
+export function BreaksTabBreaks({
+  vm,
+  breakTypeFilter,
+  setBreakTypeFilter,
+  breakDate,
+  setBreakDate,
+  refetchBreakHistory,
+  loadingBreakHistory,
+  breakHistoryData,
+}: {
+  vm: BreaksTabState
+  breakTypeFilter: Parameters<typeof BreaksTab>[0]["breakTypeFilter"]
+  setBreakTypeFilter: Parameters<typeof BreaksTab>[0]["setBreakTypeFilter"]
+  breakDate: Parameters<typeof BreaksTab>[0]["breakDate"]
+  setBreakDate: Parameters<typeof BreaksTab>[0]["setBreakDate"]
+  refetchBreakHistory: Parameters<typeof BreaksTab>[0]["refetchBreakHistory"]
+  loadingBreakHistory: Parameters<typeof BreaksTab>[0]["loadingBreakHistory"]
+  breakHistoryData: Parameters<typeof BreaksTab>[0]["breakHistoryData"]
+}) {
   const { t, breakTypeKey, hour12, locale, breakTz } = vm
   return (
     <div className="bg-card rounded-2xl border border-border/60 shadow-sm">
@@ -40,16 +39,11 @@ export function BreaksTabBreaks(
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-foreground">{t("attendance.breaks.breakHistory")}</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t("attendance.breaks.viewPastRecords")}
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">{t("attendance.breaks.viewPastRecords")}</p>
           </div>
           <div className="flex items-center gap-3">
             {/* Break Type Filter */}
-            <Select
-              value={breakTypeFilter}
-              onValueChange={setBreakTypeFilter}
-            >
+            <Select value={breakTypeFilter} onValueChange={setBreakTypeFilter}>
               <SelectTrigger className="w-[130px] h-10 rounded-lg bg-card border-border/80 shadow-sm">
                 <SelectValue placeholder={t("attendance.breaks.typeFilter")} />
               </SelectTrigger>
@@ -116,22 +110,24 @@ export function BreaksTabBreaks(
                     <UserAvatar
                       firstName={breakItem.user?.firstName}
                       lastName={breakItem.user?.lastName}
-        
+
                       seed={breakItem.user?.id}
                       size="md"
                     />
-                    <span className="font-medium text-foreground">
-                      {personName(breakItem.user)}
-                    </span>
+                    <span className="font-medium text-foreground">{personName(breakItem.user)}</span>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className={cn(
-                    "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border",
-                    breakItem.type === "LUNCH" ? "bg-amber-500/10 text-amber-700 border-amber-200" :
-                    breakItem.type === "SHORT" ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200" :
-                    "bg-muted text-foreground border-border"
-                  )}>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border",
+                      breakItem.type === "LUNCH"
+                        ? "bg-amber-500/10 text-amber-700 border-amber-200"
+                        : breakItem.type === "SHORT"
+                          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200"
+                          : "bg-muted text-foreground border-border",
+                    )}
+                  >
                     {breakItem.type === "LUNCH" ? (
                       <UtensilsCrossed className="size-3.5" />
                     ) : breakItem.type === "SHORT" ? (
@@ -145,13 +141,13 @@ export function BreaksTabBreaks(
                 <TableCell className="text-foreground">
                   <div>{formatTime(breakItem.startedAt, hour12, locale, breakTz(breakItem))}</div>
                   {countryFromTz(breakTz(breakItem), locale) && (
-                    <div className="text-xs text-muted-foreground">
-                      {countryFromTz(breakTz(breakItem), locale)}
-                    </div>
+                    <div className="text-xs text-muted-foreground">{countryFromTz(breakTz(breakItem), locale)}</div>
                   )}
                 </TableCell>
                 <TableCell className="text-foreground">
-                  {breakItem.endedAt ? formatTime(breakItem.endedAt, hour12, locale, breakTz(breakItem)) : (
+                  {breakItem.endedAt ? (
+                    formatTime(breakItem.endedAt, hour12, locale, breakTz(breakItem))
+                  ) : (
                     <span className="text-orange-600">{t("attendance.breaks.onBreak")}</span>
                   )}
                 </TableCell>
@@ -178,7 +174,14 @@ export function BreaksTabBreaks(
                   )}
                 </TableCell>
                 <TableCell>
-                  <NoteCell note={breakItem.reason || breakItem.notes} />
+                  {/* A rest the automatic clock inserted carries its label code as the reason — show its words. */}
+                  <NoteCell
+                    note={
+                      isLabelCode(breakItem.reason)
+                        ? labelWord(breakItem.reason, locale)
+                        : breakItem.reason || breakItem.notes
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ))}

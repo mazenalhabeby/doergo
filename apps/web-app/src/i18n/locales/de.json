@@ -2304,37 +2304,7 @@
       "durationColumn": "Dauer",
       "locationColumn": "Standort",
       "statusColumn": "Status",
-      "noRecords": "Keine Anwesenheitsdaten gefunden",
-      "state": {
-        "active": "Aktiv",
-        "needsReview": "Prüfung nötig",
-        "approved": "Genehmigt",
-        "rejected": "Abgelehnt",
-        "autoApproved": "Automatisch genehmigt"
-      },
-      "flag": {
-        "missedClockOut": "Ausstempeln fehlt",
-        "geofenceIn": "Einstempeln außerhalb",
-        "geofenceOut": "Ausstempeln außerhalb",
-        "late": "Verspätet",
-        "earlyDeparture": "Früher gegangen",
-        "overtime": "Überstunden",
-        "unscheduled": "Ungeplant",
-        "recordedOffline": "Offline erfasst",
-        "unanchored": "Telefonuhr nicht geprüft",
-        "clockSuspect": "Telefonuhr verstellt",
-        "stale": "Über eine Woche später gesendet",
-        "fixMocked": "Standort vorgetäuscht",
-        "boundaryChanged": "Standortgrenze seitdem geändert",
-        "clockOutProvisional": "Ausstempeln nicht bestätigt",
-        "pastDailyLimit": "Über dem Tageslimit",
-        "missedRest": "Pause verpasst",
-        "remoteWithWorkspace": "Auswärts trotz Arbeitsbereich",
-        "approvedRemote": "Remote · im Voraus genehmigt",
-        "autoClockIn": "Automatisch eingestempelt",
-        "autoClockOut": "Automatisch ausgestempelt",
-        "autoRest": "Automatische Pause"
-      }
+      "noRecords": "Keine Anwesenheitsdaten gefunden"
     },
     "locationsTab": {
       "title": "Standortzuweisungen",

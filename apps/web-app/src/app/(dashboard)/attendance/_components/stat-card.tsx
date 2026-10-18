@@ -6,34 +6,23 @@ import { cn, formatTimeOfDay } from "@/lib/utils"
 import { type TimeEntry } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
-import { personName, countryFromTz } from "@hbcfield/shared/client"
+import { personName, countryFromTz, approvalText } from "@hbcfield/shared/client"
 import { EditHistoryDialog } from "./edit-history-dialog"
-import { FLAG_BADGE_CONFIG } from "./stat-card-parts"
 import { StatTile } from "@/components/ui/stat-tile"
-export { FLAG_BADGE_CONFIG } from "./stat-card-parts"
+import { deriveAttendanceFlags } from "@/lib/attendance-status"
+import { LabelChip } from "@/components/attendance-label-chip"
+import { useTimeFormat } from "@/hooks/use-time-format"
 
-export function FlagReasonBadges({ reasons }: { reasons?: string[] }) {
-  const { t } = useTranslation()
-  if (!reasons || reasons.length === 0) return null
+/** An entry's labels — the one catalogue's words, order and colours, with each reason on hover. */
+export function FlagReasonBadges({ entry }: { entry: TimeEntry }) {
+  const reader = useTimeFormat()
+  const chips = deriveAttendanceFlags(entry, reader)
+  if (chips.length === 0) return null
   return (
     <div className="flex flex-wrap gap-1">
-      {reasons.map((reason) => {
-        const config = FLAG_BADGE_CONFIG[reason] || {
-          label: reason,
-          className: "bg-muted text-muted-foreground border-border",
-        }
-        return (
-          <span
-            key={reason}
-            className={cn(
-              "inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full border",
-              config.className,
-            )}
-          >
-            {config.labelKey ? t(config.labelKey, { defaultValue: config.label }) : config.label}
-          </span>
-        )
-      })}
+      {chips.map((chip) => (
+        <LabelChip key={chip.key} chip={chip} />
+      ))}
     </div>
   )
 }
@@ -122,31 +111,33 @@ export function ClockCell({
 
 /** Approval cell: approval-state badge with any smart-flag badges beneath. */
 export function ApprovalCell({ entry }: { entry: TimeEntry }) {
-  const { t } = useTranslation()
+  const { locale } = useTimeFormat()
+  // Where the entry stands with a person — the same words as the member page (shared catalogue).
+  const word = approvalText({ approvalStatus: entry.approvalStatus }, locale)
   return (
     <div className="space-y-1">
       {entry.approvalStatus === "AUTO" ? (
         <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
           <CheckCircle2 className="size-3.5" />
-          {t("attendance.tracking.autoApproved")}
+          {word}
         </span>
       ) : entry.approvalStatus === "APPROVED" ? (
         <span className="inline-flex items-center gap-1 text-xs text-blue-600 font-medium">
           <CheckCircle2 className="size-3.5" />
-          {t("common.approved")}
+          {word}
         </span>
       ) : entry.approvalStatus === "REJECTED" ? (
         <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium">
           <XCircle className="size-3.5" />
-          {t("common.rejected")}
+          {word}
         </span>
       ) : (
         <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
           <Clock className="size-3.5" />
-          {t("common.pending")}
+          {word}
         </span>
       )}
-      <FlagReasonBadges reasons={entry.flagReasons} />
+      <FlagReasonBadges entry={entry} />
       <EditedBadge entry={entry} />
     </div>
   )

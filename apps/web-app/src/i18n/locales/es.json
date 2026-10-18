@@ -2304,37 +2304,7 @@
       "durationColumn": "Duración",
       "locationColumn": "Ubicación",
       "statusColumn": "Estado",
-      "noRecords": "No se encontraron registros de asistencia",
-      "state": {
-        "active": "Activo",
-        "needsReview": "Requiere revisión",
-        "approved": "Aprobado",
-        "rejected": "Rechazado",
-        "autoApproved": "Aprobado automáticamente"
-      },
-      "flag": {
-        "missedClockOut": "Sin salida registrada",
-        "geofenceIn": "Entrada fuera de zona",
-        "geofenceOut": "Salida fuera de zona",
-        "late": "Tarde",
-        "earlyDeparture": "Salió antes",
-        "overtime": "Horas extra",
-        "unscheduled": "Sin programar",
-        "recordedOffline": "Registrado sin conexión",
-        "unanchored": "Reloj del teléfono sin verificar",
-        "clockSuspect": "Reloj del teléfono cambiado",
-        "stale": "Enviado más de una semana tarde",
-        "fixMocked": "Ubicación simulada",
-        "boundaryChanged": "Límite del sitio cambiado desde entonces",
-        "clockOutProvisional": "Salida sin confirmar",
-        "pastDailyLimit": "Por encima del límite diario",
-        "missedRest": "Descanso perdido",
-        "remoteWithWorkspace": "Remoto con espacio asignado",
-        "approvedRemote": "Remoto · aprobado de antemano",
-        "autoClockIn": "Entrada automática",
-        "autoClockOut": "Salida automática",
-        "autoRest": "Descanso automático"
-      }
+      "noRecords": "No se encontraron registros de asistencia"
     },
     "locationsTab": {
       "title": "Asignaciones de ubicación",

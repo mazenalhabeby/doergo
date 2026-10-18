@@ -1,6 +1,7 @@
 /** A shift as recorded, the caller's status, and time spent outside the ring. */
 import { ApprovalStatus, TimeEntryStatus } from '../enums';
 import type { CompanyLocation } from './location';
+import type { LabelFacts } from '../../attendance/labels/contract';
 
 // ============================================================================
 // TIME ENTRY (Clock-in/Clock-out)
@@ -45,6 +46,10 @@ export interface TimeEntry {
   paidMinutes?: number | null;
   notes: string | null;
   flagReasons: string[];
+  /** What the labels were judged against — only on entries made under the label rules (null on older ones). */
+  labelFacts?: LabelFacts | null;
+  /** The label rules version the entry was made under; null = before them (never re-judged). */
+  labelRules?: number | null;
   approvalStatus: ApprovalStatus;
   approvedById: string | null;
   approvedAt: string | null;

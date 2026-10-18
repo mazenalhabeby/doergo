@@ -2304,37 +2304,7 @@
       "durationColumn": "Duration",
       "locationColumn": "Location",
       "statusColumn": "Status",
-      "noRecords": "No attendance records found",
-      "state": {
-        "active": "Active",
-        "needsReview": "Needs review",
-        "approved": "Approved",
-        "rejected": "Rejected",
-        "autoApproved": "Auto-approved"
-      },
-      "flag": {
-        "missedClockOut": "Missed clock-out",
-        "geofenceIn": "Clock-in outside zone",
-        "geofenceOut": "Clock-out outside zone",
-        "late": "Late",
-        "earlyDeparture": "Left early",
-        "overtime": "Overtime",
-        "unscheduled": "Unscheduled",
-        "recordedOffline": "Recorded offline",
-        "unanchored": "Phone clock not checked",
-        "clockSuspect": "Phone clock changed",
-        "stale": "Sent over a week late",
-        "fixMocked": "Mock location",
-        "boundaryChanged": "Site boundary changed since",
-        "clockOutProvisional": "Clock-out not confirmed",
-        "pastDailyLimit": "Past today's limit",
-        "missedRest": "Missed rest",
-        "remoteWithWorkspace": "Remote, has a workspace",
-        "approvedRemote": "Remote · approved in advance",
-        "autoClockIn": "Automatic clock-in",
-        "autoClockOut": "Automatic clock-out",
-        "autoRest": "Automatic rest"
-      }
+      "noRecords": "No attendance records found"
     },
     "locationsTab": {
       "title": "Location Assignments",

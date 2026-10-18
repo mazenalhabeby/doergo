@@ -1,6 +1,6 @@
-import type { TimeEntry } from '@/lib/api'
+import type { TimeEntry } from "@/lib/api"
 
-import { deriveAttendanceFlags, deriveAttendanceState } from '../attendance-status'
+import { deriveAttendanceFlags, deriveAttendanceState } from "../attendance-status"
 
 /**
  * The status column used to render `clockInWithinGeofence`, which no normal code
@@ -9,96 +9,114 @@ import { deriveAttendanceFlags, deriveAttendanceState } from '../attendance-stat
  */
 
 const entry = (over: Record<string, unknown> = {}): TimeEntry =>
-  ({ id: 'e1', status: 'CLOCKED_OUT', approvalStatus: 'AUTO', flagReasons: [], ...over }) as unknown as TimeEntry
+  ({ id: "e1", status: "CLOCKED_OUT", approvalStatus: "AUTO", flagReasons: [], ...over }) as unknown as TimeEntry
 
-describe('deriveAttendanceState', () => {
-  it('reports an open session as Active regardless of approval state', () => {
-    const s = deriveAttendanceState(entry({ status: 'CLOCKED_IN', approvalStatus: 'PENDING' }))
-    expect(s.key).toBe('active')
-    expect(s.tone).toBe('green')
+describe("deriveAttendanceState", () => {
+  it("reports an open session as Active regardless of approval state", () => {
+    const s = deriveAttendanceState(entry({ status: "CLOCKED_IN", approvalStatus: "PENDING" }))
+    expect(s.key).toBe("active")
+    expect(s.tone).toBe("green")
   })
 
   it.each([
-    ['PENDING', 'pending', 'amber'],
-    ['APPROVED', 'approved', 'blue'],
-    ['REJECTED', 'rejected', 'red'],
-    ['AUTO', 'auto-approved', 'green'],
-  ])('maps a closed %s entry to %s', (approvalStatus, key, tone) => {
+    ["PENDING", "pending", "amber"],
+    ["APPROVED", "approved", "blue"],
+    ["REJECTED", "rejected", "red"],
+    ["AUTO", "auto-approved", "green"],
+  ])("maps a closed %s entry to %s", (approvalStatus, key, tone) => {
     const s = deriveAttendanceState(entry({ approvalStatus }))
     expect(s.key).toBe(key)
     expect(s.tone).toBe(tone)
   })
 
-  it('falls back to auto-approved for an unrecognised approval state', () => {
-    expect(deriveAttendanceState(entry({ approvalStatus: 'WEIRD' })).key).toBe('auto-approved')
+  it("falls back to auto-approved for an unrecognised approval state", () => {
+    expect(deriveAttendanceState(entry({ approvalStatus: "WEIRD" })).key).toBe("auto-approved")
   })
 
-  it('always carries an English fallback, so a missing translation never blanks the cell', () => {
-    expect(deriveAttendanceState(entry()).fallback).toBeTruthy()
+  it("always carries words, so a missing translation never blanks the cell", () => {
+    expect(deriveAttendanceState(entry()).label).toBe("Auto-approved")
+    expect(deriveAttendanceState(entry(), { locale: "xx" }).label).toBe("Auto-approved")
+  })
+
+  it('says "Needs review" for a waiting entry — the same words on every surface', () => {
+    expect(deriveAttendanceState(entry({ approvalStatus: "PENDING" })).label).toBe("Needs review")
   })
 })
 
-describe('deriveAttendanceFlags', () => {
-  it('returns nothing for a clean entry', () => {
+describe("deriveAttendanceFlags", () => {
+  it("returns nothing for a clean entry", () => {
     expect(deriveAttendanceFlags(entry())).toEqual([])
   })
 
-  it('tolerates a missing flagReasons field', () => {
+  it("tolerates a missing flagReasons field", () => {
     expect(deriveAttendanceFlags(entry({ flagReasons: undefined }))).toEqual([])
   })
 
-  it('orders by severity, not by the order the server happened to store them', () => {
-    const flags = deriveAttendanceFlags(
-      entry({ flagReasons: ['UNSCHEDULED_DAY', 'LATE_ARRIVAL', 'MISSED_CLOCK_OUT'] }),
-    )
-    expect(flags.map((f) => f.key)).toEqual(['MISSED_CLOCK_OUT', 'LATE_ARRIVAL', 'UNSCHEDULED_DAY'])
+  it("orders by severity, not by the order the server happened to store them", () => {
+    const flags = deriveAttendanceFlags(entry({ flagReasons: ["UNSCHEDULED_DAY", "LATE_ARRIVAL", "MISSED_CLOCK_OUT"] }))
+    expect(flags.map((f) => f.key)).toEqual(["MISSED_CLOCK_OUT", "LATE_ARRIVAL", "UNSCHEDULED_DAY"])
   })
 
-  it('is stable: the same reasons in a different order give the same output', () => {
-    const a = deriveAttendanceFlags(entry({ flagReasons: ['OVERTIME', 'LATE_ARRIVAL'] }))
-    const b = deriveAttendanceFlags(entry({ flagReasons: ['LATE_ARRIVAL', 'OVERTIME'] }))
+  it("is stable: the same reasons in a different order give the same output", () => {
+    const a = deriveAttendanceFlags(entry({ flagReasons: ["OVERTIME", "LATE_ARRIVAL"] }))
+    const b = deriveAttendanceFlags(entry({ flagReasons: ["LATE_ARRIVAL", "OVERTIME"] }))
     expect(a.map((f) => f.key)).toEqual(b.map((f) => f.key))
   })
 
-  it('still surfaces a flag the frontend does not know yet, humanised', () => {
-    const [chip] = deriveAttendanceFlags(entry({ flagReasons: ['SOME_NEW_FLAG'] }))
-    expect(chip.key).toBe('SOME_NEW_FLAG')
-    expect(chip.fallback).toBe('Some new flag')
-    expect(chip.tone).toBe('muted')
+  it("still surfaces a flag the frontend does not know yet, humanised", () => {
+    const [chip] = deriveAttendanceFlags(entry({ flagReasons: ["SOME_NEW_FLAG"] }))
+    expect(chip.key).toBe("SOME_NEW_FLAG")
+    expect(chip.label).toBe("Some new flag")
+    expect(chip.tone).toBe("muted")
   })
 
-  it('keeps known flags ahead of unknown ones', () => {
-    const flags = deriveAttendanceFlags(entry({ flagReasons: ['SOME_NEW_FLAG', 'OVERTIME'] }))
-    expect(flags.map((f) => f.key)).toEqual(['OVERTIME', 'SOME_NEW_FLAG'])
+  it("keeps known flags ahead of unknown ones", () => {
+    const flags = deriveAttendanceFlags(entry({ flagReasons: ["SOME_NEW_FLAG", "OVERTIME"] }))
+    expect(flags.map((f) => f.key)).toEqual(["OVERTIME", "SOME_NEW_FLAG"])
   })
 
-  it('shows APPROVED_REMOTE as a calm, neutral chip — approved in advance explains, it never asks for a look', () => {
-    const [chip] = deriveAttendanceFlags(entry({ flagReasons: ['APPROVED_REMOTE'] }))
-    expect(chip).toMatchObject({ key: 'APPROVED_REMOTE', tone: 'muted', labelKey: 'technicians.attendanceTab.flag.approvedRemote' })
+  it("shows APPROVED_REMOTE as a calm, neutral chip — approved in advance explains, it never asks for a look", () => {
+    const [chip] = deriveAttendanceFlags(entry({ flagReasons: ["APPROVED_REMOTE"] }))
+    expect(chip).toMatchObject({ key: "APPROVED_REMOTE", tone: "muted", label: "Remote · approved in advance" })
   })
 
   it.each([
-    ['AUTO_CLOCK_IN', 'autoClockIn'],
-    ['AUTO_CLOCK_OUT', 'autoClockOut'],
-    ['AUTO_REST', 'autoRest'],
-  ])('shows %s as a neutral informational chip with its own label — never a warning colour', (flag, key) => {
+    ["AUTO_CLOCK_IN", "Automatic clock-in"],
+    ["AUTO_CLOCK_OUT", "Automatic clock-out"],
+    ["AUTO_REST", "Automatic rest"],
+  ])("shows %s as a neutral informational chip with its own label — never a warning colour", (flag, label) => {
     const [chip] = deriveAttendanceFlags(entry({ flagReasons: [flag] }))
-    expect(chip).toMatchObject({ key: flag, tone: 'muted', labelKey: `technicians.attendanceTab.flag.${key}` })
+    expect(chip).toMatchObject({ key: flag, tone: "muted", label })
   })
 
-  it('puts what asks for a look ahead of the automatic-clock marks', () => {
-    const flags = deriveAttendanceFlags(entry({ flagReasons: ['AUTO_CLOCK_IN', 'LATE_ARRIVAL'] }))
-    expect(flags.map((f) => f.key)).toEqual(['LATE_ARRIVAL', 'AUTO_CLOCK_IN'])
+  it("puts what asks for a look ahead of the automatic-clock marks", () => {
+    const flags = deriveAttendanceFlags(entry({ flagReasons: ["AUTO_CLOCK_IN", "LATE_ARRIVAL"] }))
+    expect(flags.map((f) => f.key)).toEqual(["LATE_ARRIVAL", "AUTO_CLOCK_IN"])
   })
 
-  it('has every informational flag the shared contract names in all five languages', () => {
-    const { INFORMATIONAL_FLAGS } = jest.requireActual('@hbcfield/shared/client') as { INFORMATIONAL_FLAGS: ReadonlySet<string> }
-    const langs = ['en', 'de', 'es', 'fr', 'it'].map((l) => jest.requireActual(`@/i18n/locales/${l}.json`) as { technicians: { attendanceTab: { flag: Record<string, string> } } })
-    for (const flag of INFORMATIONAL_FLAGS) {
-      const [chip] = deriveAttendanceFlags(entry({ flagReasons: [flag] }))
-      expect(chip.tone).toBe('muted')
-      const leaf = chip.labelKey.split('.').pop()!
-      for (const l of langs) expect(l.technicians.attendanceTab.flag[leaf]).toBeTruthy()
+  it("has every informational flag the shared contract names in all five languages", () => {
+    const { INFORMATIONAL_FLAGS, LABEL_WORDS } = jest.requireActual("@hbcfield/shared/client") as {
+      INFORMATIONAL_FLAGS: ReadonlySet<string>
+      LABEL_WORDS: Record<string, { label: Record<string, string> }>
     }
+    for (const flag of INFORMATIONAL_FLAGS) {
+      for (const locale of ["en", "de", "es", "fr", "it"]) {
+        const [chip] = deriveAttendanceFlags(entry({ flagReasons: [flag] }), { locale })
+        expect(chip.tone).toBe("muted")
+        // The catalogue's own word in that language, never a humanised fallback.
+        expect(LABEL_WORDS[locale].label[flag]).toBeTruthy()
+        expect(chip.label).toBe(LABEL_WORDS[locale].label[flag])
+      }
+    }
+  })
+
+  it("speaks the reader’s language", () => {
+    const [chip] = deriveAttendanceFlags(entry({ flagReasons: ["LATE_ARRIVAL"] }), { locale: "de-DE" })
+    expect(chip.label).toBe("Verspätet")
+  })
+
+  it("carries no reason for an entry from before the label rules", () => {
+    const [chip] = deriveAttendanceFlags(entry({ flagReasons: ["LATE_ARRIVAL"] }))
+    expect(chip.explanation).toBeNull()
   })
 })
