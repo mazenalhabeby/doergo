@@ -6,6 +6,8 @@ import {
   APPROVAL_GROUPS,
   APPROVAL_KINDS,
   describeApproval,
+  memberKey,
+  type ApprovalDay,
   type ApprovalItem,
   type ApprovalKind,
   type ApprovalT,
@@ -21,6 +23,10 @@ import { WellRow } from '../register/well-row';
 import { approvalKey, loadApprovals } from './approvals-store';
 import { StandInSheet } from './stand-in-sheet';
 import { refreshControl } from '../pull-refresh';
+import { ApprovalDayRow } from './approval-day-row';
+
+/** A list row: one item, or a person's working day that groups several. */
+type Row = { day: ApprovalDay; item?: undefined } | { item: ApprovalItem; day?: undefined };
 
 type Filter = ApprovalKind | 'all';
 
@@ -38,6 +44,7 @@ export function ApprovalsScreen() {
   const wide = r.isTablet ? centeredContent(720) : null;
 
   const [items, setItems] = useState<ApprovalItem[] | null>(null);
+  const [days, setDays] = useState<ApprovalDay[]>([]);
   const [unavailable, setUnavailable] = useState<string[]>([]);
   const [failed, setFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,6 +62,7 @@ export function ApprovalsScreen() {
     try {
       const res = await loadApprovals();
       setItems(res.items);
+      setDays(res.days ?? []);
       setUnavailable(res.unavailable);
       setFailed(false);
     } catch {
@@ -72,10 +80,24 @@ export function ApprovalsScreen() {
     for (const i of items ?? []) n.set(i.kind, (n.get(i.kind) ?? 0) + 1);
     return n;
   }, [items]);
-  const shown = useMemo(() => (items ?? []).filter((i) => filter === 'all' || i.kind === filter), [items, filter]);
+  // A person's working day is one row; the items it holds are opened from it.
+  const grouped = useMemo(() => new Set(days.flatMap((d) => d.members.map(memberKey))), [days]);
+  const shown = useMemo(
+    () => (items ?? []).filter((i) => (filter === 'all' || i.kind === filter) && !grouped.has(approvalKey(i))),
+    [items, filter, grouped],
+  );
+  const shownDays = useMemo(() => days.filter((d) => filter === 'all' || d.members.some((m) => m.kind === filter)), [days, filter]);
+  const membersOf = (d: ApprovalDay) => (items ?? []).filter((i) => d.members.some((m) => memberKey(m) === approvalKey(i)));
   const sections = useMemo(
-    () => APPROVAL_GROUPS.map((g) => ({ group: g, data: shown.filter((i) => i.group === g) })).filter((s) => s.data.length > 0),
-    [shown],
+    () =>
+      APPROVAL_GROUPS.map((g) => ({
+        group: g,
+        data: [
+          ...shownDays.filter((d) => d.group === g).map((day): Row => ({ day })),
+          ...shown.filter((i) => i.group === g).map((item): Row => ({ item })),
+        ],
+      })).filter((s) => s.data.length > 0),
+    [shown, shownDays],
   );
 
   const tt = t as unknown as ApprovalT;
@@ -119,7 +141,7 @@ export function ApprovalsScreen() {
       />
       <SectionList
         sections={items ? sections : []}
-        keyExtractor={(x) => approvalKey(x)}
+        keyExtractor={(x) => (x.day ? x.day.key : approvalKey(x.item))}
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={header}
         showsVerticalScrollIndicator={false}
@@ -148,12 +170,14 @@ export function ApprovalsScreen() {
             )}
           </View>
         }
-        renderItem={({ item, index, section }) => {
+        renderItem={({ item: row, index, section }) => {
+          if (row.day) return <ApprovalDayRow day={row.day} members={membersOf(row.day)} onDone={() => void load('refresh')} />;
+          const item = row.item;
           const text = describeApproval(item, tt, i18n.language);
           const lead = text.facts[0]?.value;
           return (
             <WellRow
-              first={index === 0}
+              first={index === 0 || !!section.data[index - 1]?.day}
               last={index === section.data.length - 1}
               title={item.subject.name || t('approvals.someone')}
               detail={[

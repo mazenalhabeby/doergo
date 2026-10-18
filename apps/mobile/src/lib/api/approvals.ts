@@ -9,14 +9,16 @@ import type {
   ApprovalKind,
   ApprovalRouting,
   ApprovalsCount,
-  ApprovalsResponse,
+  ApprovalInbox,
+  ApprovalDayMember,
+  ApproveDayResult,
   StandInInput,
   StandInView,
   StandInsResponse,
 } from '@hbcfield/shared/client';
 
 export const approvalsApi = {
-  list: async (): Promise<ApprovalsResponse> => {
+  list: async (): Promise<ApprovalInbox> => {
     const r = await call(E.approvals.list);
     return (r?.items ? r : r?.data) ?? { items: [], unavailable: [], generatedAt: '' };
   },
@@ -43,5 +45,10 @@ export const approvalsApi = {
   decide: async (decision: ApprovalDecision): Promise<{ stage?: 'FIRST_STEP'; waitingFor?: string }> => {
     const r = await call(E.approvals.decide, undefined, { body: decision });
     return (r?.decided ? r : r?.data) ?? {};
+  },
+  /** "Approve day": each member through its own route; stops at the first refusal and says which. */
+  decideDay: async (members: ApprovalDayMember[]): Promise<ApproveDayResult> => {
+    const r = await call(E.approvals.decideDay, undefined, { body: { members } });
+    return (Array.isArray(r?.results) ? r : r?.data) ?? { complete: false, results: [] };
   },
 };

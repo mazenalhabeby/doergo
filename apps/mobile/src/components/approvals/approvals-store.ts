@@ -1,4 +1,4 @@
-import type { ApprovalItem, ApprovalsResponse } from '@hbcfield/shared/client';
+import type { ApprovalInbox, ApprovalItem } from '@hbcfield/shared/client';
 import { approvalsApi } from '../../lib/api';
 
 /**
@@ -13,7 +13,7 @@ export function knownApproval(key: string): ApprovalItem | null {
   return known.get(key) ?? null;
 }
 
-export async function loadApprovals(): Promise<ApprovalsResponse> {
+export async function loadApprovals(): Promise<ApprovalInbox> {
   const res = await approvalsApi.list();
   known.clear();
   for (const i of res.items) known.set(approvalKey(i), i);
