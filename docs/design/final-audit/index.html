@@ -1,0 +1,206 @@
+<title>Final Audit Before Deploy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: a pre-flight sheet — the verdict, then removed / kept, security, checks, live scenarios, the known issue and the deploy runbook. */
+:root{
+  --bg:#eef2f5; --card:#ffffff; --ink:#0f1d2b; --muted:#5a6879; --line:#d9e0e8; --soft:#f5f7fa;
+  --brand:#2563eb; --brandSoft:#2563eb14; --amber:#b45309; --amberSoft:#b4530916; --green:#047857; --greenSoft:#04785716;
+  --red:#b42318; --redSoft:#b4231814;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif; --sans:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace; --ar:"IBM Plex Sans Arabic","Geeza Pro","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#0b1118; --card:#121b25; --ink:#e3ebf3; --muted:#93a3b5; --line:#223042; --soft:#16212d;
+  --brand:#6b9bff; --brandSoft:#6b9bff1f; --amber:#f0a94a; --amberSoft:#f0a94a1f; --green:#4fc79c; --greenSoft:#4fc79c1f;
+  --red:#f2836f; --redSoft:#f2836f1f;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#0b1118; --card:#121b25; --ink:#e3ebf3; --muted:#93a3b5; --line:#223042; --soft:#16212d;
+  --brand:#6b9bff; --brandSoft:#6b9bff1f; --amber:#f0a94a; --amberSoft:#f0a94a1f; --green:#4fc79c; --greenSoft:#4fc79c1f;
+  --red:#f2836f; --redSoft:#f2836f1f;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:36px 140px;display:flex;flex-direction:column;gap:24px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(32px,5.5vw,52px);font-weight:800;letter-spacing:-.02em;line-height:1.04}
+h2{font-size:clamp(21px,3vw,27px);font-weight:700}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.lede{font-size:18px;color:var(--muted);max-width:64ch}
+.lede b{color:var(--ink);font-weight:600}
+section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:16px;scroll-margin:24px;transition:box-shadow .3s}
+section.speaking{box-shadow:0 0 0 3px var(--brand)}
+section > header{display:flex;flex-direction:column;gap:6px;max-width:72ch}
+section > header p{color:var(--muted)}
+.hero{background:transparent;border:0;padding:0;gap:16px}
+.verdict{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;background:var(--greenSoft);color:var(--green);border-radius:999px;padding:8px 16px;font-weight:700;font-family:var(--display);font-size:17px}
+.verdict i{width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block}
+.listen{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-family:var(--ar);font-size:13px;background:var(--brandSoft);color:var(--brand);border:0;border-radius:999px;padding:5px 12px;cursor:pointer}
+button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.areas{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.area{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--soft);display:flex;flex-direction:column;gap:8px;min-width:0}
+.area .big{font-family:var(--display);font-size:26px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.area ul{margin:0;padding-left:18px;display:grid;gap:3px;font-size:14px;color:var(--muted)}
+.kept{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.k{border-left:3px solid var(--brand);padding:6px 0 6px 12px;display:flex;flex-direction:column;gap:2px}
+.k p{font-size:14px;color:var(--muted)}
+.rows{display:flex;flex-direction:column}
+.row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px;align-items:center}
+.row:last-child{border-bottom:0}
+.ok{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--green);background:var(--greenSoft);border-radius:6px;padding:2px 8px;white-space:nowrap}
+.warn{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--amber);background:var(--amberSoft);border-radius:6px;padding:2px 8px;white-space:nowrap}
+.mig{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--soft)}
+.stat .n{font-family:var(--display);font-size:28px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .l{font-size:13.5px;color:var(--muted)}
+.scen{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+.sc{display:flex;justify-content:space-between;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px}
+.run{counter-reset:r;display:flex;flex-direction:column;gap:10px}
+.run li{list-style:none;display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:start}
+.run li::before{counter-increment:r;content:counter(r);width:26px;height:26px;border-radius:50%;background:var(--brandSoft);color:var(--brand);display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600}
+.run li p{font-size:14.5px;color:var(--muted)}
+.run{padding:0;margin:0}
+.player{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line);z-index:5}
+.player .inner{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.pbtn{width:42px;height:42px;border-radius:50%;border:0;background:var(--brand);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+.pstop{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:6px 12px;font-family:var(--ar);cursor:pointer}
+.pmeta{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.pnow{font-family:var(--ar);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:var(--brand)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <section class="hero" id="sec-intro">
+    <span class="eyebrow">Branch refactor/code-audit-2026-10 · 18 Oct · not deployed</span>
+    <h1>Final audit before deploy</h1>
+    <p class="lede">Every part of the code was checked — servers, web, phone, operator console and the shared package. <b>What isn’t used was removed</b>; what is used stayed. Then every check ran again.</p>
+    <span class="verdict"><i></i>Ready to deploy after your review</span>
+  </section>
+
+  <section id="sec-removed">
+    <header><span class="eyebrow">Removed</span><h2>Only what nothing uses — each one checked by hand</h2></header>
+    <div class="areas">
+      <div class="area"><h3>Servers + shared</h3><div class="big">~2,200 lines</div><ul><li>~200 unused imports</li><li>73 injected services nobody used</li><li>157 shared exports with no user</li><li>18 dead settings (incl. the old 30-min late threshold)</li><li>3 unused dev dependencies</li></ul></div>
+      <div class="area"><h3>Web + console</h3><div class="big">402 exports</div><ul><li>2 dead files and their tests</li><li>Unused shadcn sub-components</li><li>Old badge and sidebar CSS</li></ul></div>
+      <div class="area"><h3>Phone</h3><div class="big">92 names</div><ul><li>~20 leftover re-exports</li><li>Dead API wrappers (moved to Approvals)</li><li>2 unused files</li></ul></div>
+      <div class="area"><h3>Tools</h3><div class="big">21 scripts</div><ul><li>One-off refactor helpers</li><li>Kept: ratchets, clone check, formatters, every e2e script</li></ul></div>
+    </div>
+  </section>
+
+  <section id="sec-kept">
+    <header><span class="eyebrow">Kept on purpose</span><h2>Things a tool called unused, but are not</h2></header>
+    <div class="kept">
+      <div class="k"><h3>The operator price book</h3><p>plans.ts — the console’s Pricing tab reads it.</p></div>
+      <div class="k"><h3>Old overtime status</h3><p>Past rounds still carry it; the screens must show them.</p></div>
+      <div class="k"><h3>Native phone libraries</h3><p>Removing one needs a new store build.</p></div>
+      <div class="k"><h3>Translation keys built by name</h3><p>Listed, not deleted — the code builds them at run time.</p></div>
+    </div>
+  </section>
+
+  <section id="sec-security">
+    <header><span class="eyebrow">Security</span><h2>Nothing secret, nothing destructive</h2></header>
+    <div class="rows">
+      <div class="row"><span>Passwords, keys or tokens on the branch</span><span class="ok">none</span></div>
+      <div class="row"><span>Secret settings files (.env) tracked</span><span class="ok">none</span></div>
+      <div class="row"><span>Debug leftovers in app code</span><span class="ok">none</span></div>
+      <div class="row"><span>Database changes that drop, delete or rewrite</span><span class="ok">none</span></div>
+    </div>
+    <p class="mig">6 additive migrations: chat_counters · chat_phase2 · chat_groups_tasks_search · tasks_org_created_idx · label_rules_facts · label_check</p>
+  </section>
+
+  <section id="sec-checks">
+    <header><span class="eyebrow">Checks</span><h2>Everything green</h2></header>
+    <div class="stats">
+      <div class="stat"><div class="n">0</div><div class="l">type errors in 9 packages</div></div>
+      <div class="stat"><div class="n">5 / 5</div><div class="l">services build</div></div>
+      <div class="stat"><div class="n">2 / 2</div><div class="l">web and console production builds</div></div>
+      <div class="stat"><div class="n">~11,100</div><div class="l">tests pass</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">copy-paste clones (locked)</div></div>
+    </div>
+  </section>
+
+  <section id="sec-live">
+    <header><span class="eyebrow">Live on the local system</span><h2>11 real scenarios, all passing</h2></header>
+    <div class="scen">
+      <div class="sc"><span>A full clock-in day</span><span class="ok">pass</span></div>
+      <div class="sc"><span>Clock audit</span><span class="ok">39 / 39</span></div>
+      <div class="sc"><span>Automatic clock</span><span class="ok">pass</span></div>
+      <div class="sc"><span>No-shows</span><span class="ok">pass</span></div>
+      <div class="sc"><span>Approvals</span><span class="ok">pass</span></div>
+      <div class="sc"><span>Leader requests</span><span class="ok">pass</span></div>
+      <div class="sc"><span>External members</span><span class="ok">pass</span></div>
+      <div class="sc"><span>Calendar</span><span class="ok">pass</span></div>
+      <div class="sc"><span>Companies</span><span class="ok">pass</span></div>
+      <div class="sc"><span>Chat</span><span class="ok">pass</span></div>
+      <div class="sc"><span>Groups, job chat, search</span><span class="ok">pass</span></div>
+    </div>
+  </section>
+
+  <section id="sec-known">
+    <header><span class="eyebrow">Known</span><h2>3 PDF tests fail in the test environment only</h2><p>They load the PDF reader in a way the test runner does not support. In the running app the reader works; they failed before this work too.</p></header>
+    <div class="rows"><div class="row"><span>pdf-receipt (2) · background-reader (1)</span><span class="warn">test environment</span></div></div>
+  </section>
+
+  <section id="sec-deploy">
+    <header><span class="eyebrow">Next</span><h2>How the deploy will go — after your “ready”</h2></header>
+    <ol class="run">
+      <li><div><h3>You review</h3><p>The pages on :3000 and the screens in Expo from the delivery checklist.</p></div></li>
+      <li><div><h3>Database backup</h3><p>Nightly backup plus a fresh one, table count checked.</p></div></li>
+      <li><div><h3>Apply the 6 additive migrations</h3><p>New tables, columns and indexes only.</p></div></li>
+      <li><div><h3>Build and start</h3><p>The services, the web app and the operator console.</p></div></li>
+      <li><div><h3>Phone update over the air</h3><p>JavaScript only — no new native library, so no store build.</p></div></li>
+    </ol>
+  </section>
+</div>
+
+<div class="player" role="region" aria-label="Narration">
+  <div class="inner">
+    <button class="pbtn" id="voPlay" type="button" aria-label="Play narration"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path id="voIcon" d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
+    <div class="pmeta"><div class="pnow" id="voNow" lang="ar" dir="rtl"></div><div class="pbar"><i id="voProg"></i></div></div>
+    <button class="pstop" id="voStop" type="button" hidden>إيقاف</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var ORDER=[['intro','sec-intro','المقدمة'],['removed','sec-removed','ما أزلناه'],['kept','sec-kept','ما أبقيناه'],['security','sec-security','الأمان'],
+    ['checks','sec-checks','الفحوصات'],['live','sec-live','الاختبارات الحية'],['known','sec-known','ما بقي معروفًا'],['deploy','sec-deploy','النشر']];
+  var audio=new Audio(), i=-1, last=ORDER.length-1, IDLE='اضغط للاستماع · حوالي ثلاث دقائق';
+  var play=document.getElementById('voPlay'), icon=document.getElementById('voIcon'), now=document.getElementById('voNow'), prog=document.getElementById('voProg'), stop=document.getElementById('voStop');
+  var PLAY='M8 5v14l11-7z', PAUSE='M7 5h4v14H7zM13 5h4v14h-4z';
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  now.textContent=IDLE;
+  function mark(id){
+    document.querySelectorAll('.speaking').forEach(function(e){e.classList.remove('speaking');});
+    if(!id) return; var el=document.getElementById(id); el.classList.add('speaking');
+    el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+  }
+  function start(from,to){
+    i=from; last=to; var c=ORDER[i];
+    mark(c[1]); now.textContent=(i+1)+' / '+ORDER.length+' · '+c[2];
+    audio.src='audio/'+c[0]+'.mp3'; audio.play().catch(function(){});
+    icon.setAttribute('d',PAUSE); stop.hidden=false;
+  }
+  function end(){ audio.pause(); i=-1; icon.setAttribute('d',PLAY); stop.hidden=true; prog.style.width='0'; now.textContent=IDLE; mark(null); }
+  audio.addEventListener('timeupdate',function(){ if(audio.duration) prog.style.width=(audio.currentTime/audio.duration*100)+'%'; });
+  audio.addEventListener('ended',function(){ if(i<last) start(i+1,last); else end(); });
+  play.onclick=function(){
+    if(i<0) return start(0,ORDER.length-1);
+    if(audio.paused){ audio.play().catch(function(){}); icon.setAttribute('d',PAUSE); } else { audio.pause(); icon.setAttribute('d',PLAY); }
+  };
+  stop.onclick=end;
+  ORDER.forEach(function(c,n){
+    var sec=document.getElementById(c[1]); var b=document.createElement('button');
+    b.type='button'; b.className='listen'; b.lang='ar'; b.dir='rtl';
+    b.innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>استمع';
+    b.onclick=function(){start(n,n);};
+    sec.insertBefore(b, sec.firstElementChild);
+  });
+})();
+</script>
