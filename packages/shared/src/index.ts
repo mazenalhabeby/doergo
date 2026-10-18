@@ -154,6 +154,7 @@ export * from './attendance/away-policy';
 export * from './attendance/no-shift-limit';
 // A no-show: what the system closes itself, runs of them, the record (attendance/no-show.ts).
 export * from './attendance/no-show';
+export * from './attendance/labels';
 // One round of overtime: its state and minutes, as the Overtime page reads it.
 export * from './attendance/overtime-round';
 export * from './attendance/auto-clock';
