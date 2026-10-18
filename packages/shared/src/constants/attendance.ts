@@ -27,10 +27,6 @@ export const ATTENDANCE_CONSTANTS = {
   LOCATION_NAME_MAX_LENGTH: 100,
   LOCATION_ADDRESS_MAX_LENGTH: 500,
 
-  // Time entry limits
-  MAX_CLOCK_IN_DURATION_HOURS: 16, // Auto clock-out after 16 hours
-  GRACE_PERIOD_MINUTES: 5,         // Allow 5 min early clock-in
-
   // Validation rules
   // REQUIRE_GEOFENCE_FOR_CLOCK_IN was here: one switch for the entire product,
   // where a yard and a client-facing sales team had to want the same answer.
@@ -38,22 +34,7 @@ export const ATTENDANCE_CONSTANTS = {
   // packages/shared/src/attendance/away-policy.ts. Removed rather than
   // deprecated: a constant nothing reads is a setting somebody will one day
   // change and wonder why nothing happened.
-  ALLOW_CLOCK_OUT_ANYWHERE: true,       // Allow clock-out from anywhere
   ALERT_ON_GEOFENCE_VIOLATION: true,    // Send alerts when clock-out is outside geofence
-  AUTO_CLOCK_OUT_DISTANCE_METERS: 150,  // Auto clock-out if technician is this far from location
-  HEARTBEAT_INTERVAL_MS: 5 * 60 * 1000, // Mobile sends heartbeat every 5 minutes
-  SCHEDULE_GRACE_PERIOD_MINUTES: 30,    // Minutes after shift end before auto-clock-out
-
-  // Smart auto-approval thresholds
-  LATE_ARRIVAL_THRESHOLD_MINUTES: 30,     // Flag if >30 min after schedule start
-  EARLY_DEPARTURE_THRESHOLD_MINUTES: 30,  // Flag if >30 min before schedule end
-  OVERTIME_THRESHOLD_MINUTES: 30,         // Flag if >30 min past schedule end
-
-  // Scheduler settings
-  AUTO_CLOCK_OUT_INTERVAL_MS: 15 * 60 * 1000,    // Legacy force-close sweep (removed)
-  MIDNIGHT_CLOCK_OUT_CRON: '0 0 * * *',          // Legacy: kept for reference
-  AUTO_CLOCK_OUT_JOB_ID: 'auto-clock-out-hourly',
-  MIDNIGHT_CLOCK_OUT_JOB_ID: 'auto-clock-out-midnight',
 
   // Shift reminder engine: how often the sweep runs. The sweep is a single
   // indexed query (status + nextRemindAt) returning only entries actually due,
@@ -65,13 +46,6 @@ export const ATTENDANCE_CONSTANTS = {
   // (bounded scan over the rota); the actual no-show sweep rides the 1-min tick.
   SHIFT_MATERIALIZE_INTERVAL_MS: 30 * 60 * 1000,  // Every 30 minutes
   SHIFT_MATERIALIZE_JOB_ID: 'shift-materialize',
-  SHIFT_MATERIALIZE_WINDOW_HOURS: 36,
-
-  // Geofence excursion ("out of ring") sweep: flags APPROVED excursions whose
-  // grace timer has lapsed so the approver sees it even if the phone stopped
-  // heart-beating. It NEVER clocks anyone out (no GPS server-side). 1-min cadence.
-  GEOFENCE_EXCURSION_SWEEP_INTERVAL_MS: 60 * 1000,
-  GEOFENCE_EXCURSION_SWEEP_JOB_ID: 'geofence-excursion-sweep',
 } as const;
 
 // Geofence excursion workflow. When a clocked-in worker leaves their space's

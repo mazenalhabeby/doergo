@@ -2,13 +2,11 @@
 
 export const OVERTIME_CONSTANTS = {
   // Timeout windows
-  TECHNICIAN_RESPONSE_TIMEOUT_MS: 15 * 60 * 1000,  // 15 minutes for tech to respond
   APPROVAL_TIMEOUT_MS: 10 * 60 * 1000,              // 10 minutes for leader to approve
   CHECK_INTERVAL_MS: 60 * 1000,                      // Check timeouts every 1 minute
 
   // Duration limits
   MAX_OVERTIME_DURATION_MINUTES: 480,                 // 8 hours hard cap
-  DEFAULT_OVERTIME_DURATION_MINUTES: 120,             // 2 hours default
 
   // Job IDs
   OVERTIME_TIMEOUT_JOB_ID: 'overtime-timeout-checker',

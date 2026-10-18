@@ -6,7 +6,7 @@
 import {
   assessOccurrence,
   assessFix,
-  occurrenceNeedsApproval,
+  flagsForReview,
   outboxOutcomeFor,
   outboxOutcomeForResult,
   retryDelayMs,
@@ -28,7 +28,7 @@ describe('assessOccurrence', () => {
     expect(r.refusal).toBeUndefined();
     expect(r.occurredAt.toISOString()).toBe('2026-09-14T07:58:12.000Z');
     expect(r.flags).toEqual(['RECORDED_OFFLINE']);
-    expect(occurrenceNeedsApproval(r.flags)).toBe(false);
+    expect(flagsForReview(r.flags).length > 0).toBe(false);
   });
 
   it('flags a phone clock moved back an hour', () => {
@@ -36,7 +36,7 @@ describe('assessOccurrence', () => {
     const claimed = '2026-09-14T07:58:00Z';
     const r = assessOccurrence({ occurredAt: claimed, uptimeMs: uptimeAt(realAt), anchor }, { now: NOW });
     expect(r.flags).toContain('CLOCK_SUSPECT');
-    expect(occurrenceNeedsApproval(r.flags)).toBe(true);
+    expect(flagsForReview(r.flags).length > 0).toBe(true);
   });
 
   it('tolerates ordinary drift', () => {
@@ -50,7 +50,7 @@ describe('assessOccurrence', () => {
     const r = assessOccurrence({ occurredAt: '2026-09-14T09:00:00Z', uptimeMs: 5_000, anchor }, { now: NOW });
     expect(r.flags).toContain('UNANCHORED');
     expect(r.flags).not.toContain('CLOCK_SUSPECT');
-    expect(occurrenceNeedsApproval(r.flags)).toBe(false);
+    expect(flagsForReview(r.flags).length > 0).toBe(false);
   });
 
   it('refuses the future beyond drift tolerance, allows a little', () => {
@@ -70,7 +70,7 @@ describe('assessOccurrence', () => {
   it('sends a week-old record to a person', () => {
     const r = assessOccurrence({ occurredAt: iso(NOW.getTime() - OCCURRENCE_RULES.STALE_AFTER_MS - min(1)) }, { now: NOW });
     expect(r.flags).toEqual(expect.arrayContaining(['RECORDED_OFFLINE', 'STALE']));
-    expect(occurrenceNeedsApproval(r.flags)).toBe(true);
+    expect(flagsForReview(r.flags).length > 0).toBe(true);
   });
 
   it('a live action is not "recorded offline"', () => {

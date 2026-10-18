@@ -198,14 +198,3 @@ export function flagsForReview(flags: readonly string[]): string[] {
   return flags.filter((f) => !INFORMATIONAL_FLAGS.has(f));
 }
 
-/** Flags that stop an entry counting on its own until a person looks at it. */
-const NEEDS_A_PERSON: ReadonlySet<string> = new Set([
-  'CLOCK_SUSPECT',
-  'STALE',
-  'BOUNDARY_CHANGED',
-  'ASSIGNMENT_CHANGED',
-]);
-
-export function occurrenceNeedsApproval(flags: readonly string[]): boolean {
-  return flags.some((f) => NEEDS_A_PERSON.has(f));
-}
