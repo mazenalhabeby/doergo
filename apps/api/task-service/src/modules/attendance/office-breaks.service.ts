@@ -6,6 +6,7 @@ import { BreakType, ApprovalStatus } from '@prisma/client';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
 import { breakTotals } from '@hbcfield/shared';
+import { missedRestColumnsAfterOfficeRest } from './label-rests';
 import { assertNotSelfDecision } from './self-decision';
 
 /** The office correcting a member's rests: adding one afterwards, deleting one. */
@@ -135,6 +136,8 @@ export class OfficeBreaksService {
         data: {
           breakMinutes: totalBreakMinutes,
           unpaidBreakMinutes,
+          // Label rules (new entries): a rest that makes up the required one removes “Missed rest”.
+          ...missedRestColumnsAfterOfficeRest(entry, [...entry.breaks, br]),
           // Paid hours changed, so an approval given before it no longer applies.
           ...(entry.approvalStatus === ApprovalStatus.APPROVED
             ? { approvalStatus: ApprovalStatus.PENDING, approvedById: null, approvedAt: null }

@@ -8,6 +8,7 @@ import { judgeOccurrence } from '../../common/occurrence.util';
 import { SAME_TAP_MS } from './attendance-occurrence';
 import { parseBreakPlan, nextBreakRemindAt as nextRestAt, breakTotals } from '@hbcfield/shared';
 import { BreakStartService } from './break-start.service';
+import { restColumnsAtBreakEnd } from './label-rests';
 import { emitEvent, breakEndedEvent } from '@hbcfield/shared/microservices';
 
 @Injectable()
@@ -121,6 +122,8 @@ export class BreakService {
         breakMinutes: totalBreakMinutes,
         unpaidBreakMinutes,
         nextBreakRemindAt: plan.length ? nextRestAt(plan, now) : null,
+        // Label rules (new entries): a rest longer than planned + grace is LATE_FROM_REST.
+        ...restColumnsAtBreakEnd(entry, { startedAt: activeBreak.startedAt, endedAt: now }),
       },
     });
 
