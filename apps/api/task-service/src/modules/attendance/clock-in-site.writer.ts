@@ -15,6 +15,7 @@ import {
 } from '@hbcfield/shared';
 import { clockEventEntry } from './clock-event';
 import { clockInLabels, priorEntryOfShift } from './clock-in-labels';
+import { isJoinableFragment, joinFragment } from './clock-in-join';
 import type { DayRequestRow } from './approved-requests';
 import { approvalFor } from './attendance-occurrence';
 import { applyNoShiftAllowance } from './clock-in-no-shift';
@@ -155,6 +156,14 @@ export class ClockInSiteWriter {
       Label rules (docs/plans/clock-attendance-2026-10.md): only the first entry of a shift can be
       late; coming back after a planned rest is judged as the rest. Unscheduled days keep their rule.
     */
+    const prior = planned
+      ? await priorEntryOfShift(this.context.prisma, {
+          userId: data.userId,
+          locationId: data.locationId,
+          expectedClockInAt: stampCols.expectedClockInAt,
+          before: clockInTime,
+        })
+      : null;
     const labels = clockInLabels({
       planned,
       clockInAt: clockInTime,
@@ -162,14 +171,7 @@ export class ClockInSiteWriter {
       shiftName: shiftName ?? null,
       toleranceMin: flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
       endIsDailyLimit,
-      prior: planned
-        ? await priorEntryOfShift(this.context.prisma, {
-            userId: data.userId,
-            locationId: data.locationId,
-            expectedClockInAt: stampCols.expectedClockInAt,
-            before: clockInTime,
-          })
-        : null,
+      prior,
       fix: { lat: data.lat, lng: data.lng, accuracy: data.accuracy },
       zone: ctx.zone,
     });
@@ -234,8 +236,11 @@ export class ClockInSiteWriter {
       recordedOffline: flagReasons.includes('RECORDED_OFFLINE'),
     });
 
-    // Create time entry
-    const entry = await this.context.createEntryOnce(data.id, data.userId, {
+    // One entry per shift: right after an automatic fragment of this shift, join it (clock-in-join.ts).
+    const joined = isJoinableFragment(prior, clockInTime)
+      ? await joinFragment(this.context.prisma, prior, { clockInId: data.id, nextRemindAt: stampCols.nextRemindAt, now: new Date() })
+      : null;
+    const entry = joined ?? await this.context.createEntryOnce(data.id, data.userId, {
       ...(data.id ? { id: data.id } : {}),
       userId: data.userId,
       locationId: data.locationId,

@@ -67,6 +67,16 @@ export class ClockInService {
     if (data.id) {
       const prior = await this.prisma.timeEntry.findUnique({ where: { id: data.id }, include: { location: true } });
       if (prior) return success(sameRecordOrRefuse(prior, data.userId), 'Already clocked in');
+      // …or the clock-in JOINED an earlier fragment of its shift (clock-in-join.ts): answer with that entry.
+      const joinedInto = await this.prisma.timeEntry.findFirst({
+        where: {
+          userId: data.userId,
+          clockInAt: { gte: new Date(Date.now() - 2 * 86_400_000) },
+          labelFacts: { path: ['joinedClockInIds'], array_contains: [data.id] },
+        },
+        include: { location: true },
+      });
+      if (joinedInto) return success(joinedInto, 'Already clocked in');
       /*
         ⚠️ An automatic clock-in its owner UNDID is gone — a resend of it (the
         answer was lost, the outbox tries again) must not make the shift again.

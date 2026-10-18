@@ -10,6 +10,7 @@ import {
   type SiteZone,
 } from '@hbcfield/shared';
 import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { FragmentCandidate } from './clock-in-join';
 
 /**
  * The time labels and the facts of a NEW clock-in, under the label rules
@@ -21,7 +22,7 @@ import type { PrismaService } from '../../common/prisma/prisma.service';
 export async function priorEntryOfShift(
   prisma: Pick<PrismaService, 'timeEntry'>,
   input: { userId: string; locationId: string; expectedClockInAt: Date | null | undefined; before: Date },
-): Promise<{ clockOutAt: Date; breakPlan: unknown } | null> {
+): Promise<FragmentCandidate | null> {
   if (!input.expectedClockInAt) return null;
   const row = await prisma.timeEntry.findFirst({
     where: {
@@ -32,9 +33,17 @@ export async function priorEntryOfShift(
       clockOutAt: { not: null, lte: input.before },
     },
     orderBy: { clockOutAt: 'desc' },
-    select: { clockOutAt: true, breakPlan: true },
+    select: {
+      id: true,
+      clockInAt: true,
+      clockOutAt: true,
+      flagReasons: true,
+      labelRules: true,
+      labelFacts: true,
+      breakPlan: true,
+    },
   });
-  return row?.clockOutAt ? { clockOutAt: row.clockOutAt, breakPlan: row.breakPlan } : null;
+  return row?.clockOutAt ? ({ ...row, clockOutAt: row.clockOutAt } as FragmentCandidate) : null;
 }
 
 export interface ClockInLabelInput {

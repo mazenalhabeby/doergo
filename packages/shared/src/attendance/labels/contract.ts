@@ -105,4 +105,9 @@ export interface LabelFacts {
   closedHow?: ClosedHow;
   /** The workspace's boundary changed between the tap and its arrival (offline only). */
   boundaryChangedSinceTap?: boolean;
+  /**
+   * Clock-ins that JOINED this entry instead of opening a second one (one entry
+   * per shift): their phone-made ids, so a resend of one is answered with this entry.
+   */
+  joinedClockInIds?: string[];
 }
