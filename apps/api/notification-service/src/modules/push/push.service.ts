@@ -1,11 +1,12 @@
 import { ConfigService } from '@nestjs/config';
 import Expo, { ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { DEFAULT_LOCALE, PrismaService, type SupportedLocale } from '@hbcfield/shared';
 import { pushRouting, pushCategory, memberWantsPush, barePushToken } from '@hbcfield/shared';
 import { RecipientLocales } from '../../i18n/recipient-locales.service';
 import { renderText, type LocalizedText } from '../../i18n/translate';
 import { PushTarget } from './push-helpers';
+import { ClockPushBudgetService } from './clock-push-budget.service';
 
 export {
   shiftEscalationText,
@@ -26,6 +27,8 @@ export class PushService {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly locales: RecipientLocales,
+    // The daily budget of clock nudges (clock-push-budget.ts); optional so a bare test construction still sends.
+    @Optional() private readonly clockBudget?: ClockPushBudgetService,
   ) {
     this.expo = new Expo();
   }
@@ -110,11 +113,7 @@ export class PushService {
    * empty ids are dropped here, so a caller merging watchers with leaders does
    * not buzz somebody twice.
    */
-  async sendToUsers(
-    userIds: Array<string | null | undefined>,
-    text: LocalizedText,
-    data?: Record<string, any>,
-  ) {
+  async sendToUsers(userIds: Array<string | null | undefined>, text: LocalizedText, data?: Record<string, any>) {
     let ids = [...new Set(userIds.filter((id): id is string => !!id))];
     if (ids.length === 0) return { success: true, sent: 0, reason: 'no_recipients' };
 
@@ -131,6 +130,12 @@ export class PushService {
       const off = new Set(prefs.filter((u) => !memberWantsPush(u.notificationPrefs, data?.type)).map((u) => u.id));
       if (off.size) ids = ids.filter((id) => !off.has(id));
       if (ids.length === 0) return { success: true, sent: 0, reason: 'switched_off' };
+    }
+
+    // At most four clock nudges a day, a kind repeated at most once — counted only for people still asked.
+    if (this.clockBudget) {
+      ids = await this.clockBudget.allowed(ids, data?.type);
+      if (ids.length === 0) return { success: true, sent: 0, reason: 'clock_budget' };
     }
 
     const rows: Array<{ userId: string; token: string }> = await this.prisma.userPushToken.findMany({
@@ -183,11 +188,13 @@ export class PushService {
       const locale = localeOf.get(userId) ?? DEFAULT_LOCALE;
       byLocale.set(locale, [...(byLocale.get(locale) ?? []), { token, userId }]);
     }
-    let sent = 0, failed = 0;
+    let sent = 0,
+      failed = 0;
     for (const [locale, tokens] of byLocale) {
       const { title, body } = renderText(locale, text);
       const r = await this.deliver(tokens, title, body, data);
-      sent += r.sent; failed += r.failed;
+      sent += r.sent;
+      failed += r.failed;
     }
     return { success: true, sent, failed, reached: [...newest.keys()] };
   }

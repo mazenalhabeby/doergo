@@ -150,6 +150,8 @@ export class AttendanceReadService extends AttendanceReadBase {
       ? (({ shift, ...e }) => ({
           ...e,
           flagToleranceMin: shift?.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
+          // Left the site and not back: the phone offers it for "I forgot to clock out" (the route takes it).
+          leftSiteAt: activeExcursion?.leftRingAt ?? null,
         }))(currentEntry)
       : null;
 

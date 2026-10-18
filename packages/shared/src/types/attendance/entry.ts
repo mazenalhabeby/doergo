@@ -81,6 +81,12 @@ export interface TimeEntry {
   presenceAt?: string | null;
   /** Last position heard from the phone; null when it never sent one (a computer). */
   lastSeenAt?: string | null;
+  /**
+   * When the person was seen leaving the site on this shift and has not come back
+   * (the open out-of-area period's start). Sent on the running entry of the status
+   * read only — the phone offers it as the time for "I forgot to clock out".
+   */
+  leftSiteAt?: string | null;
   /*
     This shift's planned rests, frozen at clock-in. Loosely typed here on
     purpose: the shape is owned and validated by

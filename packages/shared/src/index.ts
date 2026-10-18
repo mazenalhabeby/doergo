@@ -130,6 +130,7 @@ export * from './security/tokens';
 
 // Push routing — see client.ts.
 export * from './notifications/push-channels';
+export * from './notifications/clock-push-budget';
 export * from './notifications/push-token';
 export * from './notifications/locale';
 export * from './notifications/locale-format';
