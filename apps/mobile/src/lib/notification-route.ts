@@ -82,6 +82,8 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   shift_reminder: CLOCK, // "Still clocked in?" — the clock-out button
   break_due: CLOCK,
   break_over: CLOCK,
+  // Left the site inside the planned rest window: the rest started on its own — the Time screen shows it.
+  'attendance.rest_started': CLOCK,
   overtime_decision: CLOCK,
   // "Thursday approved · 9 h 20 min counted": the Time screen, where the day sits in the history.
   attendance_day_decided: CLOCK,

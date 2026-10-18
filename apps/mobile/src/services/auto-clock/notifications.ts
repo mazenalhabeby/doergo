@@ -40,7 +40,7 @@ export function isAutoClockAction(actionId: string | null | undefined): actionId
   return !!actionId && (Object.values(AUTO_CLOCK_ACTIONS) as string[]).includes(actionId);
 }
 
-export const notificationIdFor = (kind: ReminderKind | 'arrived', key: string) => `auto-clock:${kind}:${key}`;
+export const notificationIdFor = (kind: ReminderKind | 'arrived' | 'forgot', key: string) => `auto-clock:${kind}:${key}`;
 
 /** What the runner asks of notifications — injected, so the decisions are tested without a phone. */
 export interface AutoClockNotifier {
@@ -58,9 +58,11 @@ export interface AutoClockNotifier {
     presence?: { hours: number; limit: boolean };
   }): Promise<void>;
   /** Arrived, but the phone could not clock in on its own: "tap to clock in" — or, outside their usual hours, "starting work?". */
-  arrivedPrompt(i: { userId: string; spaceId: string; place: string; outsideHours?: boolean }): Promise<void>;
+  arrivedPrompt(i: { userId: string; spaceId: string; place: string; outsideHours?: boolean; startsAt?: Date }): Promise<void>;
   /** Take back what a shift scheduled (all kinds when none are named). */
   cancel(entryId: string, kinds?: ReminderKind[]): Promise<void>;
+  /** "You left X at 16:42 — clock out at 16:42?", at `at` (lib/clock-smart.ts). Null `leftAt` takes it back. */
+  forgotOffer?(i: { userId: string; entryId: string; place: string; leftAt: Date | null; at: Date }): Promise<void>;
 }
 
 const ALL_KINDS: ReminderKind[] = ['in', 'rest', 'end'];
@@ -139,14 +141,32 @@ export const autoClockNotifier: AutoClockNotifier = {
     }
   },
 
-  async arrivedPrompt({ userId, spaceId, place, outsideHours }) {
+  async arrivedPrompt({ userId, spaceId, place, outsideHours, startsAt }) {
     await i18nReady.catch(() => undefined);
+    const time = startsAt ? formatTimeOfDay(startsAt, await hour12()) : null;
     await schedule({
       identifier: notificationIdFor('arrived', spaceId),
-      title: i18n.t('autoClock.push.arrivedTitle', { place }),
-      body: i18n.t(outsideHours ? 'autoClock.push.arrivedOutsideBody' : 'autoClock.push.arrivedBody'),
+      title: time ? i18n.t('clockSmart.arrivedTitle', { place }) : i18n.t('autoClock.push.arrivedTitle', { place }),
+      body: time
+        ? i18n.t('clockSmart.arrivedBody', { time })
+        : i18n.t(outsideHours ? 'autoClock.push.arrivedOutsideBody' : 'autoClock.push.arrivedBody'),
       data: { kind: 'arrived', spaceId, recipientId: userId },
       at: null,
+    });
+  },
+
+  async forgotOffer({ userId, entryId, place, leftAt, at }) {
+    const id = notificationIdFor('forgot', entryId);
+    await Notifications.cancelScheduledNotificationAsync(id).catch(() => undefined);
+    if (!leftAt) { await Notifications.dismissNotificationAsync(id).catch(() => undefined); return; }
+    await i18nReady.catch(() => undefined);
+    const time = formatTimeOfDay(leftAt, await hour12());
+    await schedule({
+      identifier: id,
+      title: i18n.t('clockSmart.leftTitle', { place, time }),
+      body: i18n.t('clockSmart.leftBody', { time }),
+      data: { kind: 'forgot', entryId, recipientId: userId },
+      at,
     });
   },
 

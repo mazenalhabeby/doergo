@@ -48,6 +48,14 @@ export function shiftCaption(st: ShiftState, ctx: {
     to be vague enough to be true of each, which is a sentence that answers
     nobody.
   */
+  // The arrival card: already at the shift's workspace — say where, and when it starts.
+  if (st.kind === 'before' && st.arrived && st.at) {
+    return t('shiftClock.arrivedStartsAt', {
+      workspace: st.workspace ?? '',
+      time: clockOf(st.at),
+      defaultValue: `You're at ${st.workspace ?? ''} · your shift starts at ${clockOf(st.at)}`,
+    });
+  }
   if (st.kind === 'before' && st.startsInMinutes !== null && st.startsInMinutes > 0) {
     return [
       st.workspace,

@@ -25,6 +25,8 @@ export function readShiftState(input: {
   lastIn?: Date | null;
   /** Something about this shift is still in the outbox. */
   queued?: boolean;
+  /** Workspaces the phone knows it is inside right now (the OS geofence) — the arrival card. */
+  insideSpaceIds?: ReadonlySet<string>;
   now?: Date;
 }): ShiftState {
   const now = input.now ?? new Date();
@@ -121,6 +123,7 @@ export function readShiftState(input: {
         at,
         workspace: planned.spaceName ?? base.workspace,
         startsInMinutes: Math.round((at.getTime() - now.getTime()) / MIN),
+        arrived: !!input.insideSpaceIds?.has(planned.spaceId),
       };
     }
     if (schedule === 'FLEXIBLE' && !!input.monthMinutes) {

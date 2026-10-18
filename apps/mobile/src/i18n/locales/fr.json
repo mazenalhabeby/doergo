@@ -3446,7 +3446,8 @@
     },
     "noShiftLeft": "À {{location}} · sans poste · encore {{left}} aujourd'hui",
     "askMoreTime": "Demander plus de temps",
-    "askMoreTimeHint": "Votre responsable est sollicité. Vous pourrez pointer dès son accord."
+    "askMoreTimeHint": "Votre responsable est sollicité. Vous pourrez pointer dès son accord.",
+    "arrivedStartsAt": "Vous êtes à {{workspace}} · votre service commence à {{time}}"
   },
   "crew": {
     "onTheClock": "pointés",
@@ -5384,9 +5385,38 @@
       "wholeRun": "Décider les {{count}} jours d’un coup",
       "save": "Enregistrer",
       "fixRota": "Corriger le planning"
+    },
+    "day": {
+      "label": "Journée de travail",
+      "count_one": "{{count}} décision",
+      "count_other": "{{count}} décisions",
+      "approve": "Valider la journée",
+      "review": "Examiner",
+      "needsMinutes": "Le temps supplémentaire et les heures sup. demandent des minutes : ouvrez-les un par un.",
+      "nothingToApprove": "Rien ici ne peut être validé d’un coup : ouvrez chaque élément.",
+      "approved": "Journée validée pour {{name}}",
+      "stopped": "Arrêté à {{what}} : {{reason}}",
+      "members": "Ce jour-là"
     }
   },
   "people": {
     "job": "Poste"
+  },
+  "clockSmart": {
+    "arrivedTitle": "Vous êtes à {{place}}",
+    "arrivedBody": "Votre service commence à {{time}}. Touchez pour pointer.",
+    "askFromHere": "Demander à pointer d'ici",
+    "askedTitle": "Demandé — vous serez prévenu",
+    "askedBody": "Votre demande de travailler hors de {{place}} aujourd'hui a été envoyée à votre responsable.",
+    "leftTitle": "Vous avez quitté {{place}} à {{time}}",
+    "leftBody": "Pointer la sortie à {{time}} ?",
+    "yesAt": "Oui, {{time}}",
+    "otherTime": "Autre heure",
+    "endedTitle": "Votre service s'est terminé à {{time}}",
+    "endedBody": "Toujours à {{place}} ?",
+    "clockOut": "Pointer la sortie",
+    "askMoreTime": "Demander plus de temps",
+    "askLeader": "Demander à mon responsable",
+    "moreTimeNote": "Votre responsable décide de la durée. Si ce n'est pas approuvé, le temps après {{time}} n'est pas compté — vous restez pointé."
   }
 }

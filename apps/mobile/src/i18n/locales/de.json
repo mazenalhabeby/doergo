@@ -3446,7 +3446,8 @@
     },
     "noShiftLeft": "Bei {{location}} · keine Schicht · noch {{left}} heute",
     "askMoreTime": "Mehr Zeit anfragen",
-    "askMoreTimeHint": "Ihre Leitung wird gefragt. Sobald sie zustimmt, können Sie einstempeln."
+    "askMoreTimeHint": "Ihre Leitung wird gefragt. Sobald sie zustimmt, können Sie einstempeln.",
+    "arrivedStartsAt": "Sie sind bei {{workspace}} · Ihre Schicht beginnt um {{time}}"
   },
   "crew": {
     "onTheClock": "eingestempelt",
@@ -5384,9 +5385,38 @@
       "wholeRun": "Alle {{count}} Tage auf einmal entscheiden",
       "save": "Speichern",
       "fixRota": "Dienstplan korrigieren"
+    },
+    "day": {
+      "label": "Arbeitstag",
+      "count_one": "{{count}} Entscheidung",
+      "count_other": "{{count}} Entscheidungen",
+      "approve": "Tag bestätigen",
+      "review": "Prüfen",
+      "needsMinutes": "Mehrarbeit und Überstunden brauchen Minuten — öffnen Sie sie einzeln.",
+      "nothingToApprove": "Hier lässt sich nichts auf einmal bestätigen — öffnen Sie jeden Eintrag.",
+      "approved": "Tag für {{name}} bestätigt",
+      "stopped": "Angehalten bei {{what}}: {{reason}}",
+      "members": "An diesem Tag"
     }
   },
   "people": {
     "job": "Tätigkeit"
+  },
+  "clockSmart": {
+    "arrivedTitle": "Sie sind bei {{place}}",
+    "arrivedBody": "Ihre Schicht beginnt um {{time}}. Tippen Sie zum Einstempeln.",
+    "askFromHere": "Einstempeln von hier anfragen",
+    "askedTitle": "Angefragt — Sie erhalten Bescheid",
+    "askedBody": "Ihre Anfrage, heute außerhalb von {{place}} zu arbeiten, ist bei Ihrer Leitung.",
+    "leftTitle": "Sie haben {{place}} um {{time}} verlassen",
+    "leftBody": "Um {{time}} ausstempeln?",
+    "yesAt": "Ja, {{time}}",
+    "otherTime": "Andere Uhrzeit",
+    "endedTitle": "Ihre Schicht endete um {{time}}",
+    "endedBody": "Noch bei {{place}}?",
+    "clockOut": "Ausstempeln",
+    "askMoreTime": "Mehr Zeit anfragen",
+    "askLeader": "Meine Leitung fragen",
+    "moreTimeNote": "Ihre Leitung entscheidet, wie lange. Wird es nicht genehmigt, zählt die Zeit nach {{time}} nicht — Sie bleiben eingestempelt."
   }
 }

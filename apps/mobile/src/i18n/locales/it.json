@@ -3446,7 +3446,8 @@
     },
     "noShiftLeft": "A {{location}} · senza turno · ancora {{left}} oggi",
     "askMoreTime": "Chiedi più tempo",
-    "askMoreTimeHint": "Viene chiesto al tuo responsabile. Potrai timbrare quando approva."
+    "askMoreTimeHint": "Viene chiesto al tuo responsabile. Potrai timbrare quando approva.",
+    "arrivedStartsAt": "Sei a {{workspace}} · il tuo turno inizia alle {{time}}"
   },
   "crew": {
     "onTheClock": "in servizio",
@@ -5384,9 +5385,38 @@
       "wholeRun": "Decidi tutti i {{count}} giorni insieme",
       "save": "Salva",
       "fixRota": "Correggi il turno"
+    },
+    "day": {
+      "label": "Giornata di lavoro",
+      "count_one": "{{count}} decisione",
+      "count_other": "{{count}} decisioni",
+      "approve": "Approva la giornata",
+      "review": "Esamina",
+      "needsMinutes": "Tempo extra e straordinari richiedono i minuti: aprili uno per uno.",
+      "nothingToApprove": "Qui niente si approva in un colpo solo: apri ogni elemento.",
+      "approved": "Giornata approvata per {{name}}",
+      "stopped": "Interrotto a {{what}}: {{reason}}",
+      "members": "In questo giorno"
     }
   },
   "people": {
     "job": "Ruolo"
+  },
+  "clockSmart": {
+    "arrivedTitle": "Sei a {{place}}",
+    "arrivedBody": "Il tuo turno inizia alle {{time}}. Tocca per timbrare l'entrata.",
+    "askFromHere": "Chiedi di timbrare da qui",
+    "askedTitle": "Richiesto — riceverai una risposta",
+    "askedBody": "La tua richiesta di lavorare oggi fuori da {{place}} è arrivata al tuo responsabile.",
+    "leftTitle": "Hai lasciato {{place}} alle {{time}}",
+    "leftBody": "Timbrare l'uscita alle {{time}}?",
+    "yesAt": "Sì, {{time}}",
+    "otherTime": "Altro orario",
+    "endedTitle": "Il tuo turno è finito alle {{time}}",
+    "endedBody": "Ancora a {{place}}?",
+    "clockOut": "Timbra uscita",
+    "askMoreTime": "Chiedi più tempo",
+    "askLeader": "Chiedi al mio responsabile",
+    "moreTimeNote": "Il tuo responsabile decide quanto. Se non viene approvato, il tempo dopo le {{time}} non conta — resti timbrato."
   }
 }

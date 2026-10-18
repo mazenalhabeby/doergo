@@ -3446,7 +3446,8 @@
     },
     "noShiftLeft": "At {{location}} · no shift · {{left}} left today",
     "askMoreTime": "Ask for more time",
-    "askMoreTimeHint": "Your leader is asked. You can clock in once they agree."
+    "askMoreTimeHint": "Your leader is asked. You can clock in once they agree.",
+    "arrivedStartsAt": "You're at {{workspace}} · your shift starts at {{time}}"
   },
   "crew": {
     "onTheClock": "on the clock",
@@ -5384,9 +5385,38 @@
       "wholeRun": "Decide all {{count}} days at once",
       "save": "Save",
       "fixRota": "Fix the rota"
+    },
+    "day": {
+      "label": "Working day",
+      "count_one": "{{count}} thing to decide",
+      "count_other": "{{count}} things to decide",
+      "approve": "Approve day",
+      "review": "Review",
+      "needsMinutes": "Extra time and overtime need minutes — open them one by one.",
+      "nothingToApprove": "Nothing here can be approved in one go — open each item.",
+      "approved": "Day approved for {{name}}",
+      "stopped": "Stopped at {{what}}: {{reason}}",
+      "members": "On this day"
     }
   },
   "people": {
     "job": "Job"
+  },
+  "clockSmart": {
+    "arrivedTitle": "You're at {{place}}",
+    "arrivedBody": "Your shift starts at {{time}}. Tap to clock in.",
+    "askFromHere": "Ask to clock in from here",
+    "askedTitle": "Asked — you'll be told",
+    "askedBody": "Your request to work away from {{place}} today went to your leader.",
+    "leftTitle": "You left {{place}} at {{time}}",
+    "leftBody": "Clock out at {{time}}?",
+    "yesAt": "Yes, {{time}}",
+    "otherTime": "Other time",
+    "endedTitle": "Your shift ended at {{time}}",
+    "endedBody": "Still at {{place}}?",
+    "clockOut": "Clock out",
+    "askMoreTime": "Ask for more time",
+    "askLeader": "Ask my leader",
+    "moreTimeNote": "Your leader decides how long. If it is not approved, the time after {{time}} isn't counted — you stay clocked in."
   }
 }

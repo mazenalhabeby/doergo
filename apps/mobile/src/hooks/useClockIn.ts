@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next';
 import type { CompanyLocation } from '../lib/api';
 import { clockableLocations } from '../lib/clockable';
 import { useAuth } from '../contexts/auth-context';
-import { useToast } from '../island/island-context';
+import { useIsland, useToast } from '../island/island-context';
+import { isAwayRefusal, preferShiftWorkspace } from '../lib/clock-smart';
+import { useAskToWorkHere } from './use-ask-to-work-here';
 import { startBackgroundHeartbeat } from '../services/background-heartbeat';
 import { startGeofenceForSpace } from '../services/background-geofence';
 import {
@@ -43,11 +45,30 @@ export function useClockIn(opts: {
   onClockedIn?: () => void | Promise<void>;
   /** Already clocked in, as far as this phone knows — offline this is the only check there is. */
   isClockedIn?: boolean;
+  /** Today's planned shift names this workspace — taken without a picker (lib/clock-smart.ts). */
+  shiftSpaceId?: string | null;
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const toast = useToast();
+  const island = useIsland();
+  const askToWorkHere = useAskToWorkHere();
   const actions = useShiftActions();
+
+  /*
+    A refusal for being away from the site is no dead end: it offers the
+    request that would let this clock-in through (a REMOTE day here, today).
+  */
+  const refuse = useCallback(
+    (title: string, body: string, code: string | null | undefined, location: CompanyLocation | null) => {
+      if (!location || !isAwayRefusal(code)) { toast.error(title, body); return; }
+      island.say({
+        tone: 'failed', title, body,
+        action: { label: t('clockSmart.askFromHere'), onPress: () => void askToWorkHere({ id: location.id, name: location.name }) },
+      });
+    },
+    [toast, island, t, askToWorkHere],
+  );
 
   // Keep the latest refetch callback without churning the memoised handlers.
   const onClockedInRef = useRef(opts.onClockedIn);
@@ -96,7 +117,7 @@ export function useClockIn(opts: {
         if (connectivity.state !== 'online') {
           const verdict = checkClockInLocally({ location, fix, alreadyClockedIn: !!opts.isClockedIn });
           if (!verdict.ok) {
-            toast.error(
+            refuse(
               t('attendance.offline.notHere', 'Not clocked in'),
               t(`attendance.offline.refused.${verdict.code}`, {
                 distance: formatDistance(verdict.distanceM),
@@ -104,6 +125,8 @@ export function useClockIn(opts: {
                 location: location?.name ?? '',
                 hours: verdict.hours ?? '',
               }),
+              verdict.code,
+              location,
             );
             return;
           }
@@ -114,7 +137,7 @@ export function useClockIn(opts: {
           fix,
         });
         if (outcome.kind === 'refused') {
-          toast.error(t('common.error'), refusalText(t, outcome, t('attendance.failedToClockIn')));
+          refuse(t('common.error'), refusalText(t, outcome, t('attendance.failedToClockIn')), outcome.code, location);
           return;
         }
         await startBackgroundHeartbeat();
@@ -147,7 +170,7 @@ export function useClockIn(opts: {
         setSelectedLocation(null);
       }
     },
-    [opts.isClockedIn, actions, t, toast],
+    [opts.isClockedIn, actions, t, toast, refuse],
   );
 
   /**
@@ -170,7 +193,8 @@ export function useClockIn(opts: {
     const fix = await getCurrentLocation();
     if (!fix) return;
     // The member's own choice: clock in where they stand, or always choose (Profile › Clock in).
-    const choice = chooseClockInLocation(clockable, fix, parseClockInPick(user?.clockInPick));
+    const pick = parseClockInPick(user?.clockInPick);
+    const choice = preferShiftWorkspace(chooseClockInLocation(clockable, fix, pick), opts.shiftSpaceId, pick);
     if (choice.kind === 'auto') {
       await clockInAt(choice.location, fix);
       return;
@@ -189,7 +213,7 @@ export function useClockIn(opts: {
     }
     setSelectedLocation(choice.ranked[0]!.location);
     setLocationModalVisible(true);
-  }, [isClockingIn, getCurrentLocation, clockable, clockInAt, user, t, toast]);
+  }, [isClockingIn, getCurrentLocation, clockable, clockInAt, user, t, toast, opts.shiftSpaceId]);
 
   const confirmClockIn = useCallback(async () => {
     if (!currentLocation || !selectedLocation) return;

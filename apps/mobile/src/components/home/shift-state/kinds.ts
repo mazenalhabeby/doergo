@@ -78,6 +78,8 @@ interface ShiftState {
   backAt: Date | null;
   /** Minutes until the rostered start. Positive only in ① with a roster. */
   startsInMinutes: number | null;
+  /** ① — the phone knows they are already inside the shift's workspace (the arrival card). */
+  arrived?: boolean;
   /** ① FLEXIBLE — working days left in the month, for the caption. */
   workingDaysLeft: number | null;
   /** ① NONE — when they last clocked in, for `last in on Friday`. */

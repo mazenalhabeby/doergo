@@ -185,7 +185,11 @@ async function promptOncePerDay(deps: AutoClockDeps, ps: PlaceState, place: Auto
   const today = localDateKey(now);
   if (ps.promptedDay === today) return;
   ps.promptedDay = today;
-  await deps.notifier.arrivedPrompt({ userId: deps.userId, spaceId: place.spaceId, place: place.name, ...(outsideHours ? { outsideHours } : {}) });
+  // Inside their hours, the shift it is for: "You're at X · your shift starts at 08:00" (the card's own words).
+  const startsAt = outsideHours ? null : shiftForArrival(place, now)?.start ?? null;
+  await deps.notifier.arrivedPrompt({
+    userId: deps.userId, spaceId: place.spaceId, place: place.name, ...(outsideHours ? { outsideHours } : {}), ...(startsAt ? { startsAt } : {}),
+  });
 }
 
 /** Outside, clocked in here, nothing filed: did they go home? */
