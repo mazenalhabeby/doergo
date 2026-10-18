@@ -1,10 +1,8 @@
 import type { Prisma } from '@prisma/client';
 import { writeRateChange, RateChangeError, parseCurrency, CURRENCY_INVALID_MESSAGE } from '@hbcfield/shared';
-import { Injectable, HttpStatus, Inject } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { BillingService } from '../billing/billing.service';
-import { SERVICE_NAMES, industryUsesExternalWorkers } from '@hbcfield/shared';
+import { industryUsesExternalWorkers } from '@hbcfield/shared';
 import { leavePolicyOf } from './onboarding-helpers';
 
 /** The organization's profile: name, address, logo, contact details. */
@@ -13,8 +11,6 @@ export class OrgProfileService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly billing: BillingService,
-    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
 
   async getOrgProfile(organizationId: string) {

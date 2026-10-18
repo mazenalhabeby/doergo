@@ -2,7 +2,6 @@ import { Controller, Get, Post, Delete, Body, Param, Query, Request } from '@nes
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { RequirePermissionInSpace } from '../../common/decorators';
 import { AssetsService } from './assets.service';
-import { AssetsQueueService } from './assets.queue.service';
 import { HandOverDto, CreateLogEntryDto, LogPresignDto, LogListQueryDto, LogSummaryQueryDto } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { assetActor } from './asset-actor';
@@ -16,7 +15,6 @@ import type { AuthedRequest } from '../../common/request.types';
 export class AssetCustodyController {
   constructor(
     private readonly assetsService: AssetsService,
-    private readonly assetsQueueService: AssetsQueueService,
   ) {}
 
   /*

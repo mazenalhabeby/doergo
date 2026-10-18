@@ -1,7 +1,5 @@
-import { Injectable, Inject, Logger, HttpStatus } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { SERVICE_NAMES } from '@hbcfield/shared';
 import { BreakType, ApprovalStatus } from '@prisma/client';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
@@ -18,8 +16,6 @@ export class OfficeBreaksService {
     private readonly prisma: PrismaService,
     // A break changes breakMinutes, and paid time is computed from it.
     private readonly countedTime: CountedTimeService,
-    @Inject(SERVICE_NAMES.NOTIFICATION)
-    private readonly notificationClient: ClientProxy,
   ) {}
 
   /**

@@ -1,10 +1,8 @@
 import type { Prisma, JoinPolicy } from '@prisma/client';
 import { ORG_NOTIFICATION_PREF_KEYS, pickBooleanPrefs, parseLeavePolicy } from '@hbcfield/shared';
-import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { BillingService } from '../billing/billing.service';
-import { SERVICE_NAMES, ORG_CODE_LENGTH, ORG_CODE_CHARSET, hashCode, generateSecureCode } from '@hbcfield/shared';
+import { ORG_CODE_LENGTH, ORG_CODE_CHARSET, hashCode, generateSecureCode } from '@hbcfield/shared';
 import { LEAVE_POLICY_SELECT, leavePolicyOf, LEAVE_POLICY_REFUSALS } from './onboarding-helpers';
 import { jsonColumn } from '../../common/records/json-column';
 
@@ -18,8 +16,6 @@ export class OrgSettingsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly billing: BillingService,
-    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
 
   /**

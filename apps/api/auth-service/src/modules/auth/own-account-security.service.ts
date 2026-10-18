@@ -1,4 +1,4 @@
-import { MemberOffboarding } from '../../common/member-offboarding/member-offboarding.service';
+
 import { BCRYPT_COST_FACTOR } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger, Optional } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -20,7 +20,6 @@ export class OwnAccountSecurityService {
     // Optional: socket revocation is best effort, and unit tests that do not
     // exercise it need not wire it.
     @Optional() private readonly sessionEvents?: SessionEvents,
-    @Optional() private readonly offboarding?: MemberOffboarding,
   ) {}
 
   /**

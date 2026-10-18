@@ -1,10 +1,8 @@
 import { Injectable, Inject, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { ShiftResolverService } from './shift-resolver.service';
 import { personName, success, SERVICE_NAMES } from '@hbcfield/shared';
 import { AttendanceRoutingService } from './attendance-routing.service';
-import { AutoClockService } from './auto-clock.service';
 import { NoShowSettleService } from './no-show-settle.service';
 import { shiftNudgeCadence } from './shift-sweep-helpers';
 import {
@@ -28,11 +26,8 @@ export class ShiftSweepService {
     private readonly prisma: PrismaService,
     @Inject(SERVICE_NAMES.NOTIFICATION)
     private readonly notificationClient: ClientProxy,
-    private readonly shiftResolver: ShiftResolverService,
     // Who is told about this member, at this workspace.
     private readonly routing: AttendanceRoutingService,
-    // The automatic clock's own threshold for telling the leader (attendance/auto-clock.ts).
-    @Optional() private readonly autoClock?: AutoClockService,
     // What the system can prove about a missed shift closes it before anybody is asked.
     @Optional() private readonly noShowSettle?: NoShowSettleService,
   ) {}

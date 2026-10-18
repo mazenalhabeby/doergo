@@ -1,8 +1,7 @@
-import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BillingService } from '../billing/billing.service';
-import { SERVICE_NAMES, Role, normalizeAccessProfile, hashCode } from '@hbcfield/shared';
+import { Role, normalizeAccessProfile, hashCode } from '@hbcfield/shared';
 import {
   memberFieldsFromInvitation,
   claimInvitation,
@@ -19,7 +18,6 @@ export class InvitationOnboardingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly billing: BillingService,
-    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
 
   /**

@@ -19,11 +19,12 @@ export function breakServices(...args: unknown[]): BreakServiceParts {
     // (prisma, countedTime, notifications), then the rest starter built from the same doubles.
     new (BreakService as unknown as new (...a: unknown[]) => object)(
       ...Array.from({ length: 3 }, (_, i) => args[i]),
-      new (BreakStartService as unknown as new (...a: unknown[]) => object)(args[0], args[1], args[2]),
+      new (BreakStartService as unknown as new (...a: unknown[]) => object)(args[0], args[2]),
     ),
-    new (BreakStatusService as unknown as new (...a: unknown[]) => object)(...args),
-    new (BreakReadService as unknown as new (...a: unknown[]) => object)(...args),
-    new (OfficeBreaksService as unknown as new (...a: unknown[]) => object)(...args),
+    // Each part takes only what it uses: (prisma, countedTime) or (prisma).
+    new (BreakStatusService as unknown as new (...a: unknown[]) => object)(args[0], args[1]),
+    new (BreakReadService as unknown as new (...a: unknown[]) => object)(args[0]),
+    new (OfficeBreaksService as unknown as new (...a: unknown[]) => object)(args[0], args[1]),
   );
 }
 

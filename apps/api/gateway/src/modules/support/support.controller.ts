@@ -1,6 +1,5 @@
 import { Controller, Get, Post, Body, Param, Query, Req } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import { orgHasAddOn, slaBusinessMinutes } from '@hbcfield/shared';
 import { SupportService } from './support.service';
@@ -21,7 +20,6 @@ const wireNumber = (v: string) => v as unknown as number;
 export class SupportController {
   constructor(
     private readonly support: SupportService,
-    private readonly config: ConfigService,
   ) {}
 
   // ════════════════════ CUSTOMER (JWT) ════════════════════

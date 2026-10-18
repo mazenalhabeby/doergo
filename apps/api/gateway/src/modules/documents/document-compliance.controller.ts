@@ -8,7 +8,6 @@ import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { documentActor, requestContext } from './documents.actor';
 import { RejectDocumentDto } from './dto/documents.dto';
-import { OrgEventsService } from '../../common/events/org-events.service';
 import { callerOrgId } from '../../common/caller-org';
 
 import type { AuthedRequest } from '../../common/request.types';
@@ -22,9 +21,6 @@ import { VerifyDocumentDto } from './dto/link-bodies.dto';
 export class DocumentComplianceController {
   constructor(
     private readonly documents: DocumentsGatewayService,
-    // A document type carries who may see it, so a change to one has to reach
-    // every colleague's open register without them reloading.
-    private readonly orgEvents: OrgEventsService,
   ) {}
 
   @Get('compliance')

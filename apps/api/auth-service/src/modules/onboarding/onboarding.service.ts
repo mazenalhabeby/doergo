@@ -1,17 +1,7 @@
-import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { seedDefaultWorkflow } from '../../common/seed-default-workflow';
-import {
-  SERVICE_NAMES,
-  Role,
-  DEFAULT_PERMISSIONS,
-  ORG_CODE_LENGTH,
-  ORG_CODE_CHARSET,
-  DEFAULT_ORG_MODULES,
-  hashCode,
-  generateSecureCode,
-} from '@hbcfield/shared';
+import { Role, DEFAULT_PERMISSIONS, ORG_CODE_LENGTH, ORG_CODE_CHARSET, DEFAULT_ORG_MODULES, hashCode, generateSecureCode } from '@hbcfield/shared';
 import { BillingTrialService } from './../billing/billing-trial.service';
 import { orphanUser } from './orphan-user';
 import { permissionColumns, NEW_ACCOUNT_USER_SELECT } from '../../common/records/permission-columns';
@@ -23,7 +13,6 @@ export class OnboardingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly trials: BillingTrialService,
-    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
 
   /**

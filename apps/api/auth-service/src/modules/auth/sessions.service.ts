@@ -8,10 +8,9 @@ import {
   maskEmail,
   memberAccessOf,
 } from '@hbcfield/shared';
-import { Injectable, HttpStatus, Logger, Optional } from '@nestjs/common';
+import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { SessionEvents } from '../../common/session-events/session-events.service';
 import { GraceTokenCache } from './grace-token-cache.service';
 import { hashToken } from './auth-common';
 import {
@@ -40,9 +39,6 @@ export class SessionsService {
     private readonly jwtService: JwtService,
     private readonly graceCache: GraceTokenCache,
     private readonly tokens: SessionTokensService,
-    // Optional: socket revocation is best effort, and unit tests that do not
-    // exercise it need not wire it.
-    @Optional() private readonly sessionEvents?: SessionEvents,
   ) {}
 
   async refresh(refreshToken: string): Promise<RefreshResult> {

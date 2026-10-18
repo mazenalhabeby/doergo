@@ -11,16 +11,12 @@ import {
   HttpStatus,
   UseInterceptors,
 } from '@nestjs/common';
-import { RebillService } from '../../common/billing/rebill.service';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { OrgEventsService } from '../../common/events/org-events.service';
 import { CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
-import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
-import { ChatReachLookup } from '../chat/chat-reach.lookup';
 import {
   sendRpc,
   listAccessRoles,
@@ -40,11 +36,6 @@ import { CreateOrgRoleDto, UpdateOrgRoleDto } from './dto/org-bodies.dto';
 export class OrgRolesController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    private readonly billing: RebillService,
-    @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
-    private readonly orgEvents: OrgEventsService,
-    private readonly authCache: AuthTokenCache,
-    private readonly chatReach: ChatReachLookup,
   ) {}
 
   @Get('roles')

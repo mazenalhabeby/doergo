@@ -6,7 +6,6 @@ import { DocumentsGatewayService } from './documents.service';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { documentActor, requestContext } from './documents.actor';
 import { SendBackDto, SignDocumentDto } from './dto/documents.dto';
-import { OrgEventsService } from '../../common/events/org-events.service';
 
 import type { AuthedRequest } from '../../common/request.types';
 import type { SessionUser } from '../../common/request.types';
@@ -21,9 +20,6 @@ import type { SessionUser } from '../../common/request.types';
 export class DocumentSigningController {
   constructor(
     private readonly documents: DocumentsGatewayService,
-    // A document type carries who may see it, so a change to one has to reach
-    // every colleague's open register without them reloading.
-    private readonly orgEvents: OrgEventsService,
   ) {}
 
   // ── Signing ──────────────────────────────────────────────────────────────

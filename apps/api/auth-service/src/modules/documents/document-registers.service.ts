@@ -3,16 +3,12 @@ import { personName } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { type DocumentActor, typeScope } from './document-common';
-import { DocumentLookupService } from './document-lookup.service';
-import { DocumentChainService } from './document-chain.service';
 import { REGISTER_ROW_SELECT } from './document-registers-helpers';
 
 @Injectable()
 export class DocumentRegistersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly lookup: DocumentLookupService,
-    private readonly chain: DocumentChainService,
   ) {}
 
   /**

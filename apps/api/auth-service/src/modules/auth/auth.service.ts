@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../common/prisma/prisma.service';
 import { SessionTokensService } from './session-tokens.service';
 import { SignInService } from './sign-in.service';
 import { SessionsService } from './sessions.service';
@@ -29,8 +27,6 @@ export type { AuthResult } from './auth-common';
 export class AuthService {
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
     private readonly tokens: SessionTokensService,
     private readonly signIn: SignInService,
     private readonly registration: RegisterService,

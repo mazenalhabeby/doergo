@@ -8,17 +8,13 @@ import {
   ForbiddenException,
   UseInterceptors,
 } from '@nestjs/common';
-import { RebillService } from '../../common/billing/rebill.service';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { OrgEventsService } from '../../common/events/org-events.service';
 import { Role, CurrentUser, addOnDef } from '@hbcfield/shared';
 import { isFeatureEntitled } from '../../common/entitlements';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
-import { ChatReachLookup } from '../chat/chat-reach.lookup';
 import { sendRpc, auditLogList } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
 import type { SessionUser } from '../../common/request.types';
@@ -31,11 +27,6 @@ import type { SessionUser } from '../../common/request.types';
 export class AuditLogController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    private readonly billing: RebillService,
-    @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
-    private readonly orgEvents: OrgEventsService,
-    private readonly authCache: AuthTokenCache,
-    private readonly chatReach: ChatReachLookup,
   ) {}
 
   // ═══════════════════════════════════════════════════════════════════════

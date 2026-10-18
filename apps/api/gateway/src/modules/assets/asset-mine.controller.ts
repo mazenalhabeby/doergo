@@ -2,7 +2,6 @@ import { Controller, Get, Param, Query, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { RequirePermission, RequirePermissionInSpace, DenyExternal } from '../../common/decorators';
 import { AssetsService } from './assets.service';
-import { AssetsQueueService } from './assets.queue.service';
 import { MyLogQueryDto } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { assetActor } from './asset-actor';
@@ -21,7 +20,6 @@ import { callerOrgId } from '../../common/caller-org';
 export class AssetMineController {
   constructor(
     private readonly assetsService: AssetsService,
-    private readonly assetsQueueService: AssetsQueueService,
   ) {}
 
   /*

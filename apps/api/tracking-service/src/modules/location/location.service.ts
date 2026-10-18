@@ -2,7 +2,6 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, SERVICE_NAMES, haversineDistance, isTaskAssignee } from '@hbcfield/shared';
-import { RouteMatchingService } from './route-matching.service';
 import { catchError, of } from 'rxjs';
 import { emitEvent, workerLocationUpdatedEvent } from '@hbcfield/shared/microservices';
 
@@ -14,7 +13,6 @@ export class LocationService {
     private readonly prisma: PrismaService,
     @Inject(SERVICE_NAMES.NOTIFICATION)
     private readonly notificationClient: ClientProxy,
-    private readonly routeMatching: RouteMatchingService,
   ) {}
 
   async updateLocation(

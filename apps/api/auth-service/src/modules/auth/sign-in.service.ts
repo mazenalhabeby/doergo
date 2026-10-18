@@ -19,7 +19,6 @@ import { AuditLogService } from '../audit-log/audit-log.service';
 import * as bcrypt from 'bcryptjs';
 import { dummyPasswordHash, type AuthResult } from './auth-common';
 import { SessionTokensService } from './session-tokens.service';
-import { BillingTrialService } from './../billing/billing-trial.service';
 
 /**
  * The two ways in: registering a new organization owner, and signing in.
@@ -33,7 +32,6 @@ export class SignInService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
-    private readonly trials: BillingTrialService,
     private readonly tokens: SessionTokensService,
   ) {}
 

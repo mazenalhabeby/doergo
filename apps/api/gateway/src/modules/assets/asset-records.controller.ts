@@ -2,7 +2,6 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Request } fro
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { RequirePermissionInSpace } from '../../common/decorators';
 import { AssetsService } from './assets.service';
-import { AssetsQueueService } from './assets.queue.service';
 import { AssetListRowDto, UpdateAssetListRowDto } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { assetActor } from './asset-actor';
@@ -17,7 +16,6 @@ import { AssetActivityDto, AssetMoneyDto } from './dto/decision-bodies.dto';
 export class AssetRecordsController {
   constructor(
     private readonly assetsService: AssetsService,
-    private readonly assetsQueueService: AssetsQueueService,
   ) {}
 
   // Both are ':id'-prefixed, so they cannot be swallowed by the ':id' route the

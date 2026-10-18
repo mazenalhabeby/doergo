@@ -16,17 +16,9 @@ import {
 } from '@hbcfield/shared/microservices';
 import { AssetsService } from './assets.service';
 import { AssetCatalogService } from './asset-catalog.service';
-import { AssetRowsService } from './asset-rows.service';
-import { AssetLedgerService } from './asset-ledger.service';
 import { AssetActivityService } from './asset-activity.service';
 import { AssetUsageService } from './asset-usage.service';
-import { AssetCustodyService } from './asset-custody.service';
-import { AssetExpenseService } from './asset-expense.service';
-import { AssetContractService } from './asset-contract.service';
-import { AssetProposalService } from './asset-proposal.service';
-import { AssetLogService } from './asset-log.service';
 import { AssetAccessService } from './asset-access.service';
-import { ProposalReviewService } from './proposal-review.service';
 import { AssetTypesService } from './asset-types.service';
 
 @Controller()
@@ -35,16 +27,8 @@ export class AssetsController {
     private readonly assetsService: AssetsService,
     private readonly catalog: AssetCatalogService,
     private readonly assetTypes: AssetTypesService,
-    private readonly rows: AssetRowsService,
-    private readonly ledger: AssetLedgerService,
     private readonly activity: AssetActivityService,
     private readonly usage: AssetUsageService,
-    private readonly custody: AssetCustodyService,
-    private readonly expenses: AssetExpenseService,
-    private readonly contracts: AssetContractService,
-    private readonly proposals: AssetProposalService,
-    private readonly proposalReview: ProposalReviewService,
-    private readonly logs: AssetLogService,
     private readonly access: AssetAccessService,
   ) {}
 

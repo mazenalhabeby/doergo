@@ -167,7 +167,7 @@ describe('PushService — one text, many languages', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new PushService({} as any, prisma as any, locales as any);
+    service = new PushService(prisma as any, locales as any);
     expoSends = [];
     (service as any).expo = {
       chunkPushNotifications: (messages: any[]) => [messages],

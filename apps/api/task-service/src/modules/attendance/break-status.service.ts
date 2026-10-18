@@ -1,7 +1,6 @@
-import { Injectable, Inject, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, TimeEntryStatus, SERVICE_NAMES } from '@hbcfield/shared';
+import { success, TimeEntryStatus } from '@hbcfield/shared';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
 import {
@@ -27,8 +26,6 @@ export class BreakStatusService {
     private readonly prisma: PrismaService,
     // A break changes breakMinutes, and paid time is computed from it.
     private readonly countedTime: CountedTimeService,
-    @Inject(SERVICE_NAMES.NOTIFICATION)
-    private readonly notificationClient: ClientProxy,
   ) {}
 
   /**

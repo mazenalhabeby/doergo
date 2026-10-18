@@ -1,7 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { MrzOcrService } from './mrz-ocr.service';
-import { DocumentStorageService } from './document-storage.service';
-import { DocumentLookupService } from './document-lookup.service';
 import { DocumentRoutingService } from './document-routing.service';
 import { DocumentSigningService } from './document-signing.service';
 import { DocumentTypesService } from './document-types.service';
@@ -47,9 +44,6 @@ export { CONSENT_TEXT, type DocumentActor, type RouteCandidateStep } from './doc
 @Injectable()
 export class DocumentsService {
   constructor(
-    private readonly ocr: MrzOcrService,
-    private readonly storage: DocumentStorageService,
-    private readonly lookup: DocumentLookupService,
     private readonly routing: DocumentRoutingService,
     private readonly chain: DocumentChainService,
     private readonly signing: DocumentSigningService,

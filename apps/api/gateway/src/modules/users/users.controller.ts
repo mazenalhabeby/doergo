@@ -4,8 +4,6 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { SERVICE_NAMES, CurrentUser } from '@hbcfield/shared';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
-import { TasksQueueService } from '../tasks/tasks.queue.service';
-import { StorageService } from '../../common/storage/storage.service';
 import { UpdateMeDto, UpdateMyEmailDto, MarkNotificationsReadDto, UpdateMyNotificationPrefsDto } from './users.dto';
 import {
   sendRpc,
@@ -30,11 +28,8 @@ export { MarkNotificationsReadDto } from './users.dto';
 export class UsersController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
-    private readonly tasksQueueService: TasksQueueService,
     private readonly authCache: AuthTokenCache,
-    private readonly storage: StorageService,
   ) {}
 
   @Get('me')

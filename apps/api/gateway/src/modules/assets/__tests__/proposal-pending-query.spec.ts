@@ -53,7 +53,7 @@ describe('the route', () => {
 
   it('forwards the workspace alongside the caller’s own scope, never instead of it', async () => {
     const proposalPending = jest.fn(async (d: any) => d);
-    const controller = new AssetIntakeController({ proposalPending } as any, {} as any);
+    const controller = new AssetIntakeController({ proposalPending } as any);
     const user = {
       id: 'u-lena',
       role: 'EMPLOYEE',

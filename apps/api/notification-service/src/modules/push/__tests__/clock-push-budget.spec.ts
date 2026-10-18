@@ -81,7 +81,7 @@ describe('clock push budget', () => {
       userPushToken: { findMany: jest.fn().mockResolvedValue([]) },
     };
     const budget = { allowed: jest.fn().mockResolvedValue([]) } as unknown as ClockPushBudgetService;
-    const push = new PushService({} as never, prisma as never, {} as never, budget);
+    const push = new PushService(prisma as never, {} as never, budget);
     const r = await push.sendToUser(
       'u1',
       { title: { key: 'x' } as never, body: { key: 'y' } as never },

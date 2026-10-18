@@ -2,7 +2,6 @@ import { Controller, Get, Post, Body, Param, Query, Request } from '@nestjs/comm
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { RequirePermissionInSpace, DenyExternal } from '../../common/decorators';
 import { AssetsService } from './assets.service';
-import { AssetsQueueService } from './assets.queue.service';
 import { ReceiptPresignDto, ReadReceiptDto, SubmitExpenseDto } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { assetActor } from './asset-actor';
@@ -17,7 +16,6 @@ import { ReviewExpenseDto } from './dto/decision-bodies.dto';
 export class AssetExpensesController {
   constructor(
     private readonly assetsService: AssetsService,
-    private readonly assetsQueueService: AssetsQueueService,
   ) {}
 
   /*

@@ -1,18 +1,9 @@
 import type { Prisma, JoinRequestStatus } from '@prisma/client';
 import { clampListLimit } from '@hbcfield/shared';
-import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BillingService } from '../billing/billing.service';
-import {
-  SERVICE_NAMES,
-  Role,
-  DEFAULT_PERMISSIONS,
-  mayGrantBaseRole,
-  loadOrgPermissionCeiling,
-  permissionsExceed,
-  permissionsFromUserFlags,
-} from '@hbcfield/shared';
+import { Role, DEFAULT_PERMISSIONS, mayGrantBaseRole, loadOrgPermissionCeiling, permissionsExceed, permissionsFromUserFlags } from '@hbcfield/shared';
 import { permissionColumns } from '../../common/records/permission-columns';
 
 /** The office deciding join requests: the list, approving (with a role), refusing. */
@@ -23,7 +14,6 @@ export class JoinRequestReviewService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly billing: BillingService,
-    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
 
   /**

@@ -22,7 +22,6 @@ import { CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { SetMemberHomeDto, UpdateMemberDto } from './dto';
-import { ChatReachLookup } from '../chat/chat-reach.lookup';
 import {
   sendRpc,
   updateMemberProfile,
@@ -55,7 +54,6 @@ export class MemberManagementController {
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
     private readonly orgEvents: OrgEventsService,
     private readonly authCache: AuthTokenCache,
-    private readonly chatReach: ChatReachLookup,
   ) {}
 
   @Patch('members/:id')

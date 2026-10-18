@@ -3,9 +3,6 @@ import { personName, nextPendingStep, type SignableDocument, type SignerStep } f
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CUSTOMER_LINK_STATUSES, canRenderInline, roleLabel, downloadName } from './document-common';
 import { DocumentStorageService } from './document-storage.service';
-import { DocumentLookupService } from './document-lookup.service';
-import { DocumentNotifierService } from './document-notifier.service';
-import { DocumentSealService } from './document-seal.service';
 
 /**
  * A client signing through an emailed link: their list, one document, and the batch.
@@ -18,9 +15,6 @@ export class DocumentCustomerSigningService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: DocumentStorageService,
-    private readonly lookup: DocumentLookupService,
-    private readonly notifier: DocumentNotifierService,
-    private readonly seal: DocumentSealService,
   ) {}
 
   /**

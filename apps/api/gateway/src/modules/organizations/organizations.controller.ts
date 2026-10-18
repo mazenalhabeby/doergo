@@ -4,7 +4,6 @@ import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.int
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { OrgEventsService } from '../../common/events/org-events.service';
 import { Role, CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
@@ -15,7 +14,6 @@ import {
   UpdateNotificationPrefsDto,
   UpdateSecuritySettingsDto,
 } from './dto';
-import { ChatReachLookup } from '../chat/chat-reach.lookup';
 import {
   sendRpc,
   onboardingGetJoinCode,
@@ -41,10 +39,7 @@ export class OrganizationsController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     private readonly billing: RebillService,
-    @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
-    private readonly orgEvents: OrgEventsService,
     private readonly authCache: AuthTokenCache,
-    private readonly chatReach: ChatReachLookup,
   ) {}
 
   @Get('join-code')

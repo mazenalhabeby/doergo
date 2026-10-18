@@ -1,10 +1,8 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated, SERVICE_NAMES, buildDateRangeFilter, buildSingleDayFilter } from '@hbcfield/shared';
+import { success, paginated, buildDateRangeFilter, buildSingleDayFilter } from '@hbcfield/shared';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
-import { CountedTimeService } from './counted-time.service';
 import type { Prisma, BreakType } from '@prisma/client';
 
 /** Reading rests: one entry's, who is resting now, the history, the summary. */
@@ -13,10 +11,6 @@ export class BreakReadService {
 
   constructor(
     private readonly prisma: PrismaService,
-    // A break changes breakMinutes, and paid time is computed from it.
-    private readonly countedTime: CountedTimeService,
-    @Inject(SERVICE_NAMES.NOTIFICATION)
-    private readonly notificationClient: ClientProxy,
   ) {}
 
   /**

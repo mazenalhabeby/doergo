@@ -1,16 +1,7 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import {
-  AUTO_REST_FLAG,
-  SERVICE_NAMES,
-  activeAssignmentWhere,
-  autoRestPlan,
-  success,
-  type MemberAutoClockSettings,
-} from '@hbcfield/shared';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { AUTO_REST_FLAG, activeAssignmentWhere, autoRestPlan, success, type MemberAutoClockSettings } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { ShiftResolverService } from './shift-resolver.service';
 import { AUTO_UNDO_EVENT, EntryRef, MEMBER_AUTO_CLOCK_SELECT, memberAutoClock } from './auto-clock-helpers';
 
 export { AUTO_UNDO_EVENT } from './auto-clock-helpers';
@@ -20,8 +11,6 @@ export class AutoClockService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly shiftResolver: ShiftResolverService,
-    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
 
   // ── Is this member automatic? ───────────────────────────────────────────

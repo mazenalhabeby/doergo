@@ -2,7 +2,6 @@ import { personName } from '@hbcfield/shared';
 import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { BillingService } from '../billing/billing.service';
 import {
   SERVICE_NAMES,
   Role,
@@ -24,7 +23,6 @@ export class JoinRequestService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly billing: BillingService,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
 

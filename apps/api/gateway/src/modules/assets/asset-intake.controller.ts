@@ -2,7 +2,6 @@ import { Controller, Get, Post, Body, Param, Query, Request } from '@nestjs/comm
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { RequirePermissionInSpace, DenyExternal } from '../../common/decorators';
 import { AssetsService } from './assets.service';
-import { AssetsQueueService } from './assets.queue.service';
 import {
   ContractProposalDto,
   ReadContractDto,
@@ -25,7 +24,6 @@ import { RejectProposalDto } from './dto/decision-bodies.dto';
 export class AssetIntakeController {
   constructor(
     private readonly assetsService: AssetsService,
-    private readonly assetsQueueService: AssetsQueueService,
   ) {}
 
   /*

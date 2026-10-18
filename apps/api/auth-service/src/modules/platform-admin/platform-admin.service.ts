@@ -1,8 +1,6 @@
 import type { Prisma, SubscriptionStatus } from '@prisma/client';
 import { SessionEvents } from '../../common/session-events/session-events.service';
 import { Injectable, Logger, Optional } from '@nestjs/common';
-import { StripeService } from '../billing/stripe.service';
-import { BillingService } from '../billing/billing.service';
 import { OrgBillService } from '../billing/org-bill.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, clampListLimit, platformCan } from '@hbcfield/shared';
@@ -21,9 +19,6 @@ export class PlatformAdminService {
 
   constructor(
     private readonly prisma: PrismaService,
-    // Moving a live subscription between collection methods — the one thing on
-    // this console that reaches Stripe.
-    private readonly stripe: StripeService,
     // Suspending must also close the members' live connections, not only their next request.
     // Optional: socket revocation is best effort, and unit tests that do not
     // exercise it need not wire it.
@@ -31,9 +26,6 @@ export class PlatformAdminService {
     // What the price list says this organization owes — the number an agreed
     // price is struck against, and the baseline drift is later measured from.
     private readonly bill: OrgBillService,
-    // Pushes a changed price to Stripe the moment it is agreed, rather than at
-    // whatever the customer happens to do next.
-    private readonly billing: BillingService,
   ) {}
 
   /**

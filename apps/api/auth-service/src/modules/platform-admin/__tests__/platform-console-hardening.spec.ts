@@ -199,7 +199,7 @@ describe('org list + detail send only what the console renders', () => {
     },
   };
   const bill = { compute: jest.fn().mockResolvedValue({ listMonthlyCents: 5000 }) };
-  const svc = new PlatformAdminService(prisma, {} as any, undefined, bill as any, {} as any);
+  const svc = new PlatformAdminService(prisma, undefined, bill as any);
 
   it('the list pages with a cursor and carries no Stripe id or VAT number', async () => {
     const r: any = await svc.listOrgs({ limit: 1 });

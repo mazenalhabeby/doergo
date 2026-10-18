@@ -1,4 +1,4 @@
-import { ConfigService } from '@nestjs/config';
+
 import Expo, { ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { DEFAULT_LOCALE, PrismaService, type SupportedLocale } from '@hbcfield/shared';
@@ -24,7 +24,6 @@ export class PushService {
   private readonly logger = new Logger(PushService.name);
 
   constructor(
-    private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly locales: RecipientLocales,
     // The daily budget of clock nudges (clock-push-budget.ts); optional so a bare test construction still sends.
