@@ -89,6 +89,8 @@ export function TimeScreen() {
     confirmLeaveTime,
     resolveForgot,
     requestExtra,
+    clockOutRequest,
+    requestClockOut,
     issueId,
     refreshing,
     onRefresh,
@@ -143,6 +145,7 @@ export function TimeScreen() {
           onRequestExtra={() => void requestExtra()}
           onChanged={() => void shift.refresh()}
           noShiftHere={noShift}
+          onClockOut={requestClockOut}
         />
 
         <TourTarget name="attendance-clock">
@@ -154,6 +157,7 @@ export function TimeScreen() {
             totals={totals}
             noShift={noShift}
             onAskMoreTime={askMoreTime}
+            clockOutRequest={clockOutRequest}
           />
         </TourTarget>
 

@@ -135,6 +135,9 @@ export function useTimeScreen() {
   const unconfirmed = status?.unconfirmedClockOut ?? null;
   const unconfirmedTz = unconfirmed?.timezone ?? unconfirmed?.location?.timezone ?? undefined;
   const [leavePicker, setLeavePicker] = useState(false);
+  /* "Clock out" on the shift-ended card bumps this; the clock card opens its receipt. */
+  const [clockOutRequest, setClockOutRequest] = useState(0);
+  const requestClockOut = useCallback(() => setClockOutRequest((n) => n + 1), []);
   const confirmLeaveTime = async (hhmm: string) => {
     setLeavePicker(false);
     if (!unconfirmed) return;
@@ -242,6 +245,8 @@ export function useTimeScreen() {
     confirmLeaveTime,
     resolveForgot,
     requestExtra,
+    clockOutRequest,
+    requestClockOut,
     issueId,
     refreshing,
     onRefresh,

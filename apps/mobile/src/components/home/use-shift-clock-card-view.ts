@@ -16,6 +16,8 @@ import { readShiftState, scheduleFor, totalsRevision } from './shift-state';
 import { useScheduleTotals, type ScheduleTotalsView } from './use-schedule-totals';
 import { useUnreadIssues } from './use-unread-issues';
 import { useShiftClockActions } from './shift-clock/use-shift-clock-actions';
+import { useInsideSites } from '../../services/auto-clock/use-inside-sites';
+import { useForgotOfferNotice } from '../time/use-forgot-offer';
 import type { NoShiftNote } from '../time/time-logic';
 
 export interface ShiftClockCardViewProps {
@@ -42,6 +44,8 @@ export interface ShiftClockCardViewProps {
   noShift?: NoShiftNote | null;
   /** With no hours left there: the button asks the leader for more time (an OVERTIME request). */
   onAskMoreTime?: () => void;
+  /** Bumped by a "Clock out" elsewhere on the screen (the shift-ended banner): opens this card's receipt. */
+  clockOutRequest?: number;
 }
 
 /** ShiftClockCardView's state and handlers — everything before its markup, moved here unchanged. */
@@ -54,9 +58,11 @@ export function useShiftClockCardView({
   totals: given,
   noShift,
   onAskMoreTime,
+  clockOutRequest,
 }: Pick<
   ShiftClockCardViewProps,
   'shift' | 'style' | 'linkToTime' | 'onSetRealTime' | 'openIssueId' | 'totals' | 'noShift' | 'onAskMoreTime'
+  | 'clockOutRequest'
 >) {
   const { user } = useAuth();
   const { amazen } = useTheme();
@@ -155,6 +161,7 @@ export function useShiftClockCardView({
   });
   const totals = given ?? own;
 
+  const insideSpaceIds = useInsideSites();
   /* Which of the eight, decided ONCE and outside the JSX — see `shift-state.ts`. */
   const st = readShiftState({
     status,
@@ -166,6 +173,7 @@ export function useShiftClockCardView({
     lastToday: totals.lastToday,
     lastIn: totals.lastIn,
     queued: shift.pendingSync,
+    insideSpaceIds,
     now,
   });
 
@@ -173,11 +181,18 @@ export function useShiftClockCardView({
   const clockIn = useClockIn({
     assignedLocations: status?.assignedLocations ?? [],
     isClockedIn: !!status?.isClockedIn,
+    // Today's shift names the workspace: no picker (lib/clock-smart.ts).
+    shiftSpaceId: status?.nextShift?.spaceId ?? null,
     // A clock-in is when a paused job is offered back (the home jobs strip).
     onClockedIn: () => { void refresh(); refreshHandovers(); },
   });
 
   const entryId = status?.currentEntry?.id;
+  useForgotOfferNotice(status?.isClockedIn ? status.currentEntry : null);
+  // "Clock out" on the shift-ended banner opens the same receipt as the disc, frozen at that moment.
+  useEffect(() => {
+    if (clockOutRequest && status?.isClockedIn) setClockOutAt(new Date());
+  }, [clockOutRequest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /*
     A clock-in, clock-out or rest the server refused AFTER the card had shown

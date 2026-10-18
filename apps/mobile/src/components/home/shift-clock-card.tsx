@@ -83,9 +83,11 @@ export function ShiftClockCardView({
   openIssueId,
   totals: given,
   noShift,
-  onAskMoreTime,
+  onAskMoreTime, clockOutRequest,
 }: ShiftClockCardViewProps) {
-  const vm = useShiftClockCardView({ shift, style, linkToTime, onSetRealTime, openIssueId, totals: given, noShift, onAskMoreTime });
+  const vm = useShiftClockCardView({
+    shift, style, linkToTime, onSetRealTime, openIssueId, totals: given, noShift, onAskMoreTime, clockOutRequest,
+  });
   const {
     user,
     amazen,

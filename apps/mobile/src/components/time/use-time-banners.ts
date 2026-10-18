@@ -6,6 +6,7 @@ import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import type { OvertimeRequest } from '../../lib/api';
 import { type NoShiftNote } from './time-logic';
+import { forgotClockOutOffer } from '../../lib/clock-smart';
 
 /** TimeBanners's state and handlers — everything before its markup, moved here unchanged. */
 export function useTimeBanners({
@@ -34,7 +35,7 @@ export function useTimeBanners({
   busy: boolean;
   /** "I forgot to clock out" — the real leave time. */
   onForgot: (at: Date) => void;
-  /** "I'm working extra" — ask a leader. */
+  /** "Ask for more time" — ask a leader. */
   onRequestExtra: () => void;
   onChanged: () => void;
   /** The workspace they are at and its no-shift rule (`noShiftHere` in time-logic) — the only one spoken of. */
@@ -47,6 +48,8 @@ export function useTimeBanners({
   const { formatClock: formatTime } = useTimeFormat();
   const [explain, setExplain] = useState(false);
   const [forgot, setForgot] = useState(false);
+  /* "Ask for more time": the small sheet with the amounts. */
+  const [moreTime, setMoreTime] = useState(false);
   /* "I'm still working" on a session with no shift: hidden until the server's next hourly reminder. */
   const [stillWorkingAt, setStillWorkingAt] = useState<number | null>(null);
 
@@ -77,6 +80,8 @@ export function useTimeBanners({
         `${end ? ` · ${t('shiftReminder.extraApprovedSubtitle', { time: formatTime(end.toISOString(), tz) })}` : ''}`)
     : null;
   const limitLeft = entry?.endIsDailyLimit && end ? Math.ceil((end.getTime() - now.getTime()) / 60_000) : null;
+  // "You left the Warehouse at 16:42 — clock out at 16:42?" (lib/clock-smart.ts).
+  const leftOffer = entry ? forgotClockOutOffer(entry, now) : null;
 
   return {
     amazen,
@@ -100,6 +105,9 @@ export function useTimeBanners({
     askEnded,
     approvedLine,
     limitLeft,
+    leftOffer,
+    moreTime,
+    setMoreTime,
   };
 }
 

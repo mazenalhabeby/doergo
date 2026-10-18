@@ -46,6 +46,7 @@ export function TimeBanners({
   onRequestExtra,
   onChanged,
   noShiftHere,
+  onClockOut,
 }: {
   status: AttendanceStatus | null;
   breaks: BreakStatus | null;
@@ -61,11 +62,13 @@ export function TimeBanners({
   busy: boolean;
   /** "I forgot to clock out" — the real leave time. */
   onForgot: (at: Date) => void;
-  /** "I'm working extra" — ask a leader. */
+  /** "Ask for more time" — ask a leader (who sets how long when approving). */
   onRequestExtra: () => void;
   onChanged: () => void;
   /** The workspace they are at and its no-shift rule (`noShiftHere` in time-logic) — the only one spoken of. */
   noShiftHere?: NoShiftNote | null;
+  /** "Clock out" on the shift-ended card — opens the clock card's receipt. Absent: the card offers only "I forgot". */
+  onClockOut?: () => void;
 }) {
   const vm = useTimeBanners({ status, breaks, watch, overtime, hasShiftScheduling, busy, onForgot, onRequestExtra, onChanged, noShiftHere });
   const {
@@ -145,7 +148,10 @@ export function TimeBanners({
         />
       ) : null}
 
-      <TimeBannersUnscheduledTitle vm={vm} busy={busy} hasShiftScheduling={hasShiftScheduling} onRequestExtra={onRequestExtra} />
+      <TimeBannersUnscheduledTitle
+        vm={vm} busy={busy} hasShiftScheduling={hasShiftScheduling}
+        onRequestExtra={onRequestExtra} onClockOut={onClockOut} onForgot={onForgot}
+      />
       {/* The same wait as the extra-time line above — said once, with a name, when that line is shown. */}
       {entry && reminder === 'OVERTIME_PENDING' && overtime?.status !== 'PENDING_APPROVAL' ? (
         <Banner tone="neutral" text={`${t('shiftReminder.waitingApprovalTitle')}. ${t('shiftReminder.waitingApprovalSubtitle')}`} />
