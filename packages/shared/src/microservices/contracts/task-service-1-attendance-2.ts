@@ -1,7 +1,13 @@
 /** task-service attendance-2 handlers — contracts (request types are what the handler reads). */
 import { rpc } from '../contract';
 import type { ManualEntriesMessage, BreakRuleInput } from './task-service-1-types';
-import type { BreakType } from '@prisma/client';
+import type { BreakType as BreakTypeEnum } from '../../types/enums';
+
+/*
+  The break kinds as their string values. Shared never imports generated Prisma types: the web and the
+  console build shared without a Prisma client, so a type from '@prisma/client' breaks their image builds.
+*/
+type BreakType = `${BreakTypeEnum}`;
 import type { AttendanceScope } from '../../index';
 import type { SpaceScopeIds } from '../../access/space-scope';
 import type { OccurrenceEvidence } from '../../sync/occurrence';
