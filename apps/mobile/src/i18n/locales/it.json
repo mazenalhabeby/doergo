@@ -2827,20 +2827,6 @@
     "rejectHint": "Indica a {{name}} cosa correggere: lo vedrà.",
     "rejectPlaceholder": "es. l’orario di uscita sembra sbagliato",
     "someone": "Qualcuno",
-    "flags": {
-      "EARLY_DEPARTURE": "Uscito prima",
-      "LATE_ARRIVAL": "In ritardo",
-      "MISSED_CLOCK_OUT": "Senza uscita",
-      "OUTSIDE_GEOFENCE_IN": "Entrata fuori sede",
-      "OUTSIDE_GEOFENCE_OUT": "Uscita fuori sede",
-      "OVERTIME": "Straordinario",
-      "UNSCHEDULED_DAY": "Non pianificato",
-      "MISSED_BREAK": "Pausa saltata",
-      "REMOTE_WITH_WORKSPACE": "Da remoto con spazio assegnato",
-      "AUTO_CLOCK_IN": "Entrata auto",
-      "AUTO_CLOCK_OUT": "Uscita auto",
-      "AUTO_REST": "Pausa auto"
-    },
     "period": {
       "month": "30 giorni",
       "today": "Oggi",
@@ -2848,12 +2834,6 @@
       "custom": "Personalizzato"
     },
     "searchPlaceholder": "Cerca per nome",
-    "outcome": {
-      "APPROVED": "Approvato",
-      "AUTO_APPROVED": "Approvato automaticamente",
-      "PENDING": "In attesa",
-      "REJECTED": "Rimandato"
-    },
     "rangeFrom": "Dal",
     "rangeTo": "Al",
     "edit": {

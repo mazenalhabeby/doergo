@@ -3,10 +3,19 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type NoShow } from '../../../lib/api';
 import type { TimeEntry } from '../../../lib/api/types';
-import { workedMinutes, personName, formatDuration } from '@hbcfield/shared/client';
+import {
+  workedMinutes,
+  personName,
+  formatDuration,
+  sortedLabels,
+  labelWord,
+  approvalText,
+  approvalWord,
+} from '@hbcfield/shared/client';
+import i18n from '../../../i18n';
 import { COLORS } from '../../../lib/constants';
 import { router, type Href } from 'expo-router';
-import { type Segment, FLAG_COLOR, s } from './attendance-review-helpers';
+import { type Segment, labelColor, s } from './attendance-review-helpers';
 import { useAttendanceReviewScreenData } from './use-attendance-review-screen-data';
 
 /** AttendanceReviewScreen's state and handlers — everything before its markup, moved here unchanged. */
@@ -81,11 +90,12 @@ export function useAttendanceReviewScreen() {
     if (!reasons?.length) return null;
     return (
       <View style={s.flagRow}>
-        {reasons.map((r) => {
-          const color = FLAG_COLOR[r] ?? colors.textMuted;
+        {/* The one catalogue's order, colour and words (packages/shared/src/attendance/labels). */}
+        {sortedLabels(reasons).map((l) => {
+          const color = labelColor(l.tone, colors.textMuted);
           return (
-            <View key={r} style={[s.flag, { backgroundColor: color + '1f', borderColor: color + '55' }]}>
-              <Text style={[s.flagText, { color }]}>{t(`attendanceReview.flags.${r}`, r)}</Text>
+            <View key={l.code} style={[s.flag, { backgroundColor: color + '1f', borderColor: color + '55' }]}>
+              <Text style={[s.flagText, { color }]}>{labelWord(l.code, i18n.language)}</Text>
             </View>
           );
         })}
@@ -95,12 +105,15 @@ export function useAttendanceReviewScreen() {
 
   /** Where a past shift ended up: approved, sent back, or still waiting. */
   const Outcome = ({ entry }: { entry: TimeEntry }) => {
-    const status = entry.approvalStatus;
-    if (!status) return null;
-    const color = status === 'APPROVED' ? '#22c55e' : status === 'REJECTED' ? COLORS.error : '#f59e0b';
+    if (!entry.approvalStatus) return null;
+    // Same words as the web: AUTO reads "Auto-approved" in green, never the raw "AUTO".
+    const word = approvalWord({ approvalStatus: entry.approvalStatus });
+    const color = word === 'rejected' ? COLORS.error : word === 'needsReview' ? '#f59e0b' : '#22c55e';
     return (
       <View style={[s.flag, { backgroundColor: color + '1f', borderColor: color + '55' }]}>
-        <Text style={[s.flagText, { color }]}>{t(`attendanceReview.outcome.${status}`, status)}</Text>
+        <Text style={[s.flagText, { color }]}>
+          {approvalText({ approvalStatus: entry.approvalStatus }, i18n.language)}
+        </Text>
       </View>
     );
   };

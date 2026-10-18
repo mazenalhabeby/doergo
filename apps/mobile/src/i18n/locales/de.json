@@ -2827,20 +2827,6 @@
     "rejectHint": "Sagen Sie {{name}}, was zu korrigieren ist — die Person sieht diesen Text.",
     "rejectPlaceholder": "z. B. Ausstempelzeit scheint falsch",
     "someone": "Jemand",
-    "flags": {
-      "EARLY_DEPARTURE": "Früher gegangen",
-      "LATE_ARRIVAL": "Verspätet",
-      "MISSED_CLOCK_OUT": "Kein Ausstempeln",
-      "OUTSIDE_GEOFENCE_IN": "Einstempeln außerhalb",
-      "OUTSIDE_GEOFENCE_OUT": "Ausstempeln außerhalb",
-      "OVERTIME": "Überstunden",
-      "UNSCHEDULED_DAY": "Nicht geplant",
-      "MISSED_BREAK": "Pause verpasst",
-      "REMOTE_WITH_WORKSPACE": "Auswärts trotz Arbeitsbereich",
-      "AUTO_CLOCK_IN": "Auto ein",
-      "AUTO_CLOCK_OUT": "Auto aus",
-      "AUTO_REST": "Auto-Pause"
-    },
     "period": {
       "month": "30 Tage",
       "today": "Heute",
@@ -2848,12 +2834,6 @@
       "custom": "Zeitraum"
     },
     "searchPlaceholder": "Nach Name suchen",
-    "outcome": {
-      "APPROVED": "Freigegeben",
-      "AUTO_APPROVED": "Automatisch freigegeben",
-      "PENDING": "Offen",
-      "REJECTED": "Zurückgeschickt"
-    },
     "rangeFrom": "Von",
     "rangeTo": "Bis",
     "edit": {

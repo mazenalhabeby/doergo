@@ -10,11 +10,13 @@ import { JobSheet } from '../job/job-ui';
 import { WorkLogSheet } from '../worklog-sheet';
 import { DateTileRow } from './date-tile-row';
 import { addDays, dayKey, statusOf } from './time-logic';
-import { AUTO_CLOCK_IN_FLAG, AUTO_CLOCK_OUT_FLAG, formatDuration } from '@hbcfield/shared/client';
+import { formatDuration, labelWord, sortedLabels } from '@hbcfield/shared/client';
 import { LoadingLine } from '../loading-line';
 
 /** Made (in part) by the automatic clock — marked, never suspected (attendance/auto-clock.ts). */
-const isAutomatic = (e: TimeEntry) => (e.flagReasons ?? []).some((f) => f === AUTO_CLOCK_IN_FLAG || f === AUTO_CLOCK_OUT_FLAG);
+const AUTOMATIC = new Set(['AUTO_CLOCK_IN', 'AUTO_CLOCK_OUT', 'AUTO_REST']);
+/** The first automatic label on the entry (catalogue order), or null — the worker sees only how it was made. */
+const automaticLabel = (e: TimeEntry) => sortedLabels(e.flagReasons).find((l) => AUTOMATIC.has(l.code))?.code ?? null;
 
 /** Counted minutes on one entry — the figure payroll reads, never called "paid". */
 const countedOf = (e: TimeEntry) => e.paidMinutes ?? e.totalMinutes ?? 0;
@@ -53,11 +55,22 @@ export function TimeHistory({ entries, now }: { entries: readonly TimeEntry[]; n
         onPress={() => setAll(true)}
         accessibilityRole="button"
         hitSlop={6}
-        style={{ alignSelf: 'center', paddingTop: amazen.space(2) }}>
-        <AText variant="caption" tone="accent" style={{ fontSize: 13.5 }}>{t('time.history.all', 'See all shifts')}</AText>
+        style={{ alignSelf: 'center', paddingTop: amazen.space(2) }}
+      >
+        <AText variant="caption" tone="accent" style={{ fontSize: 13.5 }}>
+          {t('time.history.all', 'See all shifts')}
+        </AText>
       </Pressable>
 
-      <AllShiftsSheet visible={all} onClose={() => setAll(false)} now={now} onOpen={(e) => { setAll(false); setOpen(e); }} />
+      <AllShiftsSheet
+        visible={all}
+        onClose={() => setAll(false)}
+        now={now}
+        onOpen={(e) => {
+          setAll(false);
+          setOpen(e);
+        }}
+      />
 
       {open ? (
         <WorkLogSheet
@@ -88,7 +101,8 @@ function ShiftRow({ entry, onPress }: { entry: TimeEntry; onPress: () => void })
   const day = new Date(entry.clockInAt);
   const notes = entry._count?.workLog ?? 0;
   const status = statusOf(entry);
-  const statusColor = status === 'approved' ? c.accent : status === 'rejected' || status === 'closedForYou' ? c.critical : c.warn;
+  const statusColor =
+    status === 'approved' ? c.accent : status === 'rejected' || status === 'closedForYou' ? c.critical : c.warn;
   return (
     <DateTileRow
       onPress={onPress}
@@ -96,8 +110,12 @@ function ShiftRow({ entry, onPress }: { entry: TimeEntry; onPress: () => void })
       tileBottom={day.toLocaleDateString(i18n.language, { weekday: 'short', timeZone: tz })}
       trailing={
         <View style={{ alignItems: 'flex-end' }}>
-          <AText variant="body" tone="strong" numeric style={{ fontSize: 14, lineHeight: 20 }}>{formatDuration(countedOf(entry))}</AText>
-          <AText variant="caption" numberOfLines={1} style={{ color: statusColor }}>{t(`time.history.status.${status}`)}</AText>
+          <AText variant="body" tone="strong" numeric style={{ fontSize: 14, lineHeight: 20 }}>
+            {formatDuration(countedOf(entry))}
+          </AText>
+          <AText variant="caption" numberOfLines={1} style={{ color: statusColor }}>
+            {t(`time.history.status.${status}`)}
+          </AText>
         </View>
       }
     >
@@ -108,10 +126,12 @@ function ShiftRow({ entry, onPress }: { entry: TimeEntry; onPress: () => void })
         <AText variant="caption" tone="muted" numeric numberOfLines={1} style={{ flexShrink: 1 }}>
           {`${formatTime(entry.clockInAt, tz)} → ${entry.clockOutAt ? formatTime(entry.clockOutAt, tz) : '…'}`}
         </AText>
-        {isAutomatic(entry) ? <Chip label={t('autoClock.chip')} /> : null}
+        {automaticLabel(entry) ? <Chip label={labelWord(automaticLabel(entry)!, i18n.language)} /> : null}
       </View>
       <AText variant="caption" numberOfLines={1} style={{ color: notes ? c.accent : c.inkMuted, marginTop: 2 }}>
-        {notes ? t('worklog.count', { count: notes, defaultValue: '{{count}} notes' }) : t('worklog.nothing', 'Nothing noted')}
+        {notes
+          ? t('worklog.count', { count: notes, defaultValue: '{{count}} notes' })
+          : t('worklog.nothing', 'Nothing noted')}
       </AText>
     </DateTileRow>
   );
@@ -143,22 +163,32 @@ function AllShiftsSheet({
   const [rows, setRows] = useState<TimeEntry[] | null>(null);
   const [failed, setFailed] = useState(false);
 
-  const load = useCallback(async (p: Period) => {
-    setRows(null);
-    setFailed(false);
-    const [from, to] = rangeOf(p, now);
-    try {
-      const res = await attendanceApi.getHistory({ startDate: dayKey(from), endDate: dayKey(to), limit: 100, page: 1 });
-      // ⚠️ A BARE ARRAY once unwrapped, whatever the declared type — see `attendanceApi.getHistory`.
-      const list: TimeEntry[] = Array.isArray(res) ? (res as unknown as TimeEntry[]) : (res?.data ?? []);
-      setRows(list.filter((e) => !!e.clockOutAt));
-    } catch {
-      setFailed(true);
-      setRows([]);
-    }
-  }, [now]);
+  const load = useCallback(
+    async (p: Period) => {
+      setRows(null);
+      setFailed(false);
+      const [from, to] = rangeOf(p, now);
+      try {
+        const res = await attendanceApi.getHistory({
+          startDate: dayKey(from),
+          endDate: dayKey(to),
+          limit: 100,
+          page: 1,
+        });
+        // ⚠️ A BARE ARRAY once unwrapped, whatever the declared type — see `attendanceApi.getHistory`.
+        const list: TimeEntry[] = Array.isArray(res) ? (res as unknown as TimeEntry[]) : (res?.data ?? []);
+        setRows(list.filter((e) => !!e.clockOutAt));
+      } catch {
+        setFailed(true);
+        setRows([]);
+      }
+    },
+    [now],
+  );
 
-  useEffect(() => { if (visible) void load(period); }, [visible, period, load]);
+  useEffect(() => {
+    if (visible) void load(period);
+  }, [visible, period, load]);
 
   const total = (rows ?? []).reduce((a, e) => a + countedOf(e), 0);
   const approved = (rows ?? []).filter((e) => statusOf(e) === 'approved').length;
@@ -169,9 +199,7 @@ function AllShiftsSheet({
       <View style={{ flexDirection: 'row', gap: amazen.space(1.5) }}>
         {(['week', 'lastWeek', 'month'] as const).map((p) => {
           const on = p === period;
-          return (
-            <ChoicePill key={p} label={t(`time.history.period.${p}`)} on={on} onPress={() => setPeriod(p)} />
-          );
+          return <ChoicePill key={p} label={t(`time.history.period.${p}`)} on={on} onPress={() => setPeriod(p)} />;
         })}
       </View>
 
@@ -189,9 +217,14 @@ function AllShiftsSheet({
               backgroundColor: c.tile,
               paddingVertical: amazen.space(2.25),
               paddingHorizontal: amazen.space(2.5),
-            }}>
-            <AText variant="body" tone="strong" numeric style={{ fontSize: 18, lineHeight: 24 }}>{rows ? v : '—'}</AText>
-            <AText variant="caption" tone="muted" numberOfLines={1} style={{ fontSize: 10.5 }}>{l}</AText>
+            }}
+          >
+            <AText variant="body" tone="strong" numeric style={{ fontSize: 18, lineHeight: 24 }}>
+              {rows ? v : '—'}
+            </AText>
+            <AText variant="caption" tone="muted" numberOfLines={1} style={{ fontSize: 10.5 }}>
+              {l}
+            </AText>
           </View>
         ))}
       </View>
@@ -199,9 +232,13 @@ function AllShiftsSheet({
       {rows === null ? (
         <LoadingLine />
       ) : failed ? (
-        <AText variant="caption" tone="critical">{t('time.history.failed', 'Could not load your shifts. Try again in a moment.')}</AText>
+        <AText variant="caption" tone="critical">
+          {t('time.history.failed', 'Could not load your shifts. Try again in a moment.')}
+        </AText>
       ) : rows.length === 0 ? (
-        <AText variant="caption" tone="muted">{t('time.history.none', 'No finished shifts in this period.')}</AText>
+        <AText variant="caption" tone="muted">
+          {t('time.history.none', 'No finished shifts in this period.')}
+        </AText>
       ) : (
         <View>
           {rows.map((e, i) => (

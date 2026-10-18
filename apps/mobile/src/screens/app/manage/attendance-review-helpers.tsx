@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { localDateKey } from '@hbcfield/shared/client';
+import { localDateKey, type LabelTone } from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../lib/constants';
 
 /** The attendance review's constants, date helpers and styles — moved here unchanged from app/(app)/manage/attendance.tsx. */
@@ -16,18 +16,19 @@ export const PERIODS: Period[] = ['today', 'week', 'month', 'custom'];
 export const PAGE = 30;
 
 /** How far back the no-show sweep looks, matching the web default. */
-export const NO_SHOW_DAYS = 7;
+export const NO_SHOW_DAYS = 30;
 
-/** Auto-approval flags, coloured by how much attention each deserves. */
-export const FLAG_COLOR: Record<string, string> = {
-  MISSED_CLOCK_OUT: '#ef4444',
-  OVERTIME: '#f97316',
-  OUTSIDE_GEOFENCE_IN: '#f59e0b',
-  OUTSIDE_GEOFENCE_OUT: '#f59e0b',
-  LATE_ARRIVAL: '#eab308',
-  EARLY_DEPARTURE: '#eab308',
-  UNSCHEDULED_DAY: '#a855f7',
+/** The label catalogue's tones as colours — the same five the web uses; muted takes the theme's. */
+const LABEL_HEX: Record<Exclude<LabelTone, 'muted'>, string> = {
+  red: '#ef4444',
+  amber: '#f59e0b',
+  orange: '#f97316',
+  purple: '#a855f7',
 };
+
+export function labelColor(tone: LabelTone, muted: string): string {
+  return tone === 'muted' ? muted : LABEL_HEX[tone];
+}
 
 /** A list plus where it has got to. `done` means the server has no more rows. */
 export interface Feed<T> {

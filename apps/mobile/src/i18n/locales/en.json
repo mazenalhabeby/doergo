@@ -2827,20 +2827,6 @@
     "rejectHint": "Tell {{name}} what to fix — they see this.",
     "rejectPlaceholder": "e.g. clock-out time looks wrong",
     "someone": "Someone",
-    "flags": {
-      "EARLY_DEPARTURE": "Left early",
-      "LATE_ARRIVAL": "Late",
-      "MISSED_CLOCK_OUT": "No clock-out",
-      "OUTSIDE_GEOFENCE_IN": "Off-site in",
-      "OUTSIDE_GEOFENCE_OUT": "Off-site out",
-      "OVERTIME": "Overtime",
-      "UNSCHEDULED_DAY": "Unscheduled",
-      "MISSED_BREAK": "Missed rest",
-      "REMOTE_WITH_WORKSPACE": "Remote, has a workspace",
-      "AUTO_CLOCK_IN": "Auto in",
-      "AUTO_CLOCK_OUT": "Auto out",
-      "AUTO_REST": "Auto rest"
-    },
     "period": {
       "month": "30 days",
       "today": "Today",
@@ -2848,12 +2834,6 @@
       "custom": "Custom"
     },
     "searchPlaceholder": "Search by name",
-    "outcome": {
-      "APPROVED": "Approved",
-      "AUTO_APPROVED": "Auto-approved",
-      "PENDING": "Waiting",
-      "REJECTED": "Sent back"
-    },
     "rangeFrom": "From",
     "rangeTo": "To",
     "edit": {
