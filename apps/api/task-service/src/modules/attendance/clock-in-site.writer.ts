@@ -77,7 +77,8 @@ export class ClockInSiteWriter {
       the member tapped. Rather than keep a history of boundaries, say so: a
       person looks at an entry whose site moved while it was on its way.
     */
-    if (occurrence.flags.includes('RECORDED_OFFLINE') && location.updatedAt > clockInTime) {
+    // Label rules: only a move of the site itself counts — not a rename (`boundaryChangedAt`).
+    if (occurrence.flags.includes('RECORDED_OFFLINE') && (location.boundaryChangedAt ?? 0) > clockInTime) {
       flagReasons.push('BOUNDARY_CHANGED');
     }
 

@@ -193,9 +193,19 @@ describe('attendance recorded offline', () => {
 
     it('flags an entry whose site boundary changed while it was on its way', async () => {
       const { service, prisma } = await build();
-      prisma.companyLocation.findFirst.mockResolvedValue({ ...location, updatedAt: new Date('2026-09-14T10:00:00Z') });
+      prisma.companyLocation.findFirst.mockResolvedValue({
+        ...location,
+        boundaryChangedAt: new Date('2026-09-14T10:00:00Z'),
+      });
       await service.clockIn(clockIn());
       expect(prisma.timeEntry.create.mock.calls[0][0].data.flagReasons).toContain('BOUNDARY_CHANGED');
+    });
+
+    it('does not flag it when the workspace was only edited (renamed), not moved', async () => {
+      const { service, prisma } = await build();
+      prisma.companyLocation.findFirst.mockResolvedValue({ ...location, updatedAt: new Date('2026-09-14T10:00:00Z') });
+      await service.clockIn(clockIn());
+      expect(prisma.timeEntry.create.mock.calls[0][0].data.flagReasons).not.toContain('BOUNDARY_CHANGED');
     });
 
     it('still refuses a tap that happened outside a strict site', async () => {

@@ -16,6 +16,7 @@ import {
 } from '@hbcfield/shared';
 import { tzFromCoords, spaceCurrency, readAutoClock } from './space-helpers';
 import { SpaceServiceBase } from './space-service.base';
+import { siteBoundaryChanged } from './site-boundary';
 
 /** Editing a workspace: its settings, boundary, rates, auto-clock. */
 @Injectable()
@@ -89,6 +90,8 @@ export class SpaceUpdateService extends SpaceServiceBase {
       const polygon = this.cleanPolygon(data.geofencePolygon);
       updateData.geofencePolygon = polygon === null ? Prisma.DbNull : polygon;
     }
+    // Only a move of the site itself (pin, radius, drawn area) — not a rename — is a boundary change.
+    if (siteBoundaryChanged(existing, data, updateData.geofencePolygon)) updateData.boundaryChangedAt = new Date();
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
     if (data.enabledModules !== undefined) updateData.enabledModules = data.enabledModules;
     if (data.workflowId !== undefined) {
