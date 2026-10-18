@@ -7,8 +7,8 @@
  * and the new entry is judged against 08:00: LATE_ARRIVAL by five hours, sent
  * to review, while the morning entry already says they arrived on time.
  *
- * `it.failing` pins today's wrong answer; it turns red (make it plain `it`)
- * once a clock-in that resumes a shift already started today is not judged late.
+ * Fixed by the label rules (docs/plans/clock-attendance-2026-10.md): only the
+ * first entry of a shift instance is judged late; the return is judged as a rest.
  */
 import { Test } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
@@ -56,15 +56,13 @@ const location = {
 async function build(opts: { requests?: any[]; shift?: any } = {}) {
   const prisma: any = {
     user: {
-      findFirst: jest
-        .fn()
-        .mockResolvedValue({
-          id: 'u1',
-          organizationId: 'org-1',
-          allowRemote: false,
-          role: 'EMPLOYEE',
-          organization: { timezone: 'Europe/Vienna' },
-        }),
+      findFirst: jest.fn().mockResolvedValue({
+        id: 'u1',
+        organizationId: 'org-1',
+        allowRemote: false,
+        role: 'EMPLOYEE',
+        organization: { timezone: 'Europe/Vienna' },
+      }),
       findUnique: jest.fn().mockResolvedValue({ firstName: 'Mike', lastName: 'Weber' }),
       findMany: jest.fn().mockResolvedValue([]),
     },
@@ -141,7 +139,6 @@ const at = (iso: string) => {
   jest.setSystemTime(new Date(iso));
 };
 
-
 describe('late label — a second clock-in on the same shift', () => {
   beforeAll(() => jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] }));
   afterAll(() => jest.useRealTimers());
@@ -167,13 +164,40 @@ describe('late label — a second clock-in on the same shift', () => {
     expect(created(prisma).flagReasons).not.toContain('LATE_ARRIVAL');
   });
 
-  it.failing('back from lunch at 13:00 on the same shift is NOT late', async () => {
+  /** The earlier entry of the same shift instance, as priorEntryOfShift reads it. */
+  const withMorning = (prisma: any, breakPlan: unknown = null) =>
+    prisma.timeEntry.findFirst.mockImplementation(async ({ where }: any) =>
+      where?.expectedClockInAt ? { clockOutAt: morning.clockOutAt, breakPlan } : null,
+    );
+
+  it('back from lunch at 13:00 on the same shift is NOT late', async () => {
     at('2026-09-15T11:00:00.000Z');
     const { service, prisma } = await build();
-    // Whatever the fix reads to know a shift was already started today, this is it.
-    prisma.timeEntry.findMany.mockResolvedValue([morning]);
+    withMorning(prisma);
     await service.clockIn(clockIn());
-    // Today: ['LATE_ARRIVAL'] — 300 min after the 08:00 start, PENDING review.
-    expect(created(prisma).flagReasons).not.toContain('LATE_ARRIVAL');
+    const data = created(prisma);
+    expect(data.flagReasons).not.toContain('LATE_ARRIVAL');
+    expect(data.labelFacts.firstOfShift).toBe(false);
+    expect(data.labelRules).toBe(1);
+  });
+
+  it('back after a planned 30 min lunch that took 60 min is LATE_FROM_REST, sent to review', async () => {
+    at('2026-09-15T11:00:00.000Z');
+    const { service, prisma } = await build();
+    withMorning(prisma, [{ state: 'PENDING', dueAt: '2026-09-15T10:00:00.000Z', durationMinutes: 30 }]);
+    await service.clockIn(clockIn());
+    const data = created(prisma);
+    expect(data.flagReasons).toContain('LATE_FROM_REST');
+    expect(data.flagReasons).not.toContain('LATE_ARRIVAL');
+    expect(data.labelFacts.rest).toEqual({ plannedMin: 30, takenMin: 60, overMin: 25 });
+    expect(data.approvalStatus).toBe('PENDING');
+  });
+
+  it('back within the planned rest + grace is not flagged', async () => {
+    at('2026-09-15T10:34:00.000Z');
+    const { service, prisma } = await build();
+    withMorning(prisma, [{ state: 'PENDING', dueAt: '2026-09-15T10:00:00.000Z', durationMinutes: 30 }]);
+    await service.clockIn(clockIn());
+    expect(created(prisma).flagReasons).not.toContain('LATE_FROM_REST');
   });
 });

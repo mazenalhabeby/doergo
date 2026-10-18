@@ -5,6 +5,7 @@ import {
   SHIFT_REMINDER_DEFAULTS,
   SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
   rotaRunsOn,
+  chooseShiftInstance,
 } from '@hbcfield/shared';
 import { ResolvedShift, instanceStartDay, shiftWindowOn, endedBefore, LocalDate } from './shift-resolver-helpers';
 
@@ -42,6 +43,8 @@ export abstract class ShiftResolverBase {
       orderBy: [{ priority: 'desc' }, { effectiveFrom: 'desc' }],
     });
 
+    // Every instance this clock-in could belong to, in priority order; the shared rule picks one.
+    const candidates: ResolvedShift[] = [];
     for (const a of assignments) {
       if (!a.shift?.isActive) continue;
       const shift = a.shift;
@@ -63,9 +66,9 @@ export abstract class ShiftResolverBase {
       if (endedBefore(window.expectedClockOutAt, clockInAt, toleranceMin)) continue;
 
       const graceMin = shift.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
-
-      return {
+      candidates.push({
         shiftId: shift.id,
+        shiftName: shift.name ?? null,
         expectedClockInAt: window.expectedClockInAt,
         expectedClockOutAt: window.expectedClockOutAt,
         nextRemindAt: new Date(window.expectedClockOutAt.getTime() + graceMin * 60_000),
@@ -74,9 +77,20 @@ export abstract class ShiftResolverBase {
         maxReminders: shift.maxReminders ?? SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS,
         flagToleranceMin: toleranceMin,
         source: 'assignment',
-      };
+      });
     }
-    return null;
+    /*
+      ⚠️ The first candidate used to win. Back at 12:05 for a 13:00 afternoon
+      shift was then bound to the 08:00 morning one (“late 4 h 05 min”), and
+      06:05 for a 07:00 day shift to last night's. chooseShiftInstance prefers
+      the instance the clock-in falls in, then the next to start. One rota row
+      gives one candidate, so a single shift resolves exactly as before.
+    */
+    if (candidates.length <= 1) return candidates[0] ?? null;
+    return chooseShiftInstance(
+      candidates.map((c) => ({ ...c, toleranceMin: c.flagToleranceMin })),
+      clockInAt,
+    );
   }
 
   protected async resolveLegacySchedule(

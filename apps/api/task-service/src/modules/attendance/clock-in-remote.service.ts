@@ -1,8 +1,15 @@
 import { Injectable, BadRequestException, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { success, TimeEntryStatus, ATTENDANCE_FLAG_REASONS, SERVICE_NAMES } from '@hbcfield/shared';
+import {
+  success,
+  TimeEntryStatus,
+  ATTENDANCE_FLAG_REASONS,
+  SERVICE_NAMES,
+  SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
+} from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { clockEventEntry } from './clock-event';
+import { clockInLabels, priorEntryOfShift } from './clock-in-labels';
 import { remoteApprovedAt, type DayRequestRow } from './approved-requests';
 import { alreadyClockedIn, approvalFor } from './attendance-occurrence';
 import { ClockInContextService } from './clock-in-context.service';
@@ -118,8 +125,9 @@ export class ClockInRemoteService {
     // shift to the worker's own timezone.
     // Strip only what is genuinely derived — `expectedClockInAt` is a column.
     const {
-      scheduled: _s,
-      flagToleranceMin: _ft,
+      scheduled: remoteScheduled,
+      flagToleranceMin: remoteTolerance,
+      shiftName: remoteShiftName,
       ...remoteStamp
     } = await this.context.buildShiftStamp(
       data.userId,
@@ -150,9 +158,32 @@ export class ClockInRemoteService {
       timezone: this.context.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? orgTz,
     });
 
+    /*
+      Label rules: a remote clock-in on a day with a shift is judged like any other (it used to be
+      never late). The bucket has no site, so the position is recorded as not judged.
+    */
+    const remoteLabels = clockInLabels({
+      planned: remoteScheduled,
+      clockInAt: remoteClockInAt,
+      stamp: remoteStamp,
+      shiftName: remoteShiftName ?? null,
+      toleranceMin: remoteTolerance ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
+      endIsDailyLimit: false,
+      prior: remoteScheduled
+        ? await priorEntryOfShift(this.prisma, {
+            userId: data.userId,
+            locationId: bucket.id,
+            expectedClockInAt: remoteStamp.expectedClockInAt,
+            before: remoteClockInAt,
+          })
+        : null,
+      fix: { lat: data.lat, lng: data.lng, accuracy: data.accuracy },
+      zone: { lat: null, lng: null, geofenceRadius: 0 },
+    });
     const remoteFlags = [
       ...occurrence.flags,
       ...(remoteDespiteWorkspace ? [ATTENDANCE_FLAG_REASONS.REMOTE_WITH_WORKSPACE] : []),
+      ...remoteLabels.flags,
     ];
     const remotePresence = await this.presence.atClockIn({
       userId: data.userId,
@@ -181,6 +212,8 @@ export class ClockInRemoteService {
       organizationId: data.organizationId,
       ...remoteStamp,
       ...remotePresence,
+      ...remoteLabels.columns,
+      labelFacts: remoteLabels.columns.labelFacts as never,
       breakPlan: remoteRests.breakPlan as never,
       nextBreakRemindAt: remoteRests.nextBreakRemindAt,
     });

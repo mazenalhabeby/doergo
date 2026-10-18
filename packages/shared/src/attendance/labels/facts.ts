@@ -35,10 +35,7 @@ export function shiftFact(input: {
 }
 
 /** The facts after a close: how it closed and where. Never drops what the clock-in recorded. */
-export function withClosing(
-  facts: LabelFacts,
-  closing: { closedHow: ClosedHow; clockOut?: PositionFact },
-): LabelFacts {
+export function withClosing(facts: LabelFacts, closing: { closedHow: ClosedHow; clockOut?: PositionFact }): LabelFacts {
   return { ...facts, closedHow: closing.closedHow, ...(closing.clockOut ? { clockOut: closing.clockOut } : {}) };
 }
 

@@ -127,6 +127,8 @@ export class ClockInContextService {
     expectedClockOutAt?: Date;
     nextRemindAt?: Date;
     flagToleranceMin?: number;
+    /** Derived, not a column: for the label facts. */
+    shiftName?: string | null;
     scheduled: boolean;
   }> {
     try {
@@ -138,6 +140,7 @@ export class ClockInContextService {
         expectedClockOutAt: resolved.expectedClockOutAt,
         nextRemindAt: resolved.nextRemindAt,
         flagToleranceMin: resolved.flagToleranceMin,
+        shiftName: resolved.shiftName ?? null,
         scheduled: true,
       };
     } catch (err) {

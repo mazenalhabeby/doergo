@@ -11,8 +11,10 @@ import {
   autoClockActive,
   clocksByPresence,
   SERVICE_NAMES,
+  SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
 } from '@hbcfield/shared';
 import { clockEventEntry } from './clock-event';
+import { clockInLabels, priorEntryOfShift } from './clock-in-labels';
 import type { DayRequestRow } from './approved-requests';
 import { approvalFor } from './attendance-occurrence';
 import { applyNoShiftAllowance } from './clock-in-no-shift';
@@ -105,7 +107,7 @@ export class ClockInSiteWriter {
     // the flags and the stamp — no separate legacy technicianSchedule query.
     // `scheduled` and `flagToleranceMin` are derived and are not columns;
     // `expectedClockInAt` IS one now and stays in `stampCols`.
-    const { scheduled, flagToleranceMin, ...stampCols } = await this.context.buildShiftStamp(
+    const { scheduled, flagToleranceMin, shiftName, ...stampCols } = await this.context.buildShiftStamp(
       data.userId,
       location,
       clockInTime,
@@ -147,15 +149,40 @@ export class ClockInSiteWriter {
     });
     // No shift here today and clocked by arriving and leaving: the session's course is the workspace's hours.
     const byPresence = clocksByPresence(autoSettings, stampCols);
+    const planned = scheduled || agreedPlan;
+    /*
+      Label rules (docs/plans/clock-attendance-2026-10.md): only the first entry of a shift can be
+      late; coming back after a planned rest is judged as the rest. Unscheduled days keep their rule.
+    */
+    const labels = clockInLabels({
+      planned,
+      clockInAt: clockInTime,
+      stamp: stampCols,
+      shiftName: shiftName ?? null,
+      toleranceMin: flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
+      endIsDailyLimit,
+      prior: planned
+        ? await priorEntryOfShift(this.context.prisma, {
+            userId: data.userId,
+            locationId: data.locationId,
+            expectedClockInAt: stampCols.expectedClockInAt,
+            before: clockInTime,
+          })
+        : null,
+      fix: { lat: data.lat, lng: data.lng, accuracy: data.accuracy },
+      zone: ctx.zone,
+    });
     flagReasons.push(
-      ...scheduleFlagsAtClockIn({
-        planned: scheduled || agreedPlan,
-        workModel: location.workModel,
-        byPresence,
-        clockInAt: clockInTime,
-        expectedClockInAt: stampCols.expectedClockInAt,
-        toleranceMin: flagToleranceMin,
-      }),
+      ...(planned
+        ? labels.flags
+        : scheduleFlagsAtClockIn({
+            planned,
+            workModel: location.workModel,
+            byPresence,
+            clockInAt: clockInTime,
+            expectedClockInAt: stampCols.expectedClockInAt,
+            toleranceMin: flagToleranceMin,
+          })),
     );
 
     /*
@@ -229,6 +256,8 @@ export class ClockInSiteWriter {
       ...stampCols,
       ...presenceCols,
       endIsDailyLimit,
+      ...labels.columns,
+      labelFacts: labels.columns.labelFacts as never,
       breakPlan: restPlan.breakPlan as never,
       nextBreakRemindAt: restPlan.nextBreakRemindAt,
     });

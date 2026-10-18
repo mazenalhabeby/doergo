@@ -2477,6 +2477,9 @@ model CompanyLocation {
   /// (validateGeofencePolygon) — vertex count, coordinate range and a maximum
   /// area, so a boundary cannot be drawn around a district to disable the check.
   geofencePolygon Json?
+  /// When the site's position or boundary (pin, radius, polygon) last changed —
+  /// not any edit. BOUNDARY_CHANGED compares an offline tap against this.
+  boundaryChangedAt DateTime?
   timezone        String    @default("Europe/Berlin") // IANA timezone (e.g. "America/New_York")
   workModel       WorkModel @default(NONE) // How attendance is interpreted for this space
 
@@ -2895,6 +2898,15 @@ model TimeEntry {
   /// The member answered "Still working" on the automatic rest: no automatic
   /// rest is inserted at the close (the missed-rest rule applies as for anybody).
   autoRestSkippedAt DateTime?
+
+  /// The label rules this entry was judged by (packages/shared/src/attendance/labels).
+  /// NULL = written before them: every path keeps today's behaviour for it (the
+  /// past is not touched — docs/plans/clock-attendance-2026-10.md).
+  labelRules Int?
+  /// What the labels were compared against (LabelFacts): the shift and its grace,
+  /// first of the shift or not, the rest, how far from the site, how it closed.
+  /// Never coordinates. Only on entries with `labelRules`.
+  labelFacts Json?
 
   notes String?
 

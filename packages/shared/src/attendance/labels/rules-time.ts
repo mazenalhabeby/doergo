@@ -35,7 +35,10 @@ export const UPCOMING_SHIFT_PREFERENCE_MIN = 4 * 60;
  * 08:00 morning one (“Late 4 h 05 min”), and 06:05 for a 07:00 day shift to
  * last night's 22:00 one.
  */
-export function chooseShiftInstance<T extends ShiftInstanceCandidate>(candidates: readonly T[], clockInAt: Date): T | null {
+export function chooseShiftInstance<T extends ShiftInstanceCandidate>(
+  candidates: readonly T[],
+  clockInAt: Date,
+): T | null {
   const t = clockInAt.getTime();
   const containing = candidates.find((c) => c.expectedClockInAt.getTime() <= t && t < c.expectedClockOutAt.getTime());
   if (containing) return containing;

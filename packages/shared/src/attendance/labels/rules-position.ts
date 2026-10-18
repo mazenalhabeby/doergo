@@ -23,8 +23,10 @@ export function judgePosition(
   skip?: PositionFact['notJudgedBecause'],
 ): { fact: PositionFact; outside: boolean } {
   if (skip) return { fact: { judged: false, notJudgedBecause: skip }, outside: false };
-  if (site.lat == null || site.lng == null) return { fact: { judged: false, notJudgedBecause: 'NO_SITE' }, outside: false };
-  if (fix?.lat == null || fix?.lng == null) return { fact: { judged: false, notJudgedBecause: 'NO_FIX' }, outside: false };
+  if (site.lat == null || site.lng == null)
+    return { fact: { judged: false, notJudgedBecause: 'NO_SITE' }, outside: false };
+  if (fix?.lat == null || fix?.lng == null)
+    return { fact: { judged: false, notJudgedBecause: 'NO_FIX' }, outside: false };
   const accuracy = fix.accuracy ?? null;
   if (accuracy != null && (!Number.isFinite(accuracy) || accuracy > OCCURRENCE_RULES.FIX_MAX_ACCURACY_M)) {
     return { fact: { judged: false, notJudgedBecause: 'TOO_COARSE', accuracyM: accuracy }, outside: false };

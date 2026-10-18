@@ -24,6 +24,7 @@ export interface ResolverSpace {
  */
 interface ResolvedShift {
   shiftId: string | null; // null when resolved from a legacy weekly schedule
+  shiftName?: string | null; // for the label facts ("Night shift")
   expectedClockInAt: Date; // when the shift is expected to START (for late/no-show)
   expectedClockOutAt: Date; // when the shift is expected to end
   nextRemindAt: Date; // expectedClockOutAt + grace → first reminder is due here
