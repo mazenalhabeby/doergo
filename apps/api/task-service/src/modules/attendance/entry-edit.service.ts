@@ -1,9 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import {
   success,
-  computeScheduleFlags,
-  SCHEDULE_TIME_FLAGS,
-  flagsAgainstDailyLimit,
+  judgedByLabelRules,
+  readLabelFacts,
   parseBreakPlan,
   flagsWithMissedRest,
   breakTotals,
@@ -12,6 +11,7 @@ import {
 import { assertNotSelfDecision } from './self-decision';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { approvalFor } from './attendance-occurrence';
+import { editTimeFlags, officeCloseFacts } from './entry-edit-labels';
 import { EntryServiceBase } from './entry-service.base';
 import type { Prisma } from '@prisma/client';
 
@@ -131,20 +131,11 @@ export class EntryEditService extends EntryServiceBase {
       daily allowance read as an allowance rather than a shift.
     */
     let toleranceMin: number | undefined;
+    let labelFacts = judgedByLabelRules(entry) ? readLabelFacts(entry.labelFacts) : null;
     if (timesChanged) {
-      const expectation = await this.expectationFor(entry);
-      toleranceMin = expectation.toleranceMin;
-      const recomputed = flagsAgainstDailyLimit(
-        computeScheduleFlags({
-          clockInAt: newClockIn,
-          clockOutAt: newClockOut,
-          expectedClockInAt: expectation.expectedStart,
-          expectedClockOutAt: entry.expectedClockOutAt ?? null,
-          toleranceMin,
-        }),
-        entry.endIsDailyLimit,
-      );
-      flags = [...flags.filter((f) => !SCHEDULE_TIME_FLAGS.has(f)), ...recomputed];
+      const edited = editTimeFlags({ entry, flags, expectation: await this.expectationFor(entry), newClockIn, newClockOut });
+      ({ flags, toleranceMin } = edited);
+      labelFacts = edited.labelFacts ?? labelFacts;
 
       /*
         ⚠️ A temporarily closed entry the office has corrected is no longer
@@ -182,6 +173,11 @@ export class EntryEditService extends EntryServiceBase {
     if (timesChanged || closingOpen) {
       flags = [...new Set(flags)];
       updateData.flagReasons = flags;
+      // Label rules: a new entry's status follows its labels after every edit, unless a person decided it.
+      if (labelFacts && !closingOpen && (entry.approvalStatus === 'PENDING' || entry.approvalStatus === 'AUTO')) {
+        updateData.approvalStatus = approvalFor(flags);
+      }
+      if (labelFacts) updateData.labelFacts = (closingOpen ? officeCloseFacts(labelFacts) : labelFacts) as never;
     }
 
     if (newClockOut) {
