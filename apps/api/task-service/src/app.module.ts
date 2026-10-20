@@ -3,12 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ClientsModule } from '@nestjs/microservices';
 import { BullModule } from '@nestjs/bullmq';
-import {
-  SERVICE_NAMES,
-  createClientOptions,
-  createBullMQConfig,
-  QUEUE_NAMES,
-} from '@hbcfield/shared';
+import { SERVICE_NAMES, createClientOptions, createBullMQConfig, QUEUE_NAMES } from '@hbcfield/shared';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { TaskAccessModule } from './common/task-access/task-access.module';
 import { ObjectStoreModule } from '@hbcfield/shared/storage';
@@ -20,7 +15,7 @@ import { NotificationRoutingModule } from './common/notification-routing.module'
 import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { AssetsModule } from './modules/assets/assets.module';
 import { ReportsModule } from './modules/reports/reports.module';
-import { LocationsModule } from './modules/locations/locations.module';
+import { SpacesModule } from './modules/spaces/spaces.module';
 import { SearchModule } from './modules/search/search.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { SpaceRolesModule } from './modules/space-roles/space-roles.module';
@@ -75,9 +70,7 @@ import { RetentionService } from './common/retention/retention.service';
       name: QUEUE_NAMES.SUPPORT,
     }),
     // Client for notification service (to emit events)
-    ClientsModule.registerAsync([
-      createClientOptions(SERVICE_NAMES.NOTIFICATION),
-    ]),
+    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
     PrismaModule,
     TaskAccessModule, // the one task gate (tasks, attachments, reports, custom fields)
     // One object store for every module that touches the bucket.
@@ -89,7 +82,7 @@ import { RetentionService } from './common/retention/retention.service';
     AttachmentsModule,
     AssetsModule,
     ReportsModule,
-    LocationsModule,
+    SpacesModule,
     SearchModule,
     AttendanceModule,
     SpaceRolesModule,

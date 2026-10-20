@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { PeopleController } from './people.controller';
-import { LocationsModule } from '../locations/locations.module';
+import { SpacesModule } from '../spaces/spaces.module';
 import { ChatModule } from '../chat/chat.module';
 
 @Module({
-  imports: [LocationsModule, ChatModule],
+  imports: [SpacesModule, ChatModule],
   controllers: [PeopleController],
 })
 export class PeopleModule {}

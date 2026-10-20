@@ -135,15 +135,15 @@ export const EXTERNAL_OPEN_ROUTES: Record<string, string> = {
   'MemberTimeOffController.requestTimeOff': 'MemberTimeOffController',
   // GeoController: timezone lookup for a point — no organization data
   'GeoController.timezone': 'GeoController',
-  // LocationsController: locationListScope forces 'own' for external members; member routes decided per workspace in the path
-  'LocationMembersController.assignMember': 'LocationMembersController',
-  'LocationsController.findAll': 'LocationsController',
-  'LocationsController.findOne': 'LocationsController',
-  'LocationMembersController.getLocationMembers': 'LocationMembersController',
-  'LocationsController.getRosters': 'LocationsController',
-  'LocationsController.getTeam': 'LocationsController',
-  'LocationMembersController.removeAssignment': 'LocationMembersController',
-  'LocationMembersController.updateAssignment': 'LocationMembersController',
+  // SpacesController: spaceListScope forces 'own' for external members; member routes decided per workspace in the path
+  'SpaceAssignmentsController.assignMember': 'SpaceAssignmentsController',
+  'SpacesController.findAll': 'SpacesController',
+  'SpacesController.findOne': 'SpacesController',
+  'SpaceAssignmentsController.getLocationMembers': 'SpaceAssignmentsController',
+  'SpacesController.getRosters': 'SpacesController',
+  'SpacesController.getTeam': 'SpacesController',
+  'SpaceAssignmentsController.removeAssignment': 'SpaceAssignmentsController',
+  'SpaceAssignmentsController.updateAssignment': 'SpaceAssignmentsController',
   // OnboardingController: the caller's own onboarding
   'OnboardingController.acceptInvitation': 'OnboardingController',
   'OnboardingController.cancelJoinRequest': 'OnboardingController',
@@ -334,10 +334,12 @@ export const EXTERNAL_OPEN_REASONS: Record<string, string> = {
   TimeOffAdminController:
     "own schedule and leave; another person only inside the caller's rota/view scope (assertMemberInScope)",
   GeoController: 'timezone lookup for a point — no organization data',
-  LocationsController: "locationListScope forces 'own' for external members; member routes decided per workspace in the path",
-  LocationMembersController: "locationListScope forces 'own' for external members; member routes decided per workspace in the path",
+  SpacesController: "spaceListScope forces 'own' for external members; member routes decided per workspace in the path",
+  SpaceAssignmentsController:
+    "spaceListScope forces 'own' for external members; member routes decided per workspace in the path",
   OnboardingController: "the caller's own onboarding",
-  OrganizationsController: 'audit trail needs the org-wide canViewAllTasks flag (no external holds one); contacts limited to shared workspaces',
+  OrganizationsController:
+    'audit trail needs the org-wide canViewAllTasks flag (no external holds one); contacts limited to shared workspaces',
   AuditLogController:
     'audit trail needs the org-wide canViewAllTasks flag (no external holds one); contacts limited to shared workspaces',
   OrgMembersController:
@@ -345,14 +347,19 @@ export const EXTERNAL_OPEN_REASONS: Record<string, string> = {
   OvertimeController: "the caller's own extra-time requests",
   PortalController: 'customer portal — @AllowCustomer + CustomerScopeGuard refuse every non-CUSTOMER account',
   ReportsController: "a job's service report — the job's access rule",
-  SearchController: 'own jobs only unless the org-wide canViewAllTasks flag is held (people and clients never for externals)',
+  SearchController:
+    'own jobs only unless the org-wide canViewAllTasks flag is held (people and clients never for externals)',
   ShiftIssuesController: "own shift issues; others' through attendanceAuthority (scopeFor)",
-  SpaceMemberPermissionsController: 'the permission builder — decided inline: canGrantSpaceRoles in the path workspace, ceiling, external allow-list',
-  SpaceRolesController: 'decided inline per workspace in the path (mayManageSpaceMembers / canAddSpaceMembers / canGrantSpaceRoles) — bill rates and trades need canManageUsers, which no external may hold',
-  SpaceMembersController: 'decided inline per workspace in the path (mayManageSpaceMembers / canAddSpaceMembers / canGrantSpaceRoles) — bill rates and trades need canManageUsers, which no external may hold',
+  SpaceMemberPermissionsController:
+    'the permission builder — decided inline: canGrantSpaceRoles in the path workspace, ceiling, external allow-list',
+  SpaceRolesController:
+    'decided inline per workspace in the path (mayManageSpaceMembers / canAddSpaceMembers / canGrantSpaceRoles) — bill rates and trades need canManageUsers, which no external may hold',
+  SpaceMembersController:
+    'decided inline per workspace in the path (mayManageSpaceMembers / canAddSpaceMembers / canGrantSpaceRoles) — bill rates and trades need canManageUsers, which no external may hold',
   SupportController: "the caller's own support tickets",
   SyncController: "the phone's own offline sync, filtered to what the caller can read",
-  TaskCustomFieldsController: "a job's custom fields — the job's access rule; externals only on jobs they raised (assertExternalMayWriteTask)",
+  TaskCustomFieldsController:
+    "a job's custom fields — the job's access rule; externals only on jobs they raised (assertExternalMayWriteTask)",
   TaskReportController: "the job report — the job's normal access rule, 404 otherwise",
   TasksController: "a job — canAccessTask on the job's own workspace (assigned, creator, or view-all there)",
   TaskActivityController: "a job — canAccessTask on the job's own workspace (assigned, creator, or view-all there)",

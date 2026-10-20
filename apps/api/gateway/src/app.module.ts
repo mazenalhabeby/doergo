@@ -19,7 +19,7 @@ import { UsersModule } from './modules/users/users.module';
 import { TrackingModule } from './modules/tracking/tracking.module';
 import { AssetsModule } from './modules/assets/assets.module';
 import { ReportsModule } from './modules/reports/reports.module';
-import { LocationsModule } from './modules/locations/locations.module';
+import { SpacesModule } from './modules/spaces/spaces.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { SpaceRolesModule } from './modules/space-roles/space-roles.module';
 import { ShiftsModule } from './modules/shifts/shifts.module';
@@ -127,7 +127,7 @@ import { StorageModule } from './common/storage/storage.module';
     TrackingModule,
     AssetsModule,
     ReportsModule,
-    LocationsModule,
+    SpacesModule,
     AttendanceModule,
     SpaceRolesModule,
     ShiftsModule,

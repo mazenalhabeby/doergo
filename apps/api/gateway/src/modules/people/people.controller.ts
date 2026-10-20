@@ -3,7 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
-import { LocationsService } from '../locations/locations.service';
+import { SpacesService } from '../spaces/spaces.service';
 import { getSpaceScope } from '@hbcfield/shared';
 import { ChatReachLookup } from '../chat/chat-reach.lookup';
 import { sendRpc, listOrgContacts } from '@hbcfield/shared/microservices';
@@ -28,7 +28,7 @@ const rowsOf = (r: unknown): PersonRow[] =>
 @Controller('people')
 export class PeopleController {
   constructor(
-    private readonly locations: LocationsService,
+    private readonly locations: SpacesService,
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     private readonly chatReach: ChatReachLookup,
   ) {}

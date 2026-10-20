@@ -12,7 +12,13 @@
  */
 import { Test } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
-import { QUEUE_NAMES, SERVICE_NAMES, effectiveNoShiftPolicy, noShiftPolicyConflict, workspaceSchedulesShifts } from '@hbcfield/shared';
+import {
+  QUEUE_NAMES,
+  SERVICE_NAMES,
+  effectiveNoShiftPolicy,
+  noShiftPolicyConflict,
+  workspaceSchedulesShifts,
+} from '@hbcfield/shared';
 import { AttendanceService } from '../attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
 import { AttendanceGeocoderService } from '../attendance-geocoder.service';
@@ -24,24 +30,57 @@ import { BREAK_SERVICES } from '../break-services';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { PresenceService } from '../presence/presence.service';
-import { SpaceUpdateService } from '../../locations/space-update.service';
+import { SpaceUpdateService } from '../../spaces/space-update.service';
 
 const NOW = new Date('2026-09-15T12:00:00.000Z');
 const SITE = { lat: 47.9813, lng: 13.8269 };
 const SPACE = {
-  id: 'loc-1', name: 'Yard', organizationId: 'org-1', isActive: true, isRemote: false, workModel: 'NONE',
-  ...SITE, geofenceRadius: 50, geofencePolygon: null, geofencePolicy: 'STRICT', timezone: 'Europe/Vienna',
-  noShiftPolicy: 'ALLOW', noShiftDailyMinutes: 480, updatedAt: new Date('2026-09-01T00:00:00.000Z'), isDefault: false,
-  enabledModules: ['time_tracking'], organization: { enabledModules: ['time_tracking'] },
+  id: 'loc-1',
+  name: 'Yard',
+  organizationId: 'org-1',
+  isActive: true,
+  isRemote: false,
+  workModel: 'NONE',
+  ...SITE,
+  geofenceRadius: 50,
+  geofencePolygon: null,
+  geofencePolicy: 'STRICT',
+  timezone: 'Europe/Vienna',
+  noShiftPolicy: 'ALLOW',
+  noShiftDailyMinutes: 480,
+  updatedAt: new Date('2026-09-01T00:00:00.000Z'),
+  isDefault: false,
+  enabledModules: ['time_tracking'],
+  organization: { enabledModules: ['time_tracking'] },
 };
-const BUCKET = { id: 'remote-1', name: 'Remote', organizationId: 'org-1', isActive: true, isRemote: true, workModel: 'NONE', timezone: 'Europe/Vienna', lat: null, lng: null };
+const BUCKET = {
+  id: 'remote-1',
+  name: 'Remote',
+  organizationId: 'org-1',
+  isActive: true,
+  isRemote: true,
+  workModel: 'NONE',
+  timezone: 'Europe/Vienna',
+  lat: null,
+  lng: null,
+};
 
-async function build(opts: { role?: string; allowRemote?: boolean; assigned?: boolean; space?: Partial<typeof SPACE> } = {}) {
+async function build(
+  opts: { role?: string; allowRemote?: boolean; assigned?: boolean; space?: Partial<typeof SPACE> } = {},
+) {
   const assignments = opts.assigned === false ? [] : [{ spaceId: 'loc-1', allowRemote: null, isPrimary: true }];
   const space = { ...SPACE, ...opts.space };
   const prisma: any = {
     user: {
-      findFirst: jest.fn().mockResolvedValue({ id: 'u1', organizationId: 'org-1', allowRemote: opts.allowRemote ?? true, role: opts.role ?? 'EMPLOYEE', organization: { timezone: 'Europe/Vienna' } }),
+      findFirst: jest
+        .fn()
+        .mockResolvedValue({
+          id: 'u1',
+          organizationId: 'org-1',
+          allowRemote: opts.allowRemote ?? true,
+          role: opts.role ?? 'EMPLOYEE',
+          organization: { timezone: 'Europe/Vienna' },
+        }),
       findUnique: jest.fn().mockResolvedValue({ firstName: 'Mike', lastName: 'Weber' }),
       findMany: jest.fn().mockResolvedValue([]),
     },
@@ -69,7 +108,8 @@ async function build(opts: { role?: string; allowRemote?: boolean; assigned?: bo
   };
   const moduleRef = await Test.createTestingModule({
     providers: [
-      AttendanceService, ...ATTENDANCE_SERVICE_PARTS,
+      AttendanceService,
+      ...ATTENDANCE_SERVICE_PARTS,
       {
         provide: PresenceService,
         useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn(), onBatch: jest.fn() },
@@ -80,8 +120,14 @@ async function build(opts: { role?: string; allowRemote?: boolean; assigned?: bo
       BreakReminderService,
       { provide: PrismaService, useValue: prisma },
       { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
-      { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) } },
-      { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) } },
+      {
+        provide: getQueueToken(QUEUE_NAMES.OVERTIME),
+        useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) },
+      },
+      {
+        provide: NotificationRoutingService,
+        useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) },
+      },
       { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn().mockResolvedValue(null) } },
     ],
   }).compile();
@@ -91,7 +137,13 @@ async function build(opts: { role?: string; allowRemote?: boolean; assigned?: bo
 }
 
 const FAR = { lat: 48.2, lng: 16.37 }; // Vienna, ~190 km from the yard
-const tap = (over: Record<string, unknown> = {}) => ({ userId: 'u1', organizationId: 'org-1', accuracy: 10, ...SITE, ...over });
+const tap = (over: Record<string, unknown> = {}) => ({
+  userId: 'u1',
+  organizationId: 'org-1',
+  accuracy: 10,
+  ...SITE,
+  ...over,
+});
 
 beforeAll(() => {
   jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] });
@@ -125,14 +177,18 @@ describe('the Remote bucket is only for somebody with no workspace', () => {
     const TAP = new Date(NOW.getTime() - 20 * 60_000);
     const anchorAt = new Date(TAP.getTime() - 5 * 60_000);
     const { service, prisma } = await build({ allowRemote: true });
-    await service.clockIn(tap({
-      isRemote: true, ...FAR,
-      evidence: {
-        occurredAt: TAP.toISOString(), uptimeMs: 1_000_000 + 5 * 60_000,
-        anchor: { serverTime: anchorAt.toISOString(), uptimeMs: 1_000_000 },
-        fix: { ...FAR, accuracy: 12, fixAt: TAP.toISOString() },
-      },
-    }));
+    await service.clockIn(
+      tap({
+        isRemote: true,
+        ...FAR,
+        evidence: {
+          occurredAt: TAP.toISOString(),
+          uptimeMs: 1_000_000 + 5 * 60_000,
+          anchor: { serverTime: anchorAt.toISOString(), uptimeMs: 1_000_000 },
+          fix: { ...FAR, accuracy: 12, fixAt: TAP.toISOString() },
+        },
+      }),
+    );
     const data = prisma.timeEntry.create.mock.calls[0][0].data;
     expect(data).toMatchObject({ locationId: 'remote-1', isRemote: true, clockInAt: TAP, approvalStatus: 'PENDING' });
     expect(data.flagReasons).toEqual(expect.arrayContaining(['RECORDED_OFFLINE', 'REMOTE_WITH_WORKSPACE']));
@@ -141,14 +197,18 @@ describe('the Remote bucket is only for somebody with no workspace', () => {
   it('a member with NO workspace offline gets no REMOTE_WITH_WORKSPACE flag', async () => {
     const TAP = new Date(NOW.getTime() - 20 * 60_000);
     const { service, prisma } = await build({ allowRemote: true, assigned: false });
-    await service.clockIn(tap({
-      isRemote: true, ...FAR,
-      evidence: {
-        occurredAt: TAP.toISOString(), uptimeMs: 1_000_000 + 5 * 60_000,
-        anchor: { serverTime: new Date(TAP.getTime() - 5 * 60_000).toISOString(), uptimeMs: 1_000_000 },
-        fix: { ...FAR, accuracy: 12, fixAt: TAP.toISOString() },
-      },
-    }));
+    await service.clockIn(
+      tap({
+        isRemote: true,
+        ...FAR,
+        evidence: {
+          occurredAt: TAP.toISOString(),
+          uptimeMs: 1_000_000 + 5 * 60_000,
+          anchor: { serverTime: new Date(TAP.getTime() - 5 * 60_000).toISOString(), uptimeMs: 1_000_000 },
+          fix: { ...FAR, accuracy: 12, fixAt: TAP.toISOString() },
+        },
+      }),
+    );
     expect(prisma.timeEntry.create.mock.calls[0][0].data.flagReasons).not.toContain('REMOTE_WITH_WORKSPACE');
   });
 
@@ -161,7 +221,10 @@ describe('the Remote bucket is only for somebody with no workspace', () => {
   });
 
   it('a workspace without Time Tracking does not close the bucket (the list does not offer it either)', async () => {
-    const { service, prisma } = await build({ allowRemote: true, space: { enabledModules: [], organization: { enabledModules: [] } } as never });
+    const { service, prisma } = await build({
+      allowRemote: true,
+      space: { enabledModules: [], organization: { enabledModules: [] } } as never,
+    });
     await service.clockIn(tap({ isRemote: true, ...FAR }));
     expect(prisma.timeEntry.create.mock.calls[0][0].data).toMatchObject({ locationId: 'remote-1', isRemote: true });
   });
@@ -232,7 +295,12 @@ describe('a workspace that schedules nothing', () => {
 
 describe('the shared rule', () => {
   it.each([
-    [null, false], [undefined, false], ['NONE', false], ['SHIFT', true], ['FIXED', true], ['TASK', false],
+    [null, false],
+    [undefined, false],
+    ['NONE', false],
+    ['SHIFT', true],
+    ['FIXED', true],
+    ['TASK', false],
   ])('workModel %s schedules shifts: %s', (wm, expected) => {
     expect(workspaceSchedulesShifts(wm as string | null | undefined)).toBe(expected);
   });

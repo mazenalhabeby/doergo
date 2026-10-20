@@ -23,7 +23,7 @@ describe('task status lists', () => {
   });
 
   it('the presence panel keeps no local list under a shared name', () => {
-    const src = read('modules/locations/space-roster.service.ts');
+    const src = read('modules/spaces/space-roster.service.ts');
     expect(src).not.toMatch(/const ACTIVE_STATUSES/);
     expect(src).toMatch(/WORKING_NOW_STATUSES/);
   });

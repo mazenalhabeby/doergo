@@ -80,9 +80,8 @@ describe('ONE narrowing rule in the gateway', () => {
     'common/permission-scope.ts': 'the rule itself',
     'common/tracking-visibility.ts': 'also reads the legacy flat column as org-wide',
     'modules/approvals/approvals-helpers.ts': 'reads OWN access (a stand-in is never a ceiling)',
-    'modules/locations/locations.controller.ts': 'external members only: closed when nothing is granted',
-    'modules/members/members.controller.ts':
-      'member card: org-wide is canViewAllTasks/canManageUsers, decided above',
+    'modules/spaces/spaces.controller.ts': 'external members only: closed when nothing is granted',
+    'modules/members/members.controller.ts': 'member card: org-wide is canViewAllTasks/canManageUsers, decided above',
   };
   const root = path.resolve(__dirname, '../..');
   const walk = (dir: string): string[] =>
