@@ -21,5 +21,5 @@
     "declarationMap": false
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "dist-esm"]
+  "exclude": ["node_modules", "dist", "dist-esm", "src/**/__tests__/**"]
 }

@@ -1,0 +1,18 @@
+{
+  // Tests only: the specs moved here from the services were written against the services' settings
+  // (no noUncheckedIndexedAccess), and ts-jest wants plain CommonJS.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["jest", "node"],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "noUncheckedIndexedAccess": false,
+    "noUnusedLocals": false,
+    "declaration": false,
+    "declarationMap": false,
+    "baseUrl": ".",
+    "paths": { "@hbcfield/shared": ["src/index.ts"], "@hbcfield/shared/*": ["src/*"] }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "dist-esm"]
+}
