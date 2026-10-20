@@ -23,9 +23,8 @@ export function diffDays(a: Date, b: Date): number {
   return Math.round((a.getTime() - b.getTime()) / 86400000)
 }
 
-export function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
-}
+/** Same calendar day — the shared rule (packages/shared/src/utils/date.ts). */
+export { isSameDay } from "@hbcfield/shared/client"
 
 export function isWeekend(d: Date): boolean {
   const day = d.getDay()

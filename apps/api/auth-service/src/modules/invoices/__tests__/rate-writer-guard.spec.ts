@@ -42,7 +42,7 @@ describe('rates are written through the dated writer', () => {
   it.each([
     ['organization default', 'auth-service/src/modules/onboarding/org-profile.service.ts', "target: 'ORGANIZATION'"],
     ['a member', 'auth-service/src/modules/users/employee-write.service.ts', "target: 'MEMBER'"],
-    ['a workspace', 'task-service/src/modules/locations/space-service.base.ts', "target: 'SPACE'"],
+    ['a workspace', 'task-service/src/modules/spaces/space-service.base.ts', "target: 'SPACE'"],
     ['a member at one client', 'task-service/src/modules/space-roles/member-terms.service.ts', "target: 'ASSIGNMENT'"],
     ["a work role's day rate", 'task-service/src/modules/space-roles/role-admin.service.ts', "target: 'ROLE'"],
   ])('%s goes through writeRateChange', (_label, file, target) => {

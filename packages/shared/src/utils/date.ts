@@ -105,17 +105,9 @@ export function formatHours(hours: number | null | undefined): string {
   return Number(hours) < 0 && totalMinutes > 0 ? `-${text}` : text;
 }
 
-/**
- * Format a date to time only (e.g., "2:30 PM")
- */
-export function formatTime(dateInput: Date | string | null | undefined): string {
-  if (!dateInput) return '-';
-  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
-  return date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
+/** Are both instants on the same calendar day in the device's own zone? One rule for web and phone. */
+export function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
 /**

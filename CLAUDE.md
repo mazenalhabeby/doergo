@@ -1511,7 +1511,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `buildDateRangeFilter()`, `buildSingleDayFilter()` | Prisma-compatible date filters |
 | `getStartOfDay()`, `getEndOfDay()` | Date boundary calculations |
 | `getStartOfWeek()`, `getEndOfWeek()`, `getStartOfMonth()`, `getEndOfMonth()` | Period calculations |
-| `formatDuration()`, `formatTime()`, `formatShortDate()` | Date display formatting |
+| `formatDuration()`, `formatShortDate()`, `isSameDay()` | Date display formatting; each app formats a time of day with its own locale/zone-aware helper |
 | `TimeEntry`, `Break`, `CompanyLocation`, `AttendanceStatus` | Attendance types (from `@hbcfield/shared`) |
 | `TimeEntryStatus`, `BreakType`, `ApprovalStatus` | Attendance enums |
 | `isBreakActive()` | Attendance helper function |
