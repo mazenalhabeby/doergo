@@ -31,13 +31,13 @@ import type { SessionUser } from '../../common/request.types';
 /**
  * /employees — who is available and on the floor, cover over a range, and the
  * caller's own request options and pre-check. ⚠️ Registered BEFORE
- * EmployeesController: its one-segment paths would otherwise be read as `:id`.
+ * MembersController: its one-segment paths would otherwise be read as `:id`.
  */
 @ApiTags('employees')
 @ApiBearerAuth()
 @UseInterceptors(LabourCostInterceptor)
 @Controller('employees')
-export class EmployeeCoverController {
+export class MemberCoverController {
   constructor(@Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy) {}
 
   // ============================================================================

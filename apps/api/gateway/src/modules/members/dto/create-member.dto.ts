@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { EmailField, MaxBytes, BCRYPT_MAX_PASSWORD_BYTES } from '@hbcfield/shared';
 
-export class CreateEmployeeDto {
+export class CreateMemberDto {
   @ApiProperty({
     example: 'john.doe@example.com',
     description: 'Email address (must be unique)',

@@ -18,12 +18,12 @@ import { join } from 'path';
 describe('cover never rides in on the task permission', () => {
   // The /employees controller was split by job (2026-10-16): read every part as one source.
   const controller = [
-    'technicians.controller.ts',
-    'employee-cover.controller.ts',
+    'members.controller.ts',
+    'member-cover.controller.ts',
     'time-off-admin.controller.ts',
     'leave-ledger.controller.ts',
-    'employee-records.controller.ts',
-    'employee-time-off.controller.ts',
+    'member-records.controller.ts',
+    'member-time-off.controller.ts',
   ]
     .map((f) => readFileSync(join(__dirname, '..', f), 'utf8'))
     .join('\n');

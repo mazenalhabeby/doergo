@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { Role, SERVICE_NAMES, CurrentUser, RequirePermissionInSpace } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
-import { leaveWriteScope, leaveReadScope } from './employees-controller-helpers';
+import { leaveWriteScope, leaveReadScope } from './members-controller-helpers';
 import { callerOrgId } from '../../common/caller-org';
 import {
   sendRpc,
@@ -22,7 +22,7 @@ import { MatchLeaveOpeningDto, SaveLeaveOpeningDto, LeaveAdjustmentDto } from '.
 
 /**
  * /employees — the leave ledger: opening balances and adjustments. ⚠️ Registered
- * before EmployeesController (GET leave-opening vs GET :id).
+ * before MembersController (GET leave-opening vs GET :id).
  */
 @ApiTags('employees')
 @ApiBearerAuth()

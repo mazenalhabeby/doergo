@@ -7,7 +7,7 @@ import { Role, SERVICE_NAMES, CurrentUser, RequirePermissionInSpace } from '@hbc
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
 import { scopeFor, scopeIdsFor } from '../../common/permission-scope';
-import { leaveWriteScope } from './employees-controller-helpers';
+import { leaveWriteScope } from './members-controller-helpers';
 import { callerOrgId } from '../../common/caller-org';
 import {
   sendRpc,
@@ -23,7 +23,7 @@ import { ApproveTimeOffDto, AddTimeOffDto, UpdateTimeOffDto } from './dto/leave-
 
 /**
  * /employees/time-off — the organization's leave: the list, approving, entering,
- * changing, deleting. ⚠️ Registered before EmployeesController (GET time-off vs
+ * changing, deleting. ⚠️ Registered before MembersController (GET time-off vs
  * GET :id).
  */
 @ApiTags('employees')

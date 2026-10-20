@@ -1,5 +1,5 @@
 import { of } from 'rxjs';
-import { EmployeesController } from '../../modules/technicians/technicians.controller';
+import { MembersController } from '../../modules/members/members.controller';
 import { AuthSessionsController } from '../../modules/auth/auth-sessions.controller';
 
 /*
@@ -13,7 +13,7 @@ describe('employee deactivation and edits', () => {
   function ctrl() {
     const authClient = { send: jest.fn(() => of({ success: true })) };
     const authCache = { invalidateUser: jest.fn(async () => undefined) };
-    const c = new (EmployeesController as any)(authClient, { rebill: jest.fn() }, authCache, {}) as EmployeesController;
+    const c = new (MembersController as any)(authClient, { rebill: jest.fn() }, authCache, {}) as MembersController;
     return { c, authCache };
   }
 

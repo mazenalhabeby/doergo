@@ -20,7 +20,7 @@ import {
   SaveLeaveOpeningDto,
   LeaveAdjustmentDto,
   SetScheduleDto,
-} from '../../../modules/technicians/dto/leave-bodies.dto';
+} from '../../../modules/members/dto/leave-bodies.dto';
 import {
   LeavePolicyDto,
   ProfileBadgesDto,

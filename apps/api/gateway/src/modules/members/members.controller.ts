@@ -8,7 +8,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@ne
 import { firstValueFrom } from 'rxjs';
 import { SERVICE_NAMES, CurrentUser, RequirePermissionInSpace, isAdmin, spacesGranting } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
-import { CreateEmployeeDto, UpdateEmployeeDto, ListEmployeesDto } from './dto';
+import { CreateMemberDto, UpdateMemberDto, ListMembersDto } from './dto';
 import { scopeIdsFor } from '../../common/permission-scope';
 import {
   sendRpc,
@@ -26,7 +26,7 @@ import type { SessionUser } from '../../common/request.types';
 @ApiBearerAuth()
 @UseInterceptors(LabourCostInterceptor)
 @Controller('employees')
-export class EmployeesController {
+export class MembersController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     private readonly billing: RebillService,
@@ -51,7 +51,7 @@ export class EmployeesController {
     different set than the page.
   */
   @RequirePermissionInSpace('canViewAllTasks')
-  async listEmployees(@Query() query: ListEmployeesDto, @CurrentUser() user: SessionUser) {
+  async listEmployees(@Query() query: ListMembersDto, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.authClient, listTechnicians, {
         ...query,
@@ -71,7 +71,7 @@ export class EmployeesController {
   @ApiResponse({ status: 201, description: 'Employee created' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
   @RequirePermission('canManageUsers')
-  async createEmployee(@Body() dto: CreateEmployeeDto, @CurrentUser() user: SessionUser) {
+  async createEmployee(@Body() dto: CreateMemberDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, createTechnician, {
         ...dto,
@@ -160,7 +160,7 @@ export class EmployeesController {
   @ApiResponse({ status: 200, description: 'Employee updated' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
   @RequirePermission('canManageUsers')
-  async updateEmployee(@Param('id') id: string, @Body() dto: UpdateEmployeeDto, @CurrentUser() user: SessionUser) {
+  async updateEmployee(@Param('id') id: string, @Body() dto: UpdateMemberDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, updateTechnician, {
         id,

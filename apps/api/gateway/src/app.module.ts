@@ -24,7 +24,7 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
 import { SpaceRolesModule } from './modules/space-roles/space-roles.module';
 import { ShiftsModule } from './modules/shifts/shifts.module';
 import { OvertimeModule } from './modules/overtime/overtime.module';
-import { EmployeesModule } from './modules/technicians/technicians.module';
+import { MembersModule } from './modules/members/members.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
 import { CustomersModule } from './modules/customers/customers.module';
@@ -132,7 +132,7 @@ import { StorageModule } from './common/storage/storage.module';
     SpaceRolesModule,
     ShiftsModule,
     OvertimeModule,
-    EmployeesModule,
+    MembersModule,
     CalendarModule,
     InvitationsModule,
     CustomersModule,

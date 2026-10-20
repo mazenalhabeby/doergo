@@ -25,7 +25,7 @@ import { SetScheduleDto } from './dto/leave-bodies.dto';
 @ApiBearerAuth()
 @UseInterceptors(LabourCostInterceptor)
 @Controller('employees')
-export class EmployeeRecordsController {
+export class MemberRecordsController {
   constructor(@Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy) {}
 
   // ============================================================================

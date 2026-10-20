@@ -14,7 +14,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 
-export class UpdateEmployeeDto {
+export class UpdateMemberDto {
   /*
     ⚠️ These three were missing, so with forbidNonWhitelisted every save of a
     member's cost rate from the edit dialog was refused with "property

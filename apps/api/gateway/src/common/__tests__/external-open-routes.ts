@@ -123,16 +123,16 @@ export const EXTERNAL_OPEN_ROUTES: Record<string, string> = {
   'DocumentSigningController.sendBack': 'DocumentSigningController',
   'DocumentSigningController.sign': 'DocumentSigningController',
   'DocumentDraftsController.submitOwnDocument': 'DocumentDraftsController',
-  // EmployeesController: own schedule and leave; another person only inside the caller's rota/view scope (assertMemberInScope)
+  // MembersController: own schedule and leave; another person only inside the caller's rota/view scope (assertMemberInScope)
   'TimeOffAdminController.cancelTimeOff': 'TimeOffAdminController',
-  'EmployeeTimeOffController.countLeave': 'EmployeeTimeOffController',
-  'EmployeeRecordsController.getEmployeeSchedule': 'EmployeeRecordsController',
-  'EmployeeTimeOffController.getEmployeeTimeOff': 'EmployeeTimeOffController',
-  'EmployeeTimeOffController.getLeaveBalance': 'EmployeeTimeOffController',
-  'EmployeeCoverController.getRequestOptions': 'EmployeeCoverController',
-  'EmployeeCoverController.precheckRequest': 'EmployeeCoverController',
+  'MemberTimeOffController.countLeave': 'MemberTimeOffController',
+  'MemberRecordsController.getEmployeeSchedule': 'MemberRecordsController',
+  'MemberTimeOffController.getEmployeeTimeOff': 'MemberTimeOffController',
+  'MemberTimeOffController.getLeaveBalance': 'MemberTimeOffController',
+  'MemberCoverController.getRequestOptions': 'MemberCoverController',
+  'MemberCoverController.precheckRequest': 'MemberCoverController',
   'LeaveLedgerController.listLeaveAdjustments': 'LeaveLedgerController',
-  'EmployeeTimeOffController.requestTimeOff': 'EmployeeTimeOffController',
+  'MemberTimeOffController.requestTimeOff': 'MemberTimeOffController',
   // GeoController: timezone lookup for a point — no organization data
   'GeoController.timezone': 'GeoController',
   // LocationsController: locationListScope forces 'own' for external members; member routes decided per workspace in the path
@@ -321,13 +321,13 @@ export const EXTERNAL_OPEN_REASONS: Record<string, string> = {
     "the caller's OWN personnel file and the signing chain they are routed on (external members have no file)",
   DocumentTypesController:
     "the caller's OWN personnel file and the signing chain they are routed on (external members have no file)",
-  EmployeesController:
+  MembersController:
     "own schedule and leave; another person only inside the caller's rota/view scope (assertMemberInScope)",
-  EmployeeCoverController:
+  MemberCoverController:
     "own schedule and leave; another person only inside the caller's rota/view scope (assertMemberInScope)",
-  EmployeeRecordsController:
+  MemberRecordsController:
     "own schedule and leave; another person only inside the caller's rota/view scope (assertMemberInScope)",
-  EmployeeTimeOffController:
+  MemberTimeOffController:
     "own schedule and leave; another person only inside the caller's rota/view scope (assertMemberInScope)",
   LeaveLedgerController:
     "own schedule and leave; another person only inside the caller's rota/view scope (assertMemberInScope)",

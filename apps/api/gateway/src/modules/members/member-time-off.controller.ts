@@ -7,7 +7,7 @@ import { Role, SERVICE_NAMES, CurrentUser, RequireAccessModule } from '@hbcfield
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequestTimeOffDto } from './dto';
 import { LeaveCountQueryDto } from '../calendar/calendar.dto';
-import { leaveReadScope } from './employees-controller-helpers';
+import { leaveReadScope } from './members-controller-helpers';
 import { callerOrgId } from '../../common/caller-org';
 import { sendRpc, getTimeOff, getLeaveBalance, countLeaveRpc, requestTimeOff } from '@hbcfield/shared/microservices';
 import type { SessionUser } from '../../common/request.types';
@@ -17,7 +17,7 @@ import type { SessionUser } from '../../common/request.types';
 @ApiBearerAuth()
 @UseInterceptors(LabourCostInterceptor)
 @Controller('employees')
-export class EmployeeTimeOffController {
+export class MemberTimeOffController {
   constructor(@Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy) {}
 
   // ============================================================================

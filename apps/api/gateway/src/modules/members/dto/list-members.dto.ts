@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class ListEmployeesDto {
+export class ListMembersDto {
   @ApiPropertyOptional({
     enum: ['active', 'inactive', 'all'],
     example: 'active',

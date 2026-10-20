@@ -15,7 +15,7 @@ import { getMetadataStorage } from 'class-validator';
   refusals a DTO would replace with a generic 400.
 */
 const LOOSE_ON_PURPOSE: Record<string, string> = {
-  'EmployeeCoverController.precheckRequest': 'read by the same shared request parser as sending',
+  'MemberCoverController.precheckRequest': 'read by the same shared request parser as sending',
   'CustomersController.importContacts': 'parseContactImport is the validator',
   'BlogController.update': 'the blogUpdate contract is an open record',
   'LegalEntitiesController.create': 'parseLegalEntity in auth-service (coded refusals)',
