@@ -9,8 +9,8 @@ import { join, relative } from 'path';
  * tracking-start day commits with the first starting balances). A third writer must
  * be added here with its reason — or go through auth-service.
  *
- * The space-roles MODULE is one writer: its service was split by job
- * (2026-10-16), and the role writes now sit in three of its files.
+ * The space-roles MODULE is one writer: only merging/deleting a role stays here
+ * (2026-10-20, group D); creating and editing go through auth-service.
  */
 describe('task-service writes to auth-owned tables', () => {
   const SRC = join(__dirname, '..', '..');
@@ -38,7 +38,7 @@ describe('task-service writes to auth-owned tables', () => {
 
   it.each([
     ['modules/calendar/holidays.service.ts', /A write to `Organization`, which auth-service owns/],
-    ['modules/space-roles/space-roles.service.ts', /WHY THIS SERVICE WRITES `AccessRole`/],
+    ['modules/space-roles/role-admin.service.ts', /WHY THIS SERVICE WRITES `AccessRole`/],
     ['modules/technicians/leave-opening.service.ts', /WHY THIS SERVICE WRITES `Organization`/],
   ])('%s says why at the write', (file, why) => {
     expect(readFileSync(join(SRC, file), 'utf8')).toMatch(why);

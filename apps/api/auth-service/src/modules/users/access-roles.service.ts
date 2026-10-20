@@ -62,16 +62,25 @@ export class AccessRolesService extends AccessRolesBase {
    * space pickers; default → org roles (Admin / Manager / custom) for the Access
    * panel. Org-scoped: id always from the caller's token.
    */
-  async listAccessRoles(data: { organizationId: string; scope?: 'org' | 'space' }) {
+  /**
+   * Every built-in exists in this organization and follows its definition (add only). The ONE place
+   * built-ins are written — the Access panel's list and task-service's workspace-role screens
+   * (`access_roles_ensure_builtins`) both come here (docs/data-ownership.md, group D).
+   */
+  async ensureBuiltInRoles(organizationId: string): Promise<void> {
     for (const p of BUILTIN_ROLES) {
       await this.prisma.accessRole.upsert({
-        where: { organizationId_slug: { organizationId: data.organizationId, slug: p.slug } },
+        where: { organizationId_slug: { organizationId, slug: p.slug } },
         update: {},
         // `permissions` is a typed permission set; the column is JSON.
-        create: { ...builtInRoleCreateData(data.organizationId, p), permissions: jsonColumn(p.permissions) },
+        create: { ...builtInRoleCreateData(organizationId, p), permissions: jsonColumn(p.permissions) },
       });
     }
-    await this.syncBuiltInRoles(data.organizationId);
+    await this.syncBuiltInRoles(organizationId);
+  }
+
+  async listAccessRoles(data: { organizationId: string; scope?: 'org' | 'space' }) {
+    await this.ensureBuiltInRoles(data.organizationId);
     const scopes: RoleScope[] = data.scope === 'space' ? ['SPACE', 'BOTH'] : ['ORG', 'BOTH'];
     const [roles, holders] = await Promise.all([
       this.prisma.accessRole.findMany({

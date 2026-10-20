@@ -52,19 +52,15 @@ task-service asks auth-service to drop them (`space_purge_auth_side` RPC) inside
 | TechnicianSchedule | auth | task | `auth-service/src/modules/invitations/invitation-apply/placement.ts:101` (createMany) |
 | SpaceAssignment | auth | task | `auth-service/src/modules/invitations/invitation-apply/placement.ts:137` (upsert) |
 
-### D. Workspace roles (task-service writes `AccessRole`)
+### D. Workspace roles (task-service writes `AccessRole`) — DONE, two kept exceptions
 
-**Decision needed** — see question 1.
+Auth owns `AccessRole`. Seeding the built-ins, creating and editing a role now go through auth
+(`access_roles_ensure_builtins`, `space_role_create`, `space_role_update`; task-service `RoleWriter`).
 
-| Table | Written by | Owner | Where |
-|---|---|---|---|
-| AccessRole | task | auth | `task-service/src/modules/space-roles/role-admin.service.ts:84` (delete) |
-| AccessRole | task | auth | `task-service/src/modules/space-roles/role-admin.service.ts:137` (delete) |
-| AccessRole | task | auth | `task-service/src/modules/space-roles/space-roles.base.ts:71` (upsert) |
-| AccessRole | task | auth | `task-service/src/modules/space-roles/space-roles.base.ts:83` (update) |
-| AccessRole | task | auth | `task-service/src/modules/space-roles/space-roles.base.ts:142` (deleteMany) |
-| AccessRole | task | auth | `task-service/src/modules/space-roles/space-roles.service.ts:161` (create) |
-| AccessRole | task | auth | `task-service/src/modules/space-roles/space-roles.service.ts:262` (update) |
+**Kept where they are (owner decision):** deleting a role and merging one into another
+(`role-admin.service.ts`) and dropping a stale personal role (`space-roles.base.ts`). Each moves the
+holders and deletes the role in ONE transaction; split across a message, a failure would leave
+people on a deleted role or a role nobody can remove. Listed in `ALLOWED` in `tools/structure/ownership.mjs`.
 
 ### E. The activity log (both services append to `ActivityLog`)
 

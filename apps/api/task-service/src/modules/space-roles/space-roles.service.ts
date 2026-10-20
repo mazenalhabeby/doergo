@@ -14,6 +14,9 @@ import {
 } from '@hbcfield/shared';
 import { userSelect } from './space-roles-helpers';
 import { SpaceRolesBase } from './space-roles.base';
+import { RoleWriter } from './role-writer.service';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import type { SpaceRoleWrite } from '@hbcfield/shared/microservices';
 
 export { type SpaceMemberAuthority } from './space-roles-helpers';
 
@@ -26,25 +29,26 @@ export { type SpaceMemberAuthority } from './space-roles-helpers';
  * Org-scoped: organizationId always from the caller's token; spaceId/userId are
  * verified in-org before use. Delegation (space-manager) is enforced at the
  * gateway against the resource's own spaceId. *
- * ⚠️ WHY THIS SERVICE WRITES `AccessRole`, a table auth-service otherwise owns.
- * Auth-service's `create/update/delete_access_role` patterns manage ORG roles
- * for the Access panel. A SPACE role here carries rules those do not know —
- * WORK vs MANAGEMENT kind (a work role's permissions forced to `{}`), the
- * grant ceiling against the caller's own space authority, merging a role into
- * another together with its assignments (one transaction with
- * `SpaceAssignment`, which lives here), dated day rates — and every one of
- * those writes must commit WITH the assignment rows. Routing them through RPC
- * would split one transaction across two services. So the rule is the
- * boundary instead: writes here touch `scope: SPACE | BOTH` rows of the
- * caller's organization only, and built-in definitions come from the one
- * shared sync (access/builtin-role-sync.ts) both services read.
+ * ⚠️ WHO WRITES `AccessRole` (docs/data-ownership.md, group D, owner decision 2026-10-20).
+ * auth-service owns the table. The rules of a SPACE role live here — WORK vs MANAGEMENT kind (a work
+ * role's permissions forced to `{}`), the grant ceiling against the caller's own space authority — so
+ * this service decides every column and `RoleWriter` asks auth-service to write it (create, edit, the
+ * built-in sync). MERGING and DELETING a role stay here (role-admin.service): they move assignments,
+ * workspace role lists and day rates in ONE transaction with the role — the agreed exception.
  */
 @Injectable()
 export class SpaceRolesService extends SpaceRolesBase {
+  constructor(
+    prisma: PrismaService,
+    private readonly writer: RoleWriter,
+  ) {
+    super(prisma);
+  }
+
   // ── Roles (AccessRole, scope SPACE) ────────────────────────────────────────
 
   async listRoles(data: { organizationId: string }) {
-    await this.ensureBuiltInRoles(data.organizationId);
+    await this.writer.ensureBuiltIns(data.organizationId);
     const roles = await this.prisma.accessRole.findMany({
       // ⚠️ Never a personal role: one person's permissions in one workspace are not a role anybody may pick.
       where: { organizationId: data.organizationId, scope: { in: ['SPACE', 'BOTH'] }, ...SHARED_ROLE_WHERE },
@@ -68,7 +72,7 @@ export class SpaceRolesService extends SpaceRolesBase {
    */
   async listSpaceRoles(data: { organizationId: string; spaceId: string }) {
     await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
-    await this.ensureBuiltInRoles(data.organizationId);
+    await this.writer.ensureBuiltIns(data.organizationId);
     const usedHere = new Set(
       (await this.prisma.companyLocation.findUnique({ where: { id: data.spaceId }, select: { workRoleIds: true } }))
         ?.workRoleIds ?? [],
@@ -158,20 +162,18 @@ export class SpaceRolesService extends SpaceRolesBase {
       where: { organizationId: data.organizationId },
       _max: { position: true },
     });
-    const role = await this.prisma.accessRole.create({
-      data: {
-        organizationId: data.organizationId,
-        name,
-        slug,
-        description: data.description?.trim() || null,
-        color: data.color || '#6b7280',
-        scope: 'SPACE',
-        isSystem: false,
-        kind,
-        // ⚠️ A work role grants nothing — forced here, whatever the request said.
-        permissions: permissionsForKind(kind, this.normalizePermissions(data.permissions)),
-        position: (max._max.position ?? -1) + 1,
-      },
+    // auth-service writes it (it owns AccessRole); every column is decided here.
+    const role = await this.writer.create(data.organizationId, {
+      name,
+      slug,
+      description: data.description?.trim() || null,
+      color: data.color || '#6b7280',
+      scope: 'SPACE',
+      isSystem: false,
+      kind,
+      // ⚠️ A work role grants nothing — forced here, whatever the request said.
+      permissions: permissionsForKind(kind, this.normalizePermissions(data.permissions)) as Record<string, boolean>,
+      position: (max._max.position ?? -1) + 1,
     });
     if (data.spaceId && kind === 'WORK') await this.useWorkRoleIn(this.prisma, data.spaceId, role.id);
     return success(role, 'Space role created');
@@ -259,7 +261,7 @@ export class SpaceRolesService extends SpaceRolesBase {
         }
       }
     }
-    const updated = await this.prisma.accessRole.update({ where: { id: role.id }, data: patch });
+    const updated = await this.writer.update(data.organizationId, role.id, patch as SpaceRoleWrite);
     return success(updated, 'Space role updated');
   }
 }

@@ -24,6 +24,9 @@ const SHARED = { ActivityLog: /^(create|createMany)$/, CronLock: /.*/ };
  * message, a task-service outage would leave an account in no workspace with its code already used.
  */
 const ALLOWED = [
+  // Deleting/merging a workspace role moves its holders and deletes it in ONE transaction.
+  { file: 'apps/api/task-service/src/modules/space-roles/role-admin.service.ts', models: ['AccessRole'] },
+  { file: 'apps/api/task-service/src/modules/space-roles/space-roles.base.ts', models: ['AccessRole'] },
   {
     file: 'apps/api/auth-service/src/modules/invitations/invitation-apply/placement.ts',
     models: ['SpaceAssignment', 'TechnicianSchedule'],

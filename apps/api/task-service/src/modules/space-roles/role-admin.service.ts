@@ -7,6 +7,10 @@ import { SpaceRolesBase } from './space-roles.base';
 /**
  * Managing a role as a whole: merging two, switching a work role on in a
  * workspace, deleting, its default day rate.
+ *
+ * WHY THIS SERVICE WRITES `AccessRole` (auth-service owns it, docs/data-ownership.md group D):
+ * merging and deleting a role move its holders and delete it in ONE transaction. Split across a
+ * message, a failure would leave people on a deleted role. Creating and editing go through auth.
  */
 @Injectable()
 export class RoleAdminService extends SpaceRolesBase {

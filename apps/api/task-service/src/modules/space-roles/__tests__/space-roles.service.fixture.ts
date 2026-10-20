@@ -15,9 +15,25 @@ export type SpaceRolesServiceParts = Public<SpaceRolesService> &
   Public<MemberRolesService> &
   Public<MemberTermsService>;
 
+/**
+ * auth-service writes the role (RoleWriter → space_role_create/update); in a unit test it writes through
+ * the same Prisma mock, in the shape auth's SpaceRoleWritesService uses, so the tests read the stored row.
+ */
+export function fakeRoleWriter(prisma: any) {
+  return {
+    ensureBuiltIns: async () => undefined,
+    create: (organizationId: string, role: any) =>
+      prisma.accessRole.create({
+        data: { scope: 'SPACE', ...role, permissions: role.permissions ?? {}, organizationId },
+      }),
+    update: (_organizationId: string, roleId: string, patch: any) =>
+      prisma.accessRole.update({ where: { id: roleId }, data: patch }),
+  };
+}
+
 export function spaceRoleServices(...args: unknown[]): SpaceRolesServiceParts {
   return combinedServices<SpaceRolesServiceParts>(
-    new (SpaceRolesService as unknown as new (...a: unknown[]) => object)(...args),
+    new (SpaceRolesService as unknown as new (...a: unknown[]) => object)(args[0], fakeRoleWriter(args[0])),
     new (RoleAdminService as unknown as new (...a: unknown[]) => object)(...args),
     new (SpaceMembersService as unknown as new (...a: unknown[]) => object)(...args),
     new (MemberRolesService as unknown as new (...a: unknown[]) => object)(...args),

@@ -4239,12 +4239,6 @@
   "apps/api/notification-service/src/modules/websocket/gateway-presence.base.ts → User.update (owned by auth-service)",
   "apps/api/task-service/src/modules/attendance/auto-clock.service.ts → User.update (owned by auth-service)",
   "apps/api/task-service/src/modules/calendar/holidays.service.ts → Organization.update (owned by auth-service)",
-  "apps/api/task-service/src/modules/space-roles/role-admin.service.ts → AccessRole.delete (owned by auth-service)",
-  "apps/api/task-service/src/modules/space-roles/space-roles.base.ts → AccessRole.deleteMany (owned by auth-service)",
-  "apps/api/task-service/src/modules/space-roles/space-roles.base.ts → AccessRole.update (owned by auth-service)",
-  "apps/api/task-service/src/modules/space-roles/space-roles.base.ts → AccessRole.upsert (owned by auth-service)",
-  "apps/api/task-service/src/modules/space-roles/space-roles.service.ts → AccessRole.create (owned by auth-service)",
-  "apps/api/task-service/src/modules/space-roles/space-roles.service.ts → AccessRole.update (owned by auth-service)",
   "apps/api/task-service/src/modules/technicians/leave-opening.service.ts → Organization.updateMany (owned by auth-service)",
   "apps/api/tracking-service/src/modules/location/location-batch.service.ts → Task.update (owned by task-service)",
   "apps/api/tracking-service/src/modules/location/location.service.ts → Task.update (owned by task-service)"

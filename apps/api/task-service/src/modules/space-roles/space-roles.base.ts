@@ -1,13 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import {
-  BUILTIN_ROLES,
-  builtInRoleCatchUp,
-  builtInRoleCreateData,
-  type PermissionSet,
-  SHARED_ROLE_WHERE,
-  roleUsableOnAssignment,
-} from '@hbcfield/shared';
+import { type PermissionSet, SHARED_ROLE_WHERE, roleUsableOnAssignment } from '@hbcfield/shared';
 import { SPACE_PERMISSION_KEYS } from './space-roles-helpers';
 import type { Prisma } from '@prisma/client';
 
@@ -29,7 +22,8 @@ export abstract class SpaceRolesBase {
   ) {
     await db.$executeRawUnsafe(
       `UPDATE "company_locations" SET "workRoleIds" = array_append("workRoleIds", $1) WHERE "id" = $2 AND NOT ($1 = ANY("workRoleIds"))`,
-      roleId, spaceId,
+      roleId,
+      spaceId,
     );
   }
 
@@ -56,32 +50,6 @@ export abstract class SpaceRolesBase {
     ]);
     if (roles !== roleIds.length) throw new BadRequestException('A chosen role does not belong to this organization');
     if (users !== userIds.length) throw new BadRequestException('A chosen person does not belong to this organization');
-  }
-
-  /**
-   * Seed missing built-ins AND bring existing ones up to their definition — the
-   * shared rule (access/builtin-role-sync.ts) auth-service's access panel
-   * follows. This only ever inserted, so a built-in seeded before its
-   * definition gained a permission kept lacking it here while the other panel
-   * fixed it: what a Space Manager could do depended on which screen opened
-   * first. Add only, never remove; a role an admin edited is left alone.
-   */
-  protected async ensureBuiltInRoles(organizationId: string) {
-    for (const p of BUILTIN_ROLES) {
-      await this.prisma.accessRole.upsert({
-        where: { organizationId_slug: { organizationId, slug: p.slug } },
-        update: {},
-        create: builtInRoleCreateData(organizationId, p),
-      });
-    }
-    const stored = await this.prisma.accessRole.findMany({
-      where: { organizationId, isSystem: true, isCustomized: false, slug: { in: BUILTIN_ROLES.map((r) => r.slug) }, ...SHARED_ROLE_WHERE },
-      select: { id: true, slug: true, isSystem: true, isCustomized: true, permissions: true, personalAssignmentId: true },
-    });
-    for (const role of stored) {
-      const next = builtInRoleCatchUp(role);
-      if (next) await this.prisma.accessRole.update({ where: { id: role.id }, data: { permissions: next as Prisma.InputJsonValue } });
-    }
   }
 
   protected normalizePermissions(input?: PermissionSet): PermissionSet {
@@ -129,7 +97,8 @@ export abstract class SpaceRolesBase {
     const role = await this.prisma.accessRole.findFirst({
       where: { id: roleId, organizationId, scope: { in: ['SPACE', 'BOTH'] } },
     });
-    if (!role || !roleUsableOnAssignment(role, opts?.assignmentId ?? null)) throw new NotFoundException('Space role not found');
+    if (!role || !roleUsableOnAssignment(role, opts?.assignmentId ?? null))
+      throw new NotFoundException('Space role not found');
     return role;
   }
 
@@ -157,7 +126,12 @@ export abstract class SpaceRolesBase {
    * called "Shift Leader" cost one query, not ten.
    */
   protected async uniqueSlug(organizationId: string, name: string, excludeId?: string): Promise<string> {
-    const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'role';
+    const base =
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 40) || 'role';
 
     const siblings = await this.prisma.accessRole.findMany({
       where: {

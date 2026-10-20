@@ -27,25 +27,30 @@ describe('one rule, not a copy of it', () => {
 
     it('never touches a role an admin edited, a custom role, or one already complete', () => {
       const lacking = {};
-      expect(builtInRoleCatchUp({ slug: def.slug, isSystem: true, isCustomized: true, permissions: lacking })).toBeNull();
-      expect(builtInRoleCatchUp({ slug: def.slug, isSystem: false, isCustomized: false, permissions: lacking })).toBeNull();
-      expect(builtInRoleCatchUp({ slug: 'mine', isSystem: true, isCustomized: false, permissions: lacking })).toBeNull();
-      expect(builtInRoleCatchUp({ slug: def.slug, isSystem: true, isCustomized: false, permissions: granted })).toBeNull();
+      expect(
+        builtInRoleCatchUp({ slug: def.slug, isSystem: true, isCustomized: true, permissions: lacking }),
+      ).toBeNull();
+      expect(
+        builtInRoleCatchUp({ slug: def.slug, isSystem: false, isCustomized: false, permissions: lacking }),
+      ).toBeNull();
+      expect(
+        builtInRoleCatchUp({ slug: 'mine', isSystem: true, isCustomized: false, permissions: lacking }),
+      ).toBeNull();
+      expect(
+        builtInRoleCatchUp({ slug: def.slug, isSystem: true, isCustomized: false, permissions: granted }),
+      ).toBeNull();
     });
 
-    it('task-service’s seeding UPDATES a stale built-in instead of only inserting', async () => {
+    it('task-service does not seed built-ins itself — it asks auth-service, which owns AccessRole', async () => {
       const prisma: any = {
-        accessRole: {
-          upsert: jest.fn().mockResolvedValue({}),
-          findMany: jest.fn().mockResolvedValue([
-            { id: 'r1', slug: def.slug, isSystem: true, isCustomized: false, permissions: {} },
-          ]),
-          update: jest.fn().mockResolvedValue({}),
-        },
+        accessRole: { findMany: jest.fn().mockResolvedValue([]), upsert: jest.fn(), update: jest.fn() },
       };
-      await (new SpaceRolesService(prisma) as any).ensureBuiltInRoles('org-1');
-      expect(prisma.accessRole.findMany.mock.calls[0][0].where).toMatchObject({ organizationId: 'org-1', isSystem: true, isCustomized: false });
-      expect(prisma.accessRole.update).toHaveBeenCalledWith({ where: { id: 'r1' }, data: { permissions: granted } });
+      const writer: any = { ensureBuiltIns: jest.fn().mockResolvedValue(undefined) };
+      await new SpaceRolesService(prisma, writer).listRoles({ organizationId: 'org-1' });
+      expect(writer.ensureBuiltIns).toHaveBeenCalledWith('org-1');
+      expect(prisma.accessRole.upsert).not.toHaveBeenCalled();
+      expect(prisma.accessRole.update).not.toHaveBeenCalled();
+      expect(granted).toBeTruthy(); // the definition auth-service's sync grants (shared builtin-role-sync)
     });
   });
 
@@ -82,10 +87,12 @@ describe('one rule, not a copy of it', () => {
         if (statSync(p).isDirectory()) {
           if (name !== '__tests__') walk(p);
         } else if (name.endsWith('.ts') && !name.endsWith('.spec.ts')) {
-          readFileSync(p, 'utf8').split('\n').forEach((line, i) => {
-            if (/Math\.min\(/.test(line) && /\b(limit|take|pageSize)\b/i.test(line)) offenders.push(`${p}:${i + 1}`);
-            if (/Math\.max\(\s*1\s*,\s*Number\([^)]*page/i.test(line)) offenders.push(`${p}:${i + 1}`);
-          });
+          readFileSync(p, 'utf8')
+            .split('\n')
+            .forEach((line, i) => {
+              if (/Math\.min\(/.test(line) && /\b(limit|take|pageSize)\b/i.test(line)) offenders.push(`${p}:${i + 1}`);
+              if (/Math\.max\(\s*1\s*,\s*Number\([^)]*page/i.test(line)) offenders.push(`${p}:${i + 1}`);
+            });
         }
       }
     };
