@@ -5,7 +5,7 @@
  */
 import type { ResolvedAccess } from '../types/permissions/resolved-access';
 import type { OccurrenceEvidence } from '../sync/occurrence';
-import type { TaskAccessFacts } from '../microservices/contracts/task-service-1-types';
+import type { TaskAccessFacts } from '../microservices/contracts/task-service-types';
 
 /** Who is asking, as the gateway resolved it from the token — never from the body. */
 export interface TaskJobCaller {

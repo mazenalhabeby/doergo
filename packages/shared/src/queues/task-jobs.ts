@@ -5,7 +5,7 @@
 import type { ResolvedAccess } from '../types/permissions/resolved-access';
 import type { OccurrenceEvidence } from '../sync/occurrence';
 import type { LeadScope } from '../tasks/crew';
-import type { TaskAccessFacts } from '../microservices/contracts/task-service-1-types';
+import type { TaskAccessFacts } from '../microservices/contracts/task-service-types';
 import { job } from './job-contract';
 import { TASK_JOB_TYPES } from './constants';
 import type {

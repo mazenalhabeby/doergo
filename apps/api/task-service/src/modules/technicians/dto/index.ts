@@ -1,6 +1,6 @@
 /**
  * The technicians module's message shapes. They live with the message contracts
- * (packages/shared/src/microservices/contracts/task-service-1-technicians-types.ts)
+ * (packages/shared/src/microservices/contracts/task-service-technicians-types.ts)
  * so the gateway and this service read one definition; the old names stay here.
  */
 import type {

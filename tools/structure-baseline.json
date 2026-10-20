@@ -1742,45 +1742,6 @@
   "packages/shared/src/microservices/contracts/auth-service-auth.ts": [
    "repeated"
   ],
-  "packages/shared/src/microservices/contracts/auth-service-documents-1.ts": [
-   "numbered"
-  ],
-  "packages/shared/src/microservices/contracts/auth-service-documents-2.ts": [
-   "numbered"
-  ],
-  "packages/shared/src/microservices/contracts/events-1.ts": [
-   "numbered"
-  ],
-  "packages/shared/src/microservices/contracts/events-2.ts": [
-   "numbered"
-  ],
-  "packages/shared/src/microservices/contracts/events-3.ts": [
-   "numbered"
-  ],
-  "packages/shared/src/microservices/contracts/events-4.ts": [
-   "numbered"
-  ],
-  "packages/shared/src/microservices/contracts/events-5.ts": [
-   "numbered"
-  ],
-  "packages/shared/src/microservices/contracts/task-service-1-attendance-1.ts": [
-   "numbered"
-  ],
-  "packages/shared/src/microservices/contracts/task-service-1-attendance-2.ts": [
-   "numbered"
-  ],
-  "packages/shared/src/microservices/contracts/task-service-1-misc-1.ts": [
-   "numbered"
-  ],
-  "packages/shared/src/microservices/contracts/task-service-1-misc-2.ts": [
-   "numbered"
-  ],
-  "packages/shared/src/microservices/contracts/task-service-1.ts": [
-   "numbered"
-  ],
-  "packages/shared/src/microservices/contracts/task-service-2.ts": [
-   "numbered"
-  ],
   "packages/shared/src/requests/detect/detect-run.ts": [
    "moved"
   ],
