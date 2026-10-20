@@ -15,7 +15,6 @@ export class AccountDeletionService {
     @Optional() private readonly offboarding?: MemberOffboarding,
   ) {}
 
-
   /**
    * Delete a user's account permanently.
    * Requires password confirmation. Anonymizes personal data and
@@ -60,7 +59,8 @@ export class AccountDeletionService {
           return {
             success: false,
             statusCode: HttpStatus.BAD_REQUEST,
-            message: 'You are the last admin of your organization. Transfer admin role to another member before deleting your account.',
+            message:
+              'You are the last admin of your organization. Transfer admin role to another member before deleting your account.',
           };
         }
       }
@@ -70,6 +70,10 @@ export class AccountDeletionService {
       // HERE that reset every task they had ever held to NEW — finished
       // history included — and left their crew places and custody behind.
       if (user.organizationId) await this.offboarding?.release(user.organizationId, user.id, user.id, { erase: true });
+      // Comments, positions and push tokens belong to the other services: each erases its own.
+      // Never anonymize while another service may still hold their data: no offboarding wired = no deletion.
+      if (!this.offboarding) throw new Error('MemberOffboarding is not wired — refusing to delete half an account');
+      await this.offboarding.eraseEverywhere(user.id);
 
       // Anonymize and deactivate within a transaction
       const deletedEmail = `deleted_${user.id}@deleted.hbcfield.local`;
@@ -79,10 +83,6 @@ export class AccountDeletionService {
         await Promise.all([
           tx.refreshToken.deleteMany({ where: { userId: user.id } }),
           tx.passwordResetToken.deleteMany({ where: { userId: user.id } }),
-          tx.userPushToken.deleteMany({ where: { userId: user.id } }),
-          tx.workerLastLocation.deleteMany({ where: { userId: user.id } }),
-          tx.locationHistory.deleteMany({ where: { userId: user.id } }),
-          tx.comment.deleteMany({ where: { userId: user.id } }),
           tx.joinRequest.deleteMany({ where: { userId: user.id } }),
         ]);
 

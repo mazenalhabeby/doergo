@@ -62,3 +62,8 @@ export const getTechnicianAssignments = rpc<{
 export const getColleagues = rpc<{ userId: string; organizationId: string; spaceScope?: 'own' | 'tasks' | 'all' }>(
   'get_colleagues',
 );
+
+/** A member deleting their account: task-service erases what is theirs across organizations (their comments). Idempotent. */
+export const taskEraseMember = rpc<{ userId: string }, { success: boolean; data?: { commentsRemoved: number } }>(
+  'task_erase_member',
+);

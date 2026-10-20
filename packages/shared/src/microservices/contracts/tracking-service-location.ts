@@ -46,3 +46,8 @@ export const getTaskRoute = rpc<
 export const getWorkerCurrentRoute = rpc<{ workerId: string; organizationId?: string; scopeSpaceIds?: string[] }>(
   'get_worker_current_route',
 );
+
+/** A member deleting their account: tracking erases what it holds about them (their last fix and GPS history). Idempotent. */
+export const trackingEraseMember = rpc<{ userId: string }, { success: boolean; data?: { locationsRemoved: number } }>(
+  'tracking_erase_member',
+);

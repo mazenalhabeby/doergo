@@ -17,7 +17,13 @@ import { PushService } from './modules/push/push.service';
 import { WebsocketGateway } from './modules/websocket/websocket.gateway';
 import { RecipientLocales } from './i18n/recipient-locales.service';
 
-import { pattern, registerPushToken, removePushToken, type RpcRequest } from '@hbcfield/shared/microservices';
+import {
+  pattern,
+  registerPushToken,
+  removePushToken,
+  notificationEraseMember,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 @Controller()
 export class NotificationController {
   private readonly logger = new Logger('NotificationController');
@@ -81,6 +87,12 @@ export class NotificationController {
   @EventPattern(eventPattern(userLocaleChangedEvent))
   handleUserLocaleChanged(@Payload() data: EventPayload<typeof userLocaleChangedEvent>) {
     if (data?.userId) this.recipientLocales.forget(data.userId);
+  }
+
+  /** A member deleting their account (auth-service's account deletion asks — notification owns the tokens). */
+  @MessagePattern(pattern(notificationEraseMember))
+  async eraseMember(@Payload() data: RpcRequest<typeof notificationEraseMember>) {
+    return this.pushService.eraseMember(data.userId);
   }
 
   @MessagePattern(pattern(removePushToken))

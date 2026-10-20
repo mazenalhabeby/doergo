@@ -1,4 +1,3 @@
-
 import Expo, { ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { DEFAULT_LOCALE, PrismaService, type SupportedLocale } from '@hbcfield/shared';
@@ -91,6 +90,12 @@ export class PushService {
    * else's phone. Scoped now; called without one (nothing does) it still falls
    * back to the old behaviour rather than silently doing nothing.
    */
+  /** Right to erasure: every push token of the member, on every phone. Safe to repeat. */
+  async eraseMember(userId: string) {
+    const { count } = await this.prisma.userPushToken.deleteMany({ where: { userId } });
+    return { success: true, data: { tokensRemoved: count } };
+  }
+
   async removePushToken(rawToken: string, userId?: string) {
     // The bare token: phones before the fix sent `token|language` and matched nothing.
     const token = barePushToken(rawToken);

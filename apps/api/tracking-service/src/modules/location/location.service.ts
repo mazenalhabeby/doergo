@@ -96,4 +96,13 @@ export class LocationService {
 
     return success(location);
   }
+
+  /** Right to erasure: the member's last position and their whole GPS history. Safe to repeat. */
+  async eraseMember(userId: string) {
+    const [last, history] = await this.prisma.$transaction([
+      this.prisma.workerLastLocation.deleteMany({ where: { userId } }),
+      this.prisma.locationHistory.deleteMany({ where: { userId } }),
+    ]);
+    return { success: true, data: { locationsRemoved: last.count + history.count } };
+  }
 }

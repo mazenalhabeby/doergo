@@ -94,4 +94,13 @@ export class MemberOffboardService {
     );
     return { tasksReleased, assignmentsEnded, assetsReturned, schedulesRemoved, timeOffErased };
   }
+
+  /**
+   * Right to erasure, whatever organization they are (or are no longer) in: their comments on jobs.
+   * Asked by auth-service's account deletion — task-service owns comments. Safe to repeat.
+   */
+  async eraseMember(userId: string): Promise<{ success: true; data: { commentsRemoved: number } }> {
+    const { count } = await this.prisma.comment.deleteMany({ where: { userId } });
+    return { success: true, data: { commentsRemoved: count } };
+  }
 }

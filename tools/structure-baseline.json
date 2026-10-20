@@ -4233,10 +4233,6 @@
  },
  "ownership": [
   "apps/api/auth-service/src/common/seed-default-workflow.ts → StatusWorkflow.create (owned by task-service)",
-  "apps/api/auth-service/src/modules/auth/account-deletion.service.ts → Comment.deleteMany (owned by task-service)",
-  "apps/api/auth-service/src/modules/auth/account-deletion.service.ts → LocationHistory.deleteMany (owned by tracking-service)",
-  "apps/api/auth-service/src/modules/auth/account-deletion.service.ts → UserPushToken.deleteMany (owned by notification-service)",
-  "apps/api/auth-service/src/modules/auth/account-deletion.service.ts → WorkerLastLocation.deleteMany (owned by tracking-service)",
   "apps/api/auth-service/src/modules/invitations/invitation-apply/placement.ts → SpaceAssignment.upsert (owned by task-service)",
   "apps/api/auth-service/src/modules/invitations/invitation-apply/placement.ts → TechnicianSchedule.createMany (owned by task-service)",
   "apps/api/auth-service/src/modules/platform-admin/platform-support-teams.service.ts → SupportTicket.updateMany (owned by task-service)",

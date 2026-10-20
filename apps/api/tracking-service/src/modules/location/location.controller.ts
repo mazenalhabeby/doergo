@@ -16,6 +16,7 @@ import {
   getWorkerHistory,
   getTaskRoute,
   getWorkerCurrentRoute,
+  trackingEraseMember,
   type RpcRequest,
 } from '@hbcfield/shared/microservices';
 /**
@@ -98,5 +99,11 @@ export class LocationController {
   @MessagePattern(pattern(getWorkerCurrentRoute))
   async getWorkerCurrentRoute(@Payload() data: RpcRequest<typeof getWorkerCurrentRoute>) {
     return this.routeReads.getWorkerCurrentRoute(data.workerId, data.organizationId, scopeOf(data));
+  }
+
+  /** A member deleting their account (auth-service's account deletion asks — tracking owns these tables). */
+  @MessagePattern(pattern(trackingEraseMember))
+  eraseMember(@Payload() data: RpcRequest<typeof trackingEraseMember>) {
+    return this.locationService.eraseMember(data.userId);
   }
 }
