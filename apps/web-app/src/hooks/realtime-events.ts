@@ -30,7 +30,7 @@ const DASHBOARD_ATTENDANCE_KEYS: QueryKey[] = [
 
 // Everything that must refresh when attendance changes (clock or admin edit).
 const ALL_ATTENDANCE_KEYS: QueryKey[] = [
-  // The "on the floor right now" panel on /employees/availability. It reports
+  // The "on the floor right now" panel on /schedule. It reports
   // the clock, so every clock event moves it.
   keys.attendance.floorNow(),...DASHBOARD_ATTENDANCE_KEYS, ...ATTENDANCE_PAGE_KEYS]
 
@@ -43,7 +43,7 @@ const MEMBER_KEYS: QueryKey[] = [
   keys.people.contacts(),             // chat / contact directory
   keys.people.pendingInvitations(),      // pending invites shown on /members
   keys.people.invitations(),             // /invitations page
-  keys.people.joinRequests(),           // /join-requests page
+  keys.people.joinRequests(),           // join requests, decided in Approvals
   keys.locations.rosterBatches(), // space rosters, several at once (/members, the dashboard)
   keys.locations.rosters(),    // one space's roster
 ]
@@ -110,12 +110,12 @@ export const EVENT_INVALIDATIONS: Record<string, QueryKey[]> = {
   [Events.MEMBER_CHANGED]: MEMBER_KEYS,
 
   // A submitted request already reached the notification bell as a toast, but
-  // nothing refreshed the list — so an admin sitting on /join-requests was told
+  // nothing refreshed the list — so an admin looking at the join requests was told
   // about a request that never appeared on the page in front of them (audit A-D1).
   [Events.JOIN_REQUEST_SUBMITTED]: [keys.people.joinRequests()],
 
   // Leave. Every key, always — time off is read on a member's record
-  // (`timeOff.member`) and on /attendance and /employees/availability
+  // (`timeOff.member`) and on /attendance and /schedule
   // (`timeOff.org`). Invalidating only the one the viewer happens to be looking
   // at is the split `invalidateTimeOff` exists to stop (audit MD-D1), and a
   // socket event has the same duty. (`["availability"]` was listed too — the key

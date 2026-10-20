@@ -47,7 +47,7 @@ export function LeaveLedgerPanel({
   const addMounted = useLatched(adding)
   const [confirmUndo, setConfirmUndo] = useState<string | null>(null)
   const on = todayKey()
-  const opensOpening = useRouteAccess().may("/employees/leave-opening")
+  const opensOpening = useRouteAccess().may("/members/leave-opening")
 
   const { data: balance, isLoading: balanceLoading } = useQuery({
     queryKey: keys.timeOff.myBalance(memberId),
@@ -101,7 +101,7 @@ export function LeaveLedgerPanel({
           <div className="ml-auto flex items-center gap-2">
             {opensOpening && (
               <Link
-                href="/employees/leave-opening"
+                href="/members/leave-opening"
                 className={"text-xs font-medium text-muted-foreground underline-offset-2 " + "hover:text-foreground hover:underline"}>
                 {t("leaveLedger.opening.link")}
               </Link>

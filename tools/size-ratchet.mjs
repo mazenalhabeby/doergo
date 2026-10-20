@@ -10,6 +10,9 @@
  *                                         file may be over 300 lines, unless named with
  *                                         --over <file> (one method too long to move apart;
  *                                         recorded at its size and ratcheted from there)
+ *   node tools/size-ratchet.mjs --moved <old path or folder> <new path or folder>
+ *                                         a file or folder was moved/renamed: its recorded
+ *                                         numbers follow it
  *
  * Limits: a source file ≤ 300 lines, a line ≤ 140 characters. The 2,452-file
  * codebase had 365 files over 300 and ~4,860 lines over 140 on 2026-10-16 with
@@ -165,9 +168,29 @@ function split(baseline, now, args) {
   );
 }
 
+function moved(baseline, from, to) {
+  const prefix = from.replace(/\/?$/, '/');
+  const next = {};
+  let n = 0;
+  for (const [f, m] of Object.entries(baseline)) {
+    const g = f === from || f.startsWith(prefix) ? to + f.slice(from.length) : f;
+    if (g !== f) n++;
+    next[g] = m;
+  }
+  const sorted = Object.fromEntries(Object.keys(next).sort().map((k) => [k, next[k]]));
+  writeFileSync(BASELINE, JSON.stringify(sorted, null, 1) + '\n');
+  console.log(`size baseline: ${n} entr${n === 1 ? 'y' : 'ies'} moved from ${from} to ${to}`);
+}
+
 function main() {
   const now = current();
   const baseline = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : null;
+  const mv = process.argv.indexOf('--moved');
+  if (mv > 0) {
+    const [from, to] = process.argv.slice(mv + 1);
+    if (!from || !to) throw new Error('usage: --moved <old path> <new path>');
+    return moved(baseline, from, to);
+  }
   const at = process.argv.indexOf('--split');
   if (at > 0) return split(baseline, now, process.argv.slice(at + 1));
 

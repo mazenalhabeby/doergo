@@ -106,7 +106,7 @@ export function useCommandPaletteLogic() {
         label: t("commandPalette.goToSchedule"),
         icon: Calendar,
         group: "navigation",
-        onSelect: () => router.push("/employees/availability"),
+        onSelect: () => router.push("/schedule"),
       })
     }
     if (offers("/attendance")) {

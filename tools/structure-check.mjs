@@ -6,6 +6,9 @@
  *   node tools/structure-check.mjs           check (exit 1 on anything new)
  *   node tools/structure-check.mjs --update  lower the baseline to today (never raises it)
  *   node tools/structure-check.mjs --report  print today's counts and the worst offenders
+ *   node tools/structure-check.mjs --moved <old path or folder> <new path or folder>
+ *                                            a file or folder was moved/renamed: its recorded
+ *                                            findings follow it (nothing else changes)
  *
  * Four checks:
  *   names     file names that show a mechanical split (numbered, -part, -inner, repeated words,
@@ -89,7 +92,29 @@ function save(b) {
   writeFileSync(BASELINE, JSON.stringify(sorted, null, 1) + '\n');
 }
 
+/** Carry baseline entries from an old path (file or folder prefix) to the new one. */
+function moved(base, from, to) {
+  const remap = (f) => (f === from || f.startsWith(from.replace(/\/?$/, '/')) ? to + f.slice(from.length) : f);
+  const names = {};
+  let n = 0;
+  for (const [f, v] of Object.entries(base.names)) {
+    const g = remap(f);
+    if (g !== f) n++;
+    names[g] = v;
+  }
+  const cyclesNext = base.cycles.map((c) => c.split(' ⇄ ').map(remap).sort().join(' ⇄ '));
+  const boundary = base.boundary.map((l) => l.replace(/^(\S+)/, (f) => remap(f)));
+  save({ ...base, names, cycles: cyclesNext, boundary });
+  console.log(`structure baseline: ${n} entr${n === 1 ? 'y' : 'ies'} moved from ${from} to ${to}`);
+}
+
 function main() {
+  const at = process.argv.indexOf('--moved');
+  if (at > 0) {
+    const [from, to] = process.argv.slice(at + 1);
+    if (!from || !to) throw new Error('usage: --moved <old path> <new path>');
+    return moved(JSON.parse(readFileSync(BASELINE, 'utf8')), from, to);
+  }
   const now = today();
   const base = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : null;
   if (process.argv.includes('--report')) {

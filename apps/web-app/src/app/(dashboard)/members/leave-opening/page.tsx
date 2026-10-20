@@ -123,7 +123,7 @@ export default function LeaveOpeningPage() {
     <div className="min-h-full bg-background">
       <div className={cn(PAGE_WIDTH, "py-6")}>
         <Link
-          href="/employees/availability"
+          href="/schedule"
           className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-3.5" />

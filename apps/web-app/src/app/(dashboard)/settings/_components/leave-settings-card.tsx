@@ -33,7 +33,7 @@ const intOrNull = (s: string): number | null => (s.trim() === "" ? null : /^\d+$
 export function LeaveSettingsCard({ profile }: { profile: LeavePolicyFields | undefined }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  const opensOpening = useRouteAccess().may("/employees/leave-opening")
+  const opensOpening = useRouteAccess().may("/members/leave-opening")
   const ledger = profile?.leaveYearMode !== undefined
 
   const stored = {
@@ -90,7 +90,7 @@ export function LeaveSettingsCard({ profile }: { profile: LeavePolicyFields | un
       {/* Shown once, until the starting balances are saved — the one-time step of starting mid-year. */}
       {ledger && profile?.leaveTrackingStartedOn === null && opensOpening && (
         <Link
-          href="/employees/leave-opening"
+          href="/members/leave-opening"
           className={"group mb-5 flex items-center gap-3 rounded-xl border border-primary/30 " +
             "bg-primary/5 px-4 py-3 transition-colors hover:bg-primary/10"}
         >
@@ -200,7 +200,7 @@ export function LeaveSettingsCard({ profile }: { profile: LeavePolicyFields | un
           </Button>
           {ledger && opensOpening && (
             <Link
-              href="/employees/leave-opening"
+              href="/members/leave-opening"
               className={"text-xs font-medium text-muted-foreground underline-offset-2 " + "hover:text-foreground hover:underline"}>
               {t("leaveLedger.opening.link")}
             </Link>

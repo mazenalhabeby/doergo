@@ -120,12 +120,9 @@ const DOCUMENTS_MENU = [
   "/documents", "/documents/all", "/documents/types", "/documents/templates", "/documents/compliance",
 ] as const
 
-/** Where a nav href actually lands, for hrefs that are redirects. */
-const NAV_TARGET: Readonly<Record<string, string>> = { "/schedule": "/employees/availability" }
-
-/** Is this nav entry offered to this member? Redirect hrefs are asked of where they land. */
+/** Is this nav entry offered to this member? Every nav href is a real page with its own rule. */
 export function navOffers(href: string, ctx: AccessContext): boolean {
-  return offers(NAV_TARGET[href] ?? href, ctx)
+  return offers(href, ctx)
 }
 
 export interface NavModel {

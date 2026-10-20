@@ -62,7 +62,7 @@ export class JoinRequestNotificationHandler {
       organizationId: data.organizationId,
       eventType: 'join_request_submitted',
       text,
-      link: '/join-requests',
+      link: '/approvals?kind=join',
     });
   }
 

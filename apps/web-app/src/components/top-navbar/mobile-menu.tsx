@@ -230,7 +230,7 @@ export function MobileMenu({
                   className={cn(
                     mobileItemBase,
                     "pl-5",
-                    isActive(pathname, "/schedule") || isActive(pathname, "/employees/availability")
+                    isActive(pathname, "/schedule")
                       ? mobileItemActiveStyle
                       : mobileItemInactive,
                   )}

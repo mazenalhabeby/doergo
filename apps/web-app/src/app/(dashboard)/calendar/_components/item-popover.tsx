@@ -83,7 +83,7 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeav
   if (!item || !anchor) return null
   const othersLeave = item.kind === "leave" && !!item.personId && item.personId !== myId
   const mayDecide = othersLeave && item.status === "PENDING" && !!canDecideLeave && !!timeOffId
-  const leaveHref = item.kind !== "leave" ? null : othersLeave ? (scheduleAccess ? "/employees/availability" : null) : "/my/time-off"
+  const leaveHref = item.kind !== "leave" ? null : othersLeave ? (scheduleAccess ? "/schedule" : null) : "/my/time-off"
   const color = KIND_COLOR[item.kind]
   const going = ev?.attendees.filter((a) => a.response === "ACCEPTED").length ?? 0
 

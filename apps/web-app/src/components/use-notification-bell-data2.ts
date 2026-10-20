@@ -175,7 +175,7 @@ export function useNotificationBellData2() {
           "time_off_requested",
           t("notifications.timeOffRequest", "Time-off request"),
           [d.memberName, [d.startDate, d.endDate].filter(Boolean).join(" → ")].filter(Boolean).join(" — "),
-          "/employees/availability",
+          "/schedule",
         )
       }),
       subscribe<{ approved?: boolean; rejectionReason?: string | null; startDate?: string; endDate?: string }>("time_off_decided", (d) => {
@@ -241,7 +241,7 @@ export function useNotificationBellData2() {
         add("join_approved", t("notifications.joinApproved"), d.organizationName || "", "/members")
       }),
       subscribe<JoinRequestEventPayload>("join_request_rejected", (d) => {
-        add("join_rejected", t("notifications.joinRejected"), d.reason || "", "/join-requests")
+        add("join_rejected", t("notifications.joinRejected"), d.reason || "", "/approvals?kind=join")
       }),
 
       // Attendance events

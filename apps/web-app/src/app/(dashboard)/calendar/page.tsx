@@ -198,7 +198,7 @@ export default function CalendarPage() {
                 ))}
                 {scheduleAccess && (
                   <Link
-                    href={spaceId ? `/employees/availability?space=${spaceId}` : "/employees/availability"}
+                    href={spaceId ? `/schedule?space=${spaceId}` : "/schedule"}
                     className={"inline-flex items-center gap-1 rounded-lg px-3 py-1 text-[13px] " +
                       "font-medium text-muted-foreground transition hover:text-foreground"}
                   >

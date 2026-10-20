@@ -7,7 +7,7 @@ describe("navbar active link", () => {
   const NAV_HREFS = [
     "/dashboard", "/tasks", "/schedule", "/attendance", "/overtime", "/issues",
     "/locations", "/members", "/clients", "/invoices", "/reports", "/manage",
-    "/invitations", "/join-requests", "/settings", "/settings/billing",
+    "/invitations", "/settings", "/settings/billing",
     "/my/attendance", "/my/time-off",
   ]
   const matches = (pathname: string, href: string) =>
@@ -52,7 +52,7 @@ describe("navbar active link", () => {
     its own top-level link.
   */
   describe("attendance dropdown", () => {
-    const DROPDOWN = ["/attendance", "/schedule", "/overtime", "/issues", "/employees/availability"]
+    const DROPDOWN = ["/attendance", "/schedule", "/overtime", "/issues"]
     const MENU_LINKS = ["/attendance", "/issues", "/overtime", "/schedule"]
     const isDropdownActive = (pathname: string) => DROPDOWN.some((h) => matches(pathname, h))
 
@@ -66,11 +66,7 @@ describe("navbar active link", () => {
     })
 
     it("claims nothing the menu does not contain", () => {
-      // Except the legacy alias, which redirects into it.
-      for (const h of DROPDOWN) {
-        if (h === "/employees/availability") continue
-        expect(MENU_LINKS).toContain(h)
-      }
+      for (const h of DROPDOWN) expect(MENU_LINKS).toContain(h)
     })
   })
 })

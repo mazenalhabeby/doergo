@@ -136,7 +136,7 @@ export function approvalWebPath(item: ApprovalItem): string {
     case 'overtime':
       return '/overtime';
     case 'request':
-      return '/employees/availability';
+      return '/schedule';
     case 'issue':
       return '/issues';
     case 'expense':
@@ -145,7 +145,7 @@ export function approvalWebPath(item: ApprovalItem): string {
     case 'document':
       return '/documents/review';
     case 'join':
-      return '/join-requests';
+      return '/approvals?kind=join';
     case 'clientRequest':
       return item.data.portalId && s ? `/locations/${s}/portals/${enc(String(item.data.portalId))}` : '/locations';
     case 'guestRequest':

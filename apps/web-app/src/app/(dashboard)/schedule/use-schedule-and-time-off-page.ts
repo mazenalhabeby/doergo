@@ -125,7 +125,7 @@ export function useScheduleAndTimeOffPage() {
   // floor-now / cover-range are @RequirePermissionInSpace('canViewSpaceAttendance').
   const readsFloor = useRouteAccess().holds("any:canViewSpaceAttendance")
   // The starting balances page, offered only to who may open it (the route table decides).
-  const opensOpening = useRouteAccess().may("/employees/leave-opening")
+  const opensOpening = useRouteAccess().may("/members/leave-opening")
   const leaveQuery = useQuery({
     queryKey: keys.timeOff.orgWindow(window.start, window.end),
     queryFn: () => employeesApi.getOrgTimeOff(undefined, { from: window.start, to: window.end }),

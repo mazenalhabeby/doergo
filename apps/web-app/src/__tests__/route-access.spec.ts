@@ -66,7 +66,7 @@ describe("the route table covers the dashboard, exactly", () => {
   it("asks the Option table for every nav href and settings section it owns", () => {
     expect(ROUTE_RULES["/invoices"].option).toBe(NAV_OPTION["/invoices"])
     expect(ROUTE_RULES["/overtime"].option).toBe(NAV_OPTION["/overtime"])
-    expect(ROUTE_RULES["/employees/availability"].option).toBe(NAV_OPTION["/schedule"])
+    expect(ROUTE_RULES["/schedule"].option).toBe(NAV_OPTION["/schedule"])
     expect(SETTINGS_SECTION_RULES["audit-log"].option).toBe(SETTINGS_OPTION["audit-log"])
   })
 
@@ -107,7 +107,7 @@ const observer = ctx({
 /** A technician who signed in on the web: no permissions, their own screens. */
 const technician = ctx({ enabledModules: ["clock", "time_off"], access: { org: {} } })
 
-const TEAM_PAGES = ["/members", "/members/x", "/invitations", "/join-requests"]
+const TEAM_PAGES = ["/members", "/members/x", "/invitations"]
 const DOC_ADMIN = ["/documents", "/documents/all", "/documents/review", "/documents/templates", "/documents/types"]
 
 describe("an admin opens everything", () => {
@@ -130,7 +130,7 @@ describe("a manager with canViewAllTasks only", () => {
     for (const p of DOC_ADMIN) expect([p, mayOpen(p, manager)]).toEqual([p, false])
   })
   it("opens what canViewAllTasks reads", () => {
-    for (const p of ["/tasks", "/locations", "/assets", "/assets/a1", "/reports", "/shared/s1", "/employees/availability", "/clients"]) {
+    for (const p of ["/tasks", "/locations", "/assets", "/assets/a1", "/reports", "/shared/s1", "/schedule", "/clients"]) {
       expect([p, mayOpen(p, manager)]).toEqual([p, true])
     }
   })
@@ -153,7 +153,7 @@ describe("a dispatcher with canAssignTasks only", () => {
 
 describe("an external observer", () => {
   it("is refused what stays the organization's own, whatever they hold", () => {
-    for (const p of ["/calendar", "/reports", "/settings/billing", "/employees/availability", "/employees/leave-opening"]) {
+    for (const p of ["/calendar", "/reports", "/settings/billing", "/schedule", "/members/leave-opening"]) {
       expect([p, checkRoute(p, observer)]).toEqual([p, { ok: false, reason: "external" }])
     }
   })
@@ -210,7 +210,7 @@ describe("a technician on the web", () => {
     }
   })
   it("is refused every management page", () => {
-    for (const p of [...TEAM_PAGES, ...DOC_ADMIN, "/attendance", "/overtime", "/invoices", "/reports", "/locations", "/employees/new"]) {
+    for (const p of [...TEAM_PAGES, ...DOC_ADMIN, "/attendance", "/overtime", "/invoices", "/reports", "/locations", "/members/new"]) {
       expect([p, mayOpen(p, technician)]).toEqual([p, false])
     }
   })

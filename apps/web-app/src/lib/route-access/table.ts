@@ -1,6 +1,6 @@
 /** Every route and who may open it (moved here unchanged) */
 import { SETTINGS_OPTION, hasAccessModule } from '@hbcfield/shared/client';
-import { APPROVAL_DECIDE_GRANTS, MANAGE_USERS, OPEN, REDIRECT, crmAccess, option, type AccessRule } from './rules';
+import { APPROVAL_DECIDE_GRANTS, MANAGE_USERS, OPEN, crmAccess, option, type AccessRule } from './rules';
 
 /**
  * Every page under app/(dashboard), by its route pattern (`[x]` = one segment).
@@ -10,12 +10,8 @@ import { APPROVAL_DECIDE_GRANTS, MANAGE_USERS, OPEN, REDIRECT, crmAccess, option
  */
 export const ROUTE_RULES: Readonly<Record<string, AccessRule>> = {
   "/dashboard": OPEN,
-  "/profile": REDIRECT,
-  "/sprints": REDIRECT,
-  "/task-types": REDIRECT,
-  "/schedule": REDIRECT, // → /employees/availability, checked below; the nav asks that entry
-  "/employees": REDIRECT,
-  "/employees/[id]": REDIRECT,
+  // Old addresses (/employees, /schedule's old home, /profile, /sprints, /task-types,
+  // /join-requests) are real 308 redirects in next.config.ts, not pages.
 
   // ── Work ──
   "/tasks": OPEN,
@@ -80,18 +76,17 @@ export const ROUTE_RULES: Readonly<Record<string, AccessRule>> = {
     why: "GET /sync/health — @RequirePermission('canManageUsers'); only meaningful with offline mode on",
   },
   "/invitations": { need: MANAGE_USERS, why: "GET /invitations — @RequirePermission('canManageUsers')" },
-  "/join-requests": { need: MANAGE_USERS, why: "GET /join-requests — @RequirePermission('canManageUsers')" },
-  "/employees/new": {
+  "/members/new": {
     need: ["any:canViewAllTasks"],
     why: "POST /employees — the page's own gate (admin or canViewAllTasks, in a workspace or org-wide)",
   },
-  "/employees/availability": {
+  "/schedule": {
     denyExternal: true, option: option("/schedule"),
     need: [["any:canViewAllTasks", "any:canManageRota"]],
     why: "GET /employees/time-off — @RequirePermissionInSpace('canViewAllTasks'); the rota is the Shift Scheduling Option",
   },
 
-  "/employees/leave-opening": {
+  "/members/leave-opening": {
     denyExternal: true,
     need: ["any:canManageRota"],
     why: "GET/POST /employees/leave-opening — @RequirePermissionInSpace('canManageRota'); the service narrows to the caller's workspaces",

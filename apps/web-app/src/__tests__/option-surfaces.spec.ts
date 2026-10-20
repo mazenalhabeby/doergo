@@ -25,13 +25,10 @@ const read = (p: string) => readFileSync(join(SRC, p), 'utf8');
 describe('every surface an Option owns is gated', () => {
   it('the navigation asks about every href in the table', () => {
     // The bar reads the route table (lib/route-access), which carries each
-    // Option on the page it owns; /schedule is asked where it lands.
+    // Option on the page it owns.
     const navbar = readNavbar();
     expect(navbar).toContain('useRouteAccess()');
-    const LANDS: Record<string, string> = { '/schedule': '/employees/availability' };
-    const ungated = Object.entries(NAV_OPTION).filter(
-      ([href, opt]) => ROUTE_RULES[LANDS[href] ?? href]?.option !== opt,
-    );
+    const ungated = Object.entries(NAV_OPTION).filter(([href, opt]) => ROUTE_RULES[href]?.option !== opt);
     expect(ungated).toEqual([]);
     expect(read('hooks/use-schedule-access.ts')).toContain('offers("/schedule")');
   });

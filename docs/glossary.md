@@ -1,6 +1,6 @@
 # Glossary — one word per thing
 
-> **Status: PROPOSED (2026-10-20), waiting for the owner's OK.** Phase 1 of
+> **Status: APPROVED by the owner (2026-10-20).** Phase 1 of
 > `docs/plans/code-structure-fix.md` renames code to these words. Until then this page says what
 > each old name means, so nobody adds a fourth.
 
@@ -27,6 +27,6 @@ The rule: **new code uses the word in the first column.** Database tables keep t
 
 ## Decisions still open
 
-1. Are **Workspace / Member / Client** the right three words? (owner)
+1. ~~Are **Workspace / Member / Client** the right three words?~~ Approved 2026-10-20.
 2. Do routes change too (`/locations` → `/workspaces`, `/customers/[id]` → `/clients/[id]`), with
    redirects for old links? — Phase 1.2–1.3.

@@ -96,7 +96,7 @@ export class TimeOffNotificationHandler {
               ? msg('request.requested.bodyOther', { name: data.memberName, reason: verbatim(data.reason, 120), range })
               : msg('request.requested.body', { name: data.memberName, what: requestWhat(data, range) }),
         };
-    const link = '/employees/availability';
+    const link = '/schedule';
 
     const payload = {
       timeOffId: data.timeOffId,

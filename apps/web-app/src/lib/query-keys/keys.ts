@@ -90,8 +90,8 @@ export const keys = {
  * Query keys that describe the SAME data from different angles.
  *
  * Time off is read under several keys — `timeOff.member` on a member's record,
- * `timeOff.org` on /attendance and /employees/availability, and the cover chart
- * and live floor on /employees/availability, which the server computes from
+ * `timeOff.org` on /attendance and /schedule, and the cover chart
+ * and live floor on /schedule, which the server computes from
  * schedule + time-off. Each screen invalidated only its own, so approving a day
  * off in one place left the others showing it as still pending (audit MD-D1).
  * Schedules had the same split against the cover chart (MD-D2).

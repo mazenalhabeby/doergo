@@ -46,7 +46,7 @@ const attendanceKeys = {
   employeesPicker: () => named("employeesForAttendance"),
   /** Workspace picker on a member's add-entry dialog. */
   locationsPicker: () => named("companyLocations"),
-  /** "On the floor right now" on /employees/availability. */
+  /** "On the floor right now" on /schedule. */
   floorNow: () => named("floor-now"),
 } as const
 
@@ -58,7 +58,7 @@ const overtimeKeys = {
 } as const
 
 const timeOffKeys = {
-  /** The organization's leave — /attendance and /employees/availability; reaches both below. */
+  /** The organization's leave — /attendance and /schedule; reaches both below. */
   org: () => named("orgTimeOff"),
   orgApproved: () => named("orgTimeOff", ["APPROVED"]),
   orgWindow: (start: string, end: string) => named("orgTimeOff", ["window", start, end]),

@@ -133,7 +133,7 @@ describe('what an external member may never reach', () => {
   });
 
   it('keeps what stays the organization\'s own closed to them, whatever they hold', () => {
-    for (const route of ['/calendar', '/reports', '/settings/billing', '/employees/availability', '/employees/leave-opening']) {
+    for (const route of ['/calendar', '/reports', '/settings/billing', '/schedule', '/members/leave-opening']) {
       expect([route, ROUTE_RULES[route].denyExternal]).toEqual([route, true]);
     }
     expect(navModelFor(supervisor).calendar).toBe(false);

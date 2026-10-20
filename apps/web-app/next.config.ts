@@ -121,6 +121,21 @@ const nextConfig: NextConfig = {
         destination: '/documents/all',
         permanent: true,
       },
+      /*
+        Old addresses kept for bookmarks and links in old emails
+        (docs/plans/code-structure-fix.md, Phase 1.2). Each was a page whose only
+        job was to call redirect(); here they are real 308s. Order matters: the
+        specific /employees/* paths come before /employees/:id.
+      */
+      { source: '/employees', destination: '/members', permanent: true },
+      { source: '/employees/availability', destination: '/schedule', permanent: true },
+      { source: '/employees/new', destination: '/members/new', permanent: true },
+      { source: '/employees/leave-opening', destination: '/members/leave-opening', permanent: true },
+      { source: '/employees/:id', destination: '/members/:id', permanent: true },
+      { source: '/profile', destination: '/settings?section=profile', permanent: true },
+      { source: '/sprints', destination: '/tasks', permanent: true },
+      { source: '/task-types', destination: '/locations', permanent: true },
+      { source: '/join-requests', destination: '/approvals?kind=join', permanent: true },
     ];
   },
   async rewrites() {

@@ -196,7 +196,7 @@ export const PAGE_TOURS: TourDef[] = [
     id: "pageAvailability",
     titleKey: "tours.availabilityTour.title",
     icon: "schedule",
-    autoRunOn: "/employees/availability",
+    autoRunOn: "/schedule",
     autoRunExact: true,
     gate: (c) => c.hasPermission("canViewAllTasks"),
     steps: [

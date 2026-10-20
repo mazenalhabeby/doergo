@@ -764,45 +764,6 @@
   "apps/web-app/src/app/(dashboard)/documents/types/_components/use-type-editor-logic.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/employees/availability/_components/drawer-body-helpers.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/employees/availability/_components/exceptions-card-floor-now.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/employees/availability/_components/exceptions-card-helpers.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/employees/availability/_components/leave-wallchart-cover.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/employees/availability/_components/leave-wallchart-days.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/employees/availability/_components/leave-wallchart-space.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/employees/availability/_components/use-drawer-body.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/employees/availability/_components/use-exceptions-card.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/employees/availability/schedule-and-time-off-page-helpers.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/employees/availability/use-schedule-and-time-off-page.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/employees/new/new-technician-page-create.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/employees/new/new-technician-page-helpers.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/employees/new/use-new-technician-page.ts": [
-   "moved"
-  ],
   "apps/web-app/src/app/(dashboard)/invitations/invitations-page-helpers.tsx": [
    "moved"
   ],
@@ -1111,6 +1072,15 @@
   "apps/web-app/src/app/(dashboard)/members/members-page-team.tsx": [
    "moved"
   ],
+  "apps/web-app/src/app/(dashboard)/members/new/new-technician-page-create.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/members/new/new-technician-page-helpers.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/members/new/use-new-technician-page.ts": [
+   "moved"
+  ],
   "apps/web-app/src/app/(dashboard)/members/use-members-page.ts": [
    "moved"
   ],
@@ -1180,6 +1150,36 @@
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/reports/use-reports-page.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/schedule/_components/drawer-body-helpers.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/schedule/_components/exceptions-card-floor-now.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/schedule/_components/exceptions-card-helpers.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/schedule/_components/leave-wallchart-cover.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/schedule/_components/leave-wallchart-days.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/schedule/_components/leave-wallchart-space.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/schedule/_components/use-drawer-body.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/schedule/_components/use-exceptions-card.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/schedule/schedule-and-time-off-page-helpers.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/schedule/use-schedule-and-time-off-page.ts": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/settings/_components/general-address-fields.tsx": [
