@@ -80,6 +80,17 @@ Decide once, then rename **code**, never database tables (Prisma `@@map` keeps t
 
 ## Phase 2 — The shared package *(≈ 5 days)*
 
+> **Status (2026-10-20): DONE on branch `refactor/structure-p2`** (4 commits, on top of p1, not merged, not deployed).
+> 2.1/2.2: `server.ts` + `@hbcfield/shared/server`; `index.ts` is exactly client + server (a structure check
+> keeps it so); the root still exports every original name, plus 23 the old list had dropped.
+> 2.3: contracts by subject (`events-*`, `task-service-*`, `auth-service-documents-*`); the `'../../index'`
+> type loop removed; numbered file names 24 → 11. 2.5: one shared `isSameDay`; the unused en-US
+> `formatTime` removed — the three formatTime helpers in use show different things and stay (merging
+> them is a visible change). 2.6: shared has its own jest project, 33 specs moved in (544 tests), CI runs it.
+> **2.4 measured and folded into 6.5:** the phone uses portalAdmin, spacePortal and billing from the
+> "web" table, and without Metro tree-shaking a ~1,100-line table is a rounding error next to what
+> `client.ts` already carries — the real win is tree-shaking.
+
 | # | Step | Done when |
 |---|---|---|
 | 2.1 | **Split server code out:** `@hbcfield/shared/server` (Nest guards, decorators, Prisma, queues, storage, mail sending, crypto). `client.ts` becomes the default; `index.ts` = client + server. | 0.4 passes; apps import server code only from `/server` |
