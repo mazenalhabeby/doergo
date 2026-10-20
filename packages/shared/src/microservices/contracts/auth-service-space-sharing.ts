@@ -51,3 +51,13 @@ export const spaceShareRequestResolve = rpc<{
   approve: boolean;
   userId: string;
 }>('space_share_request_resolve');
+
+/**
+ * A workspace is being removed for good (task-service's purge): auth-service drops what it owns
+ * for that workspace — its portal intake categories and any share that is no longer ACTIVE.
+ * An ACTIVE share is refused (the owner unshares first). Idempotent.
+ */
+export const spacePurgeAuthSide = rpc<
+  { organizationId: string; spaceId: string },
+  { success: boolean; message?: string; data?: { categoriesRemoved: number; sharesRemoved: number } }
+>('space_purge_auth_side');

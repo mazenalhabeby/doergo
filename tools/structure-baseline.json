@@ -4247,8 +4247,6 @@
   "apps/api/task-service/src/modules/space-roles/space-roles.base.ts → AccessRole.upsert (owned by auth-service)",
   "apps/api/task-service/src/modules/space-roles/space-roles.service.ts → AccessRole.create (owned by auth-service)",
   "apps/api/task-service/src/modules/space-roles/space-roles.service.ts → AccessRole.update (owned by auth-service)",
-  "apps/api/task-service/src/modules/spaces/space-lifecycle.service.ts → IntakeCategory.deleteMany (owned by auth-service)",
-  "apps/api/task-service/src/modules/spaces/space-lifecycle.service.ts → SpaceShare.deleteMany (owned by auth-service)",
   "apps/api/task-service/src/modules/technicians/leave-opening.service.ts → Organization.updateMany (owned by auth-service)",
   "apps/api/tracking-service/src/modules/location/location-batch.service.ts → Task.update (owned by task-service)",
   "apps/api/tracking-service/src/modules/location/location.service.ts → Task.update (owned by task-service)"

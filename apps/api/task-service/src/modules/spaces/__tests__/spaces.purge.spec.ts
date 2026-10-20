@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { of } from 'rxjs';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { SpaceLifecycleService } from '../space-lifecycle.service';
@@ -48,6 +49,8 @@ describe('SpaceLifecycleService.purge — what counts as empty (S-B1, S-B2)', ()
     $transaction: jest.fn(),
   };
   const notificationClient = { emit: jest.fn() };
+  // auth-service owns portal categories and shares; the purge asks it to drop them (data-ownership group B).
+  const authClient = { send: jest.fn() };
 
   const space = (counts: Partial<typeof EMPTY>) => ({
     id: 'sp-1',
@@ -65,11 +68,13 @@ describe('SpaceLifecycleService.purge — what counts as empty (S-B1, S-B2)', ()
     prisma.intakeCategory.deleteMany.mockResolvedValue({ count: 0 });
     prisma.companyLocation.delete.mockResolvedValue({ id: 'sp-1' });
     prisma.$transaction.mockImplementation(async (fn: any) => fn(prisma));
+    authClient.send.mockReturnValue(of({ success: true, data: { categoriesRemoved: 0, sharesRemoved: 0 } }));
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SpaceLifecycleService,
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: notificationClient },
+        { provide: SERVICE_NAMES.AUTH, useValue: authClient },
       ],
     }).compile();
     service = module.get(SpaceLifecycleService);
@@ -105,10 +110,25 @@ describe('SpaceLifecycleService.purge — what counts as empty (S-B1, S-B2)', ()
       expect(prisma.companyLocation.delete).not.toHaveBeenCalled();
     });
 
-    it('clears leftover non-active share rows, which no foreign key would cascade', async () => {
+    it('asks auth-service to clear leftover non-active share rows, which no foreign key would cascade', async () => {
       prisma.companyLocation.findFirst.mockResolvedValue(space({}));
       await purge();
-      expect(prisma.spaceShare.deleteMany).toHaveBeenCalledWith({ where: { spaceId: 'sp-1' } });
+      expect(authClient.send).toHaveBeenCalledWith(
+        { cmd: 'space_purge_auth_side' },
+        { organizationId: 'org-1', spaceId: 'sp-1' },
+      );
+      // task-service no longer writes auth's tables itself
+      expect(prisma.spaceShare.deleteMany).not.toHaveBeenCalled();
+      expect(prisma.intakeCategory.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('deletes nothing when auth-service refuses', async () => {
+      prisma.companyLocation.findFirst.mockResolvedValue(space({}));
+      authClient.send.mockReturnValue(
+        of({ success: false, message: '1 organization(s) this space is shared with — unshare first' }),
+      );
+      await expect(purge()).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.companyLocation.delete).not.toHaveBeenCalled();
     });
   });
 

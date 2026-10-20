@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { SpaceSharingController } from './space-sharing.controller';
 import { SpaceSharingService } from './space-sharing.service';
+import { SpacePurgeService } from './space-purge.service';
 import { MemberOffboardingModule } from '../../common/member-offboarding/member-offboarding.module';
 
 @Module({
   imports: [MemberOffboardingModule],
   controllers: [SpaceSharingController],
-  providers: [SpaceSharingService],
+  providers: [SpaceSharingService, SpacePurgeService],
   exports: [SpaceSharingService],
 })
 export class SpaceSharingModule {}

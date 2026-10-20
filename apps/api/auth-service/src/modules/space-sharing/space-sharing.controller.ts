@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { SpaceSharingService } from './space-sharing.service';
+import { SpacePurgeService } from './space-purge.service';
 
 import {
   pattern,
@@ -13,11 +14,21 @@ import {
   spaceShareRequestCreate,
   spaceShareRequestList,
   spaceShareRequestResolve,
+  spacePurgeAuthSide,
   type RpcRequest,
 } from '@hbcfield/shared/microservices';
 @Controller()
 export class SpaceSharingController {
-  constructor(private readonly svc: SpaceSharingService) {}
+  constructor(
+    private readonly svc: SpaceSharingService,
+    private readonly purge: SpacePurgeService,
+  ) {}
+
+  /** task-service is removing a workspace for good — drop what auth owns for it. */
+  @MessagePattern(pattern(spacePurgeAuthSide))
+  purgeForSpace(@Payload() data: RpcRequest<typeof spacePurgeAuthSide>) {
+    return this.purge.purgeForSpace(data);
+  }
 
   @MessagePattern(pattern(spaceShareCreate))
   create(@Payload() data: RpcRequest<typeof spaceShareCreate>) {

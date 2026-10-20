@@ -1,10 +1,41 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { success } from '@hbcfield/shared';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom, timeout } from 'rxjs';
+import { SERVICE_NAMES, success } from '@hbcfield/shared';
+import { sendRpc, spacePurgeAuthSide } from '@hbcfield/shared/microservices';
+import { PrismaService } from '../../common/prisma/prisma.service';
 import { SpaceServiceBase } from './space-service.base';
 
 /** A workspace's life: the default one, archiving, purging. */
 @Injectable()
 export class SpaceLifecycleService extends SpaceServiceBase {
+  constructor(
+    prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION) notificationClient: ClientProxy,
+    @Inject(SERVICE_NAMES.AUTH) private readonly authClient: ClientProxy,
+  ) {
+    super(prisma, notificationClient);
+  }
+
+  /** auth-service drops what it owns for the workspace (portal categories, old shares) — docs/data-ownership.md, group B. */
+  private async purgeAuthSide(organizationId: string, spaceId: string): Promise<void> {
+    let reply: { success: boolean; message?: string };
+    try {
+      reply = await firstValueFrom(
+        sendRpc(this.authClient, spacePurgeAuthSide, { organizationId, spaceId }).pipe(timeout(30_000)),
+      );
+    } catch (e) {
+      this.logger.error(`space_purge_auth_side failed for ${spaceId}: ${(e as Error)?.message ?? e}`);
+      throw new ServiceUnavailableException('Could not remove this space yet. Nothing was deleted — try again.');
+    }
+    if (!reply.success) throw new BadRequestException(reply.message ?? 'This space cannot be removed yet.');
+  }
   /**
    * Update a company location
    */
@@ -198,16 +229,10 @@ export class SpaceLifecycleService extends SpaceServiceBase {
       );
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      // Config rows that reference the space without cascade.
-      await tx.intakeCategory.deleteMany({ where: { spaceId: data.id } }).catch(() => undefined);
-      // SpaceShare.spaceId is a plain String with NO foreign key, so nothing cascades
-      // these away. Any ACTIVE share already blocked the purge above; what is left is
-      // PENDING/REVOKED history that would otherwise dangle forever (S-B2).
-      await tx.spaceShare.deleteMany({ where: { spaceId: data.id } }).catch(() => undefined);
-      // Access mappings and shift config cascade via the schema.
-      await tx.companyLocation.delete({ where: { id: data.id } });
-    });
+    // auth-service's rows for the space go first; if it refuses, nothing here is touched.
+    await this.purgeAuthSide(data.organizationId, data.id);
+    // Access mappings and shift config cascade via the schema.
+    await this.prisma.companyLocation.delete({ where: { id: data.id } });
 
     this.logger.warn(`Company location PURGED: ${existing.name} (${existing.id}) by ${data.userId}`);
     // Create, update and deactivate all announce; purge — the one that cannot be undone

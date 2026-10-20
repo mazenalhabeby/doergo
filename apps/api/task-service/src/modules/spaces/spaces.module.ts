@@ -28,7 +28,12 @@ import { SpacesProcessor } from './spaces.processor';
 @Module({
   // Space and roster mutations announce themselves so open clients re-read
   // instead of going stale until someone refreshes.
-  imports: [ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)])],
+  imports: [
+    ClientsModule.registerAsync([
+      createClientOptions(SERVICE_NAMES.NOTIFICATION),
+      createClientOptions(SERVICE_NAMES.AUTH),
+    ]),
+  ],
   controllers: [SpacesController],
   providers: [...SPACE_SERVICES, SpacesProcessor],
   exports: SPACE_SERVICES,
