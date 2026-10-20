@@ -23,6 +23,12 @@
  * `--update` only ever lowers: a file that improved gets its smaller numbers, a
  * file now under both limits leaves the baseline, and a file that grew is
  * refused (raise the limit in review, never in a script).
+ *
+ * A written exception (docs/plans/code-structure-fix.md, Phase 0.1): a file whose
+ * first lines carry `size-exempt: <reason of at least 20 characters>` may be up to
+ * 600 lines. Cutting one cohesive file into numbered "-part2" pieces only to pass
+ * the limit made the code harder to read, not easier — the reason is reviewed with
+ * the change instead. Lines over 140 characters are never exempt.
  */
 import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -31,6 +37,16 @@ import { fileURLToPath } from 'node:url';
 
 export const MAX_LINES = 300;
 export const MAX_WIDTH = 140;
+/** The most an exempt file may hold, so an exception never becomes a dumping ground. */
+export const MAX_EXEMPT_LINES = 600;
+const EXEMPT_RE = /size-exempt:\s*(.{20,})/;
+
+/** The written reason, when one of the first 15 lines grants the exception. */
+export function exemption(text) {
+  const head = text.split('\n', 15).join('\n');
+  const m = head.match(EXEMPT_RE);
+  return m ? m[1].trim() : null;
+}
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
 const BASELINE = join(REPO, 'tools', 'size-baseline.json');
@@ -74,7 +90,9 @@ function sourceFiles() {
 export function measure(text) {
   const lines = text.split('\n');
   if (lines[lines.length - 1] === '') lines.pop();
-  return { lines: lines.length, long: lines.filter((l) => l.length > MAX_WIDTH).length };
+  const m = { lines: lines.length, long: lines.filter((l) => l.length > MAX_WIDTH).length };
+  if (exemption(text)) m.exempt = true;
+  return m;
 }
 
 function current() {
@@ -83,19 +101,28 @@ function current() {
   return out;
 }
 
-const isOver = (m) => m.lines > MAX_LINES || m.long > 0;
+/** The line limit a file is held to: 300, or 600 with a written exception. */
+const limitOf = (m) => (m.exempt ? MAX_EXEMPT_LINES : MAX_LINES);
+const isOver = (m) => m.lines > limitOf(m) || m.long > 0;
 
 export function compare(now, baseline) {
   const problems = [];
   for (const [f, m] of Object.entries(now)) {
     const b = baseline[f];
+    const limit = limitOf(m);
     if (!b) {
-      if (m.lines > MAX_LINES) problems.push(`${f}: ${m.lines} lines (new file over ${MAX_LINES})`);
+      if (m.lines > limit)
+        problems.push(
+          `${f}: ${m.lines} lines (new file over ${limit}` +
+            (m.exempt
+              ? ', even with its size-exempt note)'
+              : '; split it by meaning, or add a reviewed size-exempt: <reason>)'),
+        );
       if (m.long > 0) problems.push(`${f}: ${m.long} line(s) over ${MAX_WIDTH} characters`);
       continue;
     }
-    if (m.lines > MAX_LINES && m.lines > b.lines)
-      problems.push(`${f}: grew to ${m.lines} lines (was ${b.lines}, limit ${MAX_LINES})`);
+    if (m.lines > limit && m.lines > b.lines)
+      problems.push(`${f}: grew to ${m.lines} lines (was ${b.lines}, limit ${limit})`);
     if (m.long > b.long) problems.push(`${f}: ${m.long} lines over ${MAX_WIDTH} characters (was ${b.long})`);
   }
   return problems;
@@ -126,7 +153,7 @@ function split(baseline, now, args) {
   if (total > was.long) throw new Error(`the split has ${total} long lines; ${from} had ${was.long}`);
   if (isOver(left)) baseline[from] = { lines: Math.min(was.lines, left.lines), long: left.long };
   else delete baseline[from];
-  for (const [f, m] of moved) if (isOver(m)) baseline[f] = m;
+  for (const [f, m] of moved) if (isOver(m)) baseline[f] = { lines: m.lines, long: m.long };
   const sorted = Object.fromEntries(
     Object.keys(baseline)
       .sort()
@@ -157,6 +184,7 @@ function main() {
       if (!isOver(now[f])) continue;
       const b = baseline?.[f];
       next[f] = b ? { lines: Math.min(b.lines, now[f].lines), long: Math.min(b.long, now[f].long) } : now[f];
+      delete next[f].exempt;
     }
     writeFileSync(BASELINE, JSON.stringify(next, null, 1) + '\n');
     console.log(`size baseline: ${Object.keys(next).length} file(s) over the limits recorded`);
@@ -175,8 +203,10 @@ function main() {
     const m = now[f];
     return !m || m.lines < baseline[f].lines || m.long < baseline[f].long;
   }).length;
+  const exempt = Object.values(now).filter((m) => m.exempt).length;
   console.log(
-    `size ratchet: ok (${Object.keys(now).length} files)${improved ? ` — ${improved} improved, run --update to lock it in` : ''}`,
+    `size ratchet: ok (${Object.keys(now).length} files${exempt ? `, ${exempt} with a written size exception` : ''})` +
+      (improved ? ` — ${improved} improved, run --update to lock it in` : ''),
   );
 }
 

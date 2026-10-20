@@ -1579,6 +1579,8 @@ export class TasksController {
 
 ### Size and formatting (the ratchet)
 - A source file ≤ **300 lines**, a line ≤ **140 characters**. Today's offenders are recorded in `tools/size-baseline.json`: they may shrink, never grow; a new file must be under both. `pnpm size:check` (also runs in task-service's tests); after shrinking a file, `pnpm size:update` (it only ever lowers).
+- **A written exception** instead of mechanical splits: a file whose first 15 lines carry `size-exempt: <reason, 20+ characters>` may hold up to 600 lines (never longer lines). Cutting one cohesive file into `-part2` pieces only to pass the limit is what made the code hard to read — reviewers judge the reason instead.
+- **The structure ratchet** (`pnpm structure:check`, also in task-service's tests; baseline `tools/structure-baseline.json`): no NEW file named like a mechanical split (numbered `-detail3`, `-part(s)`, `-inner`, a repeated word, a "moved here unchanged" note), no new import loop, no server code (Nest, Prisma, Node built-ins) reachable from `@hbcfield/shared/client`, no new translation key nobody reads. All may only shrink; `pnpm structure:update` locks in an improvement, `pnpm structure:report` shows today's numbers. Words: `docs/glossary.md` (proposed). Plan: `docs/plans/code-structure-fix.md`.
 - Prettier at 120, each app's own quote/semicolon style. Run `pnpm format:changed` on what you touched — **never format the whole repo**.
 
 ### File Naming
