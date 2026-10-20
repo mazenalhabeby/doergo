@@ -4230,5 +4230,31 @@
    "validation.organizationNameRequired",
    "validation.passwordsMismatch"
   ]
- }
+ },
+ "ownership": [
+  "apps/api/auth-service/src/common/seed-default-workflow.ts → StatusWorkflow.create (owned by task-service)",
+  "apps/api/auth-service/src/modules/auth/account-deletion.service.ts → Comment.deleteMany (owned by task-service)",
+  "apps/api/auth-service/src/modules/auth/account-deletion.service.ts → LocationHistory.deleteMany (owned by tracking-service)",
+  "apps/api/auth-service/src/modules/auth/account-deletion.service.ts → UserPushToken.deleteMany (owned by notification-service)",
+  "apps/api/auth-service/src/modules/auth/account-deletion.service.ts → WorkerLastLocation.deleteMany (owned by tracking-service)",
+  "apps/api/auth-service/src/modules/invitations/invitation-apply/placement.ts → SpaceAssignment.upsert (owned by task-service)",
+  "apps/api/auth-service/src/modules/invitations/invitation-apply/placement.ts → TechnicianSchedule.createMany (owned by task-service)",
+  "apps/api/auth-service/src/modules/platform-admin/platform-support-teams.service.ts → SupportTicket.updateMany (owned by task-service)",
+  "apps/api/auth-service/src/modules/users/own-account.service.ts → NotificationDelivery.updateMany (owned by notification-service)",
+  "apps/api/notification-service/src/i18n/recipient-locales.service.ts → User.updateMany (owned by auth-service)",
+  "apps/api/notification-service/src/modules/websocket/gateway-presence.base.ts → User.update (owned by auth-service)",
+  "apps/api/task-service/src/modules/attendance/auto-clock.service.ts → User.update (owned by auth-service)",
+  "apps/api/task-service/src/modules/calendar/holidays.service.ts → Organization.update (owned by auth-service)",
+  "apps/api/task-service/src/modules/space-roles/role-admin.service.ts → AccessRole.delete (owned by auth-service)",
+  "apps/api/task-service/src/modules/space-roles/space-roles.base.ts → AccessRole.deleteMany (owned by auth-service)",
+  "apps/api/task-service/src/modules/space-roles/space-roles.base.ts → AccessRole.update (owned by auth-service)",
+  "apps/api/task-service/src/modules/space-roles/space-roles.base.ts → AccessRole.upsert (owned by auth-service)",
+  "apps/api/task-service/src/modules/space-roles/space-roles.service.ts → AccessRole.create (owned by auth-service)",
+  "apps/api/task-service/src/modules/space-roles/space-roles.service.ts → AccessRole.update (owned by auth-service)",
+  "apps/api/task-service/src/modules/spaces/space-lifecycle.service.ts → IntakeCategory.deleteMany (owned by auth-service)",
+  "apps/api/task-service/src/modules/spaces/space-lifecycle.service.ts → SpaceShare.deleteMany (owned by auth-service)",
+  "apps/api/task-service/src/modules/technicians/leave-opening.service.ts → Organization.updateMany (owned by auth-service)",
+  "apps/api/tracking-service/src/modules/location/location-batch.service.ts → Task.update (owned by task-service)",
+  "apps/api/tracking-service/src/modules/location/location.service.ts → Task.update (owned by task-service)"
+ ]
 }

@@ -1,6 +1,6 @@
 # Who owns which table — the data ownership map
 
-> **Status: PROPOSED (2026-10-20), waiting for the owner's OK.** Phase 3.1 of `docs/plans/code-structure-fix.md`.
+> **Status: APPROVED by the owner (2026-10-20)** — decisions below. Phase 3.1 of `docs/plans/code-structure-fix.md`.
 > Generated from the code: every `prisma.<model>.create/update/upsert/delete…` and every raw `INSERT/UPDATE/DELETE`
 > in `apps/api/*/src` (tests excluded). **Owner = the one service allowed to write a table.** Reading another
 > service's table stays allowed for now (Phase 3.4 shrinks it); writing one is what Phase 3.3 removes.
@@ -119,7 +119,14 @@ Most read by services that do not own them:
 
 `User` and `Organization` are read everywhere because every rule needs a name, a timezone or a role. Phase 3.4 does not forbid that — it replaces the direct reads with one small cached reader per owner.
 
-## Questions for the owner
+## Decisions (owner, 2026-10-20)
+
+- **AccessRole → auth owns it**; task-service's role screens ask auth through a message.
+- **A job's route → its own `TaskRoute` table, owned by tracking** (additive migration); the job page reads it through the existing route request.
+- **The 8 unused tables stay for now**; removed later in a separate, checked migration.
+- **ActivityLog (insert only) and CronLock (through the shared lease helper) may be written by any service.**
+
+## The questions that were asked
 
 1. **Workspace roles (`AccessRole`).** The roles are *read* by auth-service on every sign-in (the session is built from them) but *written* by task-service's space-roles screens (7 places). Either **auth owns them** and task-service asks auth to change a role (recommended — who-may-do-what belongs with sign-in), or task-service owns them and auth only reads.
 2. **A job's route** (`Task.routeDistance`, `routeStartedAt`, `routeEndedAt`). tracking-service writes these three fields on every GPS batch. Either task-service owns them and tracking sends an event (one more hop per batch), or **the route moves into tracking's own table** (`TaskRoute`, recommended — tracking is the only writer and reader of the numbers; the job page reads them through the existing route RPC).

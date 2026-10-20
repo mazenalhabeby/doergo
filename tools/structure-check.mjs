@@ -24,6 +24,7 @@ import { measureNames, compareNames } from './structure/names.mjs';
 import { cycles } from './structure/graph.mjs';
 import { boundaryLeaks, rootProblem } from './structure/boundary.mjs';
 import { unusedKeys } from './structure/i18n-unused.mjs';
+import { foreignWrites } from './structure/ownership.mjs';
 
 const BASELINE = join(REPO, 'tools', 'structure-baseline.json');
 
@@ -33,6 +34,7 @@ function today() {
     cycles: cycles().map((c) => c.join(' ⇄ ')),
     boundary: [...boundaryLeaks().leaks, ...[rootProblem()].filter(Boolean)],
     i18n: unusedKeys(),
+    ownership: foreignWrites(),
   };
 }
 
@@ -45,6 +47,10 @@ function problems(now, base) {
   for (const l of now.boundary)
     if (!oldLeaks.has(l))
       out.push(l.includes('must only re-export') ? l : `server code reachable from @hbcfield/shared/client: ${l}`);
+  const oldOwn = new Set(base.ownership ?? []);
+  for (const w of now.ownership)
+    if (!oldOwn.has(w))
+      out.push(`write to a table another service owns (docs/data-ownership.md) — ask the owner instead: ${w}`);
   for (const [app, keys] of Object.entries(now.i18n)) {
     const had = new Set(base.i18n?.[app] ?? []);
     const fresh = keys.filter((k) => !had.has(k));
@@ -63,7 +69,13 @@ function lowered(now, base) {
   const keep = (list, old) => list.filter((x) => (old ?? []).includes(x));
   const i18n = {};
   for (const [app, keys] of Object.entries(now.i18n)) i18n[app] = keep(keys, base.i18n?.[app]);
-  return { names, cycles: keep(now.cycles, base.cycles), boundary: keep(now.boundary, base.boundary), i18n };
+  return {
+    names,
+    cycles: keep(now.cycles, base.cycles),
+    boundary: keep(now.boundary, base.boundary),
+    i18n,
+    ownership: keep(now.ownership, base.ownership),
+  };
 }
 
 function counts(b) {
@@ -76,7 +88,7 @@ function counts(b) {
     b.i18n,
   )
     .map(([a, k]) => `${a} ${k.length}`)
-    .join(', ')}`;
+    .join(', ')} · ${(b.ownership ?? []).length} writes to another service's table`;
 }
 
 function save(b) {
@@ -89,6 +101,7 @@ function save(b) {
     cycles: b.cycles,
     boundary: b.boundary,
     i18n: b.i18n,
+    ownership: b.ownership ?? [],
   };
   writeFileSync(BASELINE, JSON.stringify(sorted, null, 1) + '\n');
 }
