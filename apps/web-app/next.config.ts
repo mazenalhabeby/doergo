@@ -136,6 +136,8 @@ const nextConfig: NextConfig = {
       { source: '/sprints', destination: '/tasks', permanent: true },
       { source: '/task-types', destination: '/locations', permanent: true },
       { source: '/join-requests', destination: '/approvals?kind=join', permanent: true },
+      { source: '/settings/audit-log', destination: '/settings?section=audit-log', permanent: true },
+      { source: '/customers/:id', destination: '/clients/:id', permanent: true },
     ];
   },
   async rewrites() {

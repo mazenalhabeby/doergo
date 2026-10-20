@@ -707,20 +707,20 @@
   "apps/web-app/src/app/(dashboard)/calendar/_components/use-event-dialog.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/customers/[id]/add-contact-dialog.tsx": [
+  "apps/web-app/src/app/(dashboard)/clients/[id]/add-contact-dialog.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/customers/[id]/customer-addresses-parts.tsx": [
+  "apps/web-app/src/app/(dashboard)/clients/[id]/customer-addresses-parts.tsx": [
    "part",
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/customers/[id]/customer-record-lib.ts": [
+  "apps/web-app/src/app/(dashboard)/clients/[id]/customer-record-lib.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/customers/[id]/use-add-contact-dialog.ts": [
+  "apps/web-app/src/app/(dashboard)/clients/[id]/use-add-contact-dialog.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/customers/[id]/works-at-panel.tsx": [
+  "apps/web-app/src/app/(dashboard)/clients/[id]/works-at-panel.tsx": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/dashboard/_components/client-dashboard-helpers.tsx": [
@@ -1194,12 +1194,6 @@
   ],
   "apps/web-app/src/app/(dashboard)/settings/_components/use-general-section.ts": [
    "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/settings/audit-log/audit-log-page-inner.tsx": [
-   "inner"
-  ],
-  "apps/web-app/src/app/(dashboard)/settings/audit-log/page-parts.tsx": [
-   "part"
   ],
   "apps/web-app/src/app/(dashboard)/settings/billing/_components/bill-breakdown-bill.tsx": [
    "repeated",

@@ -16,10 +16,11 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Combobox } from "@/components/ui/combobox"
-import { auditDetail, EVENT_COLORS, EVENT_TYPES } from "./page-parts"
+import { auditDetail, EVENT_COLORS, EVENT_TYPES } from "./audit-log-events"
 import { ListPager } from "@/components/ui/list-pager"
 
-export function AuditLogPageInner() {
+/** The organization's audit log — a Settings section (its only entry point). */
+export function AuditLogSection() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const isAdmin = user?.role === "ADMIN"
@@ -73,8 +74,8 @@ export function AuditLogPageInner() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-full bg-muted p-8">
-        <div className="max-w-5xl mx-auto text-center py-12">
+      <div>
+        <div className="text-center py-12">
           <Shield className="size-12 mx-auto text-muted-foreground/30 mb-4" />
           <p className="text-lg font-medium">{t("auditLog.accessDenied")}</p>
           <p className="text-sm text-muted-foreground">{t("auditLog.accessDeniedDescription")}</p>
@@ -84,12 +85,12 @@ export function AuditLogPageInner() {
   }
 
   return (
-    <div className="min-h-full bg-muted">
-      <div className="p-8 max-w-6xl mx-auto">
+    <div>
+      <div>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">{t("auditLog.title")}</h1>
+            <h2 className="text-lg font-semibold text-foreground">{t("auditLog.title")}</h2>
             <p className="text-sm text-muted-foreground mt-1">{t("auditLog.subtitle")}</p>
           </div>
         </div>

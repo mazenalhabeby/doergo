@@ -141,7 +141,7 @@ export function PortalDetailTabs({ vm }: { vm: PortalDetailPageState }) {
                   >
                     <button
                       className="flex min-w-0 flex-1 items-center gap-4 text-left"
-                      onClick={() => router.push(`/customers/${r.id}`)}
+                      onClick={() => router.push(`/clients/${r.id}`)}
                     >
                       <div
                         className={

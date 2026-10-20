@@ -172,7 +172,7 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
               .filter(Boolean)
               .join(" · ")
             return (
-            <button key={c.id} onClick={() => router.push(`/customers/${c.id}`)}
+            <button key={c.id} onClick={() => router.push(`/clients/${c.id}`)}
               className={cn(
                 "flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left transition-colors hover:bg-muted/50",
                 // Dimmed: a contact is somebody else's person, sitting in a list

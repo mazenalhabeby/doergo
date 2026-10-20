@@ -163,7 +163,7 @@ function ContactRow({
       </span>
       <span className="min-w-0 flex-1">
         <a
-          href={`/customers/${p.id}`}
+          href={`/clients/${p.id}`}
           className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground hover:text-primary"
         >
           <Truncated text={p.name} />

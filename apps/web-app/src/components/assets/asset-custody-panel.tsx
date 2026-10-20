@@ -132,7 +132,7 @@ function PeriodRow({ period }: { period: CustodyPeriodDto }) {
   const href = period.userId
     ? `/members/${period.userId}`
     : period.customerId
-      ? `/customers/${period.customerId}`
+      ? `/clients/${period.customerId}`
       : null
 
   const body = (

@@ -140,7 +140,7 @@ export const EVENT_INVALIDATIONS: Record<string, QueryKey[]> = {
   // it now mounts the workspace's Customers tab.
   [Events.CUSTOMER_CHANGED]: [
     keys.customers.lists(),       // every client list: the CRM, workspace tabs, pickers
-    keys.customers.details(),     // /customers/[id]
+    keys.customers.details(),     // /clients/[id]
     keys.customers.activities(),
     keys.customers.addresses(),
   ],

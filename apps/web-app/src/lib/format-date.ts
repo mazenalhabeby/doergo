@@ -11,7 +11,7 @@ import i18n from "i18next"
  *
  * The app ships in five languages, but dates were formatted with a hardcoded
  * `"en-US"` in 27 places, so a German user read a German page with an English
- * date on it (audit MD-F1). Meanwhile `customers/[id]`, `service-report-section`
+ * date on it (audit MD-F1). Meanwhile `clients/[id]`, `service-report-section`
  * and `invoices-tab` had already switched to `i18n.language`, so both patterns
  * were live at once and neither was obviously the right one to copy.
  *

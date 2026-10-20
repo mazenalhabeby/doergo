@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 import { dateLocale } from "@/lib/format-date"
 import type { AssetDetail } from "../_lib/asset-detail"
 
-const AddressMap = dynamic(() => import("../../../customers/[id]/address-map"), {
+const AddressMap = dynamic(() => import("../../../clients/[id]/address-map"), {
   ssr: false,
   loading: () => <div className="h-full w-full animate-pulse bg-muted" />,
 }) as unknown as React.ComponentType<{ lat: number | null; lng: number | null }>
@@ -92,7 +92,7 @@ export function AssetAbout({ asset, shape }: { asset: AssetDetail; shape: KindSh
                 ) : h.customer ? (
                   <div key={h.id} className="space-y-1.5">
                     <button
-                      onClick={() => router.push(`/customers/${h.customer!.id}`)}
+                      onClick={() => router.push(`/clients/${h.customer!.id}`)}
                       className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary"
                     >
                       {h.customer.name}

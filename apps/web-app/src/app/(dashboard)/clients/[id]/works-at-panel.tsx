@@ -131,7 +131,7 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
           {companies.map((c) => (
             <li key={c.id} className="group flex items-start gap-2 py-2.5 first:pt-0.5">
               <a
-                href={`/customers/${c.company.id}`}
+                href={`/clients/${c.company.id}`}
                 className="flex min-w-0 flex-1 items-start gap-2.5 hover:text-primary"
               >
                 <span

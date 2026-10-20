@@ -1,10 +1,11 @@
 "use client"
 
 import { lazy, Suspense } from "react"
+import { PlanGate } from "@/components/plan-gate"
 import { Skeleton } from "@/components/ui/skeleton"
 
-// Lazy-load sub-pages so they render inline in the settings content area
-const AuditLogPage = lazy(() => import("../audit-log/page"))
+// Loaded only when the section is opened: the log, its filters and pager stay out of /settings' first load.
+const AuditLogSection = lazy(() => import("./audit-log-section").then((m) => ({ default: m.AuditLogSection })))
 
 function LazyFallback() {
   return (
@@ -16,9 +17,12 @@ function LazyFallback() {
   )
 }
 
-// Strip the outer page wrapper when rendering inline — override backgrounds and padding
-function EmbeddedPage({ children }: { children: React.ReactNode }) {
-  return <div className="[&>div]:min-h-0 [&>div]:bg-transparent [&>div]:p-0 [&>div>div]:p-0 [&>div>div]:max-w-none">{children}</div>
+export function LazyAuditLog() {
+  return (
+    <Suspense fallback={<LazyFallback />}>
+      <PlanGate feature="audit_log">
+        <AuditLogSection />
+      </PlanGate>
+    </Suspense>
+  )
 }
-
-export function LazyAuditLog() { return <Suspense fallback={<LazyFallback />}><EmbeddedPage><AuditLogPage /></EmbeddedPage></Suspense> }

@@ -1,5 +1,5 @@
 /** Every route and who may open it (moved here unchanged) */
-import { SETTINGS_OPTION, hasAccessModule } from '@hbcfield/shared/client';
+import { hasAccessModule } from '@hbcfield/shared/client';
 import { APPROVAL_DECIDE_GRANTS, MANAGE_USERS, OPEN, crmAccess, option, type AccessRule } from './rules';
 
 /**
@@ -51,7 +51,7 @@ export const ROUTE_RULES: Readonly<Record<string, AccessRule>> = {
     module: "crm", when: ({ user }) => crmAccess(user),
     why: "GET /customers — CRM caps, org-wide or per workspace (crmReachOf), narrowed in the service",
   },
-  "/customers/[id]": {
+  "/clients/[id]": {
     when: ({ user }) => crmAccess(user),
     why: "GET /customers/:id — CRM caps + reach in the service (404 outside it)",
   },
@@ -163,8 +163,5 @@ export const ROUTE_RULES: Readonly<Record<string, AccessRule>> = {
   // ── Settings ──
   "/settings": OPEN, // the sections inside are checked by SETTINGS_SECTION_RULES
   "/settings/billing": { denyExternal: true, why: "GET /billing/bill — @DenyExternal(); reading is open, changing it is ADMIN" },
-  "/settings/audit-log": {
-    need: ["admin"], option: SETTINGS_OPTION["audit-log"],
-    why: "GET /organizations/audit-logs — the org-wide log is ADMIN only (non-admins need a resourceId)",
-  },
+  // The audit log is a section of /settings (SETTINGS_SECTION_RULES["audit-log"]); /settings/audit-log is a 308.
 }

@@ -121,7 +121,7 @@ export function AuditTrail({
         </div>
         {isAdmin && (
           <Link
-            href="/settings/audit-log"
+            href="/settings?section=audit-log"
             className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             {t("audit.viewFull")}

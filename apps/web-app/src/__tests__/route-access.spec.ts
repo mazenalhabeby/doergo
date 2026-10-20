@@ -135,7 +135,7 @@ describe("a manager with canViewAllTasks only", () => {
     }
   })
   it("is refused admin-only and invoice pages", () => {
-    for (const p of ["/settings/audit-log", "/invoices", "/tasks/recurring", "/attendance"]) {
+    for (const p of ["/invoices", "/tasks/recurring", "/attendance"]) {
       expect([p, mayOpen(p, manager)]).toEqual([p, false])
     }
   })
@@ -158,7 +158,7 @@ describe("an external observer", () => {
     }
   })
   it("is refused clients, assets and portals — canViewAllTasks in a workspace grants none of them", () => {
-    for (const p of ["/clients", "/customers/c1", "/assets", "/assets/a1", "/portals", "/locations/s1/portals/p1"]) {
+    for (const p of ["/clients", "/clients/c1", "/assets", "/assets/a1", "/portals", "/locations/s1/portals/p1"]) {
       expect([p, checkRoute(p, observer)]).toEqual([p, { ok: false, reason: "permission" }])
     }
     expect(mayOpen("/shared/s1", observer)).toBe(false)
@@ -175,7 +175,7 @@ describe("an external member given a workspace by the permission builder", () =>
   it("is offered /clients with crmViewAll in their workspace, and not without it", () => {
     const seesClients = withGrants({ crmViewAll: true })
     expect(mayOpen("/clients", seesClients)).toBe(true)
-    expect(mayOpen("/customers/c1", seesClients)).toBe(true)
+    expect(mayOpen("/clients/c1", seesClients)).toBe(true)
     expect(navModelFor(seesClients).clients).toBe(true)
     expect(mayOpen("/clients", observer)).toBe(false)
     expect(navModelFor(observer).clients).toBe(false)

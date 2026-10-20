@@ -163,7 +163,7 @@ export function useNotificationBellData2() {
           "crm_reminder",
           t("notifications.crmReminder"),
           [d.customerName, d.body].filter(Boolean).join(" — "),
-          d.customerId ? `/customers/${d.customerId}` : "/clients",
+          d.customerId ? `/clients/${d.customerId}` : "/clients",
         )
       }),
 
