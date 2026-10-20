@@ -52,6 +52,14 @@ So nothing new gets worse while we fix the old.
 
 ## Phase 1 — One name per thing *(≈ 4 days, low risk)*
 
+> **Status (2026-10-20): 1.1–1.4 DONE on branch `refactor/structure-p1`** (5 commits, not merged, not deployed).
+> 1.2: `/employees/availability` → `/schedule`, `/employees/new|leave-opening` → `/members/…`, 7 redirect-only
+> pages deleted, old paths are 308s in `next.config.ts`. 1.3: audit log is a Settings section;
+> `/customers/[id]` → `/clients/[id]`. 1.4: gateway `technicians` → `members`; gateway + task-service
+> `locations` → `spaces` (HTTP routes and message patterns unchanged). Task-service `technicians`
+> deliberately left for Phase 4 (it is leave/cover/availability — split by meaning, not renamed).
+> **1.5 waits** for a phone build that no longer reads the old i18n namespaces.
+
 Decide once, then rename **code**, never database tables (Prisma `@@map` keeps the table names).
 
 | Concept | The one word | Today also called |
