@@ -42,7 +42,7 @@ export function useNewTechnicianPage() {
         setSuccessDialog(true)
       } else {
         notify.success(t('technicians.create.successMessage'))
-        router.push("/employees")
+        router.push("/members")
       }
     },
     onError: (error: Error) => {
@@ -89,7 +89,7 @@ export function useNewTechnicianPage() {
   // Close success dialog
   const handleCloseSuccess = () => {
     setSuccessDialog(false)
-    router.push("/employees")
+    router.push("/members")
   }
 
   // Check if user can create employees (ADMIN or can-view-all-tasks)

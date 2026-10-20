@@ -170,7 +170,7 @@ export function NewTechnicianPageCreate({ vm }: { vm: NewTechnicianPageState }) 
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Link href="/employees">
+            <Link href="/members">
               <Button type="button" variant="outline">
                 {t('common.cancel')}
               </Button>

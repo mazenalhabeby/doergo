@@ -42,7 +42,7 @@ export default function NewTechnicianPage() {
   if (!canCreateEmployees) {
     return (
       <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
-        <Link href="/employees">
+        <Link href="/members">
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             {t('technicians.create.backToTechnicians')}
@@ -65,7 +65,7 @@ export default function NewTechnicianPage() {
   return (
     <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
       {/* Back button */}
-      <Link href="/employees">
+      <Link href="/members">
         <Button variant="ghost" size="sm" className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           {t('technicians.create.backToTechnicians')}
