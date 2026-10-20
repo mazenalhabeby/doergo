@@ -45,7 +45,7 @@ task-service asks auth-service to drop them (`space_purge_auth_side` RPC) inside
 
 ### C. Accepting an invitation (auth places the new member in task's tables)
 
-auth sends `member_placed` with the invitation's workspace and schedule; task-service writes the assignment and the schedule.
+**Kept as an agreed exception (owner, 2026-10-20).** Joining is the account, the spent invitation code and the placement in ONE transaction; behind a message, a task-service outage would leave an account in no workspace with its code already used — nothing on screen explains or repairs that. Only `invitation-apply/placement.ts` may write these two tables from auth-service (the structure check names the file).
 
 | Table | Written by | Owner | Where |
 |---|---|---|---|
@@ -125,6 +125,7 @@ Most read by services that do not own them:
 - **A job's route → its own `TaskRoute` table, owned by tracking** (additive migration); the job page reads it through the existing route request.
 - **The 8 unused tables stay for now**; removed later in a separate, checked migration.
 - **ActivityLog (insert only) and CronLock (through the shared lease helper) may be written by any service.**
+- **Accepting an invitation keeps writing the new member's workspace assignment and schedule** inside auth's join transaction (group C) — the one file-level exception.
 
 ## The questions that were asked
 

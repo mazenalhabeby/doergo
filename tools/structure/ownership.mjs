@@ -18,6 +18,17 @@ const SHORT = {
   tracking: 'tracking-service',
 };
 const SHARED = { ActivityLog: /^(create|createMany)$/, CronLock: /.*/ };
+/**
+ * Writes the owner agreed to keep where they are, each with its reason (docs/data-ownership.md).
+ * Joining = the account, the spent invitation code and the placement in ONE transaction: behind a
+ * message, a task-service outage would leave an account in no workspace with its code already used.
+ */
+const ALLOWED = [
+  {
+    file: 'apps/api/auth-service/src/modules/invitations/invitation-apply/placement.ts',
+    models: ['SpaceAssignment', 'TechnicianSchedule'],
+  },
+];
 const WRITE =
   /\b(?:prisma|tx|db|client|this\.prisma)\.([a-z]\w*)\.(create|createMany|createManyAndReturn|update|updateMany|upsert|delete|deleteMany)\b/g;
 
@@ -42,6 +53,7 @@ export function foreignWrites() {
       const owner = own[model];
       if (!owner || owner === svc) continue;
       if (SHARED[model]?.test(m[2])) continue;
+      if (ALLOWED.some((a) => a.file === f && a.models.includes(model))) continue;
       out.add(`${f} → ${model}.${m[2]} (owned by ${owner})`);
     }
   }
