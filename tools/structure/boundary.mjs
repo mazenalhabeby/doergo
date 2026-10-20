@@ -7,6 +7,9 @@
  * Walks the value imports from packages/shared/src/client.ts (type-only imports are erased and
  * do not count) and lists every server package reached, with the file that imports it.
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { REPO } from './files.mjs';
 import { readImports } from './graph.mjs';
 
 export const CLIENT_ENTRY = 'packages/shared/src/client.ts';
@@ -77,4 +80,22 @@ export function boundaryLeaks(entry = CLIENT_ENTRY) {
     }
   }
   return { leaks: [...leaks].sort(), reached: seen.size };
+}
+
+/**
+ * The package root must stay exactly `./client` + `./server` (Phase 2.1): a third list is how
+ * the old index.ts and client.ts drifted apart. Returns a problem string, or null.
+ */
+export function rootProblem() {
+  const text = readFileSync(join(REPO, 'packages/shared/src/index.ts'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '');
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const want = ["export * from './client';", "export * from './server';"];
+  return JSON.stringify(lines) === JSON.stringify(want)
+    ? null
+    : 'packages/shared/src/index.ts → must only re-export ./client and ./server (add new exports to one of those)';
 }

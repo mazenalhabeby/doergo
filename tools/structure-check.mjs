@@ -22,7 +22,7 @@ import { join } from 'node:path';
 import { REPO } from './structure/files.mjs';
 import { measureNames, compareNames } from './structure/names.mjs';
 import { cycles } from './structure/graph.mjs';
-import { boundaryLeaks } from './structure/boundary.mjs';
+import { boundaryLeaks, rootProblem } from './structure/boundary.mjs';
 import { unusedKeys } from './structure/i18n-unused.mjs';
 
 const BASELINE = join(REPO, 'tools', 'structure-baseline.json');
@@ -31,7 +31,7 @@ function today() {
   return {
     names: measureNames(),
     cycles: cycles().map((c) => c.join(' ⇄ ')),
-    boundary: boundaryLeaks().leaks,
+    boundary: [...boundaryLeaks().leaks, ...[rootProblem()].filter(Boolean)],
     i18n: unusedKeys(),
   };
 }
@@ -43,7 +43,8 @@ function problems(now, base) {
   for (const c of now.cycles) if (!oldCycles.has(c)) out.push(`import loop: ${c}`);
   const oldLeaks = new Set(base.boundary ?? []);
   for (const l of now.boundary)
-    if (!oldLeaks.has(l)) out.push(`server code reachable from @hbcfield/shared/client: ${l}`);
+    if (!oldLeaks.has(l))
+      out.push(l.includes('must only re-export') ? l : `server code reachable from @hbcfield/shared/client: ${l}`);
   for (const [app, keys] of Object.entries(now.i18n)) {
     const had = new Set(base.i18n?.[app] ?? []);
     const fresh = keys.filter((k) => !had.has(k));
