@@ -1,3 +1,4 @@
+import { jobAudience } from '@hbcfield/shared';
 import { SocketEvents } from '@hbcfield/shared';
 import { GatewayCoreBase } from './gateway-core.base';
 import type { TaskPayload } from './socket-payloads';
@@ -71,16 +72,7 @@ export abstract class GatewayTaskEmitsBase extends GatewayCoreBase {
   }
 
   protected async sendTaskChanged(taskId: string): Promise<void> {
-    const task = await this.prisma.task.findUnique({
-      where: { id: taskId },
-      select: {
-        id: true,
-        organizationId: true,
-        spaceId: true,
-        assignedToId: true,
-        assignees: { select: { userId: true }, take: 50 },
-      },
-    });
+    const task = await jobAudience(this.prisma, taskId);
     if (!task) return;
     const people = new Set([task.assignedToId, ...task.assignees.map((a) => a.userId)].filter((x): x is string => !!x));
     let target = this.taskTargets(task).to(`task:${task.id}`);
@@ -102,7 +94,9 @@ export abstract class GatewayTaskEmitsBase extends GatewayCoreBase {
 
   emitTaskDeclined(task: TaskPayload, declinedBy: unknown) {
     const by = declinedBy as DeclinedBy;
-    this.logger.log(`[EMIT] task.declined to org:${task.organizationId} (declined by: ${by?.firstName} ${by?.lastName})`);
+    this.logger.log(
+      `[EMIT] task.declined to org:${task.organizationId} (declined by: ${by?.firstName} ${by?.lastName})`,
+    );
     this.messagesSent += 2;
     // Notify the organization (dispatcher and client will see this)
     this.server.to(`taskviewers:${task.organizationId}`).emit(SocketEvents.TASK_DECLINED, { task, declinedBy });

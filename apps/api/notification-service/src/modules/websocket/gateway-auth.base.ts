@@ -1,3 +1,4 @@
+import { sharedSpacesFor } from '@hbcfield/shared';
 import { Socket } from 'socket.io';
 import * as jwt from 'jsonwebtoken';
 import { SocketEvents, platformCan } from '@hbcfield/shared';
@@ -145,10 +146,7 @@ export abstract class GatewayAuthBase extends GatewayChatEmitsBase {
     // they don't join here (no double-delivery). Once per connection; the query is
     // indexed on [guestOrgId,status] and returns nothing for the vast majority.
     try {
-      const shares = await this.prisma.spaceShare.findMany({
-        where: { guestOrgId: organizationId, status: 'ACTIVE' },
-        select: { spaceId: true },
-      });
+      const shares = await sharedSpacesFor(this.prisma, organizationId);
       for (const s of shares) {
         client.join(`space:${s.spaceId}`);
         clientInfo.rooms.push(`space:${s.spaceId}`);

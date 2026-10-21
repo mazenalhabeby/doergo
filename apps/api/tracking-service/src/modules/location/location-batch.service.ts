@@ -1,3 +1,4 @@
+import { jobTripFacts } from '@hbcfield/shared';
 import { cleanRoutePoints } from '@hbcfield/shared';
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -67,19 +68,7 @@ export class LocationBatchService {
     });
 
     if (taskId) {
-      const task = await this.prisma.task.findUnique({
-        where: { id: taskId },
-        // Co-assignees included: a member assigned alongside a lead drives the
-        // same route, and matching assignedToId alone silently discarded every
-        // point they recorded — accepted by the API, never stored.
-        select: {
-          status: true,
-          assignedToId: true,
-          assignees: { select: { userId: true } },
-          routeStartedAt: true,
-          routeEndedAt: true,
-        },
-      });
+      const task = await jobTripFacts(this.prisma, taskId);
 
       /*
         A route that already ended, receiving its own points late.

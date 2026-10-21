@@ -99,7 +99,23 @@ checked drop. The start/end times stay on the job: task-service sets them on the
 needs no reset — the row names the trip it counted (`legStartedAt`), and every reader asks `tripDistanceOf`
 / `TRIP_DISTANCE_SQL` in shared (route reads, member performance, the report's km column).
 
-## Reading another service's tables (Phase 3.4 — later)
+## Reading another service's tables (Phase 3.4 — in progress)
+
+**How:** a service reads a table it does not own only through the owner's **published readers** in
+`packages/shared/src/data/` (`members.ts` = auth's people tables, `jobs.ts` = task's) — one named function
+per question, selecting exactly the columns it returns. One database still; the readers are the list of
+columns each owner promises others, and the only code that changes when the databases split.
+**Check:** `foreignReads` in `tools/structure/ownership.mjs`, counted per file and table in the structure
+baseline — a file may only read less. It cannot see reads through a relation of the service's own table
+(`include: { user }`) or raw SQL; those are the next layer.
+
+| Area | Direct reads | Status |
+|---|---|---|
+| notification-service, tracking-service | 18 → 0 | done 2026-10-21 |
+| auth-service → task tables | 55 | next |
+| task-service → auth tables (User 127, Organization 26, …) | 196 | then, by module |
+
+The counts at the start (2026-10-21, 269 in all):
 
 Most read by services that do not own them:
 

@@ -1,3 +1,4 @@
+import { memberEmailFacts } from '@hbcfield/shared';
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -97,19 +98,7 @@ export class MemberEmailsService implements OnModuleDestroy {
   ): Promise<MemberEmailRecipient[]> {
     const ids = [...new Set(userIds.filter((id): id is string => !!id && id !== opts.actorId))];
     if (ids.length === 0) return [];
-    const rows = await this.prisma.user.findMany({
-      where: { id: { in: ids } },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        isActive: true,
-        isExternal: true,
-        role: true,
-        notificationPrefs: true,
-        organization: { select: { notificationPrefs: true, suspendedAt: true } },
-      },
-    });
+    const rows = await memberEmailFacts(this.prisma, ids);
     return rows
       .filter(
         (u) =>

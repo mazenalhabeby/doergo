@@ -1,3 +1,4 @@
+import { memberNotificationPrefs } from '@hbcfield/shared';
 import Expo, { ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { DEFAULT_LOCALE, PrismaService, type SupportedLocale } from '@hbcfield/shared';
@@ -127,10 +128,7 @@ export class PushService {
       a message or a document to sign always goes.
     */
     if (pushCategory(data?.type)) {
-      const prefs: Array<{ id: string; notificationPrefs: unknown }> = await this.prisma.user.findMany({
-        where: { id: { in: ids } },
-        select: { id: true, notificationPrefs: true },
-      });
+      const prefs: Array<{ id: string; notificationPrefs: unknown }> = await memberNotificationPrefs(this.prisma, ids);
       const off = new Set(prefs.filter((u) => !memberWantsPush(u.notificationPrefs, data?.type)).map((u) => u.id));
       if (off.size) ids = ids.filter((id) => !off.has(id));
       if (ids.length === 0) return { success: true, sent: 0, reason: 'switched_off' };

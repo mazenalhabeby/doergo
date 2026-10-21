@@ -1,3 +1,4 @@
+import { jobsUnderwayFor, memberInScope } from '@hbcfield/shared';
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '@hbcfield/shared';
@@ -10,7 +11,6 @@ import { WORKER_ROLES, taskInScope } from './location-helpers';
  */
 @Injectable()
 export class WorkerLocationReadService {
-
   constructor(private readonly prisma: PrismaService) {}
 
   async getActiveWorkers(organizationId?: string, userIds?: string[], scopeSpaceIds?: string[]) {
@@ -57,20 +57,7 @@ export class WorkerLocationReadService {
 
     // Get current tasks for each worker (EN_ROUTE or IN_PROGRESS)
     const workerIds = locations.map((loc) => loc.user.id);
-    const activeTasks = await this.prisma.task.findMany({
-      where: {
-        assignedToId: { in: workerIds },
-        status: { in: ['EN_ROUTE', 'IN_PROGRESS', 'ARRIVED'] },
-        // A job in another workspace is not named to a caller scoped to this one.
-        ...taskInScope(scopeSpaceIds),
-      },
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        assignedToId: true,
-      },
-    });
+    const activeTasks = await jobsUnderwayFor(this.prisma, workerIds, scopeSpaceIds);
 
     // Create a map of workerId -> currentTask
     const taskByWorker = new Map(activeTasks.map((task) => [task.assignedToId, task]));
@@ -143,11 +130,7 @@ export class WorkerLocationReadService {
     // Tenant scope: bail out if the worker isn't in the requesting org — or,
     // for a workspace-scoped caller, isn't rostered in one of its workspaces.
     if (organizationId || scopeSpaceIds !== undefined) {
-      const worker = await this.prisma.user.findFirst({
-        where: { id: workerId, ...(organizationId ? { organizationId } : {}), ...memberScopeFilter(scopeSpaceIds) },
-        select: { id: true },
-      });
-      if (!worker) return success([]);
+      if (!(await memberInScope(this.prisma, workerId, organizationId, scopeSpaceIds))) return success([]);
     }
 
     // Default to the last 24h when no range is given, so an open-ended call can't

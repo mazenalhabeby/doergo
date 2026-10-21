@@ -1,3 +1,4 @@
+import { memberLocales } from '@hbcfield/shared';
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { MemberFactsClient } from '../common/member-facts/member-facts.client';
 import {
@@ -51,10 +52,7 @@ export class RecipientLocales {
     if (missing.length === 0) return result;
 
     try {
-      const rows = await this.prisma.user.findMany({
-        where: { id: { in: missing } },
-        select: { id: true, locale: true },
-      });
+      const rows = await memberLocales(this.prisma, missing);
       const found = new Map(rows.map((r: { id: string; locale: string | null }) => [r.id, r.locale]));
       if (this.cache.size + missing.length > MAX_CACHED) this.cache.clear();
       for (const id of missing) {

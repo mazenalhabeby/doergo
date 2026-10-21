@@ -1,3 +1,4 @@
+import { isOnTheClock } from '@hbcfield/shared';
 import { SocketEvents } from '@hbcfield/shared';
 import { GatewayTaskEmitsBase } from './gateway-task-emits.base';
 import type { MemberFactsClient } from '../../common/member-facts/member-facts.client';
@@ -54,11 +55,7 @@ export abstract class GatewayPresenceBase extends GatewayTaskEmitsBase {
       // Clocked-in guard: a technician driving or working on-site with the app
       // backgrounded is still "at work" — never mark them offline. Their clock-in
       // (a DB record) is untouched regardless.
-      const openEntry = await this.prisma.timeEntry.findFirst({
-        where: { userId, status: 'CLOCKED_IN' },
-        select: { id: true },
-      });
-      if (openEntry) return;
+      if (await isOnTheClock(this.prisma, userId)) return;
 
       // Genuinely gone: clear last-active so they compute as offline, then push.
       await this.memberFacts?.markInactive(userId);

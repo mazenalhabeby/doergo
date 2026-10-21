@@ -1,3 +1,4 @@
+import { conversationMemberIds, ticketCreatorId } from '@hbcfield/shared';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -44,10 +45,8 @@ export abstract class GatewayCoreBase {
   protected readonly platformJwtSecret?: string;
 
   /** Conversation members for the typing relay, cached a minute per thread. */
-  protected readonly chatMembers = new ChatMembersCache(async (conversationId) =>
-    (await this.prisma.conversationMember.findMany({ where: { conversationId }, select: { userId: true } })).map(
-      (m) => m.userId,
-    ),
+  protected readonly chatMembers = new ChatMembersCache((conversationId) =>
+    conversationMemberIds(this.prisma, conversationId),
   );
 
   constructor(
@@ -88,10 +87,7 @@ export abstract class GatewayCoreBase {
   protected async ticketCreator(ticketId: string): Promise<string | null> {
     const hit = this.ticketCreatorCache.get(ticketId);
     if (hit && hit.exp > Date.now()) return hit.id;
-    const t = await this.prisma.supportTicket
-      .findUnique({ where: { id: ticketId }, select: { createdById: true } })
-      .catch(() => null);
-    const id: string | null = t?.createdById ?? null;
+    const id: string | null = await ticketCreatorId(this.prisma, ticketId).catch(() => null);
     if (this.ticketCreatorCache.size >= 1000) this.ticketCreatorCache.clear();
     this.ticketCreatorCache.set(ticketId, { id, exp: Date.now() + 5 * 60_000 });
     return id;

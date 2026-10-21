@@ -1,8 +1,8 @@
+import { jobTrip, jobEnRouteFor } from '@hbcfield/shared';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
 import { success, tripDistanceOf } from '@hbcfield/shared';
 import { RouteMatchingService } from './route-matching.service';
-import { taskInScope } from './location-helpers';
 
 /** Routes: a job's whole route, and a worker's route in progress. */
 @Injectable()
@@ -15,17 +15,7 @@ export class RouteReadService {
   async getTaskRoute(taskId: string, organizationId?: string, scopeSpaceIds?: string[]) {
     // Get task with route info — scoped to the requesting org (tenant isolation)
     // and, for a workspace-scoped caller, to its workspaces.
-    const task = await this.prisma.task.findFirst({
-      where: { id: taskId, ...(organizationId ? { organizationId } : {}), ...taskInScope(scopeSpaceIds) },
-      select: {
-        id: true,
-        status: true,
-        routeStartedAt: true,
-        routeEndedAt: true,
-        route: { select: { legStartedAt: true, distanceMeters: true } },
-        assignedToId: true,
-      },
-    });
+    const task = await jobTrip(this.prisma, taskId, organizationId, scopeSpaceIds);
 
     if (!task) {
       return success(null);
@@ -73,22 +63,7 @@ export class RouteReadService {
   async getWorkerCurrentRoute(workerId: string, organizationId?: string, scopeSpaceIds?: string[]) {
     // Find the worker's current EN_ROUTE task — scoped to the requesting org,
     // and for a workspace-scoped caller to a job in its workspaces.
-    const task = await this.prisma.task.findFirst({
-      where: {
-        assignedToId: workerId,
-        status: 'EN_ROUTE',
-        ...(organizationId ? { organizationId } : {}),
-        ...taskInScope(scopeSpaceIds),
-      },
-      select: {
-        id: true,
-        title: true,
-        routeStartedAt: true,
-        route: { select: { legStartedAt: true, distanceMeters: true } },
-        locationLat: true,
-        locationLng: true,
-      },
-    });
+    const task = await jobEnRouteFor(this.prisma, workerId, organizationId, scopeSpaceIds);
 
     if (!task) {
       return success(null);

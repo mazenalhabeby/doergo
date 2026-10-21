@@ -1,3 +1,4 @@
+import { appVersionAudience } from '@hbcfield/shared';
 import { Controller, Logger, OnModuleDestroy } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import Redis from 'ioredis';
@@ -38,18 +39,7 @@ export class AppUpdateNotificationHandler implements OnModuleDestroy {
       return { success: false, statusCode: 400, message: 'A version like 1.0.7 is required' };
     const key = `app-update-notice:${version}`;
 
-    const users = await this.prisma.user.findMany({
-      where: { isActive: true, lastAppVersion: { not: null } },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        lastAppVersion: true,
-        lastAppPlatform: true,
-        organization: { select: { name: true, suspendedAt: true } },
-        _count: { select: { pushTokens: true } },
-      },
-    });
+    const users = await appVersionAudience(this.prisma);
     const told = new Set(await this.redis.smembers(key).catch(() => [] as string[]));
     const older = users.filter(
       (u) => u.lastAppVersion && compareAppVersions(u.lastAppVersion, version) < 0 && !u.organization?.suspendedAt,

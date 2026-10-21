@@ -6,6 +6,10 @@ import {
   tokenIssuedBeforeCutoff,
   type ResolvedAccess,
   memberAccessOf,
+  memberSessionFacts,
+  jobRoomFacts,
+  operatorSocketFacts,
+  type On,
 } from '@hbcfield/shared';
 
 /**
@@ -31,11 +35,11 @@ export interface SocketAccess {
   access: ResolvedAccess;
 }
 
-type PrismaLike = {
-  user: { findUnique: (args: any) => Promise<any> };
-  task: { findFirst: (args: any) => Promise<any> };
-  spaceAssignment: { findFirst: (args: any) => Promise<any> };
-};
+/** The caller's client; the other services' tables are read through their published readers (shared data/). */
+type PrismaLike = On<'user', 'findUnique'> &
+  On<'task', 'findFirst'> & {
+    spaceAssignment: { findFirst: (args: any) => Promise<any> };
+  };
 
 export async function resolveSocketAccess(
   prisma: PrismaLike,
@@ -45,26 +49,7 @@ export async function resolveSocketAccess(
   tokenIat?: number,
 ): Promise<SocketAccess | null> {
   const now = new Date();
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      role: true,
-      isActive: true,
-      organizationId: true,
-      tokensValidAfter: true,
-      canCreateTasks: true,
-      canViewAllTasks: true,
-      canAssignTasks: true,
-      canManageUsers: true,
-      canViewReports: true,
-      organization: { select: { suspendedAt: true } },
-      memberRole: { select: { permissions: true, isActive: true } },
-      spaceAssignments: {
-        where: { ...activeWindowWhere(now) },
-        select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
-      },
-    },
-  });
+  const user = await memberSessionFacts(prisma, userId, now);
   if (!user || !user.isActive || user.organizationId !== organizationId) return null;
   if (user.organization?.suspendedAt) return null;
   if (tokenIat !== undefined && tokenIssuedBeforeCutoff(tokenIat, user.tokensValidAfter)) return null;
@@ -91,18 +76,7 @@ export async function socketMayOpenTask(
   caller: { userId: string; organizationId: string } & SocketAccess,
   taskId: string,
 ): Promise<boolean> {
-  const task = await prisma.task.findFirst({
-    where: { id: taskId, organizationId: caller.organizationId },
-    select: {
-      organizationId: true,
-      spaceId: true,
-      assignedToId: true,
-      assignees: { select: { userId: true } },
-      openRoleId: true,
-      openSpotsLeft: true,
-      status: true,
-    },
-  });
+  const task = await jobRoomFacts(prisma, taskId, caller.organizationId);
   if (!task) return false;
   const viewAll = caller.access.org?.canViewAllTasks === true;
   const viewAllSpaceIds = Object.keys(caller.access.perSpace ?? {}).filter(
@@ -135,15 +109,12 @@ export async function socketMayOpenTask(
  * their CURRENT role for the capability.
  */
 export async function operatorMaySupport(
-  prisma: { platformUser: { findUnique: (args: any) => Promise<any> } },
+  prisma: On<'platformUser', 'findUnique'>,
   payload: { sub?: unknown; iat?: unknown; typ?: unknown } | null | undefined,
   can: (role: string, capability: 'manageSupport') => boolean,
 ): Promise<boolean> {
   if (!payload || payload.typ !== 'platform' || typeof payload.sub !== 'string' || !payload.sub) return false;
-  const op = await prisma.platformUser.findUnique({
-    where: { id: payload.sub },
-    select: { isActive: true, role: true, tokensValidAfter: true, twoFactorEnabled: true },
-  });
+  const op = await operatorSocketFacts(prisma, payload.sub);
   if (!op || !op.isActive) return false;
   if (tokenIssuedBeforeCutoff(typeof payload.iat === 'number' ? payload.iat : 0, op.tokensValidAfter)) return false;
   // Second factor is mandatory for every operator (shared session.ts): a

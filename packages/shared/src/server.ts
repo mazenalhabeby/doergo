@@ -102,3 +102,8 @@ export * from './testing';
 
 // The assignment-permissions reader/writer (the apps only take its types, from ./client).
 export * from './access/assignment-permissions';
+
+// Published reads of another service's tables (code-structure-fix 3.4) — see data/db.ts.
+export * from './data/db';
+export * from './data/members';
+export * from './data/jobs';

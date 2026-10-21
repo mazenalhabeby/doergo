@@ -1,3 +1,4 @@
+import { jobTripFacts } from '@hbcfield/shared';
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '@hbcfield/shared';
@@ -40,13 +41,7 @@ export class LocationService {
     if (taskId) {
       // Get the task — and verify it is assigned to THIS user (ownership check:
       // a worker may only append GPS points to their own active task).
-      const task = await this.prisma.task.findUnique({
-        where: { id: taskId },
-        // Co-assignees included: a member assigned alongside a lead drives the
-        // same route, and matching assignedToId alone silently discarded every
-        // point they recorded — accepted by the API, never stored.
-        select: { status: true, assignedToId: true, assignees: { select: { userId: true } }, routeStartedAt: true },
-      });
+      const task = await jobTripFacts(this.prisma, taskId);
 
       // Only record history while the task is EN_ROUTE and the caller is on it —
       // as lead or co-assignee (isTaskAssignee, the shared rule).

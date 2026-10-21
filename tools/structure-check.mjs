@@ -24,7 +24,7 @@ import { measureNames, compareNames } from './structure/names.mjs';
 import { cycles } from './structure/graph.mjs';
 import { boundaryLeaks, rootProblem } from './structure/boundary.mjs';
 import { unusedKeys } from './structure/i18n-unused.mjs';
-import { foreignWrites } from './structure/ownership.mjs';
+import { foreignReads, foreignWrites } from './structure/ownership.mjs';
 
 const BASELINE = join(REPO, 'tools', 'structure-baseline.json');
 
@@ -35,6 +35,7 @@ function today() {
     boundary: [...boundaryLeaks().leaks, ...[rootProblem()].filter(Boolean)],
     i18n: unusedKeys(),
     ownership: foreignWrites(),
+    reads: foreignReads(),
   };
 }
 
@@ -51,6 +52,11 @@ function problems(now, base) {
   for (const w of now.ownership)
     if (!oldOwn.has(w))
       out.push(`write to a table another service owns (docs/data-ownership.md) — ask the owner instead: ${w}`);
+  for (const [k, n] of Object.entries(now.reads ?? {}))
+    if (n > (base.reads?.[k] ?? 0))
+      out.push(
+        `read of a table another service owns (docs/data-ownership.md) — use the owner's reader in packages/shared/src/data: ${k} ×${n}`,
+      );
   for (const [app, keys] of Object.entries(now.i18n)) {
     const had = new Set(base.i18n?.[app] ?? []);
     const fresh = keys.filter((k) => !had.has(k));
@@ -75,6 +81,11 @@ function lowered(now, base) {
     boundary: keep(now.boundary, base.boundary),
     i18n,
     ownership: keep(now.ownership, base.ownership),
+    reads: Object.fromEntries(
+      Object.entries(now.reads ?? {})
+        .filter(([k]) => base.reads?.[k])
+        .map(([k, n]) => [k, Math.min(n, base.reads[k])]),
+    ),
   };
 }
 
@@ -88,7 +99,9 @@ function counts(b) {
     b.i18n,
   )
     .map(([a, k]) => `${a} ${k.length}`)
-    .join(', ')} · ${(b.ownership ?? []).length} writes to another service's table`;
+    .join(
+      ', ',
+    )} · ${(b.ownership ?? []).length} writes to another service's table · ${Object.values(b.reads ?? {}).reduce((s, n) => s + n, 0)} reads of one`;
 }
 
 function save(b) {
@@ -102,6 +115,7 @@ function save(b) {
     boundary: b.boundary,
     i18n: b.i18n,
     ownership: b.ownership ?? [],
+    reads: b.reads ?? {},
   };
   writeFileSync(BASELINE, JSON.stringify(sorted, null, 1) + '\n');
 }
@@ -118,7 +132,10 @@ function moved(base, from, to) {
   }
   const cyclesNext = base.cycles.map((c) => c.split(' ⇄ ').map(remap).sort().join(' ⇄ '));
   const boundary = base.boundary.map((l) => l.replace(/^(\S+)/, (f) => remap(f)));
-  save({ ...base, names, cycles: cyclesNext, boundary });
+  const reads = Object.fromEntries(
+    Object.entries(base.reads ?? {}).map(([k, v]) => [k.replace(/^(\S+)/, (f) => remap(f)), v]),
+  );
+  save({ ...base, names, cycles: cyclesNext, boundary, reads });
   console.log(`structure baseline: ${n} entr${n === 1 ? 'y' : 'ies'} moved from ${from} to ${to}`);
 }
 

@@ -71,3 +71,31 @@ export function foreignWrites() {
   }
   return [...out].sort();
 }
+
+/*
+  Phase 3.4: READS of a table another service owns. Counted per "file → Model" so a file may only
+  read less. What the count cannot see: reads through a relation of the service's own table
+  (`include: { user: … }`) and raw SQL — those are the next layer, reviewed by hand.
+  Reads through the owner's published readers (`packages/shared/src/data/`) are not in any service's
+  src, so they do not count: that is the way out.
+*/
+const READ =
+  /\b(?:prisma|tx|db|client|this\.prisma)\s*\.\s*([a-z]\w*)\s*\.\s*(findUnique|findUniqueOrThrow|findFirst|findFirstOrThrow|findMany|count|aggregate|groupBy)\b/g;
+
+/** { "file → Model (owner)": number of direct reads } for every read of a table another service owns. */
+export function foreignReads() {
+  const own = owners();
+  const out = {};
+  for (const f of sourceFiles()) {
+    const svc = SERVICES.find((s) => f.startsWith(`apps/api/${s}/src/`));
+    if (!svc || f.includes('/__tests__/')) continue;
+    for (const m of readFileSync(join(REPO, f), 'utf8').matchAll(READ)) {
+      const model = m[1][0].toUpperCase() + m[1].slice(1);
+      const owner = own[model];
+      if (!owner || owner === svc) continue;
+      const k = `${f} → ${model} (owned by ${owner})`;
+      out[k] = (out[k] ?? 0) + 1;
+    }
+  }
+  return Object.fromEntries(Object.entries(out).sort(([a], [b]) => a.localeCompare(b)));
+}
