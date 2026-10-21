@@ -924,9 +924,12 @@ async function seedRoute(
     metres += 2 * R * Math.asin(Math.sqrt(h));
   }
 
-  await prisma.task.update({
-    where: { id: taskId },
-    data: { routeStartedAt: startedAt, routeDistance: Math.round(metres) },
+  await prisma.task.update({ where: { id: taskId }, data: { routeStartedAt: startedAt } });
+  // The trip's metres live in task_routes (tracking-service's table), counted against this start.
+  await prisma.taskRoute.upsert({
+    where: { taskId },
+    create: { taskId, legStartedAt: startedAt, distanceMeters: Math.round(metres) },
+    update: { legStartedAt: startedAt, distanceMeters: Math.round(metres) },
   });
 
   /* And where everybody is now, so a member's pin is not a blank. */

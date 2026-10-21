@@ -70,7 +70,6 @@ describe('TasksService', () => {
     assetId: null,
     routeStartedAt: null,
     routeEndedAt: null,
-    routeDistance: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
     createdBy: mockUser,
@@ -761,7 +760,6 @@ describe('TasksService', () => {
         expect.objectContaining({
           data: expect.objectContaining({
             routeStartedAt: expect.any(Date),
-            routeDistance: 0,
           }),
         }),
       );

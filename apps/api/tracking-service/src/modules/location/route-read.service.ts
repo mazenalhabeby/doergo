@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success } from '@hbcfield/shared';
+import { success, tripDistanceOf } from '@hbcfield/shared';
 import { RouteMatchingService } from './route-matching.service';
 import { taskInScope } from './location-helpers';
 
 /** Routes: a job's whole route, and a worker's route in progress. */
 @Injectable()
 export class RouteReadService {
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly routeMatching: RouteMatchingService,
@@ -23,7 +22,7 @@ export class RouteReadService {
         status: true,
         routeStartedAt: true,
         routeEndedAt: true,
-        routeDistance: true,
+        route: { select: { legStartedAt: true, distanceMeters: true } },
         assignedToId: true,
       },
     });
@@ -64,7 +63,8 @@ export class RouteReadService {
       startTime: task.routeStartedAt,
       endTime: task.routeEndedAt,
       duration, // seconds
-      distance: task.routeDistance, // meters
+      // meters; null = never started (as before the trip table)
+      distance: task.routeStartedAt || task.route ? tripDistanceOf(task.route, task.routeStartedAt) : null,
       points,
       matchedPath,
     });
@@ -84,7 +84,7 @@ export class RouteReadService {
         id: true,
         title: true,
         routeStartedAt: true,
-        routeDistance: true,
+        route: { select: { legStartedAt: true, distanceMeters: true } },
         locationLat: true,
         locationLng: true,
       },
@@ -118,7 +118,7 @@ export class RouteReadService {
       taskTitle: task.title,
       startTime: task.routeStartedAt,
       duration, // seconds
-      distance: task.routeDistance || 0, // meters
+      distance: tripDistanceOf(task.route, task.routeStartedAt), // meters
       destination: task.locationLat && task.locationLng ? { lat: task.locationLat, lng: task.locationLng } : null,
       points,
     });

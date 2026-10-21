@@ -1,4 +1,4 @@
-import { assertMemberInScope, toISODateString, dayKeyIn } from '@hbcfield/shared';
+import { assertMemberInScope, toISODateString, dayKeyIn, tripDistanceOf } from '@hbcfield/shared';
 import { Injectable } from '@nestjs/common';
 import { TaskStatus, success } from '@hbcfield/shared';
 import { GetEmployeePerformanceDto } from './dto';
@@ -43,7 +43,7 @@ export class MemberPerformanceService extends MemberServiceBase {
         updatedAt: true,
         routeStartedAt: true,
         routeEndedAt: true,
-        routeDistance: true,
+        route: { select: { legStartedAt: true, distanceMeters: true } },
         space: { select: { timezone: true } },
       },
     });
@@ -93,7 +93,7 @@ export class MemberPerformanceService extends MemberServiceBase {
         : 0;
 
     // Total distance traveled
-    const totalDistance = tasks.reduce((sum, t) => sum + (t.routeDistance || 0), 0);
+    const totalDistance = tasks.reduce((sum, t) => sum + tripDistanceOf(t.route, t.routeStartedAt), 0);
 
     // Build daily trends
     const orgZone = await workspaceZone(this.prisma, { organizationId });

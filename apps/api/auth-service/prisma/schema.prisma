@@ -1178,7 +1178,10 @@ model Task {
 
   routeStartedAt DateTime? // When EN_ROUTE started
   routeEndedAt   DateTime? // When ARRIVED
-  routeDistance  Float? // Total distance in meters
+  /// ⚠️ NOT WRITTEN since 2026-10-21 — the distance is `TaskRoute.distanceMeters` (tracking-service owns
+  /// it, docs/data-ownership.md). The column stays until a later, checked migration drops it.
+  legacyRouteDistance Float?    @map("routeDistance")
+  route               TaskRoute?
 
   /// Work paused because the worker clocked out with the job in a working step.
   /// Cleared by "Resume work" (clock gate applies) or by any move of the job.
@@ -1445,6 +1448,19 @@ model WorkerLastLocation {
 }
 
 // Location history for route tracking during EN_ROUTE status
+/// How far a job's current trip has gone — written ONLY by tracking-service (docs/data-ownership.md).
+/// `legStartedAt` is the `Task.routeStartedAt` of the trip the metres belong to: a new trip (the job goes
+/// En route again) starts from 0 without task-service touching this table (`routeDistanceOf` in shared).
+model TaskRoute {
+  taskId         String    @id
+  task           Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  legStartedAt   DateTime?
+  distanceMeters Float     @default(0)
+  updatedAt      DateTime  @updatedAt
+
+  @@map("task_routes")
+}
+
 model LocationHistory {
   id        String   @id @default(cuid())
   lat       Float

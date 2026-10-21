@@ -17,7 +17,7 @@
 | **auth** (40) | AccessRole, ActivityLog, BillingAlert, BillingEvent, BlogImage, BlogPost, Customer, CustomerActivity, CustomerContact, CustomerSignLink, CustomerUnit, DeviceKey, Document, DocumentEvent, DocumentSignature, DocumentSigner, DocumentTemplate, DocumentType, IntakeCategory, Invitation, Invoice, InvoiceItem, JoinRequest, LegalEntity, LegalEntityBankAccount, NotificationWatch, Organization, PasswordResetToken, PlatformAuditLog, PlatformUser, Portal, RefreshToken, SpaceShare, SpaceShareRequest, Subscription, SupportRoutingRule, SupportTeam, SupportTeamMember, UnitActivity, User |
 | **task** (71) | ApprovalDelegation, ApprovalNotice, ApprovalRule, ApprovalStep, Asset, AssetActivity, AssetCategory, AssetCustody, AssetHolder, AssetListRow, AssetLogReminder, AssetMoney, AssetProposal, AssetType, Attachment, Break, BreakRule, CalendarAttendee, CalendarEvent, CalendarFeedToken, CalendarHoliday, ChecklistItem, Comment, CompanyLocation, Conversation, ConversationMember, CustomFieldDefinition, CustomFieldValue, DefinitionOfDone, Epic, GeofenceExcursion, LabelCheckFinding, LabelCheckRun, LeaveAdjustment, Message, OvertimeRequest, PartUsed, Phase, RateHistory, RecurringTaskTemplate, ReportAttachment, ReportDefinition, ReportSchedule, ServiceReport, Shift, ShiftAssignment, ShiftInstance, ShiftIssue, ShiftIssueEvent, SpaceAssignment, SpaceWorkflow, Sprint, SprintReport, StatusWorkflow, SupportMessage, SupportTicket, SyncTombstone, Task, TaskAssignee, TaskDependency, TaskEvent, TaskHandover, TaskStepSubmission, TechnicianSchedule, TimeEntry, TimeEntryNote, TimeEntryNoteAttachment, TimeEntryPresence, TimeOff, WorkflowStatus, WorkflowTemplate |
 | **notification** (2) | NotificationDelivery, UserPushToken |
-| **tracking** (2) | LocationHistory, WorkerLastLocation |
+| **tracking** (3) | LocationHistory, TaskRoute, WorkerLastLocation |
 | **shared infrastructure** (1) | CronLock — the scheduled-job lease, written by raw SQL in `packages/shared/src/scheduling/cron-lock.ts` from every service that runs a sweep |
 | **(nobody uses it)** (8) | Alert, DailyMetric, HealthMetric, ModulePrice, OrganizationAccess, PricingConfig, ScheduleTemplate, SeatPrice |
 
@@ -72,24 +72,32 @@ people on a deleted role or a role nobody can remove. Listed in `ALLOWED` in `to
 | ActivityLog | task | auth | `task-service/src/modules/attendance/entry-service.base.ts:103` (create) |
 | ActivityLog | task | auth | `task-service/src/modules/attendance/shift-rematch.service.ts:264` (create) |
 
-### F. Single fields owned elsewhere
+### F. Single fields owned elsewhere — DONE
 
-One RPC per case to the owner: task → auth for the organization's holiday country / leave policy and a member's auto-clock consent; notification → auth for presence and the language it learns; auth → notification for `NotificationDelivery`; auth seeds the default workflow at sign-up → task (`org_created` event); platform support → task for ticket teams; tracking → task for a job's route distance (**question 2**).
+Moved to the owner (one message each):
 
-| Table | Written by | Owner | Where |
-|---|---|---|---|
-| StatusWorkflow | auth | task | `auth-service/src/common/seed-default-workflow.ts:29` (create) |
-| SupportTicket | auth | task | `auth-service/src/modules/platform-admin/platform-support-teams.service.ts:88` (updateMany) |
-| NotificationDelivery | auth | notification | `auth-service/src/modules/users/own-account.service.ts:154` (updateMany) |
-| User | task | auth | `task-service/src/modules/attendance/auto-clock.service.ts:119` (update) |
-| Organization | task | auth | `task-service/src/modules/calendar/holidays.service.ts:169` (update) |
-| Organization | task | auth | `task-service/src/modules/technicians/leave-opening.service.ts:194` (updateMany) |
-| User | notification | auth | `notification-service/src/i18n/recipient-locales.service.ts:99` (updateMany) |
-| User | notification | auth | `notification-service/src/modules/websocket/gateway-presence.base.ts:37` (update) |
-| User | notification | auth | `notification-service/src/modules/websocket/gateway-presence.base.ts:68` (update) |
-| Task | tracking | task | `tracking-service/src/modules/location/location-batch.service.ts:165` (update) |
-| Task | tracking | task | `tracking-service/src/modules/location/location-batch.service.ts:239` (update) |
-| Task | tracking | task | `tracking-service/src/modules/location/location.service.ts:72` (update) |
+| What | Was written by | Now |
+|---|---|---|
+| The in-app inbox (`NotificationDelivery`: list, mark read) | auth | notification-service answers `list_notifications` / `mark_notifications_read` itself; the gateway asks it |
+| A signed-out phone's push token (`UserPushToken`) | auth | `remove_push_token` to notification-service, scoped to the member, awaited (5 s) |
+| A deleted support team's tickets (`SupportTicket`) | auth | `support.unassign_team` to task-service FIRST; the team is deleted only after it answers |
+| Auto-clock consent (`User.autoClockConsentAt`) | task | `user_set_auto_clock_consent` to auth; the member sees 503 if it cannot be kept |
+| The language an app reports (`User.locale`) | notification | `user_set_locale` to auth, best effort |
+| Presence (`User.lastActiveAt`, connect + heartbeat + gone) | notification | `users_mark_active` / `user_mark_inactive` to auth, best effort |
+
+Kept where they are (listed in `ALLOWED`, reason at the code):
+
+- `task-service/.../calendar/holidays.service.ts` → `Organization`: the calendar's own columns, read only by task-service; switching feeds off goes with the token wipe.
+- `task-service/.../technicians/leave-opening.service.ts` → `Organization`: the tracking-start day commits with the first starting balances.
+- `auth-service/src/common/seed-default-workflow.ts` → `StatusWorkflow`: sign-up creates the organization and its default task type in one transaction — the same reason as group C.
+
+**The job's trip distance** (decision 2) → `TaskRoute` (`task_routes`), written only by tracking-service
+(`trip-distance.ts`: one upsert statement per batch, the late-points recount as an upsert). Migration
+`20261021090000_task_routes` is additive: it copies every recorded distance against its trip (110/110
+locally) and keeps `tasks."routeDistance"` — now `legacyRouteDistance` in Prisma, never written — for a later
+checked drop. The start/end times stay on the job: task-service sets them on the status change. A new trip
+needs no reset — the row names the trip it counted (`legStartedAt`), and every reader asks `tripDistanceOf`
+/ `TRIP_DISTANCE_SQL` in shared (route reads, member performance, the report's km column).
 
 ## Reading another service's tables (Phase 3.4 — later)
 

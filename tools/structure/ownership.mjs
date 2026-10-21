@@ -24,6 +24,14 @@ const SHARED = { ActivityLog: /^(create|createMany)$/, CronLock: /.*/ };
  * message, a task-service outage would leave an account in no workspace with its code already used.
  */
 const ALLOWED = [
+  // The calendar's own Organization columns (weekend, holiday country/region, feeds switch), read only
+  // by task-service; switching feeds off goes with the feed-token wipe. Pinned by auth-owned-writes.spec.
+  { file: 'apps/api/task-service/src/modules/calendar/holidays.service.ts', models: ['Organization'] },
+  // The day leave tracking started commits with the first starting balances (one transaction).
+  { file: 'apps/api/task-service/src/modules/technicians/leave-opening.service.ts', models: ['Organization'] },
+  // Sign-up creates the organization AND its default task type in one transaction: an organization
+  // without a workflow cannot create a task, and sign-up must not depend on task-service being up.
+  { file: 'apps/api/auth-service/src/common/seed-default-workflow.ts', models: ['StatusWorkflow'] },
   // Deleting/merging a workspace role moves its holders and deletes it in ONE transaction.
   { file: 'apps/api/task-service/src/modules/space-roles/role-admin.service.ts', models: ['AccessRole'] },
   { file: 'apps/api/task-service/src/modules/space-roles/space-roles.base.ts', models: ['AccessRole'] },
@@ -32,8 +40,9 @@ const ALLOWED = [
     models: ['SpaceAssignment', 'TechnicianSchedule'],
   },
 ];
+// `\s*` around the dots: `this.prisma.user\n  .updateMany(...)` is a write too.
 const WRITE =
-  /\b(?:prisma|tx|db|client|this\.prisma)\.([a-z]\w*)\.(create|createMany|createManyAndReturn|update|updateMany|upsert|delete|deleteMany)\b/g;
+  /\b(?:prisma|tx|db|client|this\.prisma)\s*\.\s*([a-z]\w*)\s*\.\s*(create|createMany|createManyAndReturn|update|updateMany|upsert|delete|deleteMany)\b/g;
 
 function owners() {
   const md = readFileSync(join(REPO, 'docs/data-ownership.md'), 'utf8');

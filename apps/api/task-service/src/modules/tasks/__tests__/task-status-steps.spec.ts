@@ -98,8 +98,8 @@ describe('what the move writes', () => {
   it('setting off starts a fresh route; arriving ends it', () => {
     expect(statusUpdateData(task(), null, TaskStatus.EN_ROUTE, at)).toEqual({
       status: TaskStatus.EN_ROUTE,
+      // The distance is tracking-service's (task_routes): a new trip is told apart by this start.
       routeStartedAt: at,
-      routeDistance: 0,
       routeEndedAt: null,
     });
     expect(statusUpdateData(task(), null, TaskStatus.ARRIVED, at)).toEqual({

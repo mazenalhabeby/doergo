@@ -4231,16 +4231,5 @@
    "validation.passwordsMismatch"
   ]
  },
- "ownership": [
-  "apps/api/auth-service/src/common/seed-default-workflow.ts → StatusWorkflow.create (owned by task-service)",
-  "apps/api/auth-service/src/modules/platform-admin/platform-support-teams.service.ts → SupportTicket.updateMany (owned by task-service)",
-  "apps/api/auth-service/src/modules/users/own-account.service.ts → NotificationDelivery.updateMany (owned by notification-service)",
-  "apps/api/notification-service/src/i18n/recipient-locales.service.ts → User.updateMany (owned by auth-service)",
-  "apps/api/notification-service/src/modules/websocket/gateway-presence.base.ts → User.update (owned by auth-service)",
-  "apps/api/task-service/src/modules/attendance/auto-clock.service.ts → User.update (owned by auth-service)",
-  "apps/api/task-service/src/modules/calendar/holidays.service.ts → Organization.update (owned by auth-service)",
-  "apps/api/task-service/src/modules/technicians/leave-opening.service.ts → Organization.updateMany (owned by auth-service)",
-  "apps/api/tracking-service/src/modules/location/location-batch.service.ts → Task.update (owned by task-service)",
-  "apps/api/tracking-service/src/modules/location/location.service.ts → Task.update (owned by task-service)"
- ]
+ "ownership": []
 }

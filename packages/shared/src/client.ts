@@ -52,6 +52,7 @@ export * from './timezone-country';
 export * from './video-guides';
 export * from './assigned-home';
 export * from './tracking/route-points';
+export * from './tracking/trip-distance';
 
 // Client-safe constants (pure data — no server deps)
 export * from './constants/attendance';

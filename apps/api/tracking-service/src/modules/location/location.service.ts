@@ -4,6 +4,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, SERVICE_NAMES, haversineDistance, isTaskAssignee } from '@hbcfield/shared';
 import { catchError, of } from 'rxjs';
 import { emitEvent, workerLocationUpdatedEvent } from '@hbcfield/shared/microservices';
+import { addTripMeters } from './trip-distance';
 
 @Injectable()
 export class LocationService {
@@ -44,7 +45,7 @@ export class LocationService {
         // Co-assignees included: a member assigned alongside a lead drives the
         // same route, and matching assignedToId alone silently discarded every
         // point they recorded — accepted by the API, never stored.
-        select: { status: true, assignedToId: true, assignees: { select: { userId: true } } },
+        select: { status: true, assignedToId: true, assignees: { select: { userId: true } }, routeStartedAt: true },
       });
 
       // Only record history while the task is EN_ROUTE and the caller is on it —
@@ -62,18 +63,13 @@ export class LocationService {
         }
 
         // Append the point and bump the distance atomically so concurrent pings
-        // can't lose an increment (read-modify-write race on routeDistance).
+        // can't lose an increment (one upsert statement on the trip's row).
         await this.prisma.$transaction([
           this.prisma.locationHistory.create({
             data: { userId, taskId, lat, lng, accuracy },
           }),
           ...(incrementalDistance > 0
-            ? [
-                this.prisma.task.update({
-                  where: { id: taskId },
-                  data: { routeDistance: { increment: incrementalDistance } },
-                }),
-              ]
+            ? [addTripMeters(this.prisma, taskId, task.routeStartedAt, incrementalDistance)]
             : []),
         ]);
       }

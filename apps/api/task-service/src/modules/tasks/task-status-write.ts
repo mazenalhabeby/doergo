@@ -33,9 +33,9 @@ export function statusUpdateData(
 
   // Set routeStartedAt when transitioning to EN_ROUTE
   if (status === TaskStatus.EN_ROUTE) {
+    // A new trip: its distance starts at 0 by itself — tracking-service's row names the trip it
+    // counted (`legStartedAt`), so nothing here touches task_routes (tripDistanceOf in shared).
     updateData.routeStartedAt = occurredAt;
-    // Reset route data for a fresh tracking session
-    updateData.routeDistance = 0;
     updateData.routeEndedAt = null;
   }
 

@@ -22,7 +22,9 @@ function build(task: Record<string, unknown>, stored: { lat: number; lng: number
   const prisma: any = {
     workerLastLocation: { upsert: jest.fn().mockResolvedValue({}) },
     task: {
-      findUnique: jest.fn().mockResolvedValue({ assignedToId: 'u1', assignees: [], routeStartedAt: START, routeEndedAt: END, ...task }),
+      findUnique: jest
+        .fn()
+        .mockResolvedValue({ assignedToId: 'u1', assignees: [], routeStartedAt: START, routeEndedAt: END, ...task }),
       update: jest.fn().mockResolvedValue({}),
     },
     locationHistory: {
@@ -33,8 +35,12 @@ function build(task: Record<string, unknown>, stored: { lat: number; lng: number
           : [...history].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
         return select.timestamp && !select.lat ? rows.map((r) => ({ timestamp: r.timestamp })) : rows;
       }),
-      createMany: jest.fn(async ({ data }: any) => { history.push(...data); return { count: data.length }; }),
+      createMany: jest.fn(async ({ data }: any) => {
+        history.push(...data);
+        return { count: data.length };
+      }),
     },
+    taskRoute: { upsert: jest.fn().mockResolvedValue({}) },
     $transaction: jest.fn((ops: any[]) => Promise.all(ops)),
   };
   const service = locationServices(prisma, { emit: jest.fn(() => of(null)) } as any, {} as any);
@@ -42,7 +48,12 @@ function build(task: Record<string, unknown>, stored: { lat: number; lng: number
 }
 
 // ~111 m per 0.001° of latitude.
-const pt = (min: number, north: number) => ({ lat: 47.98 + north * 0.001, lng: 13.82, accuracy: 10, timestamp: at(min) });
+const pt = (min: number, north: number) => ({
+  lat: 47.98 + north * 0.001,
+  lng: 13.82,
+  accuracy: 10,
+  timestamp: at(min),
+});
 
 describe('late route points', () => {
   it('stores points timed inside an ended route, and recomputes its distance in time order', async () => {
@@ -55,19 +66,23 @@ describe('late route points', () => {
 
     expect(prisma.locationHistory.createMany).toHaveBeenCalledTimes(1);
     expect(history).toHaveLength(4);
-    const distance = prisma.task.update.mock.calls[0][0].data.routeDistance;
+    const upsert = prisma.taskRoute.upsert.mock.calls[0][0];
+    expect(upsert.update.legStartedAt).toEqual(START);
+    const distance = upsert.update.distanceMeters;
     // 0 → 1 → 2 → 3 thousandths north: ~333 m, not the ~555 m an increment from the last point would add.
     expect(distance).toBeGreaterThan(320);
     expect(distance).toBeLessThan(345);
   });
 
   it('leaves out points from outside the route window and points already stored', async () => {
-    const { service, prisma } = build({ status: 'ARRIVED' }, [{ lat: 47.981, lng: 13.82, timestamp: new Date(at(10)) }]);
+    const { service, prisma } = build({ status: 'ARRIVED' }, [
+      { lat: 47.981, lng: 13.82, timestamp: new Date(at(10)) },
+    ]);
     await service.updateLocationBatch('u1', 't1', [pt(10, 1), pt(45, 5), { lat: 47.99, lng: 13.82 }], 'o1');
     expect(prisma.locationHistory.createMany).not.toHaveBeenCalled();
   });
 
-  it("does nothing for a route that never ended, or a member who is not on the task", async () => {
+  it('does nothing for a route that never ended, or a member who is not on the task', async () => {
     const neverEnded = build({ status: 'ASSIGNED', routeEndedAt: null });
     await neverEnded.service.updateLocationBatch('u1', 't1', [pt(10, 1)], 'o1');
     expect(neverEnded.prisma.locationHistory.createMany).not.toHaveBeenCalled();

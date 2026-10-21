@@ -1,5 +1,6 @@
 /** Moved here unchanged from registry.ts. */
 import type { Dataset } from './dataset-types';
+import { TRIP_DISTANCE_SQL } from '@hbcfield/shared';
 
 /** A service report's space is its task's. */
 const reportInSpaces = (p: string) =>
@@ -85,7 +86,12 @@ export const DATASETS: Record<string, Dataset> = {
       jobs: { labelKey: 'col.jobsCompleted', agg: 'count', sql: 'sr.id', format: 'number' },
       workHours: { labelKey: 'col.workHours', agg: 'sum', sql: 'sr."workDuration" / 3600.0', format: 'hours' },
       avgJobMinutes: { labelKey: 'col.avgJobMinutes', agg: 'avg', sql: 'sr."workDuration" / 60.0', format: 'number' },
-      customers: { labelKey: 'col.customers', agg: 'countDistinct', sql: `COALESCE(c.name, sr."customerName")`, format: 'number' },
+      customers: {
+        labelKey: 'col.customers',
+        agg: 'countDistinct',
+        sql: `COALESCE(c.name, sr."customerName")`,
+        format: 'number',
+      },
     },
   },
 
@@ -102,7 +108,11 @@ export const DATASETS: Record<string, Dataset> = {
     dimensions: {
       status: { labelKey: 'col.status', sql: 't.status', type: 'string' },
       priority: { labelKey: 'col.priority', sql: 't.priority::text', type: 'string' },
-      technician: { labelKey: 'col.assignee', sql: `COALESCE(u."firstName" || ' ' || u."lastName", 'Unassigned')`, type: 'string' },
+      technician: {
+        labelKey: 'col.assignee',
+        sql: `COALESCE(u."firstName" || ' ' || u."lastName", 'Unassigned')`,
+        type: 'string',
+      },
       space: { labelKey: 'col.space', sql: `COALESCE(cl.name, '—')`, type: 'string' },
       customer: { labelKey: 'col.customer', sql: `COALESCE(c.name, '—')`, type: 'string' },
     },
@@ -117,7 +127,8 @@ export const DATASETS: Record<string, Dataset> = {
       distanceKm: {
         labelKey: 'col.routeDistanceKm',
         agg: 'sum',
-        sql: 'COALESCE(t."routeDistance", 0) / 1000.0',
+        // The trip's metres are tracking-service's (task_routes); the rule lives in shared.
+        sql: `COALESCE(${TRIP_DISTANCE_SQL}, 0) / 1000.0`,
         format: 'number',
       },
     },
@@ -200,7 +211,11 @@ export const DATASETS: Record<string, Dataset> = {
     spaceFilter: (p) => `t."spaceId" = ANY(${p})`,
     dimensions: {
       priority: { labelKey: 'col.priority', sql: 't.priority::text', type: 'string' },
-      technician: { labelKey: 'col.assignee', sql: `COALESCE(u."firstName" || ' ' || u."lastName", 'Unassigned')`, type: 'string' },
+      technician: {
+        labelKey: 'col.assignee',
+        sql: `COALESCE(u."firstName" || ' ' || u."lastName", 'Unassigned')`,
+        type: 'string',
+      },
       customer: { labelKey: 'col.customer', sql: `COALESCE(c.name, '—')`, type: 'string' },
     },
     measures: {

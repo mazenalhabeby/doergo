@@ -5,6 +5,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, SERVICE_NAMES, haversineDistance, isTaskAssignee } from '@hbcfield/shared';
 import { catchError, of } from 'rxjs';
 import { emitEvent, workerLocationUpdatedEvent } from '@hbcfield/shared/microservices';
+import { addTripMeters, setTripMeters } from './trip-distance';
 
 /**
  * A phone's buffered route points, flushed in one go: ownership and the en-route
@@ -160,14 +161,7 @@ export class LocationBatchService {
         if (rows.length) {
           await this.prisma.$transaction([
             this.prisma.locationHistory.createMany({ data: rows }),
-            ...(totalIncrement > 0
-              ? [
-                  this.prisma.task.update({
-                    where: { id: taskId },
-                    data: { routeDistance: { increment: totalIncrement } },
-                  }),
-                ]
-              : []),
+            ...(totalIncrement > 0 ? [addTripMeters(this.prisma, taskId, task.routeStartedAt, totalIncrement)] : []),
           ]);
         }
       }
@@ -236,7 +230,7 @@ export class LocationBatchService {
     for (let i = 1; i < route.length; i++) {
       distance += haversineDistance(route[i - 1]!.lat, route[i - 1]!.lng, route[i]!.lat, route[i]!.lng);
     }
-    await this.prisma.task.update({ where: { id: taskId }, data: { routeDistance: distance } });
+    await setTripMeters(this.prisma, taskId, startedAt, distance);
     this.logger.log(
       `Late route points: task=${taskId} user=${userId} stored=${fresh.length} distance=${Math.round(distance)}m`,
     );
