@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import {
   zoneOf,
@@ -8,6 +9,8 @@ import {
   resolveInvoiceCurrency,
   currencyOrNull,
   DEFAULT_CURRENCY,
+  workspaceTermsToInvoice,
+  finishedJobsToInvoice,
 } from '@hbcfield/shared';
 import { jobsInPeriod, FINISHED } from './work-source';
 import { PrismaService } from '@hbcfield/shared';
@@ -16,8 +19,6 @@ import { LegalEntitiesService } from './legal-entities.service';
 import { SiteTimeService } from './site-time.service';
 import { InvoiceServiceBase } from './invoice-service.base';
 import {
-  GATHER_ASSIGNMENT_SELECT,
-  GATHER_TASK_SELECT,
   billByFor,
   billedTaskIds,
   loadGatherSource,
@@ -117,15 +118,10 @@ export class InvoiceGatherService extends InvoiceServiceBase {
     // Which jobs, in which period — the rule shared with the worker's statement.
     const withinPeriod = jobsInPeriod(data.from, data.to);
 
-    const tasks = await this.prisma.task.findMany({
-      where: {
-        organizationId: data.organizationId,
-        ...(space ? { spaceId: space.id } : { customerId: customer!.id }),
-        status: FINISHED,
-        ...withinPeriod,
-      },
-      select: GATHER_TASK_SELECT,
-      orderBy: { updatedAt: 'asc' },
+    const tasks = await finishedJobsToInvoice(this.prisma, {
+      organizationId: data.organizationId,
+      ...(space ? { spaceId: space.id } : { customerId: customer!.id }),
+      period: withinPeriod as Prisma.TaskWhereInput,
     });
 
     const billed = await billedTaskIds(
@@ -146,12 +142,7 @@ export class InvoiceGatherService extends InvoiceServiceBase {
         tasks.flatMap((t) => [t.serviceReport?.completedBy?.id, t.assignedTo?.id]).filter((id): id is string => !!id),
       ),
     );
-    const assignments = space
-      ? await this.prisma.spaceAssignment.findMany({
-          where: { spaceId: space.id, organizationId: data.organizationId },
-          select: GATHER_ASSIGNMENT_SELECT,
-        })
-      : [];
+    const assignments = space ? await workspaceTermsToInvoice(this.prisma, space.id, data.organizationId) : [];
     const assignmentOf = new Map(assignments.map((a) => [a.userId, a]));
     const billByOf = billByFor(assignmentOf);
 

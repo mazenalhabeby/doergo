@@ -1,5 +1,5 @@
 import type { Prisma } from '@prisma/client';
-import { Role } from '@hbcfield/shared';
+import { Role, memberJobList } from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
 
@@ -92,23 +92,7 @@ export class MemberDirectoryService {
   }
 
   async getWorkerTasks(workerId: string, organizationId?: string) {
-    const tasks = await this.prisma.task.findMany({
-      // Org-scoped when the caller's org is supplied (defense-in-depth): a foreign
-      // workerId can't surface another tenant's tasks.
-      where: { assignedToId: workerId, ...(organizationId ? { organizationId } : {}) },
-      orderBy: { createdAt: 'desc' },
-      take: 100, // Limit to prevent unbounded queries
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        status: true,
-        priority: true,
-        dueDate: true,
-        locationAddress: true,
-        createdAt: true,
-      },
-    });
+    const tasks = await memberJobList(this.prisma, workerId, organizationId);
 
     return { success: true, data: tasks };
   }

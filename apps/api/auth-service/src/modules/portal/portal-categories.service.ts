@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { scopeWhereOn, type SpaceScopeIds } from '@hbcfield/shared';
+import { scopeWhereOn, type SpaceScopeIds, workspaceInOrg } from '@hbcfield/shared';
 import { configCache } from './portal-helpers';
 import { PortalServiceBase } from './portal-service.base';
 
@@ -78,10 +78,7 @@ export class PortalCategoriesService extends PortalServiceBase {
     // Validate the target space belongs to this org (defence in depth — the
     // onDelete:SetNull relation already guards deletions).
     if (data.spaceId) {
-      const space = await this.prisma.companyLocation.findFirst({
-        where: { id: data.spaceId, organizationId: data.organizationId },
-        select: { id: true },
-      });
+      const space = await workspaceInOrg(this.prisma, data.spaceId, data.organizationId);
       if (!space) throw new NotFoundException('Space not found');
     }
     const cat = await this.prisma.intakeCategory.update({
@@ -113,7 +110,12 @@ export class PortalCategoriesService extends PortalServiceBase {
     return { success: true };
   }
 
-  async reorderCategories(data: { organizationId: string; portalId: string; orderedIds: string[]; scopeSpaceIds?: SpaceScopeIds }) {
+  async reorderCategories(data: {
+    organizationId: string;
+    portalId: string;
+    orderedIds: string[];
+    scopeSpaceIds?: SpaceScopeIds;
+  }) {
     if (data.scopeSpaceIds !== undefined && data.scopeSpaceIds !== null) {
       const portal = await this.prisma.portal.findFirst({
         where: { id: data.portalId, organizationId: data.organizationId, spaceId: { in: data.scopeSpaceIds } },

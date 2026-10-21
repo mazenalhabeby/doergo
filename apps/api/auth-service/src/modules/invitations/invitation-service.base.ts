@@ -2,7 +2,7 @@ import { Injectable, Logger, Inject, Optional } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { randomBytes } from 'crypto';
-import { SERVICE_NAMES } from '@hbcfield/shared';
+import { SERVICE_NAMES, workspaceInOrg } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { DocumentsService } from '../documents/documents.service';
 import { BillingService } from '../billing/billing.service';
@@ -199,10 +199,7 @@ export abstract class InvitationServiceBase {
           'SPACE_PERMISSIONS_NEED_SPACE',
         );
       }
-      const space = await this.prisma.companyLocation.findFirst({
-        where: { id: data.spaceId, organizationId: data.organizationId, isActive: true },
-        select: { id: true },
-      });
+      const space = await workspaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: true });
       if (!space) return refuse(HttpStatus.NOT_FOUND, 'Workspace not found');
       const raw = data.spacePermissions;
       if (typeof raw !== 'object' || Array.isArray(raw)) {

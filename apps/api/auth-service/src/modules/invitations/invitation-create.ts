@@ -11,6 +11,7 @@ import {
   mayGrantBaseRole,
   SHARED_ROLE_WHERE,
   type PermissionSet,
+  assetInOrg,
 } from '@hbcfield/shared';
 import type { PrismaService } from '@hbcfield/shared';
 import { jsonColumn } from '../../common/records/json-column';
@@ -78,10 +79,7 @@ export async function customerTargetRefusal(
   // Same check for an asset: an id from another tenant must not become the
   // place a login is confined to.
   if (data.assetId) {
-    const asset = await prisma.asset.findFirst({
-      where: { id: data.assetId, organizationId: data.organizationId },
-      select: { id: true },
-    });
+    const asset = await assetInOrg(prisma, data.assetId, data.organizationId);
     if (!asset) {
       return refuse(HttpStatus.NOT_FOUND, 'Asset not found in this organization');
     }

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { SHARED_ROLE_WHERE } from '@hbcfield/shared';
+import { SHARED_ROLE_WHERE, countWorkflowsInOrg } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { DocumentLookupService } from './document-lookup.service';
 
@@ -9,12 +9,10 @@ import { DocumentLookupService } from './document-lookup.service';
  */
 @Injectable()
 export abstract class DocumentTypesBase {
-
   constructor(
     protected readonly prisma: PrismaService,
     protected readonly lookup: DocumentLookupService,
   ) {}
-
 
   /**
    * A card has a reverse; a stack of paper has a page 2.
@@ -26,9 +24,7 @@ export abstract class DocumentTypesBase {
    */
   protected assertPageShape(twoSided?: boolean | null, multiPage?: boolean | null) {
     if (twoSided && multiPage) {
-      throw new BadRequestException(
-        'A document type is either two-sided or many sheets, not both',
-      );
+      throw new BadRequestException('A document type is either two-sided or many sheets, not both');
     }
   }
 
@@ -46,9 +42,7 @@ export abstract class DocumentTypesBase {
       requiredForWorkflowIds?: string[];
     },
   ) {
-    const roleIds = [
-      ...new Set([...(refs.visibleToRoleIds ?? []), ...(refs.requiredFromRoleIds ?? [])]),
-    ];
+    const roleIds = [...new Set([...(refs.visibleToRoleIds ?? []), ...(refs.requiredFromRoleIds ?? [])])];
     if (roleIds.length > 0) {
       // A personal role names one person in one workspace — not a group a document type can address.
       const found = await this.prisma.accessRole.count({
@@ -60,13 +54,9 @@ export abstract class DocumentTypesBase {
     }
     const workflowIds = [...new Set(refs.requiredForWorkflowIds ?? [])];
     if (workflowIds.length > 0) {
-      const found = await this.prisma.statusWorkflow.count({
-        where: { id: { in: workflowIds }, organizationId },
-      });
+      const found = await countWorkflowsInOrg(this.prisma, workflowIds, organizationId);
       if (found !== workflowIds.length) {
-        throw new BadRequestException(
-          'A workflow on this document type is not in your organization',
-        );
+        throw new BadRequestException('A workflow on this document type is not in your organization');
       }
     }
   }

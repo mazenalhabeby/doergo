@@ -7,6 +7,8 @@ import {
   setAssignmentPermissions,
   type PermissionSet,
   whitelistPermissions,
+  memberEverIn,
+  workspaceInOrg,
 } from '@hbcfield/shared';
 import { defaultSpaceRoleId } from '../invitation-space-role';
 
@@ -112,19 +114,11 @@ export async function applyInvitationPlacement(
 
   // Pre-assigned space, if it still exists in the org. Owner: task-service.
   if (!invitation.spaceId) return;
-  const space = await tx.companyLocation.findFirst({
-    where: { id: invitation.spaceId, organizationId: invitation.organizationId, isActive: true },
-    select: { id: true },
-  });
+  const space = await workspaceInOrg(tx, invitation.spaceId, invitation.organizationId, { activeOnly: true });
   if (!space) return;
   // Permissions built for this person (external only): granted below through the builder's own writer.
   const built = invitation.isExternal && invitation.spacePermissions != null;
-  const existing = built
-    ? await tx.spaceAssignment.findUnique({
-        where: { userId_spaceId: { userId, spaceId: invitation.spaceId } },
-        select: { id: true },
-      })
-    : null;
+  const existing = built ? await memberEverIn(tx, userId, invitation.spaceId) : null;
   // An external member's authority is their SPACE role and nothing else; an
   // internal member's org role is never copied here (see defaultSpaceRoleId).
   // Only on create — `update` deliberately leaves an existing roleId alone.

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { keepOrgUserIds } from '../../common/records/org-user-ids';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, workspaceInOrg } from '@hbcfield/shared';
 import { resolveCrmCaps, type CrmCaps } from '@hbcfield/shared';
 import {
   crmReachSelect,
@@ -248,10 +248,7 @@ export abstract class CustomersServiceBase {
    *  states. */
   protected async assertRefsInOrg(dto: CustomerInput, organizationId: string) {
     if (dto.spaceId) {
-      const s = await this.prisma.companyLocation.findFirst({
-        where: { id: dto.spaceId, organizationId, isActive: true },
-        select: { id: true },
-      });
+      const s = await workspaceInOrg(this.prisma, dto.spaceId, organizationId, { activeOnly: true });
       if (!s) throw new BadRequestException('Invalid space for this organization');
     }
     if (dto.portalId) {

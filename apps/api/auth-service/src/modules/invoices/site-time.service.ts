@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, siteFinishedJobsBy, siteClockIns } from '@hbcfield/shared';
 import {
   personName,
   loadRateBook,
@@ -94,41 +94,18 @@ export class SiteTimeService {
     const bounded = !!(fromDay || toDay);
 
     const [entries, billedRuns, jobs] = await Promise.all([
-      this.prisma.timeEntry
-        .findMany({
-          where: {
-            organizationId,
-            locationId: spaceId,
-            userId: { in: ids },
-            approvalStatus: { not: 'REJECTED' },
-            ...(bounded ? { clockInAt: range } : {}),
-          },
-          select: {
-            userId: true,
-            clockInAt: true,
-            clockOutAt: true,
-            paidMinutes: true,
-            totalMinutes: true,
-            unpaidBreakMinutes: true,
-            expectedClockInAt: true,
-            expectedClockOutAt: true,
-            // Shift hours are the shift alone: its own length, and where approved overtime began.
-            shift: { select: { startLocal: true, endLocal: true } },
-            overtimeRequests: {
-              where: { status: { in: ['APPROVED', 'COMPLETED'] } },
-              select: { overtimeStartAt: true },
-              orderBy: { cycle: 'asc' },
-              take: 1,
-            },
-          },
-        })
-        .then((rows) =>
-          rows.map(({ shift, overtimeRequests, ...e }) => ({
-            ...e,
-            shiftLengthMinutes: shift ? shiftLengthMinutes(shift.startLocal, shift.endLocal) : null,
-            overtimeStartAt: overtimeRequests[0]?.overtimeStartAt ?? null,
-          })),
-        ),
+      siteClockIns(this.prisma, {
+        organizationId,
+        spaceId,
+        userIds: ids,
+        ...(bounded ? { clockInAt: range } : {}),
+      }).then((rows) =>
+        rows.map(({ shift, overtimeRequests, ...e }) => ({
+          ...e,
+          shiftLengthMinutes: shift ? shiftLengthMinutes(shift.startLocal, shift.endLocal) : null,
+          overtimeStartAt: overtimeRequests[0]?.overtimeStartAt ?? null,
+        })),
+      ),
       this.prisma.invoiceItem.findMany({
         where: {
           lineKind: { in: ['HOURS', 'DAYS'] },
@@ -138,19 +115,7 @@ export class SiteTimeService {
         select: { lineKind: true, workerId: true, dayFrom: true, dayTo: true },
       }),
       // Every finished job here by these people — billed or not, a day worked is a day worked.
-      this.prisma.task.findMany({
-        where: {
-          organizationId, spaceId, status: FINISHED,
-          OR: [
-            { serviceReport: { completedById: { in: ids }, ...(bounded ? { completedAt: range } : {}) } },
-            { serviceReport: null, assignedToId: { in: ids }, ...(bounded ? { updatedAt: range } : {}) },
-          ],
-        },
-        select: {
-          id: true, assignedToId: true, updatedAt: true,
-          serviceReport: { select: { completedById: true, completedAt: true, workDuration: true } },
-        },
-      }),
+      siteFinishedJobsBy(this.prisma, { organizationId, spaceId, userIds: ids, ...(bounded ? { range } : {}) }),
     ]);
     const dayOf = (at: Date) => dayKeyIn(at, tz);
     const jobMarks = jobs.map((j) => ({
@@ -198,12 +163,19 @@ export class SiteTimeService {
         .map((k) => k.split('|')[1]!)
         .filter(inPeriod)
         .sort();
-      const base = { workerId: userId, workerName: p.name, workRoleId: workRole?.id ?? null, workRoleName: workRole?.name ?? null };
+      const base = {
+        workerId: userId,
+        workerName: p.name,
+        workRoleId: workRole?.id ?? null,
+        workRoleName: workRole?.name ?? null,
+      };
 
       // HOURS: time on site, at the hourly rate in force each day; split where it changed.
       if (billsHours(billBy)) {
         const basis = basisOf(userId);
-        const days = daysWithTime.filter((d) => !alreadyBilled(userId, 'HOURS', d) && (billed.minutes.get(`${userId}|${d}`) ?? 0) > 0);
+        const days = daysWithTime.filter(
+          (d) => !alreadyBilled(userId, 'HOURS', d) && (billed.minutes.get(`${userId}|${d}`) ?? 0) > 0,
+        );
         for (const d of days) workDays.add(d);
         for (const run of book.splitDaysWith(days, (d) => ratesFor(worker, d).billRateCents)) {
           let minutes = 0;
@@ -253,7 +225,13 @@ export class SiteTimeService {
             assignmentId: a?.id ?? null,
             // The jobs these hours cover — marked billed with the line.
             taskIds: jobMarks
-              .filter((j) => j.userId === userId && !args.billedTasks.has(j.id) && run.fromDay <= dayOf(j.at) && dayOf(j.at) <= run.toDay)
+              .filter(
+                (j) =>
+                  j.userId === userId &&
+                  !args.billedTasks.has(j.id) &&
+                  run.fromDay <= dayOf(j.at) &&
+                  dayOf(j.at) <= run.toDay,
+              )
               .map((j) => j.id),
           });
         }

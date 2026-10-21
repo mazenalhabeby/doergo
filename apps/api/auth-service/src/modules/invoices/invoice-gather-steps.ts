@@ -9,6 +9,8 @@ import {
   lineAmount,
   type BillByValue,
   type RateBook,
+  workspaceToInvoice,
+  JOB_TO_INVOICE_SELECT,
 } from '@hbcfield/shared';
 import { jobHours } from './work-source';
 import type { PrismaService } from '@hbcfield/shared';
@@ -26,21 +28,6 @@ export interface GatherRefusal {
 }
 
 const refuse = (statusCode: HttpStatus, message: string): GatherRefusal => ({ success: false, message, statusCode });
-
-const SPACE_SELECT = {
-  id: true,
-  name: true,
-  kind: true,
-  contactName: true,
-  contactEmail: true,
-  address: true,
-  billableRateCents: true,
-  costRateCents: true,
-  timezone: true,
-  currency: true,
-  legalEntityId: true,
-  sourceCustomerId: true,
-} as const;
 
 const CUSTOMER_SELECT = {
   id: true,
@@ -62,12 +49,7 @@ export async function loadGatherSource(prisma: PrismaService, data: GatherInput)
     return { refusal: refuse(HttpStatus.BAD_REQUEST, 'Gather from a workspace or a client, not both') };
   }
 
-  const space = data.spaceId
-    ? await prisma.companyLocation.findFirst({
-        where: { id: data.spaceId, organizationId: data.organizationId },
-        select: SPACE_SELECT,
-      })
-    : null;
+  const space = data.spaceId ? await workspaceToInvoice(prisma, data.spaceId, data.organizationId) : null;
   if (data.spaceId && !space) {
     return { refusal: refuse(HttpStatus.NOT_FOUND, 'Space not found') };
   }
@@ -103,40 +85,7 @@ export async function loadGatherSource(prisma: PrismaService, data: GatherInput)
 type Loaded = Exclude<Awaited<ReturnType<typeof loadGatherSource>>, { refusal: GatherRefusal }>;
 export type GatherSpace = Loaded['space'];
 
-const RATED_PERSON = { id: true, firstName: true, lastName: true, billRateCents: true, costRateCents: true } as const;
-
-export const GATHER_TASK_SELECT = {
-  id: true,
-  title: true,
-  updatedAt: true,
-  assignedTo: { select: RATED_PERSON },
-  serviceReport: {
-    select: {
-      id: true,
-      summary: true,
-      workPerformed: true,
-      workDuration: true,
-      completedAt: true,
-      completedBy: { select: RATED_PERSON },
-      partsUsed: {
-        select: { name: true, partNumber: true, quantity: true, unitCost: true },
-      },
-    },
-  },
-} as const;
-
-export const GATHER_ASSIGNMENT_SELECT = {
-  id: true,
-  userId: true,
-  billRateCents: true,
-  costRateCents: true,
-  billBy: true,
-  hoursBasis: true,
-  workRole: { select: { id: true, name: true, kind: true } },
-  user: {
-    select: { id: true, firstName: true, lastName: true, billRateCents: true, costRateCents: true, isExternal: true },
-  },
-} as const;
+/** What gathering reads: the published readers (shared data/invoicing, data/workspaces). */
 
 /** Exclude tasks already billed on a live invoice (any status except CANCELED). */
 export async function billedTaskIds(prisma: PrismaService, organizationId: string, taskIds: string[]) {
@@ -219,7 +168,7 @@ export function ratesResolver(ctx: {
   };
 }
 
-type GatherTask = Prisma.TaskGetPayload<{ select: typeof GATHER_TASK_SELECT }>;
+type GatherTask = Prisma.TaskGetPayload<{ select: typeof JOB_TO_INVOICE_SELECT }>;
 
 const fullName = (u?: { firstName: string | null; lastName: string | null } | null) =>
   u ? personName(u) || null : null;

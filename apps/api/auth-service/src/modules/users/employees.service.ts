@@ -1,6 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { SessionEvents } from '../../common/session-events/session-events.service';
-import { memberScopeFilter, Role, TaskStatus, personSearchOr } from '@hbcfield/shared';
+import { memberScopeFilter, Role, TaskStatus, personSearchOr, memberOpenJobCount } from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
 import { ListEmployeesDto } from './dto';
@@ -197,20 +197,7 @@ export class EmployeesService {
     }
 
     // Check for active tasks
-    const activeTasks = await this.prisma.task.count({
-      where: {
-        assignedToId: id,
-        status: {
-          in: [
-            TaskStatus.ASSIGNED,
-            TaskStatus.ACCEPTED,
-            TaskStatus.EN_ROUTE,
-            TaskStatus.ARRIVED,
-            TaskStatus.IN_PROGRESS,
-          ],
-        },
-      },
-    });
+    const activeTasks = await memberOpenJobCount(this.prisma, id);
 
     if (activeTasks > 0) {
       throw new BadRequestException(

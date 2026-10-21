@@ -112,8 +112,8 @@ baseline — a file may only read less. It cannot see reads through a relation o
 | Area | Direct reads | Status |
 |---|---|---|
 | notification-service, tracking-service | 18 → 0 | done 2026-10-21 |
-| auth-service → task tables | 55 | next |
-| task-service → auth tables (User 127, Organization 26, …) | 196 | then, by module |
+| auth-service → task tables | 55 → 0 | done 2026-10-22 (`workspaces.ts`, `invoicing.ts`, `member-work.ts`, `jobs.ts`) |
+| task-service → auth and tracking tables (User 127, Organization 26, …) | 196 | next, by module |
 
 The counts at the start (2026-10-21, 269 in all):
 

@@ -13,6 +13,7 @@ import {
   crmCapsIn,
   crmCreateScope,
   type CrmReach,
+  workspaceInOrg,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { CustomersService, withContactKeys, type CrmCaller } from './customers.service';
@@ -107,10 +108,7 @@ export class ContactImportService {
     const { spaceId, items } = parsed.value;
     const crm = await this.assertCanCreate(caller, organizationId, spaceId);
 
-    const space = await this.prisma.companyLocation.findFirst({
-      where: { id: spaceId, organizationId, isActive: true },
-      select: { id: true },
-    });
+    const space = await workspaceInOrg(this.prisma, spaceId, organizationId, { activeOnly: true });
     if (!space) throw new BadRequestException('Invalid space for this organization');
 
     const importer = caller?.userId

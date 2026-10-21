@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { type CrmCaller } from '../customers/customers.service';
-import { type SpaceScopeIds, activeAssignmentWhere } from '@hbcfield/shared';
+import { type SpaceScopeIds, activeAssignmentWhere, memberActiveIn } from '@hbcfield/shared';
 import { sanitizeUnitDetails } from './portal-helpers';
 import { PortalServiceBase } from './portal-service.base';
 import { type portalCreateUnit, type portalUpdateUnit, type RpcRequest } from '@hbcfield/shared/microservices';
@@ -181,10 +181,7 @@ export class UnitWriteService extends PortalServiceBase {
       any person in the organization — someone they cannot otherwise see — to
       their site's apartment.
     */
-    const assigned = await this.prisma.spaceAssignment.findFirst({
-      where: { ...activeAssignmentWhere(uid), spaceId: data.spaceId, organizationId: data.organizationId },
-      select: { id: true },
-    });
+    const assigned = await memberActiveIn(this.prisma, uid, data.spaceId, data.organizationId);
     if (!assigned) throw new NotFoundException('Member not found in this workspace');
 
     // Validate the target apartment belongs to this org + space.

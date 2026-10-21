@@ -7,6 +7,7 @@ import {
   resolveMemberRouting,
   type DocumentSignerRole,
   PERSON_BRIEF_SELECT,
+  memberWorkspacesForRouting,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { type SignerCandidate } from './document-common';
@@ -207,14 +208,7 @@ export abstract class DocumentRoutingBase {
       somebody has to send a document to a person the system has never heard of
       is exactly when a closed list makes the product useless.
     */
-    const spaces = await this.prisma.spaceAssignment.findMany({
-      where: { userId: memberId, organizationId },
-      select: {
-        space: {
-          select: { id: true, name: true, kind: true, contactName: true, contactEmail: true, enabledModules: true },
-        },
-      },
-    });
+    const spaces = await memberWorkspacesForRouting(this.prisma, memberId, organizationId);
     if (spaces.length === 0) return [];
 
     const org = await this.prisma.organization.findUnique({

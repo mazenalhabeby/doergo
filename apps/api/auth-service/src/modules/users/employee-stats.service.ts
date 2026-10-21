@@ -1,4 +1,11 @@
-import { TaskStatus } from '@hbcfield/shared';
+import {
+  TaskStatus,
+  memberRecentClockIns,
+  memberRecentJobEvents,
+  memberClockInsSince,
+  memberJobsOnTime,
+  memberJobCounts,
+} from '@hbcfield/shared';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
 
@@ -19,25 +26,12 @@ export class EmployeeStatsService {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     // Use aggregation queries instead of fetching all tasks into memory
-    const [statusCounts, priorityCounts, todayCount] = await Promise.all([
-      this.prisma.task.groupBy({
-        by: ['status'],
-        where: { assignedToId: employeeId, ...spaceFilter },
-        _count: { status: true },
-      }),
-      this.prisma.task.groupBy({
-        by: ['priority'],
-        where: { assignedToId: employeeId, ...spaceFilter },
-        _count: { priority: true },
-      }),
-      this.prisma.task.count({
-        where: {
-          assignedToId: employeeId,
-          createdAt: { gte: todayStart },
-          ...spaceFilter,
-        },
-      }),
-    ]);
+    const [statusCounts, priorityCounts, todayCount] = await memberJobCounts(
+      this.prisma,
+      employeeId,
+      todayStart,
+      spaceIds,
+    );
 
     const byStatus: Record<string, number> = {};
     let total = 0;
@@ -76,13 +70,7 @@ export class EmployeeStatsService {
     // take:200 findMany+JS filter (M5).
     let completedOnTime = 0;
     if (completed > 0) {
-      completedOnTime = await this.prisma.task.count({
-        where: {
-          assignedToId: employeeId,
-          status: { in: [TaskStatus.COMPLETED, TaskStatus.CLOSED] },
-          OR: [{ dueDate: null }, { updatedAt: { lte: this.prisma.task.fields.dueDate } }],
-        },
-      });
+      completedOnTime = await memberJobsOnTime(this.prisma, employeeId);
     }
 
     return {
@@ -110,19 +98,7 @@ export class EmployeeStatsService {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
     // Batch both queries in parallel - month entries include week entries
-    const monthEntries = await this.prisma.timeEntry.findMany({
-      where: {
-        userId: employeeId,
-        clockInAt: { gte: monthStart },
-        // Hours worked at the sites this viewer supervises, not everywhere.
-        ...(spaceIds ? { locationId: { in: spaceIds } } : {}),
-      },
-      select: {
-        totalMinutes: true,
-        clockInWithinGeofence: true,
-        clockInAt: true,
-      },
-    });
+    const monthEntries = await memberClockInsSince(this.prisma, employeeId, monthStart, spaceIds);
 
     // Filter week entries from month entries to avoid a second query
     const weekEntries = monthEntries.filter((e) => new Date(e.clockInAt) >= weekStart);
@@ -152,19 +128,7 @@ export class EmployeeStatsService {
     const activities: { id: string; type: string; description: string; timestamp: string }[] = [];
 
     // Get recent task events
-    const taskEvents = await this.prisma.taskEvent.findMany({
-      where: { userId: employeeId, ...(spaceIds ? { task: { spaceId: { in: spaceIds } } } : {}) },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-      select: {
-        id: true,
-        eventType: true,
-        createdAt: true,
-        task: {
-          select: { title: true },
-        },
-      },
-    });
+    const taskEvents = await memberRecentJobEvents(this.prisma, employeeId, spaceIds);
 
     for (const event of taskEvents) {
       activities.push({
@@ -176,19 +140,7 @@ export class EmployeeStatsService {
     }
 
     // Get recent time entries
-    const timeEntries = await this.prisma.timeEntry.findMany({
-      where: { userId: employeeId, ...(spaceIds ? { locationId: { in: spaceIds } } : {}) },
-      orderBy: { clockInAt: 'desc' },
-      take: 5,
-      select: {
-        id: true,
-        clockInAt: true,
-        clockOutAt: true,
-        location: {
-          select: { name: true },
-        },
-      },
-    });
+    const timeEntries = await memberRecentClockIns(this.prisma, employeeId, spaceIds);
 
     for (const entry of timeEntries) {
       activities.push({

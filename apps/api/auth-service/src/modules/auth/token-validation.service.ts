@@ -8,6 +8,7 @@ import {
   tokenIssuedBeforeCutoff,
   memberAccessOf,
   type SharedSpaceGrant,
+  workspaceNames,
 } from '@hbcfield/shared';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -195,7 +196,7 @@ export class TokenValidationService {
         const spaceIds = sharedGrants.map((g) => g.spaceId);
         const ownerOrgIds = [...new Set(sharedGrants.map((g) => g.ownerOrgId))];
         const [spaces, orgs] = await Promise.all([
-          this.prisma.companyLocation.findMany({ where: { id: { in: spaceIds } }, select: { id: true, name: true } }),
+          workspaceNames(this.prisma, spaceIds),
           this.prisma.organization.findMany({ where: { id: { in: ownerOrgIds } }, select: { id: true, name: true } }),
         ]);
         const spaceName = new Map(spaces.map((s) => [s.id, s.name]));

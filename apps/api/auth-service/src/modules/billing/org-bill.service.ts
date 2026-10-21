@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, orgWorkspaceModules } from '@hbcfield/shared';
 import {
   notEndedWhere,
   orgMonthlyCost,
@@ -54,8 +54,12 @@ export class OrgBillService {
         // would be a strange price to pay for something almost no org has.
         select: {
           addOns: true,
-          agreedMonthlyCents: true, agreedListCents: true, agreedUntil: true,
-          agreedNote: true, agreedSetAt: true, agreedSetById: true,
+          agreedMonthlyCents: true,
+          agreedListCents: true,
+          agreedUntil: true,
+          agreedNote: true,
+          agreedSetAt: true,
+          agreedSetById: true,
         },
       }),
       // A seat is an active member. No office/field split — deciding which side
@@ -84,10 +88,7 @@ export class OrgBillService {
           },
         },
       }),
-      this.prisma.companyLocation.findMany({
-        where: { organizationId, isActive: true },
-        select: { id: true, name: true, enabledModules: true },
-      }),
+      orgWorkspaceModules(this.prisma, organizationId),
       // The SAME counts the space's Modules tab shows (shared countBillableUsage).
       countBillableUsage(this.prisma, organizationId),
     ]);
@@ -95,8 +96,9 @@ export class OrgBillService {
     const spaceInput: SpaceModules[] = spaces.map((s) => {
       // A stale key left on a space must never reach an invoice as a line
       // nobody can switch off — filter to the catalogue on the way in.
-      const enabled = (Array.isArray(s.enabledModules) ? (s.enabledModules as unknown[]) : [])
-        .filter((k): k is string => typeof k === 'string' && MODULE_KEYS.has(k));
+      const enabled = (Array.isArray(s.enabledModules) ? (s.enabledModules as unknown[]) : []).filter(
+        (k): k is string => typeof k === 'string' && MODULE_KEYS.has(k),
+      );
 
       // Only a module the space actually switched on can carry a count.
       // Otherwise turning CRM off would still bill for the clients sitting in it.

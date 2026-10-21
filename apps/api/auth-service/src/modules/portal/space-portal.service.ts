@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PORTAL_TEMPLATES, templateToIntakeCategories } from '@hbcfield/shared';
+import { PORTAL_TEMPLATES, templateToIntakeCategories, workspaceInOrg } from '@hbcfield/shared';
 import { PortalServiceBase } from './portal-service.base';
 
 /** A workspace's own portal: creating it, finding it, its template, its addresses. */
@@ -20,10 +20,7 @@ export class SpacePortalService extends PortalServiceBase {
   }
 
   async createSpacePortal(data: { organizationId: string; spaceId: string; templateKey?: string; name?: string }) {
-    const space = await this.prisma.companyLocation.findFirst({
-      where: { id: data.spaceId, organizationId: data.organizationId },
-      select: { id: true },
-    });
+    const space = await workspaceInOrg(this.prisma, data.spaceId, data.organizationId);
     if (!space) throw new NotFoundException('Space not found');
     const template = PORTAL_TEMPLATES[data.templateKey || 'rental'] || PORTAL_TEMPLATES.rental;
     // Apartment entity ⇒ the Assets module must be on (fail before creating).

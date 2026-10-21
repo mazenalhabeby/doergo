@@ -1,6 +1,11 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
 import { Prisma, type InvoiceStatus } from '@prisma/client';
-import { invoiceNumberPrefix, invoiceTotalsFromSubtotal, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
+import {
+  invoiceNumberPrefix,
+  invoiceTotalsFromSubtotal,
+  PERSON_BRIEF_SELECT,
+  workspaceIssuerFacts,
+} from '@hbcfield/shared';
 import { dayStart, dayEnd, invoiceDay } from './work-source';
 import type { InvoiceUpdateFields } from '@hbcfield/shared/microservices';
 import { InvoiceServiceBase } from './invoice-service.base';
@@ -74,12 +79,7 @@ export class InvoiceEditService extends InvoiceServiceBase {
     // Another company: a draft takes the new company's number series. An issued number never changes.
     let renumber: string | null = null;
     if (data.legalEntityId !== undefined) {
-      const space = invoice.spaceId
-        ? await this.prisma.companyLocation.findFirst({
-            where: { id: invoice.spaceId, organizationId },
-            select: { legalEntityId: true, sourceCustomerId: true },
-          })
-        : null;
+      const space = invoice.spaceId ? await workspaceIssuerFacts(this.prisma, invoice.spaceId, organizationId) : null;
       const issuer = await this.issuingEntity(
         organizationId,
         data.legalEntityId,

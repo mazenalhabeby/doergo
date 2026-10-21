@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, workspaceInOrg } from '@hbcfield/shared';
 import { keepOrgUserIds } from '../../common/records/org-user-ids';
 import { CustomersService, type CrmCaller } from '../customers/customers.service';
 import { scopeWhereOn, scopeAllows, type SpaceScopeIds, crmCapsIn } from '@hbcfield/shared';
@@ -73,11 +73,14 @@ export abstract class PortalGuards {
     refs: { spaceId?: string | null; portalId?: string | null },
   ) {
     if (refs.spaceId) {
-      const space = await this.prisma.companyLocation.findFirst({ where: { id: refs.spaceId, organizationId }, select: { id: true } });
+      const space = await workspaceInOrg(this.prisma, refs.spaceId, organizationId);
       if (!space) throw new NotFoundException('Space not found');
     }
     if (refs.portalId) {
-      const portal = await this.prisma.portal.findFirst({ where: { id: refs.portalId, organizationId }, select: { id: true } });
+      const portal = await this.prisma.portal.findFirst({
+        where: { id: refs.portalId, organizationId },
+        select: { id: true },
+      });
       if (!portal) throw new NotFoundException('Portal not found');
     }
   }
@@ -115,7 +118,10 @@ export abstract class PortalGuards {
     this.assertSpaceRefInScope(scope, refs.spaceId);
     if (refs.portalId !== undefined) {
       const portal = refs.portalId
-        ? await this.prisma.portal.findFirst({ where: { id: refs.portalId, organizationId, spaceId: { in: scope } }, select: { id: true } })
+        ? await this.prisma.portal.findFirst({
+            where: { id: refs.portalId, organizationId, spaceId: { in: scope } },
+            select: { id: true },
+          })
         : null;
       if (!portal) throw new NotFoundException('Portal not found');
     }
@@ -231,7 +237,12 @@ export abstract class PortalGuards {
   ) {
     if (!userId || !spaceId) return;
     await this.prisma.customerUnit.updateMany({
-      where: { organizationId, spaceId, residentUserId: userId, ...(exceptUnitId ? { id: { not: exceptUnitId } } : {}) },
+      where: {
+        organizationId,
+        spaceId,
+        residentUserId: userId,
+        ...(exceptUnitId ? { id: { not: exceptUnitId } } : {}),
+      },
       data: { residentUserId: null },
     });
   }

@@ -1,5 +1,12 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
-import { cleanRateCents, currencyOrNull, invoiceTotals, lineAmount, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
+import {
+  cleanRateCents,
+  currencyOrNull,
+  invoiceTotals,
+  lineAmount,
+  PERSON_BRIEF_SELECT,
+  workspaceInvoiceHeader,
+} from '@hbcfield/shared';
 import { dayStart, dayEnd, invoiceDay } from './work-source';
 import { InvoiceServiceBase } from './invoice-service.base';
 import { type invoiceCreate, type RpcRequest } from '@hbcfield/shared/microservices';
@@ -21,18 +28,7 @@ export class InvoiceCreateService extends InvoiceServiceBase {
     // an id from another tenant must not become this invoice's workspace.
     let foundSpaceId: string | null = null;
     if (data.spaceId) {
-      const space = await this.prisma.companyLocation.findFirst({
-        where: { id: data.spaceId, organizationId: data.organizationId },
-        select: {
-          name: true,
-          contactName: true,
-          contactEmail: true,
-          address: true,
-          currency: true,
-          legalEntityId: true,
-          sourceCustomerId: true,
-        },
-      });
+      const space = await workspaceInvoiceHeader(this.prisma, data.spaceId, data.organizationId);
       spaceCurrencyValue = space?.currency ?? null;
       spaceEntityId = space?.legalEntityId ?? null;
       spaceCustomerId = space?.sourceCustomerId ?? null;

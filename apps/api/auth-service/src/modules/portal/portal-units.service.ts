@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { type CrmCaller } from '../customers/customers.service';
-import { SELECTABLE_ASSET_WHERE, type SpaceScopeIds } from '@hbcfield/shared';
+import { SELECTABLE_ASSET_WHERE, type SpaceScopeIds, clientAssets } from '@hbcfield/shared';
 import { PortalServiceBase } from './portal-service.base';
 import { withAuthors } from '../../common/records/with-authors';
 
@@ -126,34 +126,7 @@ export class PortalUnitsService extends PortalServiceBase {
   async listAssets(data: { organizationId: string; customerId?: string; assetId?: string | null }) {
     if (!data.customerId && !data.assetId) return [];
 
-    const rows = await this.prisma.asset.findMany({
-      where: {
-        organizationId: data.organizationId,
-        OR: [
-          /*
-            What they hold, minus what has been retired. This is the list a
-            client picks from to raise a request, and a van handed back and
-            taken off the books last spring is not something to raise one
-            against — its history stays on the organization's side.
-
-            The one their login is CONFINED to is kept whatever its state: it
-            is the whole of their portal, and hiding it would leave them signed
-            in to an empty screen with no way to ask why.
-          */
-          ...(data.customerId ? [{ customerId: data.customerId, ...SELECTABLE_ASSET_WHERE }] : []),
-          ...(data.assetId ? [{ id: data.assetId }] : []),
-        ],
-      },
-      select: {
-        id: true,
-        name: true,
-        locationAddress: true,
-        details: true,
-        category: { select: { id: true, name: true, config: true } },
-      },
-      orderBy: { name: 'asc' },
-      take: 200,
-    });
+    const rows = await clientAssets(this.prisma, data);
 
     return rows;
   }

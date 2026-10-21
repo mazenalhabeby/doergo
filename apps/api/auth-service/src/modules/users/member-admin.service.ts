@@ -1,6 +1,6 @@
 import { MemberOffboarding } from '../../common/member-offboarding/member-offboarding.service';
 import { SessionEvents } from '../../common/session-events/session-events.service';
-import { Role } from '@hbcfield/shared';
+import { Role, memberWorkFootprint } from '@hbcfield/shared';
 import { Injectable, Logger, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
 import { RemoveMemberDto } from './dto';
@@ -78,9 +78,7 @@ export class MemberAdminService {
       });
 
       if (adminCount === 0) {
-        throw new BadRequestException(
-          'Cannot remove the last admin from the organization.',
-        );
+        throw new BadRequestException('Cannot remove the last admin from the organization.');
       }
     }
 
@@ -92,30 +90,41 @@ export class MemberAdminService {
     // SetNull relations (tokens, push, schedules, assignments, time entries, etc.)
     // clear automatically; the only ephemeral Restrict blocker is invitations this
     // user created, cleared explicitly below.
+    // task-service's tables through its published reader (shared data/member-work), in one snapshot with ours.
     const [
-      tasksCreated, tasksAssigned, comments, attachments, taskEvents,
-      serviceReports, reportDefs, reportSchedules, recurringTemplates,
-      invoices, supportTickets, messages, timeEntries, overtime,
+      tasksCreated,
+      tasksAssigned,
+      comments,
+      attachments,
+      taskEvents,
+      serviceReports,
+      reportDefs,
+      reportSchedules,
+      recurringTemplates,
+      supportTickets,
+      messages,
+      timeEntries,
+      overtime,
+      invoices,
     ] = await this.prisma.$transaction([
-      this.prisma.task.count({ where: { createdById: memberId } }),
-      this.prisma.task.count({ where: { assignedToId: memberId } }),
-      this.prisma.comment.count({ where: { userId: memberId } }),
-      this.prisma.attachment.count({ where: { uploadedById: memberId } }),
-      this.prisma.taskEvent.count({ where: { userId: memberId } }),
-      this.prisma.serviceReport.count({ where: { completedById: memberId } }),
-      this.prisma.reportDefinition.count({ where: { createdById: memberId } }),
-      this.prisma.reportSchedule.count({ where: { createdById: memberId } }),
-      this.prisma.recurringTaskTemplate.count({ where: { createdById: memberId } }),
+      ...memberWorkFootprint(this.prisma, memberId),
       this.prisma.invoice.count({ where: { createdById: memberId } }),
-      this.prisma.supportTicket.count({ where: { createdById: memberId } }),
-      this.prisma.message.count({ where: { senderId: memberId } }),
-      this.prisma.timeEntry.count({ where: { userId: memberId } }),
-      this.prisma.overtimeRequest.count({ where: { technicianId: memberId } }),
     ]);
     const hasHistory = [
-      tasksCreated, tasksAssigned, comments, attachments, taskEvents,
-      serviceReports, reportDefs, reportSchedules, recurringTemplates,
-      invoices, supportTickets, messages, timeEntries, overtime,
+      tasksCreated,
+      tasksAssigned,
+      comments,
+      attachments,
+      taskEvents,
+      serviceReports,
+      reportDefs,
+      reportSchedules,
+      recurringTemplates,
+      invoices,
+      supportTickets,
+      messages,
+      timeEntries,
+      overtime,
     ].some((n) => n > 0);
 
     if (!hasHistory) {
@@ -162,16 +171,10 @@ export class MemberAdminService {
   /**
    * Admin resets a member's password, returning a temporary password
    */
-  async adminResetMemberPassword(
-    memberId: string,
-    organizationId: string,
-    requesterId: string,
-  ) {
+  async adminResetMemberPassword(memberId: string, organizationId: string, requesterId: string) {
     // Can't reset own password via this method
     if (memberId === requesterId) {
-      throw new BadRequestException(
-        'Use the change password feature to update your own password',
-      );
+      throw new BadRequestException('Use the change password feature to update your own password');
     }
 
     // Verify member exists and belongs to the organization

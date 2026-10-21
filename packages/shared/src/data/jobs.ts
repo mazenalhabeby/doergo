@@ -2,6 +2,7 @@
  * Published reads of task-service's tables (`Task`, `TimeEntry`, `ConversationMember`, `SupportTicket`)
  * — see db.ts. Owner: task-service. Columns here are a contract: changing one is a change for every caller.
  */
+import { SELECTABLE_ASSET_WHERE } from '../assets/record';
 import type { On } from './db';
 
 /** A workspace-scoped caller sees only jobs in its workspaces; undefined = org-wide, [] = nothing. */
@@ -129,4 +130,42 @@ export async function ticketCreatorId(db: On<'supportTicket', 'findUnique'>, tic
   return (
     (await db.supportTicket.findUnique({ where: { id: ticketId }, select: { createdById: true } }))?.createdById ?? null
   );
+}
+
+/** Is this asset the organization's? */
+export async function assetInOrg(db: On<'asset', 'findFirst'>, assetId: string, organizationId: string) {
+  return !!(await db.asset.findFirst({ where: { id: assetId, organizationId }, select: { id: true } }));
+}
+
+/** How many of these workflows are the organization's. */
+export function countWorkflowsInOrg(db: On<'statusWorkflow', 'count'>, ids: string[], organizationId: string) {
+  return db.statusWorkflow.count({ where: { id: { in: ids }, organizationId } });
+}
+
+/**
+ * What a client holds (minus what was retired) plus the one their login is confined to, whatever its
+ * state — the list a portal client raises a request against. ≤ 200, by name.
+ */
+export function clientAssets(
+  db: On<'asset', 'findMany'>,
+  input: { organizationId: string; customerId?: string; assetId?: string | null },
+) {
+  return db.asset.findMany({
+    where: {
+      organizationId: input.organizationId,
+      OR: [
+        ...(input.customerId ? [{ customerId: input.customerId, ...SELECTABLE_ASSET_WHERE }] : []),
+        ...(input.assetId ? [{ id: input.assetId }] : []),
+      ],
+    },
+    select: {
+      id: true,
+      name: true,
+      locationAddress: true,
+      details: true,
+      category: { select: { id: true, name: true, config: true } },
+    },
+    orderBy: { name: 'asc' },
+    take: 200,
+  });
 }

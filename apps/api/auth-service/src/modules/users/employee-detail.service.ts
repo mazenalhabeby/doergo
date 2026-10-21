@@ -1,4 +1,4 @@
-import { Role } from '@hbcfield/shared';
+import { Role, memberInAnyOf } from '@hbcfield/shared';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
 import { GetEmployeeDetailDto } from './dto';
@@ -13,14 +13,9 @@ import { EmployeeStatsService } from './employee-stats.service';
  */
 @Injectable()
 export class EmployeeDetailService {
-
   @Inject(EmployeeStatsService) private readonly stats!: EmployeeStatsService;
 
-
-
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Get full employee detail with stats
@@ -111,10 +106,7 @@ export class EmployeeDetailService {
       // Reachable only through a space they were both put in. Reads as "not
       // found" rather than "forbidden": whether a given colleague exists is
       // itself something this caller has no business learning.
-      const shared = await this.prisma.spaceAssignment.findFirst({
-        where: { userId: id, spaceId: { in: viewerSpaceIds as string[] } },
-        select: { id: true },
-      });
+      const shared = await memberInAnyOf(this.prisma, id, viewerSpaceIds as string[]);
       if (!shared) throw new NotFoundException('Employee not found');
     }
 

@@ -107,3 +107,6 @@ export * from './access/assignment-permissions';
 export * from './data/db';
 export * from './data/members';
 export * from './data/jobs';
+export * from './data/workspaces';
+export * from './data/invoicing';
+export * from './data/member-work';

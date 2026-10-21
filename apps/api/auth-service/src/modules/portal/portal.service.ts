@@ -5,6 +5,7 @@ import {
   DEFAULT_PORTAL_FEATURES,
   scopeWhereOn,
   type SpaceScopeIds,
+  workspaceInOrg,
 } from '@hbcfield/shared';
 import { configCache, cacheConfig } from './portal-helpers';
 import { PortalServiceBase } from './portal-service.base';
@@ -83,10 +84,7 @@ export class PortalService extends PortalServiceBase {
 
     // Validate the routing space belongs to this org (fk-less link, defence in depth).
     if (data.spaceId) {
-      const space = await this.prisma.companyLocation.findFirst({
-        where: { id: data.spaceId, organizationId: data.organizationId },
-        select: { id: true },
-      });
+      const space = await workspaceInOrg(this.prisma, data.spaceId, data.organizationId);
       if (!space) throw new NotFoundException('Space not found');
     }
 

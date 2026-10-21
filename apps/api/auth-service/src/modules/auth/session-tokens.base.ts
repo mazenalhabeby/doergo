@@ -1,4 +1,4 @@
-import { notEndedWhere, DEFAULT_REFRESH_TOKEN_TTL } from '@hbcfield/shared';
+import { notEndedWhere, DEFAULT_REFRESH_TOKEN_TTL, memberWorkspaceModules } from '@hbcfield/shared';
 import { Injectable, Logger } from '@nestjs/common';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -50,24 +50,7 @@ export abstract class SessionTokensBase {
     orgFallback: string[] = [],
   ): Promise<string[]> {
     try {
-      const spaces = await this.prisma.companyLocation.findMany({
-        where: {
-          organizationId,
-          isActive: true,
-          ...(isAdminUser
-            ? {}
-            : {
-                spaceAssignments: {
-                  some: {
-                    userId,
-                    ...notEndedWhere(),
-                  },
-                },
-              }),
-        },
-        select: { enabledModules: true },
-        take: 200,
-      });
+      const spaces = await memberWorkspaceModules(this.prisma, organizationId, userId, isAdminUser);
       const out = new Set<string>();
       for (const s of spaces) {
         const own = s.enabledModules as string[] | null;

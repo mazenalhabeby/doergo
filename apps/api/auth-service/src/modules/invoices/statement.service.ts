@@ -1,5 +1,6 @@
+import type { Prisma } from '@prisma/client';
 import { Injectable, HttpStatus } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, memberClockIns, memberTermsForStatement, memberFinishedJobs } from '@hbcfield/shared';
 import {
   personName,
   zoneOf,
@@ -193,29 +194,10 @@ export class StatementService {
 
   /** The jobs this person did (exactly as the invoice counts them), where they work, and their clock-ins. */
   private async workOf(organizationId: string, memberId: string, from: string | null, to: string | null) {
-    const tasks = await this.prisma.task.findMany({
-      where: {
-        organizationId,
-        status: FINISHED,
-        AND: [
-          {
-            OR: [
-              // Whoever completed the report did the work; with no report, the assignee.
-              { serviceReport: { completedById: memberId } },
-              { serviceReport: null, assignedToId: memberId },
-            ],
-          },
-          jobsInPeriod(from, to),
-        ],
-      },
-      select: {
-        id: true,
-        updatedAt: true,
-        spaceId: true,
-        space: { select: { id: true, name: true, timezone: true, costRateCents: true } },
-        serviceReport: { select: { workDuration: true, completedAt: true } },
-      },
-      orderBy: { updatedAt: 'asc' },
+    const tasks = await memberFinishedJobs(this.prisma, {
+      organizationId,
+      memberId,
+      period: jobsInPeriod(from, to) as Prisma.TaskWhereInput,
     });
 
     /*
@@ -224,33 +206,8 @@ export class StatementService {
       and closed nothing. Their billing there decides how their time is counted.
     */
     const [assignments, clockIns] = await Promise.all([
-      this.prisma.spaceAssignment.findMany({
-        where: { userId: memberId, organizationId },
-        select: {
-          id: true,
-          spaceId: true,
-          costRateCents: true,
-          billBy: true,
-          space: { select: { id: true, name: true, timezone: true, costRateCents: true } },
-        },
-      }),
-      this.prisma.timeEntry.findMany({
-        where: {
-          userId: memberId,
-          organizationId,
-          approvalStatus: { not: 'REJECTED' },
-          ...clockInWindow(from, to),
-        },
-        select: {
-          userId: true,
-          locationId: true,
-          clockInAt: true,
-          clockOutAt: true,
-          paidMinutes: true,
-          totalMinutes: true,
-          location: { select: { timezone: true } },
-        },
-      }),
+      memberTermsForStatement(this.prisma, memberId, organizationId),
+      memberClockIns(this.prisma, { organizationId, memberId, window: clockInWindow(from, to) }),
     ]);
     return { tasks, assignments, clockIns };
   }

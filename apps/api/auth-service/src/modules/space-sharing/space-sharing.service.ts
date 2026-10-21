@@ -1,6 +1,6 @@
 import type { Prisma, ShareRequestStatus } from '@prisma/client';
 import { Injectable, HttpStatus } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, workspaceNames, workspaceToShare } from '@hbcfield/shared';
 import { MemberOffboarding } from '../../common/member-offboarding/member-offboarding.service';
 
 import { type Level } from '@hbcfield/shared/microservices';
@@ -24,10 +24,7 @@ export class SpaceSharingService {
   }
 
   private async ownerAssertSpace(spaceId: string, ownerOrgId: string) {
-    return this.prisma.companyLocation.findFirst({
-      where: { id: spaceId, organizationId: ownerOrgId },
-      select: { id: true, name: true, organizationId: true },
-    });
+    return workspaceToShare(this.prisma, spaceId, ownerOrgId);
   }
 
   // ── OWNER: create/invite a share ──────────────────────────────────────────
@@ -172,7 +169,7 @@ export class SpaceSharingService {
     const spaceIds = shares.map((s) => s.spaceId);
     const ownerIds = [...new Set(shares.map((s) => s.ownerOrgId))];
     const [spaces, orgs] = await Promise.all([
-      this.prisma.companyLocation.findMany({ where: { id: { in: spaceIds } }, select: { id: true, name: true } }),
+      workspaceNames(this.prisma, spaceIds),
       this.prisma.organization.findMany({ where: { id: { in: ownerIds } }, select: { id: true, name: true } }),
     ]);
     const spaceName = new Map(spaces.map((s) => [s.id, s.name]));

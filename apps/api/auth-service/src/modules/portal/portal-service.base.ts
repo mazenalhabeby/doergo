@@ -1,6 +1,12 @@
 import type { Portal, Prisma } from '@prisma/client';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { personName, DEFAULT_PORTAL_FEATURES, scopeWhereOn, type SpaceScopeIds } from '@hbcfield/shared';
+import {
+  personName,
+  DEFAULT_PORTAL_FEATURES,
+  scopeWhereOn,
+  type SpaceScopeIds,
+  workspaceModulesWithOrg,
+} from '@hbcfield/shared';
 import { PortalGuards } from './portal-guards.base';
 
 /**
@@ -56,10 +62,7 @@ export abstract class PortalServiceBase extends PortalGuards {
    * thing it gates does not fail open, it fails permanently.
    */
   protected async assertApartmentsModule(organizationId: string, spaceId: string) {
-    const space = await this.prisma.companyLocation.findFirst({
-      where: { id: spaceId, organizationId },
-      select: { enabledModules: true, organization: { select: { enabledModules: true } } },
-    });
+    const space = await workspaceModulesWithOrg(this.prisma, spaceId, organizationId);
     // A space's own list wins; an absent one means the space has never been
     // configured and inherits the organization's — the same precedence every
     // other module gate here applies.

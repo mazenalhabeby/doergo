@@ -1,5 +1,5 @@
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, countReportsInOrg, countJobsInOrg } from '@hbcfield/shared';
 import {
   parseDayKey,
   parseCurrency,
@@ -185,8 +185,8 @@ export abstract class InvoiceServiceBase {
     const taskIds = [...new Set(items.map((i) => i.taskId).filter((x): x is string => !!x))];
     const reportIds = [...new Set(items.map((i) => i.reportId).filter((x): x is string => !!x))];
     const [tasks, reports] = await Promise.all([
-      taskIds.length ? this.prisma.task.count({ where: { id: { in: taskIds }, organizationId } }) : 0,
-      reportIds.length ? this.prisma.serviceReport.count({ where: { id: { in: reportIds }, organizationId } }) : 0,
+      taskIds.length ? countJobsInOrg(this.prisma, taskIds, organizationId) : 0,
+      reportIds.length ? countReportsInOrg(this.prisma, reportIds, organizationId) : 0,
     ]);
     return tasks === taskIds.length && reports === reportIds.length
       ? null
