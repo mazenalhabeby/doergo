@@ -14,7 +14,7 @@ import {
   crmCreateScope,
   type CrmReach,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { CustomersService, withContactKeys, type CrmCaller } from './customers.service';
 
 /**

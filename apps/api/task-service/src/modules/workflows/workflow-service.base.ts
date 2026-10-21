@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
 import { assertFoundInOrg } from '@hbcfield/shared';
 

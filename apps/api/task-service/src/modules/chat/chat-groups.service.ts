@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { CHAT_CODES, CHAT_GROUP_MAX_MEMBERS, SERVICE_NAMES, mayManageGroup, parseGroupTitle } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { CHAT_USER_SELECT, shapeConversation } from './chat-shape';
 import { findMembership } from './chat-membership';
 import { ChatReachService } from './chat-reach.service';

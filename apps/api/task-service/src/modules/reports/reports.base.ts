@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { MediaSigner, type StoredFile } from '../../common/storage/media-signer.service';
 import { TaskAccessService } from '../../common/task-access/task-access.service';
 

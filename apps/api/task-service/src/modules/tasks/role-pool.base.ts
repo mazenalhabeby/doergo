@@ -16,7 +16,7 @@ import {
   type RoleCandidate,
 } from '@hbcfield/shared';
 import { TaskEventType } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { CoverService } from '../technicians/cover.service';
 import { TasksService } from './tasks.service';
 import { holdsOpenRole as holdsOpenRoleRule } from '@hbcfield/shared';

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { scoreTemplateBinding } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { DocumentStorageService } from './document-storage.service';
 import { DocumentLookupService } from './document-lookup.service';
 import { DocumentNotifierService } from './document-notifier.service';

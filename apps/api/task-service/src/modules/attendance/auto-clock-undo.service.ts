@@ -10,7 +10,7 @@ import {
   success,
   type OccurrenceEvidence,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { judgeOccurrence } from '../../common/occurrence.util';
 import { AUTO_UNDO_EVENT, WORK_EVENTS } from './auto-clock-helpers';
 import { AutoClockService } from './auto-clock.service';

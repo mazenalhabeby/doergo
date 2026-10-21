@@ -12,7 +12,7 @@ import {
   PERSON_BRIEF_SELECT,
   type RoutingConditions,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * What every support path shares: the SLA job, a ticket an agent may act on,

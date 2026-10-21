@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException, ConflictException, Logger } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { type PermissionSet, SHARED_ROLE_WHERE, roleUsableOnAssignment } from '@hbcfield/shared';
 import { SPACE_PERMISSION_KEYS } from './space-roles-helpers';
 import type { Prisma } from '@prisma/client';

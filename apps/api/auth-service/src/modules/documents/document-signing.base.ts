@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { nextPendingStep, maySignStep, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { type DocumentActor } from './document-common';
 import { DocumentStorageService } from './document-storage.service';
 import { DocumentLookupService } from './document-lookup.service';

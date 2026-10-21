@@ -17,7 +17,7 @@ import {
   type SupportedLocale,
   normalizeEmail,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { CustomerSignLinkService } from './customer-sign-link.service';
 
 /**

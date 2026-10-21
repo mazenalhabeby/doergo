@@ -14,7 +14,7 @@ import {
   type MemberAutoClockSettings,
 } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { ShiftResolverService } from './shift-resolver.service';
 import { approvedRequestsAround, dayRequestEffect } from './approved-requests';
 import { dedupeById } from './auto-clock-helpers';

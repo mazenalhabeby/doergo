@@ -10,7 +10,7 @@ import { ENTRY_SERVICES } from '../entry-services';
 import { AttendanceReportService } from '../attendance-report.service';
 import { ShiftResolverService } from '../shift-resolver.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { SERVICE_NAMES, QUEUE_NAMES } from '@hbcfield/shared';
 import { CountedTimeService } from '../counted-time.service';
 import { BreakRulesService } from '../break-rules.service';

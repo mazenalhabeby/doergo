@@ -6,6 +6,8 @@ import {
   analyzeMigration,
   blockingErrors,
   checkChanges,
+  dropRelocations,
+  LEGACY_MIGRATIONS_DIR,
   parseNameStatus,
   reportIsBlocking,
   DEFAULT_MIGRATIONS_DIR,
@@ -160,6 +162,22 @@ test('parseNameStatus keeps migration SQL and classifies the change', () => {
     `M\tapps/web-app/src/page.tsx`,
   ].join('\n');
   assert.deepEqual(parseNameStatus(out).map((c) => c.status), ['added', 'modified', 'deleted']);
+});
+
+test('a migration MOVED to the schema package (same name, same SQL) is neither deleted nor new', () => {
+  const old = `${LEGACY_MIGRATIONS_DIR}/20250101_a/migration.sql`;
+  const moved = `${DEFAULT_MIGRATIONS_DIR}/20250101_a/migration.sql`;
+  const fresh = `${DEFAULT_MIGRATIONS_DIR}/20261021_b/migration.sql`;
+  const changes = [
+    { status: 'deleted' as const, path: old },
+    { status: 'added' as const, path: moved },
+    { status: 'added' as const, path: fresh },
+  ];
+  const same = dropRelocations(changes, () => 'DROP TABLE x;', () => 'DROP TABLE x;');
+  assert.deepEqual(same.map((c) => c.path), [fresh]);
+  // A "move" that also changed the SQL is an edit: both halves stay and the deletion blocks.
+  const edited = dropRelocations(changes, () => 'CREATE TABLE x (id text);', () => 'DROP TABLE x;');
+  assert.equal(edited.length, 3);
 });
 
 test('editing or deleting an existing migration blocks', () => {

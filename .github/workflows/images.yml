@@ -204,8 +204,8 @@ jobs:
         # migrations" for a migration that is sitting right there in the tree.
         run: |
           ref="ghcr.io/${{ needs.meta.outputs.owner }}/hbcfield-auth-service:${{ needs.meta.outputs.sha }}"
-          tree=$(find apps/api/auth-service/prisma/migrations -mindepth 1 -maxdepth 1 -type d -name '[0-9]*' | wc -l | tr -d ' ')
-          image=$(docker run --rm --entrypoint sh "$ref" -c 'ls -1 /app/apps/api/auth-service/prisma/migrations | grep -c "^[0-9]"')
+          tree=$(find packages/db/prisma/migrations -mindepth 1 -maxdepth 1 -type d -name '[0-9]*' | wc -l | tr -d ' ')
+          image=$(docker run --rm --entrypoint sh "$ref" -c 'ls -1 /app/packages/db/prisma/migrations | grep -c "^[0-9]"')
           echo "migrations: tree $tree, image $image"
           [ "$tree" = "$image" ]
       - name: Summary

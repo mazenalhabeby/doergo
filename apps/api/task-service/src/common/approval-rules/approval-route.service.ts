@@ -15,7 +15,7 @@ import {
   type ApprovalDecider,
   type ApprovalRouting,
 } from '@hbcfield/shared';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../notification-routing.service';
 import type { ApprovalRouteInput as SharedApprovalRouteInput } from '@hbcfield/shared/microservices';
 

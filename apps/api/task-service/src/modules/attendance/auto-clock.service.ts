@@ -19,7 +19,7 @@ import {
 } from '@hbcfield/shared';
 import { sendRpc, userSetAutoClockConsent } from '@hbcfield/shared/microservices';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { AUTO_UNDO_EVENT, EntryRef, MEMBER_AUTO_CLOCK_SELECT, memberAutoClock } from './auto-clock-helpers';
 
 export { AUTO_UNDO_EVENT } from './auto-clock-helpers';

@@ -9,7 +9,7 @@ import {
   toISODateString,
   type RequestPrecheck,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { ApprovalRulesService } from '../../common/approval-rules/approval-rules.service';
 import { ShiftResolverService } from '../attendance/shift-resolver.service';
 import { CoverService } from './cover.service';

@@ -11,7 +11,7 @@ import {
 } from '@hbcfield/shared';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { resolveProfileBadges, orgPermissionFields } from './auth-common';
 import { SessionTokensService } from './session-tokens.service';
 

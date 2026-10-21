@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { MediaSigner } from '../../common/storage/media-signer.service';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { portalRequestReference, type SpaceScopeIds } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { TaskAssignmentService } from './task-assignment.service';

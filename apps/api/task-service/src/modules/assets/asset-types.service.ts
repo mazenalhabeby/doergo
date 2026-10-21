@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { success } from '@hbcfield/shared';
 import { AssetAccessService, type AssetActor } from './asset-access.service';
 

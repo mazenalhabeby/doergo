@@ -7,7 +7,7 @@ import { AssetAccessService } from '../asset-access.service';
 import { AssetActivityService } from '../asset-activity.service';
 import { AssetHoldersService } from '../asset-holders.service';
 import { AssetCustodyService } from '../asset-custody.service';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * Audit AS-B1 — an asset's value is its history.

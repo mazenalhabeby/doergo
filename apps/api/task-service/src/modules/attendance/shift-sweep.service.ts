@@ -1,6 +1,6 @@
 import { Injectable, Inject, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { personName, success, SERVICE_NAMES } from '@hbcfield/shared';
 import { AttendanceRoutingService } from './attendance-routing.service';
 import { NoShowSettleService } from './no-show-settle.service';

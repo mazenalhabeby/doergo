@@ -15,7 +15,7 @@ import {
 import { userSelect } from './space-roles-helpers';
 import { SpaceRolesBase } from './space-roles.base';
 import { RoleWriter } from './role-writer.service';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import type { SpaceRoleWrite } from '@hbcfield/shared/microservices';
 
 export { type SpaceMemberAuthority } from './space-roles-helpers';

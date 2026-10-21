@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { countBillableUsage, success } from '@hbcfield/shared';
 
 export type { ModuleUsageCounts } from '@hbcfield/shared';

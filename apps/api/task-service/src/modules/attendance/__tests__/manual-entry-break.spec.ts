@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { entryServicesOf, type ApprovalServiceParts } from './approval.service.fixture';
 import { ENTRY_SERVICES } from '../entry-services';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { CountedTimeService } from '../counted-time.service';
 import { BreakRulesService } from '../break-rules.service';
 import { BreakReminderService } from '../break-reminder.service';

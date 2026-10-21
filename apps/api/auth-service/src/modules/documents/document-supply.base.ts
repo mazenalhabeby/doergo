@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, Optional } from '@nestjs/common';
 import { personName, memberMaySupply, checkScan } from '@hbcfield/shared';
 import { DocumentReadQueue } from './document-read-queue.service';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { type DocumentActor } from './document-common';
 import { DocumentStorageService } from './document-storage.service';
 import { DocumentLookupService } from './document-lookup.service';

@@ -5,7 +5,7 @@ import { Role } from '@hbcfield/shared';
 import { UsersService } from '../users.service';
 import { USERS_SERVICES } from '../users-services';
 import { MemberAccessChecksService } from '../member-access-checks.service';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * Member corrections from the 2026-10-09 audit.

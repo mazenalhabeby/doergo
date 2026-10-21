@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { writeRateChange, RateChangeError, parseCurrency, CURRENCY_INVALID_MESSAGE } from '@hbcfield/shared';
 import { Injectable, HttpStatus } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { industryUsesExternalWorkers } from '@hbcfield/shared';
 import { leavePolicyOf } from './onboarding-helpers';
 

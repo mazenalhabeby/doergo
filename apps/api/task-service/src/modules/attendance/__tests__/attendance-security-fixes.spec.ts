@@ -13,7 +13,7 @@ import { breakServicesOf, type BreakServiceParts } from './break.service.fixture
 import { BreakRulesService } from '../break-rules.service';
 import { BreakReminderService } from '../break-reminder.service';
 import { CountedTimeService } from '../counted-time.service';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { TimeOffDecisionService } from '../../technicians/time-off-decision.service';
 import { assetExpenseParts } from '../../assets/__tests__/asset-expense.service.fixture';
 import { clockEventEntry } from '../clock-event';

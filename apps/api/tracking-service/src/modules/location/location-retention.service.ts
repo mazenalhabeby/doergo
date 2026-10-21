@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { runWithCronLock } from '@hbcfield/shared';
 
 /** Keeping GPS history only as long as it is needed: the nightly prune. */

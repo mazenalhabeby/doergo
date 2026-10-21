@@ -2,7 +2,7 @@ import type { Prisma } from '@prisma/client';
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { isTeamColor, SERVICE_NAMES, type RoutingConditions } from '@hbcfield/shared';
 import { sendRpc, supportTicketsUnassignTeam } from '@hbcfield/shared/microservices';
 

@@ -3,7 +3,7 @@ import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@ne
 // A value import here would load that loop before this class exists ("Class extends value undefined").
 import type { RolePoolService } from './role-pool.service';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { personName, TaskStatus, credentialStanding, credentialBlocks } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { syncTaskChatCrew } from '../chat/chat-tasks.service';

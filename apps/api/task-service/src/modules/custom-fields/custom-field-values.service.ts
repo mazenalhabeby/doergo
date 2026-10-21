@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
 

@@ -2,7 +2,7 @@ import { MemberOffboarding } from '../../common/member-offboarding/member-offboa
 import { Role } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import * as bcrypt from 'bcryptjs';
 
 /** A member deleting their own account. */

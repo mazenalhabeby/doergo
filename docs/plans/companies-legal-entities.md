@@ -71,7 +71,7 @@ two logins, split data and two bills. What actually differs is the identity on t
 
 ## Phase 4 runbook — moving HBC GmbH into HBC USA (needs the user's OK)
 
-`apps/api/auth-service/prisma/merge-org-into.js` — preview by default, `--apply` writes, one transaction,
+`packages/db/prisma/merge-org-into.js` — preview by default, `--apply` writes, one transaction,
 re-runnable, refuses (lists by name) any client still referenced by the source org's jobs, assets,
 reports, documents, portal logins or invitations.
 

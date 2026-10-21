@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { runWithCronLock, SYNC_TOMBSTONE_RETENTION_DAYS } from '@hbcfield/shared';
 
 /**

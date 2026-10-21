@@ -1,5 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 
 /**
  * The user every onboarding path starts from: signed up, in no organization, not

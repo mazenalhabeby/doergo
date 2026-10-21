@@ -1,7 +1,7 @@
 import type { Prisma, JoinRequestStatus } from '@prisma/client';
 import { clampListLimit } from '@hbcfield/shared';
 import { Injectable, Logger, HttpStatus } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { BillingService } from '../billing/billing.service';
 import {
   Role,

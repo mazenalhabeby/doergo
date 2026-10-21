@@ -4,7 +4,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { Role } from '@hbcfield/shared';
 import { UsersService } from '../users.service';
 import { USERS_SERVICES } from '../users-services';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /*
   An admin password reset hands back a temporary password — it IS signing in

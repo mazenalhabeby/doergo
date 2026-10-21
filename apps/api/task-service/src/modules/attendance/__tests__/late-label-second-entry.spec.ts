@@ -22,7 +22,7 @@ import { BreakRulesService } from '../break-rules.service';
 import { BreakReminderService } from '../break-reminder.service';
 import { BREAK_SERVICES } from '../break-services';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { PresenceService } from '../presence/presence.service';
 
 // 15 Sept 2026, Vienna is UTC+2: the shift is 08:00–16:00 local = 06:00Z–14:00Z.

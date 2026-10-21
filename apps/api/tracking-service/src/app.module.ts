@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { PrismaModule } from './common/prisma/prisma.module';
+import { PrismaModule } from '@hbcfield/shared';
 import { LocationModule } from './modules/location/location.module';
 
 @Module({

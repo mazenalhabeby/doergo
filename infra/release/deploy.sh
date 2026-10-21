@@ -353,8 +353,11 @@ done
 
 # The image must carry the migrations the commit has: `migrate deploy` from a
 # stale image reports "No pending migrations" for one sitting in the tree.
-tree_migrations="$(git -C "$ROOT_DIR" ls-tree --name-only "$FULL_SHA" apps/api/auth-service/prisma/migrations/ | grep -c '/[0-9]' || true)"
-image_migrations="$(docker run --rm --entrypoint sh "$REGISTRY/hbcfield-auth-service:$FULL_SHA" -c 'ls -1 /app/apps/api/auth-service/prisma/migrations | grep -c "^[0-9]"' | tr -d '\r' | tail -1)"
+# The schema moved to packages/db (code-structure-fix 3.2); a rollback to an older commit still has it
+# under auth-service, so both places are asked — in the commit and in the image.
+tree_migrations="$(git -C "$ROOT_DIR" ls-tree --name-only "$FULL_SHA" packages/db/prisma/migrations/ | grep -c '/[0-9]' || true)"
+[ "$tree_migrations" != 0 ] || tree_migrations="$(git -C "$ROOT_DIR" ls-tree --name-only "$FULL_SHA" apps/api/auth-service/prisma/migrations/ | grep -c '/[0-9]' || true)"
+image_migrations="$(docker run --rm --entrypoint sh "$REGISTRY/hbcfield-auth-service:$FULL_SHA" -c 'd=/app/packages/db/prisma/migrations; [ -d "$d" ] || d=/app/apps/api/auth-service/prisma/migrations; ls -1 "$d" | grep -c "^[0-9]"' | tr -d '\r' | tail -1)"
 [ "$tree_migrations" = "$image_migrations" ] || fail "auth-service image has $image_migrations migrations, commit has $tree_migrations"
 log "migrations: commit $tree_migrations = image $image_migrations"
 

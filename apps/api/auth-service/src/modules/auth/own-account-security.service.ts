@@ -1,7 +1,7 @@
 
 import { BCRYPT_COST_FACTOR } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger, Optional } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { SessionEvents } from '../../common/session-events/session-events.service';
 import * as bcrypt from 'bcryptjs';
 

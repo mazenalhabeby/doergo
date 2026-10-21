@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { nextBreakRemindAt, parseBreakPlan, readLabelFacts, TimeEntryStatus } from '@hbcfield/shared';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 import { approvalFor } from './attendance-occurrence';
 
 /**

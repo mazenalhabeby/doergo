@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { normalizeLocale } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /** Most ids one heartbeat may name — a socket server holds one entry per connected member. */
 const MAX_ACTIVE_IDS = 5_000;

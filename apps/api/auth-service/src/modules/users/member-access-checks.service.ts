@@ -8,7 +8,7 @@ import {
   SHARED_ROLE_WHERE,
 } from '@hbcfield/shared';
 import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { TASK_CREATION_SCOPE_RANK } from './users-common';
 
 /**

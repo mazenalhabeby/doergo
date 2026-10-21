@@ -6,7 +6,7 @@ import {
   readLabelFacts,
   withExpectedEnd,
 } from '@hbcfield/shared';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 import { approvalFor } from './attendance-occurrence';
 
 const DEPARTURE_FLAGS = new Set(['EARLY_DEPARTURE', 'OVERTIME', 'PAST_DAILY_LIMIT']);

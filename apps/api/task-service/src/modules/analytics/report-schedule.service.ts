@@ -20,7 +20,7 @@ import {
   scheduledReportEmail,
   type SupportedLocale,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { AnalyticsService } from './analytics.service';
 import { ReportDefinition } from './query-engine';
 import type { ReportCadenceMessage, ReportScheduleInputMessage } from '@hbcfield/shared/microservices';

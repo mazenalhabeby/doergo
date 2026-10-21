@@ -1,6 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { scopeAllows, type SpaceScopeIds } from '@hbcfield/shared';
-import type { PrismaService } from './prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 
 /**
  * An id arriving from a client belongs to the tenant it claims to.

@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { type Prisma } from '@prisma/client';
 import { getRedisConfig } from '@hbcfield/shared';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * Per-org cache of StatusWorkflows (with statuses + capabilities).

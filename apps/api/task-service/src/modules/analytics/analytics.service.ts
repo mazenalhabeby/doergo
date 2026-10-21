@@ -7,7 +7,7 @@ import {
   type SpaceScopeIds,
   toISODateString,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { compile, ReportDefinition } from './query-engine';
 import { datasetCatalog } from './registry';
 import { TEMPLATES } from './templates';

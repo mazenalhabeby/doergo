@@ -1,7 +1,7 @@
 import type { ClientProxy } from '@nestjs/microservices';
 import { localDateKey } from '@hbcfield/shared';
 import { emitEvent, attendanceDayDecidedEvent } from '@hbcfield/shared/microservices';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 
 /** The entry just decided — enough to find the rest of its day. */
 export interface DecidedEntry {

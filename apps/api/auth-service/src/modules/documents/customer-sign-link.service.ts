@@ -12,7 +12,7 @@ import {
   type SignableDocument,
   normalizeEmail,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * The one way in for a client who has no login here.

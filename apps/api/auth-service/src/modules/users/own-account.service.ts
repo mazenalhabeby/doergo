@@ -7,7 +7,7 @@ import {
   normalizeEmail,
 } from '@hbcfield/shared';
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import * as bcrypt from 'bcryptjs';
 
 /**

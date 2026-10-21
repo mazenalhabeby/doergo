@@ -2,7 +2,7 @@ import { SessionEvents } from '../../../common/session-events/session-events.ser
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '../users.service';
 import { USERS_SERVICES } from '../users-services';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * A personal role (one person's permissions in one workspace, built in the

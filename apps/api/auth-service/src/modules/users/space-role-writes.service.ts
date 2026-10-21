@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { SpaceRoleWrite } from '@hbcfield/shared/microservices';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { jsonColumn } from '../../common/records/json-column';
 
 /**

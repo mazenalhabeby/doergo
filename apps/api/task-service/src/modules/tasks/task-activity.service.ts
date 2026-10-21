@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { createOnce } from '../../common/create-once.util';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { TaskEventType, success } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { commentAddedEvent, emitEvent } from '@hbcfield/shared/microservices';

@@ -7,7 +7,7 @@ import {
   toISODateString,
   type NoShowSettlement,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { ShiftResolverService } from './shift-resolver.service';
 

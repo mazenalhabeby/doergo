@@ -19,7 +19,7 @@ import {
 import { remoteApprovedAt, approvedRequestsAround, type DayRequestRow } from './approved-requests';
 import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
 import { alreadyClockedIn, sameRecordOrRefuse } from './attendance-occurrence';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { ClockInContextService } from './clock-in-context.service';
 import { ClockInRemoteService } from './clock-in-remote.service';
 import { ClockInSiteWriter } from './clock-in-site.writer';

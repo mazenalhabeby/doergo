@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
 import { TaskStatus, success } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';

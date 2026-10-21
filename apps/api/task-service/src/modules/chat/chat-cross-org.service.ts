@@ -6,7 +6,7 @@ import {
   type ChatParty,
   type ChatShareFacts,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * Chat ACROSS companies: who at another organization is reachable through a

@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { personName, chainProgress, type SignerStep, clampListLimit } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { type DocumentActor, typeScope } from './document-common';
 import { REGISTER_ROW_SELECT } from './document-registers-helpers';
 

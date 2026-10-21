@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { PlanningItemService, dayUpdate, fieldUpdate, planningDay, type PlanningItemInput } from '../../common/planning-items';
 
 const VALID_EPIC_STATUSES = ['OPEN', 'IN_PROGRESS', 'DONE'];

@@ -1,7 +1,7 @@
 import { Inject, BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { nextPendingStep, acceptedForSigning, MAX_BATCH_SIGN, chainProgress } from '@hbcfield/shared';
 import { signatureKey, sha256 } from '@hbcfield/shared/storage';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { type RequestContext, type SealSigner, decodeSignaturePng } from './document-common';
 import { DocumentStorageService } from './document-storage.service';
 import { DocumentLookupService } from './document-lookup.service';

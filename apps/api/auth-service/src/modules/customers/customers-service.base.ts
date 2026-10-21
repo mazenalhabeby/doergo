@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { keepOrgUserIds } from '../../common/records/org-user-ids';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { resolveCrmCaps, type CrmCaps } from '@hbcfield/shared';
 import {
   crmReachSelect,

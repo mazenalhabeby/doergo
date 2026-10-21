@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { isBlocking, credentialStanding, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
 import { readingOf } from './document-read-queue.service';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import {
   type DocumentActor,
   typeScope,

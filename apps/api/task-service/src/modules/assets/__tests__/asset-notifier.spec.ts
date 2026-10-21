@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { AssetNotifier } from '../asset-notifier.service';
 import { AssetResponsibleService } from '../asset-responsible.service';

@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
 import { clampListLimit } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 import { type PlatformAuditInput } from '@hbcfield/shared/microservices';
 const ACTOR_TYPES = new Set(['STAFF', 'STATIC_KEY', 'ANONYMOUS']);

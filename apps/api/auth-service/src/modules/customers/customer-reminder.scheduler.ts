@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { SERVICE_NAMES, runWithCronLock } from '@hbcfield/shared';
 import { emitEvent, customerReminderDueEvent } from '@hbcfield/shared/microservices';
 

@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { hashToken } from './auth-common';
 

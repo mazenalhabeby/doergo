@@ -2,7 +2,7 @@ import type { Prisma, SubscriptionStatus } from '@prisma/client';
 import { SessionEvents } from '../../common/session-events/session-events.service';
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { OrgBillService } from '../billing/org-bill.service';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { success, clampListLimit, platformCan } from '@hbcfield/shared';
 import { ORG_SELECT, LeanOrg, SUB_STATUSES, consoleOrgFields } from './platform-admin-helpers';
 

@@ -3,7 +3,7 @@ import { ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PDFDocument } from 'pdf-lib';
 import { inflateSync } from 'node:zlib';
 import { SERVICE_NAMES, MERGE_FIELDS } from '@hbcfield/shared';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';

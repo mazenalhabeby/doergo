@@ -5,7 +5,7 @@ import {
   clampListLimit,
   type SyncPullResponse,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { ChatService } from '../chat/chat.service';
 import { CHAT_USER_SELECT, visibleMessage } from '../chat/chat-shape';
 import { decodeCursor, encodeCursor, pageResponse } from './sync-cursor';

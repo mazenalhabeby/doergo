@@ -10,7 +10,7 @@ import {
   localPartsIn,
   toISODateString,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { CrewService } from './handover/crew.service';
 import { emitEvent, taskLeadNeededEvent } from '@hbcfield/shared/microservices';

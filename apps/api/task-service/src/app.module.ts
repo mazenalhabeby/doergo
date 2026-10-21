@@ -4,7 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ClientsModule } from '@nestjs/microservices';
 import { BullModule } from '@nestjs/bullmq';
 import { SERVICE_NAMES, createClientOptions, createBullMQConfig, QUEUE_NAMES } from '@hbcfield/shared';
-import { PrismaModule } from './common/prisma/prisma.module';
+import { PrismaModule } from '@hbcfield/shared';
 import { TaskAccessModule } from './common/task-access/task-access.module';
 import { ObjectStoreModule } from '@hbcfield/shared/storage';
 import { MediaSignerModule } from './common/storage/media-signer.service';

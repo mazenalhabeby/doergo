@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { OBJECT_STORE, ObjectStore, extensionForMime } from '@hbcfield/shared/storage';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { BODY_MAX, Session } from './worklog-helpers';
 

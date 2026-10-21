@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { KIND_SHAPE_LIMITS, normalizeKindShape, maxHolders } from '@hbcfield/shared';
 
 /** One holder as a request describes it: a member OR a client, never both. */

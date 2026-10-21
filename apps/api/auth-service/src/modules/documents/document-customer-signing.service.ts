@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { personName, nextPendingStep, type SignableDocument, type SignerStep } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { CUSTOMER_LINK_STATUSES, canRenderInline, roleLabel, downloadName } from './document-common';
 import { DocumentStorageService } from './document-storage.service';
 

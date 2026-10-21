@@ -1,7 +1,7 @@
 import { SERVICE_NAMES, Role } from '@hbcfield/shared';
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { emitEvent, notificationRoutingChangedEvent } from '@hbcfield/shared/microservices';
 
 /**

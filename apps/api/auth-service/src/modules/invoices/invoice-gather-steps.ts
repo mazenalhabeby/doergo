@@ -11,7 +11,7 @@ import {
   type RateBook,
 } from '@hbcfield/shared';
 import { jobHours } from './work-source';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 import type { InvoiceGatherMessage } from '@hbcfield/shared/microservices';
 
 /** The steps of `InvoiceGatherService.gather`, in the order it runs them. */

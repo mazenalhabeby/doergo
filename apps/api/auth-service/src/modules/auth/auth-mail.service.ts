@@ -10,7 +10,7 @@ import {
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import * as nodemailer from 'nodemailer';
 import { hashToken } from './auth-common';
 

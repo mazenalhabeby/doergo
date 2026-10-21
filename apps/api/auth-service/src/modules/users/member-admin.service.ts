@@ -2,7 +2,7 @@ import { MemberOffboarding } from '../../common/member-offboarding/member-offboa
 import { SessionEvents } from '../../common/session-events/session-events.service';
 import { Role } from '@hbcfield/shared';
 import { Injectable, Logger, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { RemoveMemberDto } from './dto';
 import * as bcrypt from 'bcryptjs';
 import { BCRYPT_COST_FACTOR, generateRandomPassword } from './users-common';

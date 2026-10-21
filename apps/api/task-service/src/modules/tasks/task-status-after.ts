@@ -1,7 +1,7 @@
 import type { Logger } from '@nestjs/common';
 import type { ClientProxy } from '@nestjs/microservices';
 import { personName, TaskStatus } from '@hbcfield/shared';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 import type { PresenceService } from '../attendance/presence/presence.service';
 import type { CrewService } from './handover/crew.service';
 import type { TaskSupportService } from './task-support.service';

@@ -1,0 +1,29 @@
+{
+  "name": "@hbcfield/db",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The one database schema, its migrations and seeds — shared by every API service (docs/plans/code-structure-fix.md, 3.2).",
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "seed": "prisma db seed",
+    "studio": "prisma studio",
+    "create-fresh": "ts-node prisma/baseline/create-fresh-db.ts"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "dependencies": {
+    "@hbcfield/shared": "workspace:*",
+    "@prisma/client": "^6.2.0",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.0",
+    "prisma": "^6.2.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.0"
+  }
+}

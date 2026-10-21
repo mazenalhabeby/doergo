@@ -1,7 +1,7 @@
 import { cleanRoutePoints } from '@hbcfield/shared';
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { success, SERVICE_NAMES, haversineDistance, isTaskAssignee } from '@hbcfield/shared';
 import { catchError, of } from 'rxjs';
 import { emitEvent, workerLocationUpdatedEvent } from '@hbcfield/shared/microservices';

@@ -1,6 +1,6 @@
 import { TaskStatus } from '@hbcfield/shared';
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /** One member's numbers for their page: jobs, attendance, and recent activity. */
 @Injectable()

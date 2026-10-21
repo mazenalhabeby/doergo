@@ -2,7 +2,7 @@ import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { buildTaskVisibilityWhere } from './task-visibility';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { TaskAccessService } from '../../common/task-access/task-access.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { TaskEventType, success, getRedisConfig } from '@hbcfield/shared';

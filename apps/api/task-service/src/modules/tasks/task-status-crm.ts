@@ -1,7 +1,7 @@
 import type { Logger } from '@nestjs/common';
 import type { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 import { crmIntents, type PreparedStepSubmission } from './step-submission';
 import { sendRpc, addCustomerActivity } from '@hbcfield/shared/microservices';
 

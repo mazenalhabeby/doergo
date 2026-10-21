@@ -10,7 +10,7 @@ import {
   DEFAULT_CURRENCY,
 } from '@hbcfield/shared';
 import { jobsInPeriod, FINISHED } from './work-source';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { ExchangeRateService } from './exchange-rate.service';
 import { LegalEntitiesService } from './legal-entities.service';
 import { SiteTimeService } from './site-time.service';

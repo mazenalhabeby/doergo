@@ -1,6 +1,6 @@
 import { Injectable, Inject, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { personName, success, TimeEntryStatus, SERVICE_NAMES } from '@hbcfield/shared';
 import type { OccurrenceEvidence } from '@hbcfield/shared';
 import { judgeOccurrence } from '../../common/occurrence.util';

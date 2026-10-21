@@ -6,7 +6,7 @@ import {
   success,
   TEMPLATE_LIMITS,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { WorkflowsService } from './workflows.service';
 import { SpaceWorkflowsService } from './space-workflows.service';
 import { TEMPLATE_SOURCE_SELECT } from './workflow-library-helpers';

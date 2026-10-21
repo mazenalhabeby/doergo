@@ -4,7 +4,7 @@ import { SERVICE_NAMES } from '@hbcfield/shared';
 import { chatPartsOf, type ChatServiceParts } from './chat.service.fixture';
 import { CHAT_PROVIDERS } from '../chat.module';
 import { chatStorageStubs } from './chat-storage-stubs';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * Membership is not permission.

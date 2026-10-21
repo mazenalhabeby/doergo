@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { WorkModel } from '@hbcfield/shared';
 import { ShiftResolverService } from '../shift-resolver.service';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * "Late" on somebody who was early — when the WRONG shift instance is matched.

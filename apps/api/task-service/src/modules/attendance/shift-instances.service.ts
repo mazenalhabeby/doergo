@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { ShiftResolverService } from './shift-resolver.service';
 import { notEndedWhere, zoneOf, success, SHIFT_REMINDER_DEFAULTS } from '@hbcfield/shared';
 import { localPartsIn } from '@hbcfield/shared';

@@ -2,7 +2,7 @@ import { ConflictException, Inject, Injectable, NotFoundException } from '@nestj
 import { ClientProxy } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
 import { CHAT_CODES, SERVICE_NAMES, taskChatClosed } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
 import { CHAT_TASK_SELECT, CHAT_USER_SELECT, shapeConversation } from './chat-shape';

@@ -52,7 +52,9 @@ export interface FileResult {
   approvedReason: string | null;
 }
 
-export const DEFAULT_MIGRATIONS_DIR = 'apps/api/auth-service/prisma/migrations';
+export const DEFAULT_MIGRATIONS_DIR = 'packages/db/prisma/migrations';
+/** Where the migrations lived before the schema got its own package (code-structure-fix 3.2). */
+export const LEGACY_MIGRATIONS_DIR = 'apps/api/auth-service/prisma/migrations';
 
 const MARKER = /^\s*--\s*release:\s*destructive-approved\b[ \t]*(.*)$/im;
 const MIN_REASON_LENGTH = 10;
@@ -312,6 +314,29 @@ export function parseNameStatus(output: string, dir = DEFAULT_MIGRATIONS_DIR): M
   return changes;
 }
 
+/**
+ * A migration MOVED between the old and the new folder (same name, same SQL) is neither deleted nor new:
+ * production has applied it under its name, which did not change. Both halves are dropped; anything
+ * else stays — a moved file whose SQL differs is still an edit.
+ */
+export function dropRelocations(
+  changes: MigrationChange[],
+  readOld: (path: string) => string,
+  readNew: (path: string) => string,
+  from = LEGACY_MIGRATIONS_DIR,
+  to = DEFAULT_MIGRATIONS_DIR,
+): MigrationChange[] {
+  const rel = (p: string, d: string) => (p.startsWith(d + '/') ? p.slice(d.length + 1) : null);
+  const added = new Map(changes.filter((c) => c.status === 'added').map((c) => [rel(c.path, to), c]));
+  const moved = new Set<MigrationChange>();
+  for (const c of changes) {
+    const name = c.status === 'deleted' ? rel(c.path, from) : null;
+    const twin = name ? added.get(name) : undefined;
+    if (name && twin && readOld(c.path) === readNew(twin.path)) moved.add(c).add(twin);
+  }
+  return changes.filter((c) => !moved.has(c));
+}
+
 export interface CheckReport {
   results: FileResult[];
   structural: Finding[];
@@ -386,9 +411,12 @@ export function main(argv: string[]): number {
     } catch {
       // Unrelated or shallow history: compare trees directly.
     }
-    changes = parseNameStatus(git(['diff', '--name-status', '--no-renames', from, head, '--', dir]), dir);
     // Read from the HEAD tree, not the working copy, so --head <sha> means that sha.
     const readAt = (path: string) => (head === 'HEAD' && existsSync(path) ? readFileSync(path, 'utf8') : git(['show', `${head}:${path}`]));
+    const legacy = dir === DEFAULT_MIGRATIONS_DIR ? [LEGACY_MIGRATIONS_DIR] : [];
+    const diff = git(['diff', '--name-status', '--no-renames', from, head, '--', dir, ...legacy]);
+    changes = [dir, ...legacy].flatMap((d) => parseNameStatus(diff, d));
+    if (legacy.length) changes = dropRelocations(changes, (p) => git(['show', `${from}:${p}`]), readAt);
     return finish(checkChanges(changes, readAt), changes.length);
   }
   return finish(checkChanges(changes, (p) => readFileSync(resolve(p), 'utf8')), changes.length);

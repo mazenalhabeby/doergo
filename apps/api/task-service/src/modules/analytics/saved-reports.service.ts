@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { compile, ReportDefinition } from './query-engine';
 
 /** Reports a member saved: listing, saving, editing and deleting their own. */

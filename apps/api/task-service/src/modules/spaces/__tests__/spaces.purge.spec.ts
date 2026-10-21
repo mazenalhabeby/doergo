@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { SpaceLifecycleService } from '../space-lifecycle.service';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * Audit S-B1 / S-B2 — what "empty" has to mean before a hard delete.

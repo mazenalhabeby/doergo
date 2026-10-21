@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { StripeService } from '../billing/stripe.service';
 import { BillingService } from '../billing/billing.service';
 import { OrgBillService } from '../billing/org-bill.service';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { success, validateAgreedPrice, modeRequiresBillingEmail, formatCents, toISODateString } from '@hbcfield/shared';
 
 /**

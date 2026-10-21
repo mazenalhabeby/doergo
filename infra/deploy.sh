@@ -29,10 +29,10 @@ echo "Waiting for database to be ready..."
 sleep 10
 
 echo -e "${GREEN}[3/5]${NC} Running database migrations..."
-docker compose -f infra/docker/docker-compose.yml run --rm auth-service sh -c "cd apps/api/auth-service && npx prisma migrate deploy"
+docker compose -f infra/docker/docker-compose.yml run --rm auth-service sh -c "npx prisma migrate deploy --schema /app/packages/db/prisma/schema.prisma"
 
 echo -e "${GREEN}[4/5]${NC} Seeding database..."
-docker compose -f infra/docker/docker-compose.yml run --rm auth-service sh -c "cd apps/api/auth-service && npx prisma db seed" || echo "Seed skipped (may already exist)"
+docker compose -f infra/docker/docker-compose.yml run --rm auth-service sh -c "echo seeding needs packages/db + ts-node, not in the image; run pnpm db:seed from a checkout" || echo "Seed skipped (may already exist)"
 
 echo -e "${GREEN}[5/6]${NC} Starting all services..."
 docker compose -f infra/docker/docker-compose.yml up -d

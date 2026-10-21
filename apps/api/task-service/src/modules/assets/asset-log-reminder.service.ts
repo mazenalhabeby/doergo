@@ -10,7 +10,7 @@ import {
   dueStatus,
   nextReminderAt,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { AssetResponsibleService } from './asset-responsible.service';
 import { emitEvent, assetLogDueEvent, type EventPayload } from '@hbcfield/shared/microservices';

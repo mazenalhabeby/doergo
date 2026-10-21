@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { SpaceRosterService } from '../space-roster.service';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * Roster batch = space-scope enforcement.

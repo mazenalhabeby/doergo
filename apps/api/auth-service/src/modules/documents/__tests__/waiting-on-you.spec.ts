@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { SERVICE_NAMES } from '@hbcfield/shared';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { MrzOcrService } from '../mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';

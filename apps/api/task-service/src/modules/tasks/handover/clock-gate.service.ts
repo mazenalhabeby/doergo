@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CLOCK_GATE_CODES, activeAssignmentWhere, spaceRunsClock } from '@hbcfield/shared';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * "Clocked in to start work" (packages/shared/src/tasks/clock-gate.ts), asked

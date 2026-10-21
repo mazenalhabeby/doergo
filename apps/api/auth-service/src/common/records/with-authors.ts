@@ -1,4 +1,4 @@
-import type { PrismaService } from '../prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 
 /**
  * Timeline rows with their author's name — one query for all authors, whatever

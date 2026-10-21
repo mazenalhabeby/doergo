@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { CountedTimeService } from '../counted-time.service';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { workedMinutes } from '@hbcfield/shared';
 
 /**

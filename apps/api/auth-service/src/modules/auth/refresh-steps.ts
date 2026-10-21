@@ -2,7 +2,7 @@ import { HttpStatus, type Logger } from '@nestjs/common';
 import type { JwtService } from '@nestjs/jwt';
 import type { Prisma } from '@prisma/client';
 import { readAssignedHome, normalizeRole, type ResolvedAccess } from '@hbcfield/shared';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 import { resolveProfileBadges, orgPermissionFields } from './auth-common';
 
 /** The pieces of `SessionsService.refresh`, in the order it uses them. */

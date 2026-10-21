@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { notEndedWhere, Role, SELECTABLE_ASSET_WHERE } from '@hbcfield/shared';
 
 /*

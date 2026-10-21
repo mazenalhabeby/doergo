@@ -14,7 +14,7 @@ import {
   memberAccessOf,
 } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import * as bcrypt from 'bcryptjs';
 import { dummyPasswordHash, type AuthResult } from './auth-common';

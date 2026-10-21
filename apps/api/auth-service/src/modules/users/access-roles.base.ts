@@ -1,6 +1,6 @@
 import { PERMISSION_KEYS, type PermissionSet, whitelistPermissions } from '@hbcfield/shared';
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { MemberAccessChecksService } from './member-access-checks.service';
 
 /**

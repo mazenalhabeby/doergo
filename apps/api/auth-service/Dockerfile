@@ -8,6 +8,8 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY patches ./patches
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/auth-service/package.json ./apps/api/auth-service/
+# The schema package: schema, migrations and the prisma CLI (code-structure-fix 3.2).
+COPY packages/db/package.json ./packages/db/
 RUN pnpm install --frozen-lockfile --prod=false
 
 # The OCR language model, fetched at BUILD time.
@@ -26,9 +28,10 @@ RUN apk add --no-cache curl && \
 FROM deps AS build
 COPY packages/shared/ ./packages/shared/
 COPY apps/api/auth-service/ ./apps/api/auth-service/
+COPY packages/db/prisma/ ./packages/db/prisma/
 COPY tsconfig.base.json ./
 RUN pnpm --filter @hbcfield/shared build
-RUN cd apps/api/auth-service && npx prisma generate
+RUN cd packages/db && npx prisma generate
 RUN pnpm --filter @hbcfield/auth-service build
 
 # -- Production dependencies, exactly as pnpm-lock.yaml pins them --
@@ -106,7 +109,8 @@ FROM base AS production
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=bundle /prod ./
-COPY --from=build /app/apps/api/auth-service/prisma ./apps/api/auth-service/prisma
+# Migrations run at start (auth-entrypoint.sh, --schema points here).
+COPY --from=build /app/packages/db/prisma ./packages/db/prisma
 # Beside the app, where MrzOcrService looks by default (TESSDATA_PATH overrides).
 COPY --from=tessdata /tessdata ./apps/api/auth-service/tessdata
 COPY infra/docker/scripts/auth-entrypoint.sh /app/auth-entrypoint.sh

@@ -1,6 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
-import { PrismaService } from './prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { assertSpaceInOrg } from './tenant-scope.util';
 import type { PlanningItemInputMessage } from '@hbcfield/shared/microservices';
 

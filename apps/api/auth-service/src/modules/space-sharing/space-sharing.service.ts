@@ -1,6 +1,6 @@
 import type { Prisma, ShareRequestStatus } from '@prisma/client';
 import { Injectable, HttpStatus } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { MemberOffboarding } from '../../common/member-offboarding/member-offboarding.service';
 
 import { type Level } from '@hbcfield/shared/microservices';

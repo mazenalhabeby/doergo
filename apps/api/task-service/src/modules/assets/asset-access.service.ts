@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { Role, type AssetAccessLevel } from '@hbcfield/shared';
 import type { AssetActorMessage } from '@hbcfield/shared/microservices';
 

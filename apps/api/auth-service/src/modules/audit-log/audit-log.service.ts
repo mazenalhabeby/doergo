@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { paginated, documentVisibleTo, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
 
 @Injectable()

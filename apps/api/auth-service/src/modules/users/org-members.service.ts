@@ -1,6 +1,6 @@
 import { personSearchOr, clampListLimit } from '@hbcfield/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import type { Prisma } from '@prisma/client';
 import { ListOrgMembersDto } from './dto';
 import { DIRECTORY_MEMBER_SELECT, MANAGER_CANDIDATE_SELECT, ORG_MEMBER_SELECT } from './users-common';

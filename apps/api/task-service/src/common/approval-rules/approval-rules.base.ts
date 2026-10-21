@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { activeWindowWhere, SERVICE_NAMES, type RuleFacts, type RuleKind } from '@hbcfield/shared';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { emitEvent, approvalSecondStepEvent } from '@hbcfield/shared/microservices';
 
 /**

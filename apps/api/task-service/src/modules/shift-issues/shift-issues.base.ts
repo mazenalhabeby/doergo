@@ -3,7 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, personNameById } from '@hbcfield/shared';
 import { emitEvent, shiftIssueEventEvent, type EventContract } from '@hbcfield/shared/microservices';
 import { OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { ALLOWED_FILE_TYPES, Attachment } from './shift-issues-helpers';

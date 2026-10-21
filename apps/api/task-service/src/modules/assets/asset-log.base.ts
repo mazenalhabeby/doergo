@@ -13,7 +13,7 @@ import {
   type KindShape,
   type LogDueState,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetExpenseService, EXPENSE_STATUS } from './asset-expense.service';
 import { CustodyReadService } from './custody-read.service';

@@ -10,12 +10,7 @@
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "prisma db seed",
-    "prisma:studio": "prisma studio",
-    "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
-    "db:create-fresh": "ts-node prisma/baseline/create-fresh-db.ts"
+    "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1014.0",
@@ -54,8 +49,5 @@
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.0"
-  },
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
   }
 }

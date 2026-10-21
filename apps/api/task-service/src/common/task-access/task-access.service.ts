@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { canAccessTask, isTaskAssignee, isWithinTaskBoundary } from '@hbcfield/shared';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { holdsOpenRole } from '@hbcfield/shared';
 import type { TaskAccessFacts as SharedTaskAccessFacts } from '@hbcfield/shared/microservices';
 

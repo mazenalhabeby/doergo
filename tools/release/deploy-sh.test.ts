@@ -38,11 +38,11 @@ function makeBox(): Box {
   const state = join(dir, 'state');
   const bin = join(dir, 'bin');
   mkdirSync(join(server, 'infra/docker'), { recursive: true });
-  mkdirSync(join(server, 'apps/api/auth-service/prisma/migrations/0_init'), { recursive: true });
+  mkdirSync(join(server, 'packages/db/prisma/migrations/0_init'), { recursive: true });
   mkdirSync(state, { recursive: true });
   mkdirSync(bin, { recursive: true });
 
-  writeFileSync(join(server, 'apps/api/auth-service/prisma/migrations/0_init/migration.sql'), 'CREATE TABLE a (id text);\n');
+  writeFileSync(join(server, 'packages/db/prisma/migrations/0_init/migration.sql'), 'CREATE TABLE a (id text);\n');
   writeFileSync(join(server, 'infra/sync-static.sh'), '#!/usr/bin/env bash\necho "synced (fake)"\n');
   chmodSync(join(server, 'infra/sync-static.sh'), 0o755);
   writeFileSync(join(server, 'infra/docker/docker-compose.yml'), 'services: {}\n');
@@ -57,8 +57,8 @@ function makeBox(): Box {
   // CI's side: a clone with the release commit, shipped as a bundle.
   const ci = join(dir, 'ci');
   g(dir, 'clone', '-q', server, ci);
-  mkdirSync(join(ci, 'apps/api/auth-service/prisma/migrations/20260917_add'), { recursive: true });
-  writeFileSync(join(ci, 'apps/api/auth-service/prisma/migrations/20260917_add/migration.sql'), 'ALTER TABLE a ADD COLUMN IF NOT EXISTS b text;\n');
+  mkdirSync(join(ci, 'packages/db/prisma/migrations/20260917_add'), { recursive: true });
+  writeFileSync(join(ci, 'packages/db/prisma/migrations/20260917_add/migration.sql'), 'ALTER TABLE a ADD COLUMN IF NOT EXISTS b text;\n');
   g(ci, 'add', '-A');
   g(ci, 'commit', '-qm', 'B');
   const target = g(ci, 'rev-parse', 'HEAD');

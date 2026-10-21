@@ -2,7 +2,7 @@ import { ApprovalRulesService } from '../../common/approval-rules/approval-rules
 import { ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Optional } from '@nestjs/common';
 import { OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { AssetAccessService, type AssetActor } from './asset-access.service';
 import { AssetNotifier } from './asset-notifier.service';
 import { assetFilePrefix } from './asset-files';

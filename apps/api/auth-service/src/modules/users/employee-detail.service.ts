@@ -1,6 +1,6 @@
 import { Role } from '@hbcfield/shared';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { GetEmployeeDetailDto } from './dto';
 import { isOnline } from './users-common';
 import { EmployeeStatsService } from './employee-stats.service';

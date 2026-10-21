@@ -10,7 +10,7 @@ import {
 } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { GraceTokenCache } from './grace-token-cache.service';
 import { hashToken } from './auth-common';
 import {

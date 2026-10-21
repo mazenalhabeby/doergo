@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BUILTIN_ROLES } from '@hbcfield/shared';
 import { UsersService } from '../users.service';
 import { USERS_SERVICES } from '../users-services';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * Built-in roles follow their definition in code — additively, until an admin

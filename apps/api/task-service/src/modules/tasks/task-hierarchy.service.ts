@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import type { TaskPriority } from '@prisma/client';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { TaskStatus, TaskEventType, success, assertFoundInOrg } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { resolveOwnedTaskRefs, assertMayAssign, assertMayCreateUnder, assertTargetIsInSpace } from './task-scope';

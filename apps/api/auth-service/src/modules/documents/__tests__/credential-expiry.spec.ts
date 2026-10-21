@@ -1,7 +1,7 @@
 import { ComplianceBoardService } from '../compliance-board.service';
 import { Test } from '@nestjs/testing';
 import { SERVICE_NAMES } from '@hbcfield/shared';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { CredentialExpiryService } from '../credential-expiry.service';
 import { credentialExpiryPartsOf, type CredentialExpiryServiceParts } from './credential-expiry.service.fixture';
 

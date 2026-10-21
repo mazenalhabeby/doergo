@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Role, activeAssignmentWhere } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { AssetResponsibleService } from './asset-responsible.service';
 import { SEES_ASSETS, SEES_ASSETS_IN_SPACE, grants } from './asset-notifier-helpers';

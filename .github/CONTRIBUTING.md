@@ -119,11 +119,11 @@ docs: update API reference for invitation endpoints
 
 ### New Database Model
 
-1. Edit `apps/api/auth-service/prisma/schema.prisma`
+1. Edit `packages/db/prisma/schema.prisma`
 2. Run `pnpm db:migrate` and name the migration
 3. Run `pnpm db:generate`
 4. Add shared types in `packages/shared/src/types/`
-5. Update seed data if needed (`apps/api/auth-service/prisma/seed.ts`)
+5. Update seed data if needed (`packages/db/prisma/seed.ts`)
 
 ### New Web Page
 

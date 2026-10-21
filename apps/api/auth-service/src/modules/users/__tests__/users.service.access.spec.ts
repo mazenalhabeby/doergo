@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException, HttpStatus } from '@nestjs/common';
 import { UsersService } from '../users.service';
 import { USERS_SERVICES } from '../users-services';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { Role, permissionsExceed } from '@hbcfield/shared';
 
 /**

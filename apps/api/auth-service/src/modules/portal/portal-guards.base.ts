@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { keepOrgUserIds } from '../../common/records/org-user-ids';
 import { CustomersService, type CrmCaller } from '../customers/customers.service';
 import { scopeWhereOn, scopeAllows, type SpaceScopeIds, crmCapsIn } from '@hbcfield/shared';

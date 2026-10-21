@@ -14,7 +14,7 @@ import {
 import { createHash } from 'crypto';
 import { CustomersService, withContactKeys } from '../customers.service';
 import { ContactImportService } from '../contact-import.service';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /*
   Clients from a phone's address book.

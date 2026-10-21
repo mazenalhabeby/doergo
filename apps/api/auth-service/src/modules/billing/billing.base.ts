@@ -2,7 +2,7 @@ import { StripeCatalogService } from './stripe-catalog.service';
 import { StripeLinesService } from './stripe-lines.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type Stripe from 'stripe';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { StripeService } from './stripe.service';
 import { OrgBillService } from './org-bill.service';
 import { collectionMethodFor, type BillingMode } from '@hbcfield/shared';

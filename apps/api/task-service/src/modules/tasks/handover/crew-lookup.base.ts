@@ -13,7 +13,7 @@ import {
   personNameById,
   assertFoundInOrg,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
 import { resolveSpaceDefaultWorkflowId } from '../../../common/space-workflow.util';
 import { ClockGateService } from './clock-gate.service';

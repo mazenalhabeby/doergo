@@ -9,7 +9,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
 import { SERVICE_NAMES, success } from '@hbcfield/shared';
 import { sendRpc, spacePurgeAuthSide } from '@hbcfield/shared/microservices';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { SpaceServiceBase } from './space-service.base';
 
 /** A workspace's life: the default one, archiving, purging. */

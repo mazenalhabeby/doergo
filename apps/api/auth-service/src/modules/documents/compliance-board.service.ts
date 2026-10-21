@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { notEndedWhere, daysUntil, credentialStanding, visibleDocumentWhere } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /** The credential board: every member's required papers, and what is missing, expiring or expired. */
 @Injectable()

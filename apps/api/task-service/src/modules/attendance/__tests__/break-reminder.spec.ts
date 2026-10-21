@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { BreakReminderService } from '../break-reminder.service';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { SERVICE_NAMES, resolveBreakPlan, type BreakRuleLike } from '@hbcfield/shared';
 
 /**

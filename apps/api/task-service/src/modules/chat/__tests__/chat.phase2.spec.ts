@@ -3,7 +3,7 @@ import { SERVICE_NAMES } from '@hbcfield/shared';
 import { chatPartsOf, type ChatServiceParts } from './chat.service.fixture';
 import { ChatEditService } from '../chat-edit.service';
 import { CHAT_PROVIDERS } from '../chat.module';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { chatStorageStubs, fakeObjectStore } from './chat-storage-stubs';
 
 /**

@@ -7,7 +7,7 @@ import {
 } from '@hbcfield/shared';
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import type { Prisma, User } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { UpdateMemberProfileDto } from './dto';
 import { MemberAccessChecksService } from './member-access-checks.service';
 import {

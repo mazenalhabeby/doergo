@@ -3,7 +3,7 @@ import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.se
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { JobTimeService } from './handover/job-time.service';
 import { CrewService } from './handover/crew.service';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { TaskStatus, TaskEventType, success, getStatusCapabilities } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';

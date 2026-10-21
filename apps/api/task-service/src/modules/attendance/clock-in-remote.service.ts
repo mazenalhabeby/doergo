@@ -7,7 +7,7 @@ import {
   SERVICE_NAMES,
   SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { clockEventEntry } from './clock-event';
 import { clockInLabels, priorEntryOfShift } from './clock-in-labels';
 import { remoteApprovedAt, type DayRequestRow } from './approved-requests';

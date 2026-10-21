@@ -7,7 +7,7 @@ import {
   type OrgAccessRow,
   resolveMemberRouting,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { ChatCrossOrgService } from './chat-cross-org.service';
 
 /**

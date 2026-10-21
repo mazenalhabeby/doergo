@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { OBJECT_STORE, ObjectStore, newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { TaskEventType, Role, success } from '@hbcfield/shared';
 import { TaskAccessService } from '../../common/task-access/task-access.service';

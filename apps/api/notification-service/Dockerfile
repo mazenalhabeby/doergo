@@ -8,18 +8,19 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 # pnpm refuses a frozen install when a patch listed in package.json is missing.
 COPY patches ./patches
 COPY packages/shared/package.json ./packages/shared/
-COPY apps/api/auth-service/package.json ./apps/api/auth-service/
+# The schema package: the prisma CLI that generates the client (code-structure-fix 3.2).
+COPY packages/db/package.json ./packages/db/
 COPY apps/api/notification-service/package.json ./apps/api/notification-service/
 RUN pnpm install --frozen-lockfile --prod=false
 
 # -- Build --
 FROM deps AS build
 COPY packages/shared/ ./packages/shared/
-COPY apps/api/auth-service/prisma/ ./apps/api/auth-service/prisma/
+COPY packages/db/prisma/ ./packages/db/prisma/
 COPY apps/api/notification-service/ ./apps/api/notification-service/
 COPY tsconfig.base.json ./
 RUN pnpm --filter @hbcfield/shared build
-RUN cd apps/api/auth-service && npx prisma generate
+RUN cd packages/db && npx prisma generate
 RUN pnpm --filter @hbcfield/notification-service build
 
 # -- Production dependencies, exactly as pnpm-lock.yaml pins them --
@@ -89,7 +90,7 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=bundle /prod/node_modules /node_modules
 COPY --from=bundle /prod/app ./
-COPY --from=build /app/apps/api/auth-service/prisma ./prisma
+COPY --from=build /app/packages/db/prisma ./prisma
 EXPOSE 4001
 # Run as the built-in non-root `node` user (audit). No local file writes.
 RUN chown -R node:node /app

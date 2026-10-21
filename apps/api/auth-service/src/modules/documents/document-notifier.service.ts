@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { personName, SERVICE_NAMES, Role, nextPendingStep, ORG_ACCESS_SELECT, orgAllows } from '@hbcfield/shared';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { DocumentLookupService } from './document-lookup.service';
 import {
   emitEvent,

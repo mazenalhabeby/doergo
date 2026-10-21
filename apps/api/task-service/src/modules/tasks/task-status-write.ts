@@ -1,6 +1,6 @@
 import { ConflictException } from '@nestjs/common';
 import { TaskStatus, isWorkOver } from '@hbcfield/shared';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 import { ROLE_WAVE_CLOSED } from './role-pool.service';
 import type { PreparedStepSubmission } from './step-submission';
 import type { StatusTask } from './task-status.types';

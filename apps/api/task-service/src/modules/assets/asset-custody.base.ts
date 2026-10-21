@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { planHandover, partiesAfter, type CustodyParty, type CustodyPeriod, type HandoverPlan } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetNotifier } from './asset-notifier.service';

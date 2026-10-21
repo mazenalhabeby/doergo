@@ -2,7 +2,7 @@ import type { Prisma } from '@prisma/client';
 import { REFRESH_TOKEN_GRACE_PERIOD_SECONDS, runWithCronLock, barePushToken } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger, Optional } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { SessionEvents } from '../../common/session-events/session-events.service';
 import { hashToken } from './auth-common';
 

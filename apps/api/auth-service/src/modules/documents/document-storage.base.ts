@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { type Rect, rectToPixels, isUsefulCrop } from '@hbcfield/shared';
 import { ObjectStore } from '@hbcfield/shared/storage';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { OBJECT_STORE } from './object-store.provider';
 import { openUntrustedImage } from './image-input';
 

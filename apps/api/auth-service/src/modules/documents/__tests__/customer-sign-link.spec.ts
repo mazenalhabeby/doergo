@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { CustomerSignLinkService } from '../customer-sign-link.service';
 import { hashSecret, SIGN_LINK_TTL_DAYS } from '@hbcfield/shared';
 

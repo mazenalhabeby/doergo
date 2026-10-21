@@ -293,6 +293,8 @@ services:
       - "127.0.0.1:4001:4001"
     environment:
       - NODE_ENV=production
+      # Its pool size before the services shared one PrismaService (code-structure-fix 3.2) — kept.
+      - PRISMA_CONNECTION_LIMIT=10
       - DATABASE_URL=postgresql://${POSTGRES_USER:-hbcfield}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@pgbouncer:6432/${POSTGRES_DB:-hbcfield}?schema=public&pgbouncer=true
       - REDIS_HOST=redis
       - REDIS_PORT=6379

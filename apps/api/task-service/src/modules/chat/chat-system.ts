@@ -1,6 +1,6 @@
 import type { ClientProxy } from '@nestjs/microservices';
 import type { ChatSystemMeta } from '@hbcfield/shared';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 import { CHAT_USER_SELECT } from './chat-shape';
 import type { ChatCountersService } from './chat-counters.service';
 import { emitEvent, chatMembersChangedEvent, chatMessageEvent } from '@hbcfield/shared/microservices';

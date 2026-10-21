@@ -5,7 +5,7 @@ import { SERVICE_NAMES } from '@hbcfield/shared';
 import { CONVERSATION_LIST_ORDER } from '../chat.service';
 import { CHAT_PROVIDERS } from '../chat.module';
 import { chatStorageStubs } from './chat-storage-stubs';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * The reply right.

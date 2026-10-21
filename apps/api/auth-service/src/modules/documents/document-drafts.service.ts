@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { personName, isBlocking, parseRoute, runWithCronLock, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   type DocumentActor,

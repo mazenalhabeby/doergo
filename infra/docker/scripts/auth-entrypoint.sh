@@ -39,7 +39,8 @@ case "$DIRECT_DATABASE_URL" in
 esac
 
 echo "Running database migrations (direct connection)..."
-DATABASE_URL="$DIRECT_DATABASE_URL" npx prisma migrate deploy
+# The schema lives in packages/db since code-structure-fix 3.2.
+DATABASE_URL="$DIRECT_DATABASE_URL" npx prisma migrate deploy --schema /app/packages/db/prisma/schema.prisma
 echo "Migrations complete."
 
 echo "Starting auth-service..."

@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { mayReviewProposal, proposalInSpace, proposalReviewSpaces } from '@hbcfield/shared';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { AssetAccessService } from '../asset-access.service';
 import { AssetContractService } from '../asset-contract.service';

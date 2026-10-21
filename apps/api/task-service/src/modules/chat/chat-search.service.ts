@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { CHAT_CODES, chatSearchQuery, clampListLimit, parseHistoryCursor } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { CHAT_TASK_SELECT, CHAT_USER_SELECT, shapeConversation } from './chat-shape';
 
 /**

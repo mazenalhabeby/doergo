@@ -1,7 +1,7 @@
 import { personName, parseAssignedHome, Role } from '@hbcfield/shared';
 import { Injectable, Logger, NotFoundException, BadRequestException, HttpStatus } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /** Who owns the organization (handing it over), and a member's home workspace. */
 @Injectable()

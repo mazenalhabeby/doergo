@@ -8,7 +8,7 @@ import {
   type DocumentSignerRole,
   PERSON_BRIEF_SELECT,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { type SignerCandidate } from './document-common';
 
 /**

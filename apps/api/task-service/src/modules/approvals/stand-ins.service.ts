@@ -14,7 +14,7 @@ import {
   type StandInView,
   type StandInsResponse,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import type { StandInCaller as SharedStandInCaller } from '@hbcfield/shared/microservices';
 
 export type StandInCaller = SharedStandInCaller;

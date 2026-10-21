@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { success, buildDateRangeFilter, memberScopeFilter } from '@hbcfield/shared';
 import { WORKER_ROLES, taskInScope } from './location-helpers';
 

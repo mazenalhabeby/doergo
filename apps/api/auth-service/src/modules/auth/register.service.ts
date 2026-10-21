@@ -1,6 +1,6 @@
 import { BCRYPT_COST_FACTOR, DEFAULT_PERMISSIONS, DEFAULT_ORG_MODULES, Role, normalizeEmail } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { seedDefaultWorkflow } from '../../common/seed-default-workflow';
 import * as bcrypt from 'bcryptjs';
 import { BillingTrialService } from './../billing/billing-trial.service';

@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { Role } from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * Reading the organization's people: one account, the worker list, the contacts

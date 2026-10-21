@@ -4,7 +4,7 @@ import { standInGrant } from '../../common/stand-in';
 import { grantHolds } from '@hbcfield/shared';
 import { Injectable, Inject, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { success, TimeEntryStatus, SHIFT_REMINDER_DEFAULTS, SERVICE_NAMES } from '@hbcfield/shared';
 import { scopeWhere } from '@hbcfield/shared';
 import { assertNotSelfDecision } from './self-decision';

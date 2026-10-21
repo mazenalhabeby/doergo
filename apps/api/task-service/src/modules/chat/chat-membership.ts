@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 
 /**
  * Is `userId` in this conversation? Throws when not — membership is the grant

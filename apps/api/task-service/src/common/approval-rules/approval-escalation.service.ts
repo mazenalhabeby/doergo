@@ -13,7 +13,7 @@ import {
   type RuleFacts,
   type RuleKind,
 } from '@hbcfield/shared';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { ApprovalRouteService } from './approval-route.service';
 import { ApprovalRulesService } from './approval-rules.service';
 import { CoverService } from '../../modules/technicians/cover.service';

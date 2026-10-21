@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { NO_SHOW_OPEN_STATES, noShowRuns, type NoShowRun } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { RUN_DAYS, DAY, Instance } from './no-show-record-helpers';
 
 /**

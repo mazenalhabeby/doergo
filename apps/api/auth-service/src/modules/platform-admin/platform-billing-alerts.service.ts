@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { success } from '@hbcfield/shared';
 
 /** Operator billing alerts: bills that fell and syncs that failed, and marking one as looked at. */

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { activeAssignmentWhere } from '@hbcfield/shared';
 import { scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 import { PresenceService } from './presence/presence.service';

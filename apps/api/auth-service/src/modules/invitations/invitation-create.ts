@@ -12,7 +12,7 @@ import {
   SHARED_ROLE_WHERE,
   type PermissionSet,
 } from '@hbcfield/shared';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 import { jsonColumn } from '../../common/records/json-column';
 import type { CreateInvitationMessage } from '@hbcfield/shared/microservices';
 

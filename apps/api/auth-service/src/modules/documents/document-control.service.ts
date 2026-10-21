@@ -7,7 +7,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { documentKey } from '@hbcfield/shared/storage';
 import { personName, SHARED_ROLE_WHERE } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import {
   type DocumentActor,
   typeScope,

@@ -1,6 +1,6 @@
 import { delegationDay, standInFor, type DelegatedGrant } from '@hbcfield/shared';
 import type { Prisma } from '@prisma/client';
-import type { PrismaService } from './prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 
 /**
  * Today's stand-in grant for one member, for the services that check an

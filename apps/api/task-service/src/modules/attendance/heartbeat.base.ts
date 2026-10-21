@@ -1,7 +1,7 @@
 import { OPEN_EXCURSION_STATUSES } from './open-shift-close';
 import { Injectable, Inject, NotFoundException, Logger, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { personName, GEOFENCE_EXCURSION, SERVICE_NAMES } from '@hbcfield/shared';
 import { scopeAllows, type AttendanceScope } from '@hbcfield/shared';

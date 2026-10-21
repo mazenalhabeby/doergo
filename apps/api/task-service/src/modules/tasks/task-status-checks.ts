@@ -12,7 +12,7 @@ import {
   OFFICE_START_CODES,
   OFFICE_START_REASON_MAX,
 } from '@hbcfield/shared';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 import { fixOfTap } from '../../common/occurrence.util';
 import type { OfficeStart, StatusTask, UpdateStatusInput } from './task-status.types';
 

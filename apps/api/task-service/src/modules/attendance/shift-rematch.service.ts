@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { zoneOf, SERVICE_NAMES, computeScheduleFlags } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { ShiftResolverService } from './shift-resolver.service';
 import { CountedTimeService } from './counted-time.service';
 import { BreakRulesService } from './break-rules.service';

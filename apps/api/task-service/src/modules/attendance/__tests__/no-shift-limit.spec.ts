@@ -20,7 +20,7 @@ import { BreakRulesService } from '../break-rules.service';
 import { BreakReminderService } from '../break-reminder.service';
 import { BREAK_SERVICES } from '../break-services';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { PresenceService } from '../presence/presence.service';
 
 const at = (iso: string) => new Date(iso);

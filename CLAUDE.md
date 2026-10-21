@@ -72,10 +72,6 @@ hbcfield/
 │   │   │       ├── main.ts    # Entry: port 4000, prefix /api/v1
 │   │   │       └── modules/   # auth/, tasks/, tracking/, users/, technicians/
 │   │   ├── auth-service/      # Auth microservice
-│   │   │   ├── prisma/
-│   │   │   │   ├── schema.prisma  # ⭐ MAIN DATABASE SCHEMA
-│   │   │   │   ├── seed.ts
-│   │   │   │   └── migrations/
 │   │   │   └── src/modules/auth/
 │   │   ├── task-service/      # Task CRUD + assignment
 │   │   ├── notification-service/  # Socket.IO + Email + Push
@@ -87,10 +83,11 @@ hbcfield/
 │   └── mobile/                # Technician app (Expo)
 │       └── src/
 ├── packages/
+│   ├── db/                    # ⭐ THE database: prisma/schema.prisma, migrations/, seeds (pnpm db:*)
 │   └── shared/                # Shared types, modules, utilities
 │       └── src/
 │           ├── types/         # Enums, interfaces, API types
-│           ├── prisma/        # Shared PrismaService & PrismaModule
+│           ├── prisma/        # THE PrismaService & PrismaModule — every API service uses this one
 │           ├── microservices/ # Redis config factories, service names
 │           ├── queues/        # BullMQ queue config, constants, job types
 │           ├── api/           # Response helpers, error codes
@@ -221,7 +218,7 @@ Organizations can grant access to other organizations:
 
 ## 5. DATABASE SCHEMA (Prisma)
 
-**Location**: `apps/api/auth-service/prisma/schema.prisma`
+**Location**: `packages/db/prisma/schema.prisma` (moved from auth-service 2026-10-21; migrations beside it, run by the auth container at start with `--schema`)
 
 ### Core Models
 ```
@@ -1065,7 +1062,7 @@ pnpm build            # Build all packages
 
 **Seeds:**
 - `pnpm db:seed` runs `seed.ts` (the documented onboarding accounts + `ACME2026` join code + orphan `newuser@example.com`).
-- `npx tsx prisma/seed-demo.ts` (run from `apps/api/auth-service`) adds the demo manager + 8 employees + 3 spaces + tasks to the existing admin's org (requires an admin to already exist).
+- `npx tsx prisma/seed-demo.ts` (run from `packages/db`) adds the demo manager + 8 employees + 3 spaces + tasks to the existing admin's org (requires an admin to already exist).
 
 ### Sample Company Locations (from seed-demo.ts, Austria)
 | Name | Address | Coordinates | Geofence |
@@ -1605,7 +1602,7 @@ export class TasksController {
 4. Swagger decorators auto-generate docs
 
 ### Add new database model
-1. Edit `apps/api/auth-service/prisma/schema.prisma`
+1. Edit `packages/db/prisma/schema.prisma`
 2. Run `pnpm db:migrate` (name the migration)
 3. Run `pnpm db:generate`
 

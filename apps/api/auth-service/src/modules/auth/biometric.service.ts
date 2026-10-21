@@ -9,7 +9,7 @@ import { createPublicKey, createVerify, randomBytes } from 'crypto';
   "can't resolve dependency PrismaService", which takes the whole service down.
   Every other provider here imports this path; so does this one.
 */
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { AuthService, type AuthResult } from './auth.service';
 import { BiometricChallengeStore } from './biometric-challenge.store';
 

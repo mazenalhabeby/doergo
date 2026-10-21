@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, mayChangeMessage, CHAT_EDIT_WINDOW_MINUTES } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { CHAT_USER_SELECT, previewOf, visibleMessage } from './chat-shape';
 import { findMembership } from './chat-membership';
 import { ChatReachService } from './chat-reach.service';

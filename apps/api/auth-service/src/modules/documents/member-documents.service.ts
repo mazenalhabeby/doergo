@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { personName, credentialStanding, isCurrentSigner, type SignerStep } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import {
   type DocumentActor,
   assertTypeVisible,

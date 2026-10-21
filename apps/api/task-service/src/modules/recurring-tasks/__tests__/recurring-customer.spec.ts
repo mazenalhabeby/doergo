@@ -15,7 +15,7 @@ import { RecurringRunnerService } from '../recurring-runner.service';
  */
 import { Test } from '@nestjs/testing';
 import { SERVICE_NAMES } from '@hbcfield/shared';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { RecurringTasksService } from '../recurring-tasks.service';
 import { recurringPartsOf, type RecurringTasksServiceParts } from './recurring-tasks.service.fixture';
 

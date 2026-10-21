@@ -1,4 +1,4 @@
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 
 /**
  * The ONLY writers of `task_routes` — tracking-service owns a job's trip distance

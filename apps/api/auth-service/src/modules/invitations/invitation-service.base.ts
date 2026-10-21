@@ -3,7 +3,7 @@ import { HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { randomBytes } from 'crypto';
 import { SERVICE_NAMES } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { DocumentsService } from '../documents/documents.service';
 import { BillingService } from '../billing/billing.service';
 import {

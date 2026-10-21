@@ -1,7 +1,7 @@
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { TaskStatus, accessAllowsInSpace, activeAssignmentWhere } from '@hbcfield/shared';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 import type { TaskCreateJob } from '@hbcfield/shared';
 import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { resolveSpaceDefaultWorkflowId, listSpaceWorkflowIds } from '../../common/space-workflow.util';

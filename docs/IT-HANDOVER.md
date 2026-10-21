@@ -81,7 +81,7 @@ Payments run through **Stripe** (currently in **TEST mode** — no real charges 
 | Backend | NestJS microservices (TypeScript), communicating over **Redis transport** (`ClientProxy.send`) |
 | API | REST (via gateway, prefix `/api/v1`) + Swagger at `/docs`; WebSockets (Socket.IO) |
 | Auth | JWT access + refresh (rotation, SHA‑256 hashed refresh tokens), RBAC guards |
-| DB | PostgreSQL (+ PostGIS), **Prisma** ORM (schema in `apps/api/auth-service/prisma/schema.prisma`) |
+| DB | PostgreSQL (+ PostGIS), **Prisma** ORM (schema in `packages/db/prisma/schema.prisma`) |
 | Queue | BullMQ (Redis) — exactly‑once task processing |
 | Cache/PubSub | Redis |
 | Payments | Stripe (hosted Checkout + Customer Portal + webhooks) |
@@ -152,7 +152,7 @@ Request access to the following from the owner:
 
 - **Engine:** PostgreSQL in container `hbcfield-postgres`. DB + user are both **`doergo`**. Reachable on the host at `127.0.0.1:5434` (maps to container `5432`). Password is in `.env.production` (`POSTGRES_PASSWORD`).
 - **Access:** `docker exec -it hbcfield-postgres psql -U doergo -d doergo`
-- **ORM:** Prisma. **Canonical schema:** `apps/api/auth-service/prisma/schema.prisma`. Migrations: `apps/api/auth-service/prisma/migrations/`.
+- **ORM:** Prisma. **Canonical schema:** `packages/db/prisma/schema.prisma`. Migrations: `packages/db/prisma/migrations/`.
 
 ### 6.1 Prisma version note
 Prisma **v7** is in use. Generate the client with `pnpm db:generate` (not `npx prisma generate`).

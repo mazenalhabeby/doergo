@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SPACE_PERMISSION_KEYS, whitelistPermissions, PERMISSION_KEYS } from '@hbcfield/shared';
 import { UsersService } from '../users.service';
 import { USERS_SERVICES } from '../users-services';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /**
  * A WORK role (a trade) grants nothing — on EVERY write.

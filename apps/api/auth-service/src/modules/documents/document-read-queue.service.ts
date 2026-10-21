@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { type ObjectStore } from '@hbcfield/shared/storage';
 import { OBJECT_STORE } from './object-store.provider';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { DOCUMENT_READERS, type DocumentReader, type DocumentReading } from './document-reader';
 
 import { personName } from '@hbcfield/shared';

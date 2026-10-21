@@ -10,7 +10,7 @@ import {
   shiftFact,
   zoneOf,
 } from '@hbcfield/shared';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 import { approvedRequestsAround, dayRequestEffect } from './approved-requests';
 import { priorEntryOfShift } from './clock-in-labels';
 

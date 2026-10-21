@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { workspaceZone } from '../../common/zone.util';
 import { notEndedWhere, TaskStatus, Role, success, startOfDayIn, endOfDayIn, assertFoundInOrg } from '@hbcfield/shared';
 import { assertMayAssign } from './task-scope';

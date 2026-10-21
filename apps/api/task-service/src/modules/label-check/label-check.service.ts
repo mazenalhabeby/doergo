@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
 import { checkEntryLabels, localDateKey, runWithCronLock, zonedParts, zoneOf } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 
 /** The local hour from which last night is checked (the first sweep at or after it claims the night). */
 export const LABEL_CHECK_LOCAL_HOUR = 3;

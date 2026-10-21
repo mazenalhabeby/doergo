@@ -1,5 +1,5 @@
 import { SHIFT_REMINDER_DEFAULTS, TimeEntryStatus, clampDailyMinutes } from '@hbcfield/shared';
-import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { PrismaService } from '@hbcfield/shared';
 
 /**
  * A workspace's hours without a shift changed: the sessions RUNNING there follow

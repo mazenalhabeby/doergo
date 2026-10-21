@@ -15,7 +15,7 @@ import {
   type PresencePoint,
   type PresenceState,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../../common/prisma/prisma.service';
+import { PrismaService } from '@hbcfield/shared';
 import { emitEvent, attendanceChangedEvent } from '@hbcfield/shared/microservices';
 
 /** The columns of an open entry this service reads. */
