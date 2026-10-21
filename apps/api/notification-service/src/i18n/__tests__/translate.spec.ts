@@ -96,11 +96,12 @@ describe('phrases with rules of their own', () => {
 
 describe('RecipientLocales', () => {
   const prisma = { user: { findMany: jest.fn(), updateMany: jest.fn() } };
+  const facts = { setLocale: jest.fn() };
   let locales: RecipientLocales;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    locales = new RecipientLocales(prisma as any);
+    locales = new RecipientLocales(prisma as any, facts as any);
   });
 
   it('answers a whole list with one query, and English for anybody never told', async () => {
@@ -145,13 +146,15 @@ describe('RecipientLocales', () => {
 
   it('stores a language it has a catalogue for, reduced from a device’s region form', async () => {
     expect(await locales.set('a', 'de-AT')).toBe('de');
-    expect(prisma.user.updateMany).toHaveBeenCalledWith({ where: { id: 'a' }, data: { locale: 'de' } });
+    // auth-service owns User: the language is told to it, never written here.
+    expect(facts.setLocale).toHaveBeenCalledWith('a', 'de');
+    expect(prisma.user.updateMany).not.toHaveBeenCalled();
   });
 
   it('refuses anything else without touching what was stored', async () => {
     expect(await locales.set('a', 'xx')).toBeNull();
     expect(await locales.set('a', '')).toBeNull();
-    expect(prisma.user.updateMany).not.toHaveBeenCalled();
+    expect(facts.setLocale).not.toHaveBeenCalled();
   });
 });
 

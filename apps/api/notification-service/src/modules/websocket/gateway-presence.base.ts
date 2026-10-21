@@ -1,23 +1,23 @@
 import { SocketEvents } from '@hbcfield/shared';
 import { GatewayTaskEmitsBase } from './gateway-task-emits.base';
+import type { MemberFactsClient } from '../../common/member-facts/member-facts.client';
 
 /**
  * Who is online, and the attendance events — moved here unchanged from
  * websocket.gateway.ts.
  */
 export abstract class GatewayPresenceBase extends GatewayTaskEmitsBase {
+  /** Set by WebsocketGateway's constructor — the auth-service client for presence. */
+  protected memberFacts?: MemberFactsClient;
+
   /** Bump lastActiveAt for every currently-connected user in one query. */
   protected async refreshConnectedPresence() {
     const userIds = new Set<string>();
     for (const info of this.connectedClients.values()) userIds.add(info.userId);
     if (userIds.size === 0) return;
 
-    await this.prisma.user
-      .updateMany({
-        where: { id: { in: Array.from(userIds) } },
-        data: { lastActiveAt: new Date() },
-      })
-      .catch((err) => this.logger.warn(`[PRESENCE] heartbeat failed: ${err}`));
+    // auth-service owns User (docs/data-ownership.md, group F); a failure is logged there, never thrown.
+    await this.memberFacts?.markActive(Array.from(userIds));
   }
 
   protected scheduleOfflineCheck(userId: string, organizationId: string) {
@@ -34,16 +34,12 @@ export abstract class GatewayPresenceBase extends GatewayTaskEmitsBase {
 
   protected async markOnline(userId: string, organizationId: string, wasOffline: boolean) {
     try {
-      const updated = await this.prisma.user.update({
-        where: { id: userId },
-        data: { lastActiveAt: new Date() },
-        select: { presence: true },
-      });
+      const presence = await this.memberFacts?.markActive([userId], wasOffline);
 
       // Only broadcast on a real offline→online transition, so opening a second
       // tab or a socket reconnect doesn't spam every dashboard with refetches.
       if (wasOffline) {
-        this.emitPresenceChanged(userId, updated.presence ?? 'AVAILABLE', organizationId);
+        this.emitPresenceChanged(userId, presence?.[userId] ?? 'AVAILABLE', organizationId);
       }
     } catch (err) {
       this.logger.warn(`[PRESENCE] online mark failed for user ${userId}: ${err}`);
@@ -65,7 +61,7 @@ export abstract class GatewayPresenceBase extends GatewayTaskEmitsBase {
       if (openEntry) return;
 
       // Genuinely gone: clear last-active so they compute as offline, then push.
-      await this.prisma.user.update({ where: { id: userId }, data: { lastActiveAt: null } }).catch(() => undefined);
+      await this.memberFacts?.markInactive(userId);
 
       this.emitPresenceChanged(userId, null, organizationId);
     } catch (err) {

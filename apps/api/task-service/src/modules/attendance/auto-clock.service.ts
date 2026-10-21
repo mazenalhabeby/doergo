@@ -1,5 +1,23 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { AUTO_REST_FLAG, activeAssignmentWhere, autoRestPlan, success, type MemberAutoClockSettings } from '@hbcfield/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  Optional,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom, timeout } from 'rxjs';
+import {
+  AUTO_REST_FLAG,
+  SERVICE_NAMES,
+  activeAssignmentWhere,
+  autoRestPlan,
+  success,
+  type MemberAutoClockSettings,
+} from '@hbcfield/shared';
+import { sendRpc, userSetAutoClockConsent } from '@hbcfield/shared/microservices';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AUTO_UNDO_EVENT, EntryRef, MEMBER_AUTO_CLOCK_SELECT, memberAutoClock } from './auto-clock-helpers';
@@ -8,9 +26,11 @@ export { AUTO_UNDO_EVENT } from './auto-clock-helpers';
 
 @Injectable()
 export class AutoClockService {
-
+  private readonly logger = new Logger(AutoClockService.name);
   constructor(
     private readonly prisma: PrismaService,
+    // auth-service owns User: the consent column is written there (docs/data-ownership.md, group F).
+    @Optional() @Inject(SERVICE_NAMES.AUTH) private readonly auth?: ClientProxy,
   ) {}
 
   // ── Is this member automatic? ───────────────────────────────────────────
@@ -19,7 +39,10 @@ export class AutoClockService {
   async settingsFor(userId: string, spaceId: string, at: Date): Promise<MemberAutoClockSettings | null> {
     const row = await this.prisma.spaceAssignment.findFirst({
       where: { ...activeAssignmentWhere(userId, at), spaceId, autoClock: true },
-      select: { ...MEMBER_AUTO_CLOCK_SELECT, space: { select: { ...MEMBER_AUTO_CLOCK_SELECT.space.select, isRemote: true } } },
+      select: {
+        ...MEMBER_AUTO_CLOCK_SELECT,
+        space: { select: { ...MEMBER_AUTO_CLOCK_SELECT.space.select, isRemote: true } },
+      },
     });
     if (!row || row.space.isRemote) return null;
     return memberAutoClock(row);
@@ -29,7 +52,10 @@ export class AutoClockService {
    * The same answer for a sweep's whole batch — ONE query whatever its size.
    * Keyed by entry id; an entry absent from the map is not automatic.
    */
-  async settingsForEntries(entries: readonly EntryRef[], at: Date = new Date()): Promise<Map<string, MemberAutoClockSettings>> {
+  async settingsForEntries(
+    entries: readonly EntryRef[],
+    at: Date = new Date(),
+  ): Promise<Map<string, MemberAutoClockSettings>> {
     const out = new Map<string, MemberAutoClockSettings>();
     if (!entries.length) return out;
     const userIds = [...new Set(entries.map((e) => e.userId))];
@@ -112,13 +138,33 @@ export class AutoClockService {
     if (!user) throw new NotFoundException('Member not found');
     if (data.consent && user.isExternal) {
       // An external member holds no clock — there is nothing to consent to.
-      throw new BadRequestException({ message: 'External members do not use the clock', code: 'AUTO_CLOCK_NOT_FOR_EXTERNAL' });
+      throw new BadRequestException({
+        message: 'External members do not use the clock',
+        code: 'AUTO_CLOCK_NOT_FOR_EXTERNAL',
+      });
     }
     const consentAt = data.consent ? (user.autoClockConsentAt ?? new Date()) : null;
     if ((consentAt?.getTime() ?? null) !== (user.autoClockConsentAt?.getTime() ?? null)) {
-      await this.prisma.user.update({ where: { id: user.id }, data: { autoClockConsentAt: consentAt } });
+      await this.storeConsent(user.id, consentAt);
     }
     return success({ consentAt: consentAt ? consentAt.toISOString() : null });
+  }
+
+  /** Asked of auth-service and awaited: the member must hear whether their answer was kept. */
+  private async storeConsent(userId: string, consentAt: Date | null) {
+    const refused = new ServiceUnavailableException('Your answer could not be saved right now. Try again.');
+    if (!this.auth) throw refused;
+    try {
+      const r = await firstValueFrom(
+        sendRpc(this.auth, userSetAutoClockConsent, { userId, consentAt: consentAt?.toISOString() ?? null }).pipe(
+          timeout(10_000),
+        ),
+      );
+      if (!r?.success) throw new Error('refused');
+    } catch (e) {
+      this.logger.error(`user_set_auto_clock_consent failed for ${userId}: ${(e as Error)?.message ?? e}`);
+      throw refused;
+    }
   }
 
   // ── Undo a drive-past ───────────────────────────────────────────────────

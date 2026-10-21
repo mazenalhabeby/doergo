@@ -8,6 +8,8 @@ import { UsersService } from './users.service';
 import { USERS_SERVICES } from './users-services';
 import { SpaceRoleWritesController } from './space-role-writes.controller';
 import { SpaceRoleWritesService } from './space-role-writes.service';
+import { MemberFactsController } from './member-facts.controller';
+import { MemberFactsService } from './member-facts.service';
 
 @Module({
   // A client to task-service so a watcher change can publish the cache
@@ -17,9 +19,9 @@ import { SpaceRoleWritesService } from './space-role-writes.service';
     MemberOffboardingModule,
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)]),
   ],
-  controllers: [UsersController, SpaceRoleWritesController],
+  controllers: [UsersController, SpaceRoleWritesController, MemberFactsController],
   // The facade and its collaborators — see users-services.ts.
-  providers: [...USERS_SERVICES, SpaceRoleWritesService],
+  providers: [...USERS_SERVICES, SpaceRoleWritesService, MemberFactsService],
   exports: [UsersService],
 })
 export class UsersModule {}

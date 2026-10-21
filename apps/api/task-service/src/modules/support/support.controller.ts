@@ -10,6 +10,7 @@ import {
   supportMarkRead,
   supportSetStatus,
   supportThread,
+  supportTicketsUnassignTeam,
   type RpcRequest,
 } from '@hbcfield/shared/microservices';
 import { SupportService } from './support.service';
@@ -25,6 +26,11 @@ export class SupportController {
     private readonly support: SupportService,
     private readonly supportInbox: SupportInboxService,
   ) {}
+
+  @MessagePattern(pattern(supportTicketsUnassignTeam))
+  unassignTeam(@Payload() data: RpcRequest<typeof supportTicketsUnassignTeam>) {
+    return this.supportInbox.unassignTeam(data.teamId);
+  }
 
   @MessagePattern(pattern(supportCreate))
   create(@Payload() data: RpcRequest<typeof supportCreate>) {

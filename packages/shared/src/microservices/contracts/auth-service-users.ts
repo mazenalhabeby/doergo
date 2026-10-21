@@ -148,8 +148,6 @@ export const getMemberWatchers = rpc<{ memberId: string; organizationId: string 
 export const setMemberWatchers = rpc<{ memberId: string; organizationId: string; watcherIds: string[] }>(
   'set_member_watchers',
 );
-export const listNotifications = rpc<{ userId: string; limit?: number }>('list_notifications');
-export const markNotificationsRead = rpc<{ userId: string; ids?: string[] }>('mark_notifications_read');
 export const getMyNotificationPrefs = rpc<{ userId: string }>('get_my_notification_prefs');
 export const updateMyNotificationPrefs = rpc<{ userId: string; prefs: Record<string, boolean> }>(
   'update_my_notification_prefs',

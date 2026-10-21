@@ -19,8 +19,6 @@ import {
   listOrgContacts,
   getMemberWatchers,
   setMemberWatchers,
-  listNotifications,
-  markNotificationsRead,
   getMyNotificationPrefs,
   updateMyNotificationPrefs,
   updateMemberProfile,
@@ -133,16 +131,6 @@ export class UsersController {
   @MessagePattern(pattern(setMemberWatchers))
   async setMemberWatchers(@Payload() data: RpcRequest<typeof setMemberWatchers>) {
     return this.usersService.setWatchers(data.memberId, data.organizationId, data.watcherIds || []);
-  }
-
-  @MessagePattern(pattern(listNotifications))
-  async listNotifications(@Payload() data: RpcRequest<typeof listNotifications>) {
-    return this.usersService.listNotifications(data.userId, data.limit);
-  }
-
-  @MessagePattern(pattern(markNotificationsRead))
-  async markNotificationsRead(@Payload() data: RpcRequest<typeof markNotificationsRead>) {
-    return this.usersService.markNotificationsRead(data.userId, data.ids);
   }
 
   /*

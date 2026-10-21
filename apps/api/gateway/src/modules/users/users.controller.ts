@@ -67,7 +67,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Your in-app notification inbox (recent + unread count)' })
   async listNotifications(@CurrentUser() user: SessionUser, @Query('limit') limit?: string) {
     return firstValueFrom(
-      sendRpc(this.authClient, listNotifications, {
+      sendRpc(this.notificationClient, listNotifications, {
         userId: user.id,
         limit: limit ? Number(limit) : undefined,
       }),
@@ -78,7 +78,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Mark notifications read (all, or the given ids)' })
   async markNotificationsRead(@CurrentUser() user: SessionUser, @Body() dto: MarkNotificationsReadDto) {
     return firstValueFrom(
-      sendRpc(this.authClient, markNotificationsRead, {
+      sendRpc(this.notificationClient, markNotificationsRead, {
         userId: user.id,
         ids: dto?.ids,
       }),

@@ -147,4 +147,14 @@ export class SupportInboxService extends SupportBase {
       { page, limit, total },
     );
   }
+
+  /** The operator deleted a support team: its tickets keep their history and go back to no team. */
+  async unassignTeam(teamId: string) {
+    if (!teamId) return { success: false, count: 0 };
+    const { count } = await this.prisma.supportTicket.updateMany({
+      where: { assignedTeamId: teamId },
+      data: { assignedTeamId: null },
+    });
+    return { success: true, count };
+  }
 }

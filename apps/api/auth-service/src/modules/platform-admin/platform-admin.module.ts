@@ -1,5 +1,7 @@
 import { SessionEventsModule } from '../../common/session-events/session-events.module';
 import { Module } from '@nestjs/common';
+import { ClientsModule } from '@nestjs/microservices';
+import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { PlatformAdminController } from './platform-admin.controller';
 import { PlatformAdminService } from './platform-admin.service';
 import { PlatformAuthController } from './platform-auth.controller';
@@ -27,7 +29,8 @@ import { PlatformStaffService } from './platform-staff.service';
 
 // PrismaService (global PrismaModule) + JwtService (global JwtModule) are available.
 @Module({
-  imports: [SessionEventsModule, BillingModule],
+  // TASK: deleting a support team asks task-service to clear its tickets (SupportTicket is task's).
+  imports: [SessionEventsModule, BillingModule, ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.TASK)])],
   controllers: [
     PlatformAdminController,
     PlatformAuthController,

@@ -11,6 +11,7 @@ export * from './auth-service-search';
 export * from './auth-service-space-sharing';
 export * from './auth-service-users';
 export * from './auth-service-roles';
+export * from './auth-service-member-facts';
 export * from './auth-service-documents-types';
 export * from './auth-service-documents';
 export * from './auth-service-documents-catalogue';

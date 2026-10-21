@@ -65,11 +65,7 @@ export class SessionControlService {
         */
         // The bare token: phones before the fix sent `token|language` and matched nothing.
         const token = barePushToken(pushToken);
-        if (token) {
-          await this.prisma.userPushToken
-            .deleteMany({ where: { token, userId: stored.userId } })
-            .catch(() => undefined);
-        }
+        if (token) await this.sessionEvents?.signedOutDevice(stored.userId, token);
       }
 
       return {

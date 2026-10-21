@@ -8,7 +8,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { instrument } from '@socket.io/admin-ui';
-import { OnModuleDestroy } from '@nestjs/common';
+import { OnModuleDestroy, Optional } from '@nestjs/common';
+import { MemberFactsClient } from '../../common/member-facts/member-facts.client';
 import { ConfigService } from '@nestjs/config';
 import { SocketEvents, PrismaService } from '@hbcfield/shared';
 import { typingRecipients } from './chat-members';
@@ -38,8 +39,9 @@ export class WebsocketGateway
   @WebSocketServer()
   server: Server;
 
-  constructor(prisma: PrismaService, configService: ConfigService) {
+  constructor(prisma: PrismaService, configService: ConfigService, @Optional() memberFacts?: MemberFactsClient) {
     super(prisma, configService);
+    this.memberFacts = memberFacts;
   }
 
   afterInit(server: Server) {

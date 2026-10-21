@@ -1,7 +1,10 @@
 import type { Prisma } from '@prisma/client';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom, timeout } from 'rxjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { isTeamColor, type RoutingConditions } from '@hbcfield/shared';
+import { isTeamColor, SERVICE_NAMES, type RoutingConditions } from '@hbcfield/shared';
+import { sendRpc, supportTicketsUnassignTeam } from '@hbcfield/shared/microservices';
 
 const ok = <T>(data: T) => ({ success: true, data });
 const fail = (message: string, statusCode = 400) => ({ success: false, statusCode, message });
@@ -13,7 +16,11 @@ const fail = (message: string, statusCode = 400) => ({ success: false, statusCod
  */
 @Injectable()
 export class PlatformSupportTeamsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(PlatformSupportTeamsService.name);
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() @Inject(SERVICE_NAMES.TASK) private readonly tasks?: ClientProxy,
+  ) {}
 
   /** Active platform staff — for the "add member" picker (manageSupportTeams). */
   async listStaff() {
@@ -82,10 +89,22 @@ export class PlatformSupportTeamsService {
   }
 
   async deleteTeam(d: { teamId: string }) {
-    // Detach pinned orgs + null out tickets so nothing dangles; rules/members cascade.
+    /*
+      The team's tickets first, by task-service (it owns SupportTicket — docs/data-ownership.md,
+      group F). Asked BEFORE the team goes: if it cannot answer, nothing is deleted and the operator
+      tries again; the reverse order would leave tickets pointing at a team that no longer exists.
+      Clearing is idempotent, so a retry after a half-done attempt is safe.
+    */
+    if (!this.tasks) return fail('Support teams cannot be deleted right now. Try again.', 503);
+    try {
+      await firstValueFrom(sendRpc(this.tasks, supportTicketsUnassignTeam, { teamId: d.teamId }).pipe(timeout(10_000)));
+    } catch (e) {
+      this.logger.error(`support.unassign_team failed for ${d.teamId}: ${(e as Error)?.message ?? e}`);
+      return fail('Support teams cannot be deleted right now. Try again.', 503);
+    }
+    // Detach pinned orgs; rules/members cascade.
     await this.prisma.$transaction([
       this.prisma.organization.updateMany({ where: { supportTeamId: d.teamId }, data: { supportTeamId: null } }),
-      this.prisma.supportTicket.updateMany({ where: { assignedTeamId: d.teamId }, data: { assignedTeamId: null } }),
       this.prisma.supportTeam.delete({ where: { id: d.teamId } }),
     ]);
     return ok({ deleted: true });

@@ -28,7 +28,10 @@ import { CalendarRulesModule } from '../calendar/calendar-rules.module';
 
 @Module({
   imports: [
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
+    ClientsModule.registerAsync([
+      createClientOptions(SERVICE_NAMES.NOTIFICATION),
+      createClientOptions(SERVICE_NAMES.AUTH),
+    ]),
     BullModule.registerQueue({ name: QUEUE_NAMES.ATTENDANCE }),
     BullModule.registerQueue({ name: QUEUE_NAMES.OVERTIME }),
     PresenceModule,

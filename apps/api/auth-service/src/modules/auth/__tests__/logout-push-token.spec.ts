@@ -11,6 +11,7 @@ import { AuditLogService } from '../../audit-log/audit-log.service';
 import { BillingService } from '../../billing/billing.service';
 import { BillingTrialService } from '../../billing/billing-trial.service';
 import { GraceTokenCache } from '../grace-token-cache.service';
+import { of, throwError } from 'rxjs';
 
 /*
   ⚠️ Signing out must stop the notifications to THAT phone.
@@ -29,6 +30,9 @@ import { GraceTokenCache } from '../grace-token-cache.service';
   delete lets anyone holding a token string unregister someone else's phone),
   and it is scoped to the TOKEN (signing out of one phone must not silence the
   one still in their pocket).
+
+  notification-service owns the push tokens (docs/data-ownership.md, group F), so
+  sign-out ASKS it (`remove_push_token` with the member's id) and waits for the answer.
 */
 describe('signing out removes this device from push', () => {
   let service: AuthService &
@@ -39,15 +43,16 @@ describe('signing out removes this device from push', () => {
   const prisma: Record<string, any> = {
     refreshToken: { findUnique: jest.fn(), deleteMany: jest.fn().mockResolvedValue({ count: 1 }) },
     user: { update: jest.fn().mockResolvedValue({}) },
-    userPushToken: { deleteMany: jest.fn().mockResolvedValue({ count: 1 }) },
   };
+  const events = { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn(), signedOutDevice: jest.fn() };
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    events.signedOutDevice.mockResolvedValue(undefined);
     prisma.refreshToken.findUnique.mockResolvedValue(stored);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        { provide: SessionEvents, useValue: { sessionsRevoked: jest.fn(), organizationSuspended: jest.fn() } },
+        { provide: SessionEvents, useValue: events },
         ...AUTH_SERVICES,
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: { sign: jest.fn(() => 'jwt'), verify: jest.fn(() => ({ sub: 'user-1' })) } },
@@ -62,23 +67,9 @@ describe('signing out removes this device from push', () => {
     service = combinedServices(module.get(AuthService), module.get(SessionControlService)) as any;
   });
 
-  it('deletes the registration the phone named', async () => {
+  it('asks for the registration the phone named, for THIS member only', async () => {
     await service.logout('T1', 'ExponentPushToken[abc]');
-    expect(prisma.userPushToken.deleteMany).toHaveBeenCalledWith({
-      where: { token: 'ExponentPushToken[abc]', userId: 'user-1' },
-    });
-  });
-
-  it('scopes it to the member, so a known token cannot unregister someone else', async () => {
-    await service.logout('T1', 'ExponentPushToken[abc]');
-    const [{ where }] = prisma.userPushToken.deleteMany.mock.calls[0];
-    expect(where.userId).toBe('user-1');
-  });
-
-  it('never clears every token the member has — the other phone keeps working', async () => {
-    await service.logout('T1', 'ExponentPushToken[abc]');
-    const [{ where }] = prisma.userPushToken.deleteMany.mock.calls[0];
-    expect(where.token).toBe('ExponentPushToken[abc]');
+    expect(events.signedOutDevice).toHaveBeenCalledWith('user-1', 'ExponentPushToken[abc]');
   });
 
   /*
@@ -87,22 +78,29 @@ describe('signing out removes this device from push', () => {
     stores the bare token, so the delete matched nothing and every signed-out
     phone kept receiving the member's notifications.
   */
-  it('removes the token when the phone sends `token|language` (apps before the fix)', async () => {
+  it('asks for the bare token when the phone sends `token|language` (apps before the fix)', async () => {
     await service.logout('T1', 'ExponentPushToken[abc]|de');
-    expect(prisma.userPushToken.deleteMany).toHaveBeenCalledWith({
-      where: { token: 'ExponentPushToken[abc]', userId: 'user-1' },
-    });
+    expect(events.signedOutDevice).toHaveBeenCalledWith('user-1', 'ExponentPushToken[abc]');
   });
 
-  it('touches nothing when the phone sent no token (an older app)', async () => {
+  it('asks nothing when the phone sent no token (an older app)', async () => {
     await service.logout('T1');
-    expect(prisma.userPushToken.deleteMany).not.toHaveBeenCalled();
+    expect(events.signedOutDevice).not.toHaveBeenCalled();
+  });
+});
+
+describe('SessionEvents.signedOutDevice — the message to notification-service', () => {
+  it('sends remove_push_token scoped to the member and the one token — never every token', async () => {
+    const client: any = { send: jest.fn(() => of({ success: true })) };
+    await new SessionEvents(client).signedOutDevice('user-1', 'ExponentPushToken[abc]');
+    expect(client.send).toHaveBeenCalledWith(
+      { cmd: 'remove_push_token' },
+      { token: 'ExponentPushToken[abc]', userId: 'user-1' },
+    );
   });
 
-  it('still signs the member out when the push removal fails', async () => {
-    prisma.userPushToken.deleteMany.mockRejectedValueOnce(new Error('db down'));
-    const res: any = await service.logout('T1', 'ExponentPushToken[abc]');
-    expect(prisma.refreshToken.deleteMany).toHaveBeenCalled();
-    expect(res).toMatchObject({ success: true, userId: 'user-1' });
+  it('never fails the sign-out when notification-service cannot answer', async () => {
+    const client: any = { send: jest.fn(() => throwError(() => new Error('down'))) };
+    await expect(new SessionEvents(client).signedOutDevice('user-1', 'tok')).resolves.toBeUndefined();
   });
 });

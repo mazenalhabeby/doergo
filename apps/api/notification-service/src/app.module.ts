@@ -6,6 +6,8 @@ import { RetentionService } from './common/retention/retention.service';
 import { EmailModule } from './modules/email/email.module';
 import { PushModule } from './modules/push/push.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
+import { InboxModule } from './modules/inbox/inbox.module';
+import { MemberFactsModule } from './common/member-facts/member-facts.module';
 import { NotificationController } from './notification.controller';
 import { TaskNotificationHandler } from './handlers/task-notification.handler';
 import { RoleTaskNotificationHandler } from './handlers/role-task-notification.handler';
@@ -46,6 +48,8 @@ import { AppUpdateNotificationHandler } from './handlers/app-update-notification
     EmailModule,
     PushModule,
     WebsocketModule,
+    InboxModule,
+    MemberFactsModule,
   ],
   controllers: [
     NotificationController,

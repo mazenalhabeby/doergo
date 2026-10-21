@@ -1,8 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom, timeout } from 'rxjs';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import {
   emitEvent,
+  removePushToken,
+  sendRpc,
   organizationSuspendedEvent,
   userSessionsRevokedEvent,
   type EventContract,
@@ -35,6 +38,20 @@ export class SessionEvents {
   /** The organization was switched off — every member's connection goes. */
   organizationSuspended(organizationId: string): void {
     this.emit(organizationSuspendedEvent, { organizationId });
+  }
+
+  /**
+   * Signing out stops the pushes to THIS device. notification-service owns the push tokens
+   * (docs/data-ownership.md, group F); asked and awaited (5 s), scoped to the member — a token
+   * string alone must never unregister somebody else's phone. A failure is logged, never a
+   * failed sign-out.
+   */
+  async signedOutDevice(userId: string, token: string): Promise<void> {
+    try {
+      await firstValueFrom(sendRpc(this.notifications, removePushToken, { token, userId }).pipe(timeout(5_000)));
+    } catch (e) {
+      this.logger.warn(`remove_push_token after sign-out failed for ${userId}: ${(e as Error)?.message ?? e}`);
+    }
   }
 
   private emit<P>(contract: EventContract<P>, payload: P): void {

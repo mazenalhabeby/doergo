@@ -64,3 +64,8 @@ export const supportInbox = rpc<{
   agentId?: string;
   view?: 'all' | 'mine' | 'unassigned' | 'team';
 }>('support.inbox');
+
+/** A support team was deleted on the operator console: its tickets go back to no team (task-service owns SupportTicket). */
+export const supportTicketsUnassignTeam = rpc<{ teamId: string }, { success: boolean; count: number }>(
+  'support.unassign_team',
+);

@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
+import { MemberFactsClient } from '../common/member-facts/member-facts.client';
 import {
   DEFAULT_LOCALE,
   localesByAddress,
@@ -30,7 +31,11 @@ export class RecipientLocales {
   private readonly logger = new Logger(RecipientLocales.name);
   private readonly cache = new Map<string, { locale: SupportedLocale; at: number }>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    // auth-service owns User: a learned language is stored there (docs/data-ownership.md, group F).
+    @Optional() private readonly facts?: MemberFactsClient,
+  ) {}
 
   async localesFor(userIds: Array<string | null | undefined>): Promise<Map<string, SupportedLocale>> {
     const ids = [...new Set(userIds.filter((id): id is string => !!id))];
@@ -93,13 +98,8 @@ export class RecipientLocales {
     const normalized = normalizeLocale(locale);
     if (!userId || !normalized) return null;
     this.cache.set(userId, { locale: normalized, at: Date.now() });
-    try {
-      // updateMany, not update: a token registered for a user deleted a moment
-      // ago must not throw out of a delivery path.
-      await this.prisma.user.updateMany({ where: { id: userId }, data: { locale: normalized } });
-    } catch (error) {
-      this.logger.error(`Could not store locale for ${userId}: ${error}`);
-    }
+    // Best effort: the cache already answers this replica, and a delivery path must not wait on auth.
+    await this.facts?.setLocale(userId, normalized);
     return normalized;
   }
 

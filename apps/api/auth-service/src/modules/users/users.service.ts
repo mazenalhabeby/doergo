@@ -43,7 +43,9 @@ export class UsersService implements OnApplicationBootstrap {
 
   /** Built-ins catch up with their definitions once per boot, across every organization. */
   async onApplicationBootstrap() {
-    await this.roles.syncBuiltInRoles().catch((e) => this.logger.warn(`Built-in role sync skipped: ${e?.message ?? e}`));
+    await this.roles
+      .syncBuiltInRoles()
+      .catch((e) => this.logger.warn(`Built-in role sync skipped: ${e?.message ?? e}`));
   }
 
   syncBuiltInRoles(...args: Parameters<AccessRolesService['syncBuiltInRoles']>) {
@@ -144,14 +146,6 @@ export class UsersService implements OnApplicationBootstrap {
 
   setWatchers(...args: Parameters<MemberWatchersService['setWatchers']>) {
     return this.watchers.setWatchers(...args);
-  }
-
-  listNotifications(...args: Parameters<OwnAccountService['listNotifications']>) {
-    return this.ownAccount.listNotifications(...args);
-  }
-
-  markNotificationsRead(...args: Parameters<OwnAccountService['markNotificationsRead']>) {
-    return this.ownAccount.markNotificationsRead(...args);
   }
 
   getNotificationPrefs(...args: Parameters<OwnAccountService['getNotificationPrefs']>) {
