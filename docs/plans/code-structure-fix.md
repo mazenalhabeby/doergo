@@ -114,6 +114,18 @@ Today it is a "distributed monolith": one 6,145-line schema in auth-service, use
 | 3.4 | **Then cross-service READS:** replace direct reads (task-service reads `user` 219×) with a small read helper per owner (cached), one area at a time. | allowed-read list shrinks to zero, step by step |
 | 3.5 | **Rename `auth-service` → `core-service`** (it holds clients, invoices, documents, billing). Containers, compose, nginx and logs change — done as its own deploy with a rollback tag. | names match what the services do |
 
+> **Status (2026-10-21): 3.1–3.3 DONE on branch `refactor/structure-p3`** (not merged, not deployed).
+> - **3.3** writes: 16 → 0 cross-service writes (groups A–F, `docs/data-ownership.md`); the agreed exceptions
+>   are listed in `tools/structure/ownership.mjs` with their reasons. New migration
+>   `20261021090000_task_routes` (additive, safe to re-run).
+> - **3.2** schema: `packages/db` holds schema, migrations, seeds (`pnpm db:*`); ONE PrismaService (shared) —
+>   task-service had been running two pools. No pool changed size (`PRISMA_CONNECTION_LIMIT=10` kept for
+>   notification-service in compose). All five images built locally; the auth image's start-up migrated a
+>   copy of the local database from the new path. ⚠️ **Deploy note:** the auth entrypoint, the release
+>   script and CI read `packages/db/prisma`; `infra/release/deploy.sh` still finds an older commit's
+>   migrations under auth-service for a rollback.
+> - Still open: **3.4** reads, **3.5** rename.
+
 ---
 
 ## Phase 4 — Split the giant API modules by meaning *(≈ 2 weeks)*
