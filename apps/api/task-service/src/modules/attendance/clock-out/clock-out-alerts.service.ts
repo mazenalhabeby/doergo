@@ -2,7 +2,7 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { personName, zoneOf, SERVICE_NAMES, personNameAndEmail } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { AttendanceRoutingService } from '../core/attendance-routing.service';
 import {
   emitEvent,

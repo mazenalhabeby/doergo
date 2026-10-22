@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { buildTaskVisibilityWhere } from './task-visibility';
 import { PrismaService } from '@hbcfield/shared';
-import { TaskAccessService } from '../../../common/task-access/task-access.service';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { TaskAccessService } from '../access/task-access.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { TaskEventType, success, getRedisConfig } from '@hbcfield/shared';
 import type { Prisma } from '@prisma/client';
 
@@ -28,7 +28,7 @@ export class TaskSupportService {
     private readonly notificationRouting: NotificationRoutingService,
     configService: ConfigService,
     /**
-     * May this caller touch this task? — the shared gate (common/task-access),
+     * May this caller touch this task? — the shared gate (modules/tasks/access),
      * which this file, attachments, reports and custom fields all ask. It used to
      * be three private copies that had drifted; see TaskAccessService.
      */

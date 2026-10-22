@@ -3,7 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';
 import { PrismaService } from '@hbcfield/shared';
 import { MediaSigner, type StoredFile } from '../../common/storage/media-signer.service';
-import { TaskAccessService } from '../../common/task-access/task-access.service';
+import { TaskAccessService } from '../tasks/access/task-access.service';
 
 /** What the service-report services share: their dependencies, and signing a report's attachment links. */
 @Injectable()

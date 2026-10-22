@@ -1,6 +1,6 @@
-import { ApprovalRulesService } from '../../../common/approval-rules/approval-rules.service';
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { Optional } from '@nestjs/common';
-import { standInGrant } from '../../../common/stand-in';
+import { standInGrant } from '../../approvals/stand-in';
 import { grantHolds, managesPeopleOrIsAdmin } from '@hbcfield/shared';
 import { Injectable, Inject, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -10,7 +10,7 @@ import { scopeWhere } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { CountedTimeService } from '../core/counted-time.service';
 import { AttendanceRoutingService } from '../core/attendance-routing.service';
-import { askAboutOwnRequest, type OwnRequestAsk } from '../../../common/own-request-route';
+import { askAboutOwnRequest, type OwnRequestAsk } from '../../approvals/own-request-route';
 import { ExtraTimeDecision, decidableExtraTimeWhere, overtimeEndFor } from './extra-time-helpers';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';

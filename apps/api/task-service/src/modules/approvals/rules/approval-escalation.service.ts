@@ -17,7 +17,7 @@ import {
 import { PrismaService } from '@hbcfield/shared';
 import { ApprovalRouteService } from './approval-route.service';
 import { ApprovalRulesService } from './approval-rules.service';
-import { CoverService } from '../../modules/technicians/cover.service';
+import { CoverService } from '../../technicians/cover.service';
 import { emitEvent, approvalReminderEvent } from '@hbcfield/shared/microservices';
 
 /** One sweep looks at no more than this many waiting items per organization and kind. */

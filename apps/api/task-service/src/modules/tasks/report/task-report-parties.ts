@@ -17,8 +17,8 @@ import {
   personCrmReach,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
-import { type TaskAccessFacts } from '../../../common/task-access/task-access.service';
+import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
+import { type TaskAccessFacts } from '../access/task-access.service';
 import { JobTimeService } from '../handover/job-time.service';
 import { TaskSupportService } from '../core/task-support.service';
 import { TaskQueryService } from '../query/task-query.service';

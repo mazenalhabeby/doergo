@@ -7,7 +7,7 @@ import { BadRequestException, ForbiddenException, NotFoundException } from '@nes
 import { CREW_CODES } from '@hbcfield/shared';
 import { CrewService } from '../handover/crew.service';
 import { JobTimeService } from '../handover/job-time.service';
-import { TaskAccessService } from '../../../common/task-access/task-access.service';
+import { TaskAccessService } from '../access/task-access.service';
 
 const T = (hhmm: string) => new Date(`2026-10-01T${hhmm}:00Z`);
 const ORG = 'org1';

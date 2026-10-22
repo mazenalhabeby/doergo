@@ -4,7 +4,7 @@ import { BadRequestException, ForbiddenException, NotFoundException } from '@nes
 import { mayReviewProposal, proposalInSpace, proposalReviewSpaces } from '@hbcfield/shared';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@hbcfield/shared';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { AssetAccessService } from '../core/asset-access.service';
 import { AssetContractService } from '../proposals/asset-contract.service';
 import { AssetProposalService } from '../proposals/asset-proposal.service';

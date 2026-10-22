@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { resolveSpaceDefaultWorkflowId } from '../../../common/space-workflow.util';
+import { resolveSpaceDefaultWorkflowId } from '../../workflows/space-workflow.util';
 import {
   personName,
   notEndedWhere,

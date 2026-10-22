@@ -17,7 +17,7 @@ import { CLOSE_ENTRY_INCLUDE } from './clock-out-helpers';
 import { ShiftCloseBase } from './shift-close.base';
 import { ClockOutAlertsService } from './clock-out-alerts.service';
 import { PrismaService } from '@hbcfield/shared';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { JobPauseService } from '../../tasks/handover/job-pause.service';
 import { CountedTimeService } from '../core/counted-time.service';
 import { AttendanceRoutingService } from '../core/attendance-routing.service';

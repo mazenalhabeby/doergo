@@ -9,7 +9,7 @@ import {
 } from '@hbcfield/shared';
 import { Inject, Injectable, BadRequestException } from '@nestjs/common';
 import { success } from '@hbcfield/shared';
-import { askAboutOwnRequest } from '../../common/own-request-route';
+import { askAboutOwnRequest } from '../approvals/own-request-route';
 import { findPrior } from '../../common/create-once.util';
 import { RequestTimeOffDto } from './dto';
 import { SPACE_BRIEF, REQUEST_REFUSALS, requestFacts } from './technicians-helpers';

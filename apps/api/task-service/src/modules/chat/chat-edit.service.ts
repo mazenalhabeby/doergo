@@ -7,7 +7,7 @@ import { findMembership } from './chat-membership';
 import { ChatReachService } from './chat-reach.service';
 import { ChatFilesService } from './chat-files.service';
 import { ChatTasksService } from './chat-tasks.service';
-import type { TaskAccessFacts } from '../../common/task-access/task-access.service';
+import type { TaskAccessFacts } from '../tasks/access/task-access.service';
 import { emitEvent, chatMessageChangedEvent } from '@hbcfield/shared/microservices';
 
 /**

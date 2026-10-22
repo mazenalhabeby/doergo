@@ -9,8 +9,8 @@ import {
   assertFoundInOrg,
 } from '@hbcfield/shared';
 import type { PrismaService } from '@hbcfield/shared';
-import type { CachedWorkflow, WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
-import { resolveSpaceDefaultWorkflowId } from '../../../common/space-workflow.util';
+import type { CachedWorkflow, WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
+import { resolveSpaceDefaultWorkflowId } from '../../workflows/space-workflow.util';
 import type { StatusTask, UpdateStatusInput } from './task-status.types';
 
 /**

@@ -4,7 +4,7 @@ import { TaskStatus, accessAllowsInSpace, activeAssignmentWhere } from '@hbcfiel
 import type { PrismaService } from '@hbcfield/shared';
 import type { TaskCreateJob } from '@hbcfield/shared';
 import { assertWorkflowInOrg } from '../../../common/tenant-scope.util';
-import { resolveSpaceDefaultWorkflowId, listSpaceWorkflowIds } from '../../../common/space-workflow.util';
+import { resolveSpaceDefaultWorkflowId, listSpaceWorkflowIds } from '../../workflows/space-workflow.util';
 
 /** The steps of `TaskRecordsService.create`, in the order it runs them. */
 

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
-import { spaceRoleHolders } from '../../../common/space-leaders.util';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
+import { spaceRoleHolders } from '../../notification-routing/space-leaders.util';
 
 /**
  * Who is told about an attendance event: the workspace's leaders for the

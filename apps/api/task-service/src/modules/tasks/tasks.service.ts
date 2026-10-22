@@ -25,9 +25,9 @@ import { TaskTriageService } from './records/task-triage.service';
  */
 /*
   The caller's identity for the task gate. Lives with the gate itself now
-  (common/task-access) — re-exported so existing imports keep working.
+  (modules/tasks/access) — re-exported so existing imports keep working.
 */
-export type { TaskAccessFacts } from '../../common/task-access/task-access.service';
+export type { TaskAccessFacts } from './access/task-access.service';
 
 /**
  * The task service every caller injects — the processor, the controller, the

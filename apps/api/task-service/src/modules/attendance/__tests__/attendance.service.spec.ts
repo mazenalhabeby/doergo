@@ -10,7 +10,7 @@ import { entryServicesOf, type ApprovalServiceParts } from './approval.service.f
 import { ENTRY_SERVICES } from '../entries/entry-services';
 import { AttendanceReportService } from '../reports/attendance-report.service';
 import { ShiftResolverService } from '../core/shift-resolver.service';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { PrismaService } from '@hbcfield/shared';
 import {
   TimeEntryStatus,

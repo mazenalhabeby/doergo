@@ -7,7 +7,7 @@
  * form leaves the job where it was.
  */
 import { Test } from '@nestjs/testing';
-import { TaskAccessService } from '../../../common/task-access/task-access.service';
+import { TaskAccessService } from '../access/task-access.service';
 import { ConfigService } from '@nestjs/config';
 import { BadRequestException } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
@@ -17,8 +17,8 @@ import { TasksService } from '../tasks.service';
 import { TASK_SERVICE_PARTS } from '../task-service-parts';
 import { RolePoolService } from '../assignment/role-pool.service';
 import { PrismaService } from '@hbcfield/shared';
-import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
 import { JobTimeService } from '../handover/job-time.service';
 import { PresenceService } from '../../attendance/presence/presence.service';

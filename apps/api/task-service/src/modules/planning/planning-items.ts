@@ -1,7 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { assertSpaceInOrg } from './tenant-scope.util';
+import { assertSpaceInOrg } from '../../common/tenant-scope.util';
 import type { PlanningItemInputMessage } from '@hbcfield/shared/microservices';
 
 const WITH_TASK_COUNT = { _count: { select: { tasks: true } } } as const;

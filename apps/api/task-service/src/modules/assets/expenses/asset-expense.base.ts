@@ -1,4 +1,4 @@
-import { ApprovalRulesService } from '../../../common/approval-rules/approval-rules.service';
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Optional } from '@nestjs/common';
 import { OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';

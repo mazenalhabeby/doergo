@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
-import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
+import { WorkflowConfigCache } from './config-cache/workflow-config-cache.service';
 import { assertFoundInOrg } from '@hbcfield/shared';
 
 /** What the workflow services share: their dependencies and finding one step of a workflow. */

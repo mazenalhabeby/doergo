@@ -11,7 +11,7 @@ import {
   activeWindowWhere,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { ApprovalRulesService } from '../../common/approval-rules/approval-rules.service';
+import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
 import { ShiftResolverService } from '../attendance/core/shift-resolver.service';
 import { CoverService } from './cover.service';
 import { LeaveLedgerService } from './leave-ledger.service';

@@ -9,7 +9,7 @@
 
 - **124 tables**, one schema (`packages/db/prisma/schema.prisma`, 6,145 lines).
 - **108 tables are already written by exactly one service.** 16 are written by two or three — **30 places in the code** (below).
-- **8 tables are never read or written** by the services' code: Alert, DailyMetric, HealthMetric, ModulePrice, OrganizationAccess, PricingConfig, ScheduleTemplate, SeatPrice — candidates to delete after a check (the operator console or a raw query could still use one). Epic and Phase are written through `common/planning-items.ts`, SyncTombstone by a database trigger — all three are task-service's.
+- **8 tables are never read or written** by the services' code: Alert, DailyMetric, HealthMetric, ModulePrice, OrganizationAccess, PricingConfig, ScheduleTemplate, SeatPrice — candidates to delete after a check (the operator console or a raw query could still use one). Epic and Phase are written through `modules/planning/planning-items.ts`, SyncTombstone by a database trigger — all three are task-service's.
 - The gateway writes no table (correct — it has no database).
 
 | Service | Owns |

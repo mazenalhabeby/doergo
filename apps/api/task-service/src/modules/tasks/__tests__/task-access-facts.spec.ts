@@ -71,14 +71,14 @@ describe('per-task access checks take the caller in one piece', () => {
     ONE gate, not three copies. The copies in attachments and reports had
     drifted from the task's own (no co-assignee lookup; the role-holder question
     asked before the organization boundary). The shared DECISION may only be
-    asked from common/task-access — anywhere else is a fourth copy starting.
+    asked from modules/tasks/access — anywhere else is a fourth copy starting.
   */
   it('only TaskAccessService asks canAccessTask — no private copies', () => {
     const SRC_ROOT = join(__dirname, '..', '..', '..');
     const all = walk(SRC_ROOT).map((f) => ({ path: f, code: stripComments(readFileSync(f, 'utf8')) }));
     const askers = all.filter(({ code }) => /\bcanAccessTask\s*\(/.test(code)).map(({ path }) => path);
     expect(askers.length).toBe(1);
-    expect(askers[0]).toMatch(/common[\\/]task-access[\\/]task-access\.service\.ts$/);
+    expect(askers[0]).toMatch(/tasks[\\/]access[\\/]task-access\.service\.ts$/);
     expect(all.some(({ code }) => /private (async )?checkTaskAccess\(/.test(code))).toBe(false);
   });
 });

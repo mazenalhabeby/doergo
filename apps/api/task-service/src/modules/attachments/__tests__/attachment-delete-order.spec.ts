@@ -1,5 +1,5 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { TaskAccessService } from '../../../common/task-access/task-access.service';
+import { TaskAccessService } from '../../tasks/access/task-access.service';
 import { attachmentsParts } from './attachments.service.fixture';
 
 /**

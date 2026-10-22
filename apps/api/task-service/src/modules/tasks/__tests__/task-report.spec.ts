@@ -14,7 +14,7 @@ import {
 } from '@hbcfield/shared';
 import { TaskReportService } from '../report/task-report.service';
 import { TaskQueryService } from '../query/task-query.service';
-import { TaskAccessService } from '../../../common/task-access/task-access.service';
+import { TaskAccessService } from '../access/task-access.service';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
 
 /**

@@ -3,7 +3,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { clampListLimit, parseHistoryCursor, messagePreview } from '@hbcfield/shared';
 import { findPrior } from '../../common/create-once.util';
 import { CHAT_USER_SELECT as userSelect, previewOf, visibleMessage } from './chat-shape';
-import type { TaskAccessFacts } from '../../common/task-access/task-access.service';
+import type { TaskAccessFacts } from '../tasks/access/task-access.service';
 import { ChatServiceBase } from './chat-service.base';
 import { emitEvent, chatBadgeEvent, chatMessageEvent, chatReadEvent } from '@hbcfield/shared/microservices';
 import type { Prisma } from '@prisma/client';

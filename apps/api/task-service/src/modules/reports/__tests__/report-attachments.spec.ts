@@ -4,7 +4,7 @@ import { reportServices } from './reports.service.fixture';
  * attachments, because a report photo ends up in a PDF sent to the customer.
  */
 import { reportKeyPrefixes } from '../reports.service';
-import { TaskAccessService } from '../../../common/task-access/task-access.service';
+import { TaskAccessService } from '../../tasks/access/task-access.service';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
 
 const ORG = 'org_1';

@@ -19,7 +19,7 @@ import {
   orgMembersWithAccess,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { NotificationRoutingService } from '../notification-routing.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import type { ApprovalRouteInput as SharedApprovalRouteInput } from '@hbcfield/shared/microservices';
 
 /** "Who else can decide" is a hint, not a directory: the first few, and how many more. */

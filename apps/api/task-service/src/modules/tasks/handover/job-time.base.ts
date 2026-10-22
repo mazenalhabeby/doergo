@@ -17,8 +17,8 @@ import {
   type WorkTimelineEvent,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
-import { resolveSpaceDefaultWorkflowId, resolveSpaceDefaultWorkflowIds } from '../../../common/space-workflow.util';
+import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
+import { resolveSpaceDefaultWorkflowId, resolveSpaceDefaultWorkflowIds } from '../../workflows/space-workflow.util';
 import {
   TaskRef,
   EventRow,

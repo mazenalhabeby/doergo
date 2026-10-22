@@ -19,7 +19,7 @@ import { CountedTimeService } from '../core/counted-time.service';
 import { BreakRulesService } from '../core/break-rules.service';
 import { BreakReminderService } from '../rests/break-reminder.service';
 import { BREAK_SERVICES } from '../rests/break-services';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { PrismaService } from '@hbcfield/shared';
 import { PresenceService } from '../presence/presence.service';
 

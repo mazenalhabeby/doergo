@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
-import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
+import { TaskAccessService, type TaskAccessFacts } from '../tasks/access/task-access.service';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
 
 /** Writing a task's custom field values, each checked against its field. */

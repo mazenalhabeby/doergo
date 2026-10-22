@@ -5,7 +5,7 @@ import { emitEvent, shiftIssueEventEvent, type EventContract } from '@hbcfield/s
 import { OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';
 import { PrismaService } from '@hbcfield/shared';
 import { MediaSigner } from '../../common/storage/media-signer.service';
-import { NotificationRoutingService } from '../../common/notification-routing.service';
+import { NotificationRoutingService } from '../notification-routing/notification-routing.service';
 import { ALLOWED_FILE_TYPES, Attachment } from './shift-issues-helpers';
 
 /**

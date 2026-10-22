@@ -2,7 +2,7 @@
  * Completing a job with its report from a phone that was offline.
  */
 import { TaskStatus } from '@hbcfield/shared';
-import { TaskAccessService } from '../../../common/task-access/task-access.service';
+import { TaskAccessService } from '../../tasks/access/task-access.service';
 import { reportServices } from './reports.service.fixture';
 
 const TAP = new Date('2026-09-14T09:40:00.000Z');

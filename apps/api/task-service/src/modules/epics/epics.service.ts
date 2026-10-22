@@ -1,10 +1,10 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
-import { PlanningItemService, dayUpdate, fieldUpdate, planningDay, type PlanningItemInput } from '../../common/planning-items';
+import { PlanningItemService, dayUpdate, fieldUpdate, planningDay, type PlanningItemInput } from '../planning/planning-items';
 
 const VALID_EPIC_STATUSES = ['OPEN', 'IN_PROGRESS', 'DONE'];
 
-/** Epics: a planning item with a status and a target date (common/planning-items). */
+/** Epics: a planning item with a status and a target date (modules/planning/planning-items). */
 @Injectable()
 export class EpicsService extends PlanningItemService {
   protected readonly model = 'epic' as const;

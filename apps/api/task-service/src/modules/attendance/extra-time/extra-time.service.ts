@@ -1,4 +1,4 @@
-import { standInGrant } from '../../../common/stand-in';
+import { standInGrant } from '../../approvals/stand-in';
 import { personName, zoneOf } from '@hbcfield/shared';
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { success, TimeEntryStatus } from '@hbcfield/shared';

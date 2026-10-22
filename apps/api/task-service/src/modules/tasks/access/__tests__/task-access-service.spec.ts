@@ -1,12 +1,12 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Role } from '@hbcfield/shared';
-import { TaskAccessService } from '../task-access/task-access.service';
-import { attachmentsParts } from '../../modules/attachments/__tests__/attachments.service.fixture';
-import { customFieldsParts } from '../../modules/custom-fields/__tests__/custom-fields.service.fixture';
-import { MediaSigner } from '../storage/media-signer.service';
+import { TaskAccessService } from '../task-access.service';
+import { attachmentsParts } from '../../../attachments/__tests__/attachments.service.fixture';
+import { customFieldsParts } from '../../../custom-fields/__tests__/custom-fields.service.fixture';
+import { MediaSigner } from '../../../../common/storage/media-signer.service';
 
 /**
- * ONE task gate (common/task-access), asked by tasks, attachments, reports and
+ * ONE task gate (modules/tasks/access), asked by tasks, attachments, reports and
  * custom fields.
  *
  * Regressions it pins:

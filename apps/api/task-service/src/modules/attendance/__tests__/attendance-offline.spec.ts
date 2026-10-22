@@ -19,7 +19,7 @@ import { ShiftResolverService } from '../core/shift-resolver.service';
 import { CountedTimeService } from '../core/counted-time.service';
 import { BreakRulesService } from '../core/break-rules.service';
 import { BreakReminderService } from '../rests/break-reminder.service';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { PrismaService } from '@hbcfield/shared';
 import { approvalFor } from '../core/attendance-occurrence';
 import { PresenceService } from '../presence/presence.service';

@@ -5,7 +5,7 @@ import { resolveCreatePlacement, settleCreateSpace, writeCreateAssignees } from 
 /** A step reads only some of the job; the fixtures name only that part. */
 const job = (part: Record<string, unknown>) => part as unknown as TaskCreateJob;
 
-jest.mock('../../../common/space-workflow.util', () => ({
+jest.mock('../../workflows/space-workflow.util', () => ({
   resolveSpaceDefaultWorkflowId: jest.fn().mockResolvedValue('wf-space'),
   listSpaceWorkflowIds: jest.fn().mockResolvedValue([]),
 }));

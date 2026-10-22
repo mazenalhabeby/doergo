@@ -6,7 +6,7 @@ import path from 'path';
   gate, and every refusal path drops the open step. A new path that skips it
   lets a rule be bypassed from that page — this fails first.
 */
-const MODULES = path.join(__dirname, '..', '..', 'modules');
+const MODULES = path.join(__dirname, '..', '..');
 const read = (rel: string) => fs.readFileSync(path.join(MODULES, rel), 'utf8');
 
 describe('office rules are asked on every approve path of their kinds', () => {

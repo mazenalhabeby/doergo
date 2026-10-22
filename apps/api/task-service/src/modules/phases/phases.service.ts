@@ -1,13 +1,13 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
-import { PlanningItemService, dayUpdate, fieldUpdate, planningDay, type PlanningItemInput } from '../../common/planning-items';
+import { PlanningItemService, dayUpdate, fieldUpdate, planningDay, type PlanningItemInput } from '../planning/planning-items';
 
 const PHASE_TYPES = ['phase', 'milestone'];
 const assertPhaseType = (type?: string) => {
   if (type && !PHASE_TYPES.includes(type)) throw new BadRequestException('Type must be "phase" or "milestone"');
 };
 
-/** Phases: a planning item with a type (phase | milestone), an end date and an active switch (common/planning-items). */
+/** Phases: a planning item with a type (phase | milestone), an end date and an active switch (modules/planning/planning-items). */
 @Injectable()
 export class PhasesService extends PlanningItemService {
   protected readonly model = 'phase' as const;

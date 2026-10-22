@@ -1,4 +1,4 @@
-import { ApprovalRulesService } from '../../common/approval-rules/approval-rules.service';
+import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
 import {
   REQUEST_KINDS,
   isAbsence,
@@ -12,7 +12,7 @@ import {
 import { Inject, Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES } from '@hbcfield/shared';
-import { NotificationRoutingService } from '../../common/notification-routing.service';
+import { NotificationRoutingService } from '../notification-routing/notification-routing.service';
 import { CoverService } from './cover.service';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { LeaveLedgerService } from './leave-ledger.service';

@@ -9,7 +9,7 @@ import {
   proposalReviewSpaces,
   type ProposalPlace,
 } from '@hbcfield/shared';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { AssetContractService, type ContractActor, type ContractFields } from './asset-contract.service';
 import { assetScope } from '../core/asset-access.service';
 import { AssetNotifier } from '../core/asset-notifier.service';

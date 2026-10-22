@@ -1,9 +1,9 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { ApprovalRouteService } from '../../common/approval-rules/approval-route.service';
+import { ApprovalRouteService } from './rules/approval-route.service';
 import { StandInsService } from './stand-ins.service';
-import { ApprovalRulesService } from '../../common/approval-rules/approval-rules.service';
-import { ApprovalRulesAdminService } from '../../common/approval-rules/approval-rules-admin.service';
+import { ApprovalRulesService } from './rules/approval-rules.service';
+import { ApprovalRulesAdminService } from './rules/approval-rules-admin.service';
 import {
   pattern,
   type RpcRequest,

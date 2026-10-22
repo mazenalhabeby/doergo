@@ -4,7 +4,7 @@ import { OBJECT_STORE, ObjectStore, newObjectKey, requireObjectStore } from '@hb
 import { PrismaService } from '@hbcfield/shared';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { TaskEventType, Role, success } from '@hbcfield/shared';
-import { TaskAccessService } from '../../common/task-access/task-access.service';
+import { TaskAccessService } from '../tasks/access/task-access.service';
 import { UPLOAD_TTL_SECONDS, MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from './attachments-helpers';
 import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 import { TASK_JOBS, type JobData } from '@hbcfield/shared';

@@ -10,7 +10,7 @@ import {
   orgModules,
 } from '@hbcfield/shared';
 import { assertSpaceInOrg, assertWorkflowInOrg } from '../../common/tenant-scope.util';
-import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
+import { resolveSpaceDefaultWorkflowId } from './space-workflow.util';
 import { WorkflowServiceBase } from './workflow-service.base';
 
 /** Workflows in a workspace: which it uses, attaching and detaching one, the default. */

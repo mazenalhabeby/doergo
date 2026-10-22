@@ -1,7 +1,7 @@
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
-import { TaskAccessService } from '../../../common/task-access/task-access.service';
-import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
+import { TaskAccessService } from '../../tasks/access/task-access.service';
+import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
 
 /**
  * Storage for chat specs: every key exists (1 KB) and signs to "signed:{key}".

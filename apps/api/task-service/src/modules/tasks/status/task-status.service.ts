@@ -9,7 +9,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
+import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
 import { judgeOccurrence } from '../../../common/occurrence.util';
 import { ClockGateService } from '../handover/clock-gate.service';
 import { CrewService } from '../handover/crew.service';

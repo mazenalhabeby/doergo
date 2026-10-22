@@ -24,7 +24,7 @@ import {
   type TaskReportWork,
   activeIssuers,
 } from '@hbcfield/shared';
-import { type TaskAccessFacts } from '../../../common/task-access/task-access.service';
+import { type TaskAccessFacts } from '../access/task-access.service';
 import { PERSON, REPORT_TASK_SELECT, personOf, iso, nameOf, isImage } from './task-report-helpers';
 import { TaskReportSections } from './task-report-sections';
 

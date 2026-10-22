@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { askAboutOwnRequest } from '../../common/own-request-route';
+import { askAboutOwnRequest } from '../approvals/own-request-route';
 import {
   success,
   OVERTIME_CONSTANTS,

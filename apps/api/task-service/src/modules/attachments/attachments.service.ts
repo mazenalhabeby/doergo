@@ -5,7 +5,7 @@ import { PrismaService } from '@hbcfield/shared';
 import { createOnce } from '../../common/create-once.util';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { TaskEventType, success } from '@hbcfield/shared';
-import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
+import { TaskAccessService, type TaskAccessFacts } from '../tasks/access/task-access.service';
 import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES, attachmentTypeOf, attachmentKeyPrefixes } from './attachments-helpers';
 import { emitEvent, attachmentAddedEvent } from '@hbcfield/shared/microservices';
 import { TASK_JOBS, type JobData } from '@hbcfield/shared';

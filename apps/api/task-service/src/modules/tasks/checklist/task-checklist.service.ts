@@ -9,7 +9,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { CrewService } from '../handover/crew.service';
 import { PrismaService } from '@hbcfield/shared';
-import { type TaskAccessFacts } from '../../../common/task-access/task-access.service';
+import { type TaskAccessFacts } from '../access/task-access.service';
 import {
   personName,
   TaskEventType,

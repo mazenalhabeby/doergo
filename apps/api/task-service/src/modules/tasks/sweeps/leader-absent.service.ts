@@ -12,7 +12,7 @@ import {
   personBrief,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { CrewService } from '../handover/crew.service';
 import { emitEvent, taskLeadNeededEvent } from '@hbcfield/shared/microservices';
 

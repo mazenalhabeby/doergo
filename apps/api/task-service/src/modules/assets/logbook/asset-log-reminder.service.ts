@@ -11,7 +11,7 @@ import {
   nextReminderAt,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { AssetResponsibleService } from '../core/asset-responsible.service';
 import { emitEvent, assetLogDueEvent, type EventPayload } from '@hbcfield/shared/microservices';
 

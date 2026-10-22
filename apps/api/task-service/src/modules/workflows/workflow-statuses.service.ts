@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
-import { stepFormForSave } from '../../common/step-form.util';
+import { stepFormForSave } from './step-form.util';
 import { WorkflowServiceBase } from './workflow-service.base';
 
 /** A workflow's steps: adding, changing, reordering, removing. */

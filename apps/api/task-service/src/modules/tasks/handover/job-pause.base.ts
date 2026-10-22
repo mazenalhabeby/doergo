@@ -2,8 +2,8 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { crewPresence, pausesAtClockOut, stepCapabilities, stepStartsWork } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { WorkflowConfigCache, type CachedWorkflow } from '../../../common/cache/workflow-config-cache.service';
-import { resolveSpaceDefaultWorkflowIds } from '../../../common/space-workflow.util';
+import { WorkflowConfigCache, type CachedWorkflow } from '../../workflows/config-cache/workflow-config-cache.service';
+import { resolveSpaceDefaultWorkflowIds } from '../../workflows/space-workflow.util';
 import { JobTimeService } from './job-time.service';
 import { NEVER_WORKING, Candidate } from './job-pause-helpers';
 

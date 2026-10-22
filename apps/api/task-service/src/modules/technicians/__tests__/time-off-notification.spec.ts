@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { LeaveLedgerService } from '../leave-ledger.service';
 import { TimeOffRequestService } from '../time-off-request.service';
 import { TimeOffDecisionService } from '../time-off-decision.service';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { CoverService } from '../cover.service';
 import { CalendarRulesService } from '../../calendar/calendar-rules.service';
 import { PrismaService, SERVICE_NAMES } from '@hbcfield/shared';

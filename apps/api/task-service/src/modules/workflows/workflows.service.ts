@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { success, isTypeCapability, assertFoundInOrg } from '@hbcfield/shared';
 import { assertSpaceInOrg } from '../../common/tenant-scope.util';
-import { stepFormForSave } from '../../common/step-form.util';
+import { stepFormForSave } from './step-form.util';
 import { WorkflowServiceBase } from './workflow-service.base';
 
 @Injectable()

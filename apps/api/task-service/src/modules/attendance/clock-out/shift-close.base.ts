@@ -3,7 +3,7 @@ import { Injectable, Inject, Logger, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, personNameOf } from '@hbcfield/shared';
 import { JobPauseService } from '../../tasks/handover/job-pause.service';
-import { NotificationRoutingService } from '../../../common/notification-routing.service';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { personName, zoneOf, TimeEntryStatus, SERVICE_NAMES, AUTO_REST_FLAG } from '@hbcfield/shared';
 import { clockEventEntry } from '../core/clock-event';
 import { CountedTimeService } from '../core/counted-time.service';

@@ -1,4 +1,4 @@
-import { standInGrant } from '../../common/stand-in';
+import { standInGrant } from '../approvals/stand-in';
 import { notEndedWhere, grantHolds, approverFacts } from '@hbcfield/shared';
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { assertNotSelfDecision } from '../attendance/core/self-decision';

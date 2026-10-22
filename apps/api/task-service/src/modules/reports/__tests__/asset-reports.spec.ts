@@ -8,7 +8,7 @@
  * in, and a page size cannot be talked into returning the table.
  */
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { TaskAccessService } from '../../../common/task-access/task-access.service';
+import { TaskAccessService } from '../../tasks/access/task-access.service';
 import { reportServices } from './reports.service.fixture';
 
 const ORG = 'org_1';

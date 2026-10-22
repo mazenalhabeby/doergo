@@ -11,7 +11,7 @@ import { attachmentsParts } from './attachments.service.fixture';
  *  - rows written before keys existed (full URL only) still read and delete.
  */
 import { attachmentKeyPrefixes } from '../attachments.service';
-import { TaskAccessService } from '../../../common/task-access/task-access.service';
+import { TaskAccessService } from '../../tasks/access/task-access.service';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
 
 const ORG = 'org_1';

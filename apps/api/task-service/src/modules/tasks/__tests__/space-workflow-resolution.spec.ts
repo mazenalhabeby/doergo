@@ -1,4 +1,4 @@
-import { resolveSpaceDefaultWorkflowId, listSpaceWorkflowIds } from '../../../common/space-workflow.util';
+import { resolveSpaceDefaultWorkflowId, listSpaceWorkflowIds } from '../../workflows/space-workflow.util';
 
 /**
  * Moving a space's workflow from a column to a join table, without anyone

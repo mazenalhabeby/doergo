@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { orgRoleGrants, orgWideActorIds } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { spaceRoleHolders } from '../../../common/space-leaders.util';
+import { spaceRoleHolders } from '../../notification-routing/space-leaders.util';
 
 /**
  * Who can actually ACT on the organization's equipment.

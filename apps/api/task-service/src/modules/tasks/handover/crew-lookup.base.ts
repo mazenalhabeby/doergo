@@ -17,12 +17,12 @@ import {
   peopleFaces,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
-import { resolveSpaceDefaultWorkflowId } from '../../../common/space-workflow.util';
+import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
+import { resolveSpaceDefaultWorkflowId } from '../../workflows/space-workflow.util';
 import { ClockGateService } from './clock-gate.service';
 import { JobPauseService } from './job-pause.service';
 import { JobTimeService } from './job-time.service';
-import { TaskAccessService } from '../../../common/task-access/task-access.service';
+import { TaskAccessService } from '../access/task-access.service';
 import { CrewActor, CrewTask, TASK_SELECT } from './crew-helpers';
 
 /**
