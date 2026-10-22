@@ -1,8 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, FilterPill, FilterRow, Well, WellDivider, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, FilterPill, FilterRow, Well, WellDivider, SectionLabel } from '@/components/amazen';
 import { TourTarget } from '../tour';
 import { RequestRow, type RequestRowData } from '../requests/request-parts';
 import type { RequestFilter } from './helpers';

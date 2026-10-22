@@ -8,12 +8,12 @@ import Reanimated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { widgetTitle, type WidgetRow } from './registry';
 import { type Pitch } from './pitch';
-import { selection } from '../../lib/haptics';
-import { useAuth } from '../../contexts/auth-context';
-import { holds } from '../../lib/permissions';
+import { selection } from '@/lib/haptics';
+import { useAuth } from '@/contexts/auth-context';
+import { holds } from '@/lib/permissions';
 
 /** WidgetGallery's state and handlers — everything before its markup, moved here unchanged. */
 export function useWidgetGallery({

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { tasksApi } from '../../lib/api/tasks';
-import type { Task } from '../../lib/api/types';
+import { tasksApi } from '@/lib/api/tasks';
+import type { Task } from '@/lib/api/types';
 import { connectivity } from '../connectivity';
 import { useOffline, useSyncStatus } from '../offline-context';
 import type { OutboxOp } from '../outbox/types';

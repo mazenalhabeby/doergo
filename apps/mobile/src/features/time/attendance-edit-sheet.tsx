@@ -3,17 +3,17 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { utcToZonedInput, zonedInputToUtc, localDateKey } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { attendanceApi } from '../../lib/api';
-import type { TimeEntry } from '../../lib/api/types';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
-import { cityFromTz } from '../../lib/utils';
-import { BlurSheet } from '../../components/blur-sheet';
-import { SheetPanel } from '../../components/sheet-panel';
-import { DatePickerModal } from '../../components/date-picker-modal';
-import { splitWall, joinWall, dateFromISO, TIME_RE, TimeField, s } from '../../components/time-field';
-import { caught } from '../../lib/caught';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { attendanceApi } from '@/lib/api';
+import type { TimeEntry } from '@/lib/api/types';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
+import { cityFromTz } from '@/lib/utils';
+import { BlurSheet } from '@/components/blur-sheet';
+import { SheetPanel } from '@/components/sheet-panel';
+import { DatePickerModal } from '@/components/date-picker-modal';
+import { splitWall, joinWall, dateFromISO, TIME_RE, TimeField, s } from '@/components/time-field';
+import { caught } from '@/lib/caught';
 
 /**
  * Correcting somebody's hours, from a phone.

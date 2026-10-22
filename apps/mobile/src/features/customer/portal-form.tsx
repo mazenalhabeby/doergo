@@ -4,8 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../lib/constants';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
 
 /**
  * A client's form page in the portal — Edit profile, Change password: back,

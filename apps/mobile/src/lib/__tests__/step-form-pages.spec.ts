@@ -1,8 +1,8 @@
 import { getFlowSteps, stepFormPreset, type StepForm, type StepFormField } from '@hbcfield/shared/client';
 import {
   formForMove, moveKind, paginateForm, workflowAsks, groupOf, SINGLE_SCREEN_FIELDS,
-} from '../../features/job/step-form-logic';
-import { formSheet, formSheetTarget, parseOpenSheet } from '../../features/job/job-logic';
+} from '@/features/job/step-form-logic';
+import { formSheet, formSheetTarget, parseOpenSheet } from '@/features/job/job-logic';
 
 /**
  * Step forms on the phone — which form a move asks, and how the sheet splits it.

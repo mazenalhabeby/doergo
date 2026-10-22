@@ -6,7 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { slotHeldBy, ONE_AT_A_TIME_STATUSES } from '@hbcfield/shared/client';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 // A split file reads with the parts moved out of it (test-utils/read-source.ts).
 const code = (p: string) => readSource(path.resolve(__dirname, '../..', p), 'utf8');

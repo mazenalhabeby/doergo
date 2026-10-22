@@ -9,9 +9,9 @@ import {
   type PhoneContact,
   type PickFilter,
 } from '@hbcfield/shared/client';
-import { customersApi } from '../../../lib/api';
-import { hashMatchKeys, readPhoneContacts } from '../../../lib/phone-contacts';
-import { uuidv7 } from '../../../offline/ids';
+import { customersApi } from '@/lib/api';
+import { hashMatchKeys, readPhoneContacts } from '@/lib/phone-contacts';
+import { uuidv7 } from '@/offline/ids';
 
 export type ImportStep = 'explain' | 'pick' | 'review' | 'done';
 

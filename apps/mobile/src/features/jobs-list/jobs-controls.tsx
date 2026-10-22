@@ -1,8 +1,8 @@
 import React from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
 
 /**
  * The Jobs tab's controls — `docs/design/job-flow.html` `.search`, `.seg`,

@@ -1,4 +1,4 @@
-import type { AvailabilityResponse, ScheduleEntry, TimeOffRequest } from '../../lib/api/types';
+import type { AvailabilityResponse, ScheduleEntry, TimeOffRequest } from '@/lib/api/types';
 import { personName, localDateKey, isAbsence } from '@hbcfield/shared/client';
 
 /*

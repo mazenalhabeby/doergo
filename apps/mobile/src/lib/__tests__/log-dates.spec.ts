@@ -1,6 +1,6 @@
 import { ASSET_ENTRY_BACKDATE_DAYS, LOG_MEMBER_BACKDATE_DAYS, assetEntryDateMessage, logDateProblem } from '@hbcfield/shared/client';
 import { assetEntryDateText, dateFromDayKey, dayKeyOf, logEntryDayBounds, occurredAtForDay } from '../log-dates';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 /**
  * The days the logbook's calendar offers — pinned against the rule the server
@@ -139,7 +139,7 @@ describe('assetEntryDateText', () => {
 
   it("the English catalogue says exactly the server's sentence", () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const en = require('../../i18n/locales/en.json');
+    const en = require('@/i18n/locales/en.json');
     expect(en.logbook.dateFuture).toBe(assetEntryDateMessage('future'));
     expect(en.logbook.dateTooOld.replace('{{count}}', String(ASSET_ENTRY_BACKDATE_DAYS))).toBe(assetEntryDateMessage('too-old'));
     expect(en.logbook.badDate).toBe(assetEntryDateMessage('unreadable'));

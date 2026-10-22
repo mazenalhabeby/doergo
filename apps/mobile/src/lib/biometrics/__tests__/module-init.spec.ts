@@ -35,10 +35,10 @@ jest.mock('@sbaiahmed1/react-native-biometrics', () => ({
   createKeys: jest.fn(), deleteKeys: jest.fn(), keyExists: jest.fn().mockResolvedValue(false),
   signWithOptions: jest.fn(), BiometricStrength: { Strong: 'strong' }, InputEncoding: { Base64: 'base64' },
 }));
-jest.mock('../../api/client', () => ({
+jest.mock('@/lib/api/client', () => ({
   API_URL: 'http://test', getAccessToken: jest.fn(), getRefreshToken: jest.fn(), saveTokens: jest.fn(),
 }));
-jest.mock('../../../i18n', () => ({ t: (k: string) => k }));
+jest.mock('@/i18n', () => ({ t: (k: string) => k }));
 
 describe('biometrics module graph', () => {
   it('initialises without a cycle leaving anything undefined', () => {

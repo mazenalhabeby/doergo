@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Linking } from 'react-native';
 import { buildNavUrl, type NavApp, type OptimizedRoute } from '@hbcfield/shared/client';
-import { useAuth } from '../../contexts/auth-context';
-import { useHomeTasks } from '../../offline/tasks/use-home-tasks';
-import { planDay, todaysPlan } from '../../offline/routes/plan-route';
-import { useDriverPosition } from '../../hooks/use-driver-position';
-import { useLiveRefresh } from '../../hooks/use-live-refresh';
-import { detectNavApps, preferredNavApp, rememberNavApp, rememberedNavApp, type InstalledNavApp } from '../../lib/nav-apps';
+import { useAuth } from '@/contexts/auth-context';
+import { useHomeTasks } from '@/offline/tasks/use-home-tasks';
+import { planDay, todaysPlan } from '@/offline/routes/plan-route';
+import { useDriverPosition } from '@/hooks/use-driver-position';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
+import { detectNavApps, preferredNavApp, rememberNavApp, rememberedNavApp, type InstalledNavApp } from '@/lib/nav-apps';
 import {
   arrivedIdsOf, routeDayOf, inPlanOrder, isStalePlan, notInPlan, isStraightLine, primaryVerb, progress, routeFigures, routeState,
   type DayStop,
-} from '../../lib/route-day';
+} from '@/lib/route-day';
 
 /**
  * Today's route — the data, the state and the two verbs. The card only draws.

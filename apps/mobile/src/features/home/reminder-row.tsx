@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
-import { Monogram } from '../../components/amazen/monogram';
-import { over } from '../../theme/amazen';
-import { CallGlyph } from '../../components/glyphs/work-glyphs';
-import { EmailGlyph, ClientCompanyGlyph, ClientPersonGlyph } from '../../components/glyphs/crm-glyphs';
-import type { DueReminder } from '../../lib/api/customers';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
+import { Monogram } from '@/components/amazen/monogram';
+import { over } from '@/theme/amazen';
+import { CallGlyph } from '@/components/glyphs/work-glyphs';
+import { EmailGlyph, ClientCompanyGlyph, ClientPersonGlyph } from '@/components/glyphs/crm-glyphs';
+import type { DueReminder } from '@/lib/api/customers';
 import { DoneRing } from './done-ring';
 
 /** How long Undo is offered before the tick is sent. */

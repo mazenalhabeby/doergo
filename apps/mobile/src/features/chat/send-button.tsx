@@ -1,9 +1,9 @@
 import { Pressable, View } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated from 'react-native-reanimated';
-import { InkIcon } from '../../components/amazen/ink-icon';
-import { useIconMotion } from '../../components/amazen/motion';
+import { InkIcon } from '@/components/amazen/ink-icon';
+import { useIconMotion } from '@/components/amazen/motion';
 
 /** SendButton, moved here unchanged out of chat-rows.tsx. */
 /** Send: the theme's jade when there is something to send; the plane flies out and back on a tap. */

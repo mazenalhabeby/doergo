@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '../../contexts/auth-context';
-import { useSocketContext } from '../../contexts/socket-context';
-import { shiftIssuesApi } from '../../lib/api/shift-issues';
+import { useAuth } from '@/contexts/auth-context';
+import { useSocketContext } from '@/contexts/socket-context';
+import { shiftIssuesApi } from '@/lib/api/shift-issues';
 import { groupIssues, unreadFor } from './issue-status';
 
 /**

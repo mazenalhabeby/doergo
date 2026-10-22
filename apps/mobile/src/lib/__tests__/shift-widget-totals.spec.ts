@@ -6,10 +6,10 @@
 import type { TimeEntry } from '@hbcfield/shared/client';
 
 // The pure readers only — the network and the keep-store are not under test.
-jest.mock('../../lib/api/attendance', () => ({ attendanceApi: {} }));
+jest.mock('@/lib/api/attendance', () => ({ attendanceApi: {} }));
 jest.mock('../remember/use-remembered', () => ({ useRemembered: () => ({ data: null, ready: true }) }));
 
-import { readTotals, historyFrom } from '../../features/home/use-schedule-totals';
+import { readTotals, historyFrom } from '@/features/home/use-schedule-totals';
 
 const at = (mo: number, d: number, h: number, m = 0) => new Date(2026, mo - 1, d, h, m).toISOString();
 const shift = (inAt: string, outAt: string | null, minutes: number, over: Record<string, unknown> = {}): TimeEntry =>

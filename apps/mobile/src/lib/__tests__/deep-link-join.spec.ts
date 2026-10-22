@@ -8,10 +8,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { armCrewJoin, clearCrewJoin, crewJoinArmed, JOIN_INTENT_TTL_MS, takeCrewJoin } from '../join-intent';
-import { parseOpenSheet } from '../../features/job/job-logic';
+import { parseOpenSheet } from '@/features/job/job-logic';
 import { crewJoinTarget } from '../notification-route';
 import { runSessionEndCleaners } from '../session/session-registry';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 const ROOT = path.resolve(__dirname, '../../..');
 const read = (p: string) =>

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { SvgXml } from 'react-native-svg';
 import { ICON_VIEWBOX, iconMarkup, type IconName } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import type { GlyphProps } from '../glyphs/glyphs';
 
 /**

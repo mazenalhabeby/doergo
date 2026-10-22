@@ -1,5 +1,5 @@
-import { getFix } from '../../lib/location-fix';
-import { TaskStatus } from '../../lib/api';
+import { getFix } from '@/lib/location-fix';
+import { TaskStatus } from '@/lib/api';
 
 /**
  * Where the member is, for the task statuses that are judged by it.

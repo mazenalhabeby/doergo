@@ -5,12 +5,12 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
-import { useAuth } from '../../../../contexts/auth-context';
-import { useTheme } from '../../../../contexts/theme-context';
-import { portalApi } from '../../../../lib/api/portal';
-import { userApi } from '../../../../lib/api';
-import { initialOf } from '../../../../lib/people';
-import { changeLanguage, getCurrentLanguage, supportedLanguages } from '../../../../i18n';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { portalApi } from '@/lib/api/portal';
+import { userApi } from '@/lib/api';
+import { initialOf } from '@/lib/people';
+import { changeLanguage, getCurrentLanguage, supportedLanguages } from '@/i18n';
 
 /** CustomerProfile's state and handlers — everything before its markup, moved here unchanged. */
 export function useCustomerProfile() {

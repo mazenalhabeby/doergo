@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
 import { type AccentKey } from './use-customer-home';
 
 /** CustomerHome's module-level helpers, moved here unchanged so its sections can read them too. */

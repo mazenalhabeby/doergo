@@ -1,4 +1,4 @@
-import type { BadgeSource, Destination } from '../../lib/manage-rows';
+import type { BadgeSource, Destination } from '@/lib/manage-rows';
 
 /**
  * ⭐ THE SHORTCUTS CARD'S RULES — `docs/design/shortcuts`.

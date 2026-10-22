@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getFix } from '../../lib/location-fix';
+import { getFix } from '@/lib/location-fix';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import type { AttendanceStatus, GeofenceExcursion } from '@hbcfield/shared/client';
-import { useAuth } from '../../contexts/auth-context';
-import { useToast } from '../../island/island-context';
-import { attendanceApi } from '../../lib/api/attendance';
-import { useExcursionSync } from '../../hooks/useExcursionSync';
-import { startBackgroundHeartbeat, stopBackgroundHeartbeat } from '../../services/background-heartbeat';
-import { startGeofenceForSpace, stopGeofence } from '../../services/background-geofence';
-import { isAppActive, onAppStateChange } from '../../lib/app-resume';
-import { useNow } from '../../hooks/use-now';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/island/island-context';
+import { attendanceApi } from '@/lib/api/attendance';
+import { useExcursionSync } from '@/hooks/use-excursion-sync';
+import { startBackgroundHeartbeat, stopBackgroundHeartbeat } from '@/services/background-heartbeat';
+import { startGeofenceForSpace, stopGeofence } from '@/services/background-geofence';
+import { isAppActive, onAppStateChange } from '@/lib/app-resume';
+import { useNow } from '@/hooks/use-now';
 import { graceCountdown, heartbeatDue } from './time-logic';
 
 /**

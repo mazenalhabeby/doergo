@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { DateField } from '../../components';
+import { DateField } from '@/components';
 import { useFormPalette } from './equipment-frame';
 import { type KindLogField, type LogValueProblem } from '@hbcfield/shared/client';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type FieldColors } from '../../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type FieldColors } from '@/lib/constants';
 
 /** AssetLogScreen's module-level helpers, moved here unchanged so its sections can read them too. */
 /** One field, drawn for its type. The problem, if any, is said under it in plain words. */

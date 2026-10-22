@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useImagePicker, type PickedImage } from '../../hooks/useImagePicker';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { StateEyebrow } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useImagePicker, type PickedImage } from '@/hooks/use-image-picker';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { StateEyebrow } from '@/components/amazen';
 import { useWorklog } from './use-worklog';
 
 export interface WorkLogShift {

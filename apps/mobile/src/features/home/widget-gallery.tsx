@@ -6,15 +6,15 @@ import Reanimated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { BlurSheet } from '../../components/blur-sheet';
-import { SheetPanel } from '../../components/sheet-panel';
-import { AText, PrimaryButton } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { BlurSheet } from '@/components/blur-sheet';
+import { SheetPanel } from '@/components/sheet-panel';
+import { AText, PrimaryButton } from '@/components/amazen';
 import { widgetTitle, type WidgetRow } from './registry';
 import { PitchProvider, type Pitch } from './pitch';
-import { selection } from '../../lib/haptics';
-import { useAuth } from '../../contexts/auth-context';
-import { holds } from '../../lib/permissions';
+import { selection } from '@/lib/haptics';
+import { useAuth } from '@/contexts/auth-context';
+import { holds } from '@/lib/permissions';
 import { useWidgetGallery } from './use-widget-gallery';
 import { SCALE, FRAME_H, Dot } from './widget-gallery-helpers';
 

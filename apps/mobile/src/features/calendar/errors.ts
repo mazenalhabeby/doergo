@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { ApiError } from '../../lib/api/client';
+import { ApiError } from '@/lib/api/client';
 
 /** A refusal in the reader's language when the server sent a code we know; its own words otherwise. */
 export function calendarError(err: unknown, t: TFunction): string {

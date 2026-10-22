@@ -3,11 +3,11 @@ import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, TextInp
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useResponsive } from '../../lib/responsive';
-import { AText, Ground } from '../../components/amazen';
-import { AnimatedLogo } from '../../components/animated-logo';
-import { centeredContent } from '../../components/screen-container';
+import { useTheme } from '@/contexts/theme-context';
+import { useResponsive } from '@/lib/responsive';
+import { AText, Ground } from '@/components/amazen';
+import { AnimatedLogo } from '@/components/animated-logo';
+import { centeredContent } from '@/components/screen-container';
 
 /**
  * The doors into the app — sign in, create an account, forgot password — on

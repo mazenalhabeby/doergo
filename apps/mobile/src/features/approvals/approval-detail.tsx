@@ -2,11 +2,11 @@ import React from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Switch, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { NO_SHOW_EXCUSE_REASONS } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { approvalsApi } from '../../lib/api';
-import { formatDay } from '../../lib/money';
-import { useResponsive } from '../../lib/responsive';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { approvalsApi } from '@/lib/api';
+import { formatDay } from '@/lib/money';
+import { useResponsive } from '@/lib/responsive';
 import {
   AText,
   GhostButton,
@@ -17,14 +17,14 @@ import {
   ScreenHeader,
   Pill,
   SectionLabel,
-} from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+} from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 import { JobSheet } from '../job/job-ui';
 import { WhoElse } from './who-else';
 import { useApprovalDetail } from './use-approval-detail';
 import { ISO_DAY } from './approval-detail-helpers';
 import { ApprovalDetailView } from './approval-detail-view';
-import { FactsWell } from '../../components/facts-well';
+import { FactsWell } from '@/components/facts-well';
 
 /**
  * ONE WAITING DECISION — its facts, and the kind's own buttons

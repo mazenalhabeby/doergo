@@ -12,19 +12,19 @@ import {
   reminderPresetKey,
   type ReminderPresetKey,
 } from '@hbcfield/shared/client';
-import { PressableScale } from '../../components/pressable-scale';
-import { AText, FilterRow, SectionLabel } from '../../components/amazen';
-import { DateField } from '../../components/date-field';
-import { TimePickerModal } from '../../components/time-picker-modal';
+import { PressableScale } from '@/components/pressable-scale';
+import { AText, FilterRow, SectionLabel } from '@/components/amazen';
+import { DateField } from '@/components/date-field';
+import { TimePickerModal } from '@/components/time-picker-modal';
 import { ChoiceChip } from './client-fields';
-import { useTheme } from '../../contexts/theme-context';
-import type { ReminderDraft } from '../../lib/reminder-draft';
-import { SPACING } from '../../lib/constants';
-import type { Amazen } from '../../theme/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import type { ReminderDraft } from '@/lib/reminder-draft';
+import { SPACING } from '@/lib/constants';
+import type { Amazen } from '@/theme/amazen';
 
 // Re-exported so a caller wiring the form does not have to know that the pure
 // half lives elsewhere — it is there to be testable, not to be looked up twice.
-export { EMPTY_REMINDER, reminderDueAt, type ReminderDraft } from '../../lib/reminder-draft';
+export { EMPTY_REMINDER, reminderDueAt, type ReminderDraft } from '@/lib/reminder-draft';
 
 /**
  * Everything a reminder can say, beyond "remind me tomorrow".

@@ -2,13 +2,13 @@ import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CUSTOMER_STAGES, customerStageLabel, isCompany } from '@hbcfield/shared/client';
-import { useTheme } from '../../../contexts/theme-context';
-import type { MobileCustomer } from '../../../lib/api';
-import { AText, GlassCard, RoundButton } from '../../../components/amazen';
-import { Monogram } from '../../../components/amazen/monogram';
-import { CallGlyph, NavigateGlyph } from '../../../components/glyphs/work-glyphs';
-import { EmailGlyph, ReminderGlyph } from '../../../components/glyphs/crm-glyphs';
-import { geoUrl, mailtoUrl, openSafeUrl, telUrl } from '../../../lib/safe-links';
+import { useTheme } from '@/contexts/theme-context';
+import type { MobileCustomer } from '@/lib/api';
+import { AText, GlassCard, RoundButton } from '@/components/amazen';
+import { Monogram } from '@/components/amazen/monogram';
+import { CallGlyph, NavigateGlyph } from '@/components/glyphs/work-glyphs';
+import { EmailGlyph, ReminderGlyph } from '@/components/glyphs/crm-glyphs';
+import { geoUrl, mailtoUrl, openSafeUrl, telUrl } from '@/lib/safe-links';
 
 /** The four steps of the pipeline; Inactive is not a step, it is leaving it. */
 const STEPS = CUSTOMER_STAGES.filter((s) => s.key !== 'INACTIVE').map((s) => s.key);

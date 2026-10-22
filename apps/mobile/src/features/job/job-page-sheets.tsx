@@ -1,9 +1,9 @@
 import React from 'react';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { tabAccessFor } from '../../lib/tab-layout';
-import { LocationPickerSheet } from '../../components/index';
-import type { useClockIn } from '../../hooks/useClockIn';
+import { tabAccessFor } from '@/lib/tab-layout';
+import { LocationPickerSheet } from '@/components/index';
+import type { useClockIn } from '@/hooks/use-clock-in';
 import type { useJob } from './use-job';
 import type { useJobWrites } from './use-job-writes';
 import type { useCrew } from './use-crew';

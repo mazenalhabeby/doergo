@@ -11,7 +11,7 @@
  */
 import { getStatusCapabilities, hasCapability, type FlowStatus, type TaskCapability } from '@hbcfield/shared/client';
 import { getStatusAction } from './task-detail-helpers';
-import type { ChecklistItem } from '../../lib/api/types';
+import type { ChecklistItem } from '@/lib/api/types';
 import { BLOCKED, IN_PROGRESS, isClosedStatus, type Decision } from './decision';
 export {
   isClosedStatus,

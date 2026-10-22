@@ -1,15 +1,15 @@
 import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { usePortalRequests } from '../../../../hooks/usePortalRequests';
+import { usePortalRequests } from '@/hooks/use-portal-requests';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../../../contexts/auth-context';
-import { useTheme } from '../../../../contexts/theme-context';
-import { SPACING } from '../../../../lib/constants';
-import { portalApi } from '../../../../lib/api/portal';
-import { resolveMediaUrl } from '../../../../lib/api';
-import { ReportGlyph, RequestsGlyph, ContactGlyph, AccountGlyph } from '../../portal-glyphs';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { SPACING } from '@/lib/constants';
+import { portalApi } from '@/lib/api/portal';
+import { resolveMediaUrl } from '@/lib/api';
+import { ReportGlyph, RequestsGlyph, ContactGlyph, AccountGlyph } from '@/features/customer/portal-glyphs';
 
 export const CLOSED = /COMPLET|CLOSED|CANCEL|RESOLV|DONE/i;
 

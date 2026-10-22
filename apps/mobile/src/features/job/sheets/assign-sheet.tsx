@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../contexts/theme-context';
-import { locationsApi, techniciansApi, type TechnicianListItem } from '../../../lib/api';
-import { knownOffline } from '../../../offline/connectivity';
-import { AText, Initials, JobField, Pill } from '../../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { locationsApi, techniciansApi, type TechnicianListItem } from '@/lib/api';
+import { knownOffline } from '@/offline/connectivity';
+import { AText, Initials, JobField, Pill } from '@/components/amazen';
 import { JobSheet } from '../job-ui';
 import { personName } from '@hbcfield/shared/client';
 

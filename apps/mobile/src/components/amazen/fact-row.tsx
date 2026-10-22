@@ -1,7 +1,7 @@
 import { Pressable, View } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { AText } from './text';
-import { toneColor } from '../../theme/tone-color';
+import { toneColor } from '@/theme/tone-color';
 
 /**
  * The one label → value row: label left in muted ink, value right, a hairline

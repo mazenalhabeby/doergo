@@ -1,4 +1,4 @@
-import type { AvailabilityResponse } from '../../lib/api/types';
+import type { AvailabilityResponse } from '@/lib/api/types';
 import { toDateString } from './helpers';
 
 /**

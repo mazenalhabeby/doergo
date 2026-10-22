@@ -7,10 +7,10 @@ import {
   bandOf, blockedCount, canCreateJobs, chipsFor, effectiveFilter, emptyKind, filtersFor, groupJobs, nobodyOn, passesFilter, periodParams,
   pickNextUp, placeOf, rowRight, rowWho, showsNextUp, showsRouteRow,
   type JobFacts,
-} from '../../features/jobs-list/jobs-logic';
-import { decideNext, parseOpenSheet } from '../../features/job/job-logic';
-import { isClosed, isUnderWay, isCanceled, isMine, stepsFor } from '../../features/home/my-work';
-import { filterTasksLocally } from '../../offline/tasks/task-list-query';
+} from '@/features/jobs-list/jobs-logic';
+import { decideNext, parseOpenSheet } from '@/features/job/job-logic';
+import { isClosed, isUnderWay, isCanceled, isMine, stepsFor } from '@/features/home/my-work';
+import { filterTasksLocally } from '@/offline/tasks/task-list-query';
 import type { Task } from '../api/types';
 
 const NOW = new Date(2026, 8, 27, 10, 0, 0); // Sun 27 Sep 2026, 10:00 local

@@ -2,11 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { LEAVE_TYPES, formatDuration, personName, type LeaveType, type RequestKind } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import type { TimeOffRequest } from '../../lib/api';
-import { SyncChip } from '../../offline/components/sync-chip';
-import { AText, PrimaryButton, Sunken, Pill, ReceiptRow, SheetOption, StateEyebrow } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import type { TimeOffRequest } from '@/lib/api';
+import { SyncChip } from '@/offline/components/sync-chip';
+import { AText, PrimaryButton, Sunken, Pill, ReceiptRow, SheetOption, StateEyebrow } from '@/components/amazen';
 import { JobSheet, type Tone } from '../job/job-ui';
 import { LeaveTypeMark, REQUEST_KIND_GLYPH, RequestKindGlyph } from './request-glyphs';
 import {
@@ -21,7 +21,7 @@ import {
 } from './request-model';
 import { useRequestDetailSheet, useRequestWords, type RequestRowData } from './use-request-detail-sheet';
 import { RequestDetailSheetView } from './request-detail-sheet-view';
-import { LoadingLine } from '../../components/loading-line';
+import { LoadingLine } from '@/components/loading-line';
 export { useRequestWords, type RequestRowData } from './use-request-detail-sheet';
 
 /** One request in a list: its mark, what it is, when and where, and its state. */

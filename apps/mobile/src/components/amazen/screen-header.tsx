@@ -3,10 +3,10 @@ import { Pressable, View, type ViewStyle } from 'react-native';
 import { CachedImage } from '../cached-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useProfileAvatar } from '../../lib/use-profile-avatar';
+import { useTheme } from '@/contexts/theme-context';
+import { useProfileAvatar } from '@/lib/use-profile-avatar';
 import { AText } from './text';
-import { TourTarget } from '../../features/tour/tour-target';
+import { TourTarget } from '@/features/tour/tour-target';
 import { type HeaderAction, Anchor, TitleAnchor } from './header-back';
 export { type HeaderAction, HeaderBack } from './header-back';
 

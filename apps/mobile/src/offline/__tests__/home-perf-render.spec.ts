@@ -12,18 +12,18 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { shiftCard } from '../../lib/__tests__/shift-card-files';
+import { shiftCard } from '@/lib/__tests__/shift-card-files';
 
 jest.mock('react', () => require('./hook-harness').react);
-jest.mock('../../contexts/auth-context', () => ({ useAuth: () => ({ user: mockUser }) }));
+jest.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ user: mockUser }) }));
 const mockUser = { id: 'u1', role: 'ADMIN', canViewAllTasks: true };
-jest.mock('../../features/home/layout-store', () => ({
+jest.mock('@/features/home/layout-store', () => ({
   EMPTY_LAYOUT: { keys: [], hidden: [] },
   loadLayout: async () => ({ keys: ['my-work', 'shortcuts', 'shift-clock'], hidden: ['shift-clock'] }),
   saveLayout: async () => undefined,
 }));
 /* The registry's components are never rendered here — only its rows are read. */
-jest.mock('../../features/home/registry', () => {
+jest.mock('@/features/home/registry', () => {
   const row = (key: string) => ({ key, title: key, surface: 'well', empty: 'hidden', Component: () => null });
   const WIDGETS = [row('shift-clock'), row('my-work'), row('shortcuts')];
   return {
@@ -39,13 +39,13 @@ jest.mock('expo-location', () => ({
   getCurrentPositionAsync: async () => mockPosition,
   Accuracy: { Balanced: 3 },
 }));
-jest.mock('../../hooks/use-live-refresh', () => ({ useLiveRefresh: (fn: () => unknown) => { mockLive.refresh = fn; } }));
+jest.mock('@/hooks/use-live-refresh', () => ({ useLiveRefresh: (fn: () => unknown) => { mockLive.refresh = fn; } }));
 const mockLive: { refresh: (() => unknown) | null } = { refresh: null };
 
 import { mountHook, settle } from './hook-harness';
-import { useHomeLayout } from '../../features/home/use-home-layout';
-import { useDriverPosition } from '../../hooks/use-driver-position';
-import { readSource } from '../../test-utils/read-source';
+import { useHomeLayout } from '@/features/home/use-home-layout';
+import { useDriverPosition } from '@/hooks/use-driver-position';
+import { readSource } from '@/test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const code = (rel: string) =>

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
-import { NavigateGlyph } from '../../components/glyphs';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
+import { NavigateGlyph } from '@/components/glyphs';
 
 /**
  * "Plan my route" — `.route`. Offered only to somebody who drives, with stops

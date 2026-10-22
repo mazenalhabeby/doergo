@@ -1,8 +1,8 @@
 import { getStatusCapabilities, type FlowStatus } from '@hbcfield/shared/client';
 import { isUnreachable } from '../actions/unreachable';
-import { tasksApi } from '../../lib/api/tasks';
-import { taskAttachmentsApi } from '../../lib/api/attachments';
-import type { Comment, DetailAttachment, Task } from '../../lib/api/types';
+import { tasksApi } from '@/lib/api/tasks';
+import { taskAttachmentsApi } from '@/lib/api/attachments';
+import type { Comment, DetailAttachment, Task } from '@/lib/api/types';
 
 export type { DetailAttachment };
 import type { RecordsStore } from '../db/records-store';

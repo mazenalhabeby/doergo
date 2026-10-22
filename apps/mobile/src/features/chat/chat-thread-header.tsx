@@ -4,14 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { conversationTitle, chatPresenceLabel, type ChatConversation } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { chatApi } from '../../lib/api';
-import { AText, HeaderBack } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { chatApi } from '@/lib/api';
+import { AText, HeaderBack } from '@/components/amazen';
 import { presenceKey } from '../people/person-avatar';
 import { ConversationAvatar, Tag } from './chat-rows';
 import Animated from 'react-native-reanimated';
-import { InkIcon } from '../../components/amazen/ink-icon';
-import { useIconMotion } from '../../components/amazen/motion';
+import { InkIcon } from '@/components/amazen/ink-icon';
+import { useIconMotion } from '@/components/amazen/motion';
 
 const HOUR = 3_600_000;
 

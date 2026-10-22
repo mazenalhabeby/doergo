@@ -2,9 +2,9 @@ import { useState, useCallback, useRef } from 'react';
 import { Text, StyleSheet, TouchableOpacity, TextInput, View, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { GEOFENCE_EXCURSION } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
-import { SlideSheet, SlideSheetActions, SlideSheetHeader, useSlideSheet } from '../../components/slide-sheet';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
+import { SlideSheet, SlideSheetActions, SlideSheetHeader, useSlideSheet } from '@/components/slide-sheet';
 
 const ACCENT = '#ea580c'; // orange-600 — matches the web Out-of-Ring panel
 

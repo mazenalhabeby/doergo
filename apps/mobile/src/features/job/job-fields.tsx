@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, Switch, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { customFieldsApi, type MobileCustomFieldDefinition, type MobileCustomFieldValue } from '../../lib/api';
-import { knownOffline } from '../../offline/connectivity';
-import { AText, ChoicePill, PrimaryButton, JobField, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { customFieldsApi, type MobileCustomFieldDefinition, type MobileCustomFieldValue } from '@/lib/api';
+import { knownOffline } from '@/offline/connectivity';
+import { AText, ChoicePill, PrimaryButton, JobField, SectionLabel } from '@/components/amazen';
 import { JobSheet } from './job-ui';
 
 /**

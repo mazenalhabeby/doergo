@@ -1,5 +1,5 @@
 import type { ApprovalInbox, ApprovalItem } from '@hbcfield/shared/client';
-import { approvalsApi } from '../../lib/api';
+import { approvalsApi } from '@/lib/api';
 
 /**
  * The last inbox read, by `kind:id` — so opening an item draws at once instead

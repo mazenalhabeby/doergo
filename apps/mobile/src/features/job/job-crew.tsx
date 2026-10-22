@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
 import {
   AText,
   PrimaryButton,
@@ -15,11 +15,11 @@ import {
   QuietButton,
   SectionLabel,
   SheetOption,
-} from '../../components/amazen';
+} from '@/components/amazen';
 import { JobSheet } from './job-ui';
 import type { CrewControls, CrewMember } from './use-crew';
-import { useOffline, useSyncStatus } from '../../offline/offline-context';
-import { refusedCrewCopy, refusedCrewOps } from '../../offline/tasks/refused-crew';
+import { useOffline, useSyncStatus } from '@/offline/offline-context';
+import { refusedCrewCopy, refusedCrewOps } from '@/offline/tasks/refused-crew';
 import { personName } from '@hbcfield/shared/client';
 
 

@@ -1,9 +1,9 @@
 import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/theme-context';
-import { canTakeBack, type SentItem } from '../../lib/sent-in';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { canTakeBack, type SentItem } from '@/lib/sent-in';
+import { AText } from '@/components/amazen';
 
 /** EquipmentScreen's module-level helpers, moved here unchanged so its sections can read them too. */
 

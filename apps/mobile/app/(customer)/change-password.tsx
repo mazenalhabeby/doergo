@@ -3,10 +3,10 @@ import { Text, StyleSheet, TextInput, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../src/contexts/theme-context';
-import { COLORS, FONT_SIZE, type ThemeColors } from '../../src/lib/constants';
-import { passwordApi } from '../../src/lib/api/auth';
-import { PortalField, PortalFormScreen, portalFormStyles } from '../../src/features/customer/portal-form';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, FONT_SIZE, type ThemeColors } from '@/lib/constants';
+import { passwordApi } from '@/lib/api/auth';
+import { PortalField, PortalFormScreen, portalFormStyles } from '@/features/customer/portal-form';
 
 export default function ChangePassword() {
   const router = useRouter();

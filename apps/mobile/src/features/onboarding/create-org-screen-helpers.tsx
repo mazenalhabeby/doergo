@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '@/lib/constants';
 
 /** CreateOrgScreen's module-level helpers, moved here unchanged so its sections can read them too. */
 /** Catalog icon keys → Ionicons names (single binding point, like wizard-icons on web). */

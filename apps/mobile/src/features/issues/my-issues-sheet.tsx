@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useSocketContext } from '../../contexts/socket-context';
-import { useAuth } from '../../contexts/auth-context';
-import { shiftIssuesApi, type ShiftIssue } from '../../lib/api/shift-issues';
-import { BlurSheet } from '../../components/blur-sheet';
-import { SheetPanel } from '../../components/sheet-panel';
-import { AText, Chip, Eyebrow } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useSocketContext } from '@/contexts/socket-context';
+import { useAuth } from '@/contexts/auth-context';
+import { shiftIssuesApi, type ShiftIssue } from '@/lib/api/shift-issues';
+import { BlurSheet } from '@/components/blur-sheet';
+import { SheetPanel } from '@/components/sheet-panel';
+import { AText, Chip, Eyebrow } from '@/components/amazen';
 import { groupIssues, lookFor, severityShown, severityTone, unreadFor } from '../home/issue-status';
-import { toneColor } from '../../theme/tone-color';
+import { toneColor } from '@/theme/tone-color';
 
 /**
  * MY ISSUES — grouped by whether it is still yours to worry about.

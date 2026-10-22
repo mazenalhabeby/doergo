@@ -2,16 +2,16 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { assetRegisterApi, REGISTER_PAGE_SIZE, type RegisterAsset } from '../../lib/api';
-import { useReachSpaces } from '../../hooks/use-reach-spaces';
-import { useResponsive } from '../../lib/responsive';
-import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, SearchField } from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+import { useTheme } from '@/contexts/theme-context';
+import { assetRegisterApi, REGISTER_PAGE_SIZE, type RegisterAsset } from '@/lib/api';
+import { useReachSpaces } from '@/hooks/use-reach-spaces';
+import { useResponsive } from '@/lib/responsive';
+import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, SearchField } from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 import { StatusDot, WellRow } from './well-row';
 import { holderName, statusLabel } from './register-words';
-import { workspaceFilter } from '../../components/workspace-filter';
-import { refreshControl } from '../../components/pull-refresh';
+import { workspaceFilter } from '@/components/workspace-filter';
+import { refreshControl } from '@/components/pull-refresh';
 
 const SEARCH_DEBOUNCE_MS = 300;
 

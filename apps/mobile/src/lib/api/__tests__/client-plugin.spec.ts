@@ -30,10 +30,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ApiError, E, api, call, clearTokens, observeResponses, saveTokens, setAuthFailureCallback, type ResponseObservation } from '../client';
 import { setResponseCache } from '../response-cache';
-import { httpSyncTransport } from '../../../offline/http-transport';
-import { SyncEngine } from '../../../offline/sync-engine';
-import { MemoryOutboxStore } from '../../../offline/outbox/memory-store';
-import { readSource } from '../../../test-utils/read-source';
+import { httpSyncTransport } from '@/offline/http-transport';
+import { SyncEngine } from '@/offline/sync-engine';
+import { MemoryOutboxStore } from '@/offline/outbox/memory-store';
+import { readSource } from '@/test-utils/read-source';
 
 const b64url = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64').replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
 const jwt = (sub: string, n = 0) => `${b64url({ alg: 'HS256' })}.${b64url({ sub, n })}.sig`;

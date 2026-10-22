@@ -1,7 +1,7 @@
 import { ScrollView, View } from 'react-native';
 import { findLogType, logValueLines, personName } from '@hbcfield/shared/client';
-import { formatDay } from '../../lib/money';
-import { AText, GhostButton, SectionLabel } from '../../components/amazen';
+import { formatDay } from '@/lib/money';
+import { AText, GhostButton, SectionLabel } from '@/components/amazen';
 import { StatusDot, WellRow } from './well-row';
 import { statusLabel } from './register-words';
 import type { RegisterRecordState } from './use-register-record';

@@ -1,7 +1,7 @@
 import { straightLineRoute, type LatLng, type OptimizedRoute, type RouteStop } from '@hbcfield/shared/client';
-import { routesApi } from '../../lib/api';
+import { routesApi } from '@/lib/api';
 import { isUnreachable } from '../actions/unreachable';
-import { sealedStore } from '../../lib/sealed-stores';
+import { sealedStore } from '@/lib/sealed-stores';
 import { restoreRoute, saveRoute } from './saved-route';
 
 /** ⚠️ Sealed per member: the day's stops are clients' addresses and coordinates. A plaintext plan from before is re-sealed on first touch. */

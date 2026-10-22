@@ -1,8 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, ReceiptRow } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, ReceiptRow } from '@/components/amazen';
 import { DateTileRow } from './date-tile-row';
 import { dayKey, dayOf, daysOff } from './time-logic';
 import type { MyTimeOffRequest } from './use-my-time-off';

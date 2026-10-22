@@ -1,9 +1,9 @@
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { LeaveType } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useAuth } from '../../contexts/auth-context';
-import { AText, PrimaryButton, Sunken, Well, JobField, QuietButton, ReceiptRow, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useAuth } from '@/contexts/auth-context';
+import { AText, PrimaryButton, Sunken, Well, JobField, QuietButton, ReceiptRow, SectionLabel } from '@/components/amazen';
 import { LeaveTypePicker, useRequestWords } from '../requests/request-parts';
 import { balancePreview, draftToBody } from '../requests/request-model';
 import { PrecheckCard } from '../requests/precheck-card';

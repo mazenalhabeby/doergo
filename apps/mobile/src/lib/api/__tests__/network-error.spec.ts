@@ -7,11 +7,11 @@
  * rather than saying the plain thing, that they are offline.
  */
 import i18n from 'i18next';
-import en from '../../../i18n/locales/en.json';
-import de from '../../../i18n/locales/de.json';
-import es from '../../../i18n/locales/es.json';
-import fr from '../../../i18n/locales/fr.json';
-import italian from '../../../i18n/locales/it.json';
+import en from '@/i18n/locales/en.json';
+import de from '@/i18n/locales/de.json';
+import es from '@/i18n/locales/es.json';
+import fr from '@/i18n/locales/fr.json';
+import italian from '@/i18n/locales/it.json';
 import { networkErrorText } from '../network-error';
 
 const LOCALES: Record<string, object> = { en, de, es, fr, it: italian };

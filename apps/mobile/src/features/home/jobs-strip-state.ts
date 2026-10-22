@@ -7,7 +7,7 @@
  *   a job paused on me → offered only once I am clocked in again ("You paused
  *   a job yesterday — Resume work"); before that, resuming is not possible.
  */
-import type { MyHandovers } from '../../lib/api';
+import type { MyHandovers } from '@/lib/api';
 
 export type JobsStripKind = 'owed' | 'paused';
 

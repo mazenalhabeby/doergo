@@ -2,10 +2,10 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { documentsApi, type DocumentChain } from '../../lib/api';
-import { httpsUrl, openSafeUrl } from '../../lib/safe-links';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { documentsApi, type DocumentChain } from '@/lib/api';
+import { httpsUrl, openSafeUrl } from '@/lib/safe-links';
 
 /*
   Signing, on a phone.

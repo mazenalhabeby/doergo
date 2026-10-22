@@ -2,15 +2,15 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { useTheme } from '../../../contexts/theme-context';
-import { useToast } from '../../../island/island-context';
-import { useAuth } from '../../../contexts/auth-context';
-import { useTimeFormat } from '../../../hooks/useTimeFormat';
-import { attendanceApi, type NoShow } from '../../../lib/api';
-import type { TimeEntry } from '../../../lib/api/types';
-import { holds } from '../../../lib/permissions';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { useAuth } from '@/contexts/auth-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { attendanceApi, type NoShow } from '@/lib/api';
+import type { TimeEntry } from '@/lib/api/types';
+import { holds } from '@/lib/permissions';
 import { type Segment, type Period, PAGE, NO_SHOW_DAYS, type Feed, dayISO } from './attendance-review-helpers';
-import { caught } from '../../../lib/caught';
+import { caught } from '@/lib/caught';
 
 /** The review's state, loading and paging — the first half of `useAttendanceReviewScreen`, moved here unchanged. */
 export function useAttendanceReviewScreenData() {

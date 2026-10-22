@@ -2,11 +2,11 @@ import React from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { useLiveRefresh } from '../../hooks/use-live-refresh';
-import { useResponsive } from '../../lib/responsive';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
+import { useResponsive } from '@/lib/responsive';
 import {
   AText,
   GlassInput,
@@ -18,17 +18,17 @@ import {
   Well,
   WellDivider,
   Banner,
-} from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+} from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 import { JobSheet } from '../job/job-ui';
 import { timeAgo } from '../team/helpers';
 import { PersonAvatar } from './person-avatar';
 import { personName } from '@hbcfield/shared/client';
 import { useMembersScreen } from './use-members-screen';
 import { RoleTag } from './members-screen-helpers';
-import { FactRow } from '../../components/amazen/fact-row';
-import { LoadingLine } from '../../components/loading-line';
-import { refreshControl } from '../../components/pull-refresh';
+import { FactRow } from '@/components/amazen/fact-row';
+import { LoadingLine } from '@/components/loading-line';
+import { refreshControl } from '@/components/pull-refresh';
 
 /**
  * MEMBERS — everyone in the organization, filtered by the organization's OWN roles.

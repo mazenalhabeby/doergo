@@ -1,16 +1,16 @@
 import React, { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme, type ThemeMode } from '../../contexts/theme-context';
-import { useAuth } from '../../contexts/auth-context';
-import { useToast } from '../../island/island-context';
-import { useOwnProfileWrite } from '../../offline/profile/use-own-profile-write';
-import { userApi } from '../../lib/api';
-import { changeLanguage, getCurrentLanguage, supportedLanguages } from '../../i18n';
-import { getAmazen } from '../../theme/amazen';
-import { AText } from '../../components/amazen';
+import { useTheme, type ThemeMode } from '@/contexts/theme-context';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/island/island-context';
+import { useOwnProfileWrite } from '@/offline/profile/use-own-profile-write';
+import { userApi } from '@/lib/api';
+import { changeLanguage, getCurrentLanguage, supportedLanguages } from '@/i18n';
+import { getAmazen } from '@/theme/amazen';
+import { AText } from '@/components/amazen';
 import { ChoiceRow, SettingsPage } from './settings-ui';
-import { useShift } from '../../offline/attendance/use-shift';
+import { useShift } from '@/offline/attendance/use-shift';
 import { parseClockInPick, type ClockInPick } from '@hbcfield/shared/client';
 
 /* ─────────────────────────── Appearance ─────────────────────────── */

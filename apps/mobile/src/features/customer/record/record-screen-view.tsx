@@ -1,7 +1,7 @@
 'use client';
 
 import { Pressable, View } from 'react-native';
-import { AText } from '../../../components/amazen';
+import { AText } from '@/components/amazen';
 import { RecordHero } from './record-hero';
 import { type RecordTab } from './use-client-record';
 import type { useRecordScreenLogic } from './use-record-screen-logic';

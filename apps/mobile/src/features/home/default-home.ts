@@ -1,5 +1,5 @@
 import { hasAccessModule } from '@hbcfield/shared/client';
-import type { User } from '../../lib/api/types';
+import type { User } from '@/lib/api/types';
 import type { HomeLayout } from './layout-store';
 
 /**

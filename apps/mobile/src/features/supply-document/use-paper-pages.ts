@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MAX_PAGES } from '@hbcfield/shared/client';
-import { useToast } from '../../island/island-context';
-import { newPageId, readyKeys, allStaged, pendingCount, failedCount, type Page } from '../../lib/page-order';
-import { documentPicker } from '../../lib/optional-native';
-import { stagePage } from '../../lib/page-upload';
-import { documentsApi, type DocumentType } from '../../lib/api/documents';
-import { useConnectivity } from '../../offline/offline-context';
+import { useToast } from '@/island/island-context';
+import { newPageId, readyKeys, allStaged, pendingCount, failedCount, type Page } from '@/lib/page-order';
+import { documentPicker } from '@/lib/optional-native';
+import { stagePage } from '@/lib/page-upload';
+import { documentsApi, type DocumentType } from '@/lib/api/documents';
+import { useConnectivity } from '@/offline/offline-context';
 import type { PickFromGallery } from './supply-helpers';
 
 /**

@@ -2,7 +2,7 @@ import React from 'react';
 import { type ViewStyle } from 'react-native';
 import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { BAR_INSET_FLOOR, BAR_LIFT, GAP, PAD, slotWidths } from './tab-pill/geometry';
 import { slide } from './tab-pill/motion';
 

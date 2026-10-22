@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { AText } from '../../components/amazen';
+import { AText } from '@/components/amazen';
 import { useTranslation } from 'react-i18next';
 import { JobSheet } from '../job/job-ui';
-import { PressableScale } from '../../components/pressable-scale';
+import { PressableScale } from '@/components/pressable-scale';
 import { LabelledField, ChoiceChip, PrimaryButton } from './client-fields';
 import { ClientPicker } from './client-picker';
-import { useTheme } from '../../contexts/theme-context';
-import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
-import { customersApi } from '../../lib/api';
-import type { MobileCustomer } from '../../lib/api';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { addContactFromPhone } from '../../offline/crm/client-actions';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
+import { customersApi } from '@/lib/api';
+import type { MobileCustomer } from '@/lib/api';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { addContactFromPhone } from '@/offline/crm/client-actions';
 
 /**
  * Which END of the link this sheet is choosing.

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
 import { heroParts } from '../home/shift-state';
 
 /** What the components of clock-out-sheet.tsx share (moved here unchanged). */

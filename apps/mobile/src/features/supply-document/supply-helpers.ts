@@ -18,4 +18,4 @@ export function toIsoDate(d: Date): string {
 }
 
 /** The gallery picker, handed down from the ONE `useImagePicker` the sheet holds. */
-export type PickFromGallery = ReturnType<typeof import('../../hooks/useImagePicker').useImagePicker>['pickFromGallery'];
+export type PickFromGallery = ReturnType<typeof import('@/hooks/use-image-picker').useImagePicker>['pickFromGallery'];

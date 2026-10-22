@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
-import { shadowGlass } from '../../components/amazen/surfaces';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
+import { shadowGlass } from '@/components/amazen/surfaces';
 
 /** EditableWidgetInner's module-level helpers, moved here unchanged so its sections can read them too. */
 /**

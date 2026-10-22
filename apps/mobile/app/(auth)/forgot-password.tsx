@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../src/contexts/theme-context';
-import { passwordApi } from '../../src/lib/api/auth';
-import { AText, PrimaryButton } from '../../src/components/amazen';
-import { FinishGlyph } from '../../src/components/glyphs/work-glyphs';
-import { AuthCard, AuthField, AuthFrame, AuthHelp, AuthLinkLine } from '../../src/features/auth/auth-ui';
+import { useTheme } from '@/contexts/theme-context';
+import { passwordApi } from '@/lib/api/auth';
+import { AText, PrimaryButton } from '@/components/amazen';
+import { FinishGlyph } from '@/components/glyphs/work-glyphs';
+import { AuthCard, AuthField, AuthFrame, AuthHelp, AuthLinkLine } from '@/features/auth/auth-ui';
 
 /**
  * Forgot password — one field, one button; then what happens next.

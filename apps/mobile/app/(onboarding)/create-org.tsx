@@ -37,13 +37,13 @@ import {
   toolsFromModules,
   type WorkPlan,
 } from '@hbcfield/shared/client';
-import { Ground } from '../../src/components/amazen';
-import { useAuth } from '../../src/contexts/auth-context';
-import { useTheme } from '../../src/contexts/theme-context';
-import { useToast } from '../../src/island/island-context';
-import { onboardingApi, locationsApi } from '../../src/lib/api';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../src/lib/constants';
-import { useCreateOrgScreen } from '../../src/features/onboarding/use-create-org-screen';
+import { Ground } from '@/components/amazen';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { onboardingApi, locationsApi } from '@/lib/api';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '@/lib/constants';
+import { useCreateOrgScreen } from '@/features/onboarding/use-create-org-screen';
 import {
   ionicon,
   TOTAL_STEPS,
@@ -51,9 +51,9 @@ import {
   Chip,
   SummaryRow,
   styles,
-} from '../../src/features/onboarding/create-org-screen-helpers';
-import { useCreateOrgScreenLogic } from '../../src/features/onboarding/use-create-org-screen-logic';
-import { CreateOrgScreenStepOf } from '../../src/features/onboarding/create-org-screen-step-of';
+} from '@/features/onboarding/create-org-screen-helpers';
+import { useCreateOrgScreenLogic } from '@/features/onboarding/use-create-org-screen-logic';
+import { CreateOrgScreenStepOf } from '@/features/onboarding/create-org-screen-step-of';
 
 export default function CreateOrgScreen() {
   const vm = useCreateOrgScreenLogic();

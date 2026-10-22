@@ -1,9 +1,9 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
-import { WidgetsGlyph } from '../../components/glyphs';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
+import { WidgetsGlyph } from '@/components/glyphs';
 
 /**
  * THE COLUMN IS EMPTY AND THE MEMBER IS EDITING IT.

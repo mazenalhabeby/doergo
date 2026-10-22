@@ -11,8 +11,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { INDUSTRY_CARDS, AREAS } from '@hbcfield/shared/client';
-import { useScreenWidth } from '../../components/screen-container';
-import { COLORS, SPACING } from '../../lib/constants';
+import { useScreenWidth } from '@/components/screen-container';
+import { COLORS, SPACING } from '@/lib/constants';
 import { ionicon, TOTAL_STEPS, Kicker, Chip, SummaryRow, styles } from './create-org-screen-helpers';
 import type { CreateOrgScreenState } from './use-create-org-screen-logic';
 

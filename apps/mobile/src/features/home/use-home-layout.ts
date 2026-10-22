@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useAuth } from '../../contexts/auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { availableWidgets, DEFAULT_ORDER, WIDGETS, type WidgetRow } from './registry';
 import { defaultHomeKeys, seedLayout } from './default-home';
 import {

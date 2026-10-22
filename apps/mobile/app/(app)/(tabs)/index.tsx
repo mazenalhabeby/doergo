@@ -1,4 +1,4 @@
-import { HomeScreen } from '../../../src/features/home/home-screen';
+import { HomeScreen } from '@/features/home/home-screen';
 
 /**
  * ONE home, composed from a registry.

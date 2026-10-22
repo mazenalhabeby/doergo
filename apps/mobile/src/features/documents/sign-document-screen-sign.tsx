@@ -1,8 +1,8 @@
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING } from '../../lib/constants';
-import { SignatureCapture } from '../../components';
-import { useScreenWidth } from '../../components/screen-container';
+import { COLORS, SPACING } from '@/lib/constants';
+import { SignatureCapture } from '@/components';
+import { useScreenWidth } from '@/components/screen-container';
 import { s } from './sign-document-screen-helpers';
 import type { SignDocumentScreenState } from './use-sign-document-screen';
 

@@ -2,15 +2,15 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { DELEGATION_MAX_DAYS, type StandInView, type StandInsResponse } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { approvalsApi } from '../../lib/api';
-import { formatDay } from '../../lib/money';
-import { dayKeyOf } from '../../lib/log-dates';
-import { AText, GhostButton, GlassInput, PrimaryButton, SectionLabel, SheetOption } from '../../components/amazen';
-import { DateField } from '../../components/date-field';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { approvalsApi } from '@/lib/api';
+import { formatDay } from '@/lib/money';
+import { dayKeyOf } from '@/lib/log-dates';
+import { AText, GhostButton, GlassInput, PrimaryButton, SectionLabel, SheetOption } from '@/components/amazen';
+import { DateField } from '@/components/date-field';
 import { JobSheet } from '../job/job-ui';
-import { caught } from '../../lib/caught';
+import { caught } from '@/lib/caught';
 
 /**
  * Stand-ins on the phone: hand your approvals to a colleague for some days,

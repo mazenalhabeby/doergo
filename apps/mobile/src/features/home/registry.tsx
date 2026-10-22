@@ -8,7 +8,7 @@ import { RouteCard } from './route-card';
 import { TodayCard } from './today-card';
 import type { Requires } from './entitlement';
 import { meets } from './entitlement';
-import type { User } from '../../lib/api/types';
+import type { User } from '@/lib/api/types';
 
 /**
  * A WIDGET IS A REGISTRY ROW.

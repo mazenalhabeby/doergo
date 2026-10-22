@@ -1,6 +1,6 @@
 import { Text, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { MultiPageCapture } from '../../components/multi-page-capture';
+import { MultiPageCapture } from '@/components/multi-page-capture';
 import type { PaperPages } from './use-paper-pages';
 import { s, useSupplyPalette } from './styles';
 

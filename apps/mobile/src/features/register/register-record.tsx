@@ -12,14 +12,14 @@ import {
   formatMoney,
   personName,
 } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useAuth } from '../../contexts/auth-context';
-import { useToast } from '../../island/island-context';
-import { assetRegisterApi, locationsApi, type LocationAssignment, type RegisterAsset, type RegisterLogEntry } from '../../lib/api';
-import { holdsIn } from '../../lib/permissions';
-import { formatDay } from '../../lib/money';
-import { logColor, logTypeLabel } from '../../lib/log-display';
-import { useResponsive } from '../../lib/responsive';
+import { useTheme } from '@/contexts/theme-context';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/island/island-context';
+import { assetRegisterApi, locationsApi, type LocationAssignment, type RegisterAsset, type RegisterLogEntry } from '@/lib/api';
+import { holdsIn } from '@/lib/permissions';
+import { formatDay } from '@/lib/money';
+import { logColor, logTypeLabel } from '@/lib/log-display';
+import { useResponsive } from '@/lib/responsive';
 import {
   AText,
   GhostButton,
@@ -30,8 +30,8 @@ import {
   Pill,
   SectionLabel,
   SheetOption,
-} from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+} from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 import { JobSheet } from '../job/job-ui';
 import { StatusDot, WellRow } from './well-row';
 import { holderName, SETTABLE_STATUSES, statusLabel } from './register-words';

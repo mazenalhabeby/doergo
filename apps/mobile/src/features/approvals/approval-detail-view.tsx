@@ -1,7 +1,7 @@
 'use client';
 
 import { APPROVAL_KIND_SPECS, approvalActionsFor, describeApproval, type ApprovalT } from '@hbcfield/shared/client';
-import { formatDay } from '../../lib/money';
+import { formatDay } from '@/lib/money';
 import { ISO_DAY } from './approval-detail-helpers';
 import type { useApprovalDetail } from './use-approval-detail';
 

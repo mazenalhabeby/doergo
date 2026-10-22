@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, Well, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, Well, SectionLabel } from '@/components/amazen';
 
 /** SyncPage's module-level helpers, moved here unchanged so its sections can read them too. */
 export const STORAGE_WARN_BYTES = 500 * 1024 * 1024;

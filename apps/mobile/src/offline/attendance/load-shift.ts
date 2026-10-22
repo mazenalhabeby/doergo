@@ -1,7 +1,7 @@
 import type { AttendanceStatus, BreakStatus } from '@hbcfield/shared/client';
-import { attendanceApi } from '../../lib/api/attendance';
+import { attendanceApi } from '@/lib/api/attendance';
 import type { RecordsStore } from '../db/records-store';
-import { keep } from '../../lib/remember/store';
+import { keep } from '@/lib/remember/store';
 import { isUnreachable } from '../actions/unreachable';
 import { knownOffline } from '../connectivity';
 

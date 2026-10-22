@@ -1,10 +1,10 @@
 import React from 'react';
-import { useNow } from '../../hooks/use-now';
+import { useNow } from '@/hooks/use-now';
 import { StyleSheet, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { COLORS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { COLORS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
 import { freshnessOf } from '../freshness';
 
 /**

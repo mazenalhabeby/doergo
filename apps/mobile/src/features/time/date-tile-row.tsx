@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
 
 /**
  * One row of the Time tab's lists — a recent shift, a day off coming up: a

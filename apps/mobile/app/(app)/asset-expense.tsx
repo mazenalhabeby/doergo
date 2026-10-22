@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { EquipmentPicker } from '../../src/features/equipment/equipment-picker';
-import { AssetExpenseScreen } from '../../src/features/equipment/asset-expense-screen';
+import { EquipmentPicker } from '@/features/equipment/equipment-picker';
+import { AssetExpenseScreen } from '@/features/equipment/asset-expense-screen';
 
 /**
  * File what I just spent, at the pump, in about fifteen seconds.

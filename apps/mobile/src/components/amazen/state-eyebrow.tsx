@@ -1,10 +1,10 @@
 import { type ReactNode } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { AText } from './text';
 import { Monogram } from './monogram';
 import { LiveDot } from './live-dot';
-import { toneColor } from '../../theme/tone-color';
+import { toneColor } from '@/theme/tone-color';
 
 /** The mockup's mono eyebrow — `.ey`. */
 export function SectionLabel({

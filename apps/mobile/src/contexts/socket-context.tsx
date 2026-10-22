@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { SocketEvents } from '@hbcfield/shared/client';
-import { useSocket, type SocketUser } from '../hooks/useSocket';
+import { useSocket, type SocketUser } from '../hooks/use-socket';
 import { useAuth } from './auth-context';
 
 interface SocketContextType {

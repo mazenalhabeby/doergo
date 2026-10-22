@@ -1,6 +1,6 @@
 import { Pressable } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
 
 /** RequestFormCard's module-level helpers, moved here unchanged so its sections can read them too. */
 export function Stepper({ sign, label, onPress }: { sign: string; label: string; onPress: () => void }) {

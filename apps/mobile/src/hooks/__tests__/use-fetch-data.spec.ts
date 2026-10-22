@@ -25,7 +25,7 @@ jest.mock('react', () => ({
   },
 }));
 
-import { useFetchData } from '../useFetchData';
+import { useFetchData } from '../use-fetch-data';
 
 // Called through a plain name: the stand-in above IS the component, so the hook rule does not apply here.
 const runHook = useFetchData;

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { type Destination } from '../../lib/manage-rows';
-import { over } from '../../theme/amazen';
-import { selection } from '../../lib/haptics';
+import { useTheme } from '@/contexts/theme-context';
+import { type Destination } from '@/lib/manage-rows';
+import { over } from '@/theme/amazen';
+import { selection } from '@/lib/haptics';
 import { MIN_TILES, SLOTS, type Badges } from './shortcuts';
 
 /** ShortcutsEditor's state and handlers — everything before its markup, moved here unchanged. */

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Modal, Platform, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
-import { useKeyboardHeight } from '../hooks/useKeyboardHeight';
+import { useKeyboardHeight } from '../hooks/use-keyboard-height';
 import { BlurView } from 'expo-blur';
 
 /**

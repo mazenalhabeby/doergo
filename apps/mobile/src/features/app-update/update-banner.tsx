@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
-import type { VersionStatus } from '../../lib/version-gate';
-import { openUpdate, onDownloaded, IN_APP_UPDATES_SUPPORTED } from '../../lib/in-app-updates';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
+import type { VersionStatus } from '@/lib/version-gate';
+import { openUpdate, onDownloaded, IN_APP_UPDATES_SUPPORTED } from '@/lib/in-app-updates';
 
 const DISMISS_KEY = 'update_banner_snoozed';
 

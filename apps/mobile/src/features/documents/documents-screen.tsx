@@ -3,21 +3,21 @@ import { SectionList, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { useResponsive } from '../../lib/responsive';
-import { useHeldAssets } from '../../hooks/use-held-assets';
-import { useDocumentRequirements } from '../../contexts/document-requirements-context';
-import { useSyncStatus } from '../../offline/offline-context';
-import { STILL_MINE } from '../../offline/actions/outcome';
-import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, SectionLabel, SheetOption } from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { useResponsive } from '@/lib/responsive';
+import { useHeldAssets } from '@/hooks/use-held-assets';
+import { useDocumentRequirements } from '@/contexts/document-requirements-context';
+import { useSyncStatus } from '@/offline/offline-context';
+import { STILL_MINE } from '@/offline/actions/outcome';
+import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, SectionLabel, SheetOption } from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 import { JobSheet } from '../job/job-ui';
 import { SupplyDocumentSheet } from '../supply-document/supply-document-sheet';
 import { DocumentRow, dayOf } from './document-row';
 import { useDocumentsScreen } from './use-documents-screen';
-import { FactRow } from '../../components/amazen/fact-row';
-import { refreshControl } from '../../components/pull-refresh';
+import { FactRow } from '@/components/amazen/fact-row';
+import { refreshControl } from '@/components/pull-refresh';
 
 /**
  * MY DOCUMENTS — what is asked of the member, what waits on their signature,

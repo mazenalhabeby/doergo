@@ -2,14 +2,14 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { BlurSheet } from '../../components/blur-sheet';
-import { SheetPanel } from '../../components/sheet-panel';
-import { PressableScale } from '../../components/pressable-scale';
+import { BlurSheet } from '@/components/blur-sheet';
+import { SheetPanel } from '@/components/sheet-panel';
+import { PressableScale } from '@/components/pressable-scale';
 import { PrimaryButton } from './client-fields';
 import { ClientAvatar } from './client-avatar';
-import { customersApi, type MobileCustomer } from '../../lib/api';
-import { useTheme } from '../../contexts/theme-context';
-import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '../../lib/constants';
+import { customersApi, type MobileCustomer } from '@/lib/api';
+import { useTheme } from '@/contexts/theme-context';
+import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '@/lib/constants';
 import { duplicateSearchTerm, looksLikeSameClient } from './card-review';
 
 /**

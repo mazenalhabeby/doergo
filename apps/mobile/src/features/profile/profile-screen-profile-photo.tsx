@@ -1,10 +1,10 @@
 import { ActivityIndicator, Linking, Pressable, ScrollView, View } from 'react-native';
-import { CachedImage } from '../../components/cached-image';
+import { CachedImage } from '@/components/cached-image';
 import { router, type Href } from 'expo-router';
 import { orgHasAddOn, personName } from '@hbcfield/shared/client';
-import { openUpdate } from '../../lib/in-app-updates';
-import { initialsOf } from '../../lib/people';
-import { AText, GlassCard, SectionLabel } from '../../components/amazen';
+import { openUpdate } from '@/lib/in-app-updates';
+import { initialsOf } from '@/lib/people';
+import { AText, GlassCard, SectionLabel } from '@/components/amazen';
 import { CameraGlyph } from '../job/job-glyphs';
 import { TourTarget } from '../tour';
 import { PROFILE_GLYPHS } from './profile-glyphs';

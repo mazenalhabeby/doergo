@@ -2,7 +2,7 @@ import { outcomeOf, type ActionOutcome } from '../actions/outcome';
 import { openOpFor } from '../outbox/open-ops';
 import type { OutboxOp } from '../outbox/types';
 import type { SyncEngine } from '../sync-engine';
-import type { MobileCustomer } from '../../lib/api';
+import type { MobileCustomer } from '@/lib/api';
 
 /*
   EVERYTHING ABOUT ONE CLIENT TRAVELS IN ONE LANE, `crm:<customerId>`.

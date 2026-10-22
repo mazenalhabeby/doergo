@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LEAVE_TYPES, formatDuration } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import type { TimeOffRequest } from '../../lib/api';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import type { TimeOffRequest } from '@/lib/api';
 import { type Tone } from '../job/job-ui';
 import { describeRequest, hoursFact, leaveTypeLabelKey, legacyLabelMap } from './request-model';
 

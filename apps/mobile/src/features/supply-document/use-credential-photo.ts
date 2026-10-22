@@ -1,17 +1,17 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { expiryPrompt, type Rect } from '@hbcfield/shared/client';
-import { useToast } from '../../island/island-context';
-import { ensureJpeg } from '../../lib/page-upload';
-import { documentsApi, type DocumentType } from '../../lib/api/documents';
-import { uploadToPresignedUrl } from '../../lib/api/attachments';
-import { canReadText } from '../../lib/ocr';
-import { readExpiryOnDevice } from '../../lib/document-scan';
-import { useOffline } from '../../offline/offline-context';
-import { createFromPhone } from '../../offline/actions/queued-create';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { uuidv7 } from '../../offline/ids';
-import type { ScannedDocument } from '../../components/document-scanner';
+import { useToast } from '@/island/island-context';
+import { ensureJpeg } from '@/lib/page-upload';
+import { documentsApi, type DocumentType } from '@/lib/api/documents';
+import { uploadToPresignedUrl } from '@/lib/api/attachments';
+import { canReadText } from '@/lib/ocr';
+import { readExpiryOnDevice } from '@/lib/document-scan';
+import { useOffline } from '@/offline/offline-context';
+import { createFromPhone } from '@/offline/actions/queued-create';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { uuidv7 } from '@/offline/ids';
+import type { ScannedDocument } from '@/components/document-scanner';
 import { MAX_BYTES, safeFileSize, toIsoDate, type PickFromGallery } from './supply-helpers';
 import { useCredentialPhotoData } from './use-credential-photo-data';
 

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { AText } from './text';
-import { TourTarget } from '../../features/tour/tour-target';
+import { TourTarget } from '@/features/tour/tour-target';
 
 /**
  * The top of a screen — a date, a name, and who you are.

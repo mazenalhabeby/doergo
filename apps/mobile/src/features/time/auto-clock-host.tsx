@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import * as Notifications from 'expo-notifications';
-import { useAuth } from '../../contexts/auth-context';
-import { isExternalMember } from '../../lib/member-reach';
-import { onAppResume } from '../../lib/app-resume';
-import { useOffline } from '../../offline/offline-context';
-import { refreshAutoClock } from '../../services/auto-clock/plan';
+import { useAuth } from '@/contexts/auth-context';
+import { isExternalMember } from '@/lib/member-reach';
+import { onAppResume } from '@/lib/app-resume';
+import { useOffline } from '@/offline/offline-context';
+import { refreshAutoClock } from '@/services/auto-clock/plan';
 
 /**
  * Keeps the automatic clock's plan current: on sign-in, once the member's

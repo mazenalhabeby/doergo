@@ -2,10 +2,10 @@ import React from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { formatDuration, owesHandover, personName } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import type { Task } from '../../lib/api';
-import { AText, Banner, Initials, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import type { Task } from '@/lib/api';
+import { AText, Banner, Initials, SectionLabel } from '@/components/amazen';
 import type { JobFile } from './job-files';
 
 /**

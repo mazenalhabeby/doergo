@@ -3,11 +3,11 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'rea
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useAuth } from '../../contexts/auth-context';
-import { useResponsive } from '../../lib/responsive';
-import { AText, Ground } from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+import { useTheme } from '@/contexts/theme-context';
+import { useAuth } from '@/contexts/auth-context';
+import { useResponsive } from '@/lib/responsive';
+import { AText, Ground } from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 
 /**
  * The frame every onboarding state shares: a heading that says where you

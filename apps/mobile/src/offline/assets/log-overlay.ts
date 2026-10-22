@@ -1,5 +1,5 @@
 import { findLogType, normalizeKindShape } from '@hbcfield/shared/client';
-import type { HeldAsset, MyLogEntry } from '../../lib/api/assets';
+import type { HeldAsset, MyLogEntry } from '@/lib/api/assets';
 import { STILL_MINE } from '../actions/outcome';
 import type { OutboxOp } from '../outbox/types';
 

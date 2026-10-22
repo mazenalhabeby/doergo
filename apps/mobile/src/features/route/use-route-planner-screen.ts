@@ -10,13 +10,13 @@ import {
   rememberedNavApp,
   soleNavApp,
   type InstalledNavApp,
-} from '../../lib/nav-apps';
+} from '@/lib/nav-apps';
 import { useTranslation } from 'react-i18next';
-import { getFix } from '../../lib/location-fix';
-import { tasksApi, type Task } from '../../lib/api';
-import { isMyRouteStop, hasArrived } from '../../lib/my-route';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
+import { getFix } from '@/lib/location-fix';
+import { tasksApi, type Task } from '@/lib/api';
+import { isMyRouteStop, hasArrived } from '@/lib/my-route';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
 import {
   buildGoogleMapsUrl,
   buildNavUrl,
@@ -26,11 +26,11 @@ import {
   type OptimizedRoute,
 } from '@hbcfield/shared/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useOffline } from '../../offline/offline-context';
-import { overlayTask } from '../../offline/tasks/overlay';
-import { restoreRoute } from '../../offline/routes/saved-route';
-import { planDay } from '../../offline/routes/plan-route';
-import { isStalePlan } from '../../lib/route-day';
+import { useOffline } from '@/offline/offline-context';
+import { overlayTask } from '@/offline/tasks/overlay';
+import { restoreRoute } from '@/offline/routes/saved-route';
+import { planDay } from '@/offline/routes/plan-route';
+import { isStalePlan } from '@/lib/route-day';
 import { useRoutePlannerScreenData } from './use-route-planner-screen-data';
 
 /** RoutePlannerScreen's state and handlers — everything before its markup, moved here unchanged. */

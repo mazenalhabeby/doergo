@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, type ViewStyle } from 'react-native';
 import { AText, type Tone } from './text';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 
 /**
  * The hero, set like an amount.

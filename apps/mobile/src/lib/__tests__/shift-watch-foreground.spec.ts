@@ -5,7 +5,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { FOREGROUND_HEARTBEAT_MS, graceCountdown, heartbeatDue } from '../../features/time/time-logic';
+import { FOREGROUND_HEARTBEAT_MS, graceCountdown, heartbeatDue } from '@/features/time/time-logic';
 
 describe('the foreground heartbeat', () => {
   it('is due every five minutes while the app is in front', () => {

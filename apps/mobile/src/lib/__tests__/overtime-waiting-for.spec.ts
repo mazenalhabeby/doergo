@@ -1,4 +1,4 @@
-import { waitingText } from '../../features/time/time-logic';
+import { waitingText } from '@/features/time/time-logic';
 
 /* The extra-time line names who it waits for — one line, not two. */
 const t = (k: string, o?: Record<string, unknown>) => `${k}${o ? ' ' + JSON.stringify(o) : ''}`;
@@ -16,7 +16,7 @@ describe('waiting for whom', () => {
   });
 });
 
-import { overtimePlaceLine } from '../../features/time/time-logic';
+import { overtimePlaceLine } from '@/features/time/time-logic';
 
 describe('the line under the workspace on the extra-time page', () => {
   const now = new Date('2026-10-14T12:00:00Z');

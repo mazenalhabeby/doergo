@@ -1,13 +1,13 @@
 import React, { type ReactNode } from 'react';
 import { Pressable, ScrollView, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { BlurSheet } from '../../components/blur-sheet';
-import { SheetPanel } from '../../components/sheet-panel';
-import { AText, LiveDot } from '../../components/amazen';
-import type { GlyphProps } from '../../components/glyphs/glyphs';
+import { useTheme } from '@/contexts/theme-context';
+import { BlurSheet } from '@/components/blur-sheet';
+import { SheetPanel } from '@/components/sheet-panel';
+import { AText, LiveDot } from '@/components/amazen';
+import type { GlyphProps } from '@/components/glyphs/glyphs';
 import { personInitials } from '@hbcfield/shared/client';
-export { Initials } from '../../components/amazen/state-eyebrow';
-export { SheetOption, type Tone, QuietButton } from '../../components/amazen/sheet-option';
+export { Initials } from '@/components/amazen/state-eyebrow';
+export { SheetOption, type Tone, QuietButton } from '@/components/amazen/sheet-option';
 
 /**
  * The job page's small parts — `docs/design/job-flow.html`, `.disc`, `.banner`,

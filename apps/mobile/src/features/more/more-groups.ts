@@ -1,4 +1,4 @@
-import type { ManageRow } from '../../lib/manage-rows';
+import type { ManageRow } from '@/lib/manage-rows';
 
 export type MoreGroupKey = 'time' | 'people' | 'work';
 export interface MoreGroup { key: MoreGroupKey; rows: ManageRow[] }

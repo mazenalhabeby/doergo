@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { AText, Hero } from '../../../components/amazen';
+import { AText, Hero } from '@/components/amazen';
 import { heroParts, type readShiftState } from '../shift-state';
 
 type ShiftState = ReturnType<typeof readShiftState>;

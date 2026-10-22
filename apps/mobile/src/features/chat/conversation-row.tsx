@@ -2,11 +2,11 @@ import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { conversationTitle, chatWhenShort, type ChatConversation } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { AText, WellDivider } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { AText, WellDivider } from '@/components/amazen';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Bump } from '../../components/amazen/motion';
+import { Bump } from '@/components/amazen/motion';
 import { ConversationAvatar, Tag } from './chat-rows-shared';
 
 /** ConversationRow, moved here unchanged out of chat-rows.tsx. */

@@ -7,7 +7,7 @@ import { frameToImageCrop } from '@hbcfield/shared/client';
 import {
   readCardLines, parseCardPasses, wantsAnotherFrame, frameGapAfter, CARD_FRAME_BUDGET_MS,
   type ParsedCard, type CardLine, type CardReadQuality,
-} from '../../lib/card-scan';
+} from '@/lib/card-scan';
 
 const wait = (ms: number) => new Promise<void>((resolve) => { setTimeout(resolve, ms); });
 

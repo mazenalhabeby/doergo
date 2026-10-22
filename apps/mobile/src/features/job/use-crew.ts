@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useToast } from '../../island/island-context';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { useRefreshJobTime } from '../../hooks/useJobTime';
-import { useRefreshMyHandovers } from '../../hooks/useMyHandovers';
-import { changeLead, joinCrew, leaveCrew, reportMyIssue, resumeMine } from '../../offline/tasks/crew-actions';
-import type { ActionOutcome } from '../../offline/actions/outcome';
-import { tasksApi, type CrewView } from '../../lib/api';
+import { useToast } from '@/island/island-context';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { useRefreshJobTime } from '@/hooks/use-job-time';
+import { useRefreshMyHandovers } from '@/hooks/use-my-handovers';
+import { changeLead, joinCrew, leaveCrew, reportMyIssue, resumeMine } from '@/offline/tasks/crew-actions';
+import type { ActionOutcome } from '@/offline/actions/outcome';
+import { tasksApi, type CrewView } from '@/lib/api';
 import { refusalMessage } from './use-job-writes';
 
 export type CrewMember = CrewView['members'][number];

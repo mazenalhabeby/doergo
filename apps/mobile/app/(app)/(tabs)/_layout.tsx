@@ -1,27 +1,27 @@
 import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
-import { CachedImage } from '../../../src/components/cached-image';
+import { CachedImage } from '@/components/cached-image';
 import { Tabs, type Href } from 'expo-router';
 import { useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { splitTabs, tabAccessFor, tabVisible } from '../../../src/lib/tab-layout';
-import { manageRowsFor } from '../../../src/lib/manage-rows';
-import { AnimatedLogo } from '../../../src/components/animated-logo';
-import { TabPill } from '../../../src/components/amazen';
-import { useAuth } from '../../../src/contexts/auth-context';
-import { useTheme } from '../../../src/contexts/theme-context';
-import { COLORS, SPACING } from '../../../src/lib/constants';
-import { TourTarget } from '../../../src/features/tour';
-import { hasManageSurface } from '../../../src/lib/manage-rows';
-import { useProfileAvatar } from '../../../src/lib/use-profile-avatar';
-import { initialOf } from '../../../src/lib/people';
-import { useChatBadge } from '../../../src/lib/chat-badge';
-import { useTabsLayout } from '../../../src/features/app-shell/tabs/use-tabs-layout';
+import { splitTabs, tabAccessFor, tabVisible } from '@/lib/tab-layout';
+import { manageRowsFor } from '@/lib/manage-rows';
+import { AnimatedLogo } from '@/components/animated-logo';
+import { TabPill } from '@/components/amazen';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING } from '@/lib/constants';
+import { TourTarget } from '@/features/tour';
+import { hasManageSurface } from '@/lib/manage-rows';
+import { useProfileAvatar } from '@/lib/use-profile-avatar';
+import { initialOf } from '@/lib/people';
+import { useChatBadge } from '@/lib/chat-badge';
+import { useTabsLayout } from '@/features/app-shell/tabs/use-tabs-layout';
 import {
   HeaderLogo,
   ProfileButton,
   CustomTabBar,
   styles,
-} from '../../../src/features/app-shell/tabs/tabs-layout-helpers';
+} from '@/features/app-shell/tabs/tabs-layout-helpers';
 
 export default function TabsLayout() {
   const { user, colors, t, access, isAdmin, showTechTasks, showAttendance, showTimeOff, showCreate, showTeam } =

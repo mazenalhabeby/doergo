@@ -2,12 +2,12 @@ import React, { useEffect, useRef } from 'react';
 import { Animated as RNAnimated, Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { daysLate } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { SyncChip } from '../../offline/components/sync-chip';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { weekdayName } from '../../lib/app-dates';
-import type { ScheduleEntry, Task } from '../../lib/api/types';
-import { AText, Eyebrow, WellDivider } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { SyncChip } from '@/offline/components/sync-chip';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { weekdayName } from '@/lib/app-dates';
+import type { ScheduleEntry, Task } from '@/lib/api/types';
+import { AText, Eyebrow, WellDivider } from '@/components/amazen';
 import { LinearGradient } from 'expo-linear-gradient';
 import { weekOf, sameDay, hasHour, shiftOn, shiftHours, figuresFor } from './my-work';
 

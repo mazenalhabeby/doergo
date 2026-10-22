@@ -9,8 +9,8 @@ import {
   normalizeRole,
   Role,
 } from '@hbcfield/shared/client';
-import type { Task } from '../../lib/api/types';
-import type { TasksListParams } from '../../lib/api/tasks';
+import type { Task } from '@/lib/api/types';
+import type { TasksListParams } from '@/lib/api/tasks';
 
 export type Period = 'current' | 'upcoming' | 'history';
 

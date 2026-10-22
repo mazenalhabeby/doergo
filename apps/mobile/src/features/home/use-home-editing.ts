@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler } from 'react-native';
-import { impact } from '../../lib/haptics';
+import { impact } from '@/lib/haptics';
 import { LANDED_MS } from './editable-widget';
 
 /**

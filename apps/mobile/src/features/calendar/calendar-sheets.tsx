@@ -3,8 +3,8 @@ import { Pressable, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { CALENDAR_LAYERS, type CalendarItem, type CalendarLayer } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, PrimaryButton, QuietButton, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, PrimaryButton, QuietButton, SectionLabel } from '@/components/amazen';
 import { JobSheet } from '../job/job-ui';
 
 const LAYER_COLOR: Record<CalendarLayer, string> = {

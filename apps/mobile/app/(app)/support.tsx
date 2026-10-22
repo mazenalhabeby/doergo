@@ -15,17 +15,17 @@ import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SocketEvents, type SupportTicket } from '@hbcfield/shared/client';
-import { appendMessage, debounce, isPlaceable } from '../../src/features/chat/live-thread';
-import { useAppResume } from '../../src/lib/app-resume';
-import { useTheme } from '../../src/contexts/theme-context';
-import { useSocketContext } from '../../src/contexts/socket-context';
-import { Ground, HeaderBack, ScreenHeader } from '../../src/components/amazen';
-import { useScreenWidth } from '../../src/components/screen-container';
-import { supportApi, type SupportConfig } from '../../src/lib/api';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
-import { useQueuedCreate } from '../../src/offline/actions/queued-create';
-import { useSupportScreen } from '../../src/features/support/use-support-screen';
-import { TicketRow, SupportBubble, styles } from '../../src/features/support/support-screen-helpers';
+import { appendMessage, debounce, isPlaceable } from '@/features/chat/live-thread';
+import { useAppResume } from '@/lib/app-resume';
+import { useTheme } from '@/contexts/theme-context';
+import { useSocketContext } from '@/contexts/socket-context';
+import { Ground, HeaderBack, ScreenHeader } from '@/components/amazen';
+import { useScreenWidth } from '@/components/screen-container';
+import { supportApi, type SupportConfig } from '@/lib/api';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
+import { useQueuedCreate } from '@/offline/actions/queued-create';
+import { useSupportScreen } from '@/features/support/use-support-screen';
+import { TicketRow, SupportBubble, styles } from '@/features/support/support-screen-helpers';
 
 export default function SupportScreen() {
   const {

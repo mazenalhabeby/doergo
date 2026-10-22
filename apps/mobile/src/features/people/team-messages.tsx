@@ -2,22 +2,22 @@ import React from 'react';
 import { FlatList, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
-import { useSocketContext } from '../../contexts/socket-context';
-import { chatApi } from '../../lib/api';
-import { useOffline } from '../../offline/offline-context';
-import { useAppResume } from '../../lib/app-resume';
-import { AText, GlassInput, Well, Banner } from '../../components/amazen';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useSocketContext } from '@/contexts/socket-context';
+import { chatApi } from '@/lib/api';
+import { useOffline } from '@/offline/offline-context';
+import { useAppResume } from '@/lib/app-resume';
+import { AText, GlassInput, Well, Banner } from '@/components/amazen';
 import { ConversationRow } from '../chat/chat-rows';
-import { Arrive } from '../../components/amazen/motion';
-import { InkIcon } from '../../components/amazen/ink-icon';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
+import { Arrive } from '@/components/amazen/motion';
+import { InkIcon } from '@/components/amazen/ink-icon';
+import { useTimeFormat } from '@/hooks/use-time-format';
 import { debounce } from '../chat/live-thread';
-import { refreshChatBadge } from '../../lib/chat-badge';
+import { refreshChatBadge } from '@/lib/chat-badge';
 import { useTeamMessages } from './use-team-messages';
-import { LoadingLine } from '../../components/loading-line';
-import { pullRefresh } from '../../components/pull-refresh';
+import { LoadingLine } from '@/components/loading-line';
+import { pullRefresh } from '@/components/pull-refresh';
 
 /**
  * Team → MESSAGES: every conversation, newest first, with what is unread.

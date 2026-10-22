@@ -9,9 +9,9 @@ import {
   type AutoClockPlace,
   type OccurrenceFix,
 } from '@hbcfield/shared/client';
-import { checkClockInLocally } from '../../offline/attendance/clock-in-check';
-import { autoClockInFromPhone, autoClockOutFromPhone, undoAutoClockInFromPhone } from '../../offline/attendance/shift-actions';
-import type { SyncEngine } from '../../offline/sync-engine';
+import { checkClockInLocally } from '@/offline/attendance/clock-in-check';
+import { autoClockInFromPhone, autoClockOutFromPhone, undoAutoClockInFromPhone } from '@/offline/attendance/shift-actions';
+import type { SyncEngine } from '@/offline/sync-engine';
 import type { AutoClockNotifier } from './notifications';
 import { departureBasis, entered, exited, placeAsLocation, presenceSettings, remindersFor } from './rules';
 import { shiftForArrival, shiftForEntry, type PlaceState } from './rules';

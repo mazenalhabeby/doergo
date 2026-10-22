@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { isOpenToRole, isWorkOver, spotsTaken } from '@hbcfield/shared/client';
-import { tasksApi } from '../../lib/api';
-import { refusalText } from '../../lib/distance';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { AText, QuietButton, SectionLabel } from '../../components/amazen';
+import { tasksApi } from '@/lib/api';
+import { refusalText } from '@/lib/distance';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { AText, QuietButton, SectionLabel } from '@/components/amazen';
 
 type RoleTask = {
   id: string;

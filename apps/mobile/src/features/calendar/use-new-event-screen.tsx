@@ -12,19 +12,19 @@ import {
   type MeetingMode,
   type PlaceKind,
 } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useAuth } from '../../contexts/auth-context';
-import { useToast } from '../../island/island-context';
-import { FilterPill } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/island/island-context';
+import { FilterPill } from '@/components/amazen';
 import {
   calendarApi,
   customersApi,
   locationsApi,
   type CalendarPerson,
   type MobileCustomer,
-} from '../../lib/api';
-import { crmCapsOf } from '../../lib/member-reach';
-import { tabAccessFor } from '../../lib/tab-layout';
+} from '@/lib/api';
+import { crmCapsOf } from '@/lib/member-reach';
+import { tabAccessFor } from '@/lib/tab-layout';
 import { dayKey, forgetCalendarPages } from './calendar-data';
 import { calendarError } from './errors';
 

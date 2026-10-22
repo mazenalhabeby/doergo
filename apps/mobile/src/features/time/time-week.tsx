@@ -1,8 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, Well, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, Well, SectionLabel } from '@/components/amazen';
 import { formatDuration } from '@hbcfield/shared/client';
 
 /**

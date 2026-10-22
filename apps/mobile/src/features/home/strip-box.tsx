@@ -1,12 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Pressable, View } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { over } from '../../theme/amazen';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { over } from '@/theme/amazen';
+import { AText } from '@/components/amazen';
 import { GlyphTile } from './glyph-tile';
-import type { GlyphProps } from '../../components/glyphs/glyphs';
+import type { GlyphProps } from '@/components/glyphs/glyphs';
 import type { StripTone } from './action-strip-state';
-import { toneColor, toneTint } from '../../theme/tone-color';
+import { toneColor, toneTint } from '@/theme/tone-color';
 
 /**
  * ONE box for every strip under the home header — what the app needs from the

@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Animated, Easing, View, type LayoutChangeEvent } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { useReduceMotion } from '../../hooks/use-a11y';
-import { connectivity } from '../../offline/connectivity';
+import { useTheme } from '@/contexts/theme-context';
+import { useReduceMotion } from '@/hooks/use-a11y';
+import { connectivity } from '@/offline/connectivity';
 import { createLoadQueue, type LoadQueue, type LoadState } from './load-queue';
 
 import { HomeCardKeyContext, HomeLoadContext } from './home-load-context';

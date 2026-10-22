@@ -1,22 +1,22 @@
 import { View, Text, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { type NoShow } from '../../../src/lib/api';
-import type { TimeEntry } from '../../../src/lib/api/types';
+import { type NoShow } from '@/lib/api';
+import type { TimeEntry } from '@/lib/api/types';
 import { localDateKey } from '@hbcfield/shared/client';
-import { ChoicePill, Ground, HeaderBack, ScreenHeader } from '../../../src/components/amazen';
-import { Skeleton, AttendanceEditSheet } from '../../../src/components';
-import { useScreenWidth } from '../../../src/components/screen-container';
-import { goBack } from '../../../src/lib/go-back';
-import { DatePickerModal } from '../../../src/components/date-picker-modal';
-import { COLORS, SPACING } from '../../../src/lib/constants';
+import { ChoicePill, Ground, HeaderBack, ScreenHeader } from '@/components/amazen';
+import { Skeleton, AttendanceEditSheet } from '@/components';
+import { useScreenWidth } from '@/components/screen-container';
+import { goBack } from '@/lib/go-back';
+import { DatePickerModal } from '@/components/date-picker-modal';
+import { COLORS, SPACING } from '@/lib/constants';
 import {
   SEGMENTS,
   PERIODS,
   dateFromISO,
   shortDay,
   s,
-} from '../../../src/features/time/attendance-review/attendance-review-helpers';
-import { useAttendanceReviewScreen } from '../../../src/features/time/attendance-review/use-attendance-review-screen';
+} from '@/features/time/attendance-review/attendance-review-helpers';
+import { useAttendanceReviewScreen } from '@/features/time/attendance-review/use-attendance-review-screen';
 
 /**
  * Attendance review on the phone — the web `/attendance` page's working half.

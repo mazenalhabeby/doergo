@@ -10,7 +10,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { readSource } from '../../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 const MOBILE = path.resolve(__dirname, '../../../..');
 const read = (p: string) =>

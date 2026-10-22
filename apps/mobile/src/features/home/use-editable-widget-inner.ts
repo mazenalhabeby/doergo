@@ -3,7 +3,7 @@ import { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } fr
 import { Gesture } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { widgetTitle, type WidgetRow } from './registry';
 
 /** Edit mode's resting scale. §3. */

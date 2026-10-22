@@ -13,21 +13,21 @@ import {
   orgHasAddOn,
   formatMoney,
 } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useAuth } from '../../contexts/auth-context';
-import { useToast } from '../../island/island-context';
-import { useResponsive } from '../../lib/responsive';
-import { assetsApi, assetProposalsApi, type HeldAsset, type MyExpense, type DueItem } from '../../lib/api';
-import { logTypeLabel } from '../../lib/log-display';
-import { formatDay } from '../../lib/money';
-import { sentIn, type QueuedSend, type SentItem } from '../../lib/sent-in';
-import { forgetHeldAssets } from '../../hooks/use-held-assets';
-import { knownEquipment, rememberEquipment, type EquipmentLoaded } from '../../lib/equipment-cache';
-import { useSyncStatus } from '../../offline/offline-context';
-import { STILL_MINE } from '../../offline/actions/outcome';
-import { overlayMyLog, logEntriesDeliveredSince } from '../../offline/assets/log-overlay';
-import { AText, PrimaryButton, SectionLabel } from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+import { useTheme } from '@/contexts/theme-context';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/island/island-context';
+import { useResponsive } from '@/lib/responsive';
+import { assetsApi, assetProposalsApi, type HeldAsset, type MyExpense, type DueItem } from '@/lib/api';
+import { logTypeLabel } from '@/lib/log-display';
+import { formatDay } from '@/lib/money';
+import { sentIn, type QueuedSend, type SentItem } from '@/lib/sent-in';
+import { forgetHeldAssets } from '@/hooks/use-held-assets';
+import { knownEquipment, rememberEquipment, type EquipmentLoaded } from '@/lib/equipment-cache';
+import { useSyncStatus } from '@/offline/offline-context';
+import { STILL_MINE } from '@/offline/actions/outcome';
+import { overlayMyLog, logEntriesDeliveredSince } from '@/offline/assets/log-overlay';
+import { AText, PrimaryButton, SectionLabel } from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 
 export type Loaded = EquipmentLoaded;
 

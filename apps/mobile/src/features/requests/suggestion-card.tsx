@@ -2,8 +2,8 @@ import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { formatDuration, type DetectedRequest } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
 
 /**
  * "This looks like…" — what the words in "Other" seem to ask, with the dates

@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { AText, PrimaryButton, Sunken, QuietButton, SectionLabel } from '../../components/amazen';
-import { FactRow } from '../../components/amazen/fact-row';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { AText, PrimaryButton, Sunken, QuietButton, SectionLabel } from '@/components/amazen';
+import { FactRow } from '@/components/amazen/fact-row';
 import { JobSheet } from '../job/job-ui';
 import { MEETING_PROVIDER_NAMES, meetingProvider } from '@hbcfield/shared/client';
-import { calendarApi, type CalendarEventDetail } from '../../lib/api';
+import { calendarApi, type CalendarEventDetail } from '@/lib/api';
 import { calendarError } from './errors';
-import { httpsUrl, openSafeUrl, telUrl } from '../../lib/safe-links';
+import { httpsUrl, openSafeUrl, telUrl } from '@/lib/safe-links';
 
 const RSVP = [
   { v: 'ACCEPTED' as const, key: 'calendar.rsvp.accept' },

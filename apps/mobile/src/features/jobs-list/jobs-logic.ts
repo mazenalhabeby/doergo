@@ -10,8 +10,8 @@ import {
   getEndOfMonth, getStartOfMonth, hasAccessModule, rankMyWork, localDateKey, workBand,
   daysLate, normalizeRole, Role,
 } from '@hbcfield/shared/client';
-import type { Task } from '../../lib/api/types';
-import type { TasksListParams } from '../../lib/api/tasks';
+import type { Task } from '@/lib/api/types';
+import type { TasksListParams } from '@/lib/api/tasks';
 import {
   type Period,
   type JobFacts,

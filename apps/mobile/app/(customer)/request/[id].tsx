@@ -4,14 +4,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useSocketContext } from '../../../src/contexts/socket-context';
+import { useSocketContext } from '@/contexts/socket-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTheme } from '../../../src/contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
-import { portalApi } from '../../../src/lib/api/portal';
-import { portalColor, portalTint, portalIcon } from '../../../src/lib/portal-ui';
-import { StatusPill } from '../../../src/features/customer/request-bits';
-import { httpsUrl, openSafeUrl } from '../../../src/lib/safe-links';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
+import { portalApi } from '@/lib/api/portal';
+import { portalColor, portalTint, portalIcon } from '@/lib/portal-ui';
+import { StatusPill } from '@/features/customer/request-bits';
+import { httpsUrl, openSafeUrl } from '@/lib/safe-links';
 
 export default function RequestDetail() {
   const insets = useSafeAreaInsets();

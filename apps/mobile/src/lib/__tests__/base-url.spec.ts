@@ -4,7 +4,7 @@
 import { RELEASE_API_URL, RELEASE_ORIGIN, resolveApiUrl, resolveSocketUrl } from '../api/base-url';
 import * as fs from 'fs';
 import * as path from 'path';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 describe('the API address', () => {
   it('release: an https env URL is used; http is refused for the shipped address', () => {

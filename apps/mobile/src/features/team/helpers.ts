@@ -5,7 +5,7 @@
  * UTC-based `getTodayString` — wrong for anybody east of UTC just after
  * midnight — were removed 2026-10-10: nothing called them.)
  */
-import i18n from '../../i18n';
+import i18n from '@/i18n';
 
 /** Human-readable elapsed time since a date string. */
 export function timeAgo(dateStr: string): string {

@@ -7,8 +7,8 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { rowRight, type RowRight, type RowWho, rowWho, sameJobRowProps, sameRowRight, sameRowWho , type JobFacts } from '../../features/jobs-list/jobs-logic';
-import { readSource } from '../../test-utils/read-source';
+import { rowRight, type RowRight, type RowWho, rowWho, sameJobRowProps, sameRowRight, sameRowWho , type JobFacts } from '@/features/jobs-list/jobs-logic';
+import { readSource } from '@/test-utils/read-source';
 
 const facts: JobFacts = { mine: false, closed: false, canceled: false, underWay: false };
 const now = new Date('2026-10-10T08:00:00');

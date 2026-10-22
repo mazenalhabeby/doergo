@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { type ThemeMode } from '../../../../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, type ThemeColors } from '../../../../lib/constants';
+import { type ThemeMode } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, type ThemeColors } from '@/lib/constants';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 

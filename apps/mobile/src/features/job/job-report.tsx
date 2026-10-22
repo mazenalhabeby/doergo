@@ -1,10 +1,10 @@
 import React from 'react';
 import { Image, View, type LayoutChangeEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import type { ServiceReport } from '../../lib/api';
-import { AText, Well, WellDivider, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import type { ServiceReport } from '@/lib/api';
+import { AText, Well, WellDivider, SectionLabel } from '@/components/amazen';
 import { formatOnJob } from './job-logic';
 
 /**

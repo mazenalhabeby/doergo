@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { type AttendanceStatus, type BreakStatus, type GeofenceExcursion } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import type { OvertimeRequest } from '../../lib/api';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import type { OvertimeRequest } from '@/lib/api';
 import { type NoShiftNote } from './time-logic';
-import { forgotClockOutOffer } from '../../lib/clock-smart';
+import { forgotClockOutOffer } from '@/lib/clock-smart';
 
 /** TimeBanners's state and handlers — everything before its markup, moved here unchanged. */
 export function useTimeBanners({

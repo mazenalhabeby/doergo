@@ -15,7 +15,7 @@
  *   ⚠️ Nothing answered while the database is opening is not "loaded".
  */
 jest.mock('react', () => require('./hook-harness').react);
-jest.mock('../../lib/api/tasks', () => ({ tasksApi: { list: jest.fn() } }));
+jest.mock('@/lib/api/tasks', () => ({ tasksApi: { list: jest.fn() } }));
 const mockOffline: { records: any; engine: any; starting: boolean } = { records: null, engine: null, starting: false };
 const mockSync: { operations: any[] } = { operations: [] };
 jest.mock('../offline-context', () => ({
@@ -26,7 +26,7 @@ jest.mock('../offline-context', () => ({
 import { mountHook, settle } from './hook-harness';
 import { connectivity } from '../connectivity';
 import { HOME_PULL_GAP_MS, homeTasksSignature, useHomeTasks } from '../tasks/use-home-tasks';
-import { tasksApi } from '../../lib/api/tasks';
+import { tasksApi } from '@/lib/api/tasks';
 import { SyncEngine, type RecordsSink, type SyncTransport } from '../sync-engine';
 import { MemoryOutboxStore } from '../outbox/memory-store';
 

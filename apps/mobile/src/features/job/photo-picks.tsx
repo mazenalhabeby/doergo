@@ -1,10 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useImagePicker, type PickedImage } from '../../hooks/useImagePicker';
-import type { MediaPurpose } from '../../permissions/purposes';
-import { QuietButton } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useImagePicker, type PickedImage } from '@/hooks/use-image-picker';
+import type { MediaPurpose } from '@/permissions/purposes';
+import { QuietButton } from '@/components/amazen';
 
 /**
  * Photos picked for something about to be sent — the camera first, the gallery

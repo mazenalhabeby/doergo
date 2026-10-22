@@ -2,11 +2,11 @@
  * How old what the member sees is.
  */
 import { LONG_OFFLINE_MS, STALE_AFTER_MS, freshnessOf, newest } from '../freshness';
-import en from '../../i18n/locales/en.json'
-import de from '../../i18n/locales/de.json'
-import es from '../../i18n/locales/es.json'
-import fr from '../../i18n/locales/fr.json'
-import itLocale from '../../i18n/locales/it.json'
+import en from '@/i18n/locales/en.json'
+import de from '@/i18n/locales/de.json'
+import es from '@/i18n/locales/es.json'
+import fr from '@/i18n/locales/fr.json'
+import itLocale from '@/i18n/locales/it.json'
 
 const NOW = Date.parse('2026-09-15T21:40:00.000Z');
 const H = 3_600_000;

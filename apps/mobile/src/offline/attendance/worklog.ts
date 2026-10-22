@@ -1,5 +1,5 @@
-import type { WorkLogNote } from '../../lib/api/worklog';
-import { worklogApi } from '../../lib/api/worklog';
+import type { WorkLogNote } from '@/lib/api/worklog';
+import { worklogApi } from '@/lib/api/worklog';
 import { outcomeOf, STILL_MINE, type ActionOutcome } from '../actions/outcome';
 import type { RecordsStore } from '../db/records-store';
 import type { OfflineFiles } from '../files/offline-files';

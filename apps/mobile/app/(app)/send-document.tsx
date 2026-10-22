@@ -7,24 +7,24 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
 
-import { DateField } from '../../src/components';
-import { Ground, HeaderBack, ScreenHeader } from '../../src/components/amazen';
-import { goBack } from '../../src/lib/go-back';
-import { useTheme } from '../../src/contexts/theme-context';
-import { CaptureReviewFoot } from '../../src/features/equipment/capture-review';
-import { CaptureCamera, CaptureSkip } from '../../src/features/equipment/capture-camera';
-import { useToast } from '../../src/island/island-context';
-import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
-import { useCameraAccess } from '../../src/permissions/use-media-access';
-import { canScanContracts, scanContract } from '../../src/lib/receipt-scan';
-import { assetProposalsApi, uploadToPresignedUrl, type ContractFields } from '../../src/lib/api';
+import { DateField } from '@/components';
+import { Ground, HeaderBack, ScreenHeader } from '@/components/amazen';
+import { goBack } from '@/lib/go-back';
+import { useTheme } from '@/contexts/theme-context';
+import { CaptureReviewFoot } from '@/features/equipment/capture-review';
+import { CaptureCamera, CaptureSkip } from '@/features/equipment/capture-camera';
+import { useToast } from '@/island/island-context';
+import { MediaAccessScreen } from '@/permissions/media-access-screen';
+import { useCameraAccess } from '@/permissions/use-media-access';
+import { canScanContracts, scanContract } from '@/lib/receipt-scan';
+import { assetProposalsApi, uploadToPresignedUrl, type ContractFields } from '@/lib/api';
 import { classifyDocument, type DocumentClassification } from '@hbcfield/shared/client';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
-import { useOffline } from '../../src/offline/offline-context';
-import { createFromPhone } from '../../src/offline/actions/queued-create';
-import { uuidv7 } from '../../src/offline/ids';
-import { useSendDocumentScreen } from '../../src/features/documents/use-send-document-screen';
-import { Field, s } from '../../src/features/documents/send-document-screen-helpers';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
+import { useOffline } from '@/offline/offline-context';
+import { createFromPhone } from '@/offline/actions/queued-create';
+import { uuidv7 } from '@/offline/ids';
+import { useSendDocumentScreen } from '@/features/documents/use-send-document-screen';
+import { Field, s } from '@/features/documents/send-document-screen-helpers';
 
 export default function SendDocumentScreen() {
   const {

@@ -4,11 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { useRouter, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { personName } from '@hbcfield/shared/client';
-import { useTheme } from '../../../src/contexts/theme-context';
-import { useToast } from '../../../src/island/island-context';
-import { timeOffApi } from '../../../src/lib/api';
-import { useResponsive } from '../../../src/lib/responsive';
-import { centeredContent } from '../../../src/components/screen-container';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { timeOffApi } from '@/lib/api';
+import { useResponsive } from '@/lib/responsive';
+import { centeredContent } from '@/components/screen-container';
 import {
   AText,
   FilterPill,
@@ -18,12 +18,12 @@ import {
   ScreenHeader,
   Well,
   useTabSafe,
-} from '../../../src/components/amazen';
-import { Initials, QuietButton } from '../../../src/features/job/job-ui';
-import { RequestRow, useRequestWords, type RequestRowData } from '../../../src/features/requests/request-parts';
-import { LoadingLine } from '../../../src/components/loading-line';
-import { refreshControl } from '../../../src/components/pull-refresh';
-import { useFetchData } from '../../../src/hooks/useFetchData';
+} from '@/components/amazen';
+import { Initials, QuietButton } from '@/features/job/job-ui';
+import { RequestRow, useRequestWords, type RequestRowData } from '@/features/requests/request-parts';
+import { LoadingLine } from '@/components/loading-line';
+import { refreshControl } from '@/components/pull-refresh';
+import { useFetchData } from '@/hooks/use-fetch-data';
 
 type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL';
 const FILTER_KEYS: StatusFilter[] = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];

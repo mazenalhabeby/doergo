@@ -4,8 +4,8 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { appendMessage, applyToConversations, bubbleShape, debounce, isPlaceable, markReadLocally } from '../../features/chat/live-thread';
-import { readSource } from '../../test-utils/read-source';
+import { appendMessage, applyToConversations, bubbleShape, debounce, isPlaceable, markReadLocally } from '@/features/chat/live-thread';
+import { readSource } from '@/test-utils/read-source';
 
 const msg = (id: string, at: string, senderId = 'karim', conversationId = 'c1') =>
   ({ id, conversationId, senderId, body: id, attachments: [], createdAt: at });

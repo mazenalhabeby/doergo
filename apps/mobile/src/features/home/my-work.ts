@@ -3,7 +3,7 @@ import {
   rankMyWork, workBand, workflowStatusLabel,
   type FlowStatus,
 } from '@hbcfield/shared/client';
-import type { ScheduleEntry, Task } from '../../lib/api/types';
+import type { ScheduleEntry, Task } from '@/lib/api/types';
 import { tasksOn } from './work-shape';
 export {
   tasksOn,

@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { LeaveLegend } from '../time/time-off-section-shared';
-import { isSameDay } from '../../lib/utils';
-import { AText, Well, SectionLabel } from '../../components/amazen';
+import { isSameDay } from '@/lib/utils';
+import { AText, Well, SectionLabel } from '@/components/amazen';
 import { getMonthGrid, isDateInRange, toDateString } from './helpers';
 
 /**

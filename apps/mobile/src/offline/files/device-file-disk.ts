@@ -1,5 +1,5 @@
 import { Directory, File, Paths } from 'expo-file-system';
-import { downscaleImage } from '../../lib/downscale-image';
+import { downscaleImage } from '@/lib/downscale-image';
 import type { FileDisk, KeepInput } from './types';
 
 /** Longest edge a job photo is kept at. Enough to read a serial plate; a tenth of a 12 MP original. */

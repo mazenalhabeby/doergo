@@ -1,4 +1,4 @@
-import { type Destination } from '../../lib/manage-rows';
+import { type Destination } from '@/lib/manage-rows';
 import { type Badges } from './shortcuts';
 import { useShortcutsEditor } from './use-shortcuts-editor';
 

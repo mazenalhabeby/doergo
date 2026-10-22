@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 /**
  * The card's own rules that live in JSX and hooks, where a render test would

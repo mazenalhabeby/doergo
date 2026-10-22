@@ -1,7 +1,7 @@
 import { hasAccessModule, hasFeatureModule, moduleAnywhere, type MobileModule } from '@hbcfield/shared/client';
-import { holds, holdsOrgWide } from '../../lib/permissions';
-import type { User } from '../../lib/api/types';
-import { crmCapsOf, drivesRoutes, isExternalMember } from '../../lib/member-reach';
+import { holds, holdsOrgWide } from '@/lib/permissions';
+import type { User } from '@/lib/api/types';
+import { crmCapsOf, drivesRoutes, isExternalMember } from '@/lib/member-reach';
 
 /**
  * What a widget REQUIRES, as data.

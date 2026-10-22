@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, WellDivider } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, WellDivider } from '@/components/amazen';
 
 /**
  * A way through, at the foot of a well card: a divider, an optional mark, the

@@ -6,7 +6,7 @@
 import { kindTemplate } from '@hbcfield/shared/client';
 import { overlayMyLog, logEntriesDeliveredSince } from '../assets/log-overlay';
 import type { OutboxOp, OutboxState } from '../outbox/types';
-import type { HeldAsset, MyLogEntry } from '../../lib/api/assets';
+import type { HeldAsset, MyLogEntry } from '@/lib/api/assets';
 
 const van: HeldAsset = {
   id: 'c1',

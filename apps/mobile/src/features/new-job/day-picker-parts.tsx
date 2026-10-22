@@ -1,7 +1,7 @@
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, QuietButton } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, QuietButton } from '@/components/amazen';
 
 /**
  * The top of a day picker drawn in JavaScript — the New job "Which day" sheet

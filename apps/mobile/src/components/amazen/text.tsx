@@ -1,8 +1,8 @@
 import React from 'react';
 import { Text, type TextProps, type TextStyle } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { useSurface } from './surfaces';
-import type { AmazenColors } from '../../theme/amazen';
+import type { AmazenColors } from '@/theme/amazen';
 
 export type TypeVariant =
   | 'display' | 'displaySm' | 'decimal' | 'h2' | 'h3' | 'body' | 'caption' | 'eyebrow';

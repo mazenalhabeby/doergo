@@ -1,20 +1,20 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Platform } from 'react-native';
-import { type InstalledNavApp } from '../../lib/nav-apps';
+import { type InstalledNavApp } from '@/lib/nav-apps';
 import { useTranslation } from 'react-i18next';
-import { getFix } from '../../lib/location-fix';
-import { tasksApi, type Task } from '../../lib/api';
-import { isMyRouteStop, hasArrived } from '../../lib/my-route';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
+import { getFix } from '@/lib/location-fix';
+import { tasksApi, type Task } from '@/lib/api';
+import { isMyRouteStop, hasArrived } from '@/lib/my-route';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
 import { type NavApp, type RouteStop, type OptimizedRoute } from '@hbcfield/shared/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useOffline } from '../../offline/offline-context';
-import { overlayTask } from '../../offline/tasks/overlay';
-import { restoreRoute } from '../../offline/routes/saved-route';
-import { planDay } from '../../offline/routes/plan-route';
-import { isStalePlan } from '../../lib/route-day';
-import { caught } from '../../lib/caught';
+import { useOffline } from '@/offline/offline-context';
+import { overlayTask } from '@/offline/tasks/overlay';
+import { restoreRoute } from '@/offline/routes/saved-route';
+import { planDay } from '@/offline/routes/plan-route';
+import { isStalePlan } from '@/lib/route-day';
+import { caught } from '@/lib/caught';
 
 export type LatLng = { lat: number; lng: number; label?: string };
 

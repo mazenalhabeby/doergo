@@ -1,5 +1,5 @@
 import { View, type StyleProp, type ViewStyle } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { AText } from './text';
 import { Bump } from './motion';
 

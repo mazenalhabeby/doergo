@@ -13,7 +13,7 @@ jest.mock('../ids', () => {
   let n = 0;
   return { uuidv7: () => `0190f3c2-7b1a-7c3d-9e4f-w${String(++n).padStart(11, '0')}` };
 });
-jest.mock('../../lib/api/worklog', () => ({ worklogApi: { list: jest.fn() } }));
+jest.mock('@/lib/api/worklog', () => ({ worklogApi: { list: jest.fn() } }));
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { addWorklogEntry, worklogView } = require('../attendance/worklog') as typeof import('../attendance/worklog');
 

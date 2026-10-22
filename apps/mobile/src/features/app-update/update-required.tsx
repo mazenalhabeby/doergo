@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, Linking, Pressable, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AnimatedLogo } from '../../components/animated-logo';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
-import type { VersionStatus } from '../../lib/version-gate';
-import { IN_APP_UPDATES_SUPPORTED, startStoreUpdate } from '../../lib/in-app-updates';
+import { useTheme } from '@/contexts/theme-context';
+import { AnimatedLogo } from '@/components/animated-logo';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
+import type { VersionStatus } from '@/lib/version-gate';
+import { IN_APP_UPDATES_SUPPORTED, startStoreUpdate } from '@/lib/in-app-updates';
 
 /**
  * Shown INSTEAD of the app when this build is older than the server allows.

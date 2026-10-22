@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { PURPOSES, PROMISE, purposeOf, type MediaPurpose } from '../../permissions/purposes';
+import { PURPOSES, PROMISE, purposeOf, type MediaPurpose } from '@/permissions/purposes';
 
 const MOBILE = path.join(__dirname, '../../..');
 const files = (dir: string, out: string[] = []): string[] => {
@@ -175,7 +175,7 @@ describe('one screen, one sheet, every surface', () => {
   });
 
   it('the image picker no longer explains itself in hard-coded English', () => {
-    const src = fs.readFileSync(path.join(MOBILE, 'src/hooks/useImagePicker.ts'), 'utf8');
+    const src = fs.readFileSync(path.join(MOBILE, 'src/hooks/use-image-picker.ts'), 'utf8');
     expect(src).not.toContain('Permission Required');
     expect(stripComments(src)).toContain('requestMediaAccess');
   });

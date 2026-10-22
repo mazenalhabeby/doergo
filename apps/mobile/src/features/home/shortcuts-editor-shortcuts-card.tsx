@@ -1,12 +1,12 @@
 import { Pressable, ScrollView, View } from 'react-native';
-import { over } from '../../theme/amazen';
-import { selection } from '../../lib/haptics';
-import { AText, Eyebrow, PrimaryButton } from '../../components/amazen';
-import { SheetPanel } from '../../components/sheet-panel';
+import { over } from '@/theme/amazen';
+import { selection } from '@/lib/haptics';
+import { AText, Eyebrow, PrimaryButton } from '@/components/amazen';
+import { SheetPanel } from '@/components/sheet-panel';
 import { SHORTCUT_GLYPHS } from './shortcut-glyphs';
 import { SLOTS, badgeOf, groupOf, smartPicks } from './shortcuts';
 import { GROUPS } from './shortcuts-editor-helpers';
-import { CountBadge } from '../../components/amazen/count-badge';
+import { CountBadge } from '@/components/amazen/count-badge';
 import type { ShortcutsEditorState } from './use-shortcuts-editor-logic';
 import type { ShortcutsEditor } from './shortcuts-card';
 

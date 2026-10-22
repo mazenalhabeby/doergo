@@ -1,20 +1,20 @@
 import React from 'react';
 import { SectionList, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
-import { useSocketContext } from '../../contexts/socket-context';
-import { useLiveRefresh } from '../../hooks/use-live-refresh';
-import { useChatBadge } from '../../lib/chat-badge';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useSocketContext } from '@/contexts/socket-context';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
+import { useChatBadge } from '@/lib/chat-badge';
 import { TeamMessages } from './team-messages';
-import { useResponsive } from '../../lib/responsive';
-import { tabAccessFor } from '../../lib/tab-layout';
-import { Ground, ScreenHeader, SectionLabel } from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
-import { MessagesGlyph } from '../../components/glyphs/glyphs';
+import { useResponsive } from '@/lib/responsive';
+import { tabAccessFor } from '@/lib/tab-layout';
+import { Ground, ScreenHeader, SectionLabel } from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
+import { MessagesGlyph } from '@/components/glyphs/glyphs';
 import { useTeamScreen } from './use-team-screen';
 import { TeamSeparator, TeamRow } from './team-screen-helpers';
-import { refreshControl } from '../../components/pull-refresh';
+import { refreshControl } from '@/components/pull-refresh';
 
 /**
  * TEAM — two halves on one tab: PEOPLE (who is here) and MESSAGES (every

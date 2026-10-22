@@ -8,13 +8,13 @@ import {
   TaskStatus,
   type Task,
   type UpdateTaskInput,
-} from '../../lib/api';
-import { useAuth } from '../../contexts/auth-context';
-import { useToast } from '../../island/island-context';
-import { useOffline } from '../../offline/offline-context';
-import { useRefreshMyHandovers } from '../../hooks/useMyHandovers';
-import { useRefreshJobTime } from '../../hooks/useJobTime';
-import { mergeAttachments, pendingAttachments } from '../../offline/tasks/overlay';
+} from '@/lib/api';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/island/island-context';
+import { useOffline } from '@/offline/offline-context';
+import { useRefreshMyHandovers } from '@/hooks/use-my-handovers';
+import { useRefreshJobTime } from '@/hooks/use-job-time';
+import { mergeAttachments, pendingAttachments } from '@/offline/tasks/overlay';
 import {
   addTaskComment,
   addTaskPhoto,
@@ -22,11 +22,11 @@ import {
   resumeJob,
   writeHandover,
   type ActionOutcome,
-} from '../../offline/tasks/task-actions';
-import { taskDestination } from '../../offline/tasks/status-fix';
-import type { PickedImage } from '../../hooks/useImagePicker';
+} from '@/offline/tasks/task-actions';
+import { taskDestination } from '@/offline/tasks/status-fix';
+import type { PickedImage } from '@/hooks/use-image-picker';
 import type { JobState, JobTask } from './use-job';
-import { refusalText } from '../../lib/distance';
+import { refusalText } from '@/lib/distance';
 import {
   prepareStepForm,
   reasonFromAnswers,

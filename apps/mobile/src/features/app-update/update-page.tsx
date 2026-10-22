@@ -4,10 +4,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
-import type { VersionStatus } from '../../lib/version-gate';
-import { openUpdate } from '../../lib/in-app-updates';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
+import type { VersionStatus } from '@/lib/version-gate';
+import { openUpdate } from '@/lib/in-app-updates';
 import type { ReleaseIcon } from '@hbcfield/shared/client';
 
 const SNOOZE_KEY = 'update_page_snoozed';

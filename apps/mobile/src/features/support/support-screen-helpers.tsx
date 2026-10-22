@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { type SupportTicket } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { CountBadge } from '../../components/amazen/count-badge';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
+import { useTheme } from '@/contexts/theme-context';
+import { CountBadge } from '@/components/amazen/count-badge';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
 
 /** SupportScreen's module-level helpers, moved here unchanged so its sections can read them too. */
 /* ---------------- rows: memoised ---------------- */

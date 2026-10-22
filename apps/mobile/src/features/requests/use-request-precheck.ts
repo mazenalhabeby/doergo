@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RequestPrecheck } from '@hbcfield/shared/client';
-import { requestsApi } from '../../lib/api/technicians';
+import { requestsApi } from '@/lib/api/technicians';
 
 /**
  * The pre-check for a request being filled in — asked once the form has been

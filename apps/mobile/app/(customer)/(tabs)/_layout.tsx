@@ -2,8 +2,8 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../../src/contexts/theme-context';
-import { COLORS } from '../../../src/lib/constants';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS } from '@/lib/constants';
 
 export default function CustomerTabsLayout() {
   const { colors } = useTheme();

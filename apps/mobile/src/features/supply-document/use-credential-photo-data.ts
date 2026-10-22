@@ -1,14 +1,14 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { expiryPrompt, type Rect } from '@hbcfield/shared/client';
-import { useToast } from '../../island/island-context';
-import { ensureJpeg } from '../../lib/page-upload';
-import { documentsApi, type DocumentType } from '../../lib/api/documents';
-import { uploadToPresignedUrl } from '../../lib/api/attachments';
-import { canReadText } from '../../lib/ocr';
-import { readExpiryOnDevice } from '../../lib/document-scan';
-import { useOffline } from '../../offline/offline-context';
-import type { ScannedDocument } from '../../components/document-scanner';
+import { useToast } from '@/island/island-context';
+import { ensureJpeg } from '@/lib/page-upload';
+import { documentsApi, type DocumentType } from '@/lib/api/documents';
+import { uploadToPresignedUrl } from '@/lib/api/attachments';
+import { canReadText } from '@/lib/ocr';
+import { readExpiryOnDevice } from '@/lib/document-scan';
+import { useOffline } from '@/offline/offline-context';
+import type { ScannedDocument } from '@/components/document-scanner';
 import { toIsoDate, type PickFromGallery } from './supply-helpers';
 
 /** useCredentialPhoto's state and handlers — everything before its markup, moved here unchanged. */

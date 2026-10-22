@@ -1,5 +1,5 @@
 import { clientKind, type ClientKind, personInitials } from '@hbcfield/shared/client';
-import { Monogram } from '../../components/amazen/monogram';
+import { Monogram } from '@/components/amazen/monogram';
 
 /**
  * The client's mark: a SHAPE that says what kind of thing this is.

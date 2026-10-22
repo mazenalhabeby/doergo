@@ -5,7 +5,7 @@
  * received nothing — pushes "you haven't clocked in". The member did clock in.
  */
 import { notificationTime, reminderAnswered } from '../attendance/answered-reminders';
-import { isNotificationSuppressed, setNotificationSuppressor } from '../../lib/notification-suppression';
+import { isNotificationSuppressed, setNotificationSuppressor } from '@/lib/notification-suppression';
 
 const T = Date.parse('2026-09-14T08:30:00.000Z');
 const op = (o: string, state: string, minutesBefore: number) => ({ op: o, state, createdAt: T - minutesBefore * 60_000 }) as never;

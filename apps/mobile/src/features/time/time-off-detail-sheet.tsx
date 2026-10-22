@@ -2,9 +2,9 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { AText, PrimaryButton, Sunken, StateEyebrow } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { AText, PrimaryButton, Sunken, StateEyebrow } from '@/components/amazen';
 import { JobSheet } from '../job/job-ui';
 import { dayOf, daysOff } from './time-logic';
 import type { useMyTimeOff, MyTimeOffRequest } from './use-my-time-off';

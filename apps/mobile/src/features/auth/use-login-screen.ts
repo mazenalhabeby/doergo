@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/auth-context';
-import { useBiometricUnlock } from '../../hooks/use-biometric-unlock';
-import { resolveCapability, getKeyOwner } from '../../lib/biometrics';
-import { useTheme } from '../../contexts/theme-context';
-import { ROUTES } from '../../lib/constants';
-import { loadLastUser, shouldAutoPromptFor, type LastUser } from '../../lib/session/last-user';
+import { useAuth } from '@/contexts/auth-context';
+import { useBiometricUnlock } from '@/hooks/use-biometric-unlock';
+import { resolveCapability, getKeyOwner } from '@/lib/biometrics';
+import { useTheme } from '@/contexts/theme-context';
+import { ROUTES } from '@/lib/constants';
+import { loadLastUser, shouldAutoPromptFor, type LastUser } from '@/lib/session/last-user';
 
 /** LoginScreen's state and handlers — everything before its markup, moved here unchanged. */
 export function useLoginScreen() {

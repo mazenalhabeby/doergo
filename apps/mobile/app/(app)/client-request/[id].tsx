@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { RequestDetail } from '../../../src/features/client-requests/request-detail';
+import { RequestDetail } from '@/features/client-requests/request-detail';
 
 /** One client request — the screen lives in `src/components/client-requests/`. */
 export default function ClientRequestRoute() {

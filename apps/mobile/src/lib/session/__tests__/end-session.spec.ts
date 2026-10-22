@@ -37,36 +37,36 @@ const mocks = {
   clearStoredUser: rec('stored-user'),
 };
 
-jest.mock('../../api/auth', () => ({ authApi: { logout: () => mocks.logout() } }));
-jest.mock('../../api/client', () => ({
+jest.mock('@/lib/api/auth', () => ({ authApi: { logout: () => mocks.logout() } }));
+jest.mock('@/lib/api/client', () => ({
   clearInflightRequests: () => mocks.clearInflightRequests(),
   clearTokens: () => mocks.clearTokens(),
   sessionOwnerId: () => mocks.sessionOwnerId(),
 }));
-jest.mock('../../api/response-cache', () => ({ setResponseCache: (v: unknown) => mocks.setResponseCache(v) }));
-jest.mock('../../biometrics', () => ({ biometricCredential: { forget: () => mocks.forget() } }));
-jest.mock('../../remember/store', () => ({ forgetEverythingKept: () => mocks.forgetEverythingKept() }));
-jest.mock('../../../hooks/usePushNotifications', () => ({ purgePushTokenRegistration: () => mocks.purgePush() }));
-jest.mock('../../../services/background-route-tracking', () => ({
+jest.mock('@/lib/api/response-cache', () => ({ setResponseCache: (v: unknown) => mocks.setResponseCache(v) }));
+jest.mock('@/lib/biometrics', () => ({ biometricCredential: { forget: () => mocks.forget() } }));
+jest.mock('@/lib/remember/store', () => ({ forgetEverythingKept: () => mocks.forgetEverythingKept() }));
+jest.mock('@/hooks/use-push-notifications', () => ({ purgePushTokenRegistration: () => mocks.purgePush() }));
+jest.mock('@/services/background-route-tracking', () => ({
   stopRouteTracking: () => mocks.stopRoute(),
   forgetRouteData: () => mocks.forgetRoute(),
 }));
-jest.mock('../../../services/background-heartbeat', () => ({ stopBackgroundHeartbeat: () => mocks.stopHeartbeat() }));
-jest.mock('../../../services/background-geofence', () => ({ stopAllGeofences: () => mocks.stopGeofence() }));
-jest.mock('../../../services/auto-clock/plan', () => ({ forgetAutoClock: (id: string) => mocks.forgetAutoClock(id) }));
-jest.mock('../../../services/kept-check-ins', () => ({ keptCheckIns: { forgetAll: () => mocks.forgetCheckIns() } }));
-jest.mock('../../../offline/background-sync', () => ({ unregisterBackgroundSync: () => mocks.unregisterSync() }));
-jest.mock('../../../offline/db/database', () => ({ destroyOfflineDatabase: (id: string) => mocks.destroyDb(id) }));
-jest.mock('../../../offline/files/device-file-disk', () => ({
+jest.mock('@/services/background-heartbeat', () => ({ stopBackgroundHeartbeat: () => mocks.stopHeartbeat() }));
+jest.mock('@/services/background-geofence', () => ({ stopAllGeofences: () => mocks.stopGeofence() }));
+jest.mock('@/services/auto-clock/plan', () => ({ forgetAutoClock: (id: string) => mocks.forgetAutoClock(id) }));
+jest.mock('@/services/kept-check-ins', () => ({ keptCheckIns: { forgetAll: () => mocks.forgetCheckIns() } }));
+jest.mock('@/offline/background-sync', () => ({ unregisterBackgroundSync: () => mocks.unregisterSync() }));
+jest.mock('@/offline/db/database', () => ({ destroyOfflineDatabase: (id: string) => mocks.destroyDb(id) }));
+jest.mock('@/offline/files/device-file-disk', () => ({
   DeviceFileDisk: { forMember: (id: string) => ({ destroyAll: () => mocks.destroyFiles(id) }) },
 }));
-jest.mock('../../../offline/files/media-cache', () => ({ MediaCache: { destroyForMember: (id: string) => mocks.destroyMedia(id) } }));
-jest.mock('../../../offline/attendance/legacy-worklog-queue', () => ({
+jest.mock('@/offline/files/media-cache', () => ({ MediaCache: { destroyForMember: (id: string) => mocks.destroyMedia(id) } }));
+jest.mock('@/offline/attendance/legacy-worklog-queue', () => ({
   forgetLegacyWorklog: () => mocks.forgetLegacy(),
   legacyWorklogWaiting: (id: string) => mocks.legacyWaiting(id),
 }));
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: { removeItem: jest.fn(async (k: string) => { calls.push(`async-storage:remove:${k}`); }) } }));
-jest.mock('../../secure-buffer', () => ({ forgetSecure: (id: string) => mocks.forgetSecure(id) }));
+jest.mock('@/lib/secure-buffer', () => ({ forgetSecure: (id: string) => mocks.forgetSecure(id) }));
 jest.mock('../stored-user', () => ({
   loadStoredUser: () => mocks.loadStoredUser(),
   clearStoredUser: () => mocks.clearStoredUser(),
@@ -74,7 +74,7 @@ jest.mock('../stored-user', () => ({
 
 import { endSession, shouldDestroyLocalData } from '../end-session';
 import { onSessionEnd, registerUnsentProbe } from '../session-registry';
-import { readSource } from '../../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 beforeEach(() => {
   calls.length = 0;
@@ -256,7 +256,7 @@ describe('every exit is the one exit', () => {
       'unregisterBackgroundSync(': ['src/lib/session/end-session.ts', 'src/offline/background-sync.ts'],
       'forgetEverythingKept(': ['src/lib/session/end-session.ts', 'src/lib/remember/store.ts'],
       'forgetRouteData(': ['src/lib/session/end-session.ts', 'src/services/background-route-tracking.ts'],
-      'purgePushTokenRegistration(': ['src/lib/session/end-session.ts', 'src/hooks/usePushNotifications.ts'],
+      'purgePushTokenRegistration(': ['src/lib/session/end-session.ts', 'src/hooks/use-push-notifications.ts'],
       'destroyForMember(': ['src/lib/session/end-session.ts', 'src/offline/files/media-cache.ts'],
     };
     const offenders: string[] = [];

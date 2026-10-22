@@ -11,14 +11,14 @@ import {
   type ChatConversation,
   type ChatUserRef,
 } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { AText, WellDivider } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { AText, WellDivider } from '@/components/amazen';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
-import { InkIcon } from '../../components/amazen/ink-icon';
-import { Arrive, Bump, useIconMotion } from '../../components/amazen/motion';
+import { InkIcon } from '@/components/amazen/ink-icon';
+import { Arrive, Bump, useIconMotion } from '@/components/amazen/motion';
 import { PersonAvatar } from '../people/person-avatar';
 import { ChatFiles } from './chat-files';
 import { ConversationAvatar, DayPill, Ticks, type Receipt, Tag } from './chat-rows-shared';

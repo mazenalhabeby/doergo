@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
-import type { PickedImage } from '../../hooks/useImagePicker';
-import { worklogApi } from '../../lib/api/worklog';
-import { uploadToPresignedUrl } from '../../lib/api/attachments';
-import { sessionOwnerId } from '../../lib/api/client';
-import { sealedStore, WORKLOG_PREFIX } from '../../lib/sealed-stores';
+import type { PickedImage } from '@/hooks/use-image-picker';
+import { worklogApi } from '@/lib/api/worklog';
+import { uploadToPresignedUrl } from '@/lib/api/attachments';
+import { sessionOwnerId } from '@/lib/api/client';
+import { sealedStore, WORKLOG_PREFIX } from '@/lib/sealed-stores';
 import type { OfflineFiles } from '../files/offline-files';
 import type { SyncEngine } from '../sync-engine';
 import { addWorklogEntry } from './worklog';

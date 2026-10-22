@@ -21,7 +21,7 @@ jest.mock('react', () => ({
   useCallback: (fn: any) => fn,
   useEffect: () => undefined,
 }));
-jest.mock('../../hooks/use-live-refresh', () => ({ useLiveRefresh: (fn: () => unknown) => { captured = fn; } }));
+jest.mock('@/hooks/use-live-refresh', () => ({ useLiveRefresh: (fn: () => unknown) => { captured = fn; } }));
 jest.mock('../api/attendance', () => ({
   attendanceApi: {
     getClockedInAll: jest.fn(),
@@ -33,7 +33,7 @@ jest.mock('../api/attendance', () => ({
 }));
 
 import { attendanceApi } from '../api/attendance';
-import { useCrew } from '../../features/home/use-crew';
+import { useCrew } from '@/features/home/use-crew';
 
 /*
   The hook, driven as a plain function over the mocked React above — no

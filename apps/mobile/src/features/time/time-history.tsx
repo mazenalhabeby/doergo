@@ -2,16 +2,16 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { TimeEntry } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { attendanceApi } from '../../lib/api/attendance';
-import { AText, Chip, ChoicePill, Well, WellDivider, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { attendanceApi } from '@/lib/api/attendance';
+import { AText, Chip, ChoicePill, Well, WellDivider, SectionLabel } from '@/components/amazen';
 import { JobSheet } from '../job/job-ui';
 import { WorkLogSheet } from '../worklog/worklog-sheet';
 import { DateTileRow } from './date-tile-row';
 import { addDays, dayKey, statusOf } from './time-logic';
 import { formatDuration, labelWord, sortedLabels } from '@hbcfield/shared/client';
-import { LoadingLine } from '../../components/loading-line';
+import { LoadingLine } from '@/components/loading-line';
 
 /** Made (in part) by the automatic clock — marked, never suspected (attendance/auto-clock.ts). */
 const AUTOMATIC = new Set(['AUTO_CLOCK_IN', 'AUTO_CLOCK_OUT', 'AUTO_REST']);

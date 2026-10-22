@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { tasksApi, taskAttachmentsApi, TaskStatus, type Comment, type Task } from '../../lib/api';
-import type { DetailAttachment } from '../../lib/api/types';
-import { useAuth } from '../../contexts/auth-context';
-import { useToast } from '../../island/island-context';
-import { useOffline } from '../../offline/offline-context';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { keepCreated } from '../../offline/actions/keep-created';
-import { useRefreshMyHandovers } from '../../hooks/useMyHandovers';
-import { useRefreshJobTime } from '../../hooks/useJobTime';
-import { mergeAttachments, pendingAttachments } from '../../offline/tasks/overlay';
-import { addTaskComment, type ActionOutcome } from '../../offline/tasks/task-actions';
+import { tasksApi, taskAttachmentsApi, TaskStatus, type Comment, type Task } from '@/lib/api';
+import type { DetailAttachment } from '@/lib/api/types';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/island/island-context';
+import { useOffline } from '@/offline/offline-context';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { keepCreated } from '@/offline/actions/keep-created';
+import { useRefreshMyHandovers } from '@/hooks/use-my-handovers';
+import { useRefreshJobTime } from '@/hooks/use-job-time';
+import { mergeAttachments, pendingAttachments } from '@/offline/tasks/overlay';
+import { addTaskComment, type ActionOutcome } from '@/offline/tasks/task-actions';
 import type { JobState, JobTask } from './use-job';
-import { refusalText } from '../../lib/distance';
+import { refusalText } from '@/lib/distance';
 import { type WriteStatus, type Translate, refusalMessage, trackRouteFor, untrackRouteFor } from './job-writes-helpers';
 
 /** useJobWritesData's state and handlers — everything before its markup, moved here unchanged. */

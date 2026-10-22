@@ -1,11 +1,11 @@
 import { useCallback } from 'react';
-import { tasksApi, TaskStatus } from '../../lib/api';
-import { resumeJob, writeHandover } from '../../offline/tasks/task-actions';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { keepCreated } from '../../offline/actions/keep-created';
-import type { PickedImage } from '../../hooks/useImagePicker';
+import { tasksApi, TaskStatus } from '@/lib/api';
+import { resumeJob, writeHandover } from '@/offline/tasks/task-actions';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { keepCreated } from '@/offline/actions/keep-created';
+import type { PickedImage } from '@/hooks/use-image-picker';
 import type { JobState, JobTask } from './use-job';
-import { refusalText } from '../../lib/distance';
+import { refusalText } from '@/lib/distance';
 import { type WriteStatus } from './job-writes-helpers';
 import { useJobWritesData } from './use-job-writes-data';
 

@@ -12,8 +12,8 @@ const notifications = {
   SchedulableTriggerInputTypes: { DATE: 'date' },
 };
 jest.mock('expo-notifications', () => notifications);
-jest.mock('../../i18n', () => ({ __esModule: true, default: { t: (k: string, o?: Record<string, unknown>) => `${k}${o ? JSON.stringify(o) : ''}` }, i18nReady: Promise.resolve() }));
-jest.mock('../../lib/session/stored-user', () => ({ loadStoredUser: jest.fn(async () => ({ timeFormat: '24h' })) }));
+jest.mock('@/i18n', () => ({ __esModule: true, default: { t: (k: string, o?: Record<string, unknown>) => `${k}${o ? JSON.stringify(o) : ''}` }, i18nReady: Promise.resolve() }));
+jest.mock('@/lib/session/stored-user', () => ({ loadStoredUser: jest.fn(async () => ({ timeFormat: '24h' })) }));
 
 let armed: { regions: unknown[] } | null = null;
 const location = {
@@ -30,8 +30,8 @@ jest.mock('expo-task-manager', () => ({
   getTaskOptionsAsync: jest.fn(async () => armed),
 }));
 jest.mock('../kept-check-ins', () => ({ keptCheckIns: { flush: jest.fn(), keep: jest.fn() } }));
-jest.mock('../../lib/api', () => ({ attendanceApi: { heartbeat: jest.fn() } }));
-jest.mock('../../lib/api/client', () => ({ getAccessToken: jest.fn(async () => 't') }));
+jest.mock('@/lib/api', () => ({ attendanceApi: { heartbeat: jest.fn() } }));
+jest.mock('@/lib/api/client', () => ({ getAccessToken: jest.fn(async () => 't') }));
 jest.mock('../auto-clock/context', () => ({ handleAutoRegionEvent: jest.fn(async () => undefined) }));
 
 import { composeRegions, setAutoClockRegions, startGeofenceForSpace, stopGeofence } from '../background-geofence';

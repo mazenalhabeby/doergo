@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { tasksApi, type Task } from '../../../src/lib/api';
-import { useQueuedWrite } from '../../../src/offline/actions/queued-write';
-import { changeTaskStatus } from '../../../src/offline/tasks/task-actions';
-import { takeStatusFix, outboxFix } from '../../../src/offline/tasks/status-fix';
-import { JobPage } from '../../../src/features/job/job-page';
-import { parseOpenSheet, type OpenSheet } from '../../../src/features/job/job-logic';
-import type { StatusExtras, WriteStatus } from '../../../src/features/job/use-job-writes';
+import { tasksApi, type Task } from '@/lib/api';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { changeTaskStatus } from '@/offline/tasks/task-actions';
+import { takeStatusFix, outboxFix } from '@/offline/tasks/status-fix';
+import { JobPage } from '@/features/job/job-page';
+import { parseOpenSheet, type OpenSheet } from '@/features/job/job-logic';
+import type { StatusExtras, WriteStatus } from '@/features/job/use-job-writes';
 
 /**
  * The job — `docs/design/job-flow.html`. The page itself lives in

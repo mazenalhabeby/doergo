@@ -1,8 +1,8 @@
 import { Pressable, View, type ViewStyle } from 'react-native';
 import { type Href } from 'expo-router';
-import { refusedSpaceId } from '../../offline/attendance/refused-shift';
-import { SyncChip } from '../../offline/components/sync-chip';
-import { AText, CardSurface, Chip, DiscRow, Eyebrow, LiveDot } from '../../components/amazen';
+import { refusedSpaceId } from '@/offline/attendance/refused-shift';
+import { SyncChip } from '@/offline/components/sync-chip';
+import { AText, CardSurface, Chip, DiscRow, Eyebrow, LiveDot } from '@/components/amazen';
 import { shiftDiscs } from './shift-clock/shift-discs';
 import { ShiftHero } from './shift-clock/shift-hero';
 import { ShiftProgress } from './shift-clock/shift-progress';

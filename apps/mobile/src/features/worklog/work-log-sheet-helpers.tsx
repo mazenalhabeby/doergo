@@ -1,9 +1,9 @@
 import { Image, Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
 import { CloseGlyph } from '../job/job-glyphs';
-import type { WorklogItem } from '../../offline/attendance/worklog';
+import type { WorklogItem } from '@/offline/attendance/worklog';
 
 /** WorkLogSheet's module-level helpers, moved here unchanged so its sections can read them too. */
 export const isImg = (m: string) => m.startsWith('image/');

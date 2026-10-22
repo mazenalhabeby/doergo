@@ -8,7 +8,7 @@
 import {
   crewPeopleFrom, rosteredCountOf, needsBySpace, crewState, unitFor, startOfLocalDay, CAPS,
   type CrewEntryInput, type CrewNoShowInput, type CrewPerson,
-} from '../../features/home/crew-state';
+} from '@/features/home/crew-state';
 
 /* A fixed local afternoon, so "today" has a morning and a yesterday. */
 const NOW = new Date(2026, 8, 24, 15, 0, 0).getTime();
@@ -239,7 +239,7 @@ describe('the five states', () => {
 });
 
 describe('everyone who is in is SEEN — quiet tiles after the decisions', () => {
-  const { quietTiles } = require('../../features/home/crew-state');
+  const { quietTiles } = require('@/features/home/crew-state');
   it('the steady crew become tiles, longest on first, never counted as needing you', () => {
     const now = Date.parse('2026-09-27T09:43:00.000Z');
     const q = quietTiles([

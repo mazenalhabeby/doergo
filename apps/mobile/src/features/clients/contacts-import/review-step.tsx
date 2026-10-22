@@ -1,9 +1,9 @@
 import React from 'react';
 import { ScrollView, Switch, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../contexts/theme-context';
-import { AText, Eyebrow, FilterPill, FilterRow, GlassCard, PrimaryButton, Well, WellDivider } from '../../../components/amazen';
-import type { CrmSpace } from '../../../hooks/use-crm-spaces';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, Eyebrow, FilterPill, FilterRow, GlassCard, PrimaryButton, Well, WellDivider } from '@/components/amazen';
+import type { CrmSpace } from '@/hooks/use-crm-spaces';
 import type { ImportFields, useContactsImport } from './use-contacts-import';
 
 /**

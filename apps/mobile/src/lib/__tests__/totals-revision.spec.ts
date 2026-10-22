@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { totalsRevision } from '../../features/home/shift-state';
-import { readSource } from '../../test-utils/read-source';
+import { totalsRevision } from '@/features/home/shift-state';
+import { readSource } from '@/test-utils/read-source';
 
 /*
   ⑥ "Done for today" showed the shift BEFORE the one just clocked out: the

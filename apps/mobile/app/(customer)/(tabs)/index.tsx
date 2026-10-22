@@ -11,28 +11,28 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { usePortalRequests } from '../../../src/hooks/usePortalRequests';
+import { usePortalRequests } from '@/hooks/use-portal-requests';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../../../src/contexts/auth-context';
-import { useTheme } from '../../../src/contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
-import { portalApi } from '../../../src/lib/api/portal';
-import { resolveMediaUrl } from '../../../src/lib/api';
-import { initialOf } from '../../../src/lib/people';
-import { RequestRow } from '../../../src/features/customer/request-bits';
-import { CountBadge } from '../../../src/components/amazen/count-badge';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
+import { portalApi } from '@/lib/api/portal';
+import { resolveMediaUrl } from '@/lib/api';
+import { initialOf } from '@/lib/people';
+import { RequestRow } from '@/features/customer/request-bits';
+import { CountBadge } from '@/components/amazen/count-badge';
 import {
   ReportGlyph,
   RequestsGlyph,
   ContactGlyph,
   AccountGlyph,
   CategoryGlyph,
-} from '../../../src/features/customer/portal-glyphs';
-import { useCustomerHome, type AccentKey } from '../../../src/features/customer/screens/tabs/use-customer-home';
-import { ACCENTS, styles } from '../../../src/features/customer/screens/tabs/customer-home-helpers';
+} from '@/features/customer/portal-glyphs';
+import { useCustomerHome, type AccentKey } from '@/features/customer/screens/tabs/use-customer-home';
+import { ACCENTS, styles } from '@/features/customer/screens/tabs/customer-home-helpers';
 
 export default function CustomerHome() {
   const {

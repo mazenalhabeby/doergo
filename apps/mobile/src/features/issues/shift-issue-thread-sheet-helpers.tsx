@@ -1,9 +1,9 @@
 import { Image, Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { type ShiftIssueEvent } from '../../lib/api/shift-issues';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { type ShiftIssueEvent } from '@/lib/api/shift-issues';
+import { AText } from '@/components/amazen';
 import { type ThreadEntry } from '../home/issue-status';
 
 /** ShiftIssueThreadSheet's module-level helpers, moved here unchanged so its sections can read them too. */

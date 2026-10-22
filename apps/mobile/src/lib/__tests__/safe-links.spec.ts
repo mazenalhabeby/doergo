@@ -80,6 +80,6 @@ describe('no screen opens a data-built link by hand', () => {
   it.each(FILES)('%s goes through safe-links', (rel) => {
     const src = fs.readFileSync(path.join(ROOT, rel), 'utf8');
     expect(src).not.toMatch(/Linking\.openURL\(/);
-    expect(src).toMatch(/from '[./]+(?:\/src)?\/lib\/safe-links'/);
+    expect(src).toMatch(/from '(?:[./]+(?:\/src)?\/|@\/)lib\/safe-links'/);
   });
 });

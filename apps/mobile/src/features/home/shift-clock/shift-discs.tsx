@@ -1,8 +1,8 @@
 import React from 'react';
 import type { TFunction } from 'i18next';
 import type { Href, Router } from 'expo-router';
-import { Disc } from '../../../components/amazen';
-import { BreakGlyph, ClockOutGlyph, IssueMineGlyph, IssueNewGlyph } from '../../../components/glyphs/shift-glyphs';
+import { Disc } from '@/components/amazen';
+import { BreakGlyph, ClockOutGlyph, IssueMineGlyph, IssueNewGlyph } from '@/components/glyphs/shift-glyphs';
 import type { readShiftState } from '../shift-state';
 
 type ShiftState = ReturnType<typeof readShiftState>;

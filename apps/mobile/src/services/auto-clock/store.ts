@@ -1,6 +1,6 @@
 import type { AutoClockPlan } from '@hbcfield/shared/client';
-import type { PlainStorage } from '../../lib/secure-buffer';
-import { autoClockKey, sealedStore } from '../../lib/sealed-stores';
+import type { PlainStorage } from '@/lib/secure-buffer';
+import { autoClockKey, sealedStore } from '@/lib/sealed-stores';
 import type { PlaceState } from './rules';
 
 /**

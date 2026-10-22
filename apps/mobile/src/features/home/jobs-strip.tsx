@@ -2,10 +2,10 @@ import React, { useMemo } from 'react';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { formatDuration } from '@hbcfield/shared/client';
-import { useMyHandovers } from '../../hooks/useMyHandovers';
-import { useShift } from '../../offline/attendance/use-shift';
-import { StartWorkGlyph } from '../../components/glyphs/work-glyphs';
-import { IssueMineGlyph } from '../../components/glyphs/shift-glyphs';
+import { useMyHandovers } from '@/hooks/use-my-handovers';
+import { useShift } from '@/offline/attendance/use-shift';
+import { StartWorkGlyph } from '@/components/glyphs/work-glyphs';
+import { IssueMineGlyph } from '@/components/glyphs/shift-glyphs';
 import { StripBox } from './strip-box';
 import { jobsStripItems, jobsStripLines } from './jobs-strip-state';
 

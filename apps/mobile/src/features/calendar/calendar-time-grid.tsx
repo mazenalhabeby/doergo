@@ -3,8 +3,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { CalendarItem } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
 import { dayKey, itemsOn, kindColor, layoutDay } from './calendar-data';
 import { type Kinds, type Open } from './calendar-view-types';
 

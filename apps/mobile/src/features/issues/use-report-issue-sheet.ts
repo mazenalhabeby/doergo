@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { useOffline } from '../../offline/offline-context';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { keepCreated } from '../../offline/actions/keep-created';
-import { reportIssueFromPhone } from '../../offline/issues/issue-actions';
-import { shiftIssuesApi, type ShiftIssue } from '../../lib/api/shift-issues';
-import { useImagePicker, type PickedImage } from '../../hooks/useImagePicker';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { useOffline } from '@/offline/offline-context';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { keepCreated } from '@/offline/actions/keep-created';
+import { reportIssueFromPhone } from '@/offline/issues/issue-actions';
+import { shiftIssuesApi, type ShiftIssue } from '@/lib/api/shift-issues';
+import { useImagePicker, type PickedImage } from '@/hooks/use-image-picker';
 import { MAX_PHOTOS, uploadPhotos } from './photos';
 
 /** ReportIssueSheet's state and handlers — everything before its markup, moved here unchanged. */

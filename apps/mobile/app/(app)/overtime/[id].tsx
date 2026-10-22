@@ -1,22 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNow } from '../../../src/hooks/use-now';
+import { useNow } from '@/hooks/use-now';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../src/contexts/theme-context';
-import { useToast } from '../../../src/island/island-context';
-import { overtimeApi, OvertimeRequest } from '../../../src/lib/api';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
-import { Ground, HeaderBack, ScreenHeader } from '../../../src/components/amazen';
-import { useScreenWidth } from '../../../src/components/screen-container';
-import { goBack } from '../../../src/lib/go-back';
-import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { overtimeApi, OvertimeRequest } from '@/lib/api';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
+import { Ground, HeaderBack, ScreenHeader } from '@/components/amazen';
+import { useScreenWidth } from '@/components/screen-container';
+import { goBack } from '@/lib/go-back';
+import { useQueuedCreate } from '@/offline/actions/queued-create';
 import { formatDuration } from '@hbcfield/shared/client';
-import { overtimePlaceLine, waitingText } from '../../../src/features/time/time-logic';
-import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
-import { styles } from '../../../src/features/time/overtime/overtime-request-styles';
-import { EmptyState } from '../../../src/components/amazen/empty-state';
+import { overtimePlaceLine, waitingText } from '@/features/time/time-logic';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { styles } from '@/features/time/overtime/overtime-request-styles';
+import { EmptyState } from '@/components/amazen/empty-state';
 
 export default function OvertimeRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

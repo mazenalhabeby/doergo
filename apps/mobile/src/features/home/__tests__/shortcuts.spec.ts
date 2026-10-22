@@ -1,4 +1,4 @@
-import type { Destination } from '../../../lib/manage-rows';
+import type { Destination } from '@/lib/manage-rows';
 import { shortcutCandidates, smartPicks, shownShortcuts, groupOf } from '../shortcuts';
 
 const row = (labelKey: string, over: Partial<Destination> = {}): Destination => ({

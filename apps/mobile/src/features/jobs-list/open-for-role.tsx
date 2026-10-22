@@ -2,11 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { tasksApi, type OpenRoleTask } from '../../lib/api';
-import { formatDistance, refusalText } from '../../lib/distance';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { AText, WellDivider, QuietButton, SectionLabel } from '../../components/amazen';
+import { tasksApi, type OpenRoleTask } from '@/lib/api';
+import { formatDistance, refusalText } from '@/lib/distance';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { AText, WellDivider, QuietButton, SectionLabel } from '@/components/amazen';
 
 /**
  * "Open for your role" — jobs opened to a work role I hold, in the workspace I

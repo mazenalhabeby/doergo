@@ -1,9 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../contexts/theme-context';
-import { AText, SheetOption } from '../../../components/amazen';
-import { NavigateGlyph } from '../../../components/glyphs';
-import { inkGlyph } from '../../../components/amazen/ink-icon';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, SheetOption } from '@/components/amazen';
+import { NavigateGlyph } from '@/components/glyphs';
+import { inkGlyph } from '@/components/amazen/ink-icon';
 import { EditGlyph, IssueGlyph } from '../job-glyphs';
 import { JobSheet } from '../job-ui';
 import type { MoreOption } from '../job-logic';

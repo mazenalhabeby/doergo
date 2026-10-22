@@ -1,7 +1,7 @@
 import type React from 'react';
 import { hasCapability, type FlowStatus } from '@hbcfield/shared/client';
-import { AcceptGlyph, ArrivedGlyph, FinishGlyph, OnMyWayGlyph, StartWorkGlyph } from '../../components/glyphs';
-import type { GlyphProps } from '../../components/glyphs/glyphs';
+import { AcceptGlyph, ArrivedGlyph, FinishGlyph, OnMyWayGlyph, StartWorkGlyph } from '@/components/glyphs';
+import type { GlyphProps } from '@/components/glyphs/glyphs';
 import { capsAt } from './job-logic';
 
 /**

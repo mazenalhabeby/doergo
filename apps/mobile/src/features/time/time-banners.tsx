@@ -9,13 +9,13 @@ import {
   type GeofenceExcursion,
   formatDuration,
 } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { formatDistance } from '../../lib/distance';
-import type { OvertimeRequest } from '../../lib/api';
-import { AText, Banner, QuietButton, SheetOption } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { formatDistance } from '@/lib/distance';
+import type { OvertimeRequest } from '@/lib/api';
+import { AText, Banner, QuietButton, SheetOption } from '@/components/amazen';
 import { JobSheet } from '../job/job-ui';
-import { AlwaysLocationNudge } from '../../components/always-location-nudge';
+import { AlwaysLocationNudge } from '@/components/always-location-nudge';
 import { OutOfRingSheet } from './out-of-ring-sheet';
 import { RestCard } from './rest-card';
 import { waitingText, type NoShiftNote } from './time-logic';

@@ -3,7 +3,7 @@ import {
   canDecline, checklistMode, checklistStep, decideNext, dockMode,
   formatOnJob, heldUntilDue, isClosedStatus, issueReason, mainSteps, moreOptions, needsReport,
   stepPosition, tickOptimistic, withTick, type CheckItem,
-} from '../../features/job/job-logic';
+} from '@/features/job/job-logic';
 
 /**
  * The job page's rules — `docs/design/job-flow.html`, `decision()`.

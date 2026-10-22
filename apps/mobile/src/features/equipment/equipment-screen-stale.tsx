@@ -1,10 +1,10 @@
 import { Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { AText, Well, Banner, SectionLabel, SheetOption } from '../../components/amazen';
+import { AText, Well, Banner, SectionLabel, SheetOption } from '@/components/amazen';
 import { logFor } from './use-equipment-screen';
 import type { EquipmentScreenState } from './use-equipment-screen-logic';
-import { LoadingLine } from '../../components/loading-line';
+import { LoadingLine } from '@/components/loading-line';
 
 /** Part of EquipmentScreen's markup, moved here unchanged; it reads the page's state from `vm`. */
 export function EquipmentScreenStale({ vm }: { vm: EquipmentScreenState }) {

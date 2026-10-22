@@ -1,7 +1,7 @@
 import React from 'react';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import type { RequestKind } from '@hbcfield/shared/client';
-import type { GlyphProps } from '../../components/glyphs/glyphs';
+import type { GlyphProps } from '@/components/glyphs/glyphs';
 
 /**
  * The marks of a request — one per KIND, and one per kind of LEAVE.

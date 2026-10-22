@@ -3,13 +3,13 @@ import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } fr
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { accessAllowsAnywhere, personName } from '@hbcfield/shared/client';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { useImagePicker, type PickedImage } from '../../hooks/useImagePicker';
-import { locationsApi } from '../../lib/api';
-import { ROUTES } from '../../lib/constants';
-import { useResponsive } from '../../lib/responsive';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { useImagePicker, type PickedImage } from '@/hooks/use-image-picker';
+import { locationsApi } from '@/lib/api';
+import { ROUTES } from '@/lib/constants';
+import { useResponsive } from '@/lib/responsive';
 import {
   Ground,
   AText,
@@ -24,9 +24,9 @@ import {
   QuietButton,
   RoundButton,
   SectionLabel,
-} from '../../components/amazen';
-import { LocationSearchPicker } from '../../components/location-search-picker';
-import { centeredContent } from '../../components/screen-container';
+} from '@/components/amazen';
+import { LocationSearchPicker } from '@/components/location-search-picker';
+import { centeredContent } from '@/components/screen-container';
 import { FilterChips } from '../jobs-list/jobs-controls';
 import { CameraGlyph, CloseGlyph, GalleryGlyph } from '../job/job-glyphs';
 import { AddTile } from '../job/job-files';

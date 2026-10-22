@@ -6,15 +6,15 @@ import DraggableFlatList, {
   type RenderItemParams,
 } from 'react-native-draggable-flatlist';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
-import { Ground, ScreenHeader, SurfaceProvider, useTabSafe } from '../../components/amazen';
-import { displayName } from '../../lib/people';
-import { impact, selection } from '../../lib/haptics';
-import { announce, useScreenReader } from '../../hooks/use-a11y';
-import { OfflineBanner } from '../../offline/components/offline-banner';
-import { useOffline } from '../../offline/offline-context';
-import { connectivity } from '../../offline/connectivity';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { Ground, ScreenHeader, SurfaceProvider, useTabSafe } from '@/components/amazen';
+import { displayName } from '@/lib/people';
+import { impact, selection } from '@/lib/haptics';
+import { announce, useScreenReader } from '@/hooks/use-a11y';
+import { OfflineBanner } from '@/offline/components/offline-banner';
+import { useOffline } from '@/offline/offline-context';
+import { connectivity } from '@/offline/connectivity';
 import { EmptyArrange } from './empty-arrange';
 import { EmptyHome, type Suggestion } from './empty-home';
 import { DropSlot, EditableWidget, LIFT_FACTOR } from './editable-widget';

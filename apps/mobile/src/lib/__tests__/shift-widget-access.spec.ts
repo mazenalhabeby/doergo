@@ -17,8 +17,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { hasAccessModule } from '@hbcfield/shared/client';
-import { meets } from '../../features/home/entitlement';
-import { readSource } from '../../test-utils/read-source';
+import { meets } from '@/features/home/entitlement';
+import { readSource } from '@/test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const APP = path.resolve(__dirname, '../../../app');

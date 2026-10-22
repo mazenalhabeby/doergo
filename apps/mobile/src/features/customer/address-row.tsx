@@ -1,10 +1,10 @@
 import { memo } from 'react';
 import { View } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, Pill, RoundButton } from '../../components/amazen';
-import { CallGlyph, NavigateGlyph } from '../../components/glyphs/work-glyphs';
-import type { MobileCustomerAddress } from '../../lib/api/customers';
-import { geoUrl, openSafeUrl, telUrl } from '../../lib/safe-links';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, Pill, RoundButton } from '@/components/amazen';
+import { CallGlyph, NavigateGlyph } from '@/components/glyphs/work-glyphs';
+import type { MobileCustomerAddress } from '@/lib/api/customers';
+import { geoUrl, openSafeUrl, telUrl } from '@/lib/safe-links';
 
 
 /**

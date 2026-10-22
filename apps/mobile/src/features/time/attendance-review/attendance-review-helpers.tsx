@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { localDateKey, type LabelTone } from '@hbcfield/shared/client';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '@/lib/constants';
 
 /** The attendance review's constants, date helpers and styles — moved here unchanged from app/(app)/manage/attendance.tsx. */
 // Approving hours and excusing a missed clock-in are decided in Approvals; this screen is the record.

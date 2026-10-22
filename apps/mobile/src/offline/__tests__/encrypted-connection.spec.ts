@@ -72,7 +72,7 @@ const openDatabaseAsync = jest.fn(async (_name: string) => ({
   closeAsync: jest.fn(),
 }));
 jest.mock('../native', () => ({ loadSQLite: () => ({ openDatabaseAsync, deleteDatabaseAsync: jest.fn() }) }));
-jest.mock('../../lib/optional-native', () => ({
+jest.mock('@/lib/optional-native', () => ({
   expoCrypto: () => ({
     CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
     digestStringAsync: async () => 'a'.repeat(64),

@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, Banner } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, Banner } from '@/components/amazen';
 import { TourTarget } from '../tour';
 import type { TimeOffStats } from './helpers';
 

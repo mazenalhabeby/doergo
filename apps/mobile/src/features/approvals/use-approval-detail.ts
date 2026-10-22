@@ -2,13 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { type ApprovalActionSpec, type ApprovalItem, type NoShowExcuseReason } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { approvalsApi } from '../../lib/api';
-import { useResponsive } from '../../lib/responsive';
-import { centeredContent } from '../../components/screen-container';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { approvalsApi } from '@/lib/api';
+import { useResponsive } from '@/lib/responsive';
+import { centeredContent } from '@/components/screen-container';
 import { forgetApproval, knownApproval, loadApprovals } from './approvals-store';
-import { caught } from '../../lib/caught';
+import { caught } from '@/lib/caught';
 
 /** ApprovalDetail's state and handlers — everything before its markup, moved here unchanged. */
 export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKey'>) {

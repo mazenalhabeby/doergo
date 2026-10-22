@@ -6,10 +6,10 @@
  */
 import {
   AVAILABILITY_MAX_DAYS, mapLimited, mergeAvailability, planAvailabilityFetch, rangeUnsupported,
-} from '../../features/time-off/availability-plan';
+} from '@/features/time-off/availability-plan';
 import {
   availabilityInsights, datesWithStatus, filterRequests, getDayCount, getMonthGrid, isDateInRange, timeOffStats, toDateString,
-} from '../../features/time-off/helpers';
+} from '@/features/time-off/helpers';
 import type { AvailabilityResponse, TimeOffRequest } from '../api/types';
 
 const day = (date: string, available = 3, total = 5, off: { id: string; name: string }[] = []): AvailabilityResponse => ({
@@ -138,7 +138,7 @@ describe('the screen\'s rules, moved out unchanged', () => {
 
 describe('a ranged answer that comes back short', () => {
   it('names the days it left out (the DST change drops the last one) so they are asked singly', () => {
-    const { daysNotAnswered } = require('../../features/time-off/availability-plan');
+    const { daysNotAnswered } = require('@/features/time-off/availability-plan');
     const asked = ['2026-10-24', '2026-10-25', '2026-10-26'];
     expect(daysNotAnswered(asked, [{ date: '2026-10-24' }, { date: '2026-10-25' }])).toEqual(['2026-10-26']);
     expect(daysNotAnswered(asked, asked.map((date) => ({ date })))).toEqual([]);

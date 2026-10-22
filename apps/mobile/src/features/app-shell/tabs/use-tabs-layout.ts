@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { tabAccessFor } from '../../../lib/tab-layout';
-import { useAuth } from '../../../contexts/auth-context';
-import { useTheme } from '../../../contexts/theme-context';
+import { tabAccessFor } from '@/lib/tab-layout';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
 
 /** TabsLayout's state and handlers — everything before its markup, moved here unchanged. */
 export function useTabsLayout() {

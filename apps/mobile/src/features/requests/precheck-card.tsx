@@ -2,9 +2,9 @@ import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { formatDuration, type RequestPrecheck } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
-import { toneTint } from '../../theme/tone-color';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
+import { toneTint } from '@/theme/tone-color';
 
 type Tone = 'critical' | 'warn' | 'accent' | 'muted';
 

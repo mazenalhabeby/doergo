@@ -27,10 +27,10 @@ jest.mock('expo-local-authentication', () => ({
 }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'uuid' }));
 jest.mock('expo-device', () => ({ modelName: 'Old Build' }));
-jest.mock('../../api/client', () => ({
+jest.mock('@/lib/api/client', () => ({
   API_URL: 'http://test', getAccessToken: jest.fn(), getRefreshToken: jest.fn(), saveTokens: jest.fn(),
 }));
-jest.mock('../../../i18n', () => ({ t: (k: string) => k }));
+jest.mock('@/i18n', () => ({ t: (k: string) => k }));
 
 describe('biometrics without the native key module', () => {
   it('imports the whole graph without touching the library', () => {

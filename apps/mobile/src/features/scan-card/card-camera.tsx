@@ -5,8 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { CARD_FRAMES } from '../../lib/card-scan';
-import { SPACING, FONT_SIZE } from '../../lib/constants';
+import { CARD_FRAMES } from '@/lib/card-scan';
+import { SPACING, FONT_SIZE } from '@/lib/constants';
 
 /** The first state of the scanner: the viewfinder, the card frame, the shutter. */
 export function CardCamera({ camera, setBox, frame, busy, progress, capture }: {

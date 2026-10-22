@@ -1,14 +1,14 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { tasksApi, taskAttachmentsApi, uploadToPresignedUrl, type CreateTaskInput } from '../../lib/api';
-import type { PickedImage } from '../../hooks/useImagePicker';
-import { useToast } from '../../island/island-context';
-import { useOffline } from '../../offline/offline-context';
-import { createFromPhone } from '../../offline/actions/queued-create';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { keepCreated } from '../../offline/actions/keep-created';
-import { addTaskPhoto } from '../../offline/tasks/task-actions';
-import { uuidv7 } from '../../offline/ids';
+import { tasksApi, taskAttachmentsApi, uploadToPresignedUrl, type CreateTaskInput } from '@/lib/api';
+import type { PickedImage } from '@/hooks/use-image-picker';
+import { useToast } from '@/island/island-context';
+import { useOffline } from '@/offline/offline-context';
+import { createFromPhone } from '@/offline/actions/queued-create';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { keepCreated } from '@/offline/actions/keep-created';
+import { addTaskPhoto } from '@/offline/tasks/task-actions';
+import { uuidv7 } from '@/offline/ids';
 
 /** What happened to a New job: on the server (open it), saved for later, or refused. */
 type CreateResult = { kind: 'created'; id: string } | { kind: 'queued' } | { kind: 'failed' };

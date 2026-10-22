@@ -8,16 +8,16 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
 
-import { DateField } from '../../src/components';
-import { EquipmentFrame, useFormPalette } from '../../src/features/equipment/equipment-frame';
-import { forgetHeldAssets } from '../../src/hooks/use-held-assets';
-import { EquipmentPicker } from '../../src/features/equipment/equipment-picker';
-import { useEntryDayBounds } from '../../src/hooks/use-entry-day-bounds';
-import { assetEntryDateText, dayKeyOf, occurredAtForDay } from '../../src/lib/log-dates';
-import { useToast } from '../../src/island/island-context';
-import { useImagePicker } from '../../src/hooks/useImagePicker';
-import { canScanReceipts, scanReceipt } from '../../src/lib/receipt-scan';
-import { assetsApi, assetRegisterApi, uploadToPresignedUrl, type HeldAsset } from '../../src/lib/api';
+import { DateField } from '@/components';
+import { EquipmentFrame, useFormPalette } from '@/features/equipment/equipment-frame';
+import { forgetHeldAssets } from '@/hooks/use-held-assets';
+import { EquipmentPicker } from '@/features/equipment/equipment-picker';
+import { useEntryDayBounds } from '@/hooks/use-entry-day-bounds';
+import { assetEntryDateText, dayKeyOf, occurredAtForDay } from '@/lib/log-dates';
+import { useToast } from '@/island/island-context';
+import { useImagePicker } from '@/hooks/use-image-picker';
+import { canScanReceipts, scanReceipt } from '@/lib/receipt-scan';
+import { assetsApi, assetRegisterApi, uploadToPresignedUrl, type HeldAsset } from '@/lib/api';
 import {
   normalizeKindShape,
   findLogType,
@@ -28,13 +28,13 @@ import {
   type LogValueProblem,
   fromCents,
 } from '@hbcfield/shared/client';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
-import { logColor, logTypeLabel } from '../../src/lib/log-display';
-import { useOffline } from '../../src/offline/offline-context';
-import { logFromPhone } from '../../src/offline/assets/log-actions';
-import { useAssetLogScreen } from '../../src/features/equipment/use-asset-log-screen';
-import { FieldInput, s } from '../../src/features/equipment/asset-log-screen-helpers';
-import { NotAllowed } from '../../src/components/not-allowed';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
+import { logColor, logTypeLabel } from '@/lib/log-display';
+import { useOffline } from '@/offline/offline-context';
+import { logFromPhone } from '@/offline/assets/log-actions';
+import { useAssetLogScreen } from '@/features/equipment/use-asset-log-screen';
+import { FieldInput, s } from '@/features/equipment/asset-log-screen-helpers';
+import { NotAllowed } from '@/components/not-allowed';
 
 /**
  * Opened from a home shortcut there is no equipment in the link: ask which one

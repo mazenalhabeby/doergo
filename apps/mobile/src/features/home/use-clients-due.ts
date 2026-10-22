@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { customersApi, type ClientsDue, type DueReminder } from '../../lib/api/customers';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { setActivityDoneFromPhone } from '../../offline/crm/client-actions';
-import { useOffline, useSyncStatus } from '../../offline/offline-context';
-import { useToast } from '../../island/island-context';
-import { useLiveRefresh } from '../../hooks/use-live-refresh';
+import { customersApi, type ClientsDue, type DueReminder } from '@/lib/api/customers';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { setActivityDoneFromPhone } from '@/offline/crm/client-actions';
+import { useOffline, useSyncStatus } from '@/offline/offline-context';
+import { useToast } from '@/island/island-context';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
 import { localDay, queuedDoneIds, withoutDone } from './clients-state';
 import { UNDO_MS, type RowState } from './reminder-row';
-import { impact, selection } from '../../lib/haptics';
-import { mailtoUrl, openSafeUrl, telUrl } from '../../lib/safe-links';
+import { impact, selection } from '@/lib/haptics';
+import { mailtoUrl, openSafeUrl, telUrl } from '@/lib/safe-links';
 
 const REFRESH_MS = 60_000;
 

@@ -9,7 +9,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { SHIFT_CARD_FILES } from './shift-card-files';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;

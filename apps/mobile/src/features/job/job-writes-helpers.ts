@@ -1,8 +1,8 @@
 import type { StepFormAnswers } from '@hbcfield/shared/client';
-import { TaskStatus, type Task } from '../../lib/api';
-import { type ActionOutcome } from '../../offline/tasks/task-actions';
-import { taskDestination } from '../../offline/tasks/status-fix';
-import { refusalText } from '../../lib/distance';
+import { TaskStatus, type Task } from '@/lib/api';
+import { type ActionOutcome } from '@/offline/tasks/task-actions';
+import { taskDestination } from '@/offline/tasks/status-fix';
+import { refusalText } from '@/lib/distance';
 
 /** The types and pure helpers the job's writes share — moved here unchanged from use-job-writes.ts. */
 /**

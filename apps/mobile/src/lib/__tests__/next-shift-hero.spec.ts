@@ -1,4 +1,4 @@
-import { readShiftState } from '../../features/home/shift-state/read';
+import { readShiftState } from '@/features/home/shift-state/read';
 
 /*
   "Your shift starts in N minutes" never appeared: the card read the RUNNING

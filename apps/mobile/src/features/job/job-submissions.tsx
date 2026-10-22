@@ -2,12 +2,12 @@ import React from 'react';
 import { Image, Pressable, View, type LayoutChangeEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { parseStoredStepForm, personName } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import type { StepSubmission } from '../../lib/api';
-import { AText, Well, WellDivider, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import type { StepSubmission } from '@/lib/api';
+import { AText, Well, WellDivider, SectionLabel } from '@/components/amazen';
 import { fieldLabel, shownAnswer } from './step-form-logic';
-import { httpsUrl, openSafeUrl } from '../../lib/safe-links';
+import { httpsUrl, openSafeUrl } from '@/lib/safe-links';
 
 /**
  * "Reports" — the step forms this job was moved through, `GET /tasks/:id/submissions`.

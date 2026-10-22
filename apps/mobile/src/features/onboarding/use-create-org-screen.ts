@@ -9,10 +9,10 @@ import {
   toolsFromModules,
   type WorkPlan,
 } from '@hbcfield/shared/client';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { onboardingApi, locationsApi } from '../../lib/api';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { onboardingApi, locationsApi } from '@/lib/api';
 
 export type Step = 0 | 1 | 2;
 

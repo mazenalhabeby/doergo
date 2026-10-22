@@ -1,14 +1,14 @@
 import type React from 'react';
-import type { GlyphProps } from '../../components/glyphs/glyphs';
-import { DocumentsGlyph, SupportGlyph } from '../../components/glyphs/glyphs';
+import type { GlyphProps } from '@/components/glyphs/glyphs';
+import { DocumentsGlyph, SupportGlyph } from '@/components/glyphs/glyphs';
 import {
   SignGlyph, MyEquipmentGlyph, SyncGlyph, OvertimeGlyph, NewJobGlyph, ScanCardGlyph, AddClientGlyph,
   EquipmentLogGlyph, MembersGlyph, ClientsGlyph, InvitationsGlyph, SchedulesGlyph, RegisterGlyph, ClientRequestsGlyph,
-} from '../../components/glyphs/tile-glyphs';
-import { ExpenseQueueGlyph, LeaveQueueGlyph, JoinQueueGlyph, ApprovalsGlyph } from '../../components/glyphs/queue-glyphs';
-import { PlanRouteGlyph } from '../../components/glyphs/route-glyphs';
-import { RosterGlyph, HoursWaitingGlyph } from '../../components/glyphs/crew-glyphs';
-import { IssueNewGlyph } from '../../components/glyphs/shift-glyphs';
+} from '@/components/glyphs/tile-glyphs';
+import { ExpenseQueueGlyph, LeaveQueueGlyph, JoinQueueGlyph, ApprovalsGlyph } from '@/components/glyphs/queue-glyphs';
+import { PlanRouteGlyph } from '@/components/glyphs/route-glyphs';
+import { RosterGlyph, HoursWaitingGlyph } from '@/components/glyphs/crew-glyphs';
+import { IssueNewGlyph } from '@/components/glyphs/shift-glyphs';
 
 /**
  * Each destination's mark, keyed by the table row's `labelKey`.

@@ -1,8 +1,8 @@
 import type { ChatAttachment } from '@hbcfield/shared/client';
-import { chatApi } from '../../lib/api';
-import { uploadToPresignedUrl } from '../../lib/api/attachments';
-import { downscaleImage } from '../../lib/downscale-image';
-import type { PickedImage } from '../../hooks/useImagePicker';
+import { chatApi } from '@/lib/api';
+import { uploadToPresignedUrl } from '@/lib/api/attachments';
+import { downscaleImage } from '@/lib/downscale-image';
+import type { PickedImage } from '@/hooks/use-image-picker';
 
 /** A camera photo is ~5 MB; at this size it is ~300 KB and still sharp on any screen. */
 const MAX_EDGE = 1600;

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { usePendingFor } from '../../offline/offline-context';
-import { AText, Dot, Pill, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { usePendingFor } from '@/offline/offline-context';
+import { AText, Dot, Pill, SectionLabel } from '@/components/amazen';
 import { TourTarget } from '../tour';
 import { CloseGlyph } from './job-glyphs';
 

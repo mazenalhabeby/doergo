@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { onAppStateChange } from '../../lib/app-resume';
-import { getFix } from '../../lib/location-fix';
+import { onAppStateChange } from '@/lib/app-resume';
+import { getFix } from '@/lib/location-fix';
 import { useTranslation } from 'react-i18next';
 import { needsTravelEstimate, slotHeldBy } from '@hbcfield/shared/client';
 import {
@@ -12,19 +12,19 @@ import {
   type StepSubmission,
   type Task,
   type TaskEvent,
-} from '../../lib/api';
-import { useAuth } from '../../contexts/auth-context';
-import { useSocketContext } from '../../contexts/socket-context';
-import { useRefreshJobTime } from '../../hooks/useJobTime';
-import { SocketEvents } from '../../lib/socket';
-import { useLocationTrackingContext } from '../../contexts/location-tracking-context';
-import { hasArrivalPrompt } from '../../services/route-arrival';
-import { useOffline } from '../../offline/offline-context';
-import { knownOffline } from '../../offline/connectivity';
-import { loadTaskDetail, type DetailAttachment, type DetailTask } from '../../offline/tasks/task-source';
-import { overlayTask } from '../../offline/tasks/overlay';
-import { taskDestination } from '../../offline/tasks/status-fix';
-import { caught } from '../../lib/caught';
+} from '@/lib/api';
+import { useAuth } from '@/contexts/auth-context';
+import { useSocketContext } from '@/contexts/socket-context';
+import { useRefreshJobTime } from '@/hooks/use-job-time';
+import { SocketEvents } from '@/lib/socket';
+import { useLocationTrackingContext } from '@/contexts/location-tracking-context';
+import { hasArrivalPrompt } from '@/services/route-arrival';
+import { useOffline } from '@/offline/offline-context';
+import { knownOffline } from '@/offline/connectivity';
+import { loadTaskDetail, type DetailAttachment, type DetailTask } from '@/offline/tasks/task-source';
+import { overlayTask } from '@/offline/tasks/overlay';
+import { taskDestination } from '@/offline/tasks/status-fix';
+import { caught } from '@/lib/caught';
 
 /** The task as the page holds it: the server's copy, or the phone's with unsent changes on top. */
 /** A task event on the socket: the task itself, or `{ task }` (id-only on task_updated). */

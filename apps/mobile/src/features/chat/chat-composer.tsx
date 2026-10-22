@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Image, Pressable, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CHAT_MAX_ATTACHMENTS } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useImagePicker, type PickedImage } from '../../hooks/useImagePicker';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useImagePicker, type PickedImage } from '@/hooks/use-image-picker';
+import { AText } from '@/components/amazen';
 import { SendButton } from './chat-rows';
 import Animated from 'react-native-reanimated';
-import { InkIcon } from '../../components/amazen/ink-icon';
-import { useIconMotion } from '../../components/amazen/motion';
+import { InkIcon } from '@/components/amazen/ink-icon';
+import { useIconMotion } from '@/components/amazen/motion';
 
 /**
  * The box to write in: words, up to five photos (camera or library), Send.

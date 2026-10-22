@@ -2,9 +2,9 @@ import React from 'react';
 import { Image, Linking, Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { ChatAttachment } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
-import { InkIcon } from '../../components/amazen/ink-icon';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
+import { InkIcon } from '@/components/amazen/ink-icon';
 
 /**
  * The files in a message. A photo draws at its real shape (from the upload's

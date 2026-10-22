@@ -9,8 +9,8 @@ import { BackHandler, Platform, Pressable, StyleSheet, View, type LayoutChangeEv
 import { FullWindowOverlay } from 'react-native-screens';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path } from 'react-native-svg';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen/text';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen/text';
 import type { TargetRect, TourStep } from './types';
 
 const DIM = 'rgba(2,8,6,0.66)';

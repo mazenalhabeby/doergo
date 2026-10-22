@@ -4,10 +4,10 @@
  * after the OTA lands — once, in order, and the disk holds no plaintext after.
  */
 import { webcrypto } from 'crypto';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 import { createSecureBuffer, ENVELOPE, type KeyVault, type PlainStorage } from '../secure-buffer';
-import { createRouteBuffer, PENDING_PREFIX, type PendingBurst } from '../../services/route-buffer';
-import { checkInBufferKey, createCheckInBuffer, type KeptCheckIn } from '../../services/check-in-buffer';
+import { createRouteBuffer, PENDING_PREFIX, type PendingBurst } from '@/services/route-buffer';
+import { checkInBufferKey, createCheckInBuffer, type KeptCheckIn } from '@/services/check-in-buffer';
 
 function disk() {
   const data = new Map<string, string>();

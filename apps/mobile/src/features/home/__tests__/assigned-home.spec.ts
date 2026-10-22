@@ -19,7 +19,7 @@ import {
   layoutFromAssignment, appliedAssignment, markAssignmentApplied,
   saveShortcuts, loadShortcuts, onShortcutsChanged,
 } from '../layout-store';
-import { MANAGE_ROWS, MEMBER_ROWS } from '../../../lib/manage-rows';
+import { MANAGE_ROWS, MEMBER_ROWS } from '@/lib/manage-rows';
 
 /**
  * A home screen the office sets up: validated on the server, applied ONCE by

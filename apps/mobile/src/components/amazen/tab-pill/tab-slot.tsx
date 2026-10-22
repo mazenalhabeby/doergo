@@ -7,9 +7,9 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { useTheme } from '../../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { AText } from '../text';
-import { TAB_GLYPHS, TabMoreGlyph, type TabGlyphProps } from '../../glyphs/tab-glyphs';
+import { TAB_GLYPHS, TabMoreGlyph, type TabGlyphProps } from '@/components/glyphs/tab-glyphs';
 import { slide, tint } from './motion';
 import { Bump } from '../motion';
 import type { TabPillItem } from '../tab-pill';

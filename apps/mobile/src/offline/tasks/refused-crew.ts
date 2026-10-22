@@ -1,4 +1,4 @@
-import { refusalText } from '../../lib/distance';
+import { refusalText } from '@/lib/distance';
 import type { OutboxOp } from '../outbox/types';
 
 /**

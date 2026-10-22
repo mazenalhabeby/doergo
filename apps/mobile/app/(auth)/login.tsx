@@ -2,17 +2,17 @@ import { useState, useRef, useEffect } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../src/contexts/auth-context';
-import { useBiometricUnlock } from '../../src/hooks/use-biometric-unlock';
-import { resolveCapability, getKeyOwner } from '../../src/lib/biometrics';
-import { BiometricIcon } from '../../src/components/biometric-icon';
-import { useTheme } from '../../src/contexts/theme-context';
-import { ROUTES } from '../../src/lib/constants';
-import { AText, PrimaryButton } from '../../src/components/amazen';
-import { JobSheet, SheetOption } from '../../src/features/job/job-ui';
-import { AuthCard, AuthField, AuthFrame, AuthHelp, AuthLinkLine } from '../../src/features/auth/auth-ui';
-import { loadLastUser, shouldAutoPromptFor, type LastUser } from '../../src/lib/session/last-user';
-import { useLoginScreen } from '../../src/features/auth/use-login-screen';
+import { useAuth } from '@/contexts/auth-context';
+import { useBiometricUnlock } from '@/hooks/use-biometric-unlock';
+import { resolveCapability, getKeyOwner } from '@/lib/biometrics';
+import { BiometricIcon } from '@/components/biometric-icon';
+import { useTheme } from '@/contexts/theme-context';
+import { ROUTES } from '@/lib/constants';
+import { AText, PrimaryButton } from '@/components/amazen';
+import { JobSheet, SheetOption } from '@/features/job/job-ui';
+import { AuthCard, AuthField, AuthFrame, AuthHelp, AuthLinkLine } from '@/features/auth/auth-ui';
+import { loadLastUser, shouldAutoPromptFor, type LastUser } from '@/lib/session/last-user';
+import { useLoginScreen } from '@/features/auth/use-login-screen';
 
 export default function LoginScreen() {
   const {

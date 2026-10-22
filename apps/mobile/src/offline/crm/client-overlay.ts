@@ -1,7 +1,7 @@
 import { STILL_MINE } from '../actions/outcome';
 import type { OutboxOp } from '../outbox/types';
-import type { MobileCustomer } from '../../lib/api';
-import type { MobileCustomerContact } from '../../lib/api/customers';
+import type { MobileCustomer } from '@/lib/api';
+import type { MobileCustomerContact } from '@/lib/api/customers';
 
 /*
   THE RECORD AS THE MEMBER LAST LEFT IT.

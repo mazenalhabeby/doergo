@@ -1,9 +1,9 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../contexts/theme-context';
-import { AText } from '../../../components/amazen';
-import type { refusedShiftCopy } from '../../../offline/attendance/refused-shift';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
+import type { refusedShiftCopy } from '@/offline/attendance/refused-shift';
 
 /**
  * A clock-in, clock-out or rest the server refused AFTER the card had shown

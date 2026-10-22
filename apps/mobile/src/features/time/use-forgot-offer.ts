@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import type { TimeEntry } from '@hbcfield/shared/client';
-import { useAuth } from '../../contexts/auth-context';
-import { forgotOfferDueAt, leftSiteAt } from '../../lib/clock-smart';
-import { autoClockNotifier } from '../../services/auto-clock/notifications';
+import { useAuth } from '@/contexts/auth-context';
+import { forgotOfferDueAt, leftSiteAt } from '@/lib/clock-smart';
+import { autoClockNotifier } from '@/services/auto-clock/notifications';
 
 /**
  * Keeps the phone's "You left the Warehouse at 16:42 — clock out at 16:42?"

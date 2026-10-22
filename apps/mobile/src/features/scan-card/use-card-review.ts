@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import type { TFunction } from 'i18next';
 import { socialOf } from '@hbcfield/shared/client';
-import type { ParsedCard, CardReadQuality } from '../../lib/card-scan';
-import type { MobileCustomer } from '../../lib/api';
+import type { ParsedCard, CardReadQuality } from '@/lib/card-scan';
+import type { MobileCustomer } from '@/lib/api';
 import {
   CARD_FIELDS, cardCertainty, cardContested, cardHolding, fieldNeedsLook, guessCardKind,
   readCard, reRankGuesses,

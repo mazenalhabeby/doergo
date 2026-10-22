@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, View, StyleSheet, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { AText } from './text';
 import { CountBadge } from './count-badge';
 import { shadowDisc, shadowDiscPrimary } from './surfaces';

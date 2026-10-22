@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { tasksApi } from '../../lib/api';
-import type { Task } from '../../lib/api/types';
-import { useConnectivity, useOffline } from '../../offline/offline-context';
-import { knownOffline } from '../../offline/connectivity';
+import { tasksApi } from '@/lib/api';
+import type { Task } from '@/lib/api/types';
+import { useConnectivity, useOffline } from '@/offline/offline-context';
+import { knownOffline } from '@/offline/connectivity';
 import { flowIdOf } from './my-work';
 
 /**

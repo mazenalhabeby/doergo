@@ -1,12 +1,12 @@
 import { memo } from 'react';
 import { Pressable, View } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, Pill, RoundButton } from '../../components/amazen';
-import { Monogram } from '../../components/amazen/monogram';
-import { CallGlyph } from '../../components/glyphs/work-glyphs';
-import { EmailGlyph } from '../../components/glyphs/crm-glyphs';
-import type { MobileCustomerContact } from '../../lib/api/customers';
-import { mailtoUrl, openSafeUrl, telUrl } from '../../lib/safe-links';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, Pill, RoundButton } from '@/components/amazen';
+import { Monogram } from '@/components/amazen/monogram';
+import { CallGlyph } from '@/components/glyphs/work-glyphs';
+import { EmailGlyph } from '@/components/glyphs/crm-glyphs';
+import type { MobileCustomerContact } from '@/lib/api/customers';
+import { mailtoUrl, openSafeUrl, telUrl } from '@/lib/safe-links';
 
 
 /**

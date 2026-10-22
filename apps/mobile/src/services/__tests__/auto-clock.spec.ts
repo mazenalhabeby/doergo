@@ -9,18 +9,18 @@
  * consent leaves nothing behind.
  */
 import { AUTO_CLOCK_DEFAULTS, type AttendanceStatus, type AutoClockPlace, type AutoClockPlan } from '@hbcfield/shared/client';
-import { SyncEngine, type RecordsSink, type SyncTransport } from '../../offline/sync-engine';
-import { MemoryOutboxStore } from '../../offline/outbox/memory-store';
-import type { OutboxOp } from '../../offline/outbox/types';
-import { selectBatch } from '../../offline/outbox/scheduler';
-import { applyPushResults } from '../../offline/outbox/transitions';
-import { autoClockInFromPhone, clockInFromPhone, undoAutoClockInFromPhone } from '../../offline/attendance/shift-actions';
+import { SyncEngine, type RecordsSink, type SyncTransport } from '@/offline/sync-engine';
+import { MemoryOutboxStore } from '@/offline/outbox/memory-store';
+import type { OutboxOp } from '@/offline/outbox/types';
+import { selectBatch } from '@/offline/outbox/scheduler';
+import { applyPushResults } from '@/offline/outbox/transitions';
+import { autoClockInFromPhone, clockInFromPhone, undoAutoClockInFromPhone } from '@/offline/attendance/shift-actions';
 import { MAX_OS_REGIONS, autoRegionId, entered, exited, remindersFor, selectAutoRegions, shiftForArrival, spaceOfRegion } from '../auto-clock/rules';
 import { onRegionEvent, reevaluate, standDown, type AutoClockDeps } from '../auto-clock/runner';
 import type { AutoClockNotifier } from '../auto-clock/notifications';
 import { createAutoClockStore, type AutoClockState } from '../auto-clock/store';
 
-jest.mock('../../offline/ids', () => {
+jest.mock('@/offline/ids', () => {
   let n = 0;
   return { uuidv7: () => `0190f3c2-7b1a-7c3d-9e4f-e${String(++n).padStart(11, '0')}` };
 });

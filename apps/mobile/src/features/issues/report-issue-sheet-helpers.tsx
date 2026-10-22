@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { type ShiftIssue } from '../../lib/api/shift-issues';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { type ShiftIssue } from '@/lib/api/shift-issues';
+import { AText } from '@/components/amazen';
 import { severityShown, severityTone } from '../home/issue-status';
 
 /** ReportIssueSheet's module-level helpers, moved here unchanged so its sections can read them too. */

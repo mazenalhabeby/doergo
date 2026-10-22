@@ -4,13 +4,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useFormPalette } from './equipment-frame';
-import { useEntryDayBounds } from '../../hooks/use-entry-day-bounds';
-import { assetEntryDateText, dayKeyOf, occurredAtForDay } from '../../lib/log-dates';
-import { documentPicker } from '../../lib/optional-native';
-import { useToast } from '../../island/island-context';
-import { useCameraAccess } from '../../permissions/use-media-access';
-import { canScanReceipts, scanReceipt } from '../../lib/receipt-scan';
-import { assetsApi, uploadToPresignedUrl, type HeldAsset } from '../../lib/api';
+import { useEntryDayBounds } from '@/hooks/use-entry-day-bounds';
+import { assetEntryDateText, dayKeyOf, occurredAtForDay } from '@/lib/log-dates';
+import { documentPicker } from '@/lib/optional-native';
+import { useToast } from '@/island/island-context';
+import { useCameraAccess } from '@/permissions/use-media-access';
+import { canScanReceipts, scanReceipt } from '@/lib/receipt-scan';
+import { assetsApi, uploadToPresignedUrl, type HeldAsset } from '@/lib/api';
 import {
   normalizeKindShape,
   categoryForReceipt,
@@ -18,8 +18,8 @@ import {
   type ParsedReceipt,
   fromCents,
 } from '@hbcfield/shared/client';
-import { useOffline } from '../../offline/offline-context';
-import { caught } from '../../lib/caught';
+import { useOffline } from '@/offline/offline-context';
+import { caught } from '@/lib/caught';
 
 export type Stage = 'camera' | 'review';
 

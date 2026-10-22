@@ -10,7 +10,7 @@
  * nobody can use.
  */
 import * as path from 'path';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 import { holds } from '../permissions';
 
 const SCREEN = path.resolve(__dirname, '../../../app/(app)/manage/attendance.tsx');

@@ -1,8 +1,8 @@
 import { Pressable, Switch, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { STEP_FORM_LIMITS, type StepFormField } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, JobField } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, JobField } from '@/components/amazen';
 import { SignPad, type SignPadHandle } from './sign-pad';
 import { type FormDraft } from './step-form-logic';
 import { PhotoTiles, InlineDay } from './step-form-pickers';

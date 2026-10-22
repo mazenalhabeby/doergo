@@ -1,8 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
 import { usePhrase } from './phrase';
 import { daysLate, rowLines } from './clients-state';
 import { ReminderRow } from './reminder-row';

@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { shiftIssuesApi } from '../../lib/api/shift-issues';
-import { AText, Eyebrow } from '../../components/amazen';
+import { shiftIssuesApi } from '@/lib/api/shift-issues';
+import { AText, Eyebrow } from '@/components/amazen';
 import { ENDING_REASONS } from './shift-issue-thread-sheet-helpers';
 import type { ShiftIssueThreadSheetState } from './use-shift-issue-thread-sheet';
 

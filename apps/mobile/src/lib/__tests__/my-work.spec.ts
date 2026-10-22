@@ -3,9 +3,9 @@ import path from 'path';
 import {
   shapeFor, faceFor, viewAllSpaceIds, weekOf, tasksOn, hasHour,
   stepsFor, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
-} from '../../features/home/my-work';
+} from '@/features/home/my-work';
 import type { ScheduleEntry, Task } from '../api/types';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const code = (p: string) => readSource(path.join(SRC, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');

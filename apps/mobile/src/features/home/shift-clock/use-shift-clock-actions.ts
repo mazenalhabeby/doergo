@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { BreakType } from '@hbcfield/shared/client';
-import { useToast } from '../../../island/island-context';
-import { useShift, useShiftActions } from '../../../offline/attendance/use-shift';
-import type { useClockIn } from '../../../hooks/useClockIn';
-import type { useMyHandovers } from '../../../hooks/useMyHandovers';
-import { stopBackgroundHeartbeat } from '../../../services/background-heartbeat';
-import { stopGeofence } from '../../../services/background-geofence';
+import { useToast } from '@/island/island-context';
+import { useShift, useShiftActions } from '@/offline/attendance/use-shift';
+import type { useClockIn } from '@/hooks/use-clock-in';
+import type { useMyHandovers } from '@/hooks/use-my-handovers';
+import { stopBackgroundHeartbeat } from '@/services/background-heartbeat';
+import { stopGeofence } from '@/services/background-geofence';
 
 /**
  * What the shift card's buttons DO: clock out, start a rest, end a rest — and

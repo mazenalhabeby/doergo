@@ -6,7 +6,7 @@ import {
   type ChatMessageChangedEvent,
   type ChatMessageEvent,
 } from '@hbcfield/shared/client';
-import { useSocketContext } from '../../contexts/socket-context';
+import { useSocketContext } from '@/contexts/socket-context';
 import { useOffline } from '../offline-context';
 import { createPoke } from '../socket-poke';
 

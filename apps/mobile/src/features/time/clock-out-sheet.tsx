@@ -1,22 +1,22 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { useTheme } from '../../contexts/theme-context';
-import { BlurSheet } from '../../components/blur-sheet';
-import { SheetPanel } from '../../components/sheet-panel';
-import { AText, Eyebrow, LiveDot } from '../../components/amazen';
-import { SheetConfirmFooter } from '../../components/sheet-confirm-footer';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { useTheme } from '@/contexts/theme-context';
+import { BlurSheet } from '@/components/blur-sheet';
+import { SheetPanel } from '@/components/sheet-panel';
+import { AText, Eyebrow, LiveDot } from '@/components/amazen';
+import { SheetConfirmFooter } from '@/components/sheet-confirm-footer';
 import { heroParts } from '../home/shift-state';
 import { readClockOut, type ClockOutShift } from '../home/clock-out-state';
-import { formatDistance } from '../../lib/distance';
+import { formatDistance } from '@/lib/distance';
 import { HANDOVER_NOTE_MAX, formatDuration } from '@hbcfield/shared/client';
-import type { HandoverJob } from '../../lib/api';
+import type { HandoverJob } from '@/lib/api';
 import { EARLY_REASONS, Hero, Hatch, Row, Strip } from './clock-out-sheet-shared';
 import { type ClockOutSheetProps } from './clock-out-sheet-props';
 import { OpenJobs } from '../jobs-list/open-jobs';
-import { Bar } from '../../components/bar';
-import { Receipt } from '../../components/receipt';
+import { Bar } from '@/components/bar';
+import { Receipt } from '@/components/receipt';
 
 export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, shift, openJobs = [], onFinishJob }: ClockOutSheetProps) {
   // Jobs the crew carries on are not paused by this clock-out — only the rest are counted on the button.

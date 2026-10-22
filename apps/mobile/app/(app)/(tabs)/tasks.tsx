@@ -1,4 +1,4 @@
-import { JobsScreen } from '../../../src/features/jobs-list/jobs-screen';
+import { JobsScreen } from '@/features/jobs-list/jobs-screen';
 import { TaskDetailPane, useWriteStatus } from '../task/[id]';
 
 /**

@@ -3,11 +3,11 @@ import { View, Text, StyleSheet, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../src/contexts/auth-context';
-import { useTheme } from '../../src/contexts/theme-context';
-import { FONT_SIZE } from '../../src/lib/constants';
-import { userApi } from '../../src/lib/api/auth';
-import { PortalField, PortalFormScreen, portalFormStyles } from '../../src/features/customer/portal-form';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { FONT_SIZE } from '@/lib/constants';
+import { userApi } from '@/lib/api/auth';
+import { PortalField, PortalFormScreen, portalFormStyles } from '@/features/customer/portal-form';
 
 export default function EditProfile() {
   const router = useRouter();

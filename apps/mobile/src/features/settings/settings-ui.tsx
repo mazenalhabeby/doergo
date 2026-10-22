@@ -1,12 +1,12 @@
 import React from 'react';
 import { Pressable, ScrollView, Switch, View } from 'react-native';
 import { router, type Href } from 'expo-router';
-import { useTheme } from '../../contexts/theme-context';
-import { useResponsive } from '../../lib/responsive';
-import { AText, Ground, HeaderBack, ScreenHeader } from '../../components/amazen';
-import { FinishGlyph } from '../../components/glyphs/work-glyphs';
-import { centeredContent } from '../../components/screen-container';
-import { toneColor, toneTint } from '../../theme/tone-color';
+import { useTheme } from '@/contexts/theme-context';
+import { useResponsive } from '@/lib/responsive';
+import { AText, Ground, HeaderBack, ScreenHeader } from '@/components/amazen';
+import { FinishGlyph } from '@/components/glyphs/work-glyphs';
+import { centeredContent } from '@/components/screen-container';
+import { toneColor, toneTint } from '@/theme/tone-color';
 
 /**
  * A settings page: the app's ground and header, Back to the profile, and a

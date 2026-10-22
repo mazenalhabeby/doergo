@@ -4,7 +4,7 @@
  */
 import {
   adoptClient, buildCreateInput, canCreate, defaultSpace, dueDateFor, isPastDay, isUntouched, monthGrid,
-} from '../../features/new-job/new-job-logic';
+} from '@/features/new-job/new-job-logic';
 
 const base = {
   title: 'Replace valve', description: '', priority: 'MEDIUM' as const, day: null, time: '',

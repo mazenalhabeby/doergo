@@ -8,12 +8,12 @@ import {
   type ChatMessage,
   type ChatUserRef,
 } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, Banner, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, Banner, SectionLabel } from '@/components/amazen';
 import { presenceKey } from '../people/person-avatar';
 import type { bubbleShape } from './live-thread';
 import { ContactRow, MessageRow, SystemRow, type Receipt } from './chat-rows';
-import { Arrive, WaveDots } from '../../components/amazen/motion';
+import { Arrive, WaveDots } from '@/components/amazen/motion';
 import type { useChatThread } from './use-chat-thread';
 
 /** The lists and the closed notice of `ChatScreen` — moved here unchanged; values the screen works out come in as props. */

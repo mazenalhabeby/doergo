@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-import { expoCrypto } from '../../lib/optional-native';
+import { expoCrypto } from '@/lib/optional-native';
 import { loadSQLite } from '../native';
 import type { SqlDb } from './sql';
 import { databaseFailureText, SqlCipherMissingError, openEncrypted, discardDatabaseFiles } from './database-open';

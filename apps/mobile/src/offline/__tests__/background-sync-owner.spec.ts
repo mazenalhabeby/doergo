@@ -15,15 +15,15 @@ jest.mock('expo-secure-store', () => ({
 jest.mock('expo-task-manager', () => ({ defineTask: jest.fn(), isTaskRegisteredAsync: jest.fn(async () => false) }));
 jest.mock('expo-notifications', () => ({ getPermissionsAsync: jest.fn(async () => ({ status: 'denied' })), scheduleNotificationAsync: jest.fn() }));
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: { getItem: jest.fn(async () => null), setItem: jest.fn() } }));
-jest.mock('../../i18n', () => ({ __esModule: true, default: { t: (k: string) => k }, i18nReady: Promise.resolve() }));
+jest.mock('@/i18n', () => ({ __esModule: true, default: { t: (k: string) => k }, i18nReady: Promise.resolve() }));
 let owner: string | null = null;
-jest.mock('../../lib/api/client', () => ({ sessionOwnerId: jest.fn(async () => owner) }));
-jest.mock('../../services/background-route-tracking', () => ({ flushPendingRoute: jest.fn(async () => undefined) }));
+jest.mock('@/lib/api/client', () => ({ sessionOwnerId: jest.fn(async () => owner) }));
+jest.mock('@/services/background-route-tracking', () => ({ flushPendingRoute: jest.fn(async () => undefined) }));
 jest.mock('../native', () => ({ loadBackgroundTask: () => null, loadNetInfo: () => null }));
 const flush = jest.fn(async () => undefined);
 const createOfflineRuntime = jest.fn(async () => ({ engine: { flush, operations: () => [], stop: jest.fn() }, files: {} }));
 jest.mock('../runtime', () => ({ connectivity: { setUnmetered: jest.fn() }, createOfflineRuntime: (...a: unknown[]) => (createOfflineRuntime as jest.Mock)(...a) }));
-jest.mock('../../services/auto-clock/context', () => ({ autoClockWake: jest.fn(async () => undefined) }));
+jest.mock('@/services/auto-clock/context', () => ({ autoClockWake: jest.fn(async () => undefined) }));
 jest.mock('../telemetry', () => ({ reportTelemetry: jest.fn(async () => undefined) }));
 jest.mock('../attendance/refused-shift-notify', () => ({ notifyRefusedShifts: jest.fn(async () => undefined) }));
 

@@ -1,26 +1,26 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, View } from 'react-native';
-import { CachedImage } from '../../components/cached-image';
+import { CachedImage } from '@/components/cached-image';
 import { useTranslation } from 'react-i18next';
 import { router, type Href, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
 import { orgHasAddOn, Role, personName } from '@hbcfield/shared/client';
-import { uuidv7 } from '../../offline/ids';
-import type { AvatarChange } from '../../offline/profile/pending-avatar';
-import { updateOwnProfile } from '../../offline/profile/profile-actions';
-import { useOffline, useSyncStatus } from '../../offline/offline-context';
-import { useVersionStatus } from '../../contexts/version-context';
-import { openUpdate } from '../../lib/in-app-updates';
-import { useAuth } from '../../contexts/auth-context';
-import { getCurrentLanguage, supportedLanguages } from '../../i18n';
-import { useTheme, type ThemeMode } from '../../contexts/theme-context';
-import { useHeldAssets } from '../../hooks/use-held-assets';
-import { useDocumentRequirements } from '../../contexts/document-requirements-context';
-import { useToast } from '../../island/island-context';
-import { useImagePicker } from '../../hooks/useImagePicker';
-import { avatarApi, userApi, resolveMediaUrl } from '../../lib/api';
-import { useResponsive } from '../../lib/responsive';
-import { initialsOf } from '../../lib/people';
+import { uuidv7 } from '@/offline/ids';
+import type { AvatarChange } from '@/offline/profile/pending-avatar';
+import { updateOwnProfile } from '@/offline/profile/profile-actions';
+import { useOffline, useSyncStatus } from '@/offline/offline-context';
+import { useVersionStatus } from '@/contexts/version-context';
+import { openUpdate } from '@/lib/in-app-updates';
+import { useAuth } from '@/contexts/auth-context';
+import { getCurrentLanguage, supportedLanguages } from '@/i18n';
+import { useTheme, type ThemeMode } from '@/contexts/theme-context';
+import { useHeldAssets } from '@/hooks/use-held-assets';
+import { useDocumentRequirements } from '@/contexts/document-requirements-context';
+import { useToast } from '@/island/island-context';
+import { useImagePicker } from '@/hooks/use-image-picker';
+import { avatarApi, userApi, resolveMediaUrl } from '@/lib/api';
+import { useResponsive } from '@/lib/responsive';
+import { initialsOf } from '@/lib/people';
 import {
   AText,
   GlassCard,
@@ -32,15 +32,15 @@ import {
   WellDivider,
   SectionLabel,
   SheetOption,
-} from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+} from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 import { JobSheet } from '../job/job-ui';
 import { CameraGlyph, CloseGlyph, GalleryGlyph } from '../job/job-glyphs';
 import { TourTarget, GuideSheet, useTourScroll } from '../tour';
 import { PROFILE_GLYPHS } from './profile-glyphs';
-import { useShift } from '../../offline/attendance/use-shift';
+import { useShift } from '@/offline/attendance/use-shift';
 import { offersClockInPick, parseClockInPick } from '@hbcfield/shared/client';
-import { hasUnsentLocalWork } from '../../lib/session/end-session';
+import { hasUnsentLocalWork } from '@/lib/session/end-session';
 import { useProfileScreen } from './use-profile-screen';
 import { THEME_MODE_I18N, Group, Row } from './profile-screen-helpers';
 import { useProfileScreenLogic } from './use-profile-screen-logic';

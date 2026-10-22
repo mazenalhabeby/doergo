@@ -2,10 +2,10 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
-import { Ground, HeaderBack, ScreenHeader } from '../../components/amazen';
-import { useTheme } from '../../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
+import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
+import { Ground, HeaderBack, ScreenHeader } from '@/components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
 import { ChoiceChip } from '../customer/client-fields';
 import { CardFieldRow, CardFieldGroup } from '../customer/card-field-row';
 import { CardExtrasGroup } from '../customer/card-extras';

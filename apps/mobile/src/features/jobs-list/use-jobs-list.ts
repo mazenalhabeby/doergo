@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
-import { useAuth } from '../../contexts/auth-context';
-import { useSocketContext } from '../../contexts/socket-context';
-import { SocketEvents } from '../../lib/socket';
-import { tasksApi, type Task, type TasksListParams } from '../../lib/api';
-import { useConnectivity, useOffline, useSyncStatus } from '../../offline/offline-context';
-import { filterTasksLocally } from '../../offline/tasks/task-list-query';
-import { overlayTask } from '../../offline/tasks/overlay';
+import { useAuth } from '@/contexts/auth-context';
+import { useSocketContext } from '@/contexts/socket-context';
+import { SocketEvents } from '@/lib/socket';
+import { tasksApi, type Task, type TasksListParams } from '@/lib/api';
+import { useConnectivity, useOffline, useSyncStatus } from '@/offline/offline-context';
+import { filterTasksLocally } from '@/offline/tasks/task-list-query';
+import { overlayTask } from '@/offline/tasks/overlay';
 import { periodParams, type Period } from './jobs-logic';
-import { caught } from '../../lib/caught';
+import { caught } from '@/lib/caught';
 
 export type ListTask = Task & { pendingSync?: boolean };
 

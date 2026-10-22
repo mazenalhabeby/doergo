@@ -11,7 +11,7 @@ import * as path from 'path';
 
 describe('foreground notifications', () => {
   it('the push hook registers a handler that shows them', () => {
-    const src = fs.readFileSync(path.resolve(__dirname, '../../hooks/usePushNotifications.ts'), 'utf8');
+    const src = fs.readFileSync(path.resolve(__dirname, '../../hooks/use-push-notifications.ts'), 'utf8');
     expect(src).toMatch(/Notifications\.setNotificationHandler\(/);
     expect(src).toMatch(/shouldShowBanner:/);
   });

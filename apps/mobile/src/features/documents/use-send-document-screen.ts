@@ -4,17 +4,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { useCameraAccess } from '../../permissions/use-media-access';
-import { canScanContracts, scanContract } from '../../lib/receipt-scan';
-import { assetProposalsApi, uploadToPresignedUrl, type ContractFields } from '../../lib/api';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { useCameraAccess } from '@/permissions/use-media-access';
+import { canScanContracts, scanContract } from '@/lib/receipt-scan';
+import { assetProposalsApi, uploadToPresignedUrl, type ContractFields } from '@/lib/api';
 import { classifyDocument, type DocumentClassification } from '@hbcfield/shared/client';
-import { useOffline } from '../../offline/offline-context';
-import { createFromPhone } from '../../offline/actions/queued-create';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { uuidv7 } from '../../offline/ids';
-import { caught } from '../../lib/caught';
+import { useOffline } from '@/offline/offline-context';
+import { createFromPhone } from '@/offline/actions/queued-create';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { uuidv7 } from '@/offline/ids';
+import { caught } from '@/lib/caught';
 
 /**
  * Send a page in and let somebody responsible decide.

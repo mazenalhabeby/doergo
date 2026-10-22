@@ -14,13 +14,13 @@ import {
   type ChatConversationUpdatedEvent,
   type ChatTypingEvent,
 } from '@hbcfield/shared/client';
-import { useSocketContext } from '../../contexts/socket-context';
-import { chatApi } from '../../lib/api';
-import { activeChat } from '../../lib/active-chat';
-import { markConversationRead } from '../../lib/chat-badge';
-import { useAppResume } from '../../lib/app-resume';
-import { useOffline } from '../../offline/offline-context';
-import { useQueuedCreate } from '../../offline/actions/queued-create';
+import { useSocketContext } from '@/contexts/socket-context';
+import { chatApi } from '@/lib/api';
+import { activeChat } from '@/lib/active-chat';
+import { markConversationRead } from '@/lib/chat-badge';
+import { useAppResume } from '@/lib/app-resume';
+import { useOffline } from '@/offline/offline-context';
+import { useQueuedCreate } from '@/offline/actions/queued-create';
 import { debounce, isPlaceable } from './live-thread';
 
 export type ShownMessage = ChatMessage & { pendingSync?: boolean };

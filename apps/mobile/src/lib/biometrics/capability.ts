@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import { localAuthentication } from '../optional-native';
-import i18n from '../../i18n';
+import i18n from '@/i18n';
 import { deviceKeyModule } from './native';
 
 /**

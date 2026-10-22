@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
+import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
 
 /** SignDocumentScreen's module-level helpers, moved here unchanged so its sections can read them too. */
 export const s = StyleSheet.create({

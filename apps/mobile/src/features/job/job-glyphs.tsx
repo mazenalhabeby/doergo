@@ -1,6 +1,6 @@
 import React from 'react';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import type { GlyphProps } from '../../components/glyphs/glyphs';
+import type { GlyphProps } from '@/components/glyphs/glyphs';
 
 /**
  * The job page's small marks — the ones `docs/design/job-flow.html` draws that

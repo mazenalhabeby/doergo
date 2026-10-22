@@ -2,12 +2,12 @@ import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { formatCalendarDate } from '@hbcfield/shared/client';
-import type { DocumentType } from '../../lib/api/documents';
-import type { AskType, AskedRow, typeGroups } from '../../lib/document-asks';
-import { documentTypeIcon } from '../../lib/document-icons';
-import { PressableScale } from '../../components/pressable-scale';
+import type { DocumentType } from '@/lib/api/documents';
+import type { AskType, AskedRow, typeGroups } from '@/lib/document-asks';
+import { documentTypeIcon } from '@/lib/document-icons';
+import { PressableScale } from '@/components/pressable-scale';
 import { s, useSupplyPalette } from './styles';
-import { toneColor, toneTint } from '../../theme/tone-color';
+import { toneColor, toneTint } from '@/theme/tone-color';
 
 /**
  * "Contract for a vehicle or equipment" — the one thing a member hands in that

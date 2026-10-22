@@ -2,10 +2,10 @@ import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { personName, type ChatUserRef } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, WellDivider } from '../../components/amazen';
-import { InkIcon } from '../../components/amazen/ink-icon';
-import { Arrive } from '../../components/amazen/motion';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, WellDivider } from '@/components/amazen';
+import { InkIcon } from '@/components/amazen/ink-icon';
+import { Arrive } from '@/components/amazen/motion';
 import { PersonAvatar } from '../people/person-avatar';
 import { Tag } from './chat-rows-shared';
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { portalColor, portalIcon } from '../../lib/portal-ui';
+import { portalColor, portalIcon } from '@/lib/portal-ui';
 
 /**
  * The client portal's glyphs.

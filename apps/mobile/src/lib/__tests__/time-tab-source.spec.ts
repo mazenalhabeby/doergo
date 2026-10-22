@@ -6,7 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { shiftCard } from './shift-card-files';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const read = (p: string) => readSource(path.join(SRC, p), 'utf8');

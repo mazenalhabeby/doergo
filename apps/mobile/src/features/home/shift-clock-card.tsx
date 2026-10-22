@@ -1,22 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNow } from '../../hooks/use-now';
+import { useNow } from '@/hooks/use-now';
 import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
-import { useLiveRefresh } from '../../hooks/use-live-refresh';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
-import { useShift } from '../../offline/attendance/use-shift';
-import { refusedShiftCopy, refusedSpaceId } from '../../offline/attendance/refused-shift';
-import { useRefusedShift } from '../../offline/attendance/use-refused-shift';
-import { useOffline } from '../../offline/offline-context';
-import { SyncChip } from '../../offline/components/sync-chip';
-import { BreakSheet, LocationPickerSheet, ClockOutSheet } from '../../components/index';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useShift } from '@/offline/attendance/use-shift';
+import { refusedShiftCopy, refusedSpaceId } from '@/offline/attendance/refused-shift';
+import { useRefusedShift } from '@/offline/attendance/use-refused-shift';
+import { useOffline } from '@/offline/offline-context';
+import { SyncChip } from '@/offline/components/sync-chip';
+import { BreakSheet, LocationPickerSheet, ClockOutSheet } from '@/components/index';
 import { ReportIssueSheet, ShiftIssueListSheet, ShiftIssueThreadSheet } from '../time/shift-issue-sheet';
-import { useClockIn } from '../../hooks/useClockIn';
-import { useMyHandovers, useRefreshMyHandovers } from '../../hooks/useMyHandovers';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { AText, CardSurface, Chip, DiscRow, Eyebrow, LiveDot } from '../../components/amazen';
+import { useClockIn } from '@/hooks/use-clock-in';
+import { useMyHandovers, useRefreshMyHandovers } from '@/hooks/use-my-handovers';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { AText, CardSurface, Chip, DiscRow, Eyebrow, LiveDot } from '@/components/amazen';
 import { readShiftState, scheduleFor, totalsRevision } from './shift-state';
 import { useScheduleTotals, type ScheduleTotalsView } from './use-schedule-totals';
 import { useUnreadIssues } from './use-unread-issues';
@@ -31,7 +31,7 @@ import type { NoShiftNote } from '../time/time-logic';
 import { useShiftClockCardView, type ShiftClockCardViewProps } from './use-shift-clock-card-view';
 import { ShiftClockCardViewView } from './shift-clock-card-view-view';
 import { ShiftClockCardViewQueued } from './shift-clock-card-view-queued';
-import { clockableLocations } from '../../lib/clockable';
+import { clockableLocations } from '@/lib/clockable';
 
 /**
  * ONE GLASS SURFACE, IN EVERY STATE.

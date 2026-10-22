@@ -1,7 +1,7 @@
 import React from 'react';
 import { router } from 'expo-router';
-import { useTheme } from '../../contexts/theme-context';
-import { Ground, HeaderBack, ScreenHeader } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { Ground, HeaderBack, ScreenHeader } from '@/components/amazen';
 
 /**
  * The page an equipment screen sits on: the app's ground and header, with Back.

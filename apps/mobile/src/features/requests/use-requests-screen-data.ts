@@ -2,17 +2,17 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { type LeaveType, type RequestKind } from "@hbcfield/shared/client";
-import { useAuth } from "../../contexts/auth-context";
-import { mayReadTeamAvailability } from "../../lib/permissions";
-import { useToast } from "../../island/island-context";
-import { useTheme } from "../../contexts/theme-context";
+import { useAuth } from "@/contexts/auth-context";
+import { mayReadTeamAvailability } from "@/lib/permissions";
+import { useToast } from "@/island/island-context";
+import { useTheme } from "@/contexts/theme-context";
 import { useMyTimeOff } from "../time/use-my-time-off";
 import { useTourScroll } from "../tour";
-import { availabilityApi, type AvailabilityResponse } from "../../lib/api";
-import { useTimeFormat } from "../../hooks/useTimeFormat";
-import { useResponsive } from "../../lib/responsive";
-import { centeredContent } from "../../components/screen-container";
-import { useTabSafe } from "../../components/amazen";
+import { availabilityApi, type AvailabilityResponse } from "@/lib/api";
+import { useTimeFormat } from "@/hooks/use-time-format";
+import { useResponsive } from "@/lib/responsive";
+import { centeredContent } from "@/components/screen-container";
+import { useTabSafe } from "@/components/amazen";
 import { datesWithStatus, mondayDow, scheduleDayMap, type RequestFilter } from "../time-off/helpers";
 import {
   daysNotAnswered,

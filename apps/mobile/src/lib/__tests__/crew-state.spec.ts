@@ -5,7 +5,7 @@
 import {
   crewState, bandOf, ringOf, unitFor, exceptionNames, CAPS, BAND_ORDER, FREE_SOON_MINUTES,
   type CrewPerson,
-} from '../../features/home/crew-state';
+} from '@/features/home/crew-state';
 
 const NOW = Date.parse('2026-09-24T13:20:00.000Z');
 const iso = (minsFromNow: number) => new Date(NOW + minsFromNow * 60000).toISOString();

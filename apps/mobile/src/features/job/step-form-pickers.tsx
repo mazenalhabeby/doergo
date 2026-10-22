@@ -2,15 +2,15 @@ import { useMemo, useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { STEP_FORM_LIMITS } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { useImagePicker } from '../../hooks/useImagePicker';
-import { AText, QuietButton } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { useImagePicker } from '@/hooks/use-image-picker';
+import { AText, QuietButton } from '@/components/amazen';
 import { CameraGlyph, GalleryGlyph } from './job-glyphs';
 import { monthGrid } from '../new-job/new-job-logic';
 import { DayPickerTop, WeekdayHeads } from '../new-job/day-picker-parts';
 import { dayOf, isoDay, type DraftPhoto } from './step-form-logic';
-import { isSameDay } from '../../lib/utils';
+import { isSameDay } from '@/lib/utils';
 
 /** A step form's photo tiles and inline day picker — moved here unchanged from step-form-sheet.tsx. */
 /**

@@ -4,7 +4,7 @@ import {
   type FlowStatus,
   type TaskCapability,
 } from '@hbcfield/shared/client';
-import type { ChecklistItem } from '../../lib/api/types';
+import type { ChecklistItem } from '@/lib/api/types';
 
 export const BLOCKED = 'BLOCKED';
 

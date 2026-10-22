@@ -18,19 +18,19 @@ import {
   type ChatReadEvent,
   type ChatConversationUpdatedEvent,
 } from '@hbcfield/shared/client';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
-import { useSocketContext } from '../../contexts/socket-context';
-import { chatApi } from '../../lib/api';
-import { useOffline } from '../../offline/offline-context';
-import { useAppResume } from '../../lib/app-resume';
-import { AText, Well, WellDivider, useTabSafe, Banner } from '../../components/amazen';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useSocketContext } from '@/contexts/socket-context';
+import { chatApi } from '@/lib/api';
+import { useOffline } from '@/offline/offline-context';
+import { useAppResume } from '@/lib/app-resume';
+import { AText, Well, WellDivider, useTabSafe, Banner } from '@/components/amazen';
 import { ConversationAvatar } from '../chat/chat-rows';
-import { Arrive } from '../../components/amazen/motion';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
+import { Arrive } from '@/components/amazen/motion';
+import { useTimeFormat } from '@/hooks/use-time-format';
 import { debounce } from '../chat/live-thread';
-import { refreshChatBadge } from '../../lib/chat-badge';
-import { LoadingLine } from '../../components/loading-line';
+import { refreshChatBadge } from '@/lib/chat-badge';
+import { LoadingLine } from '@/components/loading-line';
 
 /**
  * Search inside the caller's own conversations — ONLINE ONLY: the phone keeps

@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, PrimaryButton, QuietButton } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, PrimaryButton, QuietButton } from '@/components/amazen';
 import { JobSheet } from '../job/job-ui';
 import { HOURS, MINUTES, isPastDay, monthGrid, two } from './new-job-logic';
-import { isSameDay } from '../../lib/utils';
+import { isSameDay } from '@/lib/utils';
 import { DayPickerTop, WeekdayHeads } from './day-picker-parts';
 
 /**

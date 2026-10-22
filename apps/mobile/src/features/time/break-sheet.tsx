@@ -2,12 +2,12 @@ import React, { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { BreakType, type BreakPlanItem } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { BlurSheet } from '../../components/blur-sheet';
-import { SheetPanel } from '../../components/sheet-panel';
-import { AText, Eyebrow } from '../../components/amazen';
-import { SheetConfirmFooter } from '../../components/sheet-confirm-footer';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { BlurSheet } from '@/components/blur-sheet';
+import { SheetPanel } from '@/components/sheet-panel';
+import { AText, Eyebrow } from '@/components/amazen';
+import { SheetConfirmFooter } from '@/components/sheet-confirm-footer';
 
 /**
  * WHICH BREAK IS THIS?

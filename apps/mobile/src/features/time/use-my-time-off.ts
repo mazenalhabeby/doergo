@@ -1,13 +1,13 @@
 import { useCallback, useMemo } from 'react';
-import { useAuth } from '../../contexts/auth-context';
-import { useFetchData } from '../../hooks/useFetchData';
-import { timeOffApi, scheduleApi, type TimeOffRequest, type ScheduleEntry } from '../../lib/api';
-import { useQueuedCreate } from '../../offline/actions/queued-create';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import type { ActionOutcome } from '../../offline/actions/outcome';
-import { useSyncStatus } from '../../offline/offline-context';
-import { cancelTimeOff, pendingCancellations } from '../../offline/timeoff/time-off-actions';
-import { uuidv7 } from '../../offline/ids';
+import { useAuth } from '@/contexts/auth-context';
+import { useFetchData } from '@/hooks/use-fetch-data';
+import { timeOffApi, scheduleApi, type TimeOffRequest, type ScheduleEntry } from '@/lib/api';
+import { useQueuedCreate } from '@/offline/actions/queued-create';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import type { ActionOutcome } from '@/offline/actions/outcome';
+import { useSyncStatus } from '@/offline/offline-context';
+import { cancelTimeOff, pendingCancellations } from '@/offline/timeoff/time-off-actions';
+import { uuidv7 } from '@/offline/ids';
 import { isAbsence } from '@hbcfield/shared/client';
 import { queuedRequestRow, type RequestBody } from '../requests/request-model';
 

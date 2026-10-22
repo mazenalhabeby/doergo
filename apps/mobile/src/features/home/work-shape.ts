@@ -5,7 +5,7 @@ import {
   workflowStatusLabel,
   type FlowStatus,
 } from '@hbcfield/shared/client';
-import type { ScheduleEntry, Task } from '../../lib/api/types';
+import type { ScheduleEntry, Task } from '@/lib/api/types';
 
 /** Axis 1 — modules decide the shape. */
 export type WorkShape = 'both' | 'tasks' | 'shifts' | 'none';

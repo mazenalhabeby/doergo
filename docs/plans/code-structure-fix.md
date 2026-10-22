@@ -262,6 +262,11 @@ Each becomes a folder of real Nest sub-modules with their own providers and test
 > subjects are cut to one line, and legacy cards now sit on the gradient. Still open for the design pass: ~68 files on
 > `useTheme().colors`, 89 on `lib/constants` COLORS/SPACING/FONT_SIZE.
 
+> **Status (2026-10-22): 6.4 DONE.** 2,511 imports in 592 files that climbed two or more folders now use `@/` (`src/`);
+> `./` and `../` stay for a file's own folder and its neighbour. Jest maps `@/` (Metro already read tsconfig `paths`);
+> `test-utils/read-source` follows `@/` imports too. The 12 camelCase hooks in `src/hooks/` are kebab-case
+> (`use-clock-in.ts` …). Guard: `import-alias.spec`.
+
 ---
 
 ## Order, size and what you get

@@ -3,9 +3,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../../src/contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
-import { portalApi } from '../../../src/lib/api/portal';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
+import { portalApi } from '@/lib/api/portal';
 
 // Messages with the office/support. A dedicated portal↔office thread backend is
 // a follow-up; for now this surfaces who to reach and points back to the request

@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
 
 /**
  * The supply sheet's words and surfaces, in the app's own design. Named after

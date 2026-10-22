@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useImagePicker, type PickedImage } from '../../hooks/useImagePicker';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { ActionPill, AText, Sunken, JobField, Pill, ReceiptRow, RoundButton, StateEyebrow } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useImagePicker, type PickedImage } from '@/hooks/use-image-picker';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { ActionPill, AText, Sunken, JobField, Pill, ReceiptRow, RoundButton, StateEyebrow } from '@/components/amazen';
 import { JobSheet } from '../job/job-ui';
 import { CameraGlyph, CloseGlyph, GalleryGlyph, SendGlyph } from '../job/job-glyphs';
 import { DayBar } from '../time/day-bar';
 import { useWorklog } from './use-worklog';
-import type { WorklogItem } from '../../offline/attendance/worklog';
+import type { WorklogItem } from '@/offline/attendance/worklog';
 import { formatDuration } from '@hbcfield/shared/client';
 import { useWorkLogSheet, type WorkLogShift } from './use-work-log-sheet';
 import { QUICK, NoteRow } from './work-log-sheet-helpers';
-import { LoadingLine } from '../../components/loading-line';
+import { LoadingLine } from '@/components/loading-line';
 
 /**
  * A shift's work log — what was done, note by note, drawn on the shift itself.

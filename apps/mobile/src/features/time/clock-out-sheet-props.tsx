@@ -1,5 +1,5 @@
 import { type ClockOutShift } from '../home/clock-out-state';
-import type { HandoverJob } from '../../lib/api';
+import type { HandoverJob } from '@/lib/api';
 
 /** ClockOutSheetProps, moved here unchanged out of clock-out-sheet.tsx. */
 /**

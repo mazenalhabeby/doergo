@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { AText } from '../../components/amazen';
+import { AText } from '@/components/amazen';
 import type { ShiftIssueThreadSheetState } from './use-shift-issue-thread-sheet';
 
 /** Part of ShiftIssueThreadSheet's markup, moved here unchanged; it reads the page's state from `vm`. */

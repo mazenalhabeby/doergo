@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { mayReadTeamAvailability } from '../permissions';
 import { approverCandidates } from '../overtime-approvers';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 const ROOT = path.resolve(__dirname, '../../..');
 

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { shiftCard } from '../../../lib/__tests__/shift-card-files';
+import { shiftCard } from '@/lib/__tests__/shift-card-files';
 
 /**
  * EVERY WIDGET REMEMBERS, AND NONE OF THEM GUESSES.

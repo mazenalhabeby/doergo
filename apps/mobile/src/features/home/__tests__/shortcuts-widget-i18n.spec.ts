@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { readSource } from '../../../test-utils/read-source';
-import { MANAGE_ROWS, MEMBER_ROWS } from '../../../lib/manage-rows';
+import { readSource } from '@/test-utils/read-source';
+import { MANAGE_ROWS, MEMBER_ROWS } from '@/lib/manage-rows';
 
 /**
  * Every word the Shortcuts widget can put on screen, in all five languages.

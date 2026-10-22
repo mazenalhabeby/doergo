@@ -4,11 +4,11 @@ import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import * as Updates from 'expo-updates';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useVersionStatus } from '../../contexts/version-context';
-import { openUpdate } from '../../lib/in-app-updates';
-import { formatDay } from '../../lib/money';
-import { AText, PrimaryButton, Well, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useVersionStatus } from '@/contexts/version-context';
+import { openUpdate } from '@/lib/in-app-updates';
+import { formatDay } from '@/lib/money';
+import { AText, PrimaryButton, Well, SectionLabel } from '@/components/amazen';
 import { SettingsPage, StateCard } from './settings-ui';
 
 /**

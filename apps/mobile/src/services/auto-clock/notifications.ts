@@ -1,8 +1,8 @@
 import * as Notifications from 'expo-notifications';
 import { AUTO_CLOCK_UNDO_MINUTES, PUSH_CHANNELS } from '@hbcfield/shared/client';
-import i18n, { i18nReady } from '../../i18n';
-import { formatTimeOfDay } from '../../lib/utils';
-import { loadStoredUser } from '../../lib/session/stored-user';
+import i18n, { i18nReady } from '@/i18n';
+import { formatTimeOfDay } from '@/lib/utils';
+import { loadStoredUser } from '@/lib/session/stored-user';
 import type { ReminderKind } from './rules';
 
 /*

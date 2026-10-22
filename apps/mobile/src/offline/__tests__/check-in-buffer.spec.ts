@@ -1,7 +1,7 @@
 /**
  * Check-ins kept while the phone has no signal.
  */
-import { CHECK_IN_BUFFER_KEY, checkInBufferKey, MAX_KEPT, MAX_KEPT_AGE_MS, createCheckInBuffer, type KeptCheckIn } from '../../services/check-in-buffer';
+import { CHECK_IN_BUFFER_KEY, checkInBufferKey, MAX_KEPT, MAX_KEPT_AGE_MS, createCheckInBuffer, type KeptCheckIn } from '@/services/check-in-buffer';
 
 const NOW = Date.parse('2026-09-14T11:40:00.000Z');
 

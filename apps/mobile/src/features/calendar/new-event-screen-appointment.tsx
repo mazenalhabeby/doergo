@@ -1,6 +1,6 @@
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { MEETING_PROVIDER_NAMES, spanMinutes, durationText, personName } from '@hbcfield/shared/client';
-import { AText, FilterRow, PrimaryButton, Well, JobField, SectionLabel } from '../../components/amazen';
+import { AText, FilterRow, PrimaryButton, Well, JobField, SectionLabel } from '@/components/amazen';
 import { offsetText } from './event-sheet';
 import { REMIND } from './new-event-screen-helpers';
 import type { NewEventScreenState } from './use-new-event-screen-logic';

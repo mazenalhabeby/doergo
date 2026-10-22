@@ -3,12 +3,12 @@ import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTimi
 import { FlatList, Pressable, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useAuth } from '../../contexts/auth-context';
-import { holds } from '../../lib/permissions';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { AText, Eyebrow, CardSurface } from '../../components/amazen';
-import { NotArrivedGlyph, HoursWaitingGlyph } from '../../components/glyphs/crew-glyphs';
+import { useTheme } from '@/contexts/theme-context';
+import { useAuth } from '@/contexts/auth-context';
+import { holds } from '@/lib/permissions';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { AText, Eyebrow, CardSurface } from '@/components/amazen';
+import { NotArrivedGlyph, HoursWaitingGlyph } from '@/components/glyphs/crew-glyphs';
 import Svg, { Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { crewState, needsBySpace, quietTiles, rosteredCountOf, type Band, type CrewPerson, type CrewTile, type QuietTile, type Ring, type TileBand } from './crew-state';

@@ -1,12 +1,12 @@
 import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import { DetentSheet } from './detent-sheet';
-import { PressableScale } from '../../components/pressable-scale';
-import { EmptyState } from '../../components/amazen/empty-state';
+import { PressableScale } from '@/components/pressable-scale';
+import { EmptyState } from '@/components/amazen/empty-state';
 import { Ionicons } from '@expo/vector-icons';
-import { type Task } from '../../lib/api';
-import { COLORS, SPACING } from '../../lib/constants';
+import { type Task } from '@/lib/api';
+import { COLORS, SPACING } from '@/lib/constants';
 import { type RouteStop } from '@hbcfield/shared/client';
-import { formatDistance } from '../../lib/distance';
+import { formatDistance } from '@/lib/distance';
 import { fmtDur, LegRow, PickRow, styles } from './route-planner-screen-helpers';
 import type { RoutePlannerScreenState } from './use-route-planner-screen';
 

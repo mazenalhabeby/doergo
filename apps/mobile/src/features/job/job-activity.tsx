@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import type { TaskEvent } from '../../lib/api';
-import { AText, Initials, JobField, RoundButton, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import type { TaskEvent } from '@/lib/api';
+import { AText, Initials, JobField, RoundButton, SectionLabel } from '@/components/amazen';
 import { SendGlyph } from './job-glyphs';
 import type { JobComment, LocalEvent } from './use-job';
 import { personName } from '@hbcfield/shared/client';

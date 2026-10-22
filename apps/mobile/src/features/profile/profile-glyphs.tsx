@@ -1,9 +1,9 @@
 import React from 'react';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import type { GlyphProps } from '../../components/glyphs/glyphs';
-import { DocumentsGlyph, SupportGlyph } from '../../components/glyphs/glyphs';
-import { MyEquipmentGlyph, SyncGlyph } from '../../components/glyphs/tile-glyphs';
-import { ReminderGlyph } from '../../components/glyphs/crm-glyphs';
+import type { GlyphProps } from '@/components/glyphs/glyphs';
+import { DocumentsGlyph, SupportGlyph } from '@/components/glyphs/glyphs';
+import { MyEquipmentGlyph, SyncGlyph } from '@/components/glyphs/tile-glyphs';
+import { ReminderGlyph } from '@/components/glyphs/crm-glyphs';
 
 /*
   The Profile page's marks — one colour, depth from opacity, the family's law.

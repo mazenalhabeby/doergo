@@ -3,9 +3,9 @@ import { Pressable, type LayoutChangeEvent } from 'react-native';
 import Svg, { Circle, Defs, Path, Pattern, Rect, Text as SvgText } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import type { LatLng, OptimizedRoute } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { over } from '../../theme/amazen';
-import { fitProjection, routeLine, smoothPath, splitLine, svgPath, thin, type DayStop } from '../../lib/route-day';
+import { useTheme } from '@/contexts/theme-context';
+import { over } from '@/theme/amazen';
+import { fitProjection, routeLine, smoothPath, splitLine, svgPath, thin, type DayStop } from '@/lib/route-day';
 
 const HEIGHT = 150;
 const PAD = 24;

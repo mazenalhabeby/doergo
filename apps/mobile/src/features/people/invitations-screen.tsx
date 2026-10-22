@@ -2,11 +2,11 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Share, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { useLiveRefresh } from '../../hooks/use-live-refresh';
-import { adminInvitationsApi, locationsApi, type Invitation } from '../../lib/api';
-import { useResponsive } from '../../lib/responsive';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
+import { adminInvitationsApi, locationsApi, type Invitation } from '@/lib/api';
+import { useResponsive } from '@/lib/responsive';
 import {
   AText,
   GlassCard,
@@ -20,11 +20,11 @@ import {
   JobField,
   SectionLabel,
   ChoicePill,
-} from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+} from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 import { JobSheet } from '../job/job-ui';
-import { LoadingLine } from '../../components/loading-line';
-import { pullRefresh } from '../../components/pull-refresh';
+import { LoadingLine } from '@/components/loading-line';
+import { pullRefresh } from '@/components/pull-refresh';
 
 /**
  * INVITATIONS — make a code, share it, see what became of the ones sent.

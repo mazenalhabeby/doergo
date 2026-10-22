@@ -1,5 +1,5 @@
 import { localAuthentication } from '../optional-native';
-import i18n from '../../i18n';
+import i18n from '@/i18n';
 
 /*
   ⚠️ The stored-refresh-token credential (`SecureStoreCredential`) that lived

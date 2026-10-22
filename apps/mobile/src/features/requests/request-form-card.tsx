@@ -9,10 +9,10 @@ import {
   type DetectedRequest,
   type RequestKind,
 } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, FilterPill, FilterRow, PrimaryButton, Well, JobField, QuietButton, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, FilterPill, FilterRow, PrimaryButton, Well, JobField, QuietButton, SectionLabel } from '@/components/amazen';
 import { DaySheet, TimeSheet } from '../new-job/when-sheets';
-import type { RequestOptions } from '../../lib/api/technicians';
+import type { RequestOptions } from '@/lib/api/technicians';
 import { RequestKindGlyph } from './request-glyphs';
 import { PrecheckCard } from './precheck-card';
 import { SuggestionCard } from './suggestion-card';

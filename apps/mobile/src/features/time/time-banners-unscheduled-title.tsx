@@ -1,5 +1,5 @@
 import { Pressable, View } from 'react-native';
-import { AText, QuietButton, SheetOption } from '../../components/amazen';
+import { AText, QuietButton, SheetOption } from '@/components/amazen';
 import { JobSheet } from '../job/job-ui';
 import type { TimeBannersState } from './use-time-banners';
 import type { TimeBanners } from './time-banners';

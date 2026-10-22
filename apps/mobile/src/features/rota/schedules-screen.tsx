@@ -3,17 +3,17 @@ import { Animated, Pressable, ScrollView, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { orgHasAddOn, localDateKey, todayKey } from '@hbcfield/shared/client';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
-import { useLiveRefresh } from '../../hooks/use-live-refresh';
-import { rotaApi, type RotaCell, type RotaWeek } from '../../lib/api';
-import { useResponsive } from '../../lib/responsive';
-import { AText, ChoicePill, Ground, HeaderBack, ScreenHeader, Well, Banner, SectionLabel } from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
+import { rotaApi, type RotaCell, type RotaWeek } from '@/lib/api';
+import { useResponsive } from '@/lib/responsive';
+import { AText, ChoicePill, Ground, HeaderBack, ScreenHeader, Well, Banner, SectionLabel } from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 import { JobSheet } from '../job/job-ui';
 import { NAME_W, Cell, Legend, RoundArrow, DaySheet } from './day-sheet';
-import { LoadingLine } from '../../components/loading-line';
-import { pullRefresh } from '../../components/pull-refresh';
+import { LoadingLine } from '@/components/loading-line';
+import { pullRefresh } from '@/components/pull-refresh';
 
 /**
  * SCHEDULES — who works when, in one workspace, for one week — as the CLOCK-IN

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useToast } from '../../island/island-context';
-import type { PickedImage } from '../../hooks/useImagePicker';
-import { worklogApi, type WorkLogNote } from '../../lib/api/worklog';
-import { uploadToPresignedUrl } from '../../lib/api/attachments';
-import { useOffline, useSyncStatus } from '../../offline/offline-context';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { addWorklogEntry, loadWorklog, worklogView, type WorklogItem } from '../../offline/attendance/worklog';
-import { adoptLegacyQueue, flushLegacy, queueLegacy, readLegacy } from '../../offline/attendance/legacy-worklog-queue';
+import { useToast } from '@/island/island-context';
+import type { PickedImage } from '@/hooks/use-image-picker';
+import { worklogApi, type WorkLogNote } from '@/lib/api/worklog';
+import { uploadToPresignedUrl } from '@/lib/api/attachments';
+import { useOffline, useSyncStatus } from '@/offline/offline-context';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { addWorklogEntry, loadWorklog, worklogView, type WorklogItem } from '@/offline/attendance/worklog';
+import { adoptLegacyQueue, flushLegacy, queueLegacy, readLegacy } from '@/offline/attendance/legacy-worklog-queue';
 
 /**
  * ONE SHIFT'S WORK LOG — the notes, and adding or removing one.

@@ -2,7 +2,7 @@ import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { PUSH_CHANNELS } from '@hbcfield/shared/client';
-import i18n, { i18nReady } from '../../i18n';
+import i18n, { i18nReady } from '@/i18n';
 import type { OutboxOp } from '../outbox/types';
 import { refusedShiftCopy, refusedShiftOps } from './refused-shift';
 import { refusedCrewCopy, refusedCrewOps } from '../tasks/refused-crew';

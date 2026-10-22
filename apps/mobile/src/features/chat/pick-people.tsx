@@ -8,11 +8,11 @@ import {
   type ChatConversation,
   type ChatUserRef,
 } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { chatApi } from '../../lib/api';
-import { AText, GlassInput, PrimaryButton, useTabSafe, Banner, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { chatApi } from '@/lib/api';
+import { AText, GlassInput, PrimaryButton, useTabSafe, Banner, SectionLabel } from '@/components/amazen';
 import { ContactRow } from './chat-rows';
-import { Arrive } from '../../components/amazen/motion';
+import { Arrive } from '@/components/amazen/motion';
 
 /** Toggle one id in a set, kept under the group's size. */
 export function toggled(set: ReadonlySet<string>, id: string, room: number): Set<string> {

@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { personInitials } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { AText } from './text';
 
 /**

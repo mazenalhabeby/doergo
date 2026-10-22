@@ -9,13 +9,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { AttendanceStatus, BreakStatus, TimeEntry } from '@hbcfield/shared/client';
-import { readShiftState, scheduleFor, heroParts, budgetParts } from '../../features/home/shift-state';
-import { readClockOut, AWAY_METRES } from '../../features/home/clock-out-state';
+import { readShiftState, scheduleFor, heroParts, budgetParts } from '@/features/home/shift-state';
+import { readClockOut, AWAY_METRES } from '@/features/home/clock-out-state';
 import { formatDistance } from '@hbcfield/shared/client';
-import { lookFor, offeredTo, readThread, severityShown, severityTone, unreadFor, groupIssues } from '../../features/home/issue-status';
-import type { ShiftIssue, ShiftIssueStatus } from '../../lib/api/shift-issues';
+import { lookFor, offeredTo, readThread, severityShown, severityTone, unreadFor, groupIssues } from '@/features/home/issue-status';
+import type { ShiftIssue, ShiftIssueStatus } from '@/lib/api/shift-issues';
 import { shiftCard } from './shift-card-files';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const read = (p: string) => readSource(path.join(SRC, p), 'utf8');

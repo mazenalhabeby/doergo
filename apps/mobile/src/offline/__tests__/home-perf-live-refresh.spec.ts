@@ -26,9 +26,9 @@ jest.mock('react-native', () => {
 
 import { AppState } from 'react-native';
 import { focus, mountHook, settle } from './hook-harness';
-import { __resetAppResume } from '../../lib/app-resume';
+import { __resetAppResume } from '@/lib/app-resume';
 import { connectivity } from '../connectivity';
-import { LIVE_REFRESH_COALESCE_MS, useLiveRefresh, type LiveRefreshOptions } from '../../hooks/use-live-refresh';
+import { LIVE_REFRESH_COALESCE_MS, useLiveRefresh, type LiveRefreshOptions } from '@/hooks/use-live-refresh';
 
 const appState = AppState as unknown as { currentState: string; mockEmit: (s: string) => void };
 

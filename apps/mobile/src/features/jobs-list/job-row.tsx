@@ -1,10 +1,10 @@
 import React, { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { usePendingFor } from '../../offline/offline-context';
-import { AText, Pill } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { usePendingFor } from '@/offline/offline-context';
+import { AText, Pill } from '@/components/amazen';
 import { hasHour, sameDay } from '../home/my-work';
 import { sameJobRowProps, type JobBand, type RowRight, type RowWho } from './jobs-logic';
 

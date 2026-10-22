@@ -4,7 +4,7 @@ import Reanimated, {
   Easing, interpolateColor, useAnimatedProps, useAnimatedStyle, useSharedValue, withSpring, withTiming,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 
 const AnimatedPath = Reanimated.createAnimatedComponent(Path);
 

@@ -3,22 +3,22 @@
  * and queued as the job's attachments in its lane, and the move behind them
  * carries their ids and waits for them — then all of it goes, in that order.
  */
-import { SyncEngine, type SyncTransport, type RecordsSink } from '../../offline/sync-engine';
-import { MemoryOutboxStore } from '../../offline/outbox/memory-store';
-import { MemoryFileRegistry } from '../../offline/files/sqlite-file-registry';
-import { OfflineFiles } from '../../offline/files/offline-files';
-import { FileUploadPreparer } from '../../offline/files/upload-preparer';
-import type { FileDisk } from '../../offline/files/types';
-import type { OutboxOp } from '../../offline/outbox/types';
+import { SyncEngine, type SyncTransport, type RecordsSink } from '@/offline/sync-engine';
+import { MemoryOutboxStore } from '@/offline/outbox/memory-store';
+import { MemoryFileRegistry } from '@/offline/files/sqlite-file-registry';
+import { OfflineFiles } from '@/offline/files/offline-files';
+import { FileUploadPreparer } from '@/offline/files/upload-preparer';
+import type { FileDisk } from '@/offline/files/types';
+import type { OutboxOp } from '@/offline/outbox/types';
 import type { StepForm } from '@hbcfield/shared/client';
 
-jest.mock('../../offline/ids', () => {
+jest.mock('@/offline/ids', () => {
   let n = 0;
   return { uuidv7: () => `0190f3c2-7b1a-7c3d-9e4f-c${String(++n).padStart(11, '0')}` };
 });
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { addTaskPhoto, changeTaskStatus } = require('../../offline/tasks/task-actions') as typeof import('../../offline/tasks/task-actions');
-const { prepareStepForm } = require('../../features/job/step-form-logic') as typeof import('../../features/job/step-form-logic');
+const { addTaskPhoto, changeTaskStatus } = require('@/offline/tasks/task-actions') as typeof import('@/offline/tasks/task-actions');
+const { prepareStepForm } = require('@/features/job/step-form-logic') as typeof import('@/features/job/step-form-logic');
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 function setup(online: () => boolean) {

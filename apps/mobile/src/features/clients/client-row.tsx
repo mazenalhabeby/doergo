@@ -1,12 +1,12 @@
 import React, { memo } from 'react';
 import { Pressable, View } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { isCompany } from '@hbcfield/shared/client';
-import type { MobileCustomer } from '../../lib/api';
-import { AText } from '../../components/amazen';
-import { Monogram } from '../../components/amazen/monogram';
-import { CallGlyph } from '../../components/glyphs/work-glyphs';
-import { openSafeUrl, telUrl } from '../../lib/safe-links';
+import type { MobileCustomer } from '@/lib/api';
+import { AText } from '@/components/amazen';
+import { Monogram } from '@/components/amazen/monogram';
+import { CallGlyph } from '@/components/glyphs/work-glyphs';
+import { openSafeUrl, telUrl } from '@/lib/safe-links';
 
 /**
  * One client in the book.

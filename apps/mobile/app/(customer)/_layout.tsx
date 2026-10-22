@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { OfflineProvider } from '../../src/offline/offline-context';
+import { OfflineProvider } from '@/offline/offline-context';
 import { Stack, useRouter, type Href } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type NotificationResponse } from 'expo-notifications';
-import { usePushNotifications, getTaskIdFromNotification } from '../../src/hooks/usePushNotifications';
-import { useTheme } from '../../src/contexts/theme-context';
-import { SocketProvider } from '../../src/contexts/socket-context';
-import { useAuth } from '../../src/contexts/auth-context';
-import { onSessionEnd } from '../../src/lib/session/session-registry';
+import { usePushNotifications, getTaskIdFromNotification } from '@/hooks/use-push-notifications';
+import { useTheme } from '@/contexts/theme-context';
+import { SocketProvider } from '@/contexts/socket-context';
+import { useAuth } from '@/contexts/auth-context';
+import { onSessionEnd } from '@/lib/session/session-registry';
 
 /*
   The customer portal's own QueryClient. Sensible defaults: config/units change

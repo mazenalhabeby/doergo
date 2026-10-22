@@ -1,13 +1,13 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { DateField } from '../../components';
+import { DateField } from '@/components';
 import { EquipmentFrame } from './equipment-frame';
 import { CaptureReviewFoot } from './capture-review';
 import { CaptureCamera, CaptureSkip } from './capture-camera';
-import { MediaAccessScreen } from '../../permissions/media-access-screen';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, type FieldColors } from '../../lib/constants';
+import { MediaAccessScreen } from '@/permissions/media-access-screen';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, type FieldColors } from '@/lib/constants';
 import { useAssetExpenseScreen } from './use-asset-expense-screen';
-import { NotAllowed } from '../../components/not-allowed';
+import { NotAllowed } from '@/components/not-allowed';
 
 /** The asset-expense screen — moved here unchanged from app/(app)/asset-expense.tsx (a route keeps only its export). */
 export function AssetExpenseScreen() {

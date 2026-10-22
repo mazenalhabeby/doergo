@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
-import { useAuth } from '../../contexts/auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { autoClockStore } from './store';
-import { insideOf } from '../../lib/clock-smart';
+import { insideOf } from '@/lib/clock-smart';
 
 const EMPTY: ReadonlySet<string> = new Set();
 

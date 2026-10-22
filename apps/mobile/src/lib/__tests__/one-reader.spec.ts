@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 /*
   ONE READER, ONE SET OF RULES — asked of the whole product.

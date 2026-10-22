@@ -3,13 +3,13 @@ import { ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { personName, chatPresenceLabel } from '@hbcfield/shared/client';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
-import { chatApi } from '../../lib/api';
-import { tabAccessFor } from '../../lib/tab-layout';
-import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well, WellDivider, Banner } from '../../components/amazen';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { chatApi } from '@/lib/api';
+import { tabAccessFor } from '@/lib/tab-layout';
+import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well, WellDivider, Banner } from '@/components/amazen';
 import { PersonAvatar } from './person-avatar';
-import { LoadingLine } from '../../components/loading-line';
+import { LoadingLine } from '@/components/loading-line';
 
 type Person = Awaited<ReturnType<typeof chatApi.person>> & { spaceName?: string | null };
 

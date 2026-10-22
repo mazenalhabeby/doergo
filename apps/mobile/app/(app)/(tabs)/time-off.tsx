@@ -3,40 +3,40 @@ import { View, ScrollView, RefreshControl } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { hasAccessModule, moduleAnywhere, type DetectedRequest, type LeaveType, type RequestKind } from '@hbcfield/shared/client';
-import { useAuth } from '../../../src/contexts/auth-context';
-import { mayReadTeamAvailability } from '../../../src/lib/permissions';
-import { useToast } from '../../../src/island/island-context';
-import { useTheme } from '../../../src/contexts/theme-context';
-import { useMyTimeOff } from '../../../src/features/time/use-my-time-off';
-import { LoadingState, ErrorState } from '../../../src/components/screen-states';
-import { useTourScroll, TourTarget } from '../../../src/features/tour';
-import { availabilityApi, type AvailabilityResponse } from '../../../src/lib/api';
-import type { ActionOutcome } from '../../../src/offline/actions/outcome';
-import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
-import { useResponsive } from '../../../src/lib/responsive';
-import { centeredContent } from '../../../src/components/screen-container';
-import { Ground, PrimaryButton, ScreenHeader, useTabSafe } from '../../../src/components/amazen';
+import { useAuth } from '@/contexts/auth-context';
+import { mayReadTeamAvailability } from '@/lib/permissions';
+import { useToast } from '@/island/island-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useMyTimeOff } from '@/features/time/use-my-time-off';
+import { LoadingState, ErrorState } from '@/components/screen-states';
+import { useTourScroll, TourTarget } from '@/features/tour';
+import { availabilityApi, type AvailabilityResponse } from '@/lib/api';
+import type { ActionOutcome } from '@/offline/actions/outcome';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { useResponsive } from '@/lib/responsive';
+import { centeredContent } from '@/components/screen-container';
+import { Ground, PrimaryButton, ScreenHeader, useTabSafe } from '@/components/amazen';
 import {
   availabilityInsights as insightsFor, datesWithStatus, filterRequests, getDayCount, mondayDow,
   scheduleDayMap, timeOffStats, toDateString, type RequestFilter,
-} from '../../../src/features/time-off/helpers';
+} from '@/features/time-off/helpers';
 import {
   daysNotAnswered,
   mapLimited,
   mergeAvailability,
   planAvailabilityFetch,
   rangeUnsupported,
-} from '../../../src/features/time-off/availability-plan';
-import { TimeOffStatsRow, ScheduleNotSetBanner } from '../../../src/features/time-off/stats-row';
-import { TimeOffCalendarCard } from '../../../src/features/time-off/calendar-card';
-import { TeamAvailabilityPanel } from '../../../src/features/time-off/availability-panel';
-import { TimeOffRequestForm } from '../../../src/features/time-off/request-form';
-import { TimeOffRequestsList } from '../../../src/features/time-off/requests-list';
-import { KindChooserSheet, RequestDetailSheet, type RequestRowData } from '../../../src/features/requests/request-parts';
-import { RequestFormCard } from '../../../src/features/requests/request-form-card';
-import { draftToBody, type RequestBody } from '../../../src/features/requests/request-model';
-import { useRequestOptions } from '../../../src/features/requests/use-request-options';
-import { useRequestsScreen } from "../../../src/features/requests/use-requests-screen";
+} from '@/features/time-off/availability-plan';
+import { TimeOffStatsRow, ScheduleNotSetBanner } from '@/features/time-off/stats-row';
+import { TimeOffCalendarCard } from '@/features/time-off/calendar-card';
+import { TeamAvailabilityPanel } from '@/features/time-off/availability-panel';
+import { TimeOffRequestForm } from '@/features/time-off/request-form';
+import { TimeOffRequestsList } from '@/features/time-off/requests-list';
+import { KindChooserSheet, RequestDetailSheet, type RequestRowData } from '@/features/requests/request-parts';
+import { RequestFormCard } from '@/features/requests/request-form-card';
+import { draftToBody, type RequestBody } from '@/features/requests/request-model';
+import { useRequestOptions } from '@/features/requests/use-request-options';
+import { useRequestsScreen } from "@/features/requests/use-requests-screen";
 
 /**
  * REQUESTS — everything a member asks the person responsible for them: leave

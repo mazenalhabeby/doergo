@@ -3,8 +3,8 @@ import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { CONTACT_IMPORT_MAX, type PickRow, type PickSection } from '@hbcfield/shared/client';
-import { useTheme } from '../../../contexts/theme-context';
-import { AText, Chip, Eyebrow, FilterPill, FilterRow, PrimaryButton, SearchField } from '../../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, Chip, Eyebrow, FilterPill, FilterRow, PrimaryButton, SearchField } from '@/components/amazen';
 import { ImportRow, ROW_HEIGHT } from './import-row';
 import type { useContactsImport } from './use-contacts-import';
 

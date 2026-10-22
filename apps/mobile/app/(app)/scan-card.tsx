@@ -2,20 +2,20 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Ground, HeaderBack, ScreenHeader } from '../../src/components/amazen';
-import { goBack } from '../../src/lib/go-back';
-import { useToast } from '../../src/island/island-context';
-import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
-import { useCameraAccess } from '../../src/permissions/use-media-access';
-import { useAuth } from '../../src/contexts/auth-context';
-import { holds } from '../../src/lib/permissions';
-import { SPACING, FONT_SIZE } from '../../src/lib/constants';
-import { useCardCapture } from '../../src/features/scan-card/use-card-capture';
-import { useCardReview } from '../../src/features/scan-card/use-card-review';
-import { useCardSaveFlow } from '../../src/features/scan-card/use-card-save-flow';
-import { CardReviewScreen } from '../../src/features/scan-card/card-review-screen';
-import { CardCamera } from '../../src/features/scan-card/card-camera';
-import { NotAllowed } from '../../src/components/not-allowed';
+import { Ground, HeaderBack, ScreenHeader } from '@/components/amazen';
+import { goBack } from '@/lib/go-back';
+import { useToast } from '@/island/island-context';
+import { MediaAccessScreen } from '@/permissions/media-access-screen';
+import { useCameraAccess } from '@/permissions/use-media-access';
+import { useAuth } from '@/contexts/auth-context';
+import { holds } from '@/lib/permissions';
+import { SPACING, FONT_SIZE } from '@/lib/constants';
+import { useCardCapture } from '@/features/scan-card/use-card-capture';
+import { useCardReview } from '@/features/scan-card/use-card-review';
+import { useCardSaveFlow } from '@/features/scan-card/use-card-save-flow';
+import { CardReviewScreen } from '@/features/scan-card/card-review-screen';
+import { CardCamera } from '@/features/scan-card/card-camera';
+import { NotAllowed } from '@/components/not-allowed';
 
 /**
  * Scan a business card into a client.

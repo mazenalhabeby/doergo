@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CalendarItem, CalendarItemKind, DayKind } from '@hbcfield/shared/client';
-import type { AmazenColors } from '../../theme/amazen';
-import { calendarApi, type CalendarRange } from '../../lib/api';
-import { useLiveRefresh } from '../../hooks/use-live-refresh';
-import i18n from '../../i18n';
-import { useAuth } from '../../contexts/auth-context';
+import type { AmazenColors } from '@/theme/amazen';
+import { calendarApi, type CalendarRange } from '@/lib/api';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
+import i18n from '@/i18n';
+import { useAuth } from '@/contexts/auth-context';
 import { calendarPageKey, calendarPages } from './calendar-pages';
 import { localDateKey } from '@hbcfield/shared/client';
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HANDOVER_NOTE_MAX, HANDOVER_PHOTOS_MAX } from '@hbcfield/shared/client';
-import type { PickedImage } from '../../../hooks/useImagePicker';
-import { PrimaryButton, Banner, JobField, QuietButton } from '../../../components/amazen';
+import type { PickedImage } from '@/hooks/use-image-picker';
+import { PrimaryButton, Banner, JobField, QuietButton } from '@/components/amazen';
 import { JobSheet } from '../job-ui';
 import { PhotoPicks, usePhotoPicks } from '../photo-picks';
 

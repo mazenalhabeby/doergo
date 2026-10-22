@@ -2,12 +2,12 @@ import { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { usePortalRequests } from '../../../src/hooks/usePortalRequests';
+import { usePortalRequests } from '@/hooks/use-portal-requests';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../../src/contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
-import { RequestRow } from '../../../src/features/customer/request-bits';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
+import { RequestRow } from '@/features/customer/request-bits';
 
 const CLOSED = /COMPLET|CLOSED|CANCEL|RESOLV|DONE/i;
 type Filter = 'all' | 'open' | 'done';

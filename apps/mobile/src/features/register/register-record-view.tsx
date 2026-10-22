@@ -1,8 +1,8 @@
 'use client';
 
 import { kindHolderLabel, formatMoney } from '@hbcfield/shared/client';
-import { type RegisterLogEntry } from '../../lib/api';
-import { Pill } from '../../components/amazen';
+import { type RegisterLogEntry } from '@/lib/api';
+import { Pill } from '@/components/amazen';
 import { holderName, statusLabel } from './register-words';
 import type { useRegisterRecord } from './use-register-record';
 

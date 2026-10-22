@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, SectionLabel } from '@/components/amazen';
 import { CameraGlyph, GalleryGlyph } from './job-glyphs';
-import { httpsUrl, openSafeUrl } from '../../lib/safe-links';
-import { resolveMediaUrl } from '../../lib/api/client';
+import { httpsUrl, openSafeUrl } from '@/lib/safe-links';
+import { resolveMediaUrl } from '@/lib/api/client';
 
 export interface JobFile {
   id: string;

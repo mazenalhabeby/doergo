@@ -1,10 +1,10 @@
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { formatShortDate } from '../../lib/utils';
-import { AText, Well, Banner, SectionLabel } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { formatShortDate } from '@/lib/utils';
+import { AText, Well, Banner, SectionLabel } from '@/components/amazen';
 import type { AvailabilityInsights } from './helpers';
-import { LoadingLine } from '../../components/loading-line';
+import { LoadingLine } from '@/components/loading-line';
 
 /** Who else is out over the picked range, and how thin the team gets — for somebody who may read it. */
 export function TeamAvailabilityPanel({

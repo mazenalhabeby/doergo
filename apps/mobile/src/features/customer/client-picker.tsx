@@ -3,12 +3,12 @@ import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { clientFilterQuery, type ClientKind } from '@hbcfield/shared/client';
-import { PressableScale } from '../../components/pressable-scale';
-import { Skeleton } from '../../components/skeleton';
+import { PressableScale } from '@/components/pressable-scale';
+import { Skeleton } from '@/components/skeleton';
 import { ClientAvatar } from './client-avatar';
-import { customersApi, type MobileCustomer } from '../../lib/api';
-import { useTheme } from '../../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '../../lib/constants';
+import { customersApi, type MobileCustomer } from '@/lib/api';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '@/lib/constants';
 import { SEARCH_DEBOUNCE_MS, MIN_SEARCH, RESULT_LIMIT, PickerRow, styles } from './picker-row';
 
 /**

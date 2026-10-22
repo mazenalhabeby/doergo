@@ -1,7 +1,7 @@
 import { getEndOfDay, getStartOfDay } from '@hbcfield/shared/client';
-import type { ClientsDue, DueReminder } from '../../lib/api/customers';
+import type { ClientsDue, DueReminder } from '@/lib/api/customers';
 import type { Phrase } from './phrase';
-import { STILL_MINE } from '../../offline/actions/outcome';
+import { STILL_MINE } from '@/offline/actions/outcome';
 
 /**
  * What the Clients card says — pure, so the words are tested.

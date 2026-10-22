@@ -5,9 +5,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import { DetentSheet, type Detent } from '../../src/features/route/detent-sheet';
-import { BlurSheet } from '../../src/components/blur-sheet';
-import { SheetPanel } from '../../src/components/sheet-panel';
+import { DetentSheet, type Detent } from '@/features/route/detent-sheet';
+import { BlurSheet } from '@/components/blur-sheet';
+import { SheetPanel } from '@/components/sheet-panel';
 import {
   detectNavApps,
   navDecision,
@@ -16,17 +16,17 @@ import {
   rememberedNavApp,
   soleNavApp,
   type InstalledNavApp,
-} from '../../src/lib/nav-apps';
-import { PressableScale } from '../../src/components/pressable-scale';
+} from '@/lib/nav-apps';
+import { PressableScale } from '@/components/pressable-scale';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { getFix } from '../../src/lib/location-fix';
-import { tasksApi, type Task } from '../../src/lib/api';
-import { isMyRouteStop, hasArrived } from '../../src/lib/my-route';
-import { useAuth } from '../../src/contexts/auth-context';
-import { useTheme } from '../../src/contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
+import { getFix } from '@/lib/location-fix';
+import { tasksApi, type Task } from '@/lib/api';
+import { isMyRouteStop, hasArrived } from '@/lib/my-route';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
 import {
   buildGoogleMapsUrl,
   buildNavUrl,
@@ -37,15 +37,15 @@ import {
   formatDuration,
 } from '@hbcfield/shared/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useOffline } from '../../src/offline/offline-context';
-import { overlayTask } from '../../src/offline/tasks/overlay';
-import { restoreRoute } from '../../src/offline/routes/saved-route';
-import { planDay } from '../../src/offline/routes/plan-route';
-import { isStalePlan } from '../../src/lib/route-day';
-import { formatDistance } from '../../src/lib/distance';
-import { useRoutePlannerScreen } from '../../src/features/route/use-route-planner-screen';
-import { fmtDur, LegRow, PickRow, styles } from '../../src/features/route/route-planner-screen-helpers';
-import { RoutePlannerScreenYourRoute } from '../../src/features/route/route-planner-screen-your-route';
+import { useOffline } from '@/offline/offline-context';
+import { overlayTask } from '@/offline/tasks/overlay';
+import { restoreRoute } from '@/offline/routes/saved-route';
+import { planDay } from '@/offline/routes/plan-route';
+import { isStalePlan } from '@/lib/route-day';
+import { formatDistance } from '@/lib/distance';
+import { useRoutePlannerScreen } from '@/features/route/use-route-planner-screen';
+import { fmtDur, LegRow, PickRow, styles } from '@/features/route/route-planner-screen-helpers';
+import { RoutePlannerScreenYourRoute } from '@/features/route/route-planner-screen-your-route';
 
 export default function RoutePlannerScreen() {
   const vm = useRoutePlannerScreen();

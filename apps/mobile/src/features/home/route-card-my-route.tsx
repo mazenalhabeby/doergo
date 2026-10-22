@@ -1,10 +1,10 @@
 import { Pressable, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { AText, CardSurface, PrimaryButton } from '../../components/amazen';
-import { selection } from '../../lib/haptics';
-import { formatDistance } from '../../lib/distance';
+import { AText, CardSurface, PrimaryButton } from '@/components/amazen';
+import { selection } from '@/lib/haptics';
+import { formatDistance } from '@/lib/distance';
 import { hasHour } from './my-work';
-import { weekdayName } from '../../lib/app-dates';
+import { weekdayName } from '@/lib/app-dates';
 import { RouteSketch } from './route-sketch';
 import { Notice, StopRow, NextStop, MapGlyph } from './next-stop';
 import type { RouteCardState } from './use-route-card';

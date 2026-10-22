@@ -2,17 +2,17 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useReachSpaces } from '../../hooks/use-reach-spaces';
-import { formatDay } from '../../lib/money';
-import { useResponsive } from '../../lib/responsive';
-import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, Pill } from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+import { useTheme } from '@/contexts/theme-context';
+import { useReachSpaces } from '@/hooks/use-reach-spaces';
+import { formatDay } from '@/lib/money';
+import { useResponsive } from '@/lib/responsive';
+import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, Pill } from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 import { WellRow } from '../register/well-row';
 import { requestsOfSpaces, stageOf, type ListedRequest, type RequestStage } from './requests-store';
-import { workspaceFilter } from '../../components/workspace-filter';
-import { refreshControl } from '../../components/pull-refresh';
-import { useFetchData } from '../../hooks/useFetchData';
+import { workspaceFilter } from '@/components/workspace-filter';
+import { refreshControl } from '@/components/pull-refresh';
+import { useFetchData } from '@/hooks/use-fetch-data';
 
 const STAGES: RequestStage[] = ['waiting', 'job', 'done'];
 

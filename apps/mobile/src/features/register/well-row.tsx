@@ -1,7 +1,7 @@
 import React, { memo, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
 
 /**
  * One row of a list drawn as ONE well — `first` rounds the top, `last` the

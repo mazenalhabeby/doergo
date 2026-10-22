@@ -5,14 +5,14 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTheme } from '../../src/contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../src/lib/constants';
-import { portalApi } from '../../src/lib/api/portal';
-import { useAuth } from '../../src/contexts/auth-context';
-import { useQueuedCreate } from '../../src/offline/actions/queued-create';
-import { portalColor, portalTint, portalIcon } from '../../src/lib/portal-ui';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
+import { portalApi } from '@/lib/api/portal';
+import { useAuth } from '@/contexts/auth-context';
+import { useQueuedCreate } from '@/offline/actions/queued-create';
+import { portalColor, portalTint, portalIcon } from '@/lib/portal-ui';
 import type { IntakeCategory } from '@hbcfield/shared/client';
-import { type StepId, Option, styles } from '../../src/features/customer/screens/option';
+import { type StepId, Option, styles } from '@/features/customer/screens/option';
 
 export default function ReportWizard() {
   const insets = useSafeAreaInsets();

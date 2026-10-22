@@ -205,7 +205,7 @@ describe('the scanner keeps the card on the phone', () => {
     const review = stripComments(fs.readFileSync(path.join(MOBILE, 'src/features/scan-card/card-review-screen.tsx'), 'utf8'));
     expect(review).toContain('cardFieldsFor');
     expect(review).toContain('homelessFields');
-    const { cardFieldsFor, homelessFields, CARD_FIELDS } = require('../../features/customer/card-review');
+    const { cardFieldsFor, homelessFields, CARD_FIELDS } = require('@/features/customer/card-review');
     const everything = Object.fromEntries(CARD_FIELDS.map((k: string) => [k, 'x'])) as Record<string, string>;
     for (const [kind, destination] of [['COMPANY', 'client'], ['PERSON', 'client'], ['PERSON', 'contact']] as const) {
       const shown: string[] = cardFieldsFor(kind, destination);

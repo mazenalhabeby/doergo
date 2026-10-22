@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { calendarApi, type LeaveCount } from '../../lib/api';
-import { requestsApi } from '../../lib/api/technicians';
-import type { MemberLeaveBalance } from '../../lib/leave-balance';
+import { calendarApi, type LeaveCount } from '@/lib/api';
+import { requestsApi } from '@/lib/api/technicians';
+import type { MemberLeaveBalance } from '@/lib/leave-balance';
 
 /**
  * What a leave range COSTS, asked of the server — the one count the request is

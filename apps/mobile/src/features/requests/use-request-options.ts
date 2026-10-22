@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { InteractionManager } from 'react-native';
-import { useAuth } from '../../contexts/auth-context';
-import { OPTIONS_BEFORE_REQUESTS, requestsApi, type RequestOptions } from '../../lib/api/technicians';
+import { useAuth } from '@/contexts/auth-context';
+import { OPTIONS_BEFORE_REQUESTS, requestsApi, type RequestOptions } from '@/lib/api/technicians';
 
 /*
   WHAT THIS MEMBER MAY ASK FOR — read once, after the screen has drawn.

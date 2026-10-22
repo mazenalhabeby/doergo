@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, ScrollView, TextInput, View, type TextInputProps } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { CountBadge } from './count-badge';
 import { AText } from './text';
 

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { destinationsFor, MANAGE_ROWS, MEMBER_ROWS } from '../../../lib/manage-rows';
+import { destinationsFor, MANAGE_ROWS, MEMBER_ROWS } from '@/lib/manage-rows';
 import { shortcutCandidates, shownShortcuts, smartPicks, MIN_TILES, SLOTS } from '../shortcuts';
 
 /**

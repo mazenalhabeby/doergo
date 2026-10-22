@@ -1,6 +1,6 @@
 import { personName } from '@hbcfield/shared/client';
 import type { TFunction } from 'i18next';
-import type { RegisterHolder } from '../../lib/api';
+import type { RegisterHolder } from '@/lib/api';
 
 /** Who has it, in words — a member's name, else a client's. Several: the first and how many more. */
 export function holderName(holders: RegisterHolder[] | undefined | null): string | null {

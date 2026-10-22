@@ -6,8 +6,8 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { COLORS, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '../../lib/constants';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '@/lib/constants';
 import { useTour } from './tour-context';
 
 export function GuideSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {

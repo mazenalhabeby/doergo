@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 /*
   ⚠️ THE 1.0.5 RELEASE WENT UNANNOUNCED, and none of the three reasons were a

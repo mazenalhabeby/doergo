@@ -1,6 +1,6 @@
 import {
   shapeFor, faceFor, viewAllSpaceIds, isMine, isCanceled, withoutCanceled, stepLabelFor, stepsFor, isClosed, tasksOn, figuresFor,
-} from '../../features/home/my-work';
+} from '@/features/home/my-work';
 import type { Task } from '../api/types';
 
 const task = (over: Record<string, unknown>): Task => ({

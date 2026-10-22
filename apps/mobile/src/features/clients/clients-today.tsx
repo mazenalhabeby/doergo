@@ -1,15 +1,15 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, Eyebrow, Well } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, Eyebrow, Well } from '@/components/amazen';
 import { usePhrase } from '../home/phrase';
 import { headline } from '../home/clients-state';
 import { ReminderList } from '../home/reminder-list';
 import { useClientsDue } from '../home/use-clients-due';
 import { WellDoor } from '../home/well-door';
 import { GlyphTile } from '../home/glyph-tile';
-import { ColdGlyph } from '../../components/glyphs/crm-glyphs';
+import { ColdGlyph } from '@/components/glyphs/crm-glyphs';
 
 const ROWS = 5;
 

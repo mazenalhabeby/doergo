@@ -1,11 +1,11 @@
 import { useCallback, useRef } from 'react';
-import { customersApi, type MobileCustomer } from '../../lib/api';
-import { newClientInput } from '../../lib/client-locale';
-import { uuidv7 } from '../../offline/ids';
-import { useQueuedCreate } from '../../offline/actions/queued-create';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { addContactFromPhone } from '../../offline/crm/client-actions';
-import type { ActionOutcome } from '../../offline/actions/outcome';
+import { customersApi, type MobileCustomer } from '@/lib/api';
+import { newClientInput } from '@/lib/client-locale';
+import { uuidv7 } from '@/offline/ids';
+import { useQueuedCreate } from '@/offline/actions/queued-create';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { addContactFromPhone } from '@/offline/crm/client-actions';
+import type { ActionOutcome } from '@/offline/actions/outcome';
 import {
   cardClientExtras, cardClientNames, cardContactInput,
   type CardDestination, type CardKind, type CardValues,

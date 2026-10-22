@@ -5,7 +5,7 @@ import Animated, {
   runOnJS, useAnimatedStyle, useSharedValue, withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { RADIUS } from '../../lib/constants';
+import { RADIUS } from '@/lib/constants';
 
 /**
  * A sheet that lives ON the map instead of over it.

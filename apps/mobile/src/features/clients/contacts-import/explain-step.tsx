@@ -2,9 +2,9 @@ import React from 'react';
 import { Linking, ScrollView, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../contexts/theme-context';
-import { AText, Eyebrow, GhostButton, PrimaryButton, Well, WellDivider } from '../../../components/amazen';
-import type { MediaAccess } from '../../../permissions/use-media-access';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, Eyebrow, GhostButton, PrimaryButton, Well, WellDivider } from '@/components/amazen';
+import type { MediaAccess } from '@/permissions/use-media-access';
 
 /**
  * What happens to an address book, said BEFORE the system asks for it.

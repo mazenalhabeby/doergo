@@ -2,12 +2,12 @@ import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { formatCalendarDate } from '@hbcfield/shared/client';
-import { SPACING } from '../../lib/constants';
-import { PressableScale } from '../../components/pressable-scale';
+import { SPACING } from '@/lib/constants';
+import { PressableScale } from '@/components/pressable-scale';
 // The app's own calendar, in plain JS. `@react-native-community/datetimepicker`
 // would be a NATIVE dependency, and a native dependency means a fresh build
 // rather than an over-the-air update — a heavy price for one date field.
-import { DatePickerModal } from '../../components/date-picker-modal';
+import { DatePickerModal } from '@/components/date-picker-modal';
 import type { CredentialPhoto } from './use-credential-photo';
 import { s, useSupplyPalette } from './styles';
 

@@ -1,7 +1,7 @@
 import { Image, Pressable, ScrollView, View } from 'react-native';
-import { shiftIssuesApi } from '../../lib/api/shift-issues';
-import { SheetPanel } from '../../components/sheet-panel';
-import { AText, Chip } from '../../components/amazen';
+import { shiftIssuesApi } from '@/lib/api/shift-issues';
+import { SheetPanel } from '@/components/sheet-panel';
+import { AText, Chip } from '@/components/amazen';
 import { readThread, severityShown, severityTone } from '../home/issue-status';
 import { Note, Bubble } from './shift-issue-thread-sheet-helpers';
 import { ShiftIssueThreadSheetReasonOptional } from './shift-issue-thread-sheet-reason-optional';

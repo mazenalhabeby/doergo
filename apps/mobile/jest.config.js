@@ -16,6 +16,8 @@ module.exports = {
   rootDir: '.',
   testMatch: ['<rootDir>/src/**/__tests__/**/*.spec.ts'],
   moduleNameMapper: {
+    // The app's own alias (tsconfig `paths`, which Metro reads too): `@/x` is `src/x`.
+    '^@/(.*)$': '<rootDir>/src/$1',
     '^@hbcfield/shared/client$': '<rootDir>/../../packages/shared/dist/client.js',
     // These specs test RULES, not rendering, so react-native is stubbed rather
     // than dragging in jest-expo and a native mock stack for two symbols.

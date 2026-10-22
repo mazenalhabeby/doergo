@@ -1,7 +1,7 @@
-import { sessionStartedAt } from '../../lib/api/client';
-import { mayActOnPush } from '../../lib/push-recipient';
-import { requestExtraTimeFromPhone, skipAutoRestFromPhone, undoAutoClockInFromPhone } from '../../offline/attendance/shift-actions';
-import { liveEngineFor } from '../../offline/live-engine';
+import { sessionStartedAt } from '@/lib/api/client';
+import { mayActOnPush } from '@/lib/push-recipient';
+import { requestExtraTimeFromPhone, skipAutoRestFromPhone, undoAutoClockInFromPhone } from '@/offline/attendance/shift-actions';
+import { liveEngineFor } from '@/offline/live-engine';
 import { AUTO_CLOCK_ACTIONS, autoClockNotifier, type AutoClockAction } from './notifications';
 
 export type AutoClockActionResult =

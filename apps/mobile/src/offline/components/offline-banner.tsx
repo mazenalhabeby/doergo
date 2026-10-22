@@ -3,8 +3,8 @@ import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { COLORS, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '../../lib/constants';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '@/lib/constants';
 import { useConnectivity, useLastSyncedAt, useSyncStatus } from '../offline-context';
 import { freshnessOf } from '../freshness';
 

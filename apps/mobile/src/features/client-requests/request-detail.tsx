@@ -3,14 +3,14 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { canReceiveTasks, personName } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useAuth } from '../../contexts/auth-context';
-import { useToast } from '../../island/island-context';
-import { locationsApi, portalOfficeApi, type LocationAssignment } from '../../lib/api';
-import type { TriageInput } from '../../lib/api/portal-office';
-import { holdsIn } from '../../lib/permissions';
-import { formatDay } from '../../lib/money';
-import { useResponsive } from '../../lib/responsive';
+import { useTheme } from '@/contexts/theme-context';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/island/island-context';
+import { locationsApi, portalOfficeApi, type LocationAssignment } from '@/lib/api';
+import type { TriageInput } from '@/lib/api/portal-office';
+import { holdsIn } from '@/lib/permissions';
+import { formatDay } from '@/lib/money';
+import { useResponsive } from '@/lib/responsive';
 import {
   AText,
   ChoicePill,
@@ -22,12 +22,12 @@ import {
   Pill,
   SectionLabel,
   SheetOption,
-} from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+} from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 import { JobSheet } from '../job/job-ui';
 import { knownRequest, requestsOfPortal, type ListedRequest } from './requests-store';
-import { FactsWell } from '../../components/facts-well';
-import { caught } from '../../lib/caught';
+import { FactsWell } from '@/components/facts-well';
+import { caught } from '@/lib/caught';
 
 const PRIORITIES: TriageInput['priority'][] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 

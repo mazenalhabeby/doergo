@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { type PickedImage } from '../../hooks/useImagePicker';
+import { useTheme } from '@/contexts/theme-context';
+import { type PickedImage } from '@/hooks/use-image-picker';
 import { CameraGlyph, CloseGlyph, GalleryGlyph } from '../job/job-glyphs';
 import { AddTile } from '../job/job-files';
 

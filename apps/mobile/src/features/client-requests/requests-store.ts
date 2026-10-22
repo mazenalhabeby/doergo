@@ -1,4 +1,4 @@
-import { portalOfficeApi, type OfficeRequest } from '../../lib/api';
+import { portalOfficeApi, type OfficeRequest } from '@/lib/api';
 
 /** A request as the list holds it — with the workspace of the portal it came through. */
 export type ListedRequest = OfficeRequest & { portalId: string; portalSpaceId: string };

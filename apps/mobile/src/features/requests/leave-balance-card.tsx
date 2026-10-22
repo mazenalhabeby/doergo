@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { localDateKey } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, Sunken, WellDivider, ReceiptRow } from '../../components/amazen';
-import { balanceRows, carryNote, leaveYearLabel, signedDays, type MemberLeaveBalance } from '../../lib/leave-balance';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, Sunken, WellDivider, ReceiptRow } from '@/components/amazen';
+import { balanceRows, carryNote, leaveYearLabel, signedDays, type MemberLeaveBalance } from '@/lib/leave-balance';
 
 /** A day `YYYY-MM-DD` at noon, local — never shifted across midnight by a zone. */
 const noon = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00`);

@@ -5,7 +5,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 const LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;
 const dir = path.join(__dirname, '../../i18n/locales');

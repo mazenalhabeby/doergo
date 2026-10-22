@@ -3,8 +3,8 @@ import { ScrollView, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import type { ContactImportSummary } from '@hbcfield/shared/client';
-import { useTheme } from '../../../contexts/theme-context';
-import { AText, GhostButton, PrimaryButton, Well, WellDivider, shadowDiscPrimary } from '../../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, GhostButton, PrimaryButton, Well, WellDivider, shadowDiscPrimary } from '@/components/amazen';
 
 /** What the SERVER did — not what the phone expected. */
 export function DoneStep({

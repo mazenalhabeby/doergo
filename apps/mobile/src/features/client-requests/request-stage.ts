@@ -1,4 +1,4 @@
-import type { OfficeRequest } from '../../lib/api/portal-office';
+import type { OfficeRequest } from '@/lib/api/portal-office';
 
 /* Pure — no API import, so the rule is testable without the app's native modules. */
 export type RequestStage = 'waiting' | 'job' | 'done';

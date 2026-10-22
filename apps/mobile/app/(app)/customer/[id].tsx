@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { RecordScreen } from '../../../src/features/customer/record/record-screen';
+import { RecordScreen } from '@/features/customer/record/record-screen';
 
 /**
  * The client record — the screen lives in `src/components/customer/record/`;

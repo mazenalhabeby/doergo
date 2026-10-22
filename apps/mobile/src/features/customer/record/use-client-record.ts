@@ -1,23 +1,23 @@
 import { useCallback } from 'react';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { customersApi, type MobileCustomer } from '../../../lib/api';
-import type { MobileCustomerContact, MobileCustomerAddress } from '../../../lib/api/customers';
-import { ROUTES } from '../../../lib/constants';
-import { useQueuedCreate } from '../../../offline/actions/queued-create';
-import { useQueuedWrite } from '../../../offline/actions/queued-write';
-import { useSyncStatus } from '../../../offline/offline-context';
+import { customersApi, type MobileCustomer } from '@/lib/api';
+import type { MobileCustomerContact, MobileCustomerAddress } from '@/lib/api/customers';
+import { ROUTES } from '@/lib/constants';
+import { useQueuedCreate } from '@/offline/actions/queued-create';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { useSyncStatus } from '@/offline/offline-context';
 import {
   updateClientFromPhone,
   updateContactFromPhone,
   removeContactFromPhone,
   discardPendingContact,
-} from '../../../offline/crm/client-actions';
-import { clientLocalePayload } from '../../../lib/client-locale';
-import { useToast } from '../../../island/island-context';
+} from '@/offline/crm/client-actions';
+import { clientLocalePayload } from '@/lib/client-locale';
+import { useToast } from '@/island/island-context';
 import type { ComposedActivity } from '../activity-composer';
 import type { ReminderAssignee } from '../reminder-fields';
-import { useAuth } from '../../../contexts/auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import type { ContactSide } from '../add-contact-sheet';
 import { useClientRecordData } from './use-client-record-data';
 import { useClientRecordActions } from './use-client-record-actions';

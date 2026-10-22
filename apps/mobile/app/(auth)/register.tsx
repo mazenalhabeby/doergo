@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Linking, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../src/contexts/auth-context';
-import { useTheme } from '../../src/contexts/theme-context';
-import { authApi } from '../../src/lib/api';
-import { AText, PrimaryButton } from '../../src/components/amazen';
-import { AuthCard, AuthField, AuthFrame, AuthLinkLine } from '../../src/features/auth/auth-ui';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { authApi } from '@/lib/api';
+import { AText, PrimaryButton } from '@/components/amazen';
+import { AuthCard, AuthField, AuthFrame, AuthLinkLine } from '@/features/auth/auth-ui';
 
 interface FormErrors {
   firstName?: string;

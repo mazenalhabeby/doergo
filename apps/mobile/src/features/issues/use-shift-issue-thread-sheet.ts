@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useAuth } from '../../contexts/auth-context';
-import { useSocketContext } from '../../contexts/socket-context';
-import { useOffline, useSyncStatus } from '../../offline/offline-context';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { pendingIssueEvents, sendIssueMessageFromPhone } from '../../offline/issues/issue-actions';
-import { shiftIssuesApi, type ShiftIssue } from '../../lib/api/shift-issues';
-import { useImagePicker, type PickedImage } from '../../hooks/useImagePicker';
+import { useTheme } from '@/contexts/theme-context';
+import { useAuth } from '@/contexts/auth-context';
+import { useSocketContext } from '@/contexts/socket-context';
+import { useOffline, useSyncStatus } from '@/offline/offline-context';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { pendingIssueEvents, sendIssueMessageFromPhone } from '@/offline/issues/issue-actions';
+import { shiftIssuesApi, type ShiftIssue } from '@/lib/api/shift-issues';
+import { useImagePicker, type PickedImage } from '@/hooks/use-image-picker';
 import { lookFor, offeredTo, type IssueActions } from '../home/issue-status';
 import { MAX_PHOTOS, uploadPhotos } from './photos';
 import { personName } from '@hbcfield/shared/client';
-import { toneColor } from '../../theme/tone-color';
+import { toneColor } from '@/theme/tone-color';
 
 /** ShiftIssueThreadSheet's state and handlers — everything before its markup, moved here unchanged. */
 export function useShiftIssueThreadSheet({

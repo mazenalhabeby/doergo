@@ -2,11 +2,11 @@ import { memo } from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { chatDayLabel, type ChatConversation } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
 import Svg, { Path } from 'react-native-svg';
-import { InkIcon } from '../../components/amazen/ink-icon';
-import { Arrive } from '../../components/amazen/motion';
+import { InkIcon } from '@/components/amazen/ink-icon';
+import { Arrive } from '@/components/amazen/motion';
 import { PersonAvatar } from '../people/person-avatar';
 
 /** What the components of chat-rows.tsx share (moved here unchanged). */

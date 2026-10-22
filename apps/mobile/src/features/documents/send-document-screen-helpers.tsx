@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TextInput } from 'react-native';
-import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type FieldColors } from '../../lib/constants';
+import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type FieldColors } from '@/lib/constants';
 
 /** SendDocumentScreen's module-level helpers, moved here unchanged so its sections can read them too. */
 export function Field({

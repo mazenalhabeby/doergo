@@ -3,7 +3,7 @@ import {
   dayOf, draftAnswers, draftErrors, emptyDraft, errorKey, fieldLabel, filesToSend, finalAnswers, isoDay, pageComplete,
   paginateForm, parseNumber, prepareStepForm, reasonFromAnswers, refusalFieldErrors, shownAnswer, signatureFile, stillNeeded,
   type DraftPhoto, type FormDraft, type SentFile,
-} from '../../features/job/step-form-logic';
+} from '@/features/job/step-form-logic';
 
 /**
  * Step forms — the answers. The draft is judged by the SHARED rule the server

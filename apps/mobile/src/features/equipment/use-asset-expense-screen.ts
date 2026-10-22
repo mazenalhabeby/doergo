@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
 import { router } from 'expo-router';
 import { File as FsFile } from 'expo-file-system';
-import { forgetHeldAssets } from '../../hooks/use-held-assets';
-import { assetsApi, uploadToPresignedUrl } from '../../lib/api';
+import { forgetHeldAssets } from '@/hooks/use-held-assets';
+import { assetsApi, uploadToPresignedUrl } from '@/lib/api';
 import { moneyToCents } from '@hbcfield/shared/client';
-import { submitExpenseFromPhone } from '../../offline/assets/expense-actions';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
+import { submitExpenseFromPhone } from '@/offline/assets/expense-actions';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
 import { useAssetExpenseScreenData } from './use-asset-expense-screen-data';
-import { caught } from '../../lib/caught';
+import { caught } from '@/lib/caught';
 
 /** AssetExpenseScreen's state and handlers — everything before its markup, moved here unchanged. */
 export function useAssetExpenseScreen() {

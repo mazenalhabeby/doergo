@@ -1,9 +1,9 @@
 import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { NativeSignaturePad, type NativeSignaturePadHandle } from '../../components/signature-pad-native';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { NativeSignaturePad, type NativeSignaturePadHandle } from '@/components/signature-pad-native';
+import { AText } from '@/components/amazen';
 
 export interface SignPadHandle {
   /** The drawing as a PNG data URL; null when nothing was drawn. */

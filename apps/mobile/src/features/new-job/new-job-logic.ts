@@ -4,7 +4,7 @@
  * ⚠️ PURE AND REACT-NATIVE-FREE: the rules the form acts on are tested
  * (`new-job-*.spec.ts`); the screen only draws what these return.
  */
-import type { CreateTaskInput } from '../../lib/api/types';
+import type { CreateTaskInput } from '@/lib/api/types';
 
 export const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
 export type Priority = typeof PRIORITIES[number];

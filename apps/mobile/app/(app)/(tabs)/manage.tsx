@@ -3,14 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { useAuth } from '../../../src/contexts/auth-context';
-import { useTheme } from '../../../src/contexts/theme-context';
-import { useScreenWidth } from '../../../src/components/screen-container';
-import { manageRowsFor } from '../../../src/lib/manage-rows';
-import { holds } from '../../../src/lib/permissions';
-import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../../../src/features/time/shift-issue-sheet';
-import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
-import { Ground, ScreenHeader, useTabSafe } from '../../../src/components/amazen';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useScreenWidth } from '@/components/screen-container';
+import { manageRowsFor } from '@/lib/manage-rows';
+import { holds } from '@/lib/permissions';
+import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '@/features/time/shift-issue-sheet';
+import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '@/lib/constants';
+import { Ground, ScreenHeader, useTabSafe } from '@/components/amazen';
 
 export default function ManageScreen() {
   const { user } = useAuth();

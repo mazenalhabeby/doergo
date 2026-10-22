@@ -2,17 +2,17 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useAuth } from '../../contexts/auth-context';
-import { useDocumentRequirements } from '../../contexts/document-requirements-context';
-import { knownEquipmentDue } from '../../lib/equipment-cache';
-import { useSyncStatus } from '../../offline/offline-context';
-import { destinationsFor, type Destination } from '../../lib/manage-rows';
-import { over } from '../../theme/amazen';
-import { selection } from '../../lib/haptics';
-import { AText, Eyebrow, PrimaryButton, CardSurface } from '../../components/amazen';
-import { BlurSheet } from '../../components/blur-sheet';
-import { SheetPanel } from '../../components/sheet-panel';
+import { useTheme } from '@/contexts/theme-context';
+import { useAuth } from '@/contexts/auth-context';
+import { useDocumentRequirements } from '@/contexts/document-requirements-context';
+import { knownEquipmentDue } from '@/lib/equipment-cache';
+import { useSyncStatus } from '@/offline/offline-context';
+import { destinationsFor, type Destination } from '@/lib/manage-rows';
+import { over } from '@/theme/amazen';
+import { selection } from '@/lib/haptics';
+import { AText, Eyebrow, PrimaryButton, CardSurface } from '@/components/amazen';
+import { BlurSheet } from '@/components/blur-sheet';
+import { SheetPanel } from '@/components/sheet-panel';
 import { SHORTCUT_GLYPHS } from './shortcut-glyphs';
 import {
   MIN_TILES, SLOTS, badgeOf, groupOf, shortcutCandidates, shownShortcuts,
@@ -22,7 +22,7 @@ import { useInGallery, usePitch } from './pitch';
 import { loadShortcuts, saveShortcuts, onShortcutsChanged } from './layout-store';
 import { useShortcutsEditor } from './use-shortcuts-editor';
 import { GROUPS } from './shortcuts-editor-helpers';
-import { CountBadge } from '../../components/amazen/count-badge';
+import { CountBadge } from '@/components/amazen/count-badge';
 import { useShortcutsEditorLogic } from './use-shortcuts-editor-logic';
 import { ShortcutsEditorShortcutsCard } from './shortcuts-editor-shortcuts-card';
 

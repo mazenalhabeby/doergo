@@ -1,4 +1,4 @@
-import { ClockInPickPage } from '../../../src/features/settings/choice-pages';
+import { ClockInPickPage } from '@/features/settings/choice-pages';
 
 /** The page lives in `src/components/settings/`; this route only mounts it. */
 export default function Route() {

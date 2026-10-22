@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { PassScreen } from '../../src/features/onboarding/pass-screen';
+import { PassScreen } from '@/features/onboarding/pass-screen';
 
 /**
  * Kept as a route so links that already point here still open — it is the

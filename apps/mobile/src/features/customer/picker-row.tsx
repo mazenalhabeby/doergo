@@ -2,11 +2,11 @@ import { memo, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { PressableScale } from '../../components/pressable-scale';
+import { PressableScale } from '@/components/pressable-scale';
 import { ClientAvatar } from './client-avatar';
-import { type MobileCustomer } from '../../lib/api';
-import { useTheme } from '../../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '../../lib/constants';
+import { type MobileCustomer } from '@/lib/api';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '@/lib/constants';
 
 /** The search field waits this long after the last keystroke — the client list's figure. */
 export const SEARCH_DEBOUNCE_MS = 300;

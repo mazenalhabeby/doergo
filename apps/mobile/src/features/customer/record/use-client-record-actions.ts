@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { customersApi, type MobileCustomerActivity } from '../../../lib/api';
+import { customersApi, type MobileCustomerActivity } from '@/lib/api';
 import {
   customerStageLabel,
   REMINDER_KIND_KEYS,
@@ -7,7 +7,7 @@ import {
   reminderLeadKey,
   reminderRepeatKey,
 } from '@hbcfield/shared/client';
-import { clientLane, dependsOnClients, setActivityDoneFromPhone } from '../../../offline/crm/client-actions';
+import { clientLane, dependsOnClients, setActivityDoneFromPhone } from '@/offline/crm/client-actions';
 import type { ActivityTag, PendingActivity } from '../activity-row';
 import type { ComposedActivity } from '../activity-composer';
 import { useClientRecordData } from './use-client-record-data';

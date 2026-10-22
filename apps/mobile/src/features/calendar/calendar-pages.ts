@@ -1,5 +1,5 @@
-import type { CalendarRange } from '../../lib/api/calendar';
-import { onSessionEnd } from '../../lib/session/session-registry';
+import type { CalendarRange } from '@/lib/api/calendar';
+import { onSessionEnd } from '@/lib/session/session-registry';
 
 /**
  * Calendar pages read this session, newest last — bounded, so a long swipe never grows memory.

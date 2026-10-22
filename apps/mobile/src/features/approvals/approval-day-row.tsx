@@ -9,12 +9,12 @@ import {
   type ApprovalItem,
   type ApprovalT,
 } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { formatDay } from '../../lib/money';
-import { approvalsApi } from '../../lib/api';
-import { useToast } from '../../island/island-context';
-import { caught } from '../../lib/caught';
-import { AText, Chip, PrimaryButton } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { formatDay } from '@/lib/money';
+import { approvalsApi } from '@/lib/api';
+import { useToast } from '@/island/island-context';
+import { caught } from '@/lib/caught';
+import { AText, Chip, PrimaryButton } from '@/components/amazen';
 import { WellRow } from '../register/well-row';
 import { approvalKey } from './approvals-store';
 

@@ -7,10 +7,10 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { AText } from './text';
 import type { GlyphProps } from '../glyphs/glyphs';
-import { toneColor } from '../../theme/tone-color';
+import { toneColor } from '@/theme/tone-color';
 export { JobField, ChoiceRow, QuietButton } from './sheet-option-fields';
 
 /**

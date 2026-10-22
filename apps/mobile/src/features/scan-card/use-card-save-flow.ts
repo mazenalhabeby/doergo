@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { router } from 'expo-router';
 import type { TFunction } from 'i18next';
-import type { MobileCustomer } from '../../lib/api';
+import type { MobileCustomer } from '@/lib/api';
 import { useDuplicateCheck } from '../customer/card-duplicate';
 import { useSaveScannedCard } from '../customer/card-save';
 import { cardClientNames, cardDetails, cardExtrasKept, type CardDestination, type CardKind } from '../customer/card-review';

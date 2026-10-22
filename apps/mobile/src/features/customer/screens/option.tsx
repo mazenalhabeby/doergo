@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, type ThemeColors } from '../../../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, type ThemeColors } from '@/lib/constants';
 
 export type StepId = 'category' | 'issue' | 'describe' | 'access' | 'time' | 'location' | 'contact';
 

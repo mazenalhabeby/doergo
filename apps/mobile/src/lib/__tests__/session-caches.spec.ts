@@ -3,7 +3,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { calendarPageKey, calendarPages } from '../../features/calendar/calendar-pages';
+import { calendarPageKey, calendarPages } from '@/features/calendar/calendar-pages';
 import { registeredCleaners, runSessionEndCleaners } from '../session/session-registry';
 
 const range = (who: string) => ({ from: '2026-10-05', to: '2026-10-11', who } as never);

@@ -1,8 +1,8 @@
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { type OrgMember } from '../../lib/api';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { type OrgMember } from '@/lib/api';
+import { AText } from '@/components/amazen';
 
 /** MembersScreen's module-level helpers, moved here unchanged so its sections can read them too. */
 export function RoleTag({ member }: { member: OrgMember }) {

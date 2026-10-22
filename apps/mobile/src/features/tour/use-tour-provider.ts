@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { AppState, Dimensions } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { hasAccessModule, hasFeatureModule, normalizeRole } from '@hbcfield/shared/client';
-import { useAuth } from '../../contexts/auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { TOURS } from './registry';
-import { tabAccessFor } from '../../lib/tab-layout';
+import { tabAccessFor } from '@/lib/tab-layout';
 import { createTourStorage } from './tour-storage';
 import { useTargetRegistry } from './tour-target';
 import {

@@ -3,9 +3,9 @@ import { Pressable, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import type { ClassifiedContact, PickSection } from '@hbcfield/shared/client';
-import { useTheme } from '../../../contexts/theme-context';
-import { AText, type Tone } from '../../../components/amazen';
-import { Monogram } from '../../../components/amazen/monogram';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, type Tone } from '@/components/amazen';
+import { Monogram } from '@/components/amazen/monogram';
 import { personInitials } from '@hbcfield/shared/client';
 
 /** Fixed, so the list can be measured without rendering — see `ROW_HEIGHT` use in the pick step. */

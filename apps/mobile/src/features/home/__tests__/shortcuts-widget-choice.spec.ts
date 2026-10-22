@@ -1,5 +1,5 @@
-import type { Destination } from '../../../lib/manage-rows';
-import { destinationsFor } from '../../../lib/manage-rows';
+import type { Destination } from '@/lib/manage-rows';
+import { destinationsFor } from '@/lib/manage-rows';
 import { badgeOf, groupOf, shortcutCandidates, shownShortcuts, smartPicks, MIN_TILES, SLOTS } from '../shortcuts';
 
 /**

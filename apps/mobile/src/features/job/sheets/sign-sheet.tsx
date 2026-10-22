@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PrimaryButton } from '../../../components/amazen';
+import { PrimaryButton } from '@/components/amazen';
 import { JobSheet } from '../job-ui';
 import { SignPad, type SignPadHandle } from '../sign-pad';
 

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { BlurSheet } from '../../components/blur-sheet';
-import { SheetPanel } from '../../components/sheet-panel';
-import { Skeleton } from '../../components/skeleton';
+import { BlurSheet } from '@/components/blur-sheet';
+import { SheetPanel } from '@/components/sheet-panel';
+import { Skeleton } from '@/components/skeleton';
 import { ChoiceChip } from './client-fields';
 import { ClientPicker } from './client-picker';
-import { customersApi, type MobileCustomer } from '../../lib/api';
-import { useTheme } from '../../contexts/theme-context';
-import { SPACING, FONT_SIZE, type ThemeColors } from '../../lib/constants';
+import { customersApi, type MobileCustomer } from '@/lib/api';
+import { useTheme } from '@/contexts/theme-context';
+import { SPACING, FONT_SIZE, type ThemeColors } from '@/lib/constants';
 import { duplicateSearchTerm, looksLikeSameClient, type CardDestination } from './card-review';
 
 /**

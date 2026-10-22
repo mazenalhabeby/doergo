@@ -1,5 +1,5 @@
 import { Pressable, View } from 'react-native';
-import { AText, Sunken } from '../../components/amazen';
+import { AText, Sunken } from '@/components/amazen';
 import { dayKey } from './time-logic';
 import { LeaveLegend } from './time-off-section-shared';
 import type { RequestSheetState } from './use-request-sheet';

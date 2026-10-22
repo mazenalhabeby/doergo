@@ -48,14 +48,14 @@ class ApiError extends Error {
   constructor(message: string, public statusCode: number) { super(message); }
 }
 const trackingApi = { updateLocationBatch: jest.fn(), updateLocation: jest.fn() };
-jest.mock('../../lib/api', () => ({ trackingApi, ApiError }));
+jest.mock('@/lib/api', () => ({ trackingApi, ApiError }));
 let owner: string | null = 'mike';
-jest.mock('../../lib/api/client', () => ({ getAccessToken: jest.fn(async () => 'token'), sessionOwnerId: jest.fn(async () => owner) }));
-jest.mock('../../i18n', () => ({ __esModule: true, default: { t: (k: string) => k } }));
+jest.mock('@/lib/api/client', () => ({ getAccessToken: jest.fn(async () => 'token'), sessionOwnerId: jest.fn(async () => owner) }));
+jest.mock('@/i18n', () => ({ __esModule: true, default: { t: (k: string) => k } }));
 
 import { cleanRoutePoints, ROUTE_MAX_ACCURACY_M } from '@hbcfield/shared/client';
 import { startRouteTracking, flushPendingRoute, forgetRouteData } from '../background-route-tracking';
-import { readSecure } from '../../lib/secure-buffer';
+import { readSecure } from '@/lib/secure-buffer';
 
 const at = (s: number) => new Date(Date.UTC(2026, 8, 30, 6, 0, s)).toISOString();
 const loc = (lat: number, lng: number, s: number, accuracy = 5) => ({

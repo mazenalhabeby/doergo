@@ -6,21 +6,21 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
-import { useAuth } from '../../../src/contexts/auth-context';
-import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
-import { portalApi } from '../../../src/lib/api/portal';
-import { userApi } from '../../../src/lib/api';
-import { initialOf } from '../../../src/lib/people';
-import { changeLanguage, getCurrentLanguage, supportedLanguages } from '../../../src/i18n';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme, type ThemeMode } from '@/contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
+import { portalApi } from '@/lib/api/portal';
+import { userApi } from '@/lib/api';
+import { initialOf } from '@/lib/people';
+import { changeLanguage, getCurrentLanguage, supportedLanguages } from '@/i18n';
 import { personName } from '@hbcfield/shared/client';
-import { useCustomerProfile } from '../../../src/features/customer/screens/tabs/use-customer-profile';
+import { useCustomerProfile } from '@/features/customer/screens/tabs/use-customer-profile';
 import {
   THEME_OPTIONS,
   Group,
   Row,
   styles,
-} from '../../../src/features/customer/screens/tabs/customer-profile-helpers';
+} from '@/features/customer/screens/tabs/customer-profile-helpers';
 
 export default function CustomerProfile() {
   const {

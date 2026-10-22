@@ -7,8 +7,8 @@ import {
   type DetectedRequest,
   type RequestKind,
 } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import type { RequestOptions } from '../../lib/api/technicians';
+import { useTheme } from '@/contexts/theme-context';
+import type { RequestOptions } from '@/lib/api/technicians';
 import { useRequestPrecheck } from './use-request-precheck';
 import { draftToBody, kindEffectKey, type RequestBody } from './request-model';
 

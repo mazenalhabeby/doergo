@@ -1,6 +1,6 @@
-import { type MobileCustomerActivity } from '../../../lib/api';
-import type { MobileCustomerContact } from '../../../lib/api/customers';
-import { type PendingContactLink } from '../../../offline/crm/client-overlay';
+import { type MobileCustomerActivity } from '@/lib/api';
+import type { MobileCustomerContact } from '@/lib/api/customers';
+import { type PendingContactLink } from '@/offline/crm/client-overlay';
 
 /** The record's tabs, filters and ordering — moved here unchanged from use-client-record.ts. */
 export const TABS = ['information', 'activity', 'reminders'] as const;

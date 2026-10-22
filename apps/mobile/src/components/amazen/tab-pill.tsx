@@ -3,8 +3,8 @@ import { View, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../../contexts/theme-context';
-import { TourTarget } from '../../features/tour/tour-target';
+import { useTheme } from '@/contexts/theme-context';
+import { TourTarget } from '@/features/tour/tour-target';
 import {
   BAR_INSET_FLOOR, BAR_LIFT, BAR_PAD_TOP, BAR_ROW, GAP, PAD, SCRIM_RISE, slotWidths,
 } from './tab-pill/geometry';

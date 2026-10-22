@@ -2,9 +2,9 @@ import { memo, useCallback, useMemo } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { PressableScale } from '../../components/pressable-scale';
-import { useTheme } from '../../contexts/theme-context';
-import { SPACING, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '../../lib/constants';
+import { PressableScale } from '@/components/pressable-scale';
+import { useTheme } from '@/contexts/theme-context';
+import { SPACING, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '@/lib/constants';
 import { CardFieldGroup } from './card-field-row';
 import type { CardExtraRow } from './card-review';
 

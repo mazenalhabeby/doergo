@@ -2,20 +2,20 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { normalizeKindShape, logTypesForKind, COST_LOG_KEY } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useAuth } from '../../contexts/auth-context';
-import { useToast } from '../../island/island-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/island/island-context';
 import {
   assetRegisterApi,
   locationsApi,
   type LocationAssignment,
   type RegisterAsset,
   type RegisterLogEntry,
-} from '../../lib/api';
-import { holdsIn } from '../../lib/permissions';
-import { useResponsive } from '../../lib/responsive';
-import { centeredContent } from '../../components/screen-container';
-import { caught } from '../../lib/caught';
+} from '@/lib/api';
+import { holdsIn } from '@/lib/permissions';
+import { useResponsive } from '@/lib/responsive';
+import { centeredContent } from '@/components/screen-container';
+import { caught } from '@/lib/caught';
 
 /** RegisterRecord's state and handlers — everything before its markup, moved here unchanged. */
 export function useRegisterRecord({ id }: Pick<{ id: string }, 'id'>) {

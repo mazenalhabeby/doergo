@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
-import { useAuth } from '../../contexts/auth-context';
-import type { User } from '../../lib/api';
+import { useAuth } from '@/contexts/auth-context';
+import type { User } from '@/lib/api';
 import { useQueuedWrite } from '../actions/queued-write';
 import type { ActionOutcome } from '../actions/outcome';
 import { updateOwnProfile } from './profile-actions';

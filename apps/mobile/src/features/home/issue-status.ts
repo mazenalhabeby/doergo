@@ -1,4 +1,4 @@
-import type { ShiftIssue, ShiftIssueEvent, ShiftIssueStatus, ShiftIssueSeverity } from '../../lib/api/shift-issues';
+import type { ShiftIssue, ShiftIssueEvent, ShiftIssueStatus, ShiftIssueSeverity } from '@/lib/api/shift-issues';
 
 /**
  * THE SIX STATUSES, AND WHY ALL SIX ARE ON SCREEN.

@@ -2,15 +2,15 @@ import React, { useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { COMPANY_FIELD_KEYS, COMPANY_ONLY_FIELDS, isCompany, type CompanyOnlyField } from '@hbcfield/shared/client';
-import { useTheme } from '../../../contexts/theme-context';
-import { canEditClientLocale, clientLocaleName } from '../../../lib/client-locale';
-import { AText, Well, SectionLabel } from '../../../components/amazen';
-import { FactRow } from '../../../components/amazen/fact-row';
+import { useTheme } from '@/contexts/theme-context';
+import { canEditClientLocale, clientLocaleName } from '@/lib/client-locale';
+import { AText, Well, SectionLabel } from '@/components/amazen';
+import { FactRow } from '@/components/amazen/fact-row';
 import { ContactRow } from '../contact-row';
 import { AddressRow } from '../address-row';
 import { isWaiting, type ClientRecordModel } from './use-client-record';
-import type { MobileCustomerContact } from '../../../lib/api/customers';
-import { geoUrl, mailtoUrl, openSafeUrl, telUrl, webUrl } from '../../../lib/safe-links';
+import type { MobileCustomerContact } from '@/lib/api/customers';
+import { geoUrl, mailtoUrl, openSafeUrl, telUrl, webUrl } from '@/lib/safe-links';
 
 /**
  * ABOUT — who to ask for, and everything written down about them.

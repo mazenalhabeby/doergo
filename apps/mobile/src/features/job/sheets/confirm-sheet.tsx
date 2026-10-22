@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { AText, QuietButton } from '../../../components/amazen';
+import { AText, QuietButton } from '@/components/amazen';
 import { JobSheet } from '../job-ui';
 
 /**

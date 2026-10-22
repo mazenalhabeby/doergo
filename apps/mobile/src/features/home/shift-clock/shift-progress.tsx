@@ -1,9 +1,9 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../contexts/theme-context';
-import { monthName } from '../../../lib/app-dates';
-import { AText, Eyebrow } from '../../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { monthName } from '@/lib/app-dates';
+import { AText, Eyebrow } from '@/components/amazen';
 import { targetLabel, type readShiftState } from '../shift-state';
 import { formatDuration } from '@hbcfield/shared/client';
 

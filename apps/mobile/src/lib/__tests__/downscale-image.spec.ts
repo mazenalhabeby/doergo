@@ -27,7 +27,7 @@ function context(size: Size) {
   };
 }
 let present = true;
-jest.mock('../../offline/native', () => ({
+jest.mock('@/offline/native', () => ({
   loadImageManipulator: () =>
     present
       ? {

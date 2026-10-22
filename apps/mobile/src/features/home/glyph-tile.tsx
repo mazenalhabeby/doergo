@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
-import { over } from '../../theme/amazen';
-import type { GlyphProps } from '../../components/glyphs/glyphs';
+import { over } from '@/theme/amazen';
+import type { GlyphProps } from '@/components/glyphs/glyphs';
 
 /**
  * A glyph in a rounded tile — the mark at the head of a row.

@@ -1,6 +1,6 @@
 import type { CompanyLocation } from '../api';
 import { clockableLocations } from '../clockable';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 import path from 'path';
 
 /*
@@ -18,7 +18,7 @@ describe('the phone clocks in only where the server would take it', () => {
 
   it('the choice, the picker and the card all read the clockable list', () => {
     const src = (p: string) => readSource(path.resolve(__dirname, '../..', p), 'utf8');
-    const hook = src('hooks/useClockIn.ts');
+    const hook = src('hooks/use-clock-in.ts');
     expect(hook).toMatch(/chooseClockInLocation\(clockable,/);
     expect(hook).toMatch(/locations: clockable,/);
     expect(src('features/home/shift-clock-card.tsx')).toMatch(/clockableLocations\(status\?\.assignedLocations\)/);

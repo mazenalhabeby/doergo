@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useNow } from '../../hooks/use-now';
+import { useNow } from '@/hooks/use-now';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { attendanceApi } from '../../lib/api';
-import { useShiftActions } from '../../offline/attendance/use-shift';
-import type { ActionOutcome } from '../../offline/actions/outcome';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { attendanceApi } from '@/lib/api';
+import { useShiftActions } from '@/offline/attendance/use-shift';
+import type { ActionOutcome } from '@/offline/actions/outcome';
 import { outstandingBreaks, type BreakPlanItem, formatDuration } from '@hbcfield/shared/client';
 
 /**

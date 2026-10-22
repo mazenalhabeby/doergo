@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 import { serverModuleSource } from './server-source';
 
 /*

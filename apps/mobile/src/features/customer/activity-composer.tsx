@@ -6,7 +6,7 @@ import {
   reminderPayload,
   type ReminderPresetKey,
 } from '@hbcfield/shared/client';
-import { FilterPill, PrimaryButton, Well, JobField } from '../../components/amazen';
+import { FilterPill, PrimaryButton, Well, JobField } from '@/components/amazen';
 import { ChoiceChip } from './client-fields';
 import {
   ReminderFields,
@@ -15,7 +15,7 @@ import {
   type ReminderDraft,
   type ReminderAssignee,
 } from './reminder-fields';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 
 /**
  * The two things a member WRITES here.

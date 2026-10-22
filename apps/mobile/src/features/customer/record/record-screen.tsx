@@ -2,12 +2,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, View, type ListRenderItemInfo } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../contexts/theme-context';
-import { useToast } from '../../../island/island-context';
-import { useResponsive } from '../../../lib/responsive';
-import { locationsApi } from '../../../lib/api';
-import type { MobileCustomerContact } from '../../../lib/api/customers';
-import { CLIENT_LOCALE_OPTIONS, clientLocaleFormValue } from '../../../lib/client-locale';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { useResponsive } from '@/lib/responsive';
+import { locationsApi } from '@/lib/api';
+import type { MobileCustomerContact } from '@/lib/api/customers';
+import { CLIENT_LOCALE_OPTIONS, clientLocaleFormValue } from '@/lib/client-locale';
 import {
   AText,
   FilterPill,
@@ -19,9 +19,9 @@ import {
   Banner,
   SectionLabel,
   SheetOption,
-} from '../../../components/amazen';
-import { centeredContent } from '../../../components/screen-container';
-import { JobSheet } from '../../job/job-ui';
+} from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
+import { JobSheet } from '@/features/job/job-ui';
 import { ActivityRow, type PendingActivity } from '../activity-row';
 import { ActivityComposer } from '../activity-composer';
 import { ClientEditSheet } from '../client-edit-sheet';

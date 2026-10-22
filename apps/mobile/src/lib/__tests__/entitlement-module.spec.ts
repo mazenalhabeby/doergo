@@ -12,7 +12,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { meets } from '../../features/home/entitlement';
+import { meets } from '@/features/home/entitlement';
 
 const SRC = path.resolve(__dirname, '../..');
 const clock = { module: 'clock' as const, self: true as const };

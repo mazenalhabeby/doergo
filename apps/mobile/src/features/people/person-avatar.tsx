@@ -1,9 +1,9 @@
 import React from 'react';
 import { View } from 'react-native';
-import { CachedImage } from '../../components/cached-image';
-import { useTheme } from '../../contexts/theme-context';
-import { resolveMediaUrl } from '../../lib/api';
-import { Monogram } from '../../components/amazen/monogram';
+import { CachedImage } from '@/components/cached-image';
+import { useTheme } from '@/contexts/theme-context';
+import { resolveMediaUrl } from '@/lib/api';
+import { Monogram } from '@/components/amazen/monogram';
 import { personInitials } from '@hbcfield/shared/client';
 
 export type Presence = 'AVAILABLE' | 'BUSY' | 'AWAY' | string | null | undefined;

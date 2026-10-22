@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, Eyebrow } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, Eyebrow } from '@/components/amazen';
 import { HANDOVER_NOTE_MAX, formatDuration } from '@hbcfield/shared/client';
-import type { HandoverJob } from '../../lib/api';
+import type { HandoverJob } from '@/lib/api';
 
 /** OpenJobs, moved here unchanged out of clock-out-sheet.tsx. */
 /**

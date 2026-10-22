@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { AText } from '../../components/amazen';
+import { AText } from '@/components/amazen';
 import { useTranslation } from 'react-i18next';
 import {
   clientKind,
@@ -12,12 +12,12 @@ import {
 } from '@hbcfield/shared/client';
 import { JobSheet } from '../job/job-ui';
 import { LabelledField, ChoiceChip, FieldGroupTitle, PrimaryButton } from './client-fields';
-import { CLIENT_LOCALE_OPTIONS, clientLocaleFormValue, clientLocalePayload } from '../../lib/client-locale';
-import { useTheme } from '../../contexts/theme-context';
-import { COLORS, SPACING, FONT_SIZE, type ThemeColors } from '../../lib/constants';
-import { customersApi, locationsApi, type MobileCustomer } from '../../lib/api';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { changedFields, updateClientFromPhone } from '../../offline/crm/client-actions';
+import { CLIENT_LOCALE_OPTIONS, clientLocaleFormValue, clientLocalePayload } from '@/lib/client-locale';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, SPACING, FONT_SIZE, type ThemeColors } from '@/lib/constants';
+import { customersApi, locationsApi, type MobileCustomer } from '@/lib/api';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { changedFields, updateClientFromPhone } from '@/offline/crm/client-actions';
 
 /**
  * Editing a client, on the phone, for the first time.

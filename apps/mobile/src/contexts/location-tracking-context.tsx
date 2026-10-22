@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import { useLocationTracking, type RouteDestinationInput } from '../hooks/useLocationTracking';
+import { useLocationTracking, type RouteDestinationInput } from '../hooks/use-location-tracking';
 
 interface LocationTrackingContextType {
   isTracking: boolean;

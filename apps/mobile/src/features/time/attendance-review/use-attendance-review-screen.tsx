@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { type NoShow } from '../../../lib/api';
-import type { TimeEntry } from '../../../lib/api/types';
+import { type NoShow } from '@/lib/api';
+import type { TimeEntry } from '@/lib/api/types';
 import {
   workedMinutes,
   personName,
@@ -12,8 +12,8 @@ import {
   approvalText,
   approvalWord,
 } from '@hbcfield/shared/client';
-import i18n from '../../../i18n';
-import { COLORS } from '../../../lib/constants';
+import i18n from '@/i18n';
+import { COLORS } from '@/lib/constants';
 import { router, type Href } from 'expo-router';
 import { type Segment, labelColor, s } from './attendance-review-helpers';
 import { useAttendanceReviewScreenData } from './use-attendance-review-screen-data';

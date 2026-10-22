@@ -19,8 +19,8 @@ const de = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../i18n/locale
 const en = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../i18n/locales/en.json'), 'utf8'));
 
 function load() {
-  let mod!: typeof import('../../i18n');
-  jest.isolateModules(() => { mod = require('../../i18n'); });
+  let mod!: typeof import('@/i18n');
+  jest.isolateModules(() => { mod = require('@/i18n'); });
   return mod;
 }
 

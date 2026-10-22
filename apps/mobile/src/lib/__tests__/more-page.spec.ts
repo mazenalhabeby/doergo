@@ -4,8 +4,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { splitTabs, tabAccessFor, tabVisible } from '../tab-layout';
-import { groupManageRows } from '../../features/more/more-groups';
-import { readSource } from '../../test-utils/read-source';
+import { groupManageRows } from '@/features/more/more-groups';
+import { readSource } from '@/test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const read = (p: string) => readSource(path.join(SRC, p), 'utf8');

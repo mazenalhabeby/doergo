@@ -1,6 +1,6 @@
-import { shiftIssuesApi, type IssuePhoto } from '../../lib/api/shift-issues';
-import { uploadToPresignedUrl } from '../../lib/api/attachments';
-import type { PickedImage } from '../../hooks/useImagePicker';
+import { shiftIssuesApi, type IssuePhoto } from '@/lib/api/shift-issues';
+import { uploadToPresignedUrl } from '@/lib/api/attachments';
+import type { PickedImage } from '@/hooks/use-image-picker';
 
 /** How many photos one report or reply carries. */
 export const MAX_PHOTOS = 5;

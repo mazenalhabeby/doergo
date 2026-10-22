@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { rotaApi, type RotaCell, type RotaShift } from '../../lib/api';
-import { AText, PrimaryButton, Banner } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { rotaApi, type RotaCell, type RotaShift } from '@/lib/api';
+import { AText, PrimaryButton, Banner } from '@/components/amazen';
 import { JobSheet } from '../job/job-ui';
 
 export const NAME_W = 70;

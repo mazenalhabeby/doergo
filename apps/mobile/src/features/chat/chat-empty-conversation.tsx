@@ -1,10 +1,10 @@
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { conversationTitle, type ChatConversation } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
 import { ConversationAvatar } from './chat-rows';
-import { Arrive } from '../../components/amazen/motion';
+import { Arrive } from '@/components/amazen/motion';
 
 /** The empty conversation — moved here unchanged from chat-screen.tsx. */
 

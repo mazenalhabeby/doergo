@@ -41,7 +41,7 @@ const saveTokens = jest.fn();
   over a mocked `fetch` — so these count actual round trips and read the core's
   real error kinds, not a stand-in's.
 */
-jest.mock('../../api/client', () => {
+jest.mock('@/lib/api/client', () => {
   const shared = jest.requireActual('@hbcfield/shared/client');
   const api = shared.createApiClient({ baseUrl: () => 'http://test', getToken: async () => 'access' });
   return {
@@ -61,7 +61,7 @@ const reply = (status: number, body?: unknown) => ({
   headers: { get: () => null },
   text: async () => (body === undefined ? '' : JSON.stringify(body)),
 });
-jest.mock('../../../i18n', () => ({ t: (k: string) => k }));
+jest.mock('@/i18n', () => ({ t: (k: string) => k }));
 
 describe('unlock costs exactly one prompt', () => {
   beforeEach(() => {

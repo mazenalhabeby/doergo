@@ -1,4 +1,4 @@
-import { getStatusAction } from '../../features/job/task-detail-helpers';
+import { getStatusAction } from '@/features/job/task-detail-helpers';
 
 /**
  * The forward step comes from the WORKFLOW, never from a hardcoded chain.

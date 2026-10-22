@@ -2,8 +2,8 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { COLORS, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '../../lib/constants';
+import { useTheme } from '@/contexts/theme-context';
+import { COLORS, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '@/lib/constants';
 import { usePendingFor } from '../offline-context';
 
 /**

@@ -10,8 +10,8 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { move, hide, show, onHome, offHome, canMove } from '../../features/home/arrange-list';
-import { readSource } from '../../test-utils/read-source';
+import { move, hide, show, onHome, offHome, canMove } from '@/features/home/arrange-list';
+import { readSource } from '@/test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const read = (p: string) => readSource(path.join(SRC, p), 'utf8');

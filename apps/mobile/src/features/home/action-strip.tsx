@@ -3,21 +3,21 @@ import { Pressable, ScrollView, View, type NativeScrollEvent, type NativeSynthet
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { useDocumentRequirements } from '../../contexts/document-requirements-context';
-import { documentsApi, type DocumentType } from '../../lib/api/documents';
-import { AText, Eyebrow, LiveDot, PrimaryButton } from '../../components/amazen';
-import { BlurSheet } from '../../components/blur-sheet';
-import { SheetPanel } from '../../components/sheet-panel';
+import { useTheme } from '@/contexts/theme-context';
+import { useDocumentRequirements } from '@/contexts/document-requirements-context';
+import { documentsApi, type DocumentType } from '@/lib/api/documents';
+import { AText, Eyebrow, LiveDot, PrimaryButton } from '@/components/amazen';
+import { BlurSheet } from '@/components/blur-sheet';
+import { SheetPanel } from '@/components/sheet-panel';
 import { SupplyDocumentSheet } from '../supply-document/supply-document-sheet';
-import { SignGlyph } from '../../components/glyphs/tile-glyphs';
-import { CountersignGlyph, DocBlockedGlyph, DocExpiringGlyph, DocNeededGlyph, DocSentBackGlyph } from '../../components/glyphs/doc-glyphs';
+import { SignGlyph } from '@/components/glyphs/tile-glyphs';
+import { CountersignGlyph, DocBlockedGlyph, DocExpiringGlyph, DocNeededGlyph, DocSentBackGlyph } from '@/components/glyphs/doc-glyphs';
 import { itemLines, stripItems, stripLines, stripTone, type StripItem, type StripTone } from './action-strip-state';
 import { usePhrase, type Phrase } from './phrase';
 import { GlyphTile } from './glyph-tile';
 import { StripBox } from './strip-box';
-import type { GlyphProps } from '../../components/glyphs/glyphs';
-import { toneColor } from '../../theme/tone-color';
+import type { GlyphProps } from '@/components/glyphs/glyphs';
+import { toneColor } from '@/theme/tone-color';
 
 /**
  * ⭐ THE ACTION STRIP — what the app needs from the member, under the header.

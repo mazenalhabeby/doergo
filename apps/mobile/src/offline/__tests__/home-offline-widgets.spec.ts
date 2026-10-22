@@ -11,13 +11,13 @@
  *                 and still in the queue never comes back
  */
 jest.mock('react', () => require('./hook-harness').react);
-jest.mock('../../lib/api/attendance', () => ({
+jest.mock('@/lib/api/attendance', () => ({
   attendanceApi: {
     getStatus: jest.fn(), getBreakStatus: jest.fn(),
     getClockedInAll: jest.fn(), getActiveBreaks: jest.fn(), listNoShows: jest.fn(), pendingApprovalsSummary: jest.fn(),
   },
 }));
-jest.mock('../../hooks/use-live-refresh', () => ({ useLiveRefresh: (fn: () => unknown) => { mockLive.refresh = fn; } }));
+jest.mock('@/hooks/use-live-refresh', () => ({ useLiveRefresh: (fn: () => unknown) => { mockLive.refresh = fn; } }));
 const mockLive: { refresh: (() => unknown) | null } = { refresh: null };
 const mockDisk = new Map<string, string>();
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -29,7 +29,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     multiRemove: async (ks: string[]) => { ks.forEach((k) => mockDisk.delete(k)); },
   },
 }));
-jest.mock('../../contexts/auth-context', () => ({ useAuth: () => ({ user: { id: 'u1' } }) }));
+jest.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ user: { id: 'u1' } }) }));
 jest.mock('../offline-context', () => ({
   useOffline: () => ({ records: null, engine: null, starting: false }),
   useSyncStatus: () => ({ operations: [] }),
@@ -38,17 +38,17 @@ jest.mock('../offline-context', () => ({
 import * as fs from 'fs';
 import * as path from 'path';
 import { mountHook, settle } from './hook-harness';
-import { shiftCard } from '../../lib/__tests__/shift-card-files';
+import { shiftCard } from '@/lib/__tests__/shift-card-files';
 import { connectivity } from '../connectivity';
-import { attendanceApi } from '../../lib/api/attendance';
+import { attendanceApi } from '@/lib/api/attendance';
 import { loadShift, useShift } from '../attendance/use-shift';
-import { useCrew } from '../../features/home/use-crew';
-import { useRemembered } from '../../lib/remember/use-remembered';
-import { forgetEverythingKept } from '../../lib/remember/store';
-import { queuedDoneIds, withoutDone } from '../../features/home/clients-state';
-import { shouldKeep } from '../../lib/api/response-cache';
+import { useCrew } from '@/features/home/use-crew';
+import { useRemembered } from '@/lib/remember/use-remembered';
+import { forgetEverythingKept } from '@/lib/remember/store';
+import { queuedDoneIds, withoutDone } from '@/features/home/clients-state';
+import { shouldKeep } from '@/lib/api/response-cache';
 import { apiEndpoints as EP, type Endpoint } from '@hbcfield/shared/client';
-import { readSource } from '../../test-utils/read-source';
+import { readSource } from '@/test-utils/read-source';
 
 /** Would the client let the cache hold this call's answer? (the endpoint's verdict, as the client passes it) */
 const kept = <A,>(def: Endpoint<A, any, any>, args: A) => {

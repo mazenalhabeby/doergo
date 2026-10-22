@@ -3,10 +3,10 @@ import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import type { CalendarItem } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, CardSurface, Eyebrow } from '../../components/amazen';
-import { calendarApi } from '../../lib/api';
-import { useLiveRefresh } from '../../hooks/use-live-refresh';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, CardSurface, Eyebrow } from '@/components/amazen';
+import { calendarApi } from '@/lib/api';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
 import { addDays, dayKey, fromKey, kindColor } from '../calendar/calendar-data';
 import { WellDoor } from './well-door';
 

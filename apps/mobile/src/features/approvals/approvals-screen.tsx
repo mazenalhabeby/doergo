@@ -12,17 +12,17 @@ import {
   type ApprovalKind,
   type ApprovalT,
 } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useAuth } from '../../contexts/auth-context';
-import { isExternalMember } from '../../lib/member-reach';
-import { formatDay } from '../../lib/money';
-import { useResponsive } from '../../lib/responsive';
-import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, SectionLabel } from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+import { useTheme } from '@/contexts/theme-context';
+import { useAuth } from '@/contexts/auth-context';
+import { isExternalMember } from '@/lib/member-reach';
+import { formatDay } from '@/lib/money';
+import { useResponsive } from '@/lib/responsive';
+import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, SectionLabel } from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 import { WellRow } from '../register/well-row';
 import { approvalKey, loadApprovals } from './approvals-store';
 import { StandInSheet } from './stand-in-sheet';
-import { refreshControl } from '../../components/pull-refresh';
+import { refreshControl } from '@/components/pull-refresh';
 import { ApprovalDayRow } from './approval-day-row';
 
 /** A list row: one item, or a person's working day that groups several. */

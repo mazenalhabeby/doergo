@@ -1,8 +1,8 @@
 /** JobField, ChoiceRow and QuietButton from sheet-option.tsx — moved here unchanged (2026-10-17 line-length split). */
-import { toneColor } from '../../theme/tone-color';
+import { toneColor } from '@/theme/tone-color';
 import React from 'react';
 import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { AText } from './text';
 
 /* ---------------- fields ---------------- */

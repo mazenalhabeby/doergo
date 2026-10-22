@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { expoCrypto } from '../optional-native';
 import * as Device from 'expo-device';
-import i18n from '../../i18n';
+import i18n from '@/i18n';
 import { ApiError, call, E, getAccessToken, saveTokens } from '../api/client';
 import { BiometricError, type BiometricCredential, type KeyOwner } from './types';
 import { deviceKeyModule } from './native';

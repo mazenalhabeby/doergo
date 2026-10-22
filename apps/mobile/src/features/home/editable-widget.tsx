@@ -10,9 +10,9 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../contexts/theme-context';
-import { AText, WidgetBoundary } from '../../components/amazen';
-import { shadowGlass, shadowUnderGlass } from '../../components/amazen/surfaces';
+import { useTheme } from '@/contexts/theme-context';
+import { AText, WidgetBoundary } from '@/components/amazen';
+import { shadowGlass, shadowUnderGlass } from '@/components/amazen/surfaces';
 import { widgetTitle, type WidgetRow } from './registry';
 import { useEditableWidgetInner, REST } from './use-editable-widget-inner';
 import { RemoveBadge, Arrows } from './editable-widget-inner-helpers';

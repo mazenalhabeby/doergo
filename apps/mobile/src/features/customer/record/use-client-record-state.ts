@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { customersApi, type MobileCustomer, type MobileCustomerActivity } from '../../../lib/api';
-import type { MobileCustomerContact, MobileCustomerAddress } from '../../../lib/api/customers';
-import { useQueuedCreate } from '../../../offline/actions/queued-create';
-import { useQueuedWrite } from '../../../offline/actions/queued-write';
-import { useSyncStatus } from '../../../offline/offline-context';
-import { applyPendingClient, pendingActivityDone } from '../../../offline/crm/client-overlay';
-import { useToast } from '../../../island/island-context';
+import { customersApi, type MobileCustomer, type MobileCustomerActivity } from '@/lib/api';
+import type { MobileCustomerContact, MobileCustomerAddress } from '@/lib/api/customers';
+import { useQueuedCreate } from '@/offline/actions/queued-create';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { useSyncStatus } from '@/offline/offline-context';
+import { applyPendingClient, pendingActivityDone } from '@/offline/crm/client-overlay';
+import { useToast } from '@/island/island-context';
 import type { ComposedActivity } from '../activity-composer';
-import { useAuth } from '../../../contexts/auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import type { ContactSide } from '../add-contact-sheet';
 import { type RecordTab, isTab, type ActivityFilter } from './client-record-helpers';
 

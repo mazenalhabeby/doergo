@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
-import { useNow } from '../../hooks/use-now';
+import { useNow } from '@/hooks/use-now';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
   departureAdvice, straightLineTravel, haversineDistance, type TravelEstimate,
 } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { Banner } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { Banner } from '@/components/amazen';
 
 /**
  * The lines between the title and the facts — `.banner` in the mockup. Each

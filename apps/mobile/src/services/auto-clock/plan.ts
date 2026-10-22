@@ -1,10 +1,10 @@
 import * as Location from 'expo-location';
 import { isAtSite, parseGeofencePolygon, type AutoClockPlan } from '@hbcfield/shared/client';
-import { attendanceApi } from '../../lib/api/attendance';
-import { ApiError } from '../../lib/api';
-import { getFix } from '../../lib/location-fix';
-import { isUnreachable } from '../../offline/actions/unreachable';
-import { liveEngineFor } from '../../offline/live-engine';
+import { attendanceApi } from '@/lib/api/attendance';
+import { ApiError } from '@/lib/api';
+import { getFix } from '@/lib/location-fix';
+import { isUnreachable } from '@/offline/actions/unreachable';
+import { liveEngineFor } from '@/offline/live-engine';
 import { setAutoClockRegions } from '../background-geofence';
 import { ensureBackgroundLocation } from '../background-permission';
 import { autoClockWake, handleAutoRegionEvent } from './context';

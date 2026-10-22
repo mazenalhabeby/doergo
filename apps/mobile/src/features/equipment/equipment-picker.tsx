@@ -4,11 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { normalizeKindShape, logTypesForKind } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import { assetsApi, type HeldAsset } from '../../lib/api';
-import { AText, SheetOption } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import { assetsApi, type HeldAsset } from '@/lib/api';
+import { AText, SheetOption } from '@/components/amazen';
 import { EquipmentFrame } from './equipment-frame';
-import { LoadingLine } from '../../components/loading-line';
+import { LoadingLine } from '@/components/loading-line';
 
 /** Which of the things a member holds can take this: a receipt needs money going out; a log entry needs a logbook. */
 function fits(h: HeldAsset, what: 'expense' | 'log'): boolean {

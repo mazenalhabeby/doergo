@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { useLiveRefresh } from '../../hooks/use-live-refresh';
-import { useFetchData } from '../../hooks/useFetchData';
-import { membersApi, type OrgMember } from '../../lib/api';
-import { useResponsive } from '../../lib/responsive';
-import { ChoicePill } from '../../components/amazen';
-import { centeredContent } from '../../components/screen-container';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
+import { useFetchData } from '@/hooks/use-fetch-data';
+import { membersApi, type OrgMember } from '@/lib/api';
+import { useResponsive } from '@/lib/responsive';
+import { ChoicePill } from '@/components/amazen';
+import { centeredContent } from '@/components/screen-container';
 import { personName } from '@hbcfield/shared/client';
 
 export type Filter = { kind: 'all' } | { kind: 'role'; id: string } | { kind: 'none' } | { kind: 'external' };

@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { weekdayName } from '../../../lib/app-dates';
+import { weekdayName } from '@/lib/app-dates';
 import type { readShiftState } from '../shift-state';
 import { formatDuration } from '@hbcfield/shared/client';
 

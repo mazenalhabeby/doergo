@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { onAppStateChange } from '../../lib/app-resume';
+import { onAppStateChange } from '@/lib/app-resume';
 import { type StyleProp, type ViewStyle } from 'react-native';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { hasAccessModule } from '@hbcfield/shared/client';
-import { useAuth } from '../../contexts/auth-context';
-import { useTheme } from '../../contexts/theme-context';
-import { useHomeTasks } from '../../offline/tasks/use-home-tasks';
-import { useOffline } from '../../offline/offline-context';
-import { isUnreachable } from '../../offline/actions/unreachable';
-import { useShift } from '../../offline/attendance/use-shift';
-import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { useLiveRefresh } from '../../hooks/use-live-refresh';
-import { scheduleApi } from '../../lib/api';
-import type { ScheduleEntry, Task } from '../../lib/api/types';
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-context';
+import { useHomeTasks } from '@/offline/tasks/use-home-tasks';
+import { useOffline } from '@/offline/offline-context';
+import { isUnreachable } from '@/offline/actions/unreachable';
+import { useShift } from '@/offline/attendance/use-shift';
+import { useTimeFormat } from '@/hooks/use-time-format';
+import { useLiveRefresh } from '@/hooks/use-live-refresh';
+import { scheduleApi } from '@/lib/api';
+import type { ScheduleEntry, Task } from '@/lib/api/types';
 import { usePitch } from './pitch';
 import {
   shapeFor,

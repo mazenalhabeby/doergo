@@ -3,10 +3,10 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { formatCalendarDate } from '@hbcfield/shared/client';
-import { useTheme } from '../../contexts/theme-context';
-import type { MemberDocument } from '../../lib/api';
-import { documentTypeIcon } from '../../lib/document-icons';
-import { AText, Pill } from '../../components/amazen';
+import { useTheme } from '@/contexts/theme-context';
+import type { MemberDocument } from '@/lib/api';
+import { documentTypeIcon } from '@/lib/document-icons';
+import { AText, Pill } from '@/components/amazen';
 
 const MONTH_KEYS = [
   'january', 'february', 'march', 'april', 'may', 'june',

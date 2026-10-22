@@ -1,8 +1,8 @@
 import { memo } from 'react';
 import { Pressable, View } from 'react-native';
-import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../../components/amazen';
-import type { MobileCustomerActivity } from '../../lib/api';
+import { useTheme } from '@/contexts/theme-context';
+import { AText } from '@/components/amazen';
+import type { MobileCustomerActivity } from '@/lib/api';
 
 /*
   ⚠️ A REMINDER always is amber on the rail, whatever its reason is.

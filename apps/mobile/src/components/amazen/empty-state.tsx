@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import { View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
 import { AText } from './text';
 import { GhostButton } from './button';
 

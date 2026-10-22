@@ -7,7 +7,7 @@
  * a frozen home screen at a few thousand — grouping a site by copying its
  * list per person was exactly that.
  */
-import { crewPeopleFrom, crewState, needsBySpace, rosteredCountOf, CAPS, type CrewEntryInput, type CrewNoShowInput } from '../../features/home/crew-state';
+import { crewPeopleFrom, crewState, needsBySpace, rosteredCountOf, CAPS, type CrewEntryInput, type CrewNoShowInput } from '@/features/home/crew-state';
 
 const NOW = new Date(2026, 8, 24, 15, 0, 0).getTime();
 const iso = (mins: number) => new Date(NOW + mins * 60000).toISOString();

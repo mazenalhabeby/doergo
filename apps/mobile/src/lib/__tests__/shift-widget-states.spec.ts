@@ -11,8 +11,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { AttendanceStatus, BreakStatus, TimeEntry } from '@hbcfield/shared/client';
 import { shiftCard } from './shift-card-files';
-import { readShiftState, targetLabel, heroParts, workingDaysLeftIn } from '../../features/home/shift-state';
-import { readSource } from '../../test-utils/read-source';
+import { readShiftState, targetLabel, heroParts, workingDaysLeftIn } from '@/features/home/shift-state';
+import { readSource } from '@/test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const code = (p: string) =>

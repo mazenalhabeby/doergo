@@ -11,25 +11,25 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../../../src/contexts/theme-context';
-import { useToast } from '../../../../src/island/island-context';
-import { overtimeApi, teamApi } from '../../../../src/lib/api';
-import { useAuth } from '../../../../src/contexts/auth-context';
-import { approverCandidates, type ApproverCandidate } from '../../../../src/lib/overtime-approvers';
-import { SignatureCapture } from '../../../../src/components';
-import { Ground, HeaderBack, ScreenHeader } from '../../../../src/components/amazen';
-import { useScreenWidth } from '../../../../src/components/screen-container';
-import { goBack } from '../../../../src/lib/go-back';
+import { useTheme } from '@/contexts/theme-context';
+import { useToast } from '@/island/island-context';
+import { overtimeApi, teamApi } from '@/lib/api';
+import { useAuth } from '@/contexts/auth-context';
+import { approverCandidates, type ApproverCandidate } from '@/lib/overtime-approvers';
+import { SignatureCapture } from '@/components';
+import { Ground, HeaderBack, ScreenHeader } from '@/components/amazen';
+import { useScreenWidth } from '@/components/screen-container';
+import { goBack } from '@/lib/go-back';
 import {
   COLORS,
   SPACING,
   RADIUS,
   FONT_SIZE,
   FONT_WEIGHT,
-} from '../../../../src/lib/constants';
-import { useQueuedCreate } from '../../../../src/offline/actions/queued-create';
+} from '@/lib/constants';
+import { useQueuedCreate } from '@/offline/actions/queued-create';
 import { personName } from '@hbcfield/shared/client';
-import { initialOf } from '../../../../src/lib/people';
+import { initialOf } from '@/lib/people';
 
 const DURATION_OPTIONS = [
   { label: '30 min', value: 30 },

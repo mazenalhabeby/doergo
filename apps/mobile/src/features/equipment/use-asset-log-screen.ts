@@ -4,13 +4,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
 import { useFormPalette } from './equipment-frame';
-import { forgetHeldAssets } from '../../hooks/use-held-assets';
-import { useEntryDayBounds } from '../../hooks/use-entry-day-bounds';
-import { assetEntryDateText, dayKeyOf, occurredAtForDay } from '../../lib/log-dates';
-import { useToast } from '../../island/island-context';
-import { useImagePicker } from '../../hooks/useImagePicker';
-import { scanReceipt } from '../../lib/receipt-scan';
-import { assetsApi, assetRegisterApi, uploadToPresignedUrl, type HeldAsset } from '../../lib/api';
+import { forgetHeldAssets } from '@/hooks/use-held-assets';
+import { useEntryDayBounds } from '@/hooks/use-entry-day-bounds';
+import { assetEntryDateText, dayKeyOf, occurredAtForDay } from '@/lib/log-dates';
+import { useToast } from '@/island/island-context';
+import { useImagePicker } from '@/hooks/use-image-picker';
+import { scanReceipt } from '@/lib/receipt-scan';
+import { assetsApi, assetRegisterApi, uploadToPresignedUrl, type HeldAsset } from '@/lib/api';
 import {
   normalizeKindShape,
   findLogType,
@@ -20,12 +20,12 @@ import {
   type LogValueProblem,
   fromCents,
 } from '@hbcfield/shared/client';
-import { COLORS } from '../../lib/constants';
-import { logTypeLabel } from '../../lib/log-display';
-import { useOffline } from '../../offline/offline-context';
-import { logFromPhone } from '../../offline/assets/log-actions';
-import { useQueuedWrite } from '../../offline/actions/queued-write';
-import { caught } from '../../lib/caught';
+import { COLORS } from '@/lib/constants';
+import { logTypeLabel } from '@/lib/log-display';
+import { useOffline } from '@/offline/offline-context';
+import { logFromPhone } from '@/offline/assets/log-actions';
+import { useQueuedWrite } from '@/offline/actions/queued-write';
+import { caught } from '@/lib/caught';
 
 /**
  * "What did you do?" — one log entry against something I hold.
