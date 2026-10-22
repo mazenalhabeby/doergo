@@ -43,7 +43,13 @@ def check(name, ok, detail=''):
 
 
 def login(email):
-    return data(call('POST', '/auth/login', body={'email': email, 'password': 'password123'}))['accessToken']
+    # The sign-in route is rate-limited (5 a minute per address): wait a 429 out rather than fail.
+    for _ in range(10):
+        s, b = call('POST', '/auth/login', body={'email': email, 'password': 'password123'})
+        if s != 429:
+            return data((s, b))['accessToken']
+        time.sleep(15)
+    sys.exit(f'cannot sign in as {email}: still rate-limited')
 
 
 ADMIN = login('client@example.com')

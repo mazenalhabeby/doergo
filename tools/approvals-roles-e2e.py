@@ -20,6 +20,7 @@ Klaus approves one of the two shifts the seed left for him.
 import atexit
 import json
 import statistics
+import subprocess
 import sys
 import time
 import urllib.error
@@ -83,6 +84,18 @@ atexit.register(_sign_out_all)
 # Every run asks for days nobody asked for before (the overlap rule would rightly refuse a repeat).
 import random
 _BASE = date(2027, 1, 4) + timedelta(weeks=random.randint(0, 400))
+
+
+def _reopen_shift(entry_id):
+    """Put a shift this run approved back to waiting, so the next run has one to approve.
+
+    The seed holds one waiting Weingärtner shift; section C approves it through the inbox, and there
+    is no route that un-approves a shift — so it is reset in the database, as other e2e scripts do.
+    """
+    sql = ('update time_entries set "approvalStatus"=\'PENDING\', "approvedAt"=null, "approvedById"=null '
+           f"where id='{entry_id}';")
+    subprocess.run(['docker', 'exec', '-i', 'hbcfield-postgres', 'psql', '-U', 'hbcfield', '-d', 'hbcfield', '-q'],
+                   input=sql, capture_output=True, text=True)
 
 
 def day(offset):
@@ -206,6 +219,8 @@ def main():
         before = len(ext)
         s, b = call('POST', '/approvals/decide', who['external'], {'kind': 'hours', 'id': hours[0]['id'], 'action': 'approve'}, label='decide:external')
         check('approves a Weingärtner shift from the inbox', s == 200, (s, b))
+        if s == 200:
+            atexit.register(_reopen_shift, hours[0]['id'])
         check('and it leaves their inbox', len(inbox(who['external'], 'inbox:external')) == before - 1)
         other = next((i for i in owner_items if i['kind'] == 'hours' and (i.get('space') or {}).get('id') == OTHER_SITE), None)
         if other:

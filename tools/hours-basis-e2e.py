@@ -1,5 +1,5 @@
 """Hours on the invoice per person (counted / clocked / shift), over real HTTP, LOCAL only:  python3 tools/hours-basis-e2e.py"""
-import json,subprocess,urllib.request,uuid
+import json,subprocess,time,urllib.request,uuid
 API='http://localhost:4000/api/v1'; SPACE='cmuu52nkq00btsbw5d98uvz9j'; DAY='2026-08-03'
 fails=0
 def call(m,p,t=None,b=None):
@@ -11,7 +11,14 @@ def data(r): return r[1].get('data',r[1])
 def check(n,ok,d=''):
     global fails; print(('PASS ' if ok else 'FAIL ')+n+('' if ok else f'  -> {d}')); fails+= (not ok)
 def psql(sql): return subprocess.run(['docker','exec','-i','hbcfield-postgres','psql','-U','hbcfield','-d','hbcfield','-tAq'],input=sql,capture_output=True,text=True).stdout.strip()
-T=data(call('POST','/auth/login',b={'email':'client@example.com','password':'password123'}))['accessToken']
+def login(email):
+    # The sign-in route is rate-limited (5 a minute per address): wait a 429 out rather than fail.
+    for _ in range(10):
+        r=call('POST','/auth/login',b={'email':email,'password':'password123'})
+        if r[0]!=429: return data(r)['accessToken']
+        time.sleep(15)
+    raise SystemExit(f'cannot sign in as {email}: still rate-limited')
+T=login('client@example.com')
 members=data(call('GET',f'/spaces/{SPACE}/members',T))
 m=next(x for x in members if (x.get('effectiveBillBy') in ('HOUR','BOTH')) and not x['user'].get('isExternal'))
 uid,mid,name=m['userId'],m['id'],m['user']['firstName']
