@@ -4,12 +4,12 @@ import { NotFoundException, BadRequestException, ForbiddenException } from '@nes
 import { computeScheduleFlags } from '@hbcfield/shared';
 import { AttendanceService } from '../attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
-import { BREAK_SERVICES } from '../break-services';
+import { BREAK_SERVICES } from '../rests/break-services';
 import { breakServicesOf, type BreakServiceParts } from './break.service.fixture';
 import { entryServicesOf, type ApprovalServiceParts } from './approval.service.fixture';
-import { ENTRY_SERVICES } from '../entry-services';
-import { AttendanceReportService } from '../attendance-report.service';
-import { ShiftResolverService } from '../shift-resolver.service';
+import { ENTRY_SERVICES } from '../entries/entry-services';
+import { AttendanceReportService } from '../reports/attendance-report.service';
+import { ShiftResolverService } from '../core/shift-resolver.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { PrismaService } from '@hbcfield/shared';
 import {
@@ -18,9 +18,9 @@ import {
   SERVICE_NAMES,
   QUEUE_NAMES,
 } from '@hbcfield/shared';
-import { CountedTimeService } from '../counted-time.service';
-import { BreakRulesService } from '../break-rules.service';
-import { BreakReminderService } from '../break-reminder.service';
+import { CountedTimeService } from '../core/counted-time.service';
+import { BreakRulesService } from '../core/break-rules.service';
+import { BreakReminderService } from '../rests/break-reminder.service';
 import { PresenceService } from '../presence/presence.service';
 
 describe('AttendanceService', () => {

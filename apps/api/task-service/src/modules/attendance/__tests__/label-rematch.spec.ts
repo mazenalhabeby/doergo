@@ -1,4 +1,4 @@
-import { rematchLabels } from '../rematch-labels';
+import { rematchLabels } from '../shifts/rematch-labels';
 
 /** A new entry matched to a shift added later — judged like a clock-in. */
 const facts = { shift: null, firstOfShift: true, clockIn: { judged: true, metresOutside: 0 } };

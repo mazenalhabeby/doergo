@@ -8,8 +8,8 @@
  *    Vienna on the last day (05:00Z) fell "after" the leave;
  *  - the sweep always nudged every 5 min, 3 times, whatever the shift said.
  */
-import { ShiftSweepService, shiftNudgeCadence } from '../shift-sweep.service';
-import { NoShowSettleService } from '../no-show-settle.service';
+import { ShiftSweepService, shiftNudgeCadence } from '../no-shows/shift-sweep.service';
+import { NoShowSettleService } from '../no-shows/no-show-settle.service';
 
 const NOW = new Date('2026-10-09T05:10:00.000Z');
 

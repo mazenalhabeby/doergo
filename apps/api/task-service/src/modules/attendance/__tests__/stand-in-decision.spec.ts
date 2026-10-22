@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { assertNotSelfDecision } from '../self-decision';
+import { assertNotSelfDecision } from '../core/self-decision';
 
 /*
   A stand-in decides the leader's items while the leader is away — but never

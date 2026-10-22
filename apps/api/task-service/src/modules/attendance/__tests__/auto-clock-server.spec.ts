@@ -1,6 +1,6 @@
 import { autoClockParts, type AutoClockServiceParts } from './auto-clock.service.fixture';
 /**
- * The automatic clock's server half (attendance/auto-clock.service.ts + the
+ * The automatic clock's server half (attendance/auto-clock/auto-clock.service.ts + the
  * clock-in / clock-out / close / sweeps it rides on).
  *
  * The phone decides arrival and departure offline; EVERYTHING it sends is a
@@ -20,16 +20,16 @@ import { NotFoundException } from '@nestjs/common';
 import { QUEUE_NAMES, SERVICE_NAMES, TimeEntryStatus, AUTO_CLOCK_DEFAULTS } from '@hbcfield/shared';
 import { AttendanceService } from '../attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
-import { AttendanceGeocoderService } from '../attendance-geocoder.service';
-import { ShiftResolverService } from '../shift-resolver.service';
-import { CountedTimeService } from '../counted-time.service';
-import { BreakRulesService } from '../break-rules.service';
-import { BreakReminderService } from '../break-reminder.service';
-import { BREAK_SERVICES } from '../break-services';
+import { AttendanceGeocoderService } from '../core/attendance-geocoder.service';
+import { ShiftResolverService } from '../core/shift-resolver.service';
+import { CountedTimeService } from '../core/counted-time.service';
+import { BreakRulesService } from '../core/break-rules.service';
+import { BreakReminderService } from '../rests/break-reminder.service';
+import { BREAK_SERVICES } from '../rests/break-services';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { PrismaService } from '@hbcfield/shared';
 import { PresenceService } from '../presence/presence.service';
-import { AUTO_UNDO_EVENT } from '../auto-clock.service';
+import { AUTO_UNDO_EVENT } from '../auto-clock/auto-clock.service';
 import { clockOutServices } from './clock-out.service.fixture';
 import { shiftSweepParts } from './shift-sweep.service.fixture';
 

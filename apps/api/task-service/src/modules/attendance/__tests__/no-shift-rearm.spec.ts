@@ -1,5 +1,5 @@
 /** A workspace's hours without a shift changed: the sessions running there follow at once. */
-import { rearmNoShiftSessions } from '../no-shift-rearm';
+import { rearmNoShiftSessions } from '../core/no-shift-rearm';
 
 const sqlOf = (call: unknown[]) => (call[0] as TemplateStringsArray).join('?');
 

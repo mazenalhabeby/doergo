@@ -6,7 +6,7 @@
  * whether the supervisor who was told "hasn't clocked in" is told otherwise.
  */
 // AttendanceService hands this to ShiftSweepService; who is told comes from AttendanceRoutingService.
-import { ShiftSweepService } from '../shift-sweep.service';
+import { ShiftSweepService } from '../no-shows/shift-sweep.service';
 
 const TAP = new Date('2026-09-14T07:58:00.000Z');
 

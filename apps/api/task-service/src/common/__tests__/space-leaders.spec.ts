@@ -43,7 +43,7 @@ describe('spaceRoleHolders', () => {
   });
 
   it.each([
-    ['attendance', '../../modules/attendance/attendance-routing.service.ts', 'resolveSpaceLeaders'],
+    ['attendance', '../../modules/attendance/core/attendance-routing.service.ts', 'resolveSpaceLeaders'],
     ['assets', '../../modules/assets/asset-responsible.service.ts', 'spaceManagers'],
   ])('%s asks it through the one function', (_n, file, method) => {
     const src = readFileSync(join(__dirname, file), 'utf8');

@@ -2,10 +2,10 @@
  * Shifts left open: closed with a temporary time, replaced by the real one.
  */
 // AttendanceService hands these to the collaborators that own them.
-import { ShiftCloseSweepService } from '../shift-close-sweep.service';
-import { DecidedCloseService } from '../decided-close.service';
-import { ExtraTimeDecisionService } from '../extra-time-decision.service';
-import { isAbandoned, provisionalClockOut } from '../open-shift-close';
+import { ShiftCloseSweepService } from '../clock-out/shift-close-sweep.service';
+import { DecidedCloseService } from '../clock-out/decided-close.service';
+import { ExtraTimeDecisionService } from '../extra-time/extra-time-decision.service';
+import { isAbandoned, provisionalClockOut } from '../core/open-shift-close';
 
 const at = (iso: string) => new Date(`2026-09-${iso}:00.000Z`);
 const H = 3_600_000;

@@ -1,5 +1,5 @@
-import { ShiftRematchService } from '../shift-rematch.service';
-import { CountedTimeService } from '../counted-time.service';
+import { ShiftRematchService } from '../shifts/shift-rematch.service';
+import { CountedTimeService } from '../core/counted-time.service';
 
 /**
  * A shift added after the clock-in.

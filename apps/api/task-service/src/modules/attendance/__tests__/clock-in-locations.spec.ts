@@ -63,8 +63,8 @@ describe('listClockInLocations', () => {
   // filter, and standing the whole AttendanceService up (queues, notifications,
   // shift resolver) to observe one `where` clause would test the harness.
   // (AttendanceService hands listClockInLocations to ClockInLocationsService, where it lives.)
-  const { ClockInLocationsService } = require('../clock-in-locations.service');
-  const { ClockInContextService } = require('../clock-in-context.service');
+  const { ClockInLocationsService } = require('../clock-in/clock-in-locations.service');
+  const { ClockInContextService } = require('../clock-in/clock-in-context.service');
   const service = Object.create(ClockInLocationsService.prototype);
   service.prisma = prisma;
   // The shared clock-in helpers are a collaborator now; it reads the same prisma double.
@@ -151,8 +151,8 @@ describe('listClockInLocations', () => {
 });
 
 describe('listClockInLocations — only where Time Tracking runs', () => {
-  const { ClockInLocationsService } = require('../clock-in-locations.service');
-  const { ClockInContextService } = require('../clock-in-context.service');
+  const { ClockInLocationsService } = require('../clock-in/clock-in-locations.service');
+  const { ClockInContextService } = require('../clock-in/clock-in-context.service');
   const build = (rows: unknown[]) => {
     const service = Object.create(ClockInLocationsService.prototype);
     service.prisma = {

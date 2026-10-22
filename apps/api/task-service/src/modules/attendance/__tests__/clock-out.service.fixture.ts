@@ -1,8 +1,8 @@
 import { combinedServices } from '../../../common/testing/combined-services';
-import { ClockOutService } from '../clock-out.service';
-import { ClockOutAlertsService } from '../clock-out-alerts.service';
-import { DecidedCloseService } from '../decided-close.service';
-import { ShiftCloseSweepService } from '../shift-close-sweep.service';
+import { ClockOutService } from '../clock-out/clock-out.service';
+import { ClockOutAlertsService } from '../clock-out/clock-out-alerts.service';
+import { DecidedCloseService } from '../clock-out/decided-close.service';
+import { ShiftCloseSweepService } from '../clock-out/shift-close-sweep.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };

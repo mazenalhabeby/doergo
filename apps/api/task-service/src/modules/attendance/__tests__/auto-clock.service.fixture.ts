@@ -1,7 +1,7 @@
 import { combinedServices } from '../../../common/testing/combined-services';
-import { AutoClockService } from '../auto-clock.service';
-import { AutoClockPlanService } from '../auto-clock-plan.service';
-import { AutoClockUndoService } from '../auto-clock-undo.service';
+import { AutoClockService } from '../auto-clock/auto-clock.service';
+import { AutoClockPlanService } from '../auto-clock/auto-clock-plan.service';
+import { AutoClockUndoService } from '../auto-clock/auto-clock-undo.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };

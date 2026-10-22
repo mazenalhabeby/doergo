@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
-import { BREAK_SERVICES } from '../break-services';
-import { ClockOutService } from '../clock-out.service';
+import { BREAK_SERVICES } from '../rests/break-services';
+import { ClockOutService } from '../clock-out/clock-out.service';
 
 /*
   Nest finds a constructor's dependencies through the type metadata TypeScript emits.

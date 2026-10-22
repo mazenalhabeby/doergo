@@ -1,9 +1,9 @@
 import { Test } from '@nestjs/testing';
 import { AttendanceService } from '../attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
-import { CountedTimeService } from '../counted-time.service';
-import { BreakRulesService } from '../break-rules.service';
-import { ShiftResolverService } from '../shift-resolver.service';
+import { CountedTimeService } from '../core/counted-time.service';
+import { BreakRulesService } from '../core/break-rules.service';
+import { ShiftResolverService } from '../core/shift-resolver.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { PrismaService } from '@hbcfield/shared';
 import { SERVICE_NAMES, QUEUE_NAMES } from '@hbcfield/shared';

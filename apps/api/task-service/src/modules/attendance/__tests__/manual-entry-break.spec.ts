@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { entryServicesOf, type ApprovalServiceParts } from './approval.service.fixture';
-import { ENTRY_SERVICES } from '../entry-services';
+import { ENTRY_SERVICES } from '../entries/entry-services';
 import { PrismaService } from '@hbcfield/shared';
-import { CountedTimeService } from '../counted-time.service';
-import { BreakRulesService } from '../break-rules.service';
-import { BreakReminderService } from '../break-reminder.service';
+import { CountedTimeService } from '../core/counted-time.service';
+import { BreakRulesService } from '../core/break-rules.service';
+import { BreakReminderService } from '../rests/break-reminder.service';
 
 /*
   A rest entered on "Add attendance" has to be the same thing as a rest entered

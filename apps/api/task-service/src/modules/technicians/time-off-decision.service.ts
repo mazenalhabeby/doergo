@@ -1,7 +1,7 @@
 import { notEndedWhere, isAbsence, toISODateString } from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { success } from '@hbcfield/shared';
-import { assertNotSelfDecision } from '../attendance/self-decision';
+import { assertNotSelfDecision } from '../attendance/core/self-decision';
 import { ApproveTimeOffDto, CancelTimeOffDto } from './dto';
 import { SPACE_BRIEF, requestFacts } from './technicians-helpers';
 import { MemberServiceBase } from './member-service.base';
@@ -64,7 +64,7 @@ export class TimeOffDecisionService extends MemberServiceBase {
     }
 
     // Nobody decides their own leave, either way — the overtime rule
-    // (attendance/self-decision.ts). Withdrawing your own request is
+    // (attendance/core/self-decision.ts). Withdrawing your own request is
     // `cancelTimeOff`, not a decision.
     await assertNotSelfDecision(this.prisma as never, {
       deciderId: approverId,

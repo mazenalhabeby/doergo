@@ -1,78 +1,51 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule } from '@nestjs/microservices';
 import { BullModule } from '@nestjs/bullmq';
-import { SERVICE_NAMES, createClientOptions, QUEUE_NAMES } from '@hbcfield/shared';
+import { QUEUE_NAMES } from '@hbcfield/shared';
 import { AttendanceController } from './attendance.controller';
-import { AttendanceReportsRpcController } from './attendance-reports.rpc.controller';
-import { BreaksRpcController } from './breaks.rpc.controller';
-import { EntryDecisionsRpcController } from './entry-decisions.rpc.controller';
-import { AutoClockRpcController } from './auto-clock.rpc.controller';
 import { AttendanceService } from './attendance.service';
-import { ATTENDANCE_SERVICE_PARTS } from './attendance-service-parts';
-import { DecidedCloseService } from './decided-close.service';
-import { ShiftResolverService } from './shift-resolver.service';
-import { BREAK_SERVICES } from './break-services';
-import { AttendanceReportService } from './attendance-report.service';
-import { ENTRY_SERVICES } from './entry-services';
 import { AttendanceProcessor } from './attendance.processor';
 import { AttendanceScheduler } from './attendance.scheduler';
-import { CountedTimeService } from './counted-time.service';
-import { BreakRulesService } from './break-rules.service';
-import { BreakReminderService } from './break-reminder.service';
 import { PresenceModule } from './presence/presence.module';
-import { ShiftRematchService } from './shift-rematch.service';
-import { ClockOutService } from './clock-out.service';
-import { NoShowSettleService } from './no-show-settle.service';
-import { HandoverModule } from '../tasks/handover/handover.module';
-import { CalendarRulesModule } from '../calendar/calendar-rules.module';
+import { AttendanceCoreModule } from './core/attendance-core.module';
+import { AutoClockModule } from './auto-clock/auto-clock.module';
+import { ExtraTimeModule } from './extra-time/extra-time.module';
+import { RestsModule } from './rests/rests.module';
+import { NoShowsModule } from './no-shows/no-shows.module';
+import { AttendanceShiftsModule } from './shifts/attendance-shifts.module';
+import { ClockOutModule } from './clock-out/clock-out.module';
+import { ClockInModule } from './clock-in/clock-in.module';
+import { OnTheClockModule } from './on-the-clock/on-the-clock.module';
+import { AttendanceEntriesModule } from './entries/attendance-entries.module';
+import { AttendanceReadsModule } from './reads/attendance-reads.module';
+import { AttendanceReportsModule } from './reports/attendance-reports.module';
 
+/**
+ * Clocking in and out. Each part is its own module (code-structure-fix 4.2): core · auto clock · extra
+ * time · rests · no-shows · shifts · clock-out · clock-in · on the clock · entries · reads · reports,
+ * plus presence. This module holds only what spans them: the AttendanceService facade, the BullMQ
+ * processor and scheduler, and the HTTP-facing message controller.
+ */
 @Module({
   imports: [
-    ClientsModule.registerAsync([
-      createClientOptions(SERVICE_NAMES.NOTIFICATION),
-      createClientOptions(SERVICE_NAMES.AUTH),
-    ]),
     BullModule.registerQueue({ name: QUEUE_NAMES.ATTENDANCE }),
     BullModule.registerQueue({ name: QUEUE_NAMES.OVERTIME }),
     PresenceModule,
-    // Every way a shift ends pauses the jobs left in work.
-    HandoverModule,
-    // Public holidays close a missed shift by themselves (no-show-settle).
-    CalendarRulesModule,
+    AttendanceCoreModule,
+    AutoClockModule,
+    ExtraTimeModule,
+    RestsModule,
+    NoShowsModule,
+    AttendanceShiftsModule,
+    ClockOutModule,
+    ClockInModule,
+    OnTheClockModule,
+    AttendanceEntriesModule,
+    AttendanceReadsModule,
+    AttendanceReportsModule,
   ],
-  controllers: [
-    AttendanceController,
-    AttendanceReportsRpcController,
-    BreaksRpcController,
-    EntryDecisionsRpcController,
-    AutoClockRpcController,
-  ],
-  providers: [
-    AttendanceService,
-    ...ATTENDANCE_SERVICE_PARTS, // the collaborators behind the AttendanceService facade
-    ShiftResolverService,
-    // One answer to "what are these hours worth", shared by the clock-out, the
-    // self-reported clock-out, the admin edit and the break services.
-    CountedTimeService,
-    // Rests: the rules a workspace writes, and one shift's plan of them.
-    BreakRulesService,
-    BreakReminderService,
-    ...BREAK_SERVICES,
-    // A shift added after the clock-in reaches the entries it covers.
-    ShiftRematchService,
-    AttendanceReportService,
-    ...ENTRY_SERVICES,
-    AttendanceProcessor,
-    AttendanceScheduler,
-  ],
-  // ClockOutService: the one way a shift closes — the legacy overtime module closes through it too.
-  exports: [
-    AttendanceService,
-    AttendanceScheduler,
-    ShiftRematchService,
-    ClockOutService,
-    DecidedCloseService,
-    NoShowSettleService,
-  ],
+  controllers: [AttendanceController],
+  providers: [AttendanceService, AttendanceProcessor, AttendanceScheduler],
+  // ShiftRematch (shifts), ClockOut + DecidedClose (clock-out), NoShowSettle (no-shows) are used elsewhere.
+  exports: [AttendanceService, AttendanceScheduler, AttendanceShiftsModule, ClockOutModule, NoShowsModule],
 })
 export class AttendanceModule {}

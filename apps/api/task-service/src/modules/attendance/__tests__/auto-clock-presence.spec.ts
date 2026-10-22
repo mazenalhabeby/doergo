@@ -18,7 +18,7 @@ import {
   suggestStartWindow,
   type MemberAutoClockSettings,
 } from '@hbcfield/shared';
-import { provisionalClockOut } from '../open-shift-close';
+import { provisionalClockOut } from '../core/open-shift-close';
 
 const TZ = 'America/Los_Angeles';
 // 2026-10-12 is PDT (UTC-7): 20:00 local = 03:00Z next day.

@@ -1,6 +1,6 @@
-import { closingLabelColumns } from '../clock-out-helpers';
-import { clockOutLabelSpec } from '../clock-out-steps';
-import { closedHowOfBasis } from '../open-shift-close';
+import { closingLabelColumns } from '../clock-out/clock-out-helpers';
+import { clockOutLabelSpec } from '../clock-out/clock-out-steps';
+import { closedHowOfBasis } from '../core/open-shift-close';
 
 /** How a shift closed, recorded in the label facts — for new entries only. */
 const facts = { shift: null, firstOfShift: true, clockIn: { judged: true, metresOutside: 0 } };

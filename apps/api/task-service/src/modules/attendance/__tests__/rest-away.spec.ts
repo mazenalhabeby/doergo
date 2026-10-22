@@ -1,4 +1,4 @@
-import { RestAwayService, LEFT_FOR_REST_REASON, type RestAwayEntry } from '../rest-away.service';
+import { RestAwayService, LEFT_FOR_REST_REASON, type RestAwayEntry } from '../rests/rest-away.service';
 
 /**
  * Lunch off site is the rest (decided 2026-10-18): leaving inside a planned rest's

@@ -1,4 +1,4 @@
-import { AttendanceReportService } from '../attendance-report.service';
+import { AttendanceReportService } from '../reports/attendance-report.service';
 
 /*
   The attendance export is opened in a spreadsheet on an office PC. A note or a

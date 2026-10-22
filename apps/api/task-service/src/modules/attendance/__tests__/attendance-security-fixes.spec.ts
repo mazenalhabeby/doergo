@@ -1,22 +1,22 @@
-import { ApprovalService } from '../approval.service';
+import { ApprovalService } from '../entries/approval.service';
 import { entryServices } from './approval.service.fixture';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { entryServicesOf, type ApprovalServiceParts } from './approval.service.fixture';
-import { ENTRY_SERVICES } from '../entry-services';
+import { ENTRY_SERVICES } from '../entries/entry-services';
 // AttendanceService hands the entry reads to AttendanceEntriesReadService, where they live.
-import { AttendanceEntriesReadService } from '../attendance-entries-read.service';
+import { AttendanceEntriesReadService } from '../reads/attendance-entries-read.service';
 import { readAttendanceServiceSource } from './attendance-service-source';
-import { BREAK_SERVICES } from '../break-services';
+import { BREAK_SERVICES } from '../rests/break-services';
 import { breakServicesOf, type BreakServiceParts } from './break.service.fixture';
-import { BreakRulesService } from '../break-rules.service';
-import { BreakReminderService } from '../break-reminder.service';
-import { CountedTimeService } from '../counted-time.service';
+import { BreakRulesService } from '../core/break-rules.service';
+import { BreakReminderService } from '../rests/break-reminder.service';
+import { CountedTimeService } from '../core/counted-time.service';
 import { PrismaService } from '@hbcfield/shared';
 import { TimeOffDecisionService } from '../../technicians/time-off-decision.service';
 import { assetExpenseParts } from '../../assets/__tests__/asset-expense.service.fixture';
-import { clockEventEntry } from '../clock-event';
+import { clockEventEntry } from '../core/clock-event';
 
 /**
  * Regressions for one batch of attendance authorization and correctness fixes.

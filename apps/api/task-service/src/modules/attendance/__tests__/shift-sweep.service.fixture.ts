@@ -1,7 +1,7 @@
 import { combinedServices } from '../../../common/testing/combined-services';
-import { ShiftSweepService } from '../shift-sweep.service';
-import { ShiftReminderSweepService } from '../shift-reminder-sweep.service';
-import { ShiftInstancesService } from '../shift-instances.service';
+import { ShiftSweepService } from '../no-shows/shift-sweep.service';
+import { ShiftReminderSweepService } from '../shifts/shift-reminder-sweep.service';
+import { ShiftInstancesService } from '../shifts/shift-instances.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };

@@ -1,11 +1,11 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
-import { alreadyClosedAnswer, clockOutMessage, geofenceAtOut, notesWithEarlyReason } from '../clock-out-steps';
+import { alreadyClosedAnswer, clockOutMessage, geofenceAtOut, notesWithEarlyReason } from '../clock-out/clock-out-steps';
 import {
   assertManualRangeShape,
   manualBreakPlacement,
   manualEntryRow,
   manualTargetDates,
-} from '../manual-entries-steps';
+} from '../entries/manual-entries-steps';
 
 describe('clock-out steps', () => {
   const closed = { id: 'e1', status: 'CLOCKED_OUT', clockOutAt: new Date('2026-10-01T16:00:00Z') };

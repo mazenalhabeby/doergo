@@ -3,7 +3,7 @@ import { JobProcessor } from '../../common/queue/job-processor';
 import { Job } from 'bullmq';
 import { QUEUE_NAMES, ATTENDANCE_JOB_TYPES } from '@hbcfield/shared';
 import { AttendanceService } from './attendance.service';
-import { BreakReminderService } from './break-reminder.service';
+import { BreakReminderService } from './rests/break-reminder.service';
 
 // concurrency:20 (audit P1) — the default of 1 serialised every clock-in/out,
 // heartbeat, the 1-min reminder sweep and the 30-min materialize through a single

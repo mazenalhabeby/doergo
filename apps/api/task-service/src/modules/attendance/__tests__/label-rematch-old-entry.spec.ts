@@ -1,7 +1,7 @@
 import { WorkModel } from '@hbcfield/shared';
-import { ShiftRematchService } from '../shift-rematch.service';
-import { ShiftResolverService } from '../shift-resolver.service';
-import { CountedTimeService } from '../counted-time.service';
+import { ShiftRematchService } from '../shifts/shift-rematch.service';
+import { ShiftResolverService } from '../core/shift-resolver.service';
+import { CountedTimeService } from '../core/counted-time.service';
 
 /**
  * ⚠️ The past is not touched. An entry written BEFORE the label rules

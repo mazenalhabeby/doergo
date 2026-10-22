@@ -1,5 +1,5 @@
 /** A person hears once, when the last waiting entry of their day is decided (day-decided.ts). */
-import { announceDayDecided } from '../day-decided';
+import { announceDayDecided } from '../entries/day-decided';
 
 type Row = {
   clockInAt: Date;

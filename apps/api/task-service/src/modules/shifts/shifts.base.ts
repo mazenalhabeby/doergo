@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, Logger, Optional } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
-import { ShiftRematchService } from '../attendance/shift-rematch.service';
+import { ShiftRematchService } from '../attendance/shifts/shift-rematch.service';
 import { scopeAllows, type SpaceScopeIds } from '@hbcfield/shared';
 import { HHMM } from './shifts-helpers';
 

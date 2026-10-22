@@ -1,29 +1,29 @@
 import { Injectable } from '@nestjs/common';
-import { ClockInService } from './clock-in.service';
-import { ClockOutService } from './clock-out.service';
-import { ExtraTimeService } from './extra-time.service';
-import { HeartbeatService } from './heartbeat.service';
-import { AttendanceReadService } from './attendance-read.service';
-import { ShiftSweepService } from './shift-sweep.service';
-import { NoShowRecordService } from './no-show-record.service';
-import { NoShowSettleService } from './no-show-settle.service';
-import { AttendanceRoutingService } from './attendance-routing.service';
-import { DecidedCloseService } from './decided-close.service';
-import { ShiftCloseSweepService } from './shift-close-sweep.service';
-import { ClockInLocationsService } from './clock-in-locations.service';
-import { ExtraTimeDecisionService } from './extra-time-decision.service';
-import { HeartbeatBatchService } from './heartbeat-batch.service';
-import { ExcursionsService } from './excursions.service';
-import { AttendanceEntriesReadService } from './attendance-entries-read.service';
-import { ShiftReminderSweepService } from './shift-reminder-sweep.service';
-import { ShiftInstancesService } from './shift-instances.service';
-import { NoShowSummaryService } from './no-show-summary.service';
+import { ClockInService } from './clock-in/clock-in.service';
+import { ClockOutService } from './clock-out/clock-out.service';
+import { ExtraTimeService } from './extra-time/extra-time.service';
+import { HeartbeatService } from './on-the-clock/heartbeat.service';
+import { AttendanceReadService } from './reads/attendance-read.service';
+import { ShiftSweepService } from './no-shows/shift-sweep.service';
+import { NoShowRecordService } from './no-shows/no-show-record.service';
+import { NoShowSettleService } from './no-shows/no-show-settle.service';
+import { AttendanceRoutingService } from './core/attendance-routing.service';
+import { DecidedCloseService } from './clock-out/decided-close.service';
+import { ShiftCloseSweepService } from './clock-out/shift-close-sweep.service';
+import { ClockInLocationsService } from './clock-in/clock-in-locations.service';
+import { ExtraTimeDecisionService } from './extra-time/extra-time-decision.service';
+import { HeartbeatBatchService } from './on-the-clock/heartbeat-batch.service';
+import { ExcursionsService } from './on-the-clock/excursions.service';
+import { AttendanceEntriesReadService } from './reads/attendance-entries-read.service';
+import { ShiftReminderSweepService } from './shifts/shift-reminder-sweep.service';
+import { ShiftInstancesService } from './shifts/shift-instances.service';
+import { NoShowSummaryService } from './no-shows/no-show-summary.service';
 
 /*
   Pure rules that callers have always imported from here — they live with
   extra time now (extra-time.service.ts).
 */
-export { decidableExtraTimeWhere, respondedAt } from './extra-time.service';
+export { decidableExtraTimeWhere, respondedAt } from './extra-time/extra-time.service';
 
 /**
  * The attendance service every caller injects — the controller, the

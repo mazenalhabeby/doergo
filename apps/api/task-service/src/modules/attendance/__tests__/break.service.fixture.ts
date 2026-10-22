@@ -1,9 +1,9 @@
 import { combinedServices } from '../../../common/testing/combined-services';
-import { BreakService } from '../break.service';
-import { BreakStartService } from '../break-start.service';
-import { BreakStatusService } from '../break-status.service';
-import { BreakReadService } from '../break-read.service';
-import { OfficeBreaksService } from '../office-breaks.service';
+import { BreakService } from '../rests/break.service';
+import { BreakStartService } from '../rests/break-start.service';
+import { BreakStatusService } from '../rests/break-status.service';
+import { BreakReadService } from '../rests/break-read.service';
+import { OfficeBreaksService } from '../rests/office-breaks.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };

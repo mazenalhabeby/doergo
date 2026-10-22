@@ -13,8 +13,8 @@ import {
   OVERTIME_NOTICE_EVENT,
   type OvertimeNotice,
 } from '@hbcfield/shared';
-import { DecidedCloseService } from './../attendance/decided-close.service';
-import { refusalNudge } from '../attendance/extra-time-helpers';
+import { DecidedCloseService } from '../attendance/clock-out/decided-close.service';
+import { refusalNudge } from '../attendance/extra-time/extra-time-helpers';
 
 /**
  * What the overtime services share: telling people, finding a pending approval the

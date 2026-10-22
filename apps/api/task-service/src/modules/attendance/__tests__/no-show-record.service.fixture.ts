@@ -1,6 +1,6 @@
 import { combinedServices } from '../../../common/testing/combined-services';
-import { NoShowRecordService } from '../no-show-record.service';
-import { NoShowSummaryService } from '../no-show-summary.service';
+import { NoShowRecordService } from '../no-shows/no-show-record.service';
+import { NoShowSummaryService } from '../no-shows/no-show-summary.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };

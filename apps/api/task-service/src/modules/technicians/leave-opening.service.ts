@@ -11,7 +11,7 @@ import {
   orgLeaveTrackingStart,
   leavePeopleIn,
 } from '@hbcfield/shared';
-import { assertNotSelfDecision } from '../attendance/self-decision';
+import { assertNotSelfDecision } from '../attendance/core/self-decision';
 import { PersonLeaveYear, asDate, dayOf, leaveYearFor, nameKey, readOpeningRows } from './leave-ledger-helpers';
 import { LeaveLedgerBase } from './leave-ledger.base';
 

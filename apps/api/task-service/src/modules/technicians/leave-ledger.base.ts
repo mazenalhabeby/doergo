@@ -20,7 +20,7 @@ import {
   ABSENCE_WHERE,
 } from '@hbcfield/shared';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
-import { assertNotSelfDecision } from '../attendance/self-decision';
+import { assertNotSelfDecision } from '../attendance/core/self-decision';
 import {
   OrgLeave,
   PersonLeave,
@@ -190,7 +190,7 @@ export abstract class LeaveLedgerBase {
    * The rule for writing somebody's balance is the rule for deciding their leave: the person is
    * in a workspace the caller manages the rota of (`scopeSpaceIds`, server-resolved; undefined =
    * org-wide) and it is not the caller's own balance — an organization administrator excepted
-   * (the same exemption as deciding leave, attendance/self-decision.ts).
+   * (the same exemption as deciding leave, attendance/core/self-decision.ts).
    */
   protected async assertMayWrite(
     organizationId: string,

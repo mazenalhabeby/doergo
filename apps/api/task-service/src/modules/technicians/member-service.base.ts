@@ -16,7 +16,7 @@ import { NotificationRoutingService } from '../../common/notification-routing.se
 import { CoverService } from './cover.service';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { LeaveLedgerService } from './leave-ledger.service';
-import { ShiftRematchService } from '../attendance/shift-rematch.service';
+import { ShiftRematchService } from '../attendance/shifts/shift-rematch.service';
 
 // Leave dates are Postgres DATEs (stored at midnight UTC), so they are read back
 // with toISODateString — the UTC day IS the stored day. Through the server's

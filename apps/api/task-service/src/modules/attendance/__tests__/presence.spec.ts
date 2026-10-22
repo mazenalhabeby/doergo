@@ -267,7 +267,7 @@ describe('getEntryPresence', () => {
   it('is "not found" outside the caller’s spaces, and asks the history nothing', async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     // AttendanceService hands getEntryPresence to AttendanceReadService, where it lives.
-    const { AttendanceReadService } = require('../attendance-read.service');
+    const { AttendanceReadService } = require('../reads/attendance-read.service');
     const svc = Object.create(AttendanceReadService.prototype);
     svc.prisma = { timeEntry: { findFirst: jest.fn().mockResolvedValue(null) } };
     svc.presence = { history: jest.fn() };

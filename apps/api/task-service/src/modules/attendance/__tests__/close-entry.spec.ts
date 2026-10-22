@@ -12,8 +12,8 @@
 import { ForbiddenException } from '@nestjs/common';
 import { TimeEntryStatus } from '@hbcfield/shared';
 import { clockOutServices, type ClockOutServiceParts } from './clock-out.service.fixture';
-import { CountedTimeService } from '../counted-time.service';
-import { clockOutTimeFlags, endRunningRests } from '../open-shift-close';
+import { CountedTimeService } from '../core/counted-time.service';
+import { clockOutTimeFlags, endRunningRests } from '../core/open-shift-close';
 import { overtimeServices } from '../../overtime/__tests__/overtime.service.fixture';
 
 const at = (hhmm: string) => new Date(`2026-10-05T${hhmm}:00.000Z`);

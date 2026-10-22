@@ -7,7 +7,7 @@
  */
 // The rules are still imported from the facade (re-exported); the methods live in ExtraTimeDecisionService (and its base).
 import { decidableExtraTimeWhere, respondedAt } from '../attendance.service';
-import { ExtraTimeDecisionService } from '../extra-time-decision.service';
+import { ExtraTimeDecisionService } from '../extra-time/extra-time-decision.service';
 
 const at = (hhmm: string) => new Date(`2026-09-14T${hhmm}:00.000Z`);
 

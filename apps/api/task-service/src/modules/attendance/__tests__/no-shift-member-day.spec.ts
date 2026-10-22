@@ -1,5 +1,5 @@
-import { ClockInLocationsService } from '../clock-in-locations.service';
-import { ClockInContextService } from '../clock-in-context.service';
+import { ClockInLocationsService } from '../clock-in/clock-in-locations.service';
+import { ClockInContextService } from '../clock-in/clock-in-context.service';
 
 /*
   One day for the person, at every workspace.

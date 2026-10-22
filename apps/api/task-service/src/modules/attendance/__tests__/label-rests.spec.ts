@@ -1,4 +1,4 @@
-import { missedRestColumnsAfterOfficeRest, restColumnsAtBreakEnd } from '../label-rests';
+import { missedRestColumnsAfterOfficeRest, restColumnsAtBreakEnd } from '../rests/label-rests';
 
 /** Rests and the labels — new entries only. */
 const facts = {

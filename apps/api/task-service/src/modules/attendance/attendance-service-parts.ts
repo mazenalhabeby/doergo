@@ -1,34 +1,34 @@
-import { AttendanceRoutingService } from './attendance-routing.service';
-import { AttendanceGeocoderService } from './attendance-geocoder.service';
-import { ShiftSweepService } from './shift-sweep.service';
-import { ExtraTimeService } from './extra-time.service';
-import { ClockOutService } from './clock-out.service';
-import { ClockOutAlertsService } from './clock-out-alerts.service';
-import { DecidedCloseService } from './decided-close.service';
-import { ShiftCloseSweepService } from './shift-close-sweep.service';
-import { ClockInService } from './clock-in.service';
-import { ClockInContextService } from './clock-in-context.service';
-import { ClockInRemoteService } from './clock-in-remote.service';
-import { ClockInSiteWriter } from './clock-in-site.writer';
-import { ClockInLocationsService } from './clock-in-locations.service';
-import { HeartbeatService } from './heartbeat.service';
-import { AttendanceReadService } from './attendance-read.service';
-import { AutoClockService } from './auto-clock.service';
-import { NoShowSettleService } from './no-show-settle.service';
-import { NoShowRecordService } from './no-show-record.service';
-import { ExtraTimeDecisionService } from './extra-time-decision.service';
-import { HeartbeatBatchService } from './heartbeat-batch.service';
-import { ExcursionsService } from './excursions.service';
-import { AttendanceEntriesReadService } from './attendance-entries-read.service';
-import { ShiftReminderSweepService } from './shift-reminder-sweep.service';
-import { ShiftInstancesService } from './shift-instances.service';
-import { AutoClockPlanService } from './auto-clock-plan.service';
-import { AutoClockUndoService } from './auto-clock-undo.service';
-import { NoShowSummaryService } from './no-show-summary.service';
+import { AttendanceRoutingService } from './core/attendance-routing.service';
+import { AttendanceGeocoderService } from './core/attendance-geocoder.service';
+import { ShiftSweepService } from './no-shows/shift-sweep.service';
+import { ExtraTimeService } from './extra-time/extra-time.service';
+import { ClockOutService } from './clock-out/clock-out.service';
+import { ClockOutAlertsService } from './clock-out/clock-out-alerts.service';
+import { DecidedCloseService } from './clock-out/decided-close.service';
+import { ShiftCloseSweepService } from './clock-out/shift-close-sweep.service';
+import { ClockInService } from './clock-in/clock-in.service';
+import { ClockInContextService } from './clock-in/clock-in-context.service';
+import { ClockInRemoteService } from './clock-in/clock-in-remote.service';
+import { ClockInSiteWriter } from './clock-in/clock-in-site.writer';
+import { ClockInLocationsService } from './clock-in/clock-in-locations.service';
+import { HeartbeatService } from './on-the-clock/heartbeat.service';
+import { AttendanceReadService } from './reads/attendance-read.service';
+import { AutoClockService } from './auto-clock/auto-clock.service';
+import { NoShowSettleService } from './no-shows/no-show-settle.service';
+import { NoShowRecordService } from './no-shows/no-show-record.service';
+import { ExtraTimeDecisionService } from './extra-time/extra-time-decision.service';
+import { HeartbeatBatchService } from './on-the-clock/heartbeat-batch.service';
+import { ExcursionsService } from './on-the-clock/excursions.service';
+import { AttendanceEntriesReadService } from './reads/attendance-entries-read.service';
+import { ShiftReminderSweepService } from './shifts/shift-reminder-sweep.service';
+import { ShiftInstancesService } from './shifts/shift-instances.service';
+import { AutoClockPlanService } from './auto-clock/auto-clock-plan.service';
+import { AutoClockUndoService } from './auto-clock/auto-clock-undo.service';
+import { NoShowSummaryService } from './no-shows/no-show-summary.service';
 
 /**
- * The collaborators behind the AttendanceService facade. One list, read by the
- * module and by every test that builds AttendanceService, so the two cannot drift.
+ * The collaborators behind the AttendanceService facade, as ONE flat list for the tests that build it.
+ * The app wires them through the sub-modules (see attendance.module.ts); `tools/di-check.mjs` proves it.
  */
 export const ATTENDANCE_SERVICE_PARTS = [
   AttendanceRoutingService,

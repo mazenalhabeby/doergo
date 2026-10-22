@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BREAK_SERVICES } from '../break-services';
+import { BREAK_SERVICES } from '../rests/break-services';
 import { breakServicesOf, type BreakServiceParts } from './break.service.fixture';
 import { PrismaService } from '@hbcfield/shared';
-import { CountedTimeService } from '../counted-time.service';
-import { BreakRulesService } from '../break-rules.service';
-import { BreakReminderService } from '../break-reminder.service';
+import { CountedTimeService } from '../core/counted-time.service';
+import { BreakRulesService } from '../core/break-rules.service';
+import { BreakReminderService } from '../rests/break-reminder.service';
 
 /**
  * The shape of "the breaks on this shift".

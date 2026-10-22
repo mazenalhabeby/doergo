@@ -1,5 +1,5 @@
 import { of, throwError } from 'rxjs';
-import { AutoClockService } from '../auto-clock.service';
+import { AutoClockService } from '../auto-clock/auto-clock.service';
 
 /** The consent column lives on User, which auth-service owns: task-service decides, auth stores. */
 describe('auto-clock consent is stored by auth-service', () => {

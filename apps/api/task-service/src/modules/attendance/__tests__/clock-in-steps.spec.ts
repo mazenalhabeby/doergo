@@ -5,7 +5,7 @@ import {
   gpsAccuracyRefusal,
   outsideSiteRefusal,
   scheduleFlagsAtClockIn,
-} from '../clock-in-steps';
+} from '../clock-in/clock-in-steps';
 
 describe('clockIn steps', () => {
   it('refuses a fix worse than the threshold, accepts one at it', () => {

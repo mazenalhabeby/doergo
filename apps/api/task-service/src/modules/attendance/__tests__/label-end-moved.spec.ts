@@ -1,4 +1,4 @@
-import { departureFlagsAfterEndMoved, relabelAfterEndMoved } from '../label-end-moved';
+import { departureFlagsAfterEndMoved, relabelAfterEndMoved } from '../extra-time/label-end-moved';
 
 /** Approved extra time moves the planned end — new entries' departure labels follow it. */
 const facts = {

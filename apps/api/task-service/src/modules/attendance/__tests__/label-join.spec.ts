@@ -1,4 +1,4 @@
-import { isJoinableFragment, joinFragment, type FragmentCandidate } from '../clock-in-join';
+import { isJoinableFragment, joinFragment, type FragmentCandidate } from '../core/clock-in-join';
 
 /** One entry per shift: an automatic fragment followed by a clock-in for the same shift joins. */
 const base: FragmentCandidate = {

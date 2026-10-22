@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { success, clampListLimit, peopleFaces } from '@hbcfield/shared';
 import { type AssetActor } from './asset-access.service';
-import { assertNotSelfDecision } from '../attendance/self-decision';
+import { assertNotSelfDecision } from '../attendance/core/self-decision';
 import { EXPENSE_STATUS } from './asset-expense-helpers';
 import { AssetExpenseBase } from './asset-expense.base';
 
@@ -115,7 +115,7 @@ export class AssetExpenseReviewService extends AssetExpenseBase {
 
     // A member's expense counts for nothing until SOMEBODY ELSE accepts it — an
     // asset manager who filed a slip must not be the one to accept it. The
-    // overtime rule, shared (attendance/self-decision.ts). The read only feeds
+    // overtime rule, shared (attendance/core/self-decision.ts). The read only feeds
     // this check; the guarded update below still decides the race.
     const filed = await this.prisma.assetMoney.findFirst({
       where: { id: data.entryId, organizationId: data.organizationId },

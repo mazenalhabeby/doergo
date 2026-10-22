@@ -7,7 +7,7 @@ import { ABSENCE_WHERE } from '@hbcfield/shared';
  * not thin, and draws their allowance down. The prisma double below answers like Postgres would:
  * it honours `where.kind`, so a reader that forgets the filter gets the remote day back.
  */
-import { ShiftSweepService } from '../../attendance/shift-sweep.service';
+import { ShiftSweepService } from '../../attendance/no-shows/shift-sweep.service';
 import { CoverService } from '../cover.service';
 import { LeaveRecordsService } from '../leave-records.service';
 import { LeaveLedgerService } from '../leave-ledger.service';
@@ -48,7 +48,7 @@ describe('only leave is an absence', () => {
     // that reads approved time off through the one absence filter.
     expect(ABSENCE_WHERE).toEqual({ kind: 'LEAVE' });
     const settleSource = require('fs').readFileSync(
-      require('path').join(__dirname, '../../attendance/no-show-settle.service.ts'),
+      require('path').join(__dirname, '../../attendance/no-shows/no-show-settle.service.ts'),
       'utf8',
     );
     expect(settleSource).toMatch(/timeOff\.findMany\(\{[\s\S]*?\.\.\.ABSENCE_WHERE/);

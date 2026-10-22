@@ -5,8 +5,8 @@
  * now. These pin the periods the batch turns into, and what each one does.
  */
 // AttendanceService hands heartbeatBatch to HeartbeatBatchService, where it lives.
-import { HeartbeatBatchService } from '../heartbeat-batch.service';
-import { lastReadingIsFresh, replayRing, type RingReading } from '../heartbeat-replay';
+import { HeartbeatBatchService } from '../on-the-clock/heartbeat-batch.service';
+import { lastReadingIsFresh, replayRing, type RingReading } from '../on-the-clock/heartbeat-replay';
 
 const NOW = new Date('2026-09-14T11:40:00.000Z');
 const at = (hhmm: string) => new Date(`2026-09-14T${hhmm}:00.000Z`);

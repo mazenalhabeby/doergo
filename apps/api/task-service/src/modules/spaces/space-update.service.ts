@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Prisma, WorkModel, SpaceKind } from '@prisma/client';
-import { rearmNoShiftSessions } from '../attendance/no-shift-rearm';
+import { rearmNoShiftSessions } from '../attendance/core/no-shift-rearm';
 import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import {
   success,

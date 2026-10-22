@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { WorkModel } from '@hbcfield/shared';
-import { ShiftResolverService } from '../shift-resolver.service';
+import { ShiftResolverService } from '../core/shift-resolver.service';
 import { PrismaService } from '@hbcfield/shared';
 
 /**

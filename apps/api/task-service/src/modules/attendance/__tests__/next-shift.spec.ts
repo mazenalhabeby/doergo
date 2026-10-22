@@ -1,4 +1,4 @@
-import { pickNextShift } from '../next-shift';
+import { pickNextShift } from '../clock-in/next-shift';
 
 const d = (s: string) => new Date(s);
 const now = d('2026-10-18T05:40:00Z');

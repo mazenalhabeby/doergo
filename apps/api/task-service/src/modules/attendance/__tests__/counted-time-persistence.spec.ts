@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { CountedTimeService } from '../counted-time.service';
+import { CountedTimeService } from '../core/counted-time.service';
 import { PrismaService } from '@hbcfield/shared';
 import { workedMinutes } from '@hbcfield/shared';
 

@@ -1,8 +1,8 @@
 import { combinedServices } from '../../../common/testing/combined-services';
-import { ApprovalService } from '../approval.service';
-import { EntryEditService } from '../entry-edit.service';
-import { EntryRecordService } from '../entry-record.service';
-import { ManualEntriesService } from '../manual-entries.service';
+import { ApprovalService } from '../entries/approval.service';
+import { EntryEditService } from '../entries/entry-edit.service';
+import { EntryRecordService } from '../entries/entry-record.service';
+import { ManualEntriesService } from '../entries/manual-entries.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };

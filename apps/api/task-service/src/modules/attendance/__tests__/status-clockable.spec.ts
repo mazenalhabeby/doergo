@@ -1,4 +1,4 @@
-import { isClockableAssignment, statusSpace } from '../status-clockable';
+import { isClockableAssignment, statusSpace } from '../reads/status-clockable';
 
 /*
   The status read's workspaces carry `clockable` — the clock-in check's own rule

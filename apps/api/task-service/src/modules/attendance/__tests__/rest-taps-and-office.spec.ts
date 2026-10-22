@@ -1,6 +1,6 @@
 import { breakServices } from './break.service.fixture';
-import { BreakReminderService } from '../break-reminder.service';
-import { CountedTimeService } from '../counted-time.service';
+import { BreakReminderService } from '../rests/break-reminder.service';
+import { CountedTimeService } from '../core/counted-time.service';
 import { resolveBreakPlan, type BreakRuleLike } from '@hbcfield/shared';
 
 /**

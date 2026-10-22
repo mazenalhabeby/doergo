@@ -13,9 +13,9 @@
  */
 import { AttendanceService } from '../attendance.service';
 import { noShowRecordParts } from './no-show-record.service.fixture';
-import { AttendanceReadService } from '../attendance-read.service';
-import { AttendanceEntriesReadService } from '../attendance-entries-read.service';
-import { ApprovalService } from '../approval.service';
+import { AttendanceReadService } from '../reads/attendance-read.service';
+import { AttendanceEntriesReadService } from '../reads/attendance-entries-read.service';
+import { ApprovalService } from '../entries/approval.service';
 import { breakServices } from './break.service.fixture';
 
 const ORG = 'org-1';

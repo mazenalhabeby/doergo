@@ -1,7 +1,7 @@
 import { standInGrant } from '../../common/stand-in';
 import { notEndedWhere, grantHolds, approverFacts } from '@hbcfield/shared';
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { assertNotSelfDecision } from '../attendance/self-decision';
+import { assertNotSelfDecision } from '../attendance/core/self-decision';
 import { success, OVERTIME_CONSTANTS, type SpaceScopeIds } from '@hbcfield/shared';
 import { SIGNED_CONFIRM_WINDOW_MINUTES } from './overtime-helpers';
 import { OvertimeBase } from './overtime.base';

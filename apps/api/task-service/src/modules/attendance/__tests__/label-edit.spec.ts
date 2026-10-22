@@ -1,4 +1,4 @@
-import { editTimeFlags, officeCloseFacts } from '../entry-edit-labels';
+import { editTimeFlags, officeCloseFacts } from '../entries/entry-edit-labels';
 
 /** The office edit and the labels — the old path untouched, the new one judged by the entry's own facts. */
 const shiftStart = new Date('2026-10-13T16:00:00Z'); // 18:00 Vienna

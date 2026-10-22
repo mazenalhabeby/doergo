@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ShiftResolverService } from '../shift-resolver.service';
+import { ShiftResolverService } from '../core/shift-resolver.service';
 import { PrismaService } from '@hbcfield/shared';
 import { WorkModel } from '@hbcfield/shared';
 

@@ -1,5 +1,5 @@
 import { entryServices, type ApprovalServiceParts } from './approval.service.fixture';
-import { CountedTimeService } from '../counted-time.service';
+import { CountedTimeService } from '../core/counted-time.service';
 
 /**
  * The office's correction paths, held to the rules every other path follows.

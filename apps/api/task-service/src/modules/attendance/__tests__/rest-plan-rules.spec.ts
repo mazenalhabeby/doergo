@@ -17,7 +17,7 @@ import {
   type BreakRuleLike,
   type BreakPlanItem,
 } from '@hbcfield/shared';
-import { approvalFor } from '../attendance-occurrence';
+import { approvalFor } from '../core/attendance-occurrence';
 
 /**
  * The pure rules behind three rest bugs: a coffee filed as lunch, a rule with
