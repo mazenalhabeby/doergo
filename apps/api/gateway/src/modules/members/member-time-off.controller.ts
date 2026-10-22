@@ -1,15 +1,14 @@
-import { Controller, Get, Post, Param, Query, Body, Inject, ForbiddenException, UseInterceptors } from '@nestjs/common';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Param, Query, Body, ForbiddenException, UseInterceptors } from '@nestjs/common';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
-import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
-import { Role, SERVICE_NAMES, CurrentUser, RequireAccessModule } from '@hbcfield/shared';
+import { Role, CurrentUser, RequireAccessModule } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequestTimeOffDto } from './dto';
 import { LeaveCountQueryDto } from '../calendar/calendar.dto';
 import { leaveReadScope } from './members-controller-helpers';
 import { callerOrgId } from '../../common/caller-org';
-import { sendRpc, getTimeOff, getLeaveBalance, countLeaveRpc, requestTimeOff } from '@hbcfield/shared/microservices';
+import { getTimeOff, getLeaveBalance, countLeaveRpc, requestTimeOff } from '@hbcfield/shared/microservices';
 import type { SessionUser } from '../../common/request.types';
 
 /** /employees/:id/time-off — one member's leave: the list, balance, what a range costs, asking. */
@@ -18,7 +17,7 @@ import type { SessionUser } from '../../common/request.types';
 @UseInterceptors(LabourCostInterceptor)
 @Controller('employees')
 export class MemberTimeOffController {
-  constructor(@Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy) {}
+  constructor(private readonly services: ServiceCalls) {}
 
   // ============================================================================
   // TIME-OFF MANAGEMENT
@@ -41,14 +40,12 @@ export class MemberTimeOffController {
       throw new ForbiddenException('You can only view your own time-off requests');
     }
 
-    return firstValueFrom(
-      sendRpc(this.taskClient, getTimeOff, {
-        technicianId: id,
-        // `user` is optional only because it follows optional query params; the route is authenticated.
-        organizationId: callerOrgId(user!),
-        status,
-      }),
-    );
+    return this.services.task.ask(getTimeOff, {
+      technicianId: id,
+      // `user` is optional only because it follows optional query params; the route is authenticated.
+      organizationId: callerOrgId(user!),
+      status,
+    });
   }
 
   @Get(':id/leave-balance')
@@ -68,15 +65,13 @@ export class MemberTimeOffController {
     if (!privileged && user?.id !== id) {
       throw new ForbiddenException('You can only view your own leave balance');
     }
-    return firstValueFrom(
-      sendRpc(this.taskClient, getLeaveBalance, {
-        technicianId: id,
-        organizationId: callerOrgId(user!),
-        // The leave year containing `on` (default today); `year` = the one starting in that year.
-        on: typeof on === 'string' ? on.slice(0, 10) : undefined,
-        year,
-      }),
-    );
+    return this.services.task.ask(getLeaveBalance, {
+      technicianId: id,
+      organizationId: callerOrgId(user!),
+      // The leave year containing `on` (default today); `year` = the one starting in that year.
+      on: typeof on === 'string' ? on.slice(0, 10) : undefined,
+      year,
+    });
   }
 
   @Get(':id/time-off/count')
@@ -89,16 +84,14 @@ export class MemberTimeOffController {
     const scope = leaveReadScope(user);
     if (user?.id !== id && scope !== undefined && scope.length === 0)
       throw new ForbiddenException('You can only count your own leave');
-    return firstValueFrom(
-      sendRpc(this.taskClient, countLeaveRpc, {
-        technicianId: id,
-        organizationId: callerOrgId(user),
-        from: q.from,
-        to: q.to,
-        callerId: user.id,
-        scopeSpaceIds: scope,
-      }),
-    );
+    return this.services.task.ask(countLeaveRpc, {
+      technicianId: id,
+      organizationId: callerOrgId(user),
+      from: q.from,
+      to: q.to,
+      callerId: user.id,
+      scopeSpaceIds: scope,
+    });
   }
 
   @Post(':id/time-off')
@@ -114,23 +107,21 @@ export class MemberTimeOffController {
       throw new ForbiddenException('You can only request time off for yourself');
     }
 
-    return firstValueFrom(
-      sendRpc(this.taskClient, requestTimeOff, {
-        id: body.id,
-        technicianId: id,
-        organizationId: callerOrgId(user),
-        // The request itself, as sent: task-service reads it with the shared
-        // `parseRequestInput` (defaults: LEAVE, VACATION — what older clients send).
-        kind: body.kind,
-        startDate: body.startDate,
-        endDate: body.endDate,
-        reason: body.reason,
-        type: body.type,
-        spaceId: body.spaceId,
-        startTime: body.startTime,
-        endTime: body.endTime,
-        minutes: body.minutes,
-      }),
-    );
+    return this.services.task.ask(requestTimeOff, {
+      id: body.id,
+      technicianId: id,
+      organizationId: callerOrgId(user),
+      // The request itself, as sent: task-service reads it with the shared
+      // `parseRequestInput` (defaults: LEAVE, VACATION — what older clients send).
+      kind: body.kind,
+      startDate: body.startDate,
+      endDate: body.endDate,
+      reason: body.reason,
+      type: body.type,
+      spaceId: body.spaceId,
+      startTime: body.startTime,
+      endTime: body.endTime,
+      minutes: body.minutes,
+    });
   }
 }

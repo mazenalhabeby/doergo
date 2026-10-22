@@ -1,13 +1,12 @@
-import { Controller, Get, Post, Body, Param, Request, Inject, UseGuards, BadRequestException } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Body, Param, Request, UseGuards, BadRequestException } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AllowCustomer, SkipOnboardingCheck, TASK_SOURCE, requestTitle, priorityForCategory } from '@hbcfield/shared';
 import { CustomerScopeGuard } from '../../common/guards/customer-scope.guard';
 import { TasksQueueService } from '../tasks/tasks.queue.service';
 import { SubmitRequestDto } from './dto';
-import { sendRpc, portalConfigForCustomer, portalListUnits, portalListAssets } from '@hbcfield/shared/microservices';
+import { portalConfigForCustomer, portalListUnits, portalListAssets } from '@hbcfield/shared/microservices';
 import { portalListRequests, portalGetRequest } from '@hbcfield/shared/microservices';
 
 import type { AuthedRequest } from '../../common/request.types';
@@ -25,8 +24,7 @@ import type { AuthedRequest } from '../../common/request.types';
 @Controller('portal')
 export class PortalController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    @Inject('TASK_SERVICE') private readonly taskClient: ClientProxy,
+    private readonly services: ServiceCalls,
     private readonly tasksQueue: TasksQueueService,
   ) {}
 
@@ -35,7 +33,7 @@ export class PortalController {
   @SkipOnboardingCheck()
   @ApiOperation({ summary: 'Get the portal intake config' })
   async config(@Request() req: AuthedRequest) {
-    return firstValueFrom(sendRpc(this.authClient, portalConfigForCustomer, { customerId: req.user.customerId }));
+    return this.services.auth.ask(portalConfigForCustomer, { customerId: req.user.customerId });
   }
 
   /** Units the caller (a customer) is bound to. */
@@ -44,12 +42,10 @@ export class PortalController {
   @ApiOperation({ summary: "List the customer's units" })
   async units(@Request() req: AuthedRequest) {
     // Units live in the auth DB; auth-service serves them.
-    return firstValueFrom(
-      sendRpc(this.authClient, portalListUnits, {
-        organizationId: req.user.organizationId,
-        customerId: req.user.customerId,
-      }),
-    );
+    return this.services.auth.ask(portalListUnits, {
+      organizationId: req.user.organizationId,
+      customerId: req.user.customerId,
+    });
   }
 
   /** The things this client holds — assets, the generalisation of units. */
@@ -57,15 +53,13 @@ export class PortalController {
   @SkipOnboardingCheck()
   @ApiOperation({ summary: "List the client's assets" })
   async assets(@Request() req: AuthedRequest) {
-    return firstValueFrom(
-      sendRpc(this.authClient, portalListAssets, {
-        // ⚠️ A portal (CUSTOMER) session always carries both — the invitation binds them; typed as sent today.
-        organizationId: req.user.organizationId as string,
-        customerId: req.user.customerId as string,
-        // The one their login is confined to, when they hold nothing else.
-        assetId: req.user.assetId ?? null,
-      }),
-    );
+    return this.services.auth.ask(portalListAssets, {
+      // ⚠️ A portal (CUSTOMER) session always carries both — the invitation binds them; typed as sent today.
+      organizationId: req.user.organizationId as string,
+      customerId: req.user.customerId as string,
+      // The one their login is confined to, when they hold nothing else.
+      assetId: req.user.assetId ?? null,
+    });
   }
 
   /** The customer's own requests. */
@@ -73,13 +67,11 @@ export class PortalController {
   @SkipOnboardingCheck()
   @ApiOperation({ summary: "List the customer's requests" })
   async listRequests(@Request() req: AuthedRequest) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, portalListRequests, {
-        // ⚠️ A portal (CUSTOMER) session always carries both — the invitation binds them; typed as sent today.
-        organizationId: req.user.organizationId as string,
-        customerId: req.user.customerId as string,
-      }),
-    );
+    return this.services.task.ask(portalListRequests, {
+      // ⚠️ A portal (CUSTOMER) session always carries both — the invitation binds them; typed as sent today.
+      organizationId: req.user.organizationId as string,
+      customerId: req.user.customerId as string,
+    });
   }
 
   /** One of the customer's own requests (404 if not theirs). */
@@ -87,13 +79,11 @@ export class PortalController {
   @SkipOnboardingCheck()
   @ApiOperation({ summary: 'Get one of the customer’s requests' })
   async getRequest(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, portalGetRequest, {
-        id,
-        organizationId: req.user.organizationId,
-        customerId: req.user.customerId,
-      }),
-    );
+    return this.services.task.ask(portalGetRequest, {
+      id,
+      organizationId: req.user.organizationId,
+      customerId: req.user.customerId,
+    });
   }
 
   /** Submit a new request → creates a Task via the pipeline (source=CUSTOMER_PORTAL). */
@@ -103,9 +93,7 @@ export class PortalController {
   @ApiOperation({ summary: 'Submit a new request' })
   async submitRequest(@Body() dto: SubmitRequestDto, @Request() req: AuthedRequest) {
     // Resolve the category from the caller's own portal config (fail closed).
-    const config: any = await firstValueFrom(
-      sendRpc(this.authClient, portalConfigForCustomer, { customerId: req.user.customerId }),
-    );
+    const config: any = await this.services.auth.ask(portalConfigForCustomer, { customerId: req.user.customerId });
     const category = (config?.categories || []).find((c: any) => c.key === dto.categoryKey && c.isActive);
     if (!category) {
       throw new BadRequestException('Unknown or inactive category');

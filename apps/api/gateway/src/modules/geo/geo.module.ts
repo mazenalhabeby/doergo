@@ -1,5 +1,6 @@
 import { Logger, Module, OnModuleInit } from '@nestjs/common';
 import { GeoController } from './geo.controller';
+import { GeoSearchService } from './geo-search.service';
 
 /**
  * Server-side geocoding proxy.
@@ -9,6 +10,7 @@ import { GeoController } from './geo.controller';
  */
 @Module({
   controllers: [GeoController],
+  providers: [GeoSearchService],
 })
 export class GeoModule implements OnModuleInit {
   private readonly logger = new Logger(GeoModule.name);

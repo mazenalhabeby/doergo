@@ -1,13 +1,11 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Inject, HttpStatus } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
 import { Role, CurrentUser, stripLabourCost, assertServiceOk } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import {
-  sendRpc,
   invoiceCreate,
   invoiceList,
   invoiceExchangeRate,
@@ -37,7 +35,7 @@ import { CreateInvoiceDto, UpdateInvoiceDto, InvoiceStatusDto, InvoiceItemDto } 
 @Controller('invoices')
 @ApiBearerAuth()
 export class InvoicesController {
-  constructor(@Inject('AUTH_SERVICE') private readonly authClient: ClientProxy) {}
+  constructor(private readonly services: ServiceCalls) {}
 
   /**
    * Everything leaving this controller passes through here.
@@ -74,13 +72,11 @@ export class InvoicesController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Create invoice' })
   async create(@Body() body: CreateInvoiceDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, invoiceCreate, {
-        ...body,
-        organizationId: user.organizationId,
-        createdById: user.id,
-      }),
-    );
+    const result = await this.services.auth.ask(invoiceCreate, {
+      ...body,
+      organizationId: user.organizationId,
+      createdById: user.id,
+    });
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
@@ -99,16 +95,14 @@ export class InvoicesController {
       whose items carry each line's `costRateCents` — so the one route a
       bookkeeper opens first disclosed the margin the other eight hid.
     */
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, invoiceList, {
-        organizationId: callerOrgId(user),
-        status: query.status,
-        spaceId: query.spaceId,
-        legalEntityId: query.legalEntityId || undefined,
-        page: query.page ? Number(query.page) : undefined,
-        limit: query.limit ? Number(query.limit) : undefined,
-      }),
-    );
+    const result = await this.services.auth.ask(invoiceList, {
+      organizationId: callerOrgId(user),
+      status: query.status,
+      spaceId: query.spaceId,
+      legalEntityId: query.legalEntityId || undefined,
+      page: query.page ? Number(query.page) : undefined,
+      limit: query.limit ? Number(query.limit) : undefined,
+    });
     return this.forCaller(result, user);
   }
 
@@ -125,13 +119,11 @@ export class InvoicesController {
     @Query('date') date: string | undefined,
     @CurrentUser() user: SessionUser,
   ) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, invoiceExchangeRate, {
-        organizationId: callerOrgId(user),
-        currency: String(currency ?? ''),
-        date: typeof date === 'string' ? date : undefined,
-      }),
-    );
+    const result = await this.services.auth.ask(invoiceExchangeRate, {
+      organizationId: callerOrgId(user),
+      currency: String(currency ?? ''),
+      date: typeof date === 'string' ? date : undefined,
+    });
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     // Carries no cost — through the funnel anyway, so "every route" stays true.
     return this.forCaller(result, user);
@@ -158,15 +150,13 @@ export class InvoicesController {
       from another tenant fails to resolve and 404s, and never reaches a query
       that could return that tenant's work.
     */
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, invoiceGather, {
-        organizationId: callerOrgId(user),
-        spaceId: spaceId || undefined,
-        customerId: customerId || undefined,
-        from: from || undefined,
-        to: to || undefined,
-      }),
-    );
+    const result = await this.services.auth.ask(invoiceGather, {
+      organizationId: callerOrgId(user),
+      spaceId: spaceId || undefined,
+      customerId: customerId || undefined,
+      from: from || undefined,
+      to: to || undefined,
+    });
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return this.forCaller(result, user);
   }
@@ -175,12 +165,10 @@ export class InvoicesController {
   @RequirePermission('canManageInvoices')
   @ApiOperation({ summary: 'Get invoice detail' })
   async findOne(@Param('id') id: string, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, invoiceGet, {
-        id,
-        organizationId: user.organizationId,
-      }),
-    );
+    const result = await this.services.auth.ask(invoiceGet, {
+      id,
+      organizationId: user.organizationId,
+    });
 
     assertServiceOk(result, HttpStatus.NOT_FOUND);
 
@@ -191,15 +179,13 @@ export class InvoicesController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update draft invoice' })
   async update(@Param('id') id: string, @Body() body: UpdateInvoiceDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, invoiceUpdate, {
-        ...body,
-        // id + org LAST so a body can never override the tenant scope (the DTO refuses
-        // keys it does not declare, but the order is the rule that does not depend on it).
-        id,
-        organizationId: callerOrgId(user),
-      }),
-    );
+    const result = await this.services.auth.ask(invoiceUpdate, {
+      ...body,
+      // id + org LAST so a body can never override the tenant scope (the DTO refuses
+      // keys it does not declare, but the order is the rule that does not depend on it).
+      id,
+      organizationId: callerOrgId(user),
+    });
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
@@ -210,13 +196,11 @@ export class InvoicesController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Change invoice status' })
   async updateStatus(@Param('id') id: string, @Body() body: InvoiceStatusDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, invoiceUpdateStatus, {
-        id,
-        organizationId: user.organizationId,
-        status: body.status,
-      }),
-    );
+    const result = await this.services.auth.ask(invoiceUpdateStatus, {
+      id,
+      organizationId: user.organizationId,
+      status: body.status,
+    });
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
@@ -227,12 +211,10 @@ export class InvoicesController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete draft invoice' })
   async delete(@Param('id') id: string, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, invoiceDelete, {
-        id,
-        organizationId: user.organizationId,
-      }),
-    );
+    const result = await this.services.auth.ask(invoiceDelete, {
+      id,
+      organizationId: user.organizationId,
+    });
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
@@ -243,13 +225,11 @@ export class InvoicesController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Add line item to invoice' })
   async addItem(@Param('id') invoiceId: string, @Body() body: InvoiceItemDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, invoiceAddItem, {
-        invoiceId,
-        organizationId: callerOrgId(user),
-        item: body,
-      }),
-    );
+    const result = await this.services.auth.ask(invoiceAddItem, {
+      invoiceId,
+      organizationId: callerOrgId(user),
+      item: body,
+    });
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
@@ -260,13 +240,11 @@ export class InvoicesController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Remove line item from invoice' })
   async removeItem(@Param('id') invoiceId: string, @Param('itemId') itemId: string, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, invoiceRemoveItem, {
-        invoiceId,
-        itemId,
-        organizationId: user.organizationId,
-      }),
-    );
+    const result = await this.services.auth.ask(invoiceRemoveItem, {
+      invoiceId,
+      itemId,
+      organizationId: user.organizationId,
+    });
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
 

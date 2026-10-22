@@ -20,7 +20,8 @@ async function controllerWith(env: { google?: string; photon?: string }) {
   if (env.photon) process.env.PHOTON_URL = env.photon;
   else delete process.env.PHOTON_URL;
   const { GeoController: C } = await import('../geo.controller');
-  return new C() as GeoController;
+  const { GeoSearchService: S } = await import('../geo-search.service');
+  return new C(new S()) as GeoController;
 }
 
 const googleReverseOk = {
@@ -77,14 +78,12 @@ describe('reverse geocoding providers', () => {
 
   it('falls back to Photon when one IS configured', async () => {
     const geo = await controllerWith({ google: 'key_1', photon: 'http://photon:2322' });
-    fetchSpy
-      .mockResolvedValueOnce({ ok: false, status: 500 } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          features: [{ properties: { name: 'Wien', city: 'Wien' }, geometry: { coordinates: [16.37, 48.2] } }],
-        }),
-      } as unknown as Response);
+    fetchSpy.mockResolvedValueOnce({ ok: false, status: 500 } as Response).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        features: [{ properties: { name: 'Wien', city: 'Wien' }, geometry: { coordinates: [16.37, 48.2] } }],
+      }),
+    } as unknown as Response);
 
     const { result } = await geo.reverse(LAT, LON);
 

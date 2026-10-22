@@ -1,3 +1,5 @@
+import { of } from 'rxjs';
+import { fakeServiceCalls } from '../../../common/testing/service-calls';
 /**
  * A portal client may push their queued request — and nothing else opens up.
  */
@@ -21,10 +23,16 @@ describe('customer portal and offline sync', () => {
   it('a request sent again from the phone creates the same task, named by the phone', async () => {
     const created: any[] = [];
     const controller = Object.create(PortalController.prototype) as any;
-    controller.authClient = { send: () => ({ subscribe: (o: any) => { o.next({ categories: [{ key: 'leak', label: 'Leak', isActive: true }] }); o.complete(); } }) };
+    controller.services = fakeServiceCalls({
+      auth: { send: () => of({ categories: [{ key: 'leak', label: 'Leak', isActive: true }] }) },
+    });
     controller.tasksQueue = { createTask: async (d: any) => (created.push(d), { id: d.id }) };
     const req = { user: { id: 'cust-user', customerId: 'cust-1', organizationId: 'org-1' } };
     await controller.submitRequest({ id: '0192b3c4-0000-7000-8000-000000000001', categoryKey: 'leak' }, req);
-    expect(created[0]).toMatchObject({ id: '0192b3c4-0000-7000-8000-000000000001', customerId: 'cust-1', userId: 'cust-user' });
+    expect(created[0]).toMatchObject({
+      id: '0192b3c4-0000-7000-8000-000000000001',
+      customerId: 'cust-1',
+      userId: 'cust-user',
+    });
   });
 });

@@ -1,10 +1,10 @@
+import { ServiceCalls } from '../../common/microservices/service-calls';
 import {
   Body,
   Controller,
   Get,
   HttpException,
   HttpStatus,
-  Inject,
   Post,
   Query,
   UseGuards,
@@ -12,13 +12,11 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
-import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
-import { SERVICE_NAMES, releaseNoteFor } from '@hbcfield/shared';
+import { releaseNoteFor } from '@hbcfield/shared';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../common/decorators';
-import { sendRpc, appUpdateNotice } from '@hbcfield/shared/microservices';
+import { appUpdateNotice } from '@hbcfield/shared/microservices';
 import { AppUpdateNotifyDto } from './dto/notify.dto';
 
 /**
@@ -71,7 +69,7 @@ export class AppVersionController {
 @ApiTags('app')
 @Controller('platform/app-update')
 export class AppUpdateNoticeController {
-  constructor(@Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy) {}
+  constructor(private readonly services: ServiceCalls) {}
 
   @Public()
   @UseGuards(PlatformAdminGuard)
@@ -82,8 +80,6 @@ export class AppUpdateNoticeController {
   async notify(@Body() body: AppUpdateNotifyDto) {
     const version = process.env.MOBILE_LATEST_VERSION;
     if (!version) throw new HttpException({ message: 'MOBILE_LATEST_VERSION is not set' }, HttpStatus.BAD_REQUEST);
-    return firstValueFrom(
-      sendRpc(this.notificationClient, appUpdateNotice, { version, dryRun: body?.dryRun !== false }),
-    );
+    return this.services.notification.ask(appUpdateNotice, { version, dryRun: body?.dryRun !== false });
   }
 }

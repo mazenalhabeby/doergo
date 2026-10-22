@@ -1,15 +1,9 @@
-import { Controller, Get, Query, Inject, Request } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ServiceCalls, ServiceLine } from '../../common/microservices/service-calls';
+import { Controller, Get, Query, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { firstValueFrom, timeout, catchError, of } from 'rxjs';
-import { SERVICE_NAMES } from '@hbcfield/shared';
+import { of } from 'rxjs';
 import { taskActor } from '../../common/task-actor';
-import {
-  pattern,
-  type RpcContract,
-  searchTasksAndSpaces,
-  searchPeopleAndCustomers,
-} from '@hbcfield/shared/microservices';
+import { type RpcContract, searchTasksAndSpaces, searchPeopleAndCustomers } from '@hbcfield/shared/microservices';
 
 import type { AuthedRequest } from '../../common/request.types';
 /**
@@ -28,10 +22,7 @@ const rows = (res: unknown): any[] => {
 @ApiBearerAuth()
 @Controller('search')
 export class SearchController {
-  constructor(
-    @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-  ) {}
+  constructor(private readonly services: ServiceCalls) {}
 
   @Get()
   @ApiOperation({ summary: 'Global search across tasks, people, spaces and customers' })
@@ -48,18 +39,17 @@ export class SearchController {
     const canAll = !!user.canViewAllTasks;
     const LIMIT = 6;
 
+    // A slow or failing half answers with nothing rather than holding the search (4 s each).
     const call = <Req, T>(
-      client: ClientProxy,
+      line: ServiceLine,
       contract: RpcContract<Req, unknown>,
       payload: Req,
       fallback: T,
     ): Promise<T> =>
-      firstValueFrom(
-        client.send<T, Req>(pattern(contract), payload).pipe(
-          timeout(4000),
-          catchError(() => of(fallback)),
-        ),
-      ).catch(() => fallback);
+      line.ask(contract, payload, { timeoutMs: 4000 }).then(
+        (r) => r as T,
+        () => fallback,
+      );
 
     // Two lightweight, org-scoped round-trips (task-service: tasks+spaces,
     // auth-service: people+customers). People/spaces/customers are only queried
@@ -69,7 +59,7 @@ export class SearchController {
       // "view all tasks" in a SPACE finds that space's tasks, and a guest the
       // tasks of a space shared with them — the same set GET /tasks lists.
       call(
-        this.taskClient,
+        this.services.task,
         searchTasksAndSpaces,
         {
           query,
@@ -80,7 +70,7 @@ export class SearchController {
       ),
       canAll
         ? call(
-            this.authClient,
+            this.services.auth,
             searchPeopleAndCustomers,
             { query, organizationId: org, limit: LIMIT },
             {} as { members?: unknown[]; customers?: unknown[] },

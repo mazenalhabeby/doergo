@@ -1,17 +1,15 @@
-import { Controller, Get, Post, Patch, Delete, Param, Query, Body, Inject, UseInterceptors } from '@nestjs/common';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseInterceptors } from '@nestjs/common';
 import { RebillService } from '../../common/billing/rebill.service';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { trackingVisibility } from '../../common/tracking-visibility';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
-import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
-import { SERVICE_NAMES, CurrentUser, RequirePermissionInSpace, isAdmin, spacesGranting } from '@hbcfield/shared';
+import { CurrentUser, RequirePermissionInSpace, isAdmin, spacesGranting } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { CreateMemberDto, UpdateMemberDto, ListMembersDto } from './dto';
 import { scopeIdsFor } from '../../common/permission-scope';
 import {
-  sendRpc,
   listTechnicians,
   createTechnician,
   getTechnicianDetail,
@@ -28,10 +26,9 @@ import type { SessionUser } from '../../common/request.types';
 @Controller('employees')
 export class MembersController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly services: ServiceCalls,
     private readonly billing: RebillService,
     private readonly authCache: AuthTokenCache,
-    @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
   ) {}
 
   // ============================================================================
@@ -52,14 +49,12 @@ export class MembersController {
   */
   @RequirePermissionInSpace('canViewAllTasks')
   async listEmployees(@Query() query: ListMembersDto, @CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.authClient, listTechnicians, {
-        ...query,
-        organizationId: callerOrgId(user),
-        // undefined = org-wide; [] = granted nowhere and matches nothing.
-        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-      }),
-    );
+    return this.services.auth.ask(listTechnicians, {
+      ...query,
+      organizationId: callerOrgId(user),
+      // undefined = org-wide; [] = granted nowhere and matches nothing.
+      scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+    });
   }
 
   // ============================================================================
@@ -72,12 +67,10 @@ export class MembersController {
   @ApiResponse({ status: 409, description: 'Email already in use' })
   @RequirePermission('canManageUsers')
   async createEmployee(@Body() dto: CreateMemberDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, createTechnician, {
-        ...dto,
-        organizationId: callerOrgId(user),
-      }),
-    );
+    const result = await this.services.auth.ask(createTechnician, {
+      ...dto,
+      organizationId: callerOrgId(user),
+    });
     this.billing.rebill(user.organizationId);
     return result;
   }
@@ -93,11 +86,10 @@ export class MembersController {
   @ApiResponse({ status: 404, description: 'Employee not found' })
   @RequirePermissionInSpace('canViewAllTasks')
   async getEmployeeDetail(@Param('id') id: string, @CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.authClient, getTechnicianDetail, {
-        id,
-        organizationId: callerOrgId(user),
-        /*
+    return this.services.auth.ask(getTechnicianDetail, {
+      id,
+      organizationId: callerOrgId(user),
+      /*
             Who is asking, so the answer can be layered.
 
             This route carries no permission decorator by design — every member
@@ -113,20 +105,19 @@ export class MembersController {
 
             Computed server-side from the resolved grant, never from the client.
           */
-        viewerSpaceIds:
-          isAdmin(user) || user.canViewAllTasks || user.canManageUsers
-            ? null
-            : Array.from(
-                new Set([
-                  ...(spacesGranting(user.access, 'canViewAllTasks') ?? []),
-                  ...(spacesGranting(user.access, 'canViewSpaceAttendance') ?? []),
-                ]),
-              ),
-        // Coordinates are their own permission — see lastLocation in the
-        // service. Resolved access, not the flat column (common/tracking-visibility.ts).
-        ...trackingVisibility(user),
-      }),
-    );
+      viewerSpaceIds:
+        isAdmin(user) || user.canViewAllTasks || user.canManageUsers
+          ? null
+          : Array.from(
+              new Set([
+                ...(spacesGranting(user.access, 'canViewAllTasks') ?? []),
+                ...(spacesGranting(user.access, 'canViewSpaceAttendance') ?? []),
+              ]),
+            ),
+      // Coordinates are their own permission — see lastLocation in the
+      // service. Resolved access, not the flat column (common/tracking-visibility.ts).
+      ...trackingVisibility(user),
+    });
   }
 
   // ============================================================================
@@ -140,14 +131,12 @@ export class MembersController {
   @RequirePermissionInSpace('canViewAllTasks')
   async getEmployeeStats(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     // Route to task-service for task stats (task data lives there)
-    return firstValueFrom(
-      sendRpc(this.taskClient, getTechnicianStats, {
-        // undefined = org-wide; [] = granted nowhere and matches nothing.
-        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-        id,
-        organizationId: callerOrgId(user),
-      }),
-    );
+    return this.services.task.ask(getTechnicianStats, {
+      // undefined = org-wide; [] = granted nowhere and matches nothing.
+      scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+      id,
+      organizationId: callerOrgId(user),
+    });
   }
 
   // ============================================================================
@@ -161,13 +150,11 @@ export class MembersController {
   @ApiResponse({ status: 404, description: 'Employee not found' })
   @RequirePermission('canManageUsers')
   async updateEmployee(@Param('id') id: string, @Body() dto: UpdateMemberDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, updateTechnician, {
-        id,
-        organizationId: callerOrgId(user),
-        dto,
-      }),
-    );
+    const result = await this.services.auth.ask(updateTechnician, {
+      id,
+      organizationId: callerOrgId(user),
+      dto,
+    });
     // employmentType (and access) changes can flip a member's billable seat type
     // (in-house ⇄ external field), so re-sync seats to Stripe after the edit.
     this.billing.rebill(user.organizationId);
@@ -196,12 +183,10 @@ export class MembersController {
   })
   @RequirePermission('canManageUsers')
   async deactivateEmployee(@Param('id') id: string, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, deactivateTechnician, {
-        id,
-        organizationId: user.organizationId,
-      }),
-    );
+    const result = await this.services.auth.ask(deactivateTechnician, {
+      id,
+      organizationId: user.organizationId,
+    });
     this.billing.rebill(user.organizationId);
     // A deactivated member is refused on their NEXT request, not when the
     // gateway's cached copy of their session happens to expire.

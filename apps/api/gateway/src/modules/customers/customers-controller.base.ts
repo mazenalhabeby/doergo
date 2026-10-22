@@ -1,10 +1,9 @@
-import { Inject, Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { OrgEventsService } from '../../common/events/org-events.service';
-import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { SpaceModulesService } from '../../common/space-modules.service';
-import { sendRpc, getCustomer, type RpcContract } from '@hbcfield/shared/microservices';
+import { getCustomer, type RpcContract } from '@hbcfield/shared/microservices';
 
 import type { AuthedRequest } from '../../common/request.types';
 /**
@@ -15,7 +14,7 @@ import type { AuthedRequest } from '../../common/request.types';
 @Injectable()
 export abstract class CustomersControllerBase {
   constructor(
-    @Inject('AUTH_SERVICE') protected readonly authClient: ClientProxy,
+    protected readonly services: ServiceCalls,
     protected readonly spaceModules: SpaceModulesService,
     protected readonly authCache: AuthTokenCache,
     protected readonly orgEvents: OrgEventsService,
@@ -23,7 +22,7 @@ export abstract class CustomersControllerBase {
 
   /** A message contract; the payload is checked against it. The reply is not typed yet (it was `any`). */
   protected auth<Req>(contract: RpcContract<Req, unknown>, payload: NoInfer<Req>): Promise<any> {
-    return firstValueFrom(sendRpc(this.authClient, contract, payload));
+    return this.services.auth.ask(contract, payload);
   }
 
   /**

@@ -1,7 +1,6 @@
+import { ServiceCalls } from '../../common/microservices/service-calls';
 import { DenyExternal } from '../../common/decorators';
-import { Controller, Get, Post, Patch, Delete, Body, Param, Inject, Request } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { RequirePermissionInSpace } from '@hbcfield/shared';
 import { unitFieldsFor } from '../../common/unit-fields';
@@ -9,7 +8,6 @@ import { SpaceModulesService } from '../../common/space-modules.service';
 import { portalScope } from '../../common/portal-scope';
 import { scopeFor } from '../../common/permission-scope';
 import {
-  sendRpc,
   portalList,
   portalCreateSpace,
   portalGetForSpace,
@@ -48,12 +46,12 @@ import { UnitBodyDto } from '../../common/dto/unit-body.dto';
 @Controller('spaces/:spaceId/portal')
 export class SpacePortalController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly services: ServiceCalls,
     private readonly spaceModules: SpaceModulesService,
   ) {}
   /** A message contract; the payload is checked against it. The reply is not typed yet (it was `any`). */
   private auth<Req>(contract: RpcContract<Req, unknown>, payload: NoInfer<Req>): Promise<any> {
-    return firstValueFrom(sendRpc(this.authClient, contract, payload));
+    return this.services.auth.ask(contract, payload);
   }
 
   /** The whole surface is a paid feature — the space MUST have b2c_portal on. */

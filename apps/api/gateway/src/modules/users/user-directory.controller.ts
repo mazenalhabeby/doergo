@@ -1,12 +1,11 @@
-import { Controller, Get, Param, Query, Inject, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Param, Query, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { trackingVisibility } from '../../common/tracking-visibility';
-import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
-import { Role, SERVICE_NAMES, CurrentUser } from '@hbcfield/shared';
+import { Role, CurrentUser } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { sendRpc, getWorkers, findUser, getWorkerTasks } from '@hbcfield/shared/microservices';
+import { getWorkers, findUser, getWorkerTasks } from '@hbcfield/shared/microservices';
 import { getTechnicianAssignments } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
 import type { SessionUser } from '../../common/request.types';
@@ -20,10 +19,7 @@ import type { SessionUser } from '../../common/request.types';
 @ApiBearerAuth()
 @Controller('users')
 export class UserDirectoryController {
-  constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
-  ) {}
+  constructor(private readonly services: ServiceCalls) {}
 
   @Get('workers')
   @ApiOperation({ summary: 'Get all employees (ADMIN or MANAGER)' })
@@ -31,19 +27,17 @@ export class UserDirectoryController {
   @RequirePermission('canViewAllTasks')
   async getWorkers(@CurrentUser() user: SessionUser, @Query() query: Record<string, any>) {
     // Office can only see workers in their organization
-    return firstValueFrom(
-      sendRpc(this.authClient, getWorkers, {
-        ...query,
-        organizationId: callerOrgId(user),
-        /*
+    return this.services.auth.ask(getWorkers, {
+      ...query,
+      organizationId: callerOrgId(user),
+      /*
           Coordinates travel only to somebody who may see where people are.
           This list is the whole organization (the route asks "view all tasks"
           org-wide), so the org-wide answer is the one that applies. After the
           query spread, so a query parameter can never switch it on.
         */
-        canViewTracking: trackingVisibility(user).canViewTracking,
-      }),
-    );
+      canViewTracking: trackingVisibility(user).canViewTracking,
+    });
   }
 
   @Get(':id')
@@ -56,7 +50,7 @@ export class UserDirectoryController {
       throw new ForbiddenException('You can only access your own profile');
     }
 
-    const result = await firstValueFrom(sendRpc(this.authClient, findUser, { id, organizationId: callerOrgId(user) }));
+    const result = await this.services.auth.ask(findUser, { id, organizationId: callerOrgId(user) });
 
     if (!result?.data) {
       throw new NotFoundException('User not found');
@@ -84,9 +78,7 @@ export class UserDirectoryController {
     }
 
     if (privileged && user.id !== id) {
-      const workerResult = await firstValueFrom(
-        sendRpc(this.authClient, findUser, { id, organizationId: callerOrgId(user) }),
-      );
+      const workerResult = await this.services.auth.ask(findUser, { id, organizationId: callerOrgId(user) });
 
       if (!workerResult?.data) {
         throw new NotFoundException('Worker not found');
@@ -97,9 +89,7 @@ export class UserDirectoryController {
       }
     }
 
-    return firstValueFrom(
-      sendRpc(this.authClient, getWorkerTasks, { workerId: id, organizationId: callerOrgId(user) }),
-    );
+    return this.services.auth.ask(getWorkerTasks, { workerId: id, organizationId: callerOrgId(user) });
   }
 
   @Get(':id/assignments')
@@ -107,9 +97,7 @@ export class UserDirectoryController {
   @RequirePermission('canViewAllTasks')
   async getUserAssignments(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     // Verify user is in the same organization
-    const targetUser = await firstValueFrom(
-      sendRpc(this.authClient, findUser, { id, organizationId: callerOrgId(user) }),
-    );
+    const targetUser = await this.services.auth.ask(findUser, { id, organizationId: callerOrgId(user) });
 
     if (!targetUser?.data) {
       throw new NotFoundException('User not found');
@@ -119,8 +107,6 @@ export class UserDirectoryController {
       throw new ForbiddenException('You can only access users in your organization');
     }
 
-    return firstValueFrom(
-      sendRpc(this.taskClient, getTechnicianAssignments, { userId: id, organizationId: callerOrgId(user) }),
-    );
+    return this.services.task.ask(getTechnicianAssignments, { userId: id, organizationId: callerOrgId(user) });
   }
 }

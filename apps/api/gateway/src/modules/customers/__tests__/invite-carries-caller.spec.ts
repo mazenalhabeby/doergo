@@ -1,3 +1,4 @@
+import { fakeServiceCalls } from '../../../common/testing/service-calls';
 import { of } from 'rxjs';
 import { CustomerInviteController } from '../customer-invite.controller';
 
@@ -18,7 +19,7 @@ describe('POST /customers/:id/invite', () => {
     const authClient = { send: jest.fn(({ cmd }: { cmd: string }) => of(replies[cmd] ?? {})) };
     const spaceModules = { assertEnabled: jest.fn(async () => undefined) };
     const c = new CustomerInviteController(
-      authClient as any,
+      fakeServiceCalls({ auth: authClient }),
       spaceModules as any,
       {} as any,
       { customerChanged: jest.fn() } as any,
@@ -55,7 +56,7 @@ describe('POST /customers/:id/invite', () => {
       ),
     };
     const c = new CustomerInviteController(
-      authClient as any,
+      fakeServiceCalls({ auth: authClient }),
       { assertEnabled: jest.fn() } as any,
       {} as any,
       { customerChanged: jest.fn() } as any,
@@ -73,7 +74,7 @@ describe('POST /customers/:id/invite', () => {
       ),
     };
     const c = new CustomerInviteController(
-      authClient as any,
+      fakeServiceCalls({ auth: authClient }),
       {} as any,
       {} as any,
       { customerChanged: jest.fn() } as any,

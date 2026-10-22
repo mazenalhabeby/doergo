@@ -1,3 +1,4 @@
+import { fakeServiceCalls } from '../../../common/testing/service-calls';
 import { ValidationPipe } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
 import { Role, presentSections, type TaskReport } from '@hbcfield/shared';
@@ -67,17 +68,15 @@ describe('TaskReportController', () => {
 
   beforeEach(() => {
     tasks = {
-      fullReport: jest
-        .fn()
-        .mockImplementation(({ copy }) =>
-          Promise.resolve({
-            success: true,
-            data: report(copy === 'client' ? { meta: { copy: 'client' } as any, route: undefined } : {}),
-          }),
-        ),
+      fullReport: jest.fn().mockImplementation(({ copy }) =>
+        Promise.resolve({
+          success: true,
+          data: report(copy === 'client' ? { meta: { copy: 'client' } as any, route: undefined } : {}),
+        }),
+      ),
     };
     tracking = { send: jest.fn().mockReturnValue(of(tracked)) };
-    controller = new TaskReportController(tasks as never, tracking as never);
+    controller = new TaskReportController(fakeServiceCalls({ tracking }), tasks as never);
   });
 
   describe('the copy parameter', () => {

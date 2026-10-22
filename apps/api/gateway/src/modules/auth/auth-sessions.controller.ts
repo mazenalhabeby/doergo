@@ -1,14 +1,12 @@
-import { Controller, Post, Get, Delete, Body, Param, Req, Inject, HttpCode, HttpStatus } from '@nestjs/common';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Post, Get, Delete, Body, Param, Req, HttpCode, HttpStatus } from '@nestjs/common';
 import { Request } from 'express';
-import { ClientProxy } from '@nestjs/microservices';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { firstValueFrom } from 'rxjs';
 import { RefreshTokenDto, ChangePasswordDto, DeleteAccountDto } from './dto';
 import { CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import {
-  sendRpc,
   changePassword,
   listSessions,
   revokeSession,
@@ -25,7 +23,7 @@ import type { SessionUser } from '../../common/request.types';
 @Controller('auth')
 export class AuthSessionsController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly services: ServiceCalls,
     private readonly authCache: AuthTokenCache,
   ) {}
 
@@ -37,13 +35,11 @@ export class AuthSessionsController {
   @ApiResponse({ status: 200, description: 'Password changed successfully' })
   @ApiResponse({ status: 400, description: 'Invalid current password or weak new password' })
   async changePassword(@Body() dto: ChangePasswordDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, changePassword, {
-        userId: user.id,
-        currentPassword: dto.currentPassword,
-        newPassword: dto.newPassword,
-      }),
-    );
+    const result = await this.services.auth.ask(changePassword, {
+      userId: user.id,
+      currentPassword: dto.currentPassword,
+      newPassword: dto.newPassword,
+    });
 
     // Password change → drop the cached session (Sec audit H6).
     if (result?.success !== false) await this.authCache.invalidateUser(user.id);
@@ -61,14 +57,14 @@ export class AuthSessionsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List active sessions for current user' })
   async listSessions(@CurrentUser() user: SessionUser) {
-    return firstValueFrom(sendRpc(this.authClient, listSessions, { userId: user.id }));
+    return this.services.auth.ask(listSessions, { userId: user.id });
   }
 
   @Delete('sessions/:id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Revoke a specific session' })
   async revokeSession(@Param('id') sessionId: string, @CurrentUser() user: SessionUser) {
-    const result: any = await firstValueFrom(sendRpc(this.authClient, revokeSession, { userId: user.id, sessionId }));
+    const result: any = await this.services.auth.ask(revokeSession, { userId: user.id, sessionId });
 
     assertServiceOk(result, HttpStatus.NOT_FOUND);
 
@@ -90,9 +86,7 @@ export class AuthSessionsController {
       user's rows only.
     */
     const currentRefreshToken = req.cookies?.refreshToken || body?.refreshToken || undefined;
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, revokeAllSessions, { userId: user.id, currentRefreshToken }),
-    );
+    const result = await this.services.auth.ask(revokeAllSessions, { userId: user.id, currentRefreshToken });
     /*
       The cut-off moved for the whole account, so the gateway's cached copy of
       this person's session must go too — otherwise the other devices keep
@@ -114,12 +108,10 @@ export class AuthSessionsController {
   @ApiResponse({ status: 200, description: 'Account deleted successfully' })
   @ApiResponse({ status: 400, description: 'Invalid password or last admin' })
   async deleteAccount(@Body() dto: DeleteAccountDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, deleteAccount, {
-        userId: user.id,
-        password: dto.password,
-      }),
-    );
+    const result = await this.services.auth.ask(deleteAccount, {
+      userId: user.id,
+      password: dto.password,
+    });
 
     // Account deleted → drop the cached session (Sec audit H6).
     if (result?.success !== false) await this.authCache.invalidateUser(user.id);

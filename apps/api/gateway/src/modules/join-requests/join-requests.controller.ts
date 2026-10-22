@@ -1,18 +1,15 @@
-import { Controller, Get, Patch, Body, Param, Query, Inject, HttpStatus } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Patch, Body, Param, Query, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
 import { personName, CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { OrgEventsService } from '../../common/events/org-events.service';
 import { ListJoinRequestsDto, ApproveJoinRequestDto, RejectJoinRequestDto } from './dto';
 import {
-  sendRpc,
   onboardingListJoinRequests,
   onboardingApproveJoinRequest,
   onboardingRejectJoinRequest,
-  emitEvent,
   joinRequestApprovedEvent,
   joinRequestRejectedEvent,
 } from '@hbcfield/shared/microservices';
@@ -24,8 +21,7 @@ import type { SessionUser } from '../../common/request.types';
 @ApiBearerAuth()
 export class JoinRequestsController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
+    private readonly services: ServiceCalls,
     private readonly orgEvents: OrgEventsService,
     private readonly authCache: AuthTokenCache,
   ) {}
@@ -35,12 +31,10 @@ export class JoinRequestsController {
   @ApiOperation({ summary: 'List join requests for organization' })
   @ApiResponse({ status: 200, description: 'Join requests list' })
   async list(@Query() query: ListJoinRequestsDto, @CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.authClient, onboardingListJoinRequests, {
-        ...query,
-        organizationId: user.organizationId,
-      }),
-    );
+    return this.services.auth.ask(onboardingListJoinRequests, {
+      ...query,
+      organizationId: user.organizationId,
+    });
   }
 
   @Patch(':id/approve')
@@ -50,15 +44,13 @@ export class JoinRequestsController {
   @ApiResponse({ status: 200, description: 'Join request approved' })
   @ApiResponse({ status: 404, description: 'Join request not found' })
   async approve(@Param('id') id: string, @Body() dto: ApproveJoinRequestDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, onboardingApproveJoinRequest, {
-        // The body first, the caller's identity after it: nothing sent can stand in for who is deciding.
-        ...dto,
-        requestId: id,
-        organizationId: callerOrgId(user),
-        approverId: user.id,
-      }),
-    );
+    const result = await this.services.auth.ask(onboardingApproveJoinRequest, {
+      // The body first, the caller's identity after it: nothing sent can stand in for who is deciding.
+      ...dto,
+      requestId: id,
+      organizationId: callerOrgId(user),
+      approverId: user.id,
+    });
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -71,7 +63,7 @@ export class JoinRequestsController {
 
     // Emit notification event
     if (result?.data?.userId) {
-      emitEvent(this.notificationClient, joinRequestApprovedEvent, {
+      this.services.notification.tell(joinRequestApprovedEvent, {
         userId: result.data.userId,
         organizationId: callerOrgId(user),
         organizationName: result.data.organizationName || '',
@@ -94,21 +86,19 @@ export class JoinRequestsController {
   @ApiResponse({ status: 200, description: 'Join request rejected' })
   @ApiResponse({ status: 404, description: 'Join request not found' })
   async reject(@Param('id') id: string, @Body() dto: RejectJoinRequestDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, onboardingRejectJoinRequest, {
-        // The body first, the caller's identity after it: nothing sent can stand in for who is deciding.
-        ...dto,
-        requestId: id,
-        organizationId: callerOrgId(user),
-        approverId: user.id,
-      }),
-    );
+    const result = await this.services.auth.ask(onboardingRejectJoinRequest, {
+      // The body first, the caller's identity after it: nothing sent can stand in for who is deciding.
+      ...dto,
+      requestId: id,
+      organizationId: callerOrgId(user),
+      approverId: user.id,
+    });
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
     // Emit notification event
     if (result?.data?.userId) {
-      emitEvent(this.notificationClient, joinRequestRejectedEvent, {
+      this.services.notification.tell(joinRequestRejectedEvent, {
         userId: result.data.userId,
         organizationId: callerOrgId(user),
         organizationName: result.data.organizationName || '',

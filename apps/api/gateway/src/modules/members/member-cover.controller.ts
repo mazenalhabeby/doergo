@@ -1,3 +1,4 @@
+import { ServiceCalls } from '../../common/microservices/service-calls';
 import {
   Controller,
   Get,
@@ -5,7 +6,6 @@ import {
   HttpCode,
   Query,
   Body,
-  Inject,
   BadRequestException,
   ForbiddenException,
   UseInterceptors,
@@ -13,17 +13,14 @@ import {
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import { callerOrgId } from '../../common/caller-org';
 import {
-  sendRpc,
   getTechniciansAvailability,
   getRequestOptions,
   requestPrecheck,
   getFloorNow,
   getCoverRange,
 } from '@hbcfield/shared/microservices';
-import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
-import { Role, SERVICE_NAMES, CurrentUser, RequireAccessModule, RequirePermissionInSpace } from '@hbcfield/shared';
+import { Role, CurrentUser, RequireAccessModule, RequirePermissionInSpace } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { scopeIdsFor } from '../../common/permission-scope';
 import type { SessionUser } from '../../common/request.types';
@@ -38,7 +35,7 @@ import type { SessionUser } from '../../common/request.types';
 @UseInterceptors(LabourCostInterceptor)
 @Controller('employees')
 export class MemberCoverController {
-  constructor(@Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy) {}
+  constructor(private readonly services: ServiceCalls) {}
 
   // ============================================================================
   // AVAILABILITY (must be before /:id routes to avoid conflict)
@@ -68,17 +65,15 @@ export class MemberCoverController {
       }
     }
 
-    return firstValueFrom(
-      sendRpc(this.taskClient, getTechniciansAvailability, {
-        // undefined = org-wide; [] = granted nowhere and matches nothing.
-        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-        // `user` is optional only because it follows optional query params; the route is authenticated.
-        organizationId: callerOrgId(user!),
-        date,
-        startDate,
-        endDate,
-      }),
-    );
+    return this.services.task.ask(getTechniciansAvailability, {
+      // undefined = org-wide; [] = granted nowhere and matches nothing.
+      scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+      // `user` is optional only because it follows optional query params; the route is authenticated.
+      organizationId: callerOrgId(user!),
+      date,
+      startDate,
+      endDate,
+    });
   }
 
   // ============================================================================
@@ -92,9 +87,7 @@ export class MemberCoverController {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   async getRequestOptions(@CurrentUser() user: SessionUser) {
     // Only the caller's own options: the ids come from the token, never the request.
-    return firstValueFrom(
-      sendRpc(this.taskClient, getRequestOptions, { userId: user.id, organizationId: callerOrgId(user) }),
-    );
+    return this.services.task.ask(getRequestOptions, { userId: user.id, organizationId: callerOrgId(user) });
   }
 
   @Post('me/requests/precheck')
@@ -105,9 +98,7 @@ export class MemberCoverController {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   async precheckRequest(@CurrentUser() user: SessionUser, @Body() body: Record<string, unknown>) {
     // Only the caller's own request: the person comes from the token, the body is read by the same parser as sending.
-    return firstValueFrom(
-      sendRpc(this.taskClient, requestPrecheck, { userId: user.id, organizationId: callerOrgId(user), body }),
-    );
+    return this.services.task.ask(requestPrecheck, { userId: user.id, organizationId: callerOrgId(user), body });
   }
 
   @Get('floor-now')
@@ -123,13 +114,11 @@ export class MemberCoverController {
   */
   @RequirePermissionInSpace('canViewSpaceAttendance')
   async getFloorNow(@CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, getFloorNow, {
-        organizationId: callerOrgId(user!),
-        // undefined = org-wide; [] = granted nowhere and matches nothing.
-        scopeSpaceIds: scopeIdsFor(user, 'canViewSpaceAttendance'),
-      }),
-    );
+    return this.services.task.ask(getFloorNow, {
+      organizationId: callerOrgId(user!),
+      // undefined = org-wide; [] = granted nowhere and matches nothing.
+      scopeSpaceIds: scopeIdsFor(user, 'canViewSpaceAttendance'),
+    });
   }
 
   @Get('cover-range')
@@ -153,13 +142,11 @@ export class MemberCoverController {
     if (!ISO_DAY.test(start ?? '') || !ISO_DAY.test(end ?? '') || end < start) {
       throw new BadRequestException('start and end must be dates (YYYY-MM-DD), and end must not be before start');
     }
-    return firstValueFrom(
-      sendRpc(this.taskClient, getCoverRange, {
-        organizationId: callerOrgId(user!),
-        start,
-        end,
-        scopeSpaceIds: scopeIdsFor(user, 'canViewSpaceAttendance'),
-      }),
-    );
+    return this.services.task.ask(getCoverRange, {
+      organizationId: callerOrgId(user!),
+      start,
+      end,
+      scopeSpaceIds: scopeIdsFor(user, 'canViewSpaceAttendance'),
+    });
   }
 }

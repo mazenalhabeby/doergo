@@ -1,64 +1,11 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Inject,
-  Injectable,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { BaseGatewayService, SERVICE_NAMES, assertServiceOk } from '@hbcfield/shared';
+import { assertServiceOk } from '@hbcfield/shared';
 import { Public } from '../../common/decorators';
 import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
-import {
-  pattern,
-  curateDeleteWorkflowTemplate,
-  curateImportWorkflowTemplate,
-  curateListWorkflowTemplates,
-  curatePublishWorkflowTemplate,
-  curateUpsertWorkflowTemplate,
-  type RpcRequest,
-} from '@hbcfield/shared/microservices';
 import { LibraryTemplateDto, LibraryPublishDto, LibraryImportDto } from './dto/platform-bodies.dto';
-
-/** Gateway → task-service proxy for curating the shared task-type library. */
-@Injectable()
-export class PlatformLibraryService extends BaseGatewayService {
-  constructor(@Inject(SERVICE_NAMES.TASK) taskClient: ClientProxy) {
-    super(taskClient, PlatformLibraryService.name);
-  }
-  list() {
-    return this.send(pattern(curateListWorkflowTemplates), {} satisfies RpcRequest<typeof curateListWorkflowTemplates>);
-  }
-  upsert(data: RpcRequest<typeof curateUpsertWorkflowTemplate>) {
-    return this.send(pattern(curateUpsertWorkflowTemplate), data);
-  }
-  setPublished(data: { id: string; isPublished: boolean }) {
-    return this.send(
-      pattern(curatePublishWorkflowTemplate),
-      data satisfies RpcRequest<typeof curatePublishWorkflowTemplate>,
-    );
-  }
-  remove(data: { id: string }) {
-    return this.send(
-      pattern(curateDeleteWorkflowTemplate),
-      data satisfies RpcRequest<typeof curateDeleteWorkflowTemplate>,
-    );
-  }
-  importFromOrg(data: { workflowId: string; slug?: string; industry?: string | null }) {
-    return this.send(
-      pattern(curateImportWorkflowTemplate),
-      data satisfies RpcRequest<typeof curateImportWorkflowTemplate>,
-    );
-  }
-}
+import { PlatformLibraryService } from './platform-library.service';
 
 /**
  * Curating the task-type library — the only write path this table has.

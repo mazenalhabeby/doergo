@@ -1,9 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ClientsModule } from '@nestjs/microservices';
-import {
-  SERVICE_NAMES,
-  createMultipleClientOptions,
-} from '@hbcfield/shared';
+import { SERVICE_NAMES, createMultipleClientOptions } from '@hbcfield/shared';
+import { ServiceCalls } from './service-calls';
 
 /**
  * Microservices Module
@@ -20,9 +18,10 @@ import {
         SERVICE_NAMES.TASK,
         SERVICE_NAMES.NOTIFICATION,
         SERVICE_NAMES.TRACKING,
-      ])
+      ]),
     ),
   ],
-  exports: [ClientsModule],
+  providers: [ServiceCalls],
+  exports: [ClientsModule, ServiceCalls],
 })
 export class MicroservicesModule {}

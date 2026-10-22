@@ -1,11 +1,9 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, Inject, HttpStatus } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Delete, Body, Param, Query, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { firstValueFrom } from 'rxjs';
 import { CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import {
-  sendRpc,
   createInvitation,
   validateInvitation,
   acceptInvitation,
@@ -22,7 +20,7 @@ import type { SessionUser } from '../../common/request.types';
 @Controller('invitations')
 export class InvitationsController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly services: ServiceCalls,
     private readonly orgEvents: OrgEventsService,
   ) {}
 
@@ -34,14 +32,12 @@ export class InvitationsController {
   @ApiResponse({ status: 201, description: 'Invitation created with code' })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   async create(@Body() dto: CreateInvitationDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, createInvitation, {
-        ...dto,
-        organizationId: callerOrgId(user),
-        createdById: user.id,
-        creatorRole: user.role,
-      }),
-    );
+    const result = await this.services.auth.ask(createInvitation, {
+      ...dto,
+      organizationId: callerOrgId(user),
+      createdById: user.id,
+      creatorRole: user.role,
+    });
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -64,12 +60,10 @@ export class InvitationsController {
   @ApiOperation({ summary: 'List organization invitations' })
   @ApiResponse({ status: 200, description: 'Invitations list' })
   async list(@Query() query: ListInvitationsDto, @CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.authClient, listInvitations, {
-        ...query,
-        organizationId: callerOrgId(user),
-      }),
-    );
+    return this.services.auth.ask(listInvitations, {
+      ...query,
+      organizationId: callerOrgId(user),
+    });
   }
 
   @Public()
@@ -79,7 +73,7 @@ export class InvitationsController {
   @ApiParam({ name: 'code', description: 'Invitation code to validate' })
   @ApiResponse({ status: 200, description: 'Validation result' })
   async validate(@Param('code') code: string) {
-    return firstValueFrom(sendRpc(this.authClient, validateInvitation, { code }));
+    return this.services.auth.ask(validateInvitation, { code });
   }
 
   @Public()
@@ -90,7 +84,7 @@ export class InvitationsController {
   @ApiResponse({ status: 400, description: 'Invalid or expired code' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async accept(@Body() dto: AcceptInvitationDto) {
-    const result = await firstValueFrom(sendRpc(this.authClient, acceptInvitation, dto));
+    const result = await this.services.auth.ask(acceptInvitation, dto);
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -105,13 +99,11 @@ export class InvitationsController {
   @ApiResponse({ status: 200, description: 'Invitation revoked' })
   @ApiResponse({ status: 404, description: 'Invitation not found' })
   async revoke(@Param('id') id: string, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, revokeInvitation, {
-        invitationId: id,
-        organizationId: callerOrgId(user),
-        userId: user.id,
-      }),
-    );
+    const result = await this.services.auth.ask(revokeInvitation, {
+      invitationId: id,
+      organizationId: callerOrgId(user),
+      userId: user.id,
+    });
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 

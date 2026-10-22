@@ -1,9 +1,8 @@
-import { Controller, Get, Post, Patch, Body, Inject, HttpStatus, UseInterceptors } from '@nestjs/common';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Patch, Body, HttpStatus, UseInterceptors } from '@nestjs/common';
 import { RebillService } from '../../common/billing/rebill.service';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
-import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
 import { Role, CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
@@ -15,7 +14,6 @@ import {
   UpdateSecuritySettingsDto,
 } from './dto';
 import {
-  sendRpc,
   onboardingGetJoinCode,
   onboardingRegenerateJoinCode,
   onboardingUpdateLeavePolicy,
@@ -37,7 +35,7 @@ import { LeavePolicyDto, ProfileBadgesDto } from './dto/org-bodies.dto';
 @ApiBearerAuth()
 export class OrganizationsController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly services: ServiceCalls,
     private readonly billing: RebillService,
     private readonly authCache: AuthTokenCache,
   ) {}
@@ -47,11 +45,9 @@ export class OrganizationsController {
   @ApiOperation({ summary: 'Get organization join code info' })
   @ApiResponse({ status: 200, description: 'Join code info' })
   async getJoinCode(@CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.authClient, onboardingGetJoinCode, {
-        organizationId: user.organizationId,
-      }),
-    );
+    return this.services.auth.ask(onboardingGetJoinCode, {
+      organizationId: user.organizationId,
+    });
   }
 
   @Post('regenerate-join-code')
@@ -59,11 +55,9 @@ export class OrganizationsController {
   @ApiOperation({ summary: 'Regenerate organization join code (ADMIN only)' })
   @ApiResponse({ status: 200, description: 'New join code generated' })
   async regenerateJoinCode(@CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, onboardingRegenerateJoinCode, {
-        organizationId: user.organizationId,
-      }),
-    );
+    const result = await this.services.auth.ask(onboardingRegenerateJoinCode, {
+      organizationId: user.organizationId,
+    });
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -78,20 +72,18 @@ export class OrganizationsController {
       'when HBCField started counting (ADMIN only)',
   })
   async updateLeavePolicy(@Body() dto: LeavePolicyDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, onboardingUpdateLeavePolicy, {
-        organizationId: callerOrgId(user),
-        // Read in auth-service with the shared parseLeavePolicy; only the known fields travel.
-        policy: {
-          defaultLeaveAllowance: dto?.defaultLeaveAllowance,
-          leaveYearMode: dto?.leaveYearMode,
-          carryOverMode: dto?.carryOverMode,
-          carryOverMaxDays: dto?.carryOverMaxDays,
-          carryExpiresAfterMonths: dto?.carryExpiresAfterMonths,
-          leaveTrackingStartedOn: dto?.leaveTrackingStartedOn,
-        },
-      }),
-    );
+    const result = await this.services.auth.ask(onboardingUpdateLeavePolicy, {
+      organizationId: callerOrgId(user),
+      // Read in auth-service with the shared parseLeavePolicy; only the known fields travel.
+      policy: {
+        defaultLeaveAllowance: dto?.defaultLeaveAllowance,
+        leaveYearMode: dto?.leaveYearMode,
+        carryOverMode: dto?.carryOverMode,
+        carryOverMaxDays: dto?.carryOverMaxDays,
+        carryExpiresAfterMonths: dto?.carryExpiresAfterMonths,
+        leaveTrackingStartedOn: dto?.leaveTrackingStartedOn,
+      },
+    });
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
     return result;
   }
@@ -101,12 +93,10 @@ export class OrganizationsController {
   @ApiOperation({ summary: 'Update organization settings (ADMIN only)' })
   @ApiResponse({ status: 200, description: 'Settings updated' })
   async updateSettings(@Body() dto: UpdateOrgSettingsDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, onboardingUpdateJoinPolicy, {
-        organizationId: user.organizationId,
-        joinPolicy: dto.joinPolicy,
-      }),
-    );
+    const result = await this.services.auth.ask(onboardingUpdateJoinPolicy, {
+      organizationId: user.organizationId,
+      joinPolicy: dto.joinPolicy,
+    });
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -119,19 +109,17 @@ export class OrganizationsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get org profile badge visibility config' })
   async getProfileBadges(@CurrentUser() user: SessionUser) {
-    return firstValueFrom(sendRpc(this.authClient, getProfileBadges, { organizationId: user.organizationId }));
+    return this.services.auth.ask(getProfileBadges, { organizationId: user.organizationId });
   }
 
   @Patch('profile-badges')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update org profile badge visibility config' })
   async updateProfileBadges(@Body() body: ProfileBadgesDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, updateProfileBadges, {
-        organizationId: callerOrgId(user),
-        profileBadges: body,
-      }),
-    );
+    const result = await this.services.auth.ask(updateProfileBadges, {
+      organizationId: callerOrgId(user),
+      profileBadges: body,
+    });
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
@@ -144,20 +132,18 @@ export class OrganizationsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get organization profile and all settings' })
   async getOrgProfile(@CurrentUser() user: SessionUser) {
-    return firstValueFrom(sendRpc(this.authClient, getOrgProfile, { organizationId: user.organizationId }));
+    return this.services.auth.ask(getOrgProfile, { organizationId: user.organizationId });
   }
 
   @Patch('profile')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update organization profile (name, industry, address, etc.)' })
   async updateOrgProfile(@Body() dto: UpdateOrgProfileDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, updateOrgProfile, {
-        organizationId: callerOrgId(user),
-        // A plain copy of the body (same JSON on the wire); the service allow-lists the fields.
-        updates: { ...dto },
-      }),
-    );
+    const result = await this.services.auth.ask(updateOrgProfile, {
+      organizationId: callerOrgId(user),
+      // A plain copy of the body (same JSON on the wire); the service allow-lists the fields.
+      updates: { ...dto },
+    });
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
@@ -180,12 +166,10 @@ export class OrganizationsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update org notification preferences' })
   async updateNotificationPrefs(@Body() dto: UpdateNotificationPrefsDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, updateOrgNotificationPrefs, {
-        organizationId: callerOrgId(user),
-        prefs: dto,
-      }),
-    );
+    const result = await this.services.auth.ask(updateOrgNotificationPrefs, {
+      organizationId: callerOrgId(user),
+      prefs: dto,
+    });
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
 
@@ -196,12 +180,10 @@ export class OrganizationsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update org security settings' })
   async updateSecuritySettings(@Body() dto: UpdateSecuritySettingsDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, updateSecuritySettings, {
-        organizationId: callerOrgId(user),
-        settings: dto,
-      }),
-    );
+    const result = await this.services.auth.ask(updateSecuritySettings, {
+      organizationId: callerOrgId(user),
+      settings: dto,
+    });
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
 

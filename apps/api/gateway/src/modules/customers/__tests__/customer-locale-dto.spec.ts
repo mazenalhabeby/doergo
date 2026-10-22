@@ -1,3 +1,4 @@
+import { fakeServiceCalls } from '../../../common/testing/service-calls';
 import { BadRequestException } from '@nestjs/common';
 import { of } from 'rxjs';
 import { CustomersController } from '../customers.controller';
@@ -16,7 +17,12 @@ describe('customer body — locale', () => {
     const authClient = { send: jest.fn(() => of({ data: { id: 'c1' } })) };
     const spaceModules = { assertEnabled: jest.fn(async () => undefined) };
     const orgEvents = { customerChanged: jest.fn() };
-    const controller = new CustomersController(authClient as any, spaceModules as any, {} as any, orgEvents as any);
+    const controller = new CustomersController(
+      fakeServiceCalls({ auth: authClient }),
+      spaceModules as any,
+      {} as any,
+      orgEvents as any,
+    );
     const req = { user: { id: 'u1', role: 'ADMIN', organizationId: 'org-1' } };
     return { controller, authClient, spaceModules, req };
   }

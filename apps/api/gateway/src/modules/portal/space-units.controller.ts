@@ -1,13 +1,11 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Inject, Request } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { RequirePermissionInSpace } from '@hbcfield/shared';
 import { unitFieldsFor } from '../../common/unit-fields';
 import { SpaceModulesService } from '../../common/space-modules.service';
 import { portalScope } from '../../common/portal-scope';
 import {
-  sendRpc,
   portalGetUnit,
   portalListUnitActivities,
   portalAddUnitActivity,
@@ -48,7 +46,7 @@ import { AssignUnitMemberDto, UnitActivityDto } from './dto/portal-bodies.dto';
 @Controller('spaces/:spaceId/units')
 export class SpaceUnitsController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly services: ServiceCalls,
     private readonly spaceModules: SpaceModulesService,
   ) {}
 
@@ -64,7 +62,7 @@ export class SpaceUnitsController {
   }
   /** A message contract; the payload is checked against it. The reply is not typed yet (it was `any`). */
   private auth<Req>(contract: RpcContract<Req, unknown>, payload: NoInfer<Req>): Promise<any> {
-    return firstValueFrom(sendRpc(this.authClient, contract, payload));
+    return this.services.auth.ask(contract, payload);
   }
 
   @Get()
@@ -179,46 +177,40 @@ export class SpaceUnitsController {
 @ApiBearerAuth()
 @Controller('units')
 export class UnitDetailController {
-  constructor(@Inject('AUTH_SERVICE') private readonly authClient: ClientProxy) {}
+  constructor(private readonly services: ServiceCalls) {}
 
   @Get(':id')
   @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: 'Get one apartment / unit with its resident' })
   get(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return firstValueFrom(
-      sendRpc(this.authClient, portalGetUnit, {
-        id,
-        organizationId: callerOrgId(req.user),
-        scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
-      }),
-    );
+    return this.services.auth.ask(portalGetUnit, {
+      id,
+      organizationId: callerOrgId(req.user),
+      scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
+    });
   }
 
   @Get(':id/activities')
   @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: "An apartment's activity timeline (notes + system events)" })
   activities(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return firstValueFrom(
-      sendRpc(this.authClient, portalListUnitActivities, {
-        id,
-        organizationId: callerOrgId(req.user),
-        scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
-      }),
-    );
+    return this.services.auth.ask(portalListUnitActivities, {
+      id,
+      organizationId: callerOrgId(req.user),
+      scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
+    });
   }
 
   @Post(':id/activities')
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: 'Add a note to an apartment' })
   addActivity(@Param('id') id: string, @Body() body: UnitActivityDto, @Request() req: AuthedRequest) {
-    return firstValueFrom(
-      sendRpc(this.authClient, portalAddUnitActivity, {
-        id,
-        organizationId: callerOrgId(req.user),
-        body: body.body,
-        authorId: req.user.id,
-        scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-      }),
-    );
+    return this.services.auth.ask(portalAddUnitActivity, {
+      id,
+      organizationId: callerOrgId(req.user),
+      body: body.body,
+      authorId: req.user.id,
+      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
+    });
   }
 }

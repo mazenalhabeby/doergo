@@ -1,10 +1,8 @@
-import { Controller, Get, HttpStatus, Inject, Logger, Param, Query, Request } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, HttpStatus, Logger, Param, Query, Request } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { firstValueFrom, timeout } from 'rxjs';
 import {
   parseClientCopyInclude,
-  SERVICE_NAMES,
   assertServiceOk,
   presentSections,
   toReportRoute,
@@ -15,7 +13,7 @@ import { taskActor } from '../../common/task-actor';
 import { trackingVisibility } from '../../common/tracking-visibility';
 import { TaskReportQueryDto } from './dto';
 import { TasksService } from './tasks.service';
-import { sendRpc, getTaskRoute } from '@hbcfield/shared/microservices';
+import { getTaskRoute } from '@hbcfield/shared/microservices';
 
 import type { AuthedRequest } from '../../common/request.types';
 /** A route is a nice-to-have on a report; it must never hold the report up. */
@@ -40,8 +38,8 @@ export class TaskReportController {
   private readonly logger = new Logger(TaskReportController.name);
 
   constructor(
+    private readonly services: ServiceCalls,
     private readonly tasksService: TasksService,
-    @Inject(SERVICE_NAMES.TRACKING) private readonly trackingClient: ClientProxy,
   ) {}
 
   @Get(':id/full-report')
@@ -83,8 +81,10 @@ export class TaskReportController {
   /** The tracked route, or null — a slow or failing tracking-service costs the report nothing. */
   private async routeOf(taskId: string, organizationId: string): Promise<TrackedTaskRoute | null> {
     try {
-      const res: { success?: boolean; data?: unknown } | null = await firstValueFrom(
-        sendRpc(this.trackingClient, getTaskRoute, { taskId, organizationId }).pipe(timeout(ROUTE_TIMEOUT_MS)),
+      const res: { success?: boolean; data?: unknown } | null = await this.services.tracking.ask(
+        getTaskRoute,
+        { taskId, organizationId },
+        { timeoutMs: ROUTE_TIMEOUT_MS },
       );
       return res?.success === true && res.data ? (res.data as TrackedTaskRoute) : null;
     } catch (err: unknown) {

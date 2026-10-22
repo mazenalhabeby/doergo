@@ -1,14 +1,12 @@
-import { Controller, Get, Post, Body, Param, Query, Inject, HttpStatus, UseInterceptors } from '@nestjs/common';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Body, Param, Query, HttpStatus, UseInterceptors } from '@nestjs/common';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
-import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
 import { CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { ListMembersQueryDto, TransferOwnershipDto } from './dto';
 import { ChatReachLookup } from '../chat/chat-reach.lookup';
 import {
-  sendRpc,
   listOrgMembers,
   memberStatement,
   getOrgMember,
@@ -28,7 +26,7 @@ import type { SessionUser } from '../../common/request.types';
 @ApiBearerAuth()
 export class OrgMembersController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly services: ServiceCalls,
     private readonly chatReach: ChatReachLookup,
   ) {}
 
@@ -41,27 +39,25 @@ export class OrgMembersController {
   @ApiOperation({ summary: 'List organization members' })
   @ApiResponse({ status: 200, description: 'Members list' })
   async listMembers(@Query() query: ListMembersQueryDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, listOrgMembers, {
-        organizationId: callerOrgId(user),
-        search: query.search,
-        role: query.role,
-        page: query.page ? Number(query.page) : undefined,
-        limit: query.limit ? Number(query.limit) : undefined,
-        // Leadership pickers: let the database pick the admins and managers
-        // rather than shipping the whole staff list for the browser to filter.
-        managersOnly: query.managersOnly === true || (query.managersOnly as unknown) === 'true',
-        excludeId: query.excludeId,
-        lite: query.lite === true || (query.lite as unknown) === 'true',
-        includeIds: query.includeIds
-          ? String(query.includeIds)
-              .split(',')
-              .map((v) => v.trim())
-              .filter(Boolean)
-              .slice(0, 200)
-          : undefined,
-      }),
-    );
+    const result = await this.services.auth.ask(listOrgMembers, {
+      organizationId: callerOrgId(user),
+      search: query.search,
+      role: query.role,
+      page: query.page ? Number(query.page) : undefined,
+      limit: query.limit ? Number(query.limit) : undefined,
+      // Leadership pickers: let the database pick the admins and managers
+      // rather than shipping the whole staff list for the browser to filter.
+      managersOnly: query.managersOnly === true || (query.managersOnly as unknown) === 'true',
+      excludeId: query.excludeId,
+      lite: query.lite === true || (query.lite as unknown) === 'true',
+      includeIds: query.includeIds
+        ? String(query.includeIds)
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean)
+            .slice(0, 200)
+        : undefined,
+    });
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -85,14 +81,12 @@ export class OrgMembersController {
     @Query('to') to: string | undefined,
     @CurrentUser() user: SessionUser,
   ) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, memberStatement, {
-        memberId,
-        organizationId: callerOrgId(user),
-        from: typeof from === 'string' ? from.slice(0, 10) : undefined,
-        to: typeof to === 'string' ? to.slice(0, 10) : undefined,
-      }),
-    );
+    const result = await this.services.auth.ask(memberStatement, {
+      memberId,
+      organizationId: callerOrgId(user),
+      from: typeof from === 'string' ? from.slice(0, 10) : undefined,
+      to: typeof to === 'string' ? to.slice(0, 10) : undefined,
+    });
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
   }
@@ -101,12 +95,10 @@ export class OrgMembersController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Get a single organization member (same shape as the list row)' })
   async getMember(@Param('id') memberId: string, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, getOrgMember, {
-        memberId,
-        organizationId: user.organizationId,
-      }),
-    );
+    const result = await this.services.auth.ask(getOrgMember, {
+      memberId,
+      organizationId: user.organizationId,
+    });
     assertServiceOk(result, HttpStatus.NOT_FOUND);
     return result;
   }
@@ -115,12 +107,10 @@ export class OrgMembersController {
   @ApiOperation({ summary: 'List the org admins/managers to contact — any org member' })
   @ApiResponse({ status: 200, description: 'Contacts list' })
   async listContacts(@CurrentUser() user: SessionUser) {
-    const contacts = await firstValueFrom(
-      sendRpc(this.authClient, listOrgContacts, {
-        organizationId: user.organizationId,
-        userId: user.id,
-      }),
-    );
+    const contacts = await this.services.auth.ask(listOrgContacts, {
+      organizationId: user.organizationId,
+      userId: user.id,
+    });
     // Message buttons follow chat's own rule, not this list's.
     return this.chatReach.annotate(contacts, user);
   }
@@ -137,13 +127,11 @@ export class OrgMembersController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Transfer organization ownership to another member' })
   async transferOwnership(@Body() dto: TransferOwnershipDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, transferOwnership, {
-        organizationId: user.organizationId,
-        requesterId: user.id,
-        newOwnerId: dto.newOwnerId,
-      }),
-    );
+    const result = await this.services.auth.ask(transferOwnership, {
+      organizationId: user.organizationId,
+      requesterId: user.id,
+      newOwnerId: dto.newOwnerId,
+    });
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
   }

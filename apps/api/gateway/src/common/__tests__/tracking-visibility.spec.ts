@@ -1,3 +1,4 @@
+import { fakeServiceCalls } from '../testing/service-calls';
 import { trackingVisibility } from '../tracking-visibility';
 import { UserDirectoryController } from '../../modules/users/user-directory.controller';
 import { of } from 'rxjs';
@@ -8,26 +9,39 @@ import { of } from 'rxjs';
   RESOLVED access and sends it — after any query spread, so `?canViewTracking=true`
   can never switch it on.
 */
-const user = (extra: any = {}) => ({ id: 'u-1', role: 'EMPLOYEE', organizationId: 'org-1', access: { org: {}, perSpace: {} }, ...extra });
+const user = (extra: any = {}) => ({
+  id: 'u-1',
+  role: 'EMPLOYEE',
+  organizationId: 'org-1',
+  access: { org: {}, perSpace: {} },
+  ...extra,
+});
 
 describe('trackingVisibility', () => {
   it('administrator and an org-wide grant see coordinates', () => {
     expect(trackingVisibility(user({ role: 'ADMIN' })).canViewTracking).toBe(true);
-    expect(trackingVisibility(user({ access: { org: { canViewTracking: true }, perSpace: {} } })).canViewTracking).toBe(true);
+    expect(trackingVisibility(user({ access: { org: { canViewTracking: true }, perSpace: {} } })).canViewTracking).toBe(
+      true,
+    );
   });
   it('a space grant is listed, but does not open an org-wide list', () => {
-    expect(trackingVisibility(user({ access: { org: {}, perSpace: { s1: { canViewTracking: true } } } })))
-      .toEqual({ canViewTracking: false, trackingSpaceIds: ['s1'] });
+    expect(trackingVisibility(user({ access: { org: {}, perSpace: { s1: { canViewTracking: true } } } }))).toEqual({
+      canViewTracking: false,
+      trackingSpaceIds: ['s1'],
+    });
   });
   it('"view all tasks" is not tracking', () => {
-    expect(trackingVisibility(user({ canViewAllTasks: true, access: { org: { canViewAllTasks: true }, perSpace: {} } })).canViewTracking).toBe(false);
+    expect(
+      trackingVisibility(user({ canViewAllTasks: true, access: { org: { canViewAllTasks: true }, perSpace: {} } }))
+        .canViewTracking,
+    ).toBe(false);
   });
 });
 
 describe('GET /users/workers', () => {
   it('forwards the resolved answer after the query, so a query string cannot set it', async () => {
     const authClient = { send: jest.fn(() => of({ data: [] })) };
-    const c = new (UserDirectoryController as any)(authClient, {}) as UserDirectoryController;
+    const c = new (UserDirectoryController as any)(fakeServiceCalls({ auth: authClient })) as UserDirectoryController;
     await c.getWorkers(user({ canViewAllTasks: true }) as any, { canViewTracking: 'true', page: '1' });
     const payload = (authClient.send.mock.calls[0] as any)[1];
     expect(payload.canViewTracking).toBe(false);

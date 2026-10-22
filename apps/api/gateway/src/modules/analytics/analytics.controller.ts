@@ -1,3 +1,4 @@
+import { ServiceCalls } from '../../common/microservices/service-calls';
 import {
   Controller,
   Get,
@@ -7,20 +8,16 @@ import {
   Body,
   Param,
   Query,
-  Inject,
   Request,
   UseGuards,
   ForbiddenException,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
-import { SERVICE_NAMES, isAdmin } from '@hbcfield/shared';
+import { isAdmin } from '@hbcfield/shared';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { ReportAccessGuard, reportSpaceScope } from '../../common/guards/report-access.guard';
 import {
-  pattern,
   analyticsCatalog,
   analyticsCreateSaved,
   analyticsCreateSchedule,
@@ -75,26 +72,22 @@ function assertOrgWideReports(req: AuthedRequest): void {
 @DenyExternal()
 @UseGuards(ReportAccessGuard) // admin OR canViewAllTasks OR canViewReports — narrowed by reportSpaceScope
 export class AnalyticsController {
-  constructor(@Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy) {}
+  constructor(private readonly services: ServiceCalls) {}
 
   @Get('catalog')
   @ApiOperation({ summary: 'Report builder catalog: datasets (dimensions/measures) + templates' })
   async catalog() {
-    return firstValueFrom(
-      this.taskClient.send(pattern(analyticsCatalog), {} satisfies RpcRequest<typeof analyticsCatalog>),
-    );
+    return this.services.task.ask(analyticsCatalog, {} satisfies RpcRequest<typeof analyticsCatalog>);
   }
 
   @Post('run')
   @ApiOperation({ summary: 'Run a report definition (always scoped to your organization)' })
   async run(@Body() body: RunReportDto, @Request() req: AuthedRequest) {
-    return firstValueFrom(
-      this.taskClient.send(pattern(analyticsRun), {
-        organizationId: callerOrgId(req.user),
-        definition: definitionFromBody(body?.definition),
-        scopeSpaceIds: reportSpaceScope(req.user),
-      } satisfies RpcRequest<typeof analyticsRun>),
-    );
+    return this.services.task.ask(analyticsRun, {
+      organizationId: callerOrgId(req.user),
+      definition: definitionFromBody(body?.definition),
+      scopeSpaceIds: reportSpaceScope(req.user),
+    } satisfies RpcRequest<typeof analyticsRun>);
   }
 
   @Get('timesheet')
@@ -105,87 +98,75 @@ export class AnalyticsController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    return firstValueFrom(
-      this.taskClient.send(pattern(analyticsTimesheet), {
-        organizationId: callerOrgId(req.user),
-        userId: typeof userId === 'string' ? userId : '',
-        from,
-        to,
-        scopeSpaceIds: reportSpaceScope(req.user),
-      } satisfies RpcRequest<typeof analyticsTimesheet>),
-    );
+    return this.services.task.ask(analyticsTimesheet, {
+      organizationId: callerOrgId(req.user),
+      userId: typeof userId === 'string' ? userId : '',
+      from,
+      to,
+      scopeSpaceIds: reportSpaceScope(req.user),
+    } satisfies RpcRequest<typeof analyticsTimesheet>);
   }
 
   // ── Saved reports (custom builder). View = all tiers; build = Pro+. ──────────
   @Get('reports')
   @ApiOperation({ summary: 'List saved reports (org-shared + your own)' })
   async listSaved(@Request() req: AuthedRequest) {
-    return firstValueFrom(
-      this.taskClient.send(pattern(analyticsListSaved), {
-        organizationId: callerOrgId(req.user),
-        userId: req.user.id,
-      } satisfies RpcRequest<typeof analyticsListSaved>),
-    );
+    return this.services.task.ask(analyticsListSaved, {
+      organizationId: callerOrgId(req.user),
+      userId: req.user.id,
+    } satisfies RpcRequest<typeof analyticsListSaved>);
   }
 
   @Post('reports')
   @RequirePlan('reports_builder')
   @ApiOperation({ summary: 'Save a custom report (Pro+)' })
   async createSaved(@Body() body: CreateSavedReportDto, @Request() req: AuthedRequest) {
-    return firstValueFrom(
-      this.taskClient.send(pattern(analyticsCreateSaved), {
-        organizationId: callerOrgId(req.user),
-        userId: req.user.id,
-        name: body?.name,
-        description: body?.description,
-        config: definitionFromBody(body?.config),
-        isShared: body?.isShared,
-      } satisfies RpcRequest<typeof analyticsCreateSaved>),
-    );
+    return this.services.task.ask(analyticsCreateSaved, {
+      organizationId: callerOrgId(req.user),
+      userId: req.user.id,
+      name: body?.name,
+      description: body?.description,
+      config: definitionFromBody(body?.config),
+      isShared: body?.isShared,
+    } satisfies RpcRequest<typeof analyticsCreateSaved>);
   }
 
   @Patch('reports/:id')
   @RequirePlan('reports_builder')
   @ApiOperation({ summary: 'Update a saved report (Pro+)' })
   async updateSaved(@Param('id') id: string, @Body() body: UpdateSavedReportDto, @Request() req: AuthedRequest) {
-    return firstValueFrom(
-      this.taskClient.send(pattern(analyticsUpdateSaved), {
-        id,
-        organizationId: callerOrgId(req.user),
-        userId: req.user.id,
-        isAdmin: isAdmin(req.user),
-        name: body?.name,
-        description: body?.description,
-        config: definitionFromBody(body?.config),
-        isShared: body?.isShared,
-      } satisfies RpcRequest<typeof analyticsUpdateSaved>),
-    );
+    return this.services.task.ask(analyticsUpdateSaved, {
+      id,
+      organizationId: callerOrgId(req.user),
+      userId: req.user.id,
+      isAdmin: isAdmin(req.user),
+      name: body?.name,
+      description: body?.description,
+      config: definitionFromBody(body?.config),
+      isShared: body?.isShared,
+    } satisfies RpcRequest<typeof analyticsUpdateSaved>);
   }
 
   @Delete('reports/:id')
   @RequirePlan('reports_builder')
   @ApiOperation({ summary: 'Delete a saved report (Pro+)' })
   async deleteSaved(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return firstValueFrom(
-      this.taskClient.send(pattern(analyticsDeleteSaved), {
-        id,
-        organizationId: callerOrgId(req.user),
-        userId: req.user.id,
-        isAdmin: isAdmin(req.user),
-      } satisfies RpcRequest<typeof analyticsDeleteSaved>),
-    );
+    return this.services.task.ask(analyticsDeleteSaved, {
+      id,
+      organizationId: callerOrgId(req.user),
+      userId: req.user.id,
+      isAdmin: isAdmin(req.user),
+    } satisfies RpcRequest<typeof analyticsDeleteSaved>);
   }
 
   // ── Scheduled delivery (Business+). Reads open; mutations gated. ─────────────
   @Get('schedules')
   @ApiOperation({ summary: 'List report delivery schedules' })
   async listSchedules(@Request() req: AuthedRequest, @Query('reportId') reportId?: string) {
-    return firstValueFrom(
-      this.taskClient.send(pattern(analyticsListSchedules), {
-        organizationId: callerOrgId(req.user),
-        reportDefinitionId: reportId,
-      } satisfies RpcRequest<typeof analyticsListSchedules>),
-    );
+    return this.services.task.ask(analyticsListSchedules, {
+      organizationId: callerOrgId(req.user),
+      reportDefinitionId: reportId,
+    } satisfies RpcRequest<typeof analyticsListSchedules>);
   }
 
   @Post('schedules')
@@ -193,13 +174,11 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Schedule a report for email delivery (Business+)' })
   async createSchedule(@Body() body: CreateReportScheduleDto, @Request() req: AuthedRequest) {
     assertOrgWideReports(req);
-    return firstValueFrom(
-      this.taskClient.send(pattern(analyticsCreateSchedule), {
-        ...body,
-        organizationId: callerOrgId(req.user),
-        userId: req.user.id,
-      } satisfies RpcRequest<typeof analyticsCreateSchedule>),
-    );
+    return this.services.task.ask(analyticsCreateSchedule, {
+      ...body,
+      organizationId: callerOrgId(req.user),
+      userId: req.user.id,
+    } satisfies RpcRequest<typeof analyticsCreateSchedule>);
   }
 
   @Patch('schedules/:id')
@@ -207,13 +186,11 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Update a report schedule (Business+)' })
   async updateSchedule(@Param('id') id: string, @Body() body: UpdateReportScheduleDto, @Request() req: AuthedRequest) {
     assertOrgWideReports(req);
-    return firstValueFrom(
-      this.taskClient.send(pattern(analyticsUpdateSchedule), {
-        ...body,
-        id,
-        organizationId: callerOrgId(req.user),
-      } satisfies RpcRequest<typeof analyticsUpdateSchedule>),
-    );
+    return this.services.task.ask(analyticsUpdateSchedule, {
+      ...body,
+      id,
+      organizationId: callerOrgId(req.user),
+    } satisfies RpcRequest<typeof analyticsUpdateSchedule>);
   }
 
   @Delete('schedules/:id')
@@ -221,11 +198,9 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Delete a report schedule (Business+)' })
   async deleteSchedule(@Param('id') id: string, @Request() req: AuthedRequest) {
     assertOrgWideReports(req);
-    return firstValueFrom(
-      this.taskClient.send(pattern(analyticsDeleteSchedule), {
-        id,
-        organizationId: callerOrgId(req.user),
-      } satisfies RpcRequest<typeof analyticsDeleteSchedule>),
-    );
+    return this.services.task.ask(analyticsDeleteSchedule, {
+      id,
+      organizationId: callerOrgId(req.user),
+    } satisfies RpcRequest<typeof analyticsDeleteSchedule>);
   }
 }

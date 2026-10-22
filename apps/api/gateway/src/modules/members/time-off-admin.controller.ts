@@ -1,16 +1,14 @@
-import { Controller, Get, Post, Patch, Delete, Param, Query, Body, Inject, UseInterceptors } from '@nestjs/common';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseInterceptors } from '@nestjs/common';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
-import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
-import { Role, SERVICE_NAMES, CurrentUser, RequirePermissionInSpace } from '@hbcfield/shared';
+import { Role, CurrentUser, RequirePermissionInSpace } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
 import { scopeFor, scopeIdsFor } from '../../common/permission-scope';
 import { leaveWriteScope } from './members-controller-helpers';
 import { callerOrgId } from '../../common/caller-org';
 import {
-  sendRpc,
   getOrgTimeOff,
   approveTimeOff,
   addTimeOff,
@@ -31,7 +29,7 @@ import { ApproveTimeOffDto, AddTimeOffDto, UpdateTimeOffDto } from './dto/leave-
 @UseInterceptors(LabourCostInterceptor)
 @Controller('employees')
 export class TimeOffAdminController {
-  constructor(@Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy) {}
+  constructor(private readonly services: ServiceCalls) {}
 
   @Get('time-off')
   @ApiOperation({ summary: 'Time-off requests: the organization, or the spaces the caller leads' })
@@ -68,19 +66,17 @@ export class TimeOffAdminController {
     const cover = scopeFor(user, 'canViewSpaceAttendance');
     const canSeeCover = cover === null || cover.length > 0;
 
-    return firstValueFrom(
-      sendRpc(this.taskClient, getOrgTimeOff, {
-        // `user` is optional only because it follows optional query params; the route is authenticated.
-        organizationId: callerOrgId(user!),
-        // undefined = org-wide; [] = granted nowhere and matches nothing.
-        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-        withCover: canSeeCover,
-        status,
-        // Validated in the service (a malformed day is ignored, not trusted).
-        from: typeof from === 'string' ? from.slice(0, 10) : undefined,
-        to: typeof to === 'string' ? to.slice(0, 10) : undefined,
-      }),
-    );
+    return this.services.task.ask(getOrgTimeOff, {
+      // `user` is optional only because it follows optional query params; the route is authenticated.
+      organizationId: callerOrgId(user!),
+      // undefined = org-wide; [] = granted nowhere and matches nothing.
+      scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+      withCover: canSeeCover,
+      status,
+      // Validated in the service (a malformed day is ignored, not trusted).
+      from: typeof from === 'string' ? from.slice(0, 10) : undefined,
+      to: typeof to === 'string' ? to.slice(0, 10) : undefined,
+    });
   }
 
   // ============================================================================
@@ -99,32 +95,28 @@ export class TimeOffAdminController {
     @Body() body: ApproveTimeOffDto,
     @CurrentUser() user: SessionUser,
   ) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, approveTimeOff, {
-        timeOffId,
-        organizationId: callerOrgId(user),
-        approverId: user.id,
-        scopeSpaceIds: leaveWriteScope(user),
-        approved: body.approved,
-        rejectionReason: body.rejectionReason,
-      }),
-    );
+    return this.services.task.ask(approveTimeOff, {
+      timeOffId,
+      organizationId: callerOrgId(user),
+      approverId: user.id,
+      scopeSpaceIds: leaveWriteScope(user),
+      approved: body.approved,
+      rejectionReason: body.rejectionReason,
+    });
   }
 
   @Post('time-off/manual')
   @ApiOperation({ summary: 'Admin: add an already-approved day off for an employee' })
   @RequirePermission('canManageRota')
   async addTimeOff(@Body() body: AddTimeOffDto, @CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, addTimeOff, {
-        editorId: user.id,
-        organizationId: callerOrgId(user),
-        technicianId: body.technicianId,
-        startDate: body.startDate,
-        endDate: body.endDate,
-        reason: body.reason,
-      }),
-    );
+    return this.services.task.ask(addTimeOff, {
+      editorId: user.id,
+      organizationId: callerOrgId(user),
+      technicianId: body.technicianId,
+      startDate: body.startDate,
+      endDate: body.endDate,
+      reason: body.reason,
+    });
   }
 
   @Patch('time-off/:timeOffId')
@@ -136,15 +128,13 @@ export class TimeOffAdminController {
     @Body() body: UpdateTimeOffDto,
     @CurrentUser() user: SessionUser,
   ) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, updateTimeOff, {
-        organizationId: callerOrgId(user),
-        timeOffId,
-        startDate: body.startDate,
-        endDate: body.endDate,
-        reason: body.reason,
-      }),
-    );
+    return this.services.task.ask(updateTimeOff, {
+      organizationId: callerOrgId(user),
+      timeOffId,
+      startDate: body.startDate,
+      endDate: body.endDate,
+      reason: body.reason,
+    });
   }
 
   @Delete('time-off/:timeOffId/manage')
@@ -152,9 +142,7 @@ export class TimeOffAdminController {
   @ApiParam({ name: 'timeOffId', description: 'Time-off request ID' })
   @RequirePermission('canManageRota')
   async adminDeleteTimeOff(@Param('timeOffId') timeOffId: string, @CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, adminDeleteTimeOff, { organizationId: callerOrgId(user), timeOffId }),
-    );
+    return this.services.task.ask(adminDeleteTimeOff, { organizationId: callerOrgId(user), timeOffId });
   }
 
   @Delete('time-off/:timeOffId')
@@ -163,11 +151,9 @@ export class TimeOffAdminController {
   @ApiResponse({ status: 200, description: 'Time-off request canceled' })
   @Roles(Role.EMPLOYEE)
   async cancelTimeOff(@Param('timeOffId') timeOffId: string, @CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, cancelTimeOff, {
-        timeOffId,
-        technicianId: user.id,
-      }),
-    );
+    return this.services.task.ask(cancelTimeOff, {
+      timeOffId,
+      technicianId: user.id,
+    });
   }
 }

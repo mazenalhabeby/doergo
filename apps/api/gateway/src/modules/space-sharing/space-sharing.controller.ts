@@ -1,19 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Query,
-  Inject,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, HttpException, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
 import { CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import { SpaceModulesService } from '../../common/space-modules.service';
 import { RequirePermission } from '../../common/decorators';
@@ -38,13 +25,13 @@ import {
 @ApiBearerAuth()
 export class SpaceSharingController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly auth: ClientProxy,
+    private readonly services: ServiceCalls,
     private readonly spaceModules: SpaceModulesService,
     private readonly orgEvents: OrgEventsService,
   ) {}
 
   private async send(cmd: string, payload: any) {
-    const res = await firstValueFrom(this.auth.send({ cmd }, payload));
+    const res = await this.services.auth.askCmd<any>(cmd, payload);
     assertServiceOk(res, HttpStatus.BAD_REQUEST);
     return res;
   }

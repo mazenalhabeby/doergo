@@ -1,3 +1,4 @@
+import { GeoSearchService } from '../geo-search.service';
 import 'reflect-metadata';
 import { GeoController } from '../geo.controller';
 
@@ -26,7 +27,7 @@ describe('public geocoding routes are throttled', () => {
   });
 
   it('never spends a provider call on an absurd query', async () => {
-    const out = await new GeoController().search('x'.repeat(5000));
+    const out = await new GeoController(new GeoSearchService()).search('x'.repeat(5000));
     expect(out.results).toEqual([]);
   });
 });

@@ -1,3 +1,4 @@
+import { fakeServiceCalls } from '../testing/service-calls';
 import { of } from 'rxjs';
 import { MembersController } from '../../modules/members/members.controller';
 import { AuthSessionsController } from '../../modules/auth/auth-sessions.controller';
@@ -13,11 +14,15 @@ describe('employee deactivation and edits', () => {
   function ctrl() {
     const authClient = { send: jest.fn(() => of({ success: true })) };
     const authCache = { invalidateUser: jest.fn(async () => undefined) };
-    const c = new (MembersController as any)(authClient, { rebill: jest.fn() }, authCache, {}) as MembersController;
+    const c = new (MembersController as any)(
+      fakeServiceCalls({ auth: authClient }),
+      { rebill: jest.fn() },
+      authCache,
+    ) as MembersController;
     return { c, authCache };
   }
 
-  it('DELETE drops the deactivated member\'s cached sessions', async () => {
+  it("DELETE drops the deactivated member's cached sessions", async () => {
     const { c, authCache } = ctrl();
     await c.deactivateEmployee('m-1', caller);
     expect(authCache.invalidateUser).toHaveBeenCalledWith('m-1');
@@ -31,18 +36,23 @@ describe('employee deactivation and edits', () => {
 });
 
 describe('DELETE /auth/sessions', () => {
-  it('sends the caller\'s own refresh token so their session can be kept, and drops their cache', async () => {
+  it("sends the caller's own refresh token so their session can be kept, and drops their cache", async () => {
     const authClient = { send: jest.fn(() => of({ success: true, data: { revoked: 2 } })) };
     const authCache = { invalidateUser: jest.fn(async () => undefined) };
-    const c = new AuthSessionsController(authClient as any, authCache as any);
+    const c = new AuthSessionsController(fakeServiceCalls({ auth: authClient }), authCache as any);
     await c.revokeAllSessions({ id: 'u-1' } as any, { cookies: { refreshToken: 'rt-cookie' } } as any, {} as any);
-    expect(authClient.send).toHaveBeenCalledWith({ cmd: 'revoke_all_sessions' }, { userId: 'u-1', currentRefreshToken: 'rt-cookie' });
+    expect(authClient.send).toHaveBeenCalledWith(
+      { cmd: 'revoke_all_sessions' },
+      { userId: 'u-1', currentRefreshToken: 'rt-cookie' },
+    );
     expect(authCache.invalidateUser).toHaveBeenCalledWith('u-1');
   });
 
   it('the phone sends it in the body', async () => {
     const authClient = { send: jest.fn(() => of({ success: true })) };
-    const c = new AuthSessionsController(authClient as any, { invalidateUser: jest.fn(async () => undefined) } as any);
+    const c = new AuthSessionsController(fakeServiceCalls({ auth: authClient }), {
+      invalidateUser: jest.fn(async () => undefined),
+    } as any);
     await c.revokeAllSessions({ id: 'u-1' } as any, { cookies: {} } as any, { refreshToken: 'rt-body' } as any);
     expect((authClient.send.mock.calls[0] as any)[1].currentRefreshToken).toBe('rt-body');
   });

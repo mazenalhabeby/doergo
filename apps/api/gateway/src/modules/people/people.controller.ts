@@ -1,12 +1,11 @@
-import { Controller, Get, Inject, NotFoundException, Param, Request } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, NotFoundException, Param, Request } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { firstValueFrom } from 'rxjs';
 import { SpacesService } from '../spaces/spaces.service';
 import { getSpaceScope } from '@hbcfield/shared';
 import { ChatReachLookup } from '../chat/chat-reach.lookup';
-import { sendRpc, listOrgContacts } from '@hbcfield/shared/microservices';
+import { listOrgContacts } from '@hbcfield/shared/microservices';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -28,8 +27,8 @@ const rowsOf = (r: unknown): PersonRow[] =>
 @Controller('people')
 export class PeopleController {
   constructor(
+    private readonly services: ServiceCalls,
     private readonly locations: SpacesService,
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     private readonly chatReach: ChatReachLookup,
   ) {}
 
@@ -44,9 +43,7 @@ export class PeopleController {
         organizationId: callerOrgId(user),
         spaceScope: getSpaceScope(user),
       }),
-      firstValueFrom(
-        sendRpc(this.authClient, listOrgContacts, { organizationId: user.organizationId, userId: user.id }),
-      ),
+      this.services.auth.ask(listOrgContacts, { organizationId: user.organizationId, userId: user.id }),
     ]);
     const asColleague = rowsOf(team).filter((p) => p?.id === id);
     const asManager = rowsOf(managers).find((p) => p?.id === id);

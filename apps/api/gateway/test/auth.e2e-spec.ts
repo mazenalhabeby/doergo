@@ -1,3 +1,4 @@
+import { ServiceCalls } from '../src/common/microservices/service-calls';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
@@ -84,9 +85,7 @@ describe('AuthController (e2e)', () => {
           secret: 'test-secret-key-for-testing-purposes-only',
           signOptions: { expiresIn: '1h' },
         }),
-        ThrottlerModule.forRoot([
-          { name: 'default', ttl: 60000, limit: 1000 },
-        ]),
+        ThrottlerModule.forRoot([{ name: 'default', ttl: 60000, limit: 1000 }]),
       ],
       controllers: [AuthController],
       providers: [
@@ -94,6 +93,10 @@ describe('AuthController (e2e)', () => {
           provide: 'AUTH_SERVICE',
           useValue: mockAuthClient,
         },
+        // Controllers call services through ServiceCalls (the global MicroservicesModule in the app).
+        ServiceCalls,
+        { provide: 'TASK_SERVICE', useValue: { send: jest.fn(), emit: jest.fn() } },
+        { provide: 'TRACKING_SERVICE', useValue: { send: jest.fn(), emit: jest.fn() } },
         {
           // AuthController also injects the notification client (welcome emails,
           // etc.). Provide a no-op mock so the test module compiles.
@@ -108,7 +111,14 @@ describe('AuthController (e2e)', () => {
           // cannot build the module at all, and every test in the file failed
           // during setup — a red suite that said nothing about the product.
           provide: AuthTokenCache,
-          useValue: { invalidateUser: jest.fn(), get: jest.fn(), set: jest.fn(), lookup: jest.fn().mockResolvedValue({ user: null, revoked: false }), revoke: jest.fn(), ttl: 60 },
+          useValue: {
+            invalidateUser: jest.fn(),
+            get: jest.fn(),
+            set: jest.fn(),
+            lookup: jest.fn().mockResolvedValue({ user: null, revoked: false }),
+            revoke: jest.fn(),
+            ttl: 60,
+          },
         },
         {
           provide: APP_GUARD,
@@ -163,10 +173,7 @@ describe('AuthController (e2e)', () => {
         }),
       );
 
-      const response = await request(app.getHttpServer())
-        .post('/auth/register')
-        .send(registerDto)
-        .expect(201);
+      const response = await request(app.getHttpServer()).post('/auth/register').send(registerDto).expect(201);
 
       expect(response.body.success).toBe(true);
       expect(mockAuthClient.send).toHaveBeenCalledWith(
@@ -187,10 +194,7 @@ describe('AuthController (e2e)', () => {
         }),
       );
 
-      const response = await request(app.getHttpServer())
-        .post('/auth/register')
-        .send(registerDto)
-        .expect(409);
+      const response = await request(app.getHttpServer()).post('/auth/register').send(registerDto).expect(409);
 
       expect(response.body.message).toBe('Email already exists');
     });
@@ -199,14 +203,9 @@ describe('AuthController (e2e)', () => {
       // Verify that the backend always sets role to ADMIN
       // Note: Extra fields are rejected by validation (forbidNonWhitelisted)
       // This test verifies that registration always creates ADMIN users
-      mockAuthClient.send.mockReturnValue(
-        of({ success: true, data: mockUser }),
-      );
+      mockAuthClient.send.mockReturnValue(of({ success: true, data: mockUser }));
 
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send(registerDto)
-        .expect(201);
+      await request(app.getHttpServer()).post('/auth/register').send(registerDto).expect(201);
 
       // Verify role is ADMIN in the payload sent to auth service
       expect(mockAuthClient.send).toHaveBeenCalledWith(
@@ -235,10 +234,7 @@ describe('AuthController (e2e)', () => {
         }),
       );
 
-      const response = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send(loginDto)
-        .expect(200);
+      const response = await request(app.getHttpServer()).post('/auth/login').send(loginDto).expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.accessToken).toBeDefined();
@@ -254,10 +250,7 @@ describe('AuthController (e2e)', () => {
         }),
       );
 
-      const response = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send(loginDto)
-        .expect(401);
+      const response = await request(app.getHttpServer()).post('/auth/login').send(loginDto).expect(401);
 
       expect(response.body.message).toBe('Invalid credentials');
     });
@@ -271,10 +264,7 @@ describe('AuthController (e2e)', () => {
         }),
       );
 
-      const response = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send(loginDto)
-        .expect(429);
+      const response = await request(app.getHttpServer()).post('/auth/login').send(loginDto).expect(429);
 
       expect(response.body.message).toBe('Account is temporarily locked');
     });
@@ -323,9 +313,7 @@ describe('AuthController (e2e)', () => {
     it('should logout successfully with valid token', async () => {
       const validToken = jwtService.sign(mockUser);
 
-      mockAuthClient.send.mockReturnValue(
-        of({ success: true, message: 'Logged out successfully' }),
-      );
+      mockAuthClient.send.mockReturnValue(of({ success: true, message: 'Logged out successfully' }));
 
       const response = await request(app.getHttpServer())
         .post('/auth/logout')
@@ -337,10 +325,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should return 403 without auth token', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/logout')
-        .send({ refreshToken: 'valid-refresh-token' })
-        .expect(403);
+      await request(app.getHttpServer()).post('/auth/logout').send({ refreshToken: 'valid-refresh-token' }).expect(403);
     });
   });
 
@@ -422,19 +407,13 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should return 403 with invalid token', async () => {
-      await request(app.getHttpServer())
-        .get('/auth/me')
-        .set('Authorization', 'Bearer invalid-token')
-        .expect(403);
+      await request(app.getHttpServer()).get('/auth/me').set('Authorization', 'Bearer invalid-token').expect(403);
     });
 
     it('should return 403 with expired token', async () => {
       const expiredToken = jwtService.sign(mockUser, { expiresIn: '-1h' });
 
-      await request(app.getHttpServer())
-        .get('/auth/me')
-        .set('Authorization', `Bearer ${expiredToken}`)
-        .expect(403);
+      await request(app.getHttpServer()).get('/auth/me').set('Authorization', `Bearer ${expiredToken}`).expect(403);
     });
   });
 });

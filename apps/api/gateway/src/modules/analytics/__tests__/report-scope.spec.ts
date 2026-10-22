@@ -1,3 +1,4 @@
+import { fakeServiceCalls } from '../../../common/testing/service-calls';
 import { ForbiddenException } from '@nestjs/common';
 import { of } from 'rxjs';
 import { DENY_EXTERNAL_KEY } from '../../../common/decorators/deny-external.decorator';
@@ -38,7 +39,7 @@ describe('AnalyticsController', () => {
   });
 
   const client = { send: jest.fn(() => of({ ok: true })) };
-  const ctrl = new AnalyticsController(client as any);
+  const ctrl = new AnalyticsController(fakeServiceCalls({ task: client }));
   const scoped = { user: member({}, { a: { canViewReports: true } }) };
   beforeEach(() => client.send.mockClear());
 

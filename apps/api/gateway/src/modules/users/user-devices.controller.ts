@@ -1,30 +1,22 @@
+import { ServiceCalls } from '../../common/microservices/service-calls';
 import {
   Controller,
   Post,
   Delete,
   Param,
   Body,
-  Inject,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
 import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'fs/promises';
-import { SERVICE_NAMES, CurrentUser, AllowCustomer } from '@hbcfield/shared';
+import { CurrentUser, AllowCustomer } from '@hbcfield/shared';
 import { StorageService } from '../../common/storage/storage.service';
 import { RegisterPushTokenDto } from './users.dto';
-import {
-  sendRpc,
-  updateAvatar,
-  removeAvatar,
-  registerPushToken,
-  removePushToken,
-} from '@hbcfield/shared/microservices';
+import { updateAvatar, removeAvatar, registerPushToken, removePushToken } from '@hbcfield/shared/microservices';
 import type { SessionUser } from '../../common/request.types';
 
 /** /users — the caller's own picture and the phones that receive their pushes. */
@@ -33,8 +25,7 @@ import type { SessionUser } from '../../common/request.types';
 @Controller('users')
 export class UserDevicesController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+    private readonly services: ServiceCalls,
     private readonly storage: StorageService,
   ) {}
 
@@ -88,7 +79,7 @@ export class UserDevicesController {
     }
 
     // Update user in database
-    await firstValueFrom(sendRpc(this.authClient, updateAvatar, { userId: user.id, avatarUrl }));
+    await this.services.auth.ask(updateAvatar, { userId: user.id, avatarUrl });
 
     return { success: true, data: { avatarUrl } };
   }
@@ -97,7 +88,7 @@ export class UserDevicesController {
   @ApiOperation({ summary: 'Remove avatar from user profile and local storage' })
   async avatarRemove(@CurrentUser() user: SessionUser) {
     // 1. Remove from DB and get old URL
-    const result: any = await firstValueFrom(sendRpc(this.authClient, removeAvatar, { userId: user.id }));
+    const result: any = await this.services.auth.ask(removeAvatar, { userId: user.id });
 
     // 2. Clean up the stored file, wherever it lives. Old avatars are still
     //    relative `/uploads/...` paths on disk; new ones are absolute S3 URLs.
@@ -127,21 +118,19 @@ export class UserDevicesController {
   @ApiOperation({ summary: 'Register a push notification token for the current user' })
   @ApiBody({ type: RegisterPushTokenDto })
   async registerPushToken(@CurrentUser() user: SessionUser, @Body() dto: RegisterPushTokenDto) {
-    return firstValueFrom(
-      sendRpc(this.notificationClient, registerPushToken, {
-        userId: user.id,
-        token: dto.token,
-        platform: dto.platform,
-        deviceId: dto.deviceId,
-        locale: dto.locale,
-      }),
-    );
+    return this.services.notification.ask(registerPushToken, {
+      userId: user.id,
+      token: dto.token,
+      platform: dto.platform,
+      deviceId: dto.deviceId,
+      locale: dto.locale,
+    });
   }
 
   @Delete('push-token/:token')
   @AllowCustomer() // portal customers unregister their device on logout
   @ApiOperation({ summary: 'Remove a push notification token' })
   async removePushToken(@Param('token') token: string, @CurrentUser() user: SessionUser) {
-    return firstValueFrom(sendRpc(this.notificationClient, removePushToken, { token, userId: user.id }));
+    return this.services.notification.ask(removePushToken, { token, userId: user.id });
   }
 }

@@ -14,7 +14,6 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { RequirePermission, RequirePermissionInSpace } from '@hbcfield/shared';
 import { join } from 'path';
@@ -24,7 +23,6 @@ import { assignSpaceIds } from '../../common/task-actor';
 import { PortalAdminControllerBase } from './portal-admin-controller.base';
 import { portalList, portalCreate, portalGet, portalUpdate, portalDelete } from '@hbcfield/shared/microservices';
 import {
-  sendRpc,
   portalListRequestsByPortal,
   portalListWaitingRequests,
   portalTriageRequest,
@@ -106,13 +104,11 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: 'List every request in a portal (all clients)' })
   portalRequests(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, portalListRequestsByPortal, {
-        organizationId: callerOrgId(req.user),
-        portalId: id,
-        scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
-      }),
-    );
+    return this.services.task.ask(portalListRequestsByPortal, {
+      organizationId: callerOrgId(req.user),
+      portalId: id,
+      scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
+    });
   }
 
   @Get('requests/waiting')
@@ -120,12 +116,10 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @ApiOperation({ summary: 'Requests waiting for triage across the portals the caller reads (approvals inbox)' })
   waitingRequests(@Request() req: AuthedRequest) {
     // The same gate and scope as portals/:id/requests, over every portal the caller reads.
-    return firstValueFrom(
-      sendRpc(this.taskClient, portalListWaitingRequests, {
-        organizationId: callerOrgId(req.user),
-        scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
-      }),
-    );
+    return this.services.task.ask(portalListWaitingRequests, {
+      organizationId: callerOrgId(req.user),
+      scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
+    });
   }
 
   /** Upload a portal cover/hero image (shown as the client-home background). */
@@ -201,26 +195,24 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @ApiOperation({ summary: 'Triage a portal request into a live task' })
   triageRequest(@Param('id') id: string, @Body() body: TriageRequestDto, @Request() req: AuthedRequest) {
     const scopeSpaceIds = portalScope(req.user, 'canAnswerPortal');
-    return firstValueFrom(
-      sendRpc(this.taskClient, portalTriageRequest, {
-        id,
-        organizationId: callerOrgId(req.user),
-        userId: req.user.id,
-        spaceId: body.spaceId,
-        workflowId: body.workflowId,
-        priority: body.priority,
-        assignedToId: body.assignedToId,
-        scopeSpaceIds,
-        // Naming the worker is ASSIGNING, its own permission. Asked only of a
-        // workspace-scoped answerer — an org-wide one keeps what routing a
-        // request has always allowed.
-        // (The flat flag first: it carries an org-wide grant `access.org` may
-        // not spell out, exactly as `portalScope` reads its own key.)
-        ...(scopeSpaceIds === undefined || req.user?.canAssignTasks === true
-          ? {}
-          : { assignScopeSpaceIds: assignSpaceIds(req) }),
-      }),
-    );
+    return this.services.task.ask(portalTriageRequest, {
+      id,
+      organizationId: callerOrgId(req.user),
+      userId: req.user.id,
+      spaceId: body.spaceId,
+      workflowId: body.workflowId,
+      priority: body.priority,
+      assignedToId: body.assignedToId,
+      scopeSpaceIds,
+      // Naming the worker is ASSIGNING, its own permission. Asked only of a
+      // workspace-scoped answerer — an org-wide one keeps what routing a
+      // request has always allowed.
+      // (The flat flag first: it carries an org-wide grant `access.org` may
+      // not spell out, exactly as `portalScope` reads its own key.)
+      ...(scopeSpaceIds === undefined || req.user?.canAssignTasks === true
+        ? {}
+        : { assignScopeSpaceIds: assignSpaceIds(req) }),
+    });
   }
 
   @Patch('portals/:id')
@@ -263,12 +255,10 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: "List a resident's portal requests" })
   requests(@Query('customerId') customerId: string, @Request() req: AuthedRequest) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, portalListRequests, {
-        organizationId: callerOrgId(req.user),
-        customerId,
-        scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
-      }),
-    );
+    return this.services.task.ask(portalListRequests, {
+      organizationId: callerOrgId(req.user),
+      customerId,
+      scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
+    });
   }
 }

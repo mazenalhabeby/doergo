@@ -1,13 +1,11 @@
-import { Controller, Get, Post, Delete, Body, Param, Inject, HttpStatus } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Delete, Body, Param, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { firstValueFrom } from 'rxjs';
 import { SkipOnboardingCheck, CurrentUser, assertServiceOk } from '@hbcfield/shared';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { CreateOrganizationDto, SubmitJoinRequestDto, AcceptInvitationExistingUserDto } from './dto';
 import {
-  sendRpc,
   onboardingCreateOrg,
   onboardingValidateOrgCode,
   onboardingSubmitJoinRequest,
@@ -22,7 +20,7 @@ import type { SessionUser } from '../../common/request.types';
 @SkipOnboardingCheck()
 export class OnboardingController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly services: ServiceCalls,
     private readonly authCache: AuthTokenCache,
   ) {}
 
@@ -33,12 +31,10 @@ export class OnboardingController {
   @ApiResponse({ status: 201, description: 'Organization created' })
   @ApiResponse({ status: 400, description: 'Already onboarded or has org' })
   async createOrganization(@Body() dto: CreateOrganizationDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, onboardingCreateOrg, {
-        ...dto,
-        userId: user.id,
-      }),
-    );
+    const result = await this.services.auth.ask(onboardingCreateOrg, {
+      ...dto,
+      userId: user.id,
+    });
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -55,7 +51,7 @@ export class OnboardingController {
   @ApiParam({ name: 'code', description: 'Organization join code' })
   @ApiResponse({ status: 200, description: 'Validation result' })
   async validateOrgCode(@Param('code') code: string) {
-    return firstValueFrom(sendRpc(this.authClient, onboardingValidateOrgCode, { code }));
+    return this.services.auth.ask(onboardingValidateOrgCode, { code });
   }
 
   @Post('join-by-code')
@@ -66,12 +62,10 @@ export class OnboardingController {
   @ApiResponse({ status: 400, description: 'Invalid code or already onboarded' })
   @ApiResponse({ status: 409, description: 'Already have pending request to this org' })
   async submitJoinRequest(@Body() dto: SubmitJoinRequestDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, onboardingSubmitJoinRequest, {
-        ...dto,
-        userId: user.id,
-      }),
-    );
+    const result = await this.services.auth.ask(onboardingSubmitJoinRequest, {
+      ...dto,
+      userId: user.id,
+    });
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -92,12 +86,10 @@ export class OnboardingController {
   @ApiResponse({ status: 200, description: 'Invitation accepted, user joined org' })
   @ApiResponse({ status: 400, description: 'Invalid/expired invitation or already onboarded' })
   async acceptInvitation(@Body() dto: AcceptInvitationExistingUserDto, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, onboardingAcceptInvitationExisting, {
-        userId: user.id,
-        code: dto.code,
-      }),
-    );
+    const result = await this.services.auth.ask(onboardingAcceptInvitationExisting, {
+      userId: user.id,
+      code: dto.code,
+    });
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -112,7 +104,7 @@ export class OnboardingController {
   @ApiOperation({ summary: 'Get onboarding status' })
   @ApiResponse({ status: 200, description: 'Onboarding status' })
   async getStatus(@CurrentUser() user: SessionUser) {
-    return firstValueFrom(sendRpc(this.authClient, onboardingGetStatus, { userId: user.id }));
+    return this.services.auth.ask(onboardingGetStatus, { userId: user.id });
   }
 
   @Delete('join-requests/:id')
@@ -122,12 +114,10 @@ export class OnboardingController {
   @ApiResponse({ status: 200, description: 'Join request canceled' })
   @ApiResponse({ status: 404, description: 'Join request not found' })
   async cancelJoinRequest(@Param('id') id: string, @CurrentUser() user: SessionUser) {
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, onboardingCancelJoinRequest, {
-        requestId: id,
-        userId: user.id,
-      }),
-    );
+    const result = await this.services.auth.ask(onboardingCancelJoinRequest, {
+      requestId: id,
+      userId: user.id,
+    });
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 

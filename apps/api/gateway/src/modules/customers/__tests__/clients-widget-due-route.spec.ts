@@ -1,3 +1,4 @@
+import { fakeServiceCalls } from '../../../common/testing/service-calls';
 import { Reflector } from '@nestjs/core';
 import { of } from 'rxjs';
 import { CustomersController } from '../customers.controller';
@@ -15,7 +16,7 @@ describe('GET /customers/due — gateway', () => {
   const setup = (user: Record<string, unknown>) => {
     const authClient = { send: jest.fn(() => of({ data: { allowed: true } })) };
     const controller = new CustomersController(
-      authClient as any,
+      fakeServiceCalls({ auth: authClient }),
       { send: jest.fn() } as any,
       {} as any,
       { customerChanged: jest.fn() } as any,

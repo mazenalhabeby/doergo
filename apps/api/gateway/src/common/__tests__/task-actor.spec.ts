@@ -1,3 +1,4 @@
+import { ServiceCalls } from '../microservices/service-calls';
 import fs from 'fs';
 import path from 'path';
 import { Role } from '@hbcfield/shared';
@@ -107,7 +108,9 @@ describe('routes the lead named', () => {
 
   it('search forwards the space grants and the shares', async () => {
     const taskClient = { send: jest.fn(() => of({ tasks: [], spaces: [] })) };
-    const c = new SearchController(taskClient as any, { send: jest.fn() } as any);
+    const c = new SearchController(
+      new ServiceCalls({ send: jest.fn() } as any, taskClient as any, {} as any, {} as any),
+    );
     await c.search('pump', fakeReq(spaceMember));
     expect((taskClient.send.mock.calls[0] as any)[1]).toMatchObject({
       viewAllSpaceIds: ['s1'],

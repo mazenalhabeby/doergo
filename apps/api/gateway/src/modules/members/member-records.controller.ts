@@ -1,15 +1,13 @@
-import { Controller, Get, Post, Param, Query, Body, Inject, ForbiddenException, UseInterceptors } from '@nestjs/common';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Param, Query, Body, ForbiddenException, UseInterceptors } from '@nestjs/common';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
-import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
-import { Role, SERVICE_NAMES, CurrentUser, RequirePermissionInSpace, clampListLimit } from '@hbcfield/shared';
+import { Role, CurrentUser, RequirePermissionInSpace, clampListLimit } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
 import { scopeFor, scopeIdsFor } from '../../common/permission-scope';
 import { callerOrgId } from '../../common/caller-org';
 import {
-  sendRpc,
   getTechnicianPerformance,
   getTechnicianTaskHistory,
   getAttendanceHistory,
@@ -26,7 +24,7 @@ import { SetScheduleDto } from './dto/leave-bodies.dto';
 @UseInterceptors(LabourCostInterceptor)
 @Controller('employees')
 export class MemberRecordsController {
-  constructor(@Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy) {}
+  constructor(private readonly services: ServiceCalls) {}
 
   // ============================================================================
   // PERFORMANCE METRICS
@@ -45,17 +43,15 @@ export class MemberRecordsController {
     @CurrentUser() user: SessionUser,
   ) {
     // Route to task-service for performance metrics (task data lives there)
-    return firstValueFrom(
-      sendRpc(this.taskClient, getTechnicianPerformance, {
-        // undefined = org-wide; [] = granted nowhere and matches nothing.
-        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-        id,
-        // `user` is optional only because it follows optional query params; the route is authenticated.
-        organizationId: callerOrgId(user!),
-        startDate,
-        endDate,
-      }),
-    );
+    return this.services.task.ask(getTechnicianPerformance, {
+      // undefined = org-wide; [] = granted nowhere and matches nothing.
+      scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+      id,
+      // `user` is optional only because it follows optional query params; the route is authenticated.
+      organizationId: callerOrgId(user!),
+      startDate,
+      endDate,
+    });
   }
 
   // ============================================================================
@@ -79,19 +75,17 @@ export class MemberRecordsController {
     @CurrentUser() user: SessionUser,
   ) {
     // Route to task-service for task history (task data lives there)
-    return firstValueFrom(
-      sendRpc(this.taskClient, getTechnicianTaskHistory, {
-        // undefined = org-wide; [] = granted nowhere and matches nothing.
-        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-        id,
-        organizationId: callerOrgId(user!),
-        status,
-        startDate,
-        endDate,
-        page: page ? Math.max(1, Number(page) || 1) : 1,
-        limit: clampListLimit(limit, 20, 500),
-      }),
-    );
+    return this.services.task.ask(getTechnicianTaskHistory, {
+      // undefined = org-wide; [] = granted nowhere and matches nothing.
+      scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+      id,
+      organizationId: callerOrgId(user!),
+      status,
+      startDate,
+      endDate,
+      page: page ? Math.max(1, Number(page) || 1) : 1,
+      limit: clampListLimit(limit, 20, 500),
+    });
   }
 
   // ============================================================================
@@ -111,15 +105,13 @@ export class MemberRecordsController {
     @Query('endDate') endDate: string | undefined,
     @CurrentUser() user: SessionUser,
   ) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, getAttendanceHistory, {
-        userId: id,
-        organizationId: callerOrgId(user!),
-        scopeSpaceIds: scopeFor(user, 'canViewSpaceAttendance'),
-        startDate,
-        endDate,
-      }),
-    );
+    return this.services.task.ask(getAttendanceHistory, {
+      userId: id,
+      organizationId: callerOrgId(user!),
+      scopeSpaceIds: scopeFor(user, 'canViewSpaceAttendance'),
+      startDate,
+      endDate,
+    });
   }
 
   // ============================================================================
@@ -132,14 +124,12 @@ export class MemberRecordsController {
   @ApiResponse({ status: 200, description: 'Assignments retrieved' })
   @RequirePermissionInSpace('canViewAllTasks')
   async getEmployeeAssignments(@Param('id') id: string, @CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, getTechnicianAssignments, {
-        // undefined = org-wide; [] = granted nowhere and matches nothing.
-        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-        userId: id,
-        organizationId: callerOrgId(user),
-      }),
-    );
+    return this.services.task.ask(getTechnicianAssignments, {
+      // undefined = org-wide; [] = granted nowhere and matches nothing.
+      scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+      userId: id,
+      organizationId: callerOrgId(user),
+    });
   }
 
   // ============================================================================
@@ -159,12 +149,10 @@ export class MemberRecordsController {
       throw new ForbiddenException('You can only view your own schedule');
     }
 
-    return firstValueFrom(
-      sendRpc(this.taskClient, getTechnicianSchedule, {
-        technicianId: id,
-        organizationId: callerOrgId(user),
-      }),
-    );
+    return this.services.task.ask(getTechnicianSchedule, {
+      technicianId: id,
+      organizationId: callerOrgId(user),
+    });
   }
 
   @Post(':id/schedule')
@@ -178,13 +166,11 @@ export class MemberRecordsController {
     body: SetScheduleDto,
     @CurrentUser() user: SessionUser,
   ) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, setTechnicianSchedule, {
-        technicianId: id,
-        organizationId: callerOrgId(user),
-        requesterId: user.id,
-        schedule: body.schedule,
-      }),
-    );
+    return this.services.task.ask(setTechnicianSchedule, {
+      technicianId: id,
+      organizationId: callerOrgId(user),
+      requesterId: user.id,
+      schedule: body.schedule,
+    });
   }
 }

@@ -1,21 +1,11 @@
-import {
-  Controller,
-  Get,
-  Query,
-  Inject,
-  HttpException,
-  HttpStatus,
-  ForbiddenException,
-  UseInterceptors,
-} from '@nestjs/common';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Query, HttpException, HttpStatus, ForbiddenException, UseInterceptors } from '@nestjs/common';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
-import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
 import { Role, CurrentUser, addOnDef } from '@hbcfield/shared';
 import { isFeatureEntitled } from '../../common/entitlements';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { sendRpc, auditLogList } from '@hbcfield/shared/microservices';
+import { auditLogList } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
 import type { SessionUser } from '../../common/request.types';
 
@@ -25,9 +15,7 @@ import type { SessionUser } from '../../common/request.types';
 @Controller('organizations')
 @ApiBearerAuth()
 export class AuditLogController {
-  constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-  ) {}
+  constructor(private readonly services: ServiceCalls) {}
 
   // ═══════════════════════════════════════════════════════════════════════
   // AUDIT LOGS
@@ -80,20 +68,18 @@ export class AuditLogController {
         HttpStatus.PAYMENT_REQUIRED,
       );
     }
-    return firstValueFrom(
-      sendRpc(this.authClient, auditLogList, {
-        organizationId: callerOrgId(user),
-        // Who is reading: a document's trail follows the document's own visibility.
-        viewerId: user.id,
-        eventType: query.eventType,
-        userId: query.userId,
-        resourceType: query.resourceType,
-        resourceId: query.resourceId,
-        startDate: query.startDate,
-        endDate: query.endDate,
-        page: query.page ? Number(query.page) : undefined,
-        limit: query.limit ? Number(query.limit) : undefined,
-      }),
-    );
+    return this.services.auth.ask(auditLogList, {
+      organizationId: callerOrgId(user),
+      // Who is reading: a document's trail follows the document's own visibility.
+      viewerId: user.id,
+      eventType: query.eventType,
+      userId: query.userId,
+      resourceType: query.resourceType,
+      resourceId: query.resourceId,
+      startDate: query.startDate,
+      endDate: query.endDate,
+      page: query.page ? Number(query.page) : undefined,
+      limit: query.limit ? Number(query.limit) : undefined,
+    });
   }
 }

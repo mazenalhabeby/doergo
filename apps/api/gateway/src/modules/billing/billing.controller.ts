@@ -1,23 +1,11 @@
+import { ServiceCalls } from '../../common/microservices/service-calls';
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Body,
-  Req,
-  Inject,
-  HttpException,
-  HttpStatus,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Req, HttpException, HttpStatus, UseInterceptors } from '@nestjs/common';
 import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
-import { ClientProxy } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { firstValueFrom } from 'rxjs';
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
 import { Role, CurrentUser, ADD_ON_KEYS, assertServiceOk } from '@hbcfield/shared';
@@ -26,7 +14,6 @@ import { Public } from '../../common/decorators';
 import { SetAddOnsDto } from './dto';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import {
-  sendRpc,
   billingGetSubscription,
   billingGetBill,
   billingSetAddons,
@@ -45,7 +32,7 @@ import { AdminOrgAddOnsDto } from './dto/admin-add-ons.dto';
 @Controller('billing')
 export class BillingController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    private readonly services: ServiceCalls,
     private readonly config: ConfigService,
     private readonly platformAdminGuard: PlatformAdminGuard,
     // What an organization has bought rides on the cached, validated user — so
@@ -69,9 +56,7 @@ export class BillingController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get the org subscription/billing status' })
   async getSubscription(@CurrentUser() user: SessionUser) {
-    return this.unwrap(
-      await firstValueFrom(sendRpc(this.authClient, billingGetSubscription, { organizationId: user.organizationId })),
-    );
+    return this.unwrap(await this.services.auth.ask(billingGetSubscription, { organizationId: user.organizationId }));
   }
 
   @Get('bill')
@@ -81,9 +66,7 @@ export class BillingController {
   @DenyExternal()
   @ApiOperation({ summary: 'The itemised bill: seats, every space, and org add-ons' })
   async getBill(@CurrentUser() user: SessionUser) {
-    return this.unwrap(
-      await firstValueFrom(sendRpc(this.authClient, billingGetBill, { organizationId: user.organizationId })),
-    );
+    return this.unwrap(await this.services.auth.ask(billingGetBill, { organizationId: user.organizationId }));
   }
 
   @Put('add-ons')
@@ -94,9 +77,7 @@ export class BillingController {
     // organizationId comes from the TOKEN, never the body — an admin can only
     // ever change what their own organization has bought.
     const result = this.unwrap(
-      await firstValueFrom(
-        sendRpc(this.authClient, billingSetAddons, { organizationId: user.organizationId, addOns: dto.addOns }),
-      ),
+      await this.services.auth.ask(billingSetAddons, { organizationId: user.organizationId, addOns: dto.addOns }),
     );
     /*
       Every member sees it at their next request, not somewhere inside the next
@@ -120,13 +101,11 @@ export class BillingController {
   async checkout(@CurrentUser() user: SessionUser) {
     const base = this.webBase();
     return this.unwrap(
-      await firstValueFrom(
-        sendRpc(this.authClient, billingCreateCheckout, {
-          organizationId: user.organizationId,
-          successUrl: `${base}/settings/billing?checkout=success`,
-          cancelUrl: `${base}/settings/billing?checkout=cancel`,
-        }),
-      ),
+      await this.services.auth.ask(billingCreateCheckout, {
+        organizationId: user.organizationId,
+        successUrl: `${base}/settings/billing?checkout=success`,
+        cancelUrl: `${base}/settings/billing?checkout=cancel`,
+      }),
     );
   }
 
@@ -136,12 +115,10 @@ export class BillingController {
   @ApiOperation({ summary: 'Open the Stripe Customer Portal (ADMIN)' })
   async portal(@CurrentUser() user: SessionUser) {
     return this.unwrap(
-      await firstValueFrom(
-        sendRpc(this.authClient, billingCreatePortal, {
-          organizationId: user.organizationId,
-          returnUrl: `${this.webBase()}/settings/billing`,
-        }),
-      ),
+      await this.services.auth.ask(billingCreatePortal, {
+        organizationId: user.organizationId,
+        returnUrl: `${this.webBase()}/settings/billing`,
+      }),
     );
   }
 
@@ -150,9 +127,7 @@ export class BillingController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancel the subscription at period end (ADMIN)' })
   async cancel(@CurrentUser() user: SessionUser) {
-    return this.unwrap(
-      await firstValueFrom(sendRpc(this.authClient, billingCancel, { organizationId: user.organizationId })),
-    );
+    return this.unwrap(await this.services.auth.ask(billingCancel, { organizationId: user.organizationId }));
   }
 
   /**
@@ -167,7 +142,7 @@ export class BillingController {
   async webhook(@Req() req: RawBodyRequest<Request>) {
     const signature = (req.headers['stripe-signature'] as string) || '';
     const rawBody: string = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body ?? {});
-    const result = await firstValueFrom(sendRpc(this.authClient, billingWebhook, { rawBody, signature }));
+    const result = await this.services.auth.ask(billingWebhook, { rawBody, signature });
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return { received: true };
   }
@@ -203,7 +178,7 @@ export class BillingController {
   @ApiOperation({ summary: 'Operator: list orgs + billing state (secret-gated)' })
   async adminListOrgs(@Req() req: AuthedRequest) {
     this.assertPlatformKey(req);
-    return firstValueFrom(sendRpc(this.authClient, billingAdminListOrgs, {}));
+    return this.services.auth.ask(billingAdminListOrgs, {});
   }
 
   /**
@@ -227,9 +202,7 @@ export class BillingController {
       throw new HttpException({ message: 'organizationId is required' }, HttpStatus.BAD_REQUEST);
     }
     const addOns = Array.isArray(dto.addOns) ? dto.addOns : ADD_ON_KEYS;
-    const result = await firstValueFrom(
-      sendRpc(this.authClient, billingAdminSetAddons, { organizationId: dto.organizationId, addOns }),
-    );
+    const result = await this.services.auth.ask(billingAdminSetAddons, { organizationId: dto.organizationId, addOns });
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     // The operator path changes the same thing from the other side — and is the
     // one somebody watches a customer's screen while using.

@@ -1,15 +1,13 @@
-import { Controller, Get, Post, Param, Query, Body, Inject, ForbiddenException, UseInterceptors } from '@nestjs/common';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Param, Query, Body, ForbiddenException, UseInterceptors } from '@nestjs/common';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
-import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
-import { Role, SERVICE_NAMES, CurrentUser, RequirePermissionInSpace } from '@hbcfield/shared';
+import { Role, CurrentUser, RequirePermissionInSpace } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { leaveWriteScope, leaveReadScope } from './members-controller-helpers';
 import { callerOrgId } from '../../common/caller-org';
 import {
-  sendRpc,
   getLeaveOpening,
   matchLeaveOpening,
   saveLeaveOpening,
@@ -29,7 +27,7 @@ import { MatchLeaveOpeningDto, SaveLeaveOpeningDto, LeaveAdjustmentDto } from '.
 @UseInterceptors(LabourCostInterceptor)
 @Controller('employees')
 export class LeaveLedgerController {
-  constructor(@Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy) {}
+  constructor(private readonly services: ServiceCalls) {}
 
   // ============================================================================
   // THE LEAVE LEDGER (shared leave/leave-ledger.ts) — before /:id routes
@@ -47,13 +45,11 @@ export class LeaveLedgerController {
   })
   @RequirePermissionInSpace('canManageRota')
   async getLeaveOpening(@Query('on') on: string | undefined, @CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, getLeaveOpening, {
-        organizationId: callerOrgId(user),
-        scopeSpaceIds: leaveWriteScope(user),
-        on: typeof on === 'string' ? on.slice(0, 10) : undefined,
-      }),
-    );
+    return this.services.task.ask(getLeaveOpening, {
+      organizationId: callerOrgId(user),
+      scopeSpaceIds: leaveWriteScope(user),
+      on: typeof on === 'string' ? on.slice(0, 10) : undefined,
+    });
   }
 
   @Post('leave-opening/match')
@@ -63,13 +59,11 @@ export class LeaveLedgerController {
   })
   @RequirePermissionInSpace('canManageRota')
   async matchLeaveOpening(@Body() body: MatchLeaveOpeningDto, @CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, matchLeaveOpening, {
-        organizationId: callerOrgId(user),
-        scopeSpaceIds: leaveWriteScope(user),
-        text: body?.text,
-      }),
-    );
+    return this.services.task.ask(matchLeaveOpening, {
+      organizationId: callerOrgId(user),
+      scopeSpaceIds: leaveWriteScope(user),
+      text: body?.text,
+    });
   }
 
   @Post('leave-opening')
@@ -77,15 +71,13 @@ export class LeaveLedgerController {
   @ApiOperation({ summary: 'Save starting balances (used before HBCField, carried) — one transaction, ≤ 500 people' })
   @RequirePermissionInSpace('canManageRota')
   async saveLeaveOpening(@Body() body: SaveLeaveOpeningDto, @CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, saveLeaveOpening, {
-        organizationId: callerOrgId(user),
-        callerId: user.id,
-        scopeSpaceIds: leaveWriteScope(user),
-        on: body?.on,
-        rows: body?.rows,
-      }),
-    );
+    return this.services.task.ask(saveLeaveOpening, {
+      organizationId: callerOrgId(user),
+      callerId: user.id,
+      scopeSpaceIds: leaveWriteScope(user),
+      on: body?.on,
+      rows: body?.rows,
+    });
   }
 
   @Post('leave-adjustments/:adjustmentId/void')
@@ -94,14 +86,12 @@ export class LeaveLedgerController {
   @ApiParam({ name: 'adjustmentId', description: 'Ledger line ID' })
   @RequirePermissionInSpace('canManageRota')
   async voidLeaveAdjustment(@Param('adjustmentId') adjustmentId: string, @CurrentUser() user: SessionUser) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, voidLeaveAdjustment, {
-        adjustmentId,
-        organizationId: callerOrgId(user),
-        callerId: user.id,
-        scopeSpaceIds: leaveWriteScope(user),
-      }),
-    );
+    return this.services.task.ask(voidLeaveAdjustment, {
+      adjustmentId,
+      organizationId: callerOrgId(user),
+      callerId: user.id,
+      scopeSpaceIds: leaveWriteScope(user),
+    });
   }
 
   @Get(':id/leave-adjustments')
@@ -118,18 +108,16 @@ export class LeaveLedgerController {
     if (user.id !== id && scope !== undefined && scope.length === 0)
       throw new ForbiddenException('You can only view your own leave balance');
     const write = (user as { isExternal?: boolean }).isExternal ? [] : leaveWriteScope(user);
-    return firstValueFrom(
-      sendRpc(this.taskClient, listLeaveAdjustments, {
-        technicianId: id,
-        organizationId: callerOrgId(user),
-        callerId: user.id,
-        scopeSpaceIds: scope,
-        // Only to answer `canEdit` — 'ORG' because an undefined key does not survive the transport.
-        editScope: write === undefined ? 'ORG' : write.length ? write : null,
-        on: typeof on === 'string' ? on.slice(0, 10) : undefined,
-        year,
-      }),
-    );
+    return this.services.task.ask(listLeaveAdjustments, {
+      technicianId: id,
+      organizationId: callerOrgId(user),
+      callerId: user.id,
+      scopeSpaceIds: scope,
+      // Only to answer `canEdit` — 'ORG' because an undefined key does not survive the transport.
+      editScope: write === undefined ? 'ORG' : write.length ? write : null,
+      on: typeof on === 'string' ? on.slice(0, 10) : undefined,
+      year,
+    });
   }
 
   @Post(':id/leave-adjustments')
@@ -142,15 +130,13 @@ export class LeaveLedgerController {
     @Body() body: LeaveAdjustmentDto,
     @CurrentUser() user: SessionUser,
   ) {
-    return firstValueFrom(
-      sendRpc(this.taskClient, addLeaveAdjustment, {
-        technicianId: id,
-        organizationId: callerOrgId(user),
-        callerId: user.id,
-        scopeSpaceIds: leaveWriteScope(user),
-        // Read in task-service with the shared parseLeaveAdjustment — never trusted here.
-        body: { kind: body?.kind, days: body?.days, on: body?.on, reason: body?.reason },
-      }),
-    );
+    return this.services.task.ask(addLeaveAdjustment, {
+      technicianId: id,
+      organizationId: callerOrgId(user),
+      callerId: user.id,
+      scopeSpaceIds: leaveWriteScope(user),
+      // Read in task-service with the shared parseLeaveAdjustment — never trusted here.
+      body: { kind: body?.kind, days: body?.days, on: body?.on, reason: body?.reason },
+    });
   }
 }

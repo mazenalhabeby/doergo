@@ -1,18 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Body,
-  Param,
-  Query,
-  Inject,
-  HttpStatus,
-  ForbiddenException,
-} from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { Controller, Get, Post, Patch, Body, Param, Query, HttpStatus, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { firstValueFrom } from 'rxjs';
 import {
   Role,
   CurrentUser,
@@ -55,10 +43,10 @@ const holds = (user: CurrentUserData, key: AccessPermissionKey) =>
 @ApiBearerAuth()
 @DenyExternal()
 export class LegalEntitiesController {
-  constructor(@Inject('AUTH_SERVICE') private readonly authClient: ClientProxy) {}
+  constructor(private readonly services: ServiceCalls) {}
 
   private async call(cmd: string, payload: Record<string, unknown>) {
-    const result = await firstValueFrom(this.authClient.send({ cmd }, payload));
+    const result = await this.services.auth.askCmd(cmd, payload);
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
   }
