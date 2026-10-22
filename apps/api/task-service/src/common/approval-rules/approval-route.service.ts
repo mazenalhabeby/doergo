@@ -14,6 +14,9 @@ import {
   sortDeciders,
   type ApprovalDecider,
   type ApprovalRouting,
+  peopleNames,
+  orgTimezone,
+  orgMembersWithAccess,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../notification-routing.service';
@@ -49,27 +52,11 @@ export class ApprovalRouteService {
     const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
     const [members, told] = await Promise.all([
-      this.prisma.user.findMany({
-        where: {
-          organizationId: input.organizationId,
-          isActive: true,
-          id: { notIn: [input.callerId, ...(input.subjectUserId ? [input.subjectUserId] : [])] },
-        },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          avatarUrl: true,
-          isExternal: true,
-          ...ORG_ACCESS_SELECT,
-          // Only the workspace in question matters; none for an org-wide kind or an item with no workspace.
-          spaceAssignments: input.spaceId
-            ? {
-                where: { spaceId: input.spaceId, ...activeWindow(now) },
-                select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
-              }
-            : { where: { id: '__none__' }, select: { spaceId: true } },
-        },
+      orgMembersWithAccess(this.prisma, {
+        organizationId: input.organizationId,
+        exclude: [input.callerId, ...(input.subjectUserId ? [input.subjectUserId] : [])],
+        spaceId: input.spaceId || null,
+        now,
       }),
       input.subjectUserId
         ? this.routing
@@ -79,10 +66,7 @@ export class ApprovalRouteService {
     ]);
 
     // Today's stand-ins: they decide where the leader they cover does — never about that leader.
-    const org = await this.prisma.organization.findUnique({
-      where: { id: input.organizationId },
-      select: { timezone: true },
-    });
+    const org = await orgTimezone(this.prisma, input.organizationId);
     const standIns = await standInsOn(
       this.prisma as never,
       input.organizationId,
@@ -126,12 +110,7 @@ export class ApprovalRouteService {
     const sorted = sortDeciders(deciders);
     const deciderIds = new Set(deciders.map((d) => d.id));
     const toldIds = told.ids.filter((id) => !deciderIds.has(id) && id !== input.callerId);
-    const toldPeople = toldIds.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: toldIds.slice(0, 20) } },
-          select: { id: true, firstName: true, lastName: true },
-        })
-      : [];
+    const toldPeople = toldIds.length ? await peopleNames(this.prisma, toldIds.slice(0, 20)) : [];
 
     return {
       deciders: sorted.slice(0, MAX_DECIDERS),

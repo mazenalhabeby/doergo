@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, peopleToNotify, watchersOf } from '@hbcfield/shared';
 import { resolveMemberRouting } from '@hbcfield/shared';
 
 type NotificationCategory = 'attendance' | 'tasks';
@@ -91,18 +91,15 @@ export class NotificationRoutingService {
     //    These are ADDED to the space routing below, not a replacement for it —
     //    an earlier version of this comment said "override the default routing
     //    entirely", which the code has not done since step 2 started merging.
-    const watches = await this.prisma.notificationWatch.findMany({
-      where: { subjectUserId, organizationId },
-      select: {
-        watcher: {
-          select: { id: true, email: true, isActive: true, notificationPrefs: true },
-        },
-      },
-    });
+    const watches = await watchersOf(this.prisma, subjectUserId, organizationId);
     const byId = new Map<string, { id: string; email: string; notificationPrefs: unknown }>();
     for (const w of watches) {
       if (w.watcher.isActive) {
-        byId.set(w.watcher.id, { id: w.watcher.id, email: w.watcher.email, notificationPrefs: w.watcher.notificationPrefs });
+        byId.set(w.watcher.id, {
+          id: w.watcher.id,
+          email: w.watcher.email,
+          notificationPrefs: w.watcher.notificationPrefs,
+        });
       }
     }
 
@@ -111,19 +108,10 @@ export class NotificationRoutingService {
     // watchers. allowLeaderDefault=false → an unconfigured space contributes no
     // one (no automatic all-leaders blast). Skipped entirely for explicitOnly.
     if (!explicitOnly) {
-      const recipientIds = await resolveMemberRouting(
-        this.prisma,
-        organizationId,
-        subjectUserId,
-        'notify',
-        false,
-      );
+      const recipientIds = await resolveMemberRouting(this.prisma, organizationId, subjectUserId, 'notify', false);
       const missing = [...recipientIds].filter((id) => id !== subjectUserId && !byId.has(id));
       if (missing.length) {
-        const users = await this.prisma.user.findMany({
-          where: { id: { in: missing }, isActive: true },
-          select: { id: true, email: true, notificationPrefs: true },
-        });
+        const users = await peopleToNotify(this.prisma, missing);
         for (const u of users) byId.set(u.id, u);
       }
       // No safety floor: if nothing is explicitly configured, notify no one.

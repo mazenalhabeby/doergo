@@ -12,6 +12,7 @@ import {
   type NoticeStage,
   type RuleFacts,
   type RuleKind,
+  peopleNames,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { ApprovalRouteService } from './approval-route.service';
@@ -197,10 +198,7 @@ export class ApprovalEscalationService {
           where: { id: { in: [...new Set(rows.map((m) => m.assetId))] } },
           select: { id: true, category: { select: { spaceId: true } } },
         }),
-        this.prisma.user.findMany({
-          where: { id: { in: [...new Set(rows.map((m) => m.authorId).filter(Boolean) as string[])] } },
-          select: { id: true, firstName: true, lastName: true },
-        }),
+        peopleNames(this.prisma, [...new Set(rows.map((m) => m.authorId).filter(Boolean) as string[])]),
       ]);
       const spaceOf = new Map(assets.map((a) => [a.id, a.category?.spaceId ?? null]));
       const nameOf = new Map(authors.map((a) => [a.id, personName(a)]));

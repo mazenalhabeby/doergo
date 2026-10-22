@@ -1,6 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { activeWindowWhere, SERVICE_NAMES, type RuleFacts, type RuleKind } from '@hbcfield/shared';
+import {
+  activeWindowWhere,
+  SERVICE_NAMES,
+  type RuleFacts,
+  type RuleKind,
+  holdsOrgRole,
+  roleNameOf,
+  roleHolderIds,
+} from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { emitEvent, approvalSecondStepEvent } from '@hbcfield/shared/microservices';
 
@@ -35,7 +43,7 @@ export abstract class ApprovalRulesBase {
   }
 
   protected async roleName(roleId: string): Promise<string> {
-    return (await this.prisma.accessRole.findUnique({ where: { id: roleId }, select: { name: true } }))?.name ?? '';
+    return roleNameOf(this.prisma, roleId);
   }
 
   /** Holds the role org-wide, or as a workspace role in one of the item's workspaces — and it is active. */
@@ -47,10 +55,7 @@ export abstract class ApprovalRulesBase {
   ): Promise<boolean> {
     const now = new Date();
     const [org, space] = await Promise.all([
-      this.prisma.user.findFirst({
-        where: { id: userId, organizationId, isActive: true, memberRoleId: roleId, memberRole: { isActive: true } },
-        select: { id: true },
-      }),
+      holdsOrgRole(this.prisma, userId, organizationId, roleId),
       spaceIds.length
         ? this.prisma.spaceAssignment.findFirst({
             where: {
@@ -76,28 +81,7 @@ export abstract class ApprovalRulesBase {
     exclude: string[] = [],
   ): Promise<string[]> {
     const now = new Date();
-    const holders = await this.prisma.user.findMany({
-      where: {
-        organizationId,
-        isActive: true,
-        id: { notIn: exclude },
-        OR: [
-          { memberRoleId: roleId, memberRole: { isActive: true } },
-          ...(spaceIds.length
-            ? [
-                {
-                  spaceAssignments: {
-                    some: { roleId, spaceId: { in: spaceIds }, role: { isActive: true }, ...activeWindowWhere(now) },
-                  },
-                },
-              ]
-            : []),
-        ],
-      },
-      select: { id: true },
-      take: 50,
-    });
-    return holders.map((h) => h.id);
+    return roleHolderIds(this.prisma, { organizationId, roleId, spaceIds, exclude, now });
   }
 
   /** Push the holders of the second role (never the first approver or the person it is about). */

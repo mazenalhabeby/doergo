@@ -1,5 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
-import { scopeAllows, type SpaceScopeIds } from '@hbcfield/shared';
+import { scopeAllows, type SpaceScopeIds, clientInOrg, peopleWhoPass, personRef } from '@hbcfield/shared';
 import type { PrismaService } from '@hbcfield/shared';
 
 /**
@@ -86,10 +86,7 @@ export async function assertUserInOrg(
   userId: string,
   organizationId: string,
 ): Promise<{ id: string; isExternal: boolean }> {
-  const user = await prisma.user.findFirst({
-    where: { id: userId, organizationId },
-    select: { id: true, isExternal: true },
-  });
+  const user = await personRef(prisma, userId, organizationId);
   if (!user) throw new NotFoundException('User not found in this organization');
   return user;
 }
@@ -108,10 +105,7 @@ export async function assertUsersInOrg(
 ): Promise<void> {
   if (!userIds || userIds.length === 0) return;
   const unique = [...new Set(userIds)];
-  const found = await prisma.user.findMany({
-    where: { id: { in: unique }, organizationId },
-    select: { id: true },
-  });
+  const found = await peopleWhoPass(prisma, unique, { organizationId });
   if (found.length !== unique.length) {
     throw new NotFoundException('One or more assignees are not members of this organization');
   }
@@ -128,9 +122,6 @@ export async function assertCustomerInOrg(
   organizationId: string,
 ): Promise<void> {
   if (!customerId) return;
-  const found = await prisma.customer.findFirst({
-    where: { id: customerId, organizationId },
-    select: { id: true },
-  });
+  const found = await clientInOrg(prisma, customerId, organizationId);
   if (!found) throw new NotFoundException('Client not found in this organization');
 }

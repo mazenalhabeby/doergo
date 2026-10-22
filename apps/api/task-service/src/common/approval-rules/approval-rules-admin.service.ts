@@ -1,5 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ruleInputProblem, type ApprovalRuleInput, type ApprovalRuleView, type RuleKind } from '@hbcfield/shared';
+import {
+  ruleInputProblem,
+  type ApprovalRuleInput,
+  type ApprovalRuleView,
+  type RuleKind,
+  sharedRoleInOrg,
+  roleNames,
+} from '@hbcfield/shared';
 import { RULE_MESSAGES } from './approval-rules-helpers';
 import { ApprovalRulesBase } from './approval-rules.base';
 
@@ -18,7 +25,7 @@ export class ApprovalRulesAdminService extends ApprovalRulesBase {
     });
     const roleIds = [...new Set(rules.flatMap((r) => [r.secondRoleId, r.escalateRoleId]).filter(Boolean) as string[])];
     const [roles, spaces] = await Promise.all([
-      this.prisma.accessRole.findMany({ where: { id: { in: roleIds } }, select: { id: true, name: true } }),
+      roleNames(this.prisma, roleIds),
       this.prisma.companyLocation.findMany({
         where: { id: { in: rules.map((r) => r.spaceId).filter(Boolean) as string[] } },
         select: { id: true, name: true },
@@ -52,11 +59,7 @@ export class ApprovalRulesAdminService extends ApprovalRulesBase {
     const problem = ruleInputProblem(input);
     if (problem) throw new BadRequestException({ message: RULE_MESSAGES[problem], code: problem });
     // Any of the organization's SHARED roles — never somebody's personal role.
-    const sharedRole = (id: string) =>
-      this.prisma.accessRole.findFirst({
-        where: { id, organizationId, personalAssignmentId: null },
-        select: { id: true },
-      });
+    const sharedRole = (id: string) => sharedRoleInOrg(this.prisma, id, organizationId);
     const [second, escalate, space] = await Promise.all([
       input.secondRoleId ? sharedRole(input.secondRoleId) : Promise.resolve({ id: null }),
       input.escalateRoleId ? sharedRole(input.escalateRoleId) : Promise.resolve({ id: null }),

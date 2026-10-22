@@ -1,5 +1,14 @@
 import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
-import { personName, pickRule, type ApprovalStepView, type RuleFacts, type RuleKind } from '@hbcfield/shared';
+import {
+  personName,
+  pickRule,
+  type ApprovalStepView,
+  type RuleFacts,
+  type RuleKind,
+  roleNames,
+  peopleNames,
+  personRoleAndName,
+} from '@hbcfield/shared';
 import { GateVerdict } from './approval-rules-helpers';
 import { ApprovalRulesBase } from './approval-rules.base';
 
@@ -49,10 +58,7 @@ export class ApprovalRulesService extends ApprovalRulesBase {
       return { finalize: true };
     }
 
-    const decider = await this.prisma.user.findFirst({
-      where: { id: input.deciderId, organizationId: input.organizationId },
-      select: { role: true, firstName: true, lastName: true },
-    });
+    const decider = await personRoleAndName(this.prisma, input.deciderId, input.organizationId);
     const secondRoleId = rule.secondRoleId as string;
     const roleName = await this.roleName(secondRoleId);
 
@@ -148,19 +154,15 @@ export class ApprovalRulesService extends ApprovalRulesBase {
     });
     if (!rows.length) return [];
     const [people, rules] = await Promise.all([
-      this.prisma.user.findMany({
-        where: { id: { in: [...new Set(rows.map((r) => r.firstById))] } },
-        select: { id: true, firstName: true, lastName: true },
-      }),
+      peopleNames(this.prisma, [...new Set(rows.map((r) => r.firstById))]),
       this.prisma.approvalRule.findMany({
         where: { id: { in: [...new Set(rows.map((r) => r.ruleId))] } },
         select: { id: true, secondRoleId: true },
       }),
     ]);
-    const roles = await this.prisma.accessRole.findMany({
-      where: { id: { in: [...new Set(rules.map((r) => r.secondRoleId).filter(Boolean) as string[])] } },
-      select: { id: true, name: true },
-    });
+    const roles = await roleNames(this.prisma, [
+      ...new Set(rules.map((r) => r.secondRoleId).filter(Boolean) as string[]),
+    ]);
     const personById = new Map(people.map((p) => [p.id, personName(p)]));
     const roleByRule = new Map(rules.map((r) => [r.id, roles.find((x) => x.id === r.secondRoleId)?.name ?? '']));
     return rows.map((r) => ({

@@ -110,3 +110,8 @@ export * from './data/jobs';
 export * from './data/workspaces';
 export * from './data/invoicing';
 export * from './data/member-work';
+export * from './data/people';
+export * from './data/organizations';
+export * from './data/roles';
+export * from './data/access';
+export * from './data/clients';

@@ -5,6 +5,8 @@ import {
   ownRequestRoute,
   type ApprovalKind,
   type OwnRequestRoute,
+  orgAdminIds,
+  memberAccessFactsIn,
 } from '@hbcfield/shared';
 
 /**
@@ -30,26 +32,17 @@ export async function askAboutOwnRequest(
 ): Promise<OwnRequestAsk> {
   const now = new Date();
   const usual = params.usual.filter((id) => id !== params.subjectId);
-  const subject = await prisma.user.findFirst({
-    where: { id: params.subjectId, organizationId: params.organizationId },
-    select: {
-      ...ORG_ACCESS_SELECT,
-      spaceAssignments: {
-        where: { ...(params.spaceIds.length ? { spaceId: { in: params.spaceIds } } : {}), ...activeWindowWhere(now) },
-        select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
-      },
-    },
+  const subject = await memberAccessFactsIn(prisma, {
+    userId: params.subjectId,
+    organizationId: params.organizationId,
+    spaceIds: params.spaceIds,
+    now,
   });
   if (!subject) return { route: 'USUAL', ids: usual };
   const who = { isAdmin: subject.role === 'ADMIN', access: memberAccessOf(subject) };
   // A member never reaches the administrators: asked only for a leader or an administrator.
   if (ownRequestRoute(who, params.kind, params.spaceIds, 1) === 'USUAL') return { route: 'USUAL', ids: usual };
-  const admins: Array<{ id: string }> = await prisma.user.findMany({
-    where: { organizationId: params.organizationId, role: 'ADMIN', isActive: true, isExternal: false, id: { not: params.subjectId } },
-    select: { id: true },
-    orderBy: { createdAt: 'asc' },
-    take: 50,
-  });
+  const admins: Array<{ id: string }> = await orgAdminIds(prisma, params.organizationId, params.subjectId);
   const route = ownRequestRoute(who, params.kind, params.spaceIds, admins.length);
   if (route === 'AUTOMATIC') return { route, ids: [] };
   if (route === 'ADMINS') return { route, ids: admins.map((a) => a.id) };

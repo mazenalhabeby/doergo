@@ -1,4 +1,4 @@
-import { delegationDay, standInFor, type DelegatedGrant } from '@hbcfield/shared';
+import { delegationDay, standInFor, type DelegatedGrant, orgTimezone } from '@hbcfield/shared';
 import type { Prisma } from '@prisma/client';
 import type { PrismaService } from '@hbcfield/shared';
 
@@ -17,7 +17,7 @@ export async function standInGrant(
   const empty: DelegatedGrant = { org: {}, perSpace: {} };
   if (!userId || !organizationId) return empty;
   try {
-    const org = await prisma.organization.findUnique({ where: { id: organizationId }, select: { timezone: true } });
+    const org = await orgTimezone(prisma, organizationId);
     // Prisma's generic delegate does not match the shared code's structural port; it is that port at run time.
     const port = prisma as unknown as Parameters<typeof standInFor>[0];
     return (await standInFor(port, userId, organizationId, delegationDay(new Date(), org?.timezone))).grant;
