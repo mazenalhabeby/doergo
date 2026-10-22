@@ -18,9 +18,9 @@ import { documentsApi, type DocumentChain } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import { SignatureCapture, ScreenContainer, ScreenHeader } from '../../src/components';
 import { httpsUrl, openSafeUrl } from '../../src/lib/safe-links';
-import { useSignDocumentScreen } from '../../src/screens/app/use-sign-document-screen';
-import { s } from '../../src/screens/app/sign-document-screen-helpers';
-import { SignDocumentScreenSign } from '../../src/screens/app/sign-document-screen-sign';
+import { useSignDocumentScreen } from '../../src/features/documents/use-sign-document-screen';
+import { s } from '../../src/features/documents/sign-document-screen-helpers';
+import { SignDocumentScreenSign } from '../../src/features/documents/sign-document-screen-sign';
 
 export default function SignDocumentScreen() {
   const vm = useSignDocumentScreen();

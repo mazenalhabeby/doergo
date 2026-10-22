@@ -6,7 +6,7 @@ import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
 import { authApi } from '../../src/lib/api';
 import { AText, PrimaryButton } from '../../src/components/amazen';
-import { AuthCard, AuthField, AuthFrame, AuthLinkLine } from '../../src/components/auth/auth-ui';
+import { AuthCard, AuthField, AuthFrame, AuthLinkLine } from '../../src/features/auth/auth-ui';
 
 interface FormErrors {
   firstName?: string;

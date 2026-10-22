@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { ApprovalDetail } from '../../../src/components/approvals/approval-detail';
+import { ApprovalDetail } from '../../../src/features/approvals/approval-detail';
 
 /** One waiting decision, by `kind:id`. */
 export default function ApprovalRoute() {

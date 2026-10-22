@@ -17,13 +17,13 @@ import { shiftCard } from '../../lib/__tests__/shift-card-files';
 jest.mock('react', () => require('./hook-harness').react);
 jest.mock('../../contexts/auth-context', () => ({ useAuth: () => ({ user: mockUser }) }));
 const mockUser = { id: 'u1', role: 'ADMIN', canViewAllTasks: true };
-jest.mock('../../home/layout-store', () => ({
+jest.mock('../../features/home/layout-store', () => ({
   EMPTY_LAYOUT: { keys: [], hidden: [] },
   loadLayout: async () => ({ keys: ['my-work', 'shortcuts', 'shift-clock'], hidden: ['shift-clock'] }),
   saveLayout: async () => undefined,
 }));
 /* The registry's components are never rendered here — only its rows are read. */
-jest.mock('../../home/registry', () => {
+jest.mock('../../features/home/registry', () => {
   const row = (key: string) => ({ key, title: key, surface: 'well', empty: 'hidden', Component: () => null });
   const WIDGETS = [row('shift-clock'), row('my-work'), row('shortcuts')];
   return {
@@ -43,7 +43,7 @@ jest.mock('../../hooks/use-live-refresh', () => ({ useLiveRefresh: (fn: () => un
 const mockLive: { refresh: (() => unknown) | null } = { refresh: null };
 
 import { mountHook, settle } from './hook-harness';
-import { useHomeLayout } from '../../home/use-home-layout';
+import { useHomeLayout } from '../../features/home/use-home-layout';
 import { useDriverPosition } from '../../hooks/use-driver-position';
 import { readSource } from '../../test-utils/read-source';
 
@@ -73,10 +73,10 @@ describe('the home layout keeps its identity', () => {
   });
 
   it('the screen keys its callbacks on it, and its own set of keys is memoised', () => {
-    const screen = code('home/home-screen.tsx');
+    const screen = code('features/home/home-screen.tsx');
     expect(screen).toMatch(/const onHomeKeys = React\.useMemo\(/);
     expect(screen).not.toMatch(/const onHomeKeys = new Set/);
-    expect(code('home/use-home-layout.ts')).toMatch(/return useMemo\(\s*\(\) => \(\{ rows, available, offScreen, loading, move/);
+    expect(code('features/home/use-home-layout.ts')).toMatch(/return useMemo\(\s*\(\) => \(\{ rows, available, offScreen, loading, move/);
   });
 });
 
@@ -111,7 +111,7 @@ describe('triggers, pinned in the source', () => {
   });
 
   it('the route card reads the task list on focus and resume — no minute timer of pulls', () => {
-    expect(code('components/home/use-route-day.ts')).toMatch(/useLiveRefresh\(load, null\)/);
+    expect(code('features/home/use-route-day.ts')).toMatch(/useLiveRefresh\(load, null\)/);
   });
 
   it('the minute tick asks only while the app is in the foreground', () => {

@@ -1,4 +1,4 @@
-import { TimeScreen } from '../../../src/components/time/time-screen';
+import { TimeScreen } from '../../../src/features/time/time-screen';
 
 /**
  * The Time tab — the whole page lives in `src/components/time/`, built on the

@@ -28,11 +28,11 @@ function* walk(dir: string): Generator<string> {
   }
 }
 
-const page = read('src/components/job/job-page.tsx');
-const writes = read('src/components/job/use-job-writes.ts');
-const nextUp = read('src/components/jobs-list/next-up.tsx');
-const sheet = read('src/components/job/sheets/step-form-sheet.tsx');
-const data = read('src/components/job/use-job.ts');
+const page = read('src/features/job/job-page.tsx');
+const writes = read('src/features/job/use-job-writes.ts');
+const nextUp = read('src/features/jobs-list/next-up.tsx');
+const sheet = read('src/features/job/sheets/step-form-sheet.tsx');
+const data = read('src/features/job/use-job.ts');
 
 describe('a step with a form opens the sheet; without one the job just moves', () => {
   it('the job page decides with moveKind over formForMove', () => {
@@ -73,7 +73,7 @@ describe('the old Finish path is gone', () => {
         .filter(([, s]) => /FinishSheet|completeTaskWithReport|reportsApi\.completeTask|reportAttachmentsApi/.test(s))
         .map(([f]) => f),
     ).toEqual([]);
-    expect(fs.existsSync(path.join(MOBILE, 'src/components/job/sheets/finish-sheet.tsx'))).toBe(false);
+    expect(fs.existsSync(path.join(MOBILE, 'src/features/job/sheets/finish-sheet.tsx'))).toBe(false);
   });
 });
 

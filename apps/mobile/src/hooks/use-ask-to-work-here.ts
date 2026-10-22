@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/auth-context';
 import { useToast } from '../island/island-context';
 import { timeOffApi } from '../lib/api';
 import { localDateKey } from '@hbcfield/shared/client';
-import { draftToBody, type RequestBody } from '../components/requests/request-model';
+import { draftToBody, type RequestBody } from '../features/requests/request-model';
 import { useQueuedCreate } from '../offline/actions/queued-create';
 import { uuidv7 } from '../offline/ids';
 

@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import { DetentSheet, type Detent } from '../../src/components/route/detent-sheet';
+import { DetentSheet, type Detent } from '../../src/features/route/detent-sheet';
 import { BlurSheet } from '../../src/components/blur-sheet';
 import { SheetPanel } from '../../src/components/sheet-panel';
 import {
@@ -43,9 +43,9 @@ import { restoreRoute } from '../../src/offline/routes/saved-route';
 import { planDay } from '../../src/offline/routes/plan-route';
 import { isStalePlan } from '../../src/lib/route-day';
 import { formatDistance } from '../../src/lib/distance';
-import { useRoutePlannerScreen } from '../../src/screens/app/use-route-planner-screen';
-import { fmtDur, LegRow, PickRow, styles } from '../../src/screens/app/route-planner-screen-helpers';
-import { RoutePlannerScreenYourRoute } from '../../src/screens/app/route-planner-screen-your-route';
+import { useRoutePlannerScreen } from '../../src/features/route/use-route-planner-screen';
+import { fmtDur, LegRow, PickRow, styles } from '../../src/features/route/route-planner-screen-helpers';
+import { RoutePlannerScreenYourRoute } from '../../src/features/route/route-planner-screen-your-route';
 
 export default function RoutePlannerScreen() {
   const vm = useRoutePlannerScreen();

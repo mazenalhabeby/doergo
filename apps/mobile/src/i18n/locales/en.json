@@ -800,7 +800,7 @@
     "rest": {
       "title": "Rests",
       "onRest": "On rest",
-      "unpaid": "not counted",
+      "notCounted": "not counted",
       "untimed": "Untimed",
       "ofTotal": "of {{total}}",
       "overBy": "{{over}} past your {{total}}",

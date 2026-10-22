@@ -1,4 +1,4 @@
-import { headline, rowLines, daysLate } from '../../components/home/clients-state';
+import { headline, rowLines, daysLate } from '../../features/home/clients-state';
 import type { DueReminder } from '../api/customers';
 
 const r = (over: Partial<DueReminder>): DueReminder => ({

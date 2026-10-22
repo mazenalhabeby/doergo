@@ -17,7 +17,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { hasAccessModule } from '@hbcfield/shared/client';
-import { meets } from '../../home/entitlement';
+import { meets } from '../../features/home/entitlement';
 import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
@@ -25,7 +25,7 @@ const APP = path.resolve(__dirname, '../../../app');
 const code = (p: string) =>
   readSource(p, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
-/** The registry row, as written in `home/registry.tsx`. */
+/** The registry row, as written in `features/home/registry.tsx`. */
 const SHIFT = { module: 'clock' as const, internal: true as const, self: true as const };
 
 const profile = (modules: string[]) => ({ modules, platforms: 'both', canContact: true, spaceScope: 'own' });
@@ -45,7 +45,7 @@ const clockTab = (u: object) => hasAccessModule(u as never, 'clock');
 
 describe('the registry row asks what the tab asks', () => {
   it('registry: shift-clock requires { module: clock, internal, self }', () => {
-    const reg = code(path.join(SRC, 'home/registry.tsx'));
+    const reg = code(path.join(SRC, 'features/home/registry.tsx'));
     const row = reg.slice(reg.indexOf("key: 'shift-clock'"), reg.indexOf("key: 'shift-clock'") + 400);
     expect(row).toMatch(/requires:\s*\{\s*module:\s*'clock',\s*internal:\s*true,\s*self:\s*true\s*\}/);
   });
@@ -61,7 +61,7 @@ describe('the registry row asks what the tab asks', () => {
   });
 
   it('entitlement: meets() reads hasAccessModule, never hasModule', () => {
-    const ent = code(path.join(SRC, 'home/entitlement.ts'));
+    const ent = code(path.join(SRC, 'features/home/entitlement.ts'));
     expect(ent).toMatch(/hasAccessModule\(user as never, r\.module\)/);
     expect(ent).not.toMatch(/\bhasModule\(/);
   });

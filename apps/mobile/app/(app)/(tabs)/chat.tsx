@@ -1,5 +1,5 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
-import { ChatScreen } from '../../../src/components/chat/chat-screen';
+import { ChatScreen } from '../../../src/features/chat/chat-screen';
 
 /**
  * One conversation, or "New message". The list of conversations is Team →

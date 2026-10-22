@@ -9,9 +9,9 @@ import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
 
 import { DateField } from '../../src/components';
-import { EquipmentFrame, useFormPalette } from '../../src/components/equipment/equipment-frame';
+import { EquipmentFrame, useFormPalette } from '../../src/features/equipment/equipment-frame';
 import { forgetHeldAssets } from '../../src/hooks/use-held-assets';
-import { EquipmentPicker } from '../../src/components/equipment/equipment-picker';
+import { EquipmentPicker } from '../../src/features/equipment/equipment-picker';
 import { useEntryDayBounds } from '../../src/hooks/use-entry-day-bounds';
 import { assetEntryDateText, dayKeyOf, occurredAtForDay } from '../../src/lib/log-dates';
 import { useToast } from '../../src/island/island-context';
@@ -32,8 +32,8 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/c
 import { logColor, logTypeLabel } from '../../src/lib/log-display';
 import { useOffline } from '../../src/offline/offline-context';
 import { logFromPhone } from '../../src/offline/assets/log-actions';
-import { useAssetLogScreen } from '../../src/screens/app/use-asset-log-screen';
-import { FieldInput, s } from '../../src/screens/app/asset-log-screen-helpers';
+import { useAssetLogScreen } from '../../src/features/equipment/use-asset-log-screen';
+import { FieldInput, s } from '../../src/features/equipment/asset-log-screen-helpers';
 import { NotAllowed } from '../../src/components/not-allowed';
 
 /**

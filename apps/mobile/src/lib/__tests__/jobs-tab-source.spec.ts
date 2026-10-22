@@ -18,7 +18,7 @@ const dir = (rel: string) => fs.readdirSync(path.join(MOBILE, rel)).filter((f) =
 
 const TASKS = 'app/(app)/(tabs)/tasks.tsx';
 const CREATE = 'app/(app)/(tabs)/create-task.tsx';
-const FILES = [TASKS, CREATE, ...dir('src/components/jobs-list'), ...dir('src/components/new-job')];
+const FILES = [TASKS, CREATE, ...dir('src/features/jobs-list'), ...dir('src/features/new-job')];
 const all = FILES.map(read).join('\n');
 
 describe('every popup is the one sheet', () => {
@@ -37,17 +37,17 @@ describe('every popup is the one sheet', () => {
 
   it('no BlurSheet of its own — only JobSheet, which is BlurSheet + SheetPanel', () => {
     expect(FILES.filter((f) => /<BlurSheet\b/.test(read(f)))).toEqual([]);
-    expect(read('src/components/new-job/when-sheets.tsx').match(/<JobSheet\b/g)?.length).toBe(2);
+    expect(read('src/features/new-job/when-sheets.tsx').match(/<JobSheet\b/g)?.length).toBe(2);
   });
 
   it('New job holds ONE sheet state for the day, the hour and the person', () => {
-    const screen = read('src/components/new-job/new-job-screen.tsx');
+    const screen = read('src/features/new-job/new-job-screen.tsx');
     expect(screen.match(/useState<Sheet \| null>/g)?.length).toBe(1);
     for (const k of ['day', 'time', 'assign']) expect(screen).toContain(`visible={sheet === '${k}'}`);
   });
 
   it('who does it is the reusable AssignSheet, offered only with canAssign', () => {
-    const screen = read('src/components/new-job/new-job-screen.tsx');
+    const screen = read('src/features/new-job/new-job-screen.tsx');
     expect(screen).toMatch(/\{canAssign \? \(\s*<AssignSheet/);
     expect(screen).toMatch(/\{canAssign \? \(\s*<View style=\{field\}>\s*<SectionLabel>\{t\('newJob\.who'\)\}/);
   });
@@ -68,8 +68,8 @@ describe('the one status write', () => {
   });
 
   it('a step from the list starts and stops the route recorder by the same rule as the page', () => {
-    expect(read('src/components/jobs-list/next-up.tsx')).toMatch(/trackRouteFor\(tracking, task, from, to\)/);
-    expect(read('src/components/job/use-job-writes.ts')).toMatch(/trackRouteFor\(tracking, task, from, to\)/);
+    expect(read('src/features/jobs-list/next-up.tsx')).toMatch(/trackRouteFor\(tracking, task, from, to\)/);
+    expect(read('src/features/job/use-job-writes.ts')).toMatch(/trackRouteFor\(tracking, task, from, to\)/);
   });
 });
 
@@ -85,7 +85,7 @@ describe('the tour, the tablet, the list', () => {
   });
 
   it('the list is virtualised and has no sort menu — the bands are the order', () => {
-    const screen = read('src/components/jobs-list/jobs-screen.tsx');
+    const screen = read('src/features/jobs-list/jobs-screen.tsx');
     expect(screen).toMatch(/<SectionList\b/);
     expect(all).not.toMatch(/sortBy|SORT_OPTIONS|showSortMenu/);
   });
@@ -95,9 +95,9 @@ describe('the one header', () => {
   const layout = read('app/(app)/(tabs)/_layout.tsx');
 
   it('every v2 screen draws the amazen ScreenHeader, not the navigator\'s band', () => {
-    for (const f of ['src/components/jobs-list/jobs-screen.tsx', 'src/components/new-job/new-job-screen.tsx', 'src/components/time/time-screen.tsx']) {
+    for (const f of ['src/features/jobs-list/jobs-screen.tsx', 'src/features/new-job/new-job-screen.tsx', 'src/features/time/time-screen.tsx']) {
       const src = read(f);
-      expect(src).toMatch(/import \{[^}]*\bScreenHeader\b[^}]*\} from '\.\.\/amazen'/);
+      expect(src).toMatch(/import \{[^}]*\bScreenHeader\b[^}]*\} from '(?:\.\.\/amazen|(?:\.\.\/)+components\/amazen|@\/components\/amazen)'/);
       // The avatar is the header's own business — no screen passes it.
       expect(src).not.toMatch(/avatarUrl=|onPressAvatar=/);
     }
@@ -113,7 +113,7 @@ describe('the one header', () => {
   });
 
   it('New job puts Back in the header\'s leading slot', () => {
-    expect(read('src/components/new-job/new-job-screen.tsx')).toMatch(/leading=\{/);
+    expect(read('src/features/new-job/new-job-screen.tsx')).toMatch(/leading=\{/);
     expect(read('src/components/amazen/screen-header.tsx')).toMatch(/\{leading \?\? null\}/);
   });
 });

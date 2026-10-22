@@ -14,13 +14,13 @@ import { userApi } from '../../../src/lib/api';
 import { initialOf } from '../../../src/lib/people';
 import { changeLanguage, getCurrentLanguage, supportedLanguages } from '../../../src/i18n';
 import { personName } from '@hbcfield/shared/client';
-import { useCustomerProfile } from '../../../src/screens/customer/tabs/use-customer-profile';
+import { useCustomerProfile } from '../../../src/features/customer/screens/tabs/use-customer-profile';
 import {
   THEME_OPTIONS,
   Group,
   Row,
   styles,
-} from '../../../src/screens/customer/tabs/customer-profile-helpers';
+} from '../../../src/features/customer/screens/tabs/customer-profile-helpers';
 
 export default function CustomerProfile() {
   const {

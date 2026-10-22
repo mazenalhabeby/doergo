@@ -9,8 +9,8 @@ import { onboardingApi } from '../../src/lib/api';
 import { ROUTES } from '../../src/lib/constants';
 import { ConfirmSheet } from '../../src/components';
 import { AText, PrimaryButton } from '../../src/components/amazen';
-import { PassBadge } from '../../src/components/onboarding/pass-badge';
-import { PassFrame } from '../../src/components/onboarding/pass-frame';
+import { PassBadge } from '../../src/features/onboarding/pass-badge';
+import { PassFrame } from '../../src/features/onboarding/pass-frame';
 import { personName } from '@hbcfield/shared/client';
 
 const POLL_INTERVAL = 30000;

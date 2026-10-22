@@ -12,7 +12,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { meets } from '../../home/entitlement';
+import { meets } from '../../features/home/entitlement';
 
 const SRC = path.resolve(__dirname, '../..');
 const clock = { module: 'clock' as const, self: true as const };
@@ -51,7 +51,7 @@ describe('a module a member holds', () => {
 
 describe('one question, asked once', () => {
   it('the registry and the tab bar call the same function', () => {
-    const entitlement = fs.readFileSync(path.join(SRC, 'home/entitlement.ts'), 'utf8');
+    const entitlement = fs.readFileSync(path.join(SRC, 'features/home/entitlement.ts'), 'utf8');
     // The tab bar's rule lives in tab-layout.ts now, read by the bar and the More page alike.
     const tabs = fs.readFileSync(path.resolve(SRC, 'lib/tab-layout.ts'), 'utf8');
     expect(entitlement).toContain('hasAccessModule(user as never, r.module)');
@@ -69,12 +69,12 @@ describe('one question, asked once', () => {
       ⚠️ THE WHOLE TREE, NOT A NAMED FILE. This listed one widget by path and
       the widget was later deleted — a guard that names its subject stops
       guarding the moment the subject moves. Every file under `home/` and every
-      widget that lands in `components/home/` is checked, so a new one is
+      widget that lands in `features/home/` is checked, so a new one is
       covered on the day it is written.
     */
     const files = [
       ...fs.readdirSync(path.join(SRC, 'home')).map((f) => `home/${f}`),
-      ...fs.readdirSync(path.join(SRC, 'components/home')).map((f) => `components/home/${f}`),
+      ...fs.readdirSync(path.join(SRC, 'features/home')).map((f) => `features/home/${f}`),
     ].filter((f) => /\.tsx?$/.test(f));
     expect(files.length).toBeGreaterThan(3);
     for (const f of files) {

@@ -108,88 +108,7 @@
   "apps/mobile/src/components/amazen/use-tab-pill.ts": [
    "moved"
   ],
-  "apps/mobile/src/components/approvals/approval-detail-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/approvals/approval-detail-view.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/approvals/use-approval-detail.ts": [
-   "moved"
-  ],
   "apps/mobile/src/components/bar.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/calendar/calendar-time-grid.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/calendar/calendar-view-types.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/calendar/new-event-screen-appointment.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/calendar/new-event-screen-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/calendar/use-new-event-screen.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/chat/chat-empty-conversation.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/chat/chat-rows-shared.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/chat/chat-screen-helpers.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/chat/chat-screen-lists.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/chat/contact-row.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/chat/conversation-row.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/chat/send-button.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/clock-out-sheet-props.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/clock-out-sheet-shared.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/customer/card-review/kind.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/customer/card-review/rank.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/customer/card-review/read.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/customer/record/client-record-helpers.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/customer/record/record-screen-view.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/customer/record/use-client-record-actions.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/customer/record/use-client-record-data.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/customer/record/use-client-record-state.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/customer/record/use-record-screen-logic.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/customer/record/use-record-screen.tsx": [
    "moved"
   ],
   "apps/mobile/src/components/date-picker-modal-parts.tsx": [
@@ -198,255 +117,16 @@
   "apps/mobile/src/components/document-scanner-helpers.tsx": [
    "moved"
   ],
-  "apps/mobile/src/components/documents/use-documents-screen.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/equipment/equipment-screen-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/equipment/equipment-screen-stale.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/equipment/use-equipment-screen-logic.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/equipment/use-equipment-screen.tsx": [
-   "moved"
-  ],
   "apps/mobile/src/components/glyphs/tile-glyphs-office.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/editable-widget-inner-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/my-work-card-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/route-card-my-route.tsx": [
-   "repeated",
-   "moved"
-  ],
-  "apps/mobile/src/components/home/shift-clock-card-view-queued.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/shift-clock-card-view-view.tsx": [
-   "repeated",
-   "moved"
-  ],
-  "apps/mobile/src/components/home/shift-state/kinds.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/shift-state/labels.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/shift-state/read.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/shortcuts-editor-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/shortcuts-editor-shortcuts-card.tsx": [
-   "repeated",
-   "moved"
-  ],
-  "apps/mobile/src/components/home/use-editable-widget-inner.ts": [
-   "inner",
-   "moved"
-  ],
-  "apps/mobile/src/components/home/use-my-work-card.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/use-route-card.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/use-shift-clock-card-view.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/use-shortcuts-editor-logic.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/use-shortcuts-editor.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/use-widget-gallery.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/home/widget-gallery-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/issues/report-issue-sheet-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/issues/shift-issue-thread-sheet-add-photo.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/issues/shift-issue-thread-sheet-close.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/issues/shift-issue-thread-sheet-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/issues/shift-issue-thread-sheet-reason-optional.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/issues/use-report-issue-sheet.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/issues/use-shift-issue-thread-sheet-logic.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/issues/use-shift-issue-thread-sheet.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/job/job-page-sheets.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/job/job-writes-helpers.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/job/step-form-field-input.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/job/step-form-fields.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/job/step-form-logic/draft.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/job/step-form-logic/labels.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/job/step-form-logic/send.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/job/step-form-pickers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/job/use-job-writes-actions.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/job/use-job-writes-data.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/job/use-job-writes-state.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/jobs-list/use-jobs-screen-data.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/jobs-list/use-jobs-screen.tsx": [
    "moved"
   ],
   "apps/mobile/src/components/location-search-picker-helpers.tsx": [
    "moved"
   ],
-  "apps/mobile/src/components/new-job/day-picker-parts.tsx": [
-   "part"
-  ],
-  "apps/mobile/src/components/new-job/use-new-job-screen.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/onboarding/pass-screen-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/onboarding/use-pass-screen.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/open-jobs.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/people/members-screen-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/people/team-screen-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/people/use-members-screen.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/people/use-team-messages.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/people/use-team-screen.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/profile/profile-screen-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/profile/profile-screen-profile-photo.tsx": [
-   "repeated",
-   "moved"
-  ],
-  "apps/mobile/src/components/profile/use-profile-screen.ts": [
-   "moved"
-  ],
   "apps/mobile/src/components/receipt.tsx": [
    "moved"
   ],
-  "apps/mobile/src/components/register/register-record-logbook.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/register/register-record-view.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/register/use-register-record.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/requests/request-detail-sheet-view.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/requests/request-form-card-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/requests/request-parts.tsx": [
-   "part"
-  ],
-  "apps/mobile/src/components/requests/use-request-detail-sheet.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/requests/use-request-form-card.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/settings/sync-page-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/settings/use-sync-page.tsx": [
-   "moved"
-  ],
   "apps/mobile/src/components/signature-capture-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/supply-document/use-credential-photo-data.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/time/request-sheet-off.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/time/request-sheet-view.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/time/time-off-detail-sheet.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/time/time-off-section-shared.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/time/use-request-sheet.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/time/use-time-banners.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/time/use-time-screen.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/tour/tour-provider-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/components/tour/use-tour-provider-data.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/components/tour/use-tour-provider.ts": [
    "moved"
   ],
   "apps/mobile/src/components/use-document-scanner.ts": [
@@ -458,19 +138,437 @@
   "apps/mobile/src/components/use-signature-capture.ts": [
    "moved"
   ],
-  "apps/mobile/src/components/use-work-log-sheet.tsx": [
+  "apps/mobile/src/features/app-shell/tabs/tabs-layout-helpers.tsx": [
    "moved"
   ],
-  "apps/mobile/src/components/work-log-sheet-helpers.tsx": [
+  "apps/mobile/src/features/app-shell/tabs/use-tabs-layout.ts": [
    "moved"
   ],
-  "apps/mobile/src/home/home-screen-helpers.tsx": [
+  "apps/mobile/src/features/approvals/approval-detail-helpers.tsx": [
    "moved"
   ],
-  "apps/mobile/src/home/use-home-screen-data.ts": [
+  "apps/mobile/src/features/approvals/approval-detail-view.tsx": [
    "moved"
   ],
-  "apps/mobile/src/home/use-home-screen.tsx": [
+  "apps/mobile/src/features/approvals/use-approval-detail.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/auth/use-login-screen.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/calendar/calendar-time-grid.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/calendar/calendar-view-types.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/calendar/new-event-screen-appointment.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/calendar/new-event-screen-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/calendar/use-new-event-screen.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/chat/chat-empty-conversation.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/chat/chat-rows-shared.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/chat/chat-screen-helpers.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/chat/chat-screen-lists.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/chat/contact-row.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/chat/conversation-row.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/chat/send-button.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/card-review/kind.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/card-review/rank.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/card-review/read.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/record/client-record-helpers.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/record/record-screen-view.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/record/use-client-record-actions.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/record/use-client-record-data.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/record/use-client-record-state.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/record/use-record-screen-logic.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/record/use-record-screen.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/screens/tabs/customer-home-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/screens/tabs/customer-profile-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/screens/tabs/use-customer-home.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/customer/screens/tabs/use-customer-profile.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/documents/send-document-screen-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/documents/sign-document-screen-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/documents/sign-document-screen-sign.tsx": [
+   "repeated",
+   "moved"
+  ],
+  "apps/mobile/src/features/documents/use-documents-screen.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/documents/use-send-document-screen.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/documents/use-sign-document-screen.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/equipment/asset-expense-screen.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/equipment/asset-log-screen-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/equipment/equipment-screen-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/equipment/equipment-screen-stale.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/equipment/use-asset-expense-screen-data.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/equipment/use-asset-expense-screen.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/equipment/use-asset-log-screen.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/equipment/use-equipment-screen-logic.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/equipment/use-equipment-screen.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/editable-widget-inner-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/home-screen-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/my-work-card-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/route-card-my-route.tsx": [
+   "repeated",
+   "moved"
+  ],
+  "apps/mobile/src/features/home/shift-clock-card-view-queued.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/shift-clock-card-view-view.tsx": [
+   "repeated",
+   "moved"
+  ],
+  "apps/mobile/src/features/home/shift-state/kinds.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/shift-state/labels.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/shift-state/read.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/shortcuts-editor-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/shortcuts-editor-shortcuts-card.tsx": [
+   "repeated",
+   "moved"
+  ],
+  "apps/mobile/src/features/home/use-editable-widget-inner.ts": [
+   "inner",
+   "moved"
+  ],
+  "apps/mobile/src/features/home/use-home-screen-data.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/use-home-screen.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/use-my-work-card.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/use-route-card.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/use-shift-clock-card-view.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/use-shortcuts-editor-logic.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/use-shortcuts-editor.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/use-widget-gallery.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/home/widget-gallery-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/issues/report-issue-sheet-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/issues/shift-issue-thread-sheet-add-photo.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/issues/shift-issue-thread-sheet-close.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/issues/shift-issue-thread-sheet-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/issues/shift-issue-thread-sheet-reason-optional.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/issues/use-report-issue-sheet.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/issues/use-shift-issue-thread-sheet-logic.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/issues/use-shift-issue-thread-sheet.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/job/job-page-sheets.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/job/job-writes-helpers.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/job/step-form-field-input.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/job/step-form-fields.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/job/step-form-logic/draft.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/job/step-form-logic/labels.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/job/step-form-logic/send.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/job/step-form-pickers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/job/use-job-writes-actions.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/job/use-job-writes-data.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/job/use-job-writes-state.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/jobs-list/open-jobs.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/jobs-list/use-jobs-screen-data.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/jobs-list/use-jobs-screen.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/new-job/day-picker-parts.tsx": [
+   "part"
+  ],
+  "apps/mobile/src/features/new-job/use-new-job-screen.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/onboarding/create-org-screen-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/onboarding/create-org-screen-step-of.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/onboarding/pass-screen-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/onboarding/use-create-org-screen-logic.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/onboarding/use-create-org-screen.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/onboarding/use-pass-screen.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/people/members-screen-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/people/team-screen-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/people/use-members-screen.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/people/use-team-messages.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/people/use-team-screen.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/profile/profile-screen-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/profile/profile-screen-profile-photo.tsx": [
+   "repeated",
+   "moved"
+  ],
+  "apps/mobile/src/features/profile/use-profile-screen.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/register/register-record-logbook.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/register/register-record-view.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/register/use-register-record.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/requests/request-detail-sheet-view.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/requests/request-form-card-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/requests/request-parts.tsx": [
+   "part"
+  ],
+  "apps/mobile/src/features/requests/use-request-detail-sheet.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/requests/use-request-form-card.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/requests/use-requests-screen-data.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/requests/use-requests-screen.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/route/route-planner-screen-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/route/route-planner-screen-your-route.tsx": [
+   "repeated",
+   "moved"
+  ],
+  "apps/mobile/src/features/route/use-route-planner-screen-data.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/route/use-route-planner-screen.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/settings/sync-page-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/settings/use-sync-page.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/supply-document/use-credential-photo-data.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/support/support-screen-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/support/use-support-screen.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/time/attendance-review/attendance-review-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/time/attendance-review/use-attendance-review-screen-data.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/time/attendance-review/use-attendance-review-screen.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/time/clock-out-sheet-props.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/time/clock-out-sheet-shared.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/time/request-sheet-off.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/time/request-sheet-view.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/time/time-off-detail-sheet.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/time/time-off-section-shared.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/time/use-request-sheet.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/time/use-time-banners.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/time/use-time-screen.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/tour/tour-provider-helpers.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/tour/use-tour-provider-data.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/tour/use-tour-provider.ts": [
+   "moved"
+  ],
+  "apps/mobile/src/features/worklog/use-work-log-sheet.tsx": [
+   "moved"
+  ],
+  "apps/mobile/src/features/worklog/work-log-sheet-helpers.tsx": [
    "moved"
   ],
   "apps/mobile/src/hooks/use-push-notifications-data.ts": [
@@ -519,104 +617,6 @@
    "moved"
   ],
   "apps/mobile/src/offline/sync-engine.base.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/asset-expense-screen.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/asset-log-screen-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/manage/attendance-review-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/manage/use-attendance-review-screen-data.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/manage/use-attendance-review-screen.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/route-planner-screen-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/route-planner-screen-your-route.tsx": [
-   "repeated",
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/send-document-screen-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/sign-document-screen-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/sign-document-screen-sign.tsx": [
-   "repeated",
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/support-screen-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/tabs/tabs-layout-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/tabs/use-requests-screen-data.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/tabs/use-requests-screen.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/tabs/use-tabs-layout.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/use-asset-expense-screen-data.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/use-asset-expense-screen.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/use-asset-log-screen.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/use-route-planner-screen-data.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/use-route-planner-screen.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/use-send-document-screen.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/use-sign-document-screen.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/app/use-support-screen.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/auth/use-login-screen.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/customer/tabs/customer-home-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/customer/tabs/customer-profile-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/customer/tabs/use-customer-home.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/customer/tabs/use-customer-profile.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/onboarding/create-org-screen-helpers.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/onboarding/create-org-screen-step-of.tsx": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/onboarding/use-create-org-screen-logic.ts": [
-   "moved"
-  ],
-  "apps/mobile/src/screens/onboarding/use-create-org-screen.ts": [
    "moved"
   ],
   "apps/mobile/src/services/route-upload.ts": [

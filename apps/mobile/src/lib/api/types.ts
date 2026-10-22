@@ -154,7 +154,7 @@ export interface User {
    * restored from a token has no schedule kind, and the card reads `NONE`.
    *
    * ⚠️ ABSENT IS ANSWERED FROM THE DATA, NOT ASSUMED. `scheduleFor` in
-   * `components/home/shift-state.ts` reads the shift itself: one the roster
+   * `features/home/shift-state.ts` reads the shift itself: one the roster
    * gave both a start and an end is a FIXED shift whatever the payload left
    * out, and everything else is NONE. Assuming NONE outright would cost a
    * rostered member a bar they legitimately have a target for; assuming FIXED

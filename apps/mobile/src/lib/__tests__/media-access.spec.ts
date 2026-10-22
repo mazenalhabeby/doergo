@@ -143,8 +143,8 @@ describe('permission state is read continuously, and never guessed', () => {
     // Likewise `CaptureCamera`, the receipt and agreement screens' viewfinder.
     const GATE = /if \(!\w+\.granted\)|if \(stage === 'camera' && !\w+\.granted\)/;
     const VIEWFINDER_PARTS: Record<string, RegExp> = {
-      'src/components/scan-card/card-camera.tsx': /<CardCamera[\s/]/,
-      'src/components/equipment/capture-camera.tsx': /<CaptureCamera[\s/]/,
+      'src/features/scan-card/card-camera.tsx': /<CardCamera[\s/]/,
+      'src/features/equipment/capture-camera.tsx': /<CaptureCamera[\s/]/,
     };
     const src = (f: string) => stripComments(fs.readFileSync(f, 'utf8'));
     const offenders = ALL

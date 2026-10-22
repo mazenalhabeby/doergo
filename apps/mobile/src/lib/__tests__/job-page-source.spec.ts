@@ -15,7 +15,7 @@ import { readSource } from '../../test-utils/read-source';
  */
 
 const MOBILE = path.resolve(__dirname, '../../..');
-const JOB = path.join(MOBILE, 'src/components/job');
+const JOB = path.join(MOBILE, 'src/features/job');
 const SCREEN = path.join(MOBILE, 'app/(app)/task/[id].tsx');
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 

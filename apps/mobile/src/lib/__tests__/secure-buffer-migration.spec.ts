@@ -224,7 +224,7 @@ describe('every per-person buffer outside the database is sealed', () => {
   const STORES: Record<string, string> = {
     'services/background-route-tracking.ts': 'route points + the last point',
     'services/kept-check-ins.ts': 'kept GPS check-ins',
-    'home/remember/store.ts': 'the remembered home cards',
+    'features/home/remember/store.ts': 'the remembered home cards',
     'offline/attendance/legacy-worklog-queue.ts': 'queued work-log notes and photo paths',
     'offline/routes/plan-route.ts': "the day's planned stops",
   };

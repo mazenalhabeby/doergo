@@ -12,7 +12,7 @@ import { useAuth } from '../../src/contexts/auth-context';
 import { useQueuedCreate } from '../../src/offline/actions/queued-create';
 import { portalColor, portalTint, portalIcon } from '../../src/lib/portal-ui';
 import type { IntakeCategory } from '@hbcfield/shared/client';
-import { type StepId, Option, styles } from '../../src/screens/customer/option';
+import { type StepId, Option, styles } from '../../src/features/customer/screens/option';
 
 export default function ReportWizard() {
   const insets = useSafeAreaInsets();

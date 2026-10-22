@@ -4,7 +4,7 @@
 import type { CompanyLocation } from '@hbcfield/shared/client';
 import {
   placesView, workWeekdays, daysOff, leaveDays, overlapIn, usedThisYear, upcomingLeave, monthGrid, dayKey, dayOf, statusOf,
-} from '../../components/time/time-logic';
+} from '../../features/time/time-logic';
 
 const site = (id: string, lat: number | null, lng: number | null, extra: Partial<CompanyLocation> = {}) =>
   ({ id, name: id, lat, lng, geofenceRadius: 50, ...extra }) as unknown as CompanyLocation;
@@ -118,7 +118,7 @@ describe('a shift\'s status on the row', () => {
   });
 });
 
-import { minutesPastEnd, suggestedExtra, stepExtra, EXTRA_MAX } from '../../components/time/time-logic';
+import { minutesPastEnd, suggestedExtra, stepExtra, EXTRA_MAX } from '../../features/time/time-logic';
 
 describe('extra time', () => {
   const end = '2026-09-27T12:30:00.000Z';

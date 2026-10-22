@@ -39,12 +39,12 @@ describe('the slot', () => {
 
 describe('said on the page', () => {
   it('accepting while the slot is held: the button waits and the dock names the job, with a way to it', () => {
-    const page = code('components/job/job-page.tsx');
+    const page = code('features/job/job-page.tsx');
     expect(page).toMatch(/disabled: held \|\| !!slotHolder/);
     expect(page).toMatch(/t\('job\.oneAtATime'/);
   });
   it('every write failure reaches the dock, not only the island', () => {
-    const writes = code('components/job/use-job-writes.ts');
+    const writes = code('features/job/use-job-writes.ts');
     expect((writes.match(/toast\.error\(/g) ?? []).length).toBe(1); // only inside fail()
     expect(writes).toMatch(/setNotice\(body \|\| title\)/);
   });

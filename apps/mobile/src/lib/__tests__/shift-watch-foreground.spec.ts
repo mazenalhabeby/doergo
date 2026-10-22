@@ -5,7 +5,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { FOREGROUND_HEARTBEAT_MS, graceCountdown, heartbeatDue } from '../../components/time/time-logic';
+import { FOREGROUND_HEARTBEAT_MS, graceCountdown, heartbeatDue } from '../../features/time/time-logic';
 
 describe('the foreground heartbeat', () => {
   it('is due every five minutes while the app is in front', () => {
@@ -32,7 +32,7 @@ describe('the grace countdown', () => {
 });
 
 describe('the wiring', () => {
-  const src = fs.readFileSync(path.resolve(__dirname, '../../components/time/use-shift-watch.ts'), 'utf8');
+  const src = fs.readFileSync(path.resolve(__dirname, '../../features/time/use-shift-watch.ts'), 'utf8');
   it('asks heartbeatDue with whether the app is in front — and keeps the background heartbeat armed', () => {
     expect(src).toMatch(/heartbeatDue\(lastBeat\.current, Date\.now\(\), isAppActive\(\)\)/);
     expect(src).toMatch(/startBackgroundHeartbeat\(\)/);

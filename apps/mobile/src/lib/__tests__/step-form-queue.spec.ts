@@ -18,7 +18,7 @@ jest.mock('../../offline/ids', () => {
 });
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { addTaskPhoto, changeTaskStatus } = require('../../offline/tasks/task-actions') as typeof import('../../offline/tasks/task-actions');
-const { prepareStepForm } = require('../../components/job/step-form-logic') as typeof import('../../components/job/step-form-logic');
+const { prepareStepForm } = require('../../features/job/step-form-logic') as typeof import('../../features/job/step-form-logic');
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 function setup(online: () => boolean) {

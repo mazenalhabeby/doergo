@@ -43,58 +43,6 @@
   "lines": 53,
   "long": 1
  },
- "apps/mobile/src/components/calendar/calendar-data.ts": {
-  "lines": 148,
-  "long": 1
- },
- "apps/mobile/src/components/calendar/calendar-screen.tsx": {
-  "lines": 186,
-  "long": 2
- },
- "apps/mobile/src/components/calendar/calendar-sheets.tsx": {
-  "lines": 106,
-  "long": 1
- },
- "apps/mobile/src/components/calendar/calendar-views.tsx": {
-  "lines": 276,
-  "long": 2
- },
- "apps/mobile/src/components/calendar/event-sheet.tsx": {
-  "lines": 167,
-  "long": 1
- },
- "apps/mobile/src/components/clients/add-client-sheet.tsx": {
-  "lines": 169,
-  "long": 1
- },
- "apps/mobile/src/components/clock-out-sheet.tsx": {
-  "lines": 262,
-  "long": 2
- },
- "apps/mobile/src/components/customer/contact-row.tsx": {
-  "lines": 84,
-  "long": 1
- },
- "apps/mobile/src/components/customer/record/record-screen.tsx": {
-  "lines": 263,
-  "long": 1
- },
- "apps/mobile/src/components/customer/record/use-record-screen.tsx": {
-  "lines": 129,
-  "long": 1
- },
- "apps/mobile/src/components/documents/use-documents-screen.tsx": {
-  "lines": 292,
-  "long": 22
- },
- "apps/mobile/src/components/equipment/equipment-screen.tsx": {
-  "lines": 228,
-  "long": 1
- },
- "apps/mobile/src/components/equipment/use-equipment-screen.tsx": {
-  "lines": 249,
-  "long": 2
- },
  "apps/mobile/src/components/glyphs/crm-glyphs.tsx": {
   "lines": 150,
   "long": 1
@@ -103,100 +51,164 @@
   "lines": 205,
   "long": 1
  },
- "apps/mobile/src/components/home/clients-state.ts": {
-  "lines": 127,
+ "apps/mobile/src/features/calendar/calendar-data.ts": {
+  "lines": 148,
+  "long": 1
+ },
+ "apps/mobile/src/features/calendar/calendar-screen.tsx": {
+  "lines": 186,
   "long": 2
  },
- "apps/mobile/src/components/home/crew-card.tsx": {
-  "lines": 606,
-  "long": 33
- },
- "apps/mobile/src/components/home/my-work-card.tsx": {
-  "lines": 229,
+ "apps/mobile/src/features/calendar/calendar-sheets.tsx": {
+  "lines": 106,
   "long": 1
  },
- "apps/mobile/src/components/home/my-work.ts": {
-  "lines": 80,
+ "apps/mobile/src/features/calendar/calendar-views.tsx": {
+  "lines": 276,
+  "long": 2
+ },
+ "apps/mobile/src/features/calendar/event-sheet.tsx": {
+  "lines": 167,
   "long": 1
  },
- "apps/mobile/src/components/home/today-card.tsx": {
-  "lines": 118,
-  "long": 1
- },
- "apps/mobile/src/components/home/widget-gallery.tsx": {
-  "lines": 227,
-  "long": 1
- },
- "apps/mobile/src/components/job/job-dock.tsx": {
-  "lines": 111,
-  "long": 1
- },
- "apps/mobile/src/components/job/job-page.tsx": {
-  "lines": 621,
-  "long": 13
- },
- "apps/mobile/src/components/job/step-form-logic/send.ts": {
-  "lines": 163,
-  "long": 1
- },
- "apps/mobile/src/components/job/use-crew.ts": {
-  "lines": 82,
-  "long": 3
- },
- "apps/mobile/src/components/onboarding/pass-badge.tsx": {
-  "lines": 137,
-  "long": 1
- },
- "apps/mobile/src/components/register/register-screen.tsx": {
+ "apps/mobile/src/features/clients/add-client-sheet.tsx": {
   "lines": 169,
   "long": 1
  },
- "apps/mobile/src/components/requests/request-glyphs.tsx": {
-  "lines": 109,
-  "long": 3
- },
- "apps/mobile/src/components/requests/request-model.ts": {
-  "lines": 223,
+ "apps/mobile/src/features/customer/contact-row.tsx": {
+  "lines": 84,
   "long": 1
  },
- "apps/mobile/src/components/rota/day-sheet.tsx": {
-  "lines": 140,
-  "long": 1
- },
- "apps/mobile/src/components/rota/schedules-screen.tsx": {
-  "lines": 221,
-  "long": 1
- },
- "apps/mobile/src/components/settings/account-page.tsx": {
-  "lines": 218,
-  "long": 1
- },
- "apps/mobile/src/components/settings/notifications-page.tsx": {
-  "lines": 144,
-  "long": 1
- },
- "apps/mobile/src/components/settings/settings-ui.tsx": {
-  "lines": 119,
-  "long": 1
- },
- "apps/mobile/src/components/settings/sync-page.tsx": {
-  "lines": 270,
-  "long": 2
- },
- "apps/mobile/src/components/time/place-relation.ts": {
+ "apps/mobile/src/features/customer/record/record-screen.tsx": {
   "lines": 263,
   "long": 1
  },
- "apps/mobile/src/components/time/time-banners.tsx": {
+ "apps/mobile/src/features/customer/record/use-record-screen.tsx": {
+  "lines": 129,
+  "long": 1
+ },
+ "apps/mobile/src/features/documents/use-documents-screen.tsx": {
+  "lines": 292,
+  "long": 22
+ },
+ "apps/mobile/src/features/equipment/equipment-screen.tsx": {
+  "lines": 228,
+  "long": 1
+ },
+ "apps/mobile/src/features/equipment/use-equipment-screen.tsx": {
+  "lines": 249,
+  "long": 2
+ },
+ "apps/mobile/src/features/home/clients-state.ts": {
+  "lines": 127,
+  "long": 2
+ },
+ "apps/mobile/src/features/home/crew-card.tsx": {
+  "lines": 606,
+  "long": 33
+ },
+ "apps/mobile/src/features/home/my-work-card.tsx": {
+  "lines": 229,
+  "long": 1
+ },
+ "apps/mobile/src/features/home/my-work.ts": {
+  "lines": 80,
+  "long": 1
+ },
+ "apps/mobile/src/features/home/remember/use-remembered.ts": {
+  "lines": 126,
+  "long": 1
+ },
+ "apps/mobile/src/features/home/today-card.tsx": {
+  "lines": 118,
+  "long": 1
+ },
+ "apps/mobile/src/features/home/widget-gallery.tsx": {
+  "lines": 227,
+  "long": 1
+ },
+ "apps/mobile/src/features/job/job-dock.tsx": {
+  "lines": 111,
+  "long": 1
+ },
+ "apps/mobile/src/features/job/job-page.tsx": {
+  "lines": 621,
+  "long": 13
+ },
+ "apps/mobile/src/features/job/step-form-logic/send.ts": {
+  "lines": 163,
+  "long": 1
+ },
+ "apps/mobile/src/features/job/use-crew.ts": {
+  "lines": 82,
+  "long": 3
+ },
+ "apps/mobile/src/features/onboarding/pass-badge.tsx": {
+  "lines": 137,
+  "long": 1
+ },
+ "apps/mobile/src/features/register/register-screen.tsx": {
+  "lines": 169,
+  "long": 1
+ },
+ "apps/mobile/src/features/requests/request-glyphs.tsx": {
+  "lines": 109,
+  "long": 3
+ },
+ "apps/mobile/src/features/requests/request-model.ts": {
+  "lines": 223,
+  "long": 1
+ },
+ "apps/mobile/src/features/requests/use-requests-screen.ts": {
+  "lines": 200,
+  "long": 1
+ },
+ "apps/mobile/src/features/rota/day-sheet.tsx": {
+  "lines": 140,
+  "long": 1
+ },
+ "apps/mobile/src/features/rota/schedules-screen.tsx": {
+  "lines": 221,
+  "long": 1
+ },
+ "apps/mobile/src/features/route/route-planner-screen-your-route.tsx": {
+  "lines": 175,
+  "long": 1
+ },
+ "apps/mobile/src/features/settings/account-page.tsx": {
+  "lines": 218,
+  "long": 1
+ },
+ "apps/mobile/src/features/settings/notifications-page.tsx": {
+  "lines": 144,
+  "long": 1
+ },
+ "apps/mobile/src/features/settings/settings-ui.tsx": {
+  "lines": 119,
+  "long": 1
+ },
+ "apps/mobile/src/features/settings/sync-page.tsx": {
+  "lines": 270,
+  "long": 2
+ },
+ "apps/mobile/src/features/support/use-support-screen.ts": {
+  "lines": 266,
+  "long": 3
+ },
+ "apps/mobile/src/features/time/clock-out-sheet.tsx": {
+  "lines": 262,
+  "long": 2
+ },
+ "apps/mobile/src/features/time/place-relation.ts": {
+  "lines": 263,
+  "long": 1
+ },
+ "apps/mobile/src/features/time/time-banners.tsx": {
   "lines": 212,
   "long": 7
  },
- "apps/mobile/src/components/time/time-today.tsx": {
+ "apps/mobile/src/features/time/time-today.tsx": {
   "lines": 155,
-  "long": 1
- },
- "apps/mobile/src/home/remember/use-remembered.ts": {
-  "lines": 126,
   "long": 1
  },
  "apps/mobile/src/island/use-island-view.ts": {
@@ -242,18 +254,6 @@
  "apps/mobile/src/offline/routes/plan-route.ts": {
   "lines": 45,
   "long": 1
- },
- "apps/mobile/src/screens/app/route-planner-screen-your-route.tsx": {
-  "lines": 175,
-  "long": 1
- },
- "apps/mobile/src/screens/app/tabs/use-requests-screen.ts": {
-  "lines": 200,
-  "long": 1
- },
- "apps/mobile/src/screens/app/use-support-screen.ts": {
-  "lines": 266,
-  "long": 3
  },
  "apps/mobile/src/services/auto-clock/runner.ts": {
   "lines": 290,

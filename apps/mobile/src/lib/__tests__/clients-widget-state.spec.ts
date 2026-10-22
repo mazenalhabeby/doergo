@@ -5,7 +5,7 @@
 */
 process.env.TZ = 'Europe/Vienna';
 
-import { daysLate, headline, localDay, withoutDone, rowLines } from '../../components/home/clients-state';
+import { daysLate, headline, localDay, withoutDone, rowLines } from '../../features/home/clients-state';
 import type { ClientsDue, DueReminder } from '../api/customers';
 
 const r = (over: Partial<DueReminder>): DueReminder => ({

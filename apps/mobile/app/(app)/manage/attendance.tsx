@@ -8,8 +8,8 @@ import { ChoicePill } from '../../../src/components/amazen';
 import { Skeleton, ScreenContainer, AttendanceEditSheet } from '../../../src/components';
 import { DatePickerModal } from '../../../src/components/date-picker-modal';
 import { COLORS, SPACING } from '../../../src/lib/constants';
-import { SEGMENTS, PERIODS, dateFromISO, shortDay, s } from '../../../src/screens/app/manage/attendance-review-helpers';
-import { useAttendanceReviewScreen } from '../../../src/screens/app/manage/use-attendance-review-screen';
+import { SEGMENTS, PERIODS, dateFromISO, shortDay, s } from '../../../src/features/time/attendance-review/attendance-review-helpers';
+import { useAttendanceReviewScreen } from '../../../src/features/time/attendance-review/use-attendance-review-screen';
 
 /**
  * Attendance review on the phone — the web `/attendance` page's working half.

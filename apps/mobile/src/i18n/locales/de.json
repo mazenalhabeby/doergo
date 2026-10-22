@@ -800,7 +800,7 @@
     "rest": {
       "title": "Pausen",
       "onRest": "In der Pause",
-      "unpaid": "nicht angerechnet",
+      "notCounted": "nicht angerechnet",
       "untimed": "Ohne Zeitvorgabe",
       "ofTotal": "von {{total}}",
       "overBy": "{{over}} über Ihre {{total}}",

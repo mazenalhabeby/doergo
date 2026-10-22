@@ -41,7 +41,7 @@ function read(file: string): string {
 
 /** Every local file `registry.tsx` imports a component from. */
 function registeredComponentFiles(): string[] {
-  const registry = read(path.join(SRC, 'home/registry.tsx'));
+  const registry = read(path.join(SRC, 'features/home/registry.tsx'));
   const out: string[] = [];
   for (const m of registry.matchAll(/^import\s+\{[^}]*\}\s+from\s+'(\.\.?\/[^']+)';/gm)) {
     const rel = m[1]!;
@@ -90,7 +90,7 @@ describe('the home screen opens without a network', () => {
       sentence is noise, and the banner is the context every widget's own
       freshness label is read against.
     */
-    expect(read(path.join(SRC, 'home/home-screen.tsx'))).toContain('OfflineBanner');
+    expect(read(path.join(SRC, 'features/home/home-screen.tsx'))).toContain('OfflineBanner');
   });
 
   it('the home tab renders the composed screen and nothing else', () => {

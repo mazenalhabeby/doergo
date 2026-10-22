@@ -63,19 +63,19 @@ describe('no screen opens a data-built link by hand', () => {
   const path = require('path') as typeof import('path');
   const ROOT = path.resolve(__dirname, '../../..');
   const FILES = [
-    'src/components/job/job-files.tsx',
-    'src/components/job/job-submissions.tsx',
+    'src/features/job/job-files.tsx',
+    'src/features/job/job-submissions.tsx',
     'app/(customer)/request/[id].tsx',
     'app/(app)/sign-document.tsx',
     // The screen's link handling moved into its hook when the screen was split.
-    'src/components/documents/use-documents-screen.tsx',
-    'src/components/customer/record/record-hero.tsx',
-    'src/components/customer/record/record-about.tsx',
-    'src/components/customer/contact-row.tsx',
-    'src/components/customer/address-row.tsx',
-    'src/components/clients/client-row.tsx',
-    'src/components/home/use-clients-due.ts',
-    'src/components/calendar/event-sheet.tsx',
+    'src/features/documents/use-documents-screen.tsx',
+    'src/features/customer/record/record-hero.tsx',
+    'src/features/customer/record/record-about.tsx',
+    'src/features/customer/contact-row.tsx',
+    'src/features/customer/address-row.tsx',
+    'src/features/clients/client-row.tsx',
+    'src/features/home/use-clients-due.ts',
+    'src/features/calendar/event-sheet.tsx',
   ];
   it.each(FILES)('%s goes through safe-links', (rel) => {
     const src = fs.readFileSync(path.join(ROOT, rel), 'utf8');

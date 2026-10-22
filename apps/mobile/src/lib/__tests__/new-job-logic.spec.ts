@@ -1,10 +1,10 @@
 /**
  * New job's rules — `docs/design/job-flow.html`, `renderCreate()`.
- * Pure: `src/components/new-job/new-job-logic.ts` decides, the screen draws.
+ * Pure: `src/features/new-job/new-job-logic.ts` decides, the screen draws.
  */
 import {
   adoptClient, buildCreateInput, canCreate, defaultSpace, dueDateFor, isPastDay, isUntouched, monthGrid,
-} from '../../components/new-job/new-job-logic';
+} from '../../features/new-job/new-job-logic';
 
 const base = {
   title: 'Replace valve', description: '', priority: 'MEDIUM' as const, day: null, time: '',

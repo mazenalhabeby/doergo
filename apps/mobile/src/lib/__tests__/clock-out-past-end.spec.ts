@@ -3,7 +3,7 @@
  * END — not only when the day's total beats the target. A late arrival who
  * stays past the end was told "short" and never asked (2026-09-26 audit).
  */
-import { readClockOut } from '../../components/home/clock-out-state';
+import { readClockOut } from '../../features/home/clock-out-state';
 
 const end = new Date('2026-09-27T05:16:00.000Z');
 const base = { restMinutes: 0, targetMinutes: 600, shiftEndAt: end };

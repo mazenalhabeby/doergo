@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { onboardingApi } from '../../src/lib/api';
 import { ROUTES } from '../../src/lib/constants';
 import { Ground } from '../../src/components/amazen';
-import { PassScreen } from '../../src/components/onboarding/pass-screen';
+import { PassScreen } from '../../src/features/onboarding/pass-screen';
 
 /**
  * Where a signed-in member with no organization lands. A request still

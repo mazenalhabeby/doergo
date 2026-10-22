@@ -1,4 +1,4 @@
-import { ProfileScreen } from '../../../src/components/profile/profile-screen';
+import { ProfileScreen } from '../../../src/features/profile/profile-screen';
 
 /** Profile — the page lives in `src/components/profile/`; this route only mounts it. */
 export default function ProfileRoute() {

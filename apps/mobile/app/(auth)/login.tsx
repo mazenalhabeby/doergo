@@ -9,10 +9,10 @@ import { BiometricIcon } from '../../src/components/biometric-icon';
 import { useTheme } from '../../src/contexts/theme-context';
 import { ROUTES } from '../../src/lib/constants';
 import { AText, PrimaryButton } from '../../src/components/amazen';
-import { JobSheet, SheetOption } from '../../src/components/job/job-ui';
-import { AuthCard, AuthField, AuthFrame, AuthHelp, AuthLinkLine } from '../../src/components/auth/auth-ui';
+import { JobSheet, SheetOption } from '../../src/features/job/job-ui';
+import { AuthCard, AuthField, AuthFrame, AuthHelp, AuthLinkLine } from '../../src/features/auth/auth-ui';
 import { loadLastUser, shouldAutoPromptFor, type LastUser } from '../../src/lib/session/last-user';
-import { useLoginScreen } from '../../src/screens/auth/use-login-screen';
+import { useLoginScreen } from '../../src/features/auth/use-login-screen';
 
 export default function LoginScreen() {
   const {

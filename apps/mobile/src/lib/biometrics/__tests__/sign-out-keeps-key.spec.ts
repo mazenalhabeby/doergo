@@ -27,7 +27,7 @@ describe('sign-out keeps the device key', () => {
   });
 
   it('account deletion is the one sign-out that asks', () => {
-    expect(read('src/components/settings/account-page.tsx')).toContain("logout({ reason: 'account-deleted' })");
+    expect(read('src/features/settings/account-page.tsx')).toContain("logout({ reason: 'account-deleted' })");
   });
 
   it('the login screen does not auto-prompt straight after a sign-out', () => {

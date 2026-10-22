@@ -2,9 +2,9 @@ import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { AText } from './amazen';
-import { readClockOut, type ClockOutShift } from './home/clock-out-state';
+import { readClockOut, type ClockOutShift } from '../features/home/clock-out-state';
 import { formatDuration } from '@hbcfield/shared/client';
-import { Hatch } from './clock-out-sheet-shared';
+import { Hatch } from '../features/time/clock-out-sheet-shared';
 
 /** Bar, moved here unchanged out of clock-out-sheet.tsx. */
 /**

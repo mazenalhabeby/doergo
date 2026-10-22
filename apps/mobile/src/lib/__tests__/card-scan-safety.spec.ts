@@ -118,7 +118,7 @@ describe('the native card reader is never imported at module scope', () => {
 describe('the scanner keeps the card on the phone', () => {
   const scan = fs.readFileSync(path.join(MOBILE, 'app/(app)/scan-card.tsx'), 'utf8');
   // The camera and its looks — where the photograph is taken, read and deleted.
-  const capture = fs.readFileSync(path.join(MOBILE, 'src/components/scan-card/use-card-capture.ts'), 'utf8');
+  const capture = fs.readFileSync(path.join(MOBILE, 'src/features/scan-card/use-card-capture.ts'), 'utf8');
   const lib = fs.readFileSync(path.join(MOBILE, 'src/lib/card-scan.ts'), 'utf8');
 
   /*
@@ -135,19 +135,19 @@ describe('the scanner keeps the card on the phone', () => {
     feature is either on this list or is not part of the feature.
   */
   const REVIEW = fs
-    .readdirSync(path.join(MOBILE, 'src/components/customer'))
+    .readdirSync(path.join(MOBILE, 'src/features/customer'))
     .filter((f) => f.startsWith('card-'))
     // card-review/ is the rules file's parts (split 2026-10-17): read each part, not the folder.
     .flatMap((f) => {
-      const rel = path.join('src/components/customer', f);
+      const rel = path.join('src/features/customer', f);
       const abs = path.join(MOBILE, rel);
       return fs.statSync(abs).isDirectory() ? fs.readdirSync(abs).map((g) => path.join(rel, g)) : [rel];
     });
   // The screen's own pieces (camera, review state, save flow, review view),
   // split out of the route so it stays a thin composition.
   const SCREEN = fs
-    .readdirSync(path.join(MOBILE, 'src/components/scan-card'))
-    .map((f) => path.join('src/components/scan-card', f));
+    .readdirSync(path.join(MOBILE, 'src/features/scan-card'))
+    .map((f) => path.join('src/features/scan-card', f));
   const FEATURE = ['app/(app)/scan-card.tsx', 'src/lib/card-scan.ts', ...SCREEN, ...REVIEW];
   const code = FEATURE.map((f) => stripComments(fs.readFileSync(path.join(MOBILE, f), 'utf8'))).join('\n');
 
@@ -202,10 +202,10 @@ describe('the scanner keeps the card on the phone', () => {
       `homelessFields` is its complement, and the screen must render both — one
       as rows, the other as the sentence saying what has nowhere to go.
     */
-    const review = stripComments(fs.readFileSync(path.join(MOBILE, 'src/components/scan-card/card-review-screen.tsx'), 'utf8'));
+    const review = stripComments(fs.readFileSync(path.join(MOBILE, 'src/features/scan-card/card-review-screen.tsx'), 'utf8'));
     expect(review).toContain('cardFieldsFor');
     expect(review).toContain('homelessFields');
-    const { cardFieldsFor, homelessFields, CARD_FIELDS } = require('../../components/customer/card-review');
+    const { cardFieldsFor, homelessFields, CARD_FIELDS } = require('../../features/customer/card-review');
     const everything = Object.fromEntries(CARD_FIELDS.map((k: string) => [k, 'x'])) as Record<string, string>;
     for (const [kind, destination] of [['COMPANY', 'client'], ['PERSON', 'client'], ['PERSON', 'contact']] as const) {
       const shown: string[] = cardFieldsFor(kind, destination);

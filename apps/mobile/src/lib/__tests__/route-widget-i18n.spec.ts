@@ -14,7 +14,7 @@ const all = Object.fromEntries(LOCALES.map((l) => [l, load(l)]));
 
 /** Every `t('…')` key the card and its drawing ask for. */
 function keysUsed(): string[] {
-  const files = ['../../components/home/route-card.tsx', '../../components/home/route-sketch.tsx'];
+  const files = ['../../features/home/route-card.tsx', '../../features/home/route-sketch.tsx'];
   const src = files.map((f) => readSource(path.join(__dirname, f), 'utf8')).join('\n');
   return [...new Set([...src.matchAll(/\bt\('([A-Za-z0-9_.]+)'/g)].map((m) => m[1]!))];
 }

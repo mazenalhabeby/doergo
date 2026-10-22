@@ -15,14 +15,14 @@
  * Skipped unless `LIVE_API=http://localhost:4000/api/v1`. Reads only, except
  * one route optimisation per driver (a stateless calculation).
  */
-jest.mock('../../components/home/shift-clock-card', () => ({ ShiftClockCard: () => null }));
-jest.mock('../../components/home/my-work-card', () => ({ MyWorkCard: () => null }));
-jest.mock('../../components/home/crew-card', () => ({ CrewCard: () => null }));
-jest.mock('../../components/home/clients-card', () => ({ ClientsCard: () => null }));
-jest.mock('../../components/home/shortcuts-card', () => ({ ShortcutsCard: () => null }));
-jest.mock('../../components/home/route-card', () => ({ RouteCard: () => null }));
-jest.mock('../../components/home/today-card', () => ({ TodayCard: () => null }));
-import { availableWidgets } from '../../home/registry';
+jest.mock('../../features/home/shift-clock-card', () => ({ ShiftClockCard: () => null }));
+jest.mock('../../features/home/my-work-card', () => ({ MyWorkCard: () => null }));
+jest.mock('../../features/home/crew-card', () => ({ CrewCard: () => null }));
+jest.mock('../../features/home/clients-card', () => ({ ClientsCard: () => null }));
+jest.mock('../../features/home/shortcuts-card', () => ({ ShortcutsCard: () => null }));
+jest.mock('../../features/home/route-card', () => ({ RouteCard: () => null }));
+jest.mock('../../features/home/today-card', () => ({ TodayCard: () => null }));
+import { availableWidgets } from '../../features/home/registry';
 import { destinationsFor } from '../manage-rows';
 
 const API = process.env.LIVE_API;

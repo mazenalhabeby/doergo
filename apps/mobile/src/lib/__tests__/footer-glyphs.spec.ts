@@ -117,7 +117,7 @@ describe('the footer', () => {
   });
 
   it('draws the same marks on the More page', () => {
-    const more = read(path.join(SRC, 'components/more/more-screen.tsx'));
+    const more = read(path.join(SRC, 'features/more/more-screen.tsx'));
     expect(more).toContain('TAB_GLYPHS');
   });
 

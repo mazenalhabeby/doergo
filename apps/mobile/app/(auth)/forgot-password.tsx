@@ -6,7 +6,7 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { passwordApi } from '../../src/lib/api/auth';
 import { AText, PrimaryButton } from '../../src/components/amazen';
 import { FinishGlyph } from '../../src/components/glyphs/work-glyphs';
-import { AuthCard, AuthField, AuthFrame, AuthHelp, AuthLinkLine } from '../../src/components/auth/auth-ui';
+import { AuthCard, AuthField, AuthFrame, AuthHelp, AuthLinkLine } from '../../src/features/auth/auth-ui';
 
 /**
  * Forgot password — one field, one button; then what happens next.

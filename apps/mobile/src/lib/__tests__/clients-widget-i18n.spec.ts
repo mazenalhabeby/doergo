@@ -8,7 +8,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const HOME = path.join(__dirname, '../../components/home');
+const HOME = path.join(__dirname, '../../features/home');
 const SOURCES = ['clients-card.tsx', 'clients-state.ts', 'reminder-row.tsx'].map((f) => fs.readFileSync(path.join(HOME, f), 'utf8'));
 const LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;
 const catalogue = Object.fromEntries(LOCALES.map((l) => [l, JSON.parse(fs.readFileSync(path.join(__dirname, `../../i18n/locales/${l}.json`), 'utf8'))]));

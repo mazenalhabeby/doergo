@@ -1,6 +1,6 @@
 import { OfflineProvider } from '../../src/offline/offline-context';
 import { RefusedShiftNotifier } from '../../src/offline/attendance/refused-shift-notifier';
-import { AutoClockHost } from '../../src/components/time/auto-clock-host';
+import { AutoClockHost } from '../../src/features/time/auto-clock-host';
 import { isAutoClockAction } from '../../src/services/auto-clock/notifications';
 import { runAutoClockAction } from '../../src/services/auto-clock/actions';
 import { OfflineSocketPoke } from '../../src/offline/components/offline-socket-poke';
@@ -22,13 +22,13 @@ import { SocketProvider, useSocketContext } from '../../src/contexts/socket-cont
 import { LocationTrackingProvider } from '../../src/contexts/location-tracking-context';
 import { DocumentRequirementsProvider } from '../../src/contexts/document-requirements-context';
 import { useToast } from '../../src/island/island-context';
-import { showUpdatePageNow } from '../../src/components/update-page';
+import { showUpdatePageNow } from '../../src/features/app-update/update-page';
 import { useAuth } from '../../src/contexts/auth-context';
 import { refreshChatBadge, setChatBadge } from '../../src/lib/chat-badge';
 import { activeChat } from '../../src/lib/active-chat';
 import { SocketEvents, personName, type ChatBadgeEvent, type ChatMessageEvent } from '@hbcfield/shared/client';
 import { SubscriptionGate } from '../../src/components/SubscriptionGate';
-import { TourProvider } from '../../src/components/tour';
+import { TourProvider } from '../../src/features/tour';
 import { useTheme } from '../../src/contexts/theme-context';
 import { trackingApi } from '../../src/lib/api';
 import { COLORS } from '../../src/lib/constants';

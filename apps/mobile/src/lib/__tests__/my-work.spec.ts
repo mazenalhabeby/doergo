@@ -3,7 +3,7 @@ import path from 'path';
 import {
   shapeFor, faceFor, viewAllSpaceIds, weekOf, tasksOn, hasHour,
   stepsFor, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
-} from '../../components/home/my-work';
+} from '../../features/home/my-work';
 import type { ScheduleEntry, Task } from '../api/types';
 import { readSource } from '../../test-utils/read-source';
 
@@ -79,7 +79,7 @@ describe('my-work — today carries what is already in your hands', () => {
 });
 
 describe('my-work — one button: open the job', () => {
-  const card = code('components/home/my-work-card.tsx');
+  const card = code('features/home/my-work-card.tsx');
   it('the focused job carries ONE button, and it opens the job page', () => {
     expect(card).toMatch(/const openTask = useCallback\(\(task: Task\) => router\.push\(`\/task\/\$\{task\.id\}`/);
     expect(card).toMatch(/onOpen=\{\(\) => openTask\(task\)\}/);
@@ -93,7 +93,7 @@ describe('my-work — one button: open the job', () => {
 });
 
 describe('my-work — no new endpoint, one outbox', () => {
-  const card = code('components/home/my-work-card.tsx');
+  const card = code('features/home/my-work-card.tsx');
   it('reads jobs through useHomeTasks and never tasksApi.list', () => {
     expect(card).toMatch(/useHomeTasks\(\)/);
     expect(card).not.toMatch(/tasksApi\.list\(/);

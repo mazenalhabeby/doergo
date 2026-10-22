@@ -42,10 +42,10 @@ import { shiftCard } from '../../lib/__tests__/shift-card-files';
 import { connectivity } from '../connectivity';
 import { attendanceApi } from '../../lib/api/attendance';
 import { loadShift, useShift } from '../attendance/use-shift';
-import { useCrew } from '../../components/home/use-crew';
-import { useRemembered } from '../../home/remember/use-remembered';
-import { forgetEverythingKept } from '../../home/remember/store';
-import { queuedDoneIds, withoutDone } from '../../components/home/clients-state';
+import { useCrew } from '../../features/home/use-crew';
+import { useRemembered } from '../../features/home/remember/use-remembered';
+import { forgetEverythingKept } from '../../features/home/remember/store';
+import { queuedDoneIds, withoutDone } from '../../features/home/clients-state';
 import { shouldKeep } from '../../lib/api/response-cache';
 import { apiEndpoints as EP, type Endpoint } from '@hbcfield/shared/client';
 import { readSource } from '../../test-utils/read-source';
@@ -178,7 +178,7 @@ describe('what the cards do with it, pinned in the source', () => {
     readSource(path.resolve(__dirname, '../..', rel), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
   it('my work says "Nothing scheduled" only once a list is on screen — never while the database opens', () => {
-    const card = code('components/home/my-work-card.tsx');
+    const card = code('features/home/my-work-card.tsx');
     expect(card).toMatch(/if \(await load\(\)\) setPhase\('ready'\)/);
     expect(card).toMatch(/if \(loaded && phase === 'opening'\) setPhase\('ready'\)/);
     expect(card).not.toMatch(/held\.length > 0 && phase === 'opening'/);
@@ -186,16 +186,16 @@ describe('what the cards do with it, pinned in the source', () => {
 
   it('clients hides a queued tick, and re-reads on reconnect only after the queue has gone', () => {
     // The card and the top of the client book share one loader, so this pins both.
-    const card = code('components/home/use-clients-due.ts');
-    expect(code('components/home/clients-card.tsx')).toMatch(/useClientsDue\(ROWS\)/);
+    const card = code('features/home/use-clients-due.ts');
+    expect(code('features/home/clients-card.tsx')).toMatch(/useClientsDue\(ROWS\)/);
     expect(card).toMatch(/queuedDoneIds\(operations\)/);
     expect(card).toMatch(/onReconnect: true, beforeReconnect: \(\) => running\?\.flush\(\)/);
   });
 
   it('crew and the shift clock come back by themselves when the signal does', () => {
-    expect(code('components/home/use-crew.ts')).toMatch(/useLiveRefresh\(refresh, REFRESH_MS, \{ onReconnect: true \}\)/);
+    expect(code('features/home/use-crew.ts')).toMatch(/useLiveRefresh\(refresh, REFRESH_MS, \{ onReconnect: true \}\)/);
     // The home widget's loader; the Time tab holds its own copy and does the same.
     expect(shiftCard(code)).toMatch(/useLiveRefresh\(shift\.refresh, null, \{ onReconnect: true \}\)/);
-    expect(code('components/time/time-screen.tsx')).toMatch(/useLiveRefresh\(shift\.refresh, null, \{ onReconnect: true \}\)/);
+    expect(code('features/time/time-screen.tsx')).toMatch(/useLiveRefresh\(shift\.refresh, null, \{ onReconnect: true \}\)/);
   });
 });

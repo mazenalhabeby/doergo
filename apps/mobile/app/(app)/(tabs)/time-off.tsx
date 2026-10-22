@@ -7,9 +7,9 @@ import { useAuth } from '../../../src/contexts/auth-context';
 import { mayReadTeamAvailability } from '../../../src/lib/permissions';
 import { useToast } from '../../../src/island/island-context';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { useMyTimeOff } from '../../../src/components/time/use-my-time-off';
+import { useMyTimeOff } from '../../../src/features/time/use-my-time-off';
 import { LoadingState, ErrorState } from '../../../src/components/screen-states';
-import { useTourScroll, TourTarget } from '../../../src/components/tour';
+import { useTourScroll, TourTarget } from '../../../src/features/tour';
 import { availabilityApi, type AvailabilityResponse } from '../../../src/lib/api';
 import type { ActionOutcome } from '../../../src/offline/actions/outcome';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
@@ -19,24 +19,24 @@ import { Ground, PrimaryButton, ScreenHeader, useTabSafe } from '../../../src/co
 import {
   availabilityInsights as insightsFor, datesWithStatus, filterRequests, getDayCount, mondayDow,
   scheduleDayMap, timeOffStats, toDateString, type RequestFilter,
-} from '../../../src/components/time-off/helpers';
+} from '../../../src/features/time-off/helpers';
 import {
   daysNotAnswered,
   mapLimited,
   mergeAvailability,
   planAvailabilityFetch,
   rangeUnsupported,
-} from '../../../src/components/time-off/availability-plan';
-import { TimeOffStatsRow, ScheduleNotSetBanner } from '../../../src/components/time-off/stats-row';
-import { TimeOffCalendarCard } from '../../../src/components/time-off/calendar-card';
-import { TeamAvailabilityPanel } from '../../../src/components/time-off/availability-panel';
-import { TimeOffRequestForm } from '../../../src/components/time-off/request-form';
-import { TimeOffRequestsList } from '../../../src/components/time-off/requests-list';
-import { KindChooserSheet, RequestDetailSheet, type RequestRowData } from '../../../src/components/requests/request-parts';
-import { RequestFormCard } from '../../../src/components/requests/request-form-card';
-import { draftToBody, type RequestBody } from '../../../src/components/requests/request-model';
-import { useRequestOptions } from '../../../src/components/requests/use-request-options';
-import { useRequestsScreen } from "../../../src/screens/app/tabs/use-requests-screen";
+} from '../../../src/features/time-off/availability-plan';
+import { TimeOffStatsRow, ScheduleNotSetBanner } from '../../../src/features/time-off/stats-row';
+import { TimeOffCalendarCard } from '../../../src/features/time-off/calendar-card';
+import { TeamAvailabilityPanel } from '../../../src/features/time-off/availability-panel';
+import { TimeOffRequestForm } from '../../../src/features/time-off/request-form';
+import { TimeOffRequestsList } from '../../../src/features/time-off/requests-list';
+import { KindChooserSheet, RequestDetailSheet, type RequestRowData } from '../../../src/features/requests/request-parts';
+import { RequestFormCard } from '../../../src/features/requests/request-form-card';
+import { draftToBody, type RequestBody } from '../../../src/features/requests/request-model';
+import { useRequestOptions } from '../../../src/features/requests/use-request-options';
+import { useRequestsScreen } from "../../../src/features/requests/use-requests-screen";
 
 /**
  * REQUESTS — everything a member asks the person responsible for them: leave

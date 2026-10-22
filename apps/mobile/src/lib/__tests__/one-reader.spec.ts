@@ -67,7 +67,7 @@ describe('the phone has one reader, and everything that reads uses it', () => {
       ML Kit beats tesseract on a photographed page.
     */
     // The read and the upload live in the credential hook since the sheet was split.
-    const sheet = stripComments((read(path.join(MOBILE, 'src/components/supply-document/use-credential-photo.ts')) + read(path.join(MOBILE, 'src/components/supply-document/use-credential-photo-data.ts'))));
+    const sheet = stripComments((read(path.join(MOBILE, 'src/features/supply-document/use-credential-photo.ts')) + read(path.join(MOBILE, 'src/features/supply-document/use-credential-photo-data.ts'))));
     expect(sheet).toContain('readExpiryOnDevice');
     // Before the presign, not after the upload.
     expect(sheet.indexOf('readExpiryOnDevice')).toBeLessThan(sheet.indexOf('ownUploadUrl'));
@@ -76,7 +76,7 @@ describe('the phone has one reader, and everything that reads uses it', () => {
   it('a device read is never wiped by a server that found nothing', () => {
     // Losing a date already on screen because a second, weaker reader missed it
     // is the worst of both.
-    const sheet = stripComments((read(path.join(MOBILE, 'src/components/supply-document/use-credential-photo.ts')) + read(path.join(MOBILE, 'src/components/supply-document/use-credential-photo-data.ts'))));
+    const sheet = stripComments((read(path.join(MOBILE, 'src/features/supply-document/use-credential-photo.ts')) + read(path.join(MOBILE, 'src/features/supply-document/use-credential-photo-data.ts'))));
     expect(sheet).toMatch(/setDateSource\(\(prev\) =>/);
   });
 });
@@ -85,7 +85,7 @@ describe('the meaning of a page is decided in one place', () => {
   it('all three platforms ask the same shared function for an expiry', () => {
     const callers: [string, string][] = [
       ['phone', path.join(MOBILE, 'src/lib/document-scan.ts')],
-      ['browser', path.join(WEB, 'src/app/(dashboard)/my/documents/_components/supply-document-dialog.tsx')],
+      ['browser', path.join(WEB, 'src/app/(dashboard)/my/documents/_components/use-supply-document-dialog.ts')],
       ['server', path.join(AUTH, 'src/modules/documents/reading/own-upload-reader.service.ts')],
     ];
     for (const [where, file] of callers) {
@@ -114,9 +114,12 @@ describe('the meaning of a page is decided in one place', () => {
       better than OCR anyway — the characters the document was written with,
       not a guess at their shape — and the file is already in the browser.
     */
-    const dialog = stripComments(read(
-      path.join(WEB, 'src/app/(dashboard)/my/documents/_components/supply-document-dialog.tsx'),
-    ));
+    // The dialog and its state hook — the screen, not one file.
+    const dialog = stripComments(
+      ['supply-document-dialog.tsx', 'use-supply-document-dialog.ts']
+        .map((f) => read(path.join(WEB, 'src/app/(dashboard)/my/documents/_components', f)))
+        .join('\n'),
+    );
     expect(dialog).toContain('extractPdfText');
     expect(dialog).toContain('application/pdf');
     // Lazily: pdf.js is ~1MB and must not tax opening the dialog.

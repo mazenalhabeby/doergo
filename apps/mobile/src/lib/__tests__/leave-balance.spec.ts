@@ -4,7 +4,7 @@
  */
 import { leaveBalance } from '@hbcfield/shared/client';
 import { balanceRows, carryNote, leaveYearLabel, readLeaveBalance, signedDays } from '../leave-balance';
-import { balancePreview } from '../../components/requests/request-model';
+import { balancePreview } from '../../features/requests/request-model';
 
 /** Mark's year from the approved mockup: 25, −10 before HBCField, +2 carried, −3 taken = 14. */
 const mark = leaveBalance({

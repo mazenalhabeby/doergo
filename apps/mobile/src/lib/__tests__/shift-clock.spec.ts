@@ -9,10 +9,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { AttendanceStatus, BreakStatus, TimeEntry } from '@hbcfield/shared/client';
-import { readShiftState, scheduleFor, heroParts, budgetParts } from '../../components/home/shift-state';
-import { readClockOut, AWAY_METRES } from '../../components/home/clock-out-state';
+import { readShiftState, scheduleFor, heroParts, budgetParts } from '../../features/home/shift-state';
+import { readClockOut, AWAY_METRES } from '../../features/home/clock-out-state';
 import { formatDistance } from '@hbcfield/shared/client';
-import { lookFor, offeredTo, readThread, severityShown, severityTone, unreadFor, groupIssues } from '../../components/home/issue-status';
+import { lookFor, offeredTo, readThread, severityShown, severityTone, unreadFor, groupIssues } from '../../features/home/issue-status';
 import type { ShiftIssue, ShiftIssueStatus } from '../../lib/api/shift-issues';
 import { shiftCard } from './shift-card-files';
 import { readSource } from '../../test-utils/read-source';
@@ -204,10 +204,10 @@ describe('§1 — the eight states, and no ninth', () => {
 
       It lives in `home/remember/` now, because every widget has this shape.
     */
-    const store = code('home/remember/store.ts');
-    const hook = code('home/remember/use-remembered.ts');
+    const store = code('features/home/remember/store.ts');
+    const hook = code('features/home/remember/use-remembered.ts');
     const shift = code('offline/attendance/use-shift.ts') + code('offline/attendance/load-shift.ts');
-    const totals = code('components/home/use-schedule-totals.ts');
+    const totals = code('features/home/use-schedule-totals.ts');
 
     // A store that exists on every build — not the offline database.
     expect(store).toMatch(/@react-native-async-storage\/async-storage/);
@@ -264,8 +264,8 @@ describe('§1 — the eight states, and no ninth', () => {
       card frame read `Ready to start` and the next read `DONE FOR TODAY`.
       After, three cold starts produced no `Ready to start` frame at all.
     */
-    const totals = code('components/home/use-schedule-totals.ts');
-    const hook = code('home/remember/use-remembered.ts');
+    const totals = code('features/home/use-schedule-totals.ts');
+    const hook = code('features/home/remember/use-remembered.ts');
     const card = shiftCard(code);
 
     // "Nothing ended today" and "not told yet" are the same null — hence `ready`.
@@ -283,7 +283,7 @@ describe('§1 — the eight states, and no ninth', () => {
   });
 
   it('has exactly the six kinds the states collapse to, and no more', () => {
-    const src = read('components/home/shift-state.ts');
+    const src = read('features/home/shift-state.ts');
     const union = src.slice(src.indexOf('export type ShiftStateKind'), src.indexOf('export type ScheduleKind'));
     const kinds = [...union.matchAll(/\| '([a-zA-Z]+)'/g)].map((m) => m[1]).sort();
     expect(kinds).toEqual(['before', 'done', 'restOverdue', 'resting', 'unconfirmed', 'working']);
@@ -362,7 +362,7 @@ describe('§2 — three kinds of worker', () => {
       `/attendance/reports/*` all require `canViewSpaceAttendance`. So the month
       is fetched ONCE and kept, and the component re-reads a number.
     */
-    const hook = code('components/home/use-schedule-totals.ts');
+    const hook = code('features/home/use-schedule-totals.ts');
     expect(hook).toMatch(/getHistory\(/);
     /*
       The asking-once guard lives in `useRemembered` now — one implementation
@@ -370,7 +370,7 @@ describe('§2 — three kinds of worker', () => {
       the question, so a phone left open across midnight re-asks on its own.
     */
     expect(hook).toMatch(/revision: `\$\{iso\(startOfMonth\(now\)\)\}\|\$\{iso\(startOfWeek\(now\)\)\}/);
-    expect(code('home/remember/use-remembered.ts')).toMatch(/askedFor\.current === key/);
+    expect(code('features/home/remember/use-remembered.ts')).toMatch(/askedFor\.current === key/);
     // And never for somebody who will not see it.
     /*
       A FIXED member on the clock is measured against TODAY, which comes off
@@ -452,7 +452,7 @@ describe('§9 — the twelve rules', () => {
   });
 
   it('8 · Report\'s primary is jade, and severity is neutral below HIGH', () => {
-    const form = code('components/issues/report-issue-sheet.tsx');
+    const form = code('features/issues/report-issue-sheet.tsx');
     /*
       ⚠️ Red means destructive. A member unsure whether to report already
       hesitates; a red button confirms the hesitation. The PRIMARY is jade —
@@ -521,8 +521,8 @@ describe('§9 — the twelve rules', () => {
     } as unknown as ShiftIssue;
     expect(unreadFor(issue, 'me')).toBe(1);
     expect(unreadFor({ id: 'x' } as ShiftIssue, 'me')).toBe(0);
-    expect(code('components/issues/my-issues-sheet.tsx')).toMatch(/unreadFor\(/);
-    expect(code('components/issues/my-issues-sheet.tsx')).not.toMatch(/eventCount/);
+    expect(code('features/issues/my-issues-sheet.tsx')).toMatch(/unreadFor\(/);
+    expect(code('features/issues/my-issues-sheet.tsx')).not.toMatch(/eventCount/);
   });
 
   it('11 · the reporter does not Acknowledge, and cannot Resolve either', () => {
@@ -560,7 +560,7 @@ describe('§9 — the twelve rules', () => {
     expect(offeredTo({ issue: { ...mine, status: 'RESOLVED' }, viewerId: 'me', canManage: true }))
       .toEqual({ ...none, reopen: true });
 
-    const thread = code('components/issues/issue-thread-sheet.tsx');
+    const thread = code('features/issues/issue-thread-sheet.tsx');
     // ⚠️ Every ending is a text link, not a button beside the reply.
     for (const key of ['issues.markResolved', 'issues.withdraw', 'issues.reopen']) {
       const at = thread.indexOf(key);
@@ -624,7 +624,7 @@ describe('§9 — the twelve rules', () => {
     const created = read[0];
     expect(created.kind === 'note' && created.reason).toBe('Second rung is split.');
 
-    const sheet = code('components/issues/issue-thread-sheet.tsx');
+    const sheet = code('features/issues/issue-thread-sheet.tsx');
     expect(sheet).toMatch(/readThread\(thread\)/);
     // ⚠️ The description is gone from the header — it is the first line of the trail.
     expect(sheet).not.toMatch(/\{issue\.description\}/);
@@ -679,7 +679,7 @@ describe('§9 — the twelve rules', () => {
       it was live in the worklog sheet and in the issue thread's own lightbox.
     */
     const jsx = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '');
-    for (const f of ['components/issues/issue-thread-sheet.tsx', 'components/worklog-sheet.tsx']) {
+    for (const f of ['features/issues/issue-thread-sheet.tsx', 'features/worklog/worklog-sheet.tsx']) {
       const src = read(f);
       // `JobSheet` IS the BlurSheet slot, in the design system's clothes.
       expect(src).toMatch(/BlurSheet|JobSheet/);
@@ -695,21 +695,21 @@ describe('§9 — the twelve rules', () => {
       decide who is told.
     */
     for (const f of [
-      'components/issues/report-issue-sheet.tsx',
-      'components/issues/my-issues-sheet.tsx',
-      'components/issues/issue-thread-sheet.tsx',
+      'features/issues/report-issue-sheet.tsx',
+      'features/issues/my-issues-sheet.tsx',
+      'features/issues/issue-thread-sheet.tsx',
     ]) {
       const src = code(f);
       expect(src).not.toMatch(/watchers|assignedLocations|adminsOf|routeTo/);
     }
     // The name comes from the server's own answer, or it is not said.
-    expect(code('components/issues/report-issue-sheet.tsx')).toMatch(/issue\?\.assigneeName/);
+    expect(code('features/issues/report-issue-sheet.tsx')).toMatch(/issue\?\.assigneeName/);
   });
 });
 
 // ── §5 · Sent, and offline ───────────────────────────────────────────────
 describe('§5 — Sent, a state that did not exist', () => {
-  const form = code('components/issues/report-issue-sheet.tsx');
+  const form = code('features/issues/report-issue-sheet.tsx');
 
   it('lands on an acknowledgement instead of closing silently', () => {
     expect(form).toMatch(/const \[sent, setSent\]/);
@@ -771,7 +771,7 @@ describe('§8 — the two live contrast bugs', () => {
 
 // ── the widget, as a registry row ────────────────────────────────────────
 describe('the shift clock is a row', () => {
-  const registry = code('home/registry.tsx');
+  const registry = code('features/home/registry.tsx');
 
   it('is registered, on glass, and asks the same module the tab bar asks', () => {
     expect(registry).toMatch(/key: 'shift-clock'/);
@@ -788,7 +788,7 @@ describe('the shift clock is a row', () => {
 
 // ── §11 · the clock-out sheet ────────────────────────────────────────────
 describe('§11 — the clock-out sheet', () => {
-  const sheet = code('components/clock-out-sheet.tsx');
+  const sheet = code('features/time/clock-out-sheet.tsx');
   // The button and the Cancel line are the shared shift-sheet footer.
   const footer = code('components/sheet-confirm-footer.tsx');
   const card = shiftCard(code);
@@ -852,7 +852,7 @@ describe('§11 — the clock-out sheet', () => {
     */
     expect(sheet).not.toMatch(/new Date\(\)/);
     expect(card).toMatch(/setClockOutAt\(new Date\(\)\)/);
-    expect(code('home/../components/home/clock-out-state.ts')).toMatch(/clockOutAt: Date;/);
+    expect(code('features/home/clock-out-state.ts')).toMatch(/clockOutAt: Date;/);
   });
 
   it('5 · the hero is the card\'s own figure, in the card\'s own setting', () => {
@@ -937,7 +937,7 @@ describe('§11 — the clock-out sheet', () => {
 });
 
 describe('the totals, and two silent ways they were always zero', () => {
-  const hook = code('components/home/use-schedule-totals.ts');
+  const hook = code('features/home/use-schedule-totals.ts');
 
   it('reads the BARE ARRAY the endpoint actually returns', () => {
     /*
@@ -972,7 +972,7 @@ describe('the totals, and two silent ways they were always zero', () => {
 
       It is `useRemembered`'s job now, so every widget gets it.
     */
-    expect(code('home/remember/use-remembered.ts'))
+    expect(code('features/home/remember/use-remembered.ts'))
       .toMatch(/if \(!alive && askedFor\.current === key\) askedFor\.current = '';/);
   });
 
@@ -996,8 +996,8 @@ describe('one clock for the whole feature', () => {
     */
     for (const src of [
       shiftCard(code),
-      code('components/clock-out-sheet.tsx'),
-      code('components/issues/issue-thread-sheet.tsx'),
+      code('features/time/clock-out-sheet.tsx'),
+      code('features/issues/issue-thread-sheet.tsx'),
     ]) {
       expect(src).not.toMatch(/toLocaleTimeString/);
       expect(src).toMatch(/clockOf/);
@@ -1007,7 +1007,7 @@ describe('one clock for the whole feature', () => {
 });
 
 describe('the Break disc asks which kind, and never insists', () => {
-  const sheet = code('components/break-sheet.tsx');
+  const sheet = code('features/time/break-sheet.tsx');
   const card = shiftCard(code);
 
   it('offers the three, and the button works with none picked', () => {

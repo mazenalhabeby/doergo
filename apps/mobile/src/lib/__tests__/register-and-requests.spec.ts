@@ -3,8 +3,8 @@
  * rows, how a request's stage is read, and who "has it" says.
  */
 import { manageRowsFor } from '../manage-rows';
-import { stageOf } from '../../components/client-requests/request-stage';
-import { holderName } from '../../components/register/register-words';
+import { stageOf } from '../../features/client-requests/request-stage';
+import { holderName } from '../../features/register/register-words';
 
 const labels = (u: unknown) => manageRowsFor(u as never).map((r) => r.labelKey);
 

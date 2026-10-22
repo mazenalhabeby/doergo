@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, FONT_SIZE, type ThemeColors } from '../../src/lib/constants';
 import { passwordApi } from '../../src/lib/api/auth';
-import { PortalField, PortalFormScreen, portalFormStyles } from '../../src/components/customer/portal-form';
+import { PortalField, PortalFormScreen, portalFormStyles } from '../../src/features/customer/portal-form';
 
 export default function ChangePassword() {
   const router = useRouter();

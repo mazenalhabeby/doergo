@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SocketEvents, type SupportTicket } from '@hbcfield/shared/client';
-import { appendMessage, debounce, isPlaceable } from '../../src/components/chat/live-thread';
+import { appendMessage, debounce, isPlaceable } from '../../src/features/chat/live-thread';
 import { useAppResume } from '../../src/lib/app-resume';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useSocketContext } from '../../src/contexts/socket-context';
@@ -23,8 +23,8 @@ import { ScreenContainer, ScreenHeader, goBack as leaveScreen } from '../../src/
 import { supportApi, type SupportConfig } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import { useQueuedCreate } from '../../src/offline/actions/queued-create';
-import { useSupportScreen } from '../../src/screens/app/use-support-screen';
-import { TicketRow, SupportBubble, styles } from '../../src/screens/app/support-screen-helpers';
+import { useSupportScreen } from '../../src/features/support/use-support-screen';
+import { TicketRow, SupportBubble, styles } from '../../src/features/support/support-screen-helpers';
 
 export default function SupportScreen() {
   const {

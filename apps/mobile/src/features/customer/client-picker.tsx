@@ -1,0 +1,197 @@
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import { clientFilterQuery, type ClientKind } from '@hbcfield/shared/client';
+import { PressableScale } from '../../components/pressable-scale';
+import { Skeleton } from '../../components/skeleton';
+import { ClientAvatar } from './client-avatar';
+import { customersApi, type MobileCustomer } from '../../lib/api';
+import { useTheme } from '../../contexts/theme-context';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '../../lib/constants';
+import { SEARCH_DEBOUNCE_MS, MIN_SEARCH, RESULT_LIMIT, PickerRow, styles } from './picker-row';
+
+/**
+ * FIND SOMEBODY WHO IS ALREADY IN THE BOOK.
+ *
+ * ⚠️ This exists to stop a SECOND record for one human being. Without it the
+ * only way to name a contact is to type them, so the person who is already a
+ * client — with their history, their reminders and their jobs — quietly gains a
+ * twin, and the two halves of what is known about them never meet again. That
+ * is the damage; the convenience is incidental.
+ *
+ * ⚠️ The SERVER is asked for the right kind, through `clientFilterQuery` in
+ * shared rather than a hand-written `type=` — filtering a fetched page instead
+ * would narrow a list that was already capped at eight, so "companies" would
+ * quietly mean "the companies among the first eight clients by name".
+ *
+ * ⚠️ Contacts are INCLUDED (`contacts: 'all'`). Somebody who already contacts
+ * another company is exactly who is being looked for, and hiding them is how
+ * the duplicate this component exists to prevent gets created anyway. A row
+ * that IS already a contact says where — see `contactOf`.
+ *
+ * ⚠️ No client-side widening of any kind. `GET /customers` is already scoped to
+ * the caller's own CRM abilities server-side, so what comes back IS their
+ * visible book; a filter added here could only make the list stricter than the
+ * rule it mirrors, which is the failure this codebase keeps re-learning.
+ */
+export function ClientPicker({
+  /** What to search FOR — the OPPOSITE end of the link being made. */
+  kind,
+  /**
+   * The record the picker was opened from.
+   *
+   * Dropped from the results: the server refuses a client as its own contact,
+   * so offering it can only produce a refusal for something nobody meant.
+   */
+  excludeId,
+  selectedId,
+  onSelect,
+  includeOtherKind = false,
+  initialSearch = '',
+}: {
+  kind: ClientKind;
+  excludeId: string;
+  selectedId: string | null;
+  onSelect: (client: MobileCustomer) => void;
+  /**
+   * Search the WHOLE book, not only records of `kind`.
+   *
+   * ⚠️ A real book files firms as PERSON all the time — "BILLA AG",
+   * "Siemens AG" — because the Company/Person toggle is an afterthought when
+   * somebody is entering a client in a hurry. Asking the server for
+   * `type=COMPANY` then hides exactly the companies being looked for. Where the
+   * member is choosing freely rather than filling one side of a typed link,
+   * that filter costs more than it buys; `kind` still decides the wording, so
+   * the sheet still says what it is asking for.
+   */
+  includeOtherKind?: boolean;
+  /**
+   * What to search for before the member types anything.
+   *
+   * The card scanner passes the company the reader found, so the shortlist is
+   * already on screen when the sheet opens. Read once, on mount: re-seeding
+   * would fight whatever the member has since typed.
+   */
+  initialSearch?: string;
+}) {
+  const { colors } = useTheme();
+  const s = useMemo(() => styles(colors), [colors]);
+  const { t } = useTranslation();
+
+  const [search, setSearch] = useState(initialSearch);
+  const [results, setResults] = useState<MobileCustomer[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  /*
+    WHICH ANSWER IS STILL THE CURRENT QUESTION.
+
+    ⚠️ Every request carries a number and only the newest one is allowed to
+    write state. Typing "sie" fires after "si" and the two answers race: on a
+    slow connection the shorter query's longer list arrives last and overwrites
+    the narrower one, so the member watches their search visibly UN-narrow
+    itself as they type. The stale answer is discarded rather than aborted
+    (`customersApi.list` takes no signal), which costs the same on screen.
+
+    It doubles as the unmount guard: the counter is bumped on the way out, so a
+    reply landing after the sheet closes writes nothing.
+  */
+  const seq = useRef(0);
+
+  useEffect(() => () => { seq.current += 1; }, []);
+
+  const query = search.trim();
+
+  useEffect(() => {
+    if (query.length < MIN_SEARCH) {
+      // Not a search yet: clear what the last one found rather than leaving a
+      // stale shortlist under a field that no longer says what produced it.
+      seq.current += 1;
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+    const mine = ++seq.current;
+    setLoading(true);
+    const timer = setTimeout(() => {
+      void (async () => {
+        try {
+          const rows = await customersApi.list({
+            search: query,
+            limit: RESULT_LIMIT,
+            // The two parameters the server reads, built in shared. `contacts`
+            // is set on top of the kind because no single filter says both.
+            ...clientFilterQuery(includeOtherKind ? 'all' : kind === 'COMPANY' ? 'companies' : 'people'),
+            contacts: 'all',
+            portalResident: false,
+          });
+          if (seq.current !== mine) return;
+          setResults(rows.filter((r) => r.id !== excludeId));
+        } catch {
+          // A failed search shows nothing found rather than an error banner: the
+          // way out is the same either way — type again, or create them.
+          if (seq.current === mine) setResults([]);
+        } finally {
+          if (seq.current === mine) setLoading(false);
+        }
+      })();
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [query, kind, excludeId, includeOtherKind]);
+
+  const findLabel = t(kind === 'COMPANY' ? 'customers.record.findCompany' : 'customers.record.findPerson');
+
+  return (
+    <View>
+      <Text style={s.label}>{findLabel}</Text>
+      <View style={s.searchBar}>
+        <Ionicons name="search" size={17} color={colors.textMuted} />
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder={t(kind === 'COMPANY' ? 'customers.record.findCompanyHint' : 'customers.record.findPersonHint')}
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="none"
+          autoCorrect={false}
+          style={s.searchInput}
+          accessibilityLabel={findLabel}
+        />
+        {!!search && (
+          <PressableScale
+            onPress={() => setSearch('')}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.clear', 'Clear')}
+          >
+            <Ionicons name="close-circle" size={17} color={colors.textMuted} />
+          </PressableScale>
+        )}
+      </View>
+
+      {query.length < MIN_SEARCH ? (
+        <Text style={s.hint}>{t('customers.record.searchHint', { min: MIN_SEARCH })}</Text>
+      ) : loading ? (
+        <View style={s.loading}>
+          <Skeleton.Line width="100%" height={22} />
+          <Skeleton.Line width="70%" height={22} style={{ marginTop: SPACING.sm }} />
+        </View>
+      ) : results.length === 0 ? (
+        <Text style={s.hint}>
+          {t(kind === 'COMPANY' ? 'customers.record.noCompanyFound' : 'customers.record.noPersonFound')}
+        </Text>
+      ) : (
+        <View style={s.results}>
+          {results.map((r, i) => (
+            <PickerRow
+              key={r.id}
+              client={r}
+              selected={selectedId === r.id}
+              divider={i > 0}
+              onSelect={onSelect}
+            />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}

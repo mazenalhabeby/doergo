@@ -5,8 +5,8 @@
 import {
   balancePreview, describeRequest, draftToBody, hoursFact, kindEffectKey, kindLabelKey, legacyLabelMap,
   queuedRequestRow, splitLegacyReason, stepOvertime,
-} from '../../components/requests/request-model';
-import { datesWithStatus, timeOffStats } from '../../components/time-off/helpers';
+} from '../../features/requests/request-model';
+import { datesWithStatus, timeOffStats } from '../../features/time-off/helpers';
 
 const legacy = legacyLabelMap([
   ['VACATION', 'Vacation'], ['SICK', 'Sick Leave'], ['FAMILY', 'Family'], ['OTHER', 'Other'],

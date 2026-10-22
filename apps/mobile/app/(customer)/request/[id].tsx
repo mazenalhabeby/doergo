@@ -10,7 +10,7 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
 import { portalApi } from '../../../src/lib/api/portal';
 import { portalColor, portalTint, portalIcon } from '../../../src/lib/portal-ui';
-import { StatusPill } from '../../../src/components/customer/request-bits';
+import { StatusPill } from '../../../src/features/customer/request-bits';
 import { httpsUrl, openSafeUrl } from '../../../src/lib/safe-links';
 
 export default function RequestDetail() {

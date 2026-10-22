@@ -21,6 +21,6 @@ describe('the phone clocks in only where the server would take it', () => {
     const hook = src('hooks/useClockIn.ts');
     expect(hook).toMatch(/chooseClockInLocation\(clockable,/);
     expect(hook).toMatch(/locations: clockable,/);
-    expect(src('components/home/shift-clock-card.tsx')).toMatch(/clockableLocations\(status\?\.assignedLocations\)/);
+    expect(src('features/home/shift-clock-card.tsx')).toMatch(/clockableLocations\(status\?\.assignedLocations\)/);
   });
 });

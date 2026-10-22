@@ -1,10 +1,10 @@
 /**
  * A message on the socket is ADDED to what the screen holds, not reloaded —
- * chat and support (components/chat/live-thread.ts).
+ * chat and support (features/chat/live-thread.ts).
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { appendMessage, applyToConversations, bubbleShape, debounce, isPlaceable, markReadLocally } from '../../components/chat/live-thread';
+import { appendMessage, applyToConversations, bubbleShape, debounce, isPlaceable, markReadLocally } from '../../features/chat/live-thread';
 import { readSource } from '../../test-utils/read-source';
 
 const msg = (id: string, at: string, senderId = 'karim', conversationId = 'c1') =>
@@ -143,7 +143,7 @@ describe('the screens use it', () => {
   const read = (f: string) => readSource(path.join(ROOT, f), 'utf8');
   // [screen, where its live updates are applied] — chat's moved into its hook (use-chat-thread).
   it.each([
-    ['src/components/chat/chat-screen.tsx', 'src/components/chat/use-chat-thread.ts'],
+    ['src/features/chat/chat-screen.tsx', 'src/features/chat/use-chat-thread.ts'],
     ['app/(app)/support.tsx', 'app/(app)/support.tsx'],
   ])('%s: a virtualised, inverted thread and no reload per message', (screen, logic) => {
     const src = read(screen);

@@ -4,7 +4,7 @@ import { dateFromDayKey } from './log-dates';
 /**
  * The reminder half of the composer's draft, and the one calculation it does.
  *
- * Kept out of `components/customer/reminder-fields.tsx` so it can be tested:
+ * Kept out of `features/customer/reminder-fields.tsx` so it can be tested:
  * the mobile runner is deliberately React-Native-free and matches `.spec.ts`
  * only, so anything living in a `.tsx` component is verified by eye. The
  * local-time rule below is precisely the kind of thing eyes do not catch — it

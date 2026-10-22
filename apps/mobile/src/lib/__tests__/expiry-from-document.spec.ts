@@ -25,16 +25,16 @@ const stripComments = (s: string) =>
   together, so every assertion below holds of the whole flow — a check that
   moved out of the door is still checked.
 */
-const SHEET_DIR = path.join(MOBILE, 'src/components/supply-document');
+const SHEET_DIR = path.join(MOBILE, 'src/features/supply-document');
 const SHEET = [
-  path.join(MOBILE, 'src/components/supply-document-sheet.tsx'),
+  path.join(MOBILE, 'src/features/supply-document/supply-document-sheet.tsx'),
   ...fs.readdirSync(SHEET_DIR).filter((f) => /\.tsx?$/.test(f)).sort().map((f) => path.join(SHEET_DIR, f)),
 ];
-const DIALOG = path.join(
-  WEB,
-  'src/app/(dashboard)/my/documents/_components/supply-document-dialog.tsx',
+// The web dialog and its state hook (split by meaning in 5.2) — one screen.
+const DIALOG = ['supply-document-dialog.tsx', 'use-supply-document-dialog.ts'].map((f) =>
+  path.join(WEB, 'src/app/(dashboard)/my/documents/_components', f),
 );
-const SURFACES: [string, string[]][] = [['mobile', SHEET], ['web', [DIALOG]]];
+const SURFACES: [string, string[]][] = [['mobile', SHEET], ['web', DIALOG]];
 
 describe.each(SURFACES)('%s: the document is asked before the member is', (_name, files) => {
   const src = () => files.map((file) => stripComments(readSource(file, 'utf8'))).join('\n');

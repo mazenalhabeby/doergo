@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useProfileAvatar } from '../../lib/use-profile-avatar';
 import { AText } from './text';
-import { TourTarget } from '../tour/tour-target';
+import { TourTarget } from '../../features/tour/tour-target';
 import { type HeaderAction, Anchor, TitleAnchor } from './header-back';
 export { type HeaderAction, HeaderBack } from './header-back';
 

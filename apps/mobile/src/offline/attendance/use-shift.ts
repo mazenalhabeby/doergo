@@ -4,7 +4,7 @@ import { attendanceApi } from '../../lib/api/attendance';
 import type { ActionOutcome } from '../actions/outcome';
 import { useAuth } from '../../contexts/auth-context';
 import { useOffline, useSyncStatus } from '../offline-context';
-import { keptNow, keptOnDisk } from '../../home/remember/store';
+import { keptNow, keptOnDisk } from '../../features/home/remember/store';
 import { overlayShift, type ShiftView } from './shift-overlay';
 import {
   clockInFromPhone,

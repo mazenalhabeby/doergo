@@ -21,18 +21,18 @@ const LANGS = ['en', 'de', 'es', 'fr', 'it'] as const;
 const SOURCES = [
   'app/(app)/scan-card.tsx',
   // The route's own pieces, split out of it.
-  'src/components/scan-card/card-camera.tsx',
-  'src/components/scan-card/card-review-screen.tsx',
-  'src/components/scan-card/scan-card-copy.ts',
-  'src/components/scan-card/use-card-capture.ts',
-  'src/components/scan-card/use-card-review.ts',
-  'src/components/scan-card/use-card-save-flow.ts',
-  'src/components/customer/card-destination.tsx',
-  'src/components/customer/card-duplicate.tsx',
-  'src/components/customer/card-field-row.tsx',
+  'src/features/scan-card/card-camera.tsx',
+  'src/features/scan-card/card-review-screen.tsx',
+  'src/features/scan-card/scan-card-copy.ts',
+  'src/features/scan-card/use-card-capture.ts',
+  'src/features/scan-card/use-card-review.ts',
+  'src/features/scan-card/use-card-save-flow.ts',
+  'src/features/customer/card-destination.tsx',
+  'src/features/customer/card-duplicate.tsx',
+  'src/features/customer/card-field-row.tsx',
   // What the card said that no field wanted. Added when the extras group was:
   // a source file missing from this list is a screenful of keys nobody checks.
-  'src/components/customer/card-extras.tsx',
+  'src/features/customer/card-extras.tsx',
 ];
 
 /*

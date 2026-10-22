@@ -7,7 +7,7 @@ import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
 import { FONT_SIZE } from '../../src/lib/constants';
 import { userApi } from '../../src/lib/api/auth';
-import { PortalField, PortalFormScreen, portalFormStyles } from '../../src/components/customer/portal-form';
+import { PortalField, PortalFormScreen, portalFormStyles } from '../../src/features/customer/portal-form';
 
 export default function EditProfile() {
   const router = useRouter();

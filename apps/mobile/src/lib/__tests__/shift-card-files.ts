@@ -12,15 +12,15 @@ import * as path from 'path';
 
 const SRC = path.resolve(__dirname, '../..');
 
-export const SHIFT_CARD = 'components/home/shift-clock-card.tsx';
+export const SHIFT_CARD = 'features/home/shift-clock-card.tsx';
 
 /** Paths relative to `src/`, entry file first. */
 export const SHIFT_CARD_FILES = [
   SHIFT_CARD,
-  ...fs.readdirSync(path.join(SRC, 'components/home/shift-clock'))
+  ...fs.readdirSync(path.join(SRC, 'features/home/shift-clock'))
     .filter((f) => /\.tsx?$/.test(f))
     .sort()
-    .map((f) => `components/home/shift-clock/${f}`),
+    .map((f) => `features/home/shift-clock/${f}`),
 ];
 
 /** Every file of the card, read with the spec's own reader, as one text. */

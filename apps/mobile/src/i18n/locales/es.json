@@ -800,7 +800,7 @@
     "rest": {
       "title": "Descansos",
       "onRest": "En descanso",
-      "unpaid": "no computa",
+      "notCounted": "no computa",
       "untimed": "Sin duración fijada",
       "ofTotal": "de {{total}}",
       "overBy": "{{over}} más de sus {{total}}",

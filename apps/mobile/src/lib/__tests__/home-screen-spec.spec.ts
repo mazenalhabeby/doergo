@@ -10,7 +10,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { move, hide, show, onHome, offHome, canMove } from '../../home/arrange-list';
+import { move, hide, show, onHome, offHome, canMove } from '../../features/home/arrange-list';
 import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
@@ -23,12 +23,12 @@ const L = { keys: ['a', 'b', 'c', 'd'], hidden: ['c'] };
 
 describe('rule 1 — edit in place. No arrange screen, no list of names', () => {
   it('has no arrange sheet and no hand-written drag layer', () => {
-    expect(fs.existsSync(path.join(SRC, 'components/home/arrange-sheet.tsx'))).toBe(false);
+    expect(fs.existsSync(path.join(SRC, 'features/home/arrange-sheet.tsx'))).toBe(false);
     expect(fs.existsSync(path.join(SRC, 'components/amazen/arrangeable.tsx'))).toBe(false);
   });
 
   it('the home screen renders the widgets themselves, in a draggable list', () => {
-    const home = code('home/home-screen.tsx');
+    const home = code('features/home/home-screen.tsx');
     expect(home).toMatch(/from 'react-native-draggable-flatlist'/);
     expect(home).toMatch(/<DraggableFlatList/);
     expect(home).toMatch(/<EditableWidget/);
@@ -36,7 +36,7 @@ describe('rule 1 — edit in place. No arrange screen, no list of names', () => 
 });
 
 describe('rule 2 — drag the card, never a row', () => {
-  const card = code('components/home/editable-widget.tsx');
+  const card = code('features/home/editable-widget.tsx');
 
   it('renders the widget itself, not a label', () => {
     expect(card).toMatch(/<row\.Component \/>/);
@@ -49,7 +49,7 @@ describe('rule 2 — drag the card, never a row', () => {
   });
 
   it('§7 — uses the two decorators the design names, and no rotation', () => {
-    const home = code('home/home-screen.tsx');
+    const home = code('features/home/home-screen.tsx');
     expect(home).toMatch(/<ScaleDecorator activeScale=\{LIFT_FACTOR\}/);
     expect(home).toMatch(/<ShadowDecorator/);
     // ⚠️ Neither platform tilts a dragged card.
@@ -70,11 +70,11 @@ describe('rule 2 — drag the card, never a row', () => {
   });
 
   it('§7 — sets an activation distance, so the iOS back-swipe still works', () => {
-    expect(code('home/home-screen.tsx')).toMatch(/activationDistance=\{\d+\}/);
+    expect(code('features/home/home-screen.tsx')).toMatch(/activationDistance=\{\d+\}/);
   });
 
   it('§3 — auto-scrolls within 60pt of an edge', () => {
-    expect(code('home/home-screen.tsx')).toMatch(/autoscrollThreshold=\{60\}/);
+    expect(code('features/home/home-screen.tsx')).toMatch(/autoscrollThreshold=\{60\}/);
   });
 
   it('§3 — the gap is a dashed jade slot', () => {
@@ -86,14 +86,14 @@ describe('rule 2 — drag the card, never a row', () => {
 
 describe('rule 3 — previews are the real component, never a screenshot', () => {
   it('the empty home renders the component at .42, inert', () => {
-    const empty = code('components/home/empty-home.tsx');
+    const empty = code('features/home/empty-home.tsx');
     expect(empty).toMatch(/<row\.Component \/>/);
     expect(empty).toMatch(/opacity: 0\.42/);
     expect(empty).toMatch(/pointerEvents="none"/);
   });
 
   it('the gallery renders the real component (scaled to fit), inert', () => {
-    const gallery = code('components/home/widget-gallery.tsx');
+    const gallery = code('features/home/widget-gallery.tsx');
     expect(gallery).toMatch(/<row\.Component \/>/);
     expect(gallery).toMatch(/pointerEvents="none"/);
     expect(gallery).not.toMatch(/Image|require\(/);
@@ -109,13 +109,13 @@ describe('rule 4 — two suggestions, and only ones whose data arrived', () => {
       ready third one sat unused. §1 asks for two, and for only ones whose data
       arrived: that is a filter then a take, not a take then a filter.
     */
-    const home = code('home/home-screen.tsx');
+    const home = code('features/home/home-screen.tsx');
     const at = home.indexOf('const suggestions');
     expect(at).toBeGreaterThan(-1);
     const block = home.slice(at, at + 500);
     expect(block.indexOf('.filter(')).toBeLessThan(block.indexOf('.slice(0, 2)'));
     // And the child renders what it is given rather than choosing again.
-    expect(code('components/home/empty-home.tsx')).not.toMatch(/\.slice\(0, 2\)/);
+    expect(code('features/home/empty-home.tsx')).not.toMatch(/\.slice\(0, 2\)/);
   });
 
   it('offers no buttons when there is nothing behind them', () => {
@@ -124,12 +124,12 @@ describe('rule 4 — two suggestions, and only ones whose data arrived', () => {
       opens an empty sheet, offering a choice that does not exist. A member
       whose entitlement grants them no widget at all is a real case.
     */
-    expect(code('components/home/empty-home.tsx')).toMatch(/totalAvailable === 0 \? null/);
+    expect(code('features/home/empty-home.tsx')).toMatch(/totalAvailable === 0 \? null/);
   });
 
   it('drops a suggestion with no live answer rather than showing "loading"', () => {
     // The filter moved to where the choosing happens — see the test above.
-    expect(code('home/home-screen.tsx')).toMatch(/s\.line !== null/);
+    expect(code('features/home/home-screen.tsx')).toMatch(/s\.line !== null/);
   });
 
   it('one hook answers for every widget, and nothing in it fetches', () => {
@@ -145,11 +145,11 @@ describe('rule 4 — two suggestions, and only ones whose data arrived', () => {
       gallery — so a value that cost a request would fire one round trip per
       widget the member does not have, every time the sheet opens.
     */
-    const answers = code('home/answers.ts');
+    const answers = code('features/home/answers.ts');
     expect(answers).toMatch(/export function useWidgetAnswers\(\)/);
     expect(answers).not.toMatch(/Api\.|fetch\(|axios/);
 
-    const home = code('home/home-screen.tsx');
+    const home = code('features/home/home-screen.tsx');
     expect(home).toMatch(/const answers = useWidgetAnswers\(\);/);
     // The screen looks a widget up. It never names one.
     expect(home).toMatch(/answerFor\(answers, row\.key\)/);
@@ -163,14 +163,14 @@ describe('rule 4 — two suggestions, and only ones whose data arrived', () => {
       them one because they are up to date, are two different mistakes with the
       same symptom — so `ready` is its own field.
     */
-    const answers = code('home/answers.ts');
+    const answers = code('features/home/answers.ts');
     expect(answers).toMatch(/ready: boolean;/);
     expect(answers).toMatch(/line: string \| null;/);
   });
 });
 
 describe('rule 5 — ⊖ is neutral, and removing deletes nothing', () => {
-  const card = code('components/home/editable-widget.tsx');
+  const card = code('features/home/editable-widget.tsx');
 
   it('never draws the remove badge in red', () => {
     const badge = card.slice(card.indexOf('function RemoveBadge'));
@@ -197,19 +197,19 @@ describe('rule 6 — new widgets land near the top, several in one visit', () =>
     closing the gallery on every Add meant one trip per widget.
   */
   it('lands under the first card, or after the one added before it', () => {
-    const hook = code('home/use-home-layout.ts');
+    const hook = code('features/home/use-home-layout.ts');
     expect(hook).toMatch(/const anchor = after \?\? rest\.find\(\(k\) => onHomeKeys\.has\(k\)\) \?\? null;/);
-    expect(code('home/home-screen.tsx')).toMatch(/onAdd=\{\(key, after\) => layout\.add\(key, after\)\}/);
+    expect(code('features/home/home-screen.tsx')).toMatch(/onAdd=\{\(key, after\) => layout\.add\(key, after\)\}/);
   });
 
   it('stays open while adding, and on Done rings every arrival in arrange mode', () => {
-    const home = code('home/home-screen.tsx');
+    const home = code('features/home/home-screen.tsx');
     expect(home).toMatch(/setPicking\(false\);[\s\S]{0,400}enterEdit\(\);\s*\n\s*land\(added\)/);
-    expect(code('components/home/editable-widget.tsx')).toMatch(
+    expect(code('features/home/editable-widget.tsx')).toMatch(
       /export const LANDED_MS = 30_000;/,
     );
     // The ring's clock lives with the mode it belongs to, and is cleaned up.
-    const editing = code('home/use-home-editing.ts');
+    const editing = code('features/home/use-home-editing.ts');
     expect(editing).toMatch(/setTimeout\(\(\) => setLanded\(\[\]\), LANDED_MS\)/);
     expect(editing).toMatch(/clearTimeout\(ring\.current\)/);
   });
@@ -217,7 +217,7 @@ describe('rule 6 — new widgets land near the top, several in one visit', () =>
 
 describe('rule 7 — entitlement decides membership, LAST, every render', () => {
   it('filters after the saved order', () => {
-    const hook = read('home/use-home-layout.ts');
+    const hook = read('features/home/use-home-layout.ts');
     const rows = hook.indexOf('const rows = useMemo');
     const ordered = hook.indexOf('const orderedKeys = useMemo');
     expect(ordered).toBeLessThan(rows);
@@ -231,7 +231,7 @@ describe('rule 7 — entitlement decides membership, LAST, every render', () => 
       every admin and every member whose profile was never configured, while
       the Clock TAB was shown to exactly those people.
     */
-    const ent = code('home/entitlement.ts');
+    const ent = code('features/home/entitlement.ts');
     expect(ent).toMatch(/hasAccessModule\(user as never, r\.module\)/);
     expect(ent).not.toMatch(/\bhasModule\(/);
   });
@@ -254,10 +254,10 @@ describe('rule 8 — a hidden key is never deleted from storage', () => {
       occupied; two copies is how one of them keeps a hidden key and the other
       loses it. Both go through `withVisibleOrder`.
     */
-    const list = code('home/arrange-list.ts');
+    const list = code('features/home/arrange-list.ts');
     expect(list).toMatch(/export function withVisibleOrder\(/);
     expect(list).toMatch(/visible\.has\(k\) \? ordered\[i\+\+\]/);
-    const hook = code('home/use-home-layout.ts');
+    const hook = code('features/home/use-home-layout.ts');
     expect(hook).toMatch(/withVisibleOrder\(orderedKeys, onHomeKeys, visibleKeys\)/);
     // `move` uses it too, rather than its own inline loop.
     expect(list).toMatch(/const keys = withVisibleOrder\(layout\.keys/);
@@ -272,7 +272,7 @@ describe('rule 9 — glass on three cards only', () => {
       the rule actually forbids is a FOURTH glass card, and that is what this
       asserts — true of an empty registry and true of a full one.
     */
-    const registry = code('home/registry.tsx');
+    const registry = code('features/home/registry.tsx');
     const rows = [...registry.matchAll(/key: '([^']+)',[\s\S]*?surface: '(glass|well)'/g)]
       .map((m) => ({ key: m[1], surface: m[2] }));
     const glass = rows.filter((r) => r.surface === 'glass').map((r) => r.key);
@@ -281,7 +281,7 @@ describe('rule 9 — glass on three cards only', () => {
 });
 
 describe('rule 10 — arrows are accessibilityActions, visible only to a reader', () => {
-  const card = code('components/home/editable-widget.tsx');
+  const card = code('features/home/editable-widget.tsx');
 
   it('every card carries the three actions', () => {
     expect(card).toMatch(/name: 'moveUp'/);
@@ -292,11 +292,11 @@ describe('rule 10 — arrows are accessibilityActions, visible only to a reader'
 
   it('draws them only when a screen reader is running', () => {
     expect(card).toMatch(/editing && screenReader \? \(\s*<Arrows/);
-    expect(code('home/home-screen.tsx')).toMatch(/useScreenReader\(\)/);
+    expect(code('features/home/home-screen.tsx')).toMatch(/useScreenReader\(\)/);
   });
 
   it('announces the RESULT, not the act', () => {
-    const home = code('home/home-screen.tsx');
+    const home = code('features/home/home-screen.tsx');
     expect(home).toMatch(/announce\(/);
     expect(home).toMatch(/position \$\{at\} of \$\{rows\.length\}/);
   });
@@ -322,7 +322,7 @@ describe('rule 10 — arrows are accessibilityActions, visible only to a reader'
 });
 
 describe('rule 11 — no placeholder is in the registry', () => {
-  const registry = code('home/registry.tsx');
+  const registry = code('features/home/registry.tsx');
 
   it('registers nothing that says "not built yet"', () => {
     expect(registry).not.toMatch(/placeholder\(/);
@@ -358,7 +358,7 @@ describe('rule 11 — no placeholder is in the registry', () => {
 
 describe('§3 — entering the mode moves nothing', () => {
   it('shrinks the card with a transform, never a layout animation', () => {
-    const card = code('components/home/editable-widget.tsx');
+    const card = code('features/home/editable-widget.tsx');
     expect(card).toMatch(/transform: \[\{ scale: shrink\.value \}\]/);
     expect(card).not.toMatch(/FadeIn|Layout|entering=/);
   });
@@ -374,11 +374,11 @@ describe('§3 — entering the mode moves nothing', () => {
       CONSTANT: one that appeared with edit mode would push the whole column
       down under the finger that had just opened it.
     */
-    const card = code('components/home/editable-widget.tsx');
+    const card = code('features/home/editable-widget.tsx');
     const overhangs = [...card.matchAll(/top: -(\d+)/g)].map((m) => Number(m[1]));
     expect(overhangs.length).toBeGreaterThan(0);
 
-    const home = code('home/home-screen.tsx');
+    const home = code('features/home/home-screen.tsx');
     const pad = home.match(/paddingTop: (\d+)/);
     expect(pad).not.toBeNull();
     expect(Number(pad![1])).toBeGreaterThanOrEqual(Math.max(...overhangs));
@@ -387,7 +387,7 @@ describe('§3 — entering the mode moves nothing', () => {
   });
 
   it('keeps ＋ and Done in the header, outside the list', () => {
-    const home = read('home/home-screen.tsx');
+    const home = read('features/home/home-screen.tsx');
     const header = home.indexOf('<ScreenHeader');
     const list = home.indexOf('<DraggableFlatList');
     expect(header).toBeLessThan(list);
@@ -431,15 +431,15 @@ describe('§5 — saved immediately, and nothing to confirm', () => {
       time, over the card below it. Its own words were also the only thing
       claiming the layout is on the account; it is on the phone.
     */
-    expect(fs.existsSync(path.join(SRC, 'components/home/saved-line.tsx'))).toBe(false);
-    const home = code('home/home-screen.tsx');
+    expect(fs.existsSync(path.join(SRC, 'features/home/saved-line.tsx'))).toBe(false);
+    const home = code('features/home/home-screen.tsx');
     expect(home).not.toMatch(/SavedLine|UNDO_MS|undoTo/);
     // And the before-picture the line needed is gone from the layout API too.
-    expect(code('home/use-home-layout.ts')).not.toMatch(/snapshot|restore/);
+    expect(code('features/home/use-home-layout.ts')).not.toMatch(/snapshot|restore/);
   });
 
   it('❌ no confirm dialog and ❌ no save button', () => {
-    const home = code('home/home-screen.tsx');
+    const home = code('features/home/home-screen.tsx');
     expect(home).not.toMatch(/ConfirmSheet|Alert\.alert/);
     expect(home).not.toMatch(/home\.edit\.save\b/);
   });
@@ -450,11 +450,11 @@ describe('§5 — saved immediately, and nothing to confirm', () => {
       mid-arrangement keeps their arrangement, which is the half of §5 that
       actually mattered.
     */
-    const home = code('home/home-screen.tsx');
+    const home = code('features/home/home-screen.tsx');
     expect(home).toMatch(/layout\.setOrder\(/);
     expect(home).toMatch(/layout\.hide\(/);
     expect(home).toMatch(/layout\.add\(/);
-    const hook = code('home/use-home-layout.ts');
+    const hook = code('features/home/use-home-layout.ts');
     for (const fn of ['setOrder', 'hide', 'add', 'move']) {
       const at = hook.indexOf(`const ${fn} =`);
       expect(at).toBeGreaterThan(-1);
@@ -465,8 +465,8 @@ describe('§5 — saved immediately, and nothing to confirm', () => {
 
 describe('§3 — the three taps', () => {
   it('impactLight on entering, selection on crossing, impactMedium on the drop', () => {
-    const home = code('home/home-screen.tsx');
-    expect(code('home/use-home-editing.ts')).toMatch(/impact\('light'\)/);
+    const home = code('features/home/home-screen.tsx');
+    expect(code('features/home/use-home-editing.ts')).toMatch(/impact\('light'\)/);
     expect(home).toMatch(/onPlaceholderIndexChange=\{selection\}/);
     expect(home).toMatch(/impact\('medium'\)/);
   });
@@ -477,7 +477,7 @@ describe('§3 — the three taps', () => {
       binary without it, and an Expo module that is missing throws at IMPORT —
       which would take the whole home screen down rather than cost it a buzz.
     */
-    expect(code('home/home-screen.tsx')).not.toMatch(/from 'expo-haptics'/);
+    expect(code('features/home/home-screen.tsx')).not.toMatch(/from 'expo-haptics'/);
     expect(code('lib/haptics.ts')).toMatch(/require\('expo-haptics'\)/);
   });
 });
@@ -499,13 +499,13 @@ describe('the copy the design refuses', () => {
   });
 
   it('draws no dashed "Add a widget" outline on the empty home', () => {
-    expect(code('components/home/empty-home.tsx')).not.toMatch(/dashed/);
+    expect(code('features/home/empty-home.tsx')).not.toMatch(/dashed/);
   });
 });
 
 describe('the render path — a column of live widgets, redrawn on every gesture', () => {
-  const home = code('home/home-screen.tsx');
-  const card = code('components/home/editable-widget.tsx');
+  const home = code('features/home/home-screen.tsx');
+  const card = code('features/home/editable-widget.tsx');
 
   it('memoizes the card, and gives it callbacks that survive a render', () => {
     /*
@@ -547,11 +547,11 @@ describe('the render path — a column of live widgets, redrawn on every gesture
       flash before their widgets appeared.
     */
     expect(home).toMatch(/layout\.loading \? EMPTY_ROWS : layout\.rows/);
-    expect(code('home/registry.tsx')).toMatch(/EMPTY_ROWS: readonly WidgetRow\[\] = Object\.freeze/);
+    expect(code('features/home/registry.tsx')).toMatch(/EMPTY_ROWS: readonly WidgetRow\[\] = Object\.freeze/);
   });
 
   it('never leaves a timer holding a setter for a screen that is gone', () => {
-    for (const f of ['home/home-screen.tsx', 'home/use-home-editing.ts']) {
+    for (const f of ['features/home/home-screen.tsx', 'features/home/use-home-editing.ts']) {
       const src = code(f);
       if (!/setTimeout\(/.test(src)) continue;
       expect(src).toMatch(/clearTimeout\(/);
@@ -569,7 +569,7 @@ describe('a widget the member is entitled to is always reachable', () => {
       in the gallery: registered and unreachable, with nothing on screen to say
       so.
     */
-    const hook = code('home/use-home-layout.ts');
+    const hook = code('features/home/use-home-layout.ts');
     expect(hook).toMatch(/available\.filter\(\(w\) => !onHomeKeys\.has\(w\.key\)\)/);
     expect(hook).not.toMatch(/available\.filter\(\(w\) => layout\.hidden\.includes/);
   });
@@ -577,13 +577,13 @@ describe('a widget the member is entitled to is always reachable', () => {
 
 describe('one rule, one place', () => {
   const HOME_FILES = [
-    'home/home-screen.tsx',
-    'home/use-home-layout.ts',
-    'home/use-home-editing.ts',
-    'home/answers.ts',
-    'components/home/editable-widget.tsx',
-    'components/home/empty-home.tsx',
-    'components/home/widget-gallery.tsx',
+    'features/home/home-screen.tsx',
+    'features/home/use-home-layout.ts',
+    'features/home/use-home-editing.ts',
+    'features/home/answers.ts',
+    'features/home/editable-widget.tsx',
+    'features/home/empty-home.tsx',
+    'features/home/widget-gallery.tsx',
   ];
 
   it('nobody but the registry knows how to render a widget\'s name', () => {
@@ -594,7 +594,7 @@ describe('one rule, one place', () => {
       path on somebody's home screen looks like a crash.
     */
     for (const f of HOME_FILES) expect(code(f)).not.toMatch(/t\(row\.title/);
-    expect(code('home/registry.tsx')).toMatch(/export function widgetTitle\(/);
+    expect(code('features/home/registry.tsx')).toMatch(/export function widgetTitle\(/);
   });
 
   it('the gallery measures the window as it is now, not as it was', () => {
@@ -603,7 +603,7 @@ describe('one rule, one place', () => {
       split view — leaves every page the width of the old orientation and the
       paging stops landing on a card.
     */
-    const gallery = code('components/home/widget-gallery.tsx');
+    const gallery = code('features/home/widget-gallery.tsx');
     expect(gallery).toMatch(/useWindowDimensions\(\)/);
     expect(gallery).not.toMatch(/Dimensions\.get/);
     // And one snapping rule, not two that disagree about how wide a page is.
@@ -613,7 +613,7 @@ describe('one rule, one place', () => {
 });
 
 describe('an empty column always offers the way out', () => {
-  const home = code('home/home-screen.tsx');
+  const home = code('features/home/home-screen.tsx');
 
   it('§1 is shown only when there is something to preview', () => {
     /*
@@ -637,7 +637,7 @@ describe('an empty column always offers the way out', () => {
       ONLY silent case is a member with nothing available at all — where the
       button would open an empty sheet, and saying so is the honest answer.
     */
-    const arrange = code('components/home/empty-arrange.tsx');
+    const arrange = code('features/home/empty-arrange.tsx');
     expect(arrange).toMatch(/totalAvailable > 0 \? \(/);
     expect(arrange).toMatch(/home\.edit\.add/);
     expect(arrange).toMatch(/home\.edit\.emptyNone/);
@@ -650,7 +650,7 @@ describe('an empty column always offers the way out', () => {
       is the same answer to the same question, so it is one component rather
       than two that drift.
     */
-    const arrange = code('components/home/empty-arrange.tsx');
+    const arrange = code('features/home/empty-arrange.tsx');
     expect(arrange).toContain("home.edit.emptyTitle");
     expect(arrange).toContain("home.nothingYet.title");
     expect(arrange).toMatch(/arranging/);
@@ -665,9 +665,9 @@ describe('an empty column always offers the way out', () => {
       dashed rectangle is already this screen's word for that: it is the drop
       target, drawn at its own weight rather than invented again.
     */
-    const arrange = code('components/home/empty-arrange.tsx');
-    const card = code('components/home/editable-widget.tsx');
-    expect(code('components/home/empty-home.tsx')).not.toMatch(/dashed/);
+    const arrange = code('features/home/empty-arrange.tsx');
+    const card = code('features/home/editable-widget.tsx');
+    expect(code('features/home/empty-home.tsx')).not.toMatch(/dashed/);
     for (const src of [arrange, card]) {
       expect(src).toMatch(/borderStyle: 'dashed'/);
       expect(src).toMatch(/borderWidth: 1\.5/);
@@ -677,7 +677,7 @@ describe('an empty column always offers the way out', () => {
 
   it('says nothing was lost, and only when something was', () => {
     // `hidden` is not `deleted`, and this is the one moment worth saying so.
-    expect(code('components/home/empty-arrange.tsx')).toMatch(/\{emptied \? \(/);
+    expect(code('features/home/empty-arrange.tsx')).toMatch(/\{emptied \? \(/);
     expect(home).toMatch(/emptied=\{layout\.offScreen\.length > 0 && editing\}/);
     const en = JSON.parse(read('i18n/locales/en.json'));
     expect(en.home.edit.emptied).toBe(
@@ -686,7 +686,7 @@ describe('an empty column always offers the way out', () => {
   });
 
   it('counts in every language with `count`, never an arbitrary `n`', () => {
-    expect(code('components/home/empty-arrange.tsx')).toMatch(/count: totalAvailable/);
+    expect(code('features/home/empty-arrange.tsx')).toMatch(/count: totalAvailable/);
     for (const lang of ['en', 'de', 'es', 'fr', 'it']) {
       const l = JSON.parse(read(`i18n/locales/${lang}.json`));
       for (const k of ['emptySub_one', 'emptySub_other', 'emptyTitle', 'emptyNone', 'emptied']) {

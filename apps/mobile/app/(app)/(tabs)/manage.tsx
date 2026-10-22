@@ -8,7 +8,7 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { ScreenContainer } from '../../../src/components';
 import { manageRowsFor } from '../../../src/lib/manage-rows';
 import { holds } from '../../../src/lib/permissions';
-import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../../../src/components/shift-issue-sheet';
+import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../../../src/features/time/shift-issue-sheet';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
 import { useTabSafe } from '../../../src/components/amazen';
 

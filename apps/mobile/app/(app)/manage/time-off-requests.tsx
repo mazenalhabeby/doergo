@@ -19,8 +19,8 @@ import {
   Well,
   useTabSafe,
 } from '../../../src/components/amazen';
-import { Initials, QuietButton } from '../../../src/components/job/job-ui';
-import { RequestRow, useRequestWords, type RequestRowData } from '../../../src/components/requests/request-parts';
+import { Initials, QuietButton } from '../../../src/features/job/job-ui';
+import { RequestRow, useRequestWords, type RequestRowData } from '../../../src/features/requests/request-parts';
 import { LoadingLine } from '../../../src/components/loading-line';
 import { refreshControl } from '../../../src/components/pull-refresh';
 import { useFetchData } from '../../../src/hooks/useFetchData';

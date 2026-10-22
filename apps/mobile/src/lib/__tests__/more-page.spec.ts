@@ -4,7 +4,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { splitTabs, tabAccessFor, tabVisible } from '../tab-layout';
-import { groupManageRows } from '../../components/more/more-groups';
+import { groupManageRows } from '../../features/more/more-groups';
 import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
@@ -67,10 +67,10 @@ describe('More is a page, not a popup', () => {
   });
   it('the bar and the page ask the same function', () => {
     expect(layout).toMatch(/tabVisible\(route\.name, access\)/);
-    expect(read('components/more/more-screen.tsx')).toMatch(/tabVisible\(n, access\)/);
+    expect(read('features/more/more-screen.tsx')).toMatch(/tabVisible\(n, access\)/);
   });
   it('the page uses the shared ground and header', () => {
-    const src = read('components/more/more-screen.tsx');
+    const src = read('features/more/more-screen.tsx');
     expect(src).toMatch(/<Ground/);
     expect(src).toMatch(/<ScreenHeader/);
   });

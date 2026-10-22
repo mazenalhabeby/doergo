@@ -10,18 +10,18 @@ import { TabPill } from '../../../src/components/amazen';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING } from '../../../src/lib/constants';
-import { TourTarget } from '../../../src/components/tour';
+import { TourTarget } from '../../../src/features/tour';
 import { hasManageSurface } from '../../../src/lib/manage-rows';
 import { useProfileAvatar } from '../../../src/lib/use-profile-avatar';
 import { initialOf } from '../../../src/lib/people';
 import { useChatBadge } from '../../../src/lib/chat-badge';
-import { useTabsLayout } from '../../../src/screens/app/tabs/use-tabs-layout';
+import { useTabsLayout } from '../../../src/features/app-shell/tabs/use-tabs-layout';
 import {
   HeaderLogo,
   ProfileButton,
   CustomTabBar,
   styles,
-} from '../../../src/screens/app/tabs/tabs-layout-helpers';
+} from '../../../src/features/app-shell/tabs/tabs-layout-helpers';
 
 export default function TabsLayout() {
   const {

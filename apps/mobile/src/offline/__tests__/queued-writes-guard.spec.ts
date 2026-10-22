@@ -37,12 +37,12 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     which needs the network anyway, so there is nothing to queue. Words alone
     go through the queue in the same hook.
   */
-  'src/components/chat/use-chat-thread.ts': {
+  'src/features/chat/use-chat-thread.ts': {
     calls: { 'chatApi.send': 2 },
     why: "a message with photos needs the network (uploaded first); the second call is the queue's own online fallback for words",
   },
   /*
-    The job page split into `src/components/job/` when it was rebuilt to
+    The job page split into `src/features/job/` when it was rebuilt to
     `docs/design/job-flow.html`. The status write stayed on the screen (one
     call, every step, Blocked and Cancel included — it was three); every other
     fallback moved with the code into the writes hook.
@@ -52,16 +52,16 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     why: FALLBACK,
   },
   // A crew on one job (offline/tasks/crew-actions.ts): the lead hand-over's direct path.
-  'src/components/job/use-crew.ts': {
+  'src/features/job/use-crew.ts': {
     calls: { 'tasksApi.changeLead': 1 },
     why: FALLBACK,
   },
   // The job's writes (use-job-writes.ts), split 2026-10-17 into these parts — the same calls, the same counts.
-  'src/components/job/use-job-writes-state.ts': {
+  'src/features/job/use-job-writes-state.ts': {
     calls: { 'tasksApi.addComment': 1 },
     why: FALLBACK,
   },
-  'src/components/job/use-job-writes-data.ts': {
+  'src/features/job/use-job-writes-data.ts': {
     calls: {
       'tasksApi.declineTask': 1,
       /*
@@ -74,7 +74,7 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     },
     why: FALLBACK,
   },
-  'src/components/job/use-job-writes-actions.ts': {
+  'src/features/job/use-job-writes-actions.ts': {
     calls: {
       // Paused at a clock-out: picking it back up, and the handover note.
       'tasksApi.resumeWork': 1,
@@ -86,12 +86,12 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     New job was rebuilt to `docs/design/job-flow.html`; the route is thin now
     and the send moved with the code into its hook — the same two calls.
   */
-  'src/components/new-job/use-create-job.ts': {
+  'src/features/new-job/use-create-job.ts': {
     calls: { 'tasksApi.create': 1, 'taskAttachmentsApi.confirmUpload': 1 },
     why: FALLBACK,
   },
   /*
-    The supply sheet split into `src/components/supply-document/`; its two
+    The supply sheet split into `src/features/supply-document/`; its two
     direct calls moved with the code, one per hook — the same two as before.
 
     The credential's is the no-offline-build fallback. The paper one is NOT:
@@ -102,11 +102,11 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     So it refuses while offline and says so, which is the honest answer for a
     flow that cannot work without a connection.
   */
-  'src/components/supply-document/use-credential-photo.ts': {
+  'src/features/supply-document/use-credential-photo.ts': {
     calls: { 'documentsApi.submitOwn': 1 },
     why: FALLBACK,
   },
-  'src/components/supply-document/use-paper-pages.ts': {
+  'src/features/supply-document/use-paper-pages.ts': {
     calls: { 'documentsApi.submitOwn': 1 },
     why: 'multi-sheet submit which cannot be queued — its pages must reach the store first',
   },
@@ -116,20 +116,20 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     through and calls nothing itself. The allowance moved with the code — the
     same two direct calls, in the two files that now make them.
   */
-  'src/components/issues/use-report-issue-sheet.ts': {
+  'src/features/issues/use-report-issue-sheet.ts': {
     // the sheet's logic, since the split
     calls: { 'shiftIssuesApi.create': 1, 'shiftIssuesApi.message': 1 },
     why: `${FALLBACK}. The photo message is posted AFTER create, because the S3 key is namespaced by the issue id`,
   },
-  'src/components/issues/use-shift-issue-thread-sheet.ts': { calls: { 'shiftIssuesApi.message': 1 }, why: FALLBACK },
-  'src/screens/app/use-asset-expense-screen.ts': { calls: { 'assetsApi.submitExpense': 1 }, why: FALLBACK }, // asset-expense's logic, since the split
-  'src/screens/app/use-asset-log-screen.ts': { calls: { 'assetsApi.createLog': 1 }, why: FALLBACK }, // asset-log's logic, since the split
-  'src/screens/app/use-send-document-screen.ts': { calls: { 'assetProposalsApi.raise': 1 }, why: FALLBACK },
+  'src/features/issues/use-shift-issue-thread-sheet.ts': { calls: { 'shiftIssuesApi.message': 1 }, why: FALLBACK },
+  'src/features/equipment/use-asset-expense-screen.ts': { calls: { 'assetsApi.submitExpense': 1 }, why: FALLBACK }, // asset-expense's logic, since the split
+  'src/features/equipment/use-asset-log-screen.ts': { calls: { 'assetsApi.createLog': 1 }, why: FALLBACK }, // asset-log's logic, since the split
+  'src/features/documents/use-send-document-screen.ts': { calls: { 'assetProposalsApi.raise': 1 }, why: FALLBACK },
   // One copy of a member's leave, shared by the Time off tab and the Time tab.
-  'src/components/time/use-my-time-off.ts': { calls: { 'timeOffApi.cancel': 1 }, why: FALLBACK },
-  'src/components/profile/use-profile-screen.ts': { calls: { 'userApi.setPresence': 1 }, why: FALLBACK },
+  'src/features/time/use-my-time-off.ts': { calls: { 'timeOffApi.cancel': 1 }, why: FALLBACK },
+  'src/features/profile/use-profile-screen.ts': { calls: { 'userApi.setPresence': 1 }, why: FALLBACK },
   // Time format and language: both pages live in one file now.
-  'src/components/settings/choice-pages.tsx': {
+  'src/features/settings/choice-pages.tsx': {
     calls: { 'userApi.setTimeFormat': 1, 'userApi.setLocale': 1, 'userApi.setClockInPick': 1 },
     why: FALLBACK,
   },
@@ -140,12 +140,12 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
   },
   // Same portal: its sync push is confined to portal requests, so a language change goes direct.
   // (The profile screen's logic moved to its hook in the 2026-10-17 line-length split.)
-  'src/screens/customer/tabs/use-customer-profile.ts': {
+  'src/features/customer/screens/tabs/use-customer-profile.ts': {
     calls: { 'userApi.setLocale': 1 },
     why: 'the customer portal has no outbox for profile changes',
   },
   // The work log's data moved out of the sheet so the Today card reads the same notes.
-  'src/components/worklog/use-worklog.ts': {
+  'src/features/worklog/use-worklog.ts': {
     calls: { 'worklogApi.addNote': 1, 'worklogApi.confirmAttachment': 1 },
     why: 'directSave: the legacy path for a build without the offline layer',
   },

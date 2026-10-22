@@ -22,7 +22,7 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
 import { portalApi } from '../../../src/lib/api/portal';
 import { resolveMediaUrl } from '../../../src/lib/api';
 import { initialOf } from '../../../src/lib/people';
-import { RequestRow } from '../../../src/components/customer/request-bits';
+import { RequestRow } from '../../../src/features/customer/request-bits';
 import { CountBadge } from '../../../src/components/amazen/count-badge';
 import {
   ReportGlyph,
@@ -30,9 +30,9 @@ import {
   ContactGlyph,
   AccountGlyph,
   CategoryGlyph,
-} from '../../../src/components/customer/portal-glyphs';
-import { useCustomerHome, type AccentKey } from '../../../src/screens/customer/tabs/use-customer-home';
-import { ACCENTS, styles } from '../../../src/screens/customer/tabs/customer-home-helpers';
+} from '../../../src/features/customer/portal-glyphs';
+import { useCustomerHome, type AccentKey } from '../../../src/features/customer/screens/tabs/use-customer-home';
+import { ACCENTS, styles } from '../../../src/features/customer/screens/tabs/customer-home-helpers';
 
 export default function CustomerHome() {
   const {

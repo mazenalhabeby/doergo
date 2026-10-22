@@ -37,7 +37,7 @@ it('reads the app (a sweep that matched nothing would pass everything)', () => {
 });
 
 describe('the card sheet (slide-sheet.tsx)', () => {
-  const callers = ['src/components/confirm-sheet.tsx', 'src/components/out-of-ring-sheet.tsx', 'src/components/always-location-sheet.tsx'];
+  const callers = ['src/components/confirm-sheet.tsx', 'src/features/time/out-of-ring-sheet.tsx', 'src/components/always-location-sheet.tsx'];
 
   it.each(callers)('%s draws through SlideSheet, with no Modal or animation of its own', (f) => {
     const src = read(f);
@@ -48,13 +48,13 @@ describe('the card sheet (slide-sheet.tsx)', () => {
   });
 
   it('the out-of-ring sheet still drops the keyboard on close and rides above it', () => {
-    const src = read('src/components/out-of-ring-sheet.tsx');
+    const src = read('src/features/time/out-of-ring-sheet.tsx');
     expect(src).toMatch(/useSlideSheet\(visible, \{ dismissKeyboard: true \}\)/);
     expect(src).toMatch(/<SlideSheet[^>]*\savoidKeyboard\b/);
   });
 
   it('the sheet caps match what each one had', () => {
-    expect(read('src/components/out-of-ring-sheet.tsx')).toMatch(/maxHeightFraction=\{0\.85\}/);
+    expect(read('src/features/time/out-of-ring-sheet.tsx')).toMatch(/maxHeightFraction=\{0\.85\}/);
     expect(read('src/components/always-location-sheet.tsx')).toMatch(/maxHeightFraction=\{0\.9\}/);
     expect(read('src/components/confirm-sheet.tsx')).not.toMatch(/maxHeightFraction/);
   });
@@ -64,30 +64,30 @@ describe('the card sheet (slide-sheet.tsx)', () => {
     expect(src).toMatch(/onPress=\{onCancel\}\s+disabled=\{isLoading\}/);
     expect(src).toMatch(/onPress=\{onConfirm\}\s+disabled=\{disabled\}/);
     // Out of ring: an empty reason greys it out, as before.
-    expect(read('src/components/out-of-ring-sheet.tsx')).toMatch(/disabled=\{!canConfirm \|\| isLoading\}/);
+    expect(read('src/features/time/out-of-ring-sheet.tsx')).toMatch(/disabled=\{!canConfirm \|\| isLoading\}/);
   });
 
   it('nobody else writes the slide-up spring out by hand (BlurSheet and the job page aside)', () => {
     expect(copiesOf(/damping: 25, stiffness: 200/, [
-      'src/components/slide-sheet.tsx', 'src/components/blur-sheet.tsx', 'src/components/job/job-page.tsx',
+      'src/components/slide-sheet.tsx', 'src/components/blur-sheet.tsx', 'src/features/job/job-page.tsx',
     ])).toEqual([]);
   });
 });
 
 describe('one copy of each small part', () => {
   it('the receipt line (ReceiptRow, job-ui)', () => {
-    expect(copiesOf(/fontSize: strong \? 16 : 13\.5/, ['src/components/job/job-ui.tsx', 'src/components/amazen/sheet-option.tsx'])).toEqual([]);
+    expect(copiesOf(/fontSize: strong \? 16 : 13\.5/, ['src/features/job/job-ui.tsx', 'src/components/amazen/sheet-option.tsx'])).toEqual([]);
   });
 
   it('the date tile (DateTileRow)', () => {
-    expect(copiesOf(/width: 44, height: 44, borderRadius: 14, backgroundColor: c\.tile/, ['src/components/time/date-tile-row.tsx'])).toEqual([]);
+    expect(copiesOf(/width: 44, height: 44, borderRadius: 14, backgroundColor: c\.tile/, ['src/features/time/date-tile-row.tsx'])).toEqual([]);
   });
 
   it('the month arrows (DayPickerTop)', () => {
-    expect(copiesOf(/\$\{months\?\.\[/, ['src/components/new-job/day-picker-parts.tsx'])).toEqual([]);
+    expect(copiesOf(/\$\{months\?\.\[/, ['src/features/new-job/day-picker-parts.tsx'])).toEqual([]);
   });
 
-  it.each(['src/components/clock-out-sheet.tsx', 'src/components/break-sheet.tsx'])('%s ends with the shift-sheet footer', (f) => {
+  it.each(['src/features/time/clock-out-sheet.tsx', 'src/features/time/break-sheet.tsx'])('%s ends with the shift-sheet footer', (f) => {
     const src = read(f);
     expect(src).toMatch(/<SheetConfirmFooter\b/);
     expect(src).not.toMatch(/shiftEnd\.notYet/);
@@ -96,9 +96,9 @@ describe('one copy of each small part', () => {
 
   it('the camera of a send-it-in screen (CaptureCamera)', () => {
     expect(copiesOf(/shutterInner/, [
-      'src/components/equipment/capture-camera.tsx',
+      'src/features/equipment/capture-camera.tsx',
       // Their own viewfinders, with a frame to fill — not this one.
-      'src/components/document-scanner.tsx', 'src/components/document-scanner-helpers.tsx', 'src/components/scan-card/card-camera.tsx',
+      'src/components/document-scanner.tsx', 'src/components/document-scanner-helpers.tsx', 'src/features/scan-card/card-camera.tsx',
     ])).toEqual([]);
   });
 
@@ -106,7 +106,7 @@ describe('one copy of each small part', () => {
     expect(copiesOf(/backgroundColor: c\.glass, borderWidth: 1, borderColor: c\.lineGlass, borderRadius: 16/, ['src/components/amazen/filter.tsx'])).toEqual([]);
   });
 
-  it.each(['src/components/people/members-screen.tsx', 'src/components/people/team-screen.tsx'])('%s draws no pill of its own', (f) => {
+  it.each(['src/features/people/members-screen.tsx', 'src/features/people/team-screen.tsx'])('%s draws no pill of its own', (f) => {
     expect(read(f)).not.toMatch(/backgroundColor: on \? c\.accentTint : c\.tile/);
   });
 });
@@ -123,12 +123,12 @@ describe('the parts kept what their callers relied on', () => {
   });
 
   it('only the New-job day sheet closes the months before this one', () => {
-    expect(read('src/components/new-job/when-sheets.tsx')).toMatch(/<DayPickerTop[\s\S]*?prevDisabled=\{atStart\}/);
-    expect(read('src/components/job/sheets/step-form-sheet.tsx')).not.toMatch(/prevDisabled/);
+    expect(read('src/features/new-job/when-sheets.tsx')).toMatch(/<DayPickerTop[\s\S]*?prevDisabled=\{atStart\}/);
+    expect(read('src/features/job/sheets/step-form-sheet.tsx')).not.toMatch(/prevDisabled/);
   });
 
   it('Members and Team keep their pills whole (ChoicePill, not the capped FilterPill)', () => {
-    for (const f of ['src/components/people/members-screen.tsx', 'src/components/people/team-screen.tsx']) {
+    for (const f of ['src/features/people/members-screen.tsx', 'src/features/people/team-screen.tsx']) {
       const src = read(f);
       expect(src).toMatch(/<ChoicePill\b/);
       expect(src).toMatch(/<GlassInput\b/);
@@ -140,7 +140,7 @@ describe('the parts kept what their callers relied on', () => {
     expect(choice.replace(/truncate \? \{ maxWidth: 220 \} : null/, '').replace(/numberOfLines=\{truncate \? 1 : undefined\}/, ''))
       .not.toMatch(/maxWidth|numberOfLines/);
     // …and Members and Team never ask for it.
-    for (const f of ['src/components/people/members-screen.tsx', 'src/components/people/team-screen.tsx']) {
+    for (const f of ['src/features/people/members-screen.tsx', 'src/features/people/team-screen.tsx']) {
       expect(read(f)).not.toMatch(/<ChoicePill\b[^>]*\btruncate\b/);
     }
   });

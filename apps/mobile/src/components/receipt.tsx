@@ -2,10 +2,10 @@ import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { AText } from './amazen';
-import { readClockOut, type ClockOutShift } from './home/clock-out-state';
+import { readClockOut, type ClockOutShift } from '../features/home/clock-out-state';
 import { formatDistance } from '../lib/distance';
 import { formatDuration } from '@hbcfield/shared/client';
-import { Row } from './clock-out-sheet-shared';
+import { Row } from '../features/time/clock-out-sheet-shared';
 
 /** Receipt, moved here unchanged out of clock-out-sheet.tsx. */
 /**

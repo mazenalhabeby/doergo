@@ -11,25 +11,25 @@ import { readSource } from '../../test-utils/read-source';
 const SRC = path.resolve(__dirname, '../..');
 const read = (p: string) => readSource(path.join(SRC, p), 'utf8');
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-const TIME = fs.readdirSync(path.join(SRC, 'components/time')).filter((f) => /\.tsx?$/.test(f)).map((f) => `components/time/${f}`);
+const TIME = fs.readdirSync(path.join(SRC, 'features/time')).filter((f) => /\.tsx?$/.test(f)).map((f) => `features/time/${f}`);
 
 describe('one ground, one header', () => {
   it('there is ONE gradient — no variant, no interior ground, no second glass grey', () => {
     expect(strip(read('components/amazen/ground.tsx'))).not.toMatch(/variant/);
     expect(strip(read('theme/amazen.ts'))).not.toMatch(/interior|inkOnGlassHome/);
-    for (const f of ['home/home-screen.tsx', 'components/jobs-list/jobs-screen.tsx', 'components/job/job-page.tsx', 'components/new-job/new-job-screen.tsx', 'components/time/time-screen.tsx']) {
+    for (const f of ['features/home/home-screen.tsx', 'features/jobs-list/jobs-screen.tsx', 'features/job/job-page.tsx', 'features/new-job/new-job-screen.tsx', 'features/time/time-screen.tsx']) {
       expect(strip(read(f))).not.toMatch(/<Ground[^>]*variant=/);
     }
   });
 
   it('the header reads the avatar itself — no screen passes it', () => {
     expect(read('components/amazen/screen-header.tsx')).toMatch(/useProfileAvatar\(\)/);
-    const users = ['home/home-screen.tsx', 'components/jobs-list/jobs-screen.tsx', 'components/new-job/new-job-screen.tsx', 'components/time/time-screen.tsx'];
+    const users = ['features/home/home-screen.tsx', 'features/jobs-list/jobs-screen.tsx', 'features/new-job/new-job-screen.tsx', 'features/time/time-screen.tsx'];
     for (const f of users) expect(read(f)).not.toMatch(/avatarUrl=|onPressAvatar=|initials=/);
   });
 
   it('the Time tab stands on the shared ground and draws the shared header', () => {
-    const src = read('components/time/time-screen.tsx');
+    const src = read('features/time/time-screen.tsx');
     expect(src).toMatch(/<Ground style=/);
     expect(src).toMatch(/<ScreenHeader/);
     expect(read('../app/(app)/(tabs)/attendance.tsx')).toMatch(/<TimeScreen \/>/);
@@ -38,7 +38,7 @@ describe('one ground, one header', () => {
 
 describe('the home\'s card, with one copy of the shift', () => {
   it('the page renders the card VIEW with its own shift and totals — one load for the screen', () => {
-    const src = read('components/time/time-screen.tsx');
+    const src = read('features/time/time-screen.tsx');
     expect(src).toMatch(/<ShiftClockCardView[\s\S]*?shift=\{shift\}[\s\S]*?totals=\{totals\}/);
     expect(src.match(/useShift\(\)/g)?.length).toBe(1);
   });
@@ -51,7 +51,7 @@ describe('the home\'s card, with one copy of the shift', () => {
   });
 
   it('on the Time tab the figure is not a link to the page you are on', () => {
-    expect(read('components/time/time-screen.tsx')).toMatch(/linkToTime=\{false\}/);
+    expect(read('features/time/time-screen.tsx')).toMatch(/linkToTime=\{false\}/);
   });
 });
 
@@ -61,13 +61,13 @@ describe('time off asks for no staffing figures', () => {
   });
 
   it('one copy of a member\'s leave for both screens', () => {
-    expect(read('components/time/time-off-section.tsx')).toMatch(/useMyTimeOff/);
+    expect(read('features/time/time-off-section.tsx')).toMatch(/useMyTimeOff/);
   });
 });
 
 describe('words', () => {
   it('no "paid" anywhere on the Time tab', () => {
-    for (const f of [...TIME, 'components/worklog-sheet.tsx']) {
+    for (const f of [...TIME, 'features/worklog/worklog-sheet.tsx']) {
       expect(strip(read(f)).replace(/paidMinutes/g, '')).not.toMatch(/\bpaid\b|\bunpaid\b/i);
     }
   });
@@ -76,7 +76,7 @@ describe('words', () => {
     const langs = ['en', 'de', 'es', 'fr', 'it'].map((l) => JSON.parse(read(`i18n/locales/${l}.json`)));
     const get = (o: Record<string, unknown>, k: string) => k.split('.').reduce<unknown>((a, p) => (a as Record<string, unknown>)?.[p], o);
     const keys = new Set<string>();
-    for (const f of [...TIME, 'components/worklog-sheet.tsx']) {
+    for (const f of [...TIME, 'features/worklog/worklog-sheet.tsx']) {
       for (const m of read(f).matchAll(/t\('((?:time|worklog|extraTime)\.[a-zA-Z.]+)'/g)) keys.add(m[1]);
     }
     expect(keys.size).toBeGreaterThan(30);

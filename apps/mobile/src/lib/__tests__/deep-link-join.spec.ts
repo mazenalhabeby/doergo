@@ -8,7 +8,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { armCrewJoin, clearCrewJoin, crewJoinArmed, JOIN_INTENT_TTL_MS, takeCrewJoin } from '../join-intent';
-import { parseOpenSheet } from '../../components/job/job-logic';
+import { parseOpenSheet } from '../../features/job/job-logic';
 import { crewJoinTarget } from '../notification-route';
 import { runSessionEndCleaners } from '../session/session-registry';
 import { readSource } from '../../test-utils/read-source';
@@ -53,7 +53,7 @@ describe('a link cannot ask for a join', () => {
   });
 
   it('the job page joins only on an armed intent, never on its route parameter', () => {
-    const page = read('src/components/job/job-page.tsx');
+    const page = read('src/features/job/job-page.tsx');
     expect(page).not.toMatch(/initialSheet\s*!==\s*'join'|initialSheet\s*===\s*'join'/);
     expect(page).toMatch(/takeCrewJoin\(taskId\) && !crew\.me\.joined\) void crew\.join\(true\)/);
   });

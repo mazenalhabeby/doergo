@@ -4,9 +4,9 @@ import { tasksApi, type Task } from '../../../src/lib/api';
 import { useOffline } from '../../../src/offline/offline-context';
 import { changeTaskStatus } from '../../../src/offline/tasks/task-actions';
 import { takeStatusFix, outboxFix } from '../../../src/offline/tasks/status-fix';
-import { JobPage } from '../../../src/components/job/job-page';
-import { parseOpenSheet, type OpenSheet } from '../../../src/components/job/job-logic';
-import type { StatusExtras, WriteStatus } from '../../../src/components/job/use-job-writes';
+import { JobPage } from '../../../src/features/job/job-page';
+import { parseOpenSheet, type OpenSheet } from '../../../src/features/job/job-logic';
+import type { StatusExtras, WriteStatus } from '../../../src/features/job/use-job-writes';
 
 /**
  * The job — `docs/design/job-flow.html`. The page itself lives in

@@ -1,4 +1,4 @@
-import { stripItems, stripLines, stripTone, itemLines } from '../../components/home/action-strip-state';
+import { stripItems, stripLines, stripTone, itemLines } from '../../features/home/action-strip-state';
 
 const none = { toUpload: [], rejected: [], toSign: [], expiringSoon: [] };
 const NOW = Date.parse('2026-09-26T10:00:00Z');

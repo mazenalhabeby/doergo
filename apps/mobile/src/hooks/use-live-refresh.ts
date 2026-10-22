@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useRef } from 'react';
 import { isAppActive, onAppResume } from '../lib/app-resume';
 import { useFocusEffect } from 'expo-router';
 import { connectivity, type Connectivity } from '../offline/connectivity';
-import { HomeCardKeyContext, HomeLoadContext } from '../home/home-load-context';
+import { HomeCardKeyContext, HomeLoadContext } from '../features/home/home-load-context';
 
 /**
  * Keep a live answer live: ask on every return to the screen, once a minute

@@ -13,7 +13,7 @@ import { readSource } from '../../test-utils/read-source';
 
 const SRC = path.resolve(__dirname, '../..');
 const LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;
-const CARD_FILES = [...SHIFT_CARD_FILES, 'components/home/shift-state.ts'];
+const CARD_FILES = [...SHIFT_CARD_FILES, 'features/home/shift-state.ts'];
 
 function flat(o: Record<string, unknown>, p = '', out: Record<string, string> = {}) {
   for (const [k, v] of Object.entries(o)) {

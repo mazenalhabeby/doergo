@@ -12,9 +12,9 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../../src/li
 import { ScreenContainer, ScreenHeader } from '../../../src/components';
 import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
 import { formatDuration } from '@hbcfield/shared/client';
-import { overtimePlaceLine, waitingText } from '../../../src/components/time/time-logic';
+import { overtimePlaceLine, waitingText } from '../../../src/features/time/time-logic';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
-import { styles } from '../../../src/screens/app/overtime/overtime-request-styles';
+import { styles } from '../../../src/features/time/overtime/overtime-request-styles';
 import { EmptyState } from '../../../src/components/amazen/empty-state';
 
 export default function OvertimeRequestScreen() {

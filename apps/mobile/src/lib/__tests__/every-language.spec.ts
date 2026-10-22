@@ -64,7 +64,7 @@ describe('every language', () => {
       in English inside a German sentence. `lib/app-dates.ts` asks the app.
     */
     const offenders: string[] = [];
-    for (const file of walk(path.join(SRC, 'components/home'))) {
+    for (const file of walk(path.join(SRC, 'features/home'))) {
       if (/toLocale(Date|Time)String\(undefined/.test(fs.readFileSync(file, 'utf8'))) offenders.push(path.relative(SRC, file));
     }
     expect(offenders).toEqual([]);

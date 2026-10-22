@@ -1,4 +1,4 @@
-import { AccountPage } from '../../../src/components/settings/account-page';
+import { AccountPage } from '../../../src/features/settings/account-page';
 
 /** Account & security — the page lives in `src/components/settings/`; this route only mounts it. */
 export default function Route() {

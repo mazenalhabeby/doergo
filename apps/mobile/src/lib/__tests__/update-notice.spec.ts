@@ -15,9 +15,9 @@ const stripComments = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 const CONTEXT = 'src/contexts/version-context.tsx';
-const BANNER = 'src/components/update-banner.tsx';
-// The Profile page's body lives in src/components/profile/ now; the route only mounts it.
-const PROFILE = 'src/components/profile/profile-screen.tsx';
+const BANNER = 'src/features/app-update/update-banner.tsx';
+// The Profile page's body lives in src/features/profile/ now; the route only mounts it.
+const PROFILE = 'src/features/profile/profile-screen.tsx';
 
 describe('a new version is noticed more than once per launch', () => {
   /*

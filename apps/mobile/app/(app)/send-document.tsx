@@ -11,8 +11,8 @@ import { File as FsFile } from 'expo-file-system';
 
 import { ScreenHeader, DateField } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
-import { CaptureReviewFoot } from '../../src/components/equipment/capture-review';
-import { CaptureCamera, CaptureSkip } from '../../src/components/equipment/capture-camera';
+import { CaptureReviewFoot } from '../../src/features/equipment/capture-review';
+import { CaptureCamera, CaptureSkip } from '../../src/features/equipment/capture-camera';
 import { useToast } from '../../src/island/island-context';
 import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
 import { useCameraAccess } from '../../src/permissions/use-media-access';
@@ -23,8 +23,8 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/c
 import { useOffline } from '../../src/offline/offline-context';
 import { createFromPhone } from '../../src/offline/actions/queued-create';
 import { uuidv7 } from '../../src/offline/ids';
-import { useSendDocumentScreen } from '../../src/screens/app/use-send-document-screen';
-import { Field, s } from '../../src/screens/app/send-document-screen-helpers';
+import { useSendDocumentScreen } from '../../src/features/documents/use-send-document-screen';
+import { Field, s } from '../../src/features/documents/send-document-screen-helpers';
 
 export default function SendDocumentScreen() {
   const {

@@ -36,7 +36,7 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/island/island-context';
 import { onboardingApi, locationsApi } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../src/lib/constants';
-import { useCreateOrgScreen } from '../../src/screens/onboarding/use-create-org-screen';
+import { useCreateOrgScreen } from '../../src/features/onboarding/use-create-org-screen';
 import {
   ionicon,
   TOTAL_STEPS,
@@ -44,9 +44,9 @@ import {
   Chip,
   SummaryRow,
   styles,
-} from '../../src/screens/onboarding/create-org-screen-helpers';
-import { useCreateOrgScreenLogic } from '../../src/screens/onboarding/use-create-org-screen-logic';
-import { CreateOrgScreenStepOf } from '../../src/screens/onboarding/create-org-screen-step-of';
+} from '../../src/features/onboarding/create-org-screen-helpers';
+import { useCreateOrgScreenLogic } from '../../src/features/onboarding/use-create-org-screen-logic';
+import { CreateOrgScreenStepOf } from '../../src/features/onboarding/create-org-screen-step-of';
 
 export default function CreateOrgScreen() {
   const vm = useCreateOrgScreenLogic();

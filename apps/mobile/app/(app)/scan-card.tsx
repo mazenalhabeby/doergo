@@ -11,11 +11,11 @@ import { useCameraAccess } from '../../src/permissions/use-media-access';
 import { useAuth } from '../../src/contexts/auth-context';
 import { holds } from '../../src/lib/permissions';
 import { SPACING, FONT_SIZE } from '../../src/lib/constants';
-import { useCardCapture } from '../../src/components/scan-card/use-card-capture';
-import { useCardReview } from '../../src/components/scan-card/use-card-review';
-import { useCardSaveFlow } from '../../src/components/scan-card/use-card-save-flow';
-import { CardReviewScreen } from '../../src/components/scan-card/card-review-screen';
-import { CardCamera } from '../../src/components/scan-card/card-camera';
+import { useCardCapture } from '../../src/features/scan-card/use-card-capture';
+import { useCardReview } from '../../src/features/scan-card/use-card-review';
+import { useCardSaveFlow } from '../../src/features/scan-card/use-card-save-flow';
+import { CardReviewScreen } from '../../src/features/scan-card/card-review-screen';
+import { CardCamera } from '../../src/features/scan-card/card-camera';
 import { NotAllowed } from '../../src/components/not-allowed';
 
 /**

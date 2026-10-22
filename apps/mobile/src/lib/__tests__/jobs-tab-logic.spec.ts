@@ -1,15 +1,15 @@
 /**
  * The Jobs tab's rules — `docs/design/job-flow.html`, `renderJobs()`.
- * Pure: `src/components/jobs-list/jobs-logic.ts` decides, the screen draws.
+ * Pure: `src/features/jobs-list/jobs-logic.ts` decides, the screen draws.
  */
 import { getFlowSteps } from '@hbcfield/shared/client';
 import {
   bandOf, blockedCount, canCreateJobs, chipsFor, effectiveFilter, emptyKind, filtersFor, groupJobs, nobodyOn, passesFilter, periodParams,
   pickNextUp, placeOf, rowRight, rowWho, showsNextUp, showsRouteRow,
   type JobFacts,
-} from '../../components/jobs-list/jobs-logic';
-import { decideNext, parseOpenSheet } from '../../components/job/job-logic';
-import { isClosed, isUnderWay, isCanceled, isMine, stepsFor } from '../../components/home/my-work';
+} from '../../features/jobs-list/jobs-logic';
+import { decideNext, parseOpenSheet } from '../../features/job/job-logic';
+import { isClosed, isUnderWay, isCanceled, isMine, stepsFor } from '../../features/home/my-work';
 import { filterTasksLocally } from '../../offline/tasks/task-list-query';
 import type { Task } from '../api/types';
 

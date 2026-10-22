@@ -1,7 +1,7 @@
 import type { AttendanceStatus, BreakStatus } from '@hbcfield/shared/client';
 import { attendanceApi } from '../../lib/api/attendance';
 import type { RecordsStore } from '../db/records-store';
-import { keep } from '../../home/remember/store';
+import { keep } from '../../features/home/remember/store';
 import { isUnreachable } from '../actions/unreachable';
 import { knownOffline } from '../connectivity';
 
@@ -12,11 +12,11 @@ import { knownOffline } from '../connectivity';
 */
 
 export const SHIFT_SCOPE = 'attendance';
-/** ⚠️ One question per name — see `home/remember/store.ts`. */
+/** ⚠️ One question per name — see `features/home/remember/store.ts`. */
 const KEPT = 'shift';
 export { KEPT as KEPT_SHIFT };
 
-/** What is remembered between runs — see `home/remember/store.ts`. */
+/** What is remembered between runs — see `features/home/remember/store.ts`. */
 export interface KeptShift {
   status: AttendanceStatus | null;
   breaks: BreakStatus | null;

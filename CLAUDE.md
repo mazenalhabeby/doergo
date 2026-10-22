@@ -1610,6 +1610,9 @@ export class TasksController {
 1. Edit `apps/api/notification-service/src/modules/websocket/websocket.gateway.ts`
 2. Add event type to `packages/shared/src/types/index.ts`
 
+### Phone app folders
+`apps/mobile/src/features/<domain>/` holds a feature's screens, hooks and parts together (routes in `apps/mobile/app/` stay thin and import them); `src/components/` is shared UI only — the design system (`components/amazen`), glyphs, sheets, pickers, scanners, signatures.
+
 ### Add new web page
 1. Create `src/app/{route}/page.tsx` (App Router)
 2. **One folder rule** (checked by `pnpm structure:check`, `tools/structure/web-layout.mjs`): beside `page.tsx` only Next's own files (layout, loading, error, route …) and folders. The route's pieces go in `_components/`, its hooks in `_hooks/` (`use-*`), its helpers in `_lib/`; a private `_name/` folder shared by several routes is allowed. Those folders belong to their route: no other route and nothing in `components/` imports from them — a piece two routes share moves to `components/<domain>/`. `src/components/` holds DOMAIN folders only (`common/`, `app-shell/`, `tasks/`, `attendance/`, `permissions/`, `map/` …) — never a loose file; a hook used by one component lives beside it, a hook used across the app lives in `src/hooks/`.

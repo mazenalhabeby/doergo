@@ -224,6 +224,15 @@ Each becomes a folder of real Nest sub-modules with their own providers and test
 | 6.4 | **`@/` alias** instead of `../../../` (81 files); kebab-case `use-*.ts` names. | consistent imports |
 | 6.5 | **Smaller bundle:** Metro tree-shaking on, with 2.4. ⚠️ Metro config is native-adjacent — ship in a store build, not an OTA. | bundle size measured before/after |
 
+> **Status (2026-10-22): 6.1 DONE on branch `refactor/structure-p3`** (not merged, not deployed, no OTA). 448 files moved
+> into `src/features/<domain>/` (30 features: home — `src/home` merged in —, job, jobs-list, new-job, time, customer,
+> chat, calendar, documents, equipment, route, onboarding, auth, app-shell, app-update, …); `src/screens/*` folded into
+> their features; `components/` keeps shared UI only (the design system `amazen`, glyphs, sheets, pickers, scanners,
+> signatures) — **10 %** of the code (was 52 %). `tools/move-ts.mjs --alias=@/=src/` resolves the phone's alias. Guards
+> that read files by path follow them; the mobile suite also caught two web renames from Phase 5 (supply-document
+> dialog hook, the radius readout) and the key `attendance.rest.unpaid` (now `notCounted` — the text never said
+> "unpaid"). Metro export (Android) bundles: 11 MB — the 6.5 "before".
+
 ---
 
 ## Order, size and what you get

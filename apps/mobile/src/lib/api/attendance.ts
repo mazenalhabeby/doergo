@@ -77,7 +77,7 @@ export const attendanceApi = {
    *
    * Left as declared rather than corrected here because several screens
    * already destructure it defensively; callers must handle both shapes. See
-   * `components/home/use-schedule-totals.ts` for the one that was bitten.
+   * `features/home/use-schedule-totals.ts` for the one that was bitten.
    */
   getHistory: async (params?: AttendanceHistoryParams): Promise<PaginatedResponse<TimeEntry>> => {
     return call(E.attendance.history, params ?? {});

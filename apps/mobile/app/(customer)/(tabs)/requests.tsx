@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
-import { RequestRow } from '../../../src/components/customer/request-bits';
+import { RequestRow } from '../../../src/features/customer/request-bits';
 
 const CLOSED = /COMPLET|CLOSED|CANCEL|RESOLV|DONE/i;
 type Filter = 'all' | 'open' | 'done';

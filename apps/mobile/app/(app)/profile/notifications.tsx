@@ -1,4 +1,4 @@
-import { NotificationsPage } from '../../../src/components/settings/notifications-page';
+import { NotificationsPage } from '../../../src/features/settings/notifications-page';
 
 /** The page lives in `src/components/settings/`; this route only mounts it. */
 export default function Route() {

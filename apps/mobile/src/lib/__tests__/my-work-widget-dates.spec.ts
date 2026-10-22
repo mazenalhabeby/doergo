@@ -7,7 +7,7 @@ process.env.TZ = 'Europe/Vienna';
 import { daysLate } from '@hbcfield/shared/client';
 import {
   weekOf, tasksOn, hasHour, nextJobAfter, nextDayStart, msUntilNextDay, sameDay, startOfDay, todaysOwn,
-} from '../../components/home/my-work';
+} from '../../features/home/my-work';
 import type { Task } from '../api/types';
 
 const task = (over: Record<string, unknown>): Task => ({

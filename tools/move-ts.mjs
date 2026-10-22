@@ -18,7 +18,9 @@ import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSy
 import { dirname, join, relative, resolve } from 'node:path';
 
 const [rootArg, planArg, ...flags] = process.argv.slice(2);
-const alias = flags.find((f) => f.startsWith('--alias='))?.slice('--alias='.length) ?? null;
+// `--alias=@/` maps the alias to <root>; `--alias=@/=src/` maps it to <root>/src/ (the phone app).
+const aliasFlag = flags.find((f) => f.startsWith('--alias='))?.slice('--alias='.length) ?? null;
+const [alias, aliasDir = ''] = aliasFlag ? aliasFlag.split('=') : [null];
 const root = resolve(rootArg);
 const plan = JSON.parse(readFileSync(planArg, 'utf8')).map(([a, b]) => [resolve(root, a), resolve(root, b)]);
 const moved = new Map(plan);
@@ -26,7 +28,7 @@ const moved = new Map(plan);
 const walk = (d) =>
   readdirSync(d).flatMap((e) => {
     const f = join(d, e);
-    if (e === 'node_modules' || e === 'dist') return [];
+    if (e === 'node_modules' || e === 'dist' || e === 'android' || e === 'ios' || e.startsWith('.')) return [];
     return statSync(f).isDirectory() ? walk(f) : /\.(ts|tsx|mts|cts)$/.test(e) ? [f] : [];
   });
 const files = walk(root);
@@ -34,14 +36,14 @@ const files = walk(root);
 /** Resolve a relative specifier from `fromFile` to an existing file (or null). */
 function target(fromFile, spec) {
   const base =
-    alias && spec.startsWith(alias) ? resolve(root, spec.slice(alias.length)) : resolve(dirname(fromFile), spec);
+    alias && spec.startsWith(alias) ? resolve(root, aliasDir, spec.slice(alias.length)) : resolve(dirname(fromFile), spec);
   for (const c of [base, base + '.ts', base + '.tsx', join(base, 'index.ts'), join(base, 'index.tsx')])
     if (existsSync(c) && statSync(c).isFile()) return c;
   return null;
 }
 function specFor(fromFile, toFile, original) {
   if (alias && original.startsWith(alias)) {
-    let a = relative(root, toFile).replace(/\.tsx?$/, '');
+    let a = relative(resolve(root, aliasDir), toFile).replace(/\.tsx?$/, '');
     if (a.endsWith('/index') && !original.endsWith('/index')) a = a.slice(0, -6);
     return alias + a;
   }

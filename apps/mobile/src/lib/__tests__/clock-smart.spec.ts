@@ -8,8 +8,8 @@ import {
   leftSiteAt,
   preferShiftWorkspace,
 } from '../clock-smart';
-import { readShiftState } from '../../components/home/shift-state';
-import { shiftCaption } from '../../components/home/shift-clock/shift-caption';
+import { readShiftState } from '../../features/home/shift-state';
+import { shiftCaption } from '../../features/home/shift-clock/shift-caption';
 
 /** docs/plans/clock-attendance-2026-10.md, step 3 — the phone's smarter day. */
 describe('clock-smart', () => {

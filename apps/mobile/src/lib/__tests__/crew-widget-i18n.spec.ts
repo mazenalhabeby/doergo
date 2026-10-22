@@ -8,7 +8,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const HOME = path.join(__dirname, '../../components/home');
+const HOME = path.join(__dirname, '../../features/home');
 const FILES = ['crew-card.tsx', 'crew-state.ts', 'use-crew.ts'];
 const SOURCES = FILES.map((f) => fs.readFileSync(path.join(HOME, f), 'utf8'));
 const CARD = SOURCES[0]!;
@@ -101,7 +101,7 @@ describe('Crew widget — no static phrases', () => {
 });
 
 describe('the member tile never outgrows itself', () => {
-  const card = require('fs').readFileSync(require('path').resolve(__dirname, '../../components/home/crew-card.tsx'), 'utf8') as string;
+  const card = require('fs').readFileSync(require('path').resolve(__dirname, '../../features/home/crew-card.tsx'), 'utf8') as string;
   const tile = card.slice(card.indexOf('function TileView'), card.indexOf('function RingSvg'));
   it('every text on the tile is one line', () => {
     const texts = tile.match(/<AText[^>]*>/g) ?? [];

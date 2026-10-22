@@ -2,7 +2,7 @@ import { authApi } from '../api/auth';
 import { clearInflightRequests, clearTokens, sessionOwnerId } from '../api/client';
 import { setResponseCache } from '../api/response-cache';
 import { biometricCredential } from '../biometrics';
-import { forgetEverythingKept } from '../../home/remember/store';
+import { forgetEverythingKept } from '../../features/home/remember/store';
 import { purgePushTokenRegistration } from '../../hooks/usePushNotifications';
 import { forgetRouteData, stopRouteTracking } from '../../services/background-route-tracking';
 import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';

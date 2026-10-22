@@ -28,7 +28,7 @@ import * as path from 'path';
 const SRC = path.resolve(__dirname, '../..');
 
 /** Files whose animations or state changes are driven from inside a gesture. */
-const WORKLET_FILES = ['components/home/editable-widget.tsx'];
+const WORKLET_FILES = ['features/home/editable-widget.tsx'];
 
 const read = (p: string) =>
   fs

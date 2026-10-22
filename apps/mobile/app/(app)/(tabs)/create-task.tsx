@@ -1,4 +1,4 @@
-import { NewJobScreen } from '../../../src/components/new-job/new-job-screen';
+import { NewJobScreen } from '../../../src/features/new-job/new-job-screen';
 
 /**
  * New job — `docs/design/job-flow.html`, `renderCreate()`. The screen, its

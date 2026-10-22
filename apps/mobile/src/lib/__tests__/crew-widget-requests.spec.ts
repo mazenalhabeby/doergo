@@ -33,7 +33,7 @@ jest.mock('../api/attendance', () => ({
 }));
 
 import { attendanceApi } from '../api/attendance';
-import { useCrew } from '../../components/home/use-crew';
+import { useCrew } from '../../features/home/use-crew';
 
 /*
   The hook, driven as a plain function over the mocked React above — no

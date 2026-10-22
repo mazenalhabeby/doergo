@@ -72,22 +72,22 @@ describe('client language — wired into the screens', () => {
   const read = (rel: string) => fs.readFileSync(path.join(__dirname, '../../..', rel), 'utf8');
 
   it('the add form sends ONE body both directly and through the outbox', () => {
-    const src = read('src/components/clients/add-client-sheet.tsx');
+    const src = read('src/features/clients/add-client-sheet.tsx');
     expect(src).toMatch(/const input = newClientInput\(form, spaceId, locale\)/);
     expect(src).toMatch(/clientCreate\.run\(\{ lane: 'crm:new', body: input \}, \(\) => customersApi\.create\(input\)\)/);
   });
 
   it('the record shows the language and gates changing it on editInfo', () => {
     // The record is drawn by three files and written by one hook; each claim is pinned where it lives.
-    expect(read('src/components/customer/record/record-screen.tsx')).toContain("t('customers.locale'");
-    const about = read('src/components/customer/record/record-about.tsx');
+    expect(read('src/features/customer/record/record-screen.tsx')).toContain("t('customers.locale'");
+    const about = read('src/features/customer/record/record-about.tsx');
     // `record` is the client with whatever is still in the outbox applied to it
     // (crm/client-overlay). The gate is the same one, asked of the same record —
     // so a language chosen with no signal shows while it waits.
     expect(about).toMatch(/const editLocale = canEditClientLocale\(record\)/);
     // The row is a button only when the gate allows it (no onPress = nothing to tap).
     expect(about).toMatch(/onPress=\{editLocale \? onLanguage : undefined\}/);
-    const src = read('src/components/customer/record/use-client-record.ts');
+    const src = read('src/features/customer/record/use-client-record.ts');
     // ONE body for the queued change and the direct call, exactly as the add
     // form: a language that reached one path and not the other is what this pins.
     expect(src).toMatch(/updateClientFromPhone\(e, \{ customerId: id, patch: patch as Record<string, unknown> \}\)/);

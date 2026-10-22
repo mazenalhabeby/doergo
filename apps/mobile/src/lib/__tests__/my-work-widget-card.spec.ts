@@ -8,9 +8,9 @@ import { readSource } from '../../test-utils/read-source';
  * a warning that QUOTES a mistake never satisfies (or trips) the scan.
  */
 const SRC = path.resolve(__dirname, '../..');
-const raw = readSource(path.join(SRC, 'components/home/my-work-card.tsx'), 'utf8');
+const raw = readSource(path.join(SRC, 'features/home/my-work-card.tsx'), 'utf8');
 // The card alone (its hooks moved to use-my-work-card, which runs before the card's exit).
-const cardOnly = require('fs').readFileSync(path.join(SRC, 'components/home/my-work-card.tsx'), 'utf8') as string;
+const cardOnly = require('fs').readFileSync(path.join(SRC, 'features/home/my-work-card.tsx'), 'utf8') as string;
 const code = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
 const LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;

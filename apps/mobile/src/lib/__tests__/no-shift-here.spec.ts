@@ -1,4 +1,4 @@
-import { noShiftHere, type PlaceTile } from '../../components/time/time-logic';
+import { noShiftHere, type PlaceTile } from '../../features/time/time-logic';
 
 /*
   The Time page speaks of ONE workspace's no-shift rule — the one the member is

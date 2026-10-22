@@ -60,7 +60,7 @@ describe('the tab screens leave room for the pill', () => {
 
   it('the home screen reserves it too, in its own file', () => {
     // `(tabs)/index.tsx` delegates, so the padding lives with the column.
-    const home = read(path.resolve(__dirname, '../../home/home-screen.tsx'));
+    const home = read(path.resolve(__dirname, '../../features/home/home-screen.tsx'));
     expect(home).toContain('useTabSafe');
     expect(home).toMatch(/paddingBottom: tabSafe/);
   });
@@ -70,7 +70,7 @@ describe('the tab screens leave room for the pill', () => {
       The old `TAB_SAFE` constant. A screen importing it again would compile,
       render, and be wrong on two of the four devices above.
     */
-    for (const file of [...screens, path.resolve(__dirname, '../../home/home-screen.tsx')]) {
+    for (const file of [...screens, path.resolve(__dirname, '../../features/home/home-screen.tsx')]) {
       expect(read(file)).not.toMatch(/\bTAB_SAFE\b/);
     }
   });
