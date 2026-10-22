@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Role } from '@hbcfield/shared';
+import { orgRoleGrants, orgWideActorIds } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { spaceRoleHolders } from '../../common/space-leaders.util';
 
@@ -23,29 +23,10 @@ export class AssetResponsibleService {
    * `canManageUsers`, which is how sign-in resolves it too).
    */
   async orgManagers(organizationId: string, exceptUserId?: string): Promise<string[]> {
-    const roles = await this.prisma.accessRole.findMany({
-      where: { organizationId, isActive: true, scope: { not: 'SPACE' as never } },
-      select: { id: true, permissions: true },
-    });
+    const roles = await orgRoleGrants(this.prisma, organizationId);
     const granting = roles.filter((r) => grants(r.permissions)).map((r) => r.id);
 
-    const people = await this.prisma.user.findMany({
-      where: {
-        organizationId,
-        isActive: true,
-        isExternal: false,
-        ...(exceptUserId ? { id: { not: exceptUserId } } : {}),
-        // An admin is one by being one, exactly as PermissionsGuard decides it.
-        OR: [
-          { role: Role.ADMIN as never },
-          { canManageUsers: true },
-          ...(granting.length ? [{ memberRoleId: { in: granting } }] : []),
-        ],
-      },
-      select: { id: true },
-      take: 25,
-    });
-    return people.map((p) => p.id);
+    return orgWideActorIds(this.prisma, { organizationId, grantingRoleIds: granting, exceptUserId });
   }
 
   /**

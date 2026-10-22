@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, personNameOf } from '@hbcfield/shared';
 import {
   personName,
   activeAssignmentWhere,
@@ -99,10 +99,7 @@ export abstract class AssetProposalBase {
       }
       if (recipientIds.length === 0) return;
 
-      const raiser = await this.prisma.user.findUnique({
-        where: { id: raisedById },
-        select: { firstName: true, lastName: true },
-      });
+      const raiser = await personNameOf(this.prisma, raisedById);
 
       emitEvent(this.notifications, assetProposalRaisedEvent, {
         proposalId,

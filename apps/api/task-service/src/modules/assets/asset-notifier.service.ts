@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { personName, Role, type HandoverPlan } from '@hbcfield/shared';
+import { personName, type HandoverPlan, peopleIds, personBrief } from '@hbcfield/shared';
 import { AssetNotifierBase } from './asset-notifier.base';
 import {
   emitEvent,
@@ -64,10 +64,7 @@ export class AssetNotifier extends AssetNotifierBase {
           where: { id: entry.assetId, organizationId: entry.organizationId },
           select: { name: true, category: { select: { spaceId: true } } },
         }),
-        this.prisma.user.findFirst({
-          where: { id: entry.authorId, organizationId: entry.organizationId },
-          select: { firstName: true, lastName: true },
-        }),
+        personBrief(this.prisma, entry.authorId, { organizationId: entry.organizationId }),
       ]);
       if (!asset) return;
       const spaceId = asset.category?.spaceId ?? null;
@@ -178,14 +175,10 @@ export class AssetNotifier extends AssetNotifierBase {
         }),
         // Members of THIS organization, still here. A portal account is a
         // client, whatever a custody row happens to hold.
-        this.prisma.user.findMany({
-          where: {
-            id: { in: [...opened, ...closed] },
-            organizationId: input.organizationId,
-            isActive: true,
-            role: { not: Role.CUSTOMER as never },
-          },
-          select: { id: true },
+        peopleIds(this.prisma, [...opened, ...closed], {
+          organizationId: input.organizationId,
+          active: true,
+          notClients: true,
         }),
       ]);
       if (!asset) return;

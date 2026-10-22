@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { success, normalizeKindShape, totalsByPeriod, type CustodyPeriod } from '@hbcfield/shared';
+import {
+  success,
+  normalizeKindShape,
+  totalsByPeriod,
+  type CustodyPeriod,
+  clientContacts,
+  peopleContacts,
+} from '@hbcfield/shared';
 import { type AssetActor } from './asset-access.service';
 import { AssetCustodyBase } from './asset-custody.base';
 
@@ -47,7 +54,10 @@ export class CustodyReadService extends AssetCustodyBase {
       periods: named.map((p, i) => ({
         ...p,
         totals: byPeriod.get(periods[i] as unknown as CustodyPeriod) ?? {
-          inCents: 0, outCents: 0, netCents: 0, entries: 0,
+          inCents: 0,
+          outCents: 0,
+          netCents: 0,
+          entries: 0,
         },
       })),
       unattributed,
@@ -62,10 +72,12 @@ export class CustodyReadService extends AssetCustodyBase {
    * way round — which is exactly why custody is a table and not a JSON blob on
    * an activity entry.
    */
-  async forMember(data: {
-    memberId: string;
-    open?: boolean;
-  } & AssetActor) {
+  async forMember(
+    data: {
+      memberId: string;
+      open?: boolean;
+    } & AssetActor,
+  ) {
     this.access.assertMay(data, 'view');
     /*
       Only the periods of records the caller may read. A depot manager asking
@@ -133,7 +145,12 @@ export class CustodyReadService extends AssetCustodyBase {
         ...AssetCustodyBase.select,
         asset: {
           select: {
-            id: true, name: true, status: true, serialNumber: true, model: true, manufacturer: true,
+            id: true,
+            name: true,
+            status: true,
+            serialNumber: true,
+            model: true,
+            manufacturer: true,
             category: { select: { id: true, name: true, icon: true, color: true, config: true, spaceId: true } },
           },
         },
@@ -186,18 +203,8 @@ export class CustodyReadService extends AssetCustodyBase {
     const customerIds = [...new Set(periods.map((p) => p.customerId).filter((v): v is string => !!v))];
 
     const [users, customers] = await Promise.all([
-      userIds.length
-        ? this.prisma.user.findMany({
-            where: { id: { in: userIds }, organizationId },
-            select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true },
-          })
-        : Promise.resolve([]),
-      customerIds.length
-        ? this.prisma.customer.findMany({
-            where: { id: { in: customerIds }, organizationId },
-            select: { id: true, name: true, email: true, phone: true },
-          })
-        : Promise.resolve([]),
+      userIds.length ? peopleContacts(this.prisma, userIds, organizationId) : Promise.resolve([]),
+      customerIds.length ? clientContacts(this.prisma, customerIds, organizationId) : Promise.resolve([]),
     ]);
 
     const byUser = new Map(users.map((u) => [u.id, u]));
@@ -205,8 +212,8 @@ export class CustodyReadService extends AssetCustodyBase {
 
     return periods.map((p) => ({
       ...p,
-      user: p.userId ? byUser.get(p.userId) ?? null : null,
-      customer: p.customerId ? byCustomer.get(p.customerId) ?? null : null,
+      user: p.userId ? (byUser.get(p.userId) ?? null) : null,
+      customer: p.customerId ? (byCustomer.get(p.customerId) ?? null) : null,
     }));
   }
 

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { success, clampListLimit } from '@hbcfield/shared';
+import { success, clampListLimit, peopleFaces } from '@hbcfield/shared';
 import { type AssetActor } from './asset-access.service';
 import { assertNotSelfDecision } from '../attendance/self-decision';
 import { EXPENSE_STATUS } from './asset-expense-helpers';
@@ -11,7 +11,6 @@ import { AssetExpenseBase } from './asset-expense.base';
  */
 @Injectable()
 export class AssetExpenseReviewService extends AssetExpenseBase {
-
   /** What the caller has sent in, newest first — the phone's "my expenses". */
   async mine(data: { userId: string; organizationId: string; limit?: number }) {
     const take = clampListLimit(data.limit, 50, 100);
@@ -25,8 +24,17 @@ export class AssetExpenseReviewService extends AssetExpenseBase {
       orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }],
       take,
       select: {
-        id: true, assetId: true, category: true, direction: true, amountCents: true, note: true,
-        occurredAt: true, status: true, reviewNote: true, reviewedAt: true, receiptKey: true,
+        id: true,
+        assetId: true,
+        category: true,
+        direction: true,
+        amountCents: true,
+        note: true,
+        occurredAt: true,
+        status: true,
+        reviewNote: true,
+        reviewedAt: true,
+        receiptKey: true,
         // Logbook entries share the table; the screen names their type (null = a cost).
         logType: true,
         asset: { select: { id: true, name: true } },
@@ -55,10 +63,19 @@ export class AssetExpenseReviewService extends AssetExpenseBase {
       orderBy: [{ occurredAt: 'desc' }],
       take,
       select: {
-        id: true, assetId: true, category: true, direction: true, amountCents: true, note: true,
-        occurredAt: true, authorId: true, receiptKey: true, createdAt: true,
+        id: true,
+        assetId: true,
+        category: true,
+        direction: true,
+        amountCents: true,
+        note: true,
+        occurredAt: true,
+        authorId: true,
+        receiptKey: true,
+        createdAt: true,
         // A logbook entry waiting for a decision is in the same queue; the screen names its type.
-        logType: true, values: true,
+        logType: true,
+        values: true,
         asset: { select: { id: true, name: true } },
       },
     });
@@ -66,10 +83,7 @@ export class AssetExpenseReviewService extends AssetExpenseBase {
 
     const authorIds = [...new Set(entries.map((e) => e.authorId).filter((v): v is string => !!v))];
     const authors = authorIds.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: authorIds }, organizationId: data.organizationId },
-          select: { id: true, firstName: true, lastName: true, avatarUrl: true },
-        })
+      ? await peopleFaces(this.prisma, authorIds, { organizationId: data.organizationId })
       : [];
     const byId = new Map(authors.map((a) => [a.id, a]));
 
@@ -77,7 +91,7 @@ export class AssetExpenseReviewService extends AssetExpenseBase {
       entries: entries.map(({ receiptKey, ...e }) => ({
         ...e,
         hasReceipt: !!receiptKey,
-        author: e.authorId ? byId.get(e.authorId) ?? null : null,
+        author: e.authorId ? (byId.get(e.authorId) ?? null) : null,
       })),
       totalCents: entries.reduce((n, e) => n + (e.direction === 'IN' ? 0 : e.amountCents), 0),
     });
@@ -90,11 +104,13 @@ export class AssetExpenseReviewService extends AssetExpenseBase {
    * read-then-write: two people opening the queue at once would otherwise both
    * see it pending and the second decision would silently overwrite the first.
    */
-  async review(data: {
-    entryId: string;
-    decision: 'accept' | 'reject';
-    note?: string;
-  } & AssetActor) {
+  async review(
+    data: {
+      entryId: string;
+      decision: 'accept' | 'reject';
+      note?: string;
+    } & AssetActor,
+  ) {
     this.access.assertMay(data, 'manage');
 
     // A member's expense counts for nothing until SOMEBODY ELSE accepts it — an
@@ -133,7 +149,12 @@ export class AssetExpenseReviewService extends AssetExpenseBase {
         subjectId: filed.authorId,
       });
       if (!verdict.finalize) {
-        return success({ id: data.entryId, status: EXPENSE_STATUS.SUBMITTED, stage: 'FIRST_STEP', waitingFor: verdict.roleName });
+        return success({
+          id: data.entryId,
+          status: EXPENSE_STATUS.SUBMITTED,
+          stage: 'FIRST_STEP',
+          waitingFor: verdict.roleName,
+        });
       }
     }
 
@@ -160,6 +181,9 @@ export class AssetExpenseReviewService extends AssetExpenseBase {
       reviewerId: data.userId,
     });
 
-    return success({ id: data.entryId, status: data.decision === 'accept' ? EXPENSE_STATUS.RECORDED : EXPENSE_STATUS.REJECTED });
+    return success({
+      id: data.entryId,
+      status: data.decision === 'accept' ? EXPENSE_STATUS.RECORDED : EXPENSE_STATUS.REJECTED,
+    });
   }
 }

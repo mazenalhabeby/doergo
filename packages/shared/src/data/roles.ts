@@ -181,3 +181,51 @@ export function roleSlugsLike(
     select: { slug: true },
   });
 }
+
+/** The organization's active org-level roles (not workspace-only) with their permissions. */
+export function orgRoleGrants(db: On<'accessRole', 'findMany'>, organizationId: string) {
+  return db.accessRole.findMany({
+    where: { organizationId, isActive: true, scope: { not: 'SPACE' as never } },
+    select: { id: true, permissions: true },
+  });
+}
+
+/**
+ * Up to 25 active internal people who can act organization-wide: administrators, people managers, or
+ * holders of one of these org roles — except one person.
+ */
+export async function orgWideActorIds(
+  db: On<'user', 'findMany'>,
+  input: { organizationId: string; grantingRoleIds: string[]; exceptUserId?: string },
+): Promise<string[]> {
+  const people = await db.user.findMany({
+    where: {
+      organizationId: input.organizationId,
+      isActive: true,
+      isExternal: false,
+      ...(input.exceptUserId ? { id: { not: input.exceptUserId } } : {}),
+      OR: [
+        { role: 'ADMIN' as never },
+        { canManageUsers: true },
+        ...(input.grantingRoleIds.length ? [{ memberRoleId: { in: input.grantingRoleIds } }] : []),
+      ],
+    },
+    select: { id: true },
+    take: 25,
+  });
+  return people.map((p) => p.id);
+}
+
+/** Active internal people's role, legacy flags and org role permissions — who may see / act on a record. */
+export function staffAccessFlags(db: On<'user', 'findMany'>, ids: string[], organizationId: string) {
+  return db.user.findMany({
+    where: { id: { in: ids }, organizationId, isActive: true, isExternal: false },
+    select: {
+      id: true,
+      role: true,
+      canViewAllTasks: true,
+      canManageUsers: true,
+      memberRole: { select: { permissions: true, isActive: true } },
+    },
+  });
+}

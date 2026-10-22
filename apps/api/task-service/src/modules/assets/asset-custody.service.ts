@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
-  notEndedWhere,
   success,
   normalizeKindShape,
   maxHolders,
   type CustodyParty,
   type HandoverPlan,
+  clientIds,
+  peopleIds,
 } from '@hbcfield/shared';
 import { type AssetActor } from './asset-access.service';
 import { Db } from './asset-custody-helpers';
@@ -173,27 +174,12 @@ export class AssetCustodyService extends AssetCustodyBase {
 
     const [members, clients] = await Promise.all([
       userIds.size
-        ? this.prisma.user.findMany({
-            where: {
-              id: { in: [...userIds] },
-              organizationId,
-              ...(withinSpaceId === undefined
-                ? {}
-                : { spaceAssignments: { some: { spaceId: withinSpaceId ?? '__none__', ...notEndedWhere() } } }),
-            },
-            select: { id: true },
+        ? peopleIds(this.prisma, [...userIds], {
+            organizationId,
+            ...(withinSpaceId === undefined ? {} : { inWorkspace: withinSpaceId ?? null }),
           })
         : Promise.resolve([]),
-      customerIds.size
-        ? this.prisma.customer.findMany({
-            where: {
-              id: { in: [...customerIds] },
-              organizationId,
-              ...(withinSpaceId === undefined ? {} : { spaceId: withinSpaceId ?? '__none__' }),
-            },
-            select: { id: true },
-          })
-        : Promise.resolve([]),
+      customerIds.size ? clientIds(this.prisma, [...customerIds], organizationId, withinSpaceId) : Promise.resolve([]),
     ]);
     if (members.length !== userIds.size) {
       throw new BadRequestException(

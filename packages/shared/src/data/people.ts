@@ -3,7 +3,7 @@
  * named (who counts), never a raw `where`, and the columns are one of a few fixed shapes, so the owner can
  * read exactly what others rely on. Owner: auth-service.
  */
-import { activeWindowWhere } from '../access/assignment-window';
+import { activeWindowWhere, notEndedWhere } from '../access/assignment-window';
 import { PERSON_BRIEF_SELECT } from '../api/person-search';
 import { crmReachSelect } from '../crm/client-reach';
 import type { On } from './db';
@@ -20,6 +20,8 @@ export interface PeopleFilter {
   internalOnly?: boolean;
   /** Not portal clients (external members allowed). */
   notClients?: boolean;
+  /** Assigned (not ended) to this workspace; `null` = to none, i.e. nobody. Omitted = no workspace rule. */
+  inWorkspace?: string | null;
 }
 
 function filterWhere(f: PeopleFilter = {}) {
@@ -28,6 +30,9 @@ function filterWhere(f: PeopleFilter = {}) {
     ...(f.active ? { isActive: true } : {}),
     ...(f.staffOnly || f.internalOnly ? { isExternal: false } : {}),
     ...(f.staffOnly || f.notClients ? { role: { not: 'CUSTOMER' as never } } : {}),
+    ...(f.inWorkspace !== undefined
+      ? { spaceAssignments: { some: { spaceId: f.inWorkspace ?? '__none__', ...notEndedWhere() } } }
+      : {}),
   };
 }
 
@@ -213,9 +218,22 @@ export function peopleStanding(db: On<'user', 'findMany'>, ids: string[]) {
   return db.user.findMany({ where: { id: { in: ids } }, select: { id: true, isActive: true, organizationId: true } });
 }
 
-/** People by id with name and address (PERSON_BRIEF_SELECT). */
-export function peopleBriefWithEmail(db: On<'user', 'findMany'>, ids: string[]) {
-  return db.user.findMany({ where: { id: { in: ids } }, select: PERSON_BRIEF_SELECT });
+/** People by id with name and address (PERSON_BRIEF_SELECT) — those who pass the filter. */
+export function peopleBriefWithEmail(db: On<'user', 'findMany'>, ids: string[], filter: PeopleFilter = {}) {
+  return db.user.findMany({ where: { id: { in: ids }, ...filterWhere(filter) }, select: PERSON_BRIEF_SELECT });
+}
+
+/** The `{ id }` rows of these people who pass the filter (the shape a membership check reads). */
+export function peopleIds(db: On<'user', 'findMany'>, ids: string[], filter: PeopleFilter = {}) {
+  return db.user.findMany({ where: { id: { in: ids }, ...filterWhere(filter) }, select: { id: true } });
+}
+
+/** Names, address and photo of these people of the organization. */
+export function peopleContacts(db: On<'user', 'findMany'>, ids: string[], organizationId: string) {
+  return db.user.findMany({
+    where: { id: { in: ids }, organizationId },
+    select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true },
+  });
 }
 
 /** The CRM reach facts of one member (null = not in the organization). */

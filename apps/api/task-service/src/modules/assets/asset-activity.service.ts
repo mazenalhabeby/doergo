@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, peopleNames } from '@hbcfield/shared';
 import { success } from '@hbcfield/shared';
 import { AssetAccessService, type AssetActor } from './asset-access.service';
 
@@ -34,22 +34,19 @@ export class AssetActivityService {
     });
 
     const authorIds = [...new Set(activities.map((a) => a.authorId).filter(Boolean))] as string[];
-    const authors = authorIds.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: authorIds } },
-          select: { id: true, firstName: true, lastName: true },
-        })
-      : [];
+    const authors = authorIds.length ? await peopleNames(this.prisma, authorIds) : [];
     const byId = new Map(authors.map((a) => [a.id, a]));
 
-    return success(activities.map((a) => ({ ...a, author: a.authorId ? byId.get(a.authorId) ?? null : null })));
+    return success(activities.map((a) => ({ ...a, author: a.authorId ? (byId.get(a.authorId) ?? null) : null })));
   }
 
   /** Write a note against an asset. */
-  async addActivity(data: {
-    id: string;
-    body: string;
-  } & AssetActor) {
+  async addActivity(
+    data: {
+      id: string;
+      body: string;
+    } & AssetActor,
+  ) {
     // A note is part of the record's history, written by whoever runs it:
     // management, in the record's own workspace — never a wider door.
     await this.access.assetInScope(data.id, data, 'manage');

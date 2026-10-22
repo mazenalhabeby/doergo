@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { requireObjectStore } from '@hbcfield/shared/storage';
 import { Prisma } from '@prisma/client';
-import { success, mayReviewProposal, proposalInSpace } from '@hbcfield/shared';
+import { success, mayReviewProposal, proposalInSpace, peopleFaces } from '@hbcfield/shared';
 import { type ContractActor, type ContractFields } from './asset-contract.service';
 import { assetScope } from './asset-access.service';
 import { ALLOWED, PENDING_SCAN, PROPOSAL_STATUS } from './asset-proposal-helpers';
@@ -70,8 +70,16 @@ export class ProposalReviewService extends AssetProposalBase {
       // Narrowed in memory below, so a narrowed queue reads further before it cuts.
       take: narrowed ? PENDING_SCAN : 100,
       select: {
-        id: true, fields: true, signals: true, documentKind: true, categoryId: true,
-        raisedById: true, holderUserId: true, createdAt: true, fileKey: true, fileName: true,
+        id: true,
+        fields: true,
+        signals: true,
+        documentKind: true,
+        categoryId: true,
+        raisedById: true,
+        holderUserId: true,
+        createdAt: true,
+        fileKey: true,
+        fileName: true,
       },
     });
     let rows = found;
@@ -90,10 +98,7 @@ export class ProposalReviewService extends AssetProposalBase {
     if (rows.length === 0) return success({ proposals: [] });
 
     const ids = [...new Set(rows.flatMap((r) => [r.raisedById, r.holderUserId]).filter((v): v is string => !!v))];
-    const people = await this.prisma.user.findMany({
-      where: { id: { in: ids }, organizationId: data.organizationId },
-      select: { id: true, firstName: true, lastName: true, avatarUrl: true },
-    });
+    const people = await peopleFaces(this.prisma, ids, { organizationId: data.organizationId });
     const byId = new Map(people.map((p) => [p.id, p]));
 
     return success({
@@ -117,13 +122,15 @@ export class ProposalReviewService extends AssetProposalBase {
    * been given to somebody else, and executing a plan frozen at upload would
    * quietly undo that.
    */
-  async accept(data: {
-    id: string;
-    categoryId?: string;
-    typeId?: string;
-    fields?: ContractFields;
-    retireReplaced?: boolean;
-  } & ContractActor) {
+  async accept(
+    data: {
+      id: string;
+      categoryId?: string;
+      typeId?: string;
+      fields?: ContractFields;
+      retireReplaced?: boolean;
+    } & ContractActor,
+  ) {
     this.contracts.assertMay(data, 'update assets');
     // Out of scope answers exactly like decided or missing — and before the
     // claim, so a refused reviewer never takes it out of somebody else's queue.
@@ -139,17 +146,18 @@ export class ProposalReviewService extends AssetProposalBase {
       // The reviewer's corrections win over what was sent in; they are looking
       // at the page too, on a bigger screen.
       const fields = { ...(proposal.fields as ContractFields), ...this.cleanFields(data.fields) };
-      const applied = await this.contracts.apply({
-        categoryId,
-        typeId: data.typeId,
-        holderUserId,
-        fields,
-        retireReplaced: data.retireReplaced,
-        userId: data.userId,
-        userRole: data.userRole,
-        isExternal: data.isExternal,
-        canManageAssets: data.canManageAssets,
-        /*
+      const applied = await this.contracts.apply(
+        {
+          categoryId,
+          typeId: data.typeId,
+          holderUserId,
+          fields,
+          retireReplaced: data.retireReplaced,
+          userId: data.userId,
+          userRole: data.userRole,
+          isExternal: data.isExternal,
+          canManageAssets: data.canManageAssets,
+          /*
           ⚠️ The reviewer's own workspaces travel into apply, which narrows the
           CHOSEN kind by its real workspace. Being allowed to review a proposal
           for a member of my depot is not being allowed to create it in another

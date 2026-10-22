@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { Role, activeAssignmentWhere } from '@hbcfield/shared';
+import { Role, activeAssignmentWhere, staffAccessFlags } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { AssetResponsibleService } from './asset-responsible.service';
@@ -17,7 +17,6 @@ export abstract class AssetNotifierBase {
     @Inject('NOTIFICATION_SERVICE') protected readonly notifications: ClientProxy,
     protected readonly responsible: AssetResponsibleService,
   ) {}
-
 
   // ── Who ────────────────────────────────────────────────────────────────────
 
@@ -74,13 +73,7 @@ export abstract class AssetNotifierBase {
     const candidates = [...new Set(userIds)].filter((id) => id && id !== exceptUserId);
     if (candidates.length === 0) return [];
 
-    const users = await this.prisma.user.findMany({
-      where: { id: { in: candidates }, organizationId, isActive: true, isExternal: false },
-      select: {
-        id: true, role: true, canViewAllTasks: true, canManageUsers: true,
-        memberRole: { select: { permissions: true, isActive: true } },
-      },
-    });
+    const users = await staffAccessFlags(this.prisma, candidates, organizationId);
 
     const allowed = new Set<string>();
     const rest: string[] = [];

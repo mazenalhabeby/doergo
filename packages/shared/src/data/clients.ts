@@ -26,3 +26,28 @@ export function dueClientReminders(
     take: 300,
   });
 }
+
+/** The `{ id }` rows of these clients of the organization — in one workspace when given (`null` = none). */
+export function clientIds(
+  db: On<'customer', 'findMany'>,
+  ids: string[],
+  organizationId: string,
+  inWorkspace?: string | null,
+) {
+  return db.customer.findMany({
+    where: {
+      id: { in: ids },
+      organizationId,
+      ...(inWorkspace === undefined ? {} : { spaceId: inWorkspace ?? '__none__' }),
+    },
+    select: { id: true },
+  });
+}
+
+/** Name and contact details of these clients of the organization. */
+export function clientContacts(db: On<'customer', 'findMany'>, ids: string[], organizationId: string) {
+  return db.customer.findMany({
+    where: { id: { in: ids }, organizationId },
+    select: { id: true, name: true, email: true, phone: true },
+  });
+}

@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
 import { randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
-import { success, normalizeKindShape, activeAssignmentWhere } from '@hbcfield/shared';
+import { success, normalizeKindShape, activeAssignmentWhere, personPasses } from '@hbcfield/shared';
 import { type ContractFields } from './asset-contract.service';
 import { findPrior } from '../../common/create-once.util';
 import { ALLOWED, MAX_FILE_SIZE, MAX_OPEN_PER_MEMBER, PROPOSAL_STATUS } from './asset-proposal-helpers';
@@ -86,8 +86,13 @@ export class AssetProposalService extends AssetProposalBase {
       decide. Refused here rather than accepted and shown as an empty card,
       which is a queue item that can only be dismissed.
     */
-    const identified = !!(fields.name || fields.registration || fields.vin || fields.serial ||
-      (fields.manufacturer && fields.model));
+    const identified = !!(
+      fields.name ||
+      fields.registration ||
+      fields.vin ||
+      fields.serial ||
+      (fields.manufacturer && fields.model)
+    );
     if (!identified) {
       throw new BadRequestException('Nothing on that page identifies a thing');
     }
@@ -96,10 +101,7 @@ export class AssetProposalService extends AssetProposalBase {
     // proposal quietly becomes a way to attach a vehicle to a colleague.
     const holderUserId = data.canManageAssets ? (data.holderUserId ?? data.userId) : data.userId;
     if (holderUserId !== data.userId) {
-      const member = await this.prisma.user.findFirst({
-        where: { id: holderUserId, organizationId: data.organizationId },
-        select: { id: true },
-      });
+      const member = await personPasses(this.prisma, holderUserId, { organizationId: data.organizationId });
       if (!member) throw new BadRequestException('That person is not in this organization');
     }
 
@@ -118,7 +120,8 @@ export class AssetProposalService extends AssetProposalBase {
       }
       const object = await requireObjectStore(this.store).head(data.fileKey);
       if (!object.exists) throw new BadRequestException('The page did not finish uploading — please try again');
-      if (object.sizeBytes <= 0 || object.sizeBytes > MAX_FILE_SIZE) throw new BadRequestException('That file is too large');
+      if (object.sizeBytes <= 0 || object.sizeBytes > MAX_FILE_SIZE)
+        throw new BadRequestException('That file is too large');
       fileKey = data.fileKey;
     }
 
@@ -145,8 +148,8 @@ export class AssetProposalService extends AssetProposalBase {
         documentKind: data.documentKind === 'asset-contract' ? 'asset-contract' : 'unknown',
         signals: (data.signals ?? []).slice(0, 10) as unknown as Prisma.InputJsonValue,
         fileKey,
-        fileName: fileKey ? data.fileName?.slice(0, 255) ?? null : null,
-        fileMime: fileKey ? data.fileMime ?? null : null,
+        fileName: fileKey ? (data.fileName?.slice(0, 255) ?? null) : null,
+        fileMime: fileKey ? (data.fileMime ?? null) : null,
       },
     });
 
@@ -204,8 +207,15 @@ export class AssetProposalService extends AssetProposalBase {
       orderBy: { createdAt: 'desc' },
       take: 50,
       select: {
-        id: true, fields: true, status: true, reviewNote: true, reviewedAt: true,
-        createdAssetId: true, createdAt: true, fileKey: true, documentKind: true,
+        id: true,
+        fields: true,
+        status: true,
+        reviewNote: true,
+        reviewedAt: true,
+        createdAssetId: true,
+        createdAt: true,
+        fileKey: true,
+        documentKind: true,
       },
     });
     // The KEY never leaves the server — only whether there is a page.

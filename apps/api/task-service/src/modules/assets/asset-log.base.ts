@@ -12,6 +12,7 @@ import {
   type AssetLogState,
   type KindShape,
   type LogDueState,
+  peopleFaces,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
@@ -187,12 +188,7 @@ export abstract class AssetLogBase {
 
   protected async names(ids: Array<string | null | undefined>, organizationId: string) {
     const unique = [...new Set(ids.filter((v): v is string => !!v))];
-    const users = unique.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: unique }, organizationId },
-          select: { id: true, firstName: true, lastName: true, avatarUrl: true },
-        })
-      : [];
+    const users = unique.length ? await peopleFaces(this.prisma, unique, { organizationId }) : [];
     return new Map(users.map((u) => [u.id, u]));
   }
 }

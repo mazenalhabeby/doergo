@@ -1,12 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
-import {
-  success,
-  isAssetStatus,
-  assetDateProblems,
-  type AssetDateProblem,
-  PERSON_BRIEF_SELECT,
-} from '@hbcfield/shared';
+import { PrismaService, peopleBriefWithEmail } from '@hbcfield/shared';
+import { success, isAssetStatus, assetDateProblems, type AssetDateProblem } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetHoldersService } from './asset-holders.service';
 import { AssetCustodyService } from './asset-custody.service';
@@ -59,12 +53,7 @@ export abstract class AssetsBase {
     const userIds = [
       ...new Set(assets.flatMap((a) => (a.holders ?? []).map((h) => h.userId).filter((id): id is string => !!id))),
     ];
-    const members = userIds.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: userIds }, organizationId },
-          select: PERSON_BRIEF_SELECT,
-        })
-      : [];
+    const members = userIds.length ? await peopleBriefWithEmail(this.prisma, userIds, { organizationId }) : [];
     const byId = new Map(members.map((m) => [m.id, m]));
 
     return assets.map((a) => ({
@@ -88,10 +77,7 @@ export abstract class AssetsBase {
     const userIds = rows.map((h) => h.userId).filter((id): id is string => !!id);
 
     const members = userIds.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: userIds }, organizationId: asset.organizationId },
-          select: PERSON_BRIEF_SELECT,
-        })
+      ? await peopleBriefWithEmail(this.prisma, userIds, { organizationId: asset.organizationId })
       : [];
     const byId = new Map(members.map((m) => [m.id, m]));
 
@@ -132,8 +118,8 @@ export abstract class AssetsBase {
     stored?: { installDate: Date | null; warrantyExpiry: Date | null },
   ): void {
     const problems = assetDateProblems({
-      installDate: next.installDate !== undefined ? next.installDate : stored?.installDate ?? null,
-      warrantyExpiry: next.warrantyExpiry !== undefined ? next.warrantyExpiry : stored?.warrantyExpiry ?? null,
+      installDate: next.installDate !== undefined ? next.installDate : (stored?.installDate ?? null),
+      warrantyExpiry: next.warrantyExpiry !== undefined ? next.warrantyExpiry : (stored?.warrantyExpiry ?? null),
     });
     if (!problems.length) return;
     const say: Record<AssetDateProblem, string> = {

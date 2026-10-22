@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, personPasses } from '@hbcfield/shared';
 import {
-  notEndedWhere,
   normalizeKindShape,
   maxHolders,
   proposeFromContract,
@@ -124,13 +123,9 @@ export abstract class AssetContractBase {
 
     // A workspace-scoped manager hands the thing only to somebody who works in that workspace (same rule as a handover).
     const narrow = Array.isArray(data.manageSpaceIds);
-    const member = await this.prisma.user.findFirst({
-      where: {
-        id: data.holderUserId,
-        organizationId: data.organizationId,
-        ...(narrow ? { spaceAssignments: { some: { spaceId: kind.spaceId ?? '__none__', ...notEndedWhere() } } } : {}),
-      },
-      select: { id: true },
+    const member = await personPasses(this.prisma, data.holderUserId, {
+      organizationId: data.organizationId,
+      ...(narrow ? { inWorkspace: kind.spaceId ?? null } : {}),
     });
     if (!member)
       throw new BadRequestException(

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, clientIds, peopleIds } from '@hbcfield/shared';
 import { KIND_SHAPE_LIMITS, normalizeKindShape, maxHolders } from '@hbcfield/shared';
 
 /** One holder as a request describes it: a member OR a client, never both. */
@@ -90,18 +90,8 @@ export class AssetHoldersService {
     // Two queries, whatever the count. Both scoped to the organization, so an
     // id guessed from another tenant comes back missing rather than accepted.
     const [members, clients] = await Promise.all([
-      userIds.size
-        ? this.prisma.user.findMany({
-            where: { id: { in: [...userIds] }, organizationId },
-            select: { id: true },
-          })
-        : Promise.resolve([]),
-      customerIds.size
-        ? this.prisma.customer.findMany({
-            where: { id: { in: [...customerIds] }, organizationId },
-            select: { id: true },
-          })
-        : Promise.resolve([]),
+      userIds.size ? peopleIds(this.prisma, [...userIds], { organizationId }) : Promise.resolve([]),
+      customerIds.size ? clientIds(this.prisma, [...customerIds], organizationId) : Promise.resolve([]),
     ]);
 
     if (members.length !== userIds.size) {
