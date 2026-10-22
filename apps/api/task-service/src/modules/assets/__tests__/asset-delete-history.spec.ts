@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { BILLABLE_ASSET_WHERE } from '@hbcfield/shared';
-import { AssetsService } from '../assets.service';
+import { AssetsService } from '../register/assets.service';
 import { assetServicesOf, type AssetsServiceParts } from './assets.service.fixture';
-import { AssetAccessService } from '../asset-access.service';
-import { AssetActivityService } from '../asset-activity.service';
-import { AssetHoldersService } from '../asset-holders.service';
-import { AssetCustodyService } from '../asset-custody.service';
+import { AssetAccessService } from '../core/asset-access.service';
+import { AssetActivityService } from '../core/asset-activity.service';
+import { AssetHoldersService } from '../core/asset-holders.service';
+import { AssetCustodyService } from '../custody/asset-custody.service';
 import { PrismaService } from '@hbcfield/shared';
 
 /**

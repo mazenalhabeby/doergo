@@ -104,26 +104,26 @@ describe('the server reads the file, and is allowed to by custody', () => {
   it('refuses a key that is not this organization’s and this asset’s', () => {
     // Without it the route reads any object in the bucket whose key can be
     // guessed. The same check `submit` makes.
-    const svc = stripComments(read(path.join(TASK, 'src/modules/assets/asset-expense.service.ts')));
+    const svc = stripComments(read(path.join(TASK, 'src/modules/assets/expenses/asset-expense.service.ts')));
     expect(svc).toMatch(/readReceipt[\s\S]{0,2000}startsWith\(this\.prefix\(/);
   });
 
   it('asks custody on the RECEIPT’s date, not today', () => {
-    const svc = stripComments(read(path.join(TASK, 'src/modules/assets/asset-expense.service.ts')));
+    const svc = stripComments(read(path.join(TASK, 'src/modules/assets/expenses/asset-expense.service.ts')));
     expect(svc).toMatch(
       /readReceipt[\s\S]{0,600}readAssetEntryDate\(data\.occurredAt, data\)[\s\S]{0,200}this\.gate\(/,
     );
   });
 
   it('declines an image rather than reading it worse', () => {
-    const svc = stripComments(read(path.join(TASK, 'src/modules/assets/asset-expense.service.ts')));
+    const svc = stripComments(read(path.join(TASK, 'src/modules/assets/expenses/asset-expense.service.ts')));
     expect(svc).toContain("'NOT_A_PDF'");
   });
 
   it('uses the SAME rules as the phone', () => {
     // A second "which figure is the total" is how one surface starts
     // disagreeing with the other about the same invoice.
-    const svc = stripComments(read(path.join(TASK, 'src/modules/assets/asset-expense.service.ts')));
+    const svc = stripComments(read(path.join(TASK, 'src/modules/assets/expenses/asset-expense.service.ts')));
     expect(svc).toContain('parseReceipt');
     expect(svc).toMatch(/from '@hbcfield\/shared'/);
   });

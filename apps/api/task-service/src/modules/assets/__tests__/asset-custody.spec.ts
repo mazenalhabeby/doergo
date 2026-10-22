@@ -1,15 +1,15 @@
-import { AssetExpenseReviewService } from '../asset-expense-review.service';
-import { CustodyReadService } from '../custody-read.service';
+import { AssetExpenseReviewService } from '../expenses/asset-expense-review.service';
+import { CustodyReadService } from '../custody/custody-read.service';
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
-import { AssetAccessService } from '../asset-access.service';
-import { AssetCustodyService } from '../asset-custody.service';
+import { AssetAccessService } from '../core/asset-access.service';
+import { AssetCustodyService } from '../custody/asset-custody.service';
 import { custodyServicesOf, type AssetCustodyServiceParts } from './asset-custody.service.fixture';
-import { AssetExpenseService } from '../asset-expense.service';
+import { AssetExpenseService } from '../expenses/asset-expense.service';
 import { assetExpensePartsOf, type AssetExpenseServiceParts } from './asset-expense.service.fixture';
-import { AssetNotifier } from '../asset-notifier.service';
+import { AssetNotifier } from '../core/asset-notifier.service';
 import { ConfigService } from '@nestjs/config';
 
 /**

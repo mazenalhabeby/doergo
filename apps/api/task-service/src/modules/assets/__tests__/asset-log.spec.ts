@@ -1,9 +1,9 @@
 import { BadRequestException, ForbiddenException, NotFoundException, ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { kindTemplate } from '@hbcfield/shared';
-import { AssetAccessService } from '../asset-access.service';
+import { AssetAccessService } from '../core/asset-access.service';
 import { assetLogParts } from './asset-log.service.fixture';
-import { AssetLogReminderService } from '../asset-log-reminder.service';
+import { AssetLogReminderService } from '../logbook/asset-log-reminder.service';
 
 /**
  * The logbook on the server: who may log, what a write does to the asset's
@@ -320,7 +320,7 @@ describe('the due sweep', () => {
     };
     const routing: any = { resolveWatchers: jest.fn(async () => ({ ids: [], emails: [] })) };
     const notifications: any = { emit: jest.fn() };
-    const { AssetResponsibleService } = require('../asset-responsible.service');
+    const { AssetResponsibleService } = require('../core/asset-responsible.service');
     const service = new AssetLogReminderService(prisma, routing, new AssetResponsibleService(prisma), notifications);
     return { service, prisma, notifications };
   }

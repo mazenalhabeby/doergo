@@ -9,7 +9,7 @@ import {
   BILLABLE_ASSET_WHERE,
 } from '@hbcfield/shared';
 import { assetServices } from './assets.service.fixture';
-import { AssetAccessService } from '../asset-access.service';
+import { AssetAccessService } from '../core/asset-access.service';
 
 /**
  * The record's own facts: its status, its plate, its dates.

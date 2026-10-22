@@ -1,5 +1,5 @@
 import { Role } from '@hbcfield/shared';
-import { AssetAccessService } from '../asset-access.service';
+import { AssetAccessService } from '../core/asset-access.service';
 
 /**
  * Which workspaces' equipment a caller may list.

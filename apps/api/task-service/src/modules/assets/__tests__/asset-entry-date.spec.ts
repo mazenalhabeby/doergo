@@ -14,10 +14,10 @@ import {
   localDayKey,
   logDateProblem,
 } from '@hbcfield/shared';
-import { AssetAccessService } from '../asset-access.service';
-import { AssetExpenseService } from '../asset-expense.service';
+import { AssetAccessService } from '../core/asset-access.service';
+import { AssetExpenseService } from '../expenses/asset-expense.service';
 import { assetLogParts } from './asset-log.service.fixture';
-import { readAssetEntryDate } from '../asset-entry-date';
+import { readAssetEntryDate } from '../core/asset-entry-date';
 
 /**
  * ONE date rule for everything filed against an asset.
@@ -194,8 +194,11 @@ describe('the server reads every asset date through one door', () => {
 
   it('no asset service keeps its own copy of the window', () => {
     const dir = path.join(__dirname, '..');
-    const offenders = fs.readdirSync(dir)
-      .filter((f) => f.endsWith('.service.ts'))
+    // Every service in every sub-module (core, custody, expenses, logbook, proposals, register).
+    const services = fs.readdirSync(dir, { recursive: true, encoding: 'utf8' })
+      .filter((f) => f.endsWith('.service.ts') && !f.includes('__tests__'));
+    expect(services.length).toBeGreaterThan(10);
+    const offenders = services
       .filter((f) => {
         const src = fs.readFileSync(path.join(dir, f), 'utf8');
         return /BACKDATE_DAYS\s*=|\b120\s*\*\s*86_400_000|(entry|receipt) cannot be dated/.test(src);

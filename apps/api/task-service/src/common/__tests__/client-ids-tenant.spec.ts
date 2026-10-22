@@ -4,7 +4,7 @@ import { EpicsService } from '../../modules/epics/epics.service';
 import { PhasesService } from '../../modules/phases/phases.service';
 import { recurringParts } from '../../modules/recurring-tasks/__tests__/recurring-tasks.service.fixture';
 import { SpacesService } from '../../modules/spaces/spaces.service';
-import { AssetProposalService } from '../../modules/assets/asset-proposal.service';
+import { AssetProposalService } from '../../modules/assets/proposals/asset-proposal.service';
 
 /**
  * An id from a request body says nothing about whose it is. Each of these was

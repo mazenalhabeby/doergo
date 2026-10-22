@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { AssetHoldersService } from '../asset-holders.service';
+import { AssetHoldersService } from '../core/asset-holders.service';
 
 /**
  * Who may hold a thing, and how many.

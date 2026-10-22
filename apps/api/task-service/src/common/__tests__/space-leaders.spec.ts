@@ -44,7 +44,7 @@ describe('spaceRoleHolders', () => {
 
   it.each([
     ['attendance', '../../modules/attendance/core/attendance-routing.service.ts', 'resolveSpaceLeaders'],
-    ['assets', '../../modules/assets/asset-responsible.service.ts', 'spaceManagers'],
+    ['assets', '../../modules/assets/core/asset-responsible.service.ts', 'spaceManagers'],
   ])('%s asks it through the one function', (_n, file, method) => {
     const src = readFileSync(join(__dirname, file), 'utf8');
     const body = src.slice(src.indexOf(`async ${method}(`), src.indexOf(`async ${method}(`) + 1500);

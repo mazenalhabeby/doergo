@@ -2,11 +2,11 @@ import { Processor } from '@nestjs/bullmq';
 import { JobProcessor } from '../../common/queue/job-processor';
 import { Job } from 'bullmq';
 import { QUEUE_NAMES, ASSET_JOB_TYPES } from '@hbcfield/shared';
-import { AssetsService } from './assets.service';
-import { AssetCatalogService } from './asset-catalog.service';
-import { AssetCreateService } from './asset-create.service';
-import { AssetUpdateService } from './asset-update.service';
-import { AssetTypesService } from './asset-types.service';
+import { AssetsService } from './register/assets.service';
+import { AssetCatalogService } from './register/asset-catalog.service';
+import { AssetCreateService } from './register/asset-create.service';
+import { AssetUpdateService } from './register/asset-update.service';
+import { AssetTypesService } from './register/asset-types.service';
 
 @Processor(QUEUE_NAMES.ASSETS)
 export class AssetsProcessor extends JobProcessor {

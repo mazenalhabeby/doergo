@@ -6,7 +6,7 @@ import { ChatMessagesService } from '../../modules/chat/chat-messages.service';
 import {  } from '../../modules/chat/__tests__/chat.service.fixture';
 import { SupportService } from '../../modules/support/support.service';
 import { TimeOffRequestService } from '../../modules/technicians/time-off-request.service';
-import { AssetExpenseService } from '../../modules/assets/asset-expense.service';
+import { AssetExpenseService } from '../../modules/assets/expenses/asset-expense.service';
 import {  } from '../../modules/assets/__tests__/asset-expense.service.fixture';
 import { TaskRecordsService } from '../../modules/tasks/records/task-records.service';
 

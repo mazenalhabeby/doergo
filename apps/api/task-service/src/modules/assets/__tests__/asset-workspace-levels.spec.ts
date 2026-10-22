@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { assetSpaces, assetAccessIn } from '@hbcfield/shared';
-import { AssetAccessService } from '../asset-access.service';
+import { AssetAccessService } from '../core/asset-access.service';
 import { assetServices } from './assets.service.fixture';
 import { assetCatalogParts } from './asset-catalog.service.fixture';
 import { custodyServices } from './asset-custody.service.fixture';

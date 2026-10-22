@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
 import { TasksService } from '../tasks/tasks.service';
-import { AssetCustodyService } from '../assets/asset-custody.service';
+import { AssetCustodyService } from '../assets/custody/asset-custody.service';
 
 export interface OffboardResult {
   tasksReleased: number;

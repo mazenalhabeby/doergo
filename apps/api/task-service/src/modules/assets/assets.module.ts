@@ -1,84 +1,34 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule } from '@nestjs/microservices';
-import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
-import { AssetsService } from './assets.service';
-import { AssetAccessService } from './asset-access.service';
-import { AssetCatalogService } from './asset-catalog.service';
-import { AssetRowsService } from './asset-rows.service';
-import { AssetLedgerService } from './asset-ledger.service';
-import { AssetActivityService } from './asset-activity.service';
-import { AssetUsageService } from './asset-usage.service';
-import { AssetHoldersService } from './asset-holders.service';
-import { AssetCustodyService } from './asset-custody.service';
-import { AssetExpenseService } from './asset-expense.service';
-import { AssetExpenseReviewService } from './asset-expense-review.service';
-import { AssetContractService } from './asset-contract.service';
-import { AssetProposalService } from './asset-proposal.service';
-import { AssetNotifier } from './asset-notifier.service';
-import { AssetResponsibleService } from './asset-responsible.service';
-import { AssetLogService } from './asset-log.service';
-import { AssetLogReminderService } from './asset-log-reminder.service';
 import { AssetsController } from './assets.controller';
-import { AssetMoneyRpcController } from './asset-money.rpc.controller';
-import { AssetIntakeRpcController } from './asset-intake.rpc.controller';
-import { AssetLogRpcController } from './asset-log.rpc.controller';
 import { AssetsProcessor } from './assets.processor';
-import { AssetCreateService } from './asset-create.service';
-import { AssetUpdateService } from './asset-update.service';
-import { ProposalReviewService } from './proposal-review.service';
-import { CustodyReadService } from './custody-read.service';
-import { AssetLogReadService } from './asset-log-read.service';
-import { AssetTypesService } from './asset-types.service';
+import { AssetCoreModule } from './core/asset-core.module';
+import { AssetCustodyModule } from './custody/asset-custody.module';
+import { AssetExpensesModule } from './expenses/asset-expenses.module';
+import { AssetLogbookModule } from './logbook/asset-logbook.module';
+import { AssetProposalsModule } from './proposals/asset-proposals.module';
+import { AssetRegisterModule } from './register/asset-register.module';
 
 /**
- * One 1,500-line service became several, split by subject rather than by layer:
- * the rules everything shares, the kinds, the records, their tables, their
- * money, what happened to them, and how many of them are billable. Each is
- * injected where it is needed, so a dependency is visible in a constructor
- * rather than implied by a file.
+ * Equipment. Each part is its own module (code-structure-fix 4.4): core · custody · expenses · logbook ·
+ * proposals · register. This module holds only the HTTP-facing controller and the queue processor, and
+ * re-exports every part for the modules that use them (members).
+ *
+ * `NotificationRoutingService` needs no import — it is @Global, so the three consumers of "who is
+ * responsible for this member" all inject it without wiring.
  */
-const SERVICES = [
-  AssetAccessService,
-  AssetCatalogService,
-  AssetTypesService,
-  AssetsService,
-  AssetCreateService,
-  AssetUpdateService,
-  AssetRowsService,
-  AssetLedgerService,
-  AssetActivityService,
-  AssetUsageService,
-  AssetHoldersService,
-  // Who held it and when, and what they spent on it while they did.
-  AssetCustodyService,
-  CustodyReadService,
-  AssetExpenseService,
-  AssetExpenseReviewService,
-  // A contract read into a record, a handover and a retirement.
-  AssetContractService,
-  // A member sends a page in; somebody responsible decides.
-  AssetProposalService,
-  ProposalReviewService,
-  // Who is told about any of the above — expenses, decisions, handovers.
-  AssetNotifier,
-  // Who can act on the equipment — for proposals and due reminders alike.
-  AssetResponsibleService,
-  // What gets done to a thing, and when it is due again.
-  AssetLogService,
-  AssetLogReadService,
-  AssetLogReminderService,
+const PARTS = [
+  AssetCoreModule,
+  AssetCustodyModule,
+  AssetExpensesModule,
+  AssetLogbookModule,
+  AssetProposalsModule,
+  AssetRegisterModule,
 ];
 
 @Module({
-  /*
-    A proposal has to reach somebody, so this module now talks to the
-    notification service. `NotificationRoutingService` needs no import — it is
-    @Global, so the three consumers of "who is responsible for this member" all
-    inject it without wiring.
-  */
-  imports: [ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)])],
-  controllers: [AssetsController, AssetMoneyRpcController, AssetIntakeRpcController, AssetLogRpcController],
-  providers: [...SERVICES, AssetsProcessor],
-  exports: SERVICES,
+  imports: PARTS,
+  controllers: [AssetsController],
+  providers: [AssetsProcessor],
+  exports: PARTS,
 })
 export class AssetsModule {}

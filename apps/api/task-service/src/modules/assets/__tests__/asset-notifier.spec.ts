@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
-import { AssetNotifier } from '../asset-notifier.service';
-import { AssetResponsibleService } from '../asset-responsible.service';
+import { AssetNotifier } from '../core/asset-notifier.service';
+import { AssetResponsibleService } from '../core/asset-responsible.service';
 
 /**
  * Who is told about the organization's things.

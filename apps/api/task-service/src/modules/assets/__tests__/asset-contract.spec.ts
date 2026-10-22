@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@hbcfield/shared';
-import { AssetAccessService } from '../asset-access.service';
-import { AssetCustodyService } from '../asset-custody.service';
-import { AssetContractService } from '../asset-contract.service';
+import { AssetAccessService } from '../core/asset-access.service';
+import { AssetCustodyService } from '../custody/asset-custody.service';
+import { AssetContractService } from '../proposals/asset-contract.service';
 import { assetCatalogParts } from './asset-catalog.service.fixture';
 
 /**

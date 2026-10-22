@@ -5,13 +5,13 @@ import { mayReviewProposal, proposalInSpace, proposalReviewSpaces } from '@hbcfi
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
-import { AssetAccessService } from '../asset-access.service';
-import { AssetContractService } from '../asset-contract.service';
-import { AssetProposalService } from '../asset-proposal.service';
-import { ProposalReviewService } from '../proposal-review.service';
+import { AssetAccessService } from '../core/asset-access.service';
+import { AssetContractService } from '../proposals/asset-contract.service';
+import { AssetProposalService } from '../proposals/asset-proposal.service';
+import { ProposalReviewService } from '../proposals/proposal-review.service';
 import { assetProposalServicesOf, type AssetProposalServiceParts } from './asset-proposal.service.fixture';
-import { AssetNotifier } from '../asset-notifier.service';
-import { AssetResponsibleService } from '../asset-responsible.service';
+import { AssetNotifier } from '../core/asset-notifier.service';
+import { AssetResponsibleService } from '../core/asset-responsible.service';
 
 /**
  * A member sends a page in; somebody responsible decides.

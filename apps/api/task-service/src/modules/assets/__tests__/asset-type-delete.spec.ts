@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { assetCatalogParts } from './asset-catalog.service.fixture';
-import { AssetAccessService } from '../asset-access.service';
+import { AssetAccessService } from '../core/asset-access.service';
 
 /**
  * Deleting a type used to detach its assets instead of refusing.

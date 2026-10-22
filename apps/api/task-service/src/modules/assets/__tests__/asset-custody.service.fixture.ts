@@ -1,6 +1,6 @@
 import { combinedServices } from '../../../common/testing/combined-services';
-import { AssetCustodyService } from '../asset-custody.service';
-import { CustodyReadService } from '../custody-read.service';
+import { AssetCustodyService } from '../custody/asset-custody.service';
+import { CustodyReadService } from '../custody/custody-read.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };

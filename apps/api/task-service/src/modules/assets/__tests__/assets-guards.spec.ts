@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { AssetAccessService } from '../asset-access.service';
+import { AssetAccessService } from '../core/asset-access.service';
 
 /**
  * The two rules that were spread across 25 copies and one missing clamp.

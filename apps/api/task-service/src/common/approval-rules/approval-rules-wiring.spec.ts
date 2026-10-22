@@ -14,7 +14,7 @@ describe('office rules are asked on every approve path of their kinds', () => {
   const paths: Array<[string, string]> = [
     ['attendance/extra-time/extra-time.base.ts + attendance/extra-time/extra-time-decision.service.ts', 'overtime'],
     ['technicians/time-off-decision.service.ts', 'request'],
-    ['assets/asset-expense-review.service.ts', 'expense'],
+    ['assets/expenses/asset-expense-review.service.ts', 'expense'],
   ];
   for (const [file, kind] of paths) {
     it(`${file} gates and clears '${kind}'`, () => {

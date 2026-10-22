@@ -1,7 +1,7 @@
 import { combinedServices } from '../../../common/testing/combined-services';
-import { AssetsService } from '../assets.service';
-import { AssetCreateService } from '../asset-create.service';
-import { AssetUpdateService } from '../asset-update.service';
+import { AssetsService } from '../register/assets.service';
+import { AssetCreateService } from '../register/asset-create.service';
+import { AssetUpdateService } from '../register/asset-update.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };

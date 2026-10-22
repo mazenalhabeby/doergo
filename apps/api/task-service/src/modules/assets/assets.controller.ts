@@ -14,12 +14,12 @@ import {
   listOrphanAssets,
   type RpcRequest,
 } from '@hbcfield/shared/microservices';
-import { AssetsService } from './assets.service';
-import { AssetCatalogService } from './asset-catalog.service';
-import { AssetActivityService } from './asset-activity.service';
-import { AssetUsageService } from './asset-usage.service';
-import { AssetAccessService } from './asset-access.service';
-import { AssetTypesService } from './asset-types.service';
+import { AssetsService } from './register/assets.service';
+import { AssetCatalogService } from './register/asset-catalog.service';
+import { AssetActivityService } from './core/asset-activity.service';
+import { AssetUsageService } from './register/asset-usage.service';
+import { AssetAccessService } from './core/asset-access.service';
+import { AssetTypesService } from './register/asset-types.service';
 
 @Controller()
 export class AssetsController {
