@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject } from '@nestjs/common';
+import { RoleOpeningService } from './role-opening.service';
 import { RolePoolService } from './role-pool.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { findPrior } from '../../common/create-once.util';
@@ -31,7 +32,8 @@ export class TaskRecordsService {
     private readonly support: TaskSupportService,
     private readonly assignment: TaskAssignmentService,
     // A task open to a WORK role (shared tasks/role-pool.ts) — beside the name flow.
-    @Inject(forwardRef(() => RolePoolService)) private readonly rolePool: RolePoolService,
+    private readonly rolePool: RolePoolService,
+    private readonly roleOpening: RoleOpeningService,
   ) {}
 
   /**
@@ -134,13 +136,13 @@ export class TaskRecordsService {
       !Array.isArray(data.roleAssignSpaceIds) ||
       (data.spaceId != null && data.roleAssignSpaceIds.includes(data.spaceId));
     const openRole =
-      openRoleId && mayOpenHere ? await this.rolePool.resolveOpenRole(effectiveOrgId, data.spaceId, openRoleId) : null;
+      openRoleId && mayOpenHere ? await this.roleOpening.resolveOpenRole(effectiveOrgId, data.spaceId, openRoleId) : null;
 
     const task = await this.prisma.$transaction(async (tx) => {
       const createdTask = await tx.task.create({
         data: {
           ...(typeof data.id === 'string' && data.id ? { id: data.id } : {}),
-          ...(openRole ? this.rolePool.openColumns(openRole.id, data.openSpots) : {}),
+          ...(openRole ? this.roleOpening.openColumns(openRole.id, data.openSpots) : {}),
           title: data.title,
           description: data.description,
           // The gateway's DTO checks it (@IsEnum); Prisma refuses anything else, as before.

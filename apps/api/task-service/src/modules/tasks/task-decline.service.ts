@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { PrismaService } from '@hbcfield/shared';
+import { TaskSupportService } from './task-support.service';
+import { RoleOpeningService } from './role-opening.service';
+import { RolePoolService } from './role-pool.service';
 import { personName, TaskStatus, TaskEventType, success } from '@hbcfield/shared';
 import { TaskAssignmentBase } from './task-assignment.base';
 import { emitEvent, taskDeclinedEvent } from '@hbcfield/shared/microservices';
@@ -7,6 +12,17 @@ import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 /** A worker declining a job they were given. */
 @Injectable()
 export class TaskDeclineService extends TaskAssignmentBase {
+  constructor(
+    prisma: PrismaService,
+    @Inject('NOTIFICATION_SERVICE') notificationClient: ClientProxy,
+    support: TaskSupportService,
+    roleOpening: RoleOpeningService,
+    /** A task open to a role goes back to the ROLE when its taker declines. */
+    private readonly rolePool: RolePoolService,
+  ) {
+    super(prisma, notificationClient, support, roleOpening);
+  }
+
   /**
    * Decline task assignment (TECHNICIAN only)
    * Returns task to NEW status and removes assignment

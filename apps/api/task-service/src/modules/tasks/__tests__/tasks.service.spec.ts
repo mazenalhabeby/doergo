@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { TasksService } from '../tasks.service';
 import { TASK_SERVICE_PARTS } from '../task-service-parts';
 import { RolePoolService } from '../role-pool.service';
+import { RoleOpeningService } from '../role-opening.service';
 import { PrismaService } from '@hbcfield/shared';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
@@ -165,10 +166,12 @@ describe('TasksService', () => {
         { provide: CrewService, useValue: crewStub() },
         {
           provide: RolePoolService,
-          useValue: {
-            holdsOpenRole: jest.fn().mockResolvedValue(false),
-            syncSpots: jest.fn().mockResolvedValue(undefined),
-          },
+          useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false) },
+        },
+        // After TASK_SERVICE_PARTS, so this stub replaces the real one: places follow the crew (syncSpots).
+        {
+          provide: RoleOpeningService,
+          useValue: { syncSpots: jest.fn().mockResolvedValue(undefined) },
         },
         { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: mockPrismaService },

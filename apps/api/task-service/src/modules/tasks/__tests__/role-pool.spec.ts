@@ -1,3 +1,4 @@
+import { RoleOpeningService } from '../role-opening.service';
 import { rolePoolServices } from './role-pool.service.fixture';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { ROLE_WAVE_CLOSED } from '../role-pool.service';
@@ -40,13 +41,16 @@ function make(overrides: Record<string, any> = {}) {
   prisma.$transaction = jest.fn(async (fn: any) => fn(prisma));
   const tasks: any = { assertCanReceiveTasks: jest.fn(), onAssigneesChanged: jest.fn(), assertMayAssignTask: jest.fn() };
   const notifications: any = { emit: jest.fn() };
+  // Opening a role and its places is its own service now (shared with assignment, no cycle).
+  const opening = new RoleOpeningService(prisma);
   const svc = rolePoolServices(
     prisma,
     { expectedToday: jest.fn().mockResolvedValue(new Map()) } as any,
     notifications,
+    opening,
     tasks,
   );
-  return { svc, prisma, tasks, notifications };
+  return { svc, prisma, tasks, notifications, opening };
 }
 
 const holder = (extra: Record<string, any> = {}) => ({ user: { role: 'EMPLOYEE', enabledModules: { modules: ['tasks'] }, isExternal: false, ...extra } });
@@ -118,8 +122,8 @@ describe('role pool — handing back', () => {
 
 describe('role pool — places and waves', () => {
   it('places are recomputed from the crew in SQL, never written as an absolute number', async () => {
-    const { svc, prisma } = make();
-    await svc.syncSpots('t1');
+    const { opening, prisma } = make();
+    await opening.syncSpots('t1');
     const sql = (prisma.$executeRaw.mock.calls[0][0] as string[]).join('?');
     expect(sql).toContain('"openSpots" - (SELECT COUNT(*) FROM "task_assignees"');
     expect(sql).toContain('"openWave" <');

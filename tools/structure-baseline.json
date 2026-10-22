@@ -1782,7 +1782,6 @@
  },
  "cycles": [
   "apps/api/task-service/src/modules/calendar/calendar-rules.service.ts ⇄ apps/api/task-service/src/modules/technicians/cover.base.ts ⇄ apps/api/task-service/src/modules/technicians/cover.service.ts",
-  "apps/api/task-service/src/modules/tasks/role-pool.base.ts ⇄ apps/api/task-service/src/modules/tasks/role-pool.service.ts ⇄ apps/api/task-service/src/modules/tasks/task-assignment.base.ts ⇄ apps/api/task-service/src/modules/tasks/task-assignment.service.ts ⇄ apps/api/task-service/src/modules/tasks/task-crew-members.service.ts ⇄ apps/api/task-service/src/modules/tasks/task-decline.service.ts ⇄ apps/api/task-service/src/modules/tasks/task-portal.base.ts ⇄ apps/api/task-service/src/modules/tasks/task-portal.service.ts ⇄ apps/api/task-service/src/modules/tasks/task-records.service.ts ⇄ apps/api/task-service/src/modules/tasks/task-status-write.ts ⇄ apps/api/task-service/src/modules/tasks/task-status.service.ts ⇄ apps/api/task-service/src/modules/tasks/task-triage.service.ts ⇄ apps/api/task-service/src/modules/tasks/tasks.service.ts",
   "apps/web-app/src/i18n/index.ts ⇄ apps/web-app/src/i18n/languages.ts"
  ],
  "boundary": [],

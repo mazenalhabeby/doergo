@@ -124,7 +124,8 @@ Today it is a "distributed monolith": one 6,145-line schema in auth-service, use
 >   copy of the local database from the new path. ⚠️ **Deploy note:** the auth entrypoint, the release
 >   script and CI read `packages/db/prisma`; `infra/release/deploy.sh` still finds an older commit's
 >   migrations under auth-service for a rollback.
-> - Still open: **3.4** reads, **3.5** rename.
+> - **3.4** reads: DONE 2026-10-22 — direct cross-service reads 269 → 0 (owner readers in `packages/shared/src/data`); relation reads (`include`) and raw SQL are the next layer.
+> - **3.5** rename: SKIPPED for now by the owner (2026-10-22) — the name is cosmetic, the risk is in production naming. Revisit as its own release.
 
 ---
 

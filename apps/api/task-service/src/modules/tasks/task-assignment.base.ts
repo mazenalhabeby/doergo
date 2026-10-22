@@ -1,7 +1,5 @@
-import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@nestjs/common';
-// TYPE only: role-pool.service imports tasks.service, which imports the services that extend this base.
-// A value import here would load that loop before this class exists ("Class extends value undefined").
-import type { RolePoolService } from './role-pool.service';
+import { Injectable, Logger, BadRequestException, Inject } from '@nestjs/common';
+import { RoleOpeningService } from './role-opening.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, heldCredentials, credentialTypesFor } from '@hbcfield/shared';
 import { personName, TaskStatus, credentialStanding, credentialBlocks } from '@hbcfield/shared';
@@ -23,8 +21,8 @@ export abstract class TaskAssignmentBase {
     @Inject('NOTIFICATION_SERVICE') protected readonly notificationClient: ClientProxy,
     protected readonly support: TaskSupportService,
     // A task open to a WORK role (shared tasks/role-pool.ts) — beside the name flow.
-    @Inject(forwardRef(() => require('./role-pool.service').RolePoolService))
-    protected readonly rolePool: RolePoolService,
+    /** Places on a task open to a role follow the crew (syncSpots). */
+    protected readonly roleOpening: RoleOpeningService,
   ) {}
 
   /**
@@ -96,7 +94,7 @@ export abstract class TaskAssignmentBase {
   ): Promise<void> {
     await this.syncPrimaryAssignee(taskId);
     // A role task's places follow its crew, however the crew changed (the picker too).
-    await this.rolePool.syncSpots(taskId);
+    await this.roleOpening.syncSpots(taskId);
     // A lead handed over for today ends when that person is no longer on the crew (shared crew.ts).
     const lead = await this.prisma.task.findUnique({
       where: { id: taskId },

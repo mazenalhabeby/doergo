@@ -48,7 +48,7 @@ export class RoleTakeService extends RolePoolBase {
     if (mine) throw new ConflictException({ message: 'You are already on this task', code: 'ROLE_TASK_ALREADY_YOURS' });
 
     // The same refusals as the office's picker: access profile and required credentials.
-    await this.tasks.assertCanReceiveTasks([data.userId], task.workflowId, task.organizationId);
+    await this.assignment.assertCanReceiveTasks([data.userId], task.workflowId, task.organizationId);
 
     const roleId = task.openRoleId!;
     let spotsLeft: number;
@@ -100,7 +100,7 @@ export class RoleTakeService extends RolePoolBase {
       },
     });
     // From here it is an ordinary assignment — the office's own path.
-    await this.tasks.onAssigneesChanged(task.id, [data.userId], data.userId);
+    await this.assignment.onAssigneesChanged(task.id, [data.userId], data.userId);
 
     if (task.createdById !== data.userId) {
       emitEvent(this.notifications, roleTaskTakenEvent, {

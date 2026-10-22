@@ -15,6 +15,7 @@ import { WorkflowResyncService } from './workflow-resync.service';
 import { TaskDetailService } from './task-detail.service';
 import { TaskDependenciesService } from './task-dependencies.service';
 import { TaskTriageService } from './task-triage.service';
+import { RoleOpeningService } from './role-opening.service';
 
 /**
  * The collaborators behind the TasksService facade. One list, read by the
@@ -38,4 +39,5 @@ export const TASK_SERVICE_PARTS = [
   TechnicianSuggestionService,
   TaskHierarchyService,
   TaskDependenciesService,
+  RoleOpeningService,
 ];

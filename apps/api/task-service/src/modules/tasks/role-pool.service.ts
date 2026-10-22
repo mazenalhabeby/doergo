@@ -84,7 +84,7 @@ export class RolePoolService extends RolePoolBase {
       select: { id: true, spaceId: true, status: true, openRoleId: true, openSpots: true, openSpotsLeft: true },
     });
     if (!task) throw new NotFoundException('Task not found');
-    await this.tasks.assertMayAssignTask(task.id, data);
+    await this.assignment.assertMayAssignTask(task.id, data);
     if (isWorkOver(task.status)) {
       throw new ConflictException({ message: 'This task is finished', code: 'ROLE_TASK_FINISHED' });
     }
@@ -99,7 +99,7 @@ export class RolePoolService extends RolePoolBase {
       return success({ id: task.id, openRoleId: null });
     }
 
-    const role = await this.resolveOpenRole(data.organizationId, task.spaceId, data.roleId);
+    const role = await this.opening.resolveOpenRole(data.organizationId, task.spaceId, data.roleId);
     const spots = parseRoleSpots(data.spots);
     /*
       The places left are ALWAYS asked for − people on it (syncSpots, in SQL):
@@ -112,10 +112,10 @@ export class RolePoolService extends RolePoolBase {
     if (task.openRoleId === role.id && task.openSpots != null) {
       // Same role, a different number: keep who already took it, and the wait.
       await this.prisma.task.update({ where: { id: task.id }, data: { openSpots: asked } });
-      await this.syncSpots(task.id);
+      await this.opening.syncSpots(task.id);
     } else {
-      await this.prisma.task.update({ where: { id: task.id }, data: { ...this.openColumns(role.id, asked) } });
-      await this.syncSpots(task.id);
+      await this.prisma.task.update({ where: { id: task.id }, data: { ...this.opening.openColumns(role.id, asked) } });
+      await this.opening.syncSpots(task.id);
       await this.afterOpened(task.id, data.userId, role, asked);
     }
     const after = await this.prisma.task.findUniqueOrThrow({ where: { id: task.id }, select: { openSpots: true, openSpotsLeft: true } });
@@ -148,7 +148,7 @@ export class RolePoolService extends RolePoolBase {
    * are free now, and the best ten. Read-only; asks the right to assign.
    */
   async preview(data: Facts & { spaceId: string; roleId: string; lat?: number | null; lng?: number | null }) {
-    const role = await this.resolveOpenRole(data.organizationId, data.spaceId, data.roleId);
+    const role = await this.opening.resolveOpenRole(data.organizationId, data.spaceId, data.roleId);
     const ranked = await this.candidates(data.organizationId, data.spaceId, role.id, { lat: data.lat ?? null, lng: data.lng ?? null });
     const count = (s: CandidateState) => ranked.filter((c) => c.state === s).length;
     return success({
@@ -216,7 +216,7 @@ export class RolePoolService extends RolePoolBase {
         metadata: { roleId: task.openRoleId, roleName: task.openRole?.name ?? null, reason },
       },
     });
-    await this.tasks.onAssigneesChanged(task.id, [], data.userId);
+    await this.assignment.onAssigneesChanged(task.id, [], data.userId);
     // Nobody left on it: back to NEW (the canonical flow only — a custom flow is left as it is).
     await this.prisma.task.updateMany({
       where: { id: task.id, status: { in: [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED] }, assignees: { none: {} } },
