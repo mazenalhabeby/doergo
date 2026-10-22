@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useContactActions } from "@/hooks/use-contact-actions"
 import { EditMemberDialog } from "./member-tabs-lazy"
+import { useLatched } from "@/hooks/use-latched"
 
 interface MemberHeaderCardProps {
   member: OrgMember
@@ -39,6 +40,7 @@ export function MemberHeaderCard({
   const { t } = useTranslation()
   const { message, canMessage } = useContactActions()
   const [editOpen, setEditOpen] = useState(false)
+  const editMounted = useLatched(editOpen)
   /*
     `?edit=1` opens the editor straight away — the invoice's "Set rate" link
     lands here, and a link that then asks for one more click to find the field
@@ -169,7 +171,10 @@ export function MemberHeaderCard({
           </Button>
         )}
 
-        <EditMemberDialog member={editOpen ? member : null} onClose={() => setEditOpen(false)} onSaved={onSaved} />
+        {/* Mounted once opened: closed, it still asked for the companies list at page load. */}
+        {editMounted && (
+          <EditMemberDialog member={editOpen ? member : null} onClose={() => setEditOpen(false)} onSaved={onSaved} />
+        )}
       </div>
 
       {/* Quick stats — Score · Done · Active · This Week */}

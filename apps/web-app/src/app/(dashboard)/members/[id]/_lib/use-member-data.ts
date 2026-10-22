@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/auth-context"
 import { organizationsApi, employeesApi } from "@/lib/api"
 import { localDateKey } from "@hbcfield/shared/client"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
 /**
  * Everything `/members/[id]` needs to fetch, and everything derived from it.
@@ -72,10 +73,12 @@ export function useMemberData(memberId: string) {
     enabled: !!memberId && readsWork,
   })
 
+  // The weekly hours card sits under the header: it waits for the page's first load (the request budget).
+  const afterLoad = useAfterFirstLoad(1)
   const { data: scheduleData, isLoading: scheduleLoading } = useQuery({
     queryKey: keys.schedules.member(memberId),
     queryFn: () => employeesApi.getSchedule(memberId),
-    enabled: !!memberId,
+    enabled: !!memberId && afterLoad,
   })
 
   // This member's space assignments in ONE call (was an N+1 fan-out over every

@@ -108,6 +108,12 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // who can't read the directory fall back to the member data embedded in their
   // (scoped) space rosters — see memberMap below.
   const canReadMembers = !!user?.canManageUsers
+  /*
+    The boxes are drawn from the rosters, which carry each person's name; the directory adds faces
+    and presence on top. So it follows the first paint (the request budget) — wave 1, ahead of the
+    side lists.
+  */
+  const membersAfterLoad = useAfterFirstLoad(1)
   const { data: members = NO_MEMBERS } = useQuery({
     // The directory, lite: member add/remove/role mutations invalidate
     // keys.members.lists(), which this is one of.
@@ -116,7 +122,7 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
     // minute for presence. It has no use for Access Profiles, contact
     // allow-lists or the role join, which are the expensive columns.
     queryFn: () => organizationsApi.getAllMembers({ lite: true }),
-    enabled: canReadMembers,
+    enabled: canReadMembers && membersAfterLoad,
     staleTime: 30000,
     refetchOnMount: true,
     refetchInterval: PRESENCE_REFETCH_MS,

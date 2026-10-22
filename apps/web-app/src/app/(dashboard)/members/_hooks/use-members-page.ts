@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { organizationsApi, invitationsApi, locationsApi, type OrgMember } from "@/lib/api"
 import { useMemberActions } from "../_lib/use-member-actions"
 import { useOrgRoles } from "@/hooks/use-org-roles"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
 /** The Members page's state: the list and its filters, the dialogs' targets, the selection and the bulk actions. */
 export function useMembersPage() {
@@ -101,10 +102,12 @@ export function useMembersPage() {
     return map
   }, [allAssignments, locNameById])
 
+  // The pending list sits under the members: it waits for the page's first load (the request budget).
+  const afterLoad = useAfterFirstLoad(1)
   const { data: pendingInvitationsData } = useQuery({
     queryKey: keys.people.pendingInvitations(),
     queryFn: () => invitationsApi.list({ status: "PENDING", limit: 50 }),
-    enabled: isAdmin,
+    enabled: isAdmin && afterLoad,
   })
 
   const pendingInvitations = pendingInvitationsData?.data || []

@@ -9,6 +9,7 @@ import { personName, parseStoredStepForm, workflowStatusLabel, type StepFormFiel
 import { tasksApi, type TaskStepSubmission } from "@/lib/api"
 import { stepFieldLabel } from "@/lib/step-forms"
 import { CollapsibleSection } from "@/components/common/collapsible-section"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
 interface StatusLike {
   key: string
@@ -25,9 +26,12 @@ interface StatusLike {
  */
 export function StepReportsSection({ taskId, workflowStatuses }: { taskId: string; workflowStatuses?: ReadonlyArray<StatusLike> | null }) {
   const { t } = useTranslation()
+  // Below the job's main facts: it waits for the page's first load (the request budget).
+  const afterLoad = useAfterFirstLoad(1)
   const { data: submissions = [] } = useQuery({
     queryKey: keys.tasks.submissions(taskId),
     queryFn: () => tasksApi.getSubmissions(taskId),
+    enabled: afterLoad,
     // Photo and signature links are signed and short-lived.
     staleTime: 5 * 60_000,
   })

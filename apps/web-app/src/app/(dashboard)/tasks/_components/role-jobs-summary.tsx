@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { tasksApi } from "@/lib/api"
 import { localDateKey } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
 /** The last 30 days, as `YYYY-MM-DD` from LOCAL parts (never toISOString — it shifts the day). */
 function since30(): string {
@@ -27,9 +28,12 @@ function since30(): string {
 export function RoleJobsSummary({ spaceId }: { spaceId: string | null }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
+  // A summary beside the list, not the list: it waits for the page's first load (the request budget).
+  const afterLoad = useAfterFirstLoad(1)
   const { data } = useQuery({
     queryKey: keys.spaces.roleStats(spaceId),
     queryFn: () => tasksApi.roleStats({ spaceId: spaceId ?? undefined, from: since30() }),
+    enabled: afterLoad,
     staleTime: 60_000,
   })
   const roles = data?.roles ?? []

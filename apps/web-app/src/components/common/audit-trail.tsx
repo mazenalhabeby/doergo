@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 import { formatTimeAgo } from "@/lib/format-date"
 import { Skeleton } from "@/components/ui/skeleton"
 import { keys } from "@/lib/query-keys"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,8 +61,10 @@ function useAuditTrail(
   opts?: { limit?: number; enabled?: boolean },
 ) {
   const canView = useCanViewAudit()
+  // The trail closes a record's page: it waits for the page's first load (the request budget).
+  const afterLoad = useAfterFirstLoad(2)
   const limit = opts?.limit ?? 10
-  const enabled = !!resourceId && opts?.enabled !== false && canView
+  const enabled = !!resourceId && opts?.enabled !== false && canView && afterLoad
 
   // Query by resourceId ONLY (not resourceType): sub-route mutations like a
   // task's status change (/tasks/:id/status) or assignment (/tasks/:id/assign)

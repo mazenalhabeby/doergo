@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { localDateKey } from "@hbcfield/shared/client"
 import { useClients } from "@/hooks/use-clients"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
 const TIMESHEET_DEFAULT = [
   "date",
@@ -54,7 +55,9 @@ export function useReportBuilder() {
 
   const { data: catalog } = useQuery({ queryKey: keys.reports.catalog(), queryFn: () => analyticsApi.catalog() })
   const { data: saved } = useQuery({ queryKey: keys.reports.saved(), queryFn: () => analyticsApi.listSaved() })
-  const { data: customersData } = useClients({ limit: 200 })
+  // Only a client filter reads it: it waits for the page's first load (the request budget).
+  const afterLoad = useAfterFirstLoad(1)
+  const { data: customersData } = useClients({ limit: 200 }, { enabled: afterLoad })
   const customers = customersData?.data || []
   // People to report on: the directory for whoever may read it, else the rosters they can see.
   const { members } = useAssignableMembers({})

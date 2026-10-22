@@ -19,6 +19,7 @@ import { calendarApi, employeesApi, type OrgTimeOffRequest } from "@/lib/api"
 import { useSpaceScope } from "@/hooks/use-space-scope"
 import { useLatched } from "@/hooks/use-latched"
 import { keys } from "@/lib/query-keys"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
 /**
  * Schedule & Requests — one page, two questions.
@@ -86,6 +87,7 @@ export function useScheduleAndTimeOffPage() {
     The workspace's own days from the calendar: its weekend (Fri+Sat in Riyadh, Sat+Sun in
     Vienna) and its holidays. One read per window; the chart falls back to Sat+Sun until it lands.
   */
+  const afterLoad = useAfterFirstLoad(1)
   const calendarDays = useQuery({
     queryKey: keys.calendar.team(space, format(days[0]!, "yyyy-MM-dd"), format(days[days.length - 1]!, "yyyy-MM-dd")),
     queryFn: () =>
@@ -94,7 +96,8 @@ export function useScheduleAndTimeOffPage() {
         from: format(days[0]!, "yyyy-MM-dd"),
         to: format(days[days.length - 1]!, "yyyy-MM-dd"),
       }),
-    enabled: !!space,
+    // The chart shades Sat+Sun until this lands, so it waits for the page's first load (the request budget).
+    enabled: !!space && afterLoad,
     staleTime: 5 * 60_000,
   })
   const restDays = useMemo(

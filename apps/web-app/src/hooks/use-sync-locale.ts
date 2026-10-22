@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
 import { usersApi } from "@/lib/api"
 import { isSupported } from "@/i18n/languages"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 
 /** `<userId>:<language>` last told to the server from this browser. */
 const SYNCED_KEY = "hbcfield_locale_synced"
@@ -25,9 +26,11 @@ export function useSyncLocale() {
   const { user } = useAuth()
   const { i18n } = useTranslation()
   const language = i18n.language?.split("-")[0]
+  // A background write, once per browser and language: it waits for the page's first load (the request budget).
+  const afterLoad = useAfterFirstLoad(2)
 
   useEffect(() => {
-    if (!user?.id || !language || !isSupported(language)) return
+    if (!afterLoad || !user?.id || !language || !isSupported(language)) return
     const marker = `${user.id}:${language}`
     let last: string | null = null
     try {
@@ -53,5 +56,5 @@ export function useSyncLocale() {
     return () => {
       cancelled = true
     }
-  }, [user?.id, language])
+  }, [afterLoad, user?.id, language])
 }
