@@ -1,9 +1,9 @@
 import { BadRequestException, ForbiddenException, Logger, NotFoundException } from '@nestjs/common';
 import { Role, TaskStatus } from '@hbcfield/shared';
-import { assertMayMoveStatus, managesBoard } from '../task-status-gates';
-import { assertDueBySiteDay } from '../task-status-checks';
-import { statusUpdateData } from '../task-status-write';
-import { ROLE_WAVE_CLOSED } from '../role-pool.service';
+import { assertMayMoveStatus, managesBoard } from '../status/task-status-gates';
+import { assertDueBySiteDay } from '../status/task-status-checks';
+import { statusUpdateData } from '../status/task-status-write';
+import { ROLE_WAVE_CLOSED } from '../assignment/role-pool.service';
 
 /** The steps updateStatus was split into, pinned where the service specs do not reach. */
 

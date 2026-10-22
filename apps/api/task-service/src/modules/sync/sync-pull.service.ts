@@ -5,7 +5,7 @@ import {
   type SyncPullResponse,
   clampListLimit,
 } from '@hbcfield/shared';
-import { TASK_LIST_INCLUDE, annotateTracksLocation } from '../tasks/task-list-shape';
+import { TASK_LIST_INCLUDE, annotateTracksLocation } from '../tasks/core/task-list-shape';
 import { decodeCursor, pageResponse } from './sync-cursor';
 import { MAX_SCOPE_IDS, PullRequest } from './sync-pull-helpers';
 import { SyncPullBase } from './sync-pull.base';

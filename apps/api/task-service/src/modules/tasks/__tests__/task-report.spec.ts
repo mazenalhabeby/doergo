@@ -12,8 +12,8 @@ import {
   toReportRoute,
   type TaskReport,
 } from '@hbcfield/shared';
-import { TaskReportService } from '../task-report.service';
-import { TaskQueryService } from '../task-query.service';
+import { TaskReportService } from '../report/task-report.service';
+import { TaskQueryService } from '../query/task-query.service';
 import { TaskAccessService } from '../../../common/task-access/task-access.service';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
 

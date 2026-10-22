@@ -87,7 +87,7 @@
   "apps/api/task-service/src/modules/tasks/handover/crew-lead.base.ts": [
    "moved"
   ],
-  "apps/api/task-service/src/modules/tasks/task-query.base.ts": [
+  "apps/api/task-service/src/modules/tasks/query/task-query.base.ts": [
    "moved"
   ],
   "apps/api/task-service/src/modules/tasks/task-service-parts.ts": [

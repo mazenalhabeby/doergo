@@ -1,6 +1,6 @@
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import type { TaskCreateJob } from '@hbcfield/shared';
-import { resolveCreatePlacement, settleCreateSpace, writeCreateAssignees } from '../task-create-steps';
+import { resolveCreatePlacement, settleCreateSpace, writeCreateAssignees } from '../records/task-create-steps';
 
 /** A step reads only some of the job; the fixtures name only that part. */
 const job = (part: Record<string, unknown>) => part as unknown as TaskCreateJob;

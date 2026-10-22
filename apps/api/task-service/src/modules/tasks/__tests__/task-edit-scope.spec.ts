@@ -6,7 +6,7 @@ import { Role } from '@hbcfield/shared';
 
 import { TasksService } from '../tasks.service';
 import { TASK_SERVICE_PARTS } from '../task-service-parts';
-import { RolePoolService } from '../role-pool.service';
+import { RolePoolService } from '../assignment/role-pool.service';
 import { PrismaService } from '@hbcfield/shared';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
 import { MediaSigner } from '../../../common/storage/media-signer.service';

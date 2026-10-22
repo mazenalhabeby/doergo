@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Role, clampListLimit } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { buildTaskVisibilityWhere } from '../tasks/task-visibility';
+import { buildTaskVisibilityWhere } from '../tasks/core/task-visibility';
 import type { TaskSearchInput } from '@hbcfield/shared/microservices';
 
 type SearchInput = TaskSearchInput;

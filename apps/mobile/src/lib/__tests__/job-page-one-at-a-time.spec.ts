@@ -29,7 +29,7 @@ describe('the slot', () => {
   it('the server reads the same list', () => {
     const server = fs.readFileSync(
       // The one-at-a-time check moved out of task-status.service.ts with the updateStatus split.
-      path.resolve(__dirname, '../../../../api/task-service/src/modules/tasks/task-status-checks.ts'),
+      path.resolve(__dirname, '../../../../api/task-service/src/modules/tasks/status/task-status-checks.ts'),
       'utf8',
     );
     expect(server).toMatch(/status: \{ in: \[\.\.\.ONE_AT_A_TIME_STATUSES\]/);

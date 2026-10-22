@@ -1,8 +1,8 @@
 import { combinedServices } from '../../../common/testing/combined-services';
-import { RolePoolService } from '../role-pool.service';
-import { RoleTakeService } from '../role-take.service';
-import { RoleStatsService } from '../role-stats.service';
-import { RolePoolSweepService } from '../role-pool-sweep.service';
+import { RolePoolService } from '../assignment/role-pool.service';
+import { RoleTakeService } from '../assignment/role-take.service';
+import { RoleStatsService } from '../assignment/role-stats.service';
+import { RolePoolSweepService } from '../assignment/role-pool-sweep.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };

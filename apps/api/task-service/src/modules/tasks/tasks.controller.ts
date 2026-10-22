@@ -1,10 +1,10 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TasksService } from './tasks.service';
-import { RolePoolService } from './role-pool.service';
-import { TaskReportService } from './task-report.service';
-import { RoleTakeService } from './role-take.service';
-import { RoleStatsService } from './role-stats.service';
+import { RolePoolService } from './assignment/role-pool.service';
+import { TaskReportService } from './report/task-report.service';
+import { RoleTakeService } from './assignment/role-take.service';
+import { RoleStatsService } from './assignment/role-stats.service';
 import { JobPauseReadService } from './handover/job-pause-read.service';
 import {
   pattern,

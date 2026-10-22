@@ -1,6 +1,6 @@
 import { Role } from '@hbcfield/shared';
 import { SearchService } from '../search.service';
-import { buildTaskVisibilityWhere } from '../../tasks/task-visibility';
+import { buildTaskVisibilityWhere } from '../../tasks/core/task-visibility';
 
 /**
  * The command palette finds what the task list shows — one visibility rule

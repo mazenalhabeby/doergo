@@ -3,7 +3,7 @@
  * per day, from the local morning, to the leader's own routing and the job's
  * creator — never every admin.
  */
-import { LeaderAbsentService } from '../leader-absent.service';
+import { LeaderAbsentService } from '../sweeps/leader-absent.service';
 
 describe('LeaderAbsentService.sweep', () => {
   const emit = jest.fn();

@@ -1,6 +1,6 @@
 import { combinedServices } from '../../../common/testing/combined-services';
-import { TaskPortalService } from '../task-portal.service';
-import { TaskTriageService } from '../task-triage.service';
+import { TaskPortalService } from '../records/task-portal.service';
+import { TaskTriageService } from '../records/task-triage.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };

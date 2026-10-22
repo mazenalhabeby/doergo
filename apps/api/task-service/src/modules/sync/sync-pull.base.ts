@@ -9,7 +9,7 @@ import {
   clampListLimit,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from '../tasks/task-visibility';
+import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from '../tasks/core/task-visibility';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { decodeCursor, encodeCursor, pageResponse } from './sync-cursor';

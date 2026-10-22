@@ -1,4 +1,4 @@
-import { DepartureReminderService } from '../departure-reminder.service';
+import { DepartureReminderService } from '../sweeps/departure-reminder.service';
 
 /**
  * Telling a member to set off, when the phone is in their pocket.

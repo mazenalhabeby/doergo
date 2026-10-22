@@ -8,7 +8,7 @@ import { SupportService } from '../../modules/support/support.service';
 import { TimeOffRequestService } from '../../modules/technicians/time-off-request.service';
 import { AssetExpenseService } from '../../modules/assets/asset-expense.service';
 import {  } from '../../modules/assets/__tests__/asset-expense.service.fixture';
-import { TaskRecordsService } from '../../modules/tasks/task-records.service';
+import { TaskRecordsService } from '../../modules/tasks/records/task-records.service';
 
 /** A service instance with only the collaborators a test gives it. */
 function withDeps<T extends object>(Cls: new (...a: any[]) => T, deps: Record<string, unknown>): T {

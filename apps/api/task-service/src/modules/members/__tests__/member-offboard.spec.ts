@@ -43,7 +43,7 @@ describe('MemberOffboardService', () => {
 describe('TasksService.releaseMemberFromOpenWork', () => {
   it('only looks at jobs that are not finished, closed or canceled', async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { TaskCrewMembersService } = require('../../tasks/task-crew-members.service');
+    const { TaskCrewMembersService } = require('../../tasks/assignment/task-crew-members.service');
     const { TERMINAL_STATUSES } = require('@hbcfield/shared');
     const prisma: any = { task: { findMany: jest.fn().mockResolvedValue([]) } };
     const svc = Object.create(TaskCrewMembersService.prototype);
@@ -56,7 +56,7 @@ describe('TasksService.releaseMemberFromOpenWork', () => {
 describe('TasksService.releaseMemberFromOpenWork — a custom flow’s finish is history too', () => {
   it('keeps the leaver on a job its workflow calls finished (Delivered, Done…)', async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { TaskCrewMembersService } = require('../../tasks/task-crew-members.service');
+    const { TaskCrewMembersService } = require('../../tasks/assignment/task-crew-members.service');
     const prisma: any = {
       task: {
         findMany: jest.fn().mockResolvedValue([
