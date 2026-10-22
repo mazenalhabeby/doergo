@@ -6,6 +6,7 @@ import {
   permissionsExceed,
   permissionsFromOrgRole,
   type PermissionSet,
+  personPasses,
 } from '@hbcfield/shared';
 import { assertValidScheduleDays } from './space-helpers';
 import { SpaceServiceBase } from './space-service.base';
@@ -34,16 +35,9 @@ export class SpaceMembershipService extends SpaceServiceBase {
 
     // Verify the worker belongs to the CALLER's org — a guest may only add THEIR
     // OWN people to a shared space, never inject someone else's user.
-    const technician = await this.prisma.user.findFirst({
-      where: {
-        id: data.userId,
-        organizationId: data.organizationId,
-        isActive: true,
-      },
-      select: {
-        id: true,
-        organizationId: true,
-      },
+    const technician = await personPasses(this.prisma, data.userId, {
+      organizationId: data.organizationId,
+      active: true,
     });
 
     if (!technician) {

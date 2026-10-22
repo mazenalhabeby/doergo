@@ -7,6 +7,7 @@ import {
   summarizeWorkflowProblems,
   spaceMayOffer,
   assertFoundInOrg,
+  orgModules,
 } from '@hbcfield/shared';
 import { assertSpaceInOrg, assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
@@ -115,7 +116,15 @@ export class SpaceWorkflowsService extends WorkflowServiceBase {
           ownerSpaceId: true,
           capabilities: true,
           statuses: {
-            select: { key: true, name: true, position: true, isFinal: true, isCanceled: true, transitions: true, capabilities: true },
+            select: {
+              key: true,
+              name: true,
+              position: true,
+              isFinal: true,
+              isCanceled: true,
+              transitions: true,
+              capabilities: true,
+            },
           },
         },
       }),
@@ -158,10 +167,7 @@ export class SpaceWorkflowsService extends WorkflowServiceBase {
     // A space with no override inherits its organization's modules.
     let enabled = (space.enabledModules as string[] | null) ?? null;
     if (!enabled) {
-      const org = await this.prisma.organization.findUnique({
-        where: { id: space.organizationId },
-        select: { enabledModules: true },
-      });
+      const org = await orgModules(this.prisma, space.organizationId);
       enabled = (org?.enabledModules as string[] | null) ?? [];
     }
 

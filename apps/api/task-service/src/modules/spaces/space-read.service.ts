@@ -9,6 +9,7 @@ import {
   DEFAULT_CURRENCY,
   clampListLimit,
   clampListPage,
+  orgCurrency,
 } from '@hbcfield/shared';
 import { readAutoClock } from './space-helpers';
 import { SpaceServiceBase } from './space-service.base';
@@ -206,10 +207,7 @@ export class SpaceReadService extends SpaceServiceBase {
 
     // What its rates are in: its own currency, else the organization's — said
     // here so a workspace page never has to ask for the organization profile.
-    const org = await this.prisma.organization.findUnique({
-      where: { id: location.organizationId },
-      select: { currency: true },
-    });
+    const org = await orgCurrency(this.prisma, location.organizationId);
     const organizationCurrency = currencyOrNull(org?.currency) ?? DEFAULT_CURRENCY;
 
     const mayManage = data.mayManage ?? !isShared;

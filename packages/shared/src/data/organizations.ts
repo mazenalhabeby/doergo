@@ -20,3 +20,21 @@ export function orgModules(db: OrgDb, organizationId: string) {
 export function orgCalendarFeeds(db: OrgDb, organizationId: string) {
   return db.organization.findUnique({ where: { id: organizationId }, select: { calendarFeedsEnabled: true } });
 }
+
+/** The organization's currency. */
+export function orgCurrency(db: OrgDb, organizationId: string) {
+  return db.organization.findUnique({ where: { id: organizationId }, select: { currency: true } });
+}
+
+/** Organization names by id. */
+export function orgNames(db: On<'organization', 'findMany'>, ids: string[]) {
+  return db.organization.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } });
+}
+
+/** Every organization that is switched on and not suspended, with its timezone — the nightly jobs. */
+export function liveOrgZones(db: On<'organization', 'findMany'>) {
+  return db.organization.findMany({
+    where: { isActive: true, suspendedAt: null },
+    select: { id: true, timezone: true },
+  });
+}

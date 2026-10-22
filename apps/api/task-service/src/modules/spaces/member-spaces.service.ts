@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { assertMemberInScope, notEndedWhere, success } from '@hbcfield/shared';
+import { assertMemberInScope, notEndedWhere, success, personPasses } from '@hbcfield/shared';
 import { SpaceServiceBase } from './space-service.base';
 
 /** One member's side: the workspaces they are in, the colleagues they share them with. */
@@ -83,12 +83,7 @@ export class MemberSpacesService extends SpaceServiceBase {
    */
   async getTechnicianAssignments(data: { userId: string; organizationId: string; scopeSpaceIds?: string[] }) {
     // Verify user exists and belongs to organization
-    const user = await this.prisma.user.findFirst({
-      where: {
-        id: data.userId,
-        organizationId: data.organizationId,
-      },
-    });
+    const user = await personPasses(this.prisma, data.userId, { organizationId: data.organizationId });
 
     if (!user) {
       throw new NotFoundException('User not found in organization');

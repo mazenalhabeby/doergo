@@ -6,6 +6,7 @@ import {
   success,
   TEMPLATE_LIMITS,
   type TemplateStatusShape,
+  orgNames,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { TEMPLATE_SOURCE_SELECT } from './workflow-library-helpers';
@@ -16,7 +17,6 @@ import { TEMPLATE_SOURCE_SELECT } from './workflow-library-helpers';
  */
 @Injectable()
 export class LibraryCurationService {
-
   constructor(private readonly prisma: PrismaService) {}
 
   // ── Platform side (curation) ───────────────────────────────────────────────
@@ -36,9 +36,7 @@ export class LibraryCurationService {
 
     // One lookup for every submitting org, not one per row.
     const orgIds = [...new Set(rows.map((r) => r.submittedByOrgId).filter(Boolean))] as string[];
-    const orgs = orgIds.length
-      ? await this.prisma.organization.findMany({ where: { id: { in: orgIds } }, select: { id: true, name: true } })
-      : [];
+    const orgs = orgIds.length ? await orgNames(this.prisma, orgIds) : [];
     const orgName = new Map(orgs.map((o) => [o.id, o.name]));
 
     return success(
@@ -122,8 +120,15 @@ export class LibraryCurationService {
     // A slug is an identity, so it is derived once and then fixed. Renaming a
     // template must not silently create a second one.
     const slug =
-      (data.slug ?? '').trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') ||
-      name.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+      (data.slug ?? '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, '-')
+        .replace(/^-+|-+$/g, '') ||
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
     if (!slug) throw new BadRequestException('A template needs a slug');
 
     try {

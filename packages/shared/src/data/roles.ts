@@ -17,7 +17,10 @@ export async function roleNameOf(db: On<'accessRole', 'findUnique'>, roleId: str
 
 /** A SHARED role of the organization (never somebody's personal one) — `{ id }` or null. */
 export function sharedRoleInOrg(db: On<'accessRole', 'findFirst'>, roleId: string, organizationId: string) {
-  return db.accessRole.findFirst({ where: { id: roleId, organizationId, personalAssignmentId: null }, select: { id: true } });
+  return db.accessRole.findFirst({
+    where: { id: roleId, organizationId, personalAssignmentId: null },
+    select: { id: true },
+  });
 }
 
 /** Does this active member hold this (active) role organization-wide? `{ id }` or null. */
@@ -45,7 +48,13 @@ export async function roleHolderIds(
       OR: [
         { memberRoleId: roleId, memberRole: { isActive: true } },
         ...(spaceIds.length
-          ? [{ spaceAssignments: { some: { roleId, spaceId: { in: spaceIds }, role: { isActive: true }, ...activeWindowWhere(now) } } }]
+          ? [
+              {
+                spaceAssignments: {
+                  some: { roleId, spaceId: { in: spaceIds }, role: { isActive: true }, ...activeWindowWhere(now) },
+                },
+              },
+            ]
           : []),
       ],
     },
@@ -75,5 +84,16 @@ export function watchersOf(db: On<'notificationWatch', 'findMany'>, subjectUserI
 
 /** Active people's address and switches — what a delivery needs. */
 export function peopleToNotify(db: On<'user', 'findMany'>, ids: string[]) {
-  return db.user.findMany({ where: { id: { in: ids }, isActive: true }, select: { id: true, email: true, notificationPrefs: true } });
+  return db.user.findMany({
+    where: { id: { in: ids }, isActive: true },
+    select: { id: true, email: true, notificationPrefs: true },
+  });
+}
+
+/** An active member as an overtime decision needs them: their role and their org role's permissions. */
+export function approverFacts(db: On<'user', 'findFirst'>, userId: string, organizationId: string) {
+  return db.user.findFirst({
+    where: { id: userId, organizationId, isActive: true },
+    select: { id: true, role: true, memberRole: { select: { permissions: true } } },
+  });
 }

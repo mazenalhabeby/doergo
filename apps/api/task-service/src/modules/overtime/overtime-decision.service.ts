@@ -1,5 +1,5 @@
 import { standInGrant } from '../../common/stand-in';
-import { notEndedWhere, grantHolds } from '@hbcfield/shared';
+import { notEndedWhere, grantHolds, approverFacts } from '@hbcfield/shared';
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { assertNotSelfDecision } from '../attendance/self-decision';
 import { success, OVERTIME_CONSTANTS, type SpaceScopeIds } from '@hbcfield/shared';
@@ -78,13 +78,7 @@ export class OvertimeDecisionService extends OvertimeBase {
       Now it asks the permission the other approval routes ask, and accepts it
       held org-wide OR in the space this request belongs to.
     */
-    const approver = await this.prisma.user.findFirst({
-      where: { id: data.approverId, organizationId: data.organizationId, isActive: true },
-      // `canApproveOvertime` is not a column — the five flat ones are the legacy
-      // set. It lives in a role's permission JSON, org-wide via memberRole or
-      // per-space via the assignment's role.
-      select: { id: true, role: true, memberRole: { select: { permissions: true } } },
-    });
+    const approver = await approverFacts(this.prisma, data.approverId, data.organizationId);
     if (!approver) {
       throw new BadRequestException('Invalid approver — must be an active member of this organization');
     }

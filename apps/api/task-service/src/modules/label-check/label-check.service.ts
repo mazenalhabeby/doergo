@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
-import { checkEntryLabels, localDateKey, runWithCronLock, zonedParts, zoneOf } from '@hbcfield/shared';
+import { checkEntryLabels, localDateKey, runWithCronLock, zonedParts, zoneOf, liveOrgZones } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 
 /** The local hour from which last night is checked (the first sweep at or after it claims the night). */
@@ -45,10 +45,7 @@ export class LabelCheckService {
 
   /** Every organization whose night has come and whose yesterday is not checked yet. */
   async sweep(now = new Date()): Promise<LabelCheckRunResult[]> {
-    const orgs = await this.prisma.organization.findMany({
-      where: { isActive: true, suspendedAt: null },
-      select: { id: true, timezone: true },
-    });
+    const orgs = await liveOrgZones(this.prisma);
     const done: LabelCheckRunResult[] = [];
     for (const org of orgs) {
       const tz = zoneOf(org.timezone);

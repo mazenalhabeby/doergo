@@ -6,6 +6,7 @@ import {
   ATTENDANCE_CONSTANTS,
   validateMinCover,
   effectiveSpaceModules,
+  orgTimezone,
 } from '@hbcfield/shared';
 import { tzFromCoords, spaceCurrency } from './space-helpers';
 import { SpaceServiceBase } from './space-service.base';
@@ -54,10 +55,7 @@ export class SpacesService extends SpaceServiceBase {
     // the org's zone (e.g. Vienna) instead of the hardcoded Berlin column default.
     let timezone: string | undefined = data.timezone || tzFromCoords(data.lat, data.lng) || undefined;
     if (!timezone) {
-      const org = await this.prisma.organization.findUnique({
-        where: { id: data.organizationId },
-        select: { timezone: true },
-      });
+      const org = await orgTimezone(this.prisma, data.organizationId);
       timezone = org?.timezone || undefined;
     }
 

@@ -3,6 +3,7 @@
  * named (who counts), never a raw `where`, and the columns are one of a few fixed shapes, so the owner can
  * read exactly what others rely on. Owner: auth-service.
  */
+import { activeWindowWhere } from '../access/assignment-window';
 import type { On } from './db';
 
 /** How a list of people is filtered — each one a rule, not a column. */
@@ -49,7 +50,11 @@ export function personBrief(db: On<'user', 'findFirst'>, userId: string, filter:
 }
 
 /** Does this person exist and pass the filter? */
-export async function personPasses(db: On<'user', 'findFirst'>, userId: string, filter: PeopleFilter): Promise<boolean> {
+export async function personPasses(
+  db: On<'user', 'findFirst'>,
+  userId: string,
+  filter: PeopleFilter,
+): Promise<boolean> {
   return !!(await db.user.findFirst({ where: { id: userId, ...filterWhere(filter) }, select: { id: true } }));
 }
 
@@ -74,7 +79,11 @@ export function peopleFaces(db: On<'user', 'findMany'>, ids: string[], filter: P
 }
 
 /** Which of these ids are people who pass the filter. */
-export async function peopleWhoPass(db: On<'user', 'findMany'>, ids: string[], filter: PeopleFilter): Promise<string[]> {
+export async function peopleWhoPass(
+  db: On<'user', 'findMany'>,
+  ids: string[],
+  filter: PeopleFilter,
+): Promise<string[]> {
   return (await db.user.findMany({ where: { id: { in: ids }, ...filterWhere(filter) }, select: { id: true } })).map(
     (u) => u.id,
   );
@@ -82,10 +91,55 @@ export async function peopleWhoPass(db: On<'user', 'findMany'>, ids: string[], f
 
 /** A person's role and name in the organization (null = not one of its people). */
 export function personRoleAndName(db: On<'user', 'findFirst'>, userId: string, organizationId: string) {
-  return db.user.findFirst({ where: { id: userId, organizationId }, select: { role: true, firstName: true, lastName: true } });
+  return db.user.findFirst({
+    where: { id: userId, organizationId },
+    select: { role: true, firstName: true, lastName: true },
+  });
 }
 
 /** A person of the organization as an assignment needs them: `{ id, isExternal }` or null. */
-export function personRef(db: On<'user', 'findFirst'>, userId: string, organizationId: string) {
-  return db.user.findFirst({ where: { id: userId, organizationId }, select: { id: true, isExternal: true } });
+export function personRef(
+  db: On<'user', 'findFirst'>,
+  userId: string,
+  organizationId: string,
+  filter: PeopleFilter = {},
+) {
+  return db.user.findFirst({
+    where: { id: userId, ...filterWhere({ ...filter, organizationId }) },
+    select: { id: true, isExternal: true },
+  });
+}
+
+/** Is this account an external member? (false = internal, or no such account) */
+export async function isExternalAccount(db: On<'user', 'findUnique'>, userId: string): Promise<boolean> {
+  return !!(await db.user.findUnique({ where: { id: userId }, select: { isExternal: true } }))?.isExternal;
+}
+
+/** First and last names of these people, sorted by first name. */
+export function peopleNamesSorted(db: On<'user', 'findMany'>, ids: string[]) {
+  return db.user.findMany({ where: { id: { in: ids } }, select: PERSON_NAME, orderBy: { firstName: 'asc' } });
+}
+
+/**
+ * The organization's active internal people except one, by name (≤ 500) — those in these workspaces
+ * today when `spaceIds` is given. The pickers that hand work to a colleague.
+ */
+export function colleaguesByName(
+  db: On<'user', 'findMany'>,
+  input: { organizationId: string; exceptUserId: string; spaceIds?: string[]; now: Date },
+) {
+  return db.user.findMany({
+    where: {
+      organizationId: input.organizationId,
+      isActive: true,
+      isExternal: false,
+      id: { not: input.exceptUserId },
+      ...(input.spaceIds
+        ? { spaceAssignments: { some: { spaceId: { in: input.spaceIds }, ...activeWindowWhere(input.now) } } }
+        : {}),
+    },
+    select: PERSON_BRIEF,
+    orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+    take: 500,
+  });
 }

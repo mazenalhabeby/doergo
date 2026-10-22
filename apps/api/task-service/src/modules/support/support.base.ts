@@ -11,6 +11,9 @@ import {
   ticketInSupportScope,
   PERSON_BRIEF_SELECT,
   type RoutingConditions,
+  activeSupportRoutingRules,
+  orgSupportFacts,
+  operatorNames,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 
@@ -29,7 +32,6 @@ export abstract class SupportBase {
     @InjectQueue(QUEUE_NAMES.SUPPORT)
     protected readonly supportQueue: Queue,
   ) {}
-
 
   protected slaJobId(ticketId: string) {
     return `support-sla-${ticketId}`;
@@ -67,10 +69,7 @@ export abstract class SupportBase {
   protected async agentNames(ids: (string | null | undefined)[]): Promise<Map<string, string>> {
     const unique = [...new Set(ids.filter((x): x is string => !!x))];
     if (!unique.length) return new Map();
-    const ops = await this.prisma.platformUser.findMany({
-      where: { id: { in: unique } },
-      select: PERSON_BRIEF_SELECT,
-    });
+    const ops = await operatorNames(this.prisma, unique);
     return new Map(ops.map((o) => [o.id, personName(o) || o.email]));
   }
 
@@ -80,15 +79,8 @@ export abstract class SupportBase {
    */
   protected async resolveTeamForOrg(organizationId: string): Promise<string | null> {
     const [org, rules] = await this.prisma.$transaction([
-      this.prisma.organization.findUnique({
-        where: { id: organizationId },
-        select: { planTier: true, country: true, state: true, industry: true, supportTeamId: true },
-      }),
-      this.prisma.supportRoutingRule.findMany({
-        where: { isActive: true },
-        select: { teamId: true, isActive: true, order: true, conditions: true },
-        orderBy: { order: 'asc' },
-      }),
+      orgSupportFacts(this.prisma, organizationId),
+      activeSupportRoutingRules(this.prisma),
     ]);
     if (!org) return null;
     return resolveTeamForOrg(
@@ -99,7 +91,12 @@ export abstract class SupportBase {
         industry: org.industry,
         supportTeamId: org.supportTeamId,
       },
-      rules.map((r) => ({ teamId: r.teamId, isActive: r.isActive, order: r.order, conditions: r.conditions as RoutingConditions | null })),
+      rules.map((r) => ({
+        teamId: r.teamId,
+        isActive: r.isActive,
+        order: r.order,
+        conditions: r.conditions as RoutingConditions | null,
+      })),
     );
   }
 
@@ -114,7 +111,12 @@ export abstract class SupportBase {
     const readField = reader === 'CUSTOMER' ? 'readByCustomerAt' : 'readByAgentAt';
     const grouped = await this.prisma.supportMessage.groupBy({
       by: ['ticketId'],
-      where: { ticketId: { in: rows.map((r) => r.id) }, authorType: fromType, isInternalNote: false, [readField]: null },
+      where: {
+        ticketId: { in: rows.map((r) => r.id) },
+        authorType: fromType,
+        isInternalNote: false,
+        [readField]: null,
+      },
       _count: { _all: true },
     });
     const map = new Map(grouped.map((g) => [g.ticketId, g._count._all]));

@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
-import { success, personName } from '@hbcfield/shared';
+import { success, personName, peopleNames } from '@hbcfield/shared';
 import { newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
 import { shiftIssueCreatedEvent } from '@hbcfield/shared/microservices';
 import {
@@ -145,12 +145,7 @@ export class ShiftIssuesService extends ShiftIssuesBase {
     const ids = Array.from(
       new Set(issues.flatMap((i) => [i.reportedById, i.assignedToId].filter(Boolean) as string[])),
     );
-    const users = ids.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: ids } },
-          select: { id: true, firstName: true, lastName: true },
-        })
-      : [];
+    const users = ids.length ? await peopleNames(this.prisma, ids) : [];
     const nameById = new Map(users.map((u) => [u.id, personName(u)]));
     const counts = await this.prisma.shiftIssueEvent.groupBy({
       by: ['issueId'],
@@ -187,12 +182,7 @@ export class ShiftIssuesService extends ShiftIssuesBase {
     const actorIds = Array.from(
       new Set([issue.reportedById, issue.assignedToId, ...events.map((e) => e.actorId)].filter(Boolean) as string[]),
     );
-    const users = actorIds.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: actorIds } },
-          select: { id: true, firstName: true, lastName: true },
-        })
-      : [];
+    const users = actorIds.length ? await peopleNames(this.prisma, actorIds) : [];
     const nameById = new Map(users.map((u) => [u.id, personName(u)]));
 
     const thread = await Promise.all(

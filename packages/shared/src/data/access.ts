@@ -16,7 +16,10 @@ export function memberAccessFactsIn(
     select: {
       ...ORG_ACCESS_SELECT,
       spaceAssignments: {
-        where: { ...(input.spaceIds.length ? { spaceId: { in: input.spaceIds } } : {}), ...activeWindowWhere(input.now) },
+        where: {
+          ...(input.spaceIds.length ? { spaceId: { in: input.spaceIds } } : {}),
+          ...activeWindowWhere(input.now),
+        },
         select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
       },
     },
@@ -47,5 +50,43 @@ export function orgMembersWithAccess(
           }
         : { where: { id: '__none__' }, select: { spaceId: true } },
     },
+  });
+}
+
+/** One ACTIVE member's access facts with every assignment in force — "what may they decide". */
+export function activeMemberAccessFacts(
+  db: On<'user', 'findFirst'>,
+  userId: string,
+  organizationId: string,
+  now: Date,
+) {
+  return db.user.findFirst({
+    where: { id: userId, organizationId, isActive: true },
+    select: {
+      ...ORG_ACCESS_SELECT,
+      spaceAssignments: {
+        where: { ...activeWindowWhere(now) },
+        select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
+      },
+    },
+  });
+}
+
+/** The organization's active internal people with names and access facts, by name (≤ 500). */
+export function staffWithAccess(db: On<'user', 'findMany'>, organizationId: string, now: Date) {
+  return db.user.findMany({
+    where: { organizationId, isActive: true, isExternal: false },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      ...ORG_ACCESS_SELECT,
+      spaceAssignments: {
+        where: { ...activeWindowWhere(now) },
+        select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
+      },
+    },
+    orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+    take: 500,
   });
 }

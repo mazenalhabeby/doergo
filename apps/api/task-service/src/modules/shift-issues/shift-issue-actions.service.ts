@@ -1,5 +1,5 @@
 import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { success, personName } from '@hbcfield/shared';
+import { success, personName, personBrief } from '@hbcfield/shared';
 import { createOnce } from '../../common/create-once.util';
 import { BODY_MAX, Attachment } from './shift-issues-helpers';
 import { ShiftIssuesBase } from './shift-issues.base';
@@ -96,10 +96,7 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
   }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
     if (!data.canManage) throw new ForbiddenException('Only the responsible can dispatch');
-    const assignee = await this.prisma.user.findFirst({
-      where: { id: data.assignToId, organizationId: data.organizationId },
-      select: { id: true, firstName: true, lastName: true },
-    });
+    const assignee = await personBrief(this.prisma, data.assignToId, { organizationId: data.organizationId });
     if (!assignee) throw new BadRequestException('Assignee not found');
     const assignedToName = personName(assignee);
 

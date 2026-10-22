@@ -1,6 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { askAboutOwnRequest } from '../../common/own-request-route';
-import { success, OVERTIME_CONSTANTS, scopeWhere, type SpaceScopeIds, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
+import {
+  success,
+  OVERTIME_CONSTANTS,
+  scopeWhere,
+  type SpaceScopeIds,
+  PERSON_BRIEF_SELECT,
+  peopleNamesSorted,
+} from '@hbcfield/shared';
 import { personName } from '@hbcfield/shared';
 import { OvertimeBase } from './overtime.base';
 
@@ -216,13 +223,7 @@ export class OvertimeService extends OvertimeBase {
         'canApproveOvertime',
       ),
     });
-    const people = ask.ids.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: ask.ids.slice(0, 3) } },
-          select: { firstName: true, lastName: true },
-          orderBy: { firstName: 'asc' },
-        })
-      : [];
+    const people = ask.ids.length ? await peopleNamesSorted(this.prisma, ask.ids.slice(0, 3)) : [];
     return success(
       {
         ...request,

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { personName, success } from '@hbcfield/shared';
+import { personName, success, peopleNames } from '@hbcfield/shared';
 import { createOnce } from '../../common/create-once.util';
 import { BODY_MAX, BATCH_MAX } from './worklog-helpers';
 import { WorklogBase } from './worklog.base';
@@ -121,10 +121,7 @@ export class WorklogService extends WorklogBase {
     // rows → fall back to the session's member (userId).
     const authorIds = Array.from(new Set(notes.map((n) => n.authorId ?? n.userId)));
     const users = authorIds.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: authorIds }, organizationId: data.organizationId },
-          select: { id: true, firstName: true, lastName: true },
-        })
+      ? await peopleNames(this.prisma, authorIds, { organizationId: data.organizationId })
       : [];
     const nameById = new Map(users.map((u) => [u.id, personName(u) || 'Member']));
 

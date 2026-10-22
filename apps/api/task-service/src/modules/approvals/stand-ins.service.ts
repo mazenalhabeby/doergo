@@ -13,6 +13,12 @@ import {
   type StandInInput,
   type StandInView,
   type StandInsResponse,
+  colleaguesByName,
+  isExternalAccount,
+  orgTimezone,
+  activeMemberAccessFacts,
+  personRef,
+  staffWithAccess,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import type { StandInCaller as SharedStandInCaller } from '@hbcfield/shared/microservices';
@@ -87,27 +93,20 @@ export class StandInsService {
   /** Internal, active colleagues sharing a workspace with the caller — everybody internal for a people manager. */
   private async candidates(caller: StandInCaller): Promise<Array<{ id: string; name: string }>> {
     const now = new Date();
-    let spaceFilter = {};
+    let spaceIds: string[] | undefined;
     if (!caller.managesPeople) {
       const mine = await this.prisma.spaceAssignment.findMany({
         where: { userId: caller.userId, organizationId: caller.organizationId, ...activeWindowWhere(now) },
         select: { spaceId: true },
       });
-      const spaceIds = [...new Set(mine.map((a) => a.spaceId))];
+      spaceIds = [...new Set(mine.map((a) => a.spaceId))];
       if (!spaceIds.length) return [];
-      spaceFilter = { spaceAssignments: { some: { spaceId: { in: spaceIds }, ...activeWindowWhere(now) } } };
     }
-    const people = await this.prisma.user.findMany({
-      where: {
-        organizationId: caller.organizationId,
-        isActive: true,
-        isExternal: false,
-        id: { not: caller.userId },
-        ...spaceFilter,
-      },
-      select: { id: true, firstName: true, lastName: true },
-      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
-      take: 500,
+    const people = await colleaguesByName(this.prisma, {
+      organizationId: caller.organizationId,
+      exceptUserId: caller.userId,
+      spaceIds,
+      now,
     });
     return people.map((p) => ({ id: p.id, name: personName(p) }));
   }
@@ -115,21 +114,7 @@ export class StandInsService {
   /** Everybody who holds an approval permission to hand over (for a people manager arranging one). */
   private async leaders(organizationId: string): Promise<Array<{ id: string; name: string }>> {
     const now = new Date();
-    const people = await this.prisma.user.findMany({
-      where: { organizationId, isActive: true, isExternal: false },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        ...ORG_ACCESS_SELECT,
-        spaceAssignments: {
-          where: { ...activeWindowWhere(now) },
-          select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
-        },
-      },
-      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
-      take: 500,
-    });
+    const people = await staffWithAccess(this.prisma, organizationId, now);
     return people.filter((u) => decides(u)).map((u) => ({ id: u.id, name: personName(u) }));
   }
 
@@ -157,14 +142,8 @@ export class StandInsService {
     const startsOn = input.startsOn < today ? today : input.startsOn;
 
     const [from, to] = await Promise.all([
-      this.prisma.user.findFirst({
-        where: { id: fromUserId, organizationId: caller.organizationId, isActive: true },
-        select: { id: true, isExternal: true },
-      }),
-      this.prisma.user.findFirst({
-        where: { id: input.toUserId, organizationId: caller.organizationId, isActive: true },
-        select: { id: true, isExternal: true },
-      }),
+      personRef(this.prisma, fromUserId, caller.organizationId, { active: true }),
+      personRef(this.prisma, input.toUserId, caller.organizationId, { active: true }),
     ]);
     if (!from || !to) throw new NotFoundException('Member not found');
     // A leader hands over to somebody they work with; a people manager may choose anybody internal.
@@ -259,28 +238,16 @@ export class StandInsService {
 
   private async leaderRow(userId: string, organizationId: string) {
     const now = new Date();
-    const u = await this.prisma.user.findFirst({
-      where: { id: userId, organizationId, isActive: true },
-      select: {
-        ...ORG_ACCESS_SELECT,
-        spaceAssignments: {
-          where: { ...activeWindowWhere(now) },
-          select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
-        },
-      },
-    });
+    const u = await activeMemberAccessFacts(this.prisma, userId, organizationId, now);
     return u;
   }
 
   private async isExternal(userId: string): Promise<boolean> {
-    return !!(await this.prisma.user.findUnique({ where: { id: userId }, select: { isExternal: true } }))?.isExternal;
+    return isExternalAccount(this.prisma, userId);
   }
 
   private async today(organizationId: string): Promise<string> {
-    const org = await this.prisma.organization.findUnique({
-      where: { id: organizationId },
-      select: { timezone: true },
-    });
+    const org = await orgTimezone(this.prisma, organizationId);
     return delegationDay(new Date(), org?.timezone).toISOString().slice(0, 10);
   }
 }

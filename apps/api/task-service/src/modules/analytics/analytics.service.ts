@@ -6,6 +6,7 @@ import {
   type ReportLabelKey,
   type SpaceScopeIds,
   toISODateString,
+  personBrief,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { compile, ReportDefinition } from './query-engine';
@@ -14,7 +15,6 @@ import { TEMPLATES } from './templates';
 
 @Injectable()
 export class AnalyticsService {
-
   constructor(private readonly prisma: PrismaService) {}
 
   /** Report builder catalog: available datasets (dimensions/measures) + templates. */
@@ -70,10 +70,7 @@ export class AnalyticsService {
       organizationId: data.organizationId,
       scopeSpaceIds: scope,
     });
-    const user = await this.prisma.user.findFirst({
-      where: { id: data.userId, organizationId: data.organizationId },
-      select: { firstName: true, lastName: true },
-    });
+    const user = await personBrief(this.prisma, data.userId, { organizationId: data.organizationId });
     if (!user) throw new NotFoundException('User not found');
 
     // Resolve + clamp the range (default last 30 days; hard-cap ~400 days).

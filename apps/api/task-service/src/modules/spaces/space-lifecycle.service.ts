@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
-import { SERVICE_NAMES, success } from '@hbcfield/shared';
+import { SERVICE_NAMES, success, activeShareCount } from '@hbcfield/shared';
 import { sendRpc, spacePurgeAuthSide } from '@hbcfield/shared/microservices';
 import { PrismaService } from '@hbcfield/shared';
 import { SpaceServiceBase } from './space-service.base';
@@ -215,9 +215,7 @@ export class SpaceLifecycleService extends SpaceServiceBase {
     // revokes it with no notice to them, and — because SpaceShare.spaceId carries no
     // foreign key — leaves the grant row behind pointing at a space that no longer
     // exists (audit S-B2). Make the owner unshare deliberately first.
-    const activeShares = await this.prisma.spaceShare.count({
-      where: { spaceId: data.id, status: 'ACTIVE' },
-    });
+    const activeShares = await activeShareCount(this.prisma, data.id);
     if (activeShares > 0) {
       blockers.push(`${activeShares} organization(s) this space is shared with — unshare first`);
     }
