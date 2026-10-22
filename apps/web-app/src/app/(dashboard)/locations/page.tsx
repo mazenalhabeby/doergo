@@ -5,7 +5,7 @@ import { useRouteAccess } from "@/hooks/use-route-access"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Loader2, Plus, RefreshCw } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { canManageSpace } from "@hbcfield/shared/client"
@@ -13,7 +13,7 @@ import { canManageSpace } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceLifecycle } from "./_hooks/use-space-lifecycle"
 import { SpaceLifecycleDialog } from "./_components/space-lifecycle-dialog"
-import { locationsApi, workflowsApi, type CompanyLocation } from "@/lib/api"
+import { locationsApi, type CompanyLocation } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { useBillingLock } from "@/hooks/use-billing-lock"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
@@ -23,9 +23,12 @@ import { EmptyState, SpaceCard } from "./_components/space-card"
 import { SharedWithUsSection } from "./_components/shared-with-us-section"
 import dynamic from "next/dynamic"
 import { useLatched } from "@/hooks/use-latched"
+import { useWorkflows } from "@/hooks/use-workflows"
 
 // The create dialog carries the whole space form (workflow builder included); downloaded on first open.
-const CreateSpaceDialog = dynamic(() => import("./_components/create-space-dialog").then((m) => m.CreateSpaceDialog), { ssr: false })
+const CreateSpaceDialog = dynamic(() => import("./_components/create-space-dialog").then((m) => m.CreateSpaceDialog), {
+  ssr: false,
+})
 
 // ============================================================================
 // MAIN PAGE
@@ -49,11 +52,7 @@ export default function SpacesPage() {
 
   // GET /workflows is @RequirePermission('canViewAllTasks') — asked only of whoever holds it.
   const { holds } = useRouteAccess()
-  const { data: workflows } = useQuery({
-    queryKey: keys.workflows.lists(),
-    queryFn: () => workflowsApi.list(),
-    enabled: holds("org:canViewAllTasks"),
-  })
+  const { data: workflows } = useWorkflows({ enabled: holds("org:canViewAllTasks") })
 
   const locations = directory ?? []
 
@@ -82,9 +81,7 @@ export default function SpacesPage() {
           <div className="flex items-start justify-between">
             <div data-tour="spaces-intro">
               <h1 className="text-2xl font-bold text-foreground tracking-tight">{t("locations.title")}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t("locations.subtitle")}
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("locations.subtitle")}</p>
             </div>
             {isAdmin && (
               <div className="flex items-center gap-2">
@@ -95,7 +92,11 @@ export default function SpacesPage() {
                   className="h-10 gap-2 rounded-xl"
                   title={t("locations.resyncAllTasksHint")}
                 >
-                  {resyncAllMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  {resyncAllMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
                   <span className="hidden sm:inline">{t("locations.resyncAllTasks")}</span>
                 </Button>
                 {/*
@@ -132,42 +133,52 @@ export default function SpacesPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div
-                      className={"relative overflow-hidden rounded-lg bg-muted size-10 before:absolute " +
+                      className={
+                        "relative overflow-hidden rounded-lg bg-muted size-10 before:absolute " +
                         "before:inset-0 before:-translate-x-full " +
                         "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
-                        "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                        "before:from-transparent before:via-foreground/5 before:to-transparent"
+                      }
                     />
                     <div className="space-y-1.5">
                       <div
-                        className={"relative overflow-hidden rounded bg-muted h-4 before:absolute " +
+                        className={
+                          "relative overflow-hidden rounded bg-muted h-4 before:absolute " +
                           "before:inset-0 before:-translate-x-full " +
                           "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
-                          "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                          "before:from-transparent before:via-foreground/5 before:to-transparent"
+                        }
                         style={{ width: `${100 + i * 30}px` }}
                       />
                       <div
-                        className={"relative overflow-hidden rounded bg-muted h-3 w-48 before:absolute " +
+                        className={
+                          "relative overflow-hidden rounded bg-muted h-3 w-48 before:absolute " +
                           "before:inset-0 before:-translate-x-full " +
                           "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
-                          "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                          "before:from-transparent before:via-foreground/5 before:to-transparent"
+                        }
                       />
                     </div>
                   </div>
                   <div
-                    className={"relative overflow-hidden rounded-full bg-muted h-6 w-16 before:absolute " +
+                    className={
+                      "relative overflow-hidden rounded-full bg-muted h-6 w-16 before:absolute " +
                       "before:inset-0 before:-translate-x-full " +
                       "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
-                      "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                      "before:from-transparent before:via-foreground/5 before:to-transparent"
+                    }
                   />
                 </div>
                 <div className="flex items-center gap-3 mt-4">
                   {Array.from({ length: 3 + i }).map((_, j) => (
                     <div
                       key={j}
-                      className={"relative overflow-hidden rounded-full bg-muted h-5 before:absolute " +
+                      className={
+                        "relative overflow-hidden rounded-full bg-muted h-5 before:absolute " +
                         "before:inset-0 before:-translate-x-full " +
                         "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
-                        "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                        "before:from-transparent before:via-foreground/5 before:to-transparent"
+                      }
                       style={{ width: `${50 + j * 15}px` }}
                     />
                   ))}
@@ -176,24 +187,33 @@ export default function SpacesPage() {
                   {Array.from({ length: 3 }).map((_, j) => (
                     <div
                       key={j}
-                      className={"relative overflow-hidden rounded-full bg-muted size-7 -ml-1 first:ml-0 " +
+                      className={
+                        "relative overflow-hidden rounded-full bg-muted size-7 -ml-1 first:ml-0 " +
                         "ring-2 ring-card before:absolute before:inset-0 before:-translate-x-full " +
                         "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
-                        "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                        "before:from-transparent before:via-foreground/5 before:to-transparent"
+                      }
                     />
                   ))}
                   <div
-                    className={"relative overflow-hidden rounded bg-muted h-3 w-20 ml-2 before:absolute " +
+                    className={
+                      "relative overflow-hidden rounded bg-muted h-3 w-20 ml-2 before:absolute " +
                       "before:inset-0 before:-translate-x-full " +
                       "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
-                      "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                      "before:from-transparent before:via-foreground/5 before:to-transparent"
+                    }
                   />
                 </div>
               </div>
             ))}
           </div>
         ) : locations.length === 0 ? (
-          <EmptyState onCreateClick={() => setCreateOpen(true)} isAdmin={isAdmin} locked={billingLocked} lockReason={billingLockReason} />
+          <EmptyState
+            onCreateClick={() => setCreateOpen(true)}
+            isAdmin={isAdmin}
+            locked={billingLocked}
+            lockReason={billingLockReason}
+          />
         ) : (
           <div className="grid gap-4">
             {locations.map((location, index) => (
@@ -217,21 +237,25 @@ export default function SpacesPage() {
         )}
 
         {/* Create Space Dialog */}
-        {createMounted && <CreateSpaceDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: keys.locations.lists() })
-            setCreateOpen(false)
-          }}
-        />}
+        {createMounted && (
+          <CreateSpaceDialog
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: keys.locations.lists() })
+              setCreateOpen(false)
+            }}
+          />
+        )}
 
         {/* Archive confirmation — same type-to-confirm dialog as space settings. */}
         <SpaceLifecycleDialog
           space={archiveTarget}
           mode="archive"
           open={!!archiveTarget}
-          onOpenChange={(open) => { if (!open) setArchiveTarget(null) }}
+          onOpenChange={(open) => {
+            if (!open) setArchiveTarget(null)
+          }}
           taskCount={archiveTarget?._count?.tasks ?? 0}
         />
 
@@ -242,7 +266,10 @@ export default function SpacesPage() {
           title={t("locations.resyncAllTasksConfirmTitle")}
           description={t("locations.resyncAllTasksConfirmDescription")}
           confirmLabel={t("locations.resyncAllTasks")}
-          onConfirm={(e) => { e.preventDefault(); resyncAllMutation.mutate() }}
+          onConfirm={(e) => {
+            e.preventDefault()
+            resyncAllMutation.mutate()
+          }}
           pending={resyncAllMutation.isPending}
         />
       </div>

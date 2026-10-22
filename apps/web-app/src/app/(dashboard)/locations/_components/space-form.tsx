@@ -2,13 +2,13 @@
 
 import { useState, useCallback, useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { Boxes, MapPin } from "lucide-react"
 import type { LatLng } from "@hbcfield/shared/client"
 import { DEFAULT_ORG_MODULES } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
-import { keys } from "@/lib/query-keys"
-import { locationsApi, workflowsApi, type CreateLocationInput } from "@/lib/api"
+
+import { locationsApi, type CreateLocationInput } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Input, Button, Label } from "@/components/ui"
@@ -17,6 +17,7 @@ import { OwnershipKindPicker, ownershipKindOptions } from "./ownership-kind-pick
 import { WorkflowSelector } from "./workflow-selector"
 import { SpaceModulesPicker } from "./space-modules-picker"
 import { SpaceSiteFields, GEO_MIN, GEO_MAX, GEO_DEFAULT } from "./space-site-fields"
+import { useWorkflows } from "@/hooks/use-workflows"
 
 /**
  * Shared "create a space" form — name, workspace/physical type, location +
@@ -41,11 +42,7 @@ export function SpaceForm({
   const resolvedSubmitLabel = submitLabel ?? t("locations.createSpace")
   // Workflows are fetched here (cached key shared with /locations, so no extra
   // request) — keeps both call sites a one-liner.
-  const { data: workflows = [] } = useQuery({
-    queryKey: keys.workflows.lists(),
-    queryFn: () => workflowsApi.list(),
-    staleTime: 60000,
-  })
+  const { data: workflows = [] } = useWorkflows()
 
   const [name, setName] = useState("")
   const [type, setType] = useState<"workspace" | "physical">("workspace")

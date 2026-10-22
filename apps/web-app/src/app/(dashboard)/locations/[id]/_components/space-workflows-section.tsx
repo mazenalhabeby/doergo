@@ -11,6 +11,7 @@ import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { OfferedWorkflowRow } from "./offered-workflow-row"
+import { useWorkflows } from "@/hooks/use-workflows"
 
 /**
  * The task types this space offers.
@@ -33,10 +34,7 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
     queryKey: keys.spaces.workflows(spaceId),
     queryFn: () => workflowsApi.listForSpace(spaceId),
   })
-  const { data: all = [] } = useQuery({
-    queryKey: keys.workflows.lists(),
-    queryFn: () => workflowsApi.list(),
-  })
+  const { data: all = [] } = useWorkflows()
   /*
     The shared library — ready-made task types nobody in this organization has
     to design. Picking one COPIES it: the organization gets its own definition

@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 import { Trash2 } from "lucide-react"
 import { RULE_KINDS, formatMoney, type ApprovalRuleView, type RuleKind } from "@hbcfield/shared/client"
 
-import { approvalsApi, organizationsApi } from "@/lib/api"
+import { approvalsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
 import { dateLocale } from "@/lib/format-date"
@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useOrgRoles } from "@/hooks/use-org-roles"
 
 const ALL = "__all__"
 const NONE = "__none__"
@@ -35,17 +36,8 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
   const currency = user?.orgCurrency ?? "EUR"
 
   const { data: rules } = useQuery({ queryKey: keys.approvals.rules(), queryFn: approvalsApi.rules, enabled: open })
-  const {
-    data: orgRoles
-  } = useQuery({ queryKey: keys.organization.roles(), queryFn: () => organizationsApi.getRoles(), enabled: open, staleTime: 60_000 })
-  const {
-    data: spaceRoles
-  } = useQuery({
-    queryKey: keys.organization.roles("space"),
-    queryFn: () => organizationsApi.getRoles("space"),
-    enabled: open,
-    staleTime: 60_000
-  })
+  const { data: orgRoles } = useOrgRoles(undefined, { enabled: open })
+  const { data: spaceRoles } = useOrgRoles("space", { enabled: open })
   const { data: spaces } = useSpaceDirectory({ enabled: open })
 
   const roles = useMemo(() => {
@@ -63,7 +55,14 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
   const [escalate, setEscalate] = useState("")
   const [escalateRoleId, setEscalateRoleId] = useState(NONE)
   const hoursOf = (v: string) => (v.trim() === "" ? null : Math.round(Number(v)))
-  const reset = () => { setThreshold(""); setRoleId(NONE); setCoverShort(false); setRemind(""); setEscalate(""); setEscalateRoleId(NONE) }
+  const reset = () => {
+    setThreshold("")
+    setRoleId(NONE)
+    setCoverShort(false)
+    setRemind("")
+    setEscalate("")
+    setEscalateRoleId(NONE)
+  }
 
   const refresh = () => qc.invalidateQueries({ queryKey: keys.approvals.all() })
   const save = useMutation({
@@ -83,7 +82,11 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
         minAmountCents: kind === "expense" && n != null ? Math.round(n * 100) : null,
       })
     },
-    onSuccess: () => { reset(); notify.success(t("approvals.rules.saved")); refresh() },
+    onSuccess: () => {
+      reset()
+      notify.success(t("approvals.rules.saved"))
+      refresh()
+    },
     onError: (e: Error) => notify.error(e.message),
   })
   const toggle = useMutation({
@@ -98,19 +101,24 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
   })
 
   const describe = (r: ApprovalRuleView) => {
-    const when = [
-      r.kind === "overtime" && r.minMinutes != null
-        ? t("approvals.rules.whenOvertime", { hours: Math.round((r.minMinutes / 60) * 10) / 10 })
-        : null,
-      r.kind === "request" && r.minDays != null ? t("approvals.rules.whenDays", { count: r.minDays }) : null,
-      r.kind === "expense" && r.minAmountCents != null
-        ? t("approvals.rules.whenAmount", { amount: formatMoney(r.minAmountCents, currency, dateLocale()) })
-        : null,
-      r.whenCoverShort ? t("approvals.rules.whenCover") : null,
-    ].filter(Boolean).join(", ") || t("approvals.rules.always")
-    const head = t(
-      "approvals.rules.head",
-      { what: t(`approvals.rules.kind.${r.kind}`), when, where: r.spaceName ?? t("approvals.rules.everywhere") })
+    const when =
+      [
+        r.kind === "overtime" && r.minMinutes != null
+          ? t("approvals.rules.whenOvertime", { hours: Math.round((r.minMinutes / 60) * 10) / 10 })
+          : null,
+        r.kind === "request" && r.minDays != null ? t("approvals.rules.whenDays", { count: r.minDays }) : null,
+        r.kind === "expense" && r.minAmountCents != null
+          ? t("approvals.rules.whenAmount", { amount: formatMoney(r.minAmountCents, currency, dateLocale()) })
+          : null,
+        r.whenCoverShort ? t("approvals.rules.whenCover") : null,
+      ]
+        .filter(Boolean)
+        .join(", ") || t("approvals.rules.always")
+    const head = t("approvals.rules.head", {
+      what: t(`approvals.rules.kind.${r.kind}`),
+      when,
+      where: r.spaceName ?? t("approvals.rules.everywhere"),
+    })
     const parts = [
       r.secondRoleId ? t("approvals.rules.needs", { role: r.secondRoleName ?? "?" }) : null,
       r.remindAfterHours != null ? t("approvals.rules.reminds", { hours: r.remindAfterHours }) : null,
@@ -134,7 +142,9 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
         <ul className="divide-y divide-border rounded-lg border border-border">
           {(rules ?? []).map((r) => (
             <li key={r.id} className="flex items-center gap-3 px-3 py-2.5 text-sm">
-              <p className={r.isActive ? "flex-1 text-foreground" : "flex-1 text-muted-foreground line-through"}>{describe(r)}</p>
+              <p className={r.isActive ? "flex-1 text-foreground" : "flex-1 text-muted-foreground line-through"}>
+                {describe(r)}
+              </p>
               <Switch
                 checked={r.isActive}
                 disabled={toggle.isPending}
@@ -147,12 +157,15 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
                 className="size-8"
                 disabled={remove.isPending}
                 onClick={() => remove.mutate(r.id)}
-                aria-label={t("approvals.rules.remove")}>
+                aria-label={t("approvals.rules.remove")}
+              >
                 <Trash2 className="size-4" />
               </Button>
             </li>
           ))}
-          {rules && !rules.length && <li className="px-3 py-3 text-sm text-muted-foreground">{t("approvals.rules.none")}</li>}
+          {rules && !rules.length && (
+            <li className="px-3 py-3 text-sm text-muted-foreground">{t("approvals.rules.none")}</li>
+          )}
         </ul>
 
         <div className="space-y-3 border-t border-border pt-4">
@@ -160,20 +173,40 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>{t("approvals.rules.kindLabel")}</Label>
-              <Select value={kind} onValueChange={(v) => { setKind(v as RuleKind); setThreshold("") }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={kind}
+                onValueChange={(v) => {
+                  setKind(v as RuleKind)
+                  setThreshold("")
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {RULE_KINDS.map((k) => <SelectItem key={k} value={k}>{t(`approvals.rules.kind.${k}`)}</SelectItem>)}
+                  {RULE_KINDS.map((k) => (
+                    <SelectItem key={k} value={k}>
+                      {t(`approvals.rules.kind.${k}`)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label>{t("approvals.rules.where")}</Label>
               <Select value={spaceId} onValueChange={setSpaceId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={ALL}>{t("approvals.rules.everywhere")}</SelectItem>
-                  {(spaces ?? []).filter((s) => s.isActive !== false).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  {(spaces ?? [])
+                    .filter((s) => s.isActive !== false)
+                    .map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -193,10 +226,16 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
             <div className="space-y-1.5">
               <Label>{t("approvals.rules.secondRole")}</Label>
               <Select value={roleId} onValueChange={setRoleId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE}>{t("approvals.rules.noSecond")}</SelectItem>
-                  {roles.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                  {roles.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -236,10 +275,16 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
             <div className="space-y-1.5">
               <Label>{t("approvals.rules.escalateTo")}</Label>
               <Select value={escalateRoleId} onValueChange={setEscalateRoleId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE}>—</SelectItem>
-                  {roles.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                  {roles.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

@@ -2,11 +2,11 @@
 
 import { keys } from "@/lib/query-keys"
 import { useState, useCallback } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
-import { invitationsApi, organizationsApi, type CreateInvitationInput } from "@/lib/api"
+import { invitationsApi, type CreateInvitationInput } from "@/lib/api"
 import { createDefaultSchedule, type EditableScheduleRow } from "@/components/people/schedule-fields"
 import {
   defaultAccessDraft,
@@ -19,6 +19,7 @@ import { presetChoice, withoutMissingModules } from "@/lib/permission-builder"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { copyText } from "@/lib/clipboard"
 import { useActiveSpaces } from "@/hooks/use-space-directory"
+import { useOrgRoles } from "@/hooks/use-org-roles"
 
 export type InviteMode = "email" | "code"
 export type ExternalMode = "builder" | "role"
@@ -99,12 +100,7 @@ export function useCreateInvitationDialog({
   const builderModules = hasSpace && spaceModulesResolved ? spaceModules : undefined
   // Space-scoped roles only — an org role reaches every space, which is exactly
   // what an outsider must never have. The server refuses one regardless.
-  const { data: spaceRoles = [] } = useQuery({
-    queryKey: keys.organization.roles("space"),
-    queryFn: () => organizationsApi.getRoles("space"),
-    staleTime: 300000,
-    enabled: open && isExternal,
-  })
+  const { data: spaceRoles = [] } = useOrgRoles("space", { enabled: open && isExternal })
 
   const createMutation = useMutation({
     mutationFn: (input: CreateInvitationInput) => invitationsApi.create(input),

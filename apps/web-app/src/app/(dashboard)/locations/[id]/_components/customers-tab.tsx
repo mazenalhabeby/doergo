@@ -5,7 +5,7 @@ import { useMemo, useState } from "react"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { Contact, Plus, Smartphone, ChevronRight, Building2 } from "lucide-react"
 
 import { customersApi } from "@/lib/api"
@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { SectionHeader, EmptyState } from "./section-header"
 import { CustomerForm } from "./customer-form"
+import { useClients } from "@/hooks/use-clients"
 
 // The add / edit dialog lives in customer-form.tsx; re-exported for the client record page.
 export { CustomerForm }
@@ -78,10 +79,7 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
             search: debouncedSearch || undefined,
             limit: 100,
   }
-  const listQ = useQuery({
-    queryKey: keys.customers.list(listParams),
-    queryFn: () => customersApi.list(listParams),
-  })
+  const listQ = useClients(listParams)
   const customers = listQ.data?.data ?? []
   // Only the App-users split is still done here: it is a property of the row
   // rather than a different question for the server.

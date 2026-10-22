@@ -3,12 +3,12 @@
 import { keys, invalidateTaskLists } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus, RefreshCw, Loader2, Workflow } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
-import { locationsApi, workflowsApi, type CompanyLocation } from "@/lib/api"
+import { locationsApi, type CompanyLocation } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import { WorkflowSelector } from "../../_components/workflow-selector"
@@ -16,6 +16,7 @@ import { SpaceWorkflowsSection } from "./space-workflows-section"
 import { WorkflowBuilder } from "../../_components/workflow-builder"
 import { SectionHeader } from "./section-header"
 import { workflowStatusLabel } from "@hbcfield/shared/client"
+import { useWorkflows } from "@/hooks/use-workflows"
 
 export function WorkflowTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
@@ -23,10 +24,7 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
   const isAdmin = user?.role === "ADMIN"
   const queryClient = useQueryClient()
 
-  const { data: workflows = [] } = useQuery({
-    queryKey: keys.workflows.lists(),
-    queryFn: () => workflowsApi.list(),
-  })
+  const { data: workflows = [] } = useWorkflows()
 
   const currentWorkflow = workflows.find((w) => w.id === space.workflowId) || workflows.find((w) => w.isDefault)
   const [selectedId, setSelectedId] = useState(currentWorkflow?.id || "")
@@ -140,7 +138,12 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
             {t("locations.createNew")}
           </Button>
           {hasChanges && (
-            <Button onClick={() => mutation.mutate(selectedId)} disabled={mutation.isPending} size="sm" className="ml-auto">
+            <Button
+              onClick={() => mutation.mutate(selectedId)}
+              disabled={mutation.isPending}
+              size="sm"
+              className="ml-auto"
+            >
               {mutation.isPending ? t("common.saving") : t("common.save")}
             </Button>
           )}
@@ -186,8 +189,10 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
             type="button"
             onClick={() => setConfirmResync(true)}
             disabled={resyncMutation.isPending}
-            className={"inline-flex items-center gap-1.5 text-xs text-muted-foreground " +
-              "hover:text-foreground transition-colors disabled:opacity-50"}
+            className={
+              "inline-flex items-center gap-1.5 text-xs text-muted-foreground " +
+              "hover:text-foreground transition-colors disabled:opacity-50"
+            }
           >
             {resyncMutation.isPending ? (
               <Loader2 className="h-3 w-3 animate-spin" />

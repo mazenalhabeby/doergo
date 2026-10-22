@@ -181,6 +181,11 @@ Each becomes a folder of real Nest sub-modules with their own providers and test
 > stable component (it remounted on every render); the invoice billable-work rows' open state lives in that table
 > (switching the source away and back closes them); the access editor's role-only mode no longer fetches contacts.
 
+> **Status (2026-10-22): 5.3 DONE.** One hook per shared read, one refresh time each: `useOrgRoles(scope)` (5 min),
+> `useWorkflows()` (2 min; `useOrgWorkflow` reads through it), `useClients(params)` (1 min); workspaces already had
+> `useSpaceDirectory`. 26 call sites moved (they had drifted to 1, 2, 5 minutes and none). Guard:
+> `src/__tests__/shared-reads.spec.ts` — each read has exactly one caller.
+
 ---
 
 ## Phase 6 — Phone app *(≈ 2 weeks; JS-only, OTA-safe except where noted)*

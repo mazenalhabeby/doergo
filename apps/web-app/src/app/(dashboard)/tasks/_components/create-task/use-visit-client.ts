@@ -1,11 +1,10 @@
 "use client"
 
 import { useCallback, useEffect } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { keys } from "@/lib/query-keys"
-import { customersApi } from "@/lib/api"
+
 import { geocodeAddress } from "@/lib/geocode"
 import { useClientAddresses } from "@/hooks/use-client-addresses"
+import { useClients } from "@/hooks/use-clients"
 
 /**
  * A visit: which client, which of their addresses, and copying that address
@@ -59,17 +58,18 @@ export function useVisitClient({
     admin all of them. A second copy of that rule here would be one to keep in
     step, and the browser's copy is the one that cannot be trusted anyway.
   */
-  const { data: clientPage } = useQuery({
-    queryKey: keys.customers.list({ spaceId, includeUnfiled: true, limit: 200 }),
-    queryFn: () => customersApi.list({ spaceId, includeUnfiled: true, limit: 200 }),
-    staleTime: 60000,
-    enabled: open && spaceId !== "none" && hasModule("crm") && !defaultCustomerId,
-  })
+  const { data: clientPage } = useClients(
+    { spaceId, includeUnfiled: true, limit: 200 },
+    { enabled: open && spaceId !== "none" && hasModule("crm") && !defaultCustomerId },
+  )
   const visitClients = clientPage?.data ?? []
 
   // Where that client is: the record's own address, then its address rows (shared with the calendar).
   const listedClient = visitClients.find((c) => c.id === customerId) ?? null
-  const { options: visitAddressOptions, client: chosenClient } = useClientAddresses(customerId, { enabled: open, known: listedClient })
+  const { options: visitAddressOptions, client: chosenClient } = useClientAddresses(customerId, {
+    enabled: open,
+    known: listedClient,
+  })
   // Opened from a client's page the list is never fetched — that client is shown from its own record.
   const pinnedClient = listedClient ? null : chosenClient
 
@@ -87,20 +87,27 @@ export function useVisitClient({
     they are already looking at. Failure is not an error: the text still names
     the place, the pin stays empty, and the note below says so.
   */
-  const applyVisitAddress = useCallback(async (
-    opt: { address: string | null; name: string; id: string; lat: number | null; lng: number | null } | null) => {
-    setVisitAddressId(opt?.id ?? "none")
-    if (!opt) return
-    const text = opt.address ?? opt.name ?? ""
-    setLocationAddress(text)
-    setLocationLat(opt.lat ?? null)
-    setLocationLng(opt.lng ?? null)
-    if (opt.lat != null || !text.trim()) return
+  const applyVisitAddress = useCallback(
+    async (
+      opt: { address: string | null; name: string; id: string; lat: number | null; lng: number | null } | null,
+    ) => {
+      setVisitAddressId(opt?.id ?? "none")
+      if (!opt) return
+      const text = opt.address ?? opt.name ?? ""
+      setLocationAddress(text)
+      setLocationLat(opt.lat ?? null)
+      setLocationLng(opt.lng ?? null)
+      if (opt.lat != null || !text.trim()) return
 
-    const point = await geocodeAddress(text)
-    if (point) { setLocationLat(point.lat); setLocationLng(point.lng) }
-    // The setters are useState setters from the form hook — stable, so this is still created once.
-  }, [setVisitAddressId, setLocationAddress, setLocationLat, setLocationLng])
+      const point = await geocodeAddress(text)
+      if (point) {
+        setLocationLat(point.lat)
+        setLocationLng(point.lng)
+      }
+      // The setters are useState setters from the form hook — stable, so this is still created once.
+    },
+    [setVisitAddressId, setLocationAddress, setLocationLat, setLocationLng],
+  )
 
   /*
     Choosing a client is choosing a destination when there is only one it could
@@ -110,8 +117,8 @@ export function useVisitClient({
   useEffect(() => {
     if (!open || customerId === "none" || visitAddressOptions.length === 0) return
     if (visitAddressId !== "none") return
-    const pick = visitAddressOptions.find((a) => a.isPrimary)
-      ?? (visitAddressOptions.length === 1 ? visitAddressOptions[0] : null)
+    const pick =
+      visitAddressOptions.find((a) => a.isPrimary) ?? (visitAddressOptions.length === 1 ? visitAddressOptions[0] : null)
     if (pick) void applyVisitAddress(pick)
   }, [open, customerId, visitAddressOptions, visitAddressId, applyVisitAddress])
 

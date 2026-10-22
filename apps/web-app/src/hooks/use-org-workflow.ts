@@ -3,18 +3,14 @@
 import { keys } from "@/lib/query-keys"
 import { useQuery } from "@tanstack/react-query"
 import { workflowsApi, type WorkflowStatus } from "@/lib/api"
+import { useWorkflows } from "@/hooks/use-workflows"
 
 /**
  * Hook to fetch the organization's workflows and derive the default workflow.
  * Falls back to hardcoded status definitions when no workflow exists.
  */
 export function useOrgWorkflow() {
-  const { data: workflows, isLoading, isError } = useQuery({
-    queryKey: keys.workflows.lists(),
-    queryFn: () => workflowsApi.list(),
-    staleTime: 120000, // 2 minutes
-    retry: 1,
-  })
+  const { data: workflows, isLoading, isError } = useWorkflows()
 
   const defaultWorkflow = workflows?.find((w) => w.isDefault) ?? workflows?.[0] ?? null
   const statuses = defaultWorkflow?.statuses ?? []
@@ -55,9 +51,7 @@ export function useWorkflow(workflowId?: string | null) {
 
   // Prefer the full workflow from list (if it has statuses) or the fetched one
   const workflow =
-    workflows?.find((w) => w.id === resolvedId && w.statuses?.length) ??
-    fetchedWorkflow ??
-    defaultWorkflow
+    workflows?.find((w) => w.id === resolvedId && w.statuses?.length) ?? fetchedWorkflow ?? defaultWorkflow
 
   const statuses = workflow?.statuses ?? []
 
@@ -93,9 +87,7 @@ export function buildStatusTabs(statuses: WorkflowStatus[]): StatusTabGroup[] {
   // Faithful: "All" + one tab per status, in the workflow's own order, using each
   // status's real name/color. No more collapsing finals into "Done" or canceled
   // into "Canceled" — the tabs mirror exactly what the workflow defines.
-  const tabs: StatusTabGroup[] = [
-    { key: "all", label: "All", dotColor: null, statuses: [] },
-  ]
+  const tabs: StatusTabGroup[] = [{ key: "all", label: "All", dotColor: null, statuses: [] }]
 
   for (const s of [...statuses].sort((a, b) => a.position - b.position)) {
     tabs.push({
@@ -151,10 +143,7 @@ export function buildKanbanColumns(
 /**
  * Get allowed transitions for a given status from workflow statuses.
  */
-export function getTransitionsForStatus(
-  currentStatusKey: string,
-  statuses: WorkflowStatus[],
-): WorkflowStatus[] {
+export function getTransitionsForStatus(currentStatusKey: string, statuses: WorkflowStatus[]): WorkflowStatus[] {
   const currentStatus = statuses.find((s) => s.key === currentStatusKey)
   if (!currentStatus || !currentStatus.transitions) return []
 

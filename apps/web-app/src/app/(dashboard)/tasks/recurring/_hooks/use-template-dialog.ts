@@ -3,11 +3,12 @@
 import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { notify } from "@/lib/toast"
-import { recurringTasksApi, workflowsApi, type RecurringTaskTemplate, type RecurringFrequency } from "@/lib/api"
+import { recurringTasksApi, type RecurringTaskTemplate, type RecurringFrequency } from "@/lib/api"
 import { todayKey } from "@hbcfield/shared/client"
 import { useActiveSpaces } from "@/hooks/use-space-directory"
+import { useWorkflows } from "@/hooks/use-workflows"
 
 /** A recurring template's form: every field, seeded from the template being edited, and the save. */
 export function useTemplateDialog({
@@ -30,10 +31,7 @@ export function useTemplateDialog({
   const [workflowId, setWorkflowId] = useState(existingTemplate?.workflowId || "none")
 
   const { data: spaces = [] } = useActiveSpaces()
-  const { data: taskTypes = [] } = useQuery({
-    queryKey: keys.workflows.lists(),
-    queryFn: () => workflowsApi.list(),
-  })
+  const { data: taskTypes = [] } = useWorkflows()
   const [frequency, setFrequency] = useState<RecurringFrequency>(existingTemplate?.frequency || "WEEKLY")
   const [customDays, setCustomDays] = useState<number>(existingTemplate?.customDays || 7)
   const [dayOfWeek, setDayOfWeek] = useState<number>(existingTemplate?.dayOfWeek ?? 1)

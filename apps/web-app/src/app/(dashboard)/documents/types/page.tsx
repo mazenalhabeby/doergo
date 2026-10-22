@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { Plus, ArrowLeft, ShieldCheck, RotateCcw } from "lucide-react"
-import { documentsApi, workflowsApi, organizationsApi, type DocumentTypeRow } from "@/lib/api"
+import { documentsApi, type DocumentTypeRow } from "@/lib/api"
 import { STARTER_DOCUMENT_TYPES, type StarterDocumentType } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { notify } from "@/lib/toast"
@@ -15,6 +15,8 @@ import { BLANK } from "./_lib/type-options"
 import { DirectionIcon } from "./_components/direction-icon"
 import { TypeRow } from "./_components/type-row"
 import { TypeEditor } from "./_components/type-editor"
+import { useOrgRoles } from "@/hooks/use-org-roles"
+import { useWorkflows } from "@/hooks/use-workflows"
 
 /*
   Document types — the configuration everything else in the personnel file
@@ -53,19 +55,11 @@ export default function DocumentTypesPage() {
   // Both lists are other permissions' (GET /workflows: canViewAllTasks, GET /organizations/roles:
   // canManageUsers) — asked only of whoever holds them, so the editor never fires a 403.
   const { holds } = useRouteAccess()
-  const { data: workflows = [] } = useQuery({
-    queryKey: keys.workflows.lists(),
-    queryFn: () => workflowsApi.list(),
-    enabled: holds("org:canViewAllTasks"),
-  })
+  const { data: workflows = [] } = useWorkflows({ enabled: holds("org:canViewAllTasks") })
 
   // Member roles, for "who do we require this from" — the same list the
   // contract templates bind against.
-  const { data: roles = [] } = useQuery({
-    queryKey: keys.organization.roles(),
-    queryFn: () => organizationsApi.getRoles("org"),
-    enabled: holds("org:canManageUsers"),
-  })
+  const { data: roles = [] } = useOrgRoles("org", { enabled: holds("org:canManageUsers") })
 
   const active = useMemo(() => types.filter((ty) => ty.isActive), [types])
   const retired = useMemo(() => types.filter((ty) => !ty.isActive), [types])

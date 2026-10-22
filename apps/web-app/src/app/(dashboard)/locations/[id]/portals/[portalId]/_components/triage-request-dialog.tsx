@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react"
 import { canReceiveTasks, personName } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
-import { locationsApi, portalAdminApi, workflowsApi, type PortalRequestView } from "@/lib/api"
+import { locationsApi, portalAdminApi, type PortalRequestView } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import {
@@ -17,6 +17,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
+import { useWorkflows } from "@/hooks/use-workflows"
 
 /** Where a pending request goes: the workspace, its flow, the priority and the worker. */
 export type TriageForm = { spaceId: string; workflowId: string; priority: string; assignedToId: string }
@@ -44,7 +45,7 @@ export function TriageRequestDialog({
 }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  const flowsQ = useQuery({ queryKey: keys.workflows.lists(), queryFn: () => workflowsApi.list(), staleTime: 60000 })
+  const flowsQ = useWorkflows()
   const flows = flowsQ.data ?? []
   /*
     Assignable workers = ONLY the roster of the space being routed to.

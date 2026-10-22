@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { personInitials } from "@hbcfield/shared/client"
 import { AddContactDialog } from "./add-contact-dialog"
+import { useClients } from "@/hooks/use-clients"
 
 /**
  * The mirror, on a person's record: which companies they are a contact at.
@@ -40,16 +41,9 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
     Does this organization have any companies at all?
 
     One row is enough to answer it, the key carries no customer id so every
-    person record in a session shares the single request, and it is held for
-    five minutes — a CRM does not gain its first company twice.
+    person record in a session shares the single request.
   */
-  const anyCompanies =
-    useQuery({
-      queryKey: keys.customers.list({ type: "COMPANY", limit: 1 }),
-      queryFn: () => customersApi.list({ type: "COMPANY", limit: 1 }),
-      staleTime: 5 * 60_000,
-      select: (r) => (r.data?.length ?? 0) > 0,
-    }).data ?? false
+  const anyCompanies = (useClients({ type: "COMPANY", limit: 1 }).data?.data?.length ?? 0) > 0
   const companies = q.data ?? []
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: keys.customers.companies(customer.id) })

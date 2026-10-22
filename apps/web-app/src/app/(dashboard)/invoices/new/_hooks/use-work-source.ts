@@ -1,16 +1,16 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
+
 import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
-import { customersApi } from "@/lib/api"
+
 import type { PeriodValue } from "@/components/ui/period-picker"
 import { useActiveSpaces } from "@/hooks/use-space-directory"
 import { fmtDate } from "../../_components/invoice-document"
 import { useWorkGather } from "../_lib/use-work-gather"
+import { useClients } from "@/hooks/use-clients"
 
 /**
  * Where a new invoice's work comes from: a workspace, a client or nothing, over which period —
@@ -95,12 +95,7 @@ export function useWorkSource() {
     CREATE one. `crmCaps` is the server's own answer, so the "also add them"
     offer cannot appear for somebody the server would refuse.
   */
-  const { data: clientPage } = useQuery({
-    queryKey: keys.customers.list({ limit: 200, contacts: "exclude", status: "active" }),
-    queryFn: () => customersApi.list({ limit: 200, contacts: "exclude", status: "active" }),
-    enabled: hasCrm,
-    staleTime: 60_000,
-  })
+  const { data: clientPage } = useClients({ limit: 200, contacts: "exclude", status: "active" }, { enabled: hasCrm })
   const clients = clientPage?.data ?? []
   const mayAddClient = clientPage?.meta?.crmCaps?.manage === true || clientPage?.meta?.crmCaps?.editInfo === true
 

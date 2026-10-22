@@ -1,14 +1,13 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import type { LucideIcon } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { User, Smartphone, Search, Ban } from "lucide-react"
 
-import { spaceUnitsApi, customersApi, type SpaceUnit } from "@/lib/api"
+import { spaceUnitsApi, type SpaceUnit } from "@/lib/api"
 import { personName } from "@hbcfield/shared/client"
 import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { notify } from "@/lib/toast"
@@ -18,19 +17,27 @@ import { PersonPickRow } from "@/components/common/person-pick-row"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
+import { useClients } from "@/hooks/use-clients"
 
-const LocationPicker = dynamic(
-  () => import("@/components/map/location-picker"),
-  { ssr: false, loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-muted" /> },
-)
+const LocationPicker = dynamic(() => import("@/components/map/location-picker"), {
+  ssr: false,
+  loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-muted" />,
+})
 
 // Resident is encoded as "u:<userId>" (member) or "c:<customerId>" (client).
-const encodeResident = (u?: SpaceUnit) => u?.residentUserId ? `u:${u.residentUserId}` : u?.customer ? `c:${u.customer.id}` : "none"
+const encodeResident = (u?: SpaceUnit) =>
+  u?.residentUserId ? `u:${u.residentUserId}` : u?.customer ? `c:${u.customer.id}` : "none"
 
-export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved, trigger, hideResident, entityLabel }: {
+export function ApartmentDialog({
+  spaceId,
+  apartmentPortalIds,
+  existing,
+  onSaved,
+  trigger,
+  hideResident,
+  entityLabel,
+}: {
   // apartmentPortalIds = ids of this space's B2C portals whose entity is
   // Apartment. Non-empty ⇒ the apartment can host a CLIENT resident, and the
   // client candidates are scoped to those portals. Empty ⇒ members only.
@@ -38,13 +45,13 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
   // (e.g. the portal invite, where the resident IS the client being invited).
   // entityLabel = generalize the copy for non-apartment portals (Order/Workspace…);
   // falls back to "Apartment" when absent (the space Apartments tab).
-  spaceId: string;
-    apartmentPortalIds?: string[];
-    existing?: SpaceUnit;
-    onSaved: (unit?: SpaceUnit) => void;
-    trigger: React.ReactNode;
-    hideResident?: boolean;
-    entityLabel?: string
+  spaceId: string
+  apartmentPortalIds?: string[]
+  existing?: SpaceUnit
+  onSaved: (unit?: SpaceUnit) => void
+  trigger: React.ReactNode
+  hideResident?: boolean
+  entityLabel?: string
 }) {
   const hasApartmentPortal = !hideResident && (apartmentPortalIds?.length ?? 0) > 0
   const { t } = useTranslation()
@@ -63,11 +70,7 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
   const members = membersQ.members.filter((m) => m.isActive !== false && m.role !== "CUSTOMER")
   // Clients = this SPACE's app-access customers, scoped to the Apartment-entity
   // portals (a rental+logistics space won't offer logistics clients as residents).
-  const clientsQ = useQuery({
-    queryKey: keys.customers.list({ spaceId, portalResident: true, limit: 100 }),
-    queryFn: () => customersApi.list({ spaceId, portalResident: true, limit: 100 }),
-    enabled: open && hasApartmentPortal,
-  })
+  const clientsQ = useClients({ spaceId, portalResident: true, limit: 100 }, { enabled: open && hasApartmentPortal })
   const clients = (clientsQ.data?.data ?? []).filter((c) => c.portalId && apartmentPortalIds!.includes(c.portalId))
 
   const save = useMutation({
@@ -82,25 +85,35 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
         lng: lng ?? undefined,
         residentUserId,
         customerId,
-        details: cleanDetails
+        details: cleanDetails,
       }
       return existing ? spaceUnitsApi.update(spaceId, existing.id, base) : spaceUnitsApi.create(spaceId, base)
     },
     onSuccess: (unit) => {
-      notify.success(entityLabel
-        ? (existing
-          ? t("apartments.updatedEntity", "{{e}} updated", { e: entityLabel })
-          : t("apartments.addedEntity", "{{e}} added", { e: entityLabel }))
-        : (existing ? t("apartments.updated", "Apartment updated") : t("apartments.added", "Apartment added")))
-      onSaved(unit); setOpen(false)
+      notify.success(
+        entityLabel
+          ? existing
+            ? t("apartments.updatedEntity", "{{e}} updated", { e: entityLabel })
+            : t("apartments.addedEntity", "{{e}} added", { e: entityLabel })
+          : existing
+            ? t("apartments.updated", "Apartment updated")
+            : t("apartments.added", "Apartment added"),
+      )
+      onSaved(unit)
+      setOpen(false)
     },
     onError: (e: Error) => notify.error(e.message || "Could not save"),
   })
 
   // Rows for the active tab.
-  const rows = (tab === "members"
-    ? members.map((m) => ({ value: `u:${m.id}`, name: personName(m), sub: t("apartments.memberTag", "Member (staff)") }))
-    : clients.map((c) => ({ value: `c:${c.id}`, name: c.name, sub: t("customers.appAccess", "App access") }))
+  const rows = (
+    tab === "members"
+      ? members.map((m) => ({
+          value: `u:${m.id}`,
+          name: personName(m),
+          sub: t("apartments.memberTag", "Member (staff)"),
+        }))
+      : clients.map((c) => ({ value: `c:${c.id}`, name: c.name, sub: t("customers.appAccess", "App access") }))
   ).filter((r) => r.name.toLowerCase().includes(q.trim().toLowerCase()))
   const loading = tab === "members" ? membersQ.isLoading : clientsQ.isLoading
 
@@ -108,78 +121,113 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[88vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{entityLabel
-          ? (existing
-            ? t("apartments.editEntity", "Edit {{e}}", { e: entityLabel })
-            : t("apartments.addEntity", "Add {{e}}", { e: entityLabel }))
-          : (existing ? t("apartments.edit", "Edit apartment") : t("apartments.add", "Add apartment"))}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>
+            {entityLabel
+              ? existing
+                ? t("apartments.editEntity", "Edit {{e}}", { e: entityLabel })
+                : t("apartments.addEntity", "Add {{e}}", { e: entityLabel })
+              : existing
+                ? t("apartments.edit", "Edit apartment")
+                : t("apartments.add", "Add apartment")}
+          </DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1">
             <Label>{t("apartments.name", "Name / number")}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("apartments.namePh", "e.g. Apartment 4B")} />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t("apartments.namePh", "e.g. Apartment 4B")}
+            />
           </div>
           <div className="space-y-1">
             <Label>{t("customers.address", "Address")}</Label>
-            <LocationPicker lat={lat} lng={lng} address={address}
-              onLocationChange={(la, ln) => { setLat(la); setLng(ln) }}
-              onAddressChange={(a) => setAddress(a)} />
+            <LocationPicker
+              lat={lat}
+              lng={lng}
+              address={address}
+              onLocationChange={(la, ln) => {
+                setLat(la)
+                setLng(ln)
+              }}
+              onAddressChange={(a) => setAddress(a)}
+            />
           </div>
 
           {/* Resident — tabbed picker: Members always, Clients when a B2C portal runs.
               Hidden when reused from the invite (the resident is the invited client). */}
           {!hideResident && (
-          <div className="space-y-1.5">
-            <Label>{t("apartments.resident", "Resident (lives here)")}</Label>
-            <div className="rounded-xl border border-border">
-              {/* Tabs */}
-              <div className="flex items-center gap-1 border-b border-border p-1">
-                <TabBtn
-                  active={tab === "members"}
-                  onClick={() => { setTab("members"); setQ("") }}
-                  icon={User}
-                  label={t("apartments.members", "Members")}
-                />
-                {hasApartmentPortal &&
+            <div className="space-y-1.5">
+              <Label>{t("apartments.resident", "Resident (lives here)")}</Label>
+              <div className="rounded-xl border border-border">
+                {/* Tabs */}
+                <div className="flex items-center gap-1 border-b border-border p-1">
                   <TabBtn
-                    active={tab === "clients"}
-                    onClick={() => { setTab("clients"); setQ("") }}
-                    icon={Smartphone}
-                    label={t("apartments.clients", "Clients")}
-                  />}
-                <button type="button" onClick={() => setResident("none")}
-                  className={cn("ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
-                    resident === "none" ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
-                  <Ban className="h-3.5 w-3.5" /> {t("apartments.vacant", "Vacant")}
-                </button>
-              </div>
-              {/* Search */}
-              <div className="flex items-center gap-2 border-b border-border px-2.5 py-1.5">
-                <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("common.search", "Search…")}
-                  className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
-              </div>
-              {/* List */}
-              <div className="max-h-52 overflow-y-auto p-1">
-                {loading ? (
-                  <p className="py-6 text-center text-xs text-muted-foreground">{t("common.loading", "Loading…")}</p>
-                ) : rows.length === 0 ? (
-                  <p className="py-6 text-center text-xs text-muted-foreground">
-                    {tab === "clients"
-                      ? t("apartments.noAppResidents", "No app clients yet — invite one from the portal.")
-                      : t("apartments.noMembers", "No members")}
-                  </p>
-                ) : rows.map((r) => (
-                  <PersonPickRow
-                    key={r.value}
-                    name={r.name}
-                    sub={r.sub}
-                    selected={resident === r.value}
-                    onClick={() => setResident(r.value)}
+                    active={tab === "members"}
+                    onClick={() => {
+                      setTab("members")
+                      setQ("")
+                    }}
+                    icon={User}
+                    label={t("apartments.members", "Members")}
                   />
-                ))}
+                  {hasApartmentPortal && (
+                    <TabBtn
+                      active={tab === "clients"}
+                      onClick={() => {
+                        setTab("clients")
+                        setQ("")
+                      }}
+                      icon={Smartphone}
+                      label={t("apartments.clients", "Clients")}
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setResident("none")}
+                    className={cn(
+                      "ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                      resident === "none" ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Ban className="h-3.5 w-3.5" /> {t("apartments.vacant", "Vacant")}
+                  </button>
+                </div>
+                {/* Search */}
+                <div className="flex items-center gap-2 border-b border-border px-2.5 py-1.5">
+                  <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder={t("common.search", "Search…")}
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  />
+                </div>
+                {/* List */}
+                <div className="max-h-52 overflow-y-auto p-1">
+                  {loading ? (
+                    <p className="py-6 text-center text-xs text-muted-foreground">{t("common.loading", "Loading…")}</p>
+                  ) : rows.length === 0 ? (
+                    <p className="py-6 text-center text-xs text-muted-foreground">
+                      {tab === "clients"
+                        ? t("apartments.noAppResidents", "No app clients yet — invite one from the portal.")
+                        : t("apartments.noMembers", "No members")}
+                    </p>
+                  ) : (
+                    rows.map((r) => (
+                      <PersonPickRow
+                        key={r.value}
+                        name={r.name}
+                        sub={r.sub}
+                        selected={resident === r.value}
+                        onClick={() => setResident(r.value)}
+                      />
+                    ))
+                  )}
+                </div>
               </div>
             </div>
-          </div>
           )}
 
           {/* More info — flexible property attributes (floor, size, rent, access…). */}
@@ -191,7 +239,9 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel", "Cancel")}</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            {t("common.cancel", "Cancel")}
+          </Button>
           <Button disabled={(!name.trim() && !address.trim()) || save.isPending} onClick={() => save.mutate()}>
             {save.isPending ? t("common.saving", "Saving…") : t("common.save", "Save")}
           </Button>
@@ -201,11 +251,26 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
   )
 }
 
-function TabBtn({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: LucideIcon; label: string }) {
+function TabBtn({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean
+  onClick: () => void
+  icon: LucideIcon
+  label: string
+}) {
   return (
-    <button type="button" onClick={onClick}
-      className={cn("inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-        active ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+        active ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground",
+      )}
+    >
       <Icon className="h-3.5 w-3.5" /> {label}
     </button>
   )

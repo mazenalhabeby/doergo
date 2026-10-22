@@ -3,7 +3,7 @@
 import { keys } from "@/lib/query-keys"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus, Shield, Pencil, Trash2, Loader2, Lock, ArrowLeft } from "lucide-react"
 
 import { notify } from "@/lib/toast"
@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useOrgRoles } from "@/hooks/use-org-roles"
 
 const DEFAULT_ROLE_COLOR = "#2563eb"
 
@@ -41,11 +42,7 @@ export function ManageRolesDialog({ open, onOpenChange }: { open: boolean; onOpe
   const queryClient = useQueryClient()
   const [editing, setEditing] = useState<AccessRole | "new" | null>(null)
 
-  const { data: roles, isLoading } = useQuery({
-    queryKey: keys.organization.roles(),
-    queryFn: () => organizationsApi.getRoles(),
-    enabled: open,
-  })
+  const { data: roles, isLoading } = useOrgRoles(undefined, { enabled: open })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => organizationsApi.deleteRole(id),

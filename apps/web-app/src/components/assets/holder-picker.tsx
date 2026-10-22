@@ -1,16 +1,15 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useQuery } from "@tanstack/react-query"
+
 import { Ban, Search, Smartphone, User, X } from "lucide-react"
 
-import { customersApi } from "@/lib/api"
 import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { personName, type KindShape } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { PersonPickRow } from "@/components/common/person-pick-row"
+import { useClients } from "@/hooks/use-clients"
 
 /**
  * Choosing who holds something.
@@ -33,7 +32,6 @@ import { PersonPickRow } from "@/components/common/person-pick-row"
 */
 export type HolderKey = string
 
-
 /** "u:x" / "c:x" → what the API takes. */
 export const decodeHolders = (keys: HolderKey[]): Array<{ userId?: string; customerId?: string }> =>
   keys.map((h) => (h.startsWith("u:") ? { userId: h.slice(2) } : { customerId: h.slice(2) }))
@@ -41,9 +39,7 @@ export const decodeHolders = (keys: HolderKey[]): Array<{ userId?: string; custo
 export const encodeHolderList = (
   holders?: Array<{ userId?: string | null; customerId?: string | null }> | null,
 ): HolderKey[] =>
-  (holders ?? [])
-    .map((h) => (h.userId ? `u:${h.userId}` : h.customerId ? `c:${h.customerId}` : ""))
-    .filter(Boolean)
+  (holders ?? []).map((h) => (h.userId ? `u:${h.userId}` : h.customerId ? `c:${h.customerId}` : "")).filter(Boolean)
 
 export function HolderPicker({
   shape,
@@ -73,11 +69,10 @@ export function HolderPicker({
   })
   const members = membersQ.members.filter((m) => m.isActive !== false && m.role !== "CUSTOMER")
 
-  const clientsQ = useQuery({
-    queryKey: keys.customers.list({ spaceId: spaceId ?? undefined, limit: 100 }),
-    queryFn: () => customersApi.list({ spaceId: spaceId ?? undefined, limit: 100 }),
-    enabled: enabled && shape.holder.enabled && shape.holder.clients,
-  })
+  const clientsQ = useClients(
+    { spaceId: spaceId ?? undefined, limit: 100 },
+    { enabled: enabled && shape.holder.enabled && shape.holder.clients },
+  )
   const clients = clientsQ.data?.data ?? []
 
   /*
@@ -93,9 +88,14 @@ export function HolderPicker({
     onChange(value.includes(key) ? value.filter((v) => v !== key) : [...value, key])
   }
 
-  const list = (tab === "members"
-    ? members.map((m) => ({ value: `u:${m.id}`, name: personName(m), sub: t("assetRecords.memberTag", "Member (staff)") }))
-    : clients.map((c) => ({ value: `c:${c.id}`, name: c.name, sub: t("assetRecords.client", "Client") }))
+  const list = (
+    tab === "members"
+      ? members.map((m) => ({
+          value: `u:${m.id}`,
+          name: personName(m),
+          sub: t("assetRecords.memberTag", "Member (staff)"),
+        }))
+      : clients.map((c) => ({ value: `c:${c.id}`, name: c.name, sub: t("assetRecords.client", "Client") }))
   ).filter((r) => r.name.toLowerCase().includes(q.trim().toLowerCase()))
   const loading = tab === "members" ? membersQ.isLoading : clientsQ.isLoading
 
@@ -123,8 +123,10 @@ export function HolderPicker({
               key={h}
               type="button"
               onClick={() => toggle(h)}
-              className={"inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 " +
-                "text-xs font-medium text-primary transition-colors hover:bg-primary/20"}
+              className={
+                "inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 " +
+                "text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+              }
             >
               {nameOf(h)}
               <X className="h-3 w-3" />
@@ -136,12 +138,26 @@ export function HolderPicker({
       <div className="rounded-xl border border-border">
         <div className="flex items-center gap-1 border-b border-border p-1">
           {shape.holder.members && (
-            <TabBtn active={tab === "members"} onClick={() => { setTab("members"); setQ("") }}
-              icon={User} label={t("assetRecords.members", "Members")} />
+            <TabBtn
+              active={tab === "members"}
+              onClick={() => {
+                setTab("members")
+                setQ("")
+              }}
+              icon={User}
+              label={t("assetRecords.members", "Members")}
+            />
           )}
           {shape.holder.clients && (
-            <TabBtn active={tab === "clients"} onClick={() => { setTab("clients"); setQ("") }}
-              icon={Smartphone} label={t("assetRecords.clients", "Clients")} />
+            <TabBtn
+              active={tab === "clients"}
+              onClick={() => {
+                setTab("clients")
+                setQ("")
+              }}
+              icon={Smartphone}
+              label={t("assetRecords.clients", "Clients")}
+            />
           )}
           <button
             type="button"
@@ -174,22 +190,43 @@ export function HolderPicker({
                 ? t("assetRecords.noClients", "No clients in this workspace yet")
                 : t("assetRecords.noMembers", "No members to choose from")}
             </p>
-          ) : list.map((r) => (
-            <PersonPickRow key={r.value} name={r.name} sub={r.sub} selected={value.includes(r.value)} onClick={() => toggle(r.value)} />
-          ))}
+          ) : (
+            list.map((r) => (
+              <PersonPickRow
+                key={r.value}
+                name={r.name}
+                sub={r.sub}
+                selected={value.includes(r.value)}
+                onClick={() => toggle(r.value)}
+              />
+            ))
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-function TabBtn({ active, onClick, icon: Icon, label }: {
-  active: boolean; onClick: () => void; icon: typeof User; label: string
+function TabBtn({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean
+  onClick: () => void
+  icon: typeof User
+  label: string
 }) {
   return (
-    <button type="button" onClick={onClick}
-      className={cn("inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-        active ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+        active ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground",
+      )}
+    >
       <Icon className="h-3.5 w-3.5" /> {label}
     </button>
   )

@@ -8,8 +8,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { useBillingLock } from "@/hooks/use-billing-lock"
 import { useAuth } from "@/contexts/auth-context"
-import { organizationsApi, type AccessRole, invitationsApi, locationsApi, type OrgMember } from "@/lib/api"
+import { organizationsApi, invitationsApi, locationsApi, type OrgMember } from "@/lib/api"
 import { useMemberActions } from "../_lib/use-member-actions"
+import { useOrgRoles } from "@/hooks/use-org-roles"
 
 /** The Members page's state: the list and its filters, the dialogs' targets, the selection and the bulk actions. */
 export function useMembersPage() {
@@ -37,11 +38,7 @@ export function useMembersPage() {
     Same query key as the Roles dialog, so opening that dialog after filtering
     costs nothing.
   */
-  const { data: orgRoles = [] } = useQuery<AccessRole[]>({
-    queryKey: keys.organization.roles(),
-    queryFn: () => organizationsApi.getRoles("org"),
-    staleTime: 5 * 60 * 1000,
-  })
+  const { data: orgRoles = [] } = useOrgRoles("org")
   const [page, setPage] = useState(1)
 
   // Dialogs

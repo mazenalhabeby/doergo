@@ -4,18 +4,12 @@ import { keys } from "@/lib/query-keys"
 import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import {
-  analyticsApi,
-  customersApi,
-  type ReportDefinition,
-  type ReportResult,
-  type DatasetMeta,
-  type SavedReport,
-} from "@/lib/api"
+import { analyticsApi, type ReportDefinition, type ReportResult, type DatasetMeta, type SavedReport } from "@/lib/api"
 import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { localDateKey } from "@hbcfield/shared/client"
+import { useClients } from "@/hooks/use-clients"
 
 const TIMESHEET_DEFAULT = [
   "date",
@@ -60,10 +54,7 @@ export function useReportBuilder() {
 
   const { data: catalog } = useQuery({ queryKey: keys.reports.catalog(), queryFn: () => analyticsApi.catalog() })
   const { data: saved } = useQuery({ queryKey: keys.reports.saved(), queryFn: () => analyticsApi.listSaved() })
-  const { data: customersData } = useQuery({
-    queryKey: keys.customers.list({ limit: 200 }),
-    queryFn: () => customersApi.list({ limit: 200 }),
-  })
+  const { data: customersData } = useClients({ limit: 200 })
   const customers = customersData?.data || []
   // People to report on: the directory for whoever may read it, else the rosters they can see.
   const { members } = useAssignableMembers({})

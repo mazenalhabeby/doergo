@@ -1,7 +1,6 @@
 "use client"
 // size-exempt: one form for an appointment's client and its how/where; the three modes share their state.
 
-import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { MEETING_PROVIDER_NAMES } from "@hbcfield/shared/client"
 import { Building2, Link2, MapPin, Phone, Video, X } from "lucide-react"
@@ -10,9 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
-import { keys } from "@/lib/query-keys"
-import { customersApi } from "@/lib/api"
+
 import type { EventDialogProps, EventForm } from "./use-event-form"
+import { useClients } from "@/hooks/use-clients"
 
 /** An appointment's client and its how and where: in person (office, client site, address), online, by phone. */
 export function EventMeetingFields({
@@ -77,12 +76,10 @@ export function EventMeetingFields({
   | "setCallDirection"
 > & { open: boolean; crm: boolean; offices: NonNullable<EventDialogProps["offices"]> }) {
   const { t } = useTranslation()
-  const { data: clientPage } = useQuery({
-    queryKey: keys.customers.list({ search: clientQ || undefined, includeUnfiled: true, limit: 20 }),
-    queryFn: () => customersApi.list({ search: clientQ || undefined, includeUnfiled: true, limit: 20 }),
-    enabled: open && crm && clientOpen,
-    staleTime: 60_000,
-  })
+  const { data: clientPage } = useClients(
+    { search: clientQ || undefined, includeUnfiled: true, limit: 20 },
+    { enabled: open && crm && clientOpen },
+  )
   return (
     <div className="space-y-3">
       {crm && (

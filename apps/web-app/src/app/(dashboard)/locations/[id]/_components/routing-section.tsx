@@ -7,11 +7,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Bell, MessageCircle, Save, Loader2, Shield } from "lucide-react"
 
 import { notify } from "@/lib/toast"
-import { locationsApi, organizationsApi, type AccessRole } from "@/lib/api"
+import { locationsApi, type AccessRole } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SectionHeader } from "./section-header"
+import { useOrgRoles } from "@/hooks/use-org-roles"
 
 /**
  * Per-space routing config (Phase 3/4c): which space roles are (a) NOTIFIED about
@@ -27,11 +28,7 @@ export function RoutingSection({ spaceId }: { spaceId: string }) {
     queryKey: keys.locations.detail(spaceId),
     queryFn: () => locationsApi.getById(spaceId),
   })
-  const { data: roles, isLoading: rolesLoading } = useQuery({
-    queryKey: keys.organization.roles("space"),
-    queryFn: () => organizationsApi.getRoles("space"),
-    staleTime: 60000,
-  })
+  const { data: roles, isLoading: rolesLoading } = useOrgRoles("space")
 
   const [notifyIds, setNotifyIds] = useState<string[]>([])
   const [contactIds, setContactIds] = useState<string[]>([])
@@ -69,11 +66,21 @@ export function RoutingSection({ spaceId }: { spaceId: string }) {
         title={t("scheduling.routing.heading", "Notifications & contact")}
         description={t(
           "scheduling.routing.intro",
-          ("Choose which space roles are notified about members here, and which " +
-            "roles members here can contact. Empty = the space's leaders."))}
+          "Choose which space roles are notified about members here, and which " +
+            "roles members here can contact. Empty = the space's leaders.",
+        )}
         action={
-          <Button size="sm" className="gap-1.5" disabled={!dirty || saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-            {saveMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+          <Button
+            size="sm"
+            className="gap-1.5"
+            disabled={!dirty || saveMutation.isPending}
+            onClick={() => saveMutation.mutate()}
+          >
+            {saveMutation.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
             {t("common.save")}
           </Button>
         }
@@ -132,11 +139,15 @@ function RolePicker({
       </div>
       <div className="divide-y divide-border/40">
         {roles.map((r) => (
-          <label key={r.id} className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-accent/40 transition-colors">
+          <label
+            key={r.id}
+            className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-accent/40 transition-colors"
+          >
             <Checkbox checked={selected.includes(r.id)} onCheckedChange={() => onToggle(r.id)} />
             <span
               className="h-6 w-6 rounded-md shrink-0 flex items-center justify-center"
-              style={{ backgroundColor: `${r.color || "#6b7280"}20` }}>
+              style={{ backgroundColor: `${r.color || "#6b7280"}20` }}
+            >
               <Shield className="h-3 w-3" style={{ color: r.color || "#6b7280" }} />
             </span>
             <span className="text-sm text-foreground">{r.name}</span>

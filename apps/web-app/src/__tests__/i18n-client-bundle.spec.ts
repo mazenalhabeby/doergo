@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 
+// Walking the whole client import graph takes ~4 s; under a parallel run that crossed Jest's 5 s default.
+jest.setTimeout(30_000);
+
 /**
  * The translation catalogue must not reach the browser bundle.
  *

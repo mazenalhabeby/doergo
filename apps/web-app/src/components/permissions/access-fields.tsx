@@ -1,12 +1,10 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
-import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { MessageCircle } from "lucide-react"
 import { moduleAllowedForExternal } from "@hbcfield/shared/client"
 import type { MobileModule } from "@hbcfield/shared/client"
-import { organizationsApi } from "@/lib/api"
+
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { Field } from "./access-field"
@@ -16,6 +14,7 @@ import { AccessRoleField } from "./access-role-field"
 import { AccessPermissionsSection } from "./access-permissions-section"
 import { AccessContactSection } from "./access-contact-section"
 import { ChoiceChip } from "@/components/ui/choice-chip"
+import { useOrgRoles } from "@/hooks/use-org-roles"
 export { Field } from "./access-field"
 export type { AccessFieldsProps } from "./access-field-types"
 
@@ -40,11 +39,7 @@ export function AccessFields({
   const { t } = useTranslation()
 
   // Org-wide roles (Admin / Manager / custom) for the role selector.
-  const { data: orgRoles } = useQuery({
-    queryKey: keys.organization.roles(),
-    queryFn: () => organizationsApi.getRoles(),
-    staleTime: 60000,
-  })
+  const { data: orgRoles } = useOrgRoles()
   // Only EMPLOYEE-assignable roles (Admin is its own top option).
   const assignableRoles = (orgRoles || []).filter((r) => r.slug !== "admin")
   const selectedRole = assignableRoles.find((r) => r.id === value.memberRoleId)

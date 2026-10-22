@@ -1,21 +1,27 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { Check, Copy, Loader2, Search, Smartphone } from "lucide-react"
 
-import { customersApi, invitationsApi } from "@/lib/api"
+import { invitationsApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import { copyText } from "@/lib/clipboard"
+import { useClients } from "@/hooks/use-clients"
 
 /**
  * Invite a client into the app, tied to THIS asset.
@@ -26,7 +32,9 @@ import { copyText } from "@/lib/clipboard"
  * a machine they lease, or a vehicle they hire.
  */
 export function AssetInviteClient({
-  assetId, assetName, spaceId,
+  assetId,
+  assetName,
+  spaceId,
 }: {
   assetId: string
   assetName: string
@@ -40,14 +48,8 @@ export function AssetInviteClient({
   const [code, setCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const clientsQ = useQuery({
-    queryKey: keys.customers.list({ spaceId: spaceId ?? undefined, limit: 100 }),
-    queryFn: () => customersApi.list({ spaceId: spaceId ?? undefined, limit: 100 }),
-    enabled: open,
-  })
-  const clients = (clientsQ.data?.data ?? []).filter((c) =>
-    c.name.toLowerCase().includes(q.trim().toLowerCase()),
-  )
+  const clientsQ = useClients({ spaceId: spaceId ?? undefined, limit: 100 }, { enabled: open })
+  const clients = (clientsQ.data?.data ?? []).filter((c) => c.name.toLowerCase().includes(q.trim().toLowerCase()))
 
   const invite = useMutation({
     mutationFn: () =>
@@ -66,7 +68,13 @@ export function AssetInviteClient({
   })
 
   const reset = (next: boolean) => {
-    if (next) { setQ(""); setCustomerId(null); setEmail(""); setCode(null); setCopied(false) }
+    if (next) {
+      setQ("")
+      setCustomerId(null)
+      setEmail("")
+      setCode(null)
+      setCopied(false)
+    }
     setOpen(next)
   }
 
@@ -81,7 +89,9 @@ export function AssetInviteClient({
         <DialogHeader>
           <DialogTitle>{t("assetInvite.title", "Invite a client")}</DialogTitle>
           <DialogDescription>
-            {t("assetInvite.hint", "They sign in and see {{name}} and the requests raised about it.", { name: assetName })}
+            {t("assetInvite.hint", "They sign in and see {{name}} and the requests raised about it.", {
+              name: assetName,
+            })}
           </DialogDescription>
         </DialogHeader>
 
@@ -92,8 +102,11 @@ export function AssetInviteClient({
             <Label className="text-xs text-muted-foreground">{t("assetInvite.code", "Their code")}</Label>
             <div className="flex items-center gap-2">
               <code
-                className={"flex-1 rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono " +
-                  "text-lg tracking-widest text-foreground"}>
+                className={
+                  "flex-1 rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono " +
+                  "text-lg tracking-widest text-foreground"
+                }
+              >
                 {code}
               </code>
               <Button
@@ -133,20 +146,24 @@ export function AssetInviteClient({
                     <p className="py-6 text-center text-xs text-muted-foreground">
                       {t("assetRecords.noClients", "No clients in this workspace yet")}
                     </p>
-                  ) : clients.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => setCustomerId(c.id)}
-                      className={cn(
-                        "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors",
-                        customerId === c.id ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted",
-                      )}
-                    >
-                      <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                      {customerId === c.id && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                    </button>
-                  ))}
+                  ) : (
+                    clients.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => setCustomerId(c.id)}
+                        className={cn(
+                          "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors",
+                          customerId === c.id
+                            ? "bg-primary/10 text-foreground"
+                            : "text-muted-foreground hover:bg-muted",
+                        )}
+                      >
+                        <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                        {customerId === c.id && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

@@ -4,10 +4,11 @@ import { keys, invalidateTask } from "@/lib/query-keys"
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { tasksApi, phasesApi, sprintsApi, workflowsApi, type Task, type UpdateTaskInput } from "@/lib/api"
+import { tasksApi, phasesApi, sprintsApi, type Task, type UpdateTaskInput } from "@/lib/api"
 import { timeOf } from "@/lib/due-time"
 import { notify } from "@/lib/toast"
 import { useSpaceModules } from "@/hooks/use-space-modules"
+import { useWorkflows } from "@/hooks/use-workflows"
 
 export interface EditTaskDialogProps {
   task: Task
@@ -59,12 +60,7 @@ export function useEditTaskDialog({
   const showSprints = hasModule("sprints")
 
   // Fetch phases, sprints, and the org's flows (task types)
-  const { data: flows } = useQuery({
-    queryKey: keys.workflows.lists(),
-    queryFn: () => workflowsApi.list(),
-    enabled: open,
-    staleTime: 60000,
-  })
+  const { data: flows } = useWorkflows({ enabled: open })
   const { data: phases } = useQuery({
     queryKey: keys.phases.lists(),
     queryFn: () => phasesApi.list(),
