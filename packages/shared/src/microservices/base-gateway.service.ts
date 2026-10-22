@@ -139,6 +139,15 @@ export abstract class BaseGatewayService {
     }
     const status = error?.status ?? error?.statusCode ?? error?.response?.statusCode;
     const message = error?.response?.message ?? error?.message;
+    /*
+      A 5xx is an internal failure: its text (a database message, a stack line) is not for the caller —
+      the same rule the gateway's global filter applies to a refusal that reaches it raw. Only a 4xx,
+      written for the caller, keeps its message, code and params.
+    */
+    if (status && status >= 500) {
+      this.logger.error(`Service failed (${status}): ${Array.isArray(message) ? message.join(', ') : message}`);
+      return new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
     if (status && message) {
       /*
         A refusal's code and parameters ride along on a 4xx, so a client can say
