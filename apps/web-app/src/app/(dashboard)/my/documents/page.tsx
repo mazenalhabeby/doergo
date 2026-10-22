@@ -6,8 +6,8 @@ import { SupplyDocumentDialog } from "./_components/supply-document-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { useMyDocumentsPage } from "./use-my-documents-page"
-import { MyDocumentsPageMy } from "./my-documents-page-my"
+import { useMyDocumentsPage } from "./_hooks/use-my-documents-page"
+import { MyDocumentsPageMy } from "./_components/my-documents-page-my"
 
 /*
   A member's own file.

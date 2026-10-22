@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { ConfirmDialog } from "@/components/confirm-dialog"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,

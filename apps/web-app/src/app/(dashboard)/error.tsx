@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { ErrorFallback } from "@/components/error-boundary"
+import { ErrorFallback } from "@/components/app-shell/error-boundary"
 
 export default function DashboardError({
   error,

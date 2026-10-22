@@ -3,7 +3,7 @@
 import { use } from "react"
 import { Loader2 } from "lucide-react"
 
-import { PlanGate } from "@/components/plan-gate"
+import { PlanGate } from "@/components/common/plan-gate"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { InvoiceTopBar, InvoiceNotice, InvoiceWorkbench, RailSection } from "../../_components/invoice-shell"
 import { InvoiceDocument } from "../../_components/invoice-document"
 import { ClientFields, TermsFields, LineEditor, IssuedByField } from "../../_components/invoice-fields"
-import { useEditInvoiceInner } from "./use-edit-invoice-inner"
+import { useEditInvoiceInner } from "./_hooks/use-edit-invoice-inner"
 
 export default function EditInvoicePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)

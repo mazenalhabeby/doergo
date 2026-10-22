@@ -4,14 +4,14 @@ import Link from "next/link"
 import { Plus } from "lucide-react"
 
 import { canManageSpace } from "@hbcfield/shared/client"
-import { AssignMemberDialog } from "@/components/assign-member-dialog"
+import { AssignMemberDialog } from "@/components/tasks/assign-member-dialog"
 import { isAssignedTo } from "@/lib/task-assignment"
 import { Button } from "@/components/ui/button"
 import { WorkspaceGrid, ActivityPanel, RecentTasks, ManagementContacts } from "@/components/dashboard"
-import { ActivityPanelToggle } from "@/components/activity-panel-toggle"
+import { ActivityPanelToggle } from "@/components/app-shell/activity-panel-toggle"
 import { EmptyWorkspace } from "./empty-workspace"
 import { DashboardPageSkeleton, dashboardVariant } from "./dashboard-skeleton"
-import { DocumentsReminderBanner } from "@/components/documents-reminder-banner"
+import { DocumentsReminderBanner } from "@/components/app-shell/documents-reminder-banner"
 import { cn } from "@/lib/utils";
 import { PAGE_SHELL, PAGE_WIDTH } from "@/components/ui/page-width";
 import { FindPerson } from "@/components/people/find-person"

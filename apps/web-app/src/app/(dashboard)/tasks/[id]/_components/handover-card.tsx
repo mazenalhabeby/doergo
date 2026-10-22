@@ -8,9 +8,9 @@ import type { Task } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { formatTimeAgo } from "@/lib/format-date"
-import { HANDOVER_WARN_CLASS as WARN, useHandoverPendingText } from "@/components/handover-pending-notice"
+import { HANDOVER_WARN_CLASS as WARN, useHandoverPendingText } from "@/components/tasks/handover-pending-notice"
 
 type PauseFacts = Pick<Task, "pausedAt" | "pausedById" | "handoverDueById" | "pausedBy" | "handoverDue" | "handovers">
 

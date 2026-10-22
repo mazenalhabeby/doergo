@@ -3,13 +3,13 @@
 import { Suspense } from "react"
 import { CheckCircle2, Loader2 } from "lucide-react"
 
-import { SignaturePad } from "@/components/signature-pad"
+import { SignaturePad } from "@/components/common/signature-pad"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useSignPageInner } from "./use-sign-page-inner"
-import { Shell, Tabs, Row, Refused } from "./sign-page-inner-helpers"
+import { useSignPageInner } from "./_hooks/use-sign-page-inner"
+import { Shell, Tabs, Row, Refused } from "./_components/sign-page-inner-helpers"
 import { EmptyNote } from "@/components/ui/empty-note"
 
 function SignPageInner() {

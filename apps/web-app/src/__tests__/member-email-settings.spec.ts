@@ -76,6 +76,6 @@ describe('email settings and the unconfirmed clock-out card', () => {
 
   it.each(LOCALES)('no longer names an automatic clock-out in the bell (%s)', (locale) => {
     expect(load(locale).notifications?.autoClockOut).toBeUndefined();
-    expect(read('components/notification-bell.tsx')).not.toContain('attendance_auto_clock_out');
+    expect(read('components/notifications/notification-bell.tsx')).not.toContain('attendance_auto_clock_out');
   });
 });

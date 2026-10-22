@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { ConfirmTargetDialog } from "@/components/confirm-dialog"
+import { ConfirmTargetDialog } from "@/components/common/confirm-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
 import { RoleDialog } from "./space-role-dialog"
 import { useSubRolesSection } from "./use-sub-roles-section"

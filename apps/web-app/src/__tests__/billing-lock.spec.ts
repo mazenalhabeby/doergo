@@ -52,9 +52,9 @@ describe("the client half of the billing lock", () => {
 describe("the surfaces that refuse before the typing", () => {
   it.each([
     // The page's logic lives in its hook since the split — the lock is read there.
-    ["New Task", "src/app/(dashboard)/tasks/use-tasks-page.ts"],
-    ["Clock in", "src/components/clock-widget.tsx"],
-    ["Add member", "src/app/(dashboard)/members/use-members-page.ts"],
+    ["New Task", "src/app/(dashboard)/tasks/_hooks/use-tasks-page.ts"],
+    ["Clock in", "src/components/attendance/clock-widget.tsx"],
+    ["Add member", "src/app/(dashboard)/members/_hooks/use-members-page.ts"],
     // A workspace is what modules are billed AGAINST, so this is the write
     // most worth refusing before somebody names a space and picks its modules.
     ["New Workspace", "src/app/(dashboard)/locations/page.tsx"],
@@ -66,7 +66,7 @@ describe("the surfaces that refuse before the typing", () => {
 })
 
 describe("the banner", () => {
-  const banner = read("src/components/billing-banner.tsx")
+  const banner = read("src/components/app-shell/billing-banner.tsx")
 
   it("says what is actually true, not what it wants", () => {
     // "Your subscription is inactive" describes our billing system. "This
@@ -85,7 +85,7 @@ describe("the banner", () => {
   it("no longer offers a plan to choose", () => {
     // Tiers were removed in August. "Choose plan" sent people looking for a
     // screen that does not exist.
-    const src = code("src/components/billing-banner.tsx")
+    const src = code("src/components/app-shell/billing-banner.tsx")
     expect(src).not.toContain("Choose plan")
     expect(src).not.toContain("choose a plan")
   })

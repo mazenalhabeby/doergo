@@ -12,11 +12,11 @@ import { notify } from "@/lib/toast"
 // Each from its own file, not the `./_components` barrel: app code is assumed to
 // have side effects, so importing one name through the barrel kept EVERY section
 // (the lazily loaded ones below included) in the page bundle.
-import { HandoverPendingNotice } from "@/components/handover-pending-notice"
-import { useTaskDetailPage } from "./use-task-detail-page"
-import { EditTaskDialog, AssignMemberDialog, ClockGateDialog, OfficeStartDialog } from "./task-detail-page-helpers"
-import { TaskDetailPageView } from "./task-detail-page-view"
-import { TaskDetailPageSections } from "./task-detail-page-sections"
+import { HandoverPendingNotice } from "@/components/tasks/handover-pending-notice"
+import { useTaskDetailPage } from "./_hooks/use-task-detail-page"
+import { EditTaskDialog, AssignMemberDialog, ClockGateDialog, OfficeStartDialog } from "./_components/task-detail-page-helpers"
+import { TaskDetailPageView } from "./_components/task-detail-page-view"
+import { TaskDetailPageSections } from "./_components/task-detail-page-sections"
 
 export default function TaskDetailPage({
   params,

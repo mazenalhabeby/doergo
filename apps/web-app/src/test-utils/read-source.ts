@@ -29,3 +29,20 @@ function collect(file: string, encoding: BufferEncoding, seen: Set<string>): str
   }
   return [text, ...parts].join("\n")
 }
+
+/**
+ * A route (or a component folder) as one screen: every .ts/.tsx under it, its `_components/`,
+ * `_hooks/` and `_lib/` included, tests excluded — sorted, so a guard reads the same text every run.
+ */
+export function readFolder(dir: string, encoding: BufferEncoding = "utf8"): string {
+  const walk = (d: string): string[] =>
+    fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => {
+      const p = path.join(d, e.name)
+      if (e.isDirectory()) return e.name.startsWith("__") ? [] : walk(p)
+      return /\.tsx?$/.test(e.name) && !/\.(spec|test)\.tsx?$/.test(e.name) ? [p] : []
+    })
+  return walk(dir)
+    .sort()
+    .map((f) => fs.readFileSync(f, encoding))
+    .join("\n")
+}

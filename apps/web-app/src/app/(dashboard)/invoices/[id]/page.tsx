@@ -1,19 +1,19 @@
 "use client"
 
-import { PlanGate } from "@/components/plan-gate"
+import { PlanGate } from "@/components/common/plan-gate"
 import { use } from "react"
 // The lifecycle brings its own icons — see `_lib/lifecycle.ts`.
 
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ConfirmDialog } from "@/components/confirm-dialog"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 // Types only: the builder (and jsPDF, ~350 kB) loads on the Download / Print click.
 import { PAGE_WIDTH } from "@/components/ui/page-width"
 import { InvoiceDocument, fmtDate } from "../_components/invoice-document"
-import { useInvoiceDetailInner } from "./use-invoice-detail-inner"
-import { money } from "./invoice-detail-inner-helpers"
-import { InvoiceDetailInnerView } from "./invoice-detail-inner-view"
-import { InvoiceDetailInnerPdfLanguage } from "./invoice-detail-inner-pdf-language"
+import { useInvoiceDetailInner } from "./_hooks/use-invoice-detail-inner"
+import { money } from "./_components/invoice-detail-inner-helpers"
+import { InvoiceDetailInnerView } from "./_components/invoice-detail-inner-view"
+import { InvoiceDetailInnerPdfLanguage } from "./_components/invoice-detail-inner-pdf-language"
 
 export default function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)

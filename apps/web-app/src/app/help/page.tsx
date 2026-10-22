@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import HelpClient from "./page-client";
+import HelpClient from "./_components/page-client";
 
 export const metadata: Metadata = {
   title: "Help Center",

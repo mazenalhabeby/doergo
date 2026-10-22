@@ -4,14 +4,14 @@
 import { Clock, XCircle, Coffee, UserX } from "lucide-react"
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { useAttendancePage } from "./use-attendance-page"
+import { useAttendancePage } from "./_hooks/use-attendance-page"
 import {
   BreaksTab,
   TrackingTab,
   NoShowsTab,
   AddDayOffDialog,
   AddAttendanceDialog,
-} from "./attendance-page-helpers"
+} from "./_components/attendance-page-helpers"
 
 export default function AttendancePage() {
   const {

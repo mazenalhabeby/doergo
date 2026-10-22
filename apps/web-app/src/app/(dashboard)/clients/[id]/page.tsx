@@ -16,17 +16,17 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { CustomerForm } from "../../locations/[id]/_components/customers-tab"
-import { AddressesPanel } from "./customer-addresses"
-import { ContactsPanel, WorksAtPanel } from "./customer-contacts"
+import { AddressesPanel } from "./_components/customer-addresses"
+import { ContactsPanel, WorksAtPanel } from "./_components/customer-contacts"
 import { ClientRecordSkeleton } from "@/components/skeletons/crm"
-import { ManagersPanel } from "./customer-managers"
+import { ManagersPanel } from "./_components/customer-managers"
 import { clientRecordActions } from "@/lib/crm-record-actions"
 import { clientLocaleName } from "@/lib/client-locale"
-import { gradientFor, fmtDate, customerRecordView } from "./customer-record-lib";
-import { StatusPill, IconBtn, Panel, PanelHead, PropRow } from "./customer-record-bits"
-import { Composer, QuickRemind } from "./customer-composer"
-import { Timeline } from "./customer-timeline"
-import { InviteCard } from "./customer-invite-card"
+import { gradientFor, fmtDate, customerRecordView } from "./_lib/customer-record-lib";
+import { StatusPill, IconBtn, Panel, PanelHead, PropRow } from "./_components/customer-record-bits"
+import { Composer, QuickRemind } from "./_components/customer-composer"
+import { Timeline } from "./_components/customer-timeline"
+import { InviteCard } from "./_components/customer-invite-card"
 
 // ══════════════════════════════════════════════════════════════════════════════
 export default function CustomerRecordPage() {

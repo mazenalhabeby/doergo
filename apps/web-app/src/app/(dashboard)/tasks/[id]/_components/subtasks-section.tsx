@@ -17,7 +17,7 @@ import { useRelatedStepConfigs } from "@/hooks/use-step-config"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { notify } from "@/lib/toast"
 
 // ---------------------------------------------------------------------------

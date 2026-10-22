@@ -11,7 +11,7 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { clock, methodWords, mins, roundOf, STATE_PILL } from "../_lib/round-words"
 
 type Step = { at: string; text: string; tone?: "end" | "warn" | "bad" }

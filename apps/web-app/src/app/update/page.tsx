@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import UpdateClient from './update-client';
+import UpdateClient from './_components/update-client';
 
 /**
  * `/update` — the page you send somebody whose app is out of date.

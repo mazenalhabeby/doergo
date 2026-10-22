@@ -165,6 +165,14 @@ Each becomes a folder of real Nest sub-modules with their own providers and test
 | 5.5 | **Components shared by `/clients`, `/portals`, `/locations`** move to `components/<domain>` (no route imports another route's private folder). | 0 cross-route `_components` imports |
 | 5.6 | **i18n:** delete the 7 dead groups and stale fr/it keys; marketing text in its own lazy namespace. | unused-key baseline shrinks |
 
+> **Status (2026-10-22): 5.1 DONE on branch `refactor/structure-p3`** (not merged, not deployed).
+> 190 files moved, no line of logic changed: the 66 loose files of `components/` into domain folders
+> (`common/`, `app-shell/`, `notifications/`, `command-palette/`, `custom-fields/`, `spaces/`, and the
+> existing `tasks/`, `attendance/`, `permissions/`, `map/`, `top-navbar/`, `people/`); 124 route pieces into
+> their route's `_components/`, `_hooks/`, `_lib/`. The rule is in CLAUDE.md §15 and enforced by the
+> structure ratchet (`tools/structure/web-layout.mjs`, baseline empty). `tools/move-ts.mjs --alias=@/`
+> rewrites the web app's alias imports; `readFolder()` (test-utils) reads a route as one screen.
+
 ---
 
 ## Phase 6 — Phone app *(≈ 2 weeks; JS-only, OTA-safe except where noted)*

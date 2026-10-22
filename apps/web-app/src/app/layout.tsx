@@ -4,7 +4,7 @@ import './globals.css';
 import { AuthProvider } from '@/contexts/auth-context';
 import { QueryProvider } from '@/providers/query-provider';
 import { I18nProvider } from '@/providers/i18n-provider';
-import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeProvider } from '@/components/app-shell/theme-provider';
 import { Toaster } from '@/components/ui';
 
 // display:'swap' → text paints immediately in the fallback and swaps when the

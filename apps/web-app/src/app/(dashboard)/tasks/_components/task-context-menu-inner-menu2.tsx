@@ -1,6 +1,6 @@
 "use client"
 
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import {
   ContextMenuItem,
   ContextMenuSub,

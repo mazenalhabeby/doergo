@@ -1,6 +1,6 @@
 "use client"
 
-import { UserAvatar, StackedAvatars } from "@/components/user-avatar"
+import { UserAvatar, StackedAvatars } from "@/components/common/user-avatar"
 import type { Task } from "@/lib/api"
 
 /** A task's crew as stacked faces — the card, the table row and the timeline draw the same small stack. */

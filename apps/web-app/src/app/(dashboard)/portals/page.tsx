@@ -18,7 +18,7 @@ import { LayoutTemplate } from "lucide-react"
 
 import { useSpaceScope } from "@/hooks/use-space-scope"
 import { useAuth } from "@/contexts/auth-context"
-import { SpaceTabs } from "@/components/space-tabs"
+import { SpaceTabs } from "@/components/spaces/space-tabs"
 import { PortalTab } from "../locations/[id]/_components/portal-tab"
 import { DashedEmptyBox } from "@/components/ui/empty-note"
 

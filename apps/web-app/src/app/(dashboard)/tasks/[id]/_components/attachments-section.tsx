@@ -10,7 +10,7 @@ import {
 import { formatFileSize } from "@hbcfield/shared/client"
 import { type Attachment } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { ConfirmDialog } from "@/components/confirm-dialog"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import { useAttachmentsSection, ALLOWED_TYPES } from "./use-attachments-section"
 import { isImageType } from "./attachments-section-helpers"
 

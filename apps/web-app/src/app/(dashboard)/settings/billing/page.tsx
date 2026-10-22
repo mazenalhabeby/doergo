@@ -7,8 +7,8 @@ import { billingApi } from '@/lib/api';
 import { BillBreakdown } from './_components/bill-breakdown';
 import { OptionsRail } from './_components/options-rail';
 import { dateLocale } from "@/lib/format-date"
-import { useBillingPage } from "./use-billing-page";
-import { STATUS_BADGE } from "./billing-page-helpers";
+import { useBillingPage } from "./_hooks/use-billing-page";
+import { STATUS_BADGE } from "./_components/billing-page-helpers";
 
 /**
  * Billing & plan.

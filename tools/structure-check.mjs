@@ -16,6 +16,8 @@
  *   cycles    import loops between our own files (value imports; `import type` is erased)
  *   boundary  server code (Nest, Prisma, Node built-ins …) reachable from @hbcfield/shared/client
  *   i18n      translation keys (en) that no source file reads, per app
+ *   layout    the web app's folders: a route's pieces in _components/_hooks/_lib, no loose file in
+ *             components/ — see tools/structure/web-layout.mjs
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -25,6 +27,7 @@ import { cycles } from './structure/graph.mjs';
 import { boundaryLeaks, rootProblem } from './structure/boundary.mjs';
 import { unusedKeys } from './structure/i18n-unused.mjs';
 import { foreignReads, foreignWrites } from './structure/ownership.mjs';
+import { webLayoutProblems } from './structure/web-layout.mjs';
 
 const BASELINE = join(REPO, 'tools', 'structure-baseline.json');
 
@@ -36,6 +39,7 @@ function today() {
     i18n: unusedKeys(),
     ownership: foreignWrites(),
     reads: foreignReads(),
+    layout: webLayoutProblems(),
   };
 }
 
@@ -56,6 +60,12 @@ function problems(now, base) {
     if (n > (base.reads?.[k] ?? 0))
       out.push(
         `read of a table another service owns (docs/data-ownership.md) — use the owner's reader in packages/shared/src/data: ${k} ×${n}`,
+      );
+  const oldLayout = new Set(base.layout ?? []);
+  for (const f of now.layout)
+    if (!oldLayout.has(f))
+      out.push(
+        `web folder rule: a route's pieces go in _components/, _hooks/ or _lib/; components/ holds folders only: ${f}`,
       );
   for (const [app, keys] of Object.entries(now.i18n)) {
     const had = new Set(base.i18n?.[app] ?? []);
@@ -81,6 +91,7 @@ function lowered(now, base) {
     boundary: keep(now.boundary, base.boundary),
     i18n,
     ownership: keep(now.ownership, base.ownership),
+    layout: keep(now.layout, base.layout),
     reads: Object.fromEntries(
       Object.entries(now.reads ?? {})
         .filter(([k]) => base.reads?.[k])
@@ -101,7 +112,7 @@ function counts(b) {
     .map(([a, k]) => `${a} ${k.length}`)
     .join(
       ', ',
-    )} · ${(b.ownership ?? []).length} writes to another service's table · ${Object.values(b.reads ?? {}).reduce((s, n) => s + n, 0)} reads of one`;
+    )} · ${(b.ownership ?? []).length} writes to another service's table · ${Object.values(b.reads ?? {}).reduce((s, n) => s + n, 0)} reads of one · ${(b.layout ?? []).length} web files outside the folder rule`;
 }
 
 function save(b) {
@@ -116,6 +127,7 @@ function save(b) {
     i18n: b.i18n,
     ownership: b.ownership ?? [],
     reads: b.reads ?? {},
+    layout: b.layout ?? [],
   };
   writeFileSync(BASELINE, JSON.stringify(sorted, null, 1) + '\n');
 }
@@ -135,7 +147,7 @@ function moved(base, from, to) {
   const reads = Object.fromEntries(
     Object.entries(base.reads ?? {}).map(([k, v]) => [k.replace(/^(\S+)/, (f) => remap(f)), v]),
   );
-  save({ ...base, names, cycles: cyclesNext, boundary, reads });
+  save({ ...base, names, cycles: cyclesNext, boundary, reads, layout: (base.layout ?? []).map(remap) });
   console.log(`structure baseline: ${n} entr${n === 1 ? 'y' : 'ies'} moved from ${from} to ${to}`);
 }
 

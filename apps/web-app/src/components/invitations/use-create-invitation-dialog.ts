@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next"
 import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
 import { invitationsApi, organizationsApi, type CreateInvitationInput } from "@/lib/api"
-import { createDefaultSchedule, type EditableScheduleRow } from "@/components/schedule-fields"
+import { createDefaultSchedule, type EditableScheduleRow } from "@/components/people/schedule-fields"
 import {
   defaultAccessDraft,
   serializeAccessDraft,

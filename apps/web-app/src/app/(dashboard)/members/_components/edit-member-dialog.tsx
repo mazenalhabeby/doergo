@@ -1,7 +1,7 @@
 "use client"
 
-import { UserAvatar } from "@/components/user-avatar"
-import { ScheduleFields } from "@/components/schedule-fields"
+import { UserAvatar } from "@/components/common/user-avatar"
+import { ScheduleFields } from "@/components/people/schedule-fields"
 import { type OrgMember } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"

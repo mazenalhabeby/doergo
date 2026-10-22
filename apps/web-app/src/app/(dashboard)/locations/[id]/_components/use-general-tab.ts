@@ -9,7 +9,7 @@ import { Contact, Package, LayoutTemplate, FileText } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { locationsApi, rateHistoryApi, type CompanyLocation, type UpdateLocationInput } from "@/lib/api"
 import { ATTENDANCE_CONSTANTS, parseGeofencePolygon, type LatLng } from "@hbcfield/shared/client"
-import { fetchTimezone } from "@/components/timezone-combobox"
+import { fetchTimezone } from "@/components/common/timezone-combobox"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouteAccess } from "@/hooks/use-route-access"
 

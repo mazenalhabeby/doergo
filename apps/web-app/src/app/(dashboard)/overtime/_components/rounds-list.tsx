@@ -9,7 +9,7 @@ import { overtimeApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { clock, headline, methodWords, mins, roundOf, STATE_PILL } from "../_lib/round-words"
 import { ListPager } from "@/components/ui/list-pager"
 

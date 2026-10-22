@@ -2,7 +2,7 @@
 
 import { useTranslation } from "react-i18next"
 import type { OvertimeRunningRound } from "@hbcfield/shared/client"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { cn } from "@/lib/utils"
 import { clock, mins, STATE_PILL } from "../_lib/round-words"
 

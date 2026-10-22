@@ -1,16 +1,16 @@
 "use client"
 
-import { PlanGate } from "@/components/plan-gate"
+import { PlanGate } from "@/components/common/plan-gate"
 // The lifecycle brings the step icons — see `_lib/lifecycle.ts`.
 import { Plus } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { PAGE_WIDTH } from "@/components/ui/page-width"
-import { SpaceTabs } from "@/components/space-tabs"
+import { SpaceTabs } from "@/components/spaces/space-tabs"
 import { InvoiceListDialogs } from "./_components/list/invoice-list-dialogs"
-import { useInvoicesPageInner } from "./use-invoices-page-inner"
-import { InvoicesPageInnerSearchPlaceholder } from "./invoices-page-inner-search-placeholder"
+import { useInvoicesPageInner } from "./_hooks/use-invoices-page-inner"
+import { InvoicesPageInnerSearchPlaceholder } from "./_components/invoices-page-inner-search-placeholder"
 
 export default function InvoicesPage() {
   return (

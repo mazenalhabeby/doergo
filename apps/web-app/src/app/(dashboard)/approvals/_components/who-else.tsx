@@ -7,7 +7,7 @@ import { approvalWhyText, type ApprovalItem, type ApprovalT } from "@hbcfield/sh
 import { approvalsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
 import { cn } from "@/lib/utils"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { nameParts } from "./name-parts"
 
 /**

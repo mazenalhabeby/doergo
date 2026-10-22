@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import TermsClient from "./page-client";
+import TermsClient from "./_components/page-client";
 
 export const metadata: Metadata = {
   title: "Terms of Service",

@@ -13,8 +13,8 @@ import { personName } from "@hbcfield/shared/client"
 import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
-import { DetailFields } from "@/components/detail-fields"
-import { PersonPickRow } from "@/components/person-pick-row"
+import { DetailFields } from "@/components/common/detail-fields"
+import { PersonPickRow } from "@/components/common/person-pick-row"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog"
 
 const LocationPicker = dynamic(
-  () => import("@/components/location-picker"),
+  () => import("@/components/map/location-picker"),
   { ssr: false, loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-muted" /> },
 )
 

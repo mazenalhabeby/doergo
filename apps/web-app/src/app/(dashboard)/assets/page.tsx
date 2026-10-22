@@ -26,7 +26,7 @@ import { assetsApi } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 
 import { useSpaceScope } from "@/hooks/use-space-scope"
-import { SpaceTabs } from "@/components/space-tabs"
+import { SpaceTabs } from "@/components/spaces/space-tabs"
 import { AssetsTab } from "../locations/[id]/_components/assets-tab"
 import { AllAssetsList } from "@/components/assets/all-assets-list"
 import { ProposalQueue } from "@/components/assets/proposal-queue"

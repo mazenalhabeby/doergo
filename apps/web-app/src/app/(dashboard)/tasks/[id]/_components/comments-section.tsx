@@ -7,7 +7,7 @@ import { Send, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { formatTimeAgo } from "@/lib/format-date"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 
 interface CommentData {
   id: string

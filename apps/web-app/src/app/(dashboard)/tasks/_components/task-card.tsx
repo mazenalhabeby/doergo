@@ -3,7 +3,7 @@
 import { isOpenToRole } from "@hbcfield/shared/client"
 import { OpenRoleChip } from "./open-role-chip"
 
-import { PausedChip } from "@/components/paused-chip"
+import { PausedChip } from "@/components/tasks/paused-chip"
 import React from "react"
 import { isTaskOverdue } from "@hbcfield/shared/client"
 import Link from "next/link"

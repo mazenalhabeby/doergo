@@ -1,7 +1,7 @@
 "use client"
 
 import { lazy, Suspense } from "react"
-import { PlanGate } from "@/components/plan-gate"
+import { PlanGate } from "@/components/common/plan-gate"
 import { Skeleton } from "@/components/ui/skeleton"
 
 // Loaded only when the section is opened: the log, its filters and pager stay out of /settings' first load.

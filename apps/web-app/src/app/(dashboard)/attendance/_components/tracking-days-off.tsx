@@ -1,6 +1,6 @@
 import React from "react"
 import { format } from "date-fns"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { CheckCircle2, CalendarOff } from "lucide-react"
 import { toDate, NoteCell } from "./attendance-helpers"

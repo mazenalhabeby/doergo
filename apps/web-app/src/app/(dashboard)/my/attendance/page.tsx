@@ -1,17 +1,17 @@
 "use client"
 
 import { MapPin, Home, ListChecks } from "lucide-react"
-import { WorkLogTimeline } from "@/components/worklog-timeline"
+import { WorkLogTimeline } from "@/components/attendance/worklog-timeline"
 import { cn } from "@/lib/utils"
 import { countryFromTz } from "@hbcfield/shared/client"
 
 import { RestPanel } from "@/components/attendance/rest-panel"
 import { UnconfirmedClockOutCard } from "@/components/attendance/unconfirmed-clock-out-card"
 import { deriveAttendanceFlags } from "@/lib/attendance-status"
-import { useMyAttendancePage } from "./use-my-attendance-page"
-import { duration, fmtDate, RangeField } from "./my-attendance-page-helpers"
-import { MyAttendancePageView } from "./my-attendance-page-view"
-import { MyAttendancePageMy } from "./my-attendance-page-my"
+import { useMyAttendancePage } from "./_hooks/use-my-attendance-page"
+import { duration, fmtDate, RangeField } from "./_components/my-attendance-page-helpers"
+import { MyAttendancePageView } from "./_components/my-attendance-page-view"
+import { MyAttendancePageMy } from "./_components/my-attendance-page-my"
 import { PageNotice } from "@/components/ui/empty-note"
 
 /** Local calendar day as yyyy-MM-dd — never via toISOString, which shifts to UTC. */

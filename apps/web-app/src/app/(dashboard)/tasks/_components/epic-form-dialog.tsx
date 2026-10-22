@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { ConfirmDialog } from "@/components/confirm-dialog"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import { cn } from "@/lib/utils"
 import { DateField, EPIC_COLORS } from "./complete-sprint-dialog"
 

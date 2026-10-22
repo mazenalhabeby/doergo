@@ -1612,8 +1612,9 @@ export class TasksController {
 
 ### Add new web page
 1. Create `src/app/{route}/page.tsx` (App Router)
-2. Use shared components from `src/components/`
-3. **Page-load budget (≤ 8 requests in the first second)**: a read the first paint does not need (badges, ribbons, a sidebar action, a list behind a tap) waits for `useAfterFirstLoad(wave)` (`hooks/use-after-first-load.ts`); the workspace list is `useSpaceDirectory()` (one shared request — also answers `keys.spaces.modules`, never `/locations/:id/modules` per row); dialogs and below-the-fold sections load with `next/dynamic` (+ `useLatched(open)`); import page components by FILE, not through a `_components` barrel; never import `@/i18n` from a module (it carries the English catalogue) — use the global `i18next` instance
+2. **One folder rule** (checked by `pnpm structure:check`, `tools/structure/web-layout.mjs`): beside `page.tsx` only Next's own files (layout, loading, error, route …) and folders. The route's pieces go in `_components/`, its hooks in `_hooks/` (`use-*`), its helpers in `_lib/`; a private `_name/` folder shared by several routes is allowed. `src/components/` holds DOMAIN folders only (`common/`, `app-shell/`, `tasks/`, `attendance/`, `permissions/`, `map/` …) — never a loose file; a hook used by one component lives beside it, a hook used across the app lives in `src/hooks/`.
+3. Use shared components from `src/components/<domain>/`
+4. **Page-load budget (≤ 8 requests in the first second)**: a read the first paint does not need (badges, ribbons, a sidebar action, a list behind a tap) waits for `useAfterFirstLoad(wave)` (`hooks/use-after-first-load.ts`); the workspace list is `useSpaceDirectory()` (one shared request — also answers `keys.spaces.modules`, never `/locations/:id/modules` per row); dialogs and below-the-fold sections load with `next/dynamic` (+ `useLatched(open)`); import page components by FILE, not through a `_components` barrel; never import `@/i18n` from a module (it carries the English catalogue) — use the global `i18next` instance
 
 ---
 

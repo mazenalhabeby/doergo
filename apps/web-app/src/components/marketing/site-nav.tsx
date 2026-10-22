@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from 'next-themes';
 import { Sun, Moon, ShoppingBag } from 'lucide-react';
 import { AnimatedLogo } from '@hbcfield/shared/components';
-import { LanguageSwitcher } from '@/components/language-switcher';
+import { LanguageSwitcher } from '@/components/app-shell/language-switcher';
 
 const MONO = 'font-[family:var(--font-martian)]';
 

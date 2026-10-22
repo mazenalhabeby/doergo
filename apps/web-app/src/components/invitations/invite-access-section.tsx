@@ -1,7 +1,7 @@
 "use client"
 
 import { ChevronDown, ShieldCheck } from "lucide-react"
-import { AccessFields } from "@/components/access-fields"
+import { AccessFields } from "@/components/permissions/access-fields"
 import { cn } from "@/lib/utils"
 import type { CreateInvitationDialogState } from "./use-create-invitation-dialog"
 

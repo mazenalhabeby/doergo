@@ -4,8 +4,11 @@
  * makes — across one source root. `import … from`, `export … from`, `import()`, `require()` and
  * `jest.mock()` specifiers are rewritten; nothing else in a file is touched. Uses `git mv`.
  *
- *   node tools/move-ts.mjs <root> <plan.json>
+ *   node tools/move-ts.mjs <root> <plan.json> [--alias=@/]
  *   plan.json = [["old/relative/to/root.ts", "new/relative/to/root.ts"], …]
+ *
+ * `--alias=@/` (the web app): a specifier starting with the alias names a file under <root>, and is
+ * rewritten in the same alias form.
  *
  * Prints any other string that still names a moved file's old path (a test reading a file by name),
  * which has to be fixed by hand.
@@ -14,7 +17,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 
-const [rootArg, planArg] = process.argv.slice(2);
+const [rootArg, planArg, ...flags] = process.argv.slice(2);
+const alias = flags.find((f) => f.startsWith('--alias='))?.slice('--alias='.length) ?? null;
 const root = resolve(rootArg);
 const plan = JSON.parse(readFileSync(planArg, 'utf8')).map(([a, b]) => [resolve(root, a), resolve(root, b)]);
 const moved = new Map(plan);
@@ -29,18 +33,28 @@ const files = walk(root);
 
 /** Resolve a relative specifier from `fromFile` to an existing file (or null). */
 function target(fromFile, spec) {
-  const base = resolve(dirname(fromFile), spec);
-  for (const c of [base, base + '.ts', base + '.tsx', join(base, 'index.ts')])
+  const base =
+    alias && spec.startsWith(alias) ? resolve(root, spec.slice(alias.length)) : resolve(dirname(fromFile), spec);
+  for (const c of [base, base + '.ts', base + '.tsx', join(base, 'index.ts'), join(base, 'index.tsx')])
     if (existsSync(c) && statSync(c).isFile()) return c;
   return null;
 }
 function specFor(fromFile, toFile, original) {
+  if (alias && original.startsWith(alias)) {
+    let a = relative(root, toFile).replace(/\.tsx?$/, '');
+    if (a.endsWith('/index') && !original.endsWith('/index')) a = a.slice(0, -6);
+    return alias + a;
+  }
   let r = relative(dirname(fromFile), toFile).replace(/\.tsx?$/, '');
   if (original.endsWith('/index') === false && r.endsWith('/index') && !original.includes('index')) r = r.slice(0, -6);
   if (!r.startsWith('.')) r = './' + r;
   return r;
 }
-const SPEC = /((?:from|import)\s*\(?\s*|require\(\s*|jest\.mock\(\s*)(['"])(\.{1,2}\/[^'"]+)\2/g;
+const escRe = (x) => x.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+const SPEC = new RegExp(
+  `((?:from|import)\\s*\\(?\\s*|require\\(\\s*|(?:jest|vi)\\.mock\\(\\s*)(['"])((?:\\.{1,2}\\/${alias ? `|${escRe(alias)}` : ''})[^'"]+)\\2`,
+  'g',
+);
 
 // 1. Compute every file's new text against the CURRENT tree, as if it already lived at its new path.
 const writes = new Map();

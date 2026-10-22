@@ -3,7 +3,7 @@
 import { useTranslation } from "react-i18next"
 import { addDays, format } from "date-fns"
 import type { OvertimePersonRow } from "@hbcfield/shared/client"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { mins } from "../_lib/round-words"
 

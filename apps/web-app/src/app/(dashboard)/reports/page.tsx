@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { useReportsPage } from "./use-reports-page";
-import { ReportsPageScheduleTitle } from "./reports-page-schedule-title"
-import { ReportsPageReports } from "./reports-page-reports";
+import { useReportsPage } from "./_hooks/use-reports-page";
+import { ReportsPageScheduleTitle } from "./_components/reports-page-schedule-title"
+import { ReportsPageReports } from "./_components/reports-page-reports";
 
 export default function ReportsPage() {
   const s = useReportsPage()

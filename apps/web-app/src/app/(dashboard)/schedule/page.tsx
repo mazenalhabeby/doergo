@@ -6,14 +6,14 @@ import { AlertCircle, CalendarDays, ChevronLeft, ChevronRight, House, RefreshCw 
 
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { SpaceTabs } from "@/components/space-tabs"
+import { SpaceTabs } from "@/components/spaces/space-tabs"
 import { PAGE_WIDTH } from "@/components/ui/page-width"
 import { cn } from "@/lib/utils"
 
 import { FloorNowPanel } from "./_components/floor-now-panel"
 import { LeaveWallchart } from "./_components/leave-wallchart"
-import { useScheduleAndTimeOffPage } from "./use-schedule-and-time-off-page"
-import { LeaveDecisionDrawer, Stat } from "./schedule-and-time-off-page-helpers"
+import { useScheduleAndTimeOffPage } from "./_hooks/use-schedule-and-time-off-page"
+import { LeaveDecisionDrawer, Stat } from "./_components/schedule-and-time-off-page-helpers"
 
 export default function ScheduleAndTimeOffPage() {
   const {

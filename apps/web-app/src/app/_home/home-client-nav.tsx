@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Sun, Moon, ShoppingBag } from 'lucide-react';
 import { AnimatedLogo } from '@hbcfield/shared/components';
-import { LanguageSwitcher } from '@/components/language-switcher';
+import { LanguageSwitcher } from '@/components/app-shell/language-switcher';
 import { MONO } from './home-client-helpers';
 import type { HomeClientState } from './use-home-client';
 

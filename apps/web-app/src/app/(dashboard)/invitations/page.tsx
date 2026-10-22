@@ -11,7 +11,7 @@ import {
 
 import { InvitationStatus } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { ListPageHeader, ListPager, ListTableError, ListTableLoading } from "@/components/list-page"
+import { ListPageHeader, ListPager, ListTableError, ListTableLoading } from "@/components/common/list-page"
 import {
   Table,
   TableBody,
@@ -26,11 +26,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ConfirmDialog } from "@/components/confirm-dialog"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import { CreateInvitationDialog } from "@/components/invitations/create-invitation-dialog"
 import { formatMediumDateTime } from "@/lib/format-date"
-import { useInvitationsPage } from "./use-invitations-page"
-import { STATUS_OPTIONS_KEYS, getStatusBadge, getRoleBadge, isExpired } from "./invitations-page-helpers"
+import { useInvitationsPage } from "./_hooks/use-invitations-page"
+import { STATUS_OPTIONS_KEYS, getStatusBadge, getRoleBadge, isExpired } from "./_components/invitations-page-helpers"
 
 export default function InvitationsPage() {
   const {

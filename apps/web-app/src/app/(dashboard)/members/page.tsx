@@ -11,14 +11,14 @@ import {
 } from "@/components/ui/dialog"
 import { MemberBulkActionBar } from "./_components/member-bulk-action-bar"
 import { MemberConfirmDialogs } from "./_components/member-confirm-dialogs"
-import { useMembersPage } from "./use-members-page";
+import { useMembersPage } from "./_hooks/use-members-page";
 import {
   CreateInvitationDialog,
   ManageRolesDialog,
   EditMemberDialog,
   AccessBuilder,
-} from "./members-page-helpers";
-import { MembersPageTeam } from "./members-page-team";
+} from "./_components/members-page-helpers";
+import { MembersPageTeam } from "./_components/members-page-team";
 
 // ---------------------------------------------------------------------------
 // Main page

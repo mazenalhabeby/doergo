@@ -1,6 +1,6 @@
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
 
-import { pageRange } from '../list-page'
+import { pageRange } from '../common/list-page'
 
 describe('pageRange — the rows a page shows, 1-based', () => {
   it('a full first page', () => {

@@ -2,7 +2,7 @@
 
 import { personName, isOpenToRole } from "@hbcfield/shared/client"
 import { OpenRoleChip } from "./open-role-chip"
-import { PausedChip } from "@/components/paused-chip"
+import { PausedChip } from "@/components/tasks/paused-chip"
 import React from "react"
 import { mayChangeStatus } from "@hbcfield/shared/client";
 import { GripVertical, UserPlus, ChevronDown } from "lucide-react"

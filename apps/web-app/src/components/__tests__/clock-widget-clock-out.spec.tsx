@@ -23,7 +23,7 @@ jest.mock("react-i18next", () => ({
 }))
 jest.mock("@/contexts/auth-context", () => ({ useAuth: () => ({ user: { id: "u-1", role: "EMPLOYEE" } }) }))
 jest.mock("@hbcfield/shared/client", () => ({ hasAccessModule: () => true }))
-jest.mock("@/components/clock-in-picker", () => ({ ClockInPicker: () => null }))
+jest.mock("@/components/attendance/clock-in-picker", () => ({ ClockInPicker: () => null }))
 jest.mock("@/components/attendance/clock-out-early-dialog", () => ({
   ClockOutEarlyDialog: (p: { open: boolean }) => (p.open ? <div data-testid="early-dialog" /> : null),
 }))
@@ -41,7 +41,7 @@ jest.mock("@/hooks", () => ({
 }))
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { ClockWidget } = require("../clock-widget") as typeof import("../clock-widget")
+const { ClockWidget } = require("../attendance/clock-widget") as typeof import("../attendance/clock-widget")
 
 let root: Root
 let host: HTMLDivElement

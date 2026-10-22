@@ -4,7 +4,7 @@ import { Mail, Link2 } from "lucide-react";
 import { type CompanyLocation, type AccessRole } from "@/lib/api"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ScheduleFields } from "@/components/schedule-fields"
+import { ScheduleFields } from "@/components/people/schedule-fields"
 import { Segmented } from "@/components/ui/segmented"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"

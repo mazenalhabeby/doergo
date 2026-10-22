@@ -10,7 +10,7 @@ import { customersApi } from "@/lib/api"
 import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { personName, type KindShape } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
-import { PersonPickRow } from "@/components/person-pick-row"
+import { PersonPickRow } from "@/components/common/person-pick-row"
 
 /**
  * Choosing who holds something.

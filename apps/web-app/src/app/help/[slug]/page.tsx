@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ARTICLES, getArticle, articlesByCategory, CATEGORIES } from '../_content/articles';
 import { Markdown } from '../_components/markdown';
-import { ArticleView } from './article-view';
+import { ArticleView } from './_components/article-view';
 
 /*
   A SERVER page, like the blog. It used to be a client component: the whole

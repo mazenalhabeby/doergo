@@ -12,11 +12,11 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PAGE_SHELL } from "@/components/ui/page-width"
-import { useMemberProfilePage } from "./use-member-profile-page"
-import { MemberNotice } from "./member-profile-page-helpers"
-import { MemberProfilePageView } from "./member-profile-page-view"
-import { MemberProfilePageDetail3 } from "./member-profile-page-detail3"
-import { MemberProfilePageActive } from "./member-profile-page-active"
+import { useMemberProfilePage } from "./_hooks/use-member-profile-page"
+import { MemberNotice } from "./_components/member-profile-page-helpers"
+import { MemberProfilePageView } from "./_components/member-profile-page-view"
+import { MemberProfilePageDetail3 } from "./_components/member-profile-page-detail3"
+import { MemberProfilePageActive } from "./_components/member-profile-page-active"
 
 // ---------------------------------------------------------------------------
 // Page

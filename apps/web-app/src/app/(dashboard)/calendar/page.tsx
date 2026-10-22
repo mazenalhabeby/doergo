@@ -16,7 +16,7 @@ import {
 import { AlertCircle, ChevronLeft, ChevronRight, Users } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
-import { SpaceTabs } from "@/components/space-tabs"
+import { SpaceTabs } from "@/components/spaces/space-tabs"
 import { useSpaceScope } from "@/hooks/use-space-scope"
 import { useScheduleAccess } from "@/hooks/use-schedule-access"
 import { calendarApi } from "@/lib/api"

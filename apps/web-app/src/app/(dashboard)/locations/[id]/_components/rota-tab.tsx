@@ -3,7 +3,7 @@
 import { Plus, CalendarDays } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { ConfirmTargetDialog } from "@/components/confirm-dialog"
+import { ConfirmTargetDialog } from "@/components/common/confirm-dialog"
 import { SectionHeader } from "./section-header"
 import { useRotaTab } from "./use-rota-tab"
 import { RotaDialog } from "./rota-tab-helpers"

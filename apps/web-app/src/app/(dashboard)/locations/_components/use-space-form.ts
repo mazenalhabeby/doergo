@@ -10,7 +10,7 @@ import type { LatLng } from "@hbcfield/shared/client"
 import { ATTENDANCE_CONSTANTS, DEFAULT_ORG_MODULES } from "@hbcfield/shared/client"
 import { locationsApi, workflowsApi, type CreateLocationInput } from "@/lib/api"
 import { notify } from "@/lib/toast"
-import { fetchTimezone } from "@/components/timezone-combobox"
+import { fetchTimezone } from "@/components/common/timezone-combobox"
 
 export const {
   MIN_GEOFENCE_RADIUS: GEO_MIN,

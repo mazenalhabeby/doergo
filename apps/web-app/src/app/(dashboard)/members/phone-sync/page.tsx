@@ -15,10 +15,10 @@ import { cn } from "@/lib/utils"
 import { PAGE_SHELL } from "@/components/ui/page-width"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { GenericContentSkeleton } from "@/components/skeletons/primitives"
 import { PHONE_SYNC_STATES, countByState, formatAge, matchesSearch } from "@/lib/phone-sync"
-import { TONE, StatePill, FilterChip, DetailPanel } from "./detail-panel"
+import { TONE, StatePill, FilterChip, DetailPanel } from "./_components/detail-panel"
 import { PageNotice } from "@/components/ui/empty-note"
 
 /*

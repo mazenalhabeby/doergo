@@ -3,7 +3,7 @@
 import { RADIUS_SLIDER_STEPS, radiusToSliderPosition, sliderPositionToRadius } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { Input, Label } from "@/components/ui"
-import { TimezoneCombobox } from "@/components/timezone-combobox"
+import { TimezoneCombobox } from "@/components/common/timezone-combobox"
 import { GEO_MIN, GEO_MAX, GEO_DEFAULT } from "./use-space-form"
 import { LocationPicker } from "./space-form-helpers"
 import type { SpaceFormState } from "./use-space-form"

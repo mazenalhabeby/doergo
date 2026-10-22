@@ -12,7 +12,7 @@ import {
   User,
   Users,
 } from "lucide-react"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { personName } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"

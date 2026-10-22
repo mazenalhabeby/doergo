@@ -4,8 +4,8 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { AnimatedLogo } from '@/components/auth';
-import { useResetPasswordContent } from './use-reset-password-content';
-import { ResetPasswordForm, SuccessState } from './reset-password-content-helpers';
+import { useResetPasswordContent } from './_hooks/use-reset-password-content';
+import { ResetPasswordForm, SuccessState } from './_components/reset-password-content-helpers';
 
 function ResetPasswordContent() {
   const {

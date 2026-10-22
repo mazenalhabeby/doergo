@@ -11,10 +11,10 @@ import {
   Moon,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { usePresence, PRESENCE_OPTS, presenceRingClass } from "@/components/presence-toggle"
+import { usePresence, PRESENCE_OPTS, presenceRingClass } from "@/components/attendance/presence-toggle"
 import { TourLauncherMenuItem } from "@/components/tour"
 import { cn } from "@/lib/utils"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,

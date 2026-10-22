@@ -5,33 +5,33 @@
  */
 import fs from "node:fs"
 import path from "node:path"
-import { readSource } from "../test-utils/read-source"
+import { readFolder, readSource } from "../test-utils/read-source"
 
 const root = path.join(__dirname, "..")
 const readOne = (rel: string) =>
   readSource(path.join(root, rel), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")
-// A path ending in "/" is a SCREEN split across files: every .ts/.tsx directly in that folder.
+// A path ending in "/" is a SCREEN split across files: every .ts/.tsx under that folder (tests excluded).
 const read = (rel: string) =>
   rel.endsWith("/")
-    ? fs.readdirSync(path.join(root, rel)).filter((f) => /\.tsx?$/.test(f)).sort().map((f) => readOne(rel + f)).join("\n")
+    ? readFolder(path.join(root, rel)).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")
     : readOne(rel)
 
 const PICKERS = [
-  "components/assign-member-dialog.tsx",
+  "components/tasks/assign-member-dialog.tsx",
   // The New Task dialog: its people come from its form hook in create-task/.
   "app/(dashboard)/tasks/_components/create-task/",
-  "app/(dashboard)/clients/[id]/customer-managers.tsx",
+  "app/(dashboard)/clients/[id]/_components/customer-managers.tsx",
   "app/(dashboard)/clients/[id]/",
   "app/(dashboard)/locations/[id]/_components/apartment-dialog.tsx",
   "components/assets/holder-picker.tsx",
   "components/assets/contract-dialog.tsx",
-  "app/(dashboard)/reports/use-reports-page-data.ts",
+  "app/(dashboard)/reports/_hooks/use-reports-page-data.ts",
 ]
 const LETTERHEADS = [
   "app/(dashboard)/invoices/[id]/page.tsx",
   "app/(dashboard)/invoices/[id]/edit/page.tsx",
   "app/(dashboard)/invoices/new/page.tsx",
-  "app/(dashboard)/reports/use-reports-page-data.ts",
+  "app/(dashboard)/reports/_hooks/use-reports-page-data.ts",
 ]
 
 describe("member pickers read people through useAssignableMembers", () => {

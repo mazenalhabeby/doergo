@@ -1,7 +1,7 @@
 "use client"
 
-import { AssignMemberDialog } from "@/components/assign-member-dialog"
-import { HandoverPendingNotice } from "@/components/handover-pending-notice"
+import { AssignMemberDialog } from "@/components/tasks/assign-member-dialog"
+import { HandoverPendingNotice } from "@/components/tasks/handover-pending-notice"
 import type { Task } from "@/lib/api"
 import type { TaskAssign } from "../_hooks/use-task-assign"
 

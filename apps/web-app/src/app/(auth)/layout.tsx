@@ -1,4 +1,4 @@
-import { MobileAppInterstitial } from '@/components/mobile-app-interstitial';
+import { MobileAppInterstitial } from '@/components/app-shell/mobile-app-interstitial';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (

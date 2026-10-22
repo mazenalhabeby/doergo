@@ -5,7 +5,7 @@ import { ArrowLeft, Mail, Printer } from "lucide-react"
 import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { AnimatedLogo } from "@hbcfield/shared/components"
-import { LanguageSwitcher } from "@/components/language-switcher"
+import { LanguageSwitcher } from "@/components/app-shell/language-switcher"
 import { cn } from "@/lib/utils"
 
 type Icon = ComponentType<{ className?: string }>

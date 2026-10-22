@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 import { type Break } from "@/lib/api"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"

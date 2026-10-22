@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { FolderBrowser } from "./_components/folder-browser"
 import { DocumentActionDialogs } from "./_components/document-control"
-import { useSentDocumentsPage } from "./use-sent-documents-page"
-import { TABS } from "./sent-documents-page-helpers"
-import { SentDocumentsPageControl } from "./sent-documents-page-control"
+import { useSentDocumentsPage } from "./_hooks/use-sent-documents-page"
+import { TABS } from "./_components/sent-documents-page-helpers"
+import { SentDocumentsPageControl } from "./_components/sent-documents-page-control"
 import { ListPager } from "@/components/ui/list-pager"
 
 export default function SentDocumentsPage() {

@@ -15,7 +15,7 @@
 import { useTranslation } from "react-i18next"
 
 import { useSpaceScope } from "@/hooks/use-space-scope"
-import { SpaceTabs } from "@/components/space-tabs"
+import { SpaceTabs } from "@/components/spaces/space-tabs"
 import { CustomersTab } from "../locations/[id]/_components/customers-tab"
 
 export default function ClientsPage() {

@@ -5,9 +5,9 @@ import { ArrowLeft, Copy, Check } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ConfirmDialog } from "@/components/confirm-dialog"
-import { useNewTechnicianPage } from "./use-new-technician-page"
-import { NewTechnicianPageCreate } from "./new-technician-page-create"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
+import { useNewTechnicianPage } from "./_hooks/use-new-technician-page"
+import { NewTechnicianPageCreate } from "./_components/new-technician-page-create"
 
 export default function NewTechnicianPage() {
   const vm = useNewTechnicianPage()

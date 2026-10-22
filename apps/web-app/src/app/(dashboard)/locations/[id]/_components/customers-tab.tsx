@@ -11,7 +11,7 @@ import { Contact, Plus, Smartphone, ChevronRight, Building2 } from "lucide-react
 import { customersApi, type Customer } from "@/lib/api"
 import { customerStageLabel, personInitials } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
-import { Truncated } from "@/components/truncated"
+import { Truncated } from "@/components/common/truncated"
 import { ClientRowsSkeleton } from "@/components/skeletons/crm"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

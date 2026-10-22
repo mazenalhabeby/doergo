@@ -8,7 +8,7 @@ import {
   FileText, Check, Loader2, ShieldCheck, ArrowLeft, ExternalLink,
 } from "lucide-react"
 import { documentsApi, type MemberDocumentRow, type DocumentTypeRow } from "@/lib/api"
-import { SignaturePad } from "@/components/signature-pad"
+import { SignaturePad } from "@/components/common/signature-pad"
 import { Button } from "@/components/ui/button"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"

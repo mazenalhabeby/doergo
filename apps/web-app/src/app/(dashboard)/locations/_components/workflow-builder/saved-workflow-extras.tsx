@@ -6,7 +6,7 @@ import { notify } from "@/lib/toast"
 import { AlertCircle, Loader2, Upload } from "lucide-react"
 import { workflowsApi } from "@/lib/api"
 import type { workflowAdvice } from "@hbcfield/shared/client"
-import { CustomFieldsManager } from "@/components/custom-fields-manager"
+import { CustomFieldsManager } from "@/components/custom-fields/custom-fields-manager"
 import { Label } from "@/components/ui/label"
 
 /**

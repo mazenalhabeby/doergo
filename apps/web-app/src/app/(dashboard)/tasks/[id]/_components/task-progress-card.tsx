@@ -7,7 +7,7 @@ import { Check, MessageSquare, Timer, UserPlus } from "lucide-react"
 import { type WorkflowStatus } from "@/lib/api"
 import { useContactActions } from "@/hooks/use-contact-actions"
 import { cn, formatDurationMs } from "@/lib/utils"
-import { UserAvatar, StackedAvatars } from "@/components/user-avatar"
+import { UserAvatar, StackedAvatars } from "@/components/common/user-avatar"
 
 interface AssignedUser {
   id?: string

@@ -15,7 +15,7 @@ import {
 import { type CreateTaskForm } from "./use-create-task-form"
 
 const LocationPicker = lazy(() =>
-  import("@/components/location-picker").then((m) => ({ default: m.LocationPicker }))
+  import("@/components/map/location-picker").then((m) => ({ default: m.LocationPicker }))
 )
 
 /** Where: a client visit (CRM workspaces) and the place on the map. */

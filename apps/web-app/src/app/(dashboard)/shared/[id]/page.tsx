@@ -3,15 +3,15 @@
 import { personName } from "@hbcfield/shared/client"
 import { ClipboardList, ListChecks, UserPlus, ShieldAlert, MapPin } from "lucide-react"
 
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { cn } from "@/lib/utils"
-import { BackToSpaces, CenteredNotice } from "@/components/space-page"
+import { BackToSpaces, CenteredNotice } from "@/components/spaces/space-page"
 import { Badge } from "@/components/ui/badge"
 import { dateLocale } from "@/lib/format-date"
-import { useSharedSpaceViewPage } from "./use-shared-space-view-page"
-import { REQUEST_STATUS_STYLES, AddWorkerDialog, CreateTaskDialog, RequestMoreDialog } from "./shared-space-view-page-helpers"
-import { SharedSpaceViewPageGuest } from "./shared-space-view-page-guest"
-import { SharedSpaceViewPageGuest2 } from "./shared-space-view-page-guest2"
+import { useSharedSpaceViewPage } from "./_hooks/use-shared-space-view-page"
+import { REQUEST_STATUS_STYLES, AddWorkerDialog, CreateTaskDialog, RequestMoreDialog } from "./_components/shared-space-view-page-helpers"
+import { SharedSpaceViewPageGuest } from "./_components/shared-space-view-page-guest"
+import { SharedSpaceViewPageGuest2 } from "./_components/shared-space-view-page-guest2"
 
 export default function SharedSpaceViewPage() {
   const vm = useSharedSpaceViewPage()

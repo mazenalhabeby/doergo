@@ -8,7 +8,7 @@ import { personName, type GeofenceExcursion } from "@hbcfield/shared/client"
 
 import { attendanceApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { keys } from "@/lib/query-keys"
 
 // Format remaining ms as "M:SS" / "H:MM:SS".

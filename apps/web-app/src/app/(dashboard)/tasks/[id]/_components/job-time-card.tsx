@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Timer } from "lucide-react"
 import { personName, formatDuration } from "@hbcfield/shared/client"
 import { useJobTime } from "@/hooks/use-job-time"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { toneSolid, toneText, type Tone } from "@/lib/status-tones"
 
 const KINDS = ["travel", "working", "blocked"] as const

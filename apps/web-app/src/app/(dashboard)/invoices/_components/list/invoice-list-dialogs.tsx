@@ -3,7 +3,7 @@
 import { useTranslation } from "react-i18next"
 
 import type { Invoice } from "@/lib/api"
-import { ConfirmDialog } from "@/components/confirm-dialog"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import type { LifecycleStep } from "../../_lib/lifecycle"
 import { formatCurrency } from "../../_lib/list-format"
 

@@ -4,13 +4,13 @@ import { CheckCircle2, Clock, XCircle, StickyNote, Pencil, type LucideIcon } fro
 import { format, parseISO } from "date-fns"
 import { formatTimeOfDay } from "@/lib/utils"
 import { type TimeEntry } from "@/lib/api"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { personName, countryFromTz, approvalText } from "@hbcfield/shared/client"
 import { EditHistoryDialog } from "./edit-history-dialog"
 import { StatTile } from "@/components/ui/stat-tile"
 import { deriveAttendanceFlags } from "@/lib/attendance-status"
-import { LabelChip } from "@/components/attendance-label-chip"
+import { LabelChip } from "@/components/attendance/attendance-label-chip"
 import { useTimeFormat } from "@/hooks/use-time-format"
 
 /** An entry's labels — the one catalogue's words, order and colours, with each reason on hover. */

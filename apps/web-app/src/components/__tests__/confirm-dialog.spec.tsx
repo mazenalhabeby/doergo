@@ -10,7 +10,7 @@ jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
 
-import { ConfirmDialog, ConfirmTargetDialog, type ConfirmDialogProps } from '../confirm-dialog'
+import { ConfirmDialog, ConfirmTargetDialog, type ConfirmDialogProps } from '../common/confirm-dialog'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

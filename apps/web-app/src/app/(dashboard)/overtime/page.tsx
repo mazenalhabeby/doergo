@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 import { addMonths, addWeeks, startOfMonth, startOfWeek } from "date-fns"
 import { RefreshCw, XCircle } from "lucide-react"
 
-import { PlanGate } from "@/components/plan-gate"
+import { PlanGate } from "@/components/common/plan-gate"
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceDirectory } from "@/hooks/use-space-directory"
 import { overtimeApi } from "@/lib/api"

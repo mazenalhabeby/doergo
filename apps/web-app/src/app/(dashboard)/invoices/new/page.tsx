@@ -1,12 +1,12 @@
 "use client"
 
-import { PlanGate } from "@/components/plan-gate"
+import { PlanGate } from "@/components/common/plan-gate"
 import { Loader2 } from "lucide-react"
 
 import { InvoiceTopBar, InvoiceNotice } from "../_components/invoice-shell"
 import { Button } from "@/components/ui/button"
-import { useNewInvoiceInner } from "./use-new-invoice-inner"
-import { NewInvoiceInnerCreate } from "./new-invoice-inner-create"
+import { useNewInvoiceInner } from "./_hooks/use-new-invoice-inner"
+import { NewInvoiceInnerCreate } from "./_components/new-invoice-inner-create"
 
 export default function NewInvoicePage() {
   return (

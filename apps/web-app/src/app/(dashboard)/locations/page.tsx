@@ -16,16 +16,16 @@ import { SpaceLifecycleDialog } from "./_components/space-lifecycle-dialog"
 import { locationsApi, workflowsApi, type CompanyLocation } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { useBillingLock } from "@/hooks/use-billing-lock"
-import { ConfirmDialog } from "@/components/confirm-dialog"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import { PAGE_SHELL } from "@/components/ui/page-width"
 import { useSpaceDirectory } from "@/hooks/use-space-directory"
-import { EmptyState, SpaceCard } from "./space-card"
-import { SharedWithUsSection } from "./shared-with-us-section"
+import { EmptyState, SpaceCard } from "./_components/space-card"
+import { SharedWithUsSection } from "./_components/shared-with-us-section"
 import dynamic from "next/dynamic"
 import { useLatched } from "@/hooks/use-latched"
 
 // The create dialog carries the whole space form (workflow builder included); downloaded on first open.
-const CreateSpaceDialog = dynamic(() => import("./create-space-dialog").then((m) => m.CreateSpaceDialog), { ssr: false })
+const CreateSpaceDialog = dynamic(() => import("./_components/create-space-dialog").then((m) => m.CreateSpaceDialog), { ssr: false })
 
 // ============================================================================
 // MAIN PAGE

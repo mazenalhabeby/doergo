@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 import { dateLocale } from "@/lib/format-date"
 import type { AssetDetail } from "../_lib/asset-detail"
 
-const AddressMap = dynamic(() => import("../../../clients/[id]/address-map"), {
+const AddressMap = dynamic(() => import("../../../clients/[id]/_components/address-map"), {
   ssr: false,
   loading: () => <div className="h-full w-full animate-pulse bg-muted" />,
 }) as unknown as React.ComponentType<{ lat: number | null; lng: number | null }>

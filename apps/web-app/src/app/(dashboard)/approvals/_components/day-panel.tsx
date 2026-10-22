@@ -5,7 +5,7 @@ import { CheckCheck, ChevronRight } from "lucide-react"
 import { describeApproval, type ApprovalDay, type ApprovalItem, type ApprovalT } from "@hbcfield/shared/client"
 import { dateLocale, formatMediumDate } from "@/lib/format-date"
 import { Button } from "@/components/ui/button"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { nameParts } from "./name-parts"
 import { DayChips } from "./day-row"
 

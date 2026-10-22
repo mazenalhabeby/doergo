@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { personName } from "@hbcfield/shared/client"
 
 import type { OrgMember } from "@/lib/api"
-import { ConfirmDialog } from "@/components/confirm-dialog"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 
 /** Confirming an ownership transfer, and confirming a removal. */
 export function MemberConfirmDialogs({

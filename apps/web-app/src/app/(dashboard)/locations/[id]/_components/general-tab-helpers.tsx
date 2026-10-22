@@ -8,7 +8,7 @@ import { CompanyField, companyName, useCompanies } from "@/components/companies/
 /** GeneralTab's module-level helpers, moved here unchanged so its sections can read them too. */
 // The same map picker used by the New-Space form — reused so the address
 // experience is identical (DRY). Dynamic-imported because Leaflet needs `window`.
-export const LocationPicker = dynamic(() => import("@/components/location-picker"), {
+export const LocationPicker = dynamic(() => import("@/components/map/location-picker"), {
   ssr: false,
   loading: () => (
     <div className="flex h-[220px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/40">

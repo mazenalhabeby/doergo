@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { keys, invalidateTaskLists } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
 import { tasksApi } from "@/lib/api"
-import { useHandoverPendingText } from "@/components/handover-pending-notice"
+import { useHandoverPendingText } from "@/components/tasks/handover-pending-notice"
 import { snapshotTasksCache, optimisticUpdateTask, restoreTasksCache } from "../_lib/task-list"
 
 /**

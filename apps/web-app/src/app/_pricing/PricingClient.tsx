@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Sun, Moon } from 'lucide-react';
 import { AnimatedLogo } from '@hbcfield/shared/components';
-import { LanguageSwitcher } from '@/components/language-switcher';
+import { LanguageSwitcher } from '@/components/app-shell/language-switcher';
 import { usePricingClient } from './use-pricing-client';
 import { MONO, ACCENT } from './pricing-client-helpers';
 import { PricingClientEyebrow } from './pricing-client-eyebrow';

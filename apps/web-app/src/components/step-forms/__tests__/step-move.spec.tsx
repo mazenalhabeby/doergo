@@ -30,7 +30,7 @@ jest.mock('@/lib/api', () => ({
   taskAttachmentsApi: {},
   uploadToS3: jest.fn(),
 }))
-jest.mock('@/components/signature-pad', () => ({ SignaturePad: () => null }))
+jest.mock('@/components/common/signature-pad', () => ({ SignaturePad: () => null }))
 
 // eslint-disable-next-line import/first
 import { useStepMove, type StepMoveRequest, type StepMoveResult } from '../use-step-move'

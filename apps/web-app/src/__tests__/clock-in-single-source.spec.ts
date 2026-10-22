@@ -82,7 +82,7 @@ describe('clocking in has one implementation', () => {
   });
 
   it('offers no remote-or-field choice to a member who has workspaces', () => {
-    const widget = readSource(join(SRC, 'components', 'clock-widget.tsx'), 'utf8');
+    const widget = readSource(join(SRC, 'components', 'attendance', 'clock-widget.tsx'), 'utf8');
     const page = readSource(join(SRC, 'app', '(dashboard)', 'my', 'attendance', 'page.tsx'), 'utf8');
     for (const src of [widget, page]) {
       expect(src).not.toMatch(/startAway|awayPickerProps|clockInAway/);
@@ -90,7 +90,7 @@ describe('clocking in has one implementation', () => {
   });
 
   it('shows the same picker on both surfaces', () => {
-    const widget = readSource(join(SRC, 'components', 'clock-widget.tsx'), 'utf8');
+    const widget = readSource(join(SRC, 'components', 'attendance', 'clock-widget.tsx'), 'utf8');
     const page = readSource(join(SRC, 'app', '(dashboard)', 'my', 'attendance', 'page.tsx'), 'utf8');
     for (const src of [widget, page]) {
       expect(src).toContain('useClockIn');

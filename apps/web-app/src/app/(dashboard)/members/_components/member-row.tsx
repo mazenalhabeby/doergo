@@ -6,7 +6,7 @@ import { personName } from "@hbcfield/shared/client"
 
 import { cn } from "@/lib/utils"
 import type { OrgMember } from "@/lib/api"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RoleBadge, RowActions, ScheduleBadge, SpacesCell } from "./member-row-cells"
 

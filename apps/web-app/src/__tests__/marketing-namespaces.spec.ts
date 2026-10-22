@@ -22,7 +22,7 @@ import { MARKETING_NAMESPACES } from '@/i18n/server-bundles';
 
 const HOME_DIR = path.join(process.cwd(), 'src/app/_home');
 // Rendered inside LocalizedHome's provider, so it reads the same bundle.
-const EXTRA_FILES = [path.join(process.cwd(), 'src/components/language-switcher.tsx')];
+const EXTRA_FILES = [path.join(process.cwd(), 'src/components/app-shell/language-switcher.tsx')];
 
 function filesUnder(dir: string, out: string[] = []): string[] {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {

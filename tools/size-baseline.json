@@ -271,7 +271,7 @@
   "lines": 217,
   "long": 1
  },
- "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/use-portal-detail-page.ts": {
+ "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/_hooks/use-portal-detail-page.ts": {
   "lines": 282,
   "long": 3
  },
@@ -299,7 +299,7 @@
   "lines": 295,
   "long": 1
  },
- "apps/web-app/src/components/top-navbar-sidebar.tsx": {
+ "apps/web-app/src/components/top-navbar/top-navbar-sidebar.tsx": {
   "lines": 254,
   "long": 1
  },

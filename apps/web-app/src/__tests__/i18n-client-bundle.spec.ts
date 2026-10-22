@@ -193,7 +193,7 @@ describe('the marketing pages do not carry the application catalogue', () => {
   const CATALOGUE = 'src/i18n/locales/en.json';
   const MARKETING_ENTRIES = [
     'src/app/_home/HomeClient.tsx',
-    'src/components/language-switcher.tsx',
+    'src/components/app-shell/language-switcher.tsx',
   ];
 
   it.each(MARKETING_ENTRIES)('%s does not statically reach the catalogue', (entry) => {

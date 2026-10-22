@@ -625,19 +625,22 @@
   "apps/mobile/src/test-utils/read-source.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(auth)/reset-password/reset-password-content-helpers.tsx": [
+  "apps/web-app/src/app/(auth)/reset-password/_components/reset-password-content-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(auth)/reset-password/use-reset-password-content.ts": [
+  "apps/web-app/src/app/(auth)/reset-password/_hooks/use-reset-password-content.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/approvals/_components/approvals-page-helpers.tsx": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/approvals/_components/name-parts.ts": [
    "part"
   ],
-  "apps/web-app/src/app/(dashboard)/approvals/approvals-page-helpers.tsx": [
+  "apps/web-app/src/app/(dashboard)/approvals/_hooks/use-approvals-page.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/approvals/use-approvals-page.ts": [
+  "apps/web-app/src/app/(dashboard)/attendance/_components/attendance-page-helpers.tsx": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/attendance/_components/breaks-tab-breaks.tsx": [
@@ -676,13 +679,10 @@
   "apps/web-app/src/app/(dashboard)/attendance/_components/use-tracking-tab.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/attendance/attendance-page-helpers.tsx": [
+  "apps/web-app/src/app/(dashboard)/attendance/_hooks/use-attendance-page-data.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/attendance/use-attendance-page-data.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/attendance/use-attendance-page.ts": [
+  "apps/web-app/src/app/(dashboard)/attendance/_hooks/use-attendance-page.ts": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/calendar/_components/event-dialog-client.tsx": [
@@ -707,20 +707,20 @@
   "apps/web-app/src/app/(dashboard)/calendar/_components/use-event-dialog.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/clients/[id]/add-contact-dialog.tsx": [
+  "apps/web-app/src/app/(dashboard)/clients/[id]/_components/add-contact-dialog.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/clients/[id]/customer-addresses-parts.tsx": [
+  "apps/web-app/src/app/(dashboard)/clients/[id]/_components/customer-addresses-parts.tsx": [
    "part",
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/clients/[id]/customer-record-lib.ts": [
+  "apps/web-app/src/app/(dashboard)/clients/[id]/_components/works-at-panel.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/clients/[id]/use-add-contact-dialog.ts": [
+  "apps/web-app/src/app/(dashboard)/clients/[id]/_hooks/use-add-contact-dialog.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/clients/[id]/works-at-panel.tsx": [
+  "apps/web-app/src/app/(dashboard)/clients/[id]/_lib/customer-record-lib.ts": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/dashboard/_components/client-dashboard-helpers.tsx": [
@@ -735,13 +735,13 @@
   "apps/web-app/src/app/(dashboard)/dashboard/_lib/use-attendance-feeds.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/documents/all/sent-documents-page-control.tsx": [
+  "apps/web-app/src/app/(dashboard)/documents/all/_components/sent-documents-page-control.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/documents/all/sent-documents-page-helpers.tsx": [
+  "apps/web-app/src/app/(dashboard)/documents/all/_components/sent-documents-page-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/documents/all/use-sent-documents-page.ts": [
+  "apps/web-app/src/app/(dashboard)/documents/all/_hooks/use-sent-documents-page.ts": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/documents/templates/_components/form-parts.tsx": [
@@ -764,26 +764,26 @@
   "apps/web-app/src/app/(dashboard)/documents/types/_components/use-type-editor-logic.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/invitations/invitations-page-helpers.tsx": [
+  "apps/web-app/src/app/(dashboard)/invitations/_components/invitations-page-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/invitations/use-invitations-page.ts": [
+  "apps/web-app/src/app/(dashboard)/invitations/_hooks/use-invitations-page.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/invoices/[id]/edit/use-edit-invoice-inner.ts": [
+  "apps/web-app/src/app/(dashboard)/invoices/[id]/_components/invoice-detail-inner-helpers.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/invoices/[id]/_components/invoice-detail-inner-pdf-language.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/invoices/[id]/_components/invoice-detail-inner-view.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/invoices/[id]/_hooks/use-invoice-detail-inner.ts": [
    "inner",
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/invoices/[id]/invoice-detail-inner-helpers.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/invoices/[id]/invoice-detail-inner-pdf-language.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/invoices/[id]/invoice-detail-inner-view.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/invoices/[id]/use-invoice-detail-inner.ts": [
+  "apps/web-app/src/app/(dashboard)/invoices/[id]/edit/_hooks/use-edit-invoice-inner.ts": [
    "inner",
    "moved"
   ],
@@ -793,36 +793,36 @@
   "apps/web-app/src/app/(dashboard)/invoices/_components/invoice-document-helpers.tsx": [
    "moved"
   ],
+  "apps/web-app/src/app/(dashboard)/invoices/_components/invoices-page-inner-search-placeholder.tsx": [
+   "moved"
+  ],
   "apps/web-app/src/app/(dashboard)/invoices/_components/use-invoice-document.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/invoices/invoices-page-inner-search-placeholder.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/invoices/new/new-invoice-inner-create.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/invoices/new/new-invoice-rail.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/invoices/new/use-new-invoice-inner-data.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/invoices/new/use-new-invoice-inner-source.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/invoices/new/use-new-invoice-inner.ts": [
+  "apps/web-app/src/app/(dashboard)/invoices/_hooks/use-invoices-page-inner.ts": [
    "inner",
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/invoices/use-invoices-page-inner.ts": [
+  "apps/web-app/src/app/(dashboard)/invoices/new/_components/new-invoice-inner-create.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/invoices/new/_components/new-invoice-rail.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/invoices/new/_hooks/use-new-invoice-inner-data.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/invoices/new/_hooks/use-new-invoice-inner-source.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/invoices/new/_hooks/use-new-invoice-inner.ts": [
    "inner",
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/issues/issue-thread.tsx": [
+  "apps/web-app/src/app/(dashboard)/issues/_components/issue-thread.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/issues/issues-helpers.tsx": [
+  "apps/web-app/src/app/(dashboard)/issues/_components/issues-helpers.tsx": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/locations/[id]/_components/add-member-dialog.tsx": [
@@ -883,6 +883,10 @@
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/locations/[id]/_components/modules-tab-unsaved-count.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/locations/[id]/_components/page-parts.tsx": [
+   "part",
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/locations/[id]/_components/rest-dialog-helpers.tsx": [
@@ -956,42 +960,41 @@
   "apps/web-app/src/app/(dashboard)/locations/[id]/_components/use-type-details.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/locations/[id]/page-parts.tsx": [
-   "part",
+  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/_components/portal-cover-panel.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/portal-cover-panel.tsx": [
+  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/_components/portal-detail-page-add-category.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/portal-detail-page-add-category.tsx": [
+  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/_components/portal-detail-page-change-type.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/portal-detail-page-change-type.tsx": [
+  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/_components/portal-detail-page-delete-dialog-title.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/portal-detail-page-delete-dialog-title.tsx": [
+  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/_components/portal-detail-page-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/portal-detail-page-helpers.tsx": [
+  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/_components/portal-detail-page-invite-resident.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/portal-detail-page-invite-resident.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/portal-detail-page-portal.tsx": [
+  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/_components/portal-detail-page-portal.tsx": [
    "repeated",
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/portal-detail-page-triage-title.tsx": [
+  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/_components/portal-detail-page-triage-title.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/portal-detail-tabs.tsx": [
+  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/_components/portal-detail-tabs.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/portal-templates.ts": [
+  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/_hooks/use-portal-detail-page.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/use-portal-detail-page.ts": [
+  "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/_lib/portal-templates.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/locations/_components/create-space-dialog.tsx": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/locations/_components/space-form-address.tsx": [
@@ -1007,14 +1010,38 @@
   "apps/web-app/src/app/(dashboard)/locations/_components/use-space-form.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/locations/create-space-dialog.tsx": [
-   "moved"
-  ],
   "apps/web-app/src/app/(dashboard)/members/[id]/_components/add-attendance-dialog-add-attendance.tsx": [
    "repeated",
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/members/[id]/_components/add-attendance-dialog-helpers.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/members/[id]/_components/member-profile-page-active.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/members/[id]/_components/member-profile-page-detail.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/members/[id]/_components/member-profile-page-detail2.tsx": [
+   "numbered",
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/members/[id]/_components/member-profile-page-detail3.tsx": [
+   "numbered",
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/members/[id]/_components/member-profile-page-helpers.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/members/[id]/_components/member-profile-page-part.tsx": [
+   "part",
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/members/[id]/_components/member-profile-page-previous.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/members/[id]/_components/member-profile-page-view.tsx": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/members/[id]/_components/time-off-tab-helpers.tsx": [
@@ -1030,34 +1057,13 @@
   "apps/web-app/src/app/(dashboard)/members/[id]/_components/use-time-off-tab.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/members/[id]/member-profile-page-active.tsx": [
+  "apps/web-app/src/app/(dashboard)/members/[id]/_hooks/use-member-profile-page.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/members/[id]/member-profile-page-detail.tsx": [
+  "apps/web-app/src/app/(dashboard)/members/_components/members-page-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/members/[id]/member-profile-page-detail2.tsx": [
-   "numbered",
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/members/[id]/member-profile-page-detail3.tsx": [
-   "numbered",
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/members/[id]/member-profile-page-helpers.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/members/[id]/member-profile-page-part.tsx": [
-   "part",
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/members/[id]/member-profile-page-previous.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/members/[id]/member-profile-page-view.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/members/[id]/use-member-profile-page.ts": [
+  "apps/web-app/src/app/(dashboard)/members/_components/members-page-team.tsx": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/members/_components/use-edit-member-dialog-data.ts": [
@@ -1066,34 +1072,34 @@
   "apps/web-app/src/app/(dashboard)/members/_components/use-edit-member-dialog.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/members/members-page-helpers.tsx": [
+  "apps/web-app/src/app/(dashboard)/members/_hooks/use-members-page.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/members/members-page-team.tsx": [
+  "apps/web-app/src/app/(dashboard)/members/new/_components/new-technician-page-create.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/members/new/new-technician-page-create.tsx": [
+  "apps/web-app/src/app/(dashboard)/members/new/_components/new-technician-page-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/members/new/new-technician-page-helpers.tsx": [
+  "apps/web-app/src/app/(dashboard)/members/new/_hooks/use-new-technician-page.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/members/new/use-new-technician-page.ts": [
+  "apps/web-app/src/app/(dashboard)/my/attendance/_components/my-attendance-page-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/members/use-members-page.ts": [
+  "apps/web-app/src/app/(dashboard)/my/attendance/_components/my-attendance-page-my.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/my/attendance/my-attendance-page-helpers.tsx": [
+  "apps/web-app/src/app/(dashboard)/my/attendance/_components/my-attendance-page-view.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/my/attendance/my-attendance-page-my.tsx": [
+  "apps/web-app/src/app/(dashboard)/my/attendance/_hooks/use-my-attendance-page.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/my/attendance/my-attendance-page-view.tsx": [
+  "apps/web-app/src/app/(dashboard)/my/documents/_components/my-documents-page-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/my/attendance/use-my-attendance-page.ts": [
+  "apps/web-app/src/app/(dashboard)/my/documents/_components/my-documents-page-my.tsx": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/my/documents/_components/supply-document-dialog-helpers.tsx": [
@@ -1102,54 +1108,48 @@
   "apps/web-app/src/app/(dashboard)/my/documents/_components/use-supply-document-dialog.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/my/documents/my-documents-page-helpers.tsx": [
+  "apps/web-app/src/app/(dashboard)/my/documents/_hooks/use-my-documents-page.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/my/documents/my-documents-page-my.tsx": [
+  "apps/web-app/src/app/(dashboard)/my/time-off/_components/my-time-off-page-allowance-title-work.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/my/documents/use-my-documents-page.ts": [
+  "apps/web-app/src/app/(dashboard)/my/time-off/_components/my-time-off-page-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/my/time-off/my-time-off-page-allowance-title-work.tsx": [
+  "apps/web-app/src/app/(dashboard)/my/time-off/_components/my-time-off-page-my.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/my/time-off/my-time-off-page-helpers.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/my/time-off/my-time-off-page-my.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/my/time-off/my-time-off-page-my2.tsx": [
+  "apps/web-app/src/app/(dashboard)/my/time-off/_components/my-time-off-page-my2.tsx": [
    "numbered",
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/my/time-off/use-my-time-off-page-data.tsx": [
+  "apps/web-app/src/app/(dashboard)/my/time-off/_hooks/use-my-time-off-page-data.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/my/time-off/use-my-time-off-page.tsx": [
+  "apps/web-app/src/app/(dashboard)/my/time-off/_hooks/use-my-time-off-page.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/reports/reports-page-dataset.tsx": [
+  "apps/web-app/src/app/(dashboard)/reports/_components/reports-page-dataset.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/reports/reports-page-helpers.tsx": [
+  "apps/web-app/src/app/(dashboard)/reports/_components/reports-page-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/reports/reports-page-reports.tsx": [
+  "apps/web-app/src/app/(dashboard)/reports/_components/reports-page-reports.tsx": [
    "repeated",
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/reports/reports-page-schedule-title.tsx": [
+  "apps/web-app/src/app/(dashboard)/reports/_components/reports-page-schedule-title.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/reports/reports-table-card.tsx": [
+  "apps/web-app/src/app/(dashboard)/reports/_components/reports-table-card.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/reports/use-reports-page-data.ts": [
+  "apps/web-app/src/app/(dashboard)/reports/_hooks/use-reports-page-data.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/reports/use-reports-page.tsx": [
+  "apps/web-app/src/app/(dashboard)/reports/_hooks/use-reports-page.tsx": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/schedule/_components/drawer-body-helpers.tsx": [
@@ -1170,16 +1170,16 @@
   "apps/web-app/src/app/(dashboard)/schedule/_components/leave-wallchart-space.tsx": [
    "moved"
   ],
+  "apps/web-app/src/app/(dashboard)/schedule/_components/schedule-and-time-off-page-helpers.tsx": [
+   "moved"
+  ],
   "apps/web-app/src/app/(dashboard)/schedule/_components/use-drawer-body.ts": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/schedule/_components/use-exceptions-card.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/schedule/schedule-and-time-off-page-helpers.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/schedule/use-schedule-and-time-off-page.ts": [
+  "apps/web-app/src/app/(dashboard)/schedule/_hooks/use-schedule-and-time-off-page.ts": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/settings/_components/general-address-fields.tsx": [
@@ -1202,26 +1202,26 @@
   "apps/web-app/src/app/(dashboard)/settings/billing/_components/bill-breakdown-helpers.tsx": [
    "moved"
   ],
+  "apps/web-app/src/app/(dashboard)/settings/billing/_components/billing-page-helpers.tsx": [
+   "moved"
+  ],
   "apps/web-app/src/app/(dashboard)/settings/billing/_components/use-bill-breakdown.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/settings/billing/billing-page-helpers.tsx": [
+  "apps/web-app/src/app/(dashboard)/settings/billing/_hooks/use-billing-page.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/settings/billing/use-billing-page.ts": [
+  "apps/web-app/src/app/(dashboard)/shared/[id]/_components/shared-space-view-page-guest.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/shared/[id]/shared-space-view-page-guest.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/shared/[id]/shared-space-view-page-guest2.tsx": [
+  "apps/web-app/src/app/(dashboard)/shared/[id]/_components/shared-space-view-page-guest2.tsx": [
    "numbered",
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/shared/[id]/shared-space-view-page-helpers.tsx": [
+  "apps/web-app/src/app/(dashboard)/shared/[id]/_components/shared-space-view-page-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/shared/[id]/use-shared-space-view-page.ts": [
+  "apps/web-app/src/app/(dashboard)/shared/[id]/_hooks/use-shared-space-view-page.ts": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/add-dependency-dialog-dependencies.tsx": [
@@ -1254,6 +1254,18 @@
   "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/service-report-section-shared.tsx": [
    "moved"
   ],
+  "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/task-detail-main-column.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/task-detail-page-helpers.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/task-detail-page-sections.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/task-detail-page-view.tsx": [
+   "moved"
+  ],
   "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/task-detail-sidebar-helpers.tsx": [
    "moved"
   ],
@@ -1271,6 +1283,12 @@
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/tasks/[id]/_components/use-task-detail-sidebar.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/tasks/[id]/_hooks/use-task-detail-page-data.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/tasks/[id]/_hooks/use-task-detail-page.ts": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/tasks/[id]/report/_components/report-sheet-helpers.tsx": [
@@ -1291,24 +1309,6 @@
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/tasks/[id]/report/_lib/report-model/toggles.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/tasks/[id]/task-detail-main-column.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/tasks/[id]/task-detail-page-helpers.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/tasks/[id]/task-detail-page-sections.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/tasks/[id]/task-detail-page-view.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/tasks/[id]/use-task-detail-page-data.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/tasks/[id]/use-task-detail-page.ts": [
    "moved"
   ],
   "apps/web-app/src/app/(dashboard)/tasks/_components/calendar-view-helpers.tsx": [
@@ -1347,6 +1347,13 @@
    "numbered",
    "moved"
   ],
+  "apps/web-app/src/app/(dashboard)/tasks/_components/tasks-page-helpers.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/app/(dashboard)/tasks/_components/tasks-page-part.tsx": [
+   "part",
+   "moved"
+  ],
   "apps/web-app/src/app/(dashboard)/tasks/_components/timeline-view-helpers.tsx": [
    "moved"
   ],
@@ -1373,26 +1380,19 @@
   "apps/web-app/src/app/(dashboard)/tasks/_components/use-timeline-view.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/tasks/recurring/template-card.tsx": [
+  "apps/web-app/src/app/(dashboard)/tasks/_hooks/use-tasks-page.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/tasks/recurring/template-dialog-recurring.tsx": [
+  "apps/web-app/src/app/(dashboard)/tasks/recurring/_components/template-card.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/tasks/recurring/template-dialog.tsx": [
+  "apps/web-app/src/app/(dashboard)/tasks/recurring/_components/template-dialog-recurring.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/tasks/recurring/use-template-dialog.ts": [
+  "apps/web-app/src/app/(dashboard)/tasks/recurring/_components/template-dialog.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/(dashboard)/tasks/tasks-page-helpers.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/tasks/tasks-page-part.tsx": [
-   "part",
-   "moved"
-  ],
-  "apps/web-app/src/app/(dashboard)/tasks/use-tasks-page.ts": [
+  "apps/web-app/src/app/(dashboard)/tasks/recurring/_hooks/use-template-dialog.ts": [
    "moved"
   ],
   "apps/web-app/src/app/_home/home-client-footer.tsx": [
@@ -1443,10 +1443,10 @@
   "apps/web-app/src/app/_pricing/use-pricing-client.ts": [
    "moved"
   ],
-  "apps/web-app/src/app/sign/sign-page-inner-helpers.tsx": [
+  "apps/web-app/src/app/sign/_components/sign-page-inner-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/app/sign/use-sign-page-inner.ts": [
+  "apps/web-app/src/app/sign/_hooks/use-sign-page-inner.ts": [
    "inner",
    "moved"
   ],
@@ -1457,20 +1457,6 @@
    "moved"
   ],
   "apps/web-app/src/app/welcome/_wizard/use-setup-wizard.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/components/access-builder-parts.tsx": [
-   "part",
-   "moved"
-  ],
-  "apps/web-app/src/components/access-fields-contact-access.tsx": [
-   "repeated",
-   "moved"
-  ],
-  "apps/web-app/src/components/access-fields-helpers.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/components/access-fields-permissions.tsx": [
    "moved"
   ],
   "apps/web-app/src/components/assets/asset-faults-helpers.tsx": [
@@ -1512,20 +1498,23 @@
   "apps/web-app/src/components/assets/use-review-dialog.ts": [
    "moved"
   ],
-  "apps/web-app/src/components/assign-member-dialog-helpers.tsx": [
+  "apps/web-app/src/components/command-palette/command-palette-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/components/command-palette-helpers.tsx": [
+  "apps/web-app/src/components/command-palette/use-command-palette-logic.tsx": [
    "moved"
   ],
-  "apps/web-app/src/components/dashboard/workspace-box-layout.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/components/field-dialog-edit-field.tsx": [
+  "apps/web-app/src/components/custom-fields/field-dialog-edit-field.tsx": [
    "repeated",
    "moved"
   ],
-  "apps/web-app/src/components/field-dialog-helpers.tsx": [
+  "apps/web-app/src/components/custom-fields/field-dialog-helpers.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/components/custom-fields/use-field-dialog.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/components/dashboard/workspace-box-layout.ts": [
    "moved"
   ],
   "apps/web-app/src/components/invitations/create-invitation-dialog-helpers.tsx": [
@@ -1544,13 +1533,43 @@
   "apps/web-app/src/components/invitations/use-create-invitation-dialog.ts": [
    "moved"
   ],
-  "apps/web-app/src/components/location-picker-map.tsx": [
+  "apps/web-app/src/components/map/location-picker-map.tsx": [
    "moved"
   ],
-  "apps/web-app/src/components/location-picker-panel.tsx": [
+  "apps/web-app/src/components/map/location-picker-panel.tsx": [
    "moved"
   ],
-  "apps/web-app/src/components/notification-bell-helpers.tsx": [
+  "apps/web-app/src/components/map/use-location-picker.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/components/notifications/notification-bell-helpers.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/components/notifications/use-notification-bell-data.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/components/notifications/use-notification-bell-data2.ts": [
+   "numbered",
+   "moved"
+  ],
+  "apps/web-app/src/components/notifications/use-notification-bell.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/components/permissions/access-builder-parts.tsx": [
+   "part",
+   "moved"
+  ],
+  "apps/web-app/src/components/permissions/access-fields-contact-access.tsx": [
+   "repeated",
+   "moved"
+  ],
+  "apps/web-app/src/components/permissions/access-fields-helpers.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/components/permissions/access-fields-permissions.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/components/permissions/use-access-fields.tsx": [
    "moved"
   ],
   "apps/web-app/src/components/rates/dated-rate-dialog.tsx": [
@@ -1580,10 +1599,19 @@
   "apps/web-app/src/components/step-forms/use-step-move-dialog.tsx": [
    "moved"
   ],
-  "apps/web-app/src/components/top-navbar-sidebar.tsx": [
+  "apps/web-app/src/components/tasks/assign-member-dialog-helpers.tsx": [
    "moved"
   ],
-  "apps/web-app/src/components/top-navbar-view.tsx": [
+  "apps/web-app/src/components/tasks/use-assign-member-dialog.ts": [
+   "moved"
+  ],
+  "apps/web-app/src/components/top-navbar/top-navbar-sidebar.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/components/top-navbar/top-navbar-view.tsx": [
+   "moved"
+  ],
+  "apps/web-app/src/components/top-navbar/use-top-navbar.ts": [
    "moved"
   ],
   "apps/web-app/src/components/tour/page-tours.ts": [
@@ -1602,34 +1630,6 @@
    "moved"
   ],
   "apps/web-app/src/components/tour/welcome-tours.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/components/use-access-fields.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/components/use-assign-member-dialog.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/components/use-command-palette-logic.tsx": [
-   "moved"
-  ],
-  "apps/web-app/src/components/use-field-dialog.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/components/use-location-picker.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/components/use-notification-bell-data.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/components/use-notification-bell-data2.ts": [
-   "numbered",
-   "moved"
-  ],
-  "apps/web-app/src/components/use-notification-bell.ts": [
-   "moved"
-  ],
-  "apps/web-app/src/components/use-top-navbar.ts": [
    "moved"
   ],
   "apps/web-app/src/contexts/auth-user.ts": [
@@ -4231,5 +4231,6 @@
   ]
  },
  "ownership": [],
- "reads": {}
+ "reads": {},
+ "layout": []
 }

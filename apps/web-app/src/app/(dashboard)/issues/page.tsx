@@ -9,8 +9,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { useSocketContext } from "@/contexts/socket-context"
 import { cn } from "@/lib/utils"
 import { keys } from "@/lib/query-keys"
-import { SEV_DOT, fmt, Chip } from "./issues-helpers";
-import { IssueThread } from "./issue-thread"
+import { SEV_DOT, fmt, Chip } from "./_components/issues-helpers";
+import { IssueThread } from "./_components/issue-thread"
 
 export default function IssuesPage() {
   const { user } = useAuth()

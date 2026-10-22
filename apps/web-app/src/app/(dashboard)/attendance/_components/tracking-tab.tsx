@@ -1,7 +1,7 @@
 import React from "react"
 import { cn } from "@/lib/utils"
 import { type TimeEntry } from "@/lib/api"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { AlertCircle, CheckCircle2, Clock, MapPin, Users, CalendarOff } from "lucide-react"
 import { StatCard, formatTime, formatDateInZone, StatusBadge } from "./attendance-helpers"
 import { personName, countryFromTz } from "@hbcfield/shared/client"

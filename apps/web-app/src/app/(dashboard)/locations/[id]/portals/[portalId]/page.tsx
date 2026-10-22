@@ -3,14 +3,14 @@
 
 import { AlertTriangle } from "lucide-react";
 
-import { ConfirmDialog, ConfirmTargetDialog } from "@/components/confirm-dialog"
-import { usePortalDetailPage } from "./use-portal-detail-page";
-import { PortalDetailPagePortal } from "./portal-detail-page-portal"
-import { PortalDetailPageInviteResident } from "./portal-detail-page-invite-resident"
-import { PortalDetailPageTriageTitle } from "./portal-detail-page-triage-title"
-import { PortalDetailPageChangeType } from "./portal-detail-page-change-type"
-import { PortalDetailPageDeleteDialogTitle } from "./portal-detail-page-delete-dialog-title"
-import { PortalDetailPageAddCategory } from "./portal-detail-page-add-category"
+import { ConfirmDialog, ConfirmTargetDialog } from "@/components/common/confirm-dialog"
+import { usePortalDetailPage } from "./_hooks/use-portal-detail-page";
+import { PortalDetailPagePortal } from "./_components/portal-detail-page-portal"
+import { PortalDetailPageInviteResident } from "./_components/portal-detail-page-invite-resident"
+import { PortalDetailPageTriageTitle } from "./_components/portal-detail-page-triage-title"
+import { PortalDetailPageChangeType } from "./_components/portal-detail-page-change-type"
+import { PortalDetailPageDeleteDialogTitle } from "./_components/portal-detail-page-delete-dialog-title"
+import { PortalDetailPageAddCategory } from "./_components/portal-detail-page-add-category"
 
 export default function PortalDetailPage() {
   const vm = usePortalDetailPage()

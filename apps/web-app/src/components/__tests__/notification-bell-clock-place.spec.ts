@@ -10,7 +10,7 @@ import path from "path"
  */
 describe("notification bell — clock events", () => {
   it("reads no clock-in / clock-out address from the event", () => {
-    const src = fs.readFileSync(path.join(__dirname, "../notification-bell.tsx"), "utf8")
+    const src = fs.readFileSync(path.join(__dirname, "../notifications/notification-bell.tsx"), "utf8")
     expect(src).not.toMatch(/clockInPlace|clockOutPlace/)
   })
 })

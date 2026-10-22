@@ -1,7 +1,7 @@
 "use client"
 
-import { OfficeStartDialog } from "@/components/office-start-dialog"
-import { ClockGateDialog } from "@/components/clock-gate-dialog"
+import { OfficeStartDialog } from "@/components/tasks/office-start-dialog"
+import { ClockGateDialog } from "@/components/tasks/clock-gate-dialog"
 
 
 
@@ -9,9 +9,9 @@ import { ClockGateDialog } from "@/components/clock-gate-dialog"
 import { BulkActionBar } from "./_components/bulk-action-bar"
 import { TaskPlanningDialogs } from "./_components/task-planning-dialogs"
 import { TaskAssignDialog } from "./_components/task-assign-dialog"
-import { useTasksPage } from "./use-tasks-page";
-import { CreateTaskDialog } from "./tasks-page-helpers";
-import { TasksPagePart } from "./tasks-page-part";
+import { useTasksPage } from "./_hooks/use-tasks-page";
+import { CreateTaskDialog } from "./_components/tasks-page-helpers";
+import { TasksPagePart } from "./_components/tasks-page-part";
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 

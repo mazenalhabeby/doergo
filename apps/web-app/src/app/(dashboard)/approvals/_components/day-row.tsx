@@ -5,7 +5,7 @@ import { CalendarDays } from "lucide-react"
 import { labelWord, type ApprovalDay } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { formatTimeAgo, formatMediumDate } from "@/lib/format-date"
-import { UserAvatar } from "@/components/user-avatar"
+import { UserAvatar } from "@/components/common/user-avatar"
 import { nameParts } from "./name-parts"
 
 /** One person's working day in the list: who, which day, and why it waits — as chips. */

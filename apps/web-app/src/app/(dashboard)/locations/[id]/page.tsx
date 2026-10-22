@@ -22,13 +22,13 @@ import { canManageSpace } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { locationsApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { BackToSpaces, CenteredNotice } from "@/components/space-page"
+import { BackToSpaces, CenteredNotice } from "@/components/spaces/space-page"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PlanGate } from "@/components/plan-gate"
+import { PlanGate } from "@/components/common/plan-gate"
 import { cn } from "@/lib/utils"
 
 import dynamic from "next/dynamic"
-import { MOVED_TABS } from "./page-parts"
+import { MOVED_TABS } from "./_components/page-parts"
 
 // Every tab is lazy (audit S-C1). This page has ten of them and they reach ~6,400
 // lines with their dialogs — the asset-kind editor alone is 670, the rota 733 — and
