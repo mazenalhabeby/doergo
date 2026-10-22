@@ -33,15 +33,14 @@ function widgetFiles(): string[] {
       if (/\.tsx?$/.test(e.name)) out.push(next);
     }
   };
-  walk('features/home');
-  walk('home');
+  walk('features/home'); // src/home was merged into it (6.1)
   return out;
 }
 
 describe('remembering is a rule, not a fix', () => {
   it('has one store and one hook', () => {
-    const store = code('features/home/remember/store.ts');
-    const hook = code('features/home/remember/use-remembered.ts');
+    const store = code('lib/remember/store.ts');
+    const hook = code('lib/remember/use-remembered.ts');
 
     /*
       ⚠️ A STORE THAT EXISTS ON EVERY BUILD. The first attempt remembered

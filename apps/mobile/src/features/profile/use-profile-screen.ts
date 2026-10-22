@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
 import { orgHasAddOn, Role } from '@hbcfield/shared/client';
 import { uuidv7 } from '../../offline/ids';
 import type { AvatarChange } from '../../offline/profile/pending-avatar';
-import { updateOwnProfile } from '../../offline/profile/profile-actions';
+import { useOwnProfileWrite } from '../../offline/profile/use-own-profile-write';
 import { useOffline, useSyncStatus } from '../../offline/offline-context';
 import { useVersionStatus } from '../../contexts/version-context';
 import { useAuth } from '../../contexts/auth-context';
@@ -26,8 +26,9 @@ import { caught } from '../../lib/caught';
 
 /** ProfileScreen's state and handlers — everything before its markup, moved here unchanged. */
 export function useProfileScreen() {
-  const { user, logout, refreshUser, patchUser } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const offline = useOffline();
+  const ownProfile = useOwnProfileWrite();
   // "Clock in" means something only with more than one workspace to clock in at.
   const clockInOffered = offersClockInPick(useShift().status?.assignedLocations?.length ?? 0);
   const { snapshot: syncSnapshot } = useSyncStatus();
@@ -61,15 +62,11 @@ export function useProfileScreen() {
     async (presence: 'AVAILABLE' | 'BUSY' | 'AWAY') => {
       setSavingPresence(true);
       try {
-        if (offline.engine && user?.id) {
-          const outcome = await updateOwnProfile(offline.engine, user.id, { presence });
-          if (outcome.kind === 'refused') throw new Error(outcome.message);
-          patchUser({ presence });
-          if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-          return;
-        }
-        await userApi.setPresence(presence);
-        await refreshUser();
+        const outcome = await ownProfile.run({ presence }, () =>
+          userApi.setPresence(presence).then(() => refreshUser()),
+        );
+        if (outcome.kind === 'refused') throw new Error(outcome.message);
+        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
       } catch (err) {
         toast.error(
           t('common.error'),
@@ -79,7 +76,7 @@ export function useProfileScreen() {
         setSavingPresence(false);
       }
     },
-    [refreshUser, toast, t, offline.engine, user?.id, patchUser],
+    [refreshUser, toast, t, ownProfile],
   );
   const hasRefreshed = useRef(false);
   const lastFetchTimeRef = useRef(0);

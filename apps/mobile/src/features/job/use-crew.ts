@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../island/island-context';
-import { useOffline } from '../../offline/offline-context';
+import { useQueuedWrite } from '../../offline/actions/queued-write';
 import { useRefreshJobTime } from '../../hooks/useJobTime';
 import { useRefreshMyHandovers } from '../../hooks/useMyHandovers';
 import { changeLead, joinCrew, leaveCrew, reportMyIssue, resumeMine } from '../../offline/tasks/crew-actions';
@@ -20,7 +20,6 @@ export type CrewMember = CrewView['members'][number];
 export function useCrew(taskId: string, view: CrewView | null | undefined, meId: string | null | undefined) {
   const { t } = useTranslation();
   const toast = useToast();
-  const offline = useOffline();
   const refreshJobTime = useRefreshJobTime();
   const refreshHandovers = useRefreshMyHandovers();
   const [busy, setBusy] = useState(false);
@@ -33,19 +32,19 @@ export function useCrew(taskId: string, view: CrewView | null | undefined, meId:
   /** Crew mode: somebody else moves the job's step — this phone does not offer it. */
   const stepsAreLeaders = !!view?.crewMode && isCrew && !!view.leader.userId && !isLeader;
 
-  const run = useCallback(
-    async (queued: (() => Promise<ActionOutcome>) | null, direct: () => Promise<unknown>, done: string): Promise<boolean> => {
+  const write = useQueuedWrite();
+  /** One crew action: through the outbox where there is one, straight to the API where there is not (`write.run`). */
+  const act = useCallback(
+    async (send: () => Promise<ActionOutcome>, done: string): Promise<boolean> => {
       setBusy(true);
       try {
-        if (queued) {
-          const outcome = await queued();
-          if (outcome.kind === 'refused') { toast.error(t('common.error'), refusalMessage(t, outcome)); return false; }
-          if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-          else toast.success(done);
-        } else {
-          await direct();
-          toast.success(done);
+        const outcome = await send();
+        if (outcome.kind === 'refused') {
+          toast.error(t('common.error'), refusalMessage(t, outcome));
+          return false;
         }
+        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+        else toast.success(done);
         refreshJobTime(taskId);
         refreshHandovers();
         return true;
@@ -59,7 +58,6 @@ export function useCrew(taskId: string, view: CrewView | null | undefined, meId:
     [taskId, toast, t, refreshJobTime, refreshHandovers],
   );
 
-  const engine = offline.engine;
   return {
     view: view ?? null,
     me,
@@ -69,13 +67,50 @@ export function useCrew(taskId: string, view: CrewView | null | undefined, meId:
     stepsAreLeaders,
     busy,
     join: (viaLeaderStart = false) =>
-      run(engine ? () => joinCrew(engine, taskId, viaLeaderStart) : null, () => tasksApi.crew(taskId, 'join', viaLeaderStart ? { viaLeaderStart: true } : {}), t('job.crew.joined')),
-    leave: () => run(engine ? () => leaveCrew(engine, taskId) : null, () => tasksApi.crew(taskId, 'leave'), t('job.crew.left')),
+      act(
+        () =>
+          write.run(
+            (engine) => joinCrew(engine, taskId, viaLeaderStart),
+            () => tasksApi.crew(taskId, 'join', viaLeaderStart ? { viaLeaderStart: true } : {}),
+          ),
+        t('job.crew.joined'),
+      ),
+    leave: () =>
+      act(
+        () =>
+          write.run(
+            (engine) => leaveCrew(engine, taskId),
+            () => tasksApi.crew(taskId, 'leave'),
+          ),
+        t('job.crew.left'),
+      ),
     reportMine: (reason: string) =>
-      run(engine ? () => reportMyIssue(engine, taskId, reason) : null, () => tasksApi.crew(taskId, 'issue', { reason }), t('job.crew.issueSent')),
-    resumeMine: () => run(engine ? () => resumeMine(engine, taskId) : null, () => tasksApi.crew(taskId, 'resume'), t('job.crew.resumed')),
+      act(
+        () =>
+          write.run(
+            (engine) => reportMyIssue(engine, taskId, reason),
+            () => tasksApi.crew(taskId, 'issue', { reason }),
+          ),
+        t('job.crew.issueSent'),
+      ),
+    resumeMine: () =>
+      act(
+        () =>
+          write.run(
+            (engine) => resumeMine(engine, taskId),
+            () => tasksApi.crew(taskId, 'resume'),
+          ),
+        t('job.crew.resumed'),
+      ),
     handOver: (toUserId: string, scope: 'TODAY' | 'PERMANENT') =>
-      run(engine ? () => changeLead(engine, taskId, { toUserId, scope }) : null, () => tasksApi.changeLead(taskId, { toUserId, scope }), t('job.crew.leadHandedOver')),
+      act(
+        () =>
+          write.run(
+            (engine) => changeLead(engine, taskId, { toUserId, scope }),
+            () => tasksApi.changeLead(taskId, { toUserId, scope }),
+          ),
+        t('job.crew.leadHandedOver'),
+      ),
   };
 }
 

@@ -23,7 +23,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { forgetEverythingKept } from '../remember/store';
+import { forgetEverythingKept } from '../../../lib/remember/store';
 import { crewAsOf, type CrewPerson } from '../crew-state';
 import { readSource } from '../../../test-utils/read-source';
 

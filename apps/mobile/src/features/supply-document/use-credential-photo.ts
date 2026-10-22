@@ -9,6 +9,7 @@ import { canReadText } from '../../lib/ocr';
 import { readExpiryOnDevice } from '../../lib/document-scan';
 import { useOffline } from '../../offline/offline-context';
 import { createFromPhone } from '../../offline/actions/queued-create';
+import { useQueuedWrite } from '../../offline/actions/queued-write';
 import { uuidv7 } from '../../offline/ids';
 import type { ScannedDocument } from '../../components/document-scanner';
 import { MAX_BYTES, safeFileSize, toIsoDate, type PickFromGallery } from './supply-helpers';
@@ -52,6 +53,7 @@ export function useCredentialPhoto({
     clearPhoto,
     uploadAndRead,
   } = useCredentialPhotoData({ type, setBusy, pickFromGallery });
+  const write = useQueuedWrite();
 
   /**
    * A photo the member already has.
@@ -127,85 +129,95 @@ export function useCredentialPhoto({
       board, which is chased, not silently counted as covered.
     */
     setBusy(true);
+    // The engine and the file store start together: `files` is there whenever `write.run` queues.
+    const files = offline.files;
     try {
-      if (offline.engine && offline.files) {
-        /*
-          Filed through the outbox, so it survives no signal and is filed once.
-          What was already uploaded while the date was being read goes as its
-          key; what was not is kept on the phone and uploaded when sent — and
-          the copy is deleted the moment the document is filed. It is a
-          photograph of somebody's passport.
-        */
-        const back = scanned?.back ?? null;
-        const body: Record<string, unknown> = {
-          typeId: type.id,
-          title: type.label,
-          ...(expiresOn ? { expiresOn: toIsoDate(expiresOn) } : {}),
-          ...(scanned?.barcodeData ? { mrzText: scanned.barcodeData } : {}),
-          ...((staged?.crop ?? scanned?.crop) ? { crop: staged?.crop ?? scanned?.crop } : {}),
-          ...((staged?.back?.crop ?? back?.crop) ? { backCrop: staged?.back?.crop ?? back?.crop } : {}),
-        };
-        if (staged?.key) body.stagingKey = staged.key;
-        else {
-          // Kept for the queue as JPEG — a HEIC queued offline is just as unreadable later.
-          const front = await ensureJpeg(photo.uri, photo.mimeType);
-          body.$front = (
-            await offline.files.keep({
-              id: uuidv7(),
-              kind: 'document',
-              mime: front.converted ? 'image/jpeg' : photo.mimeType || 'image/jpeg',
-              uri: front.uri,
-            })
-          ).id;
-        }
-        if (staged?.back?.key) body.backStagingKey = staged.back.key;
-        else if (back) body.$back = (await offline.files.keep({ id: uuidv7(), kind: 'document', mime: 'image/jpeg', uri: back.uri })).id;
+      const outcome = await write.run(
+        async (engine) => {
+          /*
+            Filed through the outbox, so it survives no signal and is filed once.
+            What was already uploaded while the date was being read goes as its
+            key; what was not is kept on the phone and uploaded when sent — and
+            the copy is deleted the moment the document is filed. It is a
+            photograph of somebody's passport.
+          */
+          const back = scanned?.back ?? null;
+          const body: Record<string, unknown> = {
+            typeId: type.id,
+            title: type.label,
+            ...(expiresOn ? { expiresOn: toIsoDate(expiresOn) } : {}),
+            ...(scanned?.barcodeData ? { mrzText: scanned.barcodeData } : {}),
+            ...((staged?.crop ?? scanned?.crop) ? { crop: staged?.crop ?? scanned?.crop } : {}),
+            ...((staged?.back?.crop ?? back?.crop) ? { backCrop: staged?.back?.crop ?? back?.crop } : {}),
+          };
+          if (staged?.key) body.stagingKey = staged.key;
+          else {
+            // Kept for the queue as JPEG — a HEIC queued offline is just as unreadable later.
+            const front = await ensureJpeg(photo.uri, photo.mimeType);
+            body.$front = (
+              await files!.keep({
+                id: uuidv7(),
+                kind: 'document',
+                mime: front.converted ? 'image/jpeg' : photo.mimeType || 'image/jpeg',
+                uri: front.uri,
+              })
+            ).id;
+          }
+          if (staged?.back?.key) body.backStagingKey = staged.back.key;
+          else if (back)
+            body.$back = (await files!.keep({ id: uuidv7(), kind: 'document', mime: 'image/jpeg', uri: back.uri })).id;
+          const { outcome: filed } = await createFromPhone(engine, {
+            op: 'document.supply',
+            lane: `document:${type.id}`,
+            body,
+          });
+          return filed;
+        },
+        async () => {
+          // Already uploaded while the member was confirming the date.
+          const key =
+            staged?.key ??
+            (await (async () => {
+              const jpeg = await ensureJpeg(photo.uri, photo.mimeType);
+              const mime = jpeg.converted ? 'image/jpeg' : photo.mimeType || 'image/jpeg';
+              const p = await documentsApi.ownUploadUrl({
+                typeId: type.id,
+                mimeType: mime,
+                sizeBytes: jpeg.converted ? jpeg.bytes || photo.fileSize : photo.fileSize,
+              });
+              await uploadToPresignedUrl(p.url, jpeg.uri, mime);
+              return p.key;
+            })());
 
-        const { outcome } = await createFromPhone(offline.engine, { op: 'document.supply', lane: `document:${type.id}`, body });
-        if (outcome.kind === 'refused') {
-          toast.error(
-            (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
-              outcome.message ||
-              t('documents.supply.failed'),
-          );
-          setBusy(false);
-          return false;
-        }
-        toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('documents.supply.submitted'));
-        return true;
+          return documentsApi.submitOwn({
+            stagingKey: key,
+            typeId: type.id,
+            title: type.label,
+            // Date only. A timestamp would put an expiry a few hours either side of
+            // midnight into the wrong day depending on where the phone is.
+            // Sent when known — read off the document or typed. Absent is allowed.
+            expiresOn: expiresOn ? toIsoDate(expiresOn) : undefined,
+            // Raw, unparsed. The server recomputes the check digits, so a client
+            // that invented a zone gets a SUSPECT verdict rather than a pass.
+            mrzText: scanned?.barcodeData,
+            // The frame, so what is FILED is the document rather than the table it
+            // was lying on.
+            crop: staged?.crop ?? scanned?.crop ?? null,
+            backStagingKey: staged?.back?.key ?? null,
+            backCrop: staged?.back?.crop ?? null,
+          });
+        },
+      );
+      if (outcome.kind === 'refused') {
+        toast.error(
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+            outcome.message ||
+            t('documents.supply.failed'),
+        );
+        setBusy(false);
+        return false;
       }
-
-      // Already uploaded while the member was confirming the date.
-      const key = staged?.key ?? (await (async () => {
-        const jpeg = await ensureJpeg(photo.uri, photo.mimeType);
-        const mime = jpeg.converted ? 'image/jpeg' : photo.mimeType || 'image/jpeg';
-        const p = await documentsApi.ownUploadUrl({
-          typeId: type.id,
-          mimeType: mime,
-          sizeBytes: jpeg.converted ? jpeg.bytes || photo.fileSize : photo.fileSize,
-        });
-        await uploadToPresignedUrl(p.url, jpeg.uri, mime);
-        return p.key;
-      })());
-
-      await documentsApi.submitOwn({
-        stagingKey: key,
-        typeId: type.id,
-        title: type.label,
-        // Date only. A timestamp would put an expiry a few hours either side of
-        // midnight into the wrong day depending on where the phone is.
-        // Sent when known — read off the document or typed. Absent is allowed.
-        expiresOn: expiresOn ? toIsoDate(expiresOn) : undefined,
-        // Raw, unparsed. The server recomputes the check digits, so a client
-        // that invented a zone gets a SUSPECT verdict rather than a pass.
-        mrzText: scanned?.barcodeData,
-        // The frame, so what is FILED is the document rather than the table it
-        // was lying on.
-        crop: staged?.crop ?? scanned?.crop ?? null,
-        backStagingKey: staged?.back?.key ?? null,
-        backCrop: staged?.back?.crop ?? null,
-      });
-      toast.success(t('documents.supply.submitted'));
+      toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('documents.supply.submitted'));
       return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('documents.supply.failed'));
@@ -215,9 +227,21 @@ export function useCredentialPhoto({
   };
 
   return {
-    photo, expiresOn, setExpiresOn, showDate, setShowDate, scanning, setScanning,
-    reading, readFields, setOverriding, prompt,
-    clearPhoto, pickExisting, onScanned, submit,
+    photo,
+    expiresOn,
+    setExpiresOn,
+    showDate,
+    setShowDate,
+    scanning,
+    setScanning,
+    reading,
+    readFields,
+    setOverriding,
+    prompt,
+    clearPhoto,
+    pickExisting,
+    onScanned,
+    submit,
   };
 }
 

@@ -233,6 +233,25 @@ Each becomes a folder of real Nest sub-modules with their own providers and test
 > dialog hook, the radius readout) and the key `attendance.rest.unpaid` (now `notCounted` — the text never said
 > "unpaid"). Metro export (Android) bundles: 11 MB — the 6.5 "before".
 
+> **Status (2026-10-22): 6.2 DONE (one write path).** Every hand-written `if (offline.engine) … else …` write now runs
+> through `useQueuedWrite().run(queued, direct)` (+ `keepCreated()` for creates that mint an id,
+> `useOwnProfileWrite()` for the member's own settings): job status, crew, comments, files, decline, resume, handover,
+> New job + photos, credential photo, issues, expenses, logbook, proposals, time-off cancel, presence, time format,
+> clock-in pick, language, work log. `ENGINE_FALLBACKS` 21 → 13 files; what stays is a multi-call upload-then-submit
+> block inside a `run` (the guard counts its last call) or not a queue shape (chat photos, multi-page papers, the
+> portal's profile). `offline/` no longer imports a feature (the remembered-answers store is `lib/remember/`;
+> guard `offline-boundary.spec`). Kept exactly as before, worth knowing: a few writes already differed between the
+> two modes (issue reply trimmed only when direct; direct expense/log/proposal submit even if the photo failed; a
+> direct work-log failure falls into the legacy local queue).
+>
+> ⚠️ **Decision needed — ~47 writes to routes the queue has no operation for** (would need a server sync op each).
+> Candidates a member makes in the field: checklist tick/owner, custom-field values, deleting a job photo, snoozing
+> a rest, deleting a work-log note, withdrawing one's own issue / asset proposal / log entry, chat edit/remove,
+> calendar respond/snooze, notification preferences. Online by nature (leave as is): take/return a role job (a queued
+> take would promise a place somebody else got), office edits/assign, approvals and stand-ins, attendance
+> corrections, rota, register hand-overs, signing documents, invitations/members, onboarding/auth/account,
+> telemetry (heartbeat, excursions, location), push tokens.
+
 ---
 
 ## Order, size and what you get

@@ -5,6 +5,8 @@ import type { DetailAttachment } from '../../lib/api/types';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
 import { useOffline } from '../../offline/offline-context';
+import { useQueuedWrite } from '../../offline/actions/queued-write';
+import { keepCreated } from '../../offline/actions/keep-created';
 import { useRefreshMyHandovers } from '../../hooks/useMyHandovers';
 import { useRefreshJobTime } from '../../hooks/useJobTime';
 import { mergeAttachments, pendingAttachments } from '../../offline/tasks/overlay';
@@ -22,6 +24,7 @@ export function useJobWritesState(
   const toast = useToast();
   const { user } = useAuth();
   const offline = useOffline();
+  const write = useQueuedWrite();
   // The home strip and the clock-out sheet read the same picture this changes.
   const refreshHandovers = useRefreshMyHandovers();
   // Every move changes the job's time split; read it again.
@@ -118,32 +121,33 @@ export function useJobWritesState(
       const content = text.trim();
       try {
         setBusy(true);
-        if (offline.engine) {
-          // Saved on the phone first; shown at once, marked until the server has it.
-          const { id: commentId, outcome } = await addTaskComment(offline.engine, { taskId: task.id, content });
-          if (outcome.kind === 'refused') {
-            fail(refusalText(outcome));
-            return false;
-          }
-          // The server's copy of the comment when it was sent now.
-          const saved = (outcome.kind === 'done' ? outcome.response : null) as Comment | null;
-          setComments((prev) => [
-            ...prev.filter((c) => c.id !== commentId),
-            {
-              ...(saved ?? {
-                id: commentId,
-                content,
-                createdAt: new Date().toISOString(),
-                user: { id: user?.id ?? '', firstName: user?.firstName ?? '', lastName: user?.lastName ?? '' },
-              }),
-              pendingSync: outcome.kind === 'queued',
-            },
-          ]);
-          if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-          return true;
+        // Saved on the phone first where there is an outbox; shown at once, marked until the server has it.
+        const sent = keepCreated();
+        const outcome = await write.run(
+          (engine) => sent.from(addTaskComment(engine, { taskId: task.id, content })),
+          () => tasksApi.addComment(task.id, content),
+        );
+        // The phone's id for it — none when the direct call ran (the server's copy is the response).
+        const commentId = sent.value?.id ?? '';
+        if (outcome.kind === 'refused') {
+          fail(refusalText(outcome));
+          return false;
         }
-        const comment = await tasksApi.addComment(task.id, content);
-        setComments((prev) => [...prev, comment]);
+        // The server's copy of the comment when it was sent now.
+        const saved = (outcome.kind === 'done' ? outcome.response : null) as Comment | null;
+        setComments((prev) => [
+          ...prev.filter((c) => c.id !== commentId),
+          {
+            ...(saved ?? {
+              id: commentId,
+              content,
+              createdAt: new Date().toISOString(),
+              user: { id: user?.id ?? '', firstName: user?.firstName ?? '', lastName: user?.lastName ?? '' },
+            }),
+            pendingSync: outcome.kind === 'queued',
+          },
+        ]);
+        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
         return true;
       } catch (err) {
         fail(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToAddComment'));
@@ -152,7 +156,7 @@ export function useJobWritesState(
         setBusy(false);
       }
     },
-    [task, offline.engine, refusalText, setComments, toast, t, user?.id, user?.firstName, user?.lastName],
+    [task, write, refusalText, setComments, toast, t, user?.id, user?.firstName, user?.lastName],
   );
 
   /* ---------------- photos & files ---------------- */

@@ -94,11 +94,11 @@ describe('files first, then the move — through the one status write', () => {
 
   it('every file goes through the ONE sender: queued with a signature kind for the pad, direct only without the engine', () => {
     const send = writes.slice(writes.indexOf('const sendFile = useCallback('), writes.indexOf('const photoRefused'));
-    expect(send).toMatch(
-      /if \(offline\.engine && offline\.files\) \{[\s\S]*?addTaskPhoto\(offline\.engine, offline\.files/,
-    );
-    expect(send).toMatch(/photo\.uri\.startsWith\('data:'\) \? \{ base64: photo\.uri, kind: 'signature' as const \}/);
-    expect(send).toMatch(/waitFor: sent\.state === 'done' \? null : sent\.opId/);
+    // One road through `write.run`: queued where there is an engine, `uploadDirect` only without one.
+    expect(send).toMatch(/write\.run\(\s*\(engine\) =>[\s\S]*?addTaskPhoto\(engine, files!/);
+    expect(send).toMatch(/\(\) => uploadDirect\(taskId, photo\)/);
+    expect(send).toMatch(/photo\.uri\.startsWith\('data:'\)\s*\?\s*\{ base64: photo\.uri, kind: 'signature' as const \}/);
+    expect(send).toMatch(/waitFor: sent\.value\.state === 'done' \? null : sent\.value\.opId/);
     expect(writes.match(/addTaskPhoto\(/g)?.length).toBe(1);
   });
 

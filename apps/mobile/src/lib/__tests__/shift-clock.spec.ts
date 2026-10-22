@@ -202,10 +202,10 @@ describe('§1 — the eight states, and no ninth', () => {
       app container held no offline database at all. Nothing changed, and it
       looked exactly like the bug.
 
-      It lives in `home/remember/` now, because every widget has this shape.
+      It lives in `lib/remember/` now, because every widget has this shape.
     */
-    const store = code('features/home/remember/store.ts');
-    const hook = code('features/home/remember/use-remembered.ts');
+    const store = code('lib/remember/store.ts');
+    const hook = code('lib/remember/use-remembered.ts');
     const shift = code('offline/attendance/use-shift.ts') + code('offline/attendance/load-shift.ts');
     const totals = code('features/home/use-schedule-totals.ts');
 
@@ -265,7 +265,7 @@ describe('§1 — the eight states, and no ninth', () => {
       After, three cold starts produced no `Ready to start` frame at all.
     */
     const totals = code('features/home/use-schedule-totals.ts');
-    const hook = code('features/home/remember/use-remembered.ts');
+    const hook = code('lib/remember/use-remembered.ts');
     const card = shiftCard(code);
 
     // "Nothing ended today" and "not told yet" are the same null — hence `ready`.
@@ -370,7 +370,7 @@ describe('§2 — three kinds of worker', () => {
       the question, so a phone left open across midnight re-asks on its own.
     */
     expect(hook).toMatch(/revision: `\$\{iso\(startOfMonth\(now\)\)\}\|\$\{iso\(startOfWeek\(now\)\)\}/);
-    expect(code('features/home/remember/use-remembered.ts')).toMatch(/askedFor\.current === key/);
+    expect(code('lib/remember/use-remembered.ts')).toMatch(/askedFor\.current === key/);
     // And never for somebody who will not see it.
     /*
       A FIXED member on the clock is measured against TODAY, which comes off
@@ -972,7 +972,7 @@ describe('the totals, and two silent ways they were always zero', () => {
 
       It is `useRemembered`'s job now, so every widget gets it.
     */
-    expect(code('features/home/remember/use-remembered.ts'))
+    expect(code('lib/remember/use-remembered.ts'))
       .toMatch(/if \(!alive && askedFor\.current === key\) askedFor\.current = '';/);
   });
 

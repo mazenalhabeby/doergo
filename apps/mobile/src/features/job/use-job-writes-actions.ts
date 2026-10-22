@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import { tasksApi, TaskStatus } from '../../lib/api';
 import { resumeJob, writeHandover } from '../../offline/tasks/task-actions';
+import { useQueuedWrite } from '../../offline/actions/queued-write';
+import { keepCreated } from '../../offline/actions/keep-created';
 import type { PickedImage } from '../../hooks/useImagePicker';
 import type { JobState, JobTask } from './use-job';
 import { refusalText } from '../../lib/distance';
@@ -19,7 +21,6 @@ export function useJobWritesActions(
     t,
     toast,
     user,
-    offline,
     refreshHandovers,
     refreshJobTime,
     task,
@@ -48,6 +49,7 @@ export function useJobWritesActions(
     deleteAttachment,
     decline,
   } = useJobWritesData(job, deps);
+  const write = useQueuedWrite();
 
   /* ---------------- report an issue ---------------- */
 
@@ -71,26 +73,24 @@ export function useJobWritesActions(
     if (!task) return false;
     try {
       setBusy(true);
-      if (offline.engine) {
-        const outcome = await resumeJob(offline.engine, { taskId: task.id });
-        if (outcome.kind === 'refused') {
-          fail(refusalText(outcome));
-          return false;
-        }
-        setTask(
-          (prev) =>
-            ({
-              ...(prev ?? task),
-              pausedAt: null,
-              pausedById: null,
-              pendingSync: outcome.kind === 'queued',
-            }) as JobTask,
-        );
-        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-      } else {
-        await tasksApi.resumeWork(task.id);
-        setTask((prev) => ({ ...(prev ?? task), pausedAt: null, pausedById: null }) as JobTask);
+      const outcome = await write.run(
+        (engine) => resumeJob(engine, { taskId: task.id }),
+        () => tasksApi.resumeWork(task.id),
+      );
+      if (outcome.kind === 'refused') {
+        fail(refusalText(outcome));
+        return false;
       }
+      setTask(
+        (prev) =>
+          ({
+            ...(prev ?? task),
+            pausedAt: null,
+            pausedById: null,
+            pendingSync: outcome.kind === 'queued',
+          }) as JobTask,
+      );
+      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
       pushLocalEvent({ eventType: 'RESUMED', metadata: {}, pendingSync: false });
       refreshHandovers();
       refreshJobTime(task.id);
@@ -102,7 +102,7 @@ export function useJobWritesActions(
     } finally {
       setBusy(false);
     }
-  }, [task, offline.engine, refusalText, setTask, pushLocalEvent, toast, t, refreshHandovers, refreshJobTime]);
+  }, [task, write, refusalText, setTask, pushLocalEvent, toast, t, refreshHandovers, refreshJobTime]);
 
   /**
    * "What I did, and what is left." The photos go onto the job first (queued
@@ -124,34 +124,28 @@ export function useJobWritesActions(
           if (sent.id) ids.push(sent.id);
           if (sent.waitFor) waitFor.push(sent.waitFor);
         }
-        let queued = false;
-        let saved: Handover;
-        if (offline.engine) {
-          const { id, outcome } = await writeHandover(offline.engine, {
-            taskId: task.id,
-            note,
-            attachmentIds: ids,
-            dependsOn: waitFor,
-          });
-          if (outcome.kind === 'refused') {
-            fail(refusalText(outcome));
-            return false;
-          }
-          queued = outcome.kind === 'queued';
-          saved =
-            outcome.kind === 'done'
-              ? (outcome.response as Handover) // the server's copy of the note
-              : {
-                  id,
-                  note,
-                  attachmentIds: ids,
-                  workedMinutes: null,
-                  createdAt: new Date().toISOString(),
-                  author: { id: user?.id ?? '', firstName: user?.firstName ?? '', lastName: user?.lastName ?? '' },
-                };
-        } else {
-          saved = await tasksApi.writeHandover(task.id, { note, attachmentIds: ids });
+        const sent = keepCreated();
+        const outcome = await write.run(
+          (engine) =>
+            sent.from(writeHandover(engine, { taskId: task.id, note, attachmentIds: ids, dependsOn: waitFor })),
+          () => tasksApi.writeHandover(task.id, { note, attachmentIds: ids }),
+        );
+        if (outcome.kind === 'refused') {
+          fail(refusalText(outcome));
+          return false;
         }
+        const queued = outcome.kind === 'queued';
+        const saved: Handover =
+          outcome.kind === 'done'
+            ? (outcome.response as Handover) // the server's copy of the note
+            : {
+                id: sent.value?.id ?? '',
+                note,
+                attachmentIds: ids,
+                workedMinutes: null,
+                createdAt: new Date().toISOString(),
+                author: { id: user?.id ?? '', firstName: user?.firstName ?? '', lastName: user?.lastName ?? '' },
+              };
         setTask((prev) => {
           const base = (prev ?? task) as JobTask;
           return {
@@ -176,7 +170,7 @@ export function useJobWritesActions(
     [
       task,
       sendFile,
-      offline.engine,
+      write,
       refusalText,
       setTask,
       refreshAttachments,

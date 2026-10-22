@@ -84,7 +84,7 @@ describe('the job page — the screen', () => {
 
   it('is the one place a status leaves the phone, through the outbox and the shared fix', () => {
     expect(screen).toMatch(/takeStatusFix\(newStatus\)/);
-    expect(screen).toMatch(/changeTaskStatus\(offline\.engine/);
+    expect(screen).toMatch(/write\.run\(\s*\(engine\) =>\s*changeTaskStatus\(engine,/);
     const writers = files.filter((f) => f !== SCREEN && /changeTaskStatus\(|tasksApi\.updateStatus\(/.test(read(f)));
     expect(writers.map(rel)).toEqual([]);
   });

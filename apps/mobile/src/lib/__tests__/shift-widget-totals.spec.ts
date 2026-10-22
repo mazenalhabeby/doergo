@@ -7,7 +7,7 @@ import type { TimeEntry } from '@hbcfield/shared/client';
 
 // The pure readers only — the network and the keep-store are not under test.
 jest.mock('../../lib/api/attendance', () => ({ attendanceApi: {} }));
-jest.mock('../../features/home/remember/use-remembered', () => ({ useRemembered: () => ({ data: null, ready: true }) }));
+jest.mock('../remember/use-remembered', () => ({ useRemembered: () => ({ data: null, ready: true }) }));
 
 import { readTotals, historyFrom } from '../../features/home/use-schedule-totals';
 

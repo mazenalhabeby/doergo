@@ -5,6 +5,7 @@ import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useSocketContext } from '../../contexts/socket-context';
 import { useOffline, useSyncStatus } from '../../offline/offline-context';
+import { useQueuedWrite } from '../../offline/actions/queued-write';
 import { pendingIssueEvents, sendIssueMessageFromPhone } from '../../offline/issues/issue-actions';
 import { shiftIssuesApi, type ShiftIssue } from '../../lib/api/shift-issues';
 import { useImagePicker, type PickedImage } from '../../hooks/useImagePicker';
@@ -20,13 +21,16 @@ export function useShiftIssueThreadSheet({
   issueId,
   canManage,
   currentUserId,
-}: Pick<{
-  visible: boolean;
-  onClose: () => void;
-  issueId: string | null;
-  canManage?: boolean;
-  currentUserId?: string;
-}, 'visible' | 'onClose' | 'issueId' | 'canManage' | 'currentUserId'>) {
+}: Pick<
+  {
+    visible: boolean;
+    onClose: () => void;
+    issueId: string | null;
+    canManage?: boolean;
+    currentUserId?: string;
+  },
+  'visible' | 'onClose' | 'issueId' | 'canManage' | 'currentUserId'
+>) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const c = amazen.color;
@@ -34,6 +38,7 @@ export function useShiftIssueThreadSheet({
   const { subscribe } = useSocketContext();
   const { pickFromGallery, takePhoto } = useImagePicker();
   const offline = useOffline();
+  const write = useQueuedWrite();
   const { operations } = useSyncStatus();
 
   const [issue, setIssue] = useState<ShiftIssue | null>(null);
@@ -73,9 +78,14 @@ export function useShiftIssueThreadSheet({
     read came back — on a slow connection, long enough to reply to the wrong
     one.
   */
-  useEffect(() => { setIssue(null); setFailed(false); }, [issueId]);
+  useEffect(() => {
+    setIssue(null);
+    setFailed(false);
+  }, [issueId]);
 
-  useEffect(() => { if (visible && issueId) void load(); }, [visible, issueId, load]);
+  useEffect(() => {
+    if (visible && issueId) void load();
+  }, [visible, issueId, load]);
 
   // Live: refresh the thread on any socket event for this issue.
   useEffect(() => {
@@ -105,34 +115,58 @@ export function useShiftIssueThreadSheet({
     if (!issueId || (!draft.trim() && picked.length === 0)) return;
     setBusy(true);
     try {
-      if (offline.engine && offline.files) {
-        const outcome = await sendIssueMessageFromPhone(offline.engine, offline.files, {
-          issueId,
-          body: draft,
-          photos: picked.map((p) => ({ uri: p.uri, fileName: p.fileName, mimeType: p.mimeType, width: p.width, height: p.height })),
-        });
-        if (outcome.kind === 'refused') return;
-        setDraft(''); setPicked([]);
-        if (outcome.kind === 'done') await load();
-        return;
-      }
-      const attachments = picked.length ? await uploadPhotos(issueId, picked) : [];
-      await shiftIssuesApi.message(issueId, { body: draft.trim(), attachments });
-      setDraft(''); setPicked([]);
-      await load();
-    } catch { /* the client reports its own failures */ } finally { setBusy(false); }
-  }, [issueId, draft, picked, load, offline.engine, offline.files]);
+      const files = offline.files; // starts with the engine — there whenever `write.run` queues
+      const outcome = await write.run(
+        (engine) =>
+          sendIssueMessageFromPhone(engine, files!, {
+            issueId,
+            body: draft,
+            photos: picked.map((p) => ({
+              uri: p.uri,
+              fileName: p.fileName,
+              mimeType: p.mimeType,
+              width: p.width,
+              height: p.height,
+            })),
+          }),
+        // Straight to the server: the photos are uploaded first, the message names them.
+        async () => {
+          const attachments = picked.length ? await uploadPhotos(issueId, picked) : [];
+          return shiftIssuesApi.message(issueId, { body: draft.trim(), attachments });
+        },
+      );
+      if (outcome.kind === 'refused') return;
+      setDraft('');
+      setPicked([]);
+      if (outcome.kind === 'done') await load();
+    } catch {
+      /* the client reports its own failures */
+    } finally {
+      setBusy(false);
+    }
+  }, [issueId, draft, picked, load, write, offline.files]);
 
   const addPhoto = useCallback(async () => {
     const img = await takePhoto('issue-photo');
-    if (img) { setPicked((p) => [...p, img].slice(0, MAX_PHOTOS)); return; }
+    if (img) {
+      setPicked((p) => [...p, img].slice(0, MAX_PHOTOS));
+      return;
+    }
     const imgs = await pickFromGallery('issue-photo');
     if (imgs.length) setPicked((p) => [...p, ...imgs].slice(0, MAX_PHOTOS));
   }, [takePhoto, pickFromGallery]);
 
-  const act = useCallback(async (fn: () => Promise<unknown>) => {
-    try { await fn(); await load(); } catch { /* the client reports its own failures */ }
-  }, [load]);
+  const act = useCallback(
+    async (fn: () => Promise<unknown>) => {
+      try {
+        await fn();
+        await load();
+      } catch {
+        /* the client reports its own failures */
+      }
+    },
+    [load],
+  );
 
   const viewerId = currentUserId ?? user?.id ?? null;
   const offered: IssueActions = issue

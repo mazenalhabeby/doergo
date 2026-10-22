@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { attendanceApi, type NoShow } from '../../lib/api/attendance';
 import { crewAsOf, crewPeopleFrom, type CrewAsOf, type CrewPerson, type CrewEntryInput } from './crew-state';
-import { keep, keptNow, keptOnDisk } from './remember/store';
+import { keep, keptNow, keptOnDisk } from '../../lib/remember/store';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { connectivity } from '../../offline/connectivity';
 

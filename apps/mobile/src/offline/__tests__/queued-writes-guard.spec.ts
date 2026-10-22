@@ -26,11 +26,20 @@ const SCANNED = ['app', 'src/components', 'src/hooks', 'src/screens', 'src/featu
 
   1. The online fallback handed to a queue helper — `queued.run(input, () => api.fn(...))`.
      Recognised here without a list: the helper decides, not the screen.
-  2. The `else` of `if (offline.engine)`. Those are COUNTED per file below. A
-     new direct call in a listed file raises the count and fails, which is the
-     point: it has to be read to know whether it sits behind the engine check.
+  2. Anything else. Those are COUNTED per file below. A new direct call in a
+     listed file raises the count and fails, which is the point: it has to be
+     read to know whether it is a fallback or a write that skips the queue.
+
+  Every write to a queued route is ONE code path through `useQueuedWrite().run`
+  (or `useQueuedCreate`), which picks the outbox or the API by itself. What is
+  left here is either not a queue-helper shape at all (chat photos, sheets of
+  paper, the customer portal) or a fallback the scan cannot see: a direct path
+  that uploads the file first (presign → PUT → the counted call) is more than
+  one call, so it is a block handed to `run`, not the `() => api.fn(...)` the
+  regex below recognises. Those are read by a person, and counted.
 */
-const FALLBACK = 'the no-offline-build path, behind `if (offline.engine)`';
+const UPLOAD_FIRST =
+  'the fallback handed to `write.run` — it uploads the file first (presign → PUT), so it is a block the scan cannot recognise';
 const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: string }> = {
   /*
     A chat message WITH PHOTOS is sent directly: the photos are uploaded first,
@@ -42,97 +51,44 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     why: "a message with photos needs the network (uploaded first); the second call is the queue's own online fallback for words",
   },
   /*
-    The job page split into `src/features/job/` when it was rebuilt to
-    `docs/design/job-flow.html`. The status write stayed on the screen (one
-    call, every step, Blocked and Cancel included — it was three); every other
-    fallback moved with the code into the writes hook.
+    ONE uploader (`sendFile`) for a photo added to the job and for a step
+    form's photos and signatures; its direct path is `uploadDirect`.
   */
-  'app/(app)/task/[id].tsx': {
-    calls: { 'tasksApi.updateStatus': 1 },
-    why: FALLBACK,
-  },
-  // A crew on one job (offline/tasks/crew-actions.ts): the lead hand-over's direct path.
-  'src/features/job/use-crew.ts': {
-    calls: { 'tasksApi.changeLead': 1 },
-    why: FALLBACK,
-  },
-  // The job's writes (use-job-writes.ts), split 2026-10-17 into these parts — the same calls, the same counts.
-  'src/features/job/use-job-writes-state.ts': {
-    calls: { 'tasksApi.addComment': 1 },
-    why: FALLBACK,
-  },
-  'src/features/job/use-job-writes-data.ts': {
-    calls: {
-      'tasksApi.declineTask': 1,
-      /*
-        ONE uploader (`sendFile`) for a photo added to the job and for a step
-        form's photos and signatures. The old finish path (`reportsApi.completeTask`
-        + report photos) is gone: a step's report is its form, answered on the
-        status change itself.
-      */
-      'taskAttachmentsApi.confirmUpload': 1,
-    },
-    why: FALLBACK,
-  },
-  'src/features/job/use-job-writes-actions.ts': {
-    calls: {
-      // Paused at a clock-out: picking it back up, and the handover note.
-      'tasksApi.resumeWork': 1,
-      'tasksApi.writeHandover': 1,
-    },
-    why: FALLBACK,
-  },
-  /*
-    New job was rebuilt to `docs/design/job-flow.html`; the route is thin now
-    and the send moved with the code into its hook — the same two calls.
-  */
-  'src/features/new-job/use-create-job.ts': {
-    calls: { 'tasksApi.create': 1, 'taskAttachmentsApi.confirmUpload': 1 },
-    why: FALLBACK,
-  },
+  'src/features/job/use-job-writes-data.ts': { calls: { 'taskAttachmentsApi.confirmUpload': 1 }, why: UPLOAD_FIRST },
+  // New job: the task goes through `write.run`; each photo too, its direct path `uploadPhotoDirect`.
+  'src/features/new-job/use-create-job.ts': { calls: { 'taskAttachmentsApi.confirmUpload': 1 }, why: UPLOAD_FIRST },
   /*
     The supply sheet split into `src/features/supply-document/`; its two
     direct calls moved with the code, one per hook — the same two as before.
 
-    The credential's is the no-offline-build fallback. The paper one is NOT:
-    `submitPages` files sheets of paper as one document, and it names staging
-    keys that only exist because each sheet was already PUT to the object
-    store. There is nothing to queue: a queued submit citing keys whose uploads
-    never happened would fail on arrival, having told the member it was sent.
-    So it refuses while offline and says so, which is the honest answer for a
-    flow that cannot work without a connection.
+    The credential's is the fallback handed to `write.run` (it uploads the
+    photo first unless it was staged). The paper one is NOT: `submitPages`
+    files sheets of paper as one document, and it names staging keys that only
+    exist because each sheet was already PUT to the object store. There is
+    nothing to queue: a queued submit citing keys whose uploads never happened
+    would fail on arrival, having told the member it was sent. So it refuses
+    while offline and says so, which is the honest answer for a flow that
+    cannot work without a connection.
   */
-  'src/features/supply-document/use-credential-photo.ts': {
-    calls: { 'documentsApi.submitOwn': 1 },
-    why: FALLBACK,
-  },
+  'src/features/supply-document/use-credential-photo.ts': { calls: { 'documentsApi.submitOwn': 1 }, why: UPLOAD_FIRST },
   'src/features/supply-document/use-paper-pages.ts': {
     calls: { 'documentsApi.submitOwn': 1 },
     why: 'multi-sheet submit which cannot be queued — its pages must reach the store first',
   },
   /*
-    The issue sheets split into one file each when they were rebuilt to
-    `shift-clock.md` §4–§7; `shift-issue-sheet.tsx` is now the door they came
-    through and calls nothing itself. The allowance moved with the code — the
-    same two direct calls, in the two files that now make them.
+    The issue sheets: the report goes through `write.run`. Without the offline
+    layer its photos follow as a message on the new issue — posted AFTER the
+    create, because the S3 key is namespaced by the issue id. The thread's
+    reply is the fallback handed to `write.run`, its photos uploaded first.
   */
   'src/features/issues/use-report-issue-sheet.ts': {
-    // the sheet's logic, since the split
-    calls: { 'shiftIssuesApi.create': 1, 'shiftIssuesApi.message': 1 },
-    why: `${FALLBACK}. The photo message is posted AFTER create, because the S3 key is namespaced by the issue id`,
+    calls: { 'shiftIssuesApi.message': 1 },
+    why: 'the no-offline-build photos of a new issue: posted after the create, the S3 key is namespaced by the issue id',
   },
-  'src/features/issues/use-shift-issue-thread-sheet.ts': { calls: { 'shiftIssuesApi.message': 1 }, why: FALLBACK },
-  'src/features/equipment/use-asset-expense-screen.ts': { calls: { 'assetsApi.submitExpense': 1 }, why: FALLBACK }, // asset-expense's logic, since the split
-  'src/features/equipment/use-asset-log-screen.ts': { calls: { 'assetsApi.createLog': 1 }, why: FALLBACK }, // asset-log's logic, since the split
-  'src/features/documents/use-send-document-screen.ts': { calls: { 'assetProposalsApi.raise': 1 }, why: FALLBACK },
-  // One copy of a member's leave, shared by the Time off tab and the Time tab.
-  'src/features/time/use-my-time-off.ts': { calls: { 'timeOffApi.cancel': 1 }, why: FALLBACK },
-  'src/features/profile/use-profile-screen.ts': { calls: { 'userApi.setPresence': 1 }, why: FALLBACK },
-  // Time format and language: both pages live in one file now.
-  'src/features/settings/choice-pages.tsx': {
-    calls: { 'userApi.setTimeFormat': 1, 'userApi.setLocale': 1, 'userApi.setClockInPick': 1 },
-    why: FALLBACK,
-  },
+  'src/features/issues/use-shift-issue-thread-sheet.ts': { calls: { 'shiftIssuesApi.message': 1 }, why: UPLOAD_FIRST },
+  'src/features/equipment/use-asset-expense-screen.ts': { calls: { 'assetsApi.submitExpense': 1 }, why: UPLOAD_FIRST },
+  'src/features/equipment/use-asset-log-screen.ts': { calls: { 'assetsApi.createLog': 1 }, why: UPLOAD_FIRST },
+  'src/features/documents/use-send-document-screen.ts': { calls: { 'assetProposalsApi.raise': 1 }, why: UPLOAD_FIRST },
   // The client portal runs no offline layer: a client edits their name at home, not in a basement.
   'app/(customer)/edit-profile.tsx': {
     calls: { 'userApi.updateProfile': 1 },
@@ -144,10 +100,10 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     calls: { 'userApi.setLocale': 1 },
     why: 'the customer portal has no outbox for profile changes',
   },
-  // The work log's data moved out of the sheet so the Today card reads the same notes.
+  // The work log's legacy queue (`legacyAdd`) is the fallback handed to `write.run`: a note, then its photos.
   'src/features/worklog/use-worklog.ts': {
     calls: { 'worklogApi.addNote': 1, 'worklogApi.confirmAttachment': 1 },
-    why: 'directSave: the legacy path for a build without the offline layer',
+    why: 'legacyAdd: the fallback handed to `write.run` — the old queue for a build without the offline layer',
   },
 };
 

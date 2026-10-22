@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { TimeEntry } from '@hbcfield/shared/client';
 import { attendanceApi } from '../../lib/api/attendance';
-import { useRemembered } from './remember/use-remembered';
+import { useRemembered } from '../../lib/remember/use-remembered';
 import type { ScheduleKind } from './shift-state';
 import { localDateKey } from '@hbcfield/shared/client';
 

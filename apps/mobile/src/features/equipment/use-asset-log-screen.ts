@@ -24,6 +24,7 @@ import { COLORS } from '../../lib/constants';
 import { logTypeLabel } from '../../lib/log-display';
 import { useOffline } from '../../offline/offline-context';
 import { logFromPhone } from '../../offline/assets/log-actions';
+import { useQueuedWrite } from '../../offline/actions/queued-write';
 import { caught } from '../../lib/caught';
 
 /**
@@ -56,6 +57,7 @@ export function useAssetLogScreen() {
   const tt = t as unknown as (k: string, d: string, o?: Record<string, unknown>) => string;
   const toast = useToast();
   const offline = useOffline();
+  const write = useQueuedWrite();
   const insets = useSafeAreaInsets();
   const { takePhoto, pickFromGallery } = useImagePicker();
   const params = useLocalSearchParams<{ assetId?: string; logType?: string; from?: string }>();
@@ -203,52 +205,51 @@ export function useAssetLogScreen() {
     }
     setSending(true);
     try {
-      if (offline.engine && offline.files) {
+      const files = offline.files; // starts with the engine — there whenever `write.run` queues
+      const outcome = await write.run(
         // Saved on the phone with its photo; both send themselves.
-        const outcome = await logFromPhone(offline.engine, offline.files, {
-          assetId, logType: type.key, values, note: note.trim() || undefined,
-          occurredAt: occurredAt.toISOString(), photo,
-        });
-        if (outcome.kind === 'refused') {
-          toast.error(
-            (outcome.code && tt(`offline.errors.${outcome.code}`, '')) ||
-              outcome.message ||
-              tt('logbook.sendFailed', 'Could not send it'),
-          );
-          return;
-        }
-        toast.success(
-          outcome.kind === 'queued'
-            ? tt('offline.savedForLater', 'Saved — it will send itself')
-            : tt('logbook.sent', 'Logged'),
+        (engine) =>
+          logFromPhone(engine, files!, {
+            assetId, logType: type.key, values, note: note.trim() || undefined,
+            occurredAt: occurredAt.toISOString(), photo,
+          }),
+        async () => {
+          /*
+            A build without the offline layer. The photo goes phone → S3 directly
+            under this asset's prefix; a failed upload does NOT cost the entry — the
+            odometer and the date are what the logbook needs, the picture is evidence.
+          */
+          let receiptKey: string | undefined;
+          if (photo) {
+            try {
+              const presign = await assetsApi.presignLog(assetId, {
+                logType: type.key, fileName: `photo-${Date.now()}.jpg`, mimeType: photo.mime, occurredAt: occurredAt.toISOString(),
+              });
+              await uploadToPresignedUrl(presign.uploadUrl, photo.uri, photo.mime);
+              receiptKey = presign.fileKey;
+            } catch {
+              toast.info(tt('logbook.photoFailed', 'The photo did not upload — sending the entry anyway.'));
+            }
+          }
+          return assetsApi.createLog(assetId, {
+            logType: type.key, values, note: note.trim() || undefined, occurredAt: occurredAt.toISOString(),
+            receiptKey, receiptName: receiptKey ? 'photo.jpg' : undefined, receiptMime: receiptKey ? photo?.mime : undefined,
+          });
+        },
+      );
+      if (outcome.kind === 'refused') {
+        toast.error(
+          (outcome.code && tt(`offline.errors.${outcome.code}`, '')) ||
+            outcome.message ||
+            tt('logbook.sendFailed', 'Could not send it'),
         );
-        if (photo) forgetPhoto(photo.uri);
-        forgetHeldAssets(); // the profile's count and list read this again
-        router.back();
         return;
       }
-      /*
-        A build without the offline layer. The photo goes phone → S3 directly
-        under this asset's prefix; a failed upload does NOT cost the entry — the
-        odometer and the date are what the logbook needs, the picture is evidence.
-      */
-      let receiptKey: string | undefined;
-      if (photo) {
-        try {
-          const presign = await assetsApi.presignLog(assetId, {
-            logType: type.key, fileName: `photo-${Date.now()}.jpg`, mimeType: photo.mime, occurredAt: occurredAt.toISOString(),
-          });
-          await uploadToPresignedUrl(presign.uploadUrl, photo.uri, photo.mime);
-          receiptKey = presign.fileKey;
-        } catch {
-          toast.info(tt('logbook.photoFailed', 'The photo did not upload — sending the entry anyway.'));
-        }
-      }
-      await assetsApi.createLog(assetId, {
-        logType: type.key, values, note: note.trim() || undefined, occurredAt: occurredAt.toISOString(),
-        receiptKey, receiptName: receiptKey ? 'photo.jpg' : undefined, receiptMime: receiptKey ? photo?.mime : undefined,
-      });
-      toast.success(tt('logbook.sent', 'Logged'));
+      toast.success(
+        outcome.kind === 'queued'
+          ? tt('offline.savedForLater', 'Saved — it will send itself')
+          : tt('logbook.sent', 'Logged'),
+      );
       if (photo) forgetPhoto(photo.uri);
       forgetHeldAssets(); // the profile's count and list read this again
       router.back();
@@ -258,7 +259,7 @@ export function useAssetLogScreen() {
       setSending(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, values, photo, shape, when, note, assetId, canManageAssets, offline.engine, offline.files, forgetPhoto]);
+  }, [type, values, photo, shape, when, note, assetId, canManageAssets, write, offline.files, forgetPhoto]);
 
   const title = type ? logTypeLabel(type, tt) : tt('logbook.title', 'What did you do?');
 

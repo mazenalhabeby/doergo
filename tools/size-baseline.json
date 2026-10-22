@@ -115,10 +115,6 @@
   "lines": 80,
   "long": 1
  },
- "apps/mobile/src/features/home/remember/use-remembered.ts": {
-  "lines": 126,
-  "long": 1
- },
  "apps/mobile/src/features/home/today-card.tsx": {
   "lines": 118,
   "long": 1
@@ -229,6 +225,10 @@
  },
  "apps/mobile/src/lib/notification-route.ts": {
   "lines": 201,
+  "long": 1
+ },
+ "apps/mobile/src/lib/remember/use-remembered.ts": {
+  "lines": 126,
   "long": 1
  },
  "apps/mobile/src/offline/attendance/clock-in-check.ts": {

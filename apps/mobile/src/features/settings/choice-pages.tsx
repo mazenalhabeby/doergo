@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme, type ThemeMode } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
-import { useOffline } from '../../offline/offline-context';
-import { updateOwnProfile } from '../../offline/profile/profile-actions';
+import { useOwnProfileWrite } from '../../offline/profile/use-own-profile-write';
 import { userApi } from '../../lib/api';
 import { changeLanguage, getCurrentLanguage, supportedLanguages } from '../../i18n';
 import { getAmazen } from '../../theme/amazen';
@@ -28,7 +27,16 @@ function Swatch({ mode }: { mode: ThemeMode }) {
   );
   const pick = mode === 'light' ? [light, light] : mode === 'dark' ? [dark, dark] : [light, dark];
   return (
-    <View style={{ width: 48, height: 64, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(127,127,127,0.25)' }}>
+    <View
+      style={{
+        width: 48,
+        height: 64,
+        borderRadius: 12,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(127,127,127,0.25)',
+      }}
+    >
       {half(pick[0]!.tile, pick[1]!.tile)}
       {half(pick[0]!.well, pick[1]!.well)}
     </View>
@@ -70,8 +78,8 @@ const amazenPad = 4;
 export function TimeFormatPage() {
   const { amazen } = useTheme();
   const { t } = useTranslation();
-  const { user, refreshUser, patchUser } = useAuth();
-  const offline = useOffline();
+  const { user, refreshUser } = useAuth();
+  const ownProfile = useOwnProfileWrite();
   const toast = useToast();
   const current: '24h' | '12h' = user?.timeFormat === '12h' ? '12h' : '24h';
   const [saving, setSaving] = useState(false);
@@ -80,15 +88,11 @@ export function TimeFormatPage() {
     if (value === current || saving) return;
     setSaving(true);
     try {
-      if (offline.engine && user?.id) {
-        const outcome = await updateOwnProfile(offline.engine, user.id, { timeFormat: value });
-        if (outcome.kind === 'refused') throw new Error(outcome.message);
-        patchUser({ timeFormat: value });
-        if (outcome.kind === 'queued') toast.success(t('offline.savedForLater'));
-        return;
-      }
-      await userApi.setTimeFormat(value);
-      await refreshUser();
+      const outcome = await ownProfile.run({ timeFormat: value }, () =>
+        userApi.setTimeFormat(value).then(() => refreshUser()),
+      );
+      if (outcome.kind === 'refused') throw new Error(outcome.message);
+      if (outcome.kind === 'queued') toast.success(t('offline.savedForLater'));
     } catch {
       toast.error(t('profile.timeFormat.failed'));
     } finally {
@@ -114,7 +118,9 @@ export function TimeFormatPage() {
           title={t(`profile.timeFormat.${o.value}`)}
           sub={
             <View style={{ gap: 2, marginTop: 4 }}>
-              <AText numeric style={{ fontFamily: amazen.font.mono, fontSize: 20, color: amazen.color.inkStrong }}>{o.now}</AText>
+              <AText numeric style={{ fontFamily: amazen.font.mono, fontSize: 20, color: amazen.color.inkStrong }}>
+                {o.now}
+              </AText>
               <AText variant="caption" tone="muted">
                 {t('settings.time.shift', { shift: o.shift, defaultValue: 'A shift: {{shift}}' })}
               </AText>
@@ -122,7 +128,9 @@ export function TimeFormatPage() {
           }
         />
       ))}
-      <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>{t('profile.timeFormat.note')}</AText>
+      <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
+        {t('profile.timeFormat.note')}
+      </AText>
     </SettingsPage>
   );
 }
@@ -137,8 +145,8 @@ export function TimeFormatPage() {
  */
 export function ClockInPickPage() {
   const { t } = useTranslation();
-  const { user, refreshUser, patchUser } = useAuth();
-  const offline = useOffline();
+  const { user, refreshUser } = useAuth();
+  const ownProfile = useOwnProfileWrite();
   const toast = useToast();
   const places = useShift().status?.assignedLocations ?? [];
   const current: ClockInPick = parseClockInPick(user?.clockInPick);
@@ -148,15 +156,11 @@ export function ClockInPickPage() {
     if (value === current || saving) return;
     setSaving(true);
     try {
-      if (offline.engine && user?.id) {
-        const outcome = await updateOwnProfile(offline.engine, user.id, { clockInPick: value });
-        if (outcome.kind === 'refused') throw new Error(outcome.message);
-        patchUser({ clockInPick: value });
-        if (outcome.kind === 'queued') toast.success(t('offline.savedForLater'));
-        return;
-      }
-      await userApi.setClockInPick(value);
-      await refreshUser();
+      const outcome = await ownProfile.run({ clockInPick: value }, () =>
+        userApi.setClockInPick(value).then(() => refreshUser()),
+      );
+      if (outcome.kind === 'refused') throw new Error(outcome.message);
+      if (outcome.kind === 'queued') toast.success(t('offline.savedForLater'));
     } catch {
       toast.error(t('settings.clockIn.failed'));
     } finally {
@@ -170,7 +174,9 @@ export function ClockInPickPage() {
   ];
   return (
     <SettingsPage title={t('settings.clockIn.title')}>
-      <AText variant="body" tone="onGlass" style={{ paddingHorizontal: amazenPad }}>{t('settings.clockIn.question')}</AText>
+      <AText variant="body" tone="onGlass" style={{ paddingHorizontal: amazenPad }}>
+        {t('settings.clockIn.question')}
+      </AText>
       {OPTIONS.map((o) => (
         <ChoiceRow
           key={o.value}
@@ -186,7 +192,9 @@ export function ClockInPickPage() {
           {t('settings.clockIn.workspaces', { n: places.length, names: places.map((p) => p.name).join(', ') })}
         </AText>
       ) : null}
-      <AText variant="caption" tone="onGlass" style={{ paddingHorizontal: amazenPad }}>{t('settings.clockIn.footnote')}</AText>
+      <AText variant="caption" tone="onGlass" style={{ paddingHorizontal: amazenPad }}>
+        {t('settings.clockIn.footnote')}
+      </AText>
     </SettingsPage>
   );
 }
@@ -209,23 +217,32 @@ const GREETING: Record<string, string> = {
 export function LanguagePage() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const offline = useOffline();
+  const ownProfile = useOwnProfileWrite();
   const [current, setCurrent] = useState(getCurrentLanguage());
 
-  const choose = useCallback((code: string) => {
-    if (code === current) return;
-    setCurrent(code);
-    void changeLanguage(code);
-    // Saved to the account: the emails HBCField sends this member follow it.
-    if (offline.engine && user?.id) void updateOwnProfile(offline.engine, user.id, { locale: code }).catch(() => undefined);
-    else userApi.setLocale(code).catch(() => undefined);
-  }, [current, offline.engine, user?.id]);
+  const choose = useCallback(
+    (code: string) => {
+      if (code === current) return;
+      setCurrent(code);
+      void changeLanguage(code);
+      // Saved to the account: the emails HBCField sends this member follow it.
+      void ownProfile
+        .run({ locale: code }, () => userApi.setLocale(code), { applyLocally: false })
+        .catch(() => undefined);
+    },
+    [current, ownProfile],
+  );
 
   return (
     <SettingsPage title={t('profile.menu.language', 'Language')}>
       {supportedLanguages.map((l) => (
-        <ChoiceRow key={l.code} on={current === l.code} onPress={() => choose(l.code)} title={l.label}
-          sub={`${GREETING[l.code] ?? ''}${user?.firstName ? `, ${user.firstName}` : ''}`} />
+        <ChoiceRow
+          key={l.code}
+          on={current === l.code}
+          onPress={() => choose(l.code)}
+          title={l.label}
+          sub={`${GREETING[l.code] ?? ''}${user?.firstName ? `, ${user.firstName}` : ''}`}
+        />
       ))}
       <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
         {t('settings.lang.emails', 'Your emails from HBCField come in this language too.')}

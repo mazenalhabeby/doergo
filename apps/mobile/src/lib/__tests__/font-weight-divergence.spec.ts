@@ -21,7 +21,7 @@ import * as path from 'path';
 const SRC = path.resolve(__dirname, '../..');
 
 /** The v2 layer, where the type scale is the law. */
-const DIRS = ['components/amazen', 'components/glyphs', 'home'];
+const DIRS = ['components/amazen', 'components/glyphs', 'features/home'];
 
 function files(): string[] {
   const out: string[] = [];

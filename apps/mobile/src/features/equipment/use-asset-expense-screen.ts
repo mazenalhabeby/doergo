@@ -5,6 +5,7 @@ import { forgetHeldAssets } from '../../hooks/use-held-assets';
 import { assetsApi, uploadToPresignedUrl } from '../../lib/api';
 import { moneyToCents } from '@hbcfield/shared/client';
 import { submitExpenseFromPhone } from '../../offline/assets/expense-actions';
+import { useQueuedWrite } from '../../offline/actions/queued-write';
 import { useAssetExpenseScreenData } from './use-asset-expense-screen-data';
 import { caught } from '../../lib/caught';
 
@@ -47,6 +48,7 @@ export function useAssetExpenseScreen() {
     capture,
     pickFile,
   } = useAssetExpenseScreenData();
+  const write = useQueuedWrite();
 
   const discardShot = useCallback(() => {
     // Whatever was uploaded belongs to the file being discarded; keeping the
@@ -75,78 +77,76 @@ export function useAssetExpenseScreen() {
       return;
     }
     setSending(true);
-    let receiptKey: string | undefined;
     try {
-      if (offline.engine && offline.files) {
+      const files = offline.files; // starts with the engine — there whenever `write.run` queues
+      const outcome = await write.run(
         // Saved on the phone with its receipt; both send themselves.
-        const outcome = await submitExpenseFromPhone(offline.engine, offline.files, {
-          assetId,
-          category,
-          amountCents: cents,
-          note: note.trim() || undefined,
-          occurredAt: occurredAtIso(),
-          photo: shot ? { uri: shot.uri, mime: shot.mime } : null,
-          uploadedKey,
-        });
-        if (outcome.kind === 'refused') {
-          toast.error(
-            (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
-              outcome.message ||
-              t('expenses.sendFailed', 'Could not send it'),
-          );
-          return;
-        }
-        toast.success(
-          outcome.kind === 'queued'
-            ? t('offline.savedForLater')
-            : t('expenses.sent', 'Sent — the office will confirm it.'),
+        (engine) =>
+          submitExpenseFromPhone(engine, files!, {
+            assetId,
+            category,
+            amountCents: cents,
+            note: note.trim() || undefined,
+            occurredAt: occurredAtIso(),
+            photo: shot ? { uri: shot.uri, mime: shot.mime } : null,
+            uploadedKey,
+          }),
+        async () => {
+          let receiptKey: string | undefined;
+          /*
+            The slip goes phone → S3 directly. Presigned for THIS asset under a
+            prefix that names the organization, and the submit step refuses a key
+            outside it — so a key from anywhere else cannot be attached here.
+
+            An upload that fails does NOT stop the expense. The amount and the date
+            are what the books need; the photograph is evidence, and losing it to a
+            motorway signal must not cost somebody the entry as well.
+          */
+          if (uploadedKey) {
+            /*
+              A PDF went up already — it had to, or the server could not have read
+              it. Uploading again would put a second identical object in the bucket
+              that nothing points at, and pay for the transfer twice on a phone.
+            */
+            receiptKey = uploadedKey;
+          } else if (shot) {
+            try {
+              const presign = await assetsApi.presignReceipt(assetId, {
+                fileName: `receipt-${Date.now()}.jpg`,
+                mimeType: shot.mime,
+                occurredAt: occurredAtIso(),
+              });
+              await uploadToPresignedUrl(presign.uploadUrl, shot.uri, shot.mime);
+              receiptKey = presign.fileKey;
+            } catch {
+              toast.info(t('expenses.photoFailed', 'The photo did not upload — sending the amount anyway.'));
+            }
+          }
+
+          return assetsApi.submitExpense(assetId, {
+            category,
+            amountCents: cents,
+            note: note.trim() || undefined,
+            occurredAt: occurredAtIso(),
+            receiptKey,
+            receiptName: receiptKey ? 'receipt.jpg' : undefined,
+            receiptMime: receiptKey ? shot?.mime : undefined,
+          });
+        },
+      );
+      if (outcome.kind === 'refused') {
+        toast.error(
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+            outcome.message ||
+            t('expenses.sendFailed', 'Could not send it'),
         );
-        discardShot();
-        forgetHeldAssets(); // the profile's count and list read this again
-        router.back();
         return;
       }
-      /*
-        The slip goes phone → S3 directly. Presigned for THIS asset under a
-        prefix that names the organization, and the submit step refuses a key
-        outside it — so a key from anywhere else cannot be attached here.
-
-        An upload that fails does NOT stop the expense. The amount and the date
-        are what the books need; the photograph is evidence, and losing it to a
-        motorway signal must not cost somebody the entry as well.
-      */
-      if (uploadedKey) {
-        /*
-          A PDF went up already — it had to, or the server could not have read
-          it. Uploading again would put a second identical object in the bucket
-          that nothing points at, and pay for the transfer twice on a phone.
-        */
-        receiptKey = uploadedKey;
-      } else if (shot) {
-        try {
-          const presign = await assetsApi.presignReceipt(assetId, {
-            fileName: `receipt-${Date.now()}.jpg`,
-            mimeType: shot.mime,
-            occurredAt: occurredAtIso(),
-          });
-          await uploadToPresignedUrl(presign.uploadUrl, shot.uri, shot.mime);
-          receiptKey = presign.fileKey;
-        } catch {
-          toast.info(t('expenses.photoFailed', 'The photo did not upload — sending the amount anyway.'));
-        }
-      }
-
-      await assetsApi.submitExpense(assetId, {
-        category,
-        amountCents: cents,
-        note: note.trim() || undefined,
-        occurredAt: occurredAtIso(),
-        receiptKey,
-        receiptName: receiptKey ? 'receipt.jpg' : undefined,
-        receiptMime: receiptKey ? shot?.mime : undefined,
-      });
-
-      toast.success(t('expenses.sent', 'Sent — the office will confirm it.'));
+      toast.success(
+        outcome.kind === 'queued'
+          ? t('offline.savedForLater')
+          : t('expenses.sent', 'Sent — the office will confirm it.'),
+      );
       discardShot();
       forgetHeldAssets(); // the profile's count and list read this again
       router.back();
@@ -166,7 +166,7 @@ export function useAssetExpenseScreen() {
     discardShot,
     t,
     toast,
-    offline.engine,
+    write,
     offline.files,
     uploadedKey,
   ]);

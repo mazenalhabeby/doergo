@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { tasksApi, taskAttachmentsApi, uploadToPresignedUrl, TaskStatus, type Task } from '../../lib/api';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
-import { useOffline } from '../../offline/offline-context';
+import { useQueuedWrite } from '../../offline/actions/queued-write';
+import { keepCreated } from '../../offline/actions/keep-created';
 import { useRefreshMyHandovers } from '../../hooks/useMyHandovers';
 import { useRefreshJobTime } from '../../hooks/useJobTime';
 import { mergeAttachments, pendingAttachments } from '../../offline/tasks/overlay';
@@ -14,6 +15,27 @@ import { refusalText } from '../../lib/distance';
 import { signatureFile, type DraftPhoto } from './step-form-logic';
 import { type WriteStatus, type Translate, refusalMessage, trackRouteFor, untrackRouteFor } from './job-writes-helpers';
 import { useJobWritesState } from './use-job-writes-state';
+
+/**
+ * A file onto the job with no outbox: presign → PUT → confirm, as it always
+ * was. The fallback `sendFile` hands `write.run` — three calls, so the guard
+ * counts its confirm (`queued-writes-guard.spec`).
+ */
+async function uploadDirect(taskId: string, photo: DraftPhoto) {
+  const { uploadUrl, fileKey, fileUrl } = await taskAttachmentsApi.getPresignedUrl(
+    taskId,
+    photo.fileName,
+    photo.mimeType,
+  );
+  await uploadToPresignedUrl(uploadUrl, photo.uri, photo.mimeType, () => undefined);
+  return taskAttachmentsApi.confirmUpload(taskId, {
+    fileName: photo.fileName,
+    fileKey,
+    fileUrl,
+    fileType: photo.mimeType,
+    fileSize: photo.fileSize,
+  });
+}
 
 /** useJobWrites's state and handlers — everything before its markup, moved here unchanged. */
 export function useJobWritesData(
@@ -50,6 +72,7 @@ export function useJobWritesData(
     addComment,
     refreshAttachments,
   } = useJobWritesState(job, deps);
+  const write = useQueuedWrite();
 
   // A held photo sent in the background: swap the phone's copy for the server's.
   useEffect(() => {
@@ -84,37 +107,32 @@ export function useJobWritesData(
       taskId: string,
       photo: DraftPhoto,
     ): Promise<{ id: string | null; waitFor: string | null; outcome: ActionOutcome }> => {
-      if (offline.engine && offline.files) {
-        const sent = await addTaskPhoto(offline.engine, offline.files, {
-          taskId,
-          fileName: photo.fileName,
-          mime: photo.mimeType,
-          width: photo.width,
-          height: photo.height,
-          ...(photo.uri.startsWith('data:') ? { base64: photo.uri, kind: 'signature' as const } : { uri: photo.uri }),
-        });
-        return { id: sent.id, waitFor: sent.state === 'done' ? null : sent.opId, outcome: sent.outcome };
-      }
-      const { uploadUrl, fileKey, fileUrl } = await taskAttachmentsApi.getPresignedUrl(
-        taskId,
-        photo.fileName,
-        photo.mimeType,
+      // The engine and the file store start together; `files` is there whenever there is an engine.
+      const files = offline.files;
+      const sent = keepCreated<Awaited<ReturnType<typeof addTaskPhoto>>>();
+      const outcome = await write.run(
+        (engine) =>
+          sent.from(
+            addTaskPhoto(engine, files!, {
+              taskId,
+              fileName: photo.fileName,
+              mime: photo.mimeType,
+              width: photo.width,
+              height: photo.height,
+              ...(photo.uri.startsWith('data:')
+                ? { base64: photo.uri, kind: 'signature' as const }
+                : { uri: photo.uri }),
+            }),
+          ),
+        () => uploadDirect(taskId, photo),
       );
-      await uploadToPresignedUrl(uploadUrl, photo.uri, photo.mimeType, () => undefined);
-      const saved = await taskAttachmentsApi.confirmUpload(taskId, {
-        fileName: photo.fileName,
-        fileKey,
-        fileUrl,
-        fileType: photo.mimeType,
-        fileSize: photo.fileSize,
-      });
-      return {
-        id: typeof saved?.id === 'string' ? saved.id : null,
-        waitFor: null,
-        outcome: { kind: 'done', response: saved },
-      };
+      if (sent.value) {
+        return { id: sent.value.id, waitFor: sent.value.state === 'done' ? null : sent.value.opId, outcome };
+      }
+      const saved = outcome.kind === 'done' ? (outcome.response as { id?: unknown } | null) : null;
+      return { id: typeof saved?.id === 'string' ? saved.id : null, waitFor: null, outcome };
     },
-    [offline.engine, offline.files],
+    [write, offline.files],
   );
 
   const photoRefused = (outcome: { code?: string; message?: string }) =>
@@ -171,19 +189,18 @@ export function useJobWritesData(
     if (!task) return;
     try {
       setBusy(true);
-      if (offline.engine) {
-        const outcome = await declineTask(offline.engine, { taskId: task.id });
-        if (outcome.kind === 'refused') {
-          fail(t('common.error'), refusalText(outcome));
-          return;
-        }
-        if (outcome.kind === 'queued') {
-          toast.info(t('offline.savedForLater'));
-          onClosed();
-          return;
-        }
-      } else {
-        await tasksApi.declineTask(task.id);
+      const outcome = await write.run(
+        (engine) => declineTask(engine, { taskId: task.id }),
+        () => tasksApi.declineTask(task.id),
+      );
+      if (outcome.kind === 'refused') {
+        fail(t('common.error'), refusalText(outcome));
+        return;
+      }
+      if (outcome.kind === 'queued') {
+        toast.info(t('offline.savedForLater'));
+        onClosed();
+        return;
       }
       toast.info(t('taskDetail.declineTask.successTitle'), t('taskDetail.declineTask.successMessage'));
       onClosed();
@@ -192,7 +209,7 @@ export function useJobWritesData(
     } finally {
       setBusy(false);
     }
-  }, [task, offline.engine, refusalText, toast, t, onClosed]);
+  }, [task, write, refusalText, toast, t, onClosed]);
 
   return {
     t,

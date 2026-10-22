@@ -45,7 +45,7 @@ jest.mock('../../api/client', () => ({
 }));
 jest.mock('../../api/response-cache', () => ({ setResponseCache: (v: unknown) => mocks.setResponseCache(v) }));
 jest.mock('../../biometrics', () => ({ biometricCredential: { forget: () => mocks.forget() } }));
-jest.mock('../../../features/home/remember/store', () => ({ forgetEverythingKept: () => mocks.forgetEverythingKept() }));
+jest.mock('../../remember/store', () => ({ forgetEverythingKept: () => mocks.forgetEverythingKept() }));
 jest.mock('../../../hooks/usePushNotifications', () => ({ purgePushTokenRegistration: () => mocks.purgePush() }));
 jest.mock('../../../services/background-route-tracking', () => ({
   stopRouteTracking: () => mocks.stopRoute(),
@@ -254,7 +254,7 @@ describe('every exit is the one exit', () => {
       'clearTokens(': ['src/lib/session/end-session.ts', 'src/lib/api/client.ts', 'src/lib/api/auth.ts'],
       'destroyOfflineDatabase(': ['src/lib/session/end-session.ts', 'src/offline/db/database.ts'],
       'unregisterBackgroundSync(': ['src/lib/session/end-session.ts', 'src/offline/background-sync.ts'],
-      'forgetEverythingKept(': ['src/lib/session/end-session.ts', 'src/features/home/remember/store.ts'],
+      'forgetEverythingKept(': ['src/lib/session/end-session.ts', 'src/lib/remember/store.ts'],
       'forgetRouteData(': ['src/lib/session/end-session.ts', 'src/services/background-route-tracking.ts'],
       'purgePushTokenRegistration(': ['src/lib/session/end-session.ts', 'src/hooks/usePushNotifications.ts'],
       'destroyForMember(': ['src/lib/session/end-session.ts', 'src/offline/files/media-cache.ts'],

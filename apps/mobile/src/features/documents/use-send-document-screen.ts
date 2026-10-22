@@ -12,6 +12,7 @@ import { assetProposalsApi, uploadToPresignedUrl, type ContractFields } from '..
 import { classifyDocument, type DocumentClassification } from '@hbcfield/shared/client';
 import { useOffline } from '../../offline/offline-context';
 import { createFromPhone } from '../../offline/actions/queued-create';
+import { useQueuedWrite } from '../../offline/actions/queued-write';
 import { uuidv7 } from '../../offline/ids';
 import { caught } from '../../lib/caught';
 
@@ -45,6 +46,7 @@ export function useSendDocumentScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const offline = useOffline();
+  const write = useQueuedWrite();
   const insets = useSafeAreaInsets();
   const cam = useCameraAccess();
   const camera = useRef<CameraView>(null);
@@ -108,81 +110,74 @@ export function useSendDocumentScreen() {
   const send = useCallback(async () => {
     if (!named) return;
     setSending(true);
-    let fileKey: string | undefined;
     try {
-      if (offline.engine && offline.files) {
-        // Saved on the phone with its page; both send themselves. The page copy
-        // is deleted once the proposal is accepted or refused.
-        const cleanFields: ContractFields = {};
-        for (const [k, v] of Object.entries(fields)) {
-          if (typeof v === 'string' && v.trim()) (cleanFields as Record<string, string>)[k] = v.trim();
-        }
-        const id = uuidv7();
-        if (shot) await offline.files.keep({ id, kind: 'document', mime: shot.mime, uri: shot.uri });
-        const { outcome } = await createFromPhone(offline.engine, {
-          op: 'proposal.raise',
-          id,
-          lane: 'proposal:new',
-          body: {
-            fields: cleanFields,
-            ...(verdict?.signals ? { signals: verdict.signals } : {}),
-            documentKind: verdict?.kind ?? 'unknown',
-            ...(shot ? { pagePending: true } : {}),
-          },
-        });
-        if (outcome.kind === 'refused') {
-          toast.error(
-            (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
-              outcome.message ||
-              t('sendDoc.sendFailed', 'Could not send it'),
-          );
-          return;
-        }
-        toast.success(
-          outcome.kind === 'queued'
-            ? t('offline.savedForLater')
-            : t('sendDoc.sent', 'Sent — somebody will confirm it.'),
-        );
-        discardShot();
-        router.back();
-        return;
-      }
-      /*
-        The page goes phone → S3 directly, under a prefix that names the
-        organization; the submit refuses a key outside it.
-
-        An upload that fails does NOT stop the proposal. The six fields are what
-        a reviewer needs to decide; the page is evidence, and losing it to a
-        motorway signal must not cost the member the whole errand.
-      */
-      if (shot) {
-        try {
-          const presign = await assetProposalsApi.presign({
-            fileName: `document-${Date.now()}.jpg`,
-            mimeType: shot.mime,
-          });
-          await uploadToPresignedUrl(presign.uploadUrl, shot.uri, shot.mime);
-          fileKey = presign.fileKey;
-        } catch {
-          toast.info(t('sendDoc.photoFailed', 'The page did not upload — sending what was read anyway.'));
-        }
-      }
-
       const clean: ContractFields = {};
       for (const [k, v] of Object.entries(fields)) {
         if (typeof v === 'string' && v.trim()) (clean as Record<string, string>)[k] = v.trim();
       }
+      const files = offline.files; // starts with the engine — there whenever `write.run` queues
+      const outcome = await write.run(
+        // Saved on the phone with its page; both send themselves. The page copy
+        // is deleted once the proposal is accepted or refused.
+        async (engine) => {
+          const id = uuidv7();
+          if (shot) await files!.keep({ id, kind: 'document', mime: shot.mime, uri: shot.uri });
+          const { outcome: raised } = await createFromPhone(engine, {
+            op: 'proposal.raise',
+            id,
+            lane: 'proposal:new',
+            body: {
+              fields: clean,
+              ...(verdict?.signals ? { signals: verdict.signals } : {}),
+              documentKind: verdict?.kind ?? 'unknown',
+              ...(shot ? { pagePending: true } : {}),
+            },
+          });
+          return raised;
+        },
+        async () => {
+          let fileKey: string | undefined;
+          /*
+            The page goes phone → S3 directly, under a prefix that names the
+            organization; the submit refuses a key outside it.
 
-      await assetProposalsApi.raise({
-        fields: clean,
-        signals: verdict?.signals,
-        documentKind: verdict?.kind ?? 'unknown',
-        fileKey,
-        fileName: fileKey ? 'document.jpg' : undefined,
-        fileMime: fileKey ? shot?.mime : undefined,
-      });
-
-      toast.success(t('sendDoc.sent', 'Sent — somebody will confirm it.'));
+            An upload that fails does NOT stop the proposal. The six fields are what
+            a reviewer needs to decide; the page is evidence, and losing it to a
+            motorway signal must not cost the member the whole errand.
+          */
+          if (shot) {
+            try {
+              const presign = await assetProposalsApi.presign({
+                fileName: `document-${Date.now()}.jpg`,
+                mimeType: shot.mime,
+              });
+              await uploadToPresignedUrl(presign.uploadUrl, shot.uri, shot.mime);
+              fileKey = presign.fileKey;
+            } catch {
+              toast.info(t('sendDoc.photoFailed', 'The page did not upload — sending what was read anyway.'));
+            }
+          }
+          return assetProposalsApi.raise({
+            fields: clean,
+            signals: verdict?.signals,
+            documentKind: verdict?.kind ?? 'unknown',
+            fileKey,
+            fileName: fileKey ? 'document.jpg' : undefined,
+            fileMime: fileKey ? shot?.mime : undefined,
+          });
+        },
+      );
+      if (outcome.kind === 'refused') {
+        toast.error(
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+            outcome.message ||
+            t('sendDoc.sendFailed', 'Could not send it'),
+        );
+        return;
+      }
+      toast.success(
+        outcome.kind === 'queued' ? t('offline.savedForLater') : t('sendDoc.sent', 'Sent — somebody will confirm it.'),
+      );
       discardShot();
       router.back();
     } catch (e: unknown) {
@@ -190,7 +185,7 @@ export function useSendDocumentScreen() {
     } finally {
       setSending(false);
     }
-  }, [named, shot, fields, verdict, discardShot, t, toast, offline.engine, offline.files]);
+  }, [named, shot, fields, verdict, discardShot, t, toast, write, offline.files]);
 
   return {
     colors,

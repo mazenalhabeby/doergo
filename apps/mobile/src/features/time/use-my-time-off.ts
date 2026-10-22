@@ -3,8 +3,9 @@ import { useAuth } from '../../contexts/auth-context';
 import { useFetchData } from '../../hooks/useFetchData';
 import { timeOffApi, scheduleApi, type TimeOffRequest, type ScheduleEntry } from '../../lib/api';
 import { useQueuedCreate } from '../../offline/actions/queued-create';
+import { useQueuedWrite } from '../../offline/actions/queued-write';
 import type { ActionOutcome } from '../../offline/actions/outcome';
-import { useOffline, useSyncStatus } from '../../offline/offline-context';
+import { useSyncStatus } from '../../offline/offline-context';
 import { cancelTimeOff, pendingCancellations } from '../../offline/timeoff/time-off-actions';
 import { uuidv7 } from '../../offline/ids';
 import { isAbsence } from '@hbcfield/shared/client';
@@ -27,7 +28,7 @@ export type MyTimeOffRequest = TimeOffRequest & { pendingSync?: boolean };
 export function useMyTimeOff(enabled = true) {
   const { user } = useAuth();
   const userId = user?.id ?? null;
-  const offline = useOffline();
+  const write = useQueuedWrite();
   const { operations } = useSyncStatus();
 
   const fetcher = useCallback(async () => {
@@ -39,7 +40,10 @@ export function useMyTimeOff(enabled = true) {
     return { requests: Array.isArray(requests) ? requests : [], schedule: Array.isArray(schedule) ? schedule : [] };
   }, [userId, enabled]);
 
-  const fetched = useFetchData({ fetcher, initialData: { requests: [] as TimeOffRequest[], schedule: [] as ScheduleEntry[] } });
+  const fetched = useFetchData({
+    fetcher,
+    initialData: { requests: [] as TimeOffRequest[], schedule: [] as ScheduleEntry[] },
+  });
 
   /*
     Requests still on the phone are shown with the server's, as waiting, so a
@@ -72,29 +76,33 @@ export function useMyTimeOff(enabled = true) {
   const absences = useMemo(() => requests.filter((r) => isAbsence(r.kind)), [requests]);
 
   /** Send any request — `draftToBody` builds the body. Days are local calendar days, `YYYY-MM-DD`. */
-  const request = useCallback(async (body: RequestBody): Promise<ActionOutcome> => {
-    if (!userId) return { kind: 'refused', message: 'Not signed in', conflict: false };
-    const id = uuidv7();
-    const outcome = await create.run(
-      { id, entityId: id, lane: `timeoff:${userId}`, params: { employeeId: userId }, body },
-      () => timeOffApi.request(userId, body),
-    );
-    if (outcome.kind === 'done') void fetched.fetchData();
-    return outcome;
-  }, [userId, create, fetched.fetchData]);
-
-  /** Withdraw a request that is still waiting. */
-  const cancel = useCallback(async (timeOffId: string): Promise<ActionOutcome> => {
-    if (!userId) return { kind: 'refused', message: 'Not signed in', conflict: false };
-    if (offline.engine) {
-      const outcome = await cancelTimeOff(offline.engine, { memberId: userId, timeOffId });
+  const request = useCallback(
+    async (body: RequestBody): Promise<ActionOutcome> => {
+      if (!userId) return { kind: 'refused', message: 'Not signed in', conflict: false };
+      const id = uuidv7();
+      const outcome = await create.run(
+        { id, entityId: id, lane: `timeoff:${userId}`, params: { employeeId: userId }, body },
+        () => timeOffApi.request(userId, body),
+      );
       if (outcome.kind === 'done') void fetched.fetchData();
       return outcome;
-    }
-    await timeOffApi.cancel(timeOffId);
-    void fetched.fetchData();
-    return { kind: 'done', response: null };
-  }, [userId, offline.engine, fetched.fetchData]);
+    },
+    [userId, create, fetched.fetchData],
+  );
+
+  /** Withdraw a request that is still waiting. */
+  const cancel = useCallback(
+    async (timeOffId: string): Promise<ActionOutcome> => {
+      if (!userId) return { kind: 'refused', message: 'Not signed in', conflict: false };
+      const outcome = await write.run(
+        (engine) => cancelTimeOff(engine, { memberId: userId, timeOffId }),
+        () => timeOffApi.cancel(timeOffId),
+      );
+      if (outcome.kind === 'done') void fetched.fetchData();
+      return outcome;
+    },
+    [userId, write, fetched.fetchData],
+  );
 
   return {
     requests,

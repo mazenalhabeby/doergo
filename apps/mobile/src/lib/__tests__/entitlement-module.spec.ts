@@ -73,7 +73,7 @@ describe('one question, asked once', () => {
       covered on the day it is written.
     */
     const files = [
-      ...fs.readdirSync(path.join(SRC, 'home')).map((f) => `home/${f}`),
+      // src/home was merged into features/home (6.1).
       ...fs.readdirSync(path.join(SRC, 'features/home')).map((f) => `features/home/${f}`),
     ].filter((f) => /\.tsx?$/.test(f));
     expect(files.length).toBeGreaterThan(3);

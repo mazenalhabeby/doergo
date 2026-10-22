@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { tasksApi, type Task } from '../../../src/lib/api';
-import { useOffline } from '../../../src/offline/offline-context';
+import { useQueuedWrite } from '../../../src/offline/actions/queued-write';
 import { changeTaskStatus } from '../../../src/offline/tasks/task-actions';
 import { takeStatusFix, outboxFix } from '../../../src/offline/tasks/status-fix';
 import { JobPage } from '../../../src/features/job/job-page';
@@ -33,24 +33,27 @@ import type { StatusExtras, WriteStatus } from '../../../src/features/job/use-jo
  * that owes answers can never leave the phone by a second road.
  */
 export function useWriteStatus(): WriteStatus {
-  const offline = useOffline();
-  return useCallback(async (task: Task, newStatus: string, reason?: string, extras?: StatusExtras) => {
-    const location = await takeStatusFix(newStatus);
-    if (offline.engine) {
-      return changeTaskStatus(offline.engine, {
-        taskId: task.id,
-        from: task.status,
-        to: newStatus,
-        reason,
-        fix: outboxFix(location),
-        // A step form's answers, and the queued photos/signatures they name — sent first.
-        answers: extras?.answers,
-        dependsOn: extras?.dependsOn,
-      });
-    }
-    const updated = await tasksApi.updateStatus(task.id, newStatus, reason, location, extras?.answers);
-    return { kind: 'done' as const, response: updated };
-  }, [offline.engine]);
+  const write = useQueuedWrite();
+  return useCallback(
+    async (task: Task, newStatus: string, reason?: string, extras?: StatusExtras) => {
+      const location = await takeStatusFix(newStatus);
+      return write.run(
+        (engine) =>
+          changeTaskStatus(engine, {
+            taskId: task.id,
+            from: task.status,
+            to: newStatus,
+            reason,
+            fix: outboxFix(location),
+            // A step form's answers, and the queued photos/signatures they name — sent first.
+            answers: extras?.answers,
+            dependsOn: extras?.dependsOn,
+          }),
+        () => tasksApi.updateStatus(task.id, newStatus, reason, location, extras?.answers),
+      );
+    },
+    [write],
+  );
 }
 
 export function TaskDetailPane({
@@ -66,7 +69,15 @@ export function TaskDetailPane({
   initialSheet?: OpenSheet | null;
 }) {
   const writeStatus = useWriteStatus();
-  return <JobPage taskId={taskId} embedded={embedded} onClose={onClose} writeStatus={writeStatus} initialSheet={initialSheet} />;
+  return (
+    <JobPage
+      taskId={taskId}
+      embedded={embedded}
+      onClose={onClose}
+      writeStatus={writeStatus}
+      initialSheet={initialSheet}
+    />
+  );
 }
 
 // Route entry: reads the id from the URL and renders the pane as a slide-up panel.

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useOffline } from '../offline-context';
 import type { SyncEngine } from '../sync-engine';
 import type { ActionOutcome } from './outcome';
@@ -22,12 +22,16 @@ export function useQueuedWrite() {
   const { engine } = useOffline();
 
   const run = useCallback(
-    async (queued: (engine: SyncEngine) => Promise<ActionOutcome>, direct: () => Promise<unknown>): Promise<ActionOutcome> => {
+    async (
+      queued: (engine: SyncEngine) => Promise<ActionOutcome>,
+      direct: () => Promise<unknown>,
+    ): Promise<ActionOutcome> => {
       if (!engine) return { kind: 'done', response: await direct() };
       return queued(engine);
     },
     [engine],
   );
 
-  return { run, engine };
+  // Stable while the engine is, so a screen's callbacks can depend on the object.
+  return useMemo(() => ({ run, engine }), [run, engine]);
 }

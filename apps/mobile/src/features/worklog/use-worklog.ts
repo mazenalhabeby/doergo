@@ -5,6 +5,7 @@ import type { PickedImage } from '../../hooks/useImagePicker';
 import { worklogApi, type WorkLogNote } from '../../lib/api/worklog';
 import { uploadToPresignedUrl } from '../../lib/api/attachments';
 import { useOffline, useSyncStatus } from '../../offline/offline-context';
+import { useQueuedWrite } from '../../offline/actions/queued-write';
 import { addWorklogEntry, loadWorklog, worklogView, type WorklogItem } from '../../offline/attendance/worklog';
 import { adoptLegacyQueue, flushLegacy, queueLegacy, readLegacy } from '../../offline/attendance/legacy-worklog-queue';
 
@@ -29,6 +30,7 @@ export function useWorklog(timeEntryId: string | null, enabled: boolean) {
   const { t } = useTranslation();
   const toast = useToast();
   const offline = useOffline();
+  const write = useQueuedWrite();
   const { operations } = useSyncStatus();
   const outbox = offline.engine && offline.files ? { engine: offline.engine, files: offline.files } : null;
 
@@ -50,16 +52,25 @@ export function useWorklog(timeEntryId: string | null, enabled: boolean) {
       if (!outbox) {
         // The old queue's items, shown in the same shape so nothing looks lost.
         const items = await readLegacy(timeEntryId);
-        setLegacyPending(items.map((i) => ({
-          id: i.id, timeEntryId, body: i.body, at: i.at, pendingSync: true,
-          attachments: (i.photos ?? []).map((ph, n) => ({
-            id: `${i.id}_${n}`,
-            fileName: ph.fileName,
-            mimeType: ph.mimeType,
-            fileUrl: ph.uri,
-            url: ph.uri,
-          })),
-        }) as unknown as WorklogItem));
+        setLegacyPending(
+          items.map(
+            (i) =>
+              ({
+                id: i.id,
+                timeEntryId,
+                body: i.body,
+                at: i.at,
+                pendingSync: true,
+                attachments: (i.photos ?? []).map((ph, n) => ({
+                  id: `${i.id}_${n}`,
+                  fileName: ph.fileName,
+                  mimeType: ph.mimeType,
+                  fileUrl: ph.uri,
+                  url: ph.uri,
+                })),
+              }) as unknown as WorklogItem,
+          ),
+        );
       }
       setLoading(false);
       setLoaded(true);
@@ -83,11 +94,20 @@ export function useWorklog(timeEntryId: string | null, enabled: boolean) {
     if (!enabled || !timeEntryId) return;
     let fresh = false;
     for (const o of operations) {
-      if (!o.op.startsWith('worklog.') || o.entityId !== timeEntryId || o.state !== 'done' || accepted.current.has(o.id)) continue;
+      if (
+        !o.op.startsWith('worklog.') ||
+        o.entityId !== timeEntryId ||
+        o.state !== 'done' ||
+        accepted.current.has(o.id)
+      )
+        continue;
       accepted.current.add(o.id);
       fresh = true;
     }
-    if (fresh) void loadWorklog(timeEntryId, offline.records).then(setServerNotes).catch(() => undefined);
+    if (fresh)
+      void loadWorklog(timeEntryId, offline.records)
+        .then(setServerNotes)
+        .catch(() => undefined);
   }, [operations, enabled, timeEntryId, offline.records]);
 
   const notes: WorklogItem[] = useMemo(() => {
@@ -98,17 +118,32 @@ export function useWorklog(timeEntryId: string | null, enabled: boolean) {
   }, [outbox?.files, serverNotes, legacyPending, operations, timeEntryId]);
 
   /** True when it was taken — the composer clears only then. */
-  const add = useCallback(async (text: string, photos: PickedImage[]): Promise<boolean> => {
-    if (!timeEntryId) return false;
-    const body = text.trim() || t('worklog.photoOnly', '(photo)');
-    if (!text.trim() && photos.length === 0) return false;
-    try {
-      if (outbox) {
-        const { outcome } = await addWorklogEntry(outbox.engine, outbox.files, {
-          entryId: timeEntryId,
-          body,
-          photos: photos.map((p) => ({ uri: p.uri, fileName: p.fileName, mimeType: p.mimeType, width: p.width, height: p.height })),
-        });
+  const add = useCallback(
+    async (text: string, photos: PickedImage[]): Promise<boolean> => {
+      if (!timeEntryId) return false;
+      const body = text.trim() || t('worklog.photoOnly', '(photo)');
+      if (!text.trim() && photos.length === 0) return false;
+      try {
+        const files = offline.files; // starts with the engine — there whenever `write.run` queues
+        const outcome = await write.run(
+          (engine) =>
+            addWorklogEntry(engine, files!, {
+              entryId: timeEntryId,
+              body,
+              photos: photos.map((p) => ({
+                uri: p.uri,
+                fileName: p.fileName,
+                mimeType: p.mimeType,
+                width: p.width,
+                height: p.height,
+              })),
+            }).then((sent) => sent.outcome),
+          // The old queue, for a build without the offline layer.
+          async () => {
+            await legacyAdd(timeEntryId, body, photos);
+            void load();
+          },
+        );
         if (outcome.kind === 'refused') {
           toast.error(
             t('common.error'),
@@ -118,21 +153,26 @@ export function useWorklog(timeEntryId: string | null, enabled: boolean) {
           );
           return false;
         }
-      } else {
-        await legacyAdd(timeEntryId, body, photos);
+        return true;
+      } catch {
+        toast.error(t('common.error'), t('offline.errors.PHOTO_NOT_KEPT'));
+        return false;
+      }
+    },
+    [timeEntryId, write, offline.files, load, t, toast],
+  );
+
+  const remove = useCallback(
+    async (id: string) => {
+      setServerNotes((p) => p.filter((n) => n.id !== id));
+      try {
+        await worklogApi.deleteNote(id);
+      } catch {
         void load();
       }
-      return true;
-    } catch {
-      toast.error(t('common.error'), t('offline.errors.PHOTO_NOT_KEPT'));
-      return false;
-    }
-  }, [timeEntryId, outbox?.engine, outbox?.files, load, t, toast]);
-
-  const remove = useCallback(async (id: string) => {
-    setServerNotes((p) => p.filter((n) => n.id !== id));
-    try { await worklogApi.deleteNote(id); } catch { void load(); }
-  }, [load]);
+    },
+    [load],
+  );
 
   return { notes, loading, loaded, add, remove, reload: load };
 }
@@ -146,8 +186,13 @@ async function legacyAdd(entryId: string, body: string, photos: PickedImage[]): 
         const pre = await worklogApi.presignAttachment(note.id, img.fileName, img.mimeType);
         await uploadToPresignedUrl(pre.uploadUrl, img.uri, img.mimeType);
         await worklogApi.confirmAttachment(note.id, {
-          fileKey: pre.fileKey, fileUrl: pre.fileUrl, fileName: img.fileName,
-          fileSize: img.fileSize, mimeType: img.mimeType, width: img.width, height: img.height,
+          fileKey: pre.fileKey,
+          fileUrl: pre.fileUrl,
+          fileName: img.fileName,
+          fileSize: img.fileSize,
+          mimeType: img.mimeType,
+          width: img.width,
+          height: img.height,
         });
       } catch {
         /* photo failed — note is already saved */

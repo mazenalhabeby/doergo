@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { localDateKey } from '@hbcfield/shared/client';
-import { KEPT_PREFIX, sealedStore } from '../../../lib/sealed-stores';
+import { KEPT_PREFIX, sealedStore } from '../sealed-stores';
 
 /**
  * WHAT THIS PHONE WAS LAST TOLD — one store for every widget.
