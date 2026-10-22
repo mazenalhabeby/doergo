@@ -24,9 +24,7 @@ const SPACE_DIRECTORY_PAGE = 200
 export const spaceDirectoryKey = () => keys.locations.list({ directory: true })
 
 export function fetchSpaceDirectory(): Promise<CompanyLocation[]> {
-  return fetchAllPages((page) =>
-    locationsApi.list({ page, limit: SPACE_DIRECTORY_PAGE, includeInactive: true }),
-  )
+  return fetchAllPages((page) => locationsApi.list({ page, limit: SPACE_DIRECTORY_PAGE, includeInactive: true }))
 }
 
 export const SPACE_DIRECTORY_STALE_MS = 60_000
@@ -47,8 +45,7 @@ export function spaceModulesFromDirectory(
   orgModules: readonly string[] | undefined,
 ): EffectiveSpaceModules | null {
   const space = directory?.find((s) => s.id === spaceId) as
-    | (CompanyLocation & { enabledModules?: unknown; workflowId?: string | null })
-    | undefined
+    (CompanyLocation & { enabledModules?: unknown; workflowId?: string | null }) | undefined
   // A list row without the field is not an answer (an older/narrower shape).
   if (!space || !("enabledModules" in space)) return null
   return {
@@ -69,7 +66,9 @@ export async function loadSpaceModules(
   qc: QueryClient,
   spaceId: string,
   orgModules: readonly string[] | undefined,
-): Promise<EffectiveSpaceModules | undefined> {
+  /** False when the caller may not read the workspace's own route — then only the directory answers. */
+  { mayAskSpace = true }: { mayAskSpace?: boolean } = {},
+): Promise<EffectiveSpaceModules | null | undefined> {
   const isRefetch = qc.getQueryData(keys.spaces.modules(spaceId)) !== undefined
   if (!isRefetch) {
     try {
@@ -84,5 +83,7 @@ export async function loadSpaceModules(
       // The directory could not be read — ask the workspace itself.
     }
   }
+  // Not in the directory and not readable by this person: the organization's modules decide (callers fall back).
+  if (!mayAskSpace) return null
   return locationsApi.getEffectiveModules(spaceId)
 }
