@@ -5,7 +5,8 @@ const ok = <T>(data: T) => ({ success: true, data });
 const fail = (message: string, statusCode = 400) => ({ success: false, statusCode, message });
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']);
+// Served from our own origin: never SVG/HTML (stored XSS). The gateway refuses them too (blogImageMime).
+const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 const slugify = (s: string) =>
   s

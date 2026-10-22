@@ -232,7 +232,8 @@ export class SpaceSharingService {
 
   // ── list requests: owner (by space) or guest (their own) ──────────────────
   async listRequests(data: { spaceId: string; ownerOrgId?: string; guestOrgId?: string; status?: string }) {
-    // Owner path: assert space ownership. Guest path: scope to their org.
+    // Owner path: assert space ownership. Guest path: scope to their org. Neither: nobody's list.
+    if (!data.ownerOrgId && !data.guestOrgId) return this.err('Space not found', HttpStatus.NOT_FOUND);
     if (data.ownerOrgId) {
       const space = await this.ownerAssertSpace(data.spaceId, data.ownerOrgId);
       if (!space) return this.err('Space not found', HttpStatus.NOT_FOUND);

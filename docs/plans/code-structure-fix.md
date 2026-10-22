@@ -143,6 +143,15 @@ Each becomes a folder of real Nest sub-modules with their own providers and test
 | 4.6 | **notification-service:** the 27 handlers and root controller into `modules/`; task-service `common/` business logic (approval rules, routing) into feature modules. | `common/` holds only plumbing |
 | 4.7 | **Tests** for the untested modules: epics, phases, sprints, approvals, custom fields, blog, search, space sharing. | each has at least its rules covered |
 
+> **Status (2026-10-22): 4.1–4.7 DONE on branch `refactor/structure-p3`** (not merged, not deployed).
+> - 4.1–4.4: tasks (8), attendance (12), assets (6), documents (7) are real Nest sub-modules; `tools/di-check.mjs` proves DI per service.
+> - 4.5: one `ServiceCalls` for every controller → service call; a service's 5xx text never reaches the client.
+> - 4.6: notification-service handlers in `modules/events/<area>`; task-service `common/` holds only plumbing.
+> - 4.7: rule specs for planning items (epics, phases), sprints + reports, custom fields, stand-ins, office-rule
+>   admin, blog, space sharing, global search (117 tests). Two small hardenings found on the way: the blog
+>   store refuses SVG like the gateway does, and a share-request list with no organization answers nobody.
+> - ⚠️ The Phase 4 e2e scripts still have to run against a restarted `pnpm dev:api`.
+
 ---
 
 ## Phase 5 — Web app *(≈ 2 weeks, route by route)*
