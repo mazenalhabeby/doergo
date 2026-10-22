@@ -1,4 +1,10 @@
-import { ABSENCE_WHERE, assertMemberInScope, toISODateString } from '@hbcfield/shared';
+import {
+  assertMemberInScope,
+  toISODateString,
+  personEmploymentFacts,
+  personPasses,
+  ABSENCE_WHERE,
+} from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { success } from '@hbcfield/shared';
 import { leaveYearFor } from './leave-ledger.service';
@@ -23,10 +29,7 @@ export class LeaveRecordsService extends LeaveRecordsOrgBase {
     endDate: string; // "YYYY-MM-DD" (inclusive)
     reason?: string;
   }) {
-    const technician = await this.prisma.user.findFirst({
-      where: { id: data.technicianId, organizationId: data.organizationId },
-      select: { id: true },
-    });
+    const technician = await personPasses(this.prisma, data.technicianId, { organizationId: data.organizationId });
     if (!technician) {
       throw new NotFoundException('Employee not found in organization');
     }
@@ -111,9 +114,7 @@ export class LeaveRecordsService extends LeaveRecordsOrgBase {
     const { technicianId, organizationId, status } = dto;
 
     // Verify technician belongs to organization
-    const technician = await this.prisma.user.findFirst({
-      where: { id: technicianId, organizationId },
-    });
+    const technician = await personPasses(this.prisma, technicianId, { organizationId });
 
     if (!technician) {
       throw new NotFoundException('Employee not found in organization');
@@ -153,11 +154,9 @@ export class LeaveRecordsService extends LeaveRecordsOrgBase {
       throw new BadRequestException('Choose a start day on or before the end day');
     }
     // A year at most — a longer range would be counted short, not refused, further down.
-    if ((Date.parse(dto.to) - Date.parse(dto.from)) / 86400000 > 366) throw new BadRequestException('Count at most a year at a time');
-    const exists = await this.prisma.user.findFirst({
-      where: { id: dto.technicianId, organizationId: dto.organizationId },
-      select: { id: true, employmentStartDate: true, organization: { select: { leaveYearMode: true } } },
-    });
+    if ((Date.parse(dto.to) - Date.parse(dto.from)) / 86400000 > 366)
+      throw new BadRequestException('Count at most a year at a time');
+    const exists = await personEmploymentFacts(this.prisma, dto.technicianId, dto.organizationId);
     if (!exists) throw new NotFoundException('Employee not found in organization');
     /*
       Somebody else's count shows their rota and days off: only for whoever manages that person —
@@ -180,9 +179,14 @@ export class LeaveRecordsService extends LeaveRecordsOrgBase {
       byLeaveYear[start] = (byLeaveYear[start] ?? 0) + d.cost;
     }
     return success({
-      from: dto.from, to: dto.to,
-      calendarDays: c.calendarDays, counted: c.counted, restDays: c.restDays,
-      holidays: c.holidays, byYear: c.byYear, byLeaveYear,
+      from: dto.from,
+      to: dto.to,
+      calendarDays: c.calendarDays,
+      counted: c.counted,
+      restDays: c.restDays,
+      holidays: c.holidays,
+      byYear: c.byYear,
+      byLeaveYear,
       days: c.days.map((d) => ({ day: d.day, kind: d.kind, cost: d.cost, holiday: d.holiday ?? null })),
     });
   }

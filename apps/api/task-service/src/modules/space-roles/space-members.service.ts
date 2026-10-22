@@ -12,6 +12,8 @@ import {
   type PermissionSet,
   type BillByValue,
   effectiveHoursBasis,
+  peopleCostRates,
+  orgRates,
 } from '@hbcfield/shared';
 import { userSelect, roleSelect, SpaceMemberAuthority, authorityRefusal, comboRefusal } from './space-roles-helpers';
 import { SpaceRolesBase } from './space-roles.base';
@@ -48,21 +50,20 @@ export class SpaceMembersService extends SpaceRolesBase {
         where: { id: data.spaceId },
         select: { billableRateCents: true, costRateCents: true },
       }),
-      this.prisma.organization.findUnique({
-        where: { id: data.organizationId },
-        select: { billableRateCents: true, costRateCents: true },
-      }),
-      this.prisma.user.findMany({
-        where: { id: { in: members.map((m) => m.userId) } },
-        select: { id: true, costRateCents: true },
-      }),
+      orgRates(this.prisma, data.organizationId),
+      peopleCostRates(
+        this.prisma,
+        members.map((m) => m.userId),
+      ),
     ]);
     const byUser = new Map(users.map((u) => [u.id, u]));
     // Each person's day cost today, from the dated history on their profile — one query.
     const today = utcTodayKey();
     const dayRows = await this.prisma.rateHistory.findMany({
       where: {
-        organizationId: data.organizationId, target: 'MEMBER', kind: 'COST_DAY',
+        organizationId: data.organizationId,
+        target: 'MEMBER',
+        kind: 'COST_DAY',
         targetId: { in: members.map((m) => m.userId) },
         effectiveFrom: { lte: new Date(`${today}T00:00:00Z`) },
       },
@@ -102,12 +103,8 @@ export class SpaceMembersService extends SpaceRolesBase {
         profileCostDayCents: dayCostByUser.get(m.userId) ?? null,
         // What it falls back to — the workspace, else the organization.
         inheritedBillRateCents: resolveRate('bill', {
-          client: space
-            ? { billRateCents: space.billableRateCents, costRateCents: space.costRateCents }
-            : null,
-          organization: org
-            ? { billRateCents: org.billableRateCents, costRateCents: org.costRateCents }
-            : null,
+          client: space ? { billRateCents: space.billableRateCents, costRateCents: space.costRateCents } : null,
+          organization: org ? { billRateCents: org.billableRateCents, costRateCents: org.costRateCents } : null,
         }).cents,
         notifyRoleIds: m.notifyRoleIds,
         notifyUserIds: m.notifyUserIds,
@@ -145,7 +142,13 @@ export class SpaceMembersService extends SpaceRolesBase {
     const may: SpaceMemberAuthority = data.authority ?? { addMembers: true, grantRoles: true, manageTerms: true };
     const existing = await this.prisma.spaceAssignment.findUnique({
       where: { userId_spaceId: { userId: data.userId, spaceId: data.spaceId } },
-      select: { id: true, roleId: true, workRoleId: true, allowSecondRole: true, role: { select: { permissions: true } } },
+      select: {
+        id: true,
+        roleId: true,
+        workRoleId: true,
+        allowSecondRole: true,
+        role: { select: { permissions: true } },
+      },
     });
     /*
       Adding somebody to the workspace and choosing what they may do there are
@@ -162,7 +165,9 @@ export class SpaceMembersService extends SpaceRolesBase {
     */
     if (data.spaceRoleId) {
       // Only a shared role, or this very assignment's own personal role — never somebody else's.
-      const picked = await this.getOwnedRole(data.organizationId, data.spaceRoleId, { assignmentId: existing?.id ?? null });
+      const picked = await this.getOwnedRole(data.organizationId, data.spaceRoleId, {
+        assignmentId: existing?.id ?? null,
+      });
       if (picked.kind === 'WORK') {
         // A trade carries the billing terms: canManageUsers here, never an external member.
         if (!may.manageTerms) throw authorityRefusal('give people a trade');
@@ -182,19 +187,35 @@ export class SpaceMembersService extends SpaceRolesBase {
         });
         await this.useWorkRoleIn(this.prisma, data.spaceId, picked.id);
         return success(
-          { id: member.id, userId: member.userId, user: member.user, spaceRole: member.role, workRole: member.workRole },
+          {
+            id: member.id,
+            userId: member.userId,
+            user: member.user,
+            spaceRole: member.role,
+            workRole: member.workRole,
+          },
           'Member assigned',
         );
       }
     }
     const changesRole = (data.spaceRoleId ?? null) !== (existing?.roleId ?? null);
     if (changesRole && (data.spaceRoleId || existing?.roleId) && !may.grantRoles) throw authorityRefusal('give roles');
-    if (changesRole && data.outrankCheck && data.requesterPerms && existing?.role
-      && permissionsExceed(data.requesterPerms, permissionsFromOrgRole(existing.role.permissions))) {
-      throw new ForbiddenException({ message: 'This person holds more in this workspace than you do', code: 'MEMBER_ABOVE_YOU' });
+    if (
+      changesRole &&
+      data.outrankCheck &&
+      data.requesterPerms &&
+      existing?.role &&
+      permissionsExceed(data.requesterPerms, permissionsFromOrgRole(existing.role.permissions))
+    ) {
+      throw new ForbiddenException({
+        message: 'This person holds more in this workspace than you do',
+        code: 'MEMBER_ABOVE_YOU',
+      });
     }
     if (data.spaceRoleId) {
-      const role = await this.getOwnedRole(data.organizationId, data.spaceRoleId, { assignmentId: existing?.id ?? null });
+      const role = await this.getOwnedRole(data.organizationId, data.spaceRoleId, {
+        assignmentId: existing?.id ?? null,
+      });
       /*
         An external member may hold only what the allow-list permits.
 

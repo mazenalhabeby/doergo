@@ -1,8 +1,14 @@
 import { Injectable, BadRequestException, NotFoundException, ConflictException, Logger } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
-import { type PermissionSet, SHARED_ROLE_WHERE, roleUsableOnAssignment } from '@hbcfield/shared';
+import {
+  PrismaService,
+  roleSlugsLike,
+  spaceRoleInOrg,
+  spaceRoleNamed,
+  countPeopleInOrg,
+  countSharedRolesInOrg,
+} from '@hbcfield/shared';
+import { type PermissionSet, roleUsableOnAssignment } from '@hbcfield/shared';
 import { SPACE_PERMISSION_KEYS } from './space-roles-helpers';
-import type { Prisma } from '@prisma/client';
 
 /**
  * What the role services share: built-in roles, a role this organization owns,
@@ -43,10 +49,8 @@ export abstract class SpaceRolesBase {
     const roleIds = [...new Set(ids.roleIds)];
     const userIds = [...new Set(ids.userIds)];
     const [roles, users] = await Promise.all([
-      roleIds.length
-        ? this.prisma.accessRole.count({ where: { id: { in: roleIds }, organizationId, ...SHARED_ROLE_WHERE } })
-        : Promise.resolve(0),
-      userIds.length ? this.prisma.user.count({ where: { id: { in: userIds }, organizationId } }) : Promise.resolve(0),
+      roleIds.length ? countSharedRolesInOrg(this.prisma, roleIds, organizationId) : Promise.resolve(0),
+      userIds.length ? countPeopleInOrg(this.prisma, userIds, organizationId) : Promise.resolve(0),
     ]);
     if (roles !== roleIds.length) throw new BadRequestException('A chosen role does not belong to this organization');
     if (users !== userIds.length) throw new BadRequestException('A chosen person does not belong to this organization');
@@ -65,17 +69,7 @@ export abstract class SpaceRolesBase {
    * Refused with the existing role's id, so the screen can offer it instead.
    */
   protected async assertNameFree(organizationId: string, name: string, excludeId?: string) {
-    const clash = await this.prisma.accessRole.findFirst({
-      where: {
-        organizationId,
-        scope: { in: ['SPACE', 'BOTH'] },
-        // A personal role's name ("Ann Lee · Site A") is nobody's to collide with.
-        ...SHARED_ROLE_WHERE,
-        name: { equals: name.trim(), mode: 'insensitive' },
-        ...(excludeId ? { id: { not: excludeId } } : {}),
-      },
-      select: { id: true, name: true },
-    });
+    const clash = await spaceRoleNamed(this.prisma, organizationId, name, excludeId);
     if (clash) {
       throw new ConflictException({
         message: `A role called "${clash.name}" already exists`,
@@ -94,9 +88,7 @@ export abstract class SpaceRolesBase {
    * role anyone can hand out by id.
    */
   protected async getOwnedRole(organizationId: string, roleId: string, opts?: { assignmentId?: string | null }) {
-    const role = await this.prisma.accessRole.findFirst({
-      where: { id: roleId, organizationId, scope: { in: ['SPACE', 'BOTH'] } },
-    });
+    const role = await spaceRoleInOrg(this.prisma, roleId, organizationId);
     if (!role || !roleUsableOnAssignment(role, opts?.assignmentId ?? null))
       throw new NotFoundException('Space role not found');
     return role;
@@ -133,14 +125,7 @@ export abstract class SpaceRolesBase {
         .replace(/^-+|-+$/g, '')
         .slice(0, 40) || 'role';
 
-    const siblings = await this.prisma.accessRole.findMany({
-      where: {
-        organizationId,
-        slug: { startsWith: base },
-        ...(excludeId ? { id: { not: excludeId } } : {}),
-      },
-      select: { slug: true },
-    });
+    const siblings = await roleSlugsLike(this.prisma, organizationId, base, excludeId);
     const taken = new Set(siblings.map((r) => r.slug));
 
     if (!taken.has(base)) return base;

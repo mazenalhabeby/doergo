@@ -4291,12 +4291,6 @@
   "apps/api/task-service/src/modules/chat/chat-tasks.service.ts → User (owned by auth-service)": 1,
   "apps/api/task-service/src/modules/chat/chat.service.ts → SpaceShare (owned by auth-service)": 1,
   "apps/api/task-service/src/modules/chat/chat.service.ts → User (owned by auth-service)": 1,
-  "apps/api/task-service/src/modules/space-roles/member-terms.service.ts → User (owned by auth-service)": 1,
-  "apps/api/task-service/src/modules/space-roles/space-members.service.ts → Organization (owned by auth-service)": 1,
-  "apps/api/task-service/src/modules/space-roles/space-members.service.ts → User (owned by auth-service)": 1,
-  "apps/api/task-service/src/modules/space-roles/space-roles.base.ts → AccessRole (owned by auth-service)": 4,
-  "apps/api/task-service/src/modules/space-roles/space-roles.base.ts → User (owned by auth-service)": 1,
-  "apps/api/task-service/src/modules/space-roles/space-roles.service.ts → AccessRole (owned by auth-service)": 3,
   "apps/api/task-service/src/modules/tasks/departure-reminder.service.ts → WorkerLastLocation (owned by tracking-service)": 1,
   "apps/api/task-service/src/modules/tasks/handover/clock-gate.service.ts → Organization (owned by auth-service)": 1,
   "apps/api/task-service/src/modules/tasks/handover/clock-gate.service.ts → User (owned by auth-service)": 1,
@@ -4334,16 +4328,6 @@
   "apps/api/task-service/src/modules/tasks/task-status-crm.ts → Organization (owned by auth-service)": 1,
   "apps/api/task-service/src/modules/tasks/task-triage.service.ts → CustomerUnit (owned by auth-service)": 1,
   "apps/api/task-service/src/modules/tasks/task-triage.service.ts → User (owned by auth-service)": 1,
-  "apps/api/task-service/src/modules/tasks/technician-suggestion.service.ts → User (owned by auth-service)": 1,
-  "apps/api/task-service/src/modules/technicians/leave-carry-over.service.ts → Organization (owned by auth-service)": 1,
-  "apps/api/task-service/src/modules/technicians/leave-carry-over.service.ts → User (owned by auth-service)": 1,
-  "apps/api/task-service/src/modules/technicians/leave-ledger.base.ts → Organization (owned by auth-service)": 1,
-  "apps/api/task-service/src/modules/technicians/leave-ledger.base.ts → User (owned by auth-service)": 2,
-  "apps/api/task-service/src/modules/technicians/leave-opening.service.ts → Organization (owned by auth-service)": 1,
-  "apps/api/task-service/src/modules/technicians/leave-opening.service.ts → User (owned by auth-service)": 1,
-  "apps/api/task-service/src/modules/technicians/leave-records.service.ts → User (owned by auth-service)": 3,
-  "apps/api/task-service/src/modules/technicians/member-schedule.service.ts → User (owned by auth-service)": 3,
-  "apps/api/task-service/src/modules/technicians/member-service.base.ts → User (owned by auth-service)": 1,
-  "apps/api/task-service/src/modules/technicians/request-precheck.service.ts → User (owned by auth-service)": 1
+  "apps/api/task-service/src/modules/tasks/technician-suggestion.service.ts → User (owned by auth-service)": 1
  }
 }

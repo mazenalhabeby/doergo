@@ -38,3 +38,11 @@ export function liveOrgZones(db: On<'organization', 'findMany'>) {
     select: { id: true, timezone: true },
   });
 }
+
+/** The organization's default bill and cost rates. */
+export function orgRates(db: OrgDb, organizationId: string) {
+  return db.organization.findUnique({
+    where: { id: organizationId },
+    select: { billableRateCents: true, costRateCents: true },
+  });
+}

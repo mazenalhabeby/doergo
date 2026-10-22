@@ -10,7 +10,9 @@ import {
   utcTodayKey,
   type PermissionSet,
   type RoleKindValue,
-  SHARED_ROLE_WHERE,
+  maxRolePosition,
+  spaceRoleCards,
+  spaceRolesWithCounts,
 } from '@hbcfield/shared';
 import { userSelect } from './space-roles-helpers';
 import { SpaceRolesBase } from './space-roles.base';
@@ -49,12 +51,7 @@ export class SpaceRolesService extends SpaceRolesBase {
 
   async listRoles(data: { organizationId: string }) {
     await this.writer.ensureBuiltIns(data.organizationId);
-    const roles = await this.prisma.accessRole.findMany({
-      // ⚠️ Never a personal role: one person's permissions in one workspace are not a role anybody may pick.
-      where: { organizationId: data.organizationId, scope: { in: ['SPACE', 'BOTH'] }, ...SHARED_ROLE_WHERE },
-      orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
-      include: { _count: { select: { spaceAssignments: true, workAssignments: true } } },
-    });
+    const roles = await spaceRolesWithCounts(this.prisma, data.organizationId);
     return success(
       roles.map(({ _count, ...r }) => ({
         ...r,
@@ -78,23 +75,7 @@ export class SpaceRolesService extends SpaceRolesBase {
         ?.workRoleIds ?? [],
     );
     const [roles, assignments] = await Promise.all([
-      this.prisma.accessRole.findMany({
-        where: { organizationId: data.organizationId, scope: { in: ['SPACE', 'BOTH'] }, ...SHARED_ROLE_WHERE },
-        orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          color: true,
-          description: true,
-          permissions: true,
-          kind: true,
-          isSystem: true,
-          isActive: true,
-          scope: true,
-          _count: { select: { spaceAssignments: true, workAssignments: true } },
-        },
-      }),
+      spaceRoleCards(this.prisma, data.organizationId),
       this.prisma.spaceAssignment.findMany({
         where: { organizationId: data.organizationId, spaceId: data.spaceId },
         select: { roleId: true, workRoleId: true, user: userSelect },
@@ -158,10 +139,7 @@ export class SpaceRolesService extends SpaceRolesBase {
     const kind: RoleKindValue = isRoleKind(data.kind) ? data.kind : 'MANAGEMENT';
     await this.assertNameFree(data.organizationId, name);
     const slug = await this.uniqueSlug(data.organizationId, name);
-    const max = await this.prisma.accessRole.aggregate({
-      where: { organizationId: data.organizationId },
-      _max: { position: true },
-    });
+    const max = await maxRolePosition(this.prisma, data.organizationId);
     // auth-service writes it (it owns AccessRole); every column is decided here.
     const role = await this.writer.create(data.organizationId, {
       name,

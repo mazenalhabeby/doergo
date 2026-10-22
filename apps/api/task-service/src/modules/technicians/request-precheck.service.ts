@@ -1,13 +1,14 @@
 import { BadRequestException, Injectable, Optional } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import {
-  activeWindowWhere,
   zoneOf,
   DAILY_WORK_GUIDE_MINUTES,
   isAbsence,
   parseRequestInput,
   toISODateString,
   type RequestPrecheck,
+  personActiveSpaces,
+  activeWindowWhere,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { ApprovalRulesService } from '../../common/approval-rules/approval-rules.service';
@@ -48,10 +49,7 @@ export class RequestPrecheckService {
 
     const [clashes, member] = await Promise.all([
       this.technicians.requestClashes(data.userId, value.kind, start, end),
-      this.prisma.user.findFirst({
-        where: { id: data.userId, organizationId: data.organizationId },
-        select: { spaceAssignments: { where: { ...activeWindowWhere() }, select: { spaceId: true } } },
-      }),
+      personActiveSpaces(this.prisma, data.userId, data.organizationId),
     ]);
     const spaceIds = value.spaceId ? [value.spaceId] : (member?.spaceAssignments ?? []).map((a) => a.spaceId);
 

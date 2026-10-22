@@ -1,6 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import {
-  ABSENCE_WHERE,
   PrismaService,
   assertFoundInOrg,
   assertMemberInScope,
@@ -11,24 +10,24 @@ import {
   leaveBalance,
   leaveLedgerSource,
   leaveYearDayFromQuery,
-  memberScopeFilter,
   toISODateString,
   type LeaveAdjustmentKind,
   type LeaveBalanceResponse,
   type LeaveLedgerEntry,
+  orgLeaveFacts,
+  leaveRoster,
+  personLeaveFacts,
+  ABSENCE_WHERE,
 } from '@hbcfield/shared';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { assertNotSelfDecision } from '../attendance/self-decision';
 import {
-  ORG_LEAVE_SELECT,
-  PERSON_LEAVE_SELECT,
   OrgLeave,
   PersonLeave,
   PersonLeaveYear,
   half,
   asDate,
   dayOf,
-  MEMBERS_WHERE,
   PERSON_BRIEF,
   carryRuleOf,
   leaveYearFor,
@@ -180,10 +179,7 @@ export abstract class LeaveLedgerBase {
 
   /** One person and their organization — one query. 404 for anybody outside it. */
   protected async loadPerson(organizationId: string, userId: string) {
-    const person = await this.prisma.user.findFirst({
-      where: { id: userId, organizationId },
-      select: { ...PERSON_LEAVE_SELECT, organization: { select: ORG_LEAVE_SELECT } },
-    });
+    const person = await personLeaveFacts(this.prisma, userId, organizationId);
     assertFoundInOrg(person, organizationId, 'Employee');
     return { person, org: person.organization as OrgLeave };
   }
@@ -272,16 +268,11 @@ export abstract class LeaveLedgerBase {
   /* ================================================================ starting balances */
 
   protected async membersInScope(organizationId: string, scopeSpaceIds?: string[]) {
-    return this.prisma.user.findMany({
-      where: { organizationId, ...MEMBERS_WHERE, ...memberScopeFilter(scopeSpaceIds) },
-      select: { ...PERSON_LEAVE_SELECT, firstName: true, lastName: true, email: true, avatarUrl: true },
-      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
-      take: 2000,
-    });
+    return leaveRoster(this.prisma, organizationId, scopeSpaceIds);
   }
 
   protected async loadOrg(organizationId: string): Promise<OrgLeave> {
-    const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, select: ORG_LEAVE_SELECT });
+    const org = await orgLeaveFacts(this.prisma, organizationId);
     if (!org) throw new NotFoundException('Organization not found');
     return org as OrgLeave;
   }

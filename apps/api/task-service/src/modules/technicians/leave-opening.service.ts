@@ -3,24 +3,16 @@ import {
   personName,
   OPENING_LIMITS,
   leaveSourceKey,
-  memberScopeFilter,
   parseOpeningBalances,
   type LeaveOpeningMatchResponse,
   type LeaveOpeningResponse,
   type LeaveOpeningSaveResponse,
   type LeaveYearMode,
+  orgLeaveTrackingStart,
+  leavePeopleIn,
 } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../attendance/self-decision';
-import {
-  PERSON_LEAVE_SELECT,
-  PersonLeaveYear,
-  asDate,
-  dayOf,
-  MEMBERS_WHERE,
-  leaveYearFor,
-  nameKey,
-  readOpeningRows,
-} from './leave-ledger-helpers';
+import { PersonLeaveYear, asDate, dayOf, leaveYearFor, nameKey, readOpeningRows } from './leave-ledger-helpers';
 import { LeaveLedgerBase } from './leave-ledger.base';
 
 /**
@@ -86,15 +78,7 @@ export class LeaveOpeningService extends LeaveLedgerBase {
     const ids = rows.map((r) => r.userId);
 
     // Every person: in this organization, a member, in the caller's scope. Anything else is 404.
-    const people = await this.prisma.user.findMany({
-      where: {
-        id: { in: ids },
-        organizationId: dto.organizationId,
-        ...MEMBERS_WHERE,
-        ...memberScopeFilter(dto.scopeSpaceIds),
-      },
-      select: PERSON_LEAVE_SELECT,
-    });
+    const people = await leavePeopleIn(this.prisma, ids, dto.organizationId, dto.scopeSpaceIds);
     if (people.length !== ids.length)
       throw new NotFoundException({ code: 'MEMBER_NOT_FOUND', message: 'Employee not found' });
     if (ids.includes(dto.callerId)) {
@@ -195,10 +179,7 @@ export class LeaveOpeningService extends LeaveLedgerBase {
         where: { id: dto.organizationId, leaveTrackingStartedOn: null },
         data: { leaveTrackingStartedOn: asDate(on) },
       });
-      const after = await tx.organization.findUnique({
-        where: { id: dto.organizationId },
-        select: { leaveTrackingStartedOn: true },
-      });
+      const after = await orgLeaveTrackingStart(tx, dto.organizationId);
       return {
         on,
         trackingStartedOn: dayOf(after?.leaveTrackingStartedOn),

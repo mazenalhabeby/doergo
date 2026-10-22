@@ -9,15 +9,10 @@ import {
   leaveSourceKey,
   runWithCronLock,
   toISODateString,
+  leavePeoplePage,
+  orgsCarryingOver,
 } from '@hbcfield/shared';
-import {
-  LeaveLedgerService,
-  ORG_LEAVE_SELECT,
-  PERSON_LEAVE_SELECT,
-  carryRuleOf,
-  type OrgLeave,
-  type PersonLeave,
-} from './leave-ledger.service';
+import { LeaveLedgerService, carryRuleOf, type OrgLeave, type PersonLeave } from './leave-ledger.service';
 
 /** People per batch: one set of queries per batch, never one per person. */
 const BATCH = 500;
@@ -71,10 +66,7 @@ export class LeaveCarryOverService {
 
   /** Directly callable (tests, a one-off run). Returns the number of lines written. */
   async sweep(now: Date = new Date()): Promise<number> {
-    const orgs = await this.prisma.organization.findMany({
-      where: { carryOverMode: { not: 'NONE' } as never, isActive: true, suspendedAt: null },
-      select: ORG_LEAVE_SELECT,
-    });
+    const orgs = await orgsCarryingOver(this.prisma);
     let written = 0;
     for (const org of orgs) {
       try {
@@ -94,13 +86,7 @@ export class LeaveCarryOverService {
     let written = 0;
     let cursor: string | undefined;
     for (;;) {
-      const people: PersonLeave[] = await this.prisma.user.findMany({
-        where: { organizationId: org.id, isActive: true, isExternal: false, role: { not: 'CUSTOMER' } as never },
-        select: PERSON_LEAVE_SELECT,
-        orderBy: { id: 'asc' },
-        take: BATCH,
-        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      });
+      const people: PersonLeave[] = await leavePeoplePage(this.prisma, org.id, BATCH, cursor);
       if (!people.length) break;
       cursor = people[people.length - 1]!.id;
       written += await this.sweepBatch(org, people, today, countedSince, rule);

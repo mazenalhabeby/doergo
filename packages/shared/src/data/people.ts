@@ -4,6 +4,8 @@
  * read exactly what others rely on. Owner: auth-service.
  */
 import { activeWindowWhere } from '../access/assignment-window';
+import { memberScopeFilter } from '../access/member-scope';
+import { ABSENCE_WHERE } from '../requests/request-kinds';
 import type { On } from './db';
 
 /** How a list of people is filtered — each one a rule, not a column. */
@@ -142,4 +144,68 @@ export function colleaguesByName(
     orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
     take: 500,
   });
+}
+
+/** These people's cost rates (what they cost the organization per hour). */
+export function peopleCostRates(db: On<'user', 'findMany'>, ids: string[]) {
+  return db.user.findMany({ where: { id: { in: ids } }, select: { id: true, costRateCents: true } });
+}
+
+/** Whether a person may work away from a site, and their role. */
+export function personRemoteFacts(db: On<'user', 'findFirst'>, userId: string, organizationId: string) {
+  return db.user.findFirst({
+    where: { id: userId, organizationId },
+    select: { id: true, allowRemote: true, role: true },
+  });
+}
+
+/** The workspaces a person is assigned to today (task-service's assignments, reached through the person). */
+export function personActiveSpaces(db: On<'user', 'findFirst'>, userId: string, organizationId: string) {
+  return db.user.findFirst({
+    where: { id: userId, organizationId },
+    select: { spaceAssignments: { where: { ...activeWindowWhere() }, select: { spaceId: true } } },
+  });
+}
+
+/**
+ * Field employees who are switched on, with their schedule on these weekdays, approved leave touching the
+ * range and current workspace assignments — the availability board. ⚠️ Schedules, leave and assignments
+ * are task-service's tables reached THROUGH the person (one query); narrowed by the caller's scope.
+ */
+export function availabilityRoster(
+  db: On<'user', 'findMany'>,
+  input: { organizationId: string; scopeSpaceIds?: string[]; daysOfWeek: number[]; rangeStart: Date; rangeEnd: Date },
+) {
+  return db.user.findMany({
+    where: {
+      organizationId: input.organizationId,
+      role: 'EMPLOYEE',
+      isActive: true,
+      ...memberScopeFilter(input.scopeSpaceIds),
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      position: true,
+      schedules: { where: { dayOfWeek: { in: input.daysOfWeek }, isActive: true } },
+      timeOffRequests: {
+        where: {
+          status: 'APPROVED',
+          ...ABSENCE_WHERE,
+          startDate: { lte: input.rangeEnd },
+          endDate: { gte: input.rangeStart },
+        },
+      },
+      spaceAssignments: {
+        where: { effectiveTo: null },
+        select: { isPrimary: true, space: { select: { id: true, name: true, timezone: true } } },
+      },
+    },
+  });
+}
+
+/** How many of these ids are people of the organization. */
+export function countPeopleInOrg(db: On<'user', 'count'>, ids: string[], organizationId: string) {
+  return db.user.count({ where: { id: { in: ids }, organizationId } });
 }

@@ -11,25 +11,8 @@ import {
 } from '@hbcfield/shared';
 
 /* What the ledger needs to know about an organization and a person — selected once, passed down. */
-export const ORG_LEAVE_SELECT = {
-  id: true,
-  createdAt: true,
-  timezone: true,
-  defaultLeaveAllowance: true,
-  leaveYearMode: true,
-  carryOverMode: true,
-  carryOverMaxDays: true,
-  carryExpiresAfterMonths: true,
-  leaveTrackingStartedOn: true,
-} as const;
-
-export const PERSON_LEAVE_SELECT = {
-  id: true,
-  organizationId: true,
-  leaveAllowance: true,
-  employmentStartDate: true,
-  createdAt: true,
-} as const;
+/** The leave columns of a person / an organization — auth-service's, published in shared data/leave. */
+export { ORG_LEAVE_SELECT, PERSON_LEAVE_SELECT } from '@hbcfield/shared';
 
 export interface OrgLeave {
   id: string;

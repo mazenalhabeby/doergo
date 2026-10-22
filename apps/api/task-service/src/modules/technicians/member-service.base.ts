@@ -1,12 +1,13 @@
 import { ApprovalRulesService } from '../../common/approval-rules/approval-rules.service';
 import {
   REQUEST_KINDS,
-  activeAssignmentWhere,
   isAbsence,
   requestKindsOffered,
   resolveAwayAccess,
   type RequestKind,
   toISODateString,
+  personRemoteFacts,
+  activeAssignmentWhere,
 } from '@hbcfield/shared';
 import { Inject, Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -69,10 +70,7 @@ export abstract class MemberServiceBase {
    */
   protected async requestSpaces(organizationId: string, userId: string) {
     const [member, assignments] = await Promise.all([
-      this.prisma.user.findFirst({
-        where: { id: userId, organizationId },
-        select: { id: true, allowRemote: true, role: true },
-      }),
+      personRemoteFacts(this.prisma, userId, organizationId),
       this.prisma.spaceAssignment.findMany({
         where: { ...activeAssignmentWhere(userId), space: { organizationId, isActive: true, isRemote: false } },
         select: {

@@ -1,5 +1,12 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { success, writeRateChange, utcTodayKey, COST_ON_PROFILE_MESSAGE, toISODateString } from '@hbcfield/shared';
+import {
+  success,
+  writeRateChange,
+  utcTodayKey,
+  COST_ON_PROFILE_MESSAGE,
+  toISODateString,
+  personPasses,
+} from '@hbcfield/shared';
 import { withRateErrors } from './space-roles-helpers';
 import { SpaceRolesBase } from './space-roles.base';
 
@@ -114,10 +121,7 @@ export class MemberTermsService extends SpaceRolesBase {
               select: { id: true },
             }))
           : data.target === 'MEMBER'
-            ? !!(await this.prisma.user.findFirst({
-                where: { id: data.targetId, organizationId: data.organizationId },
-                select: { id: true },
-              }))
+            ? !!(await personPasses(this.prisma, data.targetId, { organizationId: data.organizationId }))
             : !!(await this.prisma.spaceAssignment.findFirst({
                 where: {
                   id: data.targetId,

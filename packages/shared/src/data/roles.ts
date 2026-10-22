@@ -3,6 +3,7 @@
  * as a role HOLDER) — see db.ts. Owner: auth-service. A personal role never appears in a list.
  */
 import { activeWindowWhere } from '../access/assignment-window';
+import { SHARED_ROLE_WHERE } from '../access/personal-role';
 import type { On } from './db';
 
 /** Role names by id. */
@@ -95,5 +96,88 @@ export function approverFacts(db: On<'user', 'findFirst'>, userId: string, organ
   return db.user.findFirst({
     where: { id: userId, organizationId, isActive: true },
     select: { id: true, role: true, memberRole: { select: { permissions: true } } },
+  });
+}
+
+/* ── Workspace roles, as task-service's role screens read them (auth writes them, group D) ── */
+
+const SPACE_SCOPE = { scope: { in: ['SPACE', 'BOTH'] as ('SPACE' | 'BOTH')[] } };
+/** Never a personal role in a list (one person's permissions in one workspace). */
+const SHARED = SHARED_ROLE_WHERE;
+
+/** The organization's shared workspace roles, in order, with how many hold each. */
+export function spaceRolesWithCounts(db: On<'accessRole', 'findMany'>, organizationId: string) {
+  return db.accessRole.findMany({
+    where: { organizationId, ...SPACE_SCOPE, ...SHARED },
+    orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+    include: { _count: { select: { spaceAssignments: true, workAssignments: true } } },
+  });
+}
+
+/** The same list in the columns one workspace's role screen shows. */
+export function spaceRoleCards(db: On<'accessRole', 'findMany'>, organizationId: string) {
+  return db.accessRole.findMany({
+    where: { organizationId, ...SPACE_SCOPE, ...SHARED },
+    orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      color: true,
+      description: true,
+      permissions: true,
+      kind: true,
+      isSystem: true,
+      isActive: true,
+      scope: true,
+      _count: { select: { spaceAssignments: true, workAssignments: true } },
+    },
+  });
+}
+
+/** The highest role position in the organization. */
+export function maxRolePosition(db: On<'accessRole', 'aggregate'>, organizationId: string) {
+  return db.accessRole.aggregate({ where: { organizationId }, _max: { position: true } });
+}
+
+/** How many of these roles are SHARED roles of the organization. */
+export function countSharedRolesInOrg(db: On<'accessRole', 'count'>, ids: string[], organizationId: string) {
+  return db.accessRole.count({ where: { id: { in: ids }, organizationId, ...SHARED } });
+}
+
+/** A shared workspace role already named this (case-insensitive), other than `excludeId`. */
+export function spaceRoleNamed(
+  db: On<'accessRole', 'findFirst'>,
+  organizationId: string,
+  name: string,
+  excludeId?: string,
+) {
+  return db.accessRole.findFirst({
+    where: {
+      organizationId,
+      ...SPACE_SCOPE,
+      ...SHARED,
+      name: { equals: name.trim(), mode: 'insensitive' },
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+    select: { id: true, name: true },
+  });
+}
+
+/** One workspace role of the organization (the whole row — the screen edits it). */
+export function spaceRoleInOrg(db: On<'accessRole', 'findFirst'>, roleId: string, organizationId: string) {
+  return db.accessRole.findFirst({ where: { id: roleId, organizationId, ...SPACE_SCOPE } });
+}
+
+/** Slugs of the organization's roles starting with `base` (personal ones included — slugs are unique). */
+export function roleSlugsLike(
+  db: On<'accessRole', 'findMany'>,
+  organizationId: string,
+  base: string,
+  excludeId?: string,
+) {
+  return db.accessRole.findMany({
+    where: { organizationId, slug: { startsWith: base }, ...(excludeId ? { id: { not: excludeId } } : {}) },
+    select: { slug: true },
   });
 }

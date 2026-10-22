@@ -1,4 +1,4 @@
-import { ABSENCE_WHERE, memberScopeFilter, dowOf } from '@hbcfield/shared';
+import { dowOf, availabilityRoster, personBrief, personPasses } from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { success } from '@hbcfield/shared';
 import { SetScheduleDto, GetScheduleDto, GetAvailabilityDto } from './dto';
@@ -19,9 +19,7 @@ export class MemberScheduleService extends MemberServiceBase {
     const { technicianId, organizationId, schedule } = dto;
 
     // Verify technician exists and belongs to organization
-    const technician = await this.prisma.user.findFirst({
-      where: { id: technicianId, organizationId },
-    });
+    const technician = await personPasses(this.prisma, technicianId, { organizationId });
 
     if (!technician) {
       throw new NotFoundException('Employee not found in organization');
@@ -90,10 +88,7 @@ export class MemberScheduleService extends MemberServiceBase {
     const { technicianId, organizationId } = dto;
 
     // Verify technician belongs to organization
-    const technician = await this.prisma.user.findFirst({
-      where: { id: technicianId, organizationId },
-      select: { id: true, firstName: true, lastName: true },
-    });
+    const technician = await personBrief(this.prisma, technicianId, { organizationId });
 
     if (!technician) {
       throw new NotFoundException('Employee not found in organization');
@@ -137,40 +132,12 @@ export class MemberScheduleService extends MemberServiceBase {
     const rangeStart = new Date(`${days[0]}T00:00:00.000Z`);
     const rangeEnd = new Date(`${days[days.length - 1]}T00:00:00.000Z`);
 
-    const technicians = await this.prisma.user.findMany({
-      where: {
-        organizationId,
-        role: 'EMPLOYEE',
-        isActive: true,
-        // ⚠️ A reader allowed in SOME workspaces sees only the people in them —
-        // availability shows who is off and why it is not anybody else's business.
-        ...memberScopeFilter(scopeSpaceIds),
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        position: true,
-        schedules: {
-          where: { dayOfWeek: { in: daysOfWeek }, isActive: true },
-        },
-        timeOffRequests: {
-          where: {
-            status: 'APPROVED',
-            ...ABSENCE_WHERE,
-            startDate: { lte: rangeEnd },
-            endDate: { gte: rangeStart },
-          },
-        },
-        // Include space assignments for grouping
-        spaceAssignments: {
-          where: { effectiveTo: null }, // Only active assignments
-          select: {
-            isPrimary: true,
-            space: { select: { id: true, name: true, timezone: true } },
-          },
-        },
-      },
+    const technicians = await availabilityRoster(this.prisma, {
+      organizationId,
+      scopeSpaceIds,
+      daysOfWeek,
+      rangeStart,
+      rangeEnd,
     });
 
     // Build availability for each date
