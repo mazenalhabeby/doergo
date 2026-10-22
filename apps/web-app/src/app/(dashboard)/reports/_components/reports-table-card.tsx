@@ -1,14 +1,13 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { fmt } from "../_hooks/use-reports-page"
-import type { ReportsPageState } from "../_hooks/use-reports-page"
+import { useTranslation } from "react-i18next"
+import { type ReportResult } from "@/lib/api"
+import { fmt } from "./report-options"
 
-/** Part of the parent component's markup, moved here unchanged; it reads the state from `vm`. */
-export function ReportsTableCard({ vm }: { vm: ReportsPageState }) {
-  const { t, displayResult } = vm
-  // Rendered only under the parent's `displayResult` check; re-checked here for the type only.
-  if (!displayResult) return null
+/** The result as a table, one row per row, measures right-aligned. */
+export function ReportsTableCard({ result: displayResult }: { result: ReportResult }) {
+  const { t } = useTranslation()
   return (
     <>
       {/* Table card */}

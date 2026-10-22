@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Contact, Plus, Smartphone, ChevronRight, Building2 } from "lucide-react"
 
-import { customersApi, type Customer } from "@/lib/api"
+import { customersApi } from "@/lib/api"
 import { customerStageLabel, personInitials } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { Truncated } from "@/components/common/truncated"
@@ -16,10 +16,11 @@ import { ClientRowsSkeleton } from "@/components/skeletons/crm"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import { SectionHeader, EmptyState } from "./section-header"
-import { useCustomerForm } from "./use-customer-form"
-import { CustomerFormEdit } from "./customer-form-edit"
+import { CustomerForm } from "./customer-form"
+
+// The add / edit dialog lives in customer-form.tsx; re-exported for the client record page.
+export { CustomerForm }
 
 /*
   "contacts" is a different KIND of filter from the other three.
@@ -210,72 +211,5 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
         </div>
       )}
     </div>
-  )
-}
-
-// Add / edit dialog — exported for reuse on the full customer record page.
-/**
- * ⚠️ A client belongs to a WORKSPACE, and this form is opened from two places
- * that know different amounts about which one.
- *
- * From a workspace's own Customers tab, `spaceId` is that workspace and there is
- * nothing to ask. From the top-level Clients page the reader may be on "All",
- * where `spaceId` is undefined — and that used to create a client belonging to
- * NO workspace: absent from every workspace tab, visible only under All, and
- * outside the per-workspace CRM everything else here is built on. Sixteen of
- * nineteen clients in this database arrived that way.
- *
- * So when nobody has said which workspace, the form asks. One workspace and it
- * answers itself; several and it is a required choice, because guessing puts a
- * client somewhere a person then has to find.
- *
- * On EDIT it shows the workspace too. Hiding it was a mistake: a client created
- * before this asked — sixteen of nineteen here — had no way out of "no
- * workspace" except a database statement, and a client filed in the wrong one
- * was stuck there. The field says what it does, because moving a client between
- * workspaces is not the same kind of act as correcting a phone number. An app
- * user is the exception: their workspace is decided by the portal that runs
- * their login, and the server refuses to move them.
- */
-export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }: {
-  // personOnly = hide the Person/Company toggle and lock to Person (e.g. a
-  // portal client / apartment resident is always a person).
-  spaceId?: string; existing?: Customer; onSaved: (customer?: Customer) => void; trigger: React.ReactNode; personOnly?: boolean
-}) {
-  const vm = useCustomerForm({ spaceId, existing, onSaved, trigger, personOnly })
-  const {
-    t,
-    user,
-    open,
-    setOpen,
-    type,
-    setType,
-    form,
-    details,
-    setDetails,
-    locale,
-    setLocale,
-    currency,
-    setCurrency,
-    legalEntityId,
-    setLegalEntityId,
-    mainCompany,
-    needsSpace,
-    showSpace,
-    crmSpaces,
-    chosenSpace,
-    setChosenSpace,
-    targetSpace,
-    set,
-    emailInvalid,
-    isCompany,
-    save,
-  } = vm
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <CustomerFormEdit vm={vm} existing={existing} personOnly={personOnly} />
-    </Dialog>
   )
 }

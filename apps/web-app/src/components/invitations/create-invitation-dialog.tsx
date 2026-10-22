@@ -1,16 +1,26 @@
 "use client"
 
-import { Copy, Check, CheckCircle2, Link2 } from "lucide-react"
-
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { ScheduleFields } from "@/components/people/schedule-fields"
 import { useCreateInvitationDialog, type CreateInvitationDialogProps } from "./use-create-invitation-dialog"
-import { CreateInvitationDialogInviteDialog } from "./create-invitation-dialog-invite-dialog"
+import { InvitationCreated } from "./invitation-created"
+import { InviteContactFields } from "./invite-contact-fields"
+import { InviteWhoField } from "./invite-who-field"
+import { InviteWorkspaceField } from "./invite-workspace-field"
+import { ExternalRoleFields } from "./external-role-fields"
+import { InviteAccessSection } from "./invite-access-section"
 
 export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationDialogProps) {
-  const vm = useCreateInvitationDialog({ open, onOpenChange })
   const {
-    t,
     mode,
     setMode,
     email,
@@ -42,81 +52,31 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     codeCopied,
     locations,
     hasSpace,
-    spaceModules,
     builderModules,
     spaceRoles,
     createMutation,
     handleSubmit,
     handlePositionChange,
-    platformSummary,
     handleCopyCode,
     handleSendAnother,
     handleClose,
-  } = vm
+  } = useCreateInvitationDialog({ open, onOpenChange })
+  const { t } = useTranslation()
 
   // ─── Success view ──────────────────────────────────────────────────────
 
   if (success && generatedCode) {
     return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("invitations.inviteDialog.title")}</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            {mode === "email" && email ? (
-              <div className="text-center space-y-3">
-                <div className="mx-auto w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">{t("invitations.inviteDialog.invitationSent")}</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {t("invitations.inviteDialog.emailSentToPrefix")} <span className="font-medium text-foreground">{email}</span>
-                  </p>
-                </div>
-                <div className="bg-muted/60 rounded-lg p-3 space-y-1">
-                  <p className="text-xs text-muted-foreground">{t("invitations.inviteDialog.codeAlsoInEmail")}</p>
-                  <div className="flex items-center justify-center gap-2">
-                    <p className="text-xl font-mono font-bold tracking-[0.15em] text-foreground">{generatedCode}</p>
-                    <Button variant="ghost" size="icon" onClick={handleCopyCode} className="h-7 w-7">
-                      {codeCopied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center space-y-3">
-                <div className="mx-auto w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Link2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">{t("invitations.inviteDialog.codeCreated")}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{t("invitations.inviteDialog.shareCode")}</p>
-                </div>
-                <div className="bg-muted/60 rounded-xl p-5">
-                  <p className="text-3xl font-mono font-bold tracking-[0.2em] text-foreground">{generatedCode}</p>
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-2 pt-1">
-              <Button variant="outline" onClick={handleSendAnother} className="flex-1 rounded-lg">
-                {mode === "email" ? t("invitations.inviteDialog.sendAnother") : t("invitations.inviteDialog.createAnother")}
-              </Button>
-              {mode === "code" && (
-                <Button variant="outline" onClick={handleCopyCode} className="rounded-lg">
-                  {codeCopied
-                    ? <><Check className="h-4 w-4 mr-1.5 text-green-600" />{t("common.copied")}</>
-                    : <><Copy className="h-4 w-4 mr-1.5" />{t("common.copy")}</>}
-                </Button>
-              )}
-              <Button onClick={handleClose} className="flex-1 rounded-lg">{t("common.done")}</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <InvitationCreated
+        open={open}
+        onClose={handleClose}
+        mode={mode}
+        email={email}
+        generatedCode={generatedCode}
+        codeCopied={codeCopied}
+        onCopyCode={handleCopyCode}
+        onSendAnother={handleSendAnother}
+      />
     )
   }
 
@@ -130,10 +90,87 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
           <DialogDescription>{t("invitations.inviteDialog.description")}</DialogDescription>
         </DialogHeader>
 
-        <CreateInvitationDialogInviteDialog vm={vm} />
+        <div className="space-y-4 py-2 max-h-[65vh] overflow-y-auto pr-1">
+          <InviteContactFields
+            mode={mode}
+            setMode={setMode}
+            email={email}
+            setEmail={setEmail}
+            position={position}
+            onPositionChange={handlePositionChange}
+          />
+
+          {/* Staff, or somebody else's */}
+          <InviteWhoField
+            isExternal={isExternal}
+            setIsExternal={setIsExternal}
+            setScheduleType={setScheduleType}
+            setAccess={setAccess}
+          />
+
+          {/* Schedule — same control as the Edit dialog (type + weekly hours /
+              budget). Not for an external member: a schedule is the hours WE
+              expect somebody to work, and this person's hours are their own
+              employer's business. They come to approve ours, not to file
+              theirs — they never clock in, so a rota line for them would sit
+              permanently unmet and start raising no-shows against a company
+              that owes us no attendance. */}
+          {!isExternal && (
+            <ScheduleFields
+              scheduleType={scheduleType}
+              onScheduleTypeChange={setScheduleType}
+              scheduleRows={scheduleRows}
+              onScheduleRowsChange={setScheduleRows}
+              monthlyHourBudget={monthlyHourBudget}
+              onMonthlyHourBudgetChange={setMonthlyHourBudget}
+            />
+          )}
+
+          {/* Space (optional) */}
+          {locations.length > 0 && (
+            <InviteWorkspaceField
+              locations={locations}
+              spaceId={spaceId}
+              setSpaceId={setSpaceId}
+              isExternal={isExternal}
+              hasSpace={hasSpace}
+            />
+          )}
+
+          {/*
+            What an outsider may do — only meaningful for an external invite, and
+            only once the workspace is chosen (the builder greys out what that
+            workspace does not run).
+          */}
+          {isExternal && hasSpace && (
+            <ExternalRoleFields
+              externalMode={externalMode}
+              setExternalMode={setExternalMode}
+              spaceRoles={spaceRoles}
+              email={email}
+              externalChoice={externalChoice}
+              setExternalChoice={setExternalChoice}
+              builderModules={builderModules}
+              access={access}
+              patchAccess={patchAccess}
+              externalRoleId={externalRoleId}
+              setExternalRoleId={setExternalRoleId}
+            />
+          )}
+
+          <InviteAccessSection
+            isExternal={isExternal}
+            access={access}
+            patchAccess={patchAccess}
+            accessOpen={accessOpen}
+            setAccessOpen={setAccessOpen}
+          />
+        </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} className="rounded-lg">{t("common.cancel")}</Button>
+          <Button variant="outline" onClick={handleClose} className="rounded-lg">
+            {t("common.cancel")}
+          </Button>
           <Button
             onClick={handleSubmit}
             disabled={
@@ -148,9 +185,12 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
             className="rounded-lg"
           >
             {createMutation.isPending
-              ? mode === "email" ? t("invitations.inviteDialog.sending") : t("common.generating")
-              : mode === "email" ? t("invitations.inviteDialog.sendInvitation") : t("invitations.inviteDialog.generateCode")
-            }
+              ? mode === "email"
+                ? t("invitations.inviteDialog.sending")
+                : t("common.generating")
+              : mode === "email"
+                ? t("invitations.inviteDialog.sendInvitation")
+                : t("invitations.inviteDialog.generateCode")}
           </Button>
         </DialogFooter>
       </DialogContent>

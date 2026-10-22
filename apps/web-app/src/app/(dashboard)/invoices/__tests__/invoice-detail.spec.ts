@@ -1,7 +1,7 @@
 
 import path from "path"
 
-import { code, listPage } from "./_screen"
+import { code, documentCode, listPage } from "./_screen"
 import { readSource } from "../../../../test-utils/read-source"
 
 /*
@@ -39,7 +39,7 @@ describe("the issued invoice", () => {
     */
     const src = code(PAGE)
     expect(src).not.toMatch(/invoices\.create\.title["']\)\.toUpperCase/)
-    expect(code("_components/invoice-document.tsx")).toContain("invoices.create.documentWord")
+    expect(documentCode()).toContain("invoices.create.documentWord")
   })
 
   it("offers only the client's copy", () => {
@@ -65,7 +65,7 @@ describe("the issued invoice", () => {
       dash. The document says it too, not only this summary.
     */
     expect(code(PAGE)).toContain("invoices.create.onReceipt")
-    expect(code("_components/invoice-document.tsx")).toContain("invoices.create.onReceipt")
+    expect(documentCode()).toContain("invoices.create.onReceipt")
   })
 
   it("keeps the destructive actions out of the open", () => {

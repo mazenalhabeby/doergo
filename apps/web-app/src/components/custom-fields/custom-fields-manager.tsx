@@ -7,18 +7,11 @@ import { useTranslation } from "react-i18next"
 import { Plus, Trash2, Pencil, Type } from "lucide-react"
 import { notify } from "@/lib/toast"
 
-import {
-  customFieldsApi,
-  type CustomFieldDefinition,
-  type CustomFieldType,
-} from "@/lib/api"
+import { customFieldsApi, type CustomFieldDefinition, type CustomFieldType } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { Dialog } from "@/components/ui/dialog"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
-import { useFieldDialog } from "./use-field-dialog"
-import { FIELD_TYPES } from "./field-dialog-helpers"
-import { FieldDialogEditField } from "./field-dialog-edit-field"
+import { FIELD_TYPES, FieldDialog } from "./field-dialog"
 
 function getFieldIcon(type: CustomFieldType) {
   return FIELD_TYPES.find((f) => f.value === type)?.icon || Type
@@ -60,13 +53,14 @@ const FieldRow = memo(function FieldRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-foreground">{field.name}</span>
-          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-            {field.key}
-          </span>
+          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.key}</span>
           {field.isRequired && (
             <span
-              className={"text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full " +
-                "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}>
+              className={
+                "text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full " +
+                "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+              }
+            >
               {t("common.required")}
             </span>
           )}
@@ -77,14 +71,8 @@ const FieldRow = memo(function FieldRow({
           </p>
         )}
       </div>
-      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-        {field.type}
-      </span>
-      <Switch
-        checked={field.isActive}
-        onCheckedChange={onToggleActive}
-        className="data-[state=checked]:bg-green-500"
-      />
+      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{field.type}</span>
+      <Switch checked={field.isActive} onCheckedChange={onToggleActive} className="data-[state=checked]:bg-green-500" />
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onEdit}>
           <Pencil className="h-3.5 w-3.5" />
@@ -101,47 +89,6 @@ const FieldRow = memo(function FieldRow({
     </div>
   )
 })
-
-// Create/Edit dialog — scope is fixed by the manager (workflowId), so there's
-// no "Applies to" selector here.
-export function FieldDialog({
-  open,
-  onOpenChange,
-  existingField,
-  workflowId,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  existingField: CustomFieldDefinition | null
-  workflowId: string | null
-}) {
-  const vm = useFieldDialog({ open, onOpenChange, existingField, workflowId })
-  const {
-    t,
-    isEditing,
-    name,
-    setName,
-    key,
-    setKey,
-    type,
-    setType,
-    isRequired,
-    setIsRequired,
-    options,
-    setOptions,
-    newOption,
-    setNewOption,
-    autoKey,
-    mutation,
-    addOption,
-  } = vm
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <FieldDialogEditField vm={vm} workflowId={workflowId} onOpenChange={onOpenChange} />
-    </Dialog>
-  )
-}
 
 /**
  * Manage the custom fields for a single scope — a Task Type (workflowId) or the
@@ -204,9 +151,7 @@ export function CustomFieldsManager({ workflowId }: { workflowId: string | null 
       {isLoading ? (
         <div className="p-4 text-xs text-muted-foreground">{t("common.loading")}</div>
       ) : fields.length === 0 ? (
-        <div className="px-4 py-6 text-center text-xs text-muted-foreground">
-          {t("customFields.emptyState")}
-        </div>
+        <div className="px-4 py-6 text-center text-xs text-muted-foreground">{t("customFields.emptyState")}</div>
       ) : (
         <div className="divide-y divide-border">
           {fields.map((field) => (

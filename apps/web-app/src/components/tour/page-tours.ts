@@ -2,8 +2,8 @@ import type { TourDef } from "./types"
 import { step, pageTour } from "./tour-steps"
 
 /**
- * The tours of single pages: members, workspaces, attendance, reports, a task, leave, settings, availability, a member. Part of
- * `TOURS`, moved here unchanged.
+ * The tours of single pages: members, workspaces, attendance, reports, a task, leave, settings,
+ * availability, a member. Part of `TOURS`.
  */
 export const PAGE_TOURS: TourDef[] = [
   // ── DEEPER: Members screen — grow your team ──
@@ -67,7 +67,11 @@ export const PAGE_TOURS: TourDef[] = [
       { ...step("attendanceTour", "trackingTable", "tracking-table"), optional: true },
       // Approvals tab — spotlight the tab, then switch to it (controlled onClick).
       { ...step("attendanceTour", "approvalsTab", "attendance-tab-approvals"), optional: true },
-      { ...step("attendanceTour", "approvals", "approvals-content"), enter: "attendance-tab-approvals", optional: true },
+      {
+        ...step("attendanceTour", "approvals", "approvals-content"),
+        enter: "attendance-tab-approvals",
+        optional: true,
+      },
       // Breaks tab
       { ...step("attendanceTour", "breaksTab", "attendance-tab-breaks"), optional: true },
       { ...step("attendanceTour", "breaks", "breaks-content"), enter: "attendance-tab-breaks", optional: true },
@@ -160,14 +164,17 @@ export const PAGE_TOURS: TourDef[] = [
       { ...step("myAttendanceTour", "history", "my-attn-history"), optional: true },
     ],
   },
-  ...pageTour("pageInvitations", "invitations", "invite", "/invitations", "page-invitations", (c) => c.hasPermission("canManageUsers")),
+  ...pageTour("pageInvitations", "invitations", "invite", "/invitations", "page-invitations", (c) =>
+    c.hasPermission("canManageUsers"),
+  ),
   ...pageTour(
     "pageOvertime",
     "overtime",
     "attendance",
     "/overtime",
     "page-overtime",
-    (c) => c.hasPermission("canApproveOvertime") || c.hasPermission("canViewAllTasks")),
+    (c) => c.hasPermission("canApproveOvertime") || c.hasPermission("canViewAllTasks"),
+  ),
   ...pageTour("pageManage", "manage", "settings", "/manage", "page-manage"),
   // Settings — Organization + Personal sections (org steps skip for non-admins).
   {
@@ -181,7 +188,11 @@ export const PAGE_TOURS: TourDef[] = [
       { ...step("settingsTour", "orgGroup", "settings-org-group"), optional: true },
       { ...step("settingsTour", "general", "settings-general"), enter: "settings-nav-general", optional: true },
       { ...step("settingsTour", "members", "settings-members"), enter: "settings-nav-members", optional: true },
-      { ...step("settingsTour", "notifications", "settings-notifications"), enter: "settings-nav-notifications", optional: true },
+      {
+        ...step("settingsTour", "notifications", "settings-notifications"),
+        enter: "settings-nav-notifications",
+        optional: true,
+      },
       // No task-types step: they are not in Organization Settings at all. They
       // belong to the space that runs the work, and the spaces tour covers them.
       { ...step("settingsTour", "audit", "settings-audit"), enter: "settings-nav-audit-log", optional: true },

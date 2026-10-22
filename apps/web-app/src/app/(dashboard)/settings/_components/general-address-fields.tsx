@@ -1,14 +1,27 @@
 "use client"
 
+import { useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { Globe, MapPin } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Combobox } from "@/components/ui/combobox"
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox"
+import { getCountries } from "@/lib/countries"
 import { FormField } from "./settings-form-bits"
-import type { GeneralSectionState } from "./use-general-section"
+import type { OrganizationForm } from "./use-organization-profile-form"
 
-/** Part of the parent component's markup, moved here unchanged; it reads the state from `vm`. */
-export function GeneralAddressFields({ vm }: { vm: GeneralSectionState }) {
-  const { t, form, set, countryOptions } = vm
+/** The organization's postal address: street, line 2, city, state, postal code, country. */
+export function GeneralAddressFields({
+  form,
+  set,
+}: {
+  form: OrganizationForm
+  set: (field: string, value: string) => void
+}) {
+  const { t } = useTranslation()
+  const countryOptions: ComboboxOption[] = useMemo(
+    () => getCountries().map((c) => ({ value: c.code, label: c.name, keywords: c.code })),
+    [],
+  )
   return (
     <>
       <FormField icon={MapPin} label={t("settings.general.streetAddress", "Street address")}>

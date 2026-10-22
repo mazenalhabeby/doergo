@@ -7,10 +7,15 @@ import { CheckCircle2, Clock, User, Wrench, Camera, PenTool, AlertCircle } from 
 import { reportsApi } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { useTranslation } from "react-i18next"
-import { type ServiceReportSectionProps, SignatureDisplay } from "./service-report-section-shared"
+import { SignatureDisplay } from "./signature-display"
 import { PhotoGallery } from "./photo-gallery"
 import { PartsTable } from "./parts-table"
 import { AttachmentUpload } from "./attachment-upload"
+
+interface ServiceReportSectionProps {
+  taskId: string
+  taskStatus: string
+}
 
 export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectionProps) {
   const { t, i18n } = useTranslation()
@@ -20,7 +25,11 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
   // Only fetch report for completed/closed tasks
   const shouldFetch = taskStatus === "COMPLETED" || taskStatus === "CLOSED"
 
-  const { data: report, isLoading, error } = useQuery({
+  const {
+    data: report,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: keys.tasks.report(taskId),
     queryFn: () => reportsApi.getTaskReport(taskId),
     enabled: shouldFetch,
@@ -73,11 +82,13 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
           <span className="text-sm font-medium text-foreground">{t("tasks.serviceReport.jobCompleted")}</span>
         </div>
         <span className="text-sm text-muted-foreground">
-          {t("tasks.serviceReport.completedOn", { date: new Date(report.completedAt).toLocaleDateString(i18n.language, {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          }) })}
+          {t("tasks.serviceReport.completedOn", {
+            date: new Date(report.completedAt).toLocaleDateString(i18n.language, {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+          })}
         </span>
       </div>
 
@@ -127,7 +138,9 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">{t("tasks.serviceReport.before")}</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
+              {t("tasks.serviceReport.before")}
+            </p>
             <PhotoGallery
               attachments={attachments}
               type="BEFORE"
@@ -137,7 +150,9 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
             />
           </div>
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">{t("tasks.serviceReport.after")}</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
+              {t("tasks.serviceReport.after")}
+            </p>
             <PhotoGallery
               attachments={attachments}
               type="AFTER"
@@ -149,9 +164,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
         </div>
 
         {/* Upload dropzone for admins */}
-        {isAdmin && (
-          <AttachmentUpload reportId={report.id} taskId={taskId} />
-        )}
+        {isAdmin && <AttachmentUpload reportId={report.id} taskId={taskId} />}
       </div>
 
       {/* Parts Used */}

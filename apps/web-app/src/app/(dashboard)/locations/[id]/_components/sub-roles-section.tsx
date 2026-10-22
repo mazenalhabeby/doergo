@@ -1,23 +1,22 @@
 "use client"
 
-import { Plus, Shield, ShieldCheck, Loader2, Wrench, Trash2 } from "lucide-react"
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { Plus, Shield, ShieldCheck, Loader2, Wrench } from "lucide-react"
+import { type SpaceRoleInSpace } from "@hbcfield/shared/client"
+import { keys } from "@/lib/query-keys"
+import { notify } from "@/lib/toast"
+import { spaceRolesApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { formatMoney, MONEY_LOCALE } from "@/lib/money"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { ConfirmTargetDialog } from "@/components/common/confirm-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
 import { RoleDialog } from "./space-role-dialog"
-import { useSubRolesSection } from "./use-sub-roles-section"
+import { AddRoleHereDialog } from "./add-role-here-dialog"
+import { RoleCard, roleQueryKey, useSpaceCurrency } from "./work-roles"
 
-/** The workspace's roles: work roles with their day rate here, management roles — moved here unchanged. */
+/** The workspace's roles: work roles with their day rate here, and management roles. */
 // ── Section (a): roles in this workspace ─────────────────────────────────────
 //
 // Two lists, because they are two different things. WORK roles are trades —
@@ -26,32 +25,95 @@ import { useSubRolesSection } from "./use-sub-roles-section"
 // "who is a Mechanic at BILLA" is answered on the card rather than by reading
 // down the member list.
 
-const formatMoneyCents = (cents: number, currency: string) => formatMoney(cents, currency, MONEY_LOCALE)
-
 export function SubRolesSection({ spaceId }: { spaceId: string }) {
-  const {
-    money,
-    t,
-    dialog,
-    setDialog,
-    deleteTarget,
-    setDeleteTarget,
-    roles,
-    isLoading,
-    showUnused,
-    setShowUnused,
-    workRoles,
-    notHere,
-    picking,
-    setPicking,
-    duplicates,
-    combine,
-    useHere,
-    unused,
-    mgmtRoles,
-    removeMutation,
-    list,
-  } = useSubRolesSection({ spaceId })
+  const money = useSpaceCurrency(spaceId)
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [dialog, setDialog] = useState<{ role: SpaceRoleInSpace | null; kind: "WORK" | "MANAGEMENT" } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<SpaceRoleInSpace | null>(null)
+
+  const { data: roles, isLoading } = useQuery({
+    queryKey: roleQueryKey(spaceId),
+    queryFn: () => spaceRolesApi.listInSpace(spaceId),
+  })
+  const [showUnused, setShowUnused] = useState(false)
+  /*
+    Roles are one list for the company; a workspace shows only the work roles
+    it has switched on. "Add a role" offers the rest, or a new one.
+  */
+  const allWork = (roles ?? []).filter((r) => r.kind === "WORK")
+  const workRoles = allWork.filter((r) => r.activeHere !== false)
+  const notHere = allWork.filter((r) => r.activeHere === false)
+  const [picking, setPicking] = useState(false)
+  /*
+    Two roles with one name are a duplicate made before names had to be unique
+    (one priced in this workspace, one in another). Say so, and fix it in one
+    click: keep the one people hold (else the oldest), fold the rest into it —
+    their day rates move over, per workspace.
+  */
+  const duplicates = Object.values(
+    allWork.reduce<Record<string, SpaceRoleInSpace[]>>((acc, r) => {
+      const k = r.name.trim().toLowerCase()
+      ;(acc[k] ??= []).push(r)
+      return acc
+    }, {}),
+  ).filter((g) => g.length > 1)
+  const combine = useMutation({
+    mutationFn: async (group: SpaceRoleInSpace[]) => {
+      const keep = [...group].sort((a, b) => b.inUseCount - a.inUseCount)[0]
+      for (const r of group) if (r.id !== keep.id) await spaceRolesApi.merge(r.id, keep.id)
+    },
+    onSuccess: () => {
+      refreshRoles()
+      queryClient.invalidateQueries({ queryKey: keys.spaceMembers.list(spaceId) })
+      notify.success(t("scheduling.workRoles.merged"))
+    },
+    onError: (err: Error) => notify.error(err.message),
+  })
+  const refreshRoles = () => {
+    queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
+    queryClient.invalidateQueries({ queryKey: keys.organization.roleLists() })
+  }
+  const dropHere = useMutation({
+    mutationFn: (roleId: string) => spaceRolesApi.dropHere(spaceId, roleId),
+    onSuccess: () => {
+      refreshRoles()
+      notify.success(t("scheduling.workRoles.removedHere"))
+    },
+    onError: (err: Error) => notify.error(err.message),
+  })
+  const allMgmt = (roles ?? []).filter((r) => r.kind !== "WORK")
+  // Built-in roles nobody holds here are folded away — they exist in every workspace.
+  const unused = allMgmt.filter((r) => r.isSystem && r.holders.length === 0)
+  const mgmtRoles = showUnused ? allMgmt : allMgmt.filter((r) => !unused.includes(r))
+
+  const removeMutation = useMutation({
+    mutationFn: (id: string) => spaceRolesApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
+      queryClient.invalidateQueries({ queryKey: keys.organization.roleLists() })
+      setDeleteTarget(null)
+      notify.success(t("scheduling.roles.toast.deleted"))
+    },
+    onError: (err: Error) => notify.error(err.message || t("scheduling.roles.toast.deleteFailed")),
+  })
+
+  const list = (items: SpaceRoleInSpace[]) => (
+    <div className="space-y-2">
+      {items.map((role) => (
+        <RoleCard
+          key={role.id}
+          role={role}
+          currency={money.bill}
+          onEdit={() => setDialog({ role, kind: role.kind === "WORK" ? "WORK" : "MANAGEMENT" })}
+          // A work role leaves THIS workspace; deleting it everywhere is not done from here.
+          {...(role.kind === "WORK"
+            ? { onRemoveHere: () => dropHere.mutate(role.id) }
+            : { onDelete: () => setDeleteTarget(role) })}
+        />
+      ))}
+    </div>
+  )
 
   /*
     ONE "New role" button. The two section buttons opened the same dialog with
@@ -76,9 +138,11 @@ export function SubRolesSection({ spaceId }: { spaceId: string }) {
         {duplicates.map((g) => (
           <div
             key={g[0].id}
-            className={"flex flex-wrap items-center justify-between gap-3 rounded-xl border " +
+            className={
+              "flex flex-wrap items-center justify-between gap-3 rounded-xl border " +
               "border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 " +
-              "dark:text-amber-300"}
+              "dark:text-amber-300"
+            }
           >
             <span>{t("scheduling.workRoles.duplicateNotice", { count: g.length, name: g[0].name })}</span>
             <Button size="sm" variant="outline" disabled={combine.isPending} onClick={() => combine.mutate(g)}>
@@ -138,80 +202,15 @@ export function SubRolesSection({ spaceId }: { spaceId: string }) {
         )}
       </div>
 
-      <Dialog open={picking} onOpenChange={setPicking}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("scheduling.workRoles.addHere")}</DialogTitle>
-            <DialogDescription>{t("scheduling.workRoles.addHereIntro")}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">{t("scheduling.workRoles.companyRoles")}</p>
-            {notHere.length === 0 ? (
-              <p className="py-2 text-sm text-muted-foreground">{t("scheduling.workRoles.allUsedHere")}</p>
-            ) : (
-              notHere.map((r) => (
-                <div
-                  key={r.id}
-                  className="flex items-center justify-between gap-3 rounded-lg px-2 py-2 hover:bg-muted/50"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium">{r.name}</span>
-                    {r.dayRateCents != null && (
-                      <span className="block text-xs text-muted-foreground">
-                        {t("scheduling.workRoles.rateHere", {
-                          rate: `${formatMoneyCents(r.dayRateCents, money.bill)} ${t("rates.perDay")}`,
-                        })}
-                      </span>
-                    )}
-                  </span>
-                  <span className="flex shrink-0 items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled={useHere.isPending}
-                      onClick={() => useHere.mutate(r.id)}
-                    >
-                      {t("scheduling.workRoles.useHere")}
-                    </Button>
-                    {/* Held by nobody, anywhere: it can go for good. */}
-                    {r.inUseCount === 0 && !r.isSystem && !duplicates.some((g) => g.some((x) => x.id === r.id)) && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-muted-foreground hover:text-red-600"
-                        aria-label={t("common.delete")}
-                        title={t("scheduling.workRoles.deleteUnused")}
-                        onClick={() => {
-                          setPicking(false)
-                          setDeleteTarget(r)
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-          <DialogFooter className="sm:justify-between">
-            <Button
-              variant="outline"
-              className="gap-1.5"
-              onClick={() => {
-                setPicking(false)
-                setDialog({ role: null, kind: "WORK" })
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              {t("scheduling.workRoles.createNew")}
-            </Button>
-            <Button variant="ghost" onClick={() => setPicking(false)}>
-              {t("common.close")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddRoleHereDialog
+        spaceId={spaceId}
+        open={picking}
+        onOpenChange={setPicking}
+        notHere={notHere}
+        duplicates={duplicates}
+        onDelete={setDeleteTarget}
+        onCreateNew={() => setDialog({ role: null, kind: "WORK" })}
+      />
 
       {dialog && (
         <RoleDialog

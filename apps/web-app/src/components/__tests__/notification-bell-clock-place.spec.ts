@@ -1,5 +1,5 @@
-import fs from "fs"
 import path from "path"
+import { readFolder } from "../../test-utils/read-source"
 
 /**
  * The clock event no longer carries `clockInPlace` / `clockOutPlace` — the
@@ -10,7 +10,7 @@ import path from "path"
  */
 describe("notification bell — clock events", () => {
   it("reads no clock-in / clock-out address from the event", () => {
-    const src = fs.readFileSync(path.join(__dirname, "../notifications/notification-bell.tsx"), "utf8")
+    const src = readFolder(path.join(__dirname, "../notifications"))
     expect(src).not.toMatch(/clockInPlace|clockOutPlace/)
   })
 })

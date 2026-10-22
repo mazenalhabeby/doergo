@@ -1,21 +1,30 @@
 "use client"
 
-import { ListPlus, Loader2, MapPin, Plus, Trash2 } from "lucide-react"
-
-import { type AssetCategory } from "@/lib/api"
-import { normalizeKindShape, KIND_SHAPE_LIMITS, KIND_TEMPLATES } from "@hbcfield/shared/client"
-import { LogTypesEditor } from "./log-types-editor"
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import { useMutation } from "@tanstack/react-query"
+import { ListPlus, Loader2, MapPin } from "lucide-react"
+import { normalizeKindShape, KIND_SHAPE_LIMITS, KIND_TEMPLATES, type KindShape } from "@hbcfield/shared/client"
+import { assetsApi, type AssetCategory } from "@/lib/api"
+import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog"
-import { useAssetKindDialog } from "./use-asset-kind-dialog"
-import { Row } from "./asset-kind-dialog-helpers"
-import { AssetKindDialogLists } from "./asset-kind-dialog-lists"
-import { AssetKindDialogHasHolder } from "./asset-kind-dialog-has-holder"
-import { AssetKindDialogMoney } from "./asset-kind-dialog-money"
+import { LogTypesEditor } from "./log-types-editor"
+import { KindOptionRow } from "./kind-option-row"
+import { KindFieldsSection } from "./kind-fields-section"
+import { KindTablesSection } from "./kind-tables-section"
+import { KindHolderSection } from "./kind-holder-section"
+import { KindMoneySection } from "./kind-money-section"
 
 /**
  * Describe a kind of thing this space owns.
@@ -39,27 +48,43 @@ export function AssetKindDialog({
   onSaved: () => void
   trigger: React.ReactNode
 }) {
-  const vm = useAssetKindDialog({ spaceId, existing, onSaved, trigger })
-  const {
-    t,
-    open,
-    setOpen,
-    name,
-    setName,
-    description,
-    setDescription,
-    shape,
-    setShape,
-    set,
-    setHolder,
-    setField,
-    setMoney,
-    setList,
-    setCategory,
-    save,
-    reset,
-    atFieldCap,
-  } = vm
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+
+  const start = normalizeKindShape(existing?.config)
+  const [name, setName] = useState(existing?.name ?? "")
+  const [description, setDescription] = useState(existing?.description ?? "")
+  const [shape, setShape] = useState<KindShape>(start)
+
+  const set = <K extends keyof KindShape>(k: K, v: KindShape[K]) => setShape((s) => ({ ...s, [k]: v }))
+
+  const save = useMutation({
+    mutationFn: () => {
+      const input = {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        config: normalizeKindShape(shape) as unknown as Record<string, unknown>,
+      }
+      return existing ? assetsApi.updateCategory(existing.id, input) : assetsApi.createCategory({ ...input, spaceId })
+    },
+    onSuccess: () => {
+      notify.success(
+        existing ? t("common.saved", "Saved") : t("assetKinds.created", "{{name}} added", { name: name.trim() }),
+      )
+      onSaved()
+      setOpen(false)
+    },
+    onError: (e: Error) => notify.error(e.message),
+  })
+
+  const reset = (next: boolean) => {
+    if (next) {
+      setName(existing?.name ?? "")
+      setDescription(existing?.description ?? "")
+      setShape(normalizeKindShape(existing?.config))
+    }
+    setOpen(next)
+  }
 
   return (
     <Dialog open={open} onOpenChange={reset}>
@@ -70,7 +95,10 @@ export function AssetKindDialog({
             {existing ? t("assetKinds.editTitle", "Edit type") : t("assetKinds.newTitle", "New asset type")}
           </DialogTitle>
           <DialogDescription>
-            {t("assetKinds.hint", "Describe what one of these looks like. Adding them afterwards uses exactly what you set here.")}
+            {t(
+              "assetKinds.hint",
+              "Describe what one of these looks like. Adding them afterwards uses exactly what you set here.",
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -85,7 +113,10 @@ export function AssetKindDialog({
                 {t("assetKinds.template", "Start from a ready-made type")}
               </Label>
               <p className="mb-1.5 text-[11px] text-muted-foreground/70">
-                {t("assetKinds.templateHint", "Fills in the fields, the money, the tables and the log types. Change anything afterwards.")}
+                {t(
+                  "assetKinds.templateHint",
+                  "Fills in the fields, the money, the tables and the log types. Change anything afterwards.",
+                )}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {KIND_TEMPLATES.map((tpl) => (
@@ -100,9 +131,11 @@ export function AssetKindDialog({
                       setName((n) => n.trim() || tpl.name)
                       if (!description.trim()) setDescription(tpl.description)
                     }}
-                    className={"rounded-full border border-border px-3 py-1.5 text-xs font-medium " +
+                    className={
+                      "rounded-full border border-border px-3 py-1.5 text-xs font-medium " +
                       "text-muted-foreground transition-colors hover:border-primary " +
-                      "hover:text-foreground"}
+                      "hover:text-foreground"
+                    }
                   >
                     {tpl.name}
                   </button>
@@ -144,9 +177,7 @@ export function AssetKindDialog({
           </p>
 
           <div>
-            <Label className="text-xs text-muted-foreground">
-              {t("assetKinds.nameLabel", "Call the name field")}
-            </Label>
+            <Label className="text-xs text-muted-foreground">{t("assetKinds.nameLabel", "Call the name field")}</Label>
             <Input
               className="mt-1"
               value={shape.nameLabel}
@@ -157,7 +188,7 @@ export function AssetKindDialog({
           </div>
 
           {/* Address → the record gets the same map an apartment has. */}
-          <Row
+          <KindOptionRow
             icon={MapPin}
             title={t("assetKinds.hasAddress", "It has an address")}
             hint={t("assetKinds.hasAddressHint", "Adds an address box and a map to every one of them.")}
@@ -166,61 +197,21 @@ export function AssetKindDialog({
           />
 
           {/* Holder → the apartment "resident", renamed to whatever this is. */}
-          <AssetKindDialogHasHolder vm={vm} />
+          <KindHolderSection holder={shape.holder} setShape={setShape} />
 
           {/* More info → the fields every record is prompted for. */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs text-muted-foreground">
-                  {t("assetKinds.fields", "What you record about each one")}
-                </Label>
-                <p className="text-[11px] text-muted-foreground/70">
-                  {t("assetKinds.fieldsHint", "Floor, rooms, rent, plate, serial — whatever this kind needs.")}
-                </p>
-              </div>
-              <button
-                type="button"
-                disabled={atFieldCap}
-                onClick={() => set("fields", [...shape.fields, { label: "" }])}
-                className={"inline-flex items-center gap-1 text-xs font-medium text-primary " +
-                  "hover:underline disabled:opacity-40 disabled:no-underline"}
-              >
-                <Plus className="h-3.5 w-3.5" /> {t("assetRecords.addField", "Add field")}
-              </button>
-            </div>
-
-            {shape.fields.length > 0 && (
-              <div className="space-y-2">
-                {shape.fields.map((f, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <Input
-                      value={f.label}
-                      onChange={(e) => setField(i, e.target.value)}
-                      placeholder={t("assetKinds.fieldLabel", "Floor")}
-                      maxLength={KIND_SHAPE_LIMITS.maxLabel}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => set("fields", shape.fields.filter((_, idx) => idx !== i))}
-                      className="shrink-0 rounded p-1.5 text-muted-foreground hover:text-destructive"
-                      aria-label={t("common.remove", "Remove")}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <KindFieldsSection fields={shape.fields} setShape={setShape} />
 
           {/* Whether a single record may carry a field this kind never asked
               for. Off keeps every record of the kind identical, which is what
               you want when the data gets compared or exported. */}
-          <Row
+          <KindOptionRow
             icon={ListPlus}
             title={t("assetKinds.allowExtra", "Allow extra fields on a record")}
-            hint={t("assetKinds.allowExtraHint", "Off, every one of them holds exactly the fields above — nothing more.")}
+            hint={t(
+              "assetKinds.allowExtraHint",
+              "Off, every one of them holds exactly the fields above — nothing more.",
+            )}
             checked={shape.allowExtraFields}
             onChange={(v) => set("allowExtraFields", v)}
           />
@@ -228,7 +219,7 @@ export function AssetKindDialog({
           {/* Tables. A field answers "what is this one's floor"; a list answers
               "what is in it" — a machine's parts, an apartment's keys — which
               needs rows, not a value. */}
-          <AssetKindDialogLists vm={vm} />
+          <KindTablesSection shape={shape} setShape={setShape} />
 
           {/* Log types. What gets done to one of these, and when it comes due
               again. The body lives in its own file: a type carries fields, flags
@@ -242,11 +233,13 @@ export function AssetKindDialog({
           {/* Money. The kind names the headings, so an Apartments kind logs Rent
               and Repairs while a Vehicles kind logs Fuel and Service — one
               ledger, different words. */}
-          <AssetKindDialogMoney vm={vm} />
+          <KindMoneySection money={shape.money} setShape={setShape} />
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel", "Cancel")}</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            {t("common.cancel", "Cancel")}
+          </Button>
           <Button disabled={!name.trim() || save.isPending} onClick={() => save.mutate()}>
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {existing ? t("common.save", "Save") : t("common.create", "Create")}

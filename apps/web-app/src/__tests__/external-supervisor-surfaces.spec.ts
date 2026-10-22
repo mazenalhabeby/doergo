@@ -89,13 +89,15 @@ describe('canApproveAttendance', () => {
   });
 
   it('the page reads each of the three attendance decisions space-aware', () => {
-    const page = read('src/app/(dashboard)/attendance/page.tsx');
+    const page =
+      read('src/app/(dashboard)/attendance/page.tsx') + read('src/app/(dashboard)/attendance/_hooks/use-attendance-page.ts');
     expect(page).toContain('hasPermission("canDeleteAttendance")');
     expect(page).toContain('hasPermission("canReconcileAttendance")');
   });
 
   it('hours are decided in Approvals, never on the attendance page', () => {
-    const page = read('src/app/(dashboard)/attendance/page.tsx');
+    const page =
+      read('src/app/(dashboard)/attendance/page.tsx') + read('src/app/(dashboard)/attendance/_hooks/use-attendance-page.ts');
     expect(page).not.toMatch(/approveEntry|rejectEntry/);
   });
 });
@@ -114,8 +116,9 @@ describe('canDeleteAttendance', () => {
 
 describe('canViewSpaceAttendance', () => {
   it('gates the attendance surfaces space-aware, never on a flat column', () => {
-    const page = read('src/app/(dashboard)/attendance/page.tsx');
-    expect(page).toContain("hasPermission('canViewSpaceAttendance')");
+    const page =
+      read('src/app/(dashboard)/attendance/page.tsx') + read('src/app/(dashboard)/attendance/_hooks/use-attendance-page.ts');
+    expect(page).toMatch(/hasPermission\(["']canViewSpaceAttendance["']\)/);
     expect(page).not.toContain('user.canViewSpaceAttendance === true');
     expect(ROUTE_RULES['/attendance'].need).toEqual(['any:canViewSpaceAttendance']);
     expect(navModelFor(supervisor).time).toContain('/attendance');

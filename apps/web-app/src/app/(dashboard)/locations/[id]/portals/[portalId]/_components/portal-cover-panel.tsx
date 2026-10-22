@@ -1,16 +1,51 @@
 "use client"
 
+import { useRef } from "react"
+import { useTranslation } from "react-i18next"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Trash2, Loader2, Upload, ImageIcon } from "lucide-react"
+import { keys } from "@/lib/query-keys"
+import { notify } from "@/lib/toast"
+import { portalAdminApi } from "@/lib/api"
+import type { PortalDetail } from "../_lib/portal-types"
 import { Button } from "@/components/ui/button"
-import type { PortalDetailPageState } from "../_hooks/use-portal-detail-page"
 
-/** Part of the parent component's markup, moved here unchanged; it reads the state from `vm`. */
-export function PortalCoverPanel({ vm }: { vm: PortalDetailPageState }) {
-  const { t, portal, mayManage, coverInputRef, uploadCoverM, removeCoverM } = vm
+/**
+ * The client-home cover image — previewed exactly as the app shows it (full-screen portrait background on
+ * the client's home), with upload, change and remove.
+ */
+export function PortalCoverPanel({
+  portalId,
+  portal,
+  mayManage,
+}: {
+  portalId: string
+  portal: PortalDetail | undefined
+  mayManage: boolean
+}) {
+  const { t } = useTranslation()
+  const qc = useQueryClient()
+  // Cover image (client-home background)
+  const coverInputRef = useRef<HTMLInputElement>(null)
+  const uploadCoverM = useMutation({
+    mutationFn: (file: File) => portalAdminApi.uploadCover(portalId, file),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.portal.detail(portalId) })
+      notify.success(t("portal.coverUpdated", "Cover image updated"))
+    },
+    onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
+  })
+  const removeCoverM = useMutation({
+    mutationFn: () => portalAdminApi.removeCover(portalId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.portal.detail(portalId) })
+      notify.success(t("portal.coverRemoved", "Cover image removed"))
+    },
+    onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
+  })
+
   return (
     <>
-      {/* Cover image — previewed exactly as the app shows it (full-screen
-          portrait background on the client's home), so it looks right on web too. */}
       <div className="mb-6 flex flex-col items-center gap-5 rounded-2xl border border-border bg-card p-5 sm:flex-row sm:items-stretch">
         {/* Phone-frame preview */}
         <div

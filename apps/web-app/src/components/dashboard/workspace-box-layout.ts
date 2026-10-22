@@ -3,7 +3,7 @@
 import React from "react"
 import { type PersonNodeProps } from "./person-node"
 
-/** A workspace card's props and its size on the dashboard grid — moved here unchanged. */
+/** A workspace card's props and its size on the dashboard grid. */
 export interface WorkspaceBoxProps {
   title: string
   type: "fixed" | "dynamic"

@@ -173,6 +173,14 @@ Each becomes a folder of real Nest sub-modules with their own providers and test
 > structure ratchet (`tools/structure/web-layout.mjs`, baseline empty). `tools/move-ts.mjs --alias=@/`
 > rewrites the web app's alias imports; `readFolder()` (test-utils) reads a route as one screen.
 
+> **Status (2026-10-22): 5.2 DONE on the web app** (same branch, not merged, not deployed). Every section that took
+> the whole page state (`vm`) — 90 of them — now takes the props it reads, with a name by meaning; the mega-hooks
+> are gone or split by what they hold. Web split names: numbered 11 → 0, repeated 16 → 0, inner 7 → 0, part 15 → 1
+> (`name-parts.ts` really is a person's name parts), "moved here unchanged" 338 → 23 (left: `lib/api/*` and a few
+> `lib/` helpers whose names already say what they are). Small, deliberate differences: the reports nav button is a
+> stable component (it remounted on every render); the invoice billable-work rows' open state lives in that table
+> (switching the source away and back closes them); the access editor's role-only mode no longer fetches contacts.
+
 ---
 
 ## Phase 6 — Phone app *(≈ 2 weeks; JS-only, OTA-safe except where noted)*

@@ -3,16 +3,17 @@
 import React from "react"
 import ReactDOM from "react-dom"
 import { cn } from "@/lib/utils"
-import { useTimelineView, type TimeScale, ROW_HEIGHT, type TimelineViewProps } from "./use-timeline-view"
-import { APPLE_EASE, HEADER_HEIGHT, LEFT_PANEL_WIDTH, TaskTooltip, TaskRow } from "./timeline-view-helpers"
-import { TimelineViewToday } from "./timeline-view-today"
+import { useTranslation } from "react-i18next"
+import { useTimelineView, type TimelineViewProps } from "./use-timeline-view"
+import { APPLE_EASE, HEADER_HEIGHT, ROW_HEIGHT, type TimeScale } from "./timeline-layout"
+import { TaskTooltip } from "./timeline-task-tooltip"
+import { TimelineTaskList } from "./timeline-task-list"
+import { TimelineChart } from "./timeline-chart"
 
-// ─── Component ──────────────────────────────────────────────────────────────
-
+/** Tasks on a day/week/month timeline, grouped by phase, with their dependencies. */
 export function TimelineView({ tasks, phases }: TimelineViewProps) {
-  const vm = useTimelineView({ tasks, phases })
+  const { t } = useTranslation()
   const {
-    t,
     stepOf,
     scale,
     setScale,
@@ -30,7 +31,7 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
     dependencyLines,
     todayOffset,
     timelineWidth,
-  } = vm
+  } = useTimelineView({ tasks, phases })
 
   return (
     <div
@@ -52,7 +53,7 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
                 "px-3 py-1 rounded-md text-xs font-medium capitalize transition-all duration-200",
                 scale === s
                   ? "bg-card shadow-sm text-foreground ring-1 ring-border/30"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {t(`tasks.timeline.scale.${s}`)}
@@ -64,62 +65,38 @@ export function TimelineView({ tasks, phases }: TimelineViewProps) {
       {/* Timeline Container */}
       <div className="flex" style={{ height: `${Math.min(totalRows * ROW_HEIGHT + HEADER_HEIGHT + 2, 600)}px` }}>
         {/* Left Panel (sticky task list) */}
-        <div
-          ref={leftPanelRef}
-          className="flex-shrink-0 border-r border-border/40 overflow-hidden bg-card"
-          style={{ width: LEFT_PANEL_WIDTH }}
-        >
-          {/* Left header */}
-          <div
-            className="flex items-end px-3 pb-2 border-b border-border/40 bg-muted/20"
-            style={{ height: HEADER_HEIGHT }}
-          >
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{t("tasks.page.heading")}</span>
-          </div>
-
-          {/* Task rows */}
-          <div className="overflow-hidden" style={{ height: `calc(100% - ${HEADER_HEIGHT}px)` }}>
-            {groups.map((group, gi) => (
-              <React.Fragment key={gi}>
-                {/* Group header */}
-                <div
-                  className="flex items-center gap-2 px-3 bg-muted/40 border-b border-border/20"
-                  style={{ height: ROW_HEIGHT }}
-                >
-                  {group.color && (
-                    <span className="size-2.5 rounded flex-shrink-0" style={{ backgroundColor: group.color }} />
-                  )}
-                  <span className="text-[11px] font-bold text-foreground/70 uppercase tracking-wider truncate">{group.label}</span>
-                  <span className="text-[10px] text-muted-foreground/60 ml-auto tabular-nums font-medium">{group.tasks.length}</span>
-                </div>
-
-                {/* Task rows */}
-                {group.tasks.map((task, ti) => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    statusConfig={stepOf(task)}
-                    animDelay={(gi * 3 + ti) * 20}
-                  />
-                ))}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
+        <TimelineTaskList panelRef={leftPanelRef} groups={groups} stepOf={stepOf} />
 
         {/* Right Panel (scrollable timeline) */}
-        <TimelineViewToday vm={vm} />
+        <TimelineChart
+          timelineRef={timelineRef}
+          onScroll={handleTimelineScroll}
+          monthHeaders={monthHeaders}
+          columns={columns}
+          colWidth={colWidth}
+          scale={scale}
+          timelineWidth={timelineWidth}
+          totalRows={totalRows}
+          todayOffset={todayOffset}
+          groups={groups}
+          getBarStyle={getBarStyle}
+          stepOf={stepOf}
+          setTooltip={setTooltip}
+          dependencyLines={dependencyLines}
+        />
       </div>
 
       {/* Tooltip — portal to body to avoid stacking context issues */}
-      {tooltip && typeof document !== 'undefined' && ReactDOM.createPortal(
-        <TaskTooltip
-          task={tooltip.task}
-          statusConfig={stepOf(tooltip.task)}
-          style={{ left: tooltip.x, top: tooltip.y }}
-        />,
-        document.body
-      )}
+      {tooltip &&
+        typeof document !== "undefined" &&
+        ReactDOM.createPortal(
+          <TaskTooltip
+            task={tooltip.task}
+            statusConfig={stepOf(tooltip.task)}
+            style={{ left: tooltip.x, top: tooltip.y }}
+          />,
+          document.body,
+        )}
     </div>
   )
 }

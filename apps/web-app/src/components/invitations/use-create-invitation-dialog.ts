@@ -1,7 +1,7 @@
 "use client"
 
 import { keys } from "@/lib/query-keys"
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { notify } from "@/lib/toast"
@@ -20,19 +20,25 @@ import { useSpaceModules } from "@/hooks/use-space-modules"
 import { copyText } from "@/lib/clipboard"
 import { useActiveSpaces } from "@/hooks/use-space-directory"
 
+export type InviteMode = "email" | "code"
+export type ExternalMode = "builder" | "role"
+
 export interface CreateInvitationDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-/** CreateInvitationDialog's state and handlers — everything before its markup, moved here unchanged. */
-export function useCreateInvitationDialog({ open, onOpenChange }: Pick<CreateInvitationDialogProps, 'open' | 'onOpenChange'>) {
+/** The invitation form's state, what it sends, and the reset after sending or closing. */
+export function useCreateInvitationDialog({
+  open,
+  onOpenChange,
+}: Pick<CreateInvitationDialogProps, "open" | "onOpenChange">) {
   const { t } = useTranslation()
   const { user } = useAuth()
   const queryClient = useQueryClient()
 
   // Form state
-  const [mode, setMode] = useState<"email" | "code">("email")
+  const [mode, setMode] = useState<InviteMode>("email")
   const [email, setEmail] = useState("")
   const [position, setPosition] = useState("")
   const [isExternal, setIsExternal] = useState(false)
@@ -58,8 +64,10 @@ export function useCreateInvitationDialog({ open, onOpenChange }: Pick<CreateInv
     server keeps them as this person's own role on accept — or the shared role
     they exactly match. Starts at Supervisor, today's default.
   */
-  const [externalMode, setExternalMode] = useState<"builder" | "role">("builder")
-  const [externalChoice, setExternalChoice] = useState<PermissionChoice>(() => presetChoice("supervisor", { isExternal: true }))
+  const [externalMode, setExternalMode] = useState<ExternalMode>("builder")
+  const [externalChoice, setExternalChoice] = useState<PermissionChoice>(() =>
+    presetChoice("supervisor", { isExternal: true }),
+  )
 
   // Access Profile pre-config — applied to the member on accept, so their first
   // screen already matches their final access (no post-registration change).
@@ -124,7 +132,10 @@ export function useCreateInvitationDialog({ open, onOpenChange }: Pick<CreateInv
     if (scheduleType !== "NONE") input.scheduleType = scheduleType
     if (scheduleType === "FIXED") {
       input.schedule = scheduleRows.map((r) => ({
-        dayOfWeek: r.dayOfWeek, startTime: r.startTime, endTime: r.endTime, isActive: r.isActive,
+        dayOfWeek: r.dayOfWeek,
+        startTime: r.startTime,
+        endTime: r.endTime,
+        isActive: r.isActive,
       }))
     }
     if (scheduleType === "FLEXIBLE" && monthlyHourBudget !== "") {
@@ -161,23 +172,18 @@ export function useCreateInvitationDialog({ open, onOpenChange }: Pick<CreateInv
     externalChoice,
     externalRoleId,
     builderModules,
-    createMutation])
+    createMutation,
+  ])
 
   // Keep the feature tabs in sync with the position until the admin edits access
   // themselves (then their choices win).
-  const handlePositionChange = useCallback((next: string) => {
-    setPosition(next)
-    if (!accessTouched) setAccess((cur) => ({ ...cur, modules: getDefaultModules(next.trim() || null) }))
-  }, [accessTouched])
-
-  const platformSummary = useMemo(() => {
-    const key = access.platforms === "web"
-      ? "accessBuilder.platforms.webOnly"
-      : access.platforms === "mobile"
-      ? "accessBuilder.platforms.mobileOnly"
-      : "accessBuilder.platforms.both"
-    return t(key)
-  }, [access.platforms, t])
+  const handlePositionChange = useCallback(
+    (next: string) => {
+      setPosition(next)
+      if (!accessTouched) setAccess((cur) => ({ ...cur, modules: getDefaultModules(next.trim() || null) }))
+    },
+    [accessTouched],
+  )
 
   const handleCopyCode = useCallback(async () => {
     if (!generatedCode) return
@@ -193,8 +199,8 @@ export function useCreateInvitationDialog({ open, onOpenChange }: Pick<CreateInv
     setEmail("")
     setPosition("")
     setScheduleType("NONE")
-  setScheduleRows(createDefaultSchedule())
-  setMonthlyHourBudget("")
+    setScheduleRows(createDefaultSchedule())
+    setMonthlyHourBudget("")
     setAccess(defaultAccessDraft())
     setAccessOpen(false)
     setAccessTouched(false)
@@ -210,8 +216,8 @@ export function useCreateInvitationDialog({ open, onOpenChange }: Pick<CreateInv
       setEmail("")
       setPosition("")
       setScheduleType("NONE")
-  setScheduleRows(createDefaultSchedule())
-  setMonthlyHourBudget("")
+      setScheduleRows(createDefaultSchedule())
+      setMonthlyHourBudget("")
       setSpaceId("none")
       setAccess(defaultAccessDraft())
       setAccessOpen(false)
@@ -226,7 +232,6 @@ export function useCreateInvitationDialog({ open, onOpenChange }: Pick<CreateInv
   }, [onOpenChange, createMutation])
 
   return {
-    t,
     mode,
     setMode,
     email,
@@ -258,18 +263,13 @@ export function useCreateInvitationDialog({ open, onOpenChange }: Pick<CreateInv
     codeCopied,
     locations,
     hasSpace,
-    spaceModules,
     builderModules,
     spaceRoles,
     createMutation,
     handleSubmit,
     handlePositionChange,
-    platformSummary,
     handleCopyCode,
     handleSendAnother,
     handleClose,
   }
 }
-
-/** What CreateInvitationDialog and its sections read. */
-export type CreateInvitationDialogState = ReturnType<typeof useCreateInvitationDialog>

@@ -1,17 +1,14 @@
 "use client"
 
 import { useTranslation } from "react-i18next"
+import { useQueryClient } from "@tanstack/react-query"
+import { keys } from "@/lib/query-keys"
 import { MapPin, X, Plus } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { locationsApi, type OrgMember } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { EditSection } from "./edit-section"
 import type { NamedAssignment } from "./use-member-editor-data"
 
@@ -20,22 +17,20 @@ export function MemberSpacesSection({
   member,
   locations,
   allAssignments,
-  invalidateAssignments,
 }: {
   member: OrgMember
   locations: Array<{ id: string; name: string }>
   allAssignments: NamedAssignment[] | undefined
-  invalidateAssignments: () => void
 }) {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const invalidateAssignments = () => queryClient.invalidateQueries({ queryKey: keys.locations.rosterBatches() })
   return (
     <>
       <EditSection label={t("members.table.spaces")} />
       <div className="flex flex-wrap gap-1.5 items-center">
         {(() => {
-          const memberAssignments = (allAssignments || []).filter(
-            (a) => a.userId === member.id,
-          )
+          const memberAssignments = (allAssignments || []).filter((a) => a.userId === member.id)
           const assignedLocationIds = new Set(memberAssignments.map((a) => a.locationId))
           const assignedLocations = locations.filter((l) => assignedLocationIds.has(l.id))
           const unassignedLocations = locations.filter((l) => !assignedLocationIds.has(l.id))
@@ -57,7 +52,9 @@ export function MemberSpacesSection({
                             await locationsApi.removeAssignment(loc.id, assignment.id)
                             invalidateAssignments()
                             notify.success(t("members.memberEditor.removedFrom", { name: loc.name }))
-                          } catch { notify.error(t("members.memberEditor.failedToRemove")) }
+                          } catch {
+                            notify.error(t("members.memberEditor.failedToRemove"))
+                          }
                         }}
                         className="ml-0.5 p-0.5 rounded hover:bg-destructive/20 transition-colors"
                       >
@@ -86,7 +83,9 @@ export function MemberSpacesSection({
                             await locationsApi.assignMember(loc.id, { userId: member.id })
                             invalidateAssignments()
                             notify.success(t("members.memberEditor.assignedTo", { name: loc.name }))
-                          } catch { notify.error(t("members.memberEditor.failedToAssign")) }
+                          } catch {
+                            notify.error(t("members.memberEditor.failedToAssign"))
+                          }
                         }}
                       >
                         <MapPin className="h-3.5 w-3.5 mr-2 text-muted-foreground" />

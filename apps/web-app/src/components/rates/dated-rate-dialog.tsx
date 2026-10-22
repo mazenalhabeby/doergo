@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-/** The rate history list and the change-rate dialog, moved here unchanged from dated-rate. */
+/** The rate history list and the change-rate dialog that DatedRate opens. */
 export interface RateHistoryRow {
   cents: number | null
   /** `YYYY-MM-DD` */

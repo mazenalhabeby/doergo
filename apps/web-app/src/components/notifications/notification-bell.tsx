@@ -1,25 +1,23 @@
 "use client"
 
 import { Bell } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { formatTimeAgo } from "@/lib/format-date"
 
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { useNotificationBell } from "./use-notification-bell"
-import { TYPE_CONFIG } from "./notification-bell-helpers"
+import { TYPE_CONFIG } from "./notification-type-config"
 import { EmptyNote } from "@/components/ui/empty-note"
-
-// ============================================================================
-// Config — icon + color per notification type (DRY)
-// ============================================================================
 
 // ============================================================================
 // Component
 // ============================================================================
 
 export function NotificationBell() {
-  const { t, notifications, open, setOpen, isConnected, unreadCount, markAllRead, clearAll, handleClick } =
+  const { t } = useTranslation()
+  const { notifications, open, setOpen, isConnected, unreadCount, markAllRead, clearAll, handleClick } =
     useNotificationBell()
 
   // ── Render ─────────────────────────────────────────────────────────

@@ -1,8 +1,8 @@
-'use client';
+"use client"
 
-import { useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { orgMonthlyCost } from '@hbcfield/shared/client';
+import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
+import { orgMonthlyCost } from "@hbcfield/shared/client"
 
 /**
  * The whole bill, built by the visitor, itemised to the cent.
@@ -18,19 +18,18 @@ import { orgMonthlyCost } from '@hbcfield/shared/client';
  * teaches nothing.
  */
 
-export type Site = { id: string; modules: string[]; units: Record<string, number> };
+export type Site = { id: string; modules: string[]; units: Record<string, number> }
 
 /** What a new site starts with — a field team's set, the common case. */
-export const STARTER_MODULES = ['checklists', 'attachments', 'tracking', 'time_tracking', 'service_reports'];
+export const STARTER_MODULES = ["checklists", "attachments", "tracking", "time_tracking", "service_reports"]
 
-/** Calculator's state and handlers — everything before its markup, moved here unchanged. */
+/** The visitor's set-up (people, sites, company options), the bill it makes, and the site edits. */
 export function useCalculator() {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
-  const [people, setPeople] = useState(6);
-  const [sites, setSites] = useState<Site[]>([{ id: '1', modules: [...STARTER_MODULES], units: {} }]);
-  const [addOns, setAddOns] = useState<string[]>([]);
-  const [openBill, setOpenBill] = useState(true);
+  const [people, setPeople] = useState(6)
+  const [sites, setSites] = useState<Site[]>([{ id: "1", modules: [...STARTER_MODULES], units: {} }])
+  const [addOns, setAddOns] = useState<string[]>([])
 
   const bill = useMemo(
     () =>
@@ -38,57 +37,50 @@ export function useCalculator() {
         seatCount: people,
         spaces: sites.map((s, i) => ({
           spaceId: s.id,
-          spaceName: t('pricing.calc.siteN', 'Site {{n}}', { n: i + 1 }),
+          spaceName: t("pricing.calc.siteN", "Site {{n}}", { n: i + 1 }),
           enabledModules: s.modules,
           usage: s.units,
         })),
         addOns,
       }),
     [people, sites, addOns, t],
-  );
+  )
 
-  const perPerson = Math.round(bill.monthlyCents / Math.max(1, people));
+  const perPerson = Math.round(bill.monthlyCents / Math.max(1, people))
 
-  const setSite = (id: string, fn: (s: Site) => Site) =>
-    setSites((prev) => prev.map((s) => (s.id === id ? fn(s) : s)));
+  const setSite = (id: string, fn: (s: Site) => Site) => setSites((prev) => prev.map((s) => (s.id === id ? fn(s) : s)))
 
   const toggleModule = (id: string, key: string) =>
     setSite(id, (s) => {
-      const on = s.modules.includes(key);
-      const modules = on ? s.modules.filter((k) => k !== key) : [...s.modules, key];
+      const on = s.modules.includes(key)
+      const modules = on ? s.modules.filter((k) => k !== key) : [...s.modules, key]
       // Drop a count with its module: a number left behind for something
       // switched off is invisible here and would be a surprise on an invoice.
-      const units = { ...s.units };
-      if (on) delete units[key];
-      return { ...s, modules, units };
-    });
+      const units = { ...s.units }
+      if (on) delete units[key]
+      return { ...s, modules, units }
+    })
 
   const toggleGroup = (id: string, keys: string[]) =>
     setSite(id, (s) => {
-      const allOn = keys.every((k) => s.modules.includes(k));
-      const modules = allOn ? s.modules.filter((k) => !keys.includes(k)) : [...new Set([...s.modules, ...keys])];
-      const units = { ...s.units };
-      if (allOn) keys.forEach((k) => delete units[k]);
-      return { ...s, modules, units };
-    });
+      const allOn = keys.every((k) => s.modules.includes(k))
+      const modules = allOn ? s.modules.filter((k) => !keys.includes(k)) : [...new Set([...s.modules, ...keys])]
+      const units = { ...s.units }
+      if (allOn) keys.forEach((k) => delete units[k])
+      return { ...s, modules, units }
+    })
 
   return {
-    t,
     people,
     setPeople,
     sites,
     setSites,
     addOns,
     setAddOns,
-    openBill,
-    setOpenBill,
     bill,
     perPerson,
     setSite,
     toggleModule,
     toggleGroup,
-  };
+  }
 }
-
-/** What Calculator and its sections read. */
-export type CalculatorState = ReturnType<typeof useCalculator>;

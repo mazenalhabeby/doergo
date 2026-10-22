@@ -1,37 +1,55 @@
 "use client"
 
-import { Plus, CalendarDays } from "lucide-react"
-
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { Plus, CalendarDays, CalendarClock } from "lucide-react"
+import type { ShiftAssignment } from "@hbcfield/shared/client"
+import { keys } from "@/lib/query-keys"
+import { notify } from "@/lib/toast"
+import { rotaApi, spaceMembersApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmTargetDialog } from "@/components/common/confirm-dialog"
-import { SectionHeader } from "./section-header"
-import { useRotaTab } from "./use-rota-tab"
-import { RotaDialog } from "./rota-tab-helpers"
-import { RotaTabRota } from "./rota-tab-rota"
+import { SectionHeader, EmptyState } from "./section-header"
+import { RotaDialog } from "./rota-dialog"
+import { RotaWeekGrid } from "./rota-week-grid"
+import { RotaAssignmentList } from "./rota-assignment-list"
 
+/** A workspace's rota: who works which shift on which days, as a week grid and as a list. */
 export function RotaTab({ spaceId }: { spaceId: string }) {
-  const vm = useRotaTab({ spaceId })
-  const {
-    t,
-    dialogOpen,
-    setDialogOpen,
-    editTarget,
-    setEditTarget,
-    deleteTarget,
-    setDeleteTarget,
-    assignments,
-    isLoading,
-    setWeekStart,
-    days,
-    dayStrs,
-    todayStr,
-    scheduledMembers,
-    openMembers,
-    cellFor,
-    weekConflicts,
-    removeMutation,
-    recurrenceSummary,
-  } = vm
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<ShiftAssignment | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ShiftAssignment | null>(null)
+
+  const { data: assignments, isLoading } = useQuery({
+    queryKey: keys.schedules.rota(spaceId),
+    queryFn: () => rotaApi.list(spaceId),
+    staleTime: 30_000,
+  })
+  // Space members — to surface who works "open hours" (no shift assigned).
+  const { data: spaceMembers } = useQuery({
+    queryKey: keys.spaceMembers.list(spaceId),
+    queryFn: () => spaceMembersApi.list(spaceId),
+    staleTime: 30_000,
+  })
+
+  const removeMutation = useMutation({
+    mutationFn: (id: string) => rotaApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.schedules.rota(spaceId) })
+      setDeleteTarget(null)
+      notify.success(t("scheduling.rota.toast.deleted"))
+    },
+    onError: (err: Error) => notify.error(err.message || t("scheduling.rota.toast.deleteFailed")),
+  })
+
+  const openEdit = (a: ShiftAssignment | null) => {
+    setEditTarget(a)
+    setDialogOpen(true)
+  }
 
   return (
     <div className="space-y-4">
@@ -41,22 +59,40 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
         title={t("scheduling.rota.heading")}
         description={t("scheduling.rota.intro")}
         action={
-          <Button onClick={() => { setEditTarget(null); setDialogOpen(true) }} className="gap-1.5">
+          <Button onClick={() => openEdit(null)} className="gap-1.5">
             <Plus className="h-4 w-4" />
             {t("scheduling.rota.new")}
           </Button>
         }
       />
 
-      <RotaTabRota vm={vm} />
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      ) : !assignments || assignments.length === 0 ? (
+        <EmptyState
+          icon={CalendarClock}
+          title={t("scheduling.rota.empty.title")}
+          description={t("scheduling.rota.empty.description")}
+          action={
+            <Button onClick={() => openEdit(null)} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              {t("scheduling.rota.new")}
+            </Button>
+          }
+        />
+      ) : (
+        <div className="space-y-5">
+          <RotaWeekGrid assignments={assignments} spaceMembers={spaceMembers} onEdit={openEdit} />
+          <RotaAssignmentList assignments={assignments} onEdit={openEdit} onDelete={setDeleteTarget} />
+        </div>
+      )}
 
       {dialogOpen && (
-        <RotaDialog
-          spaceId={spaceId}
-          assignment={editTarget}
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-        />
+        <RotaDialog spaceId={spaceId} assignment={editTarget} open={dialogOpen} onOpenChange={setDialogOpen} />
       )}
 
       <ConfirmTargetDialog

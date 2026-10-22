@@ -2,17 +2,19 @@
 
 import { keys } from "@/lib/query-keys"
 import { useMemo } from "react"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { spanMinutes, spanProblem, moveEndWithStart, type Repeat } from "@hbcfield/shared/client"
-import { dateLocale } from "@/lib/format-date"
 import { calendarApi, type CalendarEventInput } from "@/lib/api"
 import { serverErrorMessage } from "@/lib/server-error"
 import { dayKey } from "../_lib/layout"
-import { useEventDialogData, hm, at, type Props } from "./use-event-dialog-data"
-export { hm, at, type Props } from "./use-event-dialog-data"
+import { useEventForm, hm, at, type EventDialogProps } from "./use-event-form"
 
-/** EventDialog's state and handlers — everything before its markup, moved here unchanged. */
+/**
+ * EventDialog's state: the form's fields, the length and its problem, everybody's free/busy around
+ * the chosen time, "find a time", and saving.
+ */
 export function useEventDialog({
   open,
   onOpenChange,
@@ -21,26 +23,11 @@ export function useEventDialog({
   spaceId,
   offices = [],
   crm = false,
-  onNewJob,
-  onTimeOff,
-}: Pick<
-  Props,
-  "open" | "onOpenChange" | "start" | "event" | "spaceId" | "offices" | "crm" | "onNewJob" | "onTimeOff"
->) {
-  const eventDialogData = useEventDialogData({
-    open,
-    onOpenChange,
-    start,
-    event,
-    spaceId,
-    offices,
-    crm,
-    onNewJob,
-    onTimeOff,
-  })
+}: Pick<EventDialogProps, "open" | "onOpenChange" | "start" | "event" | "spaceId" | "offices" | "crm">) {
+  const { t } = useTranslation()
+  const qc = useQueryClient()
+  const form = useEventForm({ open, start, event, spaceId, offices, crm })
   const {
-    t,
-    qc,
     editing,
     tz,
     kind,
@@ -57,11 +44,8 @@ export function useEventDialog({
     description,
     people,
     reminders,
-    setReminders,
     freq,
     visibility,
-    pickOpen,
-    debouncedQ,
     mode,
     place,
     placeSpaceId,
@@ -71,7 +55,7 @@ export function useEventDialog({
     customer,
     startAt,
     endAt,
-  } = eventDialogData
+  } = form
 
   const duration = spanMinutes(startAt, endAt)
   // Shared with the server (calendar/span.ts): it ends after it starts, and lasts at most 14 days.
@@ -90,13 +74,6 @@ export function useEventDialog({
     setEndDate(dayKey(end))
     setEndTime(hm(end))
   }
-
-  const { data: candidates = [] } = useQuery({
-    queryKey: keys.calendar.people(debouncedQ),
-    queryFn: () => calendarApi.people(debouncedQ),
-    enabled: pickOpen,
-    staleTime: 60_000,
-  })
 
   // Free/busy around the chosen time, for everyone invited.
   const windowFrom = useMemo(() => {
@@ -184,26 +161,11 @@ export function useEventDialog({
     onError: (e) => toast.error(serverErrorMessage(e, t)),
   })
 
-  const toggleReminder = (m: number) =>
-    setReminders((cur) =>
-      cur.includes(m) ? cur.filter((x) => x !== m) : cur.length >= 5 ? cur : [...cur, m].sort((a, b) => b - a),
-    )
-
-  const fmtTime = (iso: string) =>
-    new Date(iso).toLocaleString(dateLocale(), {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-
   return {
-    ...eventDialogData,
+    ...form,
     duration,
     problem,
     setStart,
-    candidates,
     windowFrom,
     windowTo,
     ids,
@@ -211,10 +173,8 @@ export function useEventDialog({
     clashes,
     findTime,
     save,
-    toggleReminder,
-    fmtTime,
   }
 }
 
-/** What EventDialog and its sections read. */
+/** What EventDialog and its sections read beyond the form: the length, free/busy, find-a-time, saving. */
 export type EventDialogState = ReturnType<typeof useEventDialog>

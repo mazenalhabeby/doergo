@@ -10,10 +10,7 @@ import type { AssigneeOption } from "./create-task-types"
 
 type Auth = ReturnType<typeof useAuth>
 
-/**
- * Who a new task is for — moved here unchanged from useCreateTaskForm, which calls this at
- * the same point, so the same hooks run in the same order.
- */
+/** Who a new task is for: the people offered, the ones chosen, or a work role it is open to. */
 export function useCreateTaskAssignment({
   open,
   user,

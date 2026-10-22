@@ -1,7 +1,8 @@
 "use client"
 
 import { personName } from "@hbcfield/shared/client"
-import { ClipboardList, MapPin } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import { ClipboardList, MapPin, type LucideIcon } from "lucide-react"
 
 import { UserAvatar } from "@/components/common/user-avatar"
 import { STATUS_CONFIG } from "@/lib/constants"
@@ -16,20 +17,61 @@ import {
   CommandItem,
   CommandShortcut,
 } from "@/components/ui/command"
-import { useCommandPaletteLogic } from "./use-command-palette-logic"
-import { Kbd, GROUP_LABEL_KEYS } from "./command-palette-helpers"
+import { usePaletteCommands } from "./use-palette-commands"
 
 // ---------------------------------------------------------------------------
 // Kbd badge component
 // ---------------------------------------------------------------------------
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd
+      className={
+        "pointer-events-none inline-flex h-5 select-none items-center gap-1 " +
+        "rounded border border-border bg-muted px-1.5 font-mono text-[10px] " +
+        "font-medium text-muted-foreground"
+      }
+    >
+      {children}
+    </kbd>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Group label keys
+// ---------------------------------------------------------------------------
+
+const GROUP_LABEL_KEYS: Record<string, string> = {
+  navigation: "commandPalette.groups.navigation",
+  tasks: "commandPalette.groups.tasks",
+  sprints: "commandPalette.groups.sprints",
+  spaces: "commandPalette.groups.spaces",
+  "quick-actions": "commandPalette.groups.quickActions",
+}
+
+/** One search result: an icon, a label and an optional second line. */
+function resultRow(key: string, Icon: LucideIcon, label: string, sub: string | null, onSelect: () => void) {
+  return (
+    <CommandItem key={key} value={key} onSelect={onSelect} className="gap-3 px-3 py-2.5 rounded-lg cursor-pointer">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/50 bg-muted/50">
+        <Icon className="size-4 text-muted-foreground" />
+      </div>
+      <div className="flex flex-col flex-1 min-w-0">
+        <span className="text-sm font-medium truncate">{label}</span>
+        {sub && <span className="text-xs text-muted-foreground truncate">{sub}</span>}
+      </div>
+    </CommandItem>
+  )
+}
 
 // ---------------------------------------------------------------------------
 // CommandPalette
 // ---------------------------------------------------------------------------
 
 export function CommandPalette() {
-  const { open, setOpen, t, query, setQuery, results, isFetching, navigate, handleSelect, staticGroups, resultRow } =
-    useCommandPaletteLogic()
+  const { open, setOpen, query, setQuery, results, isFetching, navigate, handleSelect, staticGroups } =
+    usePaletteCommands()
+  const { t } = useTranslation()
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>

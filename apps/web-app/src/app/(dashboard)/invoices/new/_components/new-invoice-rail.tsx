@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import { RailSection } from "../../_components/invoice-shell"
 import { ClientFields, TermsFields, IssuedByField } from "../../_components/invoice-fields"
 import { Input } from "@/components/ui/input"
@@ -7,12 +8,53 @@ import { Label } from "@/components/ui/label"
 import { WorkSourceFields } from "./work-source-fields"
 import { LabourLayoutFields } from "./labour-layout-fields"
 import { AddToCrmOption } from "./add-to-crm-option"
-import type { NewInvoiceInnerState } from "../_hooks/use-new-invoice-inner"
+import type { NewInvoiceState } from "../_hooks/use-new-invoice"
+import type { WorkSource } from "../_hooks/use-work-source"
 
-/** The rail of the new-invoice page — where the work comes from, who it is for, the terms. The markup is moved here unchanged. */
-export function NewInvoiceRail({ vm }: { vm: NewInvoiceInnerState }) {
+/** The rail of the new-invoice page — where the work comes from, who it is for, the terms. */
+export function NewInvoiceRail({
+  work,
+  header,
+  entries,
+  grouping,
+  setGrouping,
+  siteMode,
+  anyWorkRole,
+  groupByRole,
+  setGroupByRole,
+  lineStyle,
+  setLineStyle,
+  currencySource,
+  setCurrencySource,
+  exchange,
+  legalEntityId,
+  chooseCompany,
+  autoCompanyId,
+  rate,
+  setRate,
+}: { work: WorkSource } & Pick<
+  NewInvoiceState,
+  | "header"
+  | "entries"
+  | "grouping"
+  | "setGrouping"
+  | "siteMode"
+  | "anyWorkRole"
+  | "groupByRole"
+  | "setGroupByRole"
+  | "lineStyle"
+  | "setLineStyle"
+  | "currencySource"
+  | "setCurrencySource"
+  | "exchange"
+  | "legalEntityId"
+  | "chooseCompany"
+  | "autoCompanyId"
+  | "rate"
+  | "setRate"
+>) {
+  const { t } = useTranslation()
   const {
-    t,
     source,
     setSource,
     hasCrm,
@@ -24,45 +66,30 @@ export function NewInvoiceRail({ vm }: { vm: NewInvoiceInnerState }) {
     mayAddClient,
     customerId,
     setCustomerId,
+    addToCrm,
     setAddToCrm,
     periodValue,
     setPeriodValue,
     workDays,
-    entries,
-    grouping,
-    setGrouping,
-    siteMode,
-    anyWorkRole,
-    groupByRole,
-    setGroupByRole,
-    lineStyle,
-    setLineStyle,
+  } = work
+  const {
     clientName,
     setClientName,
     clientEmail,
     setClientEmail,
     clientAddress,
     setClientAddress,
-    addToCrm,
     issueDate,
     setIssueDate,
     dueDate,
     setDueDate,
     currency,
     setCurrency,
-    setCurrencySource,
-    currencySource,
-    exchange,
     taxPct,
     setTaxPct,
     discount,
     setDiscount,
-    legalEntityId,
-    chooseCompany,
-    autoCompanyId,
-    rate,
-    setRate,
-  } = vm
+  } = header
   return (
     <>
       {/* Where the work comes from */}

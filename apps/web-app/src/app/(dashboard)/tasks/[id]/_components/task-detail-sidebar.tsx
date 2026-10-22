@@ -3,9 +3,10 @@
 import { Target, Layers, Zap } from "lucide-react"
 import { InlineEditField } from "./inline-edit-field"
 import { STORY_POINT_OPTIONS } from "@/lib/api"
-import { useTaskDetailSidebar, type TaskDetailSidebarProps } from "./use-task-detail-sidebar"
-import { SidebarRow } from "./task-detail-sidebar-helpers"
-import { TaskDetailSidebarSidebar } from "./task-detail-sidebar-sidebar"
+import { useTranslation } from "react-i18next"
+import type { TaskDetailSidebarProps } from "./task-detail-sidebar-types"
+import { SidebarRow } from "./sidebar-row"
+import { TaskDetailsCard } from "./task-details-card"
 
 export function TaskDetailSidebar({
   task,
@@ -20,26 +21,13 @@ export function TaskDetailSidebar({
   phases = [],
   epics = [],
 }: TaskDetailSidebarProps) {
-  const vm = useTaskDetailSidebar({
-    task,
-    canEdit,
-    canAssign,
-    hasModule,
-    onFieldSave,
-    onAssignClick,
-    onRemoveAssignee,
-    onSetLead,
-    sprints,
-    phases,
-    epics
-  })
-  const { t, hasAgile, assignees, hasMultiple, leadCount } = vm
+  const { t } = useTranslation()
+  const hasAgile = hasModule("sprints") || hasModule("phases") || hasModule("epics") || hasModule("story_points")
 
   return (
     <div className="space-y-4">
       {/* ─── Details Card ─────────────────────────────────────────────── */}
-      <TaskDetailSidebarSidebar
-        vm={vm}
+      <TaskDetailsCard
         canAssign={canAssign}
         onAssignClick={onAssignClick}
         onSetLead={onSetLead}
@@ -52,7 +40,9 @@ export function TaskDetailSidebar({
       {/* ─── Agile Card ───────────────────────────────────────────────── */}
       {hasAgile && (
         <div data-tour="task-agile" className="bg-card rounded-2xl border border-border shadow-sm p-5">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t("tasks.sidebar.agile")}</h3>
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            {t("tasks.sidebar.agile")}
+          </h3>
 
           <div className="divide-y divide-border/50">
             {hasModule("sprints") && (
@@ -65,7 +55,7 @@ export function TaskDetailSidebar({
                   placeholder={t("tasks.sidebar.noSprint")}
                   options={[
                     { value: "__none__", label: t("tasks.sidebar.noSprint") },
-                    ...sprints.map(s => ({ value: s.id, label: s.name })),
+                    ...sprints.map((s) => ({ value: s.id, label: s.name })),
                   ]}
                   renderDisplay={() => task.sprint?.name || null}
                 />
@@ -82,14 +72,16 @@ export function TaskDetailSidebar({
                   placeholder={t("tasks.sidebar.noPhase")}
                   options={[
                     { value: "__none__", label: t("tasks.sidebar.noPhase") },
-                    ...phases.map(p => ({ value: p.id, label: p.name, color: p.color })),
+                    ...phases.map((p) => ({ value: p.id, label: p.name, color: p.color })),
                   ]}
-                  renderDisplay={() => task.phase ? (
-                    <span className="flex items-center gap-1.5">
-                      <span className="size-2 rounded-full" style={{ backgroundColor: task.phase.color }} />
-                      {task.phase.name}
-                    </span>
-                  ) : null}
+                  renderDisplay={() =>
+                    task.phase ? (
+                      <span className="flex items-center gap-1.5">
+                        <span className="size-2 rounded-full" style={{ backgroundColor: task.phase.color }} />
+                        {task.phase.name}
+                      </span>
+                    ) : null
+                  }
                 />
               </SidebarRow>
             )}
@@ -104,14 +96,16 @@ export function TaskDetailSidebar({
                   placeholder={t("tasks.sidebar.noEpic")}
                   options={[
                     { value: "__none__", label: t("tasks.sidebar.noEpic") },
-                    ...epics.map(e => ({ value: e.id, label: e.name, color: e.color })),
+                    ...epics.map((e) => ({ value: e.id, label: e.name, color: e.color })),
                   ]}
-                  renderDisplay={() => task.epic ? (
-                    <span className="flex items-center gap-1.5">
-                      <span className="size-2 rounded-full" style={{ backgroundColor: task.epic.color }} />
-                      {task.epic.name}
-                    </span>
-                  ) : null}
+                  renderDisplay={() =>
+                    task.epic ? (
+                      <span className="flex items-center gap-1.5">
+                        <span className="size-2 rounded-full" style={{ backgroundColor: task.epic.color }} />
+                        {task.epic.name}
+                      </span>
+                    ) : null
+                  }
                 />
               </SidebarRow>
             )}
@@ -126,9 +120,9 @@ export function TaskDetailSidebar({
                   placeholder="—"
                   options={[
                     { value: "__none__", label: t("tasks.sidebar.none") },
-                    ...STORY_POINT_OPTIONS.map(p => ({ value: String(p), label: String(p) })),
+                    ...STORY_POINT_OPTIONS.map((p) => ({ value: String(p), label: String(p) })),
                   ]}
-                  renderDisplay={(v) => v != null && String(v) !== "" ? `${v} pts` : null}
+                  renderDisplay={(v) => (v != null && String(v) !== "" ? `${v} pts` : null)}
                 />
               </SidebarRow>
             )}

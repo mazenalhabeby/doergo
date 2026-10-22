@@ -27,7 +27,7 @@ const ALLOWED: { file: string; contains: string; why: string }[] = [
     why: "average SPEED (km/h), not a distance shown",
   },
   {
-    file: "app/(dashboard)/locations/_components/space-form-address.tsx",
+    file: "app/(dashboard)/locations/_components/space-site-fields.tsx",
     contains: "{radius}m",
     why: "the readout of the radius INPUT slider — the admin sets metres",
   },

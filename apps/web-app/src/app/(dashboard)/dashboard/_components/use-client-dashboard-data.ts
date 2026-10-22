@@ -1,18 +1,18 @@
-"use client";
+"use client"
 
-import { keys } from "@/lib/query-keys";
-import { useMemo, useCallback, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/auth-context";
-import { locationsApi } from "@/lib/api";
-import { isAssignedTo } from "@/lib/task-assignment";
-import { notify } from "@/lib/toast";
-import { useTour } from "@/components/tour";
-import { useDashboardData } from "../_lib/use-dashboard-data";
+import { keys } from "@/lib/query-keys"
+import { useMemo, useCallback, useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { locationsApi } from "@/lib/api"
+import { isAssignedTo } from "@/lib/task-assignment"
+import { notify } from "@/lib/toast"
+import { useTour } from "@/components/tour"
+import { useDashboardData } from "../_lib/use-dashboard-data"
 
-/** useClientDashboard's state and handlers — everything before its markup, moved here unchanged. */
+/** The dashboard's data and handlers: the feeds, the roster dialog and its save, navigation from a workspace box. */
 export function useClientDashboardData() {
   const { user } = useAuth()
   const { t, i18n } = useTranslation()
@@ -41,23 +41,32 @@ export function useClientDashboardData() {
     assignmentsPerLocation,
   } = useDashboardData(user)
 
-  const handleEditLocation = useCallback((locationId: string) => {
-    // "Manage Space" → that space's own settings page, not the all-spaces list.
-    router.push(`/locations/${locationId}`)
-  }, [router])
+  const handleEditLocation = useCallback(
+    (locationId: string) => {
+      // "Manage Space" → that space's own settings page, not the all-spaces list.
+      router.push(`/locations/${locationId}`)
+    },
+    [router],
+  )
 
   const [assignSpaceId, setAssignSpaceId] = useState<string | null>(null)
-  const handleNavigateToProfile = useCallback((userId: string) => {
-    router.push(`/members/${userId}`)
-  }, [router])
+  const handleNavigateToProfile = useCallback(
+    (userId: string) => {
+      router.push(`/members/${userId}`)
+    },
+    [router],
+  )
 
   const handleAssignWorkers = useCallback((locationId: string) => {
     setAssignSpaceId(locationId)
   }, [])
 
-  const handleViewTasks = useCallback((locationId: string) => {
-    router.push(`/tasks?space=${locationId}`)
-  }, [router])
+  const handleViewTasks = useCallback(
+    (locationId: string) => {
+      router.push(`/tasks?space=${locationId}`)
+    },
+    [router],
+  )
 
   // ── Space roster mutation ─────────────────────────────────────────────────
 
@@ -187,5 +196,5 @@ export function useClientDashboardData() {
     handleSaveRoster,
     locations,
     spaceNameById,
-  };
+  }
 }

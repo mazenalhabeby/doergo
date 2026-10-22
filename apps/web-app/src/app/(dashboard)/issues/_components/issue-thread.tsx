@@ -19,10 +19,10 @@ import { Button } from "@/components/ui/button"
 import { AttachmentPicker, ImageLightbox, PendingFileChips } from "@/components/common/pending-attachments"
 import { Textarea } from "@/components/ui/textarea"
 import { keys } from "@/lib/query-keys"
-import { SEV_DOT, SEV_TEXT, RESOLVE_REASONS, fmt, isImg, Chip } from "./issues-helpers"
+import { SEV_DOT, SEV_TEXT, RESOLVE_REASONS, fmt, isImg, Chip } from "./issue-display"
 import { ChoiceChip } from "@/components/ui/choice-chip"
 
-/** One shift issue's thread, moved here unchanged from the issues page. */
+/** One shift issue's thread: its messages, assigning, resolving with a reason. */
 export function IssueThread(
   {
     issue,

@@ -13,8 +13,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { cn } from "@/lib/utils"
 import { coverDetail, coverTitle } from "../_lib/cover-labels"
 import { Inbox } from "lucide-react"
-import { useDrawerBody } from "./use-drawer-body"
-import { Section, Fact } from "./drawer-body-helpers"
+import { useTranslation } from "react-i18next"
+import { useRequestFacts } from "./use-request-facts"
+import { Section, Fact } from "./drawer-section"
 
 /**
  * The decision, with the reason to make it — for ANY kind of request.
@@ -44,35 +45,20 @@ export function LeaveDecisionDrawer({
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-md flex flex-col gap-0 p-0">
-        {request && (
-          <DrawerBody request={request} canManage={canManage} />
-        )}
+        {request && <DrawerBody request={request} canManage={canManage} />}
       </SheetContent>
     </Sheet>
   )
 }
 
 function DrawerBody({ request, canManage }: { request: OrgTimeOffRequest; canManage: boolean }) {
-  const {
-    t,
-    kind,
-    leave,
-    v,
-    tone,
-    span,
-    days,
-    pendingVacation,
-    balance,
-    usual,
-    openJobs,
-  } = useDrawerBody({ request, canManage })
+  const { t } = useTranslation()
+  const { kind, leave, v, tone, span, days, pendingVacation, balance, usual, openJobs } = useRequestFacts(request)
 
   return (
     <>
       <SheetHeader className="border-b border-border px-5 py-4 space-y-1">
-        <SheetTitle className="text-[17px] font-semibold tracking-tight">
-          {personName(request.technician)}
-        </SheetTitle>
+        <SheetTitle className="text-[17px] font-semibold tracking-tight">{personName(request.technician)}</SheetTitle>
         <p className="text-[12.5px] text-muted-foreground">
           {format(parseISO(request.startDate), "d MMM")}
           {request.startDate !== request.endDate && <> – {format(parseISO(request.endDate), "d MMM")}</>}
@@ -91,15 +77,21 @@ function DrawerBody({ request, canManage }: { request: OrgTimeOffRequest; canMan
           <RequestKindChip kind={kind} />
           {leave && request.type && (
             <span
-              className={"inline-flex items-center rounded-full border border-border px-2 py-0.5 " +
-                "text-[11px] font-medium text-muted-foreground"}>
+              className={
+                "inline-flex items-center rounded-full border border-border px-2 py-0.5 " +
+                "text-[11px] font-medium text-muted-foreground"
+              }
+            >
               {requestDetail(request, t)}
             </span>
           )}
           {request.technician.specialty && (
             <span
-              className={"inline-flex w-fit items-center rounded-full border border-border px-2 " +
-                "py-0.5 text-[11px] font-medium text-muted-foreground"}>
+              className={
+                "inline-flex w-fit items-center rounded-full border border-border px-2 " +
+                "py-0.5 text-[11px] font-medium text-muted-foreground"
+              }
+            >
               {request.technician.specialty}
             </span>
           )}
@@ -150,20 +142,26 @@ function DrawerBody({ request, canManage }: { request: OrgTimeOffRequest; canMan
                   <Fact label={t("requests.drawer.newHours")} value={requestDetail(request, t) ?? "—"} />
                   <Fact
                     label={t("requests.drawer.usualHours")}
-                    value={usual
-                      ? t("requests.detail.hoursBoth", { start: usual.start, end: usual.end })
-                      : t("requests.drawer.noUsualHours")}
+                    value={
+                      usual
+                        ? t("requests.detail.hoursBoth", { start: usual.start, end: usual.end })
+                        : t("requests.drawer.noUsualHours")
+                    }
                   />
                 </>
               )}
               {kind === "OVERTIME" && (
                 <>
-                  <Fact label={t("requests.drawer.overtime")} value={request.minutes ? formatRequestMinutes(request.minutes, t) : "—"} />
-                  {usual &&
+                  <Fact
+                    label={t("requests.drawer.overtime")}
+                    value={request.minutes ? formatRequestMinutes(request.minutes, t) : "—"}
+                  />
+                  {usual && (
                     <Fact
                       label={t("requests.drawer.usualHours")}
                       value={t("requests.detail.hoursBoth", { start: usual.start, end: usual.end })}
-                    />}
+                    />
+                  )}
                 </>
               )}
               {kind === "OTHER" && <Fact label={t("requests.drawer.kind")} value={t("requests.kinds.OTHER.label")} />}
@@ -249,12 +247,16 @@ function DrawerBody({ request, canManage }: { request: OrgTimeOffRequest; canMan
                     <Link
                       key={j.id}
                       href={`/tasks/${j.id}`}
-                      className={"flex items-center gap-2.5 rounded-xl border border-border px-3 py-2 " +
-                        "text-[12.5px] transition hover:bg-muted/50"}
+                      className={
+                        "flex items-center gap-2.5 rounded-xl border border-border px-3 py-2 " +
+                        "text-[12.5px] transition hover:bg-muted/50"
+                      }
                     >
                       <span className="min-w-0 flex-1">
                         <b className="block truncate font-medium">{j.title}</b>
-                        <span className="text-[11.5px] text-muted-foreground">{j.status.replace(/_/g, " ").toLowerCase()}</span>
+                        <span className="text-[11.5px] text-muted-foreground">
+                          {j.status.replace(/_/g, " ").toLowerCase()}
+                        </span>
                       </span>
                       {j.dueDate && (
                         <span className="whitespace-nowrap text-[11.5px] tabular-nums text-muted-foreground">

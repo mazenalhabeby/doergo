@@ -15,19 +15,21 @@ export interface EditTaskDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-/** EditTaskDialog's state and handlers — everything before its markup, moved here unchanged. */
-export function useEditTaskDialog({ task, open, onOpenChange }: Pick<EditTaskDialogProps, 'task' | 'open' | 'onOpenChange'>) {
+/** The Edit Task form: its fields (re-read from the task each time it opens), the lists it offers, the save. */
+export function useEditTaskDialog({
+  task,
+  open,
+  onOpenChange,
+}: Pick<EditTaskDialogProps, "task" | "open" | "onOpenChange">) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description || "")
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH" | "URGENT">(
-    (task.priority as "LOW" | "MEDIUM" | "HIGH" | "URGENT") || "MEDIUM"
+    (task.priority as "LOW" | "MEDIUM" | "HIGH" | "URGENT") || "MEDIUM",
   )
-  const [dueDate, setDueDate] = useState<Date | undefined>(
-    task.dueDate ? new Date(task.dueDate) : undefined
-  )
+  const [dueDate, setDueDate] = useState<Date | undefined>(task.dueDate ? new Date(task.dueDate) : undefined)
   // The hour the member is expected on site; "" when the job is only dated.
   const [dueTime, setDueTime] = useState<string>(timeOf(task.dueDate))
   const [locationAddress, setLocationAddress] = useState(task.locationAddress || "")
@@ -41,11 +43,9 @@ export function useEditTaskDialog({ task, open, onOpenChange }: Pick<EditTaskDia
   */
   const [locationLat, setLocationLat] = useState<number | null>(task.locationLat ?? null)
   const [locationLng, setLocationLng] = useState<number | null>(task.locationLng ?? null)
-  const [startDate, setStartDate] = useState<Date | undefined>(
-    task.startDate ? new Date(task.startDate) : undefined
-  )
+  const [startDate, setStartDate] = useState<Date | undefined>(task.startDate ? new Date(task.startDate) : undefined)
   const [estimatedHours, setEstimatedHours] = useState<string>(
-    task.estimatedHours != null ? String(task.estimatedHours) : ""
+    task.estimatedHours != null ? String(task.estimatedHours) : "",
   )
   const [phaseId, setPhaseId] = useState<string>(task.phaseId || "none")
   const [sprintId, setSprintId] = useState<string>(task.sprintId || "none")
@@ -86,7 +86,7 @@ export function useEditTaskDialog({ task, open, onOpenChange }: Pick<EditTaskDia
       setDescription(task.description || "")
       setPriority((task.priority as "LOW" | "MEDIUM" | "HIGH" | "URGENT") || "MEDIUM")
       setDueDate(task.dueDate ? new Date(task.dueDate) : undefined)
-    setDueTime(timeOf(task.dueDate))
+      setDueTime(timeOf(task.dueDate))
       setStartDate(task.startDate ? new Date(task.startDate) : undefined)
       setEstimatedHours(task.estimatedHours != null ? String(task.estimatedHours) : "")
       setLocationAddress(task.locationAddress || "")
@@ -133,7 +133,6 @@ export function useEditTaskDialog({ task, open, onOpenChange }: Pick<EditTaskDia
   }
 
   return {
-    t,
     title,
     setTitle,
     description,
@@ -170,6 +169,3 @@ export function useEditTaskDialog({ task, open, onOpenChange }: Pick<EditTaskDia
     handleSubmit,
   }
 }
-
-/** What EditTaskDialog and its sections read. */
-export type EditTaskDialogState = ReturnType<typeof useEditTaskDialog>

@@ -1,11 +1,11 @@
-'use client';
+"use client"
 
-import { Suspense } from 'react';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-import { AnimatedLogo } from '@/components/auth';
-import { useResetPasswordContent } from './_hooks/use-reset-password-content';
-import { ResetPasswordForm, SuccessState } from './_components/reset-password-content-helpers';
+import { Suspense } from "react"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
+import { AnimatedLogo } from "@/components/auth"
+import { useResetPassword } from "./_hooks/use-reset-password"
+import { ResetPasswordForm, SuccessState } from "./_components/reset-password-form"
 
 function ResetPasswordContent() {
   const {
@@ -23,7 +23,7 @@ function ResetPasswordContent() {
     isSuccess,
     errors,
     handleSubmit,
-  } = useResetPasswordContent();
+  } = useResetPassword()
 
   if (!token) {
     return (
@@ -31,17 +31,15 @@ function ResetPasswordContent() {
         <div className="bg-white rounded-2xl shadow-modal p-8">
           <div className="flex flex-col items-center mb-8">
             <AnimatedLogo size="default" className="mb-4 text-slate-900" />
-            <h1 className="text-2xl font-semibold text-slate-900">{t('auth.resetPassword.invalidLinkTitle')}</h1>
-            <p className="text-sm text-slate-500 mt-2 text-center">
-              {t('auth.resetPassword.invalidLinkSubtitle')}
-            </p>
+            <h1 className="text-2xl font-semibold text-slate-900">{t("auth.resetPassword.invalidLinkTitle")}</h1>
+            <p className="text-sm text-slate-500 mt-2 text-center">{t("auth.resetPassword.invalidLinkSubtitle")}</p>
           </div>
           <div className="mt-8 text-center">
             <Link
               href="/forgot-password"
               className="inline-flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 font-medium transition-colors"
             >
-              {t('auth.resetPassword.requestNewLink')}
+              {t("auth.resetPassword.requestNewLink")}
             </Link>
           </div>
           <div className="mt-4 text-center">
@@ -55,7 +53,7 @@ function ResetPasswordContent() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -65,12 +63,10 @@ function ResetPasswordContent() {
         <div className="flex flex-col items-center mb-8">
           <AnimatedLogo size="default" className="mb-4 text-slate-900" />
           <h1 className="text-2xl font-semibold text-slate-900">
-            {isSuccess ? t('auth.resetPassword.successTitle') : t('auth.resetPassword.title')}
+            {isSuccess ? t("auth.resetPassword.successTitle") : t("auth.resetPassword.title")}
           </h1>
           <p className="text-sm text-slate-500 mt-2 text-center">
-            {isSuccess
-              ? t('auth.resetPassword.successSubtitle')
-              : t('auth.resetPassword.subtitle')}
+            {isSuccess ? t("auth.resetPassword.successSubtitle") : t("auth.resetPassword.subtitle")}
           </p>
         </div>
 
@@ -99,12 +95,12 @@ function ResetPasswordContent() {
             className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-brand-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {t('auth.resetPassword.backToSignIn')}
+            {t("auth.resetPassword.backToSignIn")}
           </Link>
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 export default function ResetPasswordPage() {
@@ -112,7 +108,7 @@ export default function ResetPasswordPage() {
     <Suspense fallback={<ResetPasswordSkeleton />}>
       <ResetPasswordContent />
     </Suspense>
-  );
+  )
 }
 
 // ============================================================================
@@ -141,5 +137,5 @@ function ResetPasswordSkeleton() {
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,7 +1,4 @@
-/**
- * The letterhead, the facts and pills at the top, and how times, distances and days are written
- * (moved here unchanged)
- */
+/** The letterhead, the facts and pills at the top, and how times, distances and days are written. */
 import {
   formatDistance,
   personName,
@@ -9,8 +6,8 @@ import {
   type TaskReportIssuer,
   type TaskReportStatus,
   utcToZonedInput,
-} from '@hbcfield/shared/client';
-import { getStatusConfig } from '@/lib/constants';
+} from "@hbcfield/shared/client"
+import { getStatusConfig } from "@/lib/constants"
 import {
   HEAD_TOGGLE_GROUPS,
   type FactKey,
@@ -18,7 +15,7 @@ import {
   type HeadToggleGroup,
   type PillKey,
   type Translate,
-} from './toggles';
+} from "./toggles"
 
 /** The letterhead as printed: the name always; each other line only when it exists and is switched on. */
 export function letterhead(issuer: TaskReportIssuer, off: ReadonlySet<HeadToggle>, t: Translate) {
@@ -39,7 +36,11 @@ export function letterhead(issuer: TaskReportIssuer, off: ReadonlySet<HeadToggle
   }
 }
 
-interface ReportPill { key: PillKey; text: string; /** status only: the flow's colour */ hex: string | null }
+interface ReportPill {
+  key: PillKey
+  text: string
+  /** status only: the flow's colour */ hex: string | null
+}
 
 /** The labels under the title, in order — each only when it has words and is switched on. */
 export function reportPills(r: TaskReport, off: ReadonlySet<HeadToggle>, t: Translate): ReportPill[] {
@@ -53,7 +54,12 @@ export function reportPills(r: TaskReport, off: ReadonlySet<HeadToggle>, t: Tran
   return all.filter((p) => p.text && !off.has(p.key))
 }
 
-interface ReportFact { key: FactKey; label: string; value: string; sub: string | null }
+interface ReportFact {
+  key: FactKey
+  label: string
+  value: string
+  sub: string | null
+}
 
 /**
  * The detail boxes, in grid order. A box with nothing to say is not printed,
@@ -64,41 +70,56 @@ export function reportFacts(
   r: TaskReport,
   off: ReadonlySet<HeadToggle>,
   t: Translate,
-  when: (iso: string | null | undefined) => string): ReportFact[] {
+  when: (iso: string | null | undefined) => string,
+): ReportFact[] {
   const h = r.header
   const all: Array<ReportFact | null> = [
     h.client
       ? {
-        key: "client",
-        label: t("tasks.report.facts.client"),
-        value: h.client.name,
-        sub: h.contact?.name ? [h.contact.name, h.contact.phone].filter(Boolean).join(" · ") : null
-      }
+          key: "client",
+          label: t("tasks.report.facts.client"),
+          value: h.client.name,
+          sub: h.contact?.name ? [h.contact.name, h.contact.phone].filter(Boolean).join(" · ") : null,
+        }
       : null,
     h.site.address || h.unit
       ? {
-        key: "site",
-        label: t("tasks.report.facts.site"),
-        value: h.unit?.name ?? h.site.address ?? "",
-        sub: h.unit ? (h.unit.address ?? h.site.address ?? null) : null
-      }
+          key: "site",
+          label: t("tasks.report.facts.site"),
+          value: h.unit?.name ?? h.site.address ?? "",
+          sub: h.unit ? (h.unit.address ?? h.site.address ?? null) : null,
+        }
       : null,
     h.asset
       ? {
-        key: "equipment",
-        label: t("tasks.report.facts.equipment"),
-        value: h.asset.name,
-        sub: h.asset.serialNumber ? t("tasks.report.facts.serial", { serial: h.asset.serialNumber }) : null
-      }
+          key: "equipment",
+          label: t("tasks.report.facts.equipment"),
+          value: h.asset.name,
+          sub: h.asset.serialNumber ? t("tasks.report.facts.serial", { serial: h.asset.serialNumber }) : null,
+        }
       : null,
-    h.workspace ? { key: "workspace", label: t("tasks.report.facts.workspace"), value: h.workspace.name, sub: null } : null,
+    h.workspace
+      ? { key: "workspace", label: t("tasks.report.facts.workspace"), value: h.workspace.name, sub: null }
+      : null,
     h.dueDate ? { key: "due", label: t("tasks.report.facts.due"), value: when(h.dueDate), sub: null } : null,
     h.startedAt
-      ? { key: "started", label: t("tasks.report.facts.started"), value: when(h.startedAt), sub: personName(h.startedBy) || null }
+      ? {
+          key: "started",
+          label: t("tasks.report.facts.started"),
+          value: when(h.startedAt),
+          sub: personName(h.startedBy) || null,
+        }
       : null,
-    h.finishedAt ? { key: "finished", label: t("tasks.report.facts.finished"), value: when(h.finishedAt), sub: null } : null,
+    h.finishedAt
+      ? { key: "finished", label: t("tasks.report.facts.finished"), value: when(h.finishedAt), sub: null }
+      : null,
     h.totalMinutes > 0
-      ? { key: "worked", label: t("tasks.report.facts.worked"), value: formatReportMinutes(h.totalMinutes, t), sub: null }
+      ? {
+          key: "worked",
+          label: t("tasks.report.facts.worked"),
+          value: formatReportMinutes(h.totalMinutes, t),
+          sub: null,
+        }
       : null,
   ]
   return all.filter((f): f is ReportFact => !!f && !off.has(f.key))
@@ -148,7 +169,11 @@ export function formatReportDistance(meters: number | null | undefined, locale: 
 }
 
 /** An instant in the workspace's zone: "9 Oct 2026, 14:05". */
-export function formatReportDateTime(iso: string | null | undefined, tz: string | null | undefined, locale: string): string {
+export function formatReportDateTime(
+  iso: string | null | undefined,
+  tz: string | null | undefined,
+  locale: string,
+): string {
   if (!iso) return "—"
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return "—"
@@ -169,7 +194,13 @@ function zonedDayKey(iso: string | null | undefined, tz: string | null | undefin
 export function formatDayHeading(dayKey: string, locale: string): string {
   const d = new Date(`${dayKey}T12:00:00Z`)
   if (Number.isNaN(d.getTime())) return dayKey
-  return d.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
+  return d.toLocaleDateString(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  })
 }
 
 /**
@@ -180,7 +211,12 @@ export function workSteps(text: string | null | undefined): string[] | null {
   if (!text) return null
   const lines = text
     .split(/\r?\n/)
-    .map((l) => l.trim().replace(/^(?:\d{1,3}[.)]|[-*•])\s+/, "").trim())
+    .map((l) =>
+      l
+        .trim()
+        .replace(/^(?:\d{1,3}[.)]|[-*•])\s+/, "")
+        .trim(),
+    )
     .filter(Boolean)
   return lines.length >= 2 ? lines : null
 }
@@ -232,4 +268,4 @@ function originLabel(r: TaskReport, t: Translate): string | null {
   }
 }
 
-export { zonedDayKey, statusHex };
+export { zonedDayKey, statusHex }

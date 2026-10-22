@@ -4,16 +4,19 @@ import React from "react"
 import { Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatDayMonth } from "@/lib/format-date"
+import { useTranslation } from "react-i18next"
 import { useEpicRoadmap, DAY_WIDTH, type EpicRoadmapProps } from "./use-epic-roadmap"
-import { ROW_HEIGHT, HEADER_HEIGHT, LEFT_PANEL_WIDTH } from "./epic-roadmap-helpers"
 
-// ─── Constants ─────────────────────────────────────────────────────────────
+const ROW_HEIGHT = 52
 
-// ─── Component ─────────────────────────────────────────────────────────────
+const HEADER_HEIGHT = 36
 
+const LEFT_PANEL_WIDTH = 240
+
+/** The epics on a month timeline: labels with progress on the left, date bars on the right; a click filters by epic. */
 export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoadmapProps) {
+  const { t } = useTranslation()
   const {
-    t,
     scrollRef,
     hoveredEpicId,
     setHoveredEpicId,
@@ -30,30 +33,34 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
   return (
     <div className="bg-card rounded-xl border border-border/50 overflow-hidden">
       {/* Active filter indicator */}
-      {activeEpicId && (() => {
-        const active = epicRows.find(r => r.epic.id === activeEpicId)
-        if (!active) return null
-        return (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/40 border-b border-border/30">
-            <span className="size-2 rounded-full" style={{ backgroundColor: active.epic.color }} />
-            <span className="text-xs text-muted-foreground">
-              {t("tasks.epicRoadmap.filteredTo")} <span className="font-medium text-foreground">{active.epic.name}</span>
-            </span>
-            <button
-              onClick={() => onEpicClick?.(null)}
-              className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="size-3.5" />
-            </button>
-          </div>
-        )
-      })()}
+      {activeEpicId &&
+        (() => {
+          const active = epicRows.find((r) => r.epic.id === activeEpicId)
+          if (!active) return null
+          return (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/40 border-b border-border/30">
+              <span className="size-2 rounded-full" style={{ backgroundColor: active.epic.color }} />
+              <span className="text-xs text-muted-foreground">
+                {t("tasks.epicRoadmap.filteredTo")}{" "}
+                <span className="font-medium text-foreground">{active.epic.name}</span>
+              </span>
+              <button
+                onClick={() => onEpicClick?.(null)}
+                className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          )
+        })()}
 
       <div className="flex">
         {/* Left panel — epic labels */}
         <div className="shrink-0 border-r border-border/40 bg-muted/20" style={{ width: LEFT_PANEL_WIDTH }}>
           <div className="flex items-center px-3 border-b border-border/40" style={{ height: HEADER_HEIGHT }}>
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.epicRoadmap.epics")}</span>
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+              {t("tasks.epicRoadmap.epics")}
+            </span>
           </div>
 
           {epicRows.map((row) => {
@@ -81,10 +88,12 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
                 )}
 
                 <div className="min-w-0 flex-1">
-                  <p className={cn(
-                    "text-sm font-medium truncate leading-tight",
-                    isComplete ? "text-muted-foreground line-through" : "text-foreground",
-                  )}>
+                  <p
+                    className={cn(
+                      "text-sm font-medium truncate leading-tight",
+                      isComplete ? "text-muted-foreground line-through" : "text-foreground",
+                    )}
+                  >
                     {row.epic.name}
                   </p>
                   <div className="flex items-center gap-2 mt-0.5">
@@ -116,15 +125,20 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
               {months.map((m, i) => (
                 <div
                   key={i}
-                  className={"absolute top-0 flex items-center justify-center border-r " +
-                    "border-border/20 text-[11px] font-medium text-muted-foreground"}
+                  className={
+                    "absolute top-0 flex items-center justify-center border-r " +
+                    "border-border/20 text-[11px] font-medium text-muted-foreground"
+                  }
                   style={{ left: m.offsetDays * DAY_WIDTH, width: m.widthDays * DAY_WIDTH, height: HEADER_HEIGHT }}
                 >
                   {m.label}
                 </div>
               ))}
               {/* Today marker in header */}
-              <div className="absolute top-0 w-px bg-blue-500" style={{ left: todayOffset * DAY_WIDTH, height: HEADER_HEIGHT }}>
+              <div
+                className="absolute top-0 w-px bg-blue-500"
+                style={{ left: todayOffset * DAY_WIDTH, height: HEADER_HEIGHT }}
+              >
                 <span className="absolute -top-0 left-1/2 -translate-x-1/2 text-[8px] font-bold text-blue-500 uppercase">
                   {t("common.today")}
                 </span>
@@ -166,7 +180,10 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
                       onClick={() => handleEpicClick(row.epic.id)}
                     >
                       {/* Background */}
-                      <div className="absolute inset-0 rounded-lg opacity-15" style={{ backgroundColor: row.epic.color }} />
+                      <div
+                        className="absolute inset-0 rounded-lg opacity-15"
+                        style={{ backgroundColor: row.epic.color }}
+                      />
                       {/* Progress fill */}
                       <div
                         className="absolute inset-y-0 left-0 rounded-lg opacity-40 transition-[width] duration-300"
@@ -185,7 +202,10 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
                           </span>
                         )}
                         {barPos.width > 60 && (
-                          <span className="text-[9px] font-medium shrink-0 opacity-70" style={{ color: row.epic.color }}>
+                          <span
+                            className="text-[9px] font-medium shrink-0 opacity-70"
+                            style={{ color: row.epic.color }}
+                          >
                             {row.progressPct}%
                           </span>
                         )}
@@ -205,7 +225,9 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
                     </div>
                   ) : (
                     <div className="absolute top-2.5 left-4 flex items-center" style={{ height: ROW_HEIGHT - 20 }}>
-                      <span className="text-[10px] text-muted-foreground/40 italic">{t("tasks.epicRoadmap.noDates")}</span>
+                      <span className="text-[10px] text-muted-foreground/40 italic">
+                        {t("tasks.epicRoadmap.noDates")}
+                      </span>
                     </div>
                   )}
                 </div>

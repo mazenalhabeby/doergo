@@ -43,7 +43,7 @@ import {
   setHint,
   hasSessionHint,
   looksSuspended,
-} from "./auth-session-parts"
+} from "./auth-session-protocol"
 export {
   type RefreshOutcome,
   type SessionEndReason,
@@ -51,7 +51,7 @@ export {
   hasSessionHint,
   SESSION_HINT_KEY,
   decodeJwtPayload,
-} from "./auth-session-parts"
+} from "./auth-session-protocol"
 
 // ── state ──────────────────────────────────────────────────────────────────
 let accessToken: string | null = null

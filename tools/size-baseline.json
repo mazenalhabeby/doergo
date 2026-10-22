@@ -263,24 +263,8 @@
   "lines": 374,
   "long": 0
  },
- "apps/web-app/src/app/(dashboard)/attendance/_components/tracking-tab.tsx": {
-  "lines": 221,
-  "long": 1
- },
  "apps/web-app/src/app/(dashboard)/invoices/_components/invoice-shell.tsx": {
   "lines": 217,
-  "long": 1
- },
- "apps/web-app/src/app/(dashboard)/locations/[id]/portals/[portalId]/_hooks/use-portal-detail-page.ts": {
-  "lines": 282,
-  "long": 3
- },
- "apps/web-app/src/app/(dashboard)/tasks/[id]/report/_components/report-sheet.tsx": {
-  "lines": 283,
-  "long": 2
- },
- "apps/web-app/src/app/(dashboard)/tasks/_components/use-task-table-row-inner-data.ts": {
-  "lines": 140,
   "long": 1
  },
  "apps/web-app/src/app/_home/HomeClient.tsx": {
@@ -297,10 +281,6 @@
  },
  "apps/web-app/src/components/dashboard/workspace-box.tsx": {
   "lines": 295,
-  "long": 1
- },
- "apps/web-app/src/components/top-navbar/top-navbar-sidebar.tsx": {
-  "lines": 254,
   "long": 1
  },
  "apps/web-app/src/lib/api/assets-review.ts": {

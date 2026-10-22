@@ -62,10 +62,9 @@ describe('what the page renders reconstructs the total', () => {
 });
 
 describe('the page tells people the price excludes tax', () => {
-  const src = readSource(
-    path.join(process.cwd(), 'src/app/(dashboard)/settings/billing/_components/bill-breakdown.tsx'),
-    'utf8',
-  );
+  const src = ['bill-breakdown.tsx', 'bill-total.tsx']
+    .map((f) => readSource(path.join(process.cwd(), 'src/app/(dashboard)/settings/billing/_components', f), 'utf8'))
+    .join('\n');
 
   it('says so beside the total, not at checkout', () => {
     /*

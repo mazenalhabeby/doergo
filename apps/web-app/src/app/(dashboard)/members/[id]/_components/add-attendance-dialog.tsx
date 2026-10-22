@@ -1,6 +1,7 @@
 "use client"
 
 import { CalendarPlus, Loader2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -13,18 +14,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { useAddAttendanceDialog, type AddAttendanceDialogProps } from "./use-add-attendance-dialog"
-import { AddAttendanceDialogAddAttendance } from "./add-attendance-dialog-add-attendance"
+import { AddAttendanceForm } from "./add-attendance-form"
 
-export function AddAttendanceDialog({
-  employeeId,
-  employeeName,
-  prefill,
-  trigger,
-  onAdded,
-}: AddAttendanceDialogProps) {
-  const vm = useAddAttendanceDialog({ employeeId, employeeName, prefill, trigger, onAdded })
+/** Add hours by hand — one day or a range of weekdays — for a member, or for one picked here. */
+export function AddAttendanceDialog({ employeeId, employeeName, prefill, trigger, onAdded }: AddAttendanceDialogProps) {
+  const { t } = useTranslation()
   const {
-    t,
     fixedEmployee,
     open,
     mode,
@@ -65,10 +60,9 @@ export function AddAttendanceDialog({
     openWith,
     resetAndClose,
     toggleWeekday,
-    weekdayLabels,
     breakInvalid,
     canSubmit,
-  } = vm
+  } = useAddAttendanceDialog({ employeeId, prefill, onAdded })
 
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? openWith() : resetAndClose())}>
@@ -90,7 +84,45 @@ export function AddAttendanceDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <AddAttendanceDialogAddAttendance vm={vm} />
+        <AddAttendanceForm
+          fixedEmployee={fixedEmployee}
+          selectedEmployeeId={selectedEmployeeId}
+          setSelectedEmployeeId={setSelectedEmployeeId}
+          employeeList={employeeList}
+          employeesLoading={employeesLoading}
+          mode={mode}
+          setMode={setMode}
+          locationId={locationId}
+          setLocationId={setLocationId}
+          locations={locations}
+          locationsLoading={locationsLoading}
+          startDate={startDate}
+          setStartDate={setStartDate}
+          endDate={endDate}
+          setEndDate={setEndDate}
+          today={today}
+          weekdays={weekdays}
+          toggleWeekday={toggleWeekday}
+          startTime={startTime}
+          setStartTime={setStartTime}
+          endTime={endTime}
+          setEndTime={setEndTime}
+          hasBreak={hasBreak}
+          setHasBreak={setHasBreak}
+          breakStart={breakStart}
+          setBreakStart={setBreakStart}
+          breakEnd={breakEnd}
+          setBreakEnd={setBreakEnd}
+          breakKind={breakKind}
+          setBreakKind={setBreakKind}
+          breakReason={breakReason}
+          setBreakReason={setBreakReason}
+          breakInvalid={breakInvalid}
+          notes={notes}
+          setNotes={setNotes}
+          tooLarge={tooLarge}
+          previewCount={previewCount}
+        />
 
         <DialogFooter>
           <Button variant="outline" onClick={resetAndClose} disabled={mutation.isPending}>

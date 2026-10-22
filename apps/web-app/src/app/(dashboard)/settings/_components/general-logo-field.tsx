@@ -1,14 +1,52 @@
 "use client"
 
+import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import { Loader2, Image as ImageIcon, Upload, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { keys } from "@/lib/query-keys"
+import { notify } from "@/lib/toast"
+import { organizationsApi, type OrganizationProfile } from "@/lib/api"
 import { FormField } from "./settings-form-bits"
-import type { GeneralSectionState } from "./use-general-section"
+import { resizeImageToDataUrl } from "../_lib/resize-image"
 
-/** Part of the parent component's markup, moved here unchanged; it reads the state from `vm`. */
-export function GeneralLogoField({ vm }: { vm: GeneralSectionState }) {
-  const { t, profile, logoBusy, onLogoPick, saveLogo } = vm
+/** The company logo: shown, uploaded (resized to 400px) or removed — saved at once, outside the form's Save. */
+export function GeneralLogoField({ profile }: { profile: OrganizationProfile | undefined }) {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+
+  const [logoBusy, setLogoBusy] = useState(false)
+  const saveLogo = async (logoUrl: string) => {
+    setLogoBusy(true)
+    try {
+      await organizationsApi.updateProfile({ logoUrl })
+      queryClient.invalidateQueries({ queryKey: keys.organization.profile() })
+      notify.success(
+        logoUrl ? t("settings.general.logoSaved", "Logo updated") : t("settings.general.logoRemoved", "Logo removed"),
+      )
+    } catch (e) {
+      notify.error(e instanceof Error ? e.message : t("settings.general.failed"))
+    } finally {
+      setLogoBusy(false)
+    }
+  }
+  const onLogoPick = async (file?: File) => {
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      notify.error(t("settings.general.logoType", "Please choose an image file"))
+      return
+    }
+    setLogoBusy(true)
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, 400)
+      await saveLogo(dataUrl)
+    } catch {
+      setLogoBusy(false)
+      notify.error(t("settings.general.logoFailed", "Could not process that image"))
+    }
+  }
   return (
     <>
       <FormField icon={ImageIcon} label={t("settings.general.logo", "Company logo")}>

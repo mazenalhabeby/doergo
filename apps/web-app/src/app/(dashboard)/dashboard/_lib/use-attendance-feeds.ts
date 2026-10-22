@@ -13,8 +13,8 @@ import { attendanceApi } from "@/lib/api"
 export const PRESENCE_REFETCH_MS = 60_000
 
 /**
- * The dashboard's live attendance feeds — moved here unchanged from useDashboardData,
- * which calls this at the same point, so the queries run in the same order.
+ * The dashboard's live attendance feeds: who is clocked in, who is on a break, what waits for approval.
+ * useDashboardData calls this at the point the queries always ran, so they keep their order.
  */
 export function useAttendanceFeeds(canReadAttendance: boolean, afterFirstLoad: boolean) {
   // Who is clocked in RIGHT NOW? Admins read org-wide. This is date-independent

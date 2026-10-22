@@ -1,7 +1,22 @@
-'use client';
+"use client"
 
-import { useHomeClient } from './use-home-client';
-import { HomeClientWhatItIs } from './home-client-what-it-is';
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { usePrefersReducedMotion } from "./use-reduced-motion"
+import { useLenis } from "./use-lenis"
+import { useScrollRestoration } from "./use-scroll-restoration"
+import { LaptopShowcase } from "./LaptopShowcase"
+import { PhoneShowcase } from "./PhoneShowcase"
+import { DISPLAY, FramePlus } from "./home-ui"
+import { HomeNav } from "./home-nav"
+import { HomeHero } from "./home-hero"
+import { HomePositioning, HomeIntroVideo, HomeKeyFacts, HomeHowItWorks, HomeFieldApp } from "./home-product-sections"
+import { HomeWhy } from "./home-why"
+import { HomeIndustries } from "./home-industries"
+import { HomePricing } from "./home-pricing"
+import { HomeFeatureCompare, HomeFaq, HomeContactCta } from "./home-closing-sections"
+import { HomeFooter } from "./home-footer"
 
 /* ═══════════════════════════════════════════════════════════
    Monochrome studio palette
@@ -9,8 +24,23 @@ import { HomeClientWhatItIs } from './home-client-what-it-is';
    display: Familjen Grotesk (400) · labels: Martian Mono
    ═══════════════════════════════════════════════════════════ */
 
-export default function HomeClient({ lang = 'en' }: { lang?: string }) {
-  const vm = useHomeClient({ lang });
+export default function HomeClient({ lang = "en" }: { lang?: string }) {
+  const { isAuthenticated, isLoading } = useAuth()
+  const router = useRouter()
+  const reduced = usePrefersReducedMotion()
+  // next-themes: avoid hydration mismatch on the toggle icon (server can't know theme).
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  useLenis(!reduced)
+
+  // The page is two documents — see use-scroll-restoration. `mounted` is the
+  // commit in which the real prefers-reduced-motion value has been applied, so
+  // it marks the point where the layout is the one the offset was measured in.
+  useScrollRestoration(mounted)
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) router.push("/dashboard")
+  }, [isLoading, isAuthenticated, router])
 
   return (
     <>
@@ -34,12 +64,65 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
           .cw-in { transform: none; animation: none; }
         }
       `}</style>
-      <noscript><style>{`.reveal{opacity:1!important;transform:none!important}.lr-in{transform:none!important}`}</style></noscript>
+      <noscript>
+        <style>{`.reveal{opacity:1!important;transform:none!important}.lr-in{transform:none!important}`}</style>
+      </noscript>
 
       {/* Marketing content is ALWAYS rendered (server-side too) so crawlers and
           AI engines receive the full page — not a spinner. Authenticated users
           are redirected to /dashboard by the effect above, over the top. */}
-      <HomeClientWhatItIs vm={vm} lang={lang} />
+      <div className={`min-h-screen bg-background text-foreground antialiased selection:bg-foreground/20 ${DISPLAY}`}>
+        {/* corner registration marks (fixed frame) */}
+        <FramePlus />
+
+        {/* ══════ NAV ══════ */}
+        <HomeNav mounted={mounted} />
+
+        {/* ══════ HERO — always dark (explicit bg so the page theme never lightens it) ══════ */}
+        <HomeHero reduced={reduced} />
+
+        {/* ══════ POSITIONING ══════ */}
+        <HomePositioning />
+
+        {/* ══════ INTRO VIDEO ══════ */}
+        <HomeIntroVideo />
+
+        {/* ══════ KEY FACTS ══════ */}
+        <HomeKeyFacts />
+
+        {/* ══════ PRODUCT SHOWCASE — scroll-driven 3D laptop ══════ */}
+        <LaptopShowcase />
+
+        {/* ══════ HOW IT WORKS — process steps (flows with the page, no scroll-trap) ══════ */}
+        <HomeHowItWorks />
+
+        {/* ══════ FIELD / MOBILE ══════ */}
+        <HomeFieldApp />
+
+        {/* ══════ PHONE SHOWCASE — scroll-driven mobile app ══════ */}
+        <PhoneShowcase />
+
+        {/* ══════ WHY / THREE-IN-ONE + DIFFERENTIATORS ══════ */}
+        <HomeWhy />
+
+        {/* ══════ INDUSTRIES / WHO IT'S FOR ══════ */}
+        <HomeIndustries lang={lang} />
+
+        {/* ══════ PRICING ══════ */}
+        <HomePricing />
+
+        {/* ══════ FEATURE COMPARISON (code-driven) ══════ */}
+        <HomeFeatureCompare />
+
+        {/* ══════ FAQ ══════ */}
+        <HomeFaq />
+
+        {/* ══════ CTA ══════ */}
+        <HomeContactCta />
+
+        {/* ══════ FOOTER ══════ */}
+        <HomeFooter />
+      </div>
     </>
-  );
+  )
 }

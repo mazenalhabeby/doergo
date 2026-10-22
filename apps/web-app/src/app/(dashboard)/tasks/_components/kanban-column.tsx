@@ -6,8 +6,7 @@ import type { Task, Sprint, Phase, Epic } from "@/lib/api"
 import type { TaskContextMenuActions } from "./task-context-menu"
 import { TaskCard } from "./task-card"
 
-/** One column of the kanban board — moved here unchanged. */
-// ─── Column ──────────────────────────────────────────────────────────────────
+/** One column of the kanban board: its header, WIP limit, cards, and the drop/reorder targets between them. */
 
 interface KanbanColumnProps {
   label: string

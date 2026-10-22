@@ -4616,7 +4616,6 @@
     "noRole": "Sin rol",
     "roleGrants": "Concede",
     "roleMember": "Miembro",
-    "fullAccess": "Acceso completo",
     "unsaved": "Tienes cambios sin guardar",
     "fromRole": "Del rol {{role}}",
     "adminRole": "Administrador",

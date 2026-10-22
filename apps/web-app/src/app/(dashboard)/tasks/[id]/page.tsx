@@ -1,6 +1,10 @@
 "use client"
 
+import { use, useState } from "react"
+import { useTranslation } from "react-i18next"
+import { useQueryClient } from "@tanstack/react-query"
 import { keys } from "@/lib/query-keys"
+import { assigneeIds } from "@/lib/task-assignment"
 
 import { RefreshCw, AlertCircle } from "lucide-react"
 
@@ -12,30 +16,26 @@ import { notify } from "@/lib/toast"
 // Each from its own file, not the `./_components` barrel: app code is assumed to
 // have side effects, so importing one name through the barrel kept EVERY section
 // (the lazily loaded ones below included) in the page bundle.
-import { HandoverPendingNotice } from "@/components/tasks/handover-pending-notice"
-import { useTaskDetailPage } from "./_hooks/use-task-detail-page"
-import { EditTaskDialog, AssignMemberDialog, ClockGateDialog, OfficeStartDialog } from "./_components/task-detail-page-helpers"
-import { TaskDetailPageView } from "./_components/task-detail-page-view"
-import { TaskDetailPageSections } from "./_components/task-detail-page-sections"
+import { useTaskDetail } from "./_hooks/use-task-detail"
+import { useTaskDetailActions } from "./_hooks/use-task-detail-actions"
+import { TaskDetailDialogs } from "./_components/task-detail-dialogs"
+import { TaskProgressCard } from "./_components/task-progress-card"
+import { TaskDetailHeader } from "./_components/task-detail-header"
+import { TaskDetailSidebar } from "./_components/task-detail-sidebar"
+import { HandoverCard } from "./_components/handover-card"
+import { JobTimeCard } from "./_components/job-time-card"
+import { TaskCrewCard } from "./_components/task-crew-card"
+import { OpenRoleCard } from "./_components/open-role-card"
+import { TaskDetailMainColumn } from "./_components/task-detail-main-column"
 
-export default function TaskDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const vm = useTaskDetailPage({ params })
+export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
   const {
-    id,
-    t,
-    queryClient,
     user,
-    canAddWork,
-    showAssignModal,
-    setShowAssignModal,
-    activityCount,
-    setActivityCount,
-    showEditDialog,
-    setShowEditDialog,
     task,
     isLoading,
     isError,
@@ -59,6 +59,8 @@ export default function TaskDetailPage({
     canAssign,
     canCancel,
     allowedTransitions,
+  } = useTaskDetail(id)
+  const {
     reassignNote,
     setReassignNote,
     assignMutation,
@@ -70,14 +72,7 @@ export default function TaskDetailPage({
     handoverPending,
     writeHandover,
     handleFieldSave,
-    newComment,
-    setNewComment,
-    commentMutation,
-    editMounted,
-    assignMounted,
-    clockGateMounted,
-    officeStartMounted,
-  } = vm
+  } = useTaskDetailActions({ id, task, moveWorkflow, stepMove, setShowAssignModal })
 
   // ─── Loading ────────────────────────────────────────────────────────────
   // The same skeleton the route loader shows, so the shape never changes
@@ -104,68 +99,143 @@ export default function TaskDetailPage({
     )
   }
 
-  const {
-    comments,
-    checklistDone,
-    checklistTotal,
-    depCount,
-    subtaskCount,
-    attachmentCount,
-    openIfPresent,
-    onTheJob,
-  } = TaskDetailPageView({ id, user, task, isCompleted })
+  const onTheJob = !!user?.id && assigneeIds(task).includes(user.id)
 
   return (
     <div className="min-h-full bg-background">
-      {/* Dialogs */}
-      {assignMounted && <AssignMemberDialog
-        open={showAssignModal}
-        onOpenChange={setShowAssignModal}
+      <TaskDetailDialogs
         taskId={id}
-        spaceId={task?.spaceId}
-        currentAssigneeId={task?.assignedToId}
-        currentAssigneeIds={task?.assignees?.map((a) => a.userId) || []}
+        task={task}
+        showAssignModal={showAssignModal}
+        setShowAssignModal={setShowAssignModal}
+        showEditDialog={showEditDialog}
+        setShowEditDialog={setShowEditDialog}
         isAssigning={assignMutation.isPending}
-        notice={handoverPending
-          ? <HandoverPendingNotice
-            text={handoverPending}
-            onWait={() => setShowAssignModal(false)}
-            note={reassignNote}
-            onNoteChange={setReassignNote}
-          />
-          : null}
         onAssign={(memberId) => assignMutation.mutate(memberId)}
-        onSave={async (added, removed) => {
-          const ops: Promise<unknown>[] = [
-            ...removed.map(uid => tasksApi.removeAssignee(id, uid)),
-            ...added.map(uid => tasksApi.addAssignee(id, uid)),
-          ]
-          await Promise.allSettled(ops)
-          // The note for whoever takes the job over — posted here too, not only on a single reassign.
-          if (added.length && reassignNote.trim()) {
-            await tasksApi.addComment(id, reassignNote.trim()).catch(() => undefined)
-            setReassignNote("")
-          }
-          notify.success(t("tasks.detail.assigneesUpdated"))
-          queryClient.invalidateQueries({ queryKey: keys.tasks.detail(id), refetchType: "all" })
-        }}
-      />}
-      {editMounted && <EditTaskDialog task={task} open={showEditDialog} onOpenChange={setShowEditDialog} />}
-      {clockGateMounted && <ClockGateDialog {...clockGate.dialogProps} />}
-      {officeStartMounted && <OfficeStartDialog {...officeStart.dialogProps} />}
-      {stepMove.dialog}
-
-      <TaskDetailPageSections
-        vm={vm}
-        onTheJob={onTheJob}
-        subtaskCount={subtaskCount}
-        openIfPresent={openIfPresent}
-        checklistTotal={checklistTotal}
-        checklistDone={checklistDone}
-        attachmentCount={attachmentCount}
-        depCount={depCount}
-        comments={comments}
+        handoverPending={handoverPending}
+        reassignNote={reassignNote}
+        setReassignNote={setReassignNote}
+        clockGateDialog={clockGate.dialogProps}
+        officeStartDialog={officeStart.dialogProps}
+        stepMoveDialog={stepMove.dialog}
       />
+
+      <div className="p-8 max-w-7xl mx-auto">
+        {/* ─── Header ────────────────────────────────────────────────── */}
+        <div data-tour="task-header">
+          <TaskDetailHeader
+            task={task}
+            user={user}
+            canEdit={canEdit}
+            canAssign={canAssign}
+            canCancel={canCancel}
+            isCompleted={isCompleted}
+            isCanceled={isCanceled}
+            hasAssignee={hasAssignee}
+            hasModule={hasModule}
+            allowedTransitions={allowedTransitions}
+            onTitleSave={(v) => handleFieldSave("title", v)}
+            onStatusChange={(s) => statusChangeMutation.mutate({ status: s })}
+            onAssignClick={() => setShowAssignModal(true)}
+            onEditClick={() => setShowEditDialog(true)}
+            onCancelTask={() => deleteMutation.mutate()}
+            isStatusChanging={statusChangeMutation.isPending}
+          />
+        </div>
+
+        {/* ─── Stopped work: paused, the handover owed, the newest note ─── */}
+        <div className="mb-4">
+          <HandoverCard
+            task={task}
+            meId={user?.id}
+            canResume={onTheJob && !isCompleted && !isCanceled}
+            resuming={resumeMutation.isPending}
+            onResume={() => resumeMutation.mutate()}
+            onWrite={writeHandover}
+          />
+        </div>
+
+        {/* ─── Job time: working, with travel and blocked apart ─── */}
+        <div className="mb-4 space-y-4">
+          {/* Open to a work role: who may take it, how many are taken (shared tasks/role-pool.ts). */}
+          <OpenRoleCard task={task} />
+          <JobTimeCard taskId={id} paused={!!task.pausedAt} />
+          {/* The crew: who is on the job now, who leads (shared tasks/crew.ts). */}
+          <TaskCrewCard taskId={id} paused={!!task.pausedAt} />
+        </div>
+
+        {/* ─── Progress Card — always visible ─────────────────────── */}
+        <div data-tour="task-progress">
+          <TaskProgressCard
+            assignees={task.assignees || []}
+            assignedTo={task.assignedTo || null}
+            isCompleted={isCompleted}
+            taskStatus={task.status}
+            routeStartedAt={task.routeStartedAt}
+            routeEndedAt={task.routeEndedAt}
+            workflowStatuses={hasWorkflow ? workflowStatuses : undefined}
+          />
+        </div>
+
+        {/* ─── Two-panel layout ──────────────────────────────────────── */}
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          <TaskDetailMainColumn
+            taskId={id}
+            task={task}
+            canEdit={canEdit}
+            isCompleted={isCompleted}
+            isCanceled={isCanceled}
+            hasAssignee={hasAssignee}
+            hasModule={hasModule}
+            onFieldSave={handleFieldSave}
+            workflowStatuses={workflowStatuses}
+            moveWorkflowStatuses={moveWorkflow?.statuses}
+            mayReadRoute={mayReadRoute}
+            loadingRoute={loadingRoute}
+            routeData={routeData}
+          />
+
+          {/* Right sidebar — sticky */}
+          <div data-tour="task-sidebar" className="w-full lg:w-[35%] lg:shrink-0 lg:sticky lg:top-6">
+            <TaskDetailSidebar
+              task={task}
+              canEdit={canEdit}
+              canAssign={canAssign}
+              hasModule={hasModule}
+              onFieldSave={handleFieldSave}
+              onAssignClick={() => setShowAssignModal(true)}
+              onRemoveAssignee={(assigneeId) => {
+                const assignee = task.assignees?.find((a) => a.id === assigneeId)
+                if (assignee) {
+                  tasksApi
+                    .removeAssignee(id, assignee.userId)
+                    .then(() => {
+                      notify.success(t("tasks.detail.assigneeRemoved"))
+                      queryClient.invalidateQueries({ queryKey: keys.tasks.detail(id), refetchType: "all" })
+                    })
+                    .catch((e: Error) => notify.error(e.message))
+                }
+              }}
+              onSetLead={(assigneeId) => {
+                const assignee = task.assignees?.find((a) => a.id === assigneeId)
+                if (assignee) {
+                  tasksApi
+                    .removeAssignee(id, assignee.userId)
+                    .then(() => tasksApi.addAssignee(id, assignee.userId, "LEAD"))
+                    .then(() => {
+                      notify.success(t("tasks.detail.leadUpdated"))
+                      queryClient.invalidateQueries({ queryKey: keys.tasks.detail(id), refetchType: "all" })
+                    })
+                    .catch((e: Error) => notify.error(e.message))
+                }
+              }}
+              sprints={sprints || []}
+              phases={phases || []}
+              epics={epicsData || []}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

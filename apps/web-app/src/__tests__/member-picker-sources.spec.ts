@@ -17,21 +17,22 @@ const read = (rel: string) =>
     : readOne(rel)
 
 const PICKERS = [
-  "components/tasks/assign-member-dialog.tsx",
+  // The Assign dialog: its people come from its selection hook.
+  "components/tasks/use-assign-member-dialog.ts",
   // The New Task dialog: its people come from its form hook in create-task/.
   "app/(dashboard)/tasks/_components/create-task/",
   "app/(dashboard)/clients/[id]/_components/customer-managers.tsx",
   "app/(dashboard)/clients/[id]/",
   "app/(dashboard)/locations/[id]/_components/apartment-dialog.tsx",
   "components/assets/holder-picker.tsx",
-  "components/assets/contract-dialog.tsx",
-  "app/(dashboard)/reports/_hooks/use-reports-page-data.ts",
+  "components/assets/use-contract-dialog.ts",
+  "app/(dashboard)/reports/_hooks/use-report-builder.ts",
 ]
 const LETTERHEADS = [
-  "app/(dashboard)/invoices/[id]/page.tsx",
-  "app/(dashboard)/invoices/[id]/edit/page.tsx",
-  "app/(dashboard)/invoices/new/page.tsx",
-  "app/(dashboard)/reports/_hooks/use-reports-page-data.ts",
+  "app/(dashboard)/invoices/[id]/",
+  "app/(dashboard)/invoices/[id]/edit/",
+  "app/(dashboard)/invoices/new/",
+  "app/(dashboard)/reports/page.tsx",
 ]
 
 describe("member pickers read people through useAssignableMembers", () => {

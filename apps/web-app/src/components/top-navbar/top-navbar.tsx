@@ -1,6 +1,10 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { useTheme } from "next-themes"
+import { useCallback } from "react"
+import { NAV_OPTION, personInitials, personName } from "@hbcfield/shared/client"
 import { AnimatedLogo } from "@hbcfield/shared/components"
 import { NotificationBell } from "@/components/notifications/notification-bell"
 import { SupportButton } from "@/components/support/support-widget"
@@ -14,35 +18,47 @@ import { ApprovalsButton } from "./approvals-button"
 import { MessagesButton } from "./messages-button"
 import { MobileMenu } from "./mobile-menu"
 import { UserDropdown } from "./user-dropdown"
-import { useTopNavbar } from "./use-top-navbar"
-import { TopNavbarView } from "./top-navbar-view"
-import { TopNavbarSidebar } from "./top-navbar-sidebar"
+import { useAuth } from "@/contexts/auth-context"
+import { mayListOrgMembers } from "@/lib/assignable-members"
+import { useScheduleAccess } from "@/hooks/use-schedule-access"
+import { useRouteAccess } from "@/hooks/use-route-access"
+import { useSyncLocale } from "@/hooks/use-sync-locale"
+import { navVisibility } from "./nav-visibility"
+import { DesktopNav } from "./desktop-nav"
 
 // ---------------------------------------------------------------------------
 // TopNavbar
 // ---------------------------------------------------------------------------
 export function TopNavbar() {
-  const vm = useTopNavbar()
-  const {
-    user,
-    logout,
-    optionAllows,
-    scheduleAccess,
-    routeAccess,
-    pathname,
-    resolvedTheme,
-    prefetch,
-    t,
-    navRef,
-    navOverflow,
-  } = vm
+  const { user, logout, hasPlanFeature } = useAuth()
+  // Notifications are written on the server in the reader's language.
+  useSyncLocale()
+  /*
+    One question, asked of one table.
+
+    `NAV_OPTION` says which href belongs to which Option; anything it does not
+    claim is not an Option and stays visible. `hasPlanFeature` is the same check
+    the pages and PlanGate already use, so what the navigation shows and what the
+    page allows cannot disagree.
+  */
+  const optionAllows = useCallback(
+    (href: string) => {
+      const option = NAV_OPTION[href]
+      return !option || hasPlanFeature(option)
+    },
+    [hasPlanFeature],
+  )
+  const scheduleAccess = useScheduleAccess()
+  const routeAccess = useRouteAccess()
+  const pathname = usePathname()
+  const { resolvedTheme } = useTheme()
 
   if (!user || !routeAccess.nav) return null
 
+  const initials = personInitials(user)
+  const fullName = personName(user)
+  const visible = navVisibility(routeAccess.nav, scheduleAccess, optionAllows)
   const {
-    initials,
-    fullName,
-    nav,
     teamItems,
     showTeam,
     showSpaces,
@@ -57,13 +73,11 @@ export function TopNavbar() {
     showPortals,
     showInvoices,
     showIssueDocuments,
-    showAllDocuments,
-    showDocumentTypes,
     showDocumentTemplates,
     showDocumentCompliance,
     showMyDocuments,
     showManage,
-  } = TopNavbarView({ user, optionAllows, scheduleAccess, routeAccess })
+  } = visible
   // Overflow items go into "More" menu
   return (
     /*
@@ -81,15 +95,12 @@ export function TopNavbar() {
     <header className="sticky top-0 z-50 shrink-0 border-b border-border bg-background/80 backdrop-blur-xl">
       {/* ── Row 1 ─────────────────────────────────────────────────────────── */}
       <div className={cn(PAGE_WIDTH, "flex h-12 items-center gap-4")}>
-      {/* Logo */}
-      <Link
-        href="/dashboard"
-        className="flex shrink-0 items-center transition-opacity hover:opacity-80"
-      >
-        <AnimatedLogo size="small" textColor={resolvedTheme === 'dark' ? '#fafafa' : '#18181b'} />
-      </Link>
+        {/* Logo */}
+        <Link href="/dashboard" className="flex shrink-0 items-center transition-opacity hover:opacity-80">
+          <AnimatedLogo size="small" textColor={resolvedTheme === "dark" ? "#fafafa" : "#18181b"} />
+        </Link>
 
-      {/* Everything sits right in row 1. It can: the only thing on the left is the
+        {/* Everything sits right in row 1. It can: the only thing on the left is the
           logo, so there is no navigation to crowd — that lives in row 2. Order runs
           from "looking something up" through "doing something" to "who am I". */}
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
@@ -128,62 +139,38 @@ export function TopNavbar() {
 
       {/* ── Row 2 — navigation, with the full width to itself ─────────────── */}
       <div className={cn(PAGE_WIDTH, "flex h-11 items-center border-t border-border/50")}>
-    {/* Mobile hamburger menu */}
-    <MobileMenu
-      pathname={pathname}
-      showTeam={showTeam}
-      showSpaces={showSpaces}
-      showSchedule={showSchedule}
-      showAttendance={showAttendance}
-      showOvertime={showOvertime}
-      showIssues={showIssues}
-      showReports={showReports}
-      showInvoices={showInvoices}
-      showManage={showManage}
-      teamItems={teamItems}
-      showCrm={showCrm}
-      showCalendar={showCalendar}
-      showAssets={showAssets}
-      showPortals={showPortals}
-      showMyDocuments={showMyDocuments}
-      showIssueDocuments={showIssueDocuments}
-      showDocumentTemplates={showDocumentTemplates}
-      showDocumentCompliance={showDocumentCompliance}
-    />
+        {/* Mobile hamburger menu */}
+        <MobileMenu
+          pathname={pathname}
+          showTeam={showTeam}
+          showSpaces={showSpaces}
+          showSchedule={showSchedule}
+          showAttendance={showAttendance}
+          showOvertime={showOvertime}
+          showIssues={showIssues}
+          showReports={showReports}
+          showInvoices={showInvoices}
+          showManage={showManage}
+          teamItems={teamItems}
+          showCrm={showCrm}
+          showCalendar={showCalendar}
+          showAssets={showAssets}
+          showPortals={showPortals}
+          showMyDocuments={showMyDocuments}
+          showIssueDocuments={showIssueDocuments}
+          showDocumentTemplates={showDocumentTemplates}
+          showDocumentCompliance={showDocumentCompliance}
+        />
 
-    {/* Desktop Navigation */}
-    {/* xl, not lg. At 1024px the full bar does not fit once the labels are real
+        {/* Desktop Navigation */}
+        {/* xl, not lg. At 1024px the full bar does not fit once the labels are real
           words in a real language: the Spanish set alone needs ~880px before the
           logo, search, clock, language, bell, help, support and avatar on the
           right. 1024–1280px now uses the hamburger, which carries every item.
           (The `MoreDropdown` overflow path below never ran — `overflowItems` is
           initialised empty and never populated, so `hasOverflow` is always false.) */}
-      <TopNavbarSidebar
-        vm={vm}
-        showCalendar={showCalendar}
-        showCrm={showCrm}
-        showAssets={showAssets}
-        showPortals={showPortals}
-        showTeam={showTeam}
-        teamItems={teamItems}
-        showSpaces={showSpaces}
-        showSchedule={showSchedule}
-        showAttendance={showAttendance}
-        showOvertime={showOvertime}
-        showIssues={showIssues}
-        showReports={showReports}
-        showInvoices={showInvoices}
-        showMyDocuments={showMyDocuments}
-        showIssueDocuments={showIssueDocuments}
-        showAllDocuments={showAllDocuments}
-        showDocumentTypes={showDocumentTypes}
-        showDocumentTemplates={showDocumentTemplates}
-        showDocumentCompliance={showDocumentCompliance}
-        showManage={showManage}
-      />
+        <DesktopNav pathname={pathname} mayListMembers={mayListOrgMembers(user)} {...visible} />
       </div>
     </header>
   )
 }
-
-// TasksDropdown removed — sprints merged into tasks page

@@ -16,7 +16,9 @@ import { readFolder } from "../../../../test-utils/read-source"
 const PAGE = path.join(__dirname, "..", "page.tsx")
 // The page, its hooks and its sections (_components/, _hooks/) — one screen.
 const DIR = path.dirname(PAGE)
-const code = readFolder(DIR).replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
+const code = readFolder(DIR)
+  .replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1")
+  .replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
 
 describe("reports — column names in the reader's language", () => {
   it("names every timesheet column chip from the catalogue", () => {
@@ -24,11 +26,13 @@ describe("reports — column names in the reader's language", () => {
     expect(block).not.toBeNull()
     const keys = [...block![1].matchAll(/"([A-Za-z]+)"/g)].map((m) => m[1])
     expect(keys.length).toBeGreaterThan(5)
-    for (const key of keys) expect({ key, catalogued: isReportLabelKey(`col.${key}`) }).toEqual({ key, catalogued: true })
+    for (const key of keys)
+      expect({ key, catalogued: isReportLabelKey(`col.${key}`) }).toEqual({ key, catalogued: true })
   })
 
   it("localizes the result in both views — the table, the CSV and the PDF all read it", () => {
-    const memo = code.slice(code.indexOf("const displayResult = useMemo"), code.indexOf("const measureCols"))
+    const start = code.indexOf("const displayResult = useMemo")
+    const memo = code.slice(start, code.indexOf("\n  }, [", start) + 80)
     expect(memo.match(/localizeReportColumns\(/g)?.length).toBe(2)
     expect(memo).toMatch(/\[[^\]]*\blang\b[^\]]*\]\)/) // re-rendered when the language changes
   })

@@ -2,26 +2,26 @@
 
 import { useMemo, useState } from "react"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { assetsApi, type AssetListRow } from "@/lib/api"
 import { keyColumn, linkColumns, listByLabel, type KindList, type KindShape } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { keys } from "@/lib/query-keys"
 
-/** AssetFaults's state and handlers — everything before its markup, moved here unchanged. */
+/**
+ * One asset's fault-code library: the search, the codes, the parts catalogue a code links into (read once
+ * and indexed by code), the picker's part options, and removing a code.
+ */
 export function useAssetFaults({
-  assetId, assetName, spaceId, list, shape,
-}: Pick<{
+  assetId,
+  list,
+  shape,
+}: {
   assetId: string
-  assetName: string
-  /** The space this asset's type belongs to, so a raised job lands there. */
-  spaceId?: string | null
   list: KindList
   /** The whole kind, so a link column can find the table it points at. */
   shape: KindShape
-}, 'assetId' | 'assetName' | 'spaceId' | 'list' | 'shape'>) {
-  const { t } = useTranslation()
+}) {
   const qc = useQueryClient()
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search, 300)
@@ -49,11 +49,10 @@ export function useAssetFaults({
   // A catalogue longer than the window we fetched would make perfectly good
   // links read as "not in the catalogue" — the one message a technician must be
   // able to trust. Say the truth instead: we did not look at all of it.
-  const catalogueTruncated =
-    !!partsQ.data?.meta && partsQ.data.meta.total > partsQ.data.rows.length
+  const catalogueTruncated = !!partsQ.data?.meta && partsQ.data.meta.total > partsQ.data.rows.length
 
   const linkCol = linkColumn?.label ?? null
-  const codeCol = target ? keyColumn(target)?.label ?? null : null
+  const codeCol = target ? (keyColumn(target)?.label ?? null) : null
   const parts = target
   const partByCode = new Map<string, AssetListRow>()
   if (codeCol) {
@@ -100,13 +99,11 @@ export function useAssetFaults({
   }, [partsQ.data, target, codeCol])
 
   return {
-    t,
     search,
     setSearch,
     editing,
     setEditing,
     faultsQ,
-    target,
     partsQ,
     catalogueTruncated,
     linkCol,

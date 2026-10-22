@@ -7,14 +7,15 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { startOfDay, diffDays, isSameDay, isWeekend } from "@/lib/local-days"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "react-i18next"
 import { useCalendarView, isSameMonth, type CalendarViewProps } from "./use-calendar-view"
-import { APPLE_EASE, WEEKDAYS, PillTooltip, CalendarCell } from "./calendar-view-helpers"
+import { APPLE_EASE, WEEKDAYS, CalendarCell } from "./calendar-cell"
+import { PillTooltip } from "./calendar-pill-tooltip"
 
-// ─── Component ──────────────────────────────────────────────────────────────
-
+/** The month grid: multi-day bars across each week, single-day pills in each cell. */
 export function CalendarView({ tasks }: CalendarViewProps) {
+  const { t } = useTranslation()
   const {
-    t,
     stepOf,
     today,
     viewDate,
@@ -41,12 +42,7 @@ export function CalendarView({ tasks }: CalendarViewProps) {
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/40 bg-muted/20">
         <h3 className="text-sm font-semibold text-foreground">{monthLabel}</h3>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 rounded-lg"
-            onClick={goToPrev}
-          >
+          <Button variant="ghost" size="icon" className="size-7 rounded-lg" onClick={goToPrev}>
             <ChevronLeft className="size-4" />
           </Button>
           <Button
@@ -57,18 +53,13 @@ export function CalendarView({ tasks }: CalendarViewProps) {
               "h-7 px-3 text-xs font-medium rounded-lg transition-colors",
               isCurrentMonth
                 ? "text-muted-foreground/50 cursor-default"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent",
             )}
             disabled={isCurrentMonth}
           >
             {t("tasks.menu.today")}
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 rounded-lg"
-            onClick={goToNext}
-          >
+          <Button variant="ghost" size="icon" className="size-7 rounded-lg" onClick={goToNext}>
             <ChevronRight className="size-4" />
           </Button>
         </div>
@@ -81,7 +72,7 @@ export function CalendarView({ tasks }: CalendarViewProps) {
             key={day}
             className={cn(
               "py-1.5 text-center text-[10px] font-semibold uppercase tracking-wider",
-              i === 0 || i === 6 ? "text-muted-foreground/40" : "text-muted-foreground/70"
+              i === 0 || i === 6 ? "text-muted-foreground/40" : "text-muted-foreground/70",
             )}
           >
             {day}
@@ -99,7 +90,10 @@ export function CalendarView({ tasks }: CalendarViewProps) {
           <div key={weekIdx}>
             {/* Multi-day bars spanning full width */}
             {weekBars.length > 0 && (
-              <div className="relative border-b border-border/10 bg-muted/5" style={{ height: weekBars.length * 28 + 8 }}>
+              <div
+                className="relative border-b border-border/10 bg-muted/5"
+                style={{ height: weekBars.length * 28 + 8 }}
+              >
                 {weekBars.map((row, rowIdx) =>
                   row.map((bar) => {
                     const visStart = bar.startDay < weekStart ? weekStart : bar.startDay
@@ -119,7 +113,13 @@ export function CalendarView({ tasks }: CalendarViewProps) {
                         className={cn(
                           "absolute h-6 flex items-center px-2 text-[11px] font-bold text-white truncate shadow-sm",
                           "hover:brightness-110 hover:shadow-md transition-all duration-150 cursor-pointer",
-                          isRealStart && isRealEnd ? "rounded-md" : isRealStart ? "rounded-l-md" : isRealEnd ? "rounded-r-md" : ""
+                          isRealStart && isRealEnd
+                            ? "rounded-md"
+                            : isRealStart
+                              ? "rounded-l-md"
+                              : isRealEnd
+                                ? "rounded-r-md"
+                                : "",
                         )}
                         style={{
                           left: `calc(${(startCol / 7) * 100}% + 2px)`,
@@ -133,7 +133,7 @@ export function CalendarView({ tasks }: CalendarViewProps) {
                         {span >= 2 ? bar.task.title : bar.task.title.slice(0, 6)}
                       </Link>
                     )
-                  })
+                  }),
                 )}
               </div>
             )}
@@ -173,14 +173,16 @@ export function CalendarView({ tasks }: CalendarViewProps) {
       })}
 
       {/* Tooltip — rendered via portal to avoid stacking context issues */}
-      {tooltip && typeof document !== 'undefined' && ReactDOM.createPortal(
-        <PillTooltip
-          task={tooltip.task}
-          statusConfig={stepOf(tooltip.task)}
-          style={{ left: tooltip.x, top: tooltip.y }}
-        />,
-        document.body
-      )}
+      {tooltip &&
+        typeof document !== "undefined" &&
+        ReactDOM.createPortal(
+          <PillTooltip
+            task={tooltip.task}
+            statusConfig={stepOf(tooltip.task)}
+            style={{ left: tooltip.x, top: tooltip.y }}
+          />,
+          document.body,
+        )}
     </div>
   )
 }

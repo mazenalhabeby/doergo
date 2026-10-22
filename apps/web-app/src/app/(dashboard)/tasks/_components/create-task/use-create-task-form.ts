@@ -15,7 +15,8 @@ import { useCreateTaskType, useSpaceTaskType } from "./use-create-task-type"
 import { useCreateTaskAssignment } from "./use-create-task-assignment"
 import type { CreateTaskDialogProps } from "./create-task-types"
 export type { CreateTaskDialogProps } from "./create-task-types"
-import { useRepeatState, useTaskSpaces } from "./create-task-sections"
+import { useRepeatState } from "./use-repeat-state"
+import { useTaskSpaces } from "./use-task-spaces"
 
 /**
  * Everything the New Task dialog holds, loads and submits. The dialog and its

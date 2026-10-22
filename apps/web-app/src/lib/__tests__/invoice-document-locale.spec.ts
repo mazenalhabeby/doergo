@@ -174,7 +174,10 @@ describe("which language a download is written in", () => {
   })
 
   it("the invoice page sends that language to both the download and the print", () => {
-    const page = readSource(path.join(__dirname, "../../app/(dashboard)/invoices/[id]/page.tsx"), "utf8")
+    const page = readSource(
+      path.join(__dirname, "../../app/(dashboard)/invoices/[id]/_components/invoice-detail-top-bar.tsx"),
+      "utf8",
+    )
     expect(page.match(/toPdfData\(inv, pdfLocaleFor\(inv, pdfLocaleOverride\)\)/g)?.length).toBe(2)
     expect(page).toContain("invoices.pdfLanguage.client")
   })

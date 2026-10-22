@@ -1,12 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Camera, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react"
-import { type ReportAttachment } from "@/lib/api"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
+import { Camera, ChevronLeft, ChevronRight, ZoomIn, Loader2, X } from "lucide-react"
+import { keys } from "@/lib/query-keys"
+import { reportAttachmentsApi, type ReportAttachment } from "@/lib/api"
 import { useTranslation } from "react-i18next"
-import { AttachmentDeleteButton } from "./service-report-section-shared"
 
-/** PhotoGallery, moved here unchanged out of service-report-section.tsx. */
+/** A service report's photos, one at a time with arrows; removable where the viewer may delete. */
 export function PhotoGallery({
   attachments,
   type,
@@ -31,10 +33,9 @@ export function PhotoGallery({
       <div className="flex items-center justify-center h-32 bg-muted rounded-lg border-2 border-dashed border-border">
         <div className="text-center">
           <Camera className="size-6 text-muted-foreground mx-auto mb-1" />
-          <p
-            className="text-xs text-muted-foreground">{type === "BEFORE"
-              ? t("tasks.serviceReport.noBeforePhotos")
-              : t("tasks.serviceReport.noAfterPhotos")}</p>
+          <p className="text-xs text-muted-foreground">
+            {type === "BEFORE" ? t("tasks.serviceReport.noBeforePhotos") : t("tasks.serviceReport.noAfterPhotos")}
+          </p>
         </div>
       </div>
     )
@@ -64,11 +65,7 @@ export function PhotoGallery({
           </div>
         )}
         {canDelete && reportId && taskId && (
-          <AttachmentDeleteButton
-            reportId={reportId}
-            attachmentId={current.id}
-            taskId={taskId}
-          />
+          <AttachmentDeleteButton reportId={reportId} attachmentId={current.id} taskId={taskId} />
         )}
       </div>
 
@@ -120,5 +117,43 @@ export function PhotoGallery({
         </div>
       )}
     </div>
+  )
+}
+
+/** Removes one photo from the report, after a confirm. */
+function AttachmentDeleteButton({
+  reportId,
+  attachmentId,
+  taskId,
+}: {
+  reportId: string
+  attachmentId: string
+  taskId: string
+}) {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const deleteMutation = useMutation({
+    mutationFn: () => reportAttachmentsApi.delete(reportId, attachmentId),
+    onSuccess: () => {
+      toast.success(t("tasks.serviceReport.photoRemoved"))
+      queryClient.invalidateQueries({ queryKey: keys.tasks.report(taskId) })
+    },
+    onError: (e: Error) => toast.error(e.message || t("tasks.serviceReport.photoRemoveFailed")),
+  })
+
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation()
+        if (confirm(t("tasks.serviceReport.removePhotoConfirm"))) deleteMutation.mutate()
+      }}
+      disabled={deleteMutation.isPending}
+      className={
+        "absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 " +
+        "group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
+      }
+    >
+      {deleteMutation.isPending ? <Loader2 className="size-3 animate-spin" /> : <X className="size-3" />}
+    </button>
   )
 }

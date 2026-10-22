@@ -10,7 +10,7 @@ import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 
-/** AttachmentUpload, moved here unchanged out of service-report-section.tsx. */
+/** Adds before/after photos to a service report (drop or pick; presign → S3 → confirm). */
 export function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: string }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -35,11 +35,7 @@ export function AttachmentUpload({ reportId, taskId }: { reportId: string; taskI
     setIsUploading(true)
     try {
       // Step 1: Get presigned URL
-      const presigned = await reportAttachmentsApi.getPresignedUrl(
-        reportId,
-        file.name,
-        file.type
-      )
+      const presigned = await reportAttachmentsApi.getPresignedUrl(reportId, file.name, file.type)
       if (!presigned) throw new Error(t("tasks.attachments.failedUploadUrl"))
 
       // Step 2: Upload. `uploadToS3` rejects on a non-2xx; the bare fetch this
@@ -72,7 +68,7 @@ export function AttachmentUpload({ reportId, taskId }: { reportId: string; taskI
       const file = e.dataTransfer.files[0]
       if (file) uploadFile(file)
     },
-    [uploadType]
+    [uploadType],
   )
 
   const handleFileSelect = useCallback(
@@ -82,7 +78,7 @@ export function AttachmentUpload({ reportId, taskId }: { reportId: string; taskI
       // Reset input so the same file can be selected again
       e.target.value = ""
     },
-    [uploadType]
+    [uploadType],
   )
 
   return (
@@ -96,9 +92,7 @@ export function AttachmentUpload({ reportId, taskId }: { reportId: string; taskI
             onClick={() => setUploadType("BEFORE")}
             className={cn(
               "px-3 py-1 text-xs font-medium transition-colors",
-              uploadType === "BEFORE"
-                ? "bg-blue-600 text-white"
-                : "bg-card text-muted-foreground hover:bg-accent"
+              uploadType === "BEFORE" ? "bg-blue-600 text-white" : "bg-card text-muted-foreground hover:bg-accent",
             )}
           >
             {t("tasks.serviceReport.before")}
@@ -108,9 +102,7 @@ export function AttachmentUpload({ reportId, taskId }: { reportId: string; taskI
             onClick={() => setUploadType("AFTER")}
             className={cn(
               "px-3 py-1 text-xs font-medium transition-colors",
-              uploadType === "AFTER"
-                ? "bg-blue-600 text-white"
-                : "bg-card text-muted-foreground hover:bg-accent"
+              uploadType === "AFTER" ? "bg-blue-600 text-white" : "bg-card text-muted-foreground hover:bg-accent",
             )}
           >
             {t("tasks.serviceReport.after")}
@@ -132,10 +124,8 @@ export function AttachmentUpload({ reportId, taskId }: { reportId: string; taskI
         onClick={() => !isUploading && fileInputRef.current?.click()}
         className={cn(
           "relative rounded-lg border-2 border-dashed transition-all duration-200 cursor-pointer",
-          isDragOver
-            ? "border-blue-400 bg-blue-50"
-            : "border-border bg-muted hover:border-border",
-          isUploading && "pointer-events-none opacity-60"
+          isDragOver ? "border-blue-400 bg-blue-50" : "border-border bg-muted hover:border-border",
+          isUploading && "pointer-events-none opacity-60",
         )}
       >
         <input
@@ -155,12 +145,8 @@ export function AttachmentUpload({ reportId, taskId }: { reportId: string; taskI
           ) : (
             <>
               <Upload className="size-5 text-muted-foreground mb-2" />
-              <p className="text-xs text-muted-foreground font-medium">
-                {t("tasks.serviceReport.upload.dropHint")}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {t("tasks.serviceReport.upload.sizeHint")}
-              </p>
+              <p className="text-xs text-muted-foreground font-medium">{t("tasks.serviceReport.upload.dropHint")}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("tasks.serviceReport.upload.sizeHint")}</p>
             </>
           )}
         </div>

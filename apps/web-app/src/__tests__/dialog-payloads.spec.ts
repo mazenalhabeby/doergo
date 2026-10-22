@@ -27,6 +27,8 @@ interface DialogUnderTest {
   /** A folder of the dialog's own pieces, read together with `path` — the
    *  screen is the entry PLUS what was split out of it. */
   dir?: string
+  /** Named files the screen is assembled from, read together with `path` — its sections. */
+  parts?: string[]
   /**
    * The submit FUNCTION, not one payload object.
    *
@@ -46,6 +48,7 @@ const DIALOGS: DialogUnderTest[] = [
   {
     name: "Create invitation",
     path: "components/invitations/create-invitation-dialog.tsx",
+    dir: "components/invitations",
     submitFn: "const handleSubmit",
     uiOnly: {
       mode: "chooses whether an email is collected; shapes the payload rather than being in it",
@@ -71,6 +74,10 @@ const DIALOGS: DialogUnderTest[] = [
   {
     name: "Space form",
     path: "app/(dashboard)/locations/_components/space-form.tsx",
+    parts: [
+      "app/(dashboard)/locations/_components/space-site-fields.tsx",
+      "app/(dashboard)/locations/_components/space-modules-picker.tsx",
+    ],
     submitFn: "const handleSubmit",
     uiOnly: {
       type: "workspace vs physical — decides WHICH fields are sent, rather than being one",
@@ -105,6 +112,7 @@ describe.each(DIALOGS.map((d) => [d.name, d] as [string, DialogUnderTest]))(
       ...(dialog.dir
         ? readdirSync(join(__dirname, "..", dialog.dir)).sort().map((f) => `${dialog.dir}/${f}`)
         : []),
+      ...(dialog.parts ?? []),
     ]
       .map((p) => readSource(join(__dirname, "..", p), "utf8"))
       .join("\n")

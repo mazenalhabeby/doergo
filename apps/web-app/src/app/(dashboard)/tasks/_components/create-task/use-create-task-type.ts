@@ -10,8 +10,8 @@ import type { useAuth } from "@/contexts/auth-context"
 import type { useCreateTaskLists } from "./use-create-task-lists"
 
 /*
-  The task type parts of useCreateTaskForm, moved here unchanged. The form calls each hook at
-  the point its code used to be, so the same hooks run in the same order.
+  The New Task dialog's task type: the one chosen (or inherited from the workspace), and the
+  workspace's own default by name. useCreateTaskForm calls each hook at a fixed point.
 */
 
 export function useCreateTaskType({

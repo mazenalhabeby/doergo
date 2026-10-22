@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { formatDurationMs } from "@/lib/utils"
 
-/** A tracked route's shape, and its live duration and average speed — moved here unchanged. */
+/** A tracked route's shape, and its live duration and average speed. */
 export interface RoutePoint {
   lat: number
   lng: number

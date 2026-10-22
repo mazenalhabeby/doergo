@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
-import { useMemo } from "react";
-import { type WorkspaceBoxProps, type LiveEvent, type PendingAction } from "@/components/dashboard";
-import { getGreeting } from "./helpers";
-import { buildRecentActivity, buildPendingActions } from "./dashboard-activity";
-import { buildWorkspaceBoxes } from "../_lib/build-workspace-boxes";
-import { useClientDashboardData } from "./use-client-dashboard-data";
+import { useMemo } from "react"
+import { type WorkspaceBoxProps, type LiveEvent, type PendingAction } from "@/components/dashboard"
+import { getGreeting } from "./helpers"
+import { buildRecentActivity, buildPendingActions } from "./dashboard-activity"
+import { buildWorkspaceBoxes } from "../_lib/build-workspace-boxes"
+import { useClientDashboardData } from "./use-client-dashboard-data"
 
-/** ClientDashboard's state and handlers — everything before its markup, moved here unchanged. */
+/** What ClientDashboard draws: the workspace boxes, live events, pending actions and the guide's example space. */
 export function useClientDashboard() {
   const {
     user,
@@ -41,7 +41,7 @@ export function useClientDashboard() {
     handleSaveRoster,
     locations,
     spaceNameById,
-  } = useClientDashboardData();
+  } = useClientDashboardData()
 
   const activeSpaceByUser = useMemo(() => {
     const map = new Map<string, string>()
@@ -54,7 +54,10 @@ export function useClientDashboard() {
         // Remote/off-grid clock-in → attribute to their first assigned space so
         // they appear once. locations is stable-ordered, so this is deterministic.
         for (const l of locations) {
-          if (assignmentsPerLocation.get(l.id)?.has(userId)) { map.set(userId, l.id); break }
+          if (assignmentsPerLocation.get(l.id)?.has(userId)) {
+            map.set(userId, l.id)
+            break
+          }
         }
       }
     }
@@ -95,11 +98,26 @@ export function useClientDashboard() {
         },
       }),
     [
-      locations, tasks, members, assignmentsPerLocation,
-      memberMap, clockedInUserIds, onBreakUserIds, attendanceByUser, shiftLabelInfo, activeTaskMap, rosterActiveTaskMap,
-      activeSpaceByUser, spaceNameById,
-      handleEditLocation, handleAssignWorkers, handleViewTasks, handleNavigateToProfile,
-      isAdminOrDispatcher, user?.id, i18n.language,
+      locations,
+      tasks,
+      members,
+      assignmentsPerLocation,
+      memberMap,
+      clockedInUserIds,
+      onBreakUserIds,
+      attendanceByUser,
+      shiftLabelInfo,
+      activeTaskMap,
+      rosterActiveTaskMap,
+      activeSpaceByUser,
+      spaceNameById,
+      handleEditLocation,
+      handleAssignWorkers,
+      handleViewTasks,
+      handleNavigateToProfile,
+      isAdminOrDispatcher,
+      user?.id,
+      i18n.language,
     ],
   )
 
@@ -164,7 +182,7 @@ export function useClientDashboard() {
         clockedIn: true,
         name: "Ahmed M.",
         role: "Admin",
-        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" }
+        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" },
       },
       {
         initials: "SW",
@@ -174,7 +192,7 @@ export function useClientDashboard() {
         name: "Sara W.",
         role: "Employee",
         currentTask: t("dashboard.client.exampleJob"),
-        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" }
+        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" },
       },
       {
         initials: "OF",
@@ -183,7 +201,7 @@ export function useClientDashboard() {
         clockedIn: true,
         name: "Omar F.",
         role: "Employee",
-        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" }
+        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" },
       },
       {
         initials: "ER",
@@ -192,7 +210,7 @@ export function useClientDashboard() {
         clockedIn: true,
         name: "Emma R.",
         role: "Employee",
-        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" }
+        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" },
       },
       {
         initials: "LK",
@@ -201,7 +219,7 @@ export function useClientDashboard() {
         clockedIn: true,
         name: "Leo K.",
         role: "Employee",
-        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" }
+        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" },
       },
     ],
     onRoadPeople: [
@@ -212,7 +230,7 @@ export function useClientDashboard() {
         name: "Mike B.",
         role: "Employee",
         currentTask: t("dashboard.client.exampleJob"),
-        tag: { text: t("dashboard.client.exampleInField"), variant: "task" }
+        tag: { text: t("dashboard.client.exampleInField"), variant: "task" },
       },
       {
         initials: "JP",
@@ -220,7 +238,7 @@ export function useClientDashboard() {
         status: "busy",
         name: "Jonas P.",
         role: "Employee",
-        tag: { text: t("dashboard.client.exampleInField"), variant: "task" }
+        tag: { text: t("dashboard.client.exampleInField"), variant: "task" },
       },
     ],
     remotePeople: [
@@ -263,5 +281,5 @@ export function useClientDashboard() {
     exampleSpace,
     displayBoxes,
     greeting,
-  };
+  }
 }

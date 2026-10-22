@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { useMapEvents, useMap } from "react-leaflet"
 import { type LatLng } from "@hbcfield/shared/client"
 
-/** The small map helpers the location picker draws with — moved here unchanged. */
+// The small map helpers the location picker draws with.
 /**
  * Leaflet caches the size of its container and only re-reads it when told. Grow
  * the box without saying so and it keeps drawing for the old one: tiles stop

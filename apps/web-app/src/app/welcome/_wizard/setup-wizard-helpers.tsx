@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils"
 import { AREAS } from "@/lib/setup"
 import { WizardIcon } from "./wizard-icons"
 
-/** SetupWizard's module-level helpers, moved here unchanged so its sections can read them too. */
 /* ---------------- small presentational helpers ---------------- */
 
 export function Hero({ icon, green }: { icon: string; green?: boolean }) {
@@ -26,16 +25,21 @@ export function Hero({ icon, green }: { icon: string; green?: boolean }) {
 export function Kicker({ icon, text }: { icon: string; text: string }) {
   return (
     <span
-      className={"mb-4 inline-flex items-center gap-1.5 rounded-full border " +
+      className={
+        "mb-4 inline-flex items-center gap-1.5 rounded-full border " +
         "border-primary/15 bg-primary/5 px-3 py-1.5 text-[12px] font-bold " +
-        "tracking-wide text-primary"}>
+        "tracking-wide text-primary"
+      }
+    >
       <WizardIcon name={icon} className="size-3.5" /> {text}
     </span>
   )
 }
 
 export function ChipLabel({ text }: { text: string }) {
-  return <div className="mb-2.5 mt-4 text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">{text}</div>
+  return (
+    <div className="mb-2.5 mt-4 text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">{text}</div>
+  )
 }
 
 export function Chip({ icon, label, muted }: { icon: string; label: string; muted?: boolean }) {

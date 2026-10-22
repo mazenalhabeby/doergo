@@ -3,23 +3,12 @@
 import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useParams } from "next/navigation"
-import { useTranslation } from "react-i18next"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/auth-context"
-import { notify } from "@/lib/toast"
-import {
-  tasksApi,
-  spaceSharingApi,
-  locationsApi,
-  attendanceApi,
-  trackingApi,
-  type Task,
-  type TimeEntry,
-} from "@/lib/api"
+import { spaceSharingApi, locationsApi, attendanceApi, trackingApi, type TimeEntry } from "@/lib/api"
 
-/** SharedSpaceViewPage's state and handlers — everything before its markup, moved here unchanged. */
+/** A shared workspace as its guest sees it: the share, what it allows, and the sections the owner turned on. */
 export function useSharedSpaceViewPage() {
-  const { t } = useTranslation()
   const params = useParams()
   const spaceId = params.id as string
   const { user } = useAuth()
@@ -38,13 +27,6 @@ export function useSharedSpaceViewPage() {
   const [requestOpen, setRequestOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [addWorkerOpen, setAddWorkerOpen] = useState(false)
-
-  const { data: taskData, isLoading } = useQuery({
-    queryKey: keys.tasks.list({ spaceId, limit: 100 }),
-    queryFn: () => tasksApi.list({ spaceId, limit: 100 }),
-    enabled: !!share,
-  })
-  const tasks: Task[] = (taskData?.data as Task[]) || []
 
   const { data: myRequests } = useQuery({
     queryKey: keys.sharedSpaces.requests(spaceId),
@@ -75,16 +57,6 @@ export function useSharedSpaceViewPage() {
     refetchInterval: share?.showTracking ? 30_000 : false,
   })
 
-  const queryClient = useQueryClient()
-  const assignMutation = useMutation({
-    mutationFn: ({ taskId, workerId }: { taskId: string; workerId: string }) => tasksApi.assign(taskId, workerId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.tasks.list({ spaceId, limit: 100 }) })
-      notify.success(t("spaceSharing.guest.assigned", "Task assigned"))
-    },
-    onError: (e: Error) => notify.error(e.message),
-  })
-
   // The auth context surfaces the share by spaceId but not its share id, which the
   // "request more" POST targets — resolve it once from /shared-spaces.
   const { data: sharedSpaces } = useQuery({
@@ -95,9 +67,7 @@ export function useSharedSpaceViewPage() {
   const shareId = sharedSpaces?.find((s) => s.spaceId === spaceId)?.id ?? ""
 
   return {
-    t,
     spaceId,
-    user,
     share,
     canCreate,
     canAssign,
@@ -108,16 +78,16 @@ export function useSharedSpaceViewPage() {
     setCreateOpen,
     addWorkerOpen,
     setAddWorkerOpen,
-    isLoading,
-    tasks,
     myRequests,
     workers,
     attendanceEntries,
     tracked,
-    assignMutation,
     shareId,
   }
 }
 
-/** What SharedSpaceViewPage and its sections read. */
-export type SharedSpaceViewPageState = ReturnType<typeof useSharedSpaceViewPage>
+type SharedSpaceViewState = ReturnType<typeof useSharedSpaceViewPage>
+/** The share as the auth context carries it. */
+export type SharedSpace = NonNullable<SharedSpaceViewState["share"]>
+/** One assignment on the shared workspace, from "show workers". */
+export type SharedSpaceWorker = NonNullable<SharedSpaceViewState["workers"]>[number]

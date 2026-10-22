@@ -9,6 +9,7 @@
 import fs from 'fs';
 import path from 'path';
 import { ORG_EMAIL_SWITCH, MEMBER_EMAIL_PREF } from '@hbcfield/shared/client';
+import { readFolder } from '../test-utils/read-source';
 
 const LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;
 const SRC = path.join(process.cwd(), 'src');
@@ -76,6 +77,6 @@ describe('email settings and the unconfirmed clock-out card', () => {
 
   it.each(LOCALES)('no longer names an automatic clock-out in the bell (%s)', (locale) => {
     expect(load(locale).notifications?.autoClockOut).toBeUndefined();
-    expect(read('components/notifications/notification-bell.tsx')).not.toContain('attendance_auto_clock_out');
+    expect(readFolder(path.join(SRC, 'components/notifications'))).not.toContain('attendance_auto_clock_out');
   });
 });

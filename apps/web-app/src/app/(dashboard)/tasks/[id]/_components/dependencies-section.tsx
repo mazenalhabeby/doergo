@@ -9,12 +9,10 @@ import { Plus, X, ArrowRight, ArrowLeft } from "lucide-react"
 
 import { tasksApi, type TaskDependency, type WorkflowStatus } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Dialog } from "@/components/ui/dialog"
 import { notify } from "@/lib/toast"
 import { stepConfig } from "@/hooks/use-step-config"
-import { useAddDependencyDialog } from "./use-add-dependency-dialog"
-import { DEP_TYPE_LABELS } from "./add-dependency-dialog-helpers"
-import { AddDependencyDialogDependencies } from "./add-dependency-dialog-dependencies"
+import { DEP_TYPE_LABELS } from "./dependency-types"
+import { AddDependencyDialog } from "./add-dependency-dialog"
 
 // ---------------------------------------------------------------------------
 // DependencyRow
@@ -37,8 +35,7 @@ const DependencyRow = memo(function DependencyRow({
   /** The flow of the task on this page; a linked task carries no flow of its own here. */
   workflowStatuses?: readonly WorkflowStatus[] | null
 }) {
-  const linked =
-    direction === "predecessor" ? dep.predecessor : dep.successor
+  const linked = direction === "predecessor" ? dep.predecessor : dep.successor
   if (!linked) return null
 
   const step = stepConfig(linked.status, workflowStatuses)
@@ -64,9 +61,11 @@ const DependencyRow = memo(function DependencyRow({
         <button
           onClick={() => onRemove(dep.id)}
           disabled={isRemoving}
-          className={"opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 " +
+          className={
+            "opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 " +
             "dark:hover:bg-red-500/10 text-muted-foreground hover:text-red-600 " +
-            "transition-all shrink-0"}
+            "transition-all shrink-0"
+          }
         >
           <X className="size-3.5" />
         </button>
@@ -74,42 +73,6 @@ const DependencyRow = memo(function DependencyRow({
     </div>
   )
 })
-
-// ---------------------------------------------------------------------------
-// AddDependencyDialog
-// ---------------------------------------------------------------------------
-function AddDependencyDialog({
-  open,
-  onOpenChange,
-  taskId,
-  existingDepIds,
-  workflowStatuses,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  taskId: string
-  existingDepIds: Set<string>
-  workflowStatuses?: readonly WorkflowStatus[] | null
-}) {
-  const vm = useAddDependencyDialog({ open, onOpenChange, taskId, existingDepIds, workflowStatuses })
-  const {
-    t,
-    search,
-    setSearch,
-    depType,
-    setDepType,
-    searching,
-    filteredResults,
-    stepOf,
-    addMutation,
-  } = vm
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <AddDependencyDialogDependencies vm={vm} />
-    </Dialog>
-  )
-}
 
 // ---------------------------------------------------------------------------
 // DependenciesSection
@@ -174,17 +137,17 @@ export const DependenciesSection = memo(function DependenciesSection({
         fail at the server.
       */}
       {canEdit && (
-      <div className="flex justify-end mb-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-          onClick={() => setShowAddDialog(true)}
-        >
-          <Plus className="size-3.5 mr-1" />
-          {t("common.add")}
-        </Button>
-      </div>
+        <div className="flex justify-end mb-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => setShowAddDialog(true)}
+          >
+            <Plus className="size-3.5 mr-1" />
+            {t("common.add")}
+          </Button>
+        </div>
       )}
 
       {/* Predecessors (Blocked by) */}
@@ -238,9 +201,7 @@ export const DependenciesSection = memo(function DependenciesSection({
       {/* Empty state */}
       {!hasDeps && (
         <div className="py-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            {t("tasks.dependencies.empty")}
-          </p>
+          <p className="text-sm text-muted-foreground">{t("tasks.dependencies.empty")}</p>
         </div>
       )}
     </div>

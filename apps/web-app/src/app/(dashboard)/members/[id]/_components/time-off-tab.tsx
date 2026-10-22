@@ -1,32 +1,34 @@
 "use client"
 
-
-
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Skeleton } from "@/components/ui/skeleton"
 import { LeaveLedgerPanel } from "@/components/leave/leave-ledger-panel"
-import { useTimeOffTab, type TimeOffTabProps } from "./use-time-off-tab"
-import { TimeOffTabTimeOffTab } from "./time-off-tab-time-off-tab"
+import { employeesApi, type TimeOffStatus } from "@/lib/api"
+import { useRouteAccess } from "@/hooks/use-route-access"
+import { keys } from "@/lib/query-keys"
+import { TimeOffRequests } from "./time-off-requests"
 
+export interface TimeOffTabProps {
+  employeeId: string
+  employeeName: string
+  canManage: boolean
+}
+
+/** The member page's Time off tab: the leave balance, then their requests. */
 export function TimeOffTab({ employeeId, employeeName, canManage }: TimeOffTabProps) {
-  const vm = useTimeOffTab({ employeeId, employeeName, canManage })
-  const {
-    t,
-    formatDate,
-    canAdjust,
-    statusFilter,
-    setStatusFilter,
-    createOpen,
-    setCreateOpen,
-    dateRange,
-    setDateRange,
-    reason,
-    setReason,
-    timeOffRequests,
-    isLoading,
-    requestMutation,
-    cancelMutation,
-    handleCreateSubmit,
-  } = vm
+  // Adjusting a balance is deciding leave: the gate the server puts on approving it
+  // (@RequirePermissionInSpace('canManageRota')); the ledger's own `canEdit` narrows it per person.
+  const canAdjust = useRouteAccess().holds("any:canManageRota")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+
+  const { data: timeOffRequests, isLoading } = useQuery({
+    queryKey: keys.timeOff.member(employeeId, statusFilter === "all" ? undefined : statusFilter),
+    queryFn: () =>
+      employeesApi.getTimeOff(employeeId, statusFilter === "all" ? undefined : (statusFilter as TimeOffStatus)),
+    enabled: !!employeeId,
+    staleTime: 30_000, // avoid refetching on every tab re-open
+  })
 
   if (isLoading) {
     return (
@@ -58,8 +60,13 @@ export function TimeOffTab({ employeeId, employeeName, canManage }: TimeOffTabPr
       <div className="mb-6">
         <LeaveLedgerPanel memberId={employeeId} memberName={employeeName} canAdjust={canAdjust} />
       </div>
-      <TimeOffTabTimeOffTab vm={vm} canManage={canManage} />
-
+      <TimeOffRequests
+        employeeId={employeeId}
+        canManage={canManage}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        timeOffRequests={timeOffRequests}
+      />
     </>
   )
 }

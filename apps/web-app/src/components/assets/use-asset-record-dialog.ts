@@ -1,80 +1,83 @@
 "use client"
 
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useMutation } from "@tanstack/react-query"
 import { assetsApi, type AssetCategory } from "@/lib/api"
-import { decodeHolders } from "./holder-picker"
-import { detailRowsForKind, kindHolderLabel } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
-import { asStatus } from "./asset-status"
+import { useActiveSpaces } from "@/hooks/use-space-directory"
 import {
-  useAssetRecordDialogData,
-  encodeHolders,
-  type Facts,
-  factsOf,
-  hasFacts,
-  type AssetRecord,
-} from "./use-asset-record-dialog-data"
-export { type AssetRecord } from "./use-asset-record-dialog-data"
+  normalizeKindShape,
+  detailRowsForKind,
+  type DetailRow,
+  assetDateProblems,
+  type AssetStatusKey,
+  kindHolderLabel,
+} from "@hbcfield/shared/client"
+import { decodeHolders } from "./holder-picker"
+import { asStatus } from "./asset-status"
+import { encodeHolders, type Facts, factsOf, hasFacts, factsPayload, type AssetRecord } from "./asset-record"
 
-/**
- * What a save sends for the plate.
- *
- * An emptied box is sent as null, not "": null clears the fact, while an empty
- * string stored in its place reads as "has a serial number, and it is blank".
- * On a new record an empty box is simply not sent.
- */
-export function factsPayload(facts: Facts, editing: boolean): Record<string, string | null> {
-  const out: Record<string, string | null> = {}
-  for (const key of Object.keys(facts) as Array<keyof Facts>) {
-    const value = facts[key].trim()
-    if (value) out[key] = value
-    else if (editing) out[key] = null
-  }
-  return out
-}
-
-/** AssetRecordDialog's state and handlers — everything before its markup, moved here unchanged. */
+/** The record dialog's form: what it holds, the move it may carry, the save and the reset on opening. */
 export function useAssetRecordDialog({
   spaceId,
   kind,
   existing,
   onSaved,
-  trigger,
-}: Pick<
-  {
-    spaceId: string
-    kind: AssetCategory
-    existing?: AssetRecord
-    onSaved: () => void
-    trigger: React.ReactNode
-  },
-  "spaceId" | "kind" | "existing" | "onSaved" | "trigger"
->) {
-  const assetRecordDialogData = useAssetRecordDialogData({ spaceId, kind, existing, onSaved, trigger })
-  const {
-    t,
-    shape,
-    setOpen,
-    moving,
-    destKind,
-    name,
-    setName,
-    address,
-    setAddress,
-    lat,
-    setLat,
-    lng,
-    setLng,
-    holders,
-    setHolders,
-    status,
-    setStatus,
-    facts,
-    setFacts,
-    setMoreOpen,
-    rows,
-    setRows,
-  } = assetRecordDialogData
+}: {
+  spaceId: string
+  kind: AssetCategory
+  existing?: AssetRecord
+  onSaved: () => void
+}) {
+  const { t } = useTranslation()
+  const shape = normalizeKindShape(kind.config)
+  const [open, setOpen] = useState(false)
+
+  /*
+    Which workspace this record lives in.
+
+    ⚠️ An asset has no workspace of its own — it inherits its KIND's
+    (`AssetCategory.spaceId`), so the answer was only ever implied by which tab
+    somebody happened to be on. Two workspaces can both have a kind called
+    "Vehicles", and nothing in this dialog said which one was about to receive
+    the record.
+
+    Read from the list the nav and the space tabs already fetched, so saying so
+    costs nothing.
+  */
+  const { data: spaces = [] } = useActiveSpaces({ enabled: open && !!spaceId })
+  const spaceName = spaces.find((sp) => sp.id === spaceId)?.name
+
+  /*
+    Moving the record to another workspace.
+
+    An asset has no workspace of its own — it inherits its KIND's — so a move is
+    a change of kind, and the kind decides which of the record's fields survive
+    it. That is why this is not a workspace dropdown: choosing "Warehouse" alone
+    would not say what the record becomes when it gets there.
+  */
+  const [moving, setMoving] = useState(false)
+  const [destSpace, setDestSpace] = useState("")
+  const [destKind, setDestKind] = useState("")
+
+  const [name, setName] = useState(existing?.name ?? "")
+  const [address, setAddress] = useState(existing?.locationAddress ?? "")
+  const [lat, setLat] = useState<number | null>(existing?.locationLat ?? null)
+  const [lng, setLng] = useState<number | null>(existing?.locationLng ?? null)
+  const [holders, setHolders] = useState<string[]>(encodeHolders(existing))
+  const [status, setStatus] = useState<AssetStatusKey>(asStatus(existing?.status))
+  const [facts, setFacts] = useState<Facts>(factsOf(existing))
+  /*
+    "More about it" opens by itself when there is something in it. Closed on a
+    record that has a serial number would hide the one fact somebody opened the
+    form to correct.
+  */
+  const [moreOpen, setMoreOpen] = useState(hasFacts(factsOf(existing)))
+  // The same rule the server refuses on, asked while the dates are being typed.
+  const dateProblems = assetDateProblems({ installDate: facts.installDate, warrantyExpiry: facts.warrantyExpiry })
+
+  const [rows, setRows] = useState<DetailRow[]>(detailRowsForKind(shape, existing?.details))
 
   const save = useMutation({
     mutationFn: () => {
@@ -132,12 +135,38 @@ export function useAssetRecordDialog({
   const holderLabel = kindHolderLabel(shape, t("assetRecords.holder", "Held by"))
 
   return {
-    ...assetRecordDialogData,
+    shape,
+    open,
+    setOpen,
+    spaces,
+    spaceName,
+    moving,
+    setMoving,
+    destSpace,
+    setDestSpace,
+    destKind,
+    setDestKind,
+    name,
+    setName,
+    address,
+    setAddress,
+    lat,
+    setLat,
+    lng,
+    setLng,
+    holders,
+    setHolders,
+    status,
+    setStatus,
+    facts,
+    setFacts,
+    moreOpen,
+    setMoreOpen,
+    dateProblems,
+    rows,
+    setRows,
     save,
     reset,
     holderLabel,
   }
 }
-
-/** What AssetRecordDialog and its sections read. */
-export type AssetRecordDialogState = ReturnType<typeof useAssetRecordDialog>

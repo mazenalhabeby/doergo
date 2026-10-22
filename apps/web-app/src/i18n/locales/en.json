@@ -4616,7 +4616,6 @@
     "noRole": "No role",
     "roleGrants": "Grants",
     "roleMember": "Member",
-    "fullAccess": "Full access",
     "unsaved": "You have unsaved changes",
     "fromRole": "From the role {{role}}",
     "adminRole": "Admin",

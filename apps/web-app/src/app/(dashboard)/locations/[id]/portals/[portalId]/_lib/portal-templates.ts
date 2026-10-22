@@ -1,8 +1,6 @@
-"use client"
-
 import { type PortalCategoryInput } from "@/lib/api"
 
-/** The portal types offered and an empty category, moved here unchanged. */
+/** The portal types offered, and an empty category. */
 export const TEMPLATES = [
   { key: "rental", label: "Rental / Property", badge: "Rental", accent: "emerald" },
   { key: "logistics", label: "Logistics / Delivery", badge: "Logistics", accent: "orange" },

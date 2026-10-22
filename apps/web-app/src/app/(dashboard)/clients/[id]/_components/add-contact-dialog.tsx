@@ -11,9 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PhoneInput } from "@/components/ui/phone-input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
 import { personInitials } from "@hbcfield/shared/client"
-import { useAddContactDialog } from "../_hooks/use-add-contact-dialog"
+import { useAddContactDialog, type AddContactDialogProps } from "../_hooks/use-add-contact-dialog"
 
-/** Attach a contact person to a company — somebody already in the book, or somebody new — moved here unchanged. */
 /**
  * Attach a person, or create one.
  *
@@ -21,27 +20,7 @@ import { useAddContactDialog } from "../_hooks/use-add-contact-dialog"
  * is that a contact is a person you already have. A dialog that opened on a
  * blank form would produce a second Anna every time somebody was in a hurry.
  */
-export function AddContactDialog({
-  companyId,
-  onSaved,
-  trigger,
-  startName,
-  mine,
-}: {
-  companyId: string
-  onSaved: () => void
-  trigger: React.ReactNode
-  /** Opens straight into the create form with this name — see the note below. */
-  startName?: string
-  /**
-   * Adding from the OTHER end.
-   *
-   * On a person's record you pick the company they work at, so this record is
-   * the `personId` and the one you choose becomes the `companyId`. Same link,
-   * same endpoint, same checks — only which end is being chosen changes.
-   */
-  mine?: { personId: string }
-}) {
+export function AddContactDialog({ companyId, onSaved, trigger, startName, mine }: AddContactDialogProps) {
   const {
     t,
     open,
@@ -63,7 +42,7 @@ export function AddContactDialog({
     reset,
     save,
     canSave,
-  } = useAddContactDialog({ companyId, onSaved, trigger, startName, mine })
+  } = useAddContactDialog({ companyId, onSaved, startName, mine })
 
   return (
     <Dialog
@@ -128,8 +107,11 @@ export function AddContactDialog({
                             )}
                           >
                             <span
-                              className={"flex h-6 w-6 shrink-0 items-center justify-center rounded-full " +
-                                "bg-primary/10 text-[10px] font-semibold text-primary"}>
+                              className={
+                                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full " +
+                                "bg-primary/10 text-[10px] font-semibold text-primary"
+                              }
+                            >
                               {personInitials(r.name)}
                             </span>
                             <span className="min-w-0 flex-1">
@@ -179,9 +161,9 @@ export function AddContactDialog({
               <p className="rounded-lg bg-muted/50 p-2.5 text-[11.5px] leading-relaxed text-muted-foreground">
                 {t(
                   "customers.contactNotAClient",
-                  ("Saved as a contact of this company. They stay out of your client list " +
+                  "Saved as a contact of this company. They stay out of your client list " +
                     "and don’t count towards your client total — until you make them a client " +
-                    "in their own right."),
+                    "in their own right.",
                 )}
               </p>
             </>

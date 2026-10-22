@@ -1,16 +1,23 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
+import { useQuery } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import { MessageCircle } from "lucide-react"
 import { moduleAllowedForExternal } from "@hbcfield/shared/client"
-import type { AccessDraft } from "@hbcfield/shared/client"
+import type { MobileModule } from "@hbcfield/shared/client"
+import { organizationsApi } from "@/lib/api"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
-import { useAccessFields, Field } from "./use-access-fields"
-import { FEATURE_TABS, PLATFORMS, SCOPES } from "./access-fields-helpers"
-import { AccessFieldsPermissions } from "./access-fields-permissions"
-import { AccessFieldsContactAccess } from "./access-fields-contact-access"
+import { Field } from "./access-field"
+import { FEATURE_TABS, PLATFORMS, SCOPES } from "./access-field-options"
+import type { AccessFieldsProps } from "./access-field-types"
+import { AccessRoleField } from "./access-role-field"
+import { AccessPermissionsSection } from "./access-permissions-section"
+import { AccessContactSection } from "./access-contact-section"
 import { ChoiceChip } from "@/components/ui/choice-chip"
-export { Field } from "./use-access-fields"
+export { Field } from "./access-field"
+export type { AccessFieldsProps } from "./access-field-types"
 
 /**
  * AccessFields — the controlled, presentational editor for every access value
@@ -29,38 +36,43 @@ export function AccessFields({
   allowAdmin = true,
   roleOnly = false,
   external = false,
-}: {
-  value: AccessDraft
-  /** Emit a partial patch; the parent owns the draft. */
-  onChange: (patch: Partial<AccessDraft>) => void
-  /** Member id to hide from the "Specific contacts" picker (omit when inviting). */
-  excludeContactId?: string
-  /** Show the Role selector (member edit + invite). */
-  showRole?: boolean
-  /** Lock the Role selector (editing your own row — can't change your own role). */
-  lockRole?: boolean
-  /** Render ONLY the role selector — for an admin, whose permissions are fixed. */
-  roleOnly?: boolean
-  /** Offer the Admin option (member edit). Invites can't create admins → false. */
-  allowAdmin?: boolean
-  /**
-   * This person works for a client or partner. Shows only what shapes their
-   * SCREENS — where they log in, and which tabs they get.
-   *
-   * The four sections dropped are not hidden for tidiness, they are sections
-   * that cannot mean anything here: the org Role is refused by the server, the
-   * Permissions readout is derived from that role and so reads "grants no
-   * permissions yet" for everybody external, remote clock-in belongs to
-   * somebody who clocks in, and space visibility is settled by their single
-   * assignment. A control that cannot take effect is worse than an absent one
-   * — somebody sets it and waits for something to happen.
-   *
-   * Their actual powers come from the role they are given IN a space.
-   */
-  external?: boolean
-}) {
-  const vm = useAccessFields({ value, onChange, excludeContactId, showRole, lockRole, allowAdmin, roleOnly, external })
-  const { t, candidateContacts, selectedRole, permView, seesAllSpacesAnyway, toggleModule, roleField } = vm
+}: AccessFieldsProps) {
+  const { t } = useTranslation()
+
+  // Org-wide roles (Admin / Manager / custom) for the role selector.
+  const { data: orgRoles } = useQuery({
+    queryKey: keys.organization.roles(),
+    queryFn: () => organizationsApi.getRoles(),
+    staleTime: 60000,
+  })
+  // Only EMPLOYEE-assignable roles (Admin is its own top option).
+  const assignableRoles = (orgRoles || []).filter((r) => r.slug !== "admin")
+  const selectedRole = assignableRoles.find((r) => r.id === value.memberRoleId)
+
+  /** Does this member hold canViewAllTasks — the permission the space list is
+   *  scoped against — from either their role or a direct grant? */
+  const seesAllSpacesAnyway =
+    value.systemRole === "ADMIN" ||
+    selectedRole?.permissions?.canViewAllTasks === true ||
+    value.canViewAllTasks === true
+
+  const toggleModule = (m: MobileModule) =>
+    onChange({
+      modules: value.modules.includes(m) ? value.modules.filter((x) => x !== m) : [...value.modules, m],
+    })
+
+  // Not for an external member: the server refuses an org-wide role for one, so
+  // the selector would be a control whose value is discarded.
+  const roleField =
+    showRole && !external ? (
+      <AccessRoleField
+        value={value}
+        onChange={onChange}
+        lockRole={lockRole}
+        allowAdmin={allowAdmin}
+        assignableRoles={assignableRoles}
+      />
+    ) : null
 
   if (roleOnly) return <div className="space-y-6">{roleField}</div>
 
@@ -95,7 +107,7 @@ export function AccessFields({
         this section reports what that means rather than offering a second place
         to set it. See LEGACY_DIRECT_KEYS for why per-member switches went away.
       */}
-      <AccessFieldsPermissions vm={vm} external={external} value={value} onChange={onChange} />
+      {!external && <AccessPermissionsSection value={value} onChange={onChange} selectedRole={selectedRole} />}
 
       {/*
         Feature tabs.
@@ -222,7 +234,7 @@ export function AccessFields({
 
       {/* Contact management — a SEPARATE control: scopes WHO this member may
           reach (No one / All / Specific). Independent of the on/off above. */}
-      <AccessFieldsContactAccess vm={vm} value={value} onChange={onChange} />
+      <AccessContactSection value={value} onChange={onChange} excludeContactId={excludeContactId} />
     </div>
   )
 }

@@ -29,9 +29,25 @@ const INVOICES = path.join(__dirname, "..")
 export const strip = (src: string) =>
   src.replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
 
-// A file with the parts moved out of it when it was split (its hook, sections, helpers).
-export const read = (rel: string) => readSource(path.join(INVOICES, rel), "utf8")
+/** A route's own pieces, beside its `page.tsx`. */
+const PRIVATE = ["_hooks", "_components", "_lib"]
+
+/**
+ * A file — or, for a nested route's `page.tsx`, the SCREEN: the page plus its own `_hooks/`,
+ * `_components/` and `_lib/`, which is where its state, its bar and its rules live. (The list's
+ * `page.tsx` is read through `listPage()`, which says which of the shared folders are its own.)
+ */
+export const read = (rel: string) => {
+  const src = readSource(path.join(INVOICES, rel), "utf8")
+  if (!rel.endsWith("/page.tsx")) return src
+  const dir = path.dirname(rel)
+  return [src, ...PRIVATE.map((d) => rawFolder(path.join(dir, d)))].join("\n")
+}
 export const code = (rel: string) => strip(read(rel))
+
+/** The invoice document — the component and the two frames it renders. */
+export const documentCode = () =>
+  ["invoice-document.tsx", "working-sheet.tsx", "client-copy.tsx"].map((f) => code(`_components/${f}`)).join("\n")
 
 /** Every shared piece an invoice screen is built from. */
 export function components(): string {
@@ -43,31 +59,35 @@ export function components(): string {
     .join("\n")
 }
 
-/** Every .ts/.tsx file under a folder, comments stripped, in a stable order. */
-function folder(rel: string): string {
+/** Every .ts/.tsx file directly in a folder, in a stable order. */
+function rawFolder(rel: string): string {
   const dir = path.join(INVOICES, rel)
   if (!fs.existsSync(dir)) return ""
   return fs
     .readdirSync(dir)
     .filter((f) => /\.tsx?$/.test(f))
     .sort()
-    .map((f) => strip(fs.readFileSync(path.join(dir, f), "utf8")))
+    .map((f) => fs.readFileSync(path.join(dir, f), "utf8"))
     .join("\n")
 }
 
-/**
- * The New Invoice PAGE — `new/page.tsx` plus the pieces it was split into
- * (`new/_components`, `new/_lib`). These belong to this page alone, so a guard
- * about "this page's sources, gather, grouping" reads them as one.
- */
-export const newPage = () => `${code("new/page.tsx")}\n${folder("new/_lib")}\n${folder("new/_components")}`
+/** The same, comments stripped. */
+const folder = (rel: string) => strip(rawFolder(rel))
 
 /**
- * The invoice LIST — `page.tsx` plus the pieces it was split into
- * (`_components/list`, and the formatter in `_lib/list-format.ts`). Kept out of
- * `components()`, which is the shared invoice-document screen.
+ * The New Invoice PAGE — `new/page.tsx` plus its own pieces (`new/_hooks`,
+ * `new/_components`, `new/_lib`). These belong to this page alone, so a guard
+ * about "this page's sources, gather, grouping" reads them as one.
  */
-export const listPage = () => `${code("page.tsx")}\n${folder("_components/list")}\n${code("_lib/list-format.ts")}`
+export const newPage = () => code("new/page.tsx")
+
+/**
+ * The invoice LIST — `page.tsx`, its state (`_hooks`), its pieces (`_components/list`) and the
+ * formatter in `_lib/list-format.ts`. Kept out of `components()`, which is the shared
+ * invoice-document screen.
+ */
+export const listPage = () =>
+  `${code("page.tsx")}\n${folder("_hooks")}\n${folder("_components/list")}\n${code("_lib/list-format.ts")}`
 
 /** The New Invoice screen, as assembled. */
 export const createScreen = () => `${newPage()}\n${components()}`

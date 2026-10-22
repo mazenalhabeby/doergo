@@ -1,4 +1,6 @@
 import type { TimeEntry } from "@hbcfield/shared"
+import type { Task } from "@/lib/api"
+import type { RecentTask } from "@/components/dashboard"
 import i18n from "i18next"
 
 /**
@@ -27,7 +29,7 @@ export const AVATAR_COLORS = [
 function hashString(str: string): number {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i)
+    hash = (hash << 5) - hash + str.charCodeAt(i)
     hash |= 0
   }
   return Math.abs(hash)
@@ -50,3 +52,16 @@ export function isClockedIn(entry: TimeEntry): boolean {
  * one of four separate copies, each with its own granularity and i18n namespace.
  */
 export { formatTimeAgo as timeAgo } from "@/lib/format-date"
+
+/** Map a Task to the compact RecentTask shape used by the dashboard list. */
+export function toRecentTask(tk: Task): RecentTask {
+  return {
+    id: tk.id,
+    title: tk.title,
+    status: tk.status,
+    priority: tk.priority || "MEDIUM",
+    dueDate: tk.dueDate ? new Date(tk.dueDate) : undefined,
+    location: tk.locationAddress || undefined,
+    createdAt: new Date(tk.updatedAt || Date.now()),
+  }
+}

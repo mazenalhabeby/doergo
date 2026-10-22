@@ -15,12 +15,34 @@ import {
   DEFAULT_CUSTOM_PDF,
   type PdfTemplate,
   type CustomPdfOptions,
-} from "@/lib/report-pdf-options";
-import { loadRenderer, type ReportExportStudioProps } from "./report-export-studio-shared";
-import { TemplateThumb } from "./template-thumb"
+  type ReportBranding,
+} from "@/lib/report-pdf-options"
+import type { ReportPdfMeta } from "@/lib/report-pdf"
+import type { ReportResult } from "@/lib/api"
+import { PdfTemplateGallery } from "./pdf-template-gallery"
 import { CustomPdfPanel } from "./custom-pdf-panel"
 
-export function ReportExportStudio({ open, onOpenChange, result, meta, branding, canCustom, defaultName }: ReportExportStudioProps) {
+const loadRenderer = () => import("@/lib/report-pdf")
+
+export interface ReportExportStudioProps {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  result: ReportResult | null
+  meta: ReportPdfMeta
+  branding: ReportBranding
+  canCustom: boolean
+  defaultName?: string
+}
+
+export function ReportExportStudio({
+  open,
+  onOpenChange,
+  result,
+  meta,
+  branding,
+  canCustom,
+  defaultName,
+}: ReportExportStudioProps) {
   const { t } = useTranslation()
   const [template, setTemplate] = useState<PdfTemplate>("classic")
   const [custom, setCustom] = useState<CustomPdfOptions>({ ...DEFAULT_CUSTOM_PDF })
@@ -51,15 +73,34 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
     const handle = setTimeout(async () => {
       try {
         const { renderReportPdfPreview } = await loadRenderer()
-        const url = await renderReportPdfPreview(result, meta, branding, template, template === "custom" ? custom : undefined)
-        if (cancelled) { URL.revokeObjectURL(url); return }
+        const url = await renderReportPdfPreview(
+          result,
+          meta,
+          branding,
+          template,
+          template === "custom" ? custom : undefined,
+        )
+        if (cancelled) {
+          URL.revokeObjectURL(url)
+          return
+        }
         pendingRef.current = url
         const hidden = frontRef.current === "a" ? "b" : "a"
         const setter = hidden === "a" ? setSlotA : setSlotB
-        setter((old) => { if (old) URL.revokeObjectURL(old); return url })
-      } catch { /* preview is best-effort */ } finally { if (!cancelled) setBusy(false) }
+        setter((old) => {
+          if (old) URL.revokeObjectURL(old)
+          return url
+        })
+      } catch {
+        /* preview is best-effort */
+      } finally {
+        if (!cancelled) setBusy(false)
+      }
     }, 250)
-    return () => { cancelled = true; clearTimeout(handle) }
+    return () => {
+      cancelled = true
+      clearTimeout(handle)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, template, custom, result])
 
@@ -73,22 +114,35 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
     frontRef.current = slot
     setFront(slot)
     const clear = prev === "a" ? setSlotA : setSlotB
-    clear((old) => { if (old) URL.revokeObjectURL(old); return null })
+    clear((old) => {
+      if (old) URL.revokeObjectURL(old)
+      return null
+    })
   }
 
   // Free both blobs and reset when the studio closes.
   useEffect(() => {
     if (!open) {
-      setSlotA((old) => { if (old) URL.revokeObjectURL(old); return null })
-      setSlotB((old) => { if (old) URL.revokeObjectURL(old); return null })
-      frontRef.current = "a"; pendingRef.current = null; setFront("a")
+      setSlotA((old) => {
+        if (old) URL.revokeObjectURL(old)
+        return null
+      })
+      setSlotB((old) => {
+        if (old) URL.revokeObjectURL(old)
+        return null
+      })
+      frontRef.current = "a"
+      pendingRef.current = null
+      setFront("a")
     }
   }, [open])
 
   // Esc closes.
   useEffect(() => {
     if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onOpenChange(false) }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onOpenChange(false)
+    }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [open, onOpenChange])
@@ -103,11 +157,18 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
       await exportReportPdf(result, meta, branding, template, template === "custom" ? custom : undefined)
     } catch (e) {
       notify.error(e instanceof Error ? e.message : "Failed to export PDF")
-    } finally { setDownloading(false) }
+    } finally {
+      setDownloading(false)
+    }
   }
   const print = () => {
     const w = (front === "a" ? aRef : bRef).current?.contentWindow
-    try { w?.focus(); w?.print() } catch { if (frontUrl) window.open(frontUrl, "_blank") }
+    try {
+      w?.focus()
+      w?.print()
+    } catch {
+      if (frontUrl) window.open(frontUrl, "_blank")
+    }
   }
   const setC = (patch: Partial<CustomPdfOptions>) => setCustom((c) => ({ ...c, ...patch }))
 
@@ -118,28 +179,30 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
         <div className="flex items-center gap-2.5">
           <FileText className="h-5 w-5 text-primary" />
           <div>
-            <p className="text-sm font-semibold text-foreground leading-tight">{t("reports.exportStudioTitle", "Export report")}</p>
+            <p className="text-sm font-semibold text-foreground leading-tight">
+              {t("reports.exportStudioTitle", "Export report")}
+            </p>
             <p className="text-[11px] text-muted-foreground leading-tight">{meta.title}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 h-9"
-            onClick={print}
-            disabled={!hasPreview}><Printer className="h-3.5 w-3.5" />{t("reports.print", "Print")}</Button>
+          <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={print} disabled={!hasPreview}>
+            <Printer className="h-3.5 w-3.5" />
+            {t("reports.print", "Print")}
+          </Button>
           <Button size="sm" className="gap-1.5 h-9" onClick={download} disabled={!result || custEmpty || downloading}>
-            {downloading
-              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              : <FileText className="h-3.5 w-3.5" />}{t("reports.downloadPdf", "Download PDF")}
+            {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+            {t("reports.downloadPdf", "Download PDF")}
           </Button>
           <Button
             variant="ghost"
             size="icon"
             className="h-9 w-9"
             onClick={() => onOpenChange(false)}
-            aria-label={t("common.close", "Close")}><X className="h-5 w-5" /></Button>
+            aria-label={t("common.close", "Close")}
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
       </div>
 
@@ -147,42 +210,12 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[340px_1fr]">
         {/* Left: template gallery + custom options */}
         <div className="border-r border-border overflow-y-auto p-4 space-y-4">
-          <div>
-            <p
-              className={"text-[11px] font-semibold uppercase tracking-wide text-muted-foreground " +
-                "mb-2 px-0.5"}>{t("reports.templates", "Templates")}</p>
-            <div className="grid grid-cols-2 gap-2.5">
-              {templates.map((tpl) => {
-                const on = template === tpl.key
-                return (
-                  <button
-                    key={tpl.key}
-                    onClick={() => setTemplate(tpl.key)}
-                    className={cn(
-                      "group text-left rounded-xl border p-2 transition-all",
-                      on
-                        ? "border-primary ring-2 ring-primary/20 bg-primary/[0.04]"
-                        : "border-border hover:border-primary/40 hover:bg-accent/30")}
-                  >
-                    <div className="rounded-lg bg-slate-50 p-2.5 mb-1.5">
-                      <TemplateThumb template={tpl.key} accent={tpl.key === "custom" ? custom.accent : "#2563EB"} />
-                    </div>
-                    <div className="flex items-center gap-1 px-0.5">
-                      <span className="text-xs font-medium text-foreground truncate">{t(`reports.pdfTpl.${tpl.key}.name`, tpl.name)}</span>
-                      {tpl.key === "custom" &&
-                        <span
-                          className={"rounded-full bg-primary/10 text-primary text-[9px] px-1.5 py-0.5 " +
-                            "font-semibold shrink-0"}>PRO</span>}
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-            <p
-              className="text-[11px] text-muted-foreground mt-2 px-0.5 leading-snug">{t(
-                `reports.pdfTpl.${template}.desc`,
-                templates.find((x) => x.key === template)?.description || "")}</p>
-          </div>
+          <PdfTemplateGallery
+            templates={templates}
+            template={template}
+            setTemplate={setTemplate}
+            customAccent={custom.accent}
+          />
 
           {/* Custom options (progressive disclosure) */}
           {template === "custom" && canCustom && (
@@ -199,7 +232,8 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
             onLoad={() => promote("a")}
             className={cn(
               "absolute inset-0 w-full h-full transition-opacity duration-200",
-              front === "a" && slotA ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none")}
+              front === "a" && slotA ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none",
+            )}
           />
           <iframe
             ref={bRef}
@@ -208,7 +242,8 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
             onLoad={() => promote("b")}
             className={cn(
               "absolute inset-0 w-full h-full transition-opacity duration-200",
-              front === "b" && slotB ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none")}
+              front === "b" && slotB ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none",
+            )}
           />
           {!hasPreview && (
             // Skeleton page while the first preview builds.
@@ -217,23 +252,33 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
                 <div className="h-3 w-24 rounded bg-muted animate-pulse" />
                 <div className="h-6 w-2/3 rounded bg-muted animate-pulse" />
                 <div className="h-2 w-1/2 rounded bg-muted animate-pulse" />
-                <div
-                  className="grid grid-cols-4 gap-2 pt-2">{Array.from({
-                    length: 4
-                  }).map((_, i) => <div key={i} className="h-12 rounded bg-muted animate-pulse" />)}</div>
-                <div
-                  className="space-y-2 pt-2">{Array.from({
-                    length: 6
-                  }).map((_, i) => <div key={i} className="h-3 rounded bg-muted animate-pulse" />)}</div>
+                <div className="grid grid-cols-4 gap-2 pt-2">
+                  {Array.from({
+                    length: 4,
+                  }).map((_, i) => (
+                    <div key={i} className="h-12 rounded bg-muted animate-pulse" />
+                  ))}
+                </div>
+                <div className="space-y-2 pt-2">
+                  {Array.from({
+                    length: 6,
+                  }).map((_, i) => (
+                    <div key={i} className="h-3 rounded bg-muted animate-pulse" />
+                  ))}
+                </div>
               </div>
             </div>
           )}
           {busy && hasPreview && (
             <div
-              className={"absolute top-3 right-3 z-20 flex items-center gap-1.5 rounded-md " +
+              className={
+                "absolute top-3 right-3 z-20 flex items-center gap-1.5 rounded-md " +
                 "bg-background/90 border border-border px-2.5 py-1.5 text-[11px] " +
-                "text-muted-foreground shadow-sm"}>
-              <Loader2 className="h-3 w-3 animate-spin" />{t("reports.pdfUpdating", "Updating…")}
+                "text-muted-foreground shadow-sm"
+              }
+            >
+              <Loader2 className="h-3 w-3 animate-spin" />
+              {t("reports.pdfUpdating", "Updating…")}
             </div>
           )}
         </div>

@@ -1,6 +1,8 @@
 "use client"
 
 import Link from "next/link"
+import dynamic from "next/dynamic"
+import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { AlertCircle, CalendarDays, ChevronLeft, ChevronRight, House, RefreshCw } from "lucide-react"
 
@@ -13,11 +15,17 @@ import { cn } from "@/lib/utils"
 import { FloorNowPanel } from "./_components/floor-now-panel"
 import { LeaveWallchart } from "./_components/leave-wallchart"
 import { useScheduleAndTimeOffPage } from "./_hooks/use-schedule-and-time-off-page"
-import { LeaveDecisionDrawer, Stat } from "./_components/schedule-and-time-off-page-helpers"
+import { RequestSummary } from "./_components/request-summary"
+
+// The drawer is a decision somebody may never open — loaded when they do.
+const LeaveDecisionDrawer = dynamic(
+  () => import("./_components/leave-decision-drawer").then((m) => m.LeaveDecisionDrawer),
+  { ssr: false },
+)
 
 export default function ScheduleAndTimeOffPage() {
+  const { t } = useTranslation()
   const {
-    t,
     anchor,
     setAnchor,
     range,
@@ -83,7 +91,10 @@ export default function ScheduleAndTimeOffPage() {
                 {opensOpening && (
                   <>
                     {" · "}
-                    <Link href="/members/leave-opening" className="underline-offset-2 hover:text-foreground hover:underline">
+                    <Link
+                      href="/members/leave-opening"
+                      className="underline-offset-2 hover:text-foreground hover:underline"
+                    >
                       {t("leaveLedger.opening.link")}
                     </Link>
                   </>
@@ -124,11 +135,18 @@ export default function ScheduleAndTimeOffPage() {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => step(-1)}
-                aria-label={t("common.previous", "Previous")}>
+                aria-label={t("common.previous", "Previous")}
+              >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span className="min-w-[10.5rem] text-center text-sm font-semibold text-foreground">{rangeLabel}</span>
-              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => step(1)} aria-label={t("common.next", "Next")}>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => step(1)}
+                aria-label={t("common.next", "Next")}
+              >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -186,40 +204,7 @@ export default function ScheduleAndTimeOffPage() {
 
           <FloorNowPanel spaceFilter={space} />
 
-          <div data-tour="avail-summary" className="mb-4 grid gap-3 sm:grid-cols-3">
-            <Stat
-              n={summary.waiting}
-              tone={summary.waiting ? "tight" : "ok"}
-              title={t("cover.summary.waiting", "Waiting on you")}
-              sub={
-                summary.soonest
-                  ? t("cover.summary.earliest", "Earliest starts {{date}}", {
-                      date: format(new Date(summary.soonest), "d MMM"),
-                    })
-                  : t("cover.summary.nothing", "Nothing to decide")
-              }
-            />
-            <Stat
-              n={summary.risky}
-              tone={summary.risky ? "short" : "ok"}
-              title={t("cover.summary.risky", "Would break cover")}
-              sub={
-                summary.risky
-                  ? t("cover.summary.riskySub", "Approving these drops a day below the floor")
-                  : t("cover.summary.riskyNone", "None of them thin the floor")
-              }
-            />
-            <Stat
-              n={summary.skill}
-              tone={summary.skill ? "skill" : "ok"}
-              title={t("cover.summary.skill", "Leave a trade uncovered")}
-              sub={
-                summary.skill
-                  ? t("cover.summary.skillSub", "The only person with that trade is asking")
-                  : t("cover.summary.skillNone", "Every trade stays represented")
-              }
-            />
-          </div>
+          <RequestSummary summary={summary} />
 
           <div data-tour="avail-calendar">
             <LeaveWallchart
@@ -238,23 +223,31 @@ export default function ScheduleAndTimeOffPage() {
             />
           </div>
 
-          <div data-tour="avail-legend" className="flex flex-wrap items-center justify-center gap-6 py-3 text-xs text-muted-foreground">
+          <div
+            data-tour="avail-legend"
+            className="flex flex-wrap items-center justify-center gap-6 py-3 text-xs text-muted-foreground"
+          >
             <span className="inline-flex items-center gap-2">
               <i className="h-3 w-5 rounded-sm bg-primary/85" />
               {t("common.approved")}
             </span>
             <span className="inline-flex items-center gap-2">
               <i
-                className={"h-3 w-5 rounded-sm border border-amber-500/80 " +
+                className={
+                  "h-3 w-5 rounded-sm border border-amber-500/80 " +
                   "bg-[repeating-linear-gradient(45deg,theme(colors.amber.200)_0_4px,theme(colors.amber.300)_4px_8px)] " +
-                  "dark:bg-[repeating-linear-gradient(45deg,theme(colors.amber.950)_0_4px,theme(colors.amber.900)_4px_8px)]"}
+                  "dark:bg-[repeating-linear-gradient(45deg,theme(colors.amber.950)_0_4px,theme(colors.amber.900)_4px_8px)]"
+                }
               />
               {t("cover.legend.pending", "Pending — yours to decide")}
             </span>
             <span className="inline-flex items-center gap-2">
               <i
-                className={"inline-flex h-4 items-center rounded-full border border-dashed " +
-                  "border-amber-500/80 bg-card px-1 text-amber-800 dark:text-amber-300"}>
+                className={
+                  "inline-flex h-4 items-center rounded-full border border-dashed " +
+                  "border-amber-500/80 bg-card px-1 text-amber-800 dark:text-amber-300"
+                }
+              >
                 <House className="h-2.5 w-2.5" />
               </i>
               {t("requests.legendNotLeave")}
@@ -264,7 +257,9 @@ export default function ScheduleAndTimeOffPage() {
         </div>
       </div>
 
-      {drawerMounted && <LeaveDecisionDrawer request={selected} canManage={canDecide} onClose={() => setSelectedId(null)} />}
+      {drawerMounted && (
+        <LeaveDecisionDrawer request={selected} canManage={canDecide} onClose={() => setSelectedId(null)} />
+      )}
     </TooltipProvider>
   )
 }

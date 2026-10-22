@@ -1,27 +1,17 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { type BreakKind } from "@/components/attendance/break-fields"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { attendanceApi, type TimeEntry } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { utcToZonedInput, zonedInputToUtc } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
 import { keys } from "@/lib/query-keys"
+import { useEntryBreakQueue } from "./use-entry-break-queue"
 
-/** EditEntryDialog's state and handlers — everything before its markup, moved here unchanged. */
-export function useEditEntryDialog({
-  entry,
-  canEdit = true,
-  canDelete = false,
-}: Pick<{
-  entry: TimeEntry
-  /** canReconcileAttendance — times, note, breaks. */
-  canEdit?: boolean
-  /** canDeleteAttendance — the Remove button. */
-  canDelete?: boolean
-}, 'entry' | 'canEdit' | 'canDelete'>) {
+/** EditEntryDialog's form: the corrected times, note, reason, the break queue, and Save / Remove. */
+export function useEditEntryDialog(entry: TimeEntry) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { user } = useAuth()
@@ -42,67 +32,8 @@ export function useEditEntryDialog({
   const [notes, setNotes] = useState(entry.notes ?? "")
   const [reason, setReason] = useState("")
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [addingBreak, setAddingBreak] = useState(false)
-  const [breakStart, setBreakStart] = useState("")
-  const [breakEnd, setBreakEnd] = useState("")
-  const [breakType, setBreakType] = useState<BreakKind>("SHORT")
-  const [breakReason, setBreakReason] = useState("")
-  /*
-    Breaks wait for Save; they are not written the moment you add one.
-
-    Two reasons, both learned the hard way. The server validates a break against
-    the shift's CURRENT times, so adding one while the clock times are still
-    unsaved is checked against the old shift and refused — you had to save the
-    times, reopen, then add the break. And a dialog with its own Save inside
-    another Save asks somebody to guess which button commits what.
-
-    So the form queues, and one Save applies the edits first and then the breaks,
-    in that order, against times the server has already accepted.
-  */
-  /*
-    Breaks marked for removal, held until Save like the additions are.
-
-    Mixing an immediate delete with a queued add is the inconsistency that made
-    this dialog confusing in the first place — one button commits everything or
-    the buttons stop meaning anything.
-  */
-  const [removingBreaks, setRemovingBreaks] = useState<string[]>([])
-  const [pendingBreaks, setPendingBreaks] = useState<
-    { type: "SHORT" | "LUNCH" | "OTHER"; startedAt: string; endedAt: string; reason: string; label: string }[]
-  >([])
-
-  /**
-   * The break currently typed into the form, if it is complete.
-   *
-   * "Add to list" exists for entering SEVERAL breaks, but filling the form and
-   * pressing Save is what somebody adding ONE will do — and losing it there,
-   * silently, because of an extra click they had no reason to expect, is the
-   * worst possible outcome for a form about somebody's paid hours.
-   *
-   * So a completed form counts: towards the total shown in the header, and in
-   * what Save writes. Filling it in IS the intent; the extra button is a
-   * convenience for the second one, not a toll on the first.
-   */
-  const typedBreak = useMemo(() => {
-    if (!breakStart || !breakEnd || breakReason.trim().length < 3) return null
-    const startedAt = zonedInputToUtc(breakStart, tz)
-    const endedAt = zonedInputToUtc(breakEnd, tz)
-    if (new Date(endedAt) <= new Date(startedAt)) return null
-    return {
-      type: breakType,
-      startedAt,
-      endedAt,
-      reason: breakReason.trim(),
-      label: `${breakStart.slice(11)}–${breakEnd.slice(11)}`,
-    }
-  }, [breakStart, breakEnd, breakType, breakReason, tz])
-
-  /** The breaks already recorded on this shift — so the dialog shows what exists. */
-  const { data: existingBreaks = [] } = useQuery({
-    queryKey: keys.attendance.entryBreaks(entry.id),
-    queryFn: () => attendanceApi.entryBreaks(entry.id),
-    enabled: open,
-  })
+  const breaks = useEntryBreakQueue(entry.id, tz, open)
+  const { removingBreaks, setRemovingBreaks, pendingBreaks, setPendingBreaks, typedBreak, setAddingBreak } = breaks
 
   // Changing the zone keeps the real instant fixed and re-renders the wall clock
   // (e.g. 23:44 Berlin → 17:44 New York). So correcting a mis-zoned old row just
@@ -158,7 +89,10 @@ export function useEditEntryDialog({
       // on — see `typedBreak`.
       for (const b of [...pendingBreaks, ...(typedBreak ? [typedBreak] : [])]) {
         await attendanceApi.addBreak(entry.id, {
-          type: b.type, startedAt: b.startedAt, endedAt: b.endedAt, reason: b.reason,
+          type: b.type,
+          startedAt: b.startedAt,
+          endedAt: b.endedAt,
+          reason: b.reason,
         })
       }
     },
@@ -190,14 +124,11 @@ export function useEditEntryDialog({
     onError: (err: Error) => notify.error(err.message || t("attendance.editEntry.error")),
   })
 
-  const clockOutBeforeIn =
-    !!clockIn && !!clockOut && zonedInputToUtc(clockOut, tz) <= zonedInputToUtc(clockIn, tz)
+  const clockOutBeforeIn = !!clockIn && !!clockOut && zonedInputToUtc(clockOut, tz) <= zonedInputToUtc(clockIn, tz)
   const busy = mutation.isPending || remove.isPending
   const canSubmit = !!reason.trim() && !!clockIn && !clockOutBeforeIn && !busy
 
   return {
-    t,
-    user,
     open,
     setOpen,
     tz,
@@ -211,22 +142,7 @@ export function useEditEntryDialog({
     setReason,
     confirmDelete,
     setConfirmDelete,
-    addingBreak,
-    setAddingBreak,
-    breakStart,
-    setBreakStart,
-    breakEnd,
-    setBreakEnd,
-    breakType,
-    setBreakType,
-    breakReason,
-    setBreakReason,
-    removingBreaks,
-    setRemovingBreaks,
-    pendingBreaks,
-    setPendingBreaks,
-    typedBreak,
-    existingBreaks,
+    breaks,
     changeTz,
     openWith,
     mutation,
@@ -236,6 +152,3 @@ export function useEditEntryDialog({
     canSubmit,
   }
 }
-
-/** What EditEntryDialog and its sections read. */
-export type EditEntryDialogState = ReturnType<typeof useEditEntryDialog>

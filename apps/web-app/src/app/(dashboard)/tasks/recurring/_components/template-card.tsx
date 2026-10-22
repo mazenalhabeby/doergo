@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { formatMediumDate } from "@/lib/format-date"
 
-/** One recurring template as a card, and the labels the list and the dialog share — moved here unchanged. */
+/** One recurring template as a card, and the labels the list and the dialog share. */
 export const FREQUENCY_VALUES: RecurringFrequency[] = [
   "DAILY",
   "WEEKLY",

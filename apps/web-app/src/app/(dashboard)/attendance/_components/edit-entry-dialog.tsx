@@ -2,6 +2,7 @@
 
 import { personName } from "@hbcfield/shared/client"
 import { Pencil, Loader2, Trash2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { type TimeEntry } from "@/lib/api"
 import { cn } from "@/lib/utils"
@@ -21,8 +22,20 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { useEditEntryDialog } from "./use-edit-entry-dialog"
-import { REASON_PRESETS } from "./edit-entry-dialog-helpers"
-import { EditEntryDialogAddBreak } from "./edit-entry-dialog-add-break"
+import { EntryBreaksEditor } from "./entry-breaks-editor"
+
+// Smart quick-pick reasons for editing an entry — click to fill the field
+// (click again to clear); the admin can still type a custom reason. i18n keys
+// fall back to English until translated.
+const REASON_PRESETS: { key: string; fallback: string }[] = [
+  { key: "attendance.editEntry.reasonPresets.forgotOut", fallback: "Forgot to clock out" },
+  { key: "attendance.editEntry.reasonPresets.forgotIn", fallback: "Forgot to clock in" },
+  { key: "attendance.editEntry.reasonPresets.wrongTime", fallback: "Wrong time entered" },
+  { key: "attendance.editEntry.reasonPresets.wrongTz", fallback: "Wrong time zone" },
+  { key: "attendance.editEntry.reasonPresets.lateTraffic", fallback: "Late — traffic" },
+  { key: "attendance.editEntry.reasonPresets.managerApproved", fallback: "Approved by manager" },
+  { key: "attendance.editEntry.reasonPresets.deviceIssue", fallback: "Device / GPS issue" },
+]
 
 /*
   Correcting and deleting are two permissions, asked by two routes:
@@ -44,10 +57,8 @@ export function EditEntryDialog({
   /** canDeleteAttendance — the Remove button. */
   canDelete?: boolean
 }) {
-  const vm = useEditEntryDialog({ entry, canEdit, canDelete })
+  const { t } = useTranslation()
   const {
-    t,
-    user,
     open,
     setOpen,
     tz,
@@ -61,22 +72,7 @@ export function EditEntryDialog({
     setReason,
     confirmDelete,
     setConfirmDelete,
-    addingBreak,
-    setAddingBreak,
-    breakStart,
-    setBreakStart,
-    breakEnd,
-    setBreakEnd,
-    breakType,
-    setBreakType,
-    breakReason,
-    setBreakReason,
-    removingBreaks,
-    setRemovingBreaks,
-    pendingBreaks,
-    setPendingBreaks,
-    typedBreak,
-    existingBreaks,
+    breaks,
     changeTz,
     openWith,
     mutation,
@@ -84,7 +80,7 @@ export function EditEntryDialog({
     clockOutBeforeIn,
     busy,
     canSubmit,
-  } = vm
+  } = useEditEntryDialog(entry)
 
   return (
     <Dialog open={open} onOpenChange={openWith}>
@@ -112,42 +108,38 @@ export function EditEntryDialog({
         {/* A disabled fieldset disables every control inside it, the break
             list's buttons included — read-only without a second copy of the form. */}
         <fieldset disabled={!canEdit} className="contents">
-        <div className="space-y-4 py-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>{t("attendance.clockIn")}</Label>
-              <Input
-                type="datetime-local"
-                value={clockIn}
-                onChange={(e) => setClockIn(e.target.value)}
-              />
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>{t("attendance.clockIn")}</Label>
+                <Input type="datetime-local" value={clockIn} onChange={(e) => setClockIn(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t("attendance.clockOut")}</Label>
+                <Input
+                  type="datetime-local"
+                  value={clockOut}
+                  min={clockIn || undefined}
+                  onChange={(e) => setClockOut(e.target.value)}
+                />
+              </div>
             </div>
+            {clockOutBeforeIn && (
+              <p className="text-xs text-destructive">{t("attendance.editEntry.clockOutBeforeIn")}</p>
+            )}
+
             <div className="space-y-1.5">
-              <Label>{t("attendance.clockOut")}</Label>
-              <Input
-                type="datetime-local"
-                value={clockOut}
-                min={clockIn || undefined}
-                onChange={(e) => setClockOut(e.target.value)}
-              />
+              <Label>{t("attendance.editEntry.timezone", "Time zone")}</Label>
+              <TimezoneCombobox value={tz} onChange={changeTz} />
+              <p className="text-[11px] text-muted-foreground">
+                {t(
+                  "attendance.editEntry.timezoneHint",
+                  "Times above are shown in this zone. Change it to correct a mis-zoned entry — the clock reading is kept.",
+                )}
+              </p>
             </div>
-          </div>
-          {clockOutBeforeIn && (
-            <p className="text-xs text-destructive">{t("attendance.editEntry.clockOutBeforeIn")}</p>
-          )}
 
-          <div className="space-y-1.5">
-            <Label>{t("attendance.editEntry.timezone", "Time zone")}</Label>
-            <TimezoneCombobox value={tz} onChange={changeTz} />
-            <p className="text-[11px] text-muted-foreground">
-              {t(
-                "attendance.editEntry.timezoneHint",
-                "Times above are shown in this zone. Change it to correct a mis-zoned entry — the clock reading is kept.",
-              )}
-            </p>
-          </div>
-
-          {/*
+            {/*
             Adding a break to this shift.
 
             Here rather than on its own screen because the shift is already in
@@ -158,54 +150,52 @@ export function EditEntryDialog({
             Collapsed by default: correcting a break is the exception, and a form
             that is always open reads as something you are expected to fill in.
           */}
-          <EditEntryDialogAddBreak vm={vm} />
+            <EntryBreaksEditor breaks={breaks} tz={tz} clockIn={clockIn} clockOut={clockOut} />
 
-          <div className="space-y-1.5">
-            <Label>{t("attendance.editEntry.notes")}</Label>
-            <Textarea
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t("attendance.editEntry.notesPlaceholder")}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>
-              {t("attendance.editEntry.reason")} <span className="text-destructive">*</span>
-            </Label>
-            <div className="flex flex-wrap gap-1.5">
-              {REASON_PRESETS.map((p) => {
-                const text = t(p.key, p.fallback)
-                const active = reason.trim() === text
-                return (
-                  <button
-                    key={p.key}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => setReason(active ? "" : text)}
-                    className={cn(
-                      "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
-                      active
-                        ? "border-primary/40 bg-primary/10 text-primary"
-                        : "border-border bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
-                    )}
-                  >
-                    {text}
-                  </button>
-                )
-              })}
+            <div className="space-y-1.5">
+              <Label>{t("attendance.editEntry.notes")}</Label>
+              <Textarea
+                rows={2}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={t("attendance.editEntry.notesPlaceholder")}
+              />
             </div>
-            <Input
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder={t("attendance.editEntry.reasonPlaceholder")}
-            />
-            <p className="text-[11px] text-muted-foreground">
-              {t("attendance.editEntry.reasonHint")}
-            </p>
+
+            <div className="space-y-1.5">
+              <Label>
+                {t("attendance.editEntry.reason")} <span className="text-destructive">*</span>
+              </Label>
+              <div className="flex flex-wrap gap-1.5">
+                {REASON_PRESETS.map((p) => {
+                  const text = t(p.key, p.fallback)
+                  const active = reason.trim() === text
+                  return (
+                    <button
+                      key={p.key}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setReason(active ? "" : text)}
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                        active
+                          ? "border-primary/40 bg-primary/10 text-primary"
+                          : "border-border bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
+                      )}
+                    >
+                      {text}
+                    </button>
+                  )
+                })}
+              </div>
+              <Input
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder={t("attendance.editEntry.reasonPlaceholder")}
+              />
+              <p className="text-[11px] text-muted-foreground">{t("attendance.editEntry.reasonHint")}</p>
+            </div>
           </div>
-        </div>
         </fieldset>
 
         <DialogFooter className={canDelete ? "sm:justify-between" : "sm:justify-end"}>

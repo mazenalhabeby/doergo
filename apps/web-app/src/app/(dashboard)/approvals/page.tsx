@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { AlertTriangle, ChevronLeft, Inbox, RefreshCw, ScrollText, UserRoundCheck } from "lucide-react"
 import { APPROVAL_GROUPS, APPROVAL_KINDS, type ApprovalT, describeApproval } from "@hbcfield/shared/client"
 
@@ -11,9 +12,17 @@ import { PAGE_SHELL } from "@/components/ui/page-width"
 import { ListTableError } from "@/components/common/list-page"
 import { DecisionPanel } from "./_components/decision-panel"
 import { useApprovalsPage, itemKey } from "./_hooks/use-approvals-page"
-import { RulesDialog, StandInDialog, RailItem, Row } from "./_components/approvals-page-helpers"
+import { KindRailItem } from "./_components/kind-rail-item"
+import { ApprovalRow } from "./_components/approval-row"
 import { DayRow } from "./_components/day-row"
 import { DayPanel } from "./_components/day-panel"
+
+// Opened by a button: never part of the first load.
+const RulesDialog = dynamic(() => import("./_components/rules-dialog").then((m) => m.RulesDialog), { ssr: false })
+
+const StandInDialog = dynamic(() => import("./_components/stand-in-dialog").then((m) => m.StandInDialog), {
+  ssr: false,
+})
 
 /**
  * Approvals — everything waiting for the member to decide, in one place.
@@ -60,7 +69,9 @@ export default function ApprovalsPage() {
     <div className={PAGE_SHELL}>
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 data-tour="page-approvals" className="text-3xl font-bold tracking-tight text-foreground">{t("approvals.title")}</h1>
+          <h1 data-tour="page-approvals" className="text-3xl font-bold tracking-tight text-foreground">
+            {t("approvals.title")}
+          </h1>
           <p className="mt-1.5 text-muted-foreground">{t("approvals.subtitle")}</p>
         </div>
         <div className="flex items-center gap-3">
@@ -104,8 +115,11 @@ export default function ApprovalsPage() {
 
       {unavailable.length > 0 && (
         <div
-          className={"mb-4 flex items-center gap-2 rounded-lg border border-amber-500/30 " +
-            "bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300"}>
+          className={
+            "mb-4 flex items-center gap-2 rounded-lg border border-amber-500/30 " +
+            "bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300"
+          }
+        >
           <AlertTriangle className="size-4 shrink-0" />
           {t("approvals.unavailable", { kinds: unavailable.map((k) => t(`approvals.kinds.${k}`)).join(", ") })}
         </div>
@@ -118,11 +132,19 @@ export default function ApprovalsPage() {
           {/* Kinds — only the ones that have something, so the rail is itself a summary. */}
           <nav
             aria-label={t("approvals.title")}
-            className={cn("flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible", current && "max-lg:hidden")}
+            className={cn(
+              "flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible",
+              current && "max-lg:hidden",
+            )}
           >
-            <RailItem active={filter === "all"} label={t("approvals.all")} count={items.length} onClick={() => setFilter("all")} />
+            <KindRailItem
+              active={filter === "all"}
+              label={t("approvals.all")}
+              count={items.length}
+              onClick={() => setFilter("all")}
+            />
             {APPROVAL_KINDS.filter((k) => counts.has(k)).map((k) => (
-              <RailItem
+              <KindRailItem
                 key={k}
                 active={filter === k}
                 label={t(`approvals.kinds.${k}`)}
@@ -136,7 +158,9 @@ export default function ApprovalsPage() {
           <section className={cn("min-w-0", (current || currentDay) && "max-lg:hidden")}>
             {isLoading ? (
               <div className="space-y-2">
-                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
+                {[...Array(6)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                ))}
               </div>
             ) : visible.length === 0 && visibleDays.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border px-6 py-16 text-center">
@@ -167,7 +191,7 @@ export default function ApprovalsPage() {
                           <DayRow key={d.key} day={d} active={d.key === selected} onSelect={() => setSelected(d.key)} />
                         ))}
                         {rows.map((i) => (
-                          <Row
+                          <ApprovalRow
                             key={itemKey(i)}
                             item={i}
                             active={itemKey(i) === selected}
@@ -192,7 +216,10 @@ export default function ApprovalsPage() {
                     members={membersOf(currentDay)}
                     busy={approveDay.isPending}
                     onApprove={() => approveDay.mutate(currentDay)}
-                    onReview={(i) => { setFilter("all"); setSelected(`${i.kind}:${i.id}`) }}
+                    onReview={(i) => {
+                      setFilter("all")
+                      setSelected(`${i.kind}:${i.id}`)
+                    }}
                     orgCurrency={user?.orgCurrency}
                   />
                 </div>
@@ -215,7 +242,8 @@ export default function ApprovalsPage() {
                   />
                 </div>
               ) : (
-                !isLoading && visible.length > 0 && (
+                !isLoading &&
+                visible.length > 0 && (
                   <p className="rounded-xl border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground">
                     {t("approvals.pick")}
                   </p>

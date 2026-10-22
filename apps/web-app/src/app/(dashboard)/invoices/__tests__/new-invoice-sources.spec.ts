@@ -1,7 +1,7 @@
 
 import path from "path"
 
-import { code, createScreen, newPage } from "./_screen"
+import { code, createScreen, documentCode, newPage } from "./_screen"
 import { serverModuleSource } from "./server-source"
 import { readSource } from "../../../../test-utils/read-source"
 
@@ -380,7 +380,7 @@ describe("the page has a shape", () => {
     // arithmetic is how a preview starts telling somebody something the
     // document does not say.
     // Both frames iterate the one `items` prop the page hands them.
-    expect(code("_components/invoice-document.tsx").match(/items\.map\(/g) ?? []).toHaveLength(2)
+    expect(documentCode().match(/items\.map\(/g) ?? []).toHaveLength(2)
   })
 
   it("dresses the client's copy as a document, not as the app", () => {
@@ -440,7 +440,7 @@ describe("the document is the document", () => {
       cannot be two different computations.
     */
     expect(newPage()).toMatch(/items=\{documentItems\}/)
-    expect(code("_components/invoice-document.tsx")).toMatch(/items\.map\(/)
+    expect(documentCode()).toMatch(/items\.map\(/)
     expect(s).toMatch(/for \(const row of documentItems\)/)
   })
 
@@ -460,7 +460,7 @@ describe("the document is the document", () => {
 
   it("aligns every number for comparison", () => {
     // Money in a column that does not line up is money nobody checks.
-    const doc = code("_components/invoice-document.tsx")
+    const doc = documentCode()
     const from = doc.indexOf("items.map(")
     const table = doc.slice(from, doc.indexOf("</table>", from))
     expect(table.match(/tabular-nums/g)?.length ?? 0).toBeGreaterThanOrEqual(3)

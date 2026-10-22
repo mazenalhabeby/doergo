@@ -9,7 +9,7 @@ import { invitationsApi, InvitationStatus, type Invitation } from "@/lib/api"
 import { pageRange } from "@/components/common/list-page"
 import { keys } from "@/lib/query-keys"
 
-/** InvitationsPage's state and handlers — everything before its markup, moved here unchanged. */
+/** The invitations list's state: filter, page, the list, and creating / revoking an invitation. */
 export function useInvitationsPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
@@ -26,14 +26,23 @@ export function useInvitationsPage() {
   const [selectedInvitation, setSelectedInvitation] = useState<Invitation | null>(null)
 
   // Build query params
-  const queryParams = useMemo(() => ({
-    status: statusFilter !== "all" ? statusFilter : undefined,
-    page,
-    limit,
-  }), [statusFilter, page, limit])
+  const queryParams = useMemo(
+    () => ({
+      status: statusFilter !== "all" ? statusFilter : undefined,
+      page,
+      limit,
+    }),
+    [statusFilter, page, limit],
+  )
 
   // Fetch invitations
-  const { data: invitationsData, isLoading, isError, error, refetch } = useQuery({
+  const {
+    data: invitationsData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: keys.people.invitations(queryParams),
     queryFn: () => invitationsApi.list(queryParams),
   })

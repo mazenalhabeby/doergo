@@ -1,25 +1,23 @@
-"use client";
+"use client"
 
-import { keys, membersPageParams } from "@/lib/query-keys";
-import { useSpaceDirectory } from "@/hooks/use-space-directory";
-import { useState, useMemo, useEffect } from "react";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
-import { useBillingLock } from "@/hooks/use-billing-lock";
-import { useAuth } from "@/contexts/auth-context";
-import { organizationsApi, type AccessRole, invitationsApi, locationsApi, type OrgMember } from "@/lib/api";
-import { useMemberActions } from "../_lib/use-member-actions";
+import { keys, membersPageParams } from "@/lib/query-keys"
+import { useSpaceDirectory } from "@/hooks/use-space-directory"
+import { useState, useMemo, useEffect } from "react"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
+import { useBillingLock } from "@/hooks/use-billing-lock"
+import { useAuth } from "@/contexts/auth-context"
+import { organizationsApi, type AccessRole, invitationsApi, locationsApi, type OrgMember } from "@/lib/api"
+import { useMemberActions } from "../_lib/use-member-actions"
 
-/** MembersPage's state and handlers — everything before its markup, moved here unchanged. */
+/** The Members page's state: the list and its filters, the dialogs' targets, the selection and the bulk actions. */
 export function useMembersPage() {
   // Adding a member is a write AND the thing that moves the bill — doubly
   // worth refusing before the dialog rather than at submit.
   const { locked: billingLocked, reason: billingLockReason } = useBillingLock()
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const router = useRouter()
   const { user, refreshUser } = useAuth()
   const isAdmin = user?.role === "ADMIN"
 
@@ -53,9 +51,6 @@ export function useMembersPage() {
   const [bulkAccessIds, setBulkAccessIds] = useState<string[] | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [rolesOpen, setRolesOpen] = useState(false)
-
-  // Pending invitations
-  const [showPending, setShowPending] = useState(true)
 
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -123,19 +118,33 @@ export function useMembersPage() {
   // ── Mutations & handlers ─────────────────────────────────────────────
 
   const {
-    transferMutation, removeMutation, revokeInviteMutation,
-    handleSelectMember, handleSelectAll, handleBulkRoleChange, handleBulkSpaceAssign, handleBulkRemove, handleBulkAccess,
+    transferMutation,
+    removeMutation,
+    revokeInviteMutation,
+    handleSelectMember,
+    handleSelectAll,
+    handleBulkRoleChange,
+    handleBulkSpaceAssign,
+    handleBulkRemove,
+    handleBulkAccess,
   } = useMemberActions({
-    t, queryClient, refreshUser, debouncedSearch, roleFilter, page, members, userId: user?.id,
-    setTransferTarget, setRemoveTarget, setSelectedIds, setBulkAccessIds,
+    t,
+    queryClient,
+    refreshUser,
+    debouncedSearch,
+    roleFilter,
+    page,
+    members,
+    userId: user?.id,
+    setTransferTarget,
+    setRemoveTarget,
+    setSelectedIds,
+    setBulkAccessIds,
   })
 
   return {
     billingLocked,
     billingLockReason,
-    t,
-    queryClient,
-    router,
     user,
     isAdmin,
     search,
@@ -156,8 +165,6 @@ export function useMembersPage() {
     setInviteOpen,
     rolesOpen,
     setRolesOpen,
-    showPending,
-    setShowPending,
     selectedIds,
     setSelectedIds,
     isLoading,
@@ -179,8 +186,5 @@ export function useMembersPage() {
     handleBulkSpaceAssign,
     handleBulkRemove,
     handleBulkAccess,
-  };
+  }
 }
-
-/** What MembersPage and its sections read. */
-export type MembersPageState = ReturnType<typeof useMembersPage>;

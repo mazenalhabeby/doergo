@@ -27,7 +27,7 @@ describe("the proposal queue asks for the right proposals", () => {
   })
 
   it("the queue passes its workspace through, and caches each queue apart", () => {
-    const queue = read("components/assets/proposal-queue.tsx")
+    const queue = read("components/assets/proposal-queue.tsx") + read("components/assets/use-proposal-review.ts")
     expect(queue).toMatch(/spaceId\?: string/)
     expect(queue).toContain("assetsApi.getPendingProposals(spaceId)")
     // Keyed under the shared prefix, so a decision anywhere invalidates every queue.

@@ -1,18 +1,16 @@
 "use client"
 
-import {
-  Upload,
-  Trash2,
-  FileText,
-  Download,
-  Loader2,
-} from "lucide-react"
+import { Upload, Trash2, FileText, Download, Loader2 } from "lucide-react"
 import { formatFileSize } from "@hbcfield/shared/client"
 import { type Attachment } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
-import { useAttachmentsSection, ALLOWED_TYPES } from "./use-attachments-section"
-import { isImageType } from "./attachments-section-helpers"
+import { useTranslation } from "react-i18next"
+import { useTaskAttachments, ALLOWED_TYPES } from "./use-task-attachments"
+
+function isImageType(fileType: string): boolean {
+  return fileType.startsWith("image/")
+}
 
 export function AttachmentsSection({
   taskId,
@@ -26,9 +24,8 @@ export function AttachmentsSection({
    */
   initialAttachments?: Attachment[]
 }) {
+  const { t, i18n } = useTranslation()
   const {
-    t,
-    i18n,
     fileInputRef,
     isDragging,
     uploadingFiles,
@@ -42,7 +39,7 @@ export function AttachmentsSection({
     handleDragLeave,
     handleDrop,
     isUploading,
-  } = useAttachmentsSection({ taskId, initialAttachments })
+  } = useTaskAttachments({ taskId, initialAttachments })
 
   /*
     Content only — no card, no header.
@@ -83,40 +80,29 @@ export function AttachmentsSection({
         {/* Dropzone */}
         <div
           className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${
-            isDragging
-              ? "border-blue-400 bg-blue-50"
-              : "border-border hover:border-border bg-muted"
+            isDragging ? "border-blue-400 bg-blue-50" : "border-border hover:border-border bg-muted"
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
         >
-          <Upload
-            className={`size-8 mx-auto mb-2 ${isDragging ? "text-blue-400" : "text-muted-foreground"}`}
-          />
+          <Upload className={`size-8 mx-auto mb-2 ${isDragging ? "text-blue-400" : "text-muted-foreground"}`} />
           <p className="text-sm text-muted-foreground">
             {t("tasks.attachments.dragDropPrefix")}{" "}
             <span className="text-blue-600 font-medium">{t("tasks.attachments.browse")}</span>
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {t("tasks.attachments.sizeHint")}
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">{t("tasks.attachments.sizeHint")}</p>
         </div>
 
         {/* Uploading Files */}
         {uploadingFiles.length > 0 && (
           <div className="mt-4 space-y-2">
             {uploadingFiles.map((uf) => (
-              <div
-                key={uf.id}
-                className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg"
-              >
+              <div key={uf.id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                 <Loader2 className="size-4 text-blue-500 animate-spin shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {uf.file.name}
-                  </p>
+                  <p className="text-sm font-medium text-foreground truncate">{uf.file.name}</p>
                   <div className="w-full h-1.5 bg-blue-100 rounded-full mt-1.5">
                     <div
                       className="h-full bg-blue-500 rounded-full transition-all"
@@ -124,9 +110,7 @@ export function AttachmentsSection({
                     />
                   </div>
                 </div>
-                <span className="text-xs text-blue-600 font-medium shrink-0">
-                  {Math.round(uf.progress * 100)}%
-                </span>
+                <span className="text-xs text-blue-600 font-medium shrink-0">{Math.round(uf.progress * 100)}%</span>
               </div>
             ))}
           </div>
@@ -148,12 +132,7 @@ export function AttachmentsSection({
                 className="group relative rounded-xl border border-border overflow-hidden bg-card hover:border-border transition-colors"
               >
                 {isImageType(attachment.fileType) ? (
-                  <a
-                    href={attachment.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block"
-                  >
+                  <a href={attachment.fileUrl} target="_blank" rel="noopener noreferrer" className="block">
                     <div className="aspect-square bg-muted">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -166,12 +145,7 @@ export function AttachmentsSection({
                     </div>
                   </a>
                 ) : (
-                  <a
-                    href={attachment.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block"
-                  >
+                  <a href={attachment.fileUrl} target="_blank" rel="noopener noreferrer" className="block">
                     <div className="aspect-square bg-muted flex flex-col items-center justify-center p-4">
                       <FileText className="size-10 text-muted-foreground mb-2" />
                       <p className="text-xs text-muted-foreground text-center truncate w-full px-2">
@@ -186,12 +160,8 @@ export function AttachmentsSection({
                   <div className="w-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="flex items-center justify-between">
                       <div className="min-w-0 flex-1 mr-2">
-                        <p className="text-xs text-white font-medium truncate">
-                          {attachment.fileName}
-                        </p>
-                        <p className="text-xs text-white/70">
-                          {formatFileSize(attachment.fileSize, i18n.language)}
-                        </p>
+                        <p className="text-xs text-white font-medium truncate">{attachment.fileName}</p>
+                        <p className="text-xs text-white/70">{formatFileSize(attachment.fileSize, i18n.language)}</p>
                       </div>
                       <div className="flex items-center gap-1">
                         <a
@@ -223,9 +193,7 @@ export function AttachmentsSection({
 
         {/* Empty state */}
         {!isLoading && attachments.length === 0 && uploadingFiles.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground mt-4">
-            {t("tasks.attachments.empty")}
-          </p>
+          <p className="text-center text-sm text-muted-foreground mt-4">{t("tasks.attachments.empty")}</p>
         )}
       </div>
 
@@ -235,16 +203,8 @@ export function AttachmentsSection({
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title={t("tasks.attachments.deleteTitle")}
         description={t("tasks.attachments.deleteDescription", { name: deleteTarget?.fileName })}
-        confirmLabel={
-          deleteMutation.isPending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            t("common.delete")
-          )
-        }
-        onConfirm={() =>
-          deleteTarget && deleteMutation.mutate(deleteTarget.id)
-        }
+        confirmLabel={deleteMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : t("common.delete")}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
         destructive
       />
     </div>

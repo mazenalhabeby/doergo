@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import { ArrowLeft, CalendarClock, Loader2 } from "lucide-react"
 import { type DocumentTypeRow } from "@/lib/api"
 import { type StarterDocumentType } from "@hbcfield/shared/client"
@@ -7,15 +8,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { CADENCES, SIGN_MODES, RETENTION_YEARS } from "../_lib/type-options"
-import { Step, Field, Choice, Locked } from "./editor-parts"
+import { useTypeEditor } from "../_hooks/use-type-editor"
+import { Step, Field, Choice, Locked } from "./type-editor-controls"
 import { RouteEditor } from "./route-editor"
-import { useTypeEditorLogic } from "./use-type-editor-logic"
-import { TypeEditorTypes } from "./type-editor-types"
-import { TypeEditorTypes2 } from "./type-editor-types2"
-import { TypeEditorTypes3 } from "./type-editor-types3"
+import { TypeDirectionStep } from "./type-direction-step"
+import { TypeCredentialStep } from "./type-credential-step"
+import { TypeRequiredStep } from "./type-required-step"
 
 export function TypeEditor({
-  type, starter, existingKeys, workflows, roles, onClose,
+  type,
+  starter,
+  existingKeys,
+  workflows,
+  roles,
+  onClose,
 }: {
   type: DocumentTypeRow | null
   starter: StarterDocumentType | null
@@ -24,9 +30,9 @@ export function TypeEditor({
   roles: { id: string; name: string }[]
   onClose: () => void
 }) {
-  const vm = useTypeEditorLogic({ type, starter, existingKeys, workflows, roles, onClose })
+  const { t } = useTranslation()
+  const form = useTypeEditor({ type, starter, existingKeys, onClose })
   const {
-    t,
     isNew,
     key,
     keyTaken,
@@ -64,7 +70,7 @@ export function TypeEditor({
     setRoute,
     retentionMonths,
     setRetentionMonths,
-  } = vm
+  } = form
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
@@ -91,15 +97,23 @@ export function TypeEditor({
             </Field>
             {key && (
               <p className={cn("text-xs", keyTaken ? "text-red-600" : "text-slate-400")}>
-                {keyTaken
-                  ? t("documents.types.keyTaken", { key })
-                  : t("documents.types.keyIs", { key })}
+                {keyTaken ? t("documents.types.keyTaken", { key }) : t("documents.types.keyIs", { key })}
               </p>
             )}
           </div>
         </Step>
 
-        <TypeEditorTypes vm={vm} />
+        <TypeDirectionStep
+          direction={direction}
+          isNew={isNew}
+          setDirection={setDirection}
+          scanShape={scanShape}
+          setScanShape={setScanShape}
+          twoSided={twoSided}
+          setTwoSided={setTwoSided}
+          setMultiPage={setMultiPage}
+          multiPage={multiPage}
+        />
 
         <Step n={3} title={t("documents.types.step3")}>
           <div className="grid gap-2 sm:grid-cols-3">
@@ -118,7 +132,15 @@ export function TypeEditor({
           {!isNew && <Locked>{t("documents.types.cadenceLocked")}</Locked>}
         </Step>
 
-        <TypeEditorTypes2 vm={vm} workflows={workflows} />
+        <TypeCredentialStep
+          isCredential={isCredential}
+          setIsCredential={setIsCredential}
+          hasExpiry={hasExpiry}
+          setHasExpiry={setHasExpiry}
+          gates={gates}
+          setGates={setGates}
+          workflows={workflows}
+        />
 
         {/*
           Only for what the member provides. "Do we require this from people?"
@@ -126,7 +148,14 @@ export function TypeEditor({
           an employee to produce one is not a requirement, it is a category
           error. The server refuses it too.
         */}
-        <TypeEditorTypes3 vm={vm} roles={roles} />
+        <TypeRequiredStep
+          direction={direction}
+          requiredFromAll={requiredFromAll}
+          requiredFromRoleIds={requiredFromRoleIds}
+          setRequiredFromAll={setRequiredFromAll}
+          setRequiredFromRoleIds={setRequiredFromRoleIds}
+          roles={roles}
+        />
 
         {/*
           Who may see it.
@@ -154,9 +183,7 @@ export function TypeEditor({
                 <button
                   key={r.id}
                   onClick={() =>
-                    setVisibleToRoleIds((ids) =>
-                      ids.includes(r.id) ? ids.filter((x) => x !== r.id) : [...ids, r.id],
-                    )
+                    setVisibleToRoleIds((ids) => (ids.includes(r.id) ? ids.filter((x) => x !== r.id) : [...ids, r.id]))
                   }
                   className={cn(
                     "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
@@ -206,9 +233,9 @@ export function TypeEditor({
                 <p className="mt-1 text-sm text-muted-foreground">
                   {t(
                     "documents.types.route.hint",
-                    ("Leave empty and the member signs it alone. Add steps and the document " +
+                    "Leave empty and the member signs it alone. Add steps and the document " +
                       "travels — each person signs in turn, and all their signatures end up on " +
-                      "it."),
+                      "it.",
                   )}
                 </p>
                 <RouteEditor route={route} onChange={setRoute} />
@@ -245,14 +272,14 @@ export function TypeEditor({
               {t("documents.types.forever")}
             </button>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-slate-400">
-            {t("documents.types.retentionNote")}
-          </p>
+          <p className="mt-2 text-xs leading-relaxed text-slate-400">{t("documents.types.retentionNote")}</p>
         </Step>
       </div>
 
       <div className="mt-6 flex justify-end gap-2">
-        <Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
+        <Button variant="outline" onClick={onClose}>
+          {t("common.cancel")}
+        </Button>
         <Button onClick={() => save.mutate()} disabled={!canSave}>
           {save.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
           {t("common.save")}

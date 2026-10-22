@@ -9,26 +9,26 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
 // Types only: the builder (and jsPDF, ~350 kB) loads on the Download / Print click.
 import { PAGE_WIDTH } from "@/components/ui/page-width"
-import { InvoiceDocument, fmtDate } from "../_components/invoice-document"
-import { useInvoiceDetailInner } from "./_hooks/use-invoice-detail-inner"
-import { money } from "./_components/invoice-detail-inner-helpers"
-import { InvoiceDetailInnerView } from "./_components/invoice-detail-inner-view"
-import { InvoiceDetailInnerPdfLanguage } from "./_components/invoice-detail-inner-pdf-language"
+import { useTranslation } from "react-i18next"
+import { InvoiceDocument, fmtDate, money } from "../_components/invoice-document"
+import type { LifecycleStep } from "../_lib/lifecycle"
+import { useInvoiceDetail } from "./_hooks/use-invoice-detail"
+import { describeInvoice } from "./_lib/invoice-standing"
+import { InvoiceDetailTopBar } from "./_components/invoice-detail-top-bar"
 
 export default function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   return (
     <PlanGate feature="invoicing">
-      <InvoiceDetailInner id={id} />
+      <InvoiceDetail id={id} />
     </PlanGate>
   )
 }
 
 // Not exported: a Next.js page module may export only the page and its known fields.
-function InvoiceDetailInner({ id }: { id: string }) {
-  const vm = useInvoiceDetailInner({ id })
+function InvoiceDetail({ id }: { id: string }) {
+  const { t } = useTranslation()
   const {
-    t,
     inv,
     isLoading,
     org,
@@ -39,7 +39,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
     setConfirmStep,
     deleteMutation,
     branding,
-  } = vm
+  } = useInvoiceDetail({ id })
 
   if (isLoading) {
     return (
@@ -57,23 +57,29 @@ function InvoiceDetailInner({ id }: { id: string }) {
     )
   }
 
-  const { style, statusLabel, settled, standing, periodLabel, primary, others, step } = InvoiceDetailInnerView({
-    t,
-    inv,
-    statusMutation,
-    setConfirmStep,
-  })
+  const { style, statusLabel, settled, standing, periodLabel, primary, others } = describeInvoice(inv, t)
+
+  /*
+    ⚠️ Only the ONE-WAY step asks first. Issuing is reversible and "back to
+    draft" is reversible, so a dialog on those would teach people to click
+    through dialogs — which is how the one that matters gets clicked through
+    too. Marking as sent cannot be undone, and nothing in this product emails
+    the invoice, so the dialog is also where that is said.
+  */
+  const step = (s: LifecycleStep) => (s.confirm ? setConfirmStep(s) : statusMutation.mutate(s.to))
 
   return (
     <div className="min-h-full bg-background">
-      <InvoiceDetailInnerPdfLanguage
-        vm={vm}
+      <InvoiceDetailTopBar
+        id={id}
+        inv={inv}
+        branding={branding}
         statusLabel={statusLabel}
         style={style}
         primary={primary}
-        step={step}
         others={others}
-        id={id}
+        step={step}
+        setConfirmDelete={setConfirmDelete}
       />
 
       <div className={cn(PAGE_WIDTH, "py-6")}>

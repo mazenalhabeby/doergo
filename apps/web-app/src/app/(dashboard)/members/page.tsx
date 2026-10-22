@@ -1,37 +1,31 @@
 "use client"
 
+import { useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 import { keys } from "@/lib/query-keys"
+import { PAGE_SHELL } from "@/components/ui/page-width"
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MemberBulkActionBar } from "./_components/member-bulk-action-bar"
 import { MemberConfirmDialogs } from "./_components/member-confirm-dialogs"
-import { useMembersPage } from "./_hooks/use-members-page";
-import {
-  CreateInvitationDialog,
-  ManageRolesDialog,
-  EditMemberDialog,
-  AccessBuilder,
-} from "./_components/members-page-helpers";
-import { MembersPageTeam } from "./_components/members-page-team";
+import { useMembersPage } from "./_hooks/use-members-page"
+import { CreateInvitationDialog, ManageRolesDialog, EditMemberDialog, AccessBuilder } from "./_components/lazy-dialogs"
+import { MembersHeader } from "./_components/members-header"
+import { MembersTable } from "./_components/members-table"
+import { PendingInvitations } from "./_components/pending-invitations"
 
 // ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
 
 export default function MembersPage() {
-  const vm = useMembersPage();
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const router = useRouter()
   const {
     billingLocked,
     billingLockReason,
-    t,
-    queryClient,
-    router,
     user,
     isAdmin,
     search,
@@ -52,8 +46,6 @@ export default function MembersPage() {
     setInviteOpen,
     rolesOpen,
     setRolesOpen,
-    showPending,
-    setShowPending,
     selectedIds,
     setSelectedIds,
     isLoading,
@@ -75,13 +67,68 @@ export default function MembersPage() {
     handleBulkSpaceAssign,
     handleBulkRemove,
     handleBulkAccess,
-  } = vm;
+  } = useMembersPage()
 
   // ── Render ───────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-full bg-background">
-      <MembersPageTeam vm={vm} />
+      <div className={PAGE_SHELL}>
+        <MembersHeader
+          isLoading={isLoading}
+          totalCount={totalCount}
+          showPhoneSync={!!(user?.canManageUsers && user?.offlineMode)}
+          search={search}
+          onSearchChange={(value) => {
+            setSearch(value)
+            setPage(1)
+          }}
+          roleFilter={roleFilter}
+          onRoleFilterChange={(v) => {
+            setRoleFilter(v)
+            setPage(1)
+          }}
+          orgRoles={orgRoles}
+          isAdmin={isAdmin}
+          billingLocked={billingLocked}
+          billingLockReason={billingLockReason}
+          onManageRoles={() => setRolesOpen(true)}
+          onInvite={() => setInviteOpen(true)}
+        />
+
+        <MembersTable
+          members={members}
+          meta={meta}
+          isLoading={isLoading}
+          isError={isError}
+          isFetching={isFetching}
+          refetch={refetch}
+          isAdmin={isAdmin}
+          userId={user?.id}
+          isOwner={!!user?.isOwner}
+          selectedIds={selectedIds}
+          memberSpacesMap={memberSpacesMap}
+          onSelectMember={handleSelectMember}
+          onSelectAll={handleSelectAll}
+          onEdit={setEditTarget}
+          onRemove={setRemoveTarget}
+          onTransfer={setTransferTarget}
+          onNavigate={(id) => router.push(`/members/${id}`)}
+          setPage={setPage}
+          billingLocked={billingLocked}
+          billingLockReason={billingLockReason}
+          onInvite={() => setInviteOpen(true)}
+        />
+
+        {/* ── Pending Invitations ────────────────────────────────────── */}
+        {isAdmin && pendingInvitations.length > 0 && (
+          <PendingInvitations
+            pendingInvitations={pendingInvitations}
+            onRevoke={(id) => revokeInviteMutation.mutate(id)}
+            revoking={revokeInviteMutation.isPending}
+          />
+        )}
+      </div>
 
       {/* ── Edit Member Dialog (shared component) ───────────────────────── */}
       <EditMemberDialog
@@ -125,24 +172,29 @@ export default function MembersPage() {
         <DialogContent className="p-0 gap-0 max-h-[88vh] overflow-y-auto">
           <DialogHeader className="sr-only">
             <DialogTitle>{t("members.bulk.accessTitle", "Bulk access")}</DialogTitle>
-            <DialogDescription>{t("members.bulk.accessDesc", "Apply access to the selected members")}</DialogDescription>
+            <DialogDescription>
+              {t("members.bulk.accessDesc", "Apply access to the selected members")}
+            </DialogDescription>
           </DialogHeader>
-          {bulkAccessIds && bulkAccessIds.length > 0 && (() => {
-            const template = members.find((m) => m.id === bulkAccessIds[0]) || members.find((m) => bulkAccessIds.includes(m.id))
-            if (!template) return null
-            return (
-              <AccessBuilder
-                member={template}
-                applyToIds={bulkAccessIds}
-                bulkCount={bulkAccessIds.length}
-                onSaved={() => {
-                  queryClient.invalidateQueries({ queryKey: keys.members.lists() })
-                  setBulkAccessIds(null)
-                  setSelectedIds(new Set())
-                }}
-              />
-            )
-          })()}
+          {bulkAccessIds &&
+            bulkAccessIds.length > 0 &&
+            (() => {
+              const template =
+                members.find((m) => m.id === bulkAccessIds[0]) || members.find((m) => bulkAccessIds.includes(m.id))
+              if (!template) return null
+              return (
+                <AccessBuilder
+                  member={template}
+                  applyToIds={bulkAccessIds}
+                  bulkCount={bulkAccessIds.length}
+                  onSaved={() => {
+                    queryClient.invalidateQueries({ queryKey: keys.members.lists() })
+                    setBulkAccessIds(null)
+                    setSelectedIds(new Set())
+                  }}
+                />
+              )
+            })()}
         </DialogContent>
       </Dialog>
     </div>

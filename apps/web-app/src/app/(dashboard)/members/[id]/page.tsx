@@ -1,40 +1,28 @@
 "use client"
 
+import { use } from "react"
+import { useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import { ArrowLeft } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-
-
-// Worker tabs — consolidated from the retired /employees page (single member page).
-// Imported from the leaf modules, NOT the barrel: `_components/index.ts` also
-// re-exports PerformanceTab, so importing through it risks pulling recharts back
-// into this chunk and undoing the split above.
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PAGE_SHELL } from "@/components/ui/page-width"
-import { useMemberProfilePage } from "./_hooks/use-member-profile-page"
-import { MemberNotice } from "./_components/member-profile-page-helpers"
-import { MemberProfilePageView } from "./_components/member-profile-page-view"
-import { MemberProfilePageDetail3 } from "./_components/member-profile-page-detail3"
-import { MemberProfilePageActive } from "./_components/member-profile-page-active"
+import { useMemberData } from "./_lib/use-member-data"
+import { MemberNotice } from "./_components/member-notice"
+import { MemberHeaderCard } from "./_components/member-header-card"
+import { MemberProfileTabs } from "./_components/member-profile-tabs"
 
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
-export default function MemberProfilePage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const vm = useMemberProfilePage({ params })
+export default function MemberProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: memberId } = use(params)
+  const { t } = useTranslation()
+  const router = useRouter()
   const {
-    memberId,
-    t,
-    message,
-    canMessage,
-    formatSchedule,
-    router,
     canViewOps,
     canManage,
     canManageMembers,
@@ -43,6 +31,7 @@ export default function MemberProfilePage({
     setActiveTab,
     tasksPage,
     setTasksPage,
+    tasksPageSize,
     member,
     tasks,
     schedule,
@@ -51,17 +40,14 @@ export default function MemberProfilePage({
     fullTasks,
     attendance,
     performance,
+    memberProfile,
     memberLoading,
     memberError,
     tasksLoading,
     scheduleLoading,
     refetchMember,
     handleMemberSaved,
-    editOpen,
-    setEditOpen,
-    canViewLabourCost,
-    headerStats,
-  } = vm
+  } = useMemberData(memberId)
 
   if (memberLoading) {
     return (
@@ -100,15 +86,10 @@ export default function MemberProfilePage({
     return (
       <MemberNotice onBack={() => router.push("/members")}>
         <h3 className="text-lg font-semibold text-foreground mb-1.5">{t("members.detail.notFound")}</h3>
-        <p className="text-sm text-muted-foreground">
-          {t("members.detail.notFoundDescription")}
-        </p>
+        <p className="text-sm text-muted-foreground">{t("members.detail.notFoundDescription")}</p>
       </MemberNotice>
     )
   }
-
-  /* Works for a client or partner — see the tab list below for what that hides. */
-  const { isExternalMember, roleConfig, scheduleLabel } = MemberProfilePageView({ t, member })
 
   return (
     <div className="min-h-full bg-background">
@@ -125,10 +106,37 @@ export default function MemberProfilePage({
         </Button>
 
         {/* ── Header Card ──────────────────────────────────────────────── */}
-        <MemberProfilePageActive vm={vm} roleConfig={roleConfig} scheduleLabel={scheduleLabel} />
+        <MemberHeaderCard
+          member={member}
+          spaceNames={spaceNames}
+          stats={memberProfile?.stats}
+          currentUserId={currentUserId}
+          canManageMembers={canManageMembers}
+          onSaved={handleMemberSaved}
+        />
 
         {/* ── Tabbed content ───────────────────────────────────────────── */}
-        <MemberProfilePageDetail3 vm={vm} isExternalMember={isExternalMember} />
+        <MemberProfileTabs
+          member={member}
+          memberId={memberId}
+          canManageMembers={canManageMembers}
+          canViewOps={canViewOps}
+          canManage={canManage}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          tasks={tasks}
+          tasksLoading={tasksLoading}
+          schedule={schedule}
+          scheduleLoading={scheduleLoading}
+          fullTasks={fullTasks}
+          tasksPage={tasksPage}
+          setTasksPage={setTasksPage}
+          tasksPageSize={tasksPageSize}
+          attendance={attendance}
+          memberAssignments={memberAssignments}
+          performance={performance}
+          onMemberSaved={handleMemberSaved}
+        />
       </div>
     </div>
   )

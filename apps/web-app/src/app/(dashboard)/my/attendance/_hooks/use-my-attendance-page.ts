@@ -2,18 +2,15 @@
 
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { useTranslation } from "react-i18next"
-import { useClockIn, useTimeFormat } from "@/hooks"
+import { useClockIn } from "@/hooks"
 import { useAuth } from "@/contexts/auth-context"
 import { attendanceApi } from "@/lib/api"
 import { hasAccessModule, localDateKey } from "@hbcfield/shared/client"
 import type { TimeEntry } from "@hbcfield/shared"
 import { keys } from "@/lib/query-keys"
 
-/** MyAttendancePage's state and handlers — everything before its markup, moved here unchanged. */
+/** The member's own shifts page: the clock, the chosen window and the shifts in it. */
 export function useMyAttendancePage() {
-  const { t } = useTranslation()
-  const { formatTime, locale } = useTimeFormat()
   const { user } = useAuth()
   const canSee = !user || hasAccessModule(user, "clock")
 
@@ -28,10 +25,10 @@ export function useMyAttendancePage() {
     They share query keys, so mounting the hook twice is still one status
     request and one locations request.
   */
-  const {
-    clockedIn, activeEntry, locations, pending, startClockIn, clockOut,
-    pickerProps, earlyProps,
-  } = useClockIn({ enabled: canSee, locationsNow: true })
+  const { clockedIn, activeEntry, locations, pending, startClockIn, clockOut, pickerProps, earlyProps } = useClockIn({
+    enabled: canSee,
+    locationsNow: true,
+  })
 
   /*
     Which stretch of time the page is about.
@@ -65,12 +62,14 @@ export function useMyAttendancePage() {
     return { startDate: localDateKey(from), endDate: localDateKey(to) }
   })()
 
-  const effectiveRange = range ?? (() => {
-    const to = new Date()
-    const from = new Date()
-    from.setDate(from.getDate() - 6)
-    return { startDate: localDateKey(from), endDate: localDateKey(to) }
-  })()
+  const effectiveRange =
+    range ??
+    (() => {
+      const to = new Date()
+      const from = new Date()
+      from.setDate(from.getDate() - 6)
+      return { startDate: localDateKey(from), endDate: localDateKey(to) }
+    })()
 
   const { data: history, isLoading } = useQuery({
     // The range is IN the key: a different window is a different question, and
@@ -85,9 +84,6 @@ export function useMyAttendancePage() {
   const entries: TimeEntry[] = (history as { data?: TimeEntry[] })?.data ?? []
 
   return {
-    t,
-    formatTime,
-    locale,
     canSee,
     clockedIn,
     activeEntry,
@@ -109,6 +105,3 @@ export function useMyAttendancePage() {
     entries,
   }
 }
-
-/** What MyAttendancePage and its sections read. */
-export type MyAttendancePageState = ReturnType<typeof useMyAttendancePage>

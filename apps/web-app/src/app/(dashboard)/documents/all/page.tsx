@@ -1,24 +1,30 @@
 "use client"
 
-import { ArrowLeft, Search, FolderTree, ListChecks } from "lucide-react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
+import { ArrowLeft, Search, FolderTree, ListChecks, PenLine, MailOpen, CheckCircle2, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { FolderBrowser } from "./_components/folder-browser"
 import { DocumentActionDialogs } from "./_components/document-control"
-import { useSentDocumentsPage } from "./_hooks/use-sent-documents-page"
-import { TABS } from "./_components/sent-documents-page-helpers"
-import { SentDocumentsPageControl } from "./_components/sent-documents-page-control"
+import { useSentRegister, type Tab } from "./_hooks/use-sent-register"
+import { SentDocumentsList } from "./_components/sent-documents-list"
 import { ListPager } from "@/components/ui/list-pager"
 
+const TABS: { key: Tab; icon: typeof PenLine }[] = [
+  { key: "awaiting", icon: PenLine },
+  { key: "unopened", icon: MailOpen },
+  { key: "signed", icon: CheckCircle2 },
+  { key: "all", icon: FileText },
+]
+
 export default function SentDocumentsPage() {
-  const vm = useSentDocumentsPage()
+  const { t } = useTranslation()
+  const router = useRouter()
+  const [view, setView] = useState<"attention" | "files">("attention")
   const {
-    t,
-    i18n,
-    router,
-    view,
-    setView,
     tab,
     setTab,
     search,
@@ -36,9 +42,7 @@ export default function SentDocumentsPage() {
     setAction,
     totalPages,
     userPicked,
-    open,
-    opening,
-  } = vm
+  } = useSentRegister()
 
   return (
     <div className="min-h-full bg-background">
@@ -141,7 +145,14 @@ export default function SentDocumentsPage() {
               </div>
             </div>
 
-            <SentDocumentsPageControl vm={vm} />
+            <SentDocumentsList
+              isLoading={isLoading}
+              rows={rows}
+              tab={tab}
+              selection={selection}
+              setAction={setAction}
+              canSelect={canSelect}
+            />
 
             {data && data.total > data.limit && (
               <ListPager

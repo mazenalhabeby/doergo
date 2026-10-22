@@ -12,7 +12,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { personInitials } from "@hbcfield/shared/client"
 import { AddContactDialog } from "./add-contact-dialog"
 
-/** The other end of a contact link: the companies this person works at — moved here unchanged. */
 /**
  * The mirror, on a person's record: which companies they are a contact at.
  *
@@ -93,10 +92,13 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
         onSaved={invalidate}
         trigger={
           <button
-            className={"flex w-full items-center gap-1.5 rounded-xl border border-dashed " +
+            className={
+              "flex w-full items-center gap-1.5 rounded-xl border border-dashed " +
               "border-border px-4 py-2.5 text-xs font-medium text-muted-foreground " +
               "transition-colors hover:border-border/80 hover:bg-muted/40 " +
-              "hover:text-foreground"}>
+              "hover:text-foreground"
+            }
+          >
             <Building2 className="h-3.5 w-3.5" />
             {t("customers.linkToCompany", "Link to a company")}
           </button>
@@ -135,8 +137,11 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
                 className="flex min-w-0 flex-1 items-start gap-2.5 hover:text-primary"
               >
                 <span
-                  className={"mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md " +
-                    "bg-muted text-[10px] font-semibold text-muted-foreground"}>
+                  className={
+                    "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md " +
+                    "bg-muted text-[10px] font-semibold text-muted-foreground"
+                  }
+                >
                   {personInitials(c.company.name)}
                 </span>
                 <span className="min-w-0 flex-1">
@@ -155,8 +160,10 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
                 <button
                   onClick={() => detach.mutate(c.id)}
                   title={t("common.remove", "Remove")}
-                  className={"shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity " +
-                    "hover:text-destructive focus-within:opacity-100 group-hover:opacity-100"}
+                  className={
+                    "shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity " +
+                    "hover:text-destructive focus-within:opacity-100 group-hover:opacity-100"
+                  }
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>

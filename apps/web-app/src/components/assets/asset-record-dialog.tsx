@@ -1,5 +1,7 @@
 "use client"
 
+import dynamic from "next/dynamic"
+import { useTranslation } from "react-i18next"
 import { Building2 } from "lucide-react"
 
 import { type AssetCategory } from "@/lib/api"
@@ -10,11 +12,17 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AssetStatusPicker } from "./asset-status"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
-import { useAssetRecordDialog, type AssetRecord } from "./use-asset-record-dialog"
-import { LocationPicker } from "./asset-record-dialog-helpers"
-import { AssetRecordDialogFields } from "./asset-record-dialog-fields"
-import { AssetRecordDialogMore } from "./asset-record-dialog-more"
-export { type AssetRecord, factsPayload } from "./use-asset-record-dialog"
+import { useAssetRecordDialog } from "./use-asset-record-dialog"
+import { type AssetRecord } from "./asset-record"
+import { AssetDetailFields } from "./asset-detail-fields"
+import { AssetFactsFold } from "./asset-facts-fold"
+import { AssetMoveSection } from "./asset-move-section"
+export { type AssetRecord, factsPayload } from "./asset-record"
+
+const LocationPicker = dynamic(() => import("@/components/map/location-picker"), {
+  ssr: false,
+  loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-muted" />,
+})
 
 /**
  * Add or edit one record, built from what its KIND says.
@@ -38,9 +46,7 @@ export function AssetRecordDialog({
   onSaved: () => void
   trigger: React.ReactNode
 }) {
-  const vm = useAssetRecordDialog({ spaceId, kind, existing, onSaved, trigger })
   const {
-    t,
     shape,
     open,
     setOpen,
@@ -52,10 +58,6 @@ export function AssetRecordDialog({
     setDestSpace,
     destKind,
     setDestKind,
-    destKindsQ,
-    destKinds,
-    chosenKind,
-    dropped,
     name,
     setName,
     address,
@@ -69,20 +71,17 @@ export function AssetRecordDialog({
     status,
     setStatus,
     facts,
+    setFacts,
     moreOpen,
     setMoreOpen,
-    setFact,
     dateProblems,
     rows,
-    setRow,
-    addRow,
-    removeRow,
-    isFromKind,
-    duplicated,
+    setRows,
     save,
     reset,
     holderLabel,
-  } = vm
+  } = useAssetRecordDialog({ spaceId, kind, existing, onSaved })
+  const { t } = useTranslation()
 
   return (
     <Dialog open={open} onOpenChange={reset}>
@@ -125,8 +124,13 @@ export function AssetRecordDialog({
             <div className="space-y-1">
               <Label>{t("assetRecords.address", "Address")}</Label>
               <LocationPicker
-                lat={lat} lng={lng} address={address}
-                onLocationChange={(la, ln) => { setLat(la); setLng(ln) }}
+                lat={lat}
+                lng={lng}
+                address={address}
+                onLocationChange={(la, ln) => {
+                  setLat(la)
+                  setLng(ln)
+                }}
                 onAddressChange={setAddress}
               />
             </div>
@@ -149,7 +153,7 @@ export function AssetRecordDialog({
             </div>
           )}
 
-          <AssetRecordDialogFields vm={vm} />
+          <AssetDetailFields shape={shape} rows={rows} setRows={setRows} />
         </div>
 
         {/*
@@ -169,7 +173,13 @@ export function AssetRecordDialog({
           with nothing to write them. Behind a fold because most kinds never
           need them, and a van's form should not open on a warranty date.
         */}
-        <AssetRecordDialogMore vm={vm} />
+        <AssetFactsFold
+          moreOpen={moreOpen}
+          setMoreOpen={setMoreOpen}
+          facts={facts}
+          setFacts={setFacts}
+          dateProblems={dateProblems}
+        />
 
         {/*
           Moving it somewhere else.
@@ -179,88 +189,25 @@ export function AssetRecordDialog({
           sitting among the fields somebody came to correct a serial number in.
         */}
         {existing && (
-          <div className="mt-3 border-t border-border pt-3">
-            {!moving ? (
-              <button
-                type="button"
-                onClick={() => setMoving(true)}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-              >
-                <Building2 className="h-3.5 w-3.5" />
-                {t("assetRecords.move", "Move to another workspace")}
-              </button>
-            ) : (
-              <div className="space-y-2.5 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
-                <p className="text-xs font-semibold">{t("assetRecords.moveTitle", "Move to another workspace")}</p>
-
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <select
-                    value={destSpace}
-                    onChange={(e) => { setDestSpace(e.target.value); setDestKind("") }}
-                    className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm"
-                  >
-                    <option value="">{t("assetRecords.moveSpace", "Workspace…")}</option>
-                    {spaces.filter((sp) => sp.id !== spaceId).map((sp) => (
-                      <option key={sp.id} value={sp.id}>{sp.name}</option>
-                    ))}
-                  </select>
-                  {/*
-                    The kind, not just the workspace: the record has to become
-                    something when it arrives, and the kind is what it becomes.
-                  */}
-                  <select
-                    value={destKind}
-                    onChange={(e) => setDestKind(e.target.value)}
-                    disabled={!destSpace || destKindsQ.isLoading}
-                    className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm disabled:opacity-50"
-                  >
-                    <option value="">{t("assetRecords.moveKind", "Kind…")}</option>
-                    {destKinds.map((k) => (
-                      <option key={k.id} value={k.id}>{k.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {destSpace && !destKindsQ.isLoading && destKinds.length === 0 && (
-                  <p className="text-[11.5px] text-muted-foreground">
-                    {t("assetRecords.moveNoKinds", "That workspace has no asset kinds yet.")}
-                  </p>
-                )}
-
-                {/* Named, one by one. A count would not tell anybody whether the
-                    thing they care about is in it. */}
-                {dropped.length > 0 && (
-                  <p className="text-[11.5px] leading-relaxed text-amber-700 dark:text-amber-400">
-                    {t(
-                      "assetRecords.moveDrops",
-                      "{{kind}} does not have these fields, and they will be deleted:",
-                      { kind: chosenKind?.name ?? "" })}{" "}
-                    <b>{dropped.join(", ")}</b>
-                  </p>
-                )}
-                {chosenKind && dropped.length === 0 && (
-                  <p className="text-[11.5px] text-muted-foreground">
-                    {t(
-                      "assetRecords.moveKeeps",
-                      "Every field on this record exists in {{kind}} — nothing is lost.",
-                      { kind: chosenKind.name })}
-                  </p>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => { setMoving(false); setDestSpace(""); setDestKind("") }}
-                  className="text-[11.5px] font-medium text-muted-foreground hover:text-foreground"
-                >
-                  {t("common.cancel", "Cancel")}
-                </button>
-              </div>
-            )}
-          </div>
+          <AssetMoveSection
+            open={open}
+            spaceId={spaceId}
+            kind={kind}
+            details={existing.details}
+            spaces={spaces}
+            moving={moving}
+            setMoving={setMoving}
+            destSpace={destSpace}
+            setDestSpace={setDestSpace}
+            destKind={destKind}
+            setDestKind={setDestKind}
+          />
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel", "Cancel")}</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            {t("common.cancel", "Cancel")}
+          </Button>
           <Button
             disabled={(!name.trim() && !address.trim()) || dateProblems.length > 0 || save.isPending}
             onClick={() => save.mutate()}
@@ -272,4 +219,3 @@ export function AssetRecordDialog({
     </Dialog>
   )
 }
-

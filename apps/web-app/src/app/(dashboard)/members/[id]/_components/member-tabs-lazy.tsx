@@ -36,3 +36,26 @@ export function useWarmMemberTabs(): void {
     for (const load of Object.values(loaders)) void load()
   }, [ready])
 }
+
+// Performance tab pulls in recharts — load it as its own chunk only when the tab
+// is opened, so every other visitor doesn't pay for the chart lib (P11).
+export const PerformanceTab = dynamic(() => import("./performance-tab").then((m) => m.PerformanceTab), { ssr: false })
+
+// Same reasoning for the rest of the weight (audit MD-C1). The page opens on
+// Overview, which renders none of these — the Access builder, the edit dialog, the
+// audit trail and the Time Off tab were ~1,600 lines paid for on every visit.
+export const AccessBuilder = dynamic(
+  () => import("@/components/permissions/access-builder").then((m) => m.AccessBuilder),
+  { ssr: false },
+)
+
+export const EditMemberDialog = dynamic(
+  () => import("../../_components/edit-member-dialog").then((m) => m.EditMemberDialog),
+  { ssr: false },
+)
+
+export const AuditTrail = dynamic(() => import("@/components/common/audit-trail").then((m) => m.AuditTrail), {
+  ssr: false,
+})
+
+export const TimeOffTab = dynamic(() => import("./time-off-tab").then((m) => m.TimeOffTab), { ssr: false })

@@ -2,31 +2,19 @@
 
 import React from "react"
 import { Search, Loader2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useAssignMemberDialog, type AssignMemberDialogProps } from "./use-assign-member-dialog"
-import { MemberRow } from "./assign-member-dialog-helpers"
+import { MemberRow } from "./member-row"
 import { EmptyNote } from "@/components/ui/empty-note"
-
-// =============================================================================
-// MOCK DATA
-// =============================================================================
-
-// =============================================================================
-// MEMBER ROW
-// =============================================================================
-
-// =============================================================================
-// MAIN COMPONENT
-// =============================================================================
 
 export function AssignMemberDialog({
   open,
   onOpenChange,
-  taskId,
   spaceId,
   currentAssigneeId,
   currentAssigneeIds = [],
@@ -36,8 +24,8 @@ export function AssignMemberDialog({
   isAssigning = false,
   notice,
 }: AssignMemberDialogProps) {
+  const { t } = useTranslation()
   const {
-    t,
     isMultiMode,
     search,
     setSearch,
@@ -54,15 +42,12 @@ export function AssignMemberDialog({
   } = useAssignMemberDialog({
     open,
     onOpenChange,
-    taskId,
     spaceId,
     currentAssigneeId,
     currentAssigneeIds,
     onSave,
     onAssign,
     onRemove,
-    isAssigning,
-    notice,
   })
 
   return (

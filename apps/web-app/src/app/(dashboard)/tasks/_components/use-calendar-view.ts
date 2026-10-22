@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useState, useCallback } from "react"
-import { useTranslation } from "react-i18next"
 import { startOfDay } from "@/lib/local-days"
 import { useStepConfigs } from "@/hooks/use-step-config"
 import type { Task } from "@/lib/api"
@@ -42,9 +41,8 @@ export interface CalendarViewProps {
   tasks: Task[]
 }
 
-/** CalendarView's state and handlers — everything before its markup, moved here unchanged. */
-export function useCalendarView({ tasks }: Pick<CalendarViewProps, "tasks">) {
-  const { t } = useTranslation()
+/** The calendar's month, its 42 days, tasks per day, multi-day bars per week, and the hovered task. */
+export function useCalendarView({ tasks }: CalendarViewProps) {
   const stepOf = useStepConfigs(tasks)
   const today = startOfDay(new Date())
   const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
@@ -158,7 +156,6 @@ export function useCalendarView({ tasks }: Pick<CalendarViewProps, "tasks">) {
   const isCurrentMonth = isSameMonth(today, viewDate)
 
   return {
-    t,
     stepOf,
     today,
     viewDate,

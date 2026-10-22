@@ -2,7 +2,6 @@
 
 import { personName } from "@hbcfield/shared/client"
 import React, { useState, useMemo, useCallback } from "react"
-import { useTranslation } from "react-i18next"
 import type { AssignablePerson } from "@/lib/assignable-members"
 import { useAssignableMembers } from "@/hooks/use-assignable-members"
 
@@ -28,33 +27,20 @@ export interface AssignMemberDialogProps {
   notice?: React.ReactNode
 }
 
-/** AssignMemberDialog's state and handlers — everything before its markup, moved here unchanged. */
+/** The Assign dialog's search, selection (saved on Save in multi mode, at once otherwise) and who can be picked. */
 export function useAssignMemberDialog({
   open,
   onOpenChange,
-  taskId,
   spaceId,
   currentAssigneeId,
   currentAssigneeIds = [],
   onSave,
   onAssign,
   onRemove,
-  isAssigning = false,
-  notice,
-}: Pick<AssignMemberDialogProps,
-  | 'open'
-  | 'onOpenChange'
-  | 'taskId'
-  | 'spaceId'
-  | 'currentAssigneeId'
-  | 'currentAssigneeIds'
-  | 'onSave'
-  | 'onAssign'
-  | 'onRemove'
-  | 'isAssigning'
-  | 'notice'
+}: Pick<
+  AssignMemberDialogProps,
+  "open" | "onOpenChange" | "spaceId" | "currentAssigneeId" | "currentAssigneeIds" | "onSave" | "onAssign" | "onRemove"
 >) {
-  const { t } = useTranslation()
   const isMultiMode = !!onSave || !!onRemove
   const [search, setSearch] = useState("")
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -80,15 +66,25 @@ export function useAssignMemberDialog({
 
   const hasChanges = useMemo(() => {
     if (selectedIds.size !== originalIds.size) return true
-    for (const id of selectedIds) { if (!originalIds.has(id)) return true }
-    for (const id of originalIds) { if (!selectedIds.has(id)) return true }
+    for (const id of selectedIds) {
+      if (!originalIds.has(id)) return true
+    }
+    for (const id of originalIds) {
+      if (!selectedIds.has(id)) return true
+    }
     return false
   }, [selectedIds, originalIds])
 
-  const handleOpenChange = useCallback((nextOpen: boolean) => {
-    if (!nextOpen) { setSearch(""); setSelectedIds(new Set()) }
-    onOpenChange(nextOpen)
-  }, [onOpenChange])
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
+        setSearch("")
+        setSelectedIds(new Set())
+      }
+      onOpenChange(nextOpen)
+    },
+    [onOpenChange],
+  )
 
   /*
     Who can be picked — the organization directory for whoever may read it, the
@@ -96,7 +92,11 @@ export function useAssignMemberDialog({
     directory unconditionally 403'd for every manager without canManageUsers and
     the dialog listed nobody.
   */
-  const { members: allMembers, spaceMemberIds, isLoading } = useAssignableMembers({
+  const {
+    members: allMembers,
+    spaceMemberIds,
+    isLoading,
+  } = useAssignableMembers({
     spaceId,
     enabled: open,
   })
@@ -128,25 +128,31 @@ export function useAssignMemberDialog({
     return { spaceMembers: space, otherMembers: other }
   }, [filtered, spaceId, spaceMemberIds])
 
-  const handleToggle = useCallback((memberId: string) => {
-    if (isMultiMode) {
-      // Toggle in local state — no server call yet
-      setSelectedIds(prev => {
-        const next = new Set(prev)
-        if (next.has(memberId)) next.delete(memberId)
-        else next.add(memberId)
-        return next
-      })
-    } else {
-      // Single mode — assign immediately
-      onAssign(memberId)
-    }
-  }, [isMultiMode, onAssign])
+  const handleToggle = useCallback(
+    (memberId: string) => {
+      if (isMultiMode) {
+        // Toggle in local state — no server call yet
+        setSelectedIds((prev) => {
+          const next = new Set(prev)
+          if (next.has(memberId)) next.delete(memberId)
+          else next.add(memberId)
+          return next
+        })
+      } else {
+        // Single mode — assign immediately
+        onAssign(memberId)
+      }
+    },
+    [isMultiMode, onAssign],
+  )
 
   const handleSave = useCallback(async () => {
-    const added = [...selectedIds].filter(id => !originalIds.has(id))
-    const removed = [...originalIds].filter(id => !selectedIds.has(id))
-    if (added.length === 0 && removed.length === 0) { handleOpenChange(false); return }
+    const added = [...selectedIds].filter((id) => !originalIds.has(id))
+    const removed = [...originalIds].filter((id) => !selectedIds.has(id))
+    if (added.length === 0 && removed.length === 0) {
+      handleOpenChange(false)
+      return
+    }
 
     setSaving(true)
     try {
@@ -163,16 +169,7 @@ export function useAssignMemberDialog({
     }
   }, [selectedIds, originalIds, onSave, onAssign, onRemove, handleOpenChange])
 
-  // Find space name for section header
-  const spaceName = useMemo(() => {
-    if (!spaceId) return null
-    // We don't have direct access to space name here, so use a generic label
-    // The caller can enhance this if needed
-    return "Space"
-  }, [spaceId])
-
   return {
-    t,
     isMultiMode,
     search,
     setSearch,

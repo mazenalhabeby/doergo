@@ -1,4 +1,4 @@
-'use client';
+"use client"
 
 /**
  * Tiny subscription bus so scroll-driven components (laptop / phone showcases)
@@ -12,45 +12,45 @@
  * subscribers keep a native-scroll fallback of their own.
  */
 
-type Callback = () => void;
+type Callback = () => void
 
-const subscribers = new Set<Callback>();
+const subscribers = new Set<Callback>()
 
 /** Subscribe to Lenis scroll ticks. Returns an unsubscribe function. */
 export function onLenisScroll(cb: Callback): () => void {
-  subscribers.add(cb);
+  subscribers.add(cb)
   return () => {
-    subscribers.delete(cb);
-  };
+    subscribers.delete(cb)
+  }
 }
 
 /** Fired by useLenis on every Lenis scroll update. */
 export function emitLenisScroll(): void {
-  subscribers.forEach((cb) => cb());
+  subscribers.forEach((cb) => cb())
 }
 
 /** Whether a Lenis instance is currently driving scroll (has subscribers wired). */
-let lenisActive = false;
+let lenisActive = false
 export function setLenisActive(active: boolean): void {
-  lenisActive = active;
+  lenisActive = active
 }
 export function isLenisActive(): boolean {
-  return lenisActive;
+  return lenisActive
 }
 
 /* ── programmatic smooth scroll (nav anchor links) ── */
 
 type LenisLike = {
-  scrollTo: (target: HTMLElement | string | number, opts?: Record<string, unknown>) => void;
-  stop?: () => void;
-  start?: () => void;
-  scroll?: number;
-};
-let lenisInstance: LenisLike | null = null;
+  scrollTo: (target: HTMLElement | string | number, opts?: Record<string, unknown>) => void
+  stop?: () => void
+  start?: () => void
+  scroll?: number
+}
+let lenisInstance: LenisLike | null = null
 
 /** useLenis registers its instance here so anchor clicks can drive the scroll. */
 export function setLenisInstance(l: LenisLike | null): void {
-  lenisInstance = l;
+  lenisInstance = l
 }
 
 /**
@@ -71,34 +71,34 @@ export function setLenisInstance(l: LenisLike | null): void {
  * pause Lenis, let the browser scroll, then resume once it settles — Lenis
  * re-syncs to wherever the page ended up, with no snap.
  */
-export function scrollToOffset(top: number, behavior: ScrollBehavior = 'auto'): void {
-  if (typeof window === 'undefined') return;
-  const target = Math.max(0, top);
-  const lenis = lenisInstance;
+export function scrollToOffset(top: number, behavior: ScrollBehavior = "auto"): void {
+  if (typeof window === "undefined") return
+  const target = Math.max(0, top)
+  const lenis = lenisInstance
 
   if (!lenis?.stop || !lenis.start) {
-    window.scrollTo({ top: target, behavior });
-    return;
+    window.scrollTo({ top: target, behavior })
+    return
   }
 
-  lenis.stop(); // release the wheel so the native scroll isn't reverted
-  let settled = false;
-  let timer: ReturnType<typeof setTimeout>;
+  lenis.stop() // release the wheel so the native scroll isn't reverted
+  let settled = false
+  let timer: ReturnType<typeof setTimeout>
   const finish = () => {
-    if (settled) return;
-    settled = true;
-    window.removeEventListener('scroll', onScroll);
-    lenis.start?.(); // resume smoothing, re-synced to the final position
-  };
+    if (settled) return
+    settled = true
+    window.removeEventListener("scroll", onScroll)
+    lenis.start?.() // resume smoothing, re-synced to the final position
+  }
   const onScroll = () => {
-    clearTimeout(timer);
-    timer = setTimeout(finish, 140); // debounce: fire once scrolling stops
-  };
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.scrollTo({ top: target, behavior });
+    clearTimeout(timer)
+    timer = setTimeout(finish, 140) // debounce: fire once scrolling stops
+  }
+  window.addEventListener("scroll", onScroll, { passive: true })
+  window.scrollTo({ top: target, behavior })
   // An instant jump may emit no scroll event at all; settle on the next frame.
-  if (behavior === 'auto') requestAnimationFrame(() => requestAnimationFrame(finish));
-  setTimeout(finish, 1600); // safety: never leave Lenis stopped
+  if (behavior === "auto") requestAnimationFrame(() => requestAnimationFrame(finish))
+  setTimeout(finish, 1600) // safety: never leave Lenis stopped
 }
 
 /**
@@ -106,13 +106,25 @@ export function scrollToOffset(top: number, behavior: ScrollBehavior = 'auto'): 
  * navbar so the section top isn't hidden under it.
  */
 export function scrollToHash(hash: string, offset = -76): void {
-  if (typeof document === 'undefined') return;
-  const el = document.querySelector<HTMLElement>(hash);
-  if (!el) return;
-  const top = Math.max(0, el.getBoundingClientRect().top + window.scrollY + offset);
+  if (typeof document === "undefined") return
+  const el = document.querySelector<HTMLElement>(hash)
+  if (!el) return
+  const top = Math.max(0, el.getBoundingClientRect().top + window.scrollY + offset)
 
-  scrollToOffset(top, 'smooth');
+  scrollToOffset(top, "smooth")
 
   // reflect the section in the URL (shareable) without triggering a jump
-  if (window.history?.replaceState) window.history.replaceState(null, '', hash);
+  if (window.history?.replaceState) window.history.replaceState(null, "", hash)
+}
+
+/** An on-page nav link's click — smooth-scroll via Lenis (native anchor jumps aren't smooth). */
+export const navTo = (hash: string) => (e: { preventDefault(): void }) => {
+  e.preventDefault()
+  scrollToHash(hash)
+}
+
+/** The logo / "back to top" click. */
+export function backToTop(e: { preventDefault(): void }): void {
+  e.preventDefault()
+  scrollToHash("#top", 0)
 }

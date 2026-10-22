@@ -7,7 +7,7 @@ import { Package } from "lucide-react"
 
 import { assetsApi, type CustodyPeriodDto } from "@/lib/api"
 import { custodyDays, formatCents } from "@hbcfield/shared/client"
-import { CustodySpan, HasItNowBadge } from "@/components/assets/custody-parts"
+import { CustodySpan, HasItNowBadge } from "@/components/assets/custody-period"
 import { Skeleton } from "@/components/ui/skeleton"
 import { keys } from "@/lib/query-keys"
 import { DashedEmptyBox } from "@/components/ui/empty-note"

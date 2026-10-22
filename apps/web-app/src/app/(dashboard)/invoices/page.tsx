@@ -8,32 +8,28 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { PAGE_WIDTH } from "@/components/ui/page-width"
 import { SpaceTabs } from "@/components/spaces/space-tabs"
+import { useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import { InvoiceListDialogs } from "./_components/list/invoice-list-dialogs"
-import { useInvoicesPageInner } from "./_hooks/use-invoices-page-inner"
-import { InvoicesPageInnerSearchPlaceholder } from "./_components/invoices-page-inner-search-placeholder"
+import { AgingSummary } from "./_components/list/aging-summary"
+import { InvoiceList } from "./_components/list/invoice-list"
+import { useInvoiceList } from "./_hooks/use-invoice-list"
 
 export default function InvoicesPage() {
   return (
     <PlanGate feature="invoicing">
-      <InvoicesPageInner />
+      <InvoiceBook />
     </PlanGate>
   )
 }
 
-function InvoicesPageInner() {
-  const vm = useInvoicesPageInner()
-  const {
-    t,
-    router,
-    isAdmin,
-    deleteTarget,
-    setDeleteTarget,
-    sendTarget,
-    setSendTarget,
-    scope,
-    statusMutation,
-    deleteMutation,
-  } = vm
+/** One book of invoices — the whole organization's, or one workspace's. */
+function InvoiceBook() {
+  const { t } = useTranslation()
+  const router = useRouter()
+  const list = useInvoiceList()
+  const { isAdmin, deleteTarget, setDeleteTarget, sendTarget, setSendTarget, scope, statusMutation, deleteMutation } =
+    list
 
   return (
     <div className="min-h-full bg-background">
@@ -83,7 +79,42 @@ function InvoicesPageInner() {
         )}
       </div>
 
-      <InvoicesPageInnerSearchPlaceholder vm={vm} />
+      <div className={cn(PAGE_WIDTH, "py-6")}>
+        {/* ── The money, and the shape of it ──────────────────────────── */}
+        <AgingSummary
+          aging={list.aging}
+          ccy={list.ccy}
+          mixedCurrencies={list.mixedCurrencies}
+          awaiting={list.awaiting}
+          bandFilter={list.bandFilter}
+          setBandFilter={list.setBandFilter}
+          setStatusFilter={list.setStatusFilter}
+          setSearch={list.setSearch}
+        />
+
+        {/* ── The list ─────────────────────────────────────────────────── */}
+        <InvoiceList
+          search={list.search}
+          setSearch={list.setSearch}
+          statusFilter={list.statusFilter}
+          setStatusFilter={list.setStatusFilter}
+          companyFilter={list.companyFilter}
+          setCompanyFilter={list.setCompanyFilter}
+          setBandFilter={list.setBandFilter}
+          companies={list.companies}
+          severalCompanies={list.severalCompanies}
+          rows={list.rows}
+          invoices={list.invoices}
+          groups={list.groups}
+          ccy={list.ccy}
+          filtering={list.filtering}
+          isLoading={list.isLoading}
+          isAdmin={isAdmin}
+          step={list.step}
+          statusMutation={statusMutation}
+          setDeleteTarget={setDeleteTarget}
+        />
+      </div>
 
       <InvoiceListDialogs
         sendTarget={sendTarget}

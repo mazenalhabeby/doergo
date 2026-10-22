@@ -53,7 +53,7 @@ const KNOWN_INLINE_PICKERS = [
   "src/app/(dashboard)/tasks/_components/create-task/custom-field-input.tsx",
   "src/app/(dashboard)/tasks/_components/complete-sprint-dialog.tsx", // moved out of sprint-management.tsx
   "src/app/(dashboard)/tasks/[id]/_components/edit-task-dialog.tsx",
-  "src/app/(dashboard)/tasks/[id]/_components/edit-task-dialog-sidebar.tsx", // the same picker, moved out of edit-task-dialog.tsx
+  "src/app/(dashboard)/tasks/[id]/_components/edit-task-when-fields.tsx", // the same picker, moved out of edit-task-dialog.tsx
   "src/app/(dashboard)/tasks/[id]/_components/inline-edit-field.tsx",
 ]
 

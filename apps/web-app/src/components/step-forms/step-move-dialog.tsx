@@ -1,12 +1,35 @@
 "use client"
 
 import { Loader2, AlertCircle } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import type { StepForm, StepFormAnswers } from "@hbcfield/shared/client"
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { stepFieldLabel } from "@/lib/step-forms"
 import { cn } from "@/lib/utils"
-import { useStepMoveDialog, type StepMoveDialogProps } from "./use-step-move-dialog"
+import { useStepMoveAnswers } from "./use-step-move-answers"
+import { StepFormAnswerInput } from "./step-form-answer-input"
+
+export interface StepMoveDialogProps {
+  open: boolean
+  taskId: string
+  /** The step's name, as the reader sees it. */
+  stepName: string
+  form: StepForm
+  /** The standard field-service report of a step with no form of its own. */
+  legacy: boolean
+  /** Send the move with these answers. Throws the server's refusal. */
+  onSubmit: (answers: StepFormAnswers) => Promise<void>
+  onCancel: () => void
+}
 
 /**
  * "Ask when a job moves here", on the web.
@@ -17,20 +40,18 @@ import { useStepMoveDialog, type StepMoveDialogProps } from "./use-step-move-dia
  * nothing the member typed is lost to a toast.
  */
 export function StepMoveDialog({ open, taskId, stepName, form, legacy, onSubmit, onCancel }: StepMoveDialogProps) {
-  const {
-    t,
-    tr,
-    errors,
-    general,
-    busy,
-    required,
-    errorText,
-    submit,
-    fieldBody,
-  } = useStepMoveDialog({ open, taskId, stepName, form, legacy, onSubmit, onCancel })
+  const { t } = useTranslation()
+  const tr = (key: string, fallback: string) => t(key, { defaultValue: fallback })
+  const { values, files, errors, general, busy, required, set, errorText, addPhotos, removePhoto, submit } =
+    useStepMoveAnswers({ taskId, form, onSubmit })
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o && !busy) onCancel() }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o && !busy) onCancel()
+      }}
+    >
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("stepForm.dialog.title", { step: stepName, defaultValue: "Move to {{step}}" })}</DialogTitle>
@@ -51,20 +72,36 @@ export function StepMoveDialog({ open, taskId, stepName, form, legacy, onSubmit,
             return (
               <div
                 key={field.id}
-                className={cn("space-y-2 rounded-xl border bg-muted/20 p-3", errs && "border-red-400 dark:border-red-500/60")}
+                className={cn(
+                  "space-y-2 rounded-xl border bg-muted/20 p-3",
+                  errs && "border-red-400 dark:border-red-500/60",
+                )}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium">{stepFieldLabel(field, tr)}</span>
                   <span
                     className={cn(
                       "text-[10px] font-medium uppercase tracking-wide",
-                      field.required ? "text-primary" : "text-muted-foreground")}>
+                      field.required ? "text-primary" : "text-muted-foreground",
+                    )}
+                  >
                     {field.required ? t("stepForm.required", "Required") : t("stepForm.optional", "Optional")}
                   </span>
                 </div>
-                {fieldBody(field)}
+                <StepFormAnswerInput
+                  field={field}
+                  value={values[field.id]}
+                  disabled={!!busy}
+                  files={files.current}
+                  set={set}
+                  addPhotos={addPhotos}
+                  removePhoto={removePhoto}
+                />
                 {errs && (
-                  <p className="flex items-start gap-1.5 text-xs text-red-600 dark:text-red-400" data-testid={`step-error-${field.id}`}>
+                  <p
+                    className="flex items-start gap-1.5 text-xs text-red-600 dark:text-red-400"
+                    data-testid={`step-error-${field.id}`}
+                  >
                     <AlertCircle className="mt-px size-3.5 shrink-0" />
                     {errorText(errs[0]!)}
                   </p>

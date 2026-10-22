@@ -1,6 +1,6 @@
 import { readdirSync, statSync } from 'fs'
 import { join } from 'path';
-import { readSource } from "../test-utils/read-source"
+import { readSource, readFolder } from "../test-utils/read-source"
 
 /*
   There are TWO clock-in controls on the web — the navbar widget and the button
@@ -83,7 +83,7 @@ describe('clocking in has one implementation', () => {
 
   it('offers no remote-or-field choice to a member who has workspaces', () => {
     const widget = readSource(join(SRC, 'components', 'attendance', 'clock-widget.tsx'), 'utf8');
-    const page = readSource(join(SRC, 'app', '(dashboard)', 'my', 'attendance', 'page.tsx'), 'utf8');
+    const page = readFolder(join(SRC, 'app', '(dashboard)', 'my', 'attendance'), 'utf8');
     for (const src of [widget, page]) {
       expect(src).not.toMatch(/startAway|awayPickerProps|clockInAway/);
     }
@@ -91,7 +91,7 @@ describe('clocking in has one implementation', () => {
 
   it('shows the same picker on both surfaces', () => {
     const widget = readSource(join(SRC, 'components', 'attendance', 'clock-widget.tsx'), 'utf8');
-    const page = readSource(join(SRC, 'app', '(dashboard)', 'my', 'attendance', 'page.tsx'), 'utf8');
+    const page = readFolder(join(SRC, 'app', '(dashboard)', 'my', 'attendance'), 'utf8');
     for (const src of [widget, page]) {
       expect(src).toContain('useClockIn');
       expect(src).toContain('<ClockInPicker');

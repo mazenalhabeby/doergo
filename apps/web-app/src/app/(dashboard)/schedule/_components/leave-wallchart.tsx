@@ -10,8 +10,8 @@ import type { FloorSpace, OrgTimeOffRequest } from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { isAbsence } from "@/lib/requests"
-import { SpaceBlock } from "./leave-wallchart-space"
-import { type CoverRangeSpace, restingFn } from "./leave-wallchart-days"
+import { SpaceBlock } from "./space-block"
+import { type CoverRangeSpace, restingFn } from "./wallchart-days"
 
 /**
  * The wallchart: people down the side, days across, leave drawn as bars.
@@ -150,8 +150,11 @@ export function LeaveWallchart({
           {/* Dates */}
           <div className="grid bg-muted/50 border-b border-border" style={template}>
             <div
-              className={"sticky left-0 z-20 bg-muted/50 px-3 py-1.5 text-[11px] font-semibold " +
-                "uppercase tracking-wider text-muted-foreground border-r border-border"}>
+              className={
+                "sticky left-0 z-20 bg-muted/50 px-3 py-1.5 text-[11px] font-semibold " +
+                "uppercase tracking-wider text-muted-foreground border-r border-border"
+              }
+            >
               {t("cover.chart.team", "Team")}
             </div>
             {days.map((d) => (

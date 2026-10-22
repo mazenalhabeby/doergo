@@ -14,7 +14,10 @@ import { requirementPayload } from "../_lib/type-options"
  * edited, or from the starter it begins as.
  */
 export function useTypeEditor({
-  type, starter, existingKeys, onClose,
+  type,
+  starter,
+  existingKeys,
+  onClose,
 }: {
   type: DocumentTypeRow | null
   starter: StarterDocumentType | null
@@ -27,9 +30,7 @@ export function useTypeEditor({
 
   const [label, setLabel] = useState(
     type?.label ??
-      (starter?.key
-        ? t(`documents.types.starters.${starter.key}.label`, { defaultValue: starter.label })
-        : ""),
+      (starter?.key ? t(`documents.types.starters.${starter.key}.label`, { defaultValue: starter.label }) : ""),
   )
   const [description, setDescription] = useState(
     type?.description ??
@@ -69,9 +70,7 @@ export function useTypeEditor({
     routes existed — so an untouched type keeps behaving exactly as it did.
   */
   const [route, setRoute] = useState<string[]>(
-    Array.isArray(type?.signerRoute)
-      ? (type!.signerRoute as Array<{ role: string }>).map((s) => s.role)
-      : [],
+    Array.isArray(type?.signerRoute) ? (type!.signerRoute as Array<{ role: string }>).map((s) => s.role) : [],
   )
   const [retentionMonths, setRetentionMonths] = useState<number | null>(
     type?.retentionMonths ?? starter?.retentionMonths ?? null,
@@ -86,9 +85,14 @@ export function useTypeEditor({
     mutationFn: async () => {
       if (isNew) {
         return documentsApi.createType({
-          key, label, description,
-          cadence, direction, signatureMode,
-          isCredential, hasExpiry,
+          key,
+          label,
+          description,
+          cadence,
+          direction,
+          signatureMode,
+          isCredential,
+          hasExpiry,
           requiredForWorkflowIds: isCredential ? gates : [],
           ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
           visibleToRoleIds,
@@ -111,8 +115,11 @@ export function useTypeEditor({
         flipping direction would hand members a delete button for payslips.
       */
       return documentsApi.updateType(type!.id, {
-        label, description, signatureMode,
-        isCredential, hasExpiry,
+        label,
+        description,
+        signatureMode,
+        isCredential,
+        hasExpiry,
         requiredForWorkflowIds: isCredential ? gates : [],
         ...requirementPayload(direction, requiredFromAll, requiredFromRoleIds),
         visibleToRoleIds,
@@ -136,15 +143,45 @@ export function useTypeEditor({
   const canSave = !!label.trim() && !!key && !keyTaken && !save.isPending
 
   return {
-    isNew, key, keyTaken, save, canSave,
-    label, setLabel, description, setDescription,
-    direction, setDirection, cadence, setCadence,
-    signatureMode, setSignatureMode,
-    isCredential, setIsCredential, hasExpiry, setHasExpiry,
-    gates, setGates,
-    requiredFromAll, setRequiredFromAll, requiredFromRoleIds, setRequiredFromRoleIds,
-    visibleToRoleIds, setVisibleToRoleIds,
-    twoSided, setTwoSided, multiPage, setMultiPage, scanShape, setScanShape,
-    route, setRoute, retentionMonths, setRetentionMonths,
+    isNew,
+    key,
+    keyTaken,
+    save,
+    canSave,
+    label,
+    setLabel,
+    description,
+    setDescription,
+    direction,
+    setDirection,
+    cadence,
+    setCadence,
+    signatureMode,
+    setSignatureMode,
+    isCredential,
+    setIsCredential,
+    hasExpiry,
+    setHasExpiry,
+    gates,
+    setGates,
+    requiredFromAll,
+    setRequiredFromAll,
+    requiredFromRoleIds,
+    setRequiredFromRoleIds,
+    visibleToRoleIds,
+    setVisibleToRoleIds,
+    twoSided,
+    setTwoSided,
+    multiPage,
+    setMultiPage,
+    scanShape,
+    setScanShape,
+    route,
+    setRoute,
+    retentionMonths,
+    setRetentionMonths,
   }
 }
+
+/** The type editor's form, as its steps read it. */
+export type TypeEditorForm = ReturnType<typeof useTypeEditor>

@@ -7,8 +7,8 @@ import { isClockedIn } from "../_components/helpers"
 import type { AttendanceFacts } from "./build-workspace-boxes"
 
 /**
- * The dashboard's derived maps — the bodies of useDashboardData's memos, moved here
- * unchanged. The hook still memoises each one, with the same dependencies, in the same order.
+ * The dashboard's derived maps — the bodies of useDashboardData's memos. The hook memoises
+ * each one, with its own dependencies, in the order they always ran.
  */
 
 /** Who each id is: roster users, then attendance-derived records, then the real directory (fullest wins). */

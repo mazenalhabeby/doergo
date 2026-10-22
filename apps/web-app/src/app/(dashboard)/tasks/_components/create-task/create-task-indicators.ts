@@ -2,10 +2,7 @@ import { format } from "date-fns"
 import type { useTranslation } from "react-i18next"
 import type { Phase, Sprint } from "@/lib/api"
 
-/**
- * The one-line summaries beside each collapsed section of the New Task dialog — moved here
- * unchanged from useCreateTaskForm (plain values, no hooks).
- */
+/** The one-line summaries beside each collapsed section of the New Task dialog (plain values, no hooks). */
 export function createTaskIndicators({
   t,
   startDate,

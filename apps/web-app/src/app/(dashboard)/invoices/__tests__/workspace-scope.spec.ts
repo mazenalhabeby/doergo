@@ -24,7 +24,7 @@ const read = (rel: string) => strip(readSource(path.join(DASHBOARD, rel), "utf8"
 
 describe("the workspace's invoices", () => {
   it("are reached at their own address, like clients and assets", () => {
-    const settings = read("locations/[id]/page.tsx")
+    const settings = read("locations/[id]/page.tsx") + read("locations/[id]/_components/moved-tabs.ts")
     expect(settings).toMatch(/invoices:\s*["']\/invoices["']/)
     // The tab itself is gone, not merely hidden.
     expect(settings).not.toContain("InvoicesTab")
@@ -42,7 +42,8 @@ describe("the workspace's invoices", () => {
   })
 
   it("are linked from the workspace that owns them", () => {
-    const general = read("locations/[id]/_components/general-tab.tsx")
+    // The General tab's row of links to what the workspace has.
+    const general = read("locations/[id]/_components/workspace-content-links.tsx")
     expect(general).toMatch(/href:\s*"\/invoices"/)
     /*
       ⚠️ Invoicing is an organization OPTION, not a per-space module, so it is

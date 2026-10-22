@@ -9,17 +9,8 @@ import { WizardShell } from "./wizard-shell"
 import { ChoiceCard } from "./choice-card"
 import { WizardIcon } from "./wizard-icons"
 import { useSetupWizard, BUILD_STEPS } from "./use-setup-wizard"
-import {
-  Hero,
-  Kicker,
-  ChipLabel,
-  Chip,
-  Divider,
-  BuildRow,
-  DoneRow,
-  iconForArea,
-} from "./setup-wizard-helpers"
-import { SetupWizardGroup } from "./setup-wizard-group"
+import { Hero, Kicker, ChipLabel, Chip, Divider, BuildRow, DoneRow, iconForArea } from "./setup-wizard-helpers"
+import { AreasStep } from "./areas-step"
 
 /**
  * Guided org-builder for a brand-new admin. Collects a plan through 3 tap-first
@@ -27,7 +18,6 @@ import { SetupWizardGroup } from "./setup-wizard-group"
  * engine. `onFinish` hands control back to the onboarding flow.
  */
 export function SetupWizard({ onFinish }: { onFinish: () => void }) {
-  const vm = useSetupWizard({ onFinish })
   const {
     t,
     user,
@@ -56,7 +46,7 @@ export function SetupWizard({ onFinish }: { onFinish: () => void }) {
     canBack,
     tools,
     firstName,
-  } = vm
+  } = useSetupWizard({ onFinish })
 
   return (
     <WizardShell
@@ -108,9 +98,12 @@ export function SetupWizard({ onFinish }: { onFinish: () => void }) {
             {/* live understanding */}
             {plan && text.trim().length >= 3 && (
               <div
-                className={"mt-4 animate-in fade-in slide-in-from-top-1 rounded-xl border " +
+                className={
+                  "mt-4 animate-in fade-in slide-in-from-top-1 rounded-xl border " +
                   "border-green-200 border-l-4 border-l-green-600 bg-card p-5 text-left " +
-                  "shadow-md"}>
+                  "shadow-md"
+                }
+              >
                 <div className="mb-3 inline-flex items-center gap-1.5 text-[11.5px] font-extrabold uppercase tracking-wide text-green-700">
                   <WizardIcon name="sparkles" className="size-3.5" /> {t("setup.work.understoodEyebrow")}
                 </div>
@@ -118,7 +111,9 @@ export function SetupWizard({ onFinish }: { onFinish: () => void }) {
                   <span className="grid size-9 place-items-center rounded-[10px] bg-green-50 text-green-600">
                     <WizardIcon name={plan.industryIcon} className="size-[19px]" />
                   </span>
-                  <span>{t("setup.work.youreIn", { industry: industryName(plan.industryKey, plan.industryLabel) })}</span>
+                  <span>
+                    {t("setup.work.youreIn", { industry: industryName(plan.industryKey, plan.industryLabel) })}
+                  </span>
                 </div>
                 <p className="mb-1 mt-1.5 text-[13px] text-muted-foreground">{t("setup.work.understoodSub")}</p>
 
@@ -168,7 +163,17 @@ export function SetupWizard({ onFinish }: { onFinish: () => void }) {
       )}
 
       {/* 2 — areas / grouping */}
-      <SetupWizardGroup vm={vm} />
+      {step === 2 && plan && (
+        <AreasStep
+          plan={plan}
+          fromText={fromText}
+          setFromText={setFromText}
+          areaName={areaName}
+          industryName={industryName}
+          confirmDerivedAreas={confirmDerivedAreas}
+          pickGroup={pickGroup}
+        />
+      )}
 
       {/* 3 — team */}
       {step === 3 && (
@@ -232,15 +237,22 @@ export function SetupWizard({ onFinish }: { onFinish: () => void }) {
           <Hero icon="checkCircle" green />
           <h1 className="mb-3 text-[28px] font-extrabold tracking-tight">{t("setup.done.title")}</h1>
           <div
-            className={"mx-auto mb-5 inline-flex items-center gap-2 rounded-full border " +
+            className={
+              "mx-auto mb-5 inline-flex items-center gap-2 rounded-full border " +
               "border-green-100 bg-green-50 px-4 py-1.5 text-[13px] font-semibold " +
-              "text-green-700"}>
+              "text-green-700"
+            }
+          >
             <WizardIcon name="check" className="size-[15px]" />
             {t("setup.done.flag", { org: user?.organizationName || t("setup.yourCompany") })}
           </div>
           <div className="mx-auto mb-5 max-w-[500px] space-y-2.5 text-left">
             <DoneRow icon="folder" title={t("setup.done.areasTitle")} detail={spaceNames.join(", ")} />
-            <DoneRow icon="wrench" title={t("setup.done.toolsTitle")} detail={tools.map((tl) => toolName(tl.key)).join(" · ")} />
+            <DoneRow
+              icon="wrench"
+              title={t("setup.done.toolsTitle")}
+              detail={tools.map((tl) => toolName(tl.key)).join(" · ")}
+            />
             <DoneRow
               icon="mail"
               title={teamSize && teamSize > 0 ? t("setup.done.teamTitle") : t("setup.done.teamSoloTitle")}

@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EmptyState } from "./section-header"
 import { useWorkspaceAutoClock } from "./member-auto-clock"
 import { BILL_BY, roleQueryKey, useBillByLabel, useCents, useSpaceCurrency, type BillBy } from "./work-roles"
-import { RoleTag } from "./members-people-helpers"
+import { RoleTag } from "./role-tag"
 import { AddMemberDialog } from "./add-member-dialog"
 import { MemberPanel } from "./member-panel"
 

@@ -31,7 +31,7 @@ import { keys} from "@/lib/query-keys"
 import { serverErrorMessage } from "@/lib/server-error"
 import { KIND_COLOR } from "../_lib/kinds"
 import { Inbox } from "lucide-react"
-import { whenText } from "./item-popover-parts"
+import { offsetLabel, whenText } from "../_lib/item-text"
 
 interface Props {
   item: CalendarItem | null
@@ -277,12 +277,4 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeav
       </PopoverContent>
     </Popover>
   )
-}
-
-export function offsetLabel(m: number, t: (k: string, o?: Record<string, unknown>) => string): string {
-  if (m === 0) return t("calendar.atStart")
-  if (m < 60) return t("calendar.minutes", { count: m })
-  if (m < 1440) return t("calendar.hours", { count: m / 60 })
-  if (m < 10080) return t("calendar.days", { count: m / 1440 })
-  return t("calendar.weeks", { count: m / 10080 })
 }

@@ -5,10 +5,7 @@ import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { phasesApi, sprintsApi, epicsApi, customFieldsApi } from "@/lib/api"
 
-/**
- * What the New Task dialog lists — moved here unchanged from useCreateTaskForm, which
- * calls this at the same point, so the queries run in the same order.
- */
+/** What the New Task dialog lists: active custom fields, phases, sprints and epics. */
 export function useCreateTaskLists(open: boolean) {
   // ── Fetch custom fields ──
   const { data: customFields } = useQuery({

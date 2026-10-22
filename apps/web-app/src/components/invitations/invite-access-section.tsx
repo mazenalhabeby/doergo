@@ -1,13 +1,36 @@
 "use client"
 
+import { useMemo, type Dispatch, type SetStateAction } from "react"
+import { useTranslation } from "react-i18next"
 import { ChevronDown, ShieldCheck } from "lucide-react"
+import type { AccessDraft } from "@hbcfield/shared/client"
 import { AccessFields } from "@/components/permissions/access-fields"
 import { cn } from "@/lib/utils"
-import type { CreateInvitationDialogState } from "./use-create-invitation-dialog"
 
-/** Part of the parent component's markup, moved here unchanged; it reads the state from `vm`. */
-export function InviteAccessSection({ vm }: { vm: CreateInvitationDialogState }) {
-  const { t, isExternal, access, patchAccess, setAccessOpen, platformSummary, accessOpen } = vm
+/** The invited member's access profile, collapsed to a one-line summary until opened. */
+export function InviteAccessSection({
+  isExternal,
+  access,
+  patchAccess,
+  accessOpen,
+  setAccessOpen,
+}: {
+  isExternal: boolean
+  access: AccessDraft
+  patchAccess: (p: Partial<AccessDraft>) => void
+  accessOpen: boolean
+  setAccessOpen: Dispatch<SetStateAction<boolean>>
+}) {
+  const { t } = useTranslation()
+  const platformSummary = useMemo(() => {
+    const key =
+      access.platforms === "web"
+        ? "accessBuilder.platforms.webOnly"
+        : access.platforms === "mobile"
+          ? "accessBuilder.platforms.mobileOnly"
+          : "accessBuilder.platforms.both"
+    return t(key)
+  }, [access.platforms, t])
   return (
     <>
       {/* Access & permissions — pre-configured so the member's first screen

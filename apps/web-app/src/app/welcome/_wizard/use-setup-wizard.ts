@@ -7,12 +7,12 @@ import { locationsApi } from "@/lib/api"
 import { INDUSTRY_CARDS, classifyWork, planFromIndustry, toolsFromModules, type WorkPlan } from "@/lib/setup"
 import { buildOrg, type BuildStep } from "@/lib/setup/build"
 
-type Grouping = "byType" | "byPlace" | "byTeam" | "pickForMe"
+export type Grouping = "byType" | "byPlace" | "byTeam" | "pickForMe"
 
 export const BUILD_STEPS: BuildStep[] = ["company", "spaces", "tools", "finish"]
 
-/** SetupWizard's state and handlers — everything before its markup, moved here unchanged. */
-export function useSetupWizard({ onFinish }: Pick<{ onFinish: () => void }, 'onFinish'>) {
+/** SetupWizard's state: the plan read from the answers, the step, and the build that runs at step 4. */
+export function useSetupWizard({ onFinish }: { onFinish: () => void }) {
   const { t } = useTranslation()
   const { user, refreshUser } = useAuth()
 
@@ -188,6 +188,3 @@ export function useSetupWizard({ onFinish }: Pick<{ onFinish: () => void }, 'onF
     firstName,
   }
 }
-
-/** What SetupWizard and its sections read. */
-export type SetupWizardState = ReturnType<typeof useSetupWizard>

@@ -1,7 +1,7 @@
 import type { TourDef } from "./types"
 import { step } from "./tour-steps"
 
-/** The first-run tours, one per role, and the task list tours. Part of `TOURS`, moved here unchanged. */
+/** The first-run tours, one per role, and the task list tours. Part of `TOURS`. */
 export const WELCOME_TOURS: TourDef[] = [
   // ── ADMIN — the org owner: full navigation + where everything lives ──
   {
@@ -17,12 +17,12 @@ export const WELCOME_TOURS: TourDef[] = [
       {
         ...step("welcomeAdmin", "spaceHeader", "dash-space-header"),
         enter: "dash-space-box",
-        optional: true
+        optional: true,
       }, // live headcount (opens the space)
       { ...step("welcomeAdmin", "openSpace", "dash-space-members"), optional: true }, // on-site team (present now)
       {
         ...step("welcomeAdmin", "member", "dash-space-member"),
-        optional: true
+        optional: true,
       }, // one teammate → tap to message / see jobs / manage access
       { ...step("welcomeAdmin", "field", "dash-space-field"), optional: true }, // out on a job
       { ...step("welcomeAdmin", "offSite", "dash-space-offsite"), optional: true }, // working remotely

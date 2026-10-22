@@ -9,22 +9,16 @@ import { recurringTasksApi, workflowsApi, type RecurringTaskTemplate, type Recur
 import { todayKey } from "@hbcfield/shared/client"
 import { useActiveSpaces } from "@/hooks/use-space-directory"
 
-/** TemplateDialog's state and handlers — everything before its markup, moved here unchanged. */
+/** A recurring template's form: every field, seeded from the template being edited, and the save. */
 export function useTemplateDialog({
-  open,
   onOpenChange,
   existingTemplate,
   defaultSpaceId = null,
-}: Pick<
-  {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    existingTemplate: RecurringTaskTemplate | null
-    /** Pre-selected space when creating new (e.g. the active space filter). */
-    defaultSpaceId?: string | null
-  },
-  "open" | "onOpenChange" | "existingTemplate" | "defaultSpaceId"
->) {
+}: {
+  onOpenChange: (open: boolean) => void
+  existingTemplate: RecurringTaskTemplate | null
+  defaultSpaceId?: string | null
+}) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const isEditing = !!existingTemplate
@@ -51,7 +45,6 @@ export function useTemplateDialog({
   const [estimatedHours, setEstimatedHours] = useState<string>(existingTemplate?.estimatedHours?.toString() || "")
   const [locationAddress, setLocationAddress] = useState(existingTemplate?.locationAddress || "")
   const [checklistItems, setChecklistItems] = useState<string[]>(existingTemplate?.checklist?.map((c) => c.text) || [])
-  const [newChecklistItem, setNewChecklistItem] = useState("")
 
   const buildPayload = () => ({
     title,
@@ -92,16 +85,7 @@ export function useTemplateDialog({
 
   const mutation = isEditing ? updateMutation : createMutation
 
-  const addChecklistItem = () => {
-    const trimmed = newChecklistItem.trim()
-    if (trimmed) {
-      setChecklistItems([...checklistItems, trimmed])
-      setNewChecklistItem("")
-    }
-  }
-
   return {
-    t,
     isEditing,
     title,
     setTitle,
@@ -133,12 +117,6 @@ export function useTemplateDialog({
     setLocationAddress,
     checklistItems,
     setChecklistItems,
-    newChecklistItem,
-    setNewChecklistItem,
     mutation,
-    addChecklistItem,
   }
 }
-
-/** What TemplateDialog and its sections read. */
-export type TemplateDialogState = ReturnType<typeof useTemplateDialog>

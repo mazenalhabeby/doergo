@@ -16,7 +16,7 @@ import { UserAvatar } from "@/components/common/user-avatar"
 import { AccessFields, Field } from "@/components/permissions/access-fields"
 import { notify } from "@/lib/toast"
 import { runBulk, isFailure, firstFailureReason } from "@/lib/concurrency"
-import { canon } from "./access-builder-parts"
+import { canon } from "./access-draft-canon"
 
 /**
  * Access Builder — the single place to configure a member: reach (platform,

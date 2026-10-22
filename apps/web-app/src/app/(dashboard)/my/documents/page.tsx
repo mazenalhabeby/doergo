@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import { Search, Loader2, PenLine, DownloadCloud, Upload, AlertTriangle } from "lucide-react"
 import { waitingOnMember } from "@hbcfield/shared/client"
 import { SupplyDocumentDialog } from "./_components/supply-document-dialog"
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { useMyDocumentsPage } from "./_hooks/use-my-documents-page"
-import { MyDocumentsPageMy } from "./_components/my-documents-page-my"
+import { MyDocumentList } from "./_components/my-document-list"
 
 /*
   A member's own file.
@@ -28,12 +29,9 @@ import { MyDocumentsPageMy } from "./_components/my-documents-page-my"
 */
 
 export default function MyDocumentsPage() {
-  const vm = useMyDocumentsPage()
+  const { t } = useTranslation()
   const {
-    t,
-    i18n,
     isExternalMember,
-    router,
     activeType,
     setActiveType,
     year,
@@ -45,7 +43,6 @@ export default function MyDocumentsPage() {
     supplying,
     setSupplying,
     types,
-    mayRemove,
     documents,
     isLoading,
     requirements,
@@ -53,11 +50,8 @@ export default function MyDocumentsPage() {
     years,
     usedTypes,
     awaiting,
-    open,
-    opening,
     exportAll,
-    remove,
-  } = vm
+  } = useMyDocumentsPage()
 
   return (
     <div className="w-full">
@@ -66,9 +60,7 @@ export default function MyDocumentsPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             {t("documents.my.title")}
           </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {t("documents.my.subtitle")}
-          </p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("documents.my.subtitle")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {/* Only when the organization actually asks its members for
@@ -85,9 +77,11 @@ export default function MyDocumentsPage() {
           )}
           {documents.length > 0 && (
             <Button variant="outline" size="sm" onClick={() => exportAll.mutate()} disabled={exportAll.isPending}>
-              {exportAll.isPending
-                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                : <DownloadCloud className="mr-2 h-4 w-4" />}
+              {exportAll.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <DownloadCloud className="mr-2 h-4 w-4" />
+              )}
               {t("documents.export.action")}
             </Button>
           )}
@@ -113,13 +107,14 @@ export default function MyDocumentsPage() {
             {requirements.filter(waitingOnMember).map((r) => (
               <li key={r.typeId} className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="text-slate-800 dark:text-slate-200">{r.label}</span>
-                <span className="text-slate-500 dark:text-slate-400">
-                  {t(`documents.required.state.${r.state}`)}
-                </span>
+                <span className="text-slate-500 dark:text-slate-400">{t(`documents.required.state.${r.state}`)}</span>
                 {r.blocksWork && (
                   <span
-                    className={"rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold " +
-                      "text-amber-700 dark:bg-amber-950 dark:text-amber-400"}>
+                    className={
+                      "rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold " +
+                      "text-amber-700 dark:bg-amber-950 dark:text-amber-400"
+                    }
+                  >
                     {t("documents.required.blocksWork")}
                   </span>
                 )}
@@ -135,11 +130,7 @@ export default function MyDocumentsPage() {
         </div>
       )}
 
-      <SupplyDocumentDialog
-        types={types}
-        open={supplying}
-        onClose={() => setSupplying(false)}
-      />
+      <SupplyDocumentDialog types={types} open={supplying} onClose={() => setSupplying(false)} />
 
       {exported && (
         <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
@@ -151,14 +142,16 @@ export default function MyDocumentsPage() {
               {t("common.close")}
             </button>
           </div>
-          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
-            {t("documents.export.hint")}
-          </p>
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t("documents.export.hint")}</p>
           <ul className="space-y-1">
             {exported.map((f, i) => (
               <li key={i}>
-                <a href={f.url} target="_blank" rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:underline dark:text-blue-400">
+                <a
+                  href={f.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                >
                   {f.title}
                 </a>
               </li>
@@ -208,13 +201,17 @@ export default function MyDocumentsPage() {
             value={year ?? ""}
             onChange={(e) => setYear(e.target.value ? Number(e.target.value) : null)}
             aria-label={t("documents.year")}
-            className={"h-10 rounded-md border border-slate-200 bg-white px-3 text-sm " +
+            className={
+              "h-10 rounded-md border border-slate-200 bg-white px-3 text-sm " +
               "text-slate-900 dark:border-slate-700 dark:bg-slate-900 " +
-              "dark:text-slate-100"}
+              "dark:text-slate-100"
+            }
           >
             <option value="">{t("documents.allYears")}</option>
             {years.map((y) => (
-              <option key={y} value={y}>{y}</option>
+              <option key={y} value={y}>
+                {y}
+              </option>
             ))}
           </select>
         )}
@@ -256,7 +253,7 @@ export default function MyDocumentsPage() {
       )}
 
       {/* The list */}
-      <MyDocumentsPageMy vm={vm} />
+      <MyDocumentList isLoading={isLoading} visible={visible} hasDocuments={documents.length > 0} types={types} />
     </div>
   )
 }

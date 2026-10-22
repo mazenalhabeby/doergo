@@ -1,6 +1,5 @@
-
+import { readFileSync } from "fs"
 import { join } from "path"
-import { readSource } from "../../../../../../test-utils/read-source"
 
 /**
  * Everything the Edit Task dialog collects must reach the server.
@@ -16,8 +15,10 @@ import { readSource } from "../../../../../../test-utils/read-source"
  * Source is read rather than rendered: the defect is structural, so no test
  * renderer to add and no markup to assert on.
  */
-const DIALOG = join(__dirname, "..", "edit-task-dialog.tsx")
-const SRC = readSource(DIALOG, "utf8")
+// The dialog's markup and its form state (fields, reset, save) — the screen, not one file.
+const SRC = ["edit-task-dialog.tsx", "use-edit-task-dialog.ts", "edit-task-when-fields.tsx"]
+  .map((f) => readFileSync(join(__dirname, "..", f), "utf8"))
+  .join("\n")
 
 /** State that deliberately never leaves the browser. Keep the reasons. */
 const UI_ONLY_STATE: Record<string, string> = {
@@ -47,9 +48,7 @@ function payload(): string {
 }
 
 describe("Edit Task dialog — nothing collected is thrown away", () => {
-  const stateNames = [...new Set(
-    [...SRC.matchAll(/const \[(\w+), set\w+\] = useState/g)].map((m) => m[1]),
-  )]
+  const stateNames = [...new Set([...SRC.matchAll(/const \[(\w+), set\w+\] = useState/g)].map((m) => m[1]))]
 
   it("finds the dialog's state (so the regex cannot pass by matching nothing)", () => {
     expect(stateNames.length).toBeGreaterThan(8)

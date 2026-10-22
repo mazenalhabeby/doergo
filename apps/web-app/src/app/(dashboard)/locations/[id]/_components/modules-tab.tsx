@@ -1,40 +1,91 @@
 "use client"
 
-import { Blocks } from "lucide-react";
-
-import { type CompanyLocation } from "@/lib/api";
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Blocks } from "lucide-react"
 import {
   AVAILABLE_MODULES,
   MODULE_GROUPS,
   moduleI18n,
   moduleRequires,
-  moduleMonthlyCents,
-  formatCents,
+  resolveModuleDependencies,
+  spaceMonthlyCost,
   billsByUsage,
-  includedUnits,
-  marginalUnitCents,
-} from "@hbcfield/shared/client";
+} from "@hbcfield/shared/client"
+import { keys } from "@/lib/query-keys"
+import { notify } from "@/lib/toast"
+import { assetsApi, locationsApi, type CompanyLocation } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
 import { SectionHeader } from "./section-header"
 import { ModuleUsageTabs } from "./module-usage-tabs"
-import { ExplainerButton } from "@/components/explainer/explainer-button"
-import { useModulesTab } from "./use-modules-tab"
-import { MODULE_LABEL } from "./modules-tab-helpers"
-import { ModulesTabSpaceCostLabel } from "./modules-tab-space-cost-label"
-import { ModulesTabUnsavedCount } from "./modules-tab-unsaved-count"
-import { ModulesTabPresets } from "./modules-tab-presets"
+import { ModuleRow } from "./module-row"
+import { SpaceCostSummary } from "./space-cost-summary"
+import { UnsavedModulesBar } from "./unsaved-modules-bar"
+import { ModulePresets } from "./module-presets"
 
+/** A workspace's modules: what it costs, the counted modules' usage, presets, and one switch per module. */
 export function ModulesTab({ space }: { space: CompanyLocation }) {
-  const vm = useModulesTab({ space })
-  const {
-    t,
-    enabledModules,
-    usageModules,
-    usageData,
-    unitsFor,
-    toggleModule,
-  } = vm
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const saved = (space.enabledModules as string[] | null) || []
+  const [enabledModules, setEnabledModules] = useState<string[]>(saved)
+
+  const mutation = useMutation({
+    mutationFn: (modules: string[]) => locationsApi.update(space.id, { enabledModules: modules }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
+      queryClient.invalidateQueries({ queryKey: keys.locations.lists() })
+      notify.success(t("locations.toast.modulesUpdated"))
+    },
+    onError: (err: Error) => notify.error(err.message || t("locations.toast.modulesUpdateFailed")),
+  })
+
+  /*
+    The counted modules — assets, CRM clients, portals — need numbers the
+    toggles cannot supply.
+
+    One request covers all three, fetched only when at least one of them is in
+    play, so a space that touches none of them never pays for the query. Counts
+    come back per space; this screen uses its own, because the base price, the
+    free allowance and the ladder are all per space.
+  */
+  const usageModules = enabledModules.filter(billsByUsage)
+  const { data: usageData } = useQuery({
+    queryKey: keys.assets.usage(),
+    queryFn: () => assetsApi.getUsage(),
+    enabled: usageModules.length > 0,
+    staleTime: 60000,
+  })
+
+  /*
+    This space's count for a module. Falls back to the top-level asset numbers
+    so a client still reads the right figure against a server that predates
+    `modules` — during a rolling deploy that is a real window, and the wrong
+    answer here is a wrong price on screen rather than a broken page.
+  */
+  const unitsFor = (key: string) =>
+    usageData?.modules?.[key]?.spaces?.[space.id] ?? (key === "assets" ? (usageData?.spaces?.[space.id] ?? 0) : 0)
+
+  const usageUnits = Object.fromEntries(usageModules.map((k) => [k, unitsFor(k)]))
+
+  // What this space really costs: its switches plus what its own counts add.
+  const liveUsageCents = spaceMonthlyCost(enabledModules, usageUnits).usageMonthlyCents
+
+  const toggleModule = (key: string) => {
+    setEnabledModules((prev) => {
+      if (prev.includes(key)) {
+        // Disabling: also drop anything that depends on it (e.g. crm off → b2c off).
+        return resolveModuleDependencies(prev.filter((m) => m !== key))
+      }
+      // Enabling: pull in its prerequisites too.
+      return Array.from(new Set([...prev, key, ...moduleRequires(key)]))
+    })
+  }
+
+  const applyPreset = (modules: string[]) => {
+    setEnabledModules(resolveModuleDependencies([...modules]))
+  }
 
   return (
     <div className="space-y-4">
@@ -58,7 +109,12 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
         hesitate over a switch, and a total underneath a long list is read after
         the decision instead of during it.
       */}
-      <ModulesTabSpaceCostLabel vm={vm} />
+      <SpaceCostSummary
+        enabledModules={enabledModules}
+        saved={saved}
+        usageModules={usageModules}
+        liveUsageCents={liveUsageCents}
+      />
 
       {/* The counted modules, priced in full. Directly under the space total,
           because that total is only their BASE and a number that is not the
@@ -66,132 +122,42 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
       {usageData && <ModuleUsageTabs moduleKeys={usageModules} unitsFor={unitsFor} />}
 
       {/* Presets — one click to set a sensible bundle */}
-      <ModulesTabPresets vm={vm} />
+      <ModulePresets enabledModules={enabledModules} applyPreset={applyPreset} />
 
       {/* Grouped modules with a one-line description per group */}
       {MODULE_GROUPS.map((grp) => (
         <div key={grp.key} className="space-y-2">
           <div className="px-1 pt-1">
-            <p
-              className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t(
-                moduleI18n.groupLabel(grp.key),
-                { defaultValue: grp.label })}</p>
-            <p
-              className="text-[11px] text-muted-foreground/70">{t(
-                moduleI18n.groupDescription(grp.key),
-                { defaultValue: grp.description })}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              {t(moduleI18n.groupLabel(grp.key), { defaultValue: grp.label })}
+            </p>
+            <p className="text-[11px] text-muted-foreground/70">
+              {t(moduleI18n.groupDescription(grp.key), { defaultValue: grp.description })}
+            </p>
           </div>
-          {AVAILABLE_MODULES.filter((m) => m.group === grp.key).map((mod) => {
-            const isEnabled = enabledModules.includes(mod.key)
-            const unmet = moduleRequires(mod.key).filter((r) => !enabledModules.includes(r))
-            const locked = !isEnabled && unmet.length > 0
-            return (
-              /*
-                ⚠️ `htmlFor` is load-bearing, not tidiness.
-
-                A <label> with no `for` controls the first LABELABLE descendant
-                in tree order — and <button> is labelable. The explainer "i"
-                sits before the checkbox here, so the label's control was the
-                BUTTON: clicking the switch opened the description and never
-                toggled the module. Naming the control explicitly ends the
-                argument, whatever order the row is later rearranged into.
-
-                (The same two components in space-form.tsx happen to put the
-                checkbox first, which is why only this screen was broken.)
-              */
-              <label
-                key={mod.key}
-                htmlFor={`module-${mod.key}`}
-                className={cn(
-                  "flex items-center justify-between p-3 rounded-lg border transition-colors",
-                  isEnabled
-                    ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/30"
-                    : "border-border hover:bg-muted/50",
-                  locked ? "cursor-not-allowed opacity-60" : "cursor-pointer",
-                )}
-              >
-                <div className="flex-1 min-w-0 mr-3">
-                  <span className="text-sm font-medium text-foreground">{t(moduleI18n.label(mod.key), { defaultValue: mod.label })}</span>
-                  {/* This row is a <label> around the toggle, so the button
-                      stops its own click — otherwise opening the help also
-                      switches the module. See ExplainerButton. */}
-                  <ExplainerButton
-                    explainerKey={mod.key}
-                    title={t(moduleI18n.label(mod.key), { defaultValue: mod.label })}
-                    scope="workspace"
-                    priceLabel={`${formatCents(moduleMonthlyCents(mod.key))}${t("billing.perMonthShort", "/mo")}`}
-                    enabled={isEnabled}
-                    className="ml-1.5 align-middle"
-                  />
-                  {/* The price sits on the row being toggled. Anywhere else and
-                      somebody has to hold two screens in their head to answer
-                      "what does this one cost". */}
-                  <span
-                    className={cn(
-                      "ml-2 rounded px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
-                      isEnabled
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                        : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {formatCents(moduleMonthlyCents(mod.key))}
-                    <span className="opacity-70">{t("billing.perMonthShort", "/mo")}</span>
-                  </span>
-                  {/* A counted module's row price is only its base, so the row
-                      says what the count costs too — otherwise the cheapest
-                      badge on the screen belongs to the module that can grow
-                      the largest bill. */}
-                  {billsByUsage(mod.key) && (
-                    <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
-                      {usageData && marginalUnitCents(mod.key, unitsFor(mod.key)) > 0
-                        ? t("billing.usage.perUnitShort", "+{{price}} each", {
-                            price: formatCents(marginalUnitCents(mod.key, unitsFor(mod.key))),
-                          })
-                        : t("billing.usage.included", "First {{count}} included", {
-                            count: includedUnits(mod.key),
-                          })}
-                    </span>
-                  )}
-                  <p
-                    className="text-xs text-muted-foreground mt-0.5">{t(
-                      moduleI18n.description(mod.key),
-                      { defaultValue: mod.description })}</p>
-                  {locked && (
-                    <p className="text-[11px] font-medium text-amber-600 dark:text-amber-500 mt-1">
-                      🔒 {t(
-                        "locations.moduleRequires",
-                        "Requires {{modules}}",
-                        { modules: unmet.map((r) => t(moduleI18n.label(r), { defaultValue: MODULE_LABEL[r] || r })).join(", ") })}
-                    </p>
-                  )}
-                </div>
-                <div className="relative inline-flex items-center shrink-0">
-                  <input
-                    id={`module-${mod.key}`}
-                    type="checkbox"
-                    checked={isEnabled}
-                    disabled={locked}
-                    onChange={() => toggleModule(mod.key)}
-                    className="sr-only peer"
-                  />
-                  <div
-                    className={"w-9 h-5 bg-muted rounded-full peer peer-checked:bg-emerald-600 " +
-                      "peer-disabled:opacity-50 transition-colors after:content-[''] " +
-                      "after:absolute after:top-0.5 after:left-[2px] after:bg-white " +
-                      "after:rounded-full after:h-4 after:w-4 after:transition-all " +
-                      "peer-checked:after:translate-x-full"}
-                  />
-                </div>
-              </label>
-            )
-          })}
+          {AVAILABLE_MODULES.filter((m) => m.group === grp.key).map((mod) => (
+            <ModuleRow
+              key={mod.key}
+              mod={mod}
+              enabledModules={enabledModules}
+              hasUsage={!!usageData}
+              unitsFor={unitsFor}
+              toggleModule={toggleModule}
+            />
+          ))}
         </div>
       ))}
 
       {/* Sticky unsaved-changes bar — always visible while there are pending
           edits, no matter how long the list. Shows the exact diff so nobody
           thinks a toggle auto-saved. */}
-      <ModulesTabUnsavedCount vm={vm} />
+      <UnsavedModulesBar
+        saved={saved}
+        enabledModules={enabledModules}
+        setEnabledModules={setEnabledModules}
+        saving={mutation.isPending}
+        onSave={(modules) => mutation.mutate(modules)}
+      />
     </div>
   )
 }

@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useRef, useState, useCallback, useEffect } from "react"
-import { useTranslation } from "react-i18next"
 import { startOfDay, addDays, diffDays } from "@/lib/local-days"
 import type { Task, Epic } from "@/lib/api"
 import { formatMonthYear } from "@/lib/format-date"
@@ -9,10 +8,6 @@ import { formatMonthYear } from "@/lib/format-date"
 export const DAY_WIDTH = 16
 
 const DONE_STATUSES = ["COMPLETED", "CLOSED"]
-
-// ─── Helpers ───────────────────────────────────────────────────────────────
-
-// ─── Types ─────────────────────────────────────────────────────────────────
 
 export interface EpicRoadmapProps {
   epics: Epic[]
@@ -32,10 +27,9 @@ interface EpicRow {
   endDate: Date | null
 }
 
-/** EpicRoadmap's state and handlers — everything before its markup, moved here unchanged. */
+/** The roadmap's rows (progress per epic), its month range, today's offset and where each bar sits. */
 export function useEpicRoadmap(
-  { epics, tasks, activeEpicId, onEpicClick }: Pick<EpicRoadmapProps, 'epics' | 'tasks' | 'activeEpicId' | 'onEpicClick'>) {
-  const { t } = useTranslation()
+  { epics, tasks, activeEpicId, onEpicClick }: EpicRoadmapProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [hoveredEpicId, setHoveredEpicId] = useState<string | null>(null)
 
@@ -128,7 +122,6 @@ export function useEpicRoadmap(
   }, [activeEpicId, onEpicClick])
 
   return {
-    t,
     scrollRef,
     hoveredEpicId,
     setHoveredEpicId,

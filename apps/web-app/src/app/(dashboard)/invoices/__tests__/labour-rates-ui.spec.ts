@@ -106,13 +106,15 @@ describe("the member editor carries COST, and only cost", () => {
   it("sends null for a blank field, never zero", () => {
     // Null means "inherit"; 0 means this person costs nothing. Every rate is
     // now entered through ONE dialog, so the rule is checked there.
-    expect(code("../../../components/rates/dated-rate.tsx")).toMatch(/value\.trim\(\) === ""[\s\S]{0,30}\? null/)
+    expect(code("../../../components/rates/dated-rate-dialog.tsx")).toMatch(/value\.trim\(\) === ""[\s\S]{0,30}\? null/)
   })
 })
 
 describe("the client-facing rate lives on the assignment", () => {
-  const PEOPLE = "../locations/[id]/_components/members-people.tsx"
-  const src = () => code(PEOPLE)
+  const PEOPLE_DIR = "../locations/[id]/_components"
+  /** The People table, then the person's panel and its billing and rate sections — in that order. */
+  const PEOPLE = ["members-people.tsx", "member-panel.tsx", "member-billing-section.tsx", "member-rates-section.tsx"]
+  const src = () => PEOPLE.map((f) => code(`${PEOPLE_DIR}/${f}`)).join("\n")
 
   it("exists, and is per workspace", () => {
     expect(src()).toContain("spaceMembersApi.updateRate")

@@ -40,7 +40,7 @@ type Stage = "paste" | "fields" | "confirm"
 
 const FIELD_KEYS = ["registration", "vin", "manufacturer", "model", "startsOn", "endsOn"] as const
 
-type FieldKey = (typeof FIELD_KEYS)[number]
+export type ContractFieldKey = (typeof FIELD_KEYS)[number]
 
 /** Blank strings must not reach the server as empty values it then stores. */
 function clean(fields: ContractFields): ContractFields {
@@ -52,20 +52,18 @@ function clean(fields: ContractFields): ContractFields {
   return out
 }
 
-/** ContractDialog's state and handlers — everything before its markup, moved here unchanged. */
+/** The contract reader's state: the three stages, the reading, who it may go to, and the three calls. */
 export function useContractDialog({
   kinds,
   spaceId,
-  trigger,
   onCreated,
-}: Pick<{
+}: {
   /** The workspace's kinds. Only those whose records are held by a member. */
   kinds: AssetCategory[]
   /** The workspace this is opened from — whose roster a space-scoped manager picks from. */
   spaceId?: string
-  trigger: React.ReactNode
   onCreated: (assetId: string) => void
-}, 'kinds' | 'spaceId' | 'trigger' | 'onCreated'>) {
+}) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [stage, setStage] = useState<Stage>("paste")
@@ -137,7 +135,12 @@ export function useContractDialog({
   const ask = useMutation({
     mutationFn: () =>
       assetsApi.previewContract({ categoryId, holderUserId, fields: clean(fields), retireReplaced: retire }),
-    onSuccess: (p) => { if (p) { setPreview(p); setStage("confirm") } },
+    onSuccess: (p) => {
+      if (p) {
+        setPreview(p)
+        setStage("confirm")
+      }
+    },
     onError: (e: Error) => notify.error(e.message),
   })
 
@@ -155,21 +158,30 @@ export function useContractDialog({
 
   const reset = (next: boolean) => {
     if (next) {
-      setStage("paste"); setText(""); setReading(null); setFields({})
-      setCategoryId(usable[0]?.id ?? ""); setHolderUserId(""); setRetire(true); setPreview(null)
+      setStage("paste")
+      setText("")
+      setReading(null)
+      setFields({})
+      setCategoryId(usable[0]?.id ?? "")
+      setHolderUserId("")
+      setRetire(true)
+      setPreview(null)
     }
     setOpen(next)
   }
 
-  const confidence = (key: FieldKey): "certain" | "likely" | undefined =>
+  const confidence = (key: ContractFieldKey): "certain" | "likely" | undefined =>
     (reading?.[key] as { confidence?: "certain" | "likely" } | undefined)?.confidence
 
-  const named = !!(fields.name?.trim() || fields.registration?.trim() || fields.vin?.trim() ||
-    (fields.manufacturer?.trim() && fields.model?.trim()))
+  const named = !!(
+    fields.name?.trim() ||
+    fields.registration?.trim() ||
+    fields.vin?.trim() ||
+    (fields.manufacturer?.trim() && fields.model?.trim())
+  )
   const ready = !!categoryId && !!holderUserId && named
 
   return {
-    t,
     open,
     stage,
     setStage,
@@ -197,3 +209,6 @@ export function useContractDialog({
     ready,
   }
 }
+
+/** Somebody a contract can hand the thing to. */
+export type ContractMember = ReturnType<typeof useContractDialog>["members"][number]

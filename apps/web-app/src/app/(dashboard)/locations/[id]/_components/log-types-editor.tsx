@@ -4,14 +4,11 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { BookOpen, ChevronDown, ChevronRight, ChevronUp, Plus, Trash2 } from "lucide-react"
 
-import { KIND_SHAPE_LIMITS, LOG_COLORS, type KindLogType } from "@hbcfield/shared/client"
+import { KIND_SHAPE_LIMITS, type KindLogType } from "@hbcfield/shared/client"
 import { LOG_COLOR_CLASSES } from "@/components/assets/log-style"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useTypeDetails } from "./use-type-details"
-import { FlagRow } from "./type-details-helpers"
-import { TypeDetailsEditor } from "./type-details-editor"
+import { TypeDetails } from "./log-type-details"
 
 /**
  * What gets DONE to one of these — Fuel, Oil change, Damage — and what each
@@ -64,7 +61,10 @@ export function LogTypesEditor({
           <div>
             <p className="text-sm font-medium text-foreground">{t("assetLog.editor.title", "Log types")}</p>
             <p className="text-[11px] text-muted-foreground">
-              {t("assetLog.editor.hint", "What gets done to each one — fuel, an oil change, damage — and what an entry asks for.")}
+              {t(
+                "assetLog.editor.hint",
+                "What gets done to each one — fuel, an oil change, damage — and what an entry asks for.",
+              )}
             </p>
             {moneyEnabled && (
               <p className="mt-0.5 text-[11px] text-muted-foreground/70">
@@ -77,11 +77,16 @@ export function LogTypesEditor({
           type="button"
           disabled={value.length >= KIND_SHAPE_LIMITS.maxLogTypes}
           onClick={() => {
-            onChange([...value, { key: "", label: "", color: "slate", fields: [], needsApproval: false, holderOnly: false, due: null }])
+            onChange([
+              ...value,
+              { key: "", label: "", color: "slate", fields: [], needsApproval: false, holderOnly: false, due: null },
+            ])
             setOpen(value.length)
           }}
-          className={"inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary " +
-            "hover:underline disabled:opacity-40 disabled:no-underline"}
+          className={
+            "inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary " +
+            "hover:underline disabled:opacity-40 disabled:no-underline"
+          }
         >
           <Plus className="h-3.5 w-3.5" /> {t("common.add", "Add")}
         </button>
@@ -111,7 +116,8 @@ export function LogTypesEditor({
               disabled={i === 0}
               onClick={() => move(i, -1)}
               className={"shrink-0 rounded p-1 text-muted-foreground hover:text-foreground " + "disabled:opacity-30"}
-              aria-label={t("assetLog.editor.up", "Move up")}>
+              aria-label={t("assetLog.editor.up", "Move up")}
+            >
               <ChevronUp className="h-4 w-4" />
             </button>
             <button
@@ -119,12 +125,16 @@ export function LogTypesEditor({
               disabled={i === value.length - 1}
               onClick={() => move(i, 1)}
               className={"shrink-0 rounded p-1 text-muted-foreground hover:text-foreground " + "disabled:opacity-30"}
-              aria-label={t("assetLog.editor.down", "Move down")}>
+              aria-label={t("assetLog.editor.down", "Move down")}
+            >
               <ChevronDown className="h-4 w-4" />
             </button>
             <button
               type="button"
-              onClick={() => { onChange(value.filter((_, idx) => idx !== i)); setOpen(null) }}
+              onClick={() => {
+                onChange(value.filter((_, idx) => idx !== i))
+                setOpen(null)
+              }}
               className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive"
               aria-label={t("common.remove", "Remove")}
             >
@@ -141,150 +151,6 @@ export function LogTypesEditor({
           {t("assetLog.editor.removeHint", "Removing a type keeps its entries — they stay on each record's logbook.")}
         </p>
       )}
-    </div>
-  )
-}
-
-export function TypeDetails({ type, onChange }: { type: KindLogType; onChange: (patch: Partial<KindLogType>) => void }) {
-  const vm = useTypeDetails({ type, onChange })
-  const {
-    t,
-    setField,
-    hasMoney,
-    hasPhoto,
-    meters,
-    due,
-    setDue,
-    pointAtMeter,
-    num,
-  } = vm
-
-  return (
-    <div className="space-y-3 border-t border-border/70 p-3">
-      {/* Colour — a name from a fixed list, never a free value. */}
-      <div>
-        <Label className="text-[11px] text-muted-foreground">{t("assetLog.editor.color", "Colour")}</Label>
-        <div className="mt-1 flex flex-wrap gap-1.5">
-          {LOG_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => onChange({ color: c })}
-              aria-label={c}
-              className={cn(
-                "h-6 w-6 rounded-full border-2 transition-transform",
-                LOG_COLOR_CLASSES[c].dot,
-                type.color === c ? "scale-110 border-foreground" : "border-transparent",
-              )}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <FlagRow
-          title={t("assetLog.editor.needsApproval", "Needs approval")}
-          hint={t(
-            "assetLog.editor.needsApprovalHint",
-            ("An entry from a member waits for somebody who manages assets, and counts " + "for nothing until then."))}
-          checked={type.needsApproval}
-          onChange={(v) => onChange({ needsApproval: v })}
-        />
-        <FlagRow
-          title={t("assetLog.editor.holderOnly", "Only whoever had it that day")}
-          hint={t("assetLog.editor.holderOnlyHint", "Off, anybody who can see it may log one — a colleague who noticed the dent.")}
-          checked={type.holderOnly}
-          onChange={(v) => onChange({ holderOnly: v })}
-        />
-      </div>
-
-      {/* Fields */}
-      <TypeDetailsEditor vm={vm} type={type} onChange={onChange} />
-
-      {/* Next due */}
-      <div className="rounded-md border border-border/70 p-2">
-        <FlagRow
-          title={t("assetLog.editor.due", "It comes due again")}
-          hint={t(
-            "assetLog.editor.dueHint",
-            ("After some months or a meter reading, whichever comes first. Holders and " + "whoever looks after it are reminded."))}
-          checked={!!due}
-          onChange={(v) => setDue(v ? { months: 12, leadDays: 30 } : null)}
-        />
-        {due && (
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            <div>
-              <Label className="text-[11px] text-muted-foreground">{t("assetLog.editor.months", "Every … months")}</Label>
-              <Input
-                type="number"
-                min={1}
-                max={120}
-                value={due.months ?? ""}
-                onChange={(e) => setDue({ months: num(e.target.value) })}
-                className="mt-1 h-8"
-              />
-            </div>
-            <div>
-              <Label className="text-[11px] text-muted-foreground">{t("assetLog.editor.leadDays", "Remind … days before")}</Label>
-              <Input
-                type="number"
-                min={0}
-                max={365}
-                value={due.leadDays ?? ""}
-                disabled={!due.months}
-                onChange={(e) => setDue({ leadDays: num(e.target.value) })}
-                className="mt-1 h-8"
-              />
-            </div>
-            <div>
-              <Label className="text-[11px] text-muted-foreground">{t("assetLog.editor.units", "Or every …")}</Label>
-              <div className="mt-1 flex gap-1.5">
-                <Input
-                  type="number"
-                  min={1}
-                  value={due.units ?? ""}
-                  disabled={meters.length === 0}
-                  onChange={(e) => setDue({ units: num(e.target.value) })}
-                  className="h-8"
-                />
-                <select
-                  value={due.meterKey ?? ""}
-                  disabled={meters.length === 0}
-                  onChange={(e) => {
-                    const fi = type.fields.findIndex((f, idx) => (f.key || `#${idx}`) === e.target.value)
-                    if (fi < 0) return setDue({ meterKey: null, units: null, leadUnits: null })
-                    pointAtMeter(fi)
-                  }}
-                  className="h-8 shrink-0 rounded-md border border-border bg-background px-1.5 text-xs text-foreground"
-                >
-                  <option value="">—</option>
-                  {type.fields.map((f, idx) =>
-                    f.type === "number" && f.meter && f.label.trim()
-                      ? <option key={idx} value={f.key || `#${idx}`}>{f.unit || f.label}</option>
-                      : null,
-                  )}
-                </select>
-              </div>
-              {meters.length === 0 && (
-                <p className="mt-1 text-[11px] text-muted-foreground/70">
-                  {t("assetLog.editor.noMeter", "Add a number field marked as a counter reading to count in it.")}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label className="text-[11px] text-muted-foreground">{t("assetLog.editor.leadUnits", "Remind … before")}</Label>
-              <Input
-                type="number"
-                min={0}
-                value={due.leadUnits ?? ""}
-                disabled={!due.units || !due.meterKey}
-                onChange={(e) => setDue({ leadUnits: num(e.target.value) })}
-                className="mt-1 h-8"
-              />
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   )
 }

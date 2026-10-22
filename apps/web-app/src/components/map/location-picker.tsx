@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import { Search, Loader2, MapPin, X, Navigation } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -55,7 +56,31 @@ export function LocationPicker({
   onPolygonChange,
   disabled,
 }: LocationPickerProps) {
-  const s = useLocationPicker({
+  const {
+    isAddress,
+    view,
+    canDrawBoundary,
+    drawing,
+    setDrawing,
+    expanded,
+    setExpanded,
+    viewRef,
+    ring,
+    geo,
+    query,
+    setQuery,
+    manualLat,
+    manualLng,
+    locating,
+    wrapperRef,
+    selectResult,
+    handleClear,
+    handleMapClick,
+    useMyLocation,
+    handleLatChange,
+    handleLngChange,
+    mapCenter,
+  } = useLocationPicker({
     lat,
     lng,
     address,
@@ -63,30 +88,34 @@ export function LocationPicker({
     onAddressChange,
     variant,
     onClear,
-    radius,
     polygon,
     onPolygonChange,
     disabled,
   })
-  const {
-    t,
-    isAddress,
-    drawing,
-    expanded,
-    setExpanded,
-    geo,
-    query,
-    setQuery,
-    manualLat,
-    manualLng,
-    wrapperRef,
-    selectResult,
-    handleClear,
-    handleLatChange,
-    handleLngChange,
-  } = s
+  const { t } = useTranslation()
 
-  const mapPanel = <LocationPickerPanel s={s} />
+  const mapPanel = (
+    <LocationPickerPanel
+      lat={lat}
+      lng={lng}
+      radius={radius}
+      onPolygonChange={onPolygonChange}
+      disabled={disabled}
+      isAddress={isAddress}
+      view={view}
+      canDrawBoundary={canDrawBoundary}
+      drawing={drawing}
+      setDrawing={setDrawing}
+      expanded={expanded}
+      setExpanded={setExpanded}
+      viewRef={viewRef}
+      ring={ring}
+      locating={locating}
+      handleMapClick={handleMapClick}
+      useMyLocation={useMyLocation}
+      mapCenter={mapCenter}
+    />
+  )
 
   return (
     <div className="space-y-3">
@@ -105,9 +134,9 @@ export function LocationPicker({
             disabled={disabled}
             className={
               isAddress
-                ? ("h-12 pl-10 pr-10 rounded-xl border-border bg-card text-base " +
+                ? "h-12 pl-10 pr-10 rounded-xl border-border bg-card text-base " +
                   "placeholder:text-muted-foreground focus:border-blue-500 " +
-                  "focus:ring-blue-500/20")
+                  "focus:ring-blue-500/20"
                 : "pl-9 pr-9"
             }
           />

@@ -1,6 +1,7 @@
 import type { TourDef, TourGateContext } from "./types"
 
-/** Building a tour: one step, and a page's tour from its steps (moved here unchanged). */
+/** Building a tour: one step, and a page's tour from its steps. */
+
 /** Short helper to build a nav step (all target the top-bar `data-tour` anchors). */
 export const step = (tourId: string, key: string, target: string) => ({
   target,

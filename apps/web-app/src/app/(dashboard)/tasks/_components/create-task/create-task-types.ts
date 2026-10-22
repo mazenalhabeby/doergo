@@ -1,4 +1,4 @@
-/** The New Task dialog's props and the assignee shape — moved here unchanged from use-create-task-form.ts. */
+/** The New Task dialog's props and the assignee shape. */
 
 // ---------------------------------------------------------------------------
 // Props

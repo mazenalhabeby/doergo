@@ -4,7 +4,6 @@ import { useState, useCallback, useRef, useEffect } from "react"
 import { notify } from "@/lib/toast"
 import { useAddressSearch, reverseGeocode, type AddressSearchResult } from "@/hooks/use-address-search"
 import { useTranslation } from "react-i18next"
-import { useFormatDistance } from "@/hooks/use-format-distance"
 import { GEOFENCE_POLYGON_LIMITS } from "@hbcfield/shared/client"
 import type { LocationPickerProps } from "./location-picker"
 
@@ -14,7 +13,7 @@ const VIEW = {
   address: { center: [52.52, 13.405] as [number, number], emptyZoom: 4, pinnedZoom: 15 },
 }
 
-/** LocationPicker's state and handlers, moved here unchanged; called first in the component. */
+/** LocationPicker's state: the search, the pin, the drawing mode and the map's last view. */
 export function useLocationPicker({
   lat,
   lng,
@@ -23,13 +22,11 @@ export function useLocationPicker({
   onAddressChange,
   variant = "site",
   onClear,
-  radius,
   polygon,
   onPolygonChange,
   disabled,
-}: LocationPickerProps) {
+}: Omit<LocationPickerProps, "radius">) {
   const { t } = useTranslation()
-  const formatDistance = useFormatDistance()
   const isAddress = variant === "address"
   const view = VIEW[variant]
   // Boundary editing is only offered when the caller wired the handler, so the
@@ -159,19 +156,6 @@ export function useLocationPicker({
   const mapCenter: [number, number] = lat && lng ? [lat, lng] : view.center
 
   return {
-    lat,
-    lng,
-    address,
-    onLocationChange,
-    onAddressChange,
-    variant,
-    onClear,
-    radius,
-    polygon,
-    onPolygonChange,
-    disabled,
-    t,
-    formatDistance,
     isAddress,
     view,
     canDrawBoundary,
@@ -185,22 +169,15 @@ export function useLocationPicker({
     query,
     setQuery,
     manualLat,
-    setManualLat,
     manualLng,
-    setManualLng,
     locating,
-    setLocating,
     wrapperRef,
-    setShowResults,
     selectResult,
     handleClear,
     handleMapClick,
     useMyLocation,
-    applyManualCoords,
     handleLatChange,
     handleLngChange,
     mapCenter,
   }
 }
-
-export type LocationPickerState = ReturnType<typeof useLocationPicker>

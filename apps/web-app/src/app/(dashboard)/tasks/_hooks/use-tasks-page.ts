@@ -22,7 +22,7 @@ import { useGroupByOptions } from "./use-group-by-options";
 import { PRIORITY_ORDER, type TaskViewContext } from "../_lib/task-list";
 import { hasAccessModule } from "@hbcfield/shared/client";
 
-/** TasksPage's state and handlers — everything before its markup, moved here unchanged. */
+/** The tasks page's state: filters, the server's page of tasks, planning, selection and every handler its views call. */
 export function useTasksPage() {
   const { user, hasModule, hasPlanFeature, hasPermission } = useAuth()
   const queryClient = useQueryClient()
@@ -231,9 +231,7 @@ export function useTasksPage() {
     error,
     myCounts,
     spaceTaskCounts,
-    phases,
     sprints,
-    epics,
     spaces,
     effectiveHasModule,
     planning,
@@ -278,6 +276,3 @@ export function useTasksPage() {
     showContent,
   };
 }
-
-/** What TasksPage and its sections read. */
-export type TasksPageState = ReturnType<typeof useTasksPage>;

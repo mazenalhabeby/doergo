@@ -2,25 +2,20 @@
 
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import { documentsApi, type MemberDocumentRow, type DocumentTypeRow, type RequirementRow } from "@/lib/api"
-import { memberMayDelete } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
-import { useOpenDocument } from "@/hooks/use-open-document"
 import { useAuth } from "@/contexts/auth-context"
 import { keys } from "@/lib/query-keys"
 
-/** MyDocumentsPage's state and handlers — everything before its markup, moved here unchanged. */
+/** The member's own file: the documents, what is still asked of them, the filters and the export. */
 export function useMyDocumentsPage() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { user } = useAuth()
   /* Works for a client or partner — see the upload buttons below. Their page
      still lists documents ISSUED to them, which is where anything awaiting
      their signature appears. */
   const isExternalMember = user?.isExternal === true
-  const queryClient = useQueryClient()
-  const router = useRouter()
 
   const [activeType, setActiveType] = useState<string | null>(null)
   const [year, setYear] = useState<number | null>(null)
@@ -32,11 +27,6 @@ export function useMyDocumentsPage() {
     queryKey: keys.documents.types(),
     queryFn: () => documentsApi.listTypes(),
   })
-  // Only what they supplied themselves — on an "either" type, never the office's copy.
-  const mayRemove = (d: MemberDocumentRow) => {
-    const dir = types.find((ty) => ty.id === d.typeId)?.direction
-    return !!dir && memberMayDelete(dir, d.suppliedByMember === true)
-  }
 
   const { data: documents = [], isLoading } = useQuery<MemberDocumentRow[]>({
     queryKey: keys.documents.mine(),
@@ -80,10 +70,6 @@ export function useMyDocumentsPage() {
 
   const awaiting = documents.filter((d) => d.needsSignature)
 
-  const { open, opening } = useOpenDocument({
-    onOpened: () => queryClient.invalidateQueries({ queryKey: keys.documents.mine() }),
-  })
-
   /*
     Take the whole file away.
 
@@ -95,27 +81,18 @@ export function useMyDocumentsPage() {
   const exportAll = useMutation({
     mutationFn: () => documentsApi.exportMine(),
     onSuccess: (res) => {
-      if (!res?.count) { notify.error(t("documents.export.nothing")); return }
+      if (!res?.count) {
+        notify.error(t("documents.export.nothing"))
+        return
+      }
       setExported(res.files)
       notify.success(t("documents.export.ready", { count: res.count }))
     },
     onError: (e: Error) => notify.error(e.message),
   })
 
-  const remove = useMutation({
-    mutationFn: (id: string) => documentsApi.remove(id),
-    onSuccess: () => {
-      notify.success(t("documents.removed"))
-      queryClient.invalidateQueries({ queryKey: keys.documents.mine() })
-    },
-    onError: (e: Error) => notify.error(e.message),
-  })
-
   return {
-    t,
-    i18n,
     isExternalMember,
-    router,
     activeType,
     setActiveType,
     year,
@@ -127,7 +104,6 @@ export function useMyDocumentsPage() {
     supplying,
     setSupplying,
     types,
-    mayRemove,
     documents,
     isLoading,
     requirements,
@@ -135,12 +111,6 @@ export function useMyDocumentsPage() {
     years,
     usedTypes,
     awaiting,
-    open,
-    opening,
     exportAll,
-    remove,
   }
 }
-
-/** What MyDocumentsPage and its sections read. */
-export type MyDocumentsPageState = ReturnType<typeof useMyDocumentsPage>

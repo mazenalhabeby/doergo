@@ -24,6 +24,8 @@ const SOURCES = [
   'src/app/(dashboard)/assets/[id]/_components/log-entry-dialog.tsx',
   'src/app/(dashboard)/assets/[id]/page.tsx',
   'src/app/(dashboard)/locations/[id]/_components/log-types-editor.tsx',
+  'src/app/(dashboard)/locations/[id]/_components/log-type-details.tsx',
+  'src/app/(dashboard)/locations/[id]/_components/log-type-fields.tsx',
   'src/components/assets/log-style.ts',
 ];
 

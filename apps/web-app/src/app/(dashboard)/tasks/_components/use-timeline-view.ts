@@ -6,14 +6,11 @@ import { startOfDay, addDays, diffDays } from "@/lib/local-days"
 import { useStepConfigs } from "@/hooks/use-step-config"
 import type { Task, Phase } from "@/lib/api"
 import { formatMonthYear } from "@/lib/format-date"
-
-export type TimeScale = "day" | "week" | "month"
+import { ROW_HEIGHT, type TimeScale } from "./timeline-layout"
 
 function getMonthLabel(d: Date): string {
   return formatMonthYear(d)
 }
-
-export const ROW_HEIGHT = 36
 
 const MIN_COL_WIDTH_DAY = 120
 
@@ -21,12 +18,16 @@ const MIN_COL_WIDTH_WEEK = 44
 
 const MIN_COL_WIDTH_MONTH = 14
 
-// ─── Types ──────────────────────────────────────────────────────────────────
-
-interface TimelineGroup {
+export interface TimelineGroup {
   label: string
   color?: string
   tasks: Task[]
+}
+
+export interface TimelineTooltip {
+  task: Task
+  x: number
+  y: number
 }
 
 export interface TimelineViewProps {
@@ -34,14 +35,14 @@ export interface TimelineViewProps {
   phases?: Phase[]
 }
 
-/** TimelineView's state and handlers — everything before its markup, moved here unchanged. */
-export function useTimelineView({ tasks, phases }: Pick<TimelineViewProps, "tasks" | "phases">) {
+/** The timeline's scale, phase groups, date range, bar positions, dependency lines and the hovered task. */
+export function useTimelineView({ tasks, phases }: TimelineViewProps) {
   const { t } = useTranslation()
   const stepOf = useStepConfigs(tasks)
   const [scale, setScale] = useState<TimeScale>("week")
   const timelineRef = useRef<HTMLDivElement>(null)
   const leftPanelRef = useRef<HTMLDivElement>(null)
-  const [tooltip, setTooltip] = useState<{ task: Task; x: number; y: number } | null>(null)
+  const [tooltip, setTooltip] = useState<TimelineTooltip | null>(null)
 
   // ─── Group tasks by phase ───
   const groups: TimelineGroup[] = useMemo(() => {
@@ -248,7 +249,6 @@ export function useTimelineView({ tasks, phases }: Pick<TimelineViewProps, "task
   const timelineWidth = columns.length * colWidth
 
   return {
-    t,
     stepOf,
     scale,
     setScale,
@@ -268,6 +268,3 @@ export function useTimelineView({ tasks, phases }: Pick<TimelineViewProps, "task
     timelineWidth,
   }
 }
-
-/** What TimelineView and its sections read. */
-export type TimelineViewState = ReturnType<typeof useTimelineView>

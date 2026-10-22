@@ -11,11 +11,9 @@ import { attendanceApi, type BreakRuleRow } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Dialog } from "@/components/ui/dialog"
 import { SectionHeader, EmptyState } from "./section-header"
 import { keys } from "@/lib/query-keys"
-import { useRestDialog } from "./use-rest-dialog"
-import { RestDialogRests } from "./rest-dialog-rests"
+import { RestDialog } from "./rest-dialog"
 
 /**
  * The rests a workspace expects.
@@ -56,8 +54,8 @@ export function RestsSection({ spaceId }: { spaceId: string }) {
         title={t("attendance.rests.title", "Rests")}
         description={t(
           "attendance.rests.subtitle",
-          ("Planned for everyone working here. Members are asked when one falls due, " +
-            "and a rest that doesn't count as work comes off their counted hours."),
+          "Planned for everyone working here. Members are asked when one falls due, " +
+            "and a rest that doesn't count as work comes off their counted hours.",
         )}
         action={
           <Button size="sm" onClick={() => setEditing("new")}>
@@ -84,10 +82,7 @@ export function RestsSection({ spaceId }: { spaceId: string }) {
       ) : (
         <ul className="space-y-2">
           {active.map((rule) => (
-            <li
-              key={rule.id}
-              className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4"
-            >
+            <li key={rule.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium text-foreground">{rule.name}</span>
@@ -147,56 +142,8 @@ export function RestsSection({ spaceId }: { spaceId: string }) {
       )}
 
       {editing && (
-        <RestDialog
-          spaceId={spaceId}
-          rule={editing === "new" ? null : editing}
-          onClose={() => setEditing(null)}
-        />
+        <RestDialog spaceId={spaceId} rule={editing === "new" ? null : editing} onClose={() => setEditing(null)} />
       )}
     </div>
-  )
-}
-
-// ───────────────────────────────────────────────────────────────────────────
-
-export function RestDialog({
-  spaceId,
-  rule,
-  onClose,
-}: {
-  spaceId: string
-  rule: BreakRuleRow | null
-  onClose: () => void
-}) {
-  const vm = useRestDialog({ spaceId, rule, onClose })
-  const {
-    t,
-    name,
-    setName,
-    trigger,
-    setTrigger,
-    earliest,
-    setEarliest,
-    latest,
-    setLatest,
-    afterHours,
-    setAfterHours,
-    duration,
-    setDuration,
-    isPaid,
-    setIsPaid,
-    isRequired,
-    setIsRequired,
-    remind,
-    setRemind,
-    snoozeMin,
-    setSnoozeMin,
-    save,
-  } = vm
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <RestDialogRests vm={vm} rule={rule} onClose={onClose} />
-    </Dialog>
   )
 }

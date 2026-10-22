@@ -1,4 +1,3 @@
-
 import { join } from "path"
 import { readSource } from "../../../../../test-utils/read-source"
 
@@ -18,29 +17,26 @@ import { readSource } from "../../../../../test-utils/read-source"
  * a button happens to sit, so the row can be rearranged freely afterwards.
  */
 const FILES = [
-  join(__dirname, "..", "..", "[id]", "_components", "modules-tab.tsx"),
-  join(__dirname, "..", "space-form.tsx"),
+  join(__dirname, "..", "..", "[id]", "_components", "module-row.tsx"),
+  join(__dirname, "..", "space-modules-picker.tsx"),
 ]
 
 describe("module rows toggle the checkbox, not the explainer", () => {
-  it.each(FILES.map((f) => [f.split("/_components/")[1] ?? f, f]))(
-    "%s names its labelled control",
-    (_name, file) => {
-      const src = readSource(file, "utf8")
+  it.each(FILES.map((f) => [f.split("/_components/")[1] ?? f, f]))("%s names its labelled control", (_name, file) => {
+    const src = readSource(file, "utf8")
 
-      // Every <label> that wraps a module checkbox carries an htmlFor…
-      const labels = src.match(/<label\b[\s\S]*?>/g) ?? []
-      const moduleLabels = labels.filter((l) => l.includes("htmlFor"))
-      expect(moduleLabels.length).toBeGreaterThan(0)
+    // Every <label> that wraps a module checkbox carries an htmlFor…
+    const labels = src.match(/<label\b[\s\S]*?>/g) ?? []
+    const moduleLabels = labels.filter((l) => l.includes("htmlFor"))
+    expect(moduleLabels.length).toBeGreaterThan(0)
 
-      // …and the checkbox it names carries the matching id.
-      for (const label of moduleLabels) {
-        const forExpr = /htmlFor=\{`([^`]+)`\}/.exec(label)
-        expect(forExpr).not.toBeNull()
-        expect(src).toContain(`id={\`${forExpr![1]}\`}`)
-      }
-    },
-  )
+    // …and the checkbox it names carries the matching id.
+    for (const label of moduleLabels) {
+      const forExpr = /htmlFor=\{`([^`]+)`\}/.exec(label)
+      expect(forExpr).not.toBeNull()
+      expect(src).toContain(`id={\`${forExpr![1]}\`}`)
+    }
+  })
 
   /*
     The specific regression: an explainer button standing between the label and

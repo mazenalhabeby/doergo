@@ -1,0 +1,50 @@
+"use client"
+
+import {
+  Bell,
+  UserPlus,
+  ClipboardList,
+  MessageSquare,
+  CheckCircle,
+  Clock,
+  MapPin,
+  Coffee,
+  Paperclip,
+  XCircle,
+  Send,
+  ClipboardCheck,
+  PenLine,
+  CalendarDays,
+  Receipt,
+  Package,
+} from "lucide-react"
+import { type NotificationType } from "./use-notification-inbox"
+
+/** Icon and colours per notification type. */
+export const TYPE_CONFIG: Record<NotificationType, { icon: typeof Bell; color: string; bg: string }> = {
+  task_created: { icon: ClipboardList, color: "text-indigo-600", bg: "bg-indigo-50" },
+  task_assigned: { icon: ClipboardList, color: "text-blue-600", bg: "bg-blue-50" },
+  task_completed: { icon: CheckCircle, color: "text-green-600", bg: "bg-green-50" },
+  task_declined: { icon: XCircle, color: "text-red-600", bg: "bg-red-50" },
+  task_status_changed: { icon: ClipboardList, color: "text-muted-foreground", bg: "bg-muted" },
+  comment_added: { icon: MessageSquare, color: "text-amber-600", bg: "bg-amber-50" },
+  chat_message: { icon: MessageSquare, color: "text-blue-600", bg: "bg-blue-50" },
+  crm_reminder: { icon: Bell, color: "text-indigo-600", bg: "bg-indigo-50" },
+  signature_needed: { icon: PenLine, color: "text-amber-600", bg: "bg-amber-50" },
+  attachment_added: { icon: Paperclip, color: "text-cyan-600", bg: "bg-cyan-50" },
+  join_request: { icon: UserPlus, color: "text-purple-600", bg: "bg-purple-50" },
+  join_approved: { icon: CheckCircle, color: "text-green-600", bg: "bg-green-50" },
+  join_rejected: { icon: XCircle, color: "text-red-600", bg: "bg-red-50" },
+  clock_in: { icon: Clock, color: "text-green-600", bg: "bg-green-50" },
+  clock_out: { icon: Clock, color: "text-muted-foreground", bg: "bg-muted" },
+  geofence_alert: { icon: MapPin, color: "text-red-600", bg: "bg-red-50" },
+  pending_approval: { icon: ClipboardCheck, color: "text-amber-600", bg: "bg-amber-50" },
+  break_started: { icon: Coffee, color: "text-amber-600", bg: "bg-amber-50" },
+  break_ended: { icon: Coffee, color: "text-green-600", bg: "bg-green-50" },
+  invitation_created: { icon: Send, color: "text-indigo-600", bg: "bg-indigo-50" },
+  time_off_requested: { icon: CalendarDays, color: "text-purple-600", bg: "bg-purple-50" },
+  time_off_decided: { icon: CalendarDays, color: "text-green-600", bg: "bg-green-50" },
+  asset_expense: { icon: Receipt, color: "text-amber-600", bg: "bg-amber-50" },
+  asset_expense_decided: { icon: Receipt, color: "text-green-600", bg: "bg-green-50" },
+  asset_handover: { icon: Package, color: "text-indigo-600", bg: "bg-indigo-50" },
+}

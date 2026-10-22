@@ -5,7 +5,7 @@ import { ArrowUp } from "lucide-react"
 import type { TFunction } from "i18next"
 import { StoreBadges } from "./StoreBadges"
 
-/** The marketing type faces (the same strings home-client-helpers declares). */
+/** The marketing type faces (the same strings home-ui declares). */
 const FOOTER_DISPLAY = "font-[family:var(--font-familjen)]"
 export const FOOTER_MONO = "font-[family:var(--font-martian)]"
 

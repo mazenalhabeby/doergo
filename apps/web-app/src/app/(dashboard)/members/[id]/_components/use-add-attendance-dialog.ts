@@ -24,14 +24,12 @@ export interface AddAttendanceDialogProps {
 
 type Mode = "single" | "range"
 
-/** AddAttendanceDialog's state and handlers — everything before its markup, moved here unchanged. */
+/** The add-attendance dialog's form state, what it will create, and the request that creates it. */
 export function useAddAttendanceDialog({
   employeeId,
-  employeeName,
   prefill,
-  trigger,
   onAdded,
-}: Pick<AddAttendanceDialogProps, 'employeeId' | 'employeeName' | 'prefill' | 'trigger' | 'onAdded'>) {
+}: Pick<AddAttendanceDialogProps, "employeeId" | "prefill" | "onAdded">) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
@@ -101,9 +99,7 @@ export function useAddAttendanceDialog({
     if (mode === "single" || !startDate || !endDate || endDate < startDate) return 0
     return (
       Math.round(
-        (new Date(`${endDate}T12:00:00Z`).getTime() -
-          new Date(`${startDate}T12:00:00Z`).getTime()) /
-          86_400_000
+        (new Date(`${endDate}T12:00:00Z`).getTime() - new Date(`${startDate}T12:00:00Z`).getTime()) / 86_400_000,
       ) + 1
     )
   }, [mode, startDate, endDate])
@@ -144,7 +140,7 @@ export function useAddAttendanceDialog({
         toast.success(
           skipped > 0
             ? t("technicians.addAttendance.successWithSkipped", { created, skipped })
-            : t("technicians.addAttendance.success", { count: created })
+            : t("technicians.addAttendance.success", { count: created }),
         )
         onAdded?.()
         resetAndClose()
@@ -189,19 +185,7 @@ export function useAddAttendanceDialog({
   }
 
   function toggleWeekday(day: number) {
-    setWeekdays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    )
-  }
-
-  const weekdayLabels: Record<number, string> = {
-    0: t("technicians.addAttendance.weekdays.sun"),
-    1: t("technicians.addAttendance.weekdays.mon"),
-    2: t("technicians.addAttendance.weekdays.tue"),
-    3: t("technicians.addAttendance.weekdays.wed"),
-    4: t("technicians.addAttendance.weekdays.thu"),
-    5: t("technicians.addAttendance.weekdays.fri"),
-    6: t("technicians.addAttendance.weekdays.sat"),
+    setWeekdays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]))
   }
 
   /*
@@ -211,8 +195,7 @@ export function useAddAttendanceDialog({
     third time. This only spares the round trip and says which field is wrong
     while somebody is still looking at it.
   */
-  const breakInvalid =
-    hasBreak && !!startTime && !!endTime && !breakFitsShift(breakStart, breakEnd, startTime, endTime)
+  const breakInvalid = hasBreak && !!startTime && !!endTime && !breakFitsShift(breakStart, breakEnd, startTime, endTime)
   const breakNeedsReason = hasBreak && breakReason.trim().length < 3
 
   const canSubmit =
@@ -229,7 +212,6 @@ export function useAddAttendanceDialog({
     !mutation.isPending
 
   return {
-    t,
     fixedEmployee,
     open,
     mode,
@@ -270,11 +252,7 @@ export function useAddAttendanceDialog({
     openWith,
     resetAndClose,
     toggleWeekday,
-    weekdayLabels,
     breakInvalid,
     canSubmit,
   }
 }
-
-/** What AddAttendanceDialog and its sections read. */
-export type AddAttendanceDialogState = ReturnType<typeof useAddAttendanceDialog>

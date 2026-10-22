@@ -28,7 +28,7 @@ import { PlanGate } from "@/components/common/plan-gate"
 import { cn } from "@/lib/utils"
 
 import dynamic from "next/dynamic"
-import { MOVED_TABS } from "./_components/page-parts"
+import { MOVED_TABS } from "./_components/moved-tabs"
 
 // Every tab is lazy (audit S-C1). This page has ten of them and they reach ~6,400
 // lines with their dialogs — the asset-kind editor alone is 670, the rota 733 — and
@@ -206,8 +206,8 @@ export default function SpaceSettingsPage() {
                 className={cn(
                   "flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-muted/40 p-1",
                   "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-                  ("lg:flex-col lg:gap-0.5 lg:overflow-visible lg:rounded-2xl lg:border " +
-                    "lg:border-border/60 lg:bg-card/80 lg:p-2 lg:shadow-sm lg:backdrop-blur"),
+                  "lg:flex-col lg:gap-0.5 lg:overflow-visible lg:rounded-2xl lg:border " +
+                    "lg:border-border/60 lg:bg-card/80 lg:p-2 lg:shadow-sm lg:backdrop-blur",
                 )}
               >
                 {SECTIONS.map((s) => (
@@ -216,26 +216,29 @@ export default function SpaceSettingsPage() {
                     value={s.value}
                     className={cn(
                       "group shrink-0 gap-2 whitespace-nowrap",
-                      ("lg:relative lg:w-full lg:justify-start lg:rounded-xl lg:px-3 lg:py-2.5 " +
+                      "lg:relative lg:w-full lg:justify-start lg:rounded-xl lg:px-3 lg:py-2.5 " +
                         "lg:text-[13px] lg:font-medium lg:text-muted-foreground lg:transition-all " +
-                        "lg:duration-150"),
+                        "lg:duration-150",
                       "lg:hover:bg-muted/70 lg:hover:text-foreground",
-                      ("lg:data-[state=active]:bg-primary/10 " +
+                      "lg:data-[state=active]:bg-primary/10 " +
                         "lg:data-[state=active]:font-semibold lg:data-[state=active]:text-primary " +
-                        "lg:data-[state=active]:shadow-none"),
+                        "lg:data-[state=active]:shadow-none",
                       // Active left-accent bar.
-                      ("lg:before:absolute lg:before:left-0 lg:before:top-1/2 lg:before:h-5 " +
+                      "lg:before:absolute lg:before:left-0 lg:before:top-1/2 lg:before:h-5 " +
                         "lg:before:w-[3px] lg:before:-translate-y-1/2 lg:before:rounded-r-full " +
                         "lg:before:bg-primary lg:before:opacity-0 lg:before:transition-opacity " +
-                        "lg:data-[state=active]:before:opacity-100"),
+                        "lg:data-[state=active]:before:opacity-100",
                     )}
                   >
                     {/* Icon in a soft tile that tints to primary on the active item. */}
                     <span
-                      className={"hidden h-6 w-6 items-center justify-center rounded-md bg-muted/70 " +
+                      className={
+                        "hidden h-6 w-6 items-center justify-center rounded-md bg-muted/70 " +
                         "text-muted-foreground transition-colors group-hover:text-foreground " +
                         "group-data-[state=active]:bg-primary/15 " +
-                        "group-data-[state=active]:text-primary lg:flex"}>
+                        "group-data-[state=active]:text-primary lg:flex"
+                      }
+                    >
                       <s.icon className="h-3.5 w-3.5" />
                     </span>
                     {/* Inline icon on mobile (no tile). */}
@@ -243,8 +246,10 @@ export default function SpaceSettingsPage() {
                     {s.label}
                     {/* Trailing chevron hints the active section. */}
                     <ChevronRightNav
-                      className={"ml-auto hidden h-3.5 w-3.5 opacity-0 transition-opacity " +
-                        "group-data-[state=active]:opacity-60 lg:block"}
+                      className={
+                        "ml-auto hidden h-3.5 w-3.5 opacity-0 transition-opacity " +
+                        "group-data-[state=active]:opacity-60 lg:block"
+                      }
                     />
                   </TabsTrigger>
                 ))}

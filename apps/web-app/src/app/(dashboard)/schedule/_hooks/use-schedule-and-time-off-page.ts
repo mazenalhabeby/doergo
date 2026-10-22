@@ -4,7 +4,6 @@ import { useRouteAccess } from "@/hooks/use-route-access"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { useQuery, keepPreviousData } from "@tanstack/react-query"
-import { useTranslation } from "react-i18next"
 import {
   addDays,
   addMonths,
@@ -35,10 +34,9 @@ import { keys } from "@/lib/query-keys"
 
 type Range = "fortnight" | "month"
 
-/** ScheduleAndTimeOffPage's state and handlers — everything before its markup, moved here unchanged. */
+/** The page's window, workspace and selection, and the three reads it draws: leave, the floor, cover. */
 export function useScheduleAndTimeOffPage() {
   const { user, hasPermission } = useAuth()
-  const { t } = useTranslation()
   const searchParams = useSearchParams()
 
   const [anchor, setAnchor] = useState(() => new Date())
@@ -56,8 +54,7 @@ export function useScheduleAndTimeOffPage() {
     a link, and a stale id in the URL falls back instead of erroring. No module
     filter — see the hook.
   */
-  const { spaces: spaceOptions, spaceId, setSpaceId, ready: spacesReady, showTabs } =
-    useSpaceScope({ allowAll: false })
+  const { spaces: spaceOptions, spaceId, setSpaceId, ready: spacesReady, showTabs } = useSpaceScope({ allowAll: false })
   const space = spaceId ?? ""
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -91,23 +88,27 @@ export function useScheduleAndTimeOffPage() {
   */
   const calendarDays = useQuery({
     queryKey: keys.calendar.team(space, format(days[0]!, "yyyy-MM-dd"), format(days[days.length - 1]!, "yyyy-MM-dd")),
-    queryFn: () => calendarApi.team({
-      spaceId: space,
-      from: format(days[0]!, "yyyy-MM-dd"),
-      to: format(days[days.length - 1]!, "yyyy-MM-dd")
-    }),
+    queryFn: () =>
+      calendarApi.team({
+        spaceId: space,
+        from: format(days[0]!, "yyyy-MM-dd"),
+        to: format(days[days.length - 1]!, "yyyy-MM-dd"),
+      }),
     enabled: !!space,
     staleTime: 5 * 60_000,
   })
   const restDays = useMemo(
-    () => (calendarDays.data ? new Set(calendarDays.data.days.filter((d) => d.kind === "weekend").map((d) => d.day)) : undefined),
+    () =>
+      calendarDays.data
+        ? new Set(calendarDays.data.days.filter((d) => d.kind === "weekend").map((d) => d.day))
+        : undefined,
     [calendarDays.data],
   )
   const holidayNames = useMemo(() => {
     const m = new Map<string, string>()
     for (const h of calendarDays.data?.holidays ?? []) {
-      for (let d = new Date(
-        `${h.date}T12:00:00`); format(d, "yyyy-MM-dd") <= h.endDate; d = addDays(d, 1)) m.set(format(d, "yyyy-MM-dd"), h.name)
+      for (let d = new Date(`${h.date}T12:00:00`); format(d, "yyyy-MM-dd") <= h.endDate; d = addDays(d, 1))
+        m.set(format(d, "yyyy-MM-dd"), h.name)
     }
     return m
   }, [calendarDays.data])
@@ -169,24 +170,23 @@ export function useScheduleAndTimeOffPage() {
   const nudged = useRef(false)
   useEffect(() => {
     if (nudged.current || !spacesReady || !allSpaces.length) return
-    if (searchParams.get("space")) { nudged.current = true; return }
+    if (searchParams.get("space")) {
+      nudged.current = true
+      return
+    }
     const withPeople = spaceOptions.find((o) => allSpaces.some((s) => s.spaceId === o.id && s.people.length))
     nudged.current = true
     if (withPeople && withPeople.id !== spaceId) setSpaceId(withPeople.id)
   }, [spacesReady, allSpaces, spaceOptions, spaceId, setSpaceId, searchParams])
 
-  const spaces = useMemo(
-    () => allSpaces.filter((s) => s.spaceId === space),
-    [allSpaces, space],
-  )
+  const spaces = useMemo(() => allSpaces.filter((s) => s.spaceId === space), [allSpaces, space])
 
   const pending = useMemo(() => requests.filter((r) => r.status === "PENDING"), [requests])
 
   /** The two facts that decide whether this page needs opening at all. */
   const summary = useMemo(() => {
     // Only this workspace's people — the counts head a page about one floor.
-    const inScope = (r: OrgTimeOffRequest) =>
-      spaces.some((s) => s.people.some((p) => p.id === r.technicianId))
+    const inScope = (r: OrgTimeOffRequest) => spaces.some((s) => s.people.some((p) => p.id === r.technicianId))
     const mine = pending.filter(inScope)
     return {
       waiting: mine.length,
@@ -196,7 +196,7 @@ export function useScheduleAndTimeOffPage() {
     }
   }, [pending, spaces, space])
 
-  const selected = selectedId ? requests.find((r) => r.id === selectedId) ?? null : null
+  const selected = selectedId ? (requests.find((r) => r.id === selectedId) ?? null) : null
   const drawerMounted = useLatched(!!selected)
 
   // Whichever read failed first. Any of the three leaves the page unable to say
@@ -210,7 +210,6 @@ export function useScheduleAndTimeOffPage() {
   )
 
   return {
-    t,
     anchor,
     setAnchor,
     range,

@@ -1,13 +1,13 @@
-/** Which sections and lines are shown, and what is remembered per workspace (moved here unchanged) */
+/** Which sections and lines are shown, and what is remembered per workspace. */
 import type {
   ClientCopyOption,
   TaskReport,
   TaskReportCopy,
   TaskReportIssuerOption,
   TaskReportSection,
-} from '@hbcfield/shared/client';
-import { EXCLUDED_EVENTS } from '../../../_components/activity-events';
-import { keys } from '@/lib/query-keys';
+} from "@hbcfield/shared/client"
+import { EXCLUDED_EVENTS } from "../../../_components/activity-events"
+import { keys } from "@/lib/query-keys"
 
 /**
  * The job report as the screen and the PDF both read it — pure, so the two can
@@ -127,7 +127,9 @@ export function visibleSections(r: TaskReport, off: ReadonlySet<ReportToggle>): 
 /** "1", "2", … recomputed from what is shown, so switching one off never leaves a gap. */
 export function sectionNumbers(visible: readonly NumberedSection[]): Partial<Record<NumberedSection, number>> {
   const out: Partial<Record<NumberedSection, number>> = {}
-  visible.forEach((s, i) => { out[s] = i + 1 })
+  visible.forEach((s, i) => {
+    out[s] = i + 1
+  })
   return out
 }
 
@@ -150,11 +152,17 @@ function read<T>(key: string, parse: (v: unknown) => T | null): T | null {
 }
 
 function write(key: string, value: unknown): void {
-  try { window.localStorage.setItem(key, JSON.stringify(value)) } catch { /* private window, blocked storage */ }
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    /* private window, blocked storage */
+  }
 }
 
-const onlyKnown = <T extends string>(known: readonly T[]) => (v: unknown): T[] | null =>
-  Array.isArray(v) ? v.filter((x): x is T => typeof x === "string" && (known as readonly string[]).includes(x)) : null
+const onlyKnown =
+  <T extends string>(known: readonly T[]) =>
+  (v: unknown): T[] | null =>
+    Array.isArray(v) ? v.filter((x): x is T => typeof x === "string" && (known as readonly string[]).includes(x)) : null
 
 /** The switches turned OFF in this workspace (a new section is therefore on by default). */
 export function loadOffToggles(spaceId: string | null | undefined): Set<ReportToggle> {
@@ -166,7 +174,10 @@ export function saveOffToggles(spaceId: string | null | undefined, off: Readonly
 }
 
 /** What the office chose to add back to the client copy in this workspace. */
-export function loadClientInclude(spaceId: string | null | undefined, known: readonly ClientCopyOption[]): ClientCopyOption[] {
+export function loadClientInclude(
+  spaceId: string | null | undefined,
+  known: readonly ClientCopyOption[],
+): ClientCopyOption[] {
   return normalizeInclude(read(`${STORE_PREFIX}.include.${spaceId ?? "none"}`, onlyKnown(known)) ?? [])
 }
 
@@ -183,7 +194,12 @@ export function normalizeInclude(include: readonly ClientCopyOption[]): ClientCo
  * The query key of one report: the office copy ignores `include`, so it is not
  * part of its key; the issuer is part of both (it changes the letterhead).
  */
-export function reportQueryKey(taskId: string, copy: TaskReportCopy, include: readonly ClientCopyOption[], issuer: string | null = null) {
+export function reportQueryKey(
+  taskId: string,
+  copy: TaskReportCopy,
+  include: readonly ClientCopyOption[],
+  issuer: string | null = null,
+) {
   return copy === "client"
     ? keys.taskExtras.fullReport(taskId, copy, normalizeInclude(include).join(","), issuer ?? "")
     : keys.taskExtras.fullReport(taskId, copy, issuer ?? "")
@@ -192,7 +208,8 @@ export function reportQueryKey(taskId: string, copy: TaskReportCopy, include: re
 /** The "Issued by" choice remembered for this workspace — only while it is still one of the choices. */
 export function loadIssuerChoice(
   spaceId: string | null | undefined,
-  issuers: readonly TaskReportIssuerOption[] | undefined): string | null {
+  issuers: readonly TaskReportIssuerOption[] | undefined,
+): string | null {
   const id = read(`${STORE_PREFIX}.issuer.${spaceId ?? "none"}`, (v) => (typeof v === "string" ? v : null))
   return id && (issuers ?? []).some((i) => i.id === id) ? id : null
 }
@@ -200,7 +217,11 @@ export function loadIssuerChoice(
 export function saveIssuerChoice(spaceId: string | null | undefined, issuer: string | null): void {
   if (issuer) write(`${STORE_PREFIX}.issuer.${spaceId ?? "none"}`, issuer)
   else {
-    try { window.localStorage.removeItem(`${STORE_PREFIX}.issuer.${spaceId ?? "none"}`) } catch { /* blocked storage */ }
+    try {
+      window.localStorage.removeItem(`${STORE_PREFIX}.issuer.${spaceId ?? "none"}`)
+    } catch {
+      /* blocked storage */
+    }
   }
 }
 
@@ -225,7 +246,9 @@ type FactKey = (typeof HEAD_TOGGLE_GROUPS)["facts"][number]
 type PillKey = (typeof HEAD_TOGGLE_GROUPS)["labels"][number]
 
 export const HEAD_TOGGLES: readonly HeadToggle[] = [
-  ...HEAD_TOGGLE_GROUPS.letterhead, ...HEAD_TOGGLE_GROUPS.labels, ...HEAD_TOGGLE_GROUPS.facts,
+  ...HEAD_TOGGLE_GROUPS.letterhead,
+  ...HEAD_TOGGLE_GROUPS.labels,
+  ...HEAD_TOGGLE_GROUPS.facts,
 ]
 
 /** The top-of-report switches turned OFF in this workspace (all on by default). */

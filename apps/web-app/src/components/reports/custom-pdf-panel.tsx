@@ -7,9 +7,54 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { type CustomPdfOptions } from "@/lib/report-pdf-options"
-import { ACCENTS, Seg, Group, Field, type ReportExportStudioProps } from "./report-export-studio-shared"
 
-/** The custom template's options (style, layout, sections, text), moved here unchanged from ReportExportStudio. */
+const ACCENTS = ["#2563EB", "#334155", "#059669", "#7C3AED", "#E11D48", "#D97706"]
+
+// Module-scope so they keep a stable identity across renders (defining these
+// inside the component would remount the inputs on every keystroke).
+function Seg<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T
+  options: { v: T; label: string }[]
+  onChange: (v: T) => void
+}) {
+  return (
+    <div className="flex gap-0.5 rounded-lg bg-muted/70 p-0.5">
+      {options.map((o) => (
+        <button
+          key={o.v}
+          type="button"
+          onClick={() => onChange(o.v)}
+          className={cn(
+            "flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+            value === o.v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+const Group = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="rounded-xl border border-border p-3 space-y-2.5">
+    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+    {children}
+  </div>
+)
+
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div className="space-y-1">
+    <Label className="text-[11px] text-muted-foreground">{label}</Label>
+    {children}
+  </div>
+)
+
+/** The custom template's options (style, layout, sections, text). */
 export function CustomPdfPanel({
   custom,
   setC,
@@ -17,7 +62,7 @@ export function CustomPdfPanel({
 }: {
   custom: CustomPdfOptions
   setC: (patch: Partial<CustomPdfOptions>) => void
-  defaultName: ReportExportStudioProps["defaultName"]
+  defaultName: string | undefined
 }) {
   const { t } = useTranslation()
   return (

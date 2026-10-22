@@ -11,7 +11,7 @@ import type {
 } from './types/tasks'
 import { tasksEndpoints, type StepFormAnswers } from '@hbcfield/shared/client';
 import { taskWorkApi } from './tasks-work';
-import { taskPartsApi } from './tasks-parts';
+import { taskDetailsApi } from './tasks-details';
 
 export const tasksApi = {
   // Get task counts grouped by status
@@ -133,5 +133,5 @@ export const tasksApi = {
     return response.data?.data;
   },
   ...taskWorkApi,
-  ...taskPartsApi,
+  ...taskDetailsApi,
 };

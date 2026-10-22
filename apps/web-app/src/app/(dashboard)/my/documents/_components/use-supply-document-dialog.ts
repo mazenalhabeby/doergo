@@ -10,24 +10,13 @@ import { keys } from "@/lib/query-keys"
 
 const MAX_BYTES = 20 * 1024 * 1024
 
-/** SupplyDocumentDialog's state and handlers — everything before its markup, moved here unchanged. */
-export function useSupplyDocumentDialog({
-  types,
-  open,
-  onClose,
-}: Pick<{
-  types: DocumentTypeRow[]
-  open: boolean
-  onClose: () => void
-}, 'types' | 'open' | 'onClose'>) {
+/** SupplyDocumentDialog's state: the chosen type and file, the expiry read off it, and the upload. */
+export function useSupplyDocumentDialog({ types, onClose }: { types: DocumentTypeRow[]; onClose: () => void }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const suppliable = useMemo(
-    () => types.filter((ty) => ty.direction !== "ISSUED" && ty.isActive),
-    [types],
-  )
+  const suppliable = useMemo(() => types.filter((ty) => ty.direction !== "ISSUED" && ty.isActive), [types])
 
   const [typeId, setTypeId] = useState("")
   const [file, setFile] = useState<File | null>(null)
@@ -144,7 +133,7 @@ export function useSupplyDocumentDialog({
         setDateSource(read.source ?? "TEXT")
         setExpiresOn(read.expiresOn)
       } else {
-        setDateSource((prev) => (prev === "TEXT" ? prev : read?.source ?? "NOTHING"))
+        setDateSource((prev) => (prev === "TEXT" ? prev : (read?.source ?? "NOTHING")))
       }
     } catch {
       // A failed read is not a failed upload: they can still type the date.
@@ -223,7 +212,6 @@ export function useSupplyDocumentDialog({
   const canSubmit = !!file && !!type && expiryReady(prompt) && !submit.isPending
 
   return {
-    t,
     inputRef,
     suppliable,
     setTypeId,

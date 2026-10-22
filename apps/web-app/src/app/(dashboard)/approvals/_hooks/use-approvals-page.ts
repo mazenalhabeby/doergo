@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { APPROVAL_KINDS, type ApprovalDecision, type ApprovalItem, type ApprovalKind, type ApprovalInbox } from "@hbcfield/shared/client"
+import {
+  APPROVAL_KINDS,
+  type ApprovalDecision,
+  type ApprovalItem,
+  type ApprovalKind,
+  type ApprovalInbox,
+} from "@hbcfield/shared/client"
 import { approvalsApi } from "@/lib/api"
 import { keys, invalidateTimeOff } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
@@ -14,7 +20,7 @@ export { itemKey } from "../_lib/approval-keys"
 import { KIND_KEYS, itemKey, type Filter } from "../_lib/approval-keys"
 import { useApprovalDays } from "./use-approval-days"
 
-/** ApprovalsPage's state and handlers — everything before its markup, moved here unchanged. */
+/** The inbox's state: the list, the chosen kind and item, keyboard walking, and deciding. */
 export function useApprovalsPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
@@ -52,7 +58,10 @@ export function useApprovalsPage() {
   }, [items])
   const dayState = useApprovalDays(data, filter, (key) => setSelected((s) => (s === key ? null : s)))
   const visible = useMemo(
-    () => (filter === "all" ? items : items.filter((i) => i.kind === filter)).filter((i) => !dayState.grouped.has(itemKey(i))),
+    () =>
+      (filter === "all" ? items : items.filter((i) => i.kind === filter)).filter(
+        (i) => !dayState.grouped.has(itemKey(i)),
+      ),
     [items, filter, dayState.grouped],
   )
   const currentDay = dayState.visibleDays.find((d) => d.key === selected) ?? null
@@ -62,7 +71,8 @@ export function useApprovalsPage() {
   const current = visible.find((i) => itemKey(i) === selected) ?? items.find((i) => itemKey(i) === selected) ?? null
   useEffect(() => {
     if (current || selected?.startsWith("day:") || visible.length === 0) return
-    if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) setSelected(itemKey(visible[0]!))
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches)
+      setSelected(itemKey(visible[0]!))
   }, [current, visible, selected])
 
   // ↑ / ↓ walk the list — a queue is worked through, not clicked through.
@@ -103,7 +113,8 @@ export function useApprovalsPage() {
       qc.invalidateQueries({ queryKey: keys.approvals.all() })
       for (const k of KIND_KEYS[d.kind] ?? []) qc.invalidateQueries({ queryKey: k })
       if (d.kind === "request") invalidateTimeOff(qc)
-      if (d.kind === "guestRequest" && done?.space) qc.invalidateQueries({ queryKey: keys.spaces.shareRequests(done.space.id) })
+      if (d.kind === "guestRequest" && done?.space)
+        qc.invalidateQueries({ queryKey: keys.spaces.shareRequests(done.space.id) })
     },
     onError: (e: Error) => {
       notify.error(e.message)

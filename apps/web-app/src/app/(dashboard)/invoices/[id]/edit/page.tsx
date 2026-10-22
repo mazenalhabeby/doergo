@@ -1,6 +1,8 @@
 "use client"
 
 import { use } from "react"
+import { useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import { Loader2 } from "lucide-react"
 
 import { PlanGate } from "@/components/common/plan-gate"
@@ -13,22 +15,24 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { InvoiceTopBar, InvoiceNotice, InvoiceWorkbench, RailSection } from "../../_components/invoice-shell"
 import { InvoiceDocument } from "../../_components/invoice-document"
 import { ClientFields, TermsFields, LineEditor, IssuedByField } from "../../_components/invoice-fields"
-import { useEditInvoiceInner } from "./_hooks/use-edit-invoice-inner"
+import { useAuth } from "@/contexts/auth-context"
+import { useEditInvoice } from "./_hooks/use-edit-invoice"
 
 export default function EditInvoicePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   return (
     <PlanGate feature="invoicing">
-      <EditInvoiceInner id={id} />
+      <EditInvoice id={id} />
     </PlanGate>
   )
 }
 
-function EditInvoiceInner({ id }: { id: string }) {
+/** Correcting a draft invoice — the same workbench as creating one, with nothing to gather. */
+function EditInvoice({ id }: { id: string }) {
+  const { t } = useTranslation()
+  const router = useRouter()
+  const { user } = useAuth()
   const {
-    t,
-    router,
-    user,
     inv,
     isLoading,
     org,
@@ -68,7 +72,7 @@ function EditInvoiceInner({ id }: { id: string }) {
     total,
     periodLabel,
     save,
-  } = useEditInvoiceInner({ id })
+  } = useEditInvoice({ id })
 
   if (isLoading || !inv) {
     return (

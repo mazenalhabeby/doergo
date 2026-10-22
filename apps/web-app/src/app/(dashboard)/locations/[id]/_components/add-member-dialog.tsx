@@ -31,9 +31,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { BILL_BY, roleQueryKey, Segmented, useBillByLabel, type BillBy } from "./work-roles"
-import { NONE } from "./members-people-helpers"
+import { NONE } from "./role-tag"
 
-/** Adding people to a workspace (moved here unchanged). */
 /** Add somebody: who, their role (trade or management), and — for a trade — how they are billed. */
 export function AddMemberDialog({
   spaceId,
@@ -76,8 +75,13 @@ export function AddMemberDialog({
   const candidates: AssignablePerson[] = mayListOrg ? (orgPeople ?? []) : visiblePeople
   const available = candidates.filter((e) => e.isActive !== false && !assigned.has(e.id))
   const dupes = useMemo(() => {
-    const seen = new Set<string>(), d = new Set<string>()
-    for (const e of available) { const n = personName(e).toLowerCase(); if (seen.has(n)) d.add(n); seen.add(n) }
+    const seen = new Set<string>(),
+      d = new Set<string>()
+    for (const e of available) {
+      const n = personName(e).toLowerCase()
+      if (seen.has(n)) d.add(n)
+      seen.add(n)
+    }
     return d
   }, [available])
   const picked = roles.find((r) => r.id === roleId)
@@ -100,7 +104,12 @@ export function AddMemberDialog({
   })
 
   return (
-    <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose()
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("scheduling.membersPage.addMember")}</DialogTitle>
@@ -110,45 +119,64 @@ export function AddMemberDialog({
           <div className="space-y-1.5">
             <Label className="text-xs">{t("scheduling.members.fields.member")}</Label>
             <Select value={userId} onValueChange={setUserId}>
-              <SelectTrigger><SelectValue placeholder={t("scheduling.members.selectMember")} /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder={t("scheduling.members.selectMember")} />
+              </SelectTrigger>
               <SelectContent>
                 {available.length === 0 ? (
-                  <div className="p-2 text-center text-sm text-muted-foreground">{t("scheduling.members.noAvailable")}</div>
-                ) : available.map((e) => {
-                  const title = jobTitleOf(e)
-                  const showEmail = dupes.has(personName(e).toLowerCase())
-                  return (
-                    <SelectItem key={e.id} value={e.id}>
-                      <span className="flex flex-col items-start">
-                        <span>{personName(e)}</span>
-                        {(title || showEmail) &&
-                          <span
-                            className="text-xs text-muted-foreground">{[title, showEmail ? e.email : null].filter(Boolean).join(
-                              " · ")}</span>}
-                      </span>
-                    </SelectItem>
-                  )
-                })}
+                  <div className="p-2 text-center text-sm text-muted-foreground">
+                    {t("scheduling.members.noAvailable")}
+                  </div>
+                ) : (
+                  available.map((e) => {
+                    const title = jobTitleOf(e)
+                    const showEmail = dupes.has(personName(e).toLowerCase())
+                    return (
+                      <SelectItem key={e.id} value={e.id}>
+                        <span className="flex flex-col items-start">
+                          <span>{personName(e)}</span>
+                          {(title || showEmail) && (
+                            <span className="text-xs text-muted-foreground">
+                              {[title, showEmail ? e.email : null].filter(Boolean).join(" · ")}
+                            </span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    )
+                  })
+                )}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">{t("scheduling.members.fields.role")}</Label>
             <Select value={roleId} onValueChange={setRoleId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NONE}>{t("scheduling.members.noRole")}</SelectItem>
-                {([
-                  ["WORK", t("scheduling.workRoles.groupWork")],
-                  ["MANAGEMENT", t("scheduling.workRoles.groupManagement")]] as const).map(([kind, label]) => {
+                {(
+                  [
+                    ["WORK", t("scheduling.workRoles.groupWork")],
+                    ["MANAGEMENT", t("scheduling.workRoles.groupManagement")],
+                  ] as const
+                ).map(([kind, label]) => {
                   // Work roles: only those this workspace uses.
-                  const group = roles.filter((r) => (r.kind === "WORK") === (kind === "WORK") &&
-                    (r.kind !== "WORK" || r.activeHere !== false))
+                  const group = roles.filter(
+                    (r) => (r.kind === "WORK") === (kind === "WORK") && (r.kind !== "WORK" || r.activeHere !== false),
+                  )
                   if (group.length === 0) return null
                   return (
                     <SelectGroup key={kind}>
-                      <SelectLabel className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</SelectLabel>
-                      {group.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                      <SelectLabel className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        {label}
+                      </SelectLabel>
+                      {group.map((r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.name}
+                        </SelectItem>
+                      ))}
                     </SelectGroup>
                   )
                 })}
@@ -170,7 +198,9 @@ export function AddMemberDialog({
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={add.isPending}>{t("common.cancel")}</Button>
+          <Button variant="outline" onClick={onClose} disabled={add.isPending}>
+            {t("common.cancel")}
+          </Button>
           <Button onClick={() => add.mutate()} disabled={!userId || add.isPending} className="gap-1.5">
             {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
             {t("scheduling.members.addButton")}

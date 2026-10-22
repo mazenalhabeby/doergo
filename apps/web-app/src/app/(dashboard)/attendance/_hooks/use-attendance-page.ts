@@ -1,51 +1,50 @@
 "use client"
 
 import { keys } from "@/lib/query-keys"
-import { useState, useMemo } from "react"
-import { useQuery, useMutation, keepPreviousData } from "@tanstack/react-query"
-import { format } from "date-fns"
-import { notify } from "@/lib/toast"
-import { attendanceApi, type TimeEntry, type BreakType } from "@/lib/api"
-import { workedMinutes } from "@hbcfield/shared/client"
-import { useAttendancePageData } from "./use-attendance-page-data"
+import { useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { useAuth } from "@/contexts/auth-context"
+import { attendanceApi } from "@/lib/api"
+import { useTranslation } from "react-i18next"
 
-/** AttendancePage's state and handlers — everything before its markup, moved here unchanged. */
+/** The attendance page's own state: who may do what here, the open tab, the open no-show count. */
 export function useAttendancePage() {
-  const {
-    t,
-    queryClient,
-    activeTab,
-    setActiveTab,
-    searchQuery,
-    setSearchQuery,
-    selectedLocationId,
-    setSelectedLocationId,
-    selectedStatus,
-    setSelectedStatus,
-    selectedDate,
-    setSelectedDate,
-    endDate,
-    setEndDate,
-    page,
-    setPage,
-    sort,
-    onSort,
-    limit,
-    canAccess,
-    isAdmin,
-    canReconcile,
-    canDelete,
-    locations,
-    loadingLocations,
-    attendanceData,
-    loadingEntries,
-    isError,
-    error,
-    refetch,
-    daysOff,
-  } = useAttendancePageData()
+  const { user, hasPermission } = useAuth()
+  const { t } = useTranslation()
 
-  // Weekly/monthly reports moved to ReportsTab component
+  // Tab state
+  const [activeTab, setActiveTab] = useState<"tracking" | "breaks" | "noshows">("tracking")
+
+  // Honor a ?tab= deep-link (e.g. the dashboard's "Pending Actions" reject link
+  // → /attendance?tab=approvals). Read after mount to avoid a hydration mismatch.
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get("tab")
+    // Hours are decided in Approvals now: an old link to this tab goes there.
+    if (tab === "approvals") window.location.replace("/approvals?kind=hours")
+    else if (tab === "breaks" || tab === "tracking" || tab === "noshows") setActiveTab(tab)
+  }, [])
+
+  // Check role - only ADMIN and DISPATCHER can access
+  const canAccess =
+    user?.role === "ADMIN" || hasPermission("canViewSpaceAttendance") || hasPermission("canViewAllTasks")
+  const isAdmin = user?.role === "ADMIN"
+  /*
+    Correcting somebody else's shift — editing the times, adding a break they
+    could not record themselves.
+
+    Separate from `isAdmin`, which on this page still gates worklog editing.
+    The server accepts `canReconcileAttendance` for these
+    corrections precisely so the person who runs payroll can hold it without
+    being handed the organization — and a UI that only offers them to admins
+    makes that grant unreachable, which is how a permission quietly becomes
+    decorative.
+  */
+  const canReconcile = isAdmin || hasPermission("canReconcileAttendance")
+  /*
+    Erasing is its own permission (`canDeleteAttendance`). Signing hours off
+    (`canApproveAttendance`) happens in Approvals, not on this page.
+  */
+  const canDelete = isAdmin || hasPermission("canDeleteAttendance")
 
   // No-shows (shares the tab's query key → deduped) — drives the tab count badge.
   const { data: noShowPeople = [] } = useQuery({
@@ -56,149 +55,5 @@ export function useAttendancePage() {
   })
   const openNoShows = noShowPeople.reduce((n, p) => n + p.open, 0)
 
-  // Breaks state
-  const [breakDate, setBreakDate] = useState<string>(format(new Date(), "yyyy-MM-dd"))
-  const [breakTypeFilter, setBreakTypeFilter] = useState<string>("all")
-
-  // Fetch active breaks
-  const { data: activeBreaks = [], isLoading: loadingActiveBreaks, refetch: refetchActiveBreaks } = useQuery({
-    queryKey: keys.attendance.activeBreaks(),
-    queryFn: () => attendanceApi.getActiveBreaks(),
-    enabled: canAccess && activeTab === "breaks",
-    staleTime: 30_000,
-    refetchInterval: activeTab === "breaks" ? 30_000 : false, // live: who's on break now
-  })
-
-  // Fetch break history
-  const { data: breakHistoryData, isLoading: loadingBreakHistory, refetch: refetchBreakHistory } = useQuery({
-    queryKey: keys.attendance.breakHistory(breakDate, breakTypeFilter),
-    queryFn: () => attendanceApi.getBreakHistory({
-      date: breakDate,
-      type: breakTypeFilter !== "all" ? breakTypeFilter as BreakType : undefined,
-      limit: 50,
-    }),
-    enabled: canAccess && activeTab === "breaks",
-    placeholderData: keepPreviousData,
-    staleTime: 30_000,
-  })
-
-  // Fetch break summary for the selected date
-  const { data: breakSummary, isLoading: loadingBreakSummary } = useQuery({
-    queryKey: keys.attendance.breakSummary(breakDate),
-    queryFn: () => attendanceApi.getBreakSummary({
-      startDate: breakDate,
-      endDate: breakDate,
-    }),
-    enabled: canAccess && activeTab === "breaks",
-    staleTime: 30_000,
-  })
-
-  // End break mutation
-  const endBreakManually = useMutation({
-    mutationFn: ({ breakId, notes }: { breakId: string; notes?: string }) =>
-      attendanceApi.endBreakManually(breakId, notes),
-    onSuccess: () => {
-      notify.success(t('attendance.toast.breakEnded'))
-      queryClient.invalidateQueries({ queryKey: keys.attendance.activeBreaks() })
-      queryClient.invalidateQueries({ queryKey: keys.attendance.breakHistory() })
-    },
-    onError: (error) => {
-      notify.error(error instanceof Error ? error.message : t('attendance.toast.breakEndFailed'))
-    },
-  })
-
-  // Export CSV moved to ReportsTab component
-
-  const entries = attendanceData?.data || []
-  const meta = attendanceData?.meta
-
-  // Calculate stats
-  const stats = useMemo(() => {
-    const activeCount = entries.filter((e: TimeEntry) => e.status === "CLOCKED_IN").length
-    const completedCount = entries.filter((e: TimeEntry) => e.status === "CLOCKED_OUT").length
-    const autoOutCount = entries.filter((e: TimeEntry) => e.status === "AUTO_OUT").length
-    /*
-      The same hours the rows below show.
-
-      This summed raw `totalMinutes` while every row in the table beneath it
-      rendered `workedMinutes()` — so the headline said 12.2 hours and the column
-      under it added up to 11.5, on one screen, for the same shifts. Breaks were
-      not subtracted and the counted window was ignored entirely.
-    */
-    const countedMinutes = entries.reduce(
-      (sum: number, e: TimeEntry) => sum + workedMinutes(e),
-      0
-    )
-
-    return {
-      active: activeCount,
-      completed: completedCount,
-      autoOut: autoOutCount,
-      // Exact — the card rounds it to the minute when it draws it.
-      totalHours: countedMinutes / 60,
-    }
-  }, [entries])
-
-  // Filter entries with geofence violations
-  const geofenceViolations = useMemo(() => {
-    return entries.filter((e: TimeEntry) =>
-      !e.clockInWithinGeofence || (e.clockOutAt && e.clockOutWithinGeofence === false)
-    )
-  }, [entries])
-
-  // Client-side search filter
-  // Search is now server-side (matches across all pages), so the fetched
-  // entries are already filtered — no client-side narrowing needed.
-  const filteredEntries = entries
-
-  return {
-    t,
-    activeTab,
-    setActiveTab,
-    searchQuery,
-    setSearchQuery,
-    selectedLocationId,
-    setSelectedLocationId,
-    selectedStatus,
-    setSelectedStatus,
-    selectedDate,
-    setSelectedDate,
-    endDate,
-    setEndDate,
-    page,
-    setPage,
-    sort,
-    onSort,
-    limit,
-    canAccess,
-    isAdmin,
-    canReconcile,
-    canDelete,
-    locations,
-    loadingLocations,
-    loadingEntries,
-    isError,
-    error,
-    refetch,
-    daysOff,
-    openNoShows,
-    breakDate,
-    setBreakDate,
-    breakTypeFilter,
-    setBreakTypeFilter,
-    activeBreaks,
-    loadingActiveBreaks,
-    refetchActiveBreaks,
-    breakHistoryData,
-    loadingBreakHistory,
-    refetchBreakHistory,
-    breakSummary,
-    loadingBreakSummary,
-    endBreakManually,
-    entries,
-    meta,
-    stats,
-    geofenceViolations,
-    filteredEntries,
-  }
+  return { t, activeTab, setActiveTab, canAccess, isAdmin, canReconcile, canDelete, openNoShows }
 }

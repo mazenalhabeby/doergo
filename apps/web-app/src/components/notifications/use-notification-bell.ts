@@ -1,36 +1,33 @@
 "use client"
 
 import { useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { isSameAppPath } from "@/lib/safe-links"
 import { usersApi } from "@/lib/api"
-import { type Notification } from "./use-notification-bell-data"
-import { useNotificationBellData2 } from "./use-notification-bell-data2"
-export { type NotificationType } from "./use-notification-bell-data"
+import { useChat } from "@/components/chat/chat-context"
+import { type Notification, useNotificationInbox } from "./use-notification-inbox"
+import { useLiveNotifications } from "./use-live-notifications"
+export { type NotificationType } from "./use-notification-inbox"
 
-/** NotificationBell's state and handlers — everything before its markup, moved here unchanged. */
+/** The bell's list (persisted + live), its open state, and what reading or clicking an entry does. */
 export function useNotificationBell() {
-  const {
-    openChatWith,
-    t,
-    router,
-    notifications,
-    setNotifications,
-    open,
-    setOpen,
-    isConnected,
-  } = useNotificationBellData2()
+  const { openChatWith } = useChat()
+  const router = useRouter()
+  const { user, attendanceHref, notifications, setNotifications, open, setOpen, isConnected, subscribe, add } =
+    useNotificationInbox()
+  useLiveNotifications({ userId: user?.id, attendanceHref, isConnected, subscribe, add })
 
   // ── Actions ────────────────────────────────────────────────────────
-  const unreadCount = notifications.filter(n => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.read).length
 
   const markAllRead = useCallback(() => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
     usersApi.markNotificationsRead().catch(() => {}) // persist read state
   }, [])
   const clearAll = () => setNotifications([])
 
   const handleClick = (notif: Notification) => {
-    setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n))
+    setNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)))
     if (notif.link?.startsWith("chat:")) {
       // Chat opens the drawer (not a route). link = "chat:<senderUserId>".
       setOpen(false)
@@ -43,15 +40,5 @@ export function useNotificationBell() {
     }
   }
 
-  return {
-    t,
-    notifications,
-    open,
-    setOpen,
-    isConnected,
-    unreadCount,
-    markAllRead,
-    clearAll,
-    handleClick,
-  }
+  return { notifications, open, setOpen, isConnected, unreadCount, markAllRead, clearAll, handleClick }
 }

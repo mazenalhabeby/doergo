@@ -2,9 +2,11 @@
 
 import type { Dispatch, SetStateAction } from "react"
 import { useTranslation } from "react-i18next"
+import { useQueryClient } from "@tanstack/react-query"
+import { keys } from "@/lib/query-keys"
 import { CompanyField, companyName } from "@/components/companies/company-select"
 import { DatedRateField, currentOf } from "@/components/rates/dated-rate"
-import { employeesApi, type OrgMember, type rateHistoryApi } from "@/lib/api"
+import { employeesApi, type LegalEntity, type OrgMember, type rateHistoryApi } from "@/lib/api"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -25,7 +27,6 @@ export function EmploymentFields({
   mainCompany,
   usedPositions,
   memberRates,
-  refreshMemberRates,
   position,
   setPosition,
   employerEntityId,
@@ -44,10 +45,9 @@ export function EmploymentFields({
   orgCurrency?: string
   canViewLabourCost: boolean
   isExternalMember: boolean
-  mainCompany: Parameters<typeof companyName>[0]
+  mainCompany: Pick<LegalEntity, "legalName" | "label"> | null | undefined
   usedPositions: string[]
   memberRates: Awaited<ReturnType<typeof rateHistoryApi.list>> | undefined
-  refreshMemberRates: () => void
   position: string
   setPosition: (value: string) => void
   employerEntityId: string | null
@@ -62,10 +62,25 @@ export function EmploymentFields({
   setLeaveAllowance: Dispatch<SetStateAction<string>>
 }) {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  /*
+    A cost lives on the PERSON and is read in several places: their profile,
+    its dated history, and "Costs you" beside them in EVERY workspace they work
+    in (["space-members", <space>]). Saving refreshes all of them — the
+    workspace list otherwise kept the old figure for up to a minute.
+  */
+  const refreshMemberRates = () => {
+    queryClient.invalidateQueries({ queryKey: keys.members.detail(member?.id) })
+    queryClient.invalidateQueries({ queryKey: keys.rates.history("MEMBER", member?.id) })
+    queryClient.invalidateQueries({ queryKey: keys.spaceMembers.all() })
+    queryClient.invalidateQueries({ queryKey: keys.invoices.gather() })
+  }
   return (
     <div className="space-y-2.5 rounded-lg border border-border/60 p-3">
       <div className="space-y-1.5">
-        <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.jobTitle", "Job title")}</Label>
+        <Label className="text-xs font-medium text-muted-foreground">
+          {t("members.memberEditor.jobTitle", "Job title")}
+        </Label>
         <PositionCombobox value={position} onChange={setPosition} usedPositions={usedPositions} />
       </div>
 
@@ -104,54 +119,58 @@ export function EmploymentFields({
           (Capacity/"max daily jobs" is now derived automatically from throughput.) */}
       {orgUsesExternalWorkers && (
         <div className="space-y-1.5">
-          <Label
-            className="text-xs font-medium text-muted-foreground">{t(
-              "technicians.detail.editDialog.employmentTypeLabel",
-              "Employment type")}</Label>
+          <Label className="text-xs font-medium text-muted-foreground">
+            {t("technicians.detail.editDialog.employmentTypeLabel", "Employment type")}
+          </Label>
           <Select value={employmentType} onValueChange={setEmploymentType}>
-            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              <SelectItem
-                value="EXTERNAL">{t("technicians.detail.editDialog.employmentType.external", "External / freelancer")}</SelectItem>
-              <SelectItem value="IN_HOUSE">{t("technicians.detail.editDialog.employmentType.inHouse", "In-house (employed)")}</SelectItem>
+              <SelectItem value="EXTERNAL">
+                {t("technicians.detail.editDialog.employmentType.external", "External / freelancer")}
+              </SelectItem>
+              <SelectItem value="IN_HOUSE">
+                {t("technicians.detail.editDialog.employmentType.inHouse", "In-house (employed)")}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
       )}
 
       {!isExternalMember && (
-      <div className="space-y-1.5">
-        <Label className="text-xs font-medium text-muted-foreground">
-          {t("members.memberEditor.startDateLabel")}
-        </Label>
-        <Input
-          type="date"
-          value={employmentStartDate}
-          onChange={(e) => setEmploymentStartDate(e.target.value)}
-          className="h-9"
-        />
-        <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.startDateHint")}</p>
-      </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">
+            {t("members.memberEditor.startDateLabel")}
+          </Label>
+          <Input
+            type="date"
+            value={employmentStartDate}
+            onChange={(e) => setEmploymentStartDate(e.target.value)}
+            className="h-9"
+          />
+          <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.startDateHint")}</p>
+        </div>
       )}
 
       {!isExternalMember && (
-      <div className="space-y-1.5">
-        <Label className="text-xs font-medium text-muted-foreground">
-          {t("members.memberEditor.allowanceLabel")}
-        </Label>
-        <Input
-          type="number"
-          min={0}
-          max={100}
-          value={leaveAllowance}
-          onChange={(e) => setLeaveAllowance(e.target.value)}
-          placeholder={t("members.memberEditor.allowancePlaceholder")}
-          className="h-9"
-        />
-        {/* Says what BLANK means. Without it an admin reads an empty box
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">
+            {t("members.memberEditor.allowanceLabel")}
+          </Label>
+          <Input
+            type="number"
+            min={0}
+            max={100}
+            value={leaveAllowance}
+            onChange={(e) => setLeaveAllowance(e.target.value)}
+            placeholder={t("members.memberEditor.allowancePlaceholder")}
+            className="h-9"
+          />
+          {/* Says what BLANK means. Without it an admin reads an empty box
             as "no holiday" and types a number they did not need to. */}
-        <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.allowanceHint")}</p>
-      </div>
+          <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.allowanceHint")}</p>
+        </div>
       )}
 
       {/*
@@ -165,8 +184,8 @@ export function EmploymentFields({
         mistake being fixed.
       */}
       {!isExternalMember && (
-      <>
-      {/*
+        <>
+          {/*
         Their hourly rates — COST FIRST, and that order is the point.
 
         ⚠️ The bill rate led here at first and it read as "what this
@@ -181,51 +200,54 @@ export function EmploymentFields({
         company PAYS for that hour should not be a side effect of being
         allowed to fix somebody's job title.
       */}
-      {canViewLabourCost ? (
-        <DatedRateField
-          currency={orgCurrency}
-          id="member-cost-rate"
-          label={t("members.memberEditor.costRateLabel")}
-          hint={t("members.memberEditor.costRateHint")}
-          /* From the dated history, like the day rate below: the member object the
+          {canViewLabourCost ? (
+            <DatedRateField
+              currency={orgCurrency}
+              id="member-cost-rate"
+              label={t("members.memberEditor.costRateLabel")}
+              hint={t("members.memberEditor.costRateHint")}
+              /* From the dated history, like the day rate below: the member object the
              page opened with may not carry the cost, and does not move when a new
              rate is saved — the field then read "Not set" next to its own history. */
-          currentCents={memberRates?.some((r) => r.kind === "COST_HOUR")
-            ? currentOf(memberRates.filter((r) => r.kind === "COST_HOUR"))
-            : ((member as { costRateCents?: number | null } | null)?.costRateCents ?? null)}
-          history={memberRates?.filter((r) => r.kind === "COST_HOUR")}
-          onSubmit={async (c, from) => {
-            await employeesApi.update(member!.id, { costRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })
-            refreshMemberRates()
-          }}
-        />
-      ) : null}
-      {canViewLabourCost ? (
-        <DatedRateField
-          currency={orgCurrency}
-          id="member-day-cost"
-          label={t("rates.dayCost")}
-          hint={t("rates.dayCostHint")}
-          unit="day"
-          currentCents={currentOf(memberRates?.filter((r) => r.kind === "COST_DAY"))}
-          history={memberRates?.filter((r) => r.kind === "COST_DAY")}
-          onSubmit={async (c, from) => {
-            await employeesApi.update(member!.id, { costDayCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })
-            refreshMemberRates()
-          }}
-        />
-      ) : (
-        /*
+              currentCents={
+                memberRates?.some((r) => r.kind === "COST_HOUR")
+                  ? currentOf(memberRates.filter((r) => r.kind === "COST_HOUR"))
+                  : ((member as { costRateCents?: number | null } | null)?.costRateCents ?? null)
+              }
+              history={memberRates?.filter((r) => r.kind === "COST_HOUR")}
+              onSubmit={async (c, from) => {
+                await employeesApi.update(member!.id, {
+                  costRateCents: c,
+                  ...(from ? { rateEffectiveFrom: from } : {}),
+                })
+                refreshMemberRates()
+              }}
+            />
+          ) : null}
+          {canViewLabourCost ? (
+            <DatedRateField
+              currency={orgCurrency}
+              id="member-day-cost"
+              label={t("rates.dayCost")}
+              hint={t("rates.dayCostHint")}
+              unit="day"
+              currentCents={currentOf(memberRates?.filter((r) => r.kind === "COST_DAY"))}
+              history={memberRates?.filter((r) => r.kind === "COST_DAY")}
+              onSubmit={async (c, from) => {
+                await employeesApi.update(member!.id, { costDayCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })
+                refreshMemberRates()
+              }}
+            />
+          ) : (
+            /*
           ⚠️ Say it is hidden rather than simply omitting it. A person who
           expects a cost field and finds only a bill rate concludes the
           product has it the wrong way round — which is exactly what was
           reported. An absence explains nothing; this does.
         */
-        <p className="text-[11px] text-muted-foreground">
-          {t("members.memberEditor.costRateHidden")}
-        </p>
-      )}
-      </>
+            <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.costRateHidden")}</p>
+          )}
+        </>
       )}
 
       {/*

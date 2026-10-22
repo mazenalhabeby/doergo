@@ -8,31 +8,29 @@ import { customersApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 
-/** AddContactDialog's state and handlers — everything before its markup, moved here unchanged. */
+export interface AddContactDialogProps {
+  companyId: string
+  onSaved: () => void
+  trigger: React.ReactNode
+  /** Opens straight into the create form with this name — see the note below. */
+  startName?: string
+  /**
+   * Adding from the OTHER end.
+   *
+   * On a person's record you pick the company they work at, so this record is
+   * the `personId` and the one you choose becomes the `companyId`. Same link,
+   * same endpoint, same checks — only which end is being chosen changes.
+   */
+  mine?: { personId: string }
+}
+
+/** AddContactDialog's state: find or create, the search, the chosen person, and saving the link. */
 export function useAddContactDialog({
   companyId,
   onSaved,
-  trigger,
   startName,
   mine,
-}: Pick<
-  {
-    companyId: string
-    onSaved: () => void
-    trigger: React.ReactNode
-    /** Opens straight into the create form with this name — see the note below. */
-    startName?: string
-    /**
-     * Adding from the OTHER end.
-     *
-     * On a person's record you pick the company they work at, so this record is
-     * the `personId` and the one you choose becomes the `companyId`. Same link,
-     * same endpoint, same checks — only which end is being chosen changes.
-     */
-    mine?: { personId: string }
-  },
-  "companyId" | "onSaved" | "trigger" | "startName" | "mine"
->) {
+}: Pick<AddContactDialogProps, "companyId" | "onSaved" | "startName" | "mine">) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<"find" | "create">(startName ? "create" : "find")

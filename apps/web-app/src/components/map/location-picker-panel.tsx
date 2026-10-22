@@ -2,13 +2,15 @@
 
 import { MapContainer, Marker, Circle, Polygon } from "react-leaflet"
 import L from "leaflet"
-import { Loader2, LocateFixed, Spline, Undo2, Trash2, Maximize2, Minimize2 } from "lucide-react"
+import type { Dispatch, MutableRefObject, SetStateAction } from "react"
+import { useTranslation } from "react-i18next"
+import { Loader2, LocateFixed, Maximize2, Minimize2 } from "lucide-react"
 import { BaseTiles } from "@/components/map/base-tiles"
 import { cn } from "@/lib/utils"
 import { markerIcon } from "@/lib/leaflet-icon"
-import { polygonAreaSqm, GEOFENCE_POLYGON_LIMITS } from "@hbcfield/shared/client"
-import { InvalidateSizeOn, MapClickHandler, widestSpanMetres, ViewTracker, MapPanner } from "./location-picker-map"
-import type { LocationPickerState } from "./use-location-picker"
+import { type LatLng } from "@hbcfield/shared/client"
+import { InvalidateSizeOn, MapClickHandler, ViewTracker, MapPanner } from "./location-picker-map"
+import { BoundaryToolbar } from "./boundary-toolbar"
 
 /** --brand-600. Leaflet draws on canvas, so it needs a resolved colour. */
 const BRAND_ACCENT = "#2563eb"
@@ -48,30 +50,49 @@ const vertexIcon = L.divIcon({
   stacking, the focus trap and Escape. It renders ONCE either way, so the two
   surfaces cannot drift.
 */
-/** The map half of LocationPicker — its markup, moved here unchanged. */
-export function LocationPickerPanel({ s }: { s: LocationPickerState }) {
-  const {
-    lat,
-    lng,
-    radius,
-    onPolygonChange,
-    disabled,
-    t,
-    formatDistance,
-    isAddress,
-    view,
-    canDrawBoundary,
-    drawing,
-    setDrawing,
-    expanded,
-    setExpanded,
-    viewRef,
-    ring,
-    locating,
-    handleMapClick,
-    useMyLocation,
-    mapCenter,
-  } = s
+export interface LocationPickerPanelProps {
+  lat: number | null
+  lng: number | null
+  radius?: number
+  onPolygonChange?: (ring: LatLng[] | null) => void
+  disabled?: boolean
+  isAddress: boolean
+  view: { center: [number, number]; emptyZoom: number; pinnedZoom: number }
+  canDrawBoundary: boolean
+  drawing: boolean
+  setDrawing: (drawing: boolean) => void
+  expanded: boolean
+  setExpanded: Dispatch<SetStateAction<boolean>>
+  viewRef: MutableRefObject<{ center: [number, number]; zoom: number } | null>
+  ring: LatLng[]
+  locating: boolean
+  handleMapClick: (lat: number, lng: number) => void
+  useMyLocation: () => void
+  mapCenter: [number, number]
+}
+
+/** The map half of LocationPicker: the boundary tools, the map, its pin, radius and drawn boundary. */
+export function LocationPickerPanel({
+  lat,
+  lng,
+  radius,
+  onPolygonChange,
+  disabled,
+  isAddress,
+  view,
+  canDrawBoundary,
+  drawing,
+  setDrawing,
+  expanded,
+  setExpanded,
+  viewRef,
+  ring,
+  locating,
+  handleMapClick,
+  useMyLocation,
+  mapCenter,
+}: LocationPickerPanelProps) {
+  const { t } = useTranslation()
   return (
     <div className={cn(expanded ? "flex min-h-0 flex-1 flex-col gap-2" : "space-y-2")}>
       {/*
@@ -81,95 +102,13 @@ export function LocationPickerPanel({ s }: { s: LocationPickerState }) {
             boundary behaves exactly as it always has.
           */}
       {canDrawBoundary && (
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <div className="flex">
-            <button
-              type="button"
-              onClick={() => setDrawing(false)}
-              aria-pressed={!drawing}
-              className={cn(
-                "rounded-l-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors",
-                !drawing
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-muted-foreground hover:bg-muted",
-              )}
-            >
-              {t("locations.boundary.modeRadius", "Radius")}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDrawing(true)
-                setExpanded(true)
-              }}
-              aria-pressed={drawing}
-              className={cn(
-                "flex items-center gap-1.5 rounded-r-lg border border-l-0 border-border px-3 py-1.5 text-xs font-medium transition-colors",
-                drawing
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-muted-foreground hover:bg-muted",
-              )}
-            >
-              <Spline className="h-3.5 w-3.5" />
-              {t("locations.boundary.modeDraw", "Draw the site")}
-            </button>
-          </div>
-
-          {drawing && (
-            <>
-              <button
-                type="button"
-                onClick={() => onPolygonChange?.(ring.slice(0, -1))}
-                disabled={ring.length === 0}
-                className={"flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 " +
-                  "py-1.5 text-xs font-medium text-muted-foreground transition-colors " +
-                  "hover:bg-muted disabled:opacity-50"}
-              >
-                <Undo2 className="h-3.5 w-3.5" />
-                {t("locations.boundary.undo", "Undo point")}
-              </button>
-              <button
-                type="button"
-                onClick={() => onPolygonChange?.(null)}
-                disabled={ring.length === 0}
-                className={"flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 " +
-                  "py-1.5 text-xs font-medium text-muted-foreground transition-colors " +
-                  "hover:bg-muted disabled:opacity-50"}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                {t("locations.boundary.clear", "Clear")}
-              </button>
-            </>
-          )}
-
-          {/*
-                The numbers that make a mistake obvious BEFORE it is saved: a
-                boundary accidentally drawn around the whole street reads as
-                hectares and hundreds of metres, and the server refuses it anyway.
-              */}
-          <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-            {ring.length === 0
-              ? drawing
-                ? t("locations.boundary.hintEmpty", "Click each corner of the site")
-                : t("locations.boundary.usingRadius", "Using the radius")
-              : ring.length < GEOFENCE_POLYGON_LIMITS.MIN_POINTS
-                ? t("locations.boundary.needMore", "{{count}} of 3 points", { count: ring.length })
-                : (() => {
-                    const area = polygonAreaSqm(ring)
-                    const tooBig = area > GEOFENCE_POLYGON_LIMITS.MAX_AREA_SQM
-                    return (
-                      <span className={tooBig ? "font-medium text-destructive" : undefined}>
-                        {t("locations.boundary.summary", "{{points}} points · {{ha}} ha · {{span}} across", {
-                          points: ring.length,
-                          ha: (area / 10_000).toFixed(2),
-                          span: formatDistance(widestSpanMetres(ring)),
-                        })}
-                        {tooBig ? ` — ${t("locations.boundary.tooLarge", "too large to save")}` : ""}
-                      </span>
-                    )
-                  })()}
-          </span>
-        </div>
+        <BoundaryToolbar
+          drawing={drawing}
+          setDrawing={setDrawing}
+          setExpanded={setExpanded}
+          ring={ring}
+          onPolygonChange={onPolygonChange}
+        />
       )}
 
       {/* Map — its own stacking context so Leaflet's z-indexes don't bleed out */}
@@ -187,9 +126,11 @@ export function LocationPickerPanel({ s }: { s: LocationPickerState }) {
           title={
             expanded ? t("locations.boundary.collapseMap", "Done") : t("locations.boundary.expandMap", "Bigger map")
           }
-          className={"absolute bottom-2 left-2 z-[20] flex items-center gap-1.5 rounded-lg " +
+          className={
+            "absolute bottom-2 left-2 z-[20] flex items-center gap-1.5 rounded-lg " +
             "border border-border bg-card/95 px-2.5 py-1.5 text-xs font-medium " +
-            "text-foreground shadow-md backdrop-blur transition-colors hover:bg-card"}
+            "text-foreground shadow-md backdrop-blur transition-colors hover:bg-card"
+          }
         >
           {expanded ? (
             <Minimize2 className="h-3.5 w-3.5 text-blue-600" />
@@ -205,10 +146,12 @@ export function LocationPickerPanel({ s }: { s: LocationPickerState }) {
             onClick={useMyLocation}
             disabled={locating}
             title={t("locations.picker.useMyLocation")}
-            className={"absolute right-2 top-2 z-[20] flex items-center gap-1.5 rounded-lg " +
+            className={
+              "absolute right-2 top-2 z-[20] flex items-center gap-1.5 rounded-lg " +
               "border border-border bg-card/95 px-2.5 py-1.5 text-xs font-medium " +
               "text-foreground shadow-md backdrop-blur transition-colors hover:bg-card " +
-              "disabled:opacity-60"}
+              "disabled:opacity-60"
+            }
           >
             {locating ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />

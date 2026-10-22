@@ -9,16 +9,23 @@ import { BackToSpaces, CenteredNotice } from "@/components/spaces/space-page"
 import { Badge } from "@/components/ui/badge"
 import { dateLocale } from "@/lib/format-date"
 import { useSharedSpaceViewPage } from "./_hooks/use-shared-space-view-page"
-import { REQUEST_STATUS_STYLES, AddWorkerDialog, CreateTaskDialog, RequestMoreDialog } from "./_components/shared-space-view-page-helpers"
-import { SharedSpaceViewPageGuest } from "./_components/shared-space-view-page-guest"
-import { SharedSpaceViewPageGuest2 } from "./_components/shared-space-view-page-guest2"
+import { useTranslation } from "react-i18next"
+import type { SpaceShareRequestStatus } from "@/lib/api"
+import { AddWorkerDialog, CreateTaskDialog, RequestMoreDialog } from "./_components/guest-dialogs"
+import { SharedTaskBoard } from "./_components/shared-task-board"
+import { SharedSpaceHeader } from "./_components/shared-space-header"
+
+const REQUEST_STATUS_STYLES: Record<SpaceShareRequestStatus, string> = {
+  PENDING: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300",
+  APPROVED:
+    "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+  REJECTED: "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300",
+}
 
 export default function SharedSpaceViewPage() {
-  const vm = useSharedSpaceViewPage()
+  const { t } = useTranslation()
   const {
-    t,
     spaceId,
-    user,
     share,
     canCreate,
     canAssign,
@@ -29,15 +36,12 @@ export default function SharedSpaceViewPage() {
     setCreateOpen,
     addWorkerOpen,
     setAddWorkerOpen,
-    isLoading,
-    tasks,
     myRequests,
     workers,
     attendanceEntries,
     tracked,
-    assignMutation,
     shareId,
-  } = vm
+  } = useSharedSpaceViewPage()
 
   // Not an active shared space for this org (e.g. still pending or revoked).
   if (!share) {
@@ -59,27 +63,33 @@ export default function SharedSpaceViewPage() {
     <div className="min-h-full bg-background">
       <div className="max-w-[1100px] mx-auto px-6 py-6">
         {/* Header */}
-        <SharedSpaceViewPageGuest2 vm={vm} />
+        <SharedSpaceHeader
+          share={share}
+          canManageMembers={canManageMembers}
+          canCreate={canCreate}
+          onAddWorker={() => setAddWorkerOpen(true)}
+          onCreateTask={() => setCreateOpen(true)}
+          onRequestMore={() => setRequestOpen(true)}
+        />
 
         {/* Task board (read-only) */}
-        <SharedSpaceViewPageGuest vm={vm} />
+        <SharedTaskBoard spaceId={spaceId} canAssign={canAssign} workers={workers} />
 
         {/* Workers on this space (owner enabled "show workers") */}
         {share.showWorkers && workers && workers.length > 0 && (
           <div className="mt-8 space-y-3">
             <div className="flex items-center gap-2">
               <UserPlus className="h-4 w-4 text-muted-foreground" />
-              <h2
-                className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.workersHeading", "Workers on this workspace")}</h2>
+              <h2 className="text-sm font-semibold text-foreground">
+                {t("spaceSharing.guest.workersHeading", "Workers on this workspace")}
+              </h2>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {workers.map((w) => (
                 <div key={w.id} className="flex items-center gap-3 rounded-xl border bg-card p-3">
                   <UserAvatar firstName={w.user?.firstName} lastName={w.user?.lastName} seed={w.user?.id} size="sm" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {personName(w.user)}
-                    </p>
+                    <p className="text-sm font-medium text-foreground truncate">{personName(w.user)}</p>
                     {w.currentTask ? (
                       <p className="text-[11px] text-emerald-600 dark:text-emerald-400 truncate">{w.currentTask}</p>
                     ) : (
@@ -97,7 +107,9 @@ export default function SharedSpaceViewPage() {
           <div className="mt-8 space-y-3">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.trackingHeading", "Live locations")}</h2>
+              <h2 className="text-sm font-semibold text-foreground">
+                {t("spaceSharing.guest.trackingHeading", "Live locations")}
+              </h2>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {tracked.map((w) => {
@@ -105,18 +117,21 @@ export default function SharedSpaceViewPage() {
                 // Date, and the row read "NaN min ago" rather than showing nothing.
                 const seenAt = w.updatedAt ? new Date(w.updatedAt).getTime() : null
                 const mins = seenAt ? Math.round((Date.now() - seenAt) / 60000) : null
-                const ago = mins == null
-                  ? ""
-                  : mins <= 1
-                    ? t("spaceSharing.guest.justNow", "just now")
-                    : t("spaceSharing.guest.minsAgo", "{{m}} min ago", { m: mins })
+                const ago =
+                  mins == null
+                    ? ""
+                    : mins <= 1
+                      ? t("spaceSharing.guest.justNow", "just now")
+                      : t("spaceSharing.guest.minsAgo", "{{m}} min ago", { m: mins })
                 return (
                   <div key={w.id} className="flex items-center gap-3 rounded-xl border bg-card p-3">
                     <UserAvatar firstName={w.firstName} lastName={w.lastName} seed={w.id} size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground truncate">{personName(w)}</p>
                       {w.currentTask ? (
-                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 truncate">{w.currentTask.title}</p>
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 truncate">
+                          {w.currentTask.title}
+                        </p>
                       ) : (
                         <p className="text-[11px] text-muted-foreground">{ago}</p>
                       )}
@@ -136,25 +151,47 @@ export default function SharedSpaceViewPage() {
           <div className="mt-8 space-y-3">
             <div className="flex items-center gap-2">
               <ClipboardList className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.attendanceHeading", "Attendance")}</h2>
+              <h2 className="text-sm font-semibold text-foreground">
+                {t("spaceSharing.guest.attendanceHeading", "Attendance")}
+              </h2>
             </div>
             <div className="rounded-xl border bg-card overflow-hidden">
               {attendanceEntries.slice(0, 25).map((e) => {
-                const fmt = (d?: string | null) => (d
-                  ? new Date(d).toLocaleString(dateLocale(), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
-                  : "—")
+                const fmt = (d?: string | null) =>
+                  d
+                    ? new Date(d).toLocaleString(dateLocale(), {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "—"
                 return (
-                  <div key={e.id} className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/20 last:border-0">
+                  <div
+                    key={e.id}
+                    className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/20 last:border-0"
+                  >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <UserAvatar firstName={e.user?.firstName} lastName={e.user?.lastName} seed={e.user?.id} size="sm" />
+                      <UserAvatar
+                        firstName={e.user?.firstName}
+                        lastName={e.user?.lastName}
+                        seed={e.user?.id}
+                        size="sm"
+                      />
                       <span className="text-sm font-medium text-foreground truncate">{personName(e.user)}</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0 text-[11px] text-muted-foreground tabular-nums">
                       <span>{fmt(e.clockInAt)}</span>
                       <span>→</span>
-                      <span>{e.clockOutAt
-                        ? fmt(e.clockOutAt)
-                        : <span className="text-emerald-600 dark:text-emerald-400">{t("attendance.status.active", "Active")}</span>}</span>
+                      <span>
+                        {e.clockOutAt ? (
+                          fmt(e.clockOutAt)
+                        ) : (
+                          <span className="text-emerald-600 dark:text-emerald-400">
+                            {t("attendance.status.active", "Active")}
+                          </span>
+                        )}
+                      </span>
                     </div>
                   </div>
                 )
@@ -183,7 +220,10 @@ export default function SharedSpaceViewPage() {
                         {req.note && <p className="text-xs text-muted-foreground truncate">{req.note}</p>}
                       </div>
                     </div>
-                    <Badge variant="outline" className={cn("text-[11px] font-medium shrink-0", REQUEST_STATUS_STYLES[req.status])}>
+                    <Badge
+                      variant="outline"
+                      className={cn("text-[11px] font-medium shrink-0", REQUEST_STATUS_STYLES[req.status])}
+                    >
                       {t(`spaceSharing.requestStatuses.${req.status}`)}
                     </Badge>
                   </div>
@@ -196,12 +236,8 @@ export default function SharedSpaceViewPage() {
         {share.allowRequests && (
           <RequestMoreDialog spaceId={spaceId} shareId={shareId} open={requestOpen} onOpenChange={setRequestOpen} />
         )}
-        {canCreate && (
-          <CreateTaskDialog spaceId={spaceId} open={createOpen} onOpenChange={setCreateOpen} />
-        )}
-        {canManageMembers && (
-          <AddWorkerDialog spaceId={spaceId} open={addWorkerOpen} onOpenChange={setAddWorkerOpen} />
-        )}
+        {canCreate && <CreateTaskDialog spaceId={spaceId} open={createOpen} onOpenChange={setCreateOpen} />}
+        {canManageMembers && <AddWorkerDialog spaceId={spaceId} open={addWorkerOpen} onOpenChange={setAddWorkerOpen} />}
       </div>
     </div>
   )

@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useSignPageInner } from "./_hooks/use-sign-page-inner"
-import { Shell, Tabs, Row, Refused } from "./_components/sign-page-inner-helpers"
+import { useSignLink } from "./_hooks/use-sign-link"
+import { Shell, Refused } from "./_components/sign-shell"
+import { Tabs, Row } from "./_components/sign-document-list"
 import { EmptyNote } from "@/components/ui/empty-note"
 
 function SignPageInner() {
@@ -34,7 +35,7 @@ function SignPageInner() {
     load,
     openDocument,
     submit,
-  } = useSignPageInner()
+  } = useSignLink()
 
   if (loading) {
     return (

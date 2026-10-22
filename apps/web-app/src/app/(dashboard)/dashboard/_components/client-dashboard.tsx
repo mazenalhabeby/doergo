@@ -12,13 +12,11 @@ import { ActivityPanelToggle } from "@/components/app-shell/activity-panel-toggl
 import { EmptyWorkspace } from "./empty-workspace"
 import { DashboardPageSkeleton, dashboardVariant } from "./dashboard-skeleton"
 import { DocumentsReminderBanner } from "@/components/app-shell/documents-reminder-banner"
-import { cn } from "@/lib/utils";
-import { PAGE_SHELL, PAGE_WIDTH } from "@/components/ui/page-width";
+import { cn } from "@/lib/utils"
+import { PAGE_SHELL, PAGE_WIDTH } from "@/components/ui/page-width"
 import { FindPerson } from "@/components/people/find-person"
-import { useClientDashboard } from "./use-client-dashboard";
-import { toRecentTask } from "./client-dashboard-helpers";
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
+import { useClientDashboard } from "./use-client-dashboard"
+import { toRecentTask } from "./helpers"
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -42,7 +40,7 @@ export function ClientDashboard() {
     exampleSpace,
     displayBoxes,
     greeting,
-  } = useClientDashboard();
+  } = useClientDashboard()
 
   // Structural skeleton while the first fetch is in flight. Returning null here
   // blanked the screen between the route-level skeleton unmounting and the data
@@ -51,7 +49,7 @@ export function ClientDashboard() {
     return <DashboardPageSkeleton variant={dashboardVariant(user)} />
   }
 
-  const hasFixedLocations = workspaceBoxes.some(b => b.type === "fixed")
+  const hasFixedLocations = workspaceBoxes.some((b) => b.type === "fixed")
 
   // Empty state — no fixed locations to show
   if (!hasFixedLocations) {
@@ -73,7 +71,9 @@ export function ClientDashboard() {
           </div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-foreground">{t("dashboard.client.myTasks")}</h2>
-            <Link href="/tasks" className="text-xs text-primary hover:underline">{t("dashboard.client.viewAll")}</Link>
+            <Link href="/tasks" className="text-xs text-primary hover:underline">
+              {t("dashboard.client.viewAll")}
+            </Link>
           </div>
           <div className="rounded-2xl border border-border bg-card px-4 py-2" data-tour="dash-emp-tasks">
             <RecentTasks tasks={myTasks.map(toRecentTask)} showViewAll={false} />
@@ -137,7 +137,9 @@ export function ClientDashboard() {
                 <section data-tour="dash-emp-tasks" className="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-sm font-semibold text-foreground">{t("dashboard.client.myTasks")}</h2>
-                    <Link href="/tasks" className="text-xs text-primary hover:underline">{t("dashboard.client.viewAll")}</Link>
+                    <Link href="/tasks" className="text-xs text-primary hover:underline">
+                      {t("dashboard.client.viewAll")}
+                    </Link>
                   </div>
                   <div className="rounded-2xl border border-border bg-card px-4 py-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
                     <RecentTasks tasks={myTasks.slice(0, 15).map(toRecentTask)} showViewAll={false} />
@@ -225,7 +227,9 @@ export function ClientDashboard() {
       {/* Assign member dialog — opens from workspace box "Add Member" button */}
       <AssignMemberDialog
         open={!!assignSpaceId}
-        onOpenChange={(open) => { if (!open) setAssignSpaceId(null) }}
+        onOpenChange={(open) => {
+          if (!open) setAssignSpaceId(null)
+        }}
         taskId={null}
         spaceId={assignSpaceId}
         currentAssigneeIds={assignSpaceRoster.map((a) => a.userId)}
@@ -233,7 +237,6 @@ export function ClientDashboard() {
         onAssign={() => {}}
         onSave={handleSaveRoster}
       />
-
     </div>
   )
 }
