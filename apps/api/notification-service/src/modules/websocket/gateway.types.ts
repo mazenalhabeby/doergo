@@ -18,7 +18,7 @@ export interface ClientInfo {
 }
 
 /**
- * Revocation events this gateway listens for (notification.controller.ts).
+ * Revocation events this gateway listens for (socket-events.controller.ts).
  * Emitted by the auth service; the names are a contract — change both sides.
  *
  *   'user_removed'            { userId, organizationId }  removed from the org

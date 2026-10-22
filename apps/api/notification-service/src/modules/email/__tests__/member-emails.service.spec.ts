@@ -2,8 +2,8 @@ import { MEMBER_EMAILS, MEMBER_EMAIL_PREF, ORG_EMAIL_SWITCH, type MemberEmail } 
 import { EmailService } from '../email.service';
 import { MemberEmailsService, MEMBER_EMAIL_WINDOW_MS } from '../member-emails.service';
 import { RecipientLocales } from '../../../i18n/recipient-locales.service';
-import { AttendanceNotificationHandler } from '../../../handlers/attendance-notification.handler';
-import { TaskNotificationHandler } from '../../../handlers/task-notification.handler';
+import { AttendanceNotificationHandler } from '../../events/attendance/attendance-notification.handler';
+import { TaskNotificationHandler } from '../../events/tasks/task-notification.handler';
 
 /**
  * The three member emails: who gets them, how often, and where they link.

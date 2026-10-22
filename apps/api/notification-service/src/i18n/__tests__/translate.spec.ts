@@ -1,7 +1,7 @@
 import { joined, msg, plural, render, renderText, verbatim } from '../translate';
 import { RecipientLocales, LOCALE_CACHE_TTL_MS } from '../recipient-locales.service';
 import { PushService, pendingApprovalText, restName, taskStatus } from '../../modules/push/push.service';
-import { NotificationStore } from '../../common/notification-store.service';
+import { NotificationStore } from '../../modules/inbox/notification-store.service';
 
 /**
  * Writing a sentence for somebody whose language is only known at delivery.

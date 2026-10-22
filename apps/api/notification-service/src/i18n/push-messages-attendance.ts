@@ -2,7 +2,7 @@ import type { SupportedLocale } from '@hbcfield/shared';
 
 /**
  * Attendance sentences kept beside the main catalogue (push-messages.ts is at its
- * size limit): the working day decided (handlers/day-decided.handler.ts) and the
+ * size limit): the working day decided (modules/events/attendance/day-decided.handler.ts) and the
  * automatic rest starting (attendance-push.service sendRestStartedPush). Merged
  * with the main one in push-catalogue.ts; the type makes every language required.
  */

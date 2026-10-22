@@ -35,12 +35,12 @@ const FORMATTER = 'packages/shared/src/utils/distance.ts';
 /** Legitimate, named: `file` + a fragment of the offending line + why. */
 const ALLOWED: { file: string; contains: string; why: string }[] = [
   {
-    file: 'apps/api/notification-service/src/handlers/attendance-alerts.handler.ts',
+    file: 'apps/api/notification-service/src/modules/events/attendance/attendance-alerts.handler.ts',
     contains: 'distance=${data.distance}m',
     why: 'log line for operators, not shown to anybody',
   },
   {
-    file: 'apps/api/notification-service/src/handlers/excursion-notification.handler.ts',
+    file: 'apps/api/notification-service/src/modules/events/attendance/excursion-notification.handler.ts',
     contains: "${data.distanceM ?? '?'}m",
     why: 'log line for operators, not shown to anybody',
   },
@@ -129,7 +129,8 @@ function localeOffences(): string[] {
     for (const f of fs.readdirSync(path.join(REPO, d)).filter((n) => n.endsWith('.json'))) {
       const lines = fs.readFileSync(path.join(REPO, d, f), 'utf8').split('\n');
       lines.forEach((line, i) => {
-        if (/\{\{(?:distance|radius|span)\}\}\s?-?(?:m|km)(?![\p{L}\d])/u.test(line)) found.push(`${d}/${f}:${i + 1}: ${line.trim()}`);
+        if (/\{\{(?:distance|radius|span)\}\}\s?-?(?:m|km)(?![\p{L}\d])/u.test(line))
+          found.push(`${d}/${f}:${i + 1}: ${line.trim()}`);
       });
     }
   }

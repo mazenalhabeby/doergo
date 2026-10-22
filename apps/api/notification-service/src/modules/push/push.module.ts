@@ -1,3 +1,4 @@
+import { PushController } from './push.controller';
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '@hbcfield/shared';
 import { PushService } from './push.service';
@@ -8,6 +9,7 @@ import { ApprovalPushService } from './approval-push.service';
 import { ClockPushBudgetService } from './clock-push-budget.service';
 
 @Module({
+  controllers: [PushController],
   imports: [PrismaModule, I18nModule],
   // I18nModule is re-exported because the bell (NotificationStore) writes the
   // same sentences in the same per-recipient language as the push.

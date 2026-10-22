@@ -45,16 +45,16 @@ function stripComments(code: string): string {
 
 /** Every file that hands a message to SMTP or decides what one says. */
 function senders() {
-  const handlers = readdirSync(join(NOTIFICATION, 'handlers'))
-    .filter((f) => f.endsWith('.ts'))
-    .map((f) => join(NOTIFICATION, 'handlers', f));
+  // Every event handler and message controller, in whichever module it lives.
+  const handlers = (readdirSync(join(NOTIFICATION, 'modules'), { recursive: true, encoding: 'utf8' }) as string[])
+    .filter((f) => (f.endsWith('.handler.ts') || f.endsWith('.controller.ts')) && !f.includes('__tests__'))
+    .map((f) => join(NOTIFICATION, 'modules', f));
   return [
     ...handlers,
-    join(NOTIFICATION, 'notification.controller.ts'),
     join(NOTIFICATION, 'modules', 'email', 'email.service.ts'),
     join(NOTIFICATION, 'modules', 'email', 'member-emails.service.ts'),
     join(API, 'auth-service', 'src', 'modules', 'auth', 'auth-mail.service.ts'),
-    join(API, 'auth-service', 'src', 'modules', 'documents', 'customer-sign-mailer.service.ts'),
+    join(API, 'auth-service', 'src', 'modules', 'documents', 'signing', 'customer-sign-mailer.service.ts'),
     join(API, 'auth-service', 'src', 'modules', 'invitations', 'invitation.service.ts'),
     join(API, 'task-service', 'src', 'modules', 'analytics', 'report-schedule.service.ts'),
   ].map(read);
@@ -72,7 +72,7 @@ describe('email catalogue guard', () => {
       expect.arrayContaining([
         'notification-service/src/modules/email/email.service.ts',
         'auth-service/src/modules/auth/auth-mail.service.ts',
-        'auth-service/src/modules/documents/customer-sign-mailer.service.ts',
+        'auth-service/src/modules/documents/signing/customer-sign-mailer.service.ts',
         'task-service/src/modules/analytics/report-schedule.service.ts',
       ]),
     );
@@ -120,24 +120,64 @@ describe('email catalogue guard', () => {
         passwordResetEmail(locale, { firstName: '1', resetLink: '#', expiresInHours: 1 }),
         invitationEmail(locale, { organizationName: '2', invitationCode: '3', targetRole: 'EMPLOYEE', expiresAt: at }),
         invitationEmail(locale, { organizationName: null, invitationCode: '3', targetRole: 'ADMIN', expiresAt: at }),
-        geofenceAlertEmail(locale, { userName: '4', locationName: '5', distance: 6, allowedRadius: 7, action: 'clock_in' }),
-        shiftClosedEmail(locale, { userName: '4', locationName: '5', clockInAt: at, clockOutAt: at, timezone: 'Europe/Vienna', basis: 'SHIFT_END', confirmUrl: '#' }),
+        geofenceAlertEmail(locale, {
+          userName: '4',
+          locationName: '5',
+          distance: 6,
+          allowedRadius: 7,
+          action: 'clock_in',
+        }),
+        shiftClosedEmail(locale, {
+          userName: '4',
+          locationName: '5',
+          clockInAt: at,
+          clockOutAt: at,
+          timezone: 'Europe/Vienna',
+          basis: 'SHIFT_END',
+          confirmUrl: '#',
+        }),
         shiftClosedEmail(locale, { userName: '4', clockInAt: at, clockOutAt: at, basis: 'LEFT_SITE', confirmUrl: '#' }),
-        shiftClosedEmail(locale, { userName: '4', clockInAt: at, clockOutAt: at, basis: 'CLOCK_IN_PLUS_8H', confirmUrl: '#' }),
+        shiftClosedEmail(locale, {
+          userName: '4',
+          clockInAt: at,
+          clockOutAt: at,
+          basis: 'CLOCK_IN_PLUS_8H',
+          confirmUrl: '#',
+        }),
         taskAssignedEmail(locale, { title: '1', priority: 'LOW', url: '#' }),
         taskCompletedEmail(locale, { title: '1', url: '#' }),
         taskDigestEmail(locale, { kind: 'assigned', tasks: [{ title: '1', url: '#' }], url: '#' }),
         taskDigestEmail(locale, { kind: 'assigned', tasks: [{ title: '1' }, { title: '2' }], url: '#' }),
         taskDigestEmail(locale, { kind: 'completed', tasks: [{ title: '1' }], url: '#' }),
         taskDigestEmail(locale, { kind: 'completed', tasks: [{ title: '1' }, { title: '2' }, { title: '3' }] }),
-        scheduledReportEmail(locale, { reportName: '1', generatedAt: at, columns: [{ label: '2', align: 'left' }], rows: [['3']] }),
+        scheduledReportEmail(locale, {
+          reportName: '1',
+          generatedAt: at,
+          columns: [{ label: '2', align: 'left' }],
+          rows: [['3']],
+        }),
         scheduledReportEmail(locale, { reportName: '1', generatedAt: at, columns: [], rows: [] }),
-        signLinkEmail(locale, { organizationName: '2', documents: [{ title: '3', forMember: '4' }], url: '#', expiresAt: at }),
-        signLinkEmail(locale, { organizationName: '2', documents: [{ title: '3', forMember: null }, { title: '5', forMember: null }], url: '#', expiresAt: at }),
+        signLinkEmail(locale, {
+          organizationName: '2',
+          documents: [{ title: '3', forMember: '4' }],
+          url: '#',
+          expiresAt: at,
+        }),
+        signLinkEmail(locale, {
+          organizationName: '2',
+          documents: [
+            { title: '3', forMember: null },
+            { title: '5', forMember: null },
+          ],
+          url: '#',
+          expiresAt: at,
+        }),
         signReissueEmail(locale, { organizationName: '2', url: '#', expiresAt: at }),
       ];
       const nodes = (html: string) =>
-        [...html.replace(/<head>[\s\S]*<\/head>/, '').matchAll(/>([^<>]*)</g)].map((m) => m[1].replace(/\s+/g, ' ').trim());
+        [...html.replace(/<head>[\s\S]*<\/head>/, '').matchAll(/>([^<>]*)</g)].map((m) =>
+          m[1].replace(/\s+/g, ' ').trim(),
+        );
       const subjects = (locale: string) => render(locale).map((e) => e.subject);
 
       const byLocale = SUPPORTED_LOCALES.map((l) => render(l).map((e) => nodes(e.html)));
@@ -160,10 +200,7 @@ describe('email catalogue guard', () => {
       const named = [...templates.code.matchAll(/\bt\.(?:html|text)\(\s*'([\w.]+)'/g)].map((m) => m[1]);
       const plurals = [...templates.code.matchAll(/plural:\s*'([\w.]+)'/g)].map((m) => m[1]);
       expect(named.length).toBeGreaterThan(20);
-      expect([
-        ...named.filter((k) => !known.has(k)),
-        ...plurals.filter((k) => !known.has(`${k}.one`)),
-      ]).toEqual([]);
+      expect([...named.filter((k) => !known.has(k)), ...plurals.filter((k) => !known.has(`${k}.one`))]).toEqual([]);
     });
 
     it('build every dynamic key from a prefix the catalogue has', () => {
