@@ -1,8 +1,13 @@
-import en from './locales/en.json';
-import de from './locales/de.json';
-import es from './locales/es.json';
-import fr from './locales/fr.json';
-import it from './locales/it.json';
+import en from "./locales/en.json"
+import de from "./locales/de.json"
+import es from "./locales/es.json"
+import fr from "./locales/fr.json"
+import it from "./locales/it.json"
+import mEn from "./locales/marketing/en.json"
+import mDe from "./locales/marketing/de.json"
+import mEs from "./locales/marketing/es.json"
+import mFr from "./locales/marketing/fr.json"
+import mIt from "./locales/marketing/it.json"
 
 /**
  * The full translation catalogue, for SERVER rendering only.
@@ -22,11 +27,21 @@ import it from './locales/it.json';
  * The client's own path is `src/i18n/index.ts`, which bundles English and
  * fetches the other four on demand.
  */
-const BUNDLES: Record<string, unknown> = { en, de, es, fr, it };
+const APP: Record<string, Record<string, unknown>> = { en, de, es, fr, it }
+/** The marketing site's own text (home, pricing, privacy, terms) — never in the app's catalogue. */
+const MARKETING: Record<string, Record<string, unknown>> = { en: mEn, de: mDe, es: mEs, fr: mFr, it: mIt }
 
-/** One language's complete translations; falls back to English. */
+/** One language's complete translations, the app's and the marketing site's; falls back to English. */
 export function localeBundle(lang: string): Record<string, unknown> {
-  return (BUNDLES[lang] ?? BUNDLES.en) as Record<string, unknown>;
+  const key = APP[lang] ? lang : "en"
+  return { ...APP[key], ...MARKETING[key] }
+}
+
+/** The marketing groups a public page renders (`home`, `pricing`, `privacy`, `terms`), in one language. */
+export type MarketingGroup = "home" | "pricing" | "privacy" | "terms"
+export function marketingCopy(lang: string, groups: readonly MarketingGroup[]): Record<string, unknown> {
+  const all = MARKETING[MARKETING[lang] ? lang : "en"]
+  return Object.fromEntries(groups.filter((g) => all[g] !== undefined).map((g) => [g, all[g]]))
 }
 
 /**
@@ -50,14 +65,14 @@ export function localeBundle(lang: string): Record<string, unknown> {
  * fallback or the raw key — so nothing would catch it but a person noticing
  * `home.hero.title` on the page in production.
  */
-export const MARKETING_NAMESPACES = ['home', 'common', 'modules', 'addOns'] as const;
+export const MARKETING_NAMESPACES = ["home", "common", "modules", "addOns", "storeBadges"] as const
 
 /** Just the marketing slice of one language, for the localized home routes. */
 export function marketingBundle(lang: string): Record<string, unknown> {
-  const full = localeBundle(lang);
-  const out: Record<string, unknown> = {};
+  const full = localeBundle(lang)
+  const out: Record<string, unknown> = {}
   for (const ns of MARKETING_NAMESPACES) {
-    if (full[ns] !== undefined) out[ns] = full[ns];
+    if (full[ns] !== undefined) out[ns] = full[ns]
   }
-  return out;
+  return out
 }

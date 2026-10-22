@@ -136,7 +136,7 @@ export function MobileAppInterstitial() {
             {isIOS ? <AppleGlyph className="h-6 w-6" /> : <GooglePlayGlyph className="h-6 w-6" />}
             <span className="flex flex-col items-start leading-none">
               <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-white/70">
-                {isIOS ? t("home.field.downloadOnThe", "Download on the") : t("home.field.getItOn", "Get it on")}
+                {isIOS ? t("storeBadges.downloadOnThe", "Download on the") : t("storeBadges.getItOn", "Get it on")}
               </span>
               <span className="mt-1 text-[17px] font-semibold leading-none">{storeName}</span>
             </span>

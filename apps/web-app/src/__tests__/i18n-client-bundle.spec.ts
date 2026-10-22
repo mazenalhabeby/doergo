@@ -165,7 +165,8 @@ describe('client bundle must not contain the translation catalogue', () => {
   it('the four non-English locales are loaded through dynamic import, not statically', () => {
     const entry = fs.readFileSync(path.join(SRC, 'i18n/index.ts'), 'utf8');
     for (const lang of ['de', 'es', 'fr', 'it']) {
-      expect(entry).toContain(`import('./locales/${lang}.json')`);
+      // Either quote style — what matters is the dynamic import, not the formatter's choice.
+      expect(entry).toMatch(new RegExp(`import\\(['"]\\./locales/${lang}\\.json['"]\\)`));
       // A static import of the same file would put it straight back in the entry
       // chunk while the dynamic one above still reads as correct.
       expect(entry).not.toMatch(

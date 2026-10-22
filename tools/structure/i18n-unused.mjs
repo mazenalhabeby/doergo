@@ -17,7 +17,11 @@ import { join } from 'node:path';
 import { REPO, sourceFiles } from './files.mjs';
 
 export const I18N_APPS = {
-  web: { locale: 'apps/web-app/src/i18n/locales/en.json', roots: ['apps/web-app/src/', 'packages/shared/src/'] },
+  web: {
+    // The app's catalogue and the marketing site's own (5.6) — one set of keys to the reader.
+    locale: ['apps/web-app/src/i18n/locales/en.json', 'apps/web-app/src/i18n/locales/marketing/en.json'],
+    roots: ['apps/web-app/src/', 'packages/shared/src/'],
+  },
   mobile: {
     locale: 'apps/mobile/src/i18n/locales/en.json',
     roots: ['apps/mobile/src/', 'apps/mobile/app/', 'packages/shared/src/'],
@@ -66,7 +70,7 @@ function literalsOf(roots) {
 export function unusedKeys() {
   const out = {};
   for (const [app, cfg] of Object.entries(I18N_APPS)) {
-    const keys = flatten(JSON.parse(readFileSync(join(REPO, cfg.locale), 'utf8')));
+    const keys = [cfg.locale].flat().flatMap((file) => flatten(JSON.parse(readFileSync(join(REPO, file), 'utf8'))));
     const { exact, prefixes, templates } = literalsOf(cfg.roots);
     const used = (key) => {
       const base = key.replace(PLURAL, '');

@@ -60,13 +60,13 @@ export function StoreBadges({ className = '', size = 'md' }: { className?: strin
         href={GOOGLE_PLAY_URL}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={t('home.field.getOnGooglePlay', 'Get it on Google Play')}
+        aria-label={t('storeBadges.getOnGooglePlay', 'Get it on Google Play')}
         className={`${badge} transition-transform duration-200 hover:-translate-y-0.5 hover:border-white/30`}
       >
         <GooglePlayGlyph className={glyph} />
         <span className="flex flex-col leading-none">
           <span className={`${smallTxt} font-medium uppercase tracking-[0.06em] text-white/75`}>
-            {t('home.field.getItOn', 'Get it on')}
+            {t('storeBadges.getItOn', 'Get it on')}
           </span>
           <span className={`${nameTxt} font-semibold leading-none`}>Google Play</span>
         </span>
@@ -77,13 +77,13 @@ export function StoreBadges({ className = '', size = 'md' }: { className?: strin
         href={APP_STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={t('home.field.getOnAppStore', 'Download on the App Store')}
+        aria-label={t('storeBadges.getOnAppStore', 'Download on the App Store')}
         className={`${badge} transition-transform duration-200 hover:-translate-y-0.5 hover:border-white/30`}
       >
         <AppleGlyph className={glyph} />
         <span className="flex flex-col leading-none">
           <span className={`${smallTxt} font-medium uppercase tracking-[0.06em] text-white/75`}>
-            {t('home.field.downloadOnThe', 'Download on the')}
+            {t('storeBadges.downloadOnThe', 'Download on the')}
           </span>
           <span className={`${nameTxt} font-semibold leading-none`}>App Store</span>
         </span>

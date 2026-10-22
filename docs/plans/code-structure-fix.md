@@ -202,6 +202,16 @@ Each becomes a folder of real Nest sub-modules with their own providers and test
 > workbench shell (shared with the job report), three skeletons, the address map, and two marketing pieces. The
 > structure ratchet now fails on any new cross-route import (`tools/structure/web-layout.mjs`).
 
+> **Status (2026-10-22): 5.6 DONE.** Dead text: 8 groups no source reads (`landing`, `joinRequests`, `profile`,
+> `download`, `attendanceReview`, `payments`, `liveMap`, `welcome` — 171 keys × 5 languages) and 9 stale fr/it keys
+> (`locations.deactivate*`, gone from English) deleted; unused-key count 1524 → 1353 (`privacy`/`terms` only LOOK unused —
+> read through `t(`${ns}.…`)`). Marketing text: `home`, `pricing`, `privacy`, `terms` moved to
+> `i18n/locales/marketing/<lang>.json`; a public page's server render passes its English groups to `<MarketingCopy>`
+> (registered before render, so SSR and hydration agree), other languages load on demand (`wantMarketing`). The four
+> store-badge strings the app shell shows became `storeBadges.*`. Measured on a production build: the app's English
+> catalogue chunk is 344 KB (the JSON fell 482 → 418 KB); no raw keys in the prerendered `/`, `/de`, `/pricing`,
+> `/privacy`, `/terms`, `/blog`.
+
 ---
 
 ## Phase 6 — Phone app *(≈ 2 weeks; JS-only, OTA-safe except where noted)*

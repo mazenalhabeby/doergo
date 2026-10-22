@@ -1,0 +1,990 @@
+{
+  "home": {
+    "nav": {
+      "platform": "Piattaforma",
+      "process": "Processo",
+      "app": "App",
+      "signIn": "Accedi",
+      "industries": "Settori",
+      "pricing": "Prezzi",
+      "compare": "Confronta",
+      "shop": "Shop",
+      "toggleTheme": "Cambia tema",
+      "blog": "Blog",
+      "home": "Home"
+    },
+    "hero": {
+      "line1": "Il campo,",
+      "under": "sotto",
+      "words": [
+        "controllo",
+        "comando",
+        "osservazione",
+        "revisione"
+      ],
+      "requestDemo": "Inizia la prova gratuita",
+      "scroll": "Scorri",
+      "hint": "Tocca le linee per accendere il campo",
+      "meta": "HBCField — Piattaforma per i servizi sul campo",
+      "metaDesc": "Dispatching, tracciamento GPS, rapporti di servizio e presenze in un unico sistema."
+    },
+    "whatItIs": {
+      "label": "(01) — Che cos'è",
+      "lines": [
+        "Un unico sistema collega",
+        "l'ufficio e il campo.",
+        "Assegni, segua il percorso,",
+        "chiuda con un rapporto firmato."
+      ]
+    },
+    "video": {
+      "label": "Guarda · 45 sec",
+      "title": "Veda HBCField in azione.",
+      "desc": "Uno sguardo rapido a come un intervento passa dall'ufficio al campo e ritorno — assegnato, tracciato e chiuso in un unico sistema.",
+      "play": "Riproduci l'introduzione"
+    },
+    "facts": [
+      {
+        "unit": " m",
+        "label": "Intervallo di campionamento GPS",
+        "desc": "Punti basati sulla distanza, non una linea da inizio a fine."
+      },
+      {
+        "unit": " giorni",
+        "label": "Cronologia dei percorsi conservata",
+        "desc": "Prova del servizio e ripianificazione dei percorsi, registrate."
+      },
+      {
+        "unit": "",
+        "label": "Ruoli, un'unica piattaforma",
+        "desc": "Amministratore e dipendente, con accesso dinamico per persona — un'unica fonte di verità."
+      }
+    ],
+    "product": {
+      "label": "(02) — Il prodotto",
+      "reducedHeading": "Creato per gestire l'intero intervento.",
+      "shots": [
+        {
+          "kicker": "Dispatching",
+          "title": "Dall'assegnazione al completato, su un'unica bacheca.",
+          "body": "Assegni il tecnico giusto e osservi ogni intervento avanzare nel flusso in tempo reale — nessuna chiamata di stato, nessun foglio di calcolo."
+        },
+        {
+          "kicker": "Mappa in tempo reale",
+          "title": "Ogni sito e ogni tecnico, sulla mappa.",
+          "body": "Siti con geofence e GPS in tempo reale fanno sì che il dispatching sappia sempre dov'è il campo — e a che punto è ogni intervento."
+        },
+        {
+          "kicker": "Sala di controllo",
+          "title": "Tutta la sua operatività, in tempo reale.",
+          "body": "Un flusso di attività in tempo reale, le approvazioni in sospeso e ogni spazio di lavoro a colpo d'occhio — la vista dell'ufficio sul campo."
+        },
+        {
+          "kicker": "Pianificazione",
+          "title": "Pianifichi su ogni spazio di lavoro.",
+          "body": "Una timeline su tutti i suoi siti, interventi ricorrenti e disponibilità — una capacità che può davvero vedere."
+        }
+      ]
+    },
+    "process": {
+      "label": "(03) — Processo",
+      "heading": "Da un'attività in ufficio a un rapporto firmato sul campo.",
+      "steps": [
+        {
+          "key": "Crea",
+          "desc": "L'amministratore crea un'attività con posizione, scadenza, foto e priorità."
+        },
+        {
+          "key": "Assegna",
+          "desc": "Il dispatcher verifica la disponibilità e assegna — il tecnico riceve una notifica push istantanea."
+        },
+        {
+          "key": "Percorso",
+          "desc": "Il tecnico tocca In viaggio; il GPS in background registra il percorso esatto e segnala Arrivato."
+        },
+        {
+          "key": "Esegui",
+          "desc": "Foto, ricambi e note in loco, poi un rapporto di servizio firmato — anche offline."
+        },
+        {
+          "key": "Chiudi",
+          "desc": "Il rapporto si sincronizza con l'ufficio con l'intero percorso e la cronologia delle attività allegati."
+        }
+      ]
+    },
+    "field": {
+      "label": "(04) — Sul campo",
+      "lines": [
+        "Funziona quando il telefono",
+        "è bloccato. Delicato",
+        "sulla batteria."
+      ],
+      "features": [
+        {
+          "title": "GPS a schermo bloccato",
+          "desc": "Un servizio nativo in background continua a registrare il percorso a schermo spento."
+        },
+        {
+          "title": "Campionamento basato sulla distanza",
+          "desc": "Un punto ogni 25 metri — il tempo di inattività in un sito non consuma batteria extra."
+        },
+        {
+          "title": "Acquisizione sicura offline",
+          "desc": "Foto, note e rapporti vengono messi in coda sul dispositivo e si sincronizzano al ritorno del segnale."
+        },
+        {
+          "title": "Doppia firma",
+          "desc": "Tecnico e cliente firmano sul dispositivo per chiudere l'intervento in loco."
+        }
+      ],
+      "getApp": "Scarica l'app — iOS e Android",
+      "comingSoon": "Prossimamente",
+      "appStoreComingSoon": "App Store — prossimamente"
+    },
+    "app": {
+      "label": "L'app per il tecnico",
+      "reducedHeading": "Creata per la tasca del tecnico.",
+      "shots": [
+        {
+          "kicker": "In mano",
+          "title": "La sua giornata, nel momento in cui la apre.",
+          "body": "Timbratura d'ingresso, gli interventi di oggi e ciò che è urgente — il tecnico vede l'intero turno a colpo d'occhio."
+        },
+        {
+          "kicker": "Attività",
+          "title": "Ogni intervento, dall'accettazione al completamento.",
+          "body": "Accetta, avvia, blocca o completa — l'intero flusso di stati in tasca, sincronizzato con l'ufficio in tempo reale."
+        },
+        {
+          "kicker": "Presenze",
+          "title": "Timbratura in loco — verificata.",
+          "body": "Timbratura con geofence alla sede assegnata e una cronologia completa, così le ore sono dimostrabili, non stimate."
+        },
+        {
+          "kicker": "Team",
+          "title": "Tutta la squadra, a un tocco di distanza.",
+          "body": "Scriva o chiami qualsiasi collega in ogni spazio di lavoro, direttamente dal campo."
+        }
+      ]
+    },
+    "cta": {
+      "label": "(09) — Inizia",
+      "lines": [
+        "Metta il suo campo",
+        "a verbale."
+      ],
+      "emailPlaceholder": "Email di lavoro",
+      "requestDemo": "Inizia la prova gratuita",
+      "talkToSales": "Parla con le vendite",
+      "trialNote": "14 giorni gratis — nessuna carta di credito richiesta"
+    },
+    "footer": {
+      "tagline": "Assegni, tracci e dimostri ogni intervento — l'ufficio e il campo, su un'unica piattaforma.",
+      "explore": "Esplora",
+      "company": "Azienda",
+      "legal": "Note legali",
+      "linkPlatform": "Piattaforma",
+      "linkProcess": "Processo",
+      "linkApp": "L'app",
+      "linkGetStarted": "Inizia",
+      "linkSignIn": "Accedi",
+      "linkGetApp": "Scarica l'app",
+      "linkPrivacy": "Privacy",
+      "linkTerms": "Termini",
+      "copyrightSuffix": "· Gestione dei servizi sul campo",
+      "backToTop": "Torna su",
+      "linkPricing": "Prezzi",
+      "linkHelp": "Centro assistenza",
+      "linkBlog": "Blog"
+    },
+    "why": {
+      "label": "(05) — Cosa ci rende speciali",
+      "heading": "Tre strumenti in uno — più economici, e un unico accesso.",
+      "lead": "La maggior parte delle imprese sul campo paga separatamente uno strumento per i servizi sul campo, un timbratore e un tracker GPS — tre fatture, tre accessi e ore spese a riconciliarli. HBCField è tutti e tre, in un unico sistema.",
+      "compare": {
+        "otherwise": "Cosa acquisterebbe altrimenti",
+        "typicalCost": "Costo tipico",
+        "included": "incluso",
+        "rows": [
+          {
+            "name": "Gestione dei servizi sul campo",
+            "vendors": "Jobber, Housecall Pro",
+            "cost": "€45–65 / utente"
+          },
+          {
+            "name": "Rilevazione presenze e orari",
+            "vendors": "Deputy, When I Work",
+            "cost": "€5–8 / utente"
+          },
+          {
+            "name": "Tracciamento GPS / percorsi",
+            "vendors": "Hubstaff",
+            "cost": "€8 / utente"
+          }
+        ],
+        "sumLabel": "Tre abbonamenti separati",
+        "sumCost": "€60–90 / utente",
+        "sumUs": "un'unica piattaforma · {{price}} / utente per un team di sei"
+      },
+      "diffLabel": "E funzionalità che gli altri fanno pagare a parte — o non hanno affatto",
+      "diffs": [
+        {
+          "title": "GPS di percorso in background preciso",
+          "body": "Il percorso stradale reale percorso da un tecnico, acquisito anche quando il telefono è bloccato. Premium anche nel mondo FSM — la maggior parte lo riserva al livello più alto."
+        },
+        {
+          "title": "Un vero motore per gli straordinari",
+          "body": "Rilevamento degli straordinari basato su regole, timbratura d'uscita automatica con geofence e un flusso di approvazione — ben oltre un semplice timbratore aggiuntivo."
+        },
+        {
+          "title": "Multi-organizzazione e delega tra team",
+          "body": "Franchising, subappaltatori e agenzie possono gestire molte organizzazioni cliente da un unico account — di livello enterprise, raro negli strumenti per le PMI."
+        },
+        {
+          "title": "Configurabile secondo il suo flusso di lavoro",
+          "body": "Campi personalizzati, tipi di attività, interventi ricorrenti e flussi di lavoro fanno sì che il sistema si adatti al suo modo di lavorare — una piattaforma, non un'app rigida."
+        }
+      ]
+    },
+    "industries": {
+      "label": "(06) — A chi si rivolge",
+      "heading": "Creato per team sul campo di ogni tipo.",
+      "lead": "Ovunque le persone svolgano il lavoro sul terreno, HBCField lo coordina — e mostra esattamente chi aiuta, come e quanto le fa risparmiare.",
+      "whoLabel": "Chi",
+      "howLabel": "Come",
+      "benefitLabel": "Vantaggio",
+      "fields": [
+        {
+          "name": "Gestione immobiliare e di strutture",
+          "who": "Proprietari, gestori immobiliari e di strutture che amministrano molti edifici e unità.",
+          "how": "Registri ogni richiesta come intervento, assegni il tecnico più vicino e mantenga una cronologia completa dei servizi per edificio.",
+          "benefit": "Un unico sistema per inquilini, tecnici e documentazione — nulla sfugge."
+        },
+        {
+          "name": "Impianti HVAC, idraulici ed elettrici",
+          "who": "Imprese di installazione e riparazione con tecnici mobili.",
+          "how": "Assegni interventi al campo, tracci arrivo e percorso su una mappa in tempo reale e acquisisca ricambi, foto e una firma al completamento.",
+          "benefit": "Interventi più rapidi e un rapporto di servizio firmato prima che il tecnico se ne vada."
+        },
+        {
+          "name": "Industria e manutenzione",
+          "who": "Fabbriche, stabilimenti e siti industriali con team di manutenzione interni che servono macchine e attrezzature.",
+          "how": "Pianifichi la manutenzione preventiva ricorrente, crei ordini di lavoro per i guasti e registri ricambi e manodopera per ciascun asset, ottenendo una cronologia completa della macchina.",
+          "benefit": "Meno fermi non pianificati — manutenzione programmata e la cronologia completa di ogni asset in un unico posto."
+        },
+        {
+          "name": "Servizi di pulizia e sanificazione",
+          "who": "Imprese di pulizia commerciale che gestiscono giri ricorrenti su molti siti.",
+          "how": "Costruisca pianificazioni ricorrenti, dimostri le presenze con timbratura tramite geofence e confermi ciascun sito con una checklist e foto.",
+          "benefit": "Prova del servizio su ogni sito, automaticamente."
+        },
+        {
+          "name": "Sicurezza e vigilanza",
+          "who": "Imprese di sicurezza che gestiscono pattugliamenti e ispezioni dei siti.",
+          "how": "Pianifichi i pattugliamenti come interventi ricorrenti, verifichi le guardie in loco con GPS e timbratura e registri ogni controllo.",
+          "benefit": "Pattugliamenti verificati e con marca temporale da mostrare al cliente."
+        },
+        {
+          "name": "Giardinaggio e manutenzione del verde",
+          "who": "Squadre esterne che servono molti siti.",
+          "how": "Pianifichi visite ricorrenti, segua le squadre tramite percorso GPS e timbratura e documenti il lavoro con foto.",
+          "benefit": "Piena visibilità su siti dispersi e sul lavoro svolto."
+        }
+      ],
+      "more": "Altri settori"
+    },
+    "compare": {
+      "label": "Cosa puoi aggiungere",
+      "heading": "Attiva solo ciò che ti serve",
+      "lead": "Niente è bloccato dietro un piano. Attivi quando serve e disattivi quando non serve più: la fattura segue lo stesso giorno.",
+      "groups": {
+        "task": "Sezioni delle attività",
+        "field": "Servizi sul campo",
+        "agile": "Progetto / Agile",
+        "premium": "Premium",
+        "support": "Assistenza"
+      },
+      "popular": "Popolare",
+      "custom": "Personalizzato",
+      "perSeat": "/postazione",
+      "features": {
+        "subtasks": {
+          "label": "Sotto-attività",
+          "desc": "Suddivida un intervento grande in passaggi più piccoli che può assegnare e tracciare singolarmente, così nulla passa inosservato."
+        },
+        "checklists": {
+          "label": "Checklist",
+          "desc": "Aggiunga un elenco di passaggi da spuntare a qualsiasi attività, così il suo team segue sempre lo stesso processo e non ne salta mai uno."
+        },
+        "attachments": {
+          "label": "Allegati",
+          "desc": "Alleghi foto, PDF e documenti direttamente a un'attività — tutto ciò che riguarda l'intervento è in un unico posto."
+        },
+        "dependencies": {
+          "label": "Dipendenze",
+          "desc": "Colleghi le attività in modo che una non possa iniziare finché un'altra non è terminata, mantenendo gli interventi in più fasi nell'ordine giusto."
+        },
+        "custom_fields": {
+          "label": "Campi personalizzati",
+          "desc": "Acquisisca i dettagli aggiuntivi di cui la sua azienda ha bisogno — numeri di riferimento, modelli di attrezzatura, qualsiasi cosa — con campi personalizzati su ogni attività."
+        },
+        "tracking": {
+          "label": "Tracciamento percorsi",
+          "desc": "Veda esattamente dove si trova il suo team sul campo su una mappa in tempo reale e riproduca il percorso che ha guidato fino a ogni intervento."
+        },
+        "service_reports": {
+          "label": "Rapporti di servizio",
+          "desc": "Trasformi un intervento completato in un rapporto professionale con foto, ricambi utilizzati e firma del cliente — pronto da condividere o fatturare."
+        },
+        "time_tracking": {
+          "label": "Rilevazione orari",
+          "desc": "Registri quanto tempo richiedono realmente gli interventi rispetto alla stima, così può preventivare e pianificare con maggiore precisione."
+        },
+        "sprints": {
+          "label": "Sprint",
+          "desc": "Pianifichi il lavoro in cicli brevi e mirati e veda a colpo d'occhio quanto completa il suo team in ogni ciclo."
+        },
+        "story_points": {
+          "label": "Story point",
+          "desc": "Assegni un punteggio di impegno a ogni attività, così può bilanciare i carichi di lavoro e prevedere quanto entra in una settimana."
+        },
+        "epics": {
+          "label": "Epic",
+          "desc": "Raggruppi molte attività correlate sotto un'unica grande iniziativa per tracciare i progetti di grandi dimensioni dall'inizio alla fine."
+        },
+        "phases": {
+          "label": "Fasi",
+          "desc": "Suddivida un progetto in fasi — come pianificazione, esecuzione e consegna — e osservi l'avanzamento attraverso ciascuna."
+        },
+        "recurring": {
+          "label": "Attività ricorrenti",
+          "desc": "Imposti un intervento affinché si ripeta ogni giorno, settimana o mese e il sistema lo crea automaticamente — nessun reinserimento manuale."
+        },
+        "overtime": {
+          "label": "Straordinari",
+          "desc": "Consenta al personale di richiedere ore extra e ai responsabili di approvarle, con ogni minuto registrato per le buste paga."
+        },
+        "invoicing": {
+          "label": "Fatturazione",
+          "desc": "Trasformi il lavoro completato in una fattura con un paio di clic e tenga traccia di ciò che è stato saldato."
+        },
+        "workflows": {
+          "label": "Flussi di lavoro personalizzati",
+          "desc": "Costruisca le sue fasi delle attività — i passaggi esatti che la sua azienda utilizza — invece di un elenco di stati fisso."
+        },
+        "audit_log": {
+          "label": "Registro delle attività",
+          "desc": "Mantenga una registrazione completa di ogni azione, così saprà sempre chi ha cambiato cosa e quando."
+        },
+        "priority_routing": {
+          "label": "Instradamento coda prioritaria",
+          "desc": "I suoi ticket saltano la coda davanti ai piani inferiori, così riceve risposta prima nei momenti di maggiore affluenza."
+        },
+        "live_chat": {
+          "label": "Chat dal vivo",
+          "desc": "Chatti con una persona reale in tempo reale, direttamente nell'app, quando un operatore è online."
+        },
+        "dedicated_support": {
+          "label": "Contatto dedicato e onboarding",
+          "desc": "Un referente dedicato e una chiamata di onboarding — un aiuto pratico su misura per il suo team."
+        }
+      }
+    },
+    "pricing": {
+      "label": "(07) — Prezzi",
+      "heading": "Paghi ciò che attivi.",
+      "lead": "Nessun piano, nessun livello, niente bloccato dietro un upgrade. 9,99 € per ogni persona che usa HBCField, più ciò che ogni spazio di lavoro attiva davvero. 14 giorni di prova, senza carta.",
+      "outcomes": [
+        {
+          "title": "Ponga fine al caos delle chiamate di stato",
+          "body": "Una bacheca e una mappa in tempo reale sostituiscono le chiamate \"dove sei?\" e il foglio di calcolo di fine giornata."
+        },
+        {
+          "title": "Dimostri ogni ora",
+          "body": "La timbratura con geofence e una cronologia delle attività rendono le controversie sulle buste paga un non problema."
+        },
+        {
+          "title": "Documenti ogni visita",
+          "body": "Foto, ricambi e rapporti firmati fanno sì che possa sempre mostrare esattamente cosa è stato fatto."
+        }
+      ],
+      "cta": "Inizia gratis",
+      "note": "Fatturazione mensile · Disattiva un modulo il giorno in cui smetti di usarlo · IVA aggiunta al pagamento",
+      "parts": [
+        {
+          "name": "Per persona",
+          "price": "9,99 €",
+          "unit": "/ utente / mese",
+          "desc": "Ufficio o campo, stesso prezzo. Nessun tipo di licenza da discutere."
+        },
+        {
+          "name": "Per spazio di lavoro",
+          "price": "da 3 €",
+          "unit": "/ modulo / mese",
+          "desc": "Uno spazio di lavoro è una sede, un progetto o un cliente. Ognuno paga esattamente ciò che ha attivato, e smette quando lo disattiva."
+        },
+        {
+          "name": "Aggiuntivi aziendali",
+          "price": "da 9 €",
+          "unit": "/ mese",
+          "desc": "Fatturazione, flussi, registro attività. Si attivano una volta, indipendentemente dal numero di spazi di lavoro."
+        }
+      ],
+      "seePrices": "Vedi tutti i prezzi"
+    },
+    "faq": {
+      "label": "Domande frequenti",
+      "heading": "Domande, con risposte.",
+      "items": [
+        {
+          "q": "Che cos’è HBCField?",
+          "a": "HBCField è una piattaforma di gestione dei servizi sul campo che unifica l’assegnazione dei lavori, il tracciamento GPS in tempo reale, presenze e orari del personale e i rapporti di servizio in un unico sistema, collegando l’ufficio e il campo."
+        },
+        {
+          "q": "A chi è rivolto HBCField?",
+          "a": "Alle aziende che inviano tecnici o personale sul campo — manutenzione, climatizzazione, idraulica, elettrica, pulizie, sicurezza, giardinaggio e gestione immobiliare — che vogliono lavori, persone e orari in un unico posto."
+        },
+        {
+          "q": "Su quali piattaforme funziona HBCField?",
+          "a": "Un’app web per amministratori e dispatcher e app native iOS e Android per i tecnici sul campo."
+        },
+        {
+          "q": "Come funziona il tracciamento GPS del percorso?",
+          "a": "Un servizio nativo in background registra il percorso del tecnico con campionamento per distanza — un punto ogni 25 metri circa — anche a telefono bloccato, e conserva la cronologia dei percorsi."
+        },
+        {
+          "q": "Che cos’è la timbratura con geofence?",
+          "a": "I tecnici timbrano sul posto rispetto alla sede assegnata, così le ore di presenza sono verificate per posizione anziché autodichiarate."
+        },
+        {
+          "q": "HBCField funziona offline?",
+          "a": "Sì — foto, note e rapporti vengono messi in coda sul dispositivo e si sincronizzano automaticamente al ritorno del segnale."
+        },
+        {
+          "q": "Quanto costa HBCField?",
+          "a": "9,99 € per persona al mese, più ciò che ogni tua sede attiva, più gli extra acquistati una volta per l'azienda. Niente piani né livelli: 14 giorni gratis, senza carta. Tutti i prezzi sono pubblici su hbcfield.com/pricing."
+        },
+        {
+          "q": "HBCField sostituisce strumenti separati?",
+          "a": "Sì — invece di pagare separatamente uno strumento per il servizio sul campo, un timbracartellino e un tracker GPS, HBCField unisce assegnazione, presenze e tracciamento dei percorsi in un’unica piattaforma."
+        }
+      ]
+    },
+    "estimator": {
+      "teamSize": "Quante persone lavorano con te?",
+      "perPerson": "/ persona / mese",
+      "perPersonLong": "a persona, al mese",
+      "totalFor": "{{price}} in totale",
+      "anchor": "Gli strumenti separati che questo sostituisce costano 60–90 € a persona.",
+      "preset": {
+        "basics": {
+          "title": "Solo organizzare il lavoro",
+          "body": "Lavori, checklist e foto. Sostituisce la lavagna e la chat di gruppo."
+        },
+        "field": {
+          "title": "Gestire una squadra sul campo",
+          "body": "Tutto questo, più GPS, timbratura e rapporti firmati."
+        },
+        "everything": {
+          "title": "Gestire tutta l’azienda",
+          "body": "Aggiungi clienti, beni, fatturazione e lavori ricorrenti."
+        }
+      },
+      "seeAll": "Vedi tutti i prezzi"
+    },
+    "groups": {
+      "perSpace": "/ spazio di lavoro / mese",
+      "from": "da {{price}}",
+      "where": {
+        "title": "Sapere dove sono tutti",
+        "body": "Mappa in tempo reale, il percorso davvero fatto da ogni furgone e timbratura con geofence utilizzabile in busta paga."
+      },
+      "prove": {
+        "title": "Dimostrare che il lavoro è stato fatto",
+        "body": "Foto, materiali usati e firma del cliente, trasformati in un rapporto da inviare o fatturare."
+      },
+      "clients": {
+        "title": "Tenere aggiornati i clienti",
+        "body": "Ogni cliente, il suo storico e — se vuoi — un accesso da cui ordina e segue il proprio lavoro.",
+        "note": "Copre i primi 50 clienti e un portale; poi da 30 centesimi a cliente."
+      },
+      "things": {
+        "title": "Tenere traccia di ciò che curi",
+        "body": "Appartamenti, veicoli, macchine: cosa sono, dove sono e tutto ciò che ci è stato fatto.",
+        "note": "Copre i primi 10, poi da 1,20 € ciascuno — più ne hai, meno costa."
+      },
+      "plan": {
+        "title": "Gestire progetti più grandi",
+        "body": "Dividi i lavori lunghi in fasi, mettile in ordine e aggiungi i campi che il tuo mestiere richiede."
+      },
+      "office": {
+        "title": "Gestire la parte d’ufficio",
+        "body": "Fatture dal lavoro concluso, lavori che si ripetono, turni e un registro di chi ha cambiato cosa.",
+        "note": "Si attiva una volta per l’azienda, non per spazio di lavoro."
+      },
+      "share": {
+        "title": "Lavorare con un'altra azienda",
+        "body": "Dai a un partner, un cliente o un subappaltatore l'accesso a una sede — per guardare, contribuire o gestirla.",
+        "note": "Si paga per sede condivisa, non per azienda con cui condividi."
+      }
+    }
+  },
+  "pricing": {
+    "eyebrow": "Prezzi",
+    "heading": "Tutti i nostri prezzi, in una pagina.",
+    "lead": "Niente piani, niente livelli, niente nascosto dietro un «contatta le vendite». La tua fattura è la somma di tre cose, e puoi calcolarla da solo in meno di un minuto.",
+    "startTrial": "Inizia gratis",
+    "talkToUs": "Parla con noi",
+    "perMonth": "/ mese",
+    "perSite": "/ sede / mese",
+    "plusCount": "+ quantità",
+    "otherModules": "Tutto il resto",
+    "parts": {
+      "seats": {
+        "title": "Le persone",
+        "price": "{{price}} ciascuna",
+        "body": "Per persona al mese. Ufficio, campo o titolare: stesso prezzo, così non c'è nulla da discutere."
+      },
+      "modules": {
+        "title": "Cosa fa ogni sede",
+        "price": "da {{price}}",
+        "body": "Attiva una funzione dove ti serve. Una sede che non usa il GPS non paga mai il GPS."
+      },
+      "addOns": {
+        "title": "Extra per tutta l'azienda",
+        "price": "da {{price}}",
+        "body": "Fatturazione, turni, registro delle modifiche. Si comprano una volta, qualunque sia il numero di sedi."
+      }
+    },
+    "calcHeading": "Calcola quanto ti costa",
+    "calcLead": "Impostalo come funziona davvero la tua attività. Ogni cifra è calcolata dallo stesso codice che produce una fattura vera.",
+    "modulesHeading": "Ogni funzione e quanto costa",
+    "modulesLead": "Prezzo per sede al mese. Disattivala e smette di essere addebitata lo stesso giorno.",
+    "laddersHeading": "Le tre cose che si pagano a quantità",
+    "laddersLead": "Tutto il resto è un interruttore fisso. Queste tre crescono con te — e costano meno per unità man mano, come gli scaglioni fiscali: superare una soglia riprezza solo le unità sopra di essa, quindi aggiungerne una non può mai far saltare la fattura.",
+    "addOnsHeading": "Si comprano una volta per tutta l'azienda",
+    "addOnsLead": "Né per sede né per persona. Un prezzo, valido ovunque.",
+    "rulesHeading": "Come funziona davvero la fatturazione",
+    "rulesLead": "Le parti che di solito si scoprono dopo, scritte prima che tu paghi.",
+    "faqHeading": "Risposte chiare",
+    "ctaHeading": "Provalo prima di pagarlo.",
+    "ctaBody": "14 giorni, tutto attivo, senza carta. Se non ti convince, alla fine della prova non succede nulla.",
+    "units": {
+      "asset_one": "Quanti elementi?",
+      "asset_other": "Quanti elementi?",
+      "client_one": "Quanti clienti?",
+      "client_other": "Quanti clienti?",
+      "portal_one": "Quanti accessi cliente?",
+      "portal_other": "Quanti accessi cliente?"
+    },
+    "ladder": {
+      "band": "{{from}} – {{to}}",
+      "bandOpen": "da {{from}} in su",
+      "example": "Per esempio",
+      "exampleBody": "{{n}} di questi aggiungono {{total}} al mese — circa {{each}} ciascuno.",
+      "included_one": "Il modulo da {{price}} copre il primo.",
+      "included_other": "Il modulo da {{price}} copre i primi {{count}}."
+    },
+    "calc": {
+      "peopleTitle": "Quante persone lo useranno?",
+      "peopleBody": "Contano tutte allo stesso modo: ufficio, campo, titolare. {{price}} ciascuna al mese.",
+      "sitesTitle": "Cosa deve poter fare ogni sede?",
+      "sitesBody": "Una sede è un luogo o un'attività che gestisci — una filiale, un edificio, un contratto, una squadra. Ognuna paga solo ciò che attiva, quindi una sede tranquilla resta economica.",
+      "addOnsTitle": "Qualcosa per tutta l'azienda?",
+      "addOnsBody": "Questi si comprano una volta e valgono ovunque. Qualunque sia il numero di sedi, li paghi una volta sola.",
+      "siteN": "Sede {{n}}",
+      "addSite": "Aggiungi un'altra sede",
+      "removeSite": "Rimuovi questa sede",
+      "aMonth": "al mese",
+      "perPerson": "per persona al mese",
+      "breakdown": "Da dove viene",
+      "seatsLine": "{{count}} persone × {{price}}",
+      "overAllowance": "{{n}} oltre i {{included}} inclusi",
+      "nothingOn": "niente attivato",
+      "companyWide": "Tutta l'azienda",
+      "total": "Ogni mese",
+      "nextBreak": "Ancora {{away}} e ogni successivo costa {{price}}.",
+      "cheapestBand": "Sei già alla tariffa più bassa possibile.",
+      "footnote": "Prezzi IVA esclusa. 14 giorni gratis, senza carta. Cambia quello che vuoi quando vuoi — la fattura segue lo stesso giorno.",
+      "allFree_one": "Il primo è compreso nel modulo.",
+      "allFree_other": "I primi {{count}} sono compresi nel modulo."
+    },
+    "rules": [
+      {
+        "title": "Niente è bloccato",
+        "body": "Non c'è un piano da migliorare. Ogni funzione è disponibile per ogni cliente al prezzo indicato qui, dal primo giorno."
+      },
+      {
+        "title": "Le modifiche valgono lo stesso giorno",
+        "body": "Attivi qualcosa e da lì viene addebitato; lo disattivi e smette. Le modifiche a metà mese si calcolano al giorno, non si arrotondano a un mese intero."
+      },
+      {
+        "title": "14 giorni gratis, senza carta",
+        "body": "La prova ha tutto attivo — anche ciò che costa a parte — così valuti il prodotto intero, non un assaggio."
+      },
+      {
+        "title": "L'IVA si aggiunge al pagamento",
+        "body": "Tutti i prezzi qui sono IVA esclusa. Le aziende UE fuori dall'Austria possono inserire la partita IVA e vengono addebitate allo 0 %."
+      },
+      {
+        "title": "Disdici quando vuoi",
+        "body": "La disdetta ferma il rinnovo successivo. Mantieni l'accesso fino alla fine del periodo già pagato, e i tuoi dati restano esportabili."
+      }
+    ],
+    "faq": [
+      {
+        "q": "Quale piano dovrei scegliere?",
+        "a": "Nessuno — non ci sono. Paghi per le persone che usano HBCField più ciò che attivi. È tutto qui il modello, ed esiste perché quello vecchio costringeva ad aggiornare ogni postazione per arrivare a una sola funzione."
+      },
+      {
+        "q": "Cos'è esattamente una «sede»?",
+        "a": "Un luogo o un'attività che gestisci separatamente: una filiale, un edificio, un contratto, un cliente, una squadra. La maggior parte inizia con una e ne aggiunge altre solo quando il lavoro è davvero separato. Creare una sede è gratis: paghi solo ciò che quella sede attiva."
+      },
+      {
+        "q": "Pago un modulo in ogni sede?",
+        "a": "Solo in quelle che lo usano. Attiva il GPS per la squadra mobile e lascialo spento in officina: ne paghi uno. Gli extra aziendali funzionano al contrario: si comprano una volta per tutta l'azienda."
+      },
+      {
+        "q": "Cosa succede se aggiungo qualcuno a metà mese?",
+        "a": "Paghi la parte di mese in cui c'è stato, non il mese intero. Lo stesso vale per qualunque cosa attivi o disattivi."
+      },
+      {
+        "q": "C'è un minimo o un vincolo?",
+        "a": "Una persona, una sede, un mese. Nessuna dimensione minima del team, nessun costo di attivazione e nessun vincolo annuale: si fattura al mese e puoi smettere quando vuoi."
+      },
+      {
+        "q": "Cosa succede alla fine della prova?",
+        "a": "Non viene addebitato nulla automaticamente. Se non hai inserito una carta l'account si blocca semplicemente finché non lo fai, e i tuoi dati ti aspettano."
+      },
+      {
+        "q": "Potete fatturarci in altro modo?",
+        "a": "Sì — per le organizzazioni con accordo negoziato fatturiamo fuori dall'app e non viene addebitata alcuna carta. Scrivici e lo prepariamo."
+      }
+    ]
+  },
+  "privacy": {
+    "backToHbcfield": "Torna a HBCField",
+    "lastUpdated": "Ultimo aggiornamento: 8 luglio 2026",
+    "title": "Informativa sulla privacy",
+    "subtitle": "HBCField — Piattaforma di gestione dei servizi sul campo",
+    "intro": "HBC Group GmbH (\"noi\", \"nostro\", \"ci\") gestisce l'applicazione mobile e la piattaforma web HBCField. La presente Informativa sulla privacy spiega come raccogliamo, utilizziamo e proteggiamo le sue informazioni quando utilizza i nostri servizi.",
+    "s1": {
+      "title": "1. Informazioni che raccogliamo",
+      "accountTitle": "Informazioni sull'account",
+      "accountEmail": "Indirizzo email",
+      "accountName": "Nome e cognome",
+      "accountOrg": "Nome dell'organizzazione",
+      "accountRole": "Ruolo e autorizzazioni all'interno della sua organizzazione",
+      "locationTitle": "Dati sulla posizione",
+      "gpsLabel": "Posizione GPS precisa",
+      "gpsIntro": " — raccolta solo durante le attività lavorative attive:",
+      "gps1": "Durante il tragitto verso un cantiere (stato EN_ROUTE) — il suo percorso viene registrato continuamente in background, anche quando l'app è chiusa o non in uso",
+      "gps2": "Al momento della timbratura di ingresso o uscita (singolo rilevamento GPS per la verifica delle presenze)",
+      "gps3": "Al momento della registrazione dell'arrivo a un cantiere (verifica tramite geofence)",
+      "cachedLabel": "Posizione memorizzata nella cache",
+      "cachedText": " — utilizzata per gli indicatori di presenza sulla mappa in tempo reale del dispatcher. Utilizza l'ultima posizione nota del dispositivo senza attivare il ricevitore GPS.",
+      "neverPre": "I dati sulla posizione ",
+      "neverBold": "non vengono mai raccolti",
+      "neverPost": " quando consulta le attività, visualizza il suo profilo o si trova al di fuori del lavoro attivo — ovvero quando non è in tragitto verso un intervento e non ha timbrato l'ingresso.",
+      "workTitle": "Dati sull'attività lavorativa",
+      "work1": "Aggiornamenti sullo stato delle attività e marcature temporali",
+      "work2": "Orari di ingresso/uscita e durata delle pause",
+      "work3": "Rapporti di servizio comprensivi di descrizioni testuali, foto scattate con la fotocamera del dispositivo o selezionate dalla libreria fotografica e firme digitali",
+      "work4": "Commenti sulle attività",
+      "deviceTitle": "Informazioni sul dispositivo",
+      "device1": "Tipo di dispositivo e sistema operativo (per le notifiche push)",
+      "device2": "Token per le notifiche push (Expo Push Token)",
+      "device3": "Versione dell'app"
+    },
+    "s2": {
+      "title": "2. Come utilizziamo le sue informazioni",
+      "item1": "Per fornire le funzionalità di gestione dei servizi sul campo",
+      "item2": "Per abilitare il tracciamento della posizione in tempo reale per i dispatcher durante il lavoro attivo",
+      "item3": "Per verificare le presenze tramite geofencing presso le sedi aziendali",
+      "item4": "Per verificare la presenza dei dipendenti nei cantieri prima dell'inizio del lavoro",
+      "item5": "Per inviare notifiche push relative all'assegnazione delle attività, agli aggiornamenti di stato e ai commenti",
+      "item6": "Per generare rapporti di servizio e mantenere la cronologia dei lavori",
+      "item7": "Per visualizzare il tracciamento del percorso sulle attività completate",
+      "item8": "Per migliorare le prestazioni dell'app e correggere i bug"
+    },
+    "s3": {
+      "title": "3. Base giuridica per il trattamento (GDPR)",
+      "intro": "Ove si applichi il Regolamento generale sulla protezione dei dati, trattiamo i suoi dati personali sulle seguenti basi giuridiche:",
+      "contractLabel": "Esecuzione di un contratto (Art. 6(1)(b) GDPR)",
+      "contractText": " — per fornire il servizio HBCField alla sua organizzazione e a lei in quanto utente autorizzato, inclusa l'assegnazione delle attività, il dispatching basato sulla posizione, la verifica delle presenze e la rendicontazione dei servizi.",
+      "legitLabel": "Interessi legittimi (Art. 6(1)(f) GDPR)",
+      "legitText": " — per proteggere la nostra piattaforma, prevenire frodi e abusi, mantenere l'affidabilità del servizio e migliorare il prodotto. I nostri interessi legittimi sono bilanciati con i suoi diritti e le sue libertà.",
+      "consentLabel": "Consenso (Art. 6(1)(a) GDPR)",
+      "consentText": " — per funzionalità opzionali come le notifiche push, che può disattivare in qualsiasi momento nelle impostazioni del suo dispositivo.",
+      "legalLabel": "Obbligo legale (Art. 6(1)(c) GDPR)",
+      "legalText": " — laddove siamo tenuti a conservare i registri per obblighi fiscali, lavorativi o altri obblighi di legge applicabili alla sua organizzazione."
+    },
+    "s4": {
+      "title": "4. Condivisione dei dati",
+      "noSellPre": "Noi ",
+      "noSellBold": "non",
+      "noSellPost": " vendiamo i suoi dati personali a terzi.",
+      "internal": "I suoi dati vengono condivisi solo all'interno della sua organizzazione — gli utenti admin e dispatcher possono visualizzare le posizioni e l'attività lavorativa dei dipendenti.",
+      "thirdPartyIntro": "Utilizziamo i seguenti servizi di terze parti:",
+      "expoLabel": "Expo",
+      "expoText": " — Recapito delle notifiche push",
+      "fcmLabel": "Firebase Cloud Messaging (FCM)",
+      "fcmText": " — Instradamento delle notifiche push per Android",
+      "apnsLabel": "Apple Push Notification Service (APNs)",
+      "apnsText": " — Instradamento delle notifiche push per iOS",
+      "hetznerCloudLabel": "Hetzner Cloud",
+      "hetznerCloudText": " — Hosting dei server (con sede nell'UE, Finlandia/Germania)",
+      "hetznerStorageLabel": "Hetzner Object Storage",
+      "hetznerStorageText": " — Archiviazione dei file per gli allegati (con sede nell'UE)",
+      "osmLabel": "OpenStreetMap / OSRM",
+      "osmText": " — Riquadri della mappa e visualizzazione dei percorsi",
+      "nominatimLabel": "Nominatim",
+      "nominatimText": " — Ricerca degli indirizzi (geocodifica)"
+    },
+    "s5": {
+      "title": "5. Archiviazione e sicurezza dei dati",
+      "euPre": "Tutti i dati sono archiviati su server situati nell'",
+      "euBold": "Unione Europea",
+      "euPost": " (Hetzner, Helsinki/Falkenstein)",
+      "item2": "I dati sono cifrati durante la trasmissione tramite TLS/HTTPS",
+      "item3": "Le password vengono sottoposte a hashing con bcrypt e fattore di costo 12",
+      "item4": "I token di autenticazione vengono sottoposti a hashing SHA-256 prima dell'archiviazione",
+      "item5": "I token di aggiornamento utilizzano la rotazione con periodi di tolleranza per le richieste simultanee",
+      "item6": "L'accesso è limitato dalle autorizzazioni basate sui ruoli (RBAC)",
+      "item7": "Il rate limiting protegge dagli attacchi a forza bruta (10 richieste/sec, 200 richieste/min)",
+      "item8": "Blocco dell'account dopo 5 tentativi di accesso non riusciti (15 minuti di attesa)",
+      "item9": "I file caricati vengono archiviati in un object storage compatibile con S3 tramite URL prefirmati"
+    },
+    "s6": {
+      "title": "6. Conservazione dei dati",
+      "item1": "I dati dell'account vengono conservati finché l'account è attivo",
+      "item2": "La cronologia delle posizioni (tracciamento del percorso) viene conservata per 90 giorni",
+      "item3": "I rapporti di servizio vengono conservati in base ai requisiti di archiviazione della sua organizzazione",
+      "item4": "I token di aggiornamento vengono eliminati automaticamente dopo la scadenza",
+      "item5": "Può richiedere la cancellazione completa dei dati in qualsiasi momento"
+    },
+    "s7": {
+      "title": "7. I suoi diritti (GDPR)",
+      "intro": "Se si trova nell'Unione Europea o nello Spazio di lavoro economico europeo, ha i seguenti diritti ai sensi del Regolamento generale sulla protezione dei dati (GDPR):",
+      "accessLabel": "Diritto di accesso",
+      "accessText": " — Richiedere una copia dei suoi dati personali",
+      "rectificationLabel": "Diritto di rettifica",
+      "rectificationText": " — Correggere dati inesatti o incompleti",
+      "erasureLabel": "Diritto alla cancellazione",
+      "erasureText": " — Richiedere la cancellazione dei suoi dati personali (\"diritto all'oblio\"). Può eliminare il suo account e tutti i dati associati autonomamente, in qualsiasi momento, direttamente nell'app: Profilo → Account → Elimina account.",
+      "portabilityLabel": "Diritto alla portabilità dei dati",
+      "portabilityText": " — Ricevere i suoi dati in un formato strutturato e leggibile da dispositivo automatico",
+      "objectLabel": "Diritto di opposizione",
+      "objectText": " — Opporsi al trattamento dei suoi dati personali",
+      "restrictLabel": "Diritto di limitazione del trattamento",
+      "restrictText": " — Richiedere la limitazione del trattamento dei dati",
+      "withdrawLabel": "Diritto di revocare il consenso",
+      "withdrawText": " — Revocare il suo consenso in qualsiasi momento",
+      "complaintLabel": "Diritto di presentare un reclamo",
+      "complaintText": " — Ha il diritto di presentare un reclamo alla sua autorità locale per la protezione dei dati se ritiene che i suoi diritti siano stati violati.",
+      "contactPre": "Per esercitare uno qualsiasi di questi diritti, ci contatti all'indirizzo ",
+      "contactPost": "."
+    },
+    "s8": {
+      "title": "8. Informativa sul tracciamento della posizione",
+      "intro": "HBCField utilizza i dati sulla posizione come parte fondamentale delle sue funzionalità di gestione dei servizi sul campo. Ecco esattamente quando e come viene utilizzata la posizione:",
+      "gpsActiveTitle": "Quando il GPS è attivo",
+      "drivingLabel": "In tragitto verso l'intervento:",
+      "drivingText": "Tracciamento continuo in background — anche quando l'app è chiusa o non in uso — all'incirca ogni 15 secondi, per registrare il percorso verso il cantiere",
+      "clockLabel": "Timbratura ingresso/uscita:",
+      "clockText": "Singolo rilevamento ad alta precisione per la verifica delle presenze",
+      "arrivingLabel": "In arrivo all'intervento:",
+      "arrivingText": "Singolo rilevamento ad alta precisione per la verifica del geofence (raggio di 20 m)",
+      "gpsInactiveTitle": "Quando il GPS NON è attivo",
+      "inactive1": "Consultazione delle attività, visualizzazione del profilo, modifica delle impostazioni",
+      "inactive2": "L'app è in background o chiusa e lei non è in tragitto verso un intervento (tracciamento del percorso) né ha timbrato l'ingresso",
+      "inactive3": "L'indicatore di presenza utilizza solo la posizione memorizzata nella cache del sistema operativo (nessuna attivazione del GPS)",
+      "safeguardsIntro": "Ulteriori garanzie:",
+      "safeguard1": "Solo i dispatcher e gli admin all'interno della sua organizzazione possono visualizzare la sua posizione",
+      "safeguard2": "I dati sulla posizione non vengono mai condivisi al di fuori della sua organizzazione",
+      "safeguard3": "I dati sul percorso delle attività completate vengono conservati per 90 giorni",
+      "safeguard4": "Può visualizzare i propri dati sulla posizione nell'app"
+    },
+    "s9": {
+      "title": "9. Notifiche push",
+      "intro": "HBCField invia notifiche push per:",
+      "item1": "Nuove assegnazioni di attività",
+      "item2": "Modifiche allo stato delle attività",
+      "item3": "Nuovi commenti sulle sue attività",
+      "item4": "Approvazioni o rifiuti delle richieste di adesione",
+      "item5": "Promemoria sulle presenze",
+      "disable": "Può disattivare le notifiche push nelle impostazioni del suo dispositivo in qualsiasi momento."
+    },
+    "s10": {
+      "title": "10. Privacy dei minori",
+      "body": "HBCField è un'applicazione per l'ambiente lavorativo progettata per uso professionale. Non è destinata all'uso da parte di persone di età inferiore ai 18 anni. Non raccogliamo consapevolmente informazioni personali di minori."
+    },
+    "s11": {
+      "title": "11. Trasferimenti internazionali di dati",
+      "body": "I suoi dati vengono trattati e archiviati all'interno dell'Unione Europea. Il recapito delle notifiche push può comportare l'instradamento attraverso l'infrastruttura di Google (FCM) o Apple (APNs), che potrebbe trattare i dati al di fuori dell'UE. Questi trasferimenti sono coperti dal Data Privacy Framework UE-USA e dalle Clausole contrattuali standard."
+    },
+    "s12": {
+      "title": "12. Modifiche alla presente informativa",
+      "body": "Potremmo aggiornare periodicamente la presente Informativa sulla privacy per riflettere cambiamenti nelle nostre pratiche o nei requisiti di legge. Informeremo gli utenti delle modifiche sostanziali tramite email o notifica in-app. La data di \"Ultimo aggiornamento\" in cima a questa pagina indica quando la presente informativa è stata rivista per l'ultima volta."
+    },
+    "s13": {
+      "title": "13. Contattaci",
+      "company": "HBC Group GmbH",
+      "emailLabel": "Email: ",
+      "websiteLabel": "Sito web: ",
+      "supportLabel": "Assistenza: "
+    },
+    "footerRights": "HBC Group GmbH. Tutti i diritti riservati.",
+    "print": "Stampa / Salva come PDF",
+    "contents": "Contenuti"
+  },
+  "terms": {
+    "backToHbcfield": "Torna a HBCField",
+    "lastUpdated": "Ultimo aggiornamento: 13 luglio 2026",
+    "title": "Termini e condizioni",
+    "subtitle": "HBCField — Piattaforma di gestione dei servizi sul campo",
+    "intro": "I presenti Termini e condizioni (\"Termini\") disciplinano l'accesso e l'utilizzo della piattaforma web e dell'applicazione mobile HBCField (insieme, il \"Servizio\"), gestite da HBC Group GmbH (\"noi\", \"nostro\"). HBCField è un servizio business-to-business. Creando un account o utilizzando il Servizio, l'utente accetta i presenti Termini.",
+    "s1": {
+      "title": "1. Accettazione dei presenti Termini",
+      "p1": "Registrandosi, accedendo o utilizzando il Servizio, l'utente conferma di aver letto, compreso e di accettare di essere vincolato dai presenti Termini e dalla nostra Informativa sulla privacy. In caso di mancata accettazione, l'utente non deve utilizzare il Servizio.",
+      "p2": "Se l'utente accetta i presenti Termini per conto di un'organizzazione, dichiara di essere autorizzato a vincolare tale organizzazione e il termine \"utente\" si riferisce a tale organizzazione. Il Servizio è destinato esclusivamente a un uso professionale e aziendale e non è rivolto ai consumatori, salvo quanto diversamente previsto da norme imperative."
+    },
+    "s2": {
+      "title": "2. Definizioni",
+      "intro": "Nei presenti Termini:",
+      "serviceLabel": "\"Servizio\"",
+      "serviceText": " — il portale web, l'applicazione mobile, le API e la documentazione correlata di HBCField.",
+      "orgLabel": "\"Organizzazione\"",
+      "orgText": " — la società o l'entità che si registra per un account e per conto della quale viene utilizzato il Servizio.",
+      "adminLabel": "\"Amministratore\"",
+      "adminText": " — il titolare dell'organizzazione o un utente a cui sono stati concessi diritti amministrativi, che gestisce utenti, accessi e fatturazione.",
+      "memberLabel": "\"Membro\"",
+      "memberText": " — qualsiasi utente (coordinatore d'ufficio, addetto all'assegnazione o tecnico sul campo) aggiunto a un'Organizzazione.",
+      "seatLabel": "\"Postazione\"",
+      "seatText": " — un'unità di accesso fatturabile; ogni Membro attivo conta come una postazione alla stessa tariffa fissa, qualunque sia il suo accesso.",
+      "dataLabel": "\"Dati del cliente\"",
+      "dataText": " — tutti i dati che la sua Organizzazione e i suoi Membri inviano al Servizio, comprese attività, report, foto, posizioni e commenti."
+    },
+    "s3": {
+      "title": "3. Il Servizio e la licenza",
+      "intro": "HBCField fornisce una piattaforma basata sui ruoli per la gestione del lavoro sul campo — creazione e assegnazione delle attività, esecuzione da parte del tecnico, tracciamento GPS del percorso, presenze, report di servizio e funzionalità correlate. Potremo aggiungere, modificare o rimuovere funzionalità nel tempo.",
+      "licence": "Fatti salvi i presenti Termini e il pagamento delle tariffe applicabili, concediamo alla sua Organizzazione un diritto non esclusivo, non trasferibile e non concedibile in sublicenza di accedere e utilizzare il Servizio per le proprie finalità aziendali interne per la durata dell'abbonamento.",
+      "restrictTitle": "L'utente non deve",
+      "restrict1": "copiare, modificare, decodificare, decompilare o creare opere derivate del Servizio, salvo quanto consentito da norme imperative;",
+      "restrict2": "rivendere, concedere in sublicenza, noleggiare o altrimenti rendere disponibile il Servizio a terzi al di fuori della propria Organizzazione;",
+      "restrict3": "eludere i limiti di utilizzo, il numero di postazioni, le restrizioni di piano o le misure di sicurezza;",
+      "restrict4": "utilizzare il Servizio per creare un prodotto concorrente o per estrarre dati diversi dai propri Dati del cliente."
+    },
+    "s4": {
+      "title": "4. Account e Organizzazioni",
+      "intro": "Al momento della registrazione viene creata un'Organizzazione e l'utente che si registra ne diventa l'Amministratore. L'utente è responsabile del proprio account e di tutte le attività svolte al suo interno. In particolare:",
+      "item1": "deve fornire informazioni accurate, aggiornate e complete e mantenerle aggiornate;",
+      "item2": "è responsabile della riservatezza delle credenziali di accesso e di tutte le azioni compiute tramite il proprio account;",
+      "item3": "l'Amministratore controlla quali Membri vengono aggiunti, i loro ruoli e i loro accessi ed è responsabile del loro utilizzo del Servizio;",
+      "item4": "deve informarci tempestivamente di qualsiasi accesso non autorizzato o violazione della sicurezza che riguardi il proprio account."
+    },
+    "s5": {
+      "title": "5. Abbonamenti, postazioni e cosa paghi",
+      "intro": "Il Servizio è offerto con abbonamento mensile. Non esistono livelli di piano: ogni funzionalità è disponibile per tutti i clienti al prezzo indicato nella nostra pagina prezzi, e paghi la somma di persone, moduli e opzioni attive.",
+      "seats": "La fatturazione è per persona, non per pacchetto. Ogni Membro attivo conta come una postazione alla stessa tariffa, qualunque sia il suo accesso: non c'è distinzione tra ufficio e campo. I moduli si attivano per sede e sono addebitati per ogni sede che li attiva; alcuni sono inoltre addebitati a quantità (per esempio beni o schede cliente), secondo scaglioni pubblicati.",
+      "plansTitle": "Cosa viene addebitato (IVA esclusa)",
+      "plansNote": "I prezzi sono IVA esclusa e possono essere aggiornati per periodi futuri con preavviso. Il listino completo è pubblico su hbcfield.com/pricing, e la tua fattura corrente è sempre dettagliata in Impostazioni → Fatturazione.",
+      "seatLabel": "Per persona",
+      "seatText": "9,99 € per Membro / mese.",
+      "moduleLabel": "Per modulo",
+      "moduleText": "da 3 € per sede / mese, per ogni sede che lo attiva.",
+      "addOnLabel": "Per opzione",
+      "addOnText": "da 9 € / mese, acquistato una volta per l'intera Organizzazione."
+    },
+    "s6": {
+      "title": "6. Tariffe, fatturazione e ripartizione",
+      "intro": "Le tariffe sono addebitate in euro (EUR) ogni mese in anticipo, in base a persone, moduli e opzioni attive. Se qualcosa cambia a metà periodo, il calcolo è proporzionale come segue:",
+      "monthlyLabel": "Aggiunte — ",
+      "monthlyText": "le modifiche sono calcolate in proporzione e applicate alla fattura successiva; aggiungere una persona o attivare un modulo non genera un addebito immediato separato, ma l'importo proporzionale per il resto del mese in corso viene aggiunto alla fattura successiva.",
+      "decreaseLabel": "Rimozione di postazioni — ",
+      "decreaseText": "le riduzioni non comportano mai un rimborso in denaro; il valore ripartito viene accantonato come credito sul conto e applicato alle fatture future.",
+      "processor": "I pagamenti sono elaborati da Stripe. L'utente autorizza noi e Stripe ad addebitare il proprio metodo di pagamento per tutte le tariffe dovute. L'utente è responsabile di mantenere registrato un metodo di pagamento valido."
+    },
+    "s7": {
+      "title": "7. Imposte (IVA)",
+      "intro": "Tutti i prezzi sono al netto dell'imposta sul valore aggiunto (IVA) e di ogni altra imposta applicabile, che vengono aggiunte al momento del pagamento all'aliquota richiesta dalla legge. Per i clienti in Austria si applica l'aliquota IVA standard del 20%.",
+      "vatId": "I clienti business possono inserire un numero di identificazione IVA (UID) valido al momento del pagamento. Per le transazioni transfrontaliere idonee all'interno dell'UE si applica il meccanismo di inversione contabile (reverse charge) e non viene addebitata alcuna IVA, nel qual caso l'utente è responsabile della contabilizzazione dell'IVA nel proprio Paese. Le forniture nazionali austriache restano soggette all'IVA austriaca anche in presenza di un numero di partita IVA."
+    },
+    "s8": {
+      "title": "8. Prova gratuita",
+      "intro": "Le nuove Organizzazioni possono ricevere una prova gratuita (attualmente 14 giorni) con ogni funzionalità attiva, incluse quelle altrimenti a pagamento. Non è richiesto alcun metodo di pagamento per iniziare la prova.",
+      "expiry": "Salvo che l'utente sottoscriva un piano a pagamento prima del termine della prova, l'accesso viene limitato al termine della prova e l'account viene posto in stato di sola lettura fino all'attivazione di un abbonamento. Potremo modificare o interrompere le offerte di prova in qualsiasi momento."
+    },
+    "s9": {
+      "title": "9. Rinnovo, disdetta e rimborsi",
+      "renewLabel": "Rinnovo automatico — ",
+      "renewText": "gli abbonamenti si rinnovano automaticamente alla fine di ogni periodo di fatturazione mensile alle tariffe allora vigenti, fino alla disdetta.",
+      "cancelLabel": "Disdetta — ",
+      "cancelText": "è possibile disdire in qualsiasi momento da Impostazioni → Fatturazione o dal portale clienti Stripe. La disdetta ha effetto al termine del periodo a pagamento corrente; l'accesso resta valido fino ad allora.",
+      "refundLabel": "Rimborsi — ",
+      "refundText": "salvo quanto richiesto da norme imperative, le tariffe già versate non sono rimborsabili e non forniamo rimborsi parziali per il tempo non utilizzato o per i downgrade.",
+      "failLabel": "Pagamenti non riusciti — ",
+      "failText": "in caso di mancato pagamento, l'abbonamento può essere contrassegnato come scaduto e l'accesso può essere sospeso o limitato fino alla risoluzione del pagamento."
+    },
+    "s10": {
+      "title": "10. Uso accettabile",
+      "intro": "L'utente si impegna a non, e a non consentire ad alcun Membro o terzo di:",
+      "item1": "utilizzare il Servizio in violazione di qualsiasi legge o regolamento applicabile;",
+      "item2": "caricare o trasmettere contenuti illeciti, lesivi di diritti o dannosi, o malware;",
+      "item3": "tentare di ottenere accesso non autorizzato al Servizio, ad altri account o ai nostri sistemi;",
+      "item4": "interferire con o compromettere l'integrità o le prestazioni del Servizio;",
+      "item5": "utilizzare il tracciamento della posizione o i dati dei Membri in violazione delle leggi in materia di lavoro, privacy o protezione dei dati applicabili alla propria Organizzazione;",
+      "item6": "falsificare la propria identità o la propria autorità ad agire per conto di un'Organizzazione."
+    },
+    "s11": {
+      "title": "11. Dati del cliente e privacy",
+      "ownership": "Nei rapporti tra l'utente e noi, la sua Organizzazione è titolare dei propri Dati del cliente. L'utente ci concede una licenza limitata per ospitare, elaborare e trasmettere i Dati del cliente al solo scopo di fornire e supportare il Servizio. L'utente è responsabile dell'accuratezza e della liceità dei Dati del cliente e di disporre di tutti i consensi o le basi giuridiche necessari per raccoglierli (compresi i dati di posizione dei propri Membri).",
+      "privacyPre": "Il nostro trattamento dei dati personali è descritto nella nostra ",
+      "privacyLink": "Informativa sulla privacy",
+      "privacyPost": ", che costituisce parte integrante dei presenti Termini. Laddove trattiamo dati personali per suo conto, agiamo in qualità di responsabile del trattamento e l'utente in qualità di titolare.",
+      "export": "L'utente può accedere ai propri Dati del cliente ed esportarli mentre l'abbonamento è attivo. Dopo la cessazione, conserviamo i Dati del cliente per un periodo limitato per consentirne l'esportazione e successivamente li eliminiamo in conformità alle nostre pratiche di conservazione e alla legge applicabile, salvo che una conservazione più lunga sia richiesta per legge."
+    },
+    "s12": {
+      "title": "12. Proprietà intellettuale",
+      "ownership": "Il Servizio, compresi tutto il software, il design, i marchi e i contenuti da noi forniti, è e rimane di proprietà esclusiva di HBC Group GmbH e dei suoi licenzianti. I presenti Termini concedono all'utente solo un diritto di utilizzare il Servizio; nessun diritto di proprietà o altro diritto viene trasferito all'utente.",
+      "feedback": "Se l'utente ci invia feedback o suggerimenti, ci concede una licenza non esclusiva, esente da royalty e perpetua per utilizzarli al fine di migliorare il Servizio, senza alcun obbligo nei suoi confronti."
+    },
+    "s13": {
+      "title": "13. Servizi di terze parti",
+      "intro": "Il Servizio si avvale di fornitori terzi. I loro servizi sono disciplinati dai rispettivi termini e non siamo responsabili delle loro azioni, omissioni o disponibilità:",
+      "stripeLabel": "Stripe — ",
+      "stripeText": "elaborazione dei pagamenti e fatturazione degli abbonamenti;",
+      "hostingLabel": "Hetzner — ",
+      "hostingText": "hosting cloud e archiviazione oggetti con sede nell'UE;",
+      "pushLabel": "Expo, Firebase Cloud Messaging e Apple Push Notification Service — ",
+      "pushText": "invio delle notifiche push;",
+      "mapsLabel": "OpenStreetMap, OSRM e Nominatim — ",
+      "mapsText": "tessere della mappa, calcolo dei percorsi e ricerca degli indirizzi."
+    },
+    "s14": {
+      "title": "14. Garanzie, disponibilità e responsabilità",
+      "availability": "Ci impegniamo a mantenere il Servizio disponibile e affidabile, ma non garantiamo un funzionamento ininterrotto o privo di errori. Il Servizio può essere temporaneamente non disponibile per manutenzione, aggiornamenti o per motivi al di fuori del nostro controllo.",
+      "asis": "Nella misura massima consentita dalla legge, il Servizio è fornito \"così com'è\" e \"come disponibile\", senza garanzie di alcun tipo, esplicite o implicite, comprese quelle di commerciabilità, idoneità a uno scopo particolare e non violazione di diritti.",
+      "liability": "Nella misura massima consentita dalla legge, non siamo responsabili per danni indiretti, incidentali, speciali o consequenziali, né per perdita di profitti, ricavi, dati o affari. La nostra responsabilità aggregata totale derivante da o connessa al Servizio è limitata alle tariffe da lei versateci nei dodici (12) mesi precedenti l'evento che ha dato origine alla richiesta.",
+      "mandatory": "Nulla nei presenti Termini esclude o limita la responsabilità che non può essere legalmente esclusa o limitata, compresa la responsabilità per dolo, colpa grave, lesioni personali o ai sensi delle norme imperative austriache e dell'UE."
+    },
+    "s15": {
+      "title": "15. Durata, sospensione e risoluzione",
+      "term": "I presenti Termini si applicano per tutto il tempo in cui l'utente utilizza il Servizio o detiene un abbonamento attivo. L'utente può recedere disdicendo il proprio abbonamento e cessando l'utilizzo del Servizio.",
+      "suspend": "Potremo sospendere o limitare l'accesso, in tutto o in parte, qualora l'utente violi in modo sostanziale i presenti Termini, non paghi le tariffe alla scadenza, o laddove richiesto per motivi legali o di sicurezza. Ove possibile, forniremo un preavviso e la possibilità di rimediare.",
+      "effect": "Alla risoluzione, il diritto dell'utente di utilizzare il Servizio cessa e tutte le tariffe in sospeso divengono esigibili. Renderemo i Dati del cliente disponibili per l'esportazione per un periodo limitato e successivamente li elimineremo come descritto nella Sezione 11, salvo quanto diversamente richiesto da norme imperative."
+    },
+    "s16": {
+      "title": "16. Legge applicabile, modifiche e contatti",
+      "law": "I presenti Termini sono disciplinati dalla legge austriaca, con esclusione delle sue norme sui conflitti di legge e della Convenzione delle Nazioni Unite sui contratti di compravendita internazionale di merci (CISG). I tribunali competenti per la sede legale di HBC Group GmbH in Austria hanno giurisdizione esclusiva, salvo quanto diversamente previsto da norme imperative a tutela dei consumatori.",
+      "changes": "Potremo aggiornare i presenti Termini di volta in volta. Le comunicheremo eventuali modifiche sostanziali via email o tramite avviso nell'app, e la data di \"Ultimo aggiornamento\" riflette l'ultima revisione. Il proseguimento dell'utilizzo del Servizio dopo l'entrata in vigore delle modifiche costituisce accettazione dei Termini aggiornati.",
+      "company": "HBC Group GmbH",
+      "emailLabel": "Fatturazione e questioni legali: ",
+      "websiteLabel": "Sito web: ",
+      "supportLabel": "Assistenza: "
+    },
+    "footerRights": "HBC Group GmbH. Tutti i diritti riservati.",
+    "print": "Stampa / Salva come PDF",
+    "contents": "Sommario"
+  }
+}

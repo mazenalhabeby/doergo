@@ -1,0 +1,990 @@
+{
+  "home": {
+    "nav": {
+      "platform": "Platform",
+      "process": "Process",
+      "app": "App",
+      "signIn": "Sign in",
+      "industries": "Industries",
+      "pricing": "Pricing",
+      "compare": "Compare",
+      "shop": "Shop",
+      "toggleTheme": "Toggle theme",
+      "blog": "Blog",
+      "home": "Home"
+    },
+    "hero": {
+      "line1": "The field,",
+      "under": "under",
+      "words": [
+        "control",
+        "command",
+        "watch",
+        "review"
+      ],
+      "requestDemo": "Start free trial",
+      "scroll": "Scroll",
+      "hint": "Touch the lines to spark the field",
+      "meta": "HBCField — Field service platform",
+      "metaDesc": "Dispatch, GPS tracking, service reports and attendance in one system."
+    },
+    "whatItIs": {
+      "label": "(01) — What it is",
+      "lines": [
+        "One system connects",
+        "the office and the field.",
+        "Assign, follow the route,",
+        "close with a signed report."
+      ]
+    },
+    "video": {
+      "label": "Watch · 45 sec",
+      "title": "See HBCField in action.",
+      "desc": "A quick look at how a job moves from the office to the field and back — dispatched, tracked and closed on one system.",
+      "play": "Play the intro"
+    },
+    "facts": [
+      {
+        "unit": " m",
+        "label": "GPS sampling interval",
+        "desc": "Distance-based points, not a start-to-end line."
+      },
+      {
+        "unit": "-day",
+        "label": "Route history retained",
+        "desc": "Proof of service and re-routing, on record."
+      },
+      {
+        "unit": "",
+        "label": "Roles, one platform",
+        "desc": "Admin and employee, with dynamic per-person access — one source of truth."
+      }
+    ],
+    "product": {
+      "label": "(02) — The product",
+      "reducedHeading": "Built to run the whole job.",
+      "shots": [
+        {
+          "kicker": "Dispatch",
+          "title": "From dispatch to done, on one board.",
+          "body": "Assign the right technician and watch every job move through the flow in real time — no status calls, no spreadsheets."
+        },
+        {
+          "kicker": "Live map",
+          "title": "Every site and technician, on the map.",
+          "body": "Geofenced sites and live GPS mean dispatch always knows where the field is — and where each job sits."
+        },
+        {
+          "kicker": "Control room",
+          "title": "Your whole operation, in real time.",
+          "body": "A live activity feed, pending approvals and every workspace at a glance — the office view of the field."
+        },
+        {
+          "kicker": "Planning",
+          "title": "Plan across every workspace.",
+          "body": "A timeline across all your sites, recurring jobs and availability — capacity you can actually see."
+        }
+      ]
+    },
+    "process": {
+      "label": "(03) — Process",
+      "heading": "From a task in the office to a signed report in the field.",
+      "steps": [
+        {
+          "key": "Create",
+          "desc": "Admin raises a task with location, due date, photos and priority."
+        },
+        {
+          "key": "Assign",
+          "desc": "Dispatcher checks availability and assigns — the technician gets an instant push."
+        },
+        {
+          "key": "Route",
+          "desc": "Technician taps En Route; background GPS records the exact path and marks Arrived."
+        },
+        {
+          "key": "Execute",
+          "desc": "Photos, parts and notes on site, then a signed service report — even offline."
+        },
+        {
+          "key": "Close",
+          "desc": "The report syncs to the office with the full route and audit trail attached."
+        }
+      ]
+    },
+    "field": {
+      "label": "(04) — In the field",
+      "lines": [
+        "Works when the phone",
+        "is locked. Easy on",
+        "the battery."
+      ],
+      "features": [
+        {
+          "title": "Locked-screen GPS",
+          "desc": "A native background service keeps recording the route with the screen off."
+        },
+        {
+          "title": "Distance-based sampling",
+          "desc": "A point every 25 metres — idle time at a site costs no extra battery."
+        },
+        {
+          "title": "Offline-safe capture",
+          "desc": "Photos, notes and reports queue on device and sync when signal returns."
+        },
+        {
+          "title": "Dual signatures",
+          "desc": "Technician and customer sign on-device to close the job on site."
+        }
+      ],
+      "getApp": "Get the app — iOS & Android",
+      "comingSoon": "Coming soon",
+      "appStoreComingSoon": "App Store — coming soon"
+    },
+    "app": {
+      "label": "The technician app",
+      "reducedHeading": "Built for the technician's pocket.",
+      "shots": [
+        {
+          "kicker": "In hand",
+          "title": "Their day, the moment they open it.",
+          "body": "Clock-in, today's jobs and what's urgent — the technician sees the whole shift at a glance."
+        },
+        {
+          "kicker": "Tasks",
+          "title": "Every job, from accept to done.",
+          "body": "Accept, start, block or complete — the full status flow in their pocket, synced to the office in real time."
+        },
+        {
+          "kicker": "Attendance",
+          "title": "Clock in on site — verified.",
+          "body": "Geofenced clock-in with the assigned location and a full history, so hours are provable, not guessed."
+        },
+        {
+          "kicker": "Team",
+          "title": "The whole crew, one tap away.",
+          "body": "Message or call any teammate across every workspace, straight from the field."
+        }
+      ]
+    },
+    "cta": {
+      "label": "(09) — Get started",
+      "lines": [
+        "Put your field",
+        "on the record."
+      ],
+      "emailPlaceholder": "Work email",
+      "requestDemo": "Start free trial",
+      "talkToSales": "Talk to sales",
+      "trialNote": "14 days free — no credit card required"
+    },
+    "footer": {
+      "tagline": "Dispatch, track and prove every job — the office and the field, on one platform.",
+      "explore": "Explore",
+      "company": "Company",
+      "legal": "Legal",
+      "linkPlatform": "Platform",
+      "linkProcess": "Process",
+      "linkApp": "The app",
+      "linkGetStarted": "Get started",
+      "linkSignIn": "Sign in",
+      "linkGetApp": "Get the app",
+      "linkPrivacy": "Privacy",
+      "linkTerms": "Terms",
+      "copyrightSuffix": "· Field Service Management",
+      "backToTop": "Back to top",
+      "linkPricing": "Pricing",
+      "linkHelp": "Help Center",
+      "linkBlog": "Blog"
+    },
+    "why": {
+      "label": "(05) — What makes us special",
+      "heading": "Three tools in one — cheaper, and one login.",
+      "lead": "Most field businesses pay for a field-service tool, a time-clock and a GPS tracker separately — three bills, three logins, and hours spent reconciling them. HBCField is all three, in one system.",
+      "compare": {
+        "otherwise": "What you'd otherwise buy",
+        "typicalCost": "Typical cost",
+        "included": "included",
+        "rows": [
+          {
+            "name": "Field service management",
+            "vendors": "Jobber, Housecall Pro",
+            "cost": "€45–65 / user"
+          },
+          {
+            "name": "Time & attendance",
+            "vendors": "Deputy, When I Work",
+            "cost": "€5–8 / user"
+          },
+          {
+            "name": "GPS / route tracking",
+            "vendors": "Hubstaff",
+            "cost": "€8 / user"
+          }
+        ],
+        "sumLabel": "Three separate subscriptions",
+        "sumCost": "€60–90 / user",
+        "sumUs": "one platform · {{price}} / user for a team of six"
+      },
+      "diffLabel": "And things the others charge extra for — or don't have at all",
+      "diffs": [
+        {
+          "title": "Exact background-route GPS",
+          "body": "The real road path a technician drove, captured even when the phone is locked. Premium even in the FSM world — most gate it behind their top tier."
+        },
+        {
+          "title": "A real overtime engine",
+          "body": "Policy-based overtime detection, geofenced auto-clock-out and an approval flow — far beyond a bolt-on time clock."
+        },
+        {
+          "title": "Multi-org & cross-team delegation",
+          "body": "Franchises, subcontractors and agencies can manage many client organizations from one account — enterprise-grade, rare in SMB tools."
+        },
+        {
+          "title": "Configurable to your workflow",
+          "body": "Custom fields, task types, recurring jobs and workflows mean the system bends to how you already work — a platform, not a rigid app."
+        }
+      ]
+    },
+    "industries": {
+      "label": "(06) — Who it's for",
+      "heading": "Built for field teams of every kind.",
+      "lead": "Wherever people do the work on the ground, HBCField coordinates it — and shows exactly who it helps, how, and what you save.",
+      "whoLabel": "Who",
+      "howLabel": "How",
+      "benefitLabel": "Benefit",
+      "fields": [
+        {
+          "name": "Property & facility management",
+          "who": "Landlords, property and facility managers running many buildings and units.",
+          "how": "Log every request as a job, dispatch the nearest technician, and keep a full service history per building.",
+          "benefit": "One system for tenants, technicians and paperwork — nothing slips."
+        },
+        {
+          "name": "HVAC, plumbing & electrical trades",
+          "who": "Installation and repair contractors with mobile technicians.",
+          "how": "Assign jobs to the field, track arrival and route on a live map, and capture parts, photos and a signature on completion.",
+          "benefit": "Faster call-outs and a signed service report before the technician leaves."
+        },
+        {
+          "name": "Industry & maintenance",
+          "who": "Factories, plants and industrial sites with in-house maintenance teams servicing machines and equipment.",
+          "how": "Schedule recurring preventive maintenance, raise breakdown work orders, and log parts and labour against each asset for a complete machine history.",
+          "benefit": "Less unplanned downtime — planned upkeep and every asset's full history in one place."
+        },
+        {
+          "name": "Cleaning & janitorial services",
+          "who": "Commercial cleaning firms running recurring rounds across many sites.",
+          "how": "Build recurring schedules, prove attendance with geofenced clock-in, and confirm each site with a checklist and photos.",
+          "benefit": "Proof of service on every site, automatically."
+        },
+        {
+          "name": "Security & guarding",
+          "who": "Security firms running patrols and site inspections.",
+          "how": "Plan patrols as recurring jobs, verify guards on site with GPS and clock-in, and log every check.",
+          "benefit": "Verified, timestamped patrols you can show the client."
+        },
+        {
+          "name": "Landscaping & grounds maintenance",
+          "who": "Outdoor crews servicing many sites.",
+          "how": "Plan recurring visits, follow crews by GPS route and clock-in, and back up work with photos.",
+          "benefit": "Full visibility across scattered sites and the work done."
+        }
+      ],
+      "more": "More industries"
+    },
+    "compare": {
+      "label": "What you can add",
+      "heading": "Switch on only what you need",
+      "lead": "Nothing is locked behind a plan. Turn something on when you need it, off when you do not — the bill follows the same day.",
+      "groups": {
+        "task": "Task sections",
+        "field": "Field service",
+        "agile": "Project / Agile",
+        "premium": "Premium",
+        "support": "Support"
+      },
+      "popular": "Popular",
+      "custom": "Custom",
+      "perSeat": "/seat",
+      "features": {
+        "subtasks": {
+          "label": "Subtasks",
+          "desc": "Split a big job into smaller steps you can assign and track on their own, so nothing slips through the cracks."
+        },
+        "checklists": {
+          "label": "Checklists",
+          "desc": "Add a tick-off list of steps to any task so your team follows the same process every time and never misses one."
+        },
+        "attachments": {
+          "label": "Attachments",
+          "desc": "Attach photos, PDFs, and documents straight to a task — everything about the job lives in one place."
+        },
+        "dependencies": {
+          "label": "Dependencies",
+          "desc": "Link tasks so one can’t start until another finishes, keeping multi-step jobs in the right order."
+        },
+        "custom_fields": {
+          "label": "Custom Fields",
+          "desc": "Capture the extra details your business needs — reference numbers, equipment models, anything — with your own fields on every task."
+        },
+        "tracking": {
+          "label": "Route Tracking",
+          "desc": "See exactly where your field team is on a live map and replay the route they drove to each job."
+        },
+        "service_reports": {
+          "label": "Service Reports",
+          "desc": "Turn a finished job into a professional report with photos, parts used, and a customer signature — ready to share or bill."
+        },
+        "time_tracking": {
+          "label": "Time Tracking",
+          "desc": "Record how long jobs actually take versus the estimate, so you can quote and schedule more accurately."
+        },
+        "sprints": {
+          "label": "Sprints",
+          "desc": "Plan work in short, focused cycles and see at a glance how much your team completes each round."
+        },
+        "story_points": {
+          "label": "Story Points",
+          "desc": "Score each task by effort so you can balance workloads and predict how much fits in a week."
+        },
+        "epics": {
+          "label": "Epics",
+          "desc": "Bundle many related tasks under one big initiative to track large projects from start to finish."
+        },
+        "phases": {
+          "label": "Phases",
+          "desc": "Break a project into stages — like planning, execution, and handover — and watch progress move through each."
+        },
+        "recurring": {
+          "label": "Recurring tasks",
+          "desc": "Set a job to repeat daily, weekly, or monthly and the system creates it automatically — no manual re-entry."
+        },
+        "overtime": {
+          "label": "Overtime",
+          "desc": "Let staff request extra hours and managers approve them, with every minute logged for payroll."
+        },
+        "invoicing": {
+          "label": "Invoicing",
+          "desc": "Turn completed work into an invoice in a couple of clicks and keep track of what’s settled."
+        },
+        "workflows": {
+          "label": "Custom workflows",
+          "desc": "Build your own task stages — the exact steps your business uses — instead of a fixed status list."
+        },
+        "audit_log": {
+          "label": "Audit log",
+          "desc": "Keep a complete record of every action, so you always know who changed what and when."
+        },
+        "priority_routing": {
+          "label": "Priority queue routing",
+          "desc": "Your tickets jump the queue ahead of lower plans, so you’re answered sooner when it’s busy."
+        },
+        "live_chat": {
+          "label": "Live chat",
+          "desc": "Chat with a real person in real time, right inside the app, when an agent is online."
+        },
+        "dedicated_support": {
+          "label": "Dedicated contact & onboarding",
+          "desc": "A named contact and an onboarding call — hands-on help tailored to your team."
+        }
+      }
+    },
+    "pricing": {
+      "label": "(07) — Pricing",
+      "heading": "Pay for what you switch on.",
+      "lead": "No plans, no tiers, nothing locked behind an upgrade. €9.99 for each person who uses HBCField, plus whatever each of your workspaces actually turns on. 14-day trial, no card.",
+      "outcomes": [
+        {
+          "title": "End the status-call chaos",
+          "body": "A live board and map replace the “where are you?” calls and the end-of-day spreadsheet."
+        },
+        {
+          "title": "Prove every hour",
+          "body": "Geofenced clock-in and an audit trail turn payroll disputes into a non-issue."
+        },
+        {
+          "title": "Document every visit",
+          "body": "Photos, parts and signed reports mean you can always show exactly what was done."
+        }
+      ],
+      "cta": "Start free",
+      "note": "Billed monthly · Switch a module off the day you stop using it · VAT added at checkout",
+      "parts": [
+        {
+          "name": "Every person",
+          "price": "€9.99",
+          "unit": "/ user / mo",
+          "desc": "Office or field, same price. No seat types to argue about."
+        },
+        {
+          "name": "Each workspace",
+          "price": "from €3",
+          "unit": "/ module / mo",
+          "desc": "A workspace is a site, a project or a client. Each pays for exactly what it switched on — and stops when you switch it off."
+        },
+        {
+          "name": "Company add-ons",
+          "price": "from €9",
+          "unit": "/ mo",
+          "desc": "Invoicing, workflows, the audit log. Bought once, however many workspaces you run."
+        }
+      ],
+      "seePrices": "See every price"
+    },
+    "faq": {
+      "label": "FAQ",
+      "heading": "Questions, answered.",
+      "items": [
+        {
+          "q": "What is HBCField?",
+          "a": "HBCField is a field service management platform that unifies task dispatch, real-time GPS tracking, employee time & attendance, and service reports in one system — connecting the office and the field."
+        },
+        {
+          "q": "Who is HBCField for?",
+          "a": "Companies that dispatch technicians or field workers — maintenance, HVAC, plumbing, electrical, cleaning, security, landscaping and property management — that want jobs, people and time tracking in one place."
+        },
+        {
+          "q": "What platforms does HBCField run on?",
+          "a": "A web app for admins and dispatchers, and native iOS and Android apps for field technicians."
+        },
+        {
+          "q": "How does GPS route tracking work?",
+          "a": "A native background service records the technician’s route with distance-based sampling — a point roughly every 25 metres — even when the phone is locked, and keeps the route history on record."
+        },
+        {
+          "q": "What is geofenced clock-in?",
+          "a": "Technicians clock in on site against their assigned location, so attendance hours are verified by location rather than self-reported."
+        },
+        {
+          "q": "Does HBCField work offline?",
+          "a": "Yes — photos, notes and reports queue on the device and sync automatically when signal returns."
+        },
+        {
+          "q": "How much does HBCField cost?",
+          "a": "€9.99 per person per month, plus whatever each of your sites switches on, plus any add-ons bought once for the company. No plans and no tiers — 14 days free, no credit card. Every price is public at hbcfield.com/pricing."
+        },
+        {
+          "q": "Does HBCField replace separate tools?",
+          "a": "Yes — instead of paying for a field-service tool, a time clock and a GPS tracker separately, HBCField combines dispatch, attendance and route tracking in one platform."
+        }
+      ]
+    },
+    "estimator": {
+      "teamSize": "How many people work with you?",
+      "perPerson": "/ person / month",
+      "perPersonLong": "per person, per month",
+      "totalFor": "{{price}} in total",
+      "anchor": "The separate tools this replaces cost €60–90 per person.",
+      "preset": {
+        "basics": {
+          "title": "Just organise the work",
+          "body": "Jobs, checklists and photos. Replaces the whiteboard and the group chat."
+        },
+        "field": {
+          "title": "Run a field team",
+          "body": "All of that, plus GPS, clock-in and signed service reports."
+        },
+        "everything": {
+          "title": "Run the whole business",
+          "body": "Add customers, assets, invoicing and repeating jobs."
+        }
+      },
+      "seeAll": "See every price"
+    },
+    "groups": {
+      "perSpace": "/ workspace / month",
+      "from": "from {{price}}",
+      "where": {
+        "title": "Know where everyone is",
+        "body": "Live map, the route each van actually drove, and geofenced clock-in you can put on a timesheet."
+      },
+      "prove": {
+        "title": "Prove the job was done",
+        "body": "Photos, parts used and a customer signature, turned into a report you can send or bill from."
+      },
+      "clients": {
+        "title": "Keep customers in the loop",
+        "body": "Every customer, their history, and — if you want — a login where they place orders and watch their job.",
+        "note": "Covers your first 50 customers and one portal; grows from 30c a customer after that."
+      },
+      "things": {
+        "title": "Track what you look after",
+        "body": "Apartments, vehicles, machines — what they are, where they are and everything ever done to them.",
+        "note": "Covers the first 10, then from €1.20 each — cheaper the more you have."
+      },
+      "plan": {
+        "title": "Run bigger projects",
+        "body": "Break long jobs into stages, sequence them, and add the fields your trade actually needs."
+      },
+      "office": {
+        "title": "Handle the office side",
+        "body": "Invoices from finished work, jobs that repeat themselves, rotas, and a record of who changed what.",
+        "note": "Bought once for the company, not per workspace."
+      },
+      "share": {
+        "title": "Work with another company",
+        "body": "Give a partner, a client or a subcontractor access to one site — to look, to contribute, or to run it.",
+        "note": "Priced per shared site, not per company you share with."
+      }
+    }
+  },
+  "pricing": {
+    "eyebrow": "Pricing",
+    "heading": "Every price we charge, on one page.",
+    "lead": "No plans, no tiers, nothing hidden behind “contact sales”. Your bill is three things added together, and you can work it out yourself in under a minute.",
+    "startTrial": "Start free",
+    "talkToUs": "Talk to us",
+    "perMonth": "/ mo",
+    "perSite": "/ site / mo",
+    "plusCount": "+ count",
+    "otherModules": "Everything else",
+    "parts": {
+      "seats": {
+        "title": "The people",
+        "price": "{{price}} each",
+        "body": "Per person, per month. Office, field or owner — the same price, so there is nothing to argue about."
+      },
+      "modules": {
+        "title": "What each site does",
+        "price": "from {{price}}",
+        "body": "Switch a capability on where you need it. A site that does not need GPS never pays for GPS."
+      },
+      "addOns": {
+        "title": "Company-wide extras",
+        "price": "from {{price}}",
+        "body": "Invoicing, rotas, audit trail. Bought once for the business, however many sites you run."
+      }
+    },
+    "calcHeading": "Work out what it costs you",
+    "calcLead": "Set it up the way your business actually runs. Every figure is calculated by the same code that produces a real invoice.",
+    "modulesHeading": "Every capability, and what it costs",
+    "modulesLead": "Priced per site, per month. Switch one off and it stops being charged the same day.",
+    "laddersHeading": "The three things priced by how many you have",
+    "laddersLead": "Everything else is a flat switch. These three grow with you — and get cheaper per item as they do, like a tax band: passing a threshold only re-prices the ones above it, so adding one can never make your bill jump.",
+    "addOnsHeading": "Bought once for the whole company",
+    "addOnsLead": "Not per site, not per person. One price, works everywhere.",
+    "rulesHeading": "How billing actually behaves",
+    "rulesLead": "The parts people find out about later, written down before you pay.",
+    "faqHeading": "Straight answers",
+    "ctaHeading": "Try it before you pay for it.",
+    "ctaBody": "14 days, everything switched on, no card. If it does not fit, nothing happens when the trial ends.",
+    "units": {
+      "asset_one": "How many things?",
+      "asset_other": "How many things?",
+      "client_one": "How many customers?",
+      "client_other": "How many customers?",
+      "portal_one": "How many customer logins?",
+      "portal_other": "How many customer logins?"
+    },
+    "ladder": {
+      "band": "{{from}} – {{to}}",
+      "bandOpen": "{{from}} and up",
+      "example": "For example",
+      "exampleBody": "{{n}} of them add {{total}} a month — about {{each}} each.",
+      "included_one": "The {{price}} module covers the first one.",
+      "included_other": "The {{price}} module covers the first {{count}}."
+    },
+    "calc": {
+      "peopleTitle": "How many people will use it?",
+      "peopleBody": "Everyone counts the same — office, field, owner. {{price}} each, per month.",
+      "sitesTitle": "What should each site be able to do?",
+      "sitesBody": "A site is one place or operation you run — a branch, a building, a contract, a crew. Each one pays only for what it switches on, so a quiet site stays cheap.",
+      "addOnsTitle": "Anything for the whole company?",
+      "addOnsBody": "These are bought once and work everywhere. However many sites you run, you pay for each of them once.",
+      "siteN": "Site {{n}}",
+      "addSite": "Add another site",
+      "removeSite": "Remove this site",
+      "aMonth": "a month",
+      "perPerson": "per person, per month",
+      "breakdown": "Where it comes from",
+      "seatsLine": "{{count}} people × {{price}}",
+      "overAllowance": "{{n}} over the {{included}} included",
+      "nothingOn": "nothing switched on",
+      "companyWide": "Company-wide",
+      "total": "Every month",
+      "nextBreak": "{{away}} more and every one after that is {{price}}.",
+      "cheapestBand": "You're on the cheapest rate there is.",
+      "footnote": "Prices exclude VAT. 14 days free, no card. Change anything any time — the bill follows the same day.",
+      "allFree_one": "The first one is included in the module.",
+      "allFree_other": "The first {{count}} are included in the module."
+    },
+    "rules": [
+      {
+        "title": "Nothing is locked",
+        "body": "There is no plan to upgrade. Every capability is available to every customer at the price listed here, from your first day."
+      },
+      {
+        "title": "Changes take effect the same day",
+        "body": "Switch something on and it is charged from then; switch it off and it stops. Mid-month changes are worked out to the day, not rounded to a whole month."
+      },
+      {
+        "title": "14 days free, no card",
+        "body": "The trial has everything switched on — including the parts that cost extra — so you can judge the whole product, not a sample of it."
+      },
+      {
+        "title": "VAT is added at checkout",
+        "body": "Every price here excludes VAT. Businesses in the EU outside Austria can enter a VAT number and be charged 0%."
+      },
+      {
+        "title": "Cancel whenever",
+        "body": "Cancelling stops the next renewal. You keep access until the period you already paid for ends, and your data stays exportable."
+      }
+    ],
+    "faq": [
+      {
+        "q": "Which plan should I choose?",
+        "a": "None — there aren't any. You pay for the people who use HBCField plus whatever you switch on. That is the whole model, and it exists because the old one made people upgrade every seat to reach one feature."
+      },
+      {
+        "q": "What exactly is a “site”?",
+        "a": "One place or operation you run separately: a branch, a building, a contract, a client, a crew. Most businesses start with one and add more only when the work is genuinely separate. Adding a site is free — you pay only for what that site switches on."
+      },
+      {
+        "q": "Do I pay for a module in every site?",
+        "a": "Only in the sites that use it. Switch GPS on for the mobile crew and leave it off at the workshop, and you pay for one. Add-ons work the other way round: they are bought once for the whole company, however many sites you have."
+      },
+      {
+        "q": "What happens if I add someone halfway through the month?",
+        "a": "You are charged for the part of the month they were there, not the whole month. The same applies to anything you switch on or off."
+      },
+      {
+        "q": "Is there a minimum, or a contract?",
+        "a": "One person, one site, one month. No minimum team size, no setup fee and no annual commitment — billing is monthly, and you can stop at any time."
+      },
+      {
+        "q": "What happens when my trial ends?",
+        "a": "Nothing is charged automatically. If you have not entered a card the account simply locks until you do, and your data waits for you."
+      },
+      {
+        "q": "Can you invoice us instead?",
+        "a": "Yes — for organisations on a negotiated agreement we bill outside the app and nothing is charged to a card. Write to us and we will set it up."
+      }
+    ]
+  },
+  "privacy": {
+    "backToHbcfield": "Back to HBCField",
+    "lastUpdated": "Last updated: 8 July 2026",
+    "title": "Privacy Policy",
+    "subtitle": "HBCField — Field Service Management Platform",
+    "intro": "HBC Group GmbH (\"we\", \"our\", \"us\") operates the HBCField mobile application and web platform. This Privacy Policy explains how we collect, use, and protect your information when you use our services.",
+    "s1": {
+      "title": "1. Information We Collect",
+      "accountTitle": "Account Information",
+      "accountEmail": "Email address",
+      "accountName": "First and last name",
+      "accountOrg": "Organization name",
+      "accountRole": "Role and permissions within your organization",
+      "locationTitle": "Location Data",
+      "gpsLabel": "Precise GPS location",
+      "gpsIntro": " — collected only during active work activities:",
+      "gps1": "When driving to a job site (EN_ROUTE status) — your route is recorded continuously in the background, even when the app is closed or not in use",
+      "gps2": "When clocking in or out (single GPS fix for attendance verification)",
+      "gps3": "When marking arrival at a job site (geofence verification)",
+      "cachedLabel": "Cached location",
+      "cachedText": " — used for presence indicators on the dispatcher's live map. This uses the device's last known position without activating the GPS radio.",
+      "neverPre": "Location data is ",
+      "neverBold": "never collected",
+      "neverPost": " when you are browsing tasks, viewing your profile, or outside active work — that is, when you are not driving to a job and not clocked in.",
+      "workTitle": "Work Activity Data",
+      "work1": "Task status updates and timestamps",
+      "work2": "Clock in/out times and break durations",
+      "work3": "Service reports including text descriptions, photos you take with your device camera or select from your photo library, and digital signatures",
+      "work4": "Comments on tasks",
+      "deviceTitle": "Device Information",
+      "device1": "Device type and operating system (for push notifications)",
+      "device2": "Push notification tokens (Expo Push Token)",
+      "device3": "App version"
+    },
+    "s2": {
+      "title": "2. How We Use Your Information",
+      "item1": "To provide field service management functionality",
+      "item2": "To enable real-time location tracking for dispatchers during active work",
+      "item3": "To verify attendance via geofencing at company locations",
+      "item4": "To verify employee presence at job sites before starting work",
+      "item5": "To send push notifications for task assignments, status updates, and comments",
+      "item6": "To generate service reports and maintain work history",
+      "item7": "To display route tracking on completed tasks",
+      "item8": "To improve app performance and fix bugs"
+    },
+    "s3": {
+      "title": "3. Legal Basis for Processing (GDPR)",
+      "intro": "Where the General Data Protection Regulation applies, we process your personal data on the following legal bases:",
+      "contractLabel": "Performance of a contract (Art. 6(1)(b) GDPR)",
+      "contractText": " — to provide the HBCField service to your organization and to you as an authorized user, including task assignment, location-based dispatching, attendance verification, and service reporting.",
+      "legitLabel": "Legitimate interests (Art. 6(1)(f) GDPR)",
+      "legitText": " — to secure our platform, prevent fraud and abuse, maintain service reliability, and improve the product. Our legitimate interests are balanced against your rights and freedoms.",
+      "consentLabel": "Consent (Art. 6(1)(a) GDPR)",
+      "consentText": " — for optional features such as push notifications, which you can disable at any time in your device settings.",
+      "legalLabel": "Legal obligation (Art. 6(1)(c) GDPR)",
+      "legalText": " — where we are required to retain records for tax, labor, or other statutory obligations applicable to your organization."
+    },
+    "s4": {
+      "title": "4. Data Sharing",
+      "noSellPre": "We do ",
+      "noSellBold": "not",
+      "noSellPost": " sell your personal data to third parties.",
+      "internal": "Your data is shared only within your organization — admin and dispatcher users can see employee locations and work activity.",
+      "thirdPartyIntro": "We use the following third-party services:",
+      "expoLabel": "Expo",
+      "expoText": " — Push notification delivery",
+      "fcmLabel": "Firebase Cloud Messaging (FCM)",
+      "fcmText": " — Android push notification routing",
+      "apnsLabel": "Apple Push Notification Service (APNs)",
+      "apnsText": " — iOS push notification routing",
+      "hetznerCloudLabel": "Hetzner Cloud",
+      "hetznerCloudText": " — Server hosting (EU-based, Finland/Germany)",
+      "hetznerStorageLabel": "Hetzner Object Storage",
+      "hetznerStorageText": " — File storage for attachments (EU-based)",
+      "osmLabel": "OpenStreetMap / OSRM",
+      "osmText": " — Map tiles and route visualization",
+      "nominatimLabel": "Nominatim",
+      "nominatimText": " — Address search (geocoding)"
+    },
+    "s5": {
+      "title": "5. Data Storage & Security",
+      "euPre": "All data is stored on servers located in the ",
+      "euBold": "European Union",
+      "euPost": " (Hetzner, Helsinki/Falkenstein)",
+      "item2": "Data is encrypted in transit using TLS/HTTPS",
+      "item3": "Passwords are hashed using bcrypt with cost factor 12",
+      "item4": "Authentication tokens are SHA-256 hashed before storage",
+      "item5": "Refresh tokens use rotation with grace periods for concurrent requests",
+      "item6": "Access is restricted by role-based permissions (RBAC)",
+      "item7": "Rate limiting protects against brute-force attacks (10 req/sec, 200 req/min)",
+      "item8": "Account lockout after 5 failed login attempts (15-minute cooldown)",
+      "item9": "File uploads are stored in S3-compatible object storage with presigned URLs"
+    },
+    "s6": {
+      "title": "6. Data Retention",
+      "item1": "Account data is retained while your account is active",
+      "item2": "Location history (route tracking) is retained for 90 days",
+      "item3": "Service reports are retained according to your organization's record-keeping requirements",
+      "item4": "Refresh tokens are automatically cleaned up after expiration",
+      "item5": "You can request complete data deletion at any time"
+    },
+    "s7": {
+      "title": "7. Your Rights (GDPR)",
+      "intro": "If you are located in the European Union or European Economic Area, you have the following rights under the General Data Protection Regulation (GDPR):",
+      "accessLabel": "Right of Access",
+      "accessText": " — Request a copy of your personal data",
+      "rectificationLabel": "Right to Rectification",
+      "rectificationText": " — Correct inaccurate or incomplete data",
+      "erasureLabel": "Right to Erasure",
+      "erasureText": " — Request deletion of your personal data (\"right to be forgotten\"). You can delete your account and all associated data yourself, at any time, directly in the app: Profile → Account → Delete Account.",
+      "portabilityLabel": "Right to Data Portability",
+      "portabilityText": " — Receive your data in a structured, machine-readable format",
+      "objectLabel": "Right to Object",
+      "objectText": " — Object to processing of your personal data",
+      "restrictLabel": "Right to Restrict Processing",
+      "restrictText": " — Request limitation of data processing",
+      "withdrawLabel": "Right to Withdraw Consent",
+      "withdrawText": " — Withdraw your consent at any time",
+      "complaintLabel": "Right to Lodge a Complaint",
+      "complaintText": " — You have the right to lodge a complaint with your local data protection authority if you believe your rights have been infringed.",
+      "contactPre": "To exercise any of these rights, contact us at ",
+      "contactPost": "."
+    },
+    "s8": {
+      "title": "8. Location Tracking Disclosure",
+      "intro": "HBCField uses location data as a core part of its field service management functionality. Here is exactly when and how location is used:",
+      "gpsActiveTitle": "When GPS is Active",
+      "drivingLabel": "Driving to job:",
+      "drivingText": "Continuous background tracking — even when the app is closed or not in use — approximately every 15 seconds, to record your route to the job site",
+      "clockLabel": "Clock in/out:",
+      "clockText": "Single high-accuracy fix for attendance verification",
+      "arrivingLabel": "Arriving at job:",
+      "arrivingText": "Single high-accuracy fix for geofence verification (20m radius)",
+      "gpsInactiveTitle": "When GPS is NOT Active",
+      "inactive1": "Browsing tasks, viewing profile, changing settings",
+      "inactive2": "The app is in the background or closed and you are not driving to a job (route tracking) or clocked in",
+      "inactive3": "Presence indicator uses cached OS location only (no GPS activation)",
+      "safeguardsIntro": "Additional safeguards:",
+      "safeguard1": "Only dispatchers and admins within your organization can see your location",
+      "safeguard2": "Location data is never shared outside your organization",
+      "safeguard3": "Route data from completed tasks is retained for 90 days",
+      "safeguard4": "You can see your own location data in the app"
+    },
+    "s9": {
+      "title": "9. Push Notifications",
+      "intro": "HBCField sends push notifications for:",
+      "item1": "New task assignments",
+      "item2": "Task status changes",
+      "item3": "New comments on your tasks",
+      "item4": "Join request approvals or rejections",
+      "item5": "Attendance reminders",
+      "disable": "You can disable push notifications in your device settings at any time."
+    },
+    "s10": {
+      "title": "10. Children's Privacy",
+      "body": "HBCField is a workplace application designed for professional use. It is not intended for use by individuals under 18 years of age. We do not knowingly collect personal information from children."
+    },
+    "s11": {
+      "title": "11. International Data Transfers",
+      "body": "Your data is processed and stored within the European Union. Push notification delivery may involve routing through Google (FCM) or Apple (APNs) infrastructure, which may process data outside the EU. These transfers are covered by the EU-US Data Privacy Framework and Standard Contractual Clauses."
+    },
+    "s12": {
+      "title": "12. Changes to This Policy",
+      "body": "We may update this Privacy Policy from time to time to reflect changes in our practices or legal requirements. We will notify users of material changes via email or in-app notification. The \"Last updated\" date at the top of this page indicates when this policy was last revised."
+    },
+    "s13": {
+      "title": "13. Contact Us",
+      "company": "HBC Group GmbH",
+      "emailLabel": "Email: ",
+      "websiteLabel": "Website: ",
+      "supportLabel": "Support: "
+    },
+    "footerRights": "HBC Group GmbH. All rights reserved.",
+    "print": "Print / Save as PDF",
+    "contents": "Contents"
+  },
+  "terms": {
+    "backToHbcfield": "Back to HBCField",
+    "lastUpdated": "Last updated: 13 July 2026",
+    "title": "Terms & Conditions",
+    "subtitle": "HBCField — Field Service Management Platform",
+    "intro": "These Terms & Conditions (\"Terms\") govern your access to and use of the HBCField web platform and mobile application (together, the \"Service\"), operated by HBC Group GmbH (\"we\", \"our\", \"us\"). HBCField is a business-to-business service. By creating an account or using the Service, you agree to these Terms.",
+    "s1": {
+      "title": "1. Agreement to These Terms",
+      "p1": "By registering for, accessing, or using the Service, you confirm that you have read, understood, and agree to be bound by these Terms and by our Privacy Policy. If you do not agree, you must not use the Service.",
+      "p2": "If you accept these Terms on behalf of an organization, you represent that you are authorized to bind that organization, and \"you\" refers to that organization. The Service is intended for professional and business use only and is not directed at consumers, except where mandatory law provides otherwise."
+    },
+    "s2": {
+      "title": "2. Definitions",
+      "intro": "In these Terms:",
+      "serviceLabel": "\"Service\"",
+      "serviceText": " — the HBCField web portal, mobile application, APIs, and related documentation.",
+      "orgLabel": "\"Organization\"",
+      "orgText": " — the company or entity that registers for an account and on whose behalf the Service is used.",
+      "adminLabel": "\"Admin\"",
+      "adminText": " — the organization owner or a user granted administrative rights, who manages users, access, and billing.",
+      "memberLabel": "\"Member\"",
+      "memberText": " — any user (office coordinator, dispatcher, or field technician) added to an Organization.",
+      "seatLabel": "\"Seat\"",
+      "seatText": " — a billable unit of access; every active Member counts as one seat at the same flat rate, whatever their access.",
+      "dataLabel": "\"Customer Data\"",
+      "dataText": " — all data your Organization and its Members submit to the Service, including tasks, reports, photos, locations, and comments."
+    },
+    "s3": {
+      "title": "3. The Service & Licence",
+      "intro": "HBCField provides a role-based platform for managing field service work — task creation and assignment, technician execution, GPS route tracking, attendance, service reports, and related features. We may add, change, or remove features over time.",
+      "licence": "Subject to these Terms and payment of applicable fees, we grant your Organization a non-exclusive, non-transferable, non-sublicensable right to access and use the Service for its internal business purposes during the term of your subscription.",
+      "restrictTitle": "You must not",
+      "restrict1": "copy, modify, reverse-engineer, decompile, or create derivative works of the Service, except where permitted by mandatory law;",
+      "restrict2": "resell, sublicense, rent, or otherwise make the Service available to third parties outside your Organization;",
+      "restrict3": "circumvent usage limits, seat counts, plan restrictions, or security measures;",
+      "restrict4": "use the Service to build a competing product or to scrape or extract data other than your own Customer Data."
+    },
+    "s4": {
+      "title": "4. Accounts & Organizations",
+      "intro": "When you register, an Organization is created and the registering user becomes its Admin. You are responsible for your account and for all activity under it. In particular:",
+      "item1": "you must provide accurate, current, and complete information and keep it up to date;",
+      "item2": "you are responsible for keeping login credentials confidential and for all actions taken through your account;",
+      "item3": "the Admin controls which Members are added, their roles, and their access, and is responsible for their use of the Service;",
+      "item4": "you must notify us promptly of any unauthorized access or security breach affecting your account."
+    },
+    "s5": {
+      "title": "5. Subscriptions, Seats & What You Pay For",
+      "intro": "The Service is offered on a monthly subscription. There are no plan tiers: every capability is available to every customer at the price listed on our pricing page, and what you pay is the sum of the people, modules and options in effect.",
+      "seats": "Billing is per person, not per bundle. Every active Member counts as one seat at the same rate, whatever their access — there is no office/field distinction. Modules are enabled per site and billed for each site that enables them; some are additionally billed by a count (for example assets or customer records), on published volume rates.",
+      "plansTitle": "What is charged (excl. VAT)",
+      "plansNote": "Prices exclude VAT and may be updated for future terms with notice. The full price list is public at hbcfield.com/pricing, and your current bill is always itemised in Settings → Billing.",
+      "seatLabel": "Each person",
+      "seatText": "€9.99 per Member / month.",
+      "moduleLabel": "Each module",
+      "moduleText": "from €3 per site / month, for each site that switches it on.",
+      "addOnLabel": "Each option",
+      "addOnText": "from €9 / month, purchased once for the whole Organization."
+    },
+    "s6": {
+      "title": "6. Fees, Billing & Proration",
+      "intro": "Fees are charged in euro (EUR) monthly in advance, based on the people, modules and options in effect. When something changes mid-period, the amount is prorated as follows:",
+      "monthlyLabel": "Adding — ",
+      "monthlyText": "changes are prorated and applied to your next invoice; adding a person or switching a module on does not trigger an immediate separate charge, but the prorated amount for the remainder of the current month is added to the following invoice.",
+      "decreaseLabel": "Removing seats — ",
+      "decreaseText": "reductions never trigger a cash refund; the prorated value is banked as an account credit and applied to future invoices.",
+      "processor": "Payments are processed by Stripe. You authorize us and Stripe to charge your payment method for all fees due. You are responsible for keeping a valid payment method on file."
+    },
+    "s7": {
+      "title": "7. Taxes (VAT)",
+      "intro": "All prices are exclusive of value-added tax (VAT) and any other applicable taxes, which are added at checkout at the rate required by law. For customers in Austria, the standard VAT rate of 20% applies.",
+      "vatId": "Business customers may enter a valid VAT identification number (UID) at checkout. For eligible cross-border transactions within the EU, the reverse-charge mechanism applies and no VAT is charged, in which case you are responsible for accounting for VAT in your own country. Domestic Austrian supplies remain subject to Austrian VAT even where a VAT ID is provided."
+    },
+    "s8": {
+      "title": "8. Free Trial",
+      "intro": "New Organizations may receive a free trial (currently 14 days) with every capability switched on, including those that are otherwise charged for. No payment method is required to start the trial.",
+      "expiry": "Unless you subscribe to a paid plan before the trial ends, access is restricted at the end of the trial and the account is placed in a read-only state until a subscription is started. We may change or discontinue trial offers at any time."
+    },
+    "s9": {
+      "title": "9. Renewal, Cancellation & Refunds",
+      "renewLabel": "Automatic renewal — ",
+      "renewText": "subscriptions renew automatically at the end of each monthly billing period at the then-current fees, until cancelled.",
+      "cancelLabel": "Cancellation — ",
+      "cancelText": "you may cancel at any time from Settings → Billing or the Stripe Customer Portal. Cancellation takes effect at the end of the current paid period; you keep access until then.",
+      "refundLabel": "Refunds — ",
+      "refundText": "except where required by mandatory law, fees already paid are non-refundable and we do not provide partial refunds for unused time or downgrades.",
+      "failLabel": "Failed payments — ",
+      "failText": "if a payment fails, the subscription may be marked past due and access may be suspended or restricted until payment is resolved."
+    },
+    "s10": {
+      "title": "10. Acceptable Use",
+      "intro": "You agree not to, and not to allow any Member or third party to:",
+      "item1": "use the Service in violation of any applicable law or regulation;",
+      "item2": "upload or transmit unlawful, infringing, or malicious content, or malware;",
+      "item3": "attempt to gain unauthorized access to the Service, other accounts, or our systems;",
+      "item4": "interfere with or disrupt the integrity or performance of the Service;",
+      "item5": "use location tracking or Member data in violation of employment, privacy, or data-protection laws applicable to your Organization;",
+      "item6": "misrepresent your identity or your authority to act for an Organization."
+    },
+    "s11": {
+      "title": "11. Customer Data & Privacy",
+      "ownership": "As between you and us, your Organization owns its Customer Data. You grant us a limited licence to host, process, and transmit Customer Data solely to provide and support the Service. You are responsible for the accuracy and legality of Customer Data and for having any consents or legal bases required to collect it (including location data of your Members).",
+      "privacyPre": "Our handling of personal data is described in our ",
+      "privacyLink": "Privacy Policy",
+      "privacyPost": ", which forms part of these Terms. Where we process personal data on your behalf, we act as processor and you as controller.",
+      "export": "You can access and export your Customer Data while your subscription is active. After termination, we retain Customer Data for a limited period to allow export and then delete it in accordance with our retention practices and applicable law, unless longer retention is legally required."
+    },
+    "s12": {
+      "title": "12. Intellectual Property",
+      "ownership": "The Service, including all software, design, trademarks, and content we provide, is and remains the exclusive property of HBC Group GmbH and its licensors. These Terms grant you a right to use the Service only; no ownership or other rights are transferred to you.",
+      "feedback": "If you send us feedback or suggestions, you grant us a non-exclusive, royalty-free, perpetual licence to use them to improve the Service, without obligation to you."
+    },
+    "s13": {
+      "title": "13. Third-Party Services",
+      "intro": "The Service relies on third-party providers. Their services are governed by their own terms, and we are not responsible for their acts, omissions, or availability:",
+      "stripeLabel": "Stripe — ",
+      "stripeText": "payment processing and subscription billing;",
+      "hostingLabel": "Hetzner — ",
+      "hostingText": "EU-based cloud hosting and object storage;",
+      "pushLabel": "Expo, Firebase Cloud Messaging & Apple Push Notification Service — ",
+      "pushText": "push-notification delivery;",
+      "mapsLabel": "OpenStreetMap, OSRM & Nominatim — ",
+      "mapsText": "map tiles, routing, and address search."
+    },
+    "s14": {
+      "title": "14. Warranties, Availability & Liability",
+      "availability": "We aim to keep the Service available and reliable, but we do not guarantee uninterrupted or error-free operation. The Service may be temporarily unavailable for maintenance, updates, or reasons beyond our control.",
+      "asis": "To the maximum extent permitted by law, the Service is provided \"as is\" and \"as available\", without warranties of any kind, whether express or implied, including merchantability, fitness for a particular purpose, and non-infringement.",
+      "liability": "To the maximum extent permitted by law, we are not liable for indirect, incidental, special, or consequential damages, or for loss of profits, revenue, data, or business. Our total aggregate liability arising out of or relating to the Service is limited to the fees you paid to us in the twelve (12) months preceding the event giving rise to the claim.",
+      "mandatory": "Nothing in these Terms excludes or limits liability that cannot lawfully be excluded or limited, including liability for intent, gross negligence, personal injury, or under mandatory Austrian and EU law."
+    },
+    "s15": {
+      "title": "15. Term, Suspension & Termination",
+      "term": "These Terms apply for as long as you use the Service or hold an active subscription. You may terminate by cancelling your subscription and ceasing to use the Service.",
+      "suspend": "We may suspend or restrict access, in whole or in part, if you materially breach these Terms, fail to pay fees when due, or where required for legal or security reasons. Where practicable, we will give notice and an opportunity to remedy.",
+      "effect": "On termination, your right to use the Service ends and any outstanding fees become due. We will make Customer Data available for export for a limited period and then delete it as described in Section 11, unless mandatory law requires otherwise."
+    },
+    "s16": {
+      "title": "16. Governing Law, Changes & Contact",
+      "law": "These Terms are governed by the laws of Austria, excluding its conflict-of-law rules and the UN Convention on Contracts for the International Sale of Goods (CISG). The courts competent for the registered seat of HBC Group GmbH in Austria have exclusive jurisdiction, unless mandatory consumer-protection law provides otherwise.",
+      "changes": "We may update these Terms from time to time. We will notify you of material changes by email or in-app notice, and the \"Last updated\" date reflects the latest revision. Your continued use of the Service after changes take effect constitutes acceptance of the updated Terms.",
+      "company": "HBC Group GmbH",
+      "emailLabel": "Billing & legal: ",
+      "websiteLabel": "Website: ",
+      "supportLabel": "Support: "
+    },
+    "footerRights": "HBC Group GmbH. All rights reserved.",
+    "print": "Print / Save as PDF",
+    "contents": "Contents"
+  }
+}
