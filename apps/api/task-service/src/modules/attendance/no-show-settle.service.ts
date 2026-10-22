@@ -6,6 +6,7 @@ import {
   settleNoShow,
   toISODateString,
   type NoShowSettlement,
+  peopleStanding,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
@@ -152,10 +153,7 @@ export class NoShowSettleService {
         },
         select: { technicianId: true, startDate: true, endDate: true },
       }),
-      this.prisma.user.findMany({
-        where: { id: { in: userIds } },
-        select: { id: true, isActive: true, organizationId: true },
-      }),
+      peopleStanding(this.prisma, userIds),
       this.prisma.shiftAssignment.findMany({
         where: { userId: { in: userIds }, shiftId: { in: shiftIds }, isActive: true },
         select: {

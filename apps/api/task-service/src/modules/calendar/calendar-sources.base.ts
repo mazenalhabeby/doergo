@@ -16,6 +16,8 @@ import {
   zonedWallTimeToUtc,
   type CalendarItem,
   toISODateString,
+  expiringDocumentsOf,
+  dueClientReminders,
 } from '@hbcfield/shared';
 import { shiftRuleOf } from '../technicians/cover.service';
 import { CalendarRulesService } from './calendar-rules.service';
@@ -186,16 +188,11 @@ export abstract class CalendarSourcesBase {
 
   /** Client follow-ups that are mine (assigned to me, or written by me and assigned to nobody). */
   protected async crm(q: ItemsQuery, fromAt: Date, toAt: Date): Promise<CalendarItem[]> {
-    const rows = await this.prisma.customerActivity.findMany({
-      where: {
-        organizationId: q.organizationId,
-        type: 'REMINDER',
-        doneAt: null,
-        dueAt: { gte: fromAt, lt: toAt },
-        OR: [{ reminderAssigneeId: q.userId }, { reminderAssigneeId: null, authorId: q.userId }],
-      },
-      select: { id: true, body: true, dueAt: true, reminderKind: true, customer: { select: { id: true, name: true } } },
-      take: 300,
+    const rows = await dueClientReminders(this.prisma, {
+      organizationId: q.organizationId,
+      userId: q.userId,
+      from: fromAt,
+      to: toAt,
     });
     return rows.map((r) => ({
       id: `crm:${r.id}`,
@@ -212,16 +209,11 @@ export abstract class CalendarSourcesBase {
 
   /** My own documents running out in the window. */
   protected async documents(q: ItemsQuery): Promise<CalendarItem[]> {
-    const rows = await this.prisma.document.findMany({
-      where: {
-        organizationId: q.organizationId,
-        userId: q.userId,
-        hiddenFromMember: false,
-        status: { in: ['ISSUED', 'SIGNED', 'AWAITING_SIGNATURE'] },
-        expiresOn: { gte: new Date(`${q.from}T00:00:00Z`), lte: new Date(`${q.to}T00:00:00Z`) },
-      },
-      select: { id: true, title: true, expiresOn: true },
-      take: 100,
+    const rows = await expiringDocumentsOf(this.prisma, {
+      organizationId: q.organizationId,
+      userId: q.userId,
+      from: new Date(`${q.from}T00:00:00Z`),
+      to: new Date(`${q.to}T00:00:00Z`),
     });
     return rows.map((d) => ({
       id: `document:${d.id}`,

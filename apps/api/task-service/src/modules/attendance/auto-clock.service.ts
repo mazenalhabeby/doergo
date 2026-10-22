@@ -16,6 +16,8 @@ import {
   autoRestPlan,
   success,
   type MemberAutoClockSettings,
+  activityLogged,
+  personAutoClockFacts,
 } from '@hbcfield/shared';
 import { sendRpc, userSetAutoClockConsent } from '@hbcfield/shared/microservices';
 import { Prisma } from '@prisma/client';
@@ -131,10 +133,7 @@ export class AutoClockService {
 
   /** The member's own consent (ArbVG §96). Giving it twice keeps the first date; withdrawing clears it and the phone disarms. */
   async setConsent(data: { userId: string; organizationId: string; consent: boolean }) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: data.userId, organizationId: data.organizationId },
-      select: { id: true, autoClockConsentAt: true, isExternal: true },
-    });
+    const user = await personAutoClockFacts(this.prisma, data.userId, data.organizationId);
     if (!user) throw new NotFoundException('Member not found');
     if (data.consent && user.isExternal) {
       // An external member holds no clock — there is nothing to consent to.
@@ -171,10 +170,7 @@ export class AutoClockService {
 
   /** Was this id an automatic clock-in its owner undid? A resend of it must not make the shift again. */
   async wasUndone(entryId: string, userId: string): Promise<boolean> {
-    const row = await this.prisma.activityLog.findFirst({
-      where: { resourceId: entryId, eventType: AUTO_UNDO_EVENT, userId },
-      select: { id: true },
-    });
+    const row = await activityLogged(this.prisma, { resourceId: entryId, eventType: AUTO_UNDO_EVENT, userId });
     return !!row;
   }
 }

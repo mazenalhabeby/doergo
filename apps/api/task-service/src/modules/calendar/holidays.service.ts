@@ -1,5 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { resolveWeekend, success, resolveHolidayPlace, clampListLimit } from '@hbcfield/shared';
+import {
+  resolveWeekend,
+  success,
+  resolveHolidayPlace,
+  clampListLimit,
+  orgHolidayPlace,
+  orgCalendarSettings,
+} from '@hbcfield/shared';
 import { countryList, matchRegion, regionList, validCountry } from './holiday-library';
 import { Scope } from './holidays-helpers';
 import { HolidaysBase } from './holidays.base';
@@ -14,19 +21,18 @@ import { HolidaysBase } from './holidays.base';
  */
 @Injectable()
 export class HolidaysService extends HolidaysBase {
-
   /** Everything the settings screen shows, in one read. */
   async settings(dto: { organizationId: string; year?: number; lang?: string; scopeSpaceIds?: Scope }) {
     const year = Number.isInteger(dto.year) ? dto.year! : new Date().getFullYear();
-    const from = `${year}-01-01`, to = `${year}-12-31`;
-    const org = await this.prisma.organization.findUnique({
-      where: { id: dto.organizationId },
-      select: { weekendDays: true, holidayCountry: true, holidayRegion: true, country: true, calendarFeedsEnabled: true },
-    });
+    const from = `${year}-01-01`,
+      to = `${year}-12-31`;
+    const org = await orgCalendarSettings(this.prisma, dto.organizationId);
     if (!org) throw new NotFoundException('Organization not found');
     const spaces = await this.prisma.companyLocation.findMany({
       where: {
-        organizationId: dto.organizationId, isActive: true, isRemote: false,
+        organizationId: dto.organizationId,
+        isActive: true,
+        isRemote: false,
         ...(dto.scopeSpaceIds !== undefined ? { id: { in: dto.scopeSpaceIds } } : {}),
       },
       select: {
@@ -42,7 +48,13 @@ export class HolidaysService extends HolidaysBase {
       },
       orderBy: { name: 'asc' },
     });
-    const places = await this.rules.places(dto.organizationId, spaces.map((s) => s.id), from, to, dto.lang);
+    const places = await this.rules.places(
+      dto.organizationId,
+      spaces.map((s) => s.id),
+      from,
+      to,
+      dto.lang,
+    );
     const summary = (id: string | null) => {
       const p = places.get(id);
       return {
@@ -137,10 +149,7 @@ export class HolidaysService extends HolidaysBase {
   }) {
     const data: Record<string, unknown> = this.readPlace(dto, false);
     if (data.holidayRegion !== undefined && data.holidayCountry === undefined) {
-      const org = await this.prisma.organization.findUnique({
-        where: { id: dto.organizationId },
-        select: { holidayCountry: true, country: true },
-      });
+      const org = await orgHolidayPlace(this.prisma, dto.organizationId);
       const c = org?.holidayCountry || org?.country;
       if (data.holidayRegion && c && !regionList(c).some((r) => r.code === data.holidayRegion))
         throw new BadRequestException({ code: 'REGION_UNKNOWN', message: 'That region is not known.' });
@@ -152,10 +161,12 @@ export class HolidaysService extends HolidaysBase {
       throw new BadRequestException({ code: 'REGION_UNKNOWN', message: 'That region is not known.' });
     }
     if (dto.calendarFeedsEnabled !== undefined) {
-      if (typeof dto.calendarFeedsEnabled !== 'boolean') throw new BadRequestException('calendarFeedsEnabled must be true or false');
+      if (typeof dto.calendarFeedsEnabled !== 'boolean')
+        throw new BadRequestException('calendarFeedsEnabled must be true or false');
       data.calendarFeedsEnabled = dto.calendarFeedsEnabled;
       // Switching feeds off revokes every existing link, not just new ones.
-      if (!dto.calendarFeedsEnabled) await this.prisma.calendarFeedToken.deleteMany({ where: { organizationId: dto.organizationId } });
+      if (!dto.calendarFeedsEnabled)
+        await this.prisma.calendarFeedToken.deleteMany({ where: { organizationId: dto.organizationId } });
     }
     /*
       ⚠️ A write to `Organization`, which auth-service owns — deliberately here.
@@ -198,7 +209,14 @@ export class HolidaysService extends HolidaysBase {
   /** One year of holidays for the organization or a workspace, removed ones included so they can be restored. */
   async list(dto: { organizationId: string; spaceId?: string | null; year?: number; lang?: string }) {
     const year = Number.isInteger(dto.year) ? dto.year! : new Date().getFullYear();
-    const place = await this.rules.place(dto.organizationId, dto.spaceId || null, `${year}-01-01`, `${year}-12-31`, dto.lang, true);
+    const place = await this.rules.place(
+      dto.organizationId,
+      dto.spaceId || null,
+      `${year}-01-01`,
+      `${year}-12-31`,
+      dto.lang,
+      true,
+    );
     if (!place) throw new NotFoundException('Workspace not found');
     return success({ year, place: place.place, holidays: place.holidays });
   }

@@ -4,8 +4,8 @@
  * read exactly what others rely on. Owner: auth-service.
  */
 import { activeWindowWhere } from '../access/assignment-window';
-import { memberScopeFilter } from '../access/member-scope';
-import { ABSENCE_WHERE } from '../requests/request-kinds';
+import { PERSON_BRIEF_SELECT } from '../api/person-search';
+import { crmReachSelect } from '../crm/client-reach';
 import type { On } from './db';
 
 /** How a list of people is filtered — each one a rule, not a column. */
@@ -146,66 +146,79 @@ export function colleaguesByName(
   });
 }
 
-/** These people's cost rates (what they cost the organization per hour). */
-export function peopleCostRates(db: On<'user', 'findMany'>, ids: string[]) {
-  return db.user.findMany({ where: { id: { in: ids } }, select: { id: true, costRateCents: true } });
+/** How many of these ids are people of the organization. */
+export function countPeopleInOrg(db: On<'user', 'count'>, ids: string[], organizationId: string) {
+  return db.user.count({ where: { id: { in: ids }, organizationId } });
 }
 
-/** Whether a person may work away from a site, and their role. */
-export function personRemoteFacts(db: On<'user', 'findFirst'>, userId: string, organizationId: string) {
-  return db.user.findFirst({
-    where: { id: userId, organizationId },
-    select: { id: true, allowRemote: true, role: true },
-  });
-}
-
-/** The workspaces a person is assigned to today (task-service's assignments, reached through the person). */
-export function personActiveSpaces(db: On<'user', 'findFirst'>, userId: string, organizationId: string) {
-  return db.user.findFirst({
-    where: { id: userId, organizationId },
-    select: { spaceAssignments: { where: { ...activeWindowWhere() }, select: { spaceId: true } } },
-  });
-}
-
-/**
- * Field employees who are switched on, with their schedule on these weekdays, approved leave touching the
- * range and current workspace assignments — the availability board. ⚠️ Schedules, leave and assignments
- * are task-service's tables reached THROUGH the person (one query); narrowed by the caller's scope.
- */
-export function availabilityRoster(
+/** Colleagues to invite (≤ 30): the organization's active staff except the caller, optionally in a circle, by name. */
+export function inviteCandidates(
   db: On<'user', 'findMany'>,
-  input: { organizationId: string; scopeSpaceIds?: string[]; daysOfWeek: number[]; rangeStart: Date; rangeEnd: Date },
+  input: { organizationId: string; callerId: string; circle?: string[]; search?: Record<string, unknown>[] },
 ) {
   return db.user.findMany({
     where: {
       organizationId: input.organizationId,
-      role: 'EMPLOYEE',
       isActive: true,
-      ...memberScopeFilter(input.scopeSpaceIds),
+      isExternal: false,
+      role: { not: 'CUSTOMER' as never },
+      id: { not: input.callerId },
+      ...(input.circle ? { id: { in: input.circle.filter((id) => id !== input.callerId) } } : {}),
+      ...(input.search ? { OR: input.search } : {}),
     },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      position: true,
-      schedules: { where: { dayOfWeek: { in: input.daysOfWeek }, isActive: true } },
-      timeOffRequests: {
-        where: {
-          status: 'APPROVED',
-          ...ABSENCE_WHERE,
-          startDate: { lte: input.rangeEnd },
-          endDate: { gte: input.rangeStart },
-        },
-      },
-      spaceAssignments: {
-        where: { effectiveTo: null },
-        select: { isPrimary: true, space: { select: { id: true, name: true, timezone: true } } },
-      },
-    },
+    select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true },
+    orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+    take: 30,
   });
 }
 
-/** How many of these ids are people of the organization. */
-export function countPeopleInOrg(db: On<'user', 'count'>, ids: string[], organizationId: string) {
-  return db.user.count({ where: { id: { in: ids }, organizationId } });
+/** The organization's active staff in NO workspace. */
+export async function staffInNoWorkspace(db: On<'user', 'findMany'>, organizationId: string): Promise<string[]> {
+  const rows = await db.user.findMany({
+    where: {
+      organizationId,
+      isActive: true,
+      isExternal: false,
+      role: { not: 'CUSTOMER' as never },
+      spaceAssignments: { none: {} },
+    },
+    select: { id: true },
+  });
+  return rows.map((u) => u.id);
+}
+
+/** Is this an active administrator — or somebody who manages people — of the organization? */
+export async function managesPeopleOrIsAdmin(db: On<'user', 'findFirst'>, userId: string, organizationId: string) {
+  return !!(await db.user.findFirst({
+    where: { id: userId, organizationId, isActive: true, OR: [{ role: 'ADMIN' }, { canManageUsers: true }] },
+    select: { id: true },
+  }));
+}
+
+/** Is this an active administrator of the organization? */
+export async function isActiveAdmin(db: On<'user', 'findFirst'>, userId: string, organizationId: string) {
+  return !!(await db.user.findFirst({
+    where: { id: userId, organizationId, isActive: true, role: 'ADMIN' },
+    select: { id: true },
+  }));
+}
+
+/** Names, photos and when they were last active. */
+export function peopleFacesAndPresence(db: On<'user', 'findMany'>, ids: string[]) {
+  return db.user.findMany({ where: { id: { in: ids } }, select: { ...PERSON_FACE, lastActiveAt: true } });
+}
+
+/** Whether these accounts are still on, and in which organization. */
+export function peopleStanding(db: On<'user', 'findMany'>, ids: string[]) {
+  return db.user.findMany({ where: { id: { in: ids } }, select: { id: true, isActive: true, organizationId: true } });
+}
+
+/** People by id with name and address (PERSON_BRIEF_SELECT). */
+export function peopleBriefWithEmail(db: On<'user', 'findMany'>, ids: string[]) {
+  return db.user.findMany({ where: { id: { in: ids } }, select: PERSON_BRIEF_SELECT });
+}
+
+/** The CRM reach facts of one member (null = not in the organization). */
+export function personCrmReach(db: On<'user', 'findFirst'>, userId: string, organizationId: string) {
+  return db.user.findFirst({ where: { id: userId, organizationId }, select: crmReachSelect() });
 }

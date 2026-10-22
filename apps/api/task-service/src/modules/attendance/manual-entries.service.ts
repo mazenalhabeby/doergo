@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { zoneOf, success } from '@hbcfield/shared';
+import { zoneOf, success, personPasses } from '@hbcfield/shared';
 import { assertNotSelfDecision } from './self-decision';
 import { zonedWallTimeToUtc as sharedZonedWallTimeToUtc, localPartsIn, parseHm } from '@hbcfield/shared';
 import { scopeAllows } from '@hbcfield/shared';
@@ -24,10 +24,7 @@ export class ManualEntriesService extends EntryServiceBase {
    */
   async addManualEntries(data: ManualEntriesInput) {
     const [user, loc] = await Promise.all([
-      this.prisma.user.findFirst({
-        where: { id: data.userId, organizationId: data.organizationId },
-        select: { id: true },
-      }),
+      personPasses(this.prisma, data.userId, { organizationId: data.organizationId }),
       this.prisma.companyLocation.findFirst({
         where: { id: data.locationId, organizationId: data.organizationId },
         select: { id: true, lat: true, lng: true, timezone: true },

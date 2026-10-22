@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, ConflictException, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, personNameOf } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
 import { personName, success, TimeEntryStatus, SERVICE_NAMES } from '@hbcfield/shared';
 import type { OccurrenceEvidence } from '@hbcfield/shared';
@@ -136,10 +136,7 @@ export class BreakService {
     });
 
     // Get user info for notification
-    const user = await this.prisma.user.findUnique({
-      where: { id: data.userId },
-      select: { firstName: true, lastName: true },
-    });
+    const user = await personNameOf(this.prisma, data.userId);
 
     // Emit break ended notification
     emitEvent(this.notificationClient, breakEndedEvent, {

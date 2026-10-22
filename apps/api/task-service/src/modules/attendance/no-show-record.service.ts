@@ -7,6 +7,7 @@ import {
   scopeWhereOn,
   success,
   type AttendanceScope,
+  peopleFacesAndPresence,
 } from '@hbcfield/shared';
 import { assertNotSelfDecision } from './self-decision';
 import { DAY } from './no-show-record-helpers';
@@ -50,10 +51,7 @@ export class NoShowRecordService extends NoShowRecordBase {
     const userIds = [...new Set(rows.map((r) => r.userId))];
     const openRows = rows.filter((r) => isOpenNoShow(r.state));
     const [users, spaces, runs, facts] = await Promise.all([
-      this.prisma.user.findMany({
-        where: { id: { in: userIds } },
-        select: { id: true, firstName: true, lastName: true, avatarUrl: true, lastActiveAt: true },
-      }),
+      peopleFacesAndPresence(this.prisma, userIds),
       this.spaceRows(
         data.organizationId,
         rows.flatMap((r) => [r.spaceId, r.settledSpaceId]),

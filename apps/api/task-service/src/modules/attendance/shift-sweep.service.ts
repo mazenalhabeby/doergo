@@ -1,6 +1,6 @@
 import { Injectable, Inject, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, peopleNames, personNameOf } from '@hbcfield/shared';
 import { personName, success, SERVICE_NAMES } from '@hbcfield/shared';
 import { AttendanceRoutingService } from './attendance-routing.service';
 import { NoShowSettleService } from './no-show-settle.service';
@@ -21,7 +21,6 @@ export { shiftNudgeCadence } from './shift-sweep-helpers';
  */
 @Injectable()
 export class ShiftSweepService {
-
   constructor(
     private readonly prisma: PrismaService,
     @Inject(SERVICE_NAMES.NOTIFICATION)
@@ -66,10 +65,7 @@ export class ShiftSweepService {
     });
     if (!context || escalated.length === 0) return;
 
-    const member = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { firstName: true, lastName: true },
-    });
+    const member = await personNameOf(this.prisma, userId);
     const leaderIds = await this.routing.notifyTargetsFor(
       { spaceId, organizationId: context.organizationId, userId },
       'canReconcileAttendance',
@@ -119,10 +115,7 @@ export class ShiftSweepService {
     const userIds = [...new Set(open.map((d) => d.userId))];
     const shiftIds = [...new Set(open.map((d) => d.shiftId))];
     const [users, shifts] = await Promise.all([
-      this.prisma.user.findMany({
-        where: { id: { in: userIds } },
-        select: { id: true, firstName: true, lastName: true },
-      }),
+      peopleNames(this.prisma, userIds),
       this.prisma.shift.findMany({
         where: { id: { in: shiftIds } },
         select: { id: true, reminderIntervalMin: true, maxReminders: true },

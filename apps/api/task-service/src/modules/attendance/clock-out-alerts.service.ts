@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { personName, zoneOf, SERVICE_NAMES } from '@hbcfield/shared';
+import { personName, zoneOf, SERVICE_NAMES, personNameAndEmail } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { AttendanceRoutingService } from './attendance-routing.service';
@@ -103,10 +103,7 @@ export class ClockOutAlertsService {
   }) {
     try {
       // Get user info
-      const user = await this.prisma.user.findUnique({
-        where: { id: data.userId },
-        select: { firstName: true, lastName: true, email: true },
-      });
+      const user = await personNameAndEmail(this.prisma, data.userId);
 
       if (!user) return;
 

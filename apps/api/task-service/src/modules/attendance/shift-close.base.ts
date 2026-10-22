@@ -1,7 +1,7 @@
 import { closedHowOfBasis, endRunningRests, provisionalClockOut, type RestRow } from './open-shift-close';
 import { Injectable, Inject, Logger, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, personNameOf } from '@hbcfield/shared';
 import { JobPauseService } from '../tasks/handover/job-pause.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { personName, zoneOf, TimeEntryStatus, SERVICE_NAMES, AUTO_REST_FLAG } from '@hbcfield/shared';
@@ -15,7 +15,10 @@ import { ExtraTimeService } from './extra-time.service';
 import { AutoClockService } from './auto-clock.service';
 import { ClosableEntry, CloseSpec, CLOSED_ROW_INCLUDE, ClosedRow, closingLabelColumns } from './clock-out-helpers';
 import { emitEvent, attendanceClockOutEvent } from '@hbcfield/shared/microservices';
-import { attendancePendingApprovalEvent, attendanceShiftClosedProvisionallyEvent } from '@hbcfield/shared/microservices';
+import {
+  attendancePendingApprovalEvent,
+  attendanceShiftClosedProvisionallyEvent,
+} from '@hbcfield/shared/microservices';
 
 /**
  * The ONE way a shift closes (closeEntry), the provisional close, the flag
@@ -266,10 +269,7 @@ export abstract class ShiftCloseBase {
     totalMinutes: number;
   }) {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: data.userId },
-        select: { firstName: true, lastName: true },
-      });
+      const user = await personNameOf(this.prisma, data.userId);
       if (!user) return;
 
       const { ids: managerIds } = await this.notificationRouting.resolveWatchers(

@@ -11,6 +11,7 @@ import {
   type CalendarLayer,
   type CalendarPlace,
   type DayKind,
+  orgTimezone,
 } from '@hbcfield/shared';
 import { type PlaceCalendar } from './calendar-rules.service';
 import { DATE, ItemsQuery } from './calendar-helpers';
@@ -42,7 +43,7 @@ export class CalendarService extends CalendarSourcesBase {
     const spaceId = q.spaceId || null;
     // The organization's zone and the workspace check are independent reads: asked together.
     const [org, space] = await Promise.all([
-      this.prisma.organization.findUnique({ where: { id: q.organizationId }, select: { timezone: true } }),
+      orgTimezone(this.prisma, q.organizationId),
       spaceId
         ? this.prisma.companyLocation.findFirst({
             where: { id: spaceId, organizationId: q.organizationId },

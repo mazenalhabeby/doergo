@@ -13,6 +13,7 @@ import {
   type Repeat,
   toISODateString,
   hashCode,
+  orgCalendarFeeds,
 } from '@hbcfield/shared';
 import { CalendarRulesService } from './calendar-rules.service';
 
@@ -37,10 +38,7 @@ export class FeedService {
 
   async status(dto: { userId: string; organizationId: string }) {
     const [org, row] = await Promise.all([
-      this.prisma.organization.findUnique({
-        where: { id: dto.organizationId },
-        select: { calendarFeedsEnabled: true },
-      }),
+      orgCalendarFeeds(this.prisma, dto.organizationId),
       this.prisma.calendarFeedToken.findUnique({
         where: { userId: dto.userId },
         select: { createdAt: true, lastUsedAt: true },
@@ -56,10 +54,7 @@ export class FeedService {
 
   /** A new link (any old one stops working). Returned once. */
   async rotate(dto: { userId: string; organizationId: string }) {
-    const org = await this.prisma.organization.findUnique({
-      where: { id: dto.organizationId },
-      select: { calendarFeedsEnabled: true },
-    });
+    const org = await orgCalendarFeeds(this.prisma, dto.organizationId);
     if (!org?.calendarFeedsEnabled)
       throw new ForbiddenException({
         code: 'CALENDAR_FEEDS_OFF',

@@ -11,6 +11,7 @@ import {
   parseRepeat,
   zonedWallTimeToUtc,
   type Repeat,
+  clientInOrg,
 } from '@hbcfield/shared';
 import {
   DAY,
@@ -83,10 +84,7 @@ export abstract class EventsUpdateBase extends EventsBase {
           code: 'EVENT_CLIENT_NOT_ALLOWED',
           message: 'Only somebody who works with clients can put one on an event.',
         });
-      const c = await this.prisma.customer.findFirst({
-        where: { id: customerId, organizationId: caller.organizationId },
-        select: { id: true },
-      });
+      const c = await clientInOrg(this.prisma, customerId, caller.organizationId);
       if (!c) throw new BadRequestException('Client not found');
     }
   }

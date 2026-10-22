@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { personName, success } from '@hbcfield/shared';
+import { personName, success, recordHistory } from '@hbcfield/shared';
 import { assertNotSelfDecision } from './self-decision';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { EntryServiceBase } from './entry-service.base';
@@ -26,15 +26,10 @@ export class EntryRecordService extends EntryServiceBase {
       });
       if (!inScope) throw new NotFoundException('Time entry not found');
     }
-    const logs = await this.prisma.activityLog.findMany({
-      where: {
-        resourceId: data.entryId,
-        organizationId: data.organizationId,
-        eventType: 'TIME_ENTRY_EDITED',
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-      include: { user: { select: { firstName: true, lastName: true } } },
+    const logs = await recordHistory(this.prisma, {
+      resourceId: data.entryId,
+      organizationId: data.organizationId,
+      eventType: 'TIME_ENTRY_EDITED',
     });
     return success(
       logs.map((l) => {

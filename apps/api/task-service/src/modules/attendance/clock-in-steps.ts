@@ -49,18 +49,9 @@ export interface ClockInInput {
 
 export type ClockInOccurrence = ReturnType<typeof judgeOccurrence>;
 
-export const CLOCK_IN_USER_SELECT = {
-  id: true,
-  organizationId: true,
-  allowRemote: true,
-  role: true,
-  organization: { select: { timezone: true } },
-  // The member's own day, for the no-shift limit (memberDayZone).
-  timezone: true,
-  // The automatic clock: their consent, and that they are not external (who hold no clock).
-  autoClockConsentAt: true,
-  isExternal: true,
-} satisfies Prisma.UserSelect;
+/** What a clock-in needs about the member — auth-service's columns, published in shared data/people. */
+export { CLOCK_IN_USER_SELECT } from '@hbcfield/shared';
+import { CLOCK_IN_USER_SELECT } from '@hbcfield/shared';
 
 export type ClockInUser = Prisma.UserGetPayload<{ select: typeof CLOCK_IN_USER_SELECT }>;
 

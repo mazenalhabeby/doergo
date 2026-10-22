@@ -1,3 +1,4 @@
+import { isActiveAdmin, type On } from '@hbcfield/shared';
 import { ForbiddenException } from '@nestjs/common';
 
 /**
@@ -21,12 +22,8 @@ import { ForbiddenException } from '@nestjs/common';
  * its client without this file importing the module that owns it.
  */
 export interface SelfDecisionPrisma {
-  user: {
-    findFirst(args: {
-      where: { id: string; organizationId: string; isActive: true; role: 'ADMIN' };
-      select: { id: true };
-    }): Promise<{ id: string } | null>;
-  };
+  /** Asked through the published reader `isActiveAdmin` (auth-service owns User). */
+  user: On<'user', 'findFirst'>['user'];
   /** Present on the real client; a test double without it skips the stand-in rule. */
   approvalDelegation?: { findFirst(args: unknown): Promise<{ id: string } | null> };
 }
@@ -45,10 +42,7 @@ export async function assertNotSelfDecision(
     await assertNotStandingInFor(prisma, params.deciderId, params.subjectId, params.organizationId);
     return;
   }
-  const owner = await prisma.user.findFirst({
-    where: { id: params.deciderId, organizationId: params.organizationId, isActive: true, role: 'ADMIN' },
-    select: { id: true },
-  });
+  const owner = await isActiveAdmin(prisma, params.deciderId, params.organizationId);
   if (owner) return;
   throw new ForbiddenException({ message: params.message, code: 'SELF_DECISION' });
 }

@@ -7,6 +7,7 @@ import {
   type DayRules,
   type LeaveCount,
   type RosterFn,
+  peopleWorkingWeek,
 } from '@hbcfield/shared';
 import { shiftRuleOf } from '../technicians/cover.service';
 import { PlaceCalendar } from './calendar-rules-helpers';
@@ -59,17 +60,7 @@ export class CalendarRulesService extends CalendarRulesBase {
     if (!ids.length) return { byUser: out, places: null };
     const [spacesOf, users, rotas] = await Promise.all([
       this.workspacesOfMany(organizationId, ids),
-      this.prisma.user.findMany({
-        where: { id: { in: ids }, organizationId },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          specialty: true,
-          position: true,
-          schedules: { where: { isActive: true }, select: { dayOfWeek: true } },
-        },
-      }),
+      peopleWorkingWeek(this.prisma, ids, organizationId),
       this.prisma.shiftAssignment.findMany({
         where: { organizationId, userId: { in: ids }, isActive: true },
         select: {

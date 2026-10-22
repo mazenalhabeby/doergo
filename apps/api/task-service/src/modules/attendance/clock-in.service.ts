@@ -15,6 +15,7 @@ import {
   activeAssignmentWhere,
   resolveAwayAccess,
   mayClockInRemotely as canClockInRemotely,
+  personForClockIn,
 } from '@hbcfield/shared';
 import { remoteApprovedAt, approvedRequestsAround, type DayRequestRow } from './approved-requests';
 import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
@@ -24,7 +25,7 @@ import { ClockInContextService } from './clock-in-context.service';
 import { ClockInRemoteService } from './clock-in-remote.service';
 import { ClockInSiteWriter } from './clock-in-site.writer';
 import { AutoClockService } from './auto-clock.service';
-import { CLOCK_IN_USER_SELECT, gpsAccuracyRefusal, outsideSiteRefusal, type ClockInInput } from './clock-in-steps';
+import { gpsAccuracyRefusal, outsideSiteRefusal, type ClockInInput } from './clock-in-steps';
 import { joinedIntoWhere } from './clock-in-join';
 
 /**
@@ -116,14 +117,7 @@ export class ClockInService {
     // Any STAFF member may clock in (EMPLOYEE and ADMIN — admins clock in too);
     // only external portal CUSTOMER accounts are excluded. Previously this was
     // hardcoded role:'EMPLOYEE', so admins hit "Employee not found".
-    const user = await this.prisma.user.findFirst({
-      where: {
-        id: data.userId,
-        organizationId: data.organizationId,
-        role: { not: 'CUSTOMER' },
-      },
-      select: CLOCK_IN_USER_SELECT,
-    });
+    const user = await personForClockIn(this.prisma, data.userId, data.organizationId);
 
     if (!user) {
       throw new NotFoundException('Employee not found');

@@ -12,6 +12,7 @@ import {
   zonedWallTimeToUtc,
   type AutoClockPlace,
   type MemberAutoClockSettings,
+  personAutoClockFacts,
 } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@hbcfield/shared';
@@ -25,7 +26,6 @@ import { dedupeById } from './auto-clock-helpers';
  */
 @Injectable()
 export class AutoClockPlanService {
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly shiftResolver: ShiftResolverService,
@@ -52,10 +52,7 @@ export class AutoClockPlanService {
   async plan(data: { userId: string; organizationId: string; now?: Date }) {
     const now = data.now ?? new Date();
     const generatedAt = now.toISOString();
-    const user = await this.prisma.user.findFirst({
-      where: { id: data.userId, organizationId: data.organizationId },
-      select: { autoClockConsentAt: true, isExternal: true },
-    });
+    const user = await personAutoClockFacts(this.prisma, data.userId, data.organizationId);
     const consentAt = user?.autoClockConsentAt ?? null;
     const consentIso = consentAt ? consentAt.toISOString() : null;
     if (!user || user.isExternal)

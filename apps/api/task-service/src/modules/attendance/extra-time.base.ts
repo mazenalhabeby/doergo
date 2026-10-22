@@ -1,7 +1,7 @@
 import { ApprovalRulesService } from '../../common/approval-rules/approval-rules.service';
 import { Optional } from '@nestjs/common';
 import { standInGrant } from '../../common/stand-in';
-import { grantHolds } from '@hbcfield/shared';
+import { grantHolds, managesPeopleOrIsAdmin } from '@hbcfield/shared';
 import { Injectable, Inject, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '@hbcfield/shared';
@@ -230,19 +230,12 @@ export abstract class ExtraTimeBase {
       where: { userId, spaceId, organizationId, role: { isActive: true } },
       include: { role: { select: { permissions: true } } },
     });
-    if ((assignment?.role?.permissions as { canApproveOvertime?: boolean } | null)?.canApproveOvertime === true) return true;
+    if ((assignment?.role?.permissions as { canApproveOvertime?: boolean } | null)?.canApproveOvertime === true)
+      return true;
     // Standing in for a leader who approves overtime here (or everywhere) today.
     if (grantHolds(await standInGrant(this.prisma, userId, organizationId), 'canApproveOvertime', spaceId)) return true;
     // Org admins / user managers can always approve.
-    const admin = await this.prisma.user.findFirst({
-      where: {
-        id: userId,
-        organizationId,
-        isActive: true,
-        OR: [{ role: 'ADMIN' }, { canManageUsers: true }],
-      },
-      select: { id: true },
-    });
+    const admin = await managesPeopleOrIsAdmin(this.prisma, userId, organizationId);
     return !!admin;
   }
 }

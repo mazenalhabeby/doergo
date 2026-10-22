@@ -46,3 +46,27 @@ export function orgRates(db: OrgDb, organizationId: string) {
     select: { billableRateCents: true, costRateCents: true },
   });
 }
+
+/** What the calendar's day rules start from: the organization's weekend, holiday place and country. */
+export function orgCalendarRules(db: OrgDb, organizationId: string) {
+  return db.organization.findUnique({
+    where: { id: organizationId },
+    select: { id: true, name: true, weekendDays: true, holidayCountry: true, holidayRegion: true, country: true },
+  });
+}
+
+/** The organization's calendar settings (weekend, holiday place, feeds switch). */
+export function orgCalendarSettings(db: OrgDb, organizationId: string) {
+  return db.organization.findUnique({
+    where: { id: organizationId },
+    select: { weekendDays: true, holidayCountry: true, holidayRegion: true, country: true, calendarFeedsEnabled: true },
+  });
+}
+
+/** Where the organization's holidays come from (country, region; its own country as the fallback). */
+export function orgHolidayPlace(db: OrgDb, organizationId: string) {
+  return db.organization.findUnique({
+    where: { id: organizationId },
+    select: { holidayCountry: true, holidayRegion: true, country: true },
+  });
+}

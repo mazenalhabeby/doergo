@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, personRemoteFacts, personZones } from '@hbcfield/shared';
 import { ResolverSpace, ShiftResolverService } from './shift-resolver.service';
 import {
   zoneOf,
@@ -60,9 +60,9 @@ export class ClockInLocationsService {
     let overtimeRows: Promise<DayRequestRow[]> | null = null;
     // Asked by every workspace at once (Promise.all), so the promise is shared, not the answer.
     const memberDay = (fallback: string): Promise<string> =>
-      (dayTz ??= this.prisma.user
-        .findUnique({ where: { id: userId }, select: { timezone: true, organization: { select: { timezone: true } } } })
-        .then((u) => memberDayZone(u?.timezone, u?.organization?.timezone, fallback)));
+      (dayTz ??= personZones(this.prisma, userId).then((u) =>
+        memberDayZone(u?.timezone, u?.organization?.timezone, fallback),
+      ));
     return Promise.all(
       spaces.map(async (space) => {
         const tz = zoneOf(space.timezone);
@@ -187,10 +187,7 @@ export class ClockInLocationsService {
 
     const now = new Date();
     const [member, overrides, remoteDays] = await Promise.all([
-      this.prisma.user.findFirst({
-        where: { id: userId, organizationId },
-        select: { allowRemote: true, role: true },
-      }),
+      personRemoteFacts(this.prisma, userId, organizationId),
       knownOverrides
         ? Promise.resolve(knownOverrides)
         : this.prisma.spaceAssignment

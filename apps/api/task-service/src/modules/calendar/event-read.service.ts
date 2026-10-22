@@ -9,6 +9,7 @@ import {
   type Repeat,
   personName,
   personSearchOr,
+  inviteCandidates,
 } from '@hbcfield/shared';
 import { Caller, clean } from './events-helpers';
 import { EventsBase } from './events.base';
@@ -21,15 +22,11 @@ export class EventReadService extends EventsBase {
     const q = clean(dto.q, 60);
     const wide = isAdmin({ role: dto.role as string }) || dto.canManageUsers || dto.orgWideView;
     const circle = wide ? null : await this.circleOf(dto);
-    const rows = await this.prisma.user.findMany({
-      where: {
-        organizationId: dto.organizationId, isActive: true, isExternal: false, role: { not: 'CUSTOMER' }, id: { not: dto.userId },
-        ...(circle ? { id: { in: [...circle].filter((id) => id !== dto.userId) } } : {}),
-        ...(q ? { OR: personSearchOr(q, ['firstName', 'lastName', 'position']) } : {}),
-      },
-      select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true },
-      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
-      take: 30,
+    const rows = await inviteCandidates(this.prisma, {
+      organizationId: dto.organizationId,
+      callerId: dto.userId,
+      circle: circle ? [...circle] : undefined,
+      search: q ? personSearchOr(q, ['firstName', 'lastName', 'position']) : undefined,
     });
     return success(rows);
   }

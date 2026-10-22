@@ -1,7 +1,7 @@
 import { OPEN_EXCURSION_STATUSES } from './open-shift-close';
 import { Injectable, Inject, NotFoundException, Logger, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, personNameAndEmail } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { personName, GEOFENCE_EXCURSION, SERVICE_NAMES } from '@hbcfield/shared';
 import { scopeAllows, type AttendanceScope } from '@hbcfield/shared';
@@ -96,10 +96,7 @@ export abstract class HeartbeatBase {
     ctx: { distanceM?: number },
   ) {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: entry.userId },
-        select: { firstName: true, lastName: true, email: true },
-      });
+      const user = await personNameAndEmail(this.prisma, entry.userId);
       const userName = user ? personName(user) : 'A worker';
       const spaceName = entry.location?.name ?? 'the work area';
 

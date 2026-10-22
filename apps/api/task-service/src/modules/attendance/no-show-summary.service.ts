@@ -9,6 +9,7 @@ import {
   type AttendanceScope,
   type NoShowDayMark,
   type NoShowPersonSummary,
+  peopleFaces,
 } from '@hbcfield/shared';
 import { DAY, MARK_RANK, Instance } from './no-show-record-helpers';
 import { NoShowRecordBase } from './no-show-record.base';
@@ -46,10 +47,7 @@ export class NoShowSummaryService extends NoShowRecordBase {
     })) as Instance[];
     const entryIds = all.map((r) => r.timeEntryId).filter((v): v is string => !!v);
     const [users, spaces, entries] = await Promise.all([
-      this.prisma.user.findMany({
-        where: { id: { in: userIds } },
-        select: { id: true, firstName: true, lastName: true, avatarUrl: true },
-      }),
+      peopleFaces(this.prisma, userIds),
       this.spaceNames(
         data.organizationId,
         all.map((r) => r.spaceId),

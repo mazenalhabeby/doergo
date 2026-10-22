@@ -9,6 +9,7 @@ import {
   resolveWeekend,
   type HolidayOverride,
   toISODateString,
+  orgCalendarRules,
 } from '@hbcfield/shared';
 import { libraryHolidaysForYears } from './holiday-library';
 import { PlaceCalendar, OrgRow, SpaceRow, yearsOf } from './calendar-rules-helpers';
@@ -19,10 +20,7 @@ export abstract class CalendarRulesBase {
   constructor(protected readonly prisma: PrismaService) {}
 
   protected org(organizationId: string): Promise<OrgRow | null> {
-    return this.prisma.organization.findUnique({
-      where: { id: organizationId },
-      select: { id: true, name: true, weekendDays: true, holidayCountry: true, holidayRegion: true, country: true },
-    });
+    return orgCalendarRules(this.prisma, organizationId);
   }
   static orgCountry(o: Pick<OrgRow, 'holidayCountry' | 'country'>): string | null {
     return (o.holidayCountry || o.country || null)?.toUpperCase() ?? null;

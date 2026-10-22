@@ -15,9 +15,12 @@ import {
   type MeetingFields,
   success,
   personNameById,
-  crmReachSelect,
   crmReachOfRow,
   crmReachesClientIn,
+  personCrmReach,
+  peopleNames,
+  orgTimezone,
+  staffInNoWorkspace,
 } from '@hbcfield/shared';
 import { CalendarRulesService } from './calendar-rules.service';
 import { Caller, clean } from './events-helpers';
@@ -38,7 +41,7 @@ export abstract class EventsBase {
   // ─── validation ───────────────────────────────────────────────────────────
 
   protected async orgZone(organizationId: string): Promise<string> {
-    const o = await this.prisma.organization.findUnique({ where: { id: organizationId }, select: { timezone: true } });
+    const o = await orgTimezone(this.prisma, organizationId);
     return o?.timezone || 'Europe/Vienna';
   }
 
@@ -126,10 +129,7 @@ export abstract class EventsBase {
         message: `At most ${EVENT_MAX_ATTENDEES} people.`,
       });
     if (!unique.length) return new Map();
-    const people = await this.prisma.user.findMany({
-      where: { id: { in: unique }, organizationId: caller.organizationId, isActive: true, isExternal: false, role: { not: 'CUSTOMER' } },
-      select: { id: true, firstName: true, lastName: true },
-    });
+    const people = await peopleNames(this.prisma, unique, { organizationId: caller.organizationId, active: true, staffOnly: true });
     if (people.length !== unique.length)
       throw new BadRequestException({
         code: 'EVENT_PERSON_UNKNOWN',
@@ -151,17 +151,7 @@ export abstract class EventsBase {
   protected async circleOf(caller: Caller): Promise<Set<string>> {
     const mine = await this.rules.workspacesOf(caller.organizationId, caller.userId);
     if (!mine.length) {
-      const loose = await this.prisma.user.findMany({
-        where: {
-          organizationId: caller.organizationId,
-          isActive: true,
-          isExternal: false,
-          role: { not: 'CUSTOMER' },
-          spaceAssignments: { none: {} },
-        },
-        select: { id: true },
-      });
-      return new Set(loose.map((u) => u.id));
+      return new Set(await staffInNoWorkspace(this.prisma, caller.organizationId));
     }
     const rows = await this.prisma.spaceAssignment.findMany({
       where: { organizationId: caller.organizationId, spaceId: { in: mine }, ...notEndedWhere() },
@@ -186,10 +176,7 @@ export abstract class EventsBase {
     if (!client || !caller.crm) return null;
     if (caller.role === 'ADMIN') return { id: client.id, name: client.name };
     // Org-wide CRM, or a CRM grant in the workspace the client is filed in (crm/crm-reach.ts).
-    const row = await this.prisma.user.findFirst({
-      where: { id: caller.userId, organizationId: caller.organizationId },
-      select: crmReachSelect(),
-    });
+    const row = await personCrmReach(this.prisma, caller.userId, caller.organizationId);
     return crmReachesClientIn(crmReachOfRow(row as never), client, caller.userId)
       ? { id: client.id, name: client.name }
       : null;

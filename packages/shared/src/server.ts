@@ -118,3 +118,6 @@ export * from './data/clients';
 export * from './data/support';
 export * from './data/sharing';
 export * from './data/leave';
+export * from './data/documents';
+export * from './data/activity';
+export * from './data/people-work';

@@ -1,8 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { success, TimeEntryStatus } from '@hbcfield/shared';
+import { success, TimeEntryStatus, peopleBriefWithEmail } from '@hbcfield/shared';
 import { scopeWhereOn, type AttendanceScope } from '@hbcfield/shared';
 import { assertNotSelfDecision } from './self-decision';
-import { ATTENDANCE_LOCATION_SELECT, MEMBER_SELECT } from './attendance-selects';
+import { ATTENDANCE_LOCATION_SELECT } from './attendance-selects';
 import { HeartbeatBase } from './heartbeat.base';
 import type { GeofenceExcursionStatus } from '@prisma/client';
 
@@ -176,10 +176,7 @@ export class ExcursionsService extends HeartbeatBase {
     const userIds = [...new Set(rows.map((r) => r.userId))];
     const spaceIds = [...new Set(rows.map((r) => r.spaceId))];
     const [users, spaces] = await Promise.all([
-      this.prisma.user.findMany({
-        where: { id: { in: userIds } },
-        select: MEMBER_SELECT,
-      }),
+      peopleBriefWithEmail(this.prisma, userIds),
       this.prisma.companyLocation.findMany({ where: { id: { in: spaceIds } }, select: { id: true, name: true } }),
     ]);
     const userById = new Map(users.map((u) => [u.id, u]));

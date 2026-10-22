@@ -10,6 +10,7 @@ import {
   success,
   type Repeat,
   toISODateString,
+  peopleNames,
 } from '@hbcfield/shared';
 import { DAY, ISO, Caller, validZone } from './events-helpers';
 import { EventsBase } from './events.base';
@@ -40,7 +41,7 @@ export class AvailabilityService extends EventsBase {
         },
         select: { technicianId: true, startDate: true, endDate: true, status: true },
       }),
-      this.prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, firstName: true, lastName: true } }),
+      peopleNames(this.prisma, ids),
     ]);
     const tz = await this.orgZone(dto.organizationId);
     const fromKey = localPartsIn(from, tz).dateStr,

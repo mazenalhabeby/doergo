@@ -9,6 +9,7 @@ import {
   parseWeekendDays,
   success,
   resolveHolidayPlace,
+  orgHolidayPlace,
 } from '@hbcfield/shared';
 import { CalendarRulesService } from './calendar-rules.service';
 import { countryList, validCountry, validRegion } from './holiday-library';
@@ -119,12 +120,7 @@ export abstract class HolidaysBase {
       const space = await this.assertSpace(dto.organizationId, spaceId);
       // A library change belongs to whoever owns the list: a workspace sharing the organization's
       // (same country) cannot fork one holiday of it; one in another country — chosen or detected — can.
-      const org = dto.libraryKey
-        ? await this.prisma.organization.findUnique({
-            where: { id: dto.organizationId },
-            select: { holidayCountry: true, holidayRegion: true, country: true },
-          })
-        : null;
+      const org = dto.libraryKey ? await orgHolidayPlace(this.prisma, dto.organizationId) : null;
       if (dto.libraryKey && !(org && resolveHolidayPlace(org, space).ownLayer)) {
         if (dto.scopeSpaceIds !== undefined)
           throw new ForbiddenException(
