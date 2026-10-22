@@ -229,3 +229,20 @@ export function staffAccessFlags(db: On<'user', 'findMany'>, ids: string[], orga
     },
   });
 }
+
+/** A WORK role of the organization: `{ id, name }` or null. */
+export function workRoleInOrg(db: On<'accessRole', 'findFirst'>, roleId: string, organizationId: string) {
+  return db.accessRole.findFirst({
+    where: { id: roleId, organizationId, kind: 'WORK' },
+    select: { id: true, name: true },
+  });
+}
+
+/** These WORK roles of the organization, by name. */
+export function workRolesByName(db: On<'accessRole', 'findMany'>, organizationId: string, ids: string[]) {
+  return db.accessRole.findMany({
+    where: { organizationId, kind: 'WORK', id: { in: ids } },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  });
+}

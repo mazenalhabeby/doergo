@@ -1,6 +1,6 @@
 import type { Logger } from '@nestjs/common';
 import type { ClientProxy } from '@nestjs/microservices';
-import { personName, TaskStatus } from '@hbcfield/shared';
+import { personName, TaskStatus, personNameOf } from '@hbcfield/shared';
 import type { PrismaService } from '@hbcfield/shared';
 import type { PresenceService } from '../attendance/presence/presence.service';
 import type { CrewService } from './handover/crew.service';
@@ -52,10 +52,7 @@ export async function afterStatusMove(
   }
 
   if (officeStart) {
-    const by = await deps.prisma.user.findUnique({
-      where: { id: data.userId },
-      select: { firstName: true, lastName: true },
-    });
+    const by = await personNameOf(deps.prisma, data.userId);
     emitEvent(deps.notificationClient, taskStartedForYouEvent, {
       taskId: task.id,
       taskTitle: updatedTask.title,

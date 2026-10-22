@@ -6,6 +6,7 @@ import {
   canReceiveTasks,
   TERMINAL_STATUSES,
   assertFoundInOrg,
+  workerToAssign,
 } from '@hbcfield/shared';
 import { assertMayAssign, assertTargetIsInSpace } from './task-scope';
 import { TaskAssignmentBase } from './task-assignment.base';
@@ -23,11 +24,7 @@ export class TaskCrewMembersService extends TaskAssignmentBase {
     await assertTargetIsInSpace(this.prisma, task, data.userId, data);
 
     // Verify the target user exists in the organization
-    const user = await this.prisma.user.findFirst({
-      where: { id: data.userId, organizationId: data.organizationId, isActive: true },
-      // role + enabledModules so canReceiveTasks can be answered without a second read.
-      select: { id: true, firstName: true, lastName: true, avatarUrl: true, role: true, enabledModules: true },
-    });
+    const user = await workerToAssign(this.prisma, data.userId, data.organizationId);
     if (!user) throw new NotFoundException('User not found or not in your organization');
     if (!canReceiveTasks(user)) {
       throw new BadRequestException(

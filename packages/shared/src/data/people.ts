@@ -240,3 +240,11 @@ export function peopleContacts(db: On<'user', 'findMany'>, ids: string[], organi
 export function personCrmReach(db: On<'user', 'findFirst'>, userId: string, organizationId: string) {
   return db.user.findFirst({ where: { id: userId, organizationId }, select: crmReachSelect() });
 }
+
+/** Whether an account is external, in which organization, and switched on. */
+export function personStanding(db: On<'user', 'findUnique'>, userId: string) {
+  return db.user.findUnique({
+    where: { id: userId },
+    select: { isExternal: true, organizationId: true, isActive: true },
+  });
+}

@@ -117,3 +117,70 @@ export function personForClockIn(db: On<'user', 'findFirst'>, userId: string, or
     select: CLOCK_IN_USER_SELECT,
   });
 }
+
+/** What deciding "may this person receive tasks" reads: role, access modules and the legacy flags. */
+const TASK_GATE = {
+  role: true,
+  enabledModules: true,
+  canCreateTasks: true,
+  canAssignTasks: true,
+  canViewAllTasks: true,
+  canManageUsers: true,
+  taskCreationScope: true,
+} as const;
+
+/** One person's task gate. */
+export function personTaskGate(db: On<'user', 'findUnique'>, userId: string) {
+  return db.user.findUnique({ where: { id: userId }, select: TASK_GATE });
+}
+
+/** These people's names and task gate. */
+export function peopleTaskGate(db: On<'user', 'findMany'>, ids: string[]) {
+  return db.user.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, firstName: true, lastName: true, ...TASK_GATE },
+  });
+}
+
+/** An active worker to put on a job — in the organization when given — with name, photo and task gate. */
+export function workerToAssign(db: On<'user', 'findFirst'>, userId: string, organizationId?: string) {
+  return db.user.findFirst({
+    where: { id: userId, isActive: true, ...(organizationId ? { organizationId } : {}) },
+    select: { id: true, firstName: true, lastName: true, avatarUrl: true, ...TASK_GATE },
+  });
+}
+
+/**
+ * Up to `limit` active people of the organization (except the job's creator; only this roster when given)
+ * with trade, rating, last position and how many jobs they have in hand — the "who could do it" list.
+ * ⚠️ The last position (tracking-service) and open jobs (task-service) are reached through the person.
+ */
+export function suggestionCandidates(
+  db: On<'user', 'findMany'>,
+  input: { organizationId: string; exceptUserId?: string; roster?: string[]; limit: number },
+) {
+  return db.user.findMany({
+    where: {
+      organizationId: input.organizationId,
+      isActive: true,
+      id: { not: input.exceptUserId },
+      ...(input.roster ? { id: { in: input.roster, not: input.exceptUserId } } : {}),
+    },
+    take: input.limit,
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      specialty: true,
+      rating: true,
+      ratingCount: true,
+      lastLocation: { select: { lat: true, lng: true, updatedAt: true } },
+      _count: {
+        select: {
+          assignedTasks: { where: { status: { in: ['ASSIGNED', 'ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS'] } } },
+        },
+      },
+    },
+  });
+}

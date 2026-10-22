@@ -6,6 +6,7 @@ import {
   joinMoment,
   type OccurrenceEvidence,
   type WorkTimelineEvent,
+  personStanding,
 } from '@hbcfield/shared';
 import { judgeOccurrence } from '../../../common/occurrence.util';
 import { CrewTask, evidenceMeta } from './crew-helpers';
@@ -31,10 +32,7 @@ export abstract class CrewBase extends CrewLookupBase {
     const crew = await this.crewOf(task);
     if (!crew.some((c) => c.userId === who))
       throw new BadRequestException({ message: 'They are not on this job.', code: CREW_CODES.NOT_ON_CREW });
-    const person = await this.prisma.user.findUnique({
-      where: { id: who },
-      select: { isExternal: true, organizationId: true },
-    });
+    const person = await personStanding(this.prisma, who);
     // External members hold no clock and work no job of ours (EXTERNAL_FORBIDDEN_MODULES).
     if (!person || person.isExternal || person.organizationId !== task.organizationId) {
       throw new BadRequestException({ message: 'They cannot join this job.', code: CREW_CODES.NOT_ON_CREW });

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { success, scopeAllows, scopeWhereOn, type SpaceScopeIds } from '@hbcfield/shared';
+import { success, scopeAllows, type SpaceScopeIds, activePortals, portalInOrg } from '@hbcfield/shared';
 import { TaskPortalBase } from './task-portal.base';
 
 /**
@@ -44,10 +44,7 @@ export class TaskPortalService extends TaskPortalBase {
     // Explicit portal-ownership check (defense-in-depth): the task filter below
     // already scopes by org + the customer→portal join, but assert the portal
     // belongs to the caller's org so ownership never rests on an implicit join.
-    const ownsPortal = await this.prisma.portal.findFirst({
-      where: { id: data.portalId, organizationId: data.organizationId },
-      select: { id: true, spaceId: true },
-    });
+    const ownsPortal = await portalInOrg(this.prisma, data.portalId, data.organizationId);
     if (!ownsPortal) return success([]);
     // …and to a workspace the caller reads portal requests in. 404, like a
     // portal of another organization: "it exists, but not for you" is an answer.
@@ -96,12 +93,12 @@ export class TaskPortalService extends TaskPortalBase {
    * 20), and each row is what `portal_list_requests_by_portal` answers for it, plus `portalId`.
    */
   async listWaitingPortalRequests(data: { organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
-    const portals = await this.prisma.portal.findMany({
-      where: { organizationId: data.organizationId, isActive: true, ...scopeWhereOn('spaceId', data.scopeSpaceIds) },
-      orderBy: { createdAt: 'asc' },
-      take: WAITING_REQUESTS_MAX_PORTALS,
-      select: { id: true, spaceId: true },
-    });
+    const portals = await activePortals(
+      this.prisma,
+      data.organizationId,
+      data.scopeSpaceIds,
+      WAITING_REQUESTS_MAX_PORTALS,
+    );
     if (portals.length === 0) return success([]);
     const spaceIds = [...new Set(portals.map((p) => p.spaceId).filter((id): id is string => !!id))];
     const [spaces, tasks] = await Promise.all([

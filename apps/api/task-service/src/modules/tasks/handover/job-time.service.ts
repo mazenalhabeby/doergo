@@ -8,8 +8,10 @@ import {
   liveJobKind,
   crewPresence,
   type JobTime,
+  peopleNames,
+  personBrief,
 } from '@hbcfield/shared';
-import { TaskRef, PERSON, MoveMeta } from './job-time-helpers';
+import { TaskRef, MoveMeta } from './job-time-helpers';
 import { JobTimeBase } from './job-time.base';
 
 /**
@@ -42,7 +44,7 @@ export class JobTimeService extends JobTimeBase {
           this.timesForWorker(id, task.organizationId, firstAt, until, [task.id]).then((r) => ({ id, ...r })),
         ),
       ),
-      this.prisma.user.findMany({ where: { id: { in: workerIds } }, ...PERSON }),
+      peopleNames(this.prisma, workerIds),
     ]);
     const byId = new Map(shares.map((s) => [s.id, s]));
     const liveKind = liveJobKind(spans, until);
@@ -69,8 +71,7 @@ export class JobTimeService extends JobTimeBase {
       at: string;
     };
     if (started) {
-      const by =
-        names.get(started.userId) ?? (await this.prisma.user.findUnique({ where: { id: started.userId }, ...PERSON }));
+      const by = names.get(started.userId) ?? (await personBrief(this.prisma, started.userId));
       startedBy = {
         user: by ?? null,
         forUser: started.forUserId ? (names.get(started.forUserId) ?? null) : null,
@@ -147,7 +148,7 @@ export class JobTimeService extends JobTimeBase {
         },
       ];
     });
-    const people = await this.prisma.user.findMany({ where: { id: { in: [...starters] } }, ...PERSON });
+    const people = await peopleNames(this.prisma, [...starters]);
     const names = new Map(people.map((p) => [p.id, p]));
     const totals = rows.reduce<JobTime>((sum, r) => addJobTime(sum, r), NO_JOB_TIME);
     return {

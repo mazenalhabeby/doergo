@@ -22,9 +22,10 @@ import {
   type TaskReportSignature,
   type TaskReportStatus,
   type TaskReportWork,
+  activeIssuers,
 } from '@hbcfield/shared';
 import { type TaskAccessFacts } from '../../common/task-access/task-access.service';
-import { PERSON, REPORT_TASK_SELECT, ISSUER_SELECT, personOf, iso, nameOf, isImage } from './task-report-helpers';
+import { PERSON, REPORT_TASK_SELECT, personOf, iso, nameOf, isImage } from './task-report-helpers';
 import { TaskReportSections } from './task-report-sections';
 
 /**
@@ -114,7 +115,7 @@ export class TaskReportService extends TaskReportSections {
         select: { id: true, note: true, createdAt: true, workedMinutes: true, author: PERSON },
       }),
       on('custom_fields') ? this.customFields.getTaskValues(byTask).then((r) => r.data) : null,
-      this.prisma.legalEntity.findMany({ where: { organizationId: task.organizationId, isActive: true }, select: ISSUER_SELECT }),
+      activeIssuers(this.prisma, task.organizationId),
       this.clientReach(task.customer, facts),
     ]);
 

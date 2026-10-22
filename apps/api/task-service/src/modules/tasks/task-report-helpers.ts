@@ -95,27 +95,8 @@ const REPORT_TASK_SELECT = {
   },
 } as const;
 
-/** The issuing company's letterhead fields — never its bank, never its rates. */
-const ISSUER_SELECT = {
-  id: true,
-  isMain: true,
-  legalName: true,
-  label: true,
-  addressLine1: true,
-  addressLine2: true,
-  postalCode: true,
-  city: true,
-  state: true,
-  country: true,
-  vatId: true,
-  taxId: true,
-  registerNumber: true,
-  email: true,
-  phone: true,
-  website: true,
-  logoUrl: true,
-  currency: true,
-} as const;
+/** The issuing company's letterhead fields — auth-service's, published in shared data/companies. */
+import { ISSUER_SELECT } from '@hbcfield/shared';
 
 /** Events are read newest first, this many per query, up to REPORT_HISTORY_MAX. */
 const HISTORY_PAGE = 1000;

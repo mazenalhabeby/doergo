@@ -8,6 +8,9 @@ import {
   success,
   TaskStatus,
   type CandidateState,
+  lastPointOf,
+  personTaskGate,
+  workRolesByName,
 } from '@hbcfield/shared';
 import { TaskEventType } from '@prisma/client';
 import { OVER, OpenRole, Facts } from './role-pool-helpers';
@@ -136,11 +139,7 @@ export class RolePoolService extends RolePoolBase {
       _count: { _all: true },
     });
     const count = new Map(holders.map((h) => [h.workRoleId!, h._count._all]));
-    const roles = await this.prisma.accessRole.findMany({
-      where: { organizationId: data.organizationId, kind: 'WORK', id: { in: [...new Set([...space.workRoleIds, ...count.keys()])] } },
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    });
+    const roles = await workRolesByName(this.prisma, data.organizationId, [...new Set([...space.workRoleIds, ...count.keys()])]);
     return success(roles.map((r) => ({ id: r.id, name: r.name, holders: count.get(r.id) ?? 0 })));
   }
 
@@ -236,7 +235,7 @@ export class RolePoolService extends RolePoolBase {
    */
   async openForMe(data: Facts) {
     // An access profile without Tasks is offered nothing — the same rule as the picker and the waves.
-    const me = await this.prisma.user.findUnique({ where: { id: data.userId }, select: { role: true, enabledModules: true } });
+    const me = await personTaskGate(this.prisma, data.userId);
     if (!me || !canReceiveTasks(me)) return success([]);
     const mine = await this.prisma.spaceAssignment.findMany({
       where: { userId: data.userId, workRoleId: { not: null }, ...this.activeNow(), space: { organizationId: data.organizationId } },
@@ -260,7 +259,7 @@ export class RolePoolService extends RolePoolBase {
       orderBy: [{ openedAt: 'asc' }],
       take: 50,
     });
-    const here = await this.prisma.workerLastLocation.findUnique({ where: { userId: data.userId }, select: { lat: true, lng: true } });
+    const here = await lastPointOf(this.prisma, data.userId);
     const rank: Record<string, number> = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
     const rows = tasks
       .filter((t) => isOpenToRole(t))

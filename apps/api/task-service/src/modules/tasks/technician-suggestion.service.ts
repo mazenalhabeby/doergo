@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, suggestionCandidates } from '@hbcfield/shared';
 import { workspaceZone } from '../../common/zone.util';
 import { notEndedWhere, TaskStatus, Role, success, startOfDayIn, endOfDayIn, assertFoundInOrg } from '@hbcfield/shared';
 import { assertMayAssign } from './task-scope';
@@ -20,9 +20,7 @@ import {
 export class TechnicianSuggestionService {
   private static readonly SUGGESTION_LIMIT = 100;
 
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Get suggested technicians for a task with weighted scoring
@@ -77,34 +75,11 @@ export class TechnicianSuggestionService {
           })
         ).map((a) => a.userId);
 
-    const technicians = await this.prisma.user.findMany({
-      where: {
-        organizationId: data.organizationId,
-        isActive: true,
-        id: { not: task.createdById ?? undefined },
-        ...(spaceRoster ? { id: { in: spaceRoster, not: task.createdById ?? undefined } } : {}),
-      },
-      take: TechnicianSuggestionService.SUGGESTION_LIMIT, // Cap to prevent unbounded queries in large orgs
-      select: {
-        id: true, firstName: true, lastName: true, email: true,
-        specialty: true,
-        rating: true,
-        ratingCount: true,
-        lastLocation: {
-          select: { lat: true, lng: true, updatedAt: true },
-        },
-        _count: {
-          select: {
-            assignedTasks: {
-              where: {
-                status: {
-                  in: [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS],
-                },
-              },
-            },
-          },
-        },
-      },
+    const technicians = await suggestionCandidates(this.prisma, {
+      organizationId: data.organizationId,
+      exceptUserId: task.createdById ?? undefined,
+      roster: spaceRoster ?? undefined,
+      limit: TechnicianSuggestionService.SUGGESTION_LIMIT,
     });
 
     // Today's range for workload — the task's WORKSPACE's day, never the server's (zone.util).
@@ -165,59 +140,59 @@ export class TechnicianSuggestionService {
 
     // Calculate scores for each technician
     const scoredTechnicians = technicians.map((tech) => {
-        const todayCompletedCount = completedCountMap.get(tech.id) || 0;
+      const todayCompletedCount = completedCountMap.get(tech.id) || 0;
 
-          const activeTaskCount = tech._count.assignedTasks;
-          const todayTaskCount = activeTaskCount + todayCompletedCount;
-          // Automatic capacity (see above); no longer the manual maxDailyJobs field.
-          const maxDailyJobs = derivedCapacityMap.get(tech.id) ?? DEFAULT_CAPACITY;
+      const activeTaskCount = tech._count.assignedTasks;
+      const todayTaskCount = activeTaskCount + todayCompletedCount;
+      // Automatic capacity (see above); no longer the manual maxDailyJobs field.
+      const maxDailyJobs = derivedCapacityMap.get(tech.id) ?? DEFAULT_CAPACITY;
 
-          // Calculate individual scores (0-100 scale)
-          const distanceScore = calculateDistanceScore(task, tech.lastLocation);
-          const availabilityScore = calculateAvailabilityScore(todayTaskCount, maxDailyJobs);
-          const specializationScore = calculateSpecializationScore(task.title, tech.specialty);
-          const workloadScore = calculateWorkloadScore(activeTaskCount);
-          const ratingScore = calculateRatingScore(tech.rating);
+      // Calculate individual scores (0-100 scale)
+      const distanceScore = calculateDistanceScore(task, tech.lastLocation);
+      const availabilityScore = calculateAvailabilityScore(todayTaskCount, maxDailyJobs);
+      const specializationScore = calculateSpecializationScore(task.title, tech.specialty);
+      const workloadScore = calculateWorkloadScore(activeTaskCount);
+      const ratingScore = calculateRatingScore(tech.rating);
 
-        // Weighted total score
-        const totalScore =
-          distanceScore * 0.30 +
-          availabilityScore * 0.25 +
-          specializationScore * 0.20 +
-          workloadScore * 0.15 +
-          ratingScore * 0.10;
+      // Weighted total score
+      const totalScore =
+        distanceScore * 0.3 +
+        availabilityScore * 0.25 +
+        specializationScore * 0.2 +
+        workloadScore * 0.15 +
+        ratingScore * 0.1;
 
-          // Calculate distance in km
-          const distanceKm = calculateDistance(
-            task.locationLat,
-            task.locationLng,
-            tech.lastLocation?.lat,
-            tech.lastLocation?.lng,
-          );
+      // Calculate distance in km
+      const distanceKm = calculateDistance(
+        task.locationLat,
+        task.locationLng,
+        tech.lastLocation?.lat,
+        tech.lastLocation?.lng,
+      );
 
-        return {
-          id: tech.id,
-          firstName: tech.firstName,
-          lastName: tech.lastName,
-          email: tech.email,
-          specialty: tech.specialty,
-          rating: tech.rating || 5.0,
-          ratingCount: tech.ratingCount || 0,
-          activeTaskCount,
-          todayTaskCount,
-          maxDailyJobs,
-          distanceKm: distanceKm !== null ? Math.round(distanceKm * 10) / 10 : null,
-          hasLocation: !!tech.lastLocation,
-          score: Math.round(totalScore * 100) / 100,
-          scoreBreakdown: {
-            distance: Math.round(distanceScore),
-            availability: Math.round(availabilityScore),
-            specialization: Math.round(specializationScore),
-            workload: Math.round(workloadScore),
-            rating: Math.round(ratingScore),
-          },
-        };
-      });
+      return {
+        id: tech.id,
+        firstName: tech.firstName,
+        lastName: tech.lastName,
+        email: tech.email,
+        specialty: tech.specialty,
+        rating: tech.rating || 5.0,
+        ratingCount: tech.ratingCount || 0,
+        activeTaskCount,
+        todayTaskCount,
+        maxDailyJobs,
+        distanceKm: distanceKm !== null ? Math.round(distanceKm * 10) / 10 : null,
+        hasLocation: !!tech.lastLocation,
+        score: Math.round(totalScore * 100) / 100,
+        scoreBreakdown: {
+          distance: Math.round(distanceScore),
+          availability: Math.round(availabilityScore),
+          specialization: Math.round(specializationScore),
+          workload: Math.round(workloadScore),
+          rating: Math.round(ratingScore),
+        },
+      };
+    });
 
     // Sort by score (highest first)
     scoredTechnicians.sort((a, b) => b.score - a.score);

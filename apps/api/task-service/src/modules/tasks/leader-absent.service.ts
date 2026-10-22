@@ -9,6 +9,7 @@ import {
   TaskStatus,
   localPartsIn,
   toISODateString,
+  personBrief,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
@@ -128,15 +129,10 @@ export class LeaderAbsentService {
         theirs to hear.
       */
       const creator = job.createdById
-        ? await this.prisma.user.findFirst({
-            where: {
-              id: job.createdById,
-              organizationId: job.organizationId,
-              isExternal: false,
-              isActive: true,
-              role: { not: 'CUSTOMER' },
-            },
-            select: { id: true },
+        ? await personBrief(this.prisma, job.createdById, {
+            organizationId: job.organizationId,
+            active: true,
+            staffOnly: true,
           })
         : null;
       const recipients = [...new Set([...watchers.ids, ...(creator ? [creator.id] : [])])].filter(

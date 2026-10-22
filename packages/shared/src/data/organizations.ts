@@ -70,3 +70,8 @@ export function orgHolidayPlace(db: OrgDb, organizationId: string) {
     select: { holidayCountry: true, holidayRegion: true, country: true },
   });
 }
+
+/** Does the organization run crews in leader mode? */
+export function orgCrewMode(db: OrgDb, organizationId: string) {
+  return db.organization.findUnique({ where: { id: organizationId }, select: { crewMode: true } });
+}

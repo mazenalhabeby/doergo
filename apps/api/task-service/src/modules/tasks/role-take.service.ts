@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { personName, minutesWaited, success } from '@hbcfield/shared';
+import { personName, minutesWaited, success, personNameOf } from '@hbcfield/shared';
 import { TaskEventType } from '@prisma/client';
 import { Facts } from './role-pool-helpers';
 import { RolePoolBase } from './role-pool.base';
@@ -83,10 +83,7 @@ export class RoleTakeService extends RolePoolBase {
 
     const takenAt = new Date();
     const waited = minutesWaited(task.openedAt, takenAt);
-    const taker = await this.prisma.user.findUnique({
-      where: { id: data.userId },
-      select: { firstName: true, lastName: true },
-    });
+    const taker = await personNameOf(this.prisma, data.userId);
     const takerName = personName(taker);
     await this.prisma.taskEvent.create({
       data: {

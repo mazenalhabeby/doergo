@@ -11,6 +11,7 @@ import {
   ONE_AT_A_TIME_STATUSES,
   OFFICE_START_CODES,
   OFFICE_START_REASON_MAX,
+  personNameOf,
 } from '@hbcfield/shared';
 import type { PrismaService } from '@hbcfield/shared';
 import { fixOfTap } from '../../common/occurrence.util';
@@ -39,10 +40,7 @@ export async function officeStartFor(
 ): Promise<OfficeStart> {
   const reason = (data.onBehalf?.reason ?? '').trim().slice(0, OFFICE_START_REASON_MAX);
   if (!reason) {
-    const who = await prisma.user.findUnique({
-      where: { id: onClock?.userId ?? assignedToId },
-      select: { firstName: true, lastName: true },
-    });
+    const who = await personNameOf(prisma, onClock?.userId ?? assignedToId);
     throw new BadRequestException({
       message: 'Say why the office is starting this job for them.',
       code: OFFICE_START_CODES.REASON_REQUIRED,

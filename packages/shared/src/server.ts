@@ -122,3 +122,6 @@ export * from './data/documents';
 export * from './data/activity';
 export * from './data/people-work';
 export * from './data/chat-contacts';
+export * from './data/positions';
+export * from './data/portals';
+export * from './data/companies';

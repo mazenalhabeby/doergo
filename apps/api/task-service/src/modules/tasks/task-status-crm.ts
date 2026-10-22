@@ -1,3 +1,4 @@
+import { orgModules } from '@hbcfield/shared';
 import type { Logger } from '@nestjs/common';
 import type { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
@@ -77,9 +78,6 @@ async function runsCrm(prisma: PrismaService, spaceId: string | null, organizati
       return mods.includes('crm');
     }
   }
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { enabledModules: true },
-  });
+  const org = await orgModules(prisma, organizationId);
   return ((org?.enabledModules as string[] | null) ?? []).includes('crm');
 }

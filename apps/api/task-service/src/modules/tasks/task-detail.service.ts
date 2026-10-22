@@ -3,7 +3,7 @@ import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.se
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { JobTimeService } from './handover/job-time.service';
 import { CrewService } from './handover/crew.service';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, peopleNames } from '@hbcfield/shared';
 import { type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { TaskStatus, TaskEventType, success, getStatusCapabilities } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
@@ -188,7 +188,7 @@ export class TaskDetailService {
     const ids = [...new Set([task.pausedById, task.handoverDueById].filter((x): x is string => !!x))];
     if (ids.length === 0) return { pausedBy: null, handoverDue: null };
     const [people, lastPause] = await Promise.all([
-      this.prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, firstName: true, lastName: true } }),
+      peopleNames(this.prisma, ids),
       task.handoverDueById
         ? this.prisma.taskEvent.findFirst({
             where: { taskId: task.id, userId: task.handoverDueById, eventType: TaskEventType.PAUSED },

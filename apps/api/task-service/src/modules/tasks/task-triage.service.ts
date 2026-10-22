@@ -9,6 +9,8 @@ import {
   canReceiveTasks,
   scopeAllows,
   type SpaceScopeIds,
+  unitAddress,
+  workerToAssign,
 } from '@hbcfield/shared';
 import { TaskPortalBase } from './task-portal.base';
 import { emitEvent, taskAssignedEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
@@ -96,10 +98,7 @@ export class TaskTriageService extends TaskPortalBase {
       if (!member) {
         throw new BadRequestException('The worker must be a member of the selected space');
       }
-      const worker = await this.prisma.user.findFirst({
-        where: { id: data.assignedToId, organizationId: data.organizationId, isActive: true },
-        select: { id: true, firstName: true, lastName: true, role: true, enabledModules: true },
-      });
+      const worker = await workerToAssign(this.prisma, data.assignedToId, data.organizationId);
       if (!worker) throw new NotFoundException('Worker not found or not in your organization');
       if (!canReceiveTasks(worker)) {
         throw new BadRequestException(
@@ -127,12 +126,7 @@ export class TaskTriageService extends TaskPortalBase {
     // worker is dispatched to the tenant — not the space's office. Fall back to
     // the space address if the unit has none. Coords come from the space (units
     // are address-only today) to give the map a rough pin at the property.
-    const unit = task.unitId
-      ? await this.prisma.customerUnit.findFirst({
-          where: { id: task.unitId, organizationId: data.organizationId },
-          select: { address: true, name: true },
-        })
-      : null;
+    const unit = task.unitId ? await unitAddress(this.prisma, task.unitId, data.organizationId) : null;
     const routedAddress = unit?.address || task.locationAddress || space.address || null;
 
     const updated = await this.prisma.task.update({

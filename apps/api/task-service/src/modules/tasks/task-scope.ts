@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, clientRef, unitRef } from '@hbcfield/shared';
 import { notEndedWhere, Role, SELECTABLE_ASSET_WHERE } from '@hbcfield/shared';
 
 /*
@@ -31,17 +31,13 @@ export async function resolveOwnedTaskRefs(
   const id = (v: unknown): string | null => (typeof v === 'string' && v ? v : null);
   const portalCustomer = portal ? { customerId: portal.customerId || undefined } : {};
   const probes: Record<string, (v: string) => Promise<{ id: string } | null>> = {
-    unitId: (v) =>
-      prisma.customerUnit.findFirst({
-        where: { id: v, organizationId: orgId, ...(portal ? { ...portalCustomer, isActive: true } : {}) },
-        select: { id: true },
-      }),
+    unitId: (v) => unitRef(prisma, v, orgId, portal),
     assetId: (v) =>
       prisma.asset.findFirst({
         where: { id: v, organizationId: orgId, ...(portal ? { ...portalCustomer, ...SELECTABLE_ASSET_WHERE } : {}) },
         select: { id: true },
       }),
-    customerId: (v) => prisma.customer.findFirst({ where: { id: v, organizationId: orgId }, select: { id: true } }),
+    customerId: (v) => clientRef(prisma, v, orgId),
     phaseId: (v) => prisma.phase.findFirst({ where: { id: v, organizationId: orgId }, select: { id: true } }),
     sprintId: (v) => prisma.sprint.findFirst({ where: { id: v, organizationId: orgId }, select: { id: true } }),
     epicId: (v) => prisma.epic.findFirst({ where: { id: v, organizationId: orgId }, select: { id: true } }),

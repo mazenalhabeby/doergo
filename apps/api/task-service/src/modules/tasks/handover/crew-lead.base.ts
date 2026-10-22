@@ -1,7 +1,15 @@
 /** Handing a job's lead over — moved here unchanged from crew.service.ts. */
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { TaskEventType } from '@prisma/client';
-import { CREW_CODES, endOfLocalDay, success, type LeadScope, personName } from '@hbcfield/shared';
+import {
+  CREW_CODES,
+  endOfLocalDay,
+  success,
+  type LeadScope,
+  personName,
+  personNameOf,
+  personStanding,
+} from '@hbcfield/shared';
 import { cleanReason } from './crew-helpers';
 import { CrewBase } from './crew.base';
 import { emitEvent, taskLeadChangedEvent } from '@hbcfield/shared/microservices';
@@ -39,10 +47,7 @@ export abstract class CrewLeadBase extends CrewBase {
         message: 'Choose somebody on this job.',
         code: CREW_CODES.LEAD_TARGET_NOT_ON_CREW,
       });
-    const target = await this.prisma.user.findUnique({
-      where: { id: data.toUserId },
-      select: { isExternal: true, organizationId: true, isActive: true },
-    });
+    const target = await personStanding(this.prisma, data.toUserId);
     if (!target || target.isExternal || target.organizationId !== task.organizationId || target.isActive === false) {
       throw new BadRequestException({
         message: 'They cannot lead this job.',
@@ -102,10 +107,7 @@ export abstract class CrewLeadBase extends CrewBase {
       },
     });
     if (data.toUserId !== data.userId) {
-      const by = await this.prisma.user.findUnique({
-        where: { id: data.userId },
-        select: { firstName: true, lastName: true },
-      });
+      const by = await personNameOf(this.prisma, data.userId);
       emitEvent(this.notifications, taskLeadChangedEvent, {
         taskId: task.id,
         taskTitle: task.title,

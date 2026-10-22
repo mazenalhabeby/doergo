@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, lastPositions } from '@hbcfield/shared';
 import {
   zoneOf,
   runWithCronLock,
@@ -95,10 +95,7 @@ export class DepartureReminderService {
       A member with several jobs today is the normal case, not the exception.
     */
     const userIds = Array.from(new Set(candidates.map((t) => t.assignedToId!)));
-    const positions = await this.prisma.workerLastLocation.findMany({
-      where: { userId: { in: userIds } },
-      select: { userId: true, lat: true, lng: true, updatedAt: true },
-    });
+    const positions = await lastPositions(this.prisma, userIds);
     const whereTheyAre = new Map(positions.map((p) => [p.userId, p]));
 
     let sent = 0;

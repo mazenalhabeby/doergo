@@ -1,5 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { personName, notEndedWhere, TaskStatus, TaskEventType, success, accessAllowsInSpace, canReceiveTasks } from '@hbcfield/shared';
+import {
+  personName,
+  notEndedWhere,
+  TaskStatus,
+  TaskEventType,
+  success,
+  accessAllowsInSpace,
+  canReceiveTasks,
+  workerToAssign,
+  peopleTaskGate,
+} from '@hbcfield/shared';
 import { assertMayAssign, assertTargetIsInSpace } from './task-scope';
 import { TaskAssignmentBase } from './task-assignment.base';
 import { TASK_JOBS, type JobData } from '@hbcfield/shared';
@@ -53,10 +63,7 @@ export class TaskAssignmentService extends TaskAssignmentBase {
   ) {
     const unique = [...new Set(ids.filter((id): id is string => !!id))];
     if (unique.length === 0) return;
-    const users = await this.prisma.user.findMany({
-      where: { id: { in: unique } },
-      select: { id: true, role: true, enabledModules: true, firstName: true, lastName: true },
-    });
+    const users = await peopleTaskGate(this.prisma, unique);
     const blocked = users.filter((u) => !canReceiveTasks(u));
     if (blocked.length > 0) {
       const names = blocked.map((u) => personName(u)).join(', ');
@@ -105,9 +112,7 @@ export class TaskAssignmentService extends TaskAssignmentBase {
     // assigned to the task's SPACE (owner-org members, or guest members a CONTROL
     // guest added cross-org — those rows are only ever created for the caller's own
     // users, so no arbitrary user can be injected here).
-    let worker = await this.prisma.user.findFirst({
-      where: { id: data.workerId, organizationId: task.organizationId, isActive: true },
-    });
+    let worker = await workerToAssign(this.prisma, data.workerId, task.organizationId);
     if (!worker && task.spaceId) {
       const member = await this.prisma.spaceAssignment.findFirst({
         where: {
@@ -119,7 +124,7 @@ export class TaskAssignmentService extends TaskAssignmentBase {
         select: { id: true },
       });
       if (member) {
-        worker = await this.prisma.user.findFirst({ where: { id: data.workerId, isActive: true } });
+        worker = await workerToAssign(this.prisma, data.workerId);
       }
     }
 

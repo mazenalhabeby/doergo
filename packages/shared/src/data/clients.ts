@@ -51,3 +51,16 @@ export function clientContacts(db: On<'customer', 'findMany'>, ids: string[], or
     select: { id: true, name: true, email: true, phone: true },
   });
 }
+
+/** A client of the organization: `{ id }` or null. */
+export function clientRef(db: On<'customer', 'findFirst'>, customerId: string, organizationId: string) {
+  return db.customer.findFirst({ where: { id: customerId, organizationId }, select: { id: true } });
+}
+
+/** A company's primary contact person (role, name, phone, address). */
+export function primaryContactOf(db: On<'customerContact', 'findFirst'>, companyId: string) {
+  return db.customerContact.findFirst({
+    where: { companyId, isPrimary: true },
+    select: { role: true, person: { select: { name: true, phone: true, email: true } } },
+  });
+}

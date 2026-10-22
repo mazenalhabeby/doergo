@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import {
-  crmReachSelect,
   crmReachOfRow,
   crmReachesClientIn,
   isAdmin,
@@ -14,6 +13,8 @@ import {
   type TaskReportIssuer,
   type TaskReportStatus,
   type TaskReportWork,
+  primaryContactOf,
+  personCrmReach,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
@@ -68,10 +69,8 @@ export abstract class TaskReportParties {
     const entity = entities.find((e) => e.id === issuerId) ?? null;
     // The LEAD row; a job assigned before crews existed names its lead only on `assignedToId`.
     const lead =
-      (
-        task.assignees.find((a) => a.role === 'LEAD') ??
-        task.assignees.find((a) => a.userId === task.assignedToId)
-      )?.user ?? null;
+      (task.assignees.find((a) => a.role === 'LEAD') ?? task.assignees.find((a) => a.userId === task.assignedToId))
+        ?.user ?? null;
 
     return {
       taskId: task.id,
@@ -107,7 +106,7 @@ export abstract class TaskReportParties {
       createdBy: personOf(task.createdBy),
       dueDate: iso(task.dueDate),
       startedAt: time.startedBy?.at ?? moves[0]?.at ?? null,
-      startedBy: personOf((time.startedBy)?.forUser ?? (time.startedBy)?.user) ?? moves[0]?.actor ?? null,
+      startedBy: personOf(time.startedBy?.forUser ?? time.startedBy?.user) ?? moves[0]?.actor ?? null,
       finishedAt,
       taskType: workflowName,
       totalMinutes: time.total.travel + time.total.working + time.total.blocked,
@@ -187,10 +186,7 @@ export abstract class TaskReportParties {
   ): Promise<boolean> {
     if (!customer) return false;
     if (isAdmin({ role: facts.userRole })) return true;
-    const row = await this.prisma.user.findFirst({
-      where: { id: facts.userId, organizationId: facts.organizationId },
-      select: crmReachSelect(),
-    });
+    const row = await personCrmReach(this.prisma, facts.userId, facts.organizationId);
     return crmReachesClientIn(crmReachOfRow(row as never), customer, facts.userId);
   }
 
@@ -211,10 +207,7 @@ export abstract class TaskReportParties {
   /** The client's primary contact person (CRM), else the site's own contact, else the client's contact name. */
   protected async contact(task: ReportTask, clientShown: boolean) {
     if (clientShown && task.customer) {
-      const primary = await this.prisma.customerContact.findFirst({
-        where: { companyId: task.customer.id, isPrimary: true },
-        select: { role: true, person: { select: { name: true, phone: true, email: true } } },
-      });
+      const primary = await primaryContactOf(this.prisma, task.customer.id);
       if (primary)
         return {
           name: primary.person.name,

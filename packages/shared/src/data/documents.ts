@@ -21,3 +21,29 @@ export function expiringDocumentsOf(
     take: 100,
   });
 }
+
+/** The organization's active credential types a workflow requires (its gate on assignment). */
+export function credentialTypesFor(db: On<'documentType', 'findMany'>, organizationId: string, workflowId: string) {
+  return db.documentType.findMany({
+    where: { organizationId, isCredential: true, isActive: true, requiredForWorkflowIds: { has: workflowId } },
+    select: { id: true, label: true },
+  });
+}
+
+/** The issued or signed documents of these types these people hold, with their expiry. */
+export function heldCredentials(
+  db: On<'document', 'findMany'>,
+  input: { organizationId: string; userIds: string[]; typeIds: string[] },
+) {
+  const { organizationId, userIds, typeIds } = input;
+  // Every candidate in ONE query (credential-gate.spec pins this text).
+  return db.document.findMany({
+    where: {
+      organizationId,
+      userId: { in: userIds },
+      typeId: { in: typeIds },
+      status: { in: ['ISSUED', 'SIGNED'] },
+    },
+    select: { userId: true, typeId: true, expiresOn: true },
+  });
+}

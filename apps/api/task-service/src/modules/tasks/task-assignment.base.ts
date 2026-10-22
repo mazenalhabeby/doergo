@@ -3,7 +3,7 @@ import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@ne
 // A value import here would load that loop before this class exists ("Class extends value undefined").
 import type { RolePoolService } from './role-pool.service';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, heldCredentials, credentialTypesFor } from '@hbcfield/shared';
 import { personName, TaskStatus, credentialStanding, credentialBlocks } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { syncTaskChatCrew } from '../chat/chat-tasks.service';
@@ -49,27 +49,11 @@ export abstract class TaskAssignmentBase {
     // The short-circuit. Indexed on [organizationId, isCredential]; an
     // organization that gates nothing gets an empty result and returns here,
     // before the second query is ever built.
-    const gatingTypes = await this.prisma.documentType.findMany({
-      where: {
-        organizationId,
-        isCredential: true,
-        isActive: true,
-        requiredForWorkflowIds: { has: workflowId },
-      },
-      select: { id: true, label: true },
-    });
+    const gatingTypes = await credentialTypesFor(this.prisma, organizationId, workflowId);
     if (gatingTypes.length === 0) return;
 
     // What these people actually hold. One query for everyone, never one each.
-    const held = await this.prisma.document.findMany({
-      where: {
-        organizationId,
-        userId: { in: userIds },
-        typeId: { in: gatingTypes.map((t) => t.id) },
-        status: { in: ['ISSUED', 'SIGNED'] },
-      },
-      select: { userId: true, typeId: true, expiresOn: true },
-    });
+    const held = await heldCredentials(this.prisma, { organizationId, userIds, typeIds: gatingTypes.map((t) => t.id) });
 
     const now = new Date();
     const valid = new Set<string>();

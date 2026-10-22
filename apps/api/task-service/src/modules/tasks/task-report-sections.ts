@@ -13,9 +13,10 @@ import {
   type TaskReportRequest,
   type TaskReportStepSubmission,
   type TaskReportTime,
+  peopleNames,
 } from '@hbcfield/shared';
 import { JobTimeService } from './handover/job-time.service';
-import { PERSON, HISTORY_PAGE, Person, personOf, iso } from './task-report-helpers';
+import { HISTORY_PAGE, Person, personOf, iso } from './task-report-helpers';
 import type {
   ReportTask,
   ReportFileRow,
@@ -38,9 +39,7 @@ export abstract class TaskReportSections extends TaskReportParties {
    * turned chronological. A cut keeps the END of the job (how it finished)
    * and says so; years of a daily recurring crew is the only way to reach it.
    */
-  protected async history(
-    taskId: string,
-  ): Promise<{
+  protected async history(taskId: string): Promise<{
     rows: Array<{ id: string; eventType: string; metadata: unknown; createdAt: Date; userId: string }>;
     truncated: boolean;
   }> {
@@ -74,7 +73,7 @@ export abstract class TaskReportSections extends TaskReportParties {
       const m = (r.metadata ?? {}) as Record<string, unknown>;
       for (const k of EVENT_PERSON_KEYS) if (typeof m[k] === 'string' && m[k]) ids.add(m[k] as string);
     }
-    const people = ids.size ? await this.prisma.user.findMany({ where: { id: { in: [...ids] } }, ...PERSON }) : [];
+    const people = ids.size ? await peopleNames(this.prisma, [...ids]) : [];
     const byId = new Map(people.map((p) => [p.id, personOf(p)!]));
     return rows.map((r) => {
       const data = (r.metadata && typeof r.metadata === 'object' ? r.metadata : {}) as Record<string, unknown>;

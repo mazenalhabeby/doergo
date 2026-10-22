@@ -3,7 +3,7 @@ import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.se
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { JobTimeService } from './handover/job-time.service';
 import { CrewService } from './handover/crew.service';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, peopleFaces } from '@hbcfield/shared';
 import { type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { success, parseStoredStepForm, stepFormFileIds, type StepFormAnswers } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
@@ -81,10 +81,7 @@ export abstract class TaskQueryBase {
             },
           })
         : Promise.resolve([]),
-      this.prisma.user.findMany({
-        where: { id: { in: userIds } },
-        select: { id: true, firstName: true, lastName: true, avatarUrl: true },
-      }),
+      peopleFaces(this.prisma, userIds),
     ]);
     const signed = await this.media.signAll(files);
     const fileById = Object.fromEntries(signed.map((f) => [f.id, f]));

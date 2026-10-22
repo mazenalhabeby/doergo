@@ -12,6 +12,9 @@ import {
   type WorkTimelineEvent,
   personNameById,
   assertFoundInOrg,
+  orgTimezone,
+  orgCrewMode,
+  peopleFaces,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
@@ -20,7 +23,7 @@ import { ClockGateService } from './clock-gate.service';
 import { JobPauseService } from './job-pause.service';
 import { JobTimeService } from './job-time.service';
 import { TaskAccessService } from '../../../common/task-access/task-access.service';
-import { CrewActor, CrewTask, TASK_SELECT, PERSON } from './crew-helpers';
+import { CrewActor, CrewTask, TASK_SELECT } from './crew-helpers';
 
 /**
  * Reading a crew: the task (as the caller may see it), who is on it, who is on the
@@ -154,8 +157,8 @@ export abstract class CrewLookupBase {
     const [timeline, onClock, people, org] = await Promise.all([
       this.jobTime.timelinesOf([task.id]).then((m) => m.get(task.id) ?? []),
       this.onClock(ids, task.organizationId),
-      this.prisma.user.findMany({ where: { id: { in: ids } }, ...PERSON }),
-      this.prisma.organization.findUnique({ where: { id: task.organizationId }, select: { crewMode: true } }),
+      peopleFaces(this.prisma, ids),
+      orgCrewMode(this.prisma, task.organizationId),
     ]);
     const presence = crewPresence(timeline, ids);
     const leader = this.leaderFrom(task, crew, timeline, onClock);
@@ -195,10 +198,7 @@ export abstract class CrewLookupBase {
       ? await this.prisma.companyLocation.findUnique({ where: { id: task.spaceId }, select: { timezone: true } })
       : null;
     if (space?.timezone) return space.timezone;
-    const org = await this.prisma.organization.findUnique({
-      where: { id: task.organizationId },
-      select: { timezone: true },
-    });
+    const org = await orgTimezone(this.prisma, task.organizationId);
     return zoneOf(org?.timezone);
   }
 }

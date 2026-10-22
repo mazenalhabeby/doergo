@@ -37,6 +37,16 @@ export const TASK_SERVICE_FILES = [
   'tasks.service.ts',
 ];
 
+/**
+ * The published readers the task service asks for auth-service's tables (code-structure-fix 3.4) — the
+ * queries that used to sit in these files, so a guard on a query's text still finds it.
+ */
+const SHARED_READERS = ['documents.ts', 'people-work.ts'];
+
 export function readTaskServiceSource(): string {
-  return TASK_SERVICE_FILES.map((f) => readFileSync(join(__dirname, '..', f), 'utf8')).join('\n');
+  const own = TASK_SERVICE_FILES.map((f) => readFileSync(join(__dirname, '..', f), 'utf8'));
+  const readers = SHARED_READERS.map((f) =>
+    readFileSync(join(__dirname, '../../../../../../../packages/shared/src/data', f), 'utf8'),
+  );
+  return [...readers, ...own].join('\n');
 }

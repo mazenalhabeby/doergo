@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import type { TaskPriority } from '@prisma/client';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '@hbcfield/shared';
+import { PrismaService, personPasses } from '@hbcfield/shared';
 import { TaskStatus, TaskEventType, success, assertFoundInOrg } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { resolveOwnedTaskRefs, assertMayAssign, assertMayCreateUnder, assertTargetIsInSpace } from './task-scope';
@@ -91,9 +91,9 @@ export class TaskHierarchyService {
       };
       assertMayAssign(parent, grants);
       await assertTargetIsInSpace(this.prisma, parent, assignedToId, grants);
-      const worker = await this.prisma.user.findFirst({
-        where: { id: assignedToId, organizationId: parent.organizationId, isActive: true },
-        select: { id: true },
+      const worker = await personPasses(this.prisma, assignedToId, {
+        organizationId: parent.organizationId,
+        active: true,
       });
       if (!worker) throw new NotFoundException('Worker not found in your organization');
     }

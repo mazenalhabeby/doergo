@@ -1,5 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CLOCK_GATE_CODES, activeAssignmentWhere, spaceRunsClock } from '@hbcfield/shared';
+import {
+  CLOCK_GATE_CODES,
+  activeAssignmentWhere,
+  spaceRunsClock,
+  peopleNames,
+  orgModules as organizationModules,
+} from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 
 /**
@@ -37,12 +43,7 @@ export class ClockGateService {
       : null;
     const orgModules =
       where?.organization?.enabledModules ??
-      (
-        await this.prisma.organization.findUnique({
-          where: { id: task.organizationId },
-          select: { enabledModules: true },
-        })
-      )?.enabledModules;
+      (await organizationModules(this.prisma, task.organizationId))?.enabledModules;
     const jobRunsClock = spaceRunsClock(
       where?.enabledModules as string[] | null | undefined,
       orgModules as string[] | null | undefined,
@@ -70,10 +71,7 @@ export class ClockGateService {
     if (heldIds.length === 0) return null;
 
     // External members hold no clock (EXTERNAL_FORBIDDEN_MODULES): never theirs to be on.
-    const held = await this.prisma.user.findMany({
-      where: { id: { in: heldIds }, organizationId: task.organizationId, isExternal: false },
-      select: { id: true, firstName: true, lastName: true },
-    });
+    const held = await peopleNames(this.prisma, heldIds, { organizationId: task.organizationId, internalOnly: true });
     if (held.length === 0) return null;
 
     const onTheClock = await this.prisma.timeEntry.findFirst({

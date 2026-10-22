@@ -99,7 +99,7 @@ checked drop. The start/end times stay on the job: task-service sets them on the
 needs no reset — the row names the trip it counted (`legStartedAt`), and every reader asks `tripDistanceOf`
 / `TRIP_DISTANCE_SQL` in shared (route reads, member performance, the report's km column).
 
-## Reading another service's tables (Phase 3.4 — in progress)
+## Reading another service's tables (Phase 3.4 — direct reads DONE, 2026-10-22)
 
 **How:** a service reads a table it does not own only through the owner's **published readers** in
 `packages/shared/src/data/` (`members.ts` = auth's people tables, `jobs.ts` = task's) — one named function
@@ -113,7 +113,16 @@ baseline — a file may only read less. It cannot see reads through a relation o
 |---|---|---|
 | notification-service, tracking-service | 18 → 0 | done 2026-10-21 |
 | auth-service → task tables | 55 → 0 | done 2026-10-22 (`workspaces.ts`, `invoicing.ts`, `member-work.ts`, `jobs.ts`) |
-| task-service → auth and tracking tables (User 127, Organization 26, …) | 196 | next, by module |
+| task-service → auth and tracking tables (User 127, Organization 26, …) | 196 → 0 | done 2026-10-22, module by module |
+
+**The readers, by owner** (`packages/shared/src/data/`): auth-service — `members.ts`, `people.ts`,
+`people-work.ts`, `access.ts`, `roles.ts`, `organizations.ts`, `leave.ts`, `clients.ts`, `portals.ts`,
+`companies.ts`, `documents.ts`, `chat-contacts.ts`, `sharing.ts`, `support.ts`, `activity.ts`;
+task-service — `jobs.ts`, `workspaces.ts`, `invoicing.ts`, `member-work.ts`; tracking-service — `positions.ts`.
+
+**Still to do in 3.4:** reads through a service's OWN table's relations (`include: { user }`, `assignedTo`,
+`space`, …) and raw SQL — the check cannot count them yet. A few readers above also nest another
+owner's relation and say so in their doc comment (availability board, suggestions, routing).
 
 The counts at the start (2026-10-21, 269 in all):
 

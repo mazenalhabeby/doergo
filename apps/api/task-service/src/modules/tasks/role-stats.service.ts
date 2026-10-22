@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { personName, success } from '@hbcfield/shared';
+import { personName, success, roleNames } from '@hbcfield/shared';
 import { TaskEventType } from '@prisma/client';
 import { OVER } from './role-pool-helpers';
 import { RolePoolBase } from './role-pool.base';
@@ -61,10 +61,7 @@ export class RoleStatsService extends RolePoolBase {
       if (id) openedBy.set(id, (openedBy.get(id) ?? 0) + 1);
     }
     const roleIds = [...new Set([...openedBy.keys(), ...openNow.map((o) => o.openRoleId!)])];
-    const roles = await this.prisma.accessRole.findMany({
-      where: { id: { in: roleIds } },
-      select: { id: true, name: true },
-    });
+    const roles = await roleNames(this.prisma, roleIds);
     const out = roles.map((r) => {
       const mine = takes.filter((t) => (t.metadata as { roleId?: string } | null)?.roleId === r.id);
       const waits = mine

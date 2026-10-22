@@ -14,6 +14,8 @@ import {
   waveRecipients,
   type CandidateState,
   type RoleCandidate,
+  lastPoints,
+  workRoleInOrg,
 } from '@hbcfield/shared';
 import { TaskEventType } from '@prisma/client';
 import { PrismaService } from '@hbcfield/shared';
@@ -53,10 +55,7 @@ export abstract class RolePoolBase {
       });
     }
     const [role, space] = await Promise.all([
-      this.prisma.accessRole.findFirst({
-        where: { id: roleId, organizationId, kind: 'WORK' },
-        select: { id: true, name: true },
-      }),
+      workRoleInOrg(this.prisma, roleId, organizationId),
       this.prisma.companyLocation.findFirst({
         where: { id: spaceId, organizationId },
         select: { workRoleIds: true },
@@ -162,10 +161,7 @@ export abstract class RolePoolBase {
         _count: { _all: true },
       }),
       at?.lat != null && at?.lng != null
-        ? this.prisma.workerLastLocation.findMany({
-            where: { userId: { in: ids } },
-            select: { userId: true, lat: true, lng: true },
-          })
+        ? lastPoints(this.prisma, ids)
         : Promise.resolve([] as { userId: string; lat: number; lng: number }[]),
       this.cover.expectedToday(organizationId, spaceId, tz),
     ]);

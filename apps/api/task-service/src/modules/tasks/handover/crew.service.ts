@@ -1,6 +1,15 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { TaskEventType } from '@prisma/client';
-import { CREW_CODES, crewPresence, mayMoveStep, success, type ChecklistAuthority, personName } from '@hbcfield/shared';
+import {
+  CREW_CODES,
+  crewPresence,
+  mayMoveStep,
+  success,
+  type ChecklistAuthority,
+  personName,
+  personNameOf,
+  orgCrewMode,
+} from '@hbcfield/shared';
 import { judgeOccurrence } from '../../../common/occurrence.util';
 import { CrewActor, CrewTask, TASK_SELECT, evidenceMeta, cleanReason } from './crew-helpers';
 import { CrewLeadBase } from './crew-lead.base';
@@ -209,10 +218,7 @@ export class CrewService extends CrewLeadBase {
   async assertMayMoveStep(task: CrewTask, actor: CrewActor, isOffice: boolean): Promise<void> {
     // The office — org-wide, or "view all tasks" in THIS job's workspace — always moves it.
     if (isOffice || this.isOffice(actor, task, 'canViewAllTasks')) return;
-    const org = await this.prisma.organization.findUnique({
-      where: { id: task.organizationId },
-      select: { crewMode: true },
-    });
+    const org = await orgCrewMode(this.prisma, task.organizationId);
     if (!org?.crewMode) return;
     const crew = await this.crewOf(task);
     if (crew.length <= 1) return; // a job with one worker: they lead it
@@ -254,7 +260,7 @@ export class CrewService extends CrewLeadBase {
       const [timeline, onClock, starter] = await Promise.all([
         this.jobTime.timelinesOf([task.id]).then((m) => m.get(task.id) ?? []),
         this.onClock(others, task.organizationId),
-        this.prisma.user.findUnique({ where: { id: starterId }, select: { firstName: true, lastName: true } }),
+        personNameOf(this.prisma, starterId),
       ]);
       const presence = crewPresence(timeline, others);
       const memberIds = others.filter((id) => onClock.has(id) && !presence.get(id)?.joined);
