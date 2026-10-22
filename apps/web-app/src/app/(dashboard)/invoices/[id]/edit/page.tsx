@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 
-import { InvoiceTopBar, InvoiceNotice, InvoiceWorkbench, RailSection } from "../../_components/invoice-shell"
+import { InvoiceTopBar, InvoiceNotice, InvoiceWorkbench, RailSection } from "../../../../../components/invoices/invoice-shell"
 import { InvoiceDocument } from "../../_components/invoice-document"
 import { ClientFields, TermsFields, LineEditor, IssuedByField } from "../../_components/invoice-fields"
 import { useAuth } from "@/contexts/auth-context"

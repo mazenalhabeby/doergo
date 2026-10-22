@@ -65,7 +65,7 @@ function problems(now, base) {
   for (const f of now.layout)
     if (!oldLayout.has(f))
       out.push(
-        `web folder rule: a route's pieces go in _components/, _hooks/ or _lib/; components/ holds folders only: ${f}`,
+        `web folder rule (a route's pieces in its _components/_hooks/_lib, used by that route only; components/ holds domain folders): ${f}`,
       );
   for (const [app, keys] of Object.entries(now.i18n)) {
     const had = new Set(base.i18n?.[app] ?? []);

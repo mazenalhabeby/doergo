@@ -11,11 +11,11 @@ import { tasksApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
-import { InvoiceTopBar, InvoiceWorkbench } from "@/app/(dashboard)/invoices/_components/invoice-shell"
+import { InvoiceTopBar, InvoiceWorkbench } from "@/components/invoices/invoice-shell"
 import { CopySwitch, HeadSwitches, IssuerPicker, ReportRail } from "./_components/report-rail"
 import { ReportSheet } from "./_components/report-sheet"
 import { useTaskPermissions } from "@/hooks/use-task-permissions"
-import { JobReportPageSkeleton, ReportSheetSkeleton } from "./_components/report-skeleton"
+import { JobReportPageSkeleton, ReportSheetSkeleton } from "../../../../../components/skeletons/report-skeleton"
 import {
   availableHeadToggles, availableToggles, loadClientInclude, loadHeadOff, loadIssuerChoice, loadOffToggles, normalizeInclude,
   reportQueryKey, saveClientInclude, saveHeadOff, saveIssuerChoice, saveOffToggles, showPrices, visibleSections,

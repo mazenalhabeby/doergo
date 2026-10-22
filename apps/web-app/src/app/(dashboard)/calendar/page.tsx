@@ -36,7 +36,7 @@ import { useLatched } from "@/hooks/use-latched"
 // Both dialogs open on a click; they are downloaded the first time one opens.
 const EventDialog = dynamic(() => import("./_components/event-dialog").then((m) => m.EventDialog), { ssr: false })
 const CreateTaskDialog =
-  dynamic(() => import("../tasks/_components/create-task-dialog").then((m) => m.CreateTaskDialog), { ssr: false })
+  dynamic(() => import("../../../components/tasks/create-task-dialog").then((m) => m.CreateTaskDialog), { ssr: false })
 
 /**
  * The organization's own calendar.

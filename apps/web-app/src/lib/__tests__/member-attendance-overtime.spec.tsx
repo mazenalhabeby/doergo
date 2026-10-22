@@ -39,7 +39,7 @@ jest.mock("@/hooks/use-time-format", () => ({ useTimeFormat: () => timeFormat() 
 jest.mock("@/lib/api", () => ({ attendanceApi: { addOvertime: jest.fn(async () => ({})) } }))
 jest.mock("@/lib/toast", () => ({ notify: { success: jest.fn(), error: jest.fn() } }))
 jest.mock("@/components/attendance/worklog-timeline", () => ({ WorkLogTimeline: () => null }))
-jest.mock("../../app/(dashboard)/members/[id]/_components/add-attendance-dialog", () => ({
+jest.mock("../../components/attendance/add-attendance-dialog", () => ({
   AddAttendanceDialog: () => null,
 }))
 

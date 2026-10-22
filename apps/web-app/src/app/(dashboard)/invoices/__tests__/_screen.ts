@@ -49,13 +49,18 @@ export const code = (rel: string) => strip(read(rel))
 export const documentCode = () =>
   ["invoice-document.tsx", "working-sheet.tsx", "client-copy.tsx"].map((f) => code(`_components/${f}`)).join("\n")
 
-/** Every shared piece an invoice screen is built from. */
+/**
+ * Every shared piece an invoice screen is built from: `invoices/_components/`, and the workbench
+ * shell in `components/invoices/` (shared with the job report since 5.5).
+ */
 export function components(): string {
-  const dir = path.join(INVOICES, "_components")
-  return fs
-    .readdirSync(dir)
-    .filter((f) => /\.tsx?$/.test(f))
-    .map((f) => strip(fs.readFileSync(path.join(dir, f), "utf8")))
+  return [path.join(INVOICES, "_components"), path.join(INVOICES, "../../../components/invoices")]
+    .flatMap((dir) =>
+      fs
+        .readdirSync(dir)
+        .filter((f) => /\.tsx?$/.test(f))
+        .map((f) => strip(fs.readFileSync(path.join(dir, f), "utf8"))),
+    )
     .join("\n")
 }
 

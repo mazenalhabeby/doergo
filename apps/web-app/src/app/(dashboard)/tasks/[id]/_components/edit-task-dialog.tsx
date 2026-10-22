@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { PhaseSelectContent, SprintSelectContent } from "../../_components/planning-select-options"
+import { PhaseSelectContent, SprintSelectContent } from "../../../../../components/tasks/planning-select-options"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,

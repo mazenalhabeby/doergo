@@ -14,7 +14,7 @@ import { keys } from "@/lib/query-keys"
 import { AssignDialog } from "./assign-unit-dialog"
 import { AddressDialog } from "./address-dialog"
 
-const AddressMap = dynamic(() => import("./address-map"), {
+const AddressMap = dynamic(() => import("../../../../../components/map/address-map"), {
   ssr: false,
   loading: () => <div className="h-full w-full animate-pulse bg-muted" />,
 })

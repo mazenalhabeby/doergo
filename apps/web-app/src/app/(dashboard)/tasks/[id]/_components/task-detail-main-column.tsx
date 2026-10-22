@@ -2,7 +2,7 @@
 
 import { ListChecks, Paperclip, MessageCircle, Clock, GitBranch, Link2, FileText, MapPin } from "lucide-react"
 import { CommentsSection } from "./comments-section"
-import { CollapsibleSection } from "./collapsible-section"
+import { CollapsibleSection } from "../../../../../components/common/collapsible-section"
 import { DescriptionSection } from "./description-section"
 import {
   ServiceReportSection,

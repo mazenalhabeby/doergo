@@ -11,7 +11,7 @@ import { locationsApi } from "@/lib/api"
 import { MIN_COVER_MAX } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { SectionHeader } from "./section-header"
+import { SectionHeader } from "../../../../../components/common/section-header"
 
 /**
  * The staffing floor for this workspace.

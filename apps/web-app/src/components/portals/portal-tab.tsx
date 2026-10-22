@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog"
-import { SectionHeader } from "./section-header"
+import { SectionHeader } from "../common/section-header"
 import { keys } from "@/lib/query-keys"
 
 // Same portal-type language as the org Clients Portals page.

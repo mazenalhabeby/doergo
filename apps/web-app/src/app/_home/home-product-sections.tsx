@@ -2,7 +2,7 @@
 
 import { useTranslation } from "react-i18next"
 import { IntroVideo } from "./IntroVideo"
-import { StoreBadges } from "./StoreBadges"
+import { StoreBadges } from "../../components/marketing/store-badges"
 import { asArray } from "./i18n-array"
 import { DISPLAY, MONO, Reveal, LineReveal, Count, Label } from "./home-ui"
 

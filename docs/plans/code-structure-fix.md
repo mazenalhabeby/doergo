@@ -195,6 +195,13 @@ Each becomes a folder of real Nest sub-modules with their own providers and test
 > custom DATE field still sends local midnight as an instant (the task page sends `YYYY-MM-DD`); the report builder
 > still stores `from` as UTC midnight and `to` as local end of day.
 
+> **Status (2026-10-22): 5.5 DONE.** Cross-route imports of a private folder: 15 → 0. 47 files moved into
+> `components/<domain>`: the New Task dialog with its whole `create-task/` folder and the recurring-task views
+> (`components/tasks`), the workspace Customers/Assets/Portal tabs and the pieces they need (`components/crm`,
+> `components/assets`, `components/portals`), attendance's add-attendance/overtime dialogs and helpers, the invoice
+> workbench shell (shared with the job report), three skeletons, the address map, and two marketing pieces. The
+> structure ratchet now fails on any new cross-route import (`tools/structure/web-layout.mjs`).
+
 ---
 
 ## Phase 6 — Phone app *(≈ 2 weeks; JS-only, OTA-safe except where noted)*

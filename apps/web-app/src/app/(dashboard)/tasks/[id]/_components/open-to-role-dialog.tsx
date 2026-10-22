@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { tasksApi, type Task } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { serverErrorMessage } from "@/lib/server-error"
-import { RoleAssignField, type RoleAssignValue } from "../../_components/role-assign-field"
+import { RoleAssignField, type RoleAssignValue } from "../../../../../components/tasks/role-assign-field"
 import { useWorkspaceWorkRoles } from "@/hooks/use-workspace-work-roles"
 import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 

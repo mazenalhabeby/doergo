@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { SectionHeader } from "./section-header"
+import { SectionHeader } from "../../../../../components/common/section-header"
 
 /**
  * "Automatic clock" — the workspace half of the opt-in (the member's consent in

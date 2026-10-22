@@ -2,7 +2,7 @@ import { type BreakSummary } from "@/lib/api"
 import { useTranslation } from "react-i18next"
 import { Coffee, Clock, TrendingUp, Users, UtensilsCrossed, Pause } from "lucide-react"
 import { formatDuration } from "@hbcfield/shared/client"
-import { StatCard } from "./attendance-helpers"
+import { StatCard } from "../../../../components/attendance/attendance-helpers"
 
 /** The Breaks tab's figures for the day: totals, and the same per break type. */
 export function BreakStats({

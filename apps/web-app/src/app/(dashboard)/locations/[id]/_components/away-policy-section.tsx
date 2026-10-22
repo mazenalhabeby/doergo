@@ -11,7 +11,7 @@ import { notify } from "@/lib/toast"
 import { locationsApi } from "@/lib/api"
 import { DEFAULT_GEOFENCE_POLICY, type GeofencePolicy } from "@hbcfield/shared/client"
 import { PolicyOptionContent } from "./policy-option"
-import { SectionHeader } from "./section-header"
+import { SectionHeader } from "../../../../../components/common/section-header"
 import { OptionCard } from "@/components/ui/option-card"
 
 /**

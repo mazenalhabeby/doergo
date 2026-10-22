@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useTranslation } from "react-i18next"
 import { ArrowUpRight } from "lucide-react"
 import { AnimatedLogo } from "@hbcfield/shared/components"
-import { FOOTER_MONO as MONO, FooterBrandBar, footerCompanyLinks, footerLegalLinks } from "@/app/_home/footer-brand-bar"
+import { FOOTER_MONO as MONO, FooterBrandBar, footerCompanyLinks, footerLegalLinks } from "@/components/marketing/footer-brand-bar"
 
 /**
  * The main marketing footer, reusable on pages other than home (blog,

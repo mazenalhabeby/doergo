@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Type, Hash, Calendar, ChevronDown, CheckSquare, Link2, Mail, Loader2, Settings2 } from "lucide-react"
 import { notify } from "@/lib/toast"
-import { CollapsibleSection } from "./collapsible-section"
+import { CollapsibleSection } from "../../../../../components/common/collapsible-section"
 
 import { customFieldsApi, type CustomFieldDefinition, type CustomFieldType } from "@/lib/api"
 import { Input } from "@/components/ui/input"

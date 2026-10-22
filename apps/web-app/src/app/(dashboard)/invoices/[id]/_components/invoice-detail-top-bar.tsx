@@ -21,7 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { InvoiceTopBar } from "../../_components/invoice-shell"
+import { InvoiceTopBar } from "../../../../../components/invoices/invoice-shell"
 import { isEditable, isDeletable, type LifecycleStep } from "../../_lib/lifecycle"
 import { toPdfData } from "../_lib/invoice-pdf-data"
 import type { InvoiceStanding } from "../_lib/invoice-standing"

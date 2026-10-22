@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { ArrowRight, ArrowDown, Zap } from "lucide-react"
 import { HeroCanvas } from "./HeroCanvas"
-import { StoreBadges } from "./StoreBadges"
+import { StoreBadges } from "../../components/marketing/store-badges"
 import { asArray } from "./i18n-array"
 import { DISPLAY, MONO, Reveal, CyclingWord } from "./home-ui"
 

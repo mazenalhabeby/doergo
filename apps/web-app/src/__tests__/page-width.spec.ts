@@ -86,11 +86,11 @@ describe("a full-bleed band holds a contained column", () => {
     elements, and collapsing them into one is the bug this whole spec is about.
 
     ⚠️ Read from the SHELL, not from a page. The bar, the notice and the
-    workbench moved into `invoices/_components/invoice-shell.tsx` so that
+    workbench moved into `components/invoices/invoice-shell.tsx` so that
     creating an invoice and correcting one are one screen — which also means
     getting this right once fixes both, and getting it wrong once breaks both.
   */
-  const shell = strip(fs.readFileSync(path.join(SRC, "app/(dashboard)/invoices/_components/invoice-shell.tsx"), "utf8"))
+  const shell = strip(fs.readFileSync(path.join(SRC, "components/invoices/invoice-shell.tsx"), "utf8"))
 
   it("does not put the sticky bar's border on the contained element", () => {
     const bar = shell.match(/className="sticky top-0 z-30[^"]*"/)?.[0] ?? ""

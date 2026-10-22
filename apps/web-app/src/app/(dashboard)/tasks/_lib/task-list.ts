@@ -5,7 +5,7 @@ import { keys } from "@/lib/query-keys"
 import type { Task, TasksListResponse, Sprint, Phase, Epic } from "@/lib/api"
 import type { StatusTabGroup } from "@/hooks/use-org-workflow"
 import type { GroupByOption } from "../_components/grouped-list"
-import type { TaskViewMode } from "../_components/tasks-skeleton"
+import type { TaskViewMode } from "../../../../components/skeletons/tasks-skeleton"
 import type { TaskContextMenuActions } from "../_components/task-context-menu"
 
 // Priority sort order

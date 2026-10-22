@@ -1,5 +1,5 @@
 import path from "path"
-import { readSource } from "../../../../../test-utils/read-source"
+import { readSource } from "../../../test-utils/read-source"
 
 /*
   "Workspace default ()": the label looked the workspace's flow up only among the

@@ -1,7 +1,7 @@
 /**
  * Where the app actually lives, in one place.
  *
- * ⚠️ EXTRACTED FROM `StoreBadges.tsx` ON PURPOSE, and not merely for tidiness.
+ * ⚠️ EXTRACTED FROM `components/marketing/store-badges.tsx` ON PURPOSE, and not merely for tidiness.
  * That file is a `'use client'` component that calls `useTranslation`, so
  * importing a URL constant from it pulls react-i18next and the badge markup
  * into whatever imports it — an import is a MODULE, not a symbol. That exact

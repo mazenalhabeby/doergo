@@ -9,7 +9,7 @@ import {
   GOOGLE_PLAY_URL,
   AppleGlyph,
   GooglePlayGlyph,
-} from "@/app/_home/StoreBadges"
+} from "@/components/marketing/store-badges"
 
 type Phone = "ios" | "android"
 

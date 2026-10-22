@@ -16,7 +16,7 @@ import { ClientRowsSkeleton } from "@/components/skeletons/crm"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { SectionHeader, EmptyState } from "./section-header"
+import { SectionHeader, EmptyState } from "../common/section-header"
 import { CustomerForm } from "./customer-form"
 import { useClients } from "@/hooks/use-clients"
 

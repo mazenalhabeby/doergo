@@ -263,10 +263,6 @@
   "lines": 374,
   "long": 0
  },
- "apps/web-app/src/app/(dashboard)/invoices/_components/invoice-shell.tsx": {
-  "lines": 217,
-  "long": 1
- },
  "apps/web-app/src/app/_home/HomeClient.tsx": {
   "lines": 45,
   "long": 1
@@ -281,6 +277,10 @@
  },
  "apps/web-app/src/components/dashboard/workspace-box.tsx": {
   "lines": 295,
+  "long": 1
+ },
+ "apps/web-app/src/components/invoices/invoice-shell.tsx": {
+  "lines": 217,
   "long": 1
  },
  "apps/web-app/src/lib/api/assets-review.ts": {

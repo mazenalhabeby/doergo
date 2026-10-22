@@ -2,7 +2,7 @@
 
 import { ArrowUpRight } from "lucide-react"
 import { AnimatedLogo } from "@hbcfield/shared/components"
-import { FooterBrandBar, footerCompanyLinks, footerLegalLinks } from "./footer-brand-bar"
+import { FooterBrandBar, footerCompanyLinks, footerLegalLinks } from "../../components/marketing/footer-brand-bar"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { MONO } from "./home-ui"

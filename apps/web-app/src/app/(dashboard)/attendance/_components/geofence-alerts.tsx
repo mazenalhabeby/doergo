@@ -4,7 +4,7 @@ import { UserAvatar } from "@/components/common/user-avatar"
 import { useTimeFormat } from "@/hooks"
 import { AlertCircle, MapPin } from "lucide-react"
 import { personName, countryFromTz } from "@hbcfield/shared/client"
-import { formatTime, formatDateInZone, StatusBadge } from "./attendance-helpers"
+import { formatTime, formatDateInZone, StatusBadge } from "../../../../components/attendance/attendance-helpers"
 
 /** Shifts clocked in or out outside the workspace's ring — the first five, and how many more. */
 export function GeofenceAlerts({ violations }: { violations: TimeEntry[] }) {

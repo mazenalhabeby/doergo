@@ -8,7 +8,7 @@ import { personName, parseStoredStepForm, workflowStatusLabel, type StepFormFiel
 
 import { tasksApi, type TaskStepSubmission } from "@/lib/api"
 import { stepFieldLabel } from "@/lib/step-forms"
-import { CollapsibleSection } from "@/app/(dashboard)/tasks/[id]/_components/collapsible-section"
+import { CollapsibleSection } from "@/components/common/collapsible-section"
 
 interface StatusLike {
   key: string

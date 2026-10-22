@@ -1,7 +1,7 @@
 "use client"
 
 import { useTranslation } from "react-i18next"
-import { RailSection } from "../../_components/invoice-shell"
+import { RailSection } from "../../../../../components/invoices/invoice-shell"
 import { ClientFields, TermsFields, IssuedByField } from "../../_components/invoice-fields"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"

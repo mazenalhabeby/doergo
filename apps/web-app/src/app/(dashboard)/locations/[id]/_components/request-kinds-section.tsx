@@ -12,7 +12,7 @@ import { serverErrorMessage } from "@/lib/server-error"
 import { REQUEST_KINDS, requestKindHintKey, requestKindLabelKey, requestKindsEnabled, toggleRequestKind } from "@/lib/requests"
 import { REQUEST_KIND_ICON } from "@/components/requests/request-kind"
 import { Switch } from "@/components/ui/switch"
-import { SectionHeader } from "./section-header"
+import { SectionHeader } from "../../../../../components/common/section-header"
 
 /**
  * "Requests members can send here" — one switch per kind, saved at once (the

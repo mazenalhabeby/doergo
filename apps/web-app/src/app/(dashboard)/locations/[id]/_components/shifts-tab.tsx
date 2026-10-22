@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmTargetDialog } from "@/components/common/confirm-dialog"
-import { SectionHeader, EmptyState } from "./section-header"
+import { SectionHeader, EmptyState } from "../../../../../components/common/section-header"
 import { keys } from "@/lib/query-keys"
 import { DEFAULT_COLOR, ShiftDialog } from "./shift-dialog"
 

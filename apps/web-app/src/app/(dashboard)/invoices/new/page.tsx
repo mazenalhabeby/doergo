@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 import { PlanGate } from "@/components/common/plan-gate"
 import { Loader2 } from "lucide-react"
 
-import { InvoiceTopBar, InvoiceNotice, InvoiceWorkbench } from "../_components/invoice-shell"
+import { InvoiceTopBar, InvoiceNotice, InvoiceWorkbench } from "../../../../components/invoices/invoice-shell"
 import { InvoiceDocument, type DocumentView } from "../_components/invoice-document"
 import { LabourCostPanel } from "../_components/labour-cost-panel"
 import { LineEditor } from "../_components/invoice-fields"

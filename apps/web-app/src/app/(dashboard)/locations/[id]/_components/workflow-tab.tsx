@@ -14,7 +14,7 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import { WorkflowSelector } from "../../_components/workflow-selector"
 import { SpaceWorkflowsSection } from "./space-workflows-section"
 import { WorkflowBuilder } from "../../_components/workflow-builder"
-import { SectionHeader } from "./section-header"
+import { SectionHeader } from "../../../../../components/common/section-header"
 import { workflowStatusLabel } from "@hbcfield/shared/client"
 import { useWorkflows } from "@/hooks/use-workflows"
 

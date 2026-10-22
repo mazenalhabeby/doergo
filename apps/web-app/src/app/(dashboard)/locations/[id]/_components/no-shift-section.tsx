@@ -17,7 +17,7 @@ import {
   type NoShiftPolicy,
 } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
-import { SectionHeader } from "./section-header"
+import { SectionHeader } from "../../../../../components/common/section-header"
 import { OptionFrame } from "@/components/ui/option-card"
 import { ChoiceChip } from "@/components/ui/choice-chip"
 

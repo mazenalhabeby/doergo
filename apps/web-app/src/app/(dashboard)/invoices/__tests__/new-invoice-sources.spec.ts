@@ -345,7 +345,7 @@ describe("the page has a shape", () => {
       Sliced to the bar itself: `SectionHead` in the same file also renders a
       `{title}`, and an indexOf over the whole file finds that one first.
     */
-    const shell = code("_components/invoice-shell.tsx")
+    const shell = code("../../../components/invoices/invoice-shell.tsx")
     const bar = shell.slice(shell.indexOf("export function InvoiceTopBar"))
     const sticky = bar.indexOf("sticky top-0")
     expect(sticky).toBeGreaterThan(-1)

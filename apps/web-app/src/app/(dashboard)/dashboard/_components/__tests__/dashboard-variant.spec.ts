@@ -1,4 +1,4 @@
-import { dashboardVariant } from '../dashboard-skeleton'
+import { dashboardVariant } from '../../../../../components/skeletons/dashboard-page-skeleton'
 
 /**
  * One decision, shared by the page and its skeleton, so the placeholder can

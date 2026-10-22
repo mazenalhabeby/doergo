@@ -3,7 +3,7 @@
 import type { MouseEvent } from "react"
 import { ArrowUp } from "lucide-react"
 import type { TFunction } from "i18next"
-import { StoreBadges } from "./StoreBadges"
+import { StoreBadges } from "./store-badges"
 
 /** The marketing type faces (the same strings home-ui declares). */
 const FOOTER_DISPLAY = "font-[family:var(--font-familjen)]"

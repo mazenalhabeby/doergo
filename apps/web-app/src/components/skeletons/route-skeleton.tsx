@@ -3,10 +3,10 @@
 import { usePathname } from 'next/navigation';
 import { ClientRecordSkeleton, ClientsListSkeleton } from './crm';
 
-import { DashboardPageSkeleton, dashboardVariant } from '@/app/(dashboard)/dashboard/_components/dashboard-skeleton';
-import { TasksPageLoading } from '@/app/(dashboard)/tasks/_components/tasks-skeleton';
+import { DashboardPageSkeleton, dashboardVariant } from '@/components/skeletons/dashboard-page-skeleton';
+import { TasksPageLoading } from '@/components/skeletons/tasks-skeleton';
 import { TaskDetailPageSkeleton } from './page-skeletons';
-import { JobReportPageSkeleton } from '@/app/(dashboard)/tasks/[id]/report/_components/report-skeleton';
+import { JobReportPageSkeleton } from '@/components/skeletons/report-skeleton';
 import { useAuth } from '@/contexts/auth-context';
 
 import { GenericContentSkeleton } from './primitives';

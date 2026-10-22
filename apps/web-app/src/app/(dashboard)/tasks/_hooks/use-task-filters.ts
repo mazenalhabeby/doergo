@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import type { GroupByOption } from "../_components/grouped-list"
 import type { BacklogSortField, BacklogSortDir } from "../_components/backlog-toolbar"
-import { VIEW_MODE_STORAGE_KEY, readStoredViewMode } from "../_components/tasks-skeleton"
+import { VIEW_MODE_STORAGE_KEY, readStoredViewMode } from "../../../../components/skeletons/tasks-skeleton"
 import { GROUP_BY_STORAGE_KEY, type TaskScope, type ViewMode } from "../_lib/task-list"
 
 /**

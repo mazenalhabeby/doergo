@@ -20,7 +20,7 @@ const PICKERS = [
   // The Assign dialog: its people come from its selection hook.
   "components/tasks/use-assign-member-dialog.ts",
   // The New Task dialog: its people come from its form hook in create-task/.
-  "app/(dashboard)/tasks/_components/create-task/",
+  "components/tasks/create-task/",
   "app/(dashboard)/clients/[id]/_components/customer-managers.tsx",
   "app/(dashboard)/clients/[id]/",
   "app/(dashboard)/locations/[id]/_components/apartment-dialog.tsx",

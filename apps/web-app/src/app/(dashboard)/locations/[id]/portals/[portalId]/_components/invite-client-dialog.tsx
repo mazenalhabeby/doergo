@@ -20,7 +20,7 @@ const ApartmentDialog = dynamic(() => import("../../../_components/apartment-dia
   ssr: false,
 })
 
-const CustomerForm = dynamic(() => import("../../../_components/customer-form").then((m) => m.CustomerForm), {
+const CustomerForm = dynamic(() => import("../../../../../../../components/crm/customer-form").then((m) => m.CustomerForm), {
   ssr: false,
 })
 

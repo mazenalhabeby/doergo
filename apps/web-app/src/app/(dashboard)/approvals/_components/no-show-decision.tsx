@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils"
 import { ChoiceChip } from "@/components/ui/choice-chip"
 
 const AddAttendanceDialog = dynamic(
-  () => import("../../members/[id]/_components/add-attendance-dialog").then((m) => m.AddAttendanceDialog),
+  () => import("../../../../components/attendance/add-attendance-dialog").then((m) => m.AddAttendanceDialog),
   { ssr: false },
 )
 

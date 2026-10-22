@@ -11,7 +11,7 @@ import { locationsApi, type AccessRole } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
-import { SectionHeader } from "./section-header"
+import { SectionHeader } from "../../../../../components/common/section-header"
 import { useOrgRoles } from "@/hooks/use-org-roles"
 
 /**

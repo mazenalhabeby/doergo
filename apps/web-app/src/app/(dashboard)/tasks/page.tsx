@@ -9,7 +9,7 @@ import { PAGE_SHELL } from "@/components/ui/page-width"
 import { BulkActionBar } from "./_components/bulk-action-bar"
 import { TaskPlanningDialogs } from "./_components/task-planning-dialogs"
 import { TaskAssignDialog } from "./_components/task-assign-dialog"
-import { TasksViewSkeleton } from "./_components/tasks-skeleton"
+import { TasksViewSkeleton } from "../../../components/skeletons/tasks-skeleton"
 import { RoleJobsSummary } from "./_components/role-jobs-summary"
 import { BacklogToolbar } from "./_components/backlog-toolbar"
 import { SprintCapacityBar } from "./_components/sprint-capacity"
@@ -30,11 +30,11 @@ import { useTasksPage } from "./_hooks/use-tasks-page"
 // loading flash. ssr:false: none of these renders on the server. The schedule's
 // views, the grouped list and the sprint dialogs are lazy in their own files.
 // Shown only on the Recurring tab — loaded when opened, like the other alternate views.
-const RecurringPanel = dynamic(() => import("./recurring/_components/recurring-view").then((m) => m.RecurringPanel), {
+const RecurringPanel = dynamic(() => import("../../../components/tasks/recurring/recurring-view").then((m) => m.RecurringPanel), {
   ssr: false,
 })
 
-const CreateTaskDialog = dynamic(() => import("./_components/create-task-dialog").then((m) => m.CreateTaskDialog), {
+const CreateTaskDialog = dynamic(() => import("../../../components/tasks/create-task-dialog").then((m) => m.CreateTaskDialog), {
   ssr: false,
 })
 

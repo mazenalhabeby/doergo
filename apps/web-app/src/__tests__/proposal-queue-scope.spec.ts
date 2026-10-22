@@ -36,7 +36,7 @@ describe("the proposal queue asks for the right proposals", () => {
   })
 
   it("a workspace's tab asks for its own", () => {
-    const tab = read("app/(dashboard)/locations/[id]/_components/assets-tab.tsx")
+    const tab = read("components/assets/assets-tab.tsx")
     expect(tab).toMatch(/<ProposalQueue kinds=\{kinds\} spaceId=\{allProposals \? undefined : spaceId\} \/>/)
   })
 
