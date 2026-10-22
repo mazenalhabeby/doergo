@@ -267,6 +267,13 @@ Each becomes a folder of real Nest sub-modules with their own providers and test
 > `test-utils/read-source` follows `@/` imports too. The 12 camelCase hooks in `src/hooks/` are kebab-case
 > (`use-clock-in.ts` …). Guard: `import-alias.spec`.
 
+> **Status (2026-10-22): 6.5 READY, not switched on.** `apps/mobile/metro.config.js` (Expo's default config) turns on
+> Expo's tree-shaking only when `EXPO_UNSTABLE_TREE_SHAKING=1` (+ `EXPO_UNSTABLE_METRO_OPTIMIZE_GRAPH=1`) is set, with
+> the `experimentalImportSupport` transform it needs. Measured, Android Hermes bundle: **10,955,712 → 10,366,426 bytes
+> (−589 KB, −5.4 %)**; without the flag the bundle is the same size as before, so `expo start`, tests and an `eas update`
+> are unchanged. ⚠️ To ship: add both variables to the eas.json `production` env, make a store build, test it on a
+> device (module linking changes at runtime), and build OTAs for that binary the same way.
+
 ---
 
 ## Order, size and what you get
