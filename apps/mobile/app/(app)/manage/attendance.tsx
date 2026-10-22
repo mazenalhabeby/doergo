@@ -1,14 +1,21 @@
 import { View, Text, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenHeader } from '../../../src/components';
 import { type NoShow } from '../../../src/lib/api';
 import type { TimeEntry } from '../../../src/lib/api/types';
 import { localDateKey } from '@hbcfield/shared/client';
-import { ChoicePill } from '../../../src/components/amazen';
-import { Skeleton, ScreenContainer, AttendanceEditSheet } from '../../../src/components';
+import { ChoicePill, Ground, HeaderBack, ScreenHeader } from '../../../src/components/amazen';
+import { Skeleton, AttendanceEditSheet } from '../../../src/components';
+import { useScreenWidth } from '../../../src/components/screen-container';
+import { goBack } from '../../../src/lib/go-back';
 import { DatePickerModal } from '../../../src/components/date-picker-modal';
 import { COLORS, SPACING } from '../../../src/lib/constants';
-import { SEGMENTS, PERIODS, dateFromISO, shortDay, s } from '../../../src/features/time/attendance-review/attendance-review-helpers';
+import {
+  SEGMENTS,
+  PERIODS,
+  dateFromISO,
+  shortDay,
+  s,
+} from '../../../src/features/time/attendance-review/attendance-review-helpers';
 import { useAttendanceReviewScreen } from '../../../src/features/time/attendance-review/use-attendance-review-screen';
 
 /**
@@ -34,7 +41,6 @@ export default function AttendanceReviewScreen() {
   const {
     colors,
     t,
-    insets,
     segment,
     period,
     setPeriod,
@@ -63,10 +69,15 @@ export default function AttendanceReviewScreen() {
     emptyCopy,
     segmentLabel,
   } = useAttendanceReviewScreen();
+  const wide = useScreenWidth();
 
   return (
-    <View style={[s.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
-      <ScreenHeader title={t('manage.titles.attendance')} />
+    <Ground style={s.container}>
+      <ScreenHeader
+        title={t('manage.titles.attendance')}
+        leading={<HeaderBack onPress={() => goBack()} />}
+        style={wide}
+      />
       <View style={s.filterRow}>
         {SEGMENTS.map((seg) => (
           <ChoicePill key={seg} label={segmentLabel(seg)} on={segment === seg} onPress={() => show(seg)} />
@@ -116,7 +127,7 @@ export default function AttendanceReviewScreen() {
         </View>
       )}
 
-      <ScreenContainer width="content">
+      <View style={[{ flex: 1 }, wide]}>
         {isLoading && rows.length === 0 ? (
           <Skeleton.ListScreen />
         ) : (
@@ -155,7 +166,7 @@ export default function AttendanceReviewScreen() {
             }
           />
         )}
-      </ScreenContainer>
+      </View>
 
       {/* Correcting the shift itself. */}
       <AttendanceEditSheet
@@ -210,6 +221,6 @@ export default function AttendanceReviewScreen() {
         maxDate={TODAY}
         title={t(pickingRange === 'to' ? 'attendanceReview.rangeTo' : 'attendanceReview.rangeFrom')}
       />
-    </View>
+    </Ground>
   );
 }

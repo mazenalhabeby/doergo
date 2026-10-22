@@ -14,7 +14,10 @@ import { runSessionEndCleaners } from '../session/session-registry';
 import { readSource } from '../../test-utils/read-source';
 
 const ROOT = path.resolve(__dirname, '../../..');
-const read = (p: string) => readSource(path.join(ROOT, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+const read = (p: string) =>
+  readSource(path.join(ROOT, p), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
 
 beforeEach(() => clearCrewJoin());
 
@@ -48,7 +51,7 @@ describe('a link cannot ask for a join', () => {
     expect(parseOpenSheet('form:ARRIVED')).toBe('form:ARRIVED');
   });
 
-  it('the crew push\'s target carries no join in its URL', () => {
+  it("the crew push's target carries no join in its URL", () => {
     expect(crewJoinTarget({ taskId: 't1' })).toEqual({ pathname: '/(app)/task/[id]', params: { id: 't1' } });
   });
 
@@ -58,7 +61,7 @@ describe('a link cannot ask for a join', () => {
     expect(page).toMatch(/takeCrewJoin\(taskId\) && !crew\.me\.joined\) void crew\.join\(true\)/);
   });
 
-  it('the push handler arms it only for the push\'s own recipient', () => {
+  it("the push handler arms it only for the push's own recipient", () => {
     const layout = read('app/(app)/_layout.tsx');
     expect(layout).toMatch(/mayActOnPush\(\{[^}]*\}\)\) armCrewJoin\(taskId\)/);
   });
@@ -70,8 +73,8 @@ describe('the signing screen trusts only the document id from its URL', () => {
     expect(src).toMatch(/useLocalSearchParams<\{ id: string \}>\(\)/);
     expect(src).not.toMatch(/params\.title|params\.mode/);
   });
-  it('the title comes from the server\'s chain answer', () => {
+  it("the title comes from the server's chain answer", () => {
     expect(src).toMatch(/setTitle\(c\.title\)/);
-    expect(src).toMatch(/<ScreenHeader title=\{title \|\| t\('documents\.sign\.title'\)\}/);
+    expect(src).toMatch(/<ScreenHeader\s+title=\{title \|\| t\('documents\.sign\.title'\)\}/);
   });
 });

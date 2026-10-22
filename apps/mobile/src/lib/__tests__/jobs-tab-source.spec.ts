@@ -14,12 +14,37 @@ import { readSource } from '../../test-utils/read-source';
 const MOBILE = path.resolve(__dirname, '../../..');
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 const read = (rel: string) => strip(readSource(path.join(MOBILE, rel), 'utf8'));
-const dir = (rel: string) => fs.readdirSync(path.join(MOBILE, rel)).filter((f) => /\.tsx?$/.test(f)).map((f) => `${rel}/${f}`);
+const dir = (rel: string) =>
+  fs
+    .readdirSync(path.join(MOBILE, rel))
+    .filter((f) => /\.tsx?$/.test(f))
+    .map((f) => `${rel}/${f}`);
 
 const TASKS = 'app/(app)/(tabs)/tasks.tsx';
 const CREATE = 'app/(app)/(tabs)/create-task.tsx';
 const FILES = [TASKS, CREATE, ...dir('src/features/jobs-list'), ...dir('src/features/new-job')];
 const all = FILES.map(read).join('\n');
+
+const AMAZEN_HEADER =
+  /import \{[^}]*\bScreenHeader\b[^}]*\} from '(?:\.\.\/amazen|(?:\.\.\/)+(?:src\/)?components\/amazen|@\/components\/amazen)'/;
+/** The pushed screens that were the last on the old header (step 6.3): Ground, the amazen header, Back. */
+const PUSHED_ON_GROUND = [
+  'src/features/scan-card/card-review-screen.tsx',
+  'app/(app)/support.tsx',
+  'app/(app)/sign-document.tsx',
+  'app/(app)/send-document.tsx',
+  'app/(app)/scan-card.tsx',
+  'app/(app)/manage/attendance.tsx',
+  'app/(app)/overtime/[id].tsx',
+  'app/(app)/overtime/sign/[id].tsx',
+];
+/** Every source file under a folder, tests excluded. */
+const walk = (rel: string): string[] =>
+  fs.readdirSync(path.join(MOBILE, rel), { withFileTypes: true }).flatMap((e) => {
+    const child = `${rel}/${e.name}`;
+    if (e.isDirectory()) return e.name === '__tests__' ? [] : walk(child);
+    return /\.tsx?$/.test(e.name) && !/\.spec\./.test(e.name) ? [child] : [];
+  });
 
 describe('every popup is the one sheet', () => {
   it('finds the files', () => {
@@ -54,7 +79,7 @@ describe('every popup is the one sheet', () => {
 });
 
 describe('the one status write', () => {
-  it('the Jobs tab hands the job route\'s write down — it writes none of its own', () => {
+  it("the Jobs tab hands the job route's write down — it writes none of its own", () => {
     const route = read(TASKS);
     expect(route).toMatch(/import \{ TaskDetailPane, useWriteStatus \} from '\.\.\/task\/\[id\]'/);
     expect(route).toMatch(/<TaskDetailPane\b/);
@@ -94,25 +119,54 @@ describe('the tour, the tablet, the list', () => {
 describe('the one header', () => {
   const layout = read('app/(app)/(tabs)/_layout.tsx');
 
-  it('every v2 screen draws the amazen ScreenHeader, not the navigator\'s band', () => {
-    for (const f of ['src/features/jobs-list/jobs-screen.tsx', 'src/features/new-job/new-job-screen.tsx', 'src/features/time/time-screen.tsx']) {
+  it("every v2 screen draws the amazen ScreenHeader, not the navigator's band", () => {
+    for (const f of [
+      'src/features/jobs-list/jobs-screen.tsx',
+      'src/features/new-job/new-job-screen.tsx',
+      'src/features/time/time-screen.tsx',
+      ...PUSHED_ON_GROUND,
+      'app/(app)/(tabs)/manage.tsx',
+    ]) {
       const src = read(f);
-      expect(src).toMatch(/import \{[^}]*\bScreenHeader\b[^}]*\} from '(?:\.\.\/amazen|(?:\.\.\/)+components\/amazen|@\/components\/amazen)'/);
+      expect(src).toMatch(AMAZEN_HEADER);
       // The avatar is the header's own business — no screen passes it.
       expect(src).not.toMatch(/avatarUrl=|onPressAvatar=/);
     }
-    for (const name of ['tasks', 'create-task', 'attendance']) {
+    for (const name of ['tasks', 'create-task', 'attendance', 'manage']) {
       expect(layout).toMatch(new RegExp(`name="${name}"\\s*options=\\{\\{[^}]*headerShown: false`));
     }
   });
 
-  it('the avatar has ONE source and ONE handler — home, the tab bar\'s button, Jobs and New job', () => {
+  it("the pushed screens stand on Ground with Back in the header's leading slot", () => {
+    for (const f of PUSHED_ON_GROUND) {
+      const src = read(f);
+      expect(src).toMatch(/<Ground\b/);
+      expect(src).toMatch(/leading=\{<HeaderBack onPress=/);
+    }
+  });
+
+  it('the old pushed-screen header and ScreenContainer are gone, and nothing imports them', () => {
+    expect(fs.existsSync(path.join(MOBILE, 'src/components/screen-header.tsx'))).toBe(false);
+    const sources = [...walk('app'), ...walk('src')];
+    expect(sources.length).toBeGreaterThan(200);
+    const offenders = sources.filter((f) => {
+      const src = fs.readFileSync(path.join(MOBILE, f), 'utf8');
+      if (f.startsWith('src/components/amazen/')) return false; // the amazen header's own folder
+      return /from '[^']*components\/screen-header'|from '\.\/screen-header'|\bScreenContainer\b/.test(src);
+    });
+    expect(offenders).toEqual([]);
+    // `goBack` is navigation, not UI — it lives in lib, and the components barrel no longer carries it.
+    expect(read('src/components/index.ts')).not.toMatch(/goBack|ScreenHeader|ScreenContainer/);
+    expect(read('src/lib/go-back.ts')).toMatch(/router\.canGoBack\(\)/);
+  });
+
+  it("the avatar has ONE source and ONE handler — home, the tab bar's button, Jobs and New job", () => {
     expect(read('src/components/amazen/screen-header.tsx')).toMatch(/useProfileAvatar\(\)/);
     expect(layout).toMatch(/const \{ avatarUrl, openProfile \} = useProfileAvatar\(\)/);
     expect(read('src/lib/use-profile-avatar.ts')).toMatch(/router\.push\('\/\(app\)\/\(tabs\)\/profile'/);
   });
 
-  it('New job puts Back in the header\'s leading slot', () => {
+  it("New job puts Back in the header's leading slot", () => {
     expect(read('src/features/new-job/new-job-screen.tsx')).toMatch(/leading=\{/);
     expect(read('src/components/amazen/screen-header.tsx')).toMatch(/\{leading \?\? null\}/);
   });
@@ -128,7 +182,9 @@ describe('design-system rules', () => {
   });
 
   it('no style names a font face AND a weight', () => {
-    const bad = FILES.filter((f) => [...read(f).matchAll(/\{[^{}]*\}/g)].some((m) => /fontFamily\s*:/.test(m[0]) && /fontWeight\s*:/.test(m[0])));
+    const bad = FILES.filter((f) =>
+      [...read(f).matchAll(/\{[^{}]*\}/g)].some((m) => /fontFamily\s*:/.test(m[0]) && /fontWeight\s*:/.test(m[0])),
+    );
     expect(bad).toEqual([]);
   });
 
@@ -139,7 +195,9 @@ describe('design-system rules', () => {
   it('every new word exists in all five languages', () => {
     const load = (l: string) => JSON.parse(readSource(path.join(MOBILE, 'src/i18n/locales', `${l}.json`), 'utf8'));
     const keys = (o: Record<string, unknown>, p = ''): string[] =>
-      Object.entries(o).flatMap(([k, v]) => (v && typeof v === 'object' ? keys(v as Record<string, unknown>, `${p}${k}.`) : [`${p}${k}`]));
+      Object.entries(o).flatMap(([k, v]) =>
+        v && typeof v === 'object' ? keys(v as Record<string, unknown>, `${p}${k}.`) : [`${p}${k}`],
+      );
     const en = load('en');
     const want = [...keys(en.jobsList, 'jobsList.'), ...keys(en.newJob, 'newJob.')].sort();
     for (const l of ['de', 'es', 'fr', 'it']) {

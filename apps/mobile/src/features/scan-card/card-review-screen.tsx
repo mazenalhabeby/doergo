@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
-import { ScreenHeader } from '../../components/screen-header';
+import { Ground, HeaderBack, ScreenHeader } from '../../components/amazen';
 import { useTheme } from '../../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
 import { ChoiceChip } from '../customer/client-fields';
@@ -80,8 +80,8 @@ export function CardReviewScreen({ review, flow }: {
   };
 
   return (
-    <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
-      <ScreenHeader title={t('scan.review')} onBack={scanAgain} />
+    <Ground style={s.safe}>
+      <ScreenHeader title={t('scan.review')} leading={<HeaderBack onPress={scanAgain} />} />
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
@@ -238,7 +238,7 @@ export function CardReviewScreen({ review, flow }: {
         onSaveAnyway={saveAnyway}
         onClose={duplicate.dismiss}
       />
-    </SafeAreaView>
+    </Ground>
   );
 }
 

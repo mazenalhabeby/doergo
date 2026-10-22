@@ -1,10 +1,9 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ScreenHeader } from '../../src/components';
-import { useTheme } from '../../src/contexts/theme-context';
+import { Ground, HeaderBack, ScreenHeader } from '../../src/components/amazen';
+import { goBack } from '../../src/lib/go-back';
 import { useToast } from '../../src/island/island-context';
 import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
 import { useCameraAccess } from '../../src/permissions/use-media-access';
@@ -61,7 +60,6 @@ import { NotAllowed } from '../../src/components/not-allowed';
 */
 
 export default function ScanCardScreen() {
-  const { colors } = useTheme();
   const { t } = useTranslation();
   const toast = useToast();
   /*
@@ -112,18 +110,18 @@ export default function ScanCardScreen() {
   // ── Allowed to add a client at all? ───────────────────────────────────────
   if (!canAdd) {
     return (
-      <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
-        <ScreenHeader title={t('scan.title', 'Scan a card')} />
+      <Ground style={s.safe}>
+        <ScreenHeader title={t('scan.title', 'Scan a card')} leading={<HeaderBack onPress={() => goBack()} />} />
         <NotAllowed message={t('scan.notAllowed', 'You do not have permission to add clients.')} />
-      </SafeAreaView>
+      </Ground>
     );
   }
 
   // ── Camera permission ─────────────────────────────────────────────────────
   if (!cam.granted) {
     return (
-      <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
-        <ScreenHeader title={t('scan.title', 'Scan a card')} />
+      <Ground style={s.safe}>
+        <ScreenHeader title={t('scan.title', 'Scan a card')} leading={<HeaderBack onPress={() => goBack()} />} />
         {/*
           ⚠️ This used to pass `canAskAgain={permission?.canAskAgain !== false}`,
           which reads TRUE while the first check is still in flight — so a phone
@@ -132,12 +130,8 @@ export default function ScanCardScreen() {
           re-reads the permission on every focus so returning from Settings is
           noticed without restarting the app.
         */}
-        <MediaAccessScreen
-          purpose="business-card"
-          access={cam}
-          onCancel={() => router.back()}
-        />
-      </SafeAreaView>
+        <MediaAccessScreen purpose="business-card" access={cam} onCancel={() => router.back()} />
+      </Ground>
     );
   }
 

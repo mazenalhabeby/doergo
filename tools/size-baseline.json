@@ -135,10 +135,6 @@
   "lines": 163,
   "long": 1
  },
- "apps/mobile/src/features/job/use-crew.ts": {
-  "lines": 82,
-  "long": 3
- },
  "apps/mobile/src/features/onboarding/pass-badge.tsx": {
   "lines": 137,
   "long": 1
@@ -153,10 +149,6 @@
  },
  "apps/mobile/src/features/requests/request-model.ts": {
   "lines": 223,
-  "long": 1
- },
- "apps/mobile/src/features/requests/use-requests-screen.ts": {
-  "lines": 200,
   "long": 1
  },
  "apps/mobile/src/features/rota/day-sheet.tsx": {

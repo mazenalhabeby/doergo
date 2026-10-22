@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { INDUSTRY_CARDS, AREAS } from '@hbcfield/shared/client';
-import { ScreenContainer } from '../../components';
+import { useScreenWidth } from '../../components/screen-container';
 import { COLORS, SPACING } from '../../lib/constants';
 import { ionicon, TOTAL_STEPS, Kicker, Chip, SummaryRow, styles } from './create-org-screen-helpers';
 import type { CreateOrgScreenState } from './use-create-org-screen-logic';
@@ -44,9 +44,10 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
     setOrgName,
     handleCreate,
   } = vm;
+  const wide = useScreenWidth();
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-      <ScreenContainer width="content">
+      <View style={[{ flex: 1 }, wide]}>
         {/* Header: back + progress */}
         <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
           <TouchableOpacity style={styles.backButton} onPress={onBack} disabled={isLoading}>
@@ -268,7 +269,7 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
             </View>
           )}
         </ScrollView>
-      </ScreenContainer>
+      </View>
     </KeyboardAvoidingView>
   );
 }

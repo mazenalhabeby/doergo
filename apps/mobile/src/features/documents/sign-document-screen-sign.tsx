@@ -1,7 +1,8 @@
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING } from '../../lib/constants';
-import { SignatureCapture, ScreenContainer } from '../../components';
+import { SignatureCapture } from '../../components';
+import { useScreenWidth } from '../../components/screen-container';
 import { s } from './sign-document-screen-helpers';
 import type { SignDocumentScreenState } from './use-sign-document-screen';
 
@@ -26,8 +27,9 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
     signature,
     router,
   } = vm;
+  const wide = useScreenWidth();
   return (
-    <ScreenContainer>
+    <View style={[{ flex: 1 }, wide]}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + SPACING.xxl }}>
         {/* Who else is on this document, and where it has got to. */}
         {chain && (
@@ -46,10 +48,7 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
                     color={done ? COLORS.success : skipped ? colors.textMuted : colors.textSecondary}
                   />
                   <Text
-                    style={[
-                      s.chainName,
-                      { color: skipped ? colors.textMuted : colors.textPrimary },
-                    ]}
+                    style={[s.chainName, { color: skipped ? colors.textMuted : colors.textPrimary }]}
                     numberOfLines={1}
                   >
                     {cs.name ?? t('documents.sign.chainNobody', 'Not required')}
@@ -73,10 +72,7 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
             </Text>
             <View style={[s.track, { backgroundColor: colors.surfaceRaised }]}>
               <View
-                style={[
-                  s.fill,
-                  { backgroundColor: COLORS.primary, width: `${(stepNumber / totalSteps) * 100}%` },
-                ]}
+                style={[s.fill, { backgroundColor: COLORS.primary, width: `${(stepNumber / totalSteps) * 100}%` }]}
               />
             </View>
           </View>
@@ -85,12 +81,8 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
         {/* ── 1 · Read ─────────────────────────────────────────────────── */}
         {step === 'read' && (
           <View style={s.pane}>
-            <Text style={[s.h1, { color: colors.textPrimary }]}>
-              {t('documents.sign.readTitle')}
-            </Text>
-            <Text style={[s.body, { color: colors.textSecondary }]}>
-              {t('documents.sign.readBody')}
-            </Text>
+            <Text style={[s.h1, { color: colors.textPrimary }]}>{t('documents.sign.readTitle')}</Text>
+            <Text style={[s.body, { color: colors.textSecondary }]}>{t('documents.sign.readBody')}</Text>
 
             <TouchableOpacity
               style={[s.primary, { backgroundColor: COLORS.primary }]}
@@ -109,11 +101,7 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                s.secondary,
-                { borderColor: colors.border },
-                !hasRead && s.disabled,
-              ]}
+              style={[s.secondary, { borderColor: colors.border }, !hasRead && s.disabled]}
               onPress={() => setStep('agree')}
               disabled={!hasRead}
               accessibilityRole="button"
@@ -124,30 +112,20 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
               </Text>
             </TouchableOpacity>
 
-            {!hasRead && (
-              <Text style={[s.hint, { color: colors.textMuted }]}>
-                {t('documents.sign.mustOpen')}
-              </Text>
-            )}
+            {!hasRead && <Text style={[s.hint, { color: colors.textMuted }]}>{t('documents.sign.mustOpen')}</Text>}
           </View>
         )}
 
         {/* ── 2 · Agree ────────────────────────────────────────────────── */}
         {step === 'agree' && (
           <View style={s.pane}>
-            <Text style={[s.h1, { color: colors.textPrimary }]}>
-              {t('documents.sign.agreeTitle')}
-            </Text>
+            <Text style={[s.h1, { color: colors.textPrimary }]}>{t('documents.sign.agreeTitle')}</Text>
 
             <View style={[s.consentBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={[s.consentText, { color: colors.textPrimary }]}>
-                {t('documents.sign.consentText')}
-              </Text>
+              <Text style={[s.consentText, { color: colors.textPrimary }]}>{t('documents.sign.consentText')}</Text>
             </View>
 
-            <Text style={[s.body, { color: colors.textSecondary }]}>
-              {t('documents.sign.recordedNotice')}
-            </Text>
+            <Text style={[s.body, { color: colors.textSecondary }]}>{t('documents.sign.recordedNotice')}</Text>
 
             <View style={[s.recordList, { borderColor: colors.border }]}>
               {['account', 'device', 'time', 'hash'].map((k) => (
@@ -180,27 +158,17 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
         {/* ── 3 · Sign ─────────────────────────────────────────────────── */}
         {step === 'sign' && (
           <View style={s.pane}>
-            <Text style={[s.h1, { color: colors.textPrimary }]}>
-              {t('documents.sign.signTitle')}
-            </Text>
-            <Text style={[s.body, { color: colors.textSecondary }]}>
-              {t('documents.sign.signBody')}
-            </Text>
+            <Text style={[s.h1, { color: colors.textPrimary }]}>{t('documents.sign.signTitle')}</Text>
+            <Text style={[s.body, { color: colors.textSecondary }]}>{t('documents.sign.signBody')}</Text>
 
             {/* The same pad members already use on service reports — the
                 gesture is familiar, which is most of what matters here. */}
-            <SignatureCapture
-              title={t('documents.sign.padTitle')}
-              onSave={submit}
-              onClear={() => {}}
-            />
+            <SignatureCapture title={t('documents.sign.padTitle')} onSave={submit} onClear={() => {}} />
 
             {busy && (
               <View style={s.busyRow}>
                 <ActivityIndicator size="small" color={COLORS.primary} />
-                <Text style={[s.hint, { color: colors.textMuted }]}>
-                  {t('documents.sign.sealing')}
-                </Text>
+                <Text style={[s.hint, { color: colors.textMuted }]}>{t('documents.sign.sealing')}</Text>
               </View>
             )}
           </View>
@@ -228,14 +196,10 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
             */}
             {signature && (
               <View style={[s.sigCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Text style={[s.sigLabel, { color: colors.textMuted }]}>
-                  {t('documents.sign.yourSignature')}
-                </Text>
+                <Text style={[s.sigLabel, { color: colors.textMuted }]}>{t('documents.sign.yourSignature')}</Text>
                 <Image source={{ uri: signature }} style={s.sigImage} resizeMode="contain" />
                 <View style={[s.sigRule, { backgroundColor: colors.border }]} />
-                <Text style={[s.sigHint, { color: colors.textMuted }]}>
-                  {t('documents.sign.onDocument')}
-                </Text>
+                <Text style={[s.sigHint, { color: colors.textMuted }]}>{t('documents.sign.onDocument')}</Text>
               </View>
             )}
 
@@ -264,13 +228,11 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
               onPress={() => router.replace('/documents' as never)}
               accessibilityRole="button"
             >
-              <Text style={[s.secondaryText, { color: colors.textPrimary }]}>
-                {t('documents.sign.viewDocuments')}
-              </Text>
+              <Text style={[s.secondaryText, { color: colors.textPrimary }]}>{t('documents.sign.viewDocuments')}</Text>
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
-    </ScreenContainer>
+    </View>
   );
 }

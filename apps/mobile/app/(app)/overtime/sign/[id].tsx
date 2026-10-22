@@ -10,14 +10,16 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../src/contexts/theme-context';
 import { useToast } from '../../../../src/island/island-context';
 import { overtimeApi, teamApi } from '../../../../src/lib/api';
 import { useAuth } from '../../../../src/contexts/auth-context';
 import { approverCandidates, type ApproverCandidate } from '../../../../src/lib/overtime-approvers';
-import { SignatureCapture, ScreenContainer, ScreenHeader } from '../../../../src/components';
+import { SignatureCapture } from '../../../../src/components';
+import { Ground, HeaderBack, ScreenHeader } from '../../../../src/components/amazen';
+import { useScreenWidth } from '../../../../src/components/screen-container';
+import { goBack } from '../../../../src/lib/go-back';
 import {
   COLORS,
   SPACING,
@@ -41,7 +43,7 @@ const DURATION_OPTIONS = [
 export default function OvertimeSignatureScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const wide = useScreenWidth();
   const { colors } = useTheme();
   const toast = useToast();
   const { t } = useTranslation();
@@ -118,11 +120,10 @@ export default function OvertimeSignatureScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
-      {/* Header */}
-      <ScreenHeader title={t('overtime.leaderApproval')} />
+    <Ground style={styles.container}>
+      <ScreenHeader title={t('overtime.leaderApproval')} leading={<HeaderBack onPress={() => goBack()} />} style={wide} />
 
-      <ScreenContainer width="content">
+      <View style={[{ flex: 1 }, wide]}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Instructions */}
         <View style={[styles.infoCard, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
@@ -236,8 +237,8 @@ export default function OvertimeSignatureScreen() {
           )}
         </TouchableOpacity>
         </ScrollView>
-      </ScreenContainer>
-    </View>
+      </View>
+    </Ground>
   );
 }
 

@@ -5,17 +5,18 @@ import { useTranslation } from 'react-i18next';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
-import { ScreenContainer } from '../../../src/components';
+import { useScreenWidth } from '../../../src/components/screen-container';
 import { manageRowsFor } from '../../../src/lib/manage-rows';
 import { holds } from '../../../src/lib/permissions';
 import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../../../src/features/time/shift-issue-sheet';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
-import { useTabSafe } from '../../../src/components/amazen';
+import { Ground, ScreenHeader, useTabSafe } from '../../../src/components/amazen';
 
 export default function ManageScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const tabSafe = useTabSafe();
+  const wide = useScreenWidth();
   const { t } = useTranslation();
   const rows = useMemo(() => manageRowsFor(user), [user]);
   /*
@@ -33,10 +34,12 @@ export default function ManageScreen() {
   }, [issueFromNotification]);
 
   return (
-    <ScreenContainer width="content" style={{ backgroundColor: colors.surface }}>
+    <Ground style={s.container}>
+      {/* The page draws its own header, as every tab root does — no navigator band. */}
+      <ScreenHeader title={t('tabs.manage')} style={wide} />
       <ScrollView
-        style={[s.container, { backgroundColor: colors.surface }]}
-        contentContainerStyle={[s.content, { paddingBottom: tabSafe }]}
+        style={s.container}
+        contentContainerStyle={[s.content, { paddingBottom: tabSafe }, wide]}
         showsVerticalScrollIndicator={false}
       >
         {rows.map((item) => (
@@ -75,7 +78,7 @@ export default function ManageScreen() {
         canManage={holds(user, 'canViewAllTasks')}
         currentUserId={user?.id}
       />
-    </ScreenContainer>
+    </Ground>
   );
 }
 

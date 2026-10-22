@@ -1,15 +1,15 @@
 import { useCallback, useRef, useState } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TextInput,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { CameraView } from 'expo-camera';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
 
-import { ScreenHeader, DateField } from '../../src/components';
+import { DateField } from '../../src/components';
+import { Ground, HeaderBack, ScreenHeader } from '../../src/components/amazen';
+import { goBack } from '../../src/lib/go-back';
 import { useTheme } from '../../src/contexts/theme-context';
 import { CaptureReviewFoot } from '../../src/features/equipment/capture-review';
 import { CaptureCamera, CaptureSkip } from '../../src/features/equipment/capture-camera';
@@ -50,14 +50,10 @@ export default function SendDocumentScreen() {
   // ── Camera permission ─────────────────────────────────────────────────────
   if (stage === 'camera' && !cam.granted) {
     return (
-      <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <ScreenHeader title={t('sendDoc.title', 'Send a document')} />
-        <MediaAccessScreen
-          purpose="document"
-          access={cam}
-          onCancel={() => setStage('review')}
-        />
-      </SafeAreaView>
+      <Ground style={s.safe}>
+        <ScreenHeader title={t('sendDoc.title', 'Send a document')} leading={<HeaderBack onPress={() => goBack()} />} />
+        <MediaAccessScreen purpose="document" access={cam} onCancel={() => setStage('review')} />
+      </Ground>
     );
   }
 
@@ -65,9 +61,17 @@ export default function SendDocumentScreen() {
   if (stage === 'review') {
     const recognised = verdict?.kind === 'asset-contract';
     return (
-      <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <ScreenHeader title={t('sendDoc.check', 'Check before sending')}
-          onBack={() => { discardShot(); setStage('camera'); }}
+      <Ground style={s.safe}>
+        <ScreenHeader
+          title={t('sendDoc.check', 'Check before sending')}
+          leading={
+            <HeaderBack
+              onPress={() => {
+                discardShot();
+                setStage('camera');
+              }}
+            />
+          }
         />
         <ScrollView contentContainerStyle={{ padding: SPACING.lg, paddingBottom: SPACING.xxxl + insets.bottom }}>
           {/*
@@ -75,10 +79,7 @@ export default function SendDocumentScreen() {
             against the paper in their hand. A verdict nobody can argue with is
             one people either trust blindly or ignore entirely.
           */}
-          <View style={[
-            s.verdict,
-            { borderColor: recognised ? 'rgba(22,163,74,.45)' : colors.border },
-          ]}>
+          <View style={[s.verdict, { borderColor: recognised ? 'rgba(22,163,74,.45)' : colors.border }]}>
             <Ionicons
               name={recognised ? 'sparkles' : 'help-circle-outline'}
               size={18}
@@ -101,23 +102,49 @@ export default function SendDocumentScreen() {
           <Text style={[s.label, { color: colors.textMuted, marginTop: SPACING.lg }]}>
             {t('sendDoc.what', 'What it is')}
           </Text>
-          <Field colors={colors} label={t('contract.fRegistration', 'Registration')}
-            value={fields.registration ?? ''} onChange={(v) => setFields((f) => ({ ...f, registration: v }))} />
-          <Field colors={colors} label={t('contract.fVin', 'VIN / serial')}
-            value={fields.vin ?? ''} onChange={(v) => setFields((f) => ({ ...f, vin: v }))} />
-          <Field colors={colors} label={t('contract.fManufacturer', 'Make')}
-            value={fields.manufacturer ?? ''} onChange={(v) => setFields((f) => ({ ...f, manufacturer: v }))} />
-          <Field colors={colors} label={t('contract.fModel', 'Model')}
-            value={fields.model ?? ''} onChange={(v) => setFields((f) => ({ ...f, model: v }))} />
+          <Field
+            colors={colors}
+            label={t('contract.fRegistration', 'Registration')}
+            value={fields.registration ?? ''}
+            onChange={(v) => setFields((f) => ({ ...f, registration: v }))}
+          />
+          <Field
+            colors={colors}
+            label={t('contract.fVin', 'VIN / serial')}
+            value={fields.vin ?? ''}
+            onChange={(v) => setFields((f) => ({ ...f, vin: v }))}
+          />
+          <Field
+            colors={colors}
+            label={t('contract.fManufacturer', 'Make')}
+            value={fields.manufacturer ?? ''}
+            onChange={(v) => setFields((f) => ({ ...f, manufacturer: v }))}
+          />
+          <Field
+            colors={colors}
+            label={t('contract.fModel', 'Model')}
+            value={fields.model ?? ''}
+            onChange={(v) => setFields((f) => ({ ...f, model: v }))}
+          />
           {/* The term, as read — it was sent unseen, so a misread date reached the office unchecked. */}
           <View style={{ flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.sm }}>
             <View style={{ flex: 1 }}>
-              <DateField value={(fields.startsOn ?? '').slice(0, 10)} onChange={(v) => setFields((f) => ({ ...f, startsOn: v }))} clearable
-                placeholder={t('contract.fStartsOn', 'Starts on')} title={t('contract.fStartsOn', 'Starts on')} />
+              <DateField
+                value={(fields.startsOn ?? '').slice(0, 10)}
+                onChange={(v) => setFields((f) => ({ ...f, startsOn: v }))}
+                clearable
+                placeholder={t('contract.fStartsOn', 'Starts on')}
+                title={t('contract.fStartsOn', 'Starts on')}
+              />
             </View>
             <View style={{ flex: 1 }}>
-              <DateField value={(fields.endsOn ?? '').slice(0, 10)} onChange={(v) => setFields((f) => ({ ...f, endsOn: v }))} clearable
-                placeholder={t('contract.fEndsOn', 'Ends on')} title={t('contract.fEndsOn', 'Ends on')} />
+              <DateField
+                value={(fields.endsOn ?? '').slice(0, 10)}
+                onChange={(v) => setFields((f) => ({ ...f, endsOn: v }))}
+                clearable
+                placeholder={t('contract.fEndsOn', 'Ends on')}
+                title={t('contract.fEndsOn', 'Ends on')}
+              />
             </View>
           </View>
 
@@ -132,7 +159,10 @@ export default function SendDocumentScreen() {
             icon="document"
             attachedLabel={t('sendDoc.pageAttached', 'The page will be sent too')}
             missingLabel={t('sendDoc.noPage', 'No page')}
-            onRetake={() => { discardShot(); setStage('camera'); }}
+            onRetake={() => {
+              discardShot();
+              setStage('camera');
+            }}
             onSend={send}
             sendDisabled={!named || sending}
             ready={!!named}
@@ -144,7 +174,7 @@ export default function SendDocumentScreen() {
             muted={colors.textMuted}
           />
         </ScrollView>
-      </SafeAreaView>
+      </Ground>
     );
   }
 

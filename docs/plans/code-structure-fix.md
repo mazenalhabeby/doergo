@@ -252,6 +252,16 @@ Each becomes a folder of real Nest sub-modules with their own providers and test
 > corrections, rota, register hand-overs, signing documents, invitations/members, onboarding/auth/account,
 > telemetry (heartbeat, excursions, location), push tokens.
 
+> **Status (2026-10-22): 6.3 structure part DONE; the colour/token move is deferred to its own design pass (owner's
+> choice, mockup first).** The old pushed-screen header (`components/screen-header.tsx`) and `ScreenContainer` are
+> deleted: the 12 screens still on them (support, sign/send document, card scan, the Manage tab, manage attendance,
+> both overtime screens, create organization) stand on `Ground` with the design-system `ScreenHeader` + `HeaderBack`
+> and the same tablet width cap (`useScreenWidth`); their bodies keep their old colours. `goBack` is `lib/go-back.ts`.
+> Guard: `jobs-tab-source.spec` ("the one header"). ⚠️ Look at these in Expo dev before any OTA — the header is taller
+> (date line + avatar), Manage now draws the design-system header instead of the navigator's band, long Support
+> subjects are cut to one line, and legacy cards now sit on the gradient. Still open for the design pass: ~68 files on
+> `useTheme().colors`, 89 on `lib/constants` COLORS/SPACING/FONT_SIZE.
+
 ---
 
 ## Order, size and what you get

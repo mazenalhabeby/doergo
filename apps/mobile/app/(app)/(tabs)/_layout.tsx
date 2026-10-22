@@ -24,18 +24,8 @@ import {
 } from '../../../src/features/app-shell/tabs/tabs-layout-helpers';
 
 export default function TabsLayout() {
-  const {
-    user,
-    colors,
-    t,
-    access,
-    isAdmin,
-    showTechTasks,
-    showAttendance,
-    showTimeOff,
-    showCreate,
-    showTeam,
-  } = useTabsLayout();
+  const { user, colors, t, access, isAdmin, showTechTasks, showAttendance, showTimeOff, showCreate, showTeam } =
+    useTabsLayout();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
@@ -174,7 +164,7 @@ export default function TabsLayout() {
           name="create-task"
           options={{
             title: t('tabs.createTask'),
-            href: (isAdmin || showCreate) ? '/create-task' : null,
+            href: isAdmin || showCreate ? '/create-task' : null,
             // The screen draws its own back button and "New job" — job-flow.html.
             headerShown: false,
           }}
@@ -185,6 +175,8 @@ export default function TabsLayout() {
           options={{
             title: t('tabs.manage'),
             href: hasManageSurface(user) ? '/manage' : null,
+            // ⚠️ The page draws the shared ScreenHeader itself — no navigator band.
+            headerShown: false,
           }}
         />
         {/* Clock tab - TECHNICIAN only, based on enabledModules */}
@@ -258,7 +250,6 @@ export default function TabsLayout() {
           }}
         />
       </Tabs>
-
     </View>
   );
 }

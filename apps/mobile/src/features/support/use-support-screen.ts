@@ -7,7 +7,7 @@ import { appendMessage, debounce, isPlaceable } from '../chat/live-thread';
 import { useAppResume } from '../../lib/app-resume';
 import { useTheme } from '../../contexts/theme-context';
 import { useSocketContext } from '../../contexts/socket-context';
-import { goBack as leaveScreen } from '../../components';
+import { goBack as leaveScreen } from '../../lib/go-back';
 import { supportApi, type SupportConfig } from '../../lib/api';
 import { SPACING } from '../../lib/constants';
 import { useQueuedCreate } from '../../offline/actions/queued-create';

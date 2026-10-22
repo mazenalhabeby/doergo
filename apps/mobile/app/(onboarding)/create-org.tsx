@@ -13,8 +13,15 @@
  */
 import { useMemo, useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator,
-  KeyboardAvoidingView, Platform, ScrollView,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -30,7 +37,7 @@ import {
   toolsFromModules,
   type WorkPlan,
 } from '@hbcfield/shared/client';
-import { ScreenContainer } from '../../src/components';
+import { Ground } from '../../src/components/amazen';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/island/island-context';
@@ -79,9 +86,9 @@ export default function CreateOrgScreen() {
   } = vm;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <Ground style={styles.container}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <CreateOrgScreenStepOf vm={vm} />
-    </View>
+    </Ground>
   );
 }

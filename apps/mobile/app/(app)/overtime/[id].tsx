@@ -3,13 +3,14 @@ import { useNow } from '../../../src/hooks/use-now';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/island/island-context';
 import { overtimeApi, OvertimeRequest } from '../../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../../src/lib/constants';
-import { ScreenContainer, ScreenHeader } from '../../../src/components';
+import { Ground, HeaderBack, ScreenHeader } from '../../../src/components/amazen';
+import { useScreenWidth } from '../../../src/components/screen-container';
+import { goBack } from '../../../src/lib/go-back';
 import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
 import { formatDuration } from '@hbcfield/shared/client';
 import { overtimePlaceLine, waitingText } from '../../../src/features/time/time-logic';
@@ -20,7 +21,7 @@ import { EmptyState } from '../../../src/components/amazen/empty-state';
 export default function OvertimeRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const wide = useScreenWidth();
   const { colors } = useTheme();
   const toast = useToast();
   const { t } = useTranslation();
@@ -118,11 +119,10 @@ export default function OvertimeRequestScreen() {
   const status = request.status;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
-      {/* Header */}
-      <ScreenHeader title={t('overtime.title')} />
+    <Ground style={styles.container}>
+      <ScreenHeader title={t('overtime.title')} leading={<HeaderBack onPress={() => goBack()} />} style={wide} />
 
-      <ScreenContainer width="content">
+      <View style={[{ flex: 1 }, wide]}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Location info */}
           <View style={[styles.locationCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -264,7 +264,7 @@ export default function OvertimeRequestScreen() {
             </View>
           )}
         </ScrollView>
-      </ScreenContainer>
-    </View>
+      </View>
+    </Ground>
   );
 }

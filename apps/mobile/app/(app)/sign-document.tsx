@@ -1,13 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Image,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,7 +8,10 @@ import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/island/island-context';
 import { documentsApi, type DocumentChain } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
-import { SignatureCapture, ScreenContainer, ScreenHeader } from '../../src/components';
+import { SignatureCapture } from '../../src/components';
+import { Ground, HeaderBack, ScreenHeader } from '../../src/components/amazen';
+import { useScreenWidth } from '../../src/components/screen-container';
+import { goBack } from '../../src/lib/go-back';
 import { httpsUrl, openSafeUrl } from '../../src/lib/safe-links';
 import { useSignDocumentScreen } from '../../src/features/documents/use-sign-document-screen';
 import { s } from '../../src/features/documents/sign-document-screen-helpers';
@@ -44,12 +39,17 @@ export default function SignDocumentScreen() {
     stepNumber,
     totalSteps,
   } = vm;
+  const wide = useScreenWidth();
 
   return (
-    <View style={[s.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      <ScreenHeader title={title || t('documents.sign.title')} />
+    <Ground style={s.screen}>
+      <ScreenHeader
+        title={title || t('documents.sign.title')}
+        leading={<HeaderBack onPress={() => goBack()} />}
+        style={wide}
+      />
 
       <SignDocumentScreenSign vm={vm} />
-    </View>
+    </Ground>
   );
 }

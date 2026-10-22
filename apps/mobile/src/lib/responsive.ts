@@ -4,7 +4,7 @@
 // One source of truth for adapting the phone-first UI to tablets / landscape.
 //
 // Key rule: we NEVER stretch content edge-to-edge on a big screen. We constrain
-// readable content to a max width (via <ScreenContainer>) and switch lists to
+// readable content to a max width (via `useScreenWidth`/`centeredContent`) and switch lists to
 // grids / master-detail. Phone rendering is unchanged (isTablet === false).
 //
 // Built on useWindowDimensions() so every value re-computes on ROTATION — the
