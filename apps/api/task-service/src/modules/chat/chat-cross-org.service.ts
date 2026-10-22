@@ -5,6 +5,10 @@ import {
   isCrossOrgConversationLive,
   type ChatParty,
   type ChatShareFacts,
+  workerSharesBetween,
+  peopleOrgAndRole,
+  crossOrgCandidates,
+  workerSharesOf,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 
@@ -30,15 +34,7 @@ export class ChatCrossOrgService {
     const me = await this.chatParty(userId);
     if (!me || me.spaceIds.length === 0) return [];
 
-    const shares = await this.prisma.spaceShare.findMany({
-      where: {
-        status: 'ACTIVE',
-        showWorkers: true,
-        spaceId: { in: me.spaceIds },
-        OR: [{ ownerOrgId: me.organizationId }, { guestOrgId: me.organizationId }],
-      },
-      select: { spaceId: true, ownerOrgId: true, guestOrgId: true, expiresAt: true },
-    });
+    const shares = await workerSharesOf(this.prisma, me.organizationId, me.spaceIds);
     const now = Date.now();
     const live = shares.filter((s) => !s.expiresAt || new Date(s.expiresAt).getTime() > now);
     if (live.length === 0) return [];
@@ -60,19 +56,11 @@ export class ChatCrossOrgService {
     });
     if (assignments.length === 0) return [];
 
-    const candidates = await this.prisma.user.findMany({
-      where: {
-        id: { in: [...new Set(assignments.map((a) => a.userId))] },
-        isActive: true,
-        role: { not: 'CUSTOMER' },
-        organizationId: { in: [...new Set(otherOrgBySpace.values())] },
-      },
-      select: {
-        id: true, firstName: true, lastName: true, avatarUrl: true, position: true,
-        role: true, contactable: true, canManageUsers: true, presence: true, organizationId: true,
-      },
-      orderBy: [{ firstName: 'asc' }],
-    });
+    const candidates = await crossOrgCandidates(
+      this.prisma,
+      [...new Set(assignments.map((a) => a.userId))],
+      [...new Set(otherOrgBySpace.values())],
+    );
 
     // Keep only people whose org is the counterpart of a space we BOTH work.
     const spacesByUser = new Map<string, Set<string>>();
@@ -80,15 +68,15 @@ export class ChatCrossOrgService {
       if (!spacesByUser.has(a.userId)) spacesByUser.set(a.userId, new Set());
       spacesByUser.get(a.userId)!.add(a.spaceId);
     }
-    return candidates
-      .filter((u) =>
-        [...(spacesByUser.get(u.id) ?? [])].some((sp) => otherOrgBySpace.get(sp) === u.organizationId),
-      )
-      // Presence is stripped on the way out. A shared space is agreement to
-      // exchange messages about the work, not to publish when another
-      // company's staff are at their desks. See shape() for the same rule on
-      // conversations, and the websocket gateway for typing.
-      .map(({ presence: _presence, ...u }) => ({ ...u, presence: null, isExternal: true }));
+    return (
+      candidates
+        .filter((u) => [...(spacesByUser.get(u.id) ?? [])].some((sp) => otherOrgBySpace.get(sp) === u.organizationId))
+        // Presence is stripped on the way out. A shared space is agreement to
+        // exchange messages about the work, not to publish when another
+        // company's staff are at their desks. See shape() for the same rule on
+        // conversations, and the websocket gateway for typing.
+        .map(({ presence: _presence, ...u }) => ({ ...u, presence: null, isExternal: true }))
+    );
   }
 
   /**
@@ -115,10 +103,7 @@ export class ChatCrossOrgService {
 
     const now = new Date();
     const [users, assignments] = await Promise.all([
-      this.prisma.user.findMany({
-        where: { id: { in: ids }, isActive: true },
-        select: { id: true, organizationId: true, role: true },
-      }),
+      peopleOrgAndRole(this.prisma, ids),
       this.prisma.spaceAssignment.findMany({
         where: { userId: { in: ids }, ...notEndedWhere(now) },
         select: { userId: true, spaceId: true },
@@ -161,17 +146,7 @@ export class ChatCrossOrgService {
   sharesWith(myOrg: string, otherOrgIds: string[]): Promise<ChatShareFacts[]> {
     const others = [...new Set(otherOrgIds)].filter((id) => id && id !== myOrg);
     if (others.length === 0) return Promise.resolve([]);
-    return this.prisma.spaceShare.findMany({
-      where: {
-        status: 'ACTIVE',
-        showWorkers: true,
-        OR: [
-          { ownerOrgId: myOrg, guestOrgId: { in: others } },
-          { guestOrgId: myOrg, ownerOrgId: { in: others } },
-        ],
-      },
-      select: { spaceId: true, ownerOrgId: true, guestOrgId: true, status: true, showWorkers: true, expiresAt: true },
-    });
+    return workerSharesBetween(this.prisma, myOrg, others);
   }
 
   /**

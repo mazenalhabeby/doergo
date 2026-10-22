@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { directConversationKey } from '@hbcfield/shared';
+import { directConversationKey, activeShareOwner, personPasses } from '@hbcfield/shared';
 import { CHAT_TASK_SELECT, CHAT_USER_SELECT as userSelect, shapeConversation } from './chat-shape';
 import { CONVERSATION_LIST_ORDER } from './chat-service-helpers';
 import { ChatServiceBase } from './chat-service.base';
@@ -8,7 +8,6 @@ export { CONVERSATION_LIST_ORDER } from './chat-service-helpers';
 
 @Injectable()
 export class ChatService extends ChatServiceBase {
-
   // ── contacts directory (who the current user is allowed to message) ─────────
   listContacts(data: { userId: string; organizationId: string }) {
     return this.reach.listContacts(data);
@@ -26,10 +25,7 @@ export class ChatService extends ChatServiceBase {
     // actively shared between them, which both people work. The cross-org path
     // is tried only when the in-org lookup finds nobody, so the common case
     // costs exactly what it did before.
-    const sameOrg = await this.prisma.user.findFirst({
-      where: { id: data.otherUserId, organizationId: data.organizationId },
-      select: { id: true },
-    });
+    const sameOrg = await personPasses(this.prisma, data.otherUserId, { organizationId: data.organizationId });
 
     let originSpaceId: string | null = null;
     let conversationOrgId = data.organizationId;
@@ -50,10 +46,7 @@ export class ChatService extends ChatServiceBase {
       // Anchor the row to the space owner's org so BOTH sides upsert the same
       // conversation — (organizationId, dmKey) is unique, and letting each side
       // use its own org would give the pair two threads that never meet.
-      const share = await this.prisma.spaceShare.findFirst({
-        where: { spaceId: originSpaceId, status: 'ACTIVE' },
-        select: { ownerOrgId: true },
-      });
+      const share = await activeShareOwner(this.prisma, originSpaceId);
       if (!share) throw new NotFoundException('Member not found');
       conversationOrgId = existing?.organizationId ?? share.ownerOrgId;
     }

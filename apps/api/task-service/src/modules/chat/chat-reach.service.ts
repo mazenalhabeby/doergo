@@ -1,10 +1,18 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { CHAT_CODES } from '@hbcfield/shared';
+import {
+  CHAT_CODES,
+  personContactFacts,
+  personModules,
+  chatPerson,
+  personContactRules,
+  chatDirectory,
+  chatPeople,
+  personChatGate,
+} from '@hbcfield/shared';
 import {
   canContactColleagues,
   isCrossOrgConversationLive,
   SPACE_LEADER_PERMISSION,
-  ORG_ACCESS_SELECT,
   orgAllows,
   type OrgAccessRow,
 } from '@hbcfield/shared';
@@ -21,7 +29,6 @@ import type { ChatMemberContact } from './chat-membership';
  */
 @Injectable()
 export class ChatReachService extends ChatReachBase {
-
   /**
    * May this person START a group? Managers and leaders (D3): org-wide
    * `canManageUsers`, or the space-leader permission in a workspace — the same
@@ -29,10 +36,7 @@ export class ChatReachService extends ChatReachBase {
    * switch must be on: somebody taken out of chat starts nothing in it.
    */
   async mayCreateGroup(userId: string): Promise<boolean> {
-    const me = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { ...ORG_ACCESS_SELECT, role: true, enabledModules: true, isExternal: true },
-    });
+    const me = await personChatGate(this.prisma, userId);
     // An external member works for a client; their leader permission in one site
     // is about that site's hours, not about starting rooms in this company's chat.
     if (!me || me.role === 'CUSTOMER' || me.isExternal || !canContactColleagues({ enabledModules: me.enabledModules }))
@@ -54,15 +58,9 @@ export class ChatReachService extends ChatReachBase {
    * Returns the people, for the system line's names.
    */
   async assertMayAddToGroup(actorId: string, organizationId: string, userIds: string[]) {
-    const me = await this.prisma.user.findUnique({
-      where: { id: actorId },
-      select: { ...ORG_ACCESS_SELECT, enabledModules: true, contactScope: true, contactAllowedIds: true },
-    });
+    const me = await personContactRules(this.prisma, actorId);
     if (!me) throw new NotFoundException('User not found');
-    const people = await this.prisma.user.findMany({
-      where: { id: { in: userIds }, organizationId, isActive: true },
-      select: { id: true, firstName: true, lastName: true, role: true, contactable: true, canManageUsers: true },
-    });
+    const people = await chatPeople(this.prisma, userIds, organizationId);
     const targets = this.contactTargetsResolver(actorId, organizationId);
     const verdicts = await Promise.all(people.map((u) => this.canReach(me, u, targets)));
     if (people.length !== new Set(userIds).size || verdicts.some((ok) => !ok)) {
@@ -82,20 +80,9 @@ export class ChatReachService extends ChatReachBase {
   }
 
   async listContacts(data: { userId: string; organizationId: string }) {
-    const me = await this.prisma.user.findUnique({
-      where: { id: data.userId },
-      select: { ...ORG_ACCESS_SELECT, enabledModules: true, contactScope: true, contactAllowedIds: true },
-    });
+    const me = await personContactRules(this.prisma, data.userId);
     if (!me) throw new NotFoundException('User not found');
-    const all = await this.prisma.user.findMany({
-      // Exclude external CUSTOMER accounts — member chat is staff-only.
-      where: { organizationId: data.organizationId, isActive: true, id: { not: data.userId }, role: { not: 'CUSTOMER' } },
-      select: {
-        id: true, firstName: true, lastName: true, avatarUrl: true, position: true,
-        role: true, contactable: true, canManageUsers: true, presence: true,
-      },
-      orderBy: [{ firstName: 'asc' }],
-    });
+    const all = await chatDirectory(this.prisma, data.organizationId, data.userId);
     // One resolver shared by every candidate below: resolved server-side (so it
     // can't be spoofed) and at most once, however many people we test.
     const spaceTargets = this.contactTargetsResolver(data.userId, data.organizationId);
@@ -130,35 +117,14 @@ export class ChatReachService extends ChatReachBase {
     knownOther?: { id: string; role: string; contactable: boolean; canManageUsers?: boolean } | null,
   ) {
     const [me, other] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: senderId },
-        select: { ...ORG_ACCESS_SELECT, enabledModules: true, contactScope: true, contactAllowedIds: true },
-      }),
-      knownOther
-        ? Promise.resolve(knownOther)
-        : this.prisma.user.findFirst({
-            where: { id: otherUserId, organizationId },
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              avatarUrl: true,
-              position: true,
-              role: true,
-              contactable: true,
-              canManageUsers: true,
-            },
-          }),
+      personContactRules(this.prisma, senderId),
+      knownOther ? Promise.resolve(knownOther) : chatPerson(this.prisma, otherUserId, organizationId),
     ]);
     // `other.id` must match exactly — findFirst with a bad id could otherwise
     // fall through to an unintended row. Also re-check self by resolved id.
     if (!me || !other || other.id !== otherUserId) throw new NotFoundException('Member not found');
     if (other.id === senderId) throw new ForbiddenException('Cannot message yourself');
-    const reachable = await this.canReach(
-      me,
-      other,
-      this.contactTargetsResolver(senderId, organizationId),
-    );
+    const reachable = await this.canReach(me, other, this.contactTargetsResolver(senderId, organizationId));
     if (!reachable) throw new ForbiddenException(deniedMessage);
     return other;
   }
@@ -193,7 +159,7 @@ export class ChatReachService extends ChatReachBase {
       // somebody taken out of chat, or no longer active, writes nowhere.
       const me = conversation.members.find((m) => m.userId === senderId)?.user;
       if (!me || !me.isActive) throw new ForbiddenException('This conversation is no longer available');
-      const sender = await this.prisma.user.findUnique({ where: { id: senderId }, select: { enabledModules: true } });
+      const sender = await personModules(this.prisma, senderId);
       if (!sender || !canContactColleagues({ enabledModules: sender.enabledModules })) {
         throw new ForbiddenException('Messaging is switched off for you');
       }
@@ -268,26 +234,21 @@ export class ChatReachService extends ChatReachBase {
    * Same-org only: cross-org threads are decided by the share, above, and an
    * inactive / moved counterpart was already refused before this is asked.
    */
-  private async mayReply(conversationId: string, organizationId: string, senderId: string, otherId: string): Promise<boolean> {
+  private async mayReply(
+    conversationId: string,
+    organizationId: string,
+    senderId: string,
+    otherId: string,
+  ): Promise<boolean> {
     const wroteHere = await this.prisma.message.findFirst({
       where: { conversationId, senderId: otherId },
       select: { id: true },
     });
     if (!wroteHere) return false;
 
-    const select = {
-      ...ORG_ACCESS_SELECT,
-      id: true,
-      organizationId: true,
-      isActive: true,
-      contactable: true,
-      enabledModules: true,
-      contactScope: true,
-      contactAllowedIds: true,
-    } as const;
     const [sender, other] = await Promise.all([
-      this.prisma.user.findFirst({ where: { id: senderId, organizationId }, select }),
-      this.prisma.user.findFirst({ where: { id: otherId, organizationId }, select }),
+      personContactFacts(this.prisma, senderId, organizationId),
+      personContactFacts(this.prisma, otherId, organizationId),
     ]);
     if (!sender || !other || sender.id !== senderId || other.id !== otherId) return false;
     if (!sender.isActive || !other.isActive) return false;

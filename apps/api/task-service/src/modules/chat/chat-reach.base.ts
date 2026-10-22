@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import {
   canContactColleagues,
   SPACE_LEADER_PERMISSION,
-  ORG_ACCESS_SELECT,
   orgAllows,
   type OrgAccessRow,
   resolveMemberRouting,
+  personOrgAccess,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { ChatCrossOrgService } from './chat-cross-org.service';
@@ -16,18 +16,16 @@ import { ChatCrossOrgService } from './chat-cross-org.service';
  */
 @Injectable()
 export abstract class ChatReachBase {
-
   constructor(
     protected readonly prisma: PrismaService,
     readonly crossOrg: ChatCrossOrgService,
   ) {}
 
-
   // ── groups (docs/plans/chat-team.md phase 3, D3) ─────────────────────────────
 
   /** Does this person manage people org-wide (resolved access, not the legacy column)? */
   async managesPeople(userId: string): Promise<boolean> {
-    const me = await this.prisma.user.findUnique({ where: { id: userId }, select: ORG_ACCESS_SELECT });
+    const me = await personOrgAccess(this.prisma, userId);
     return !!me && orgAllows(me as OrgAccessRow, 'canManageUsers');
   }
 

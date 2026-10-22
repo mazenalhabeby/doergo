@@ -1,6 +1,14 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { CHAT_CODES, CHAT_GROUP_MAX_MEMBERS, SERVICE_NAMES, mayManageGroup, parseGroupTitle } from '@hbcfield/shared';
+import {
+  CHAT_CODES,
+  CHAT_GROUP_MAX_MEMBERS,
+  SERVICE_NAMES,
+  mayManageGroup,
+  parseGroupTitle,
+  personNameOf,
+  personBrief,
+} from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { CHAT_USER_SELECT, shapeConversation } from './chat-shape';
 import { findMembership } from './chat-membership';
@@ -56,10 +64,7 @@ export class ChatGroupsService {
       });
     }
     const people = await this.reach.assertMayAddToGroup(data.userId, data.organizationId, ids);
-    const me = await this.prisma.user.findUnique({
-      where: { id: data.userId },
-      select: { id: true, firstName: true, lastName: true },
-    });
+    const me = await personBrief(this.prisma, data.userId);
 
     const conversation = await this.prisma.conversation.create({
       data: {
@@ -128,12 +133,9 @@ export class ChatGroupsService {
   async removeMember(data: Actor & { conversationId: string; targetId: string }) {
     if (data.targetId === data.userId) return this.leave(data);
     const { membership, me } = await this.mayManage(data);
-    const target = (membership.conversation.members).find((m) => m.userId === data.targetId);
+    const target = membership.conversation.members.find((m) => m.userId === data.targetId);
     if (!target) throw new NotFoundException('Member not found');
-    const person = await this.prisma.user.findUnique({
-      where: { id: data.targetId },
-      select: { firstName: true, lastName: true },
-    });
+    const person = await personNameOf(this.prisma, data.targetId);
     await this.prisma.conversationMember.delete({ where: { id: target.id } });
     await this.handOverIfCreatorLeft(membership.conversation, data.targetId);
     await writeSystemLine(
@@ -149,10 +151,7 @@ export class ChatGroupsService {
   /** Anybody may leave a group. Their words stay; the group goes from their list. */
   async leave(data: Actor & { conversationId: string }) {
     const membership = await this.groupMembership(data.conversationId, data.userId);
-    const me = await this.prisma.user.findUnique({
-      where: { id: data.userId },
-      select: { id: true, firstName: true, lastName: true },
-    });
+    const me = await personBrief(this.prisma, data.userId);
     await this.prisma.conversationMember.delete({ where: { id: membership.id } });
     await this.handOverIfCreatorLeft(membership.conversation, data.userId);
     await writeSystemLine(
@@ -201,10 +200,7 @@ export class ChatGroupsService {
     }
     // Changing a group is writing in it: "off means off" holds here too.
     await this.reach.assertStillReachable(membership, data.userId);
-    const me = await this.prisma.user.findUnique({
-      where: { id: data.userId },
-      select: { firstName: true, lastName: true },
-    });
+    const me = await personNameOf(this.prisma, data.userId);
     return { membership, me: { id: data.userId, name: personName(me) } };
   }
 

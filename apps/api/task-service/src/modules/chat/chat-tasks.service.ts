@@ -1,7 +1,7 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
-import { CHAT_CODES, SERVICE_NAMES, taskChatClosed } from '@hbcfield/shared';
+import { CHAT_CODES, SERVICE_NAMES, taskChatClosed, peopleWhoPass } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
 import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
@@ -32,11 +32,7 @@ async function crewOf(
   const rows = await prisma.taskAssignee.findMany({ where: { taskId: task.id }, select: { userId: true } });
   const ids = [...new Set([...rows.map((r) => r.userId), ...(task.assignedToId ? [task.assignedToId] : [])])];
   if (ids.length === 0) return [];
-  const people = await prisma.user.findMany({
-    where: { id: { in: ids }, organizationId: task.organizationId, isActive: true, role: { not: 'CUSTOMER' } },
-    select: { id: true },
-  });
-  return people.map((p) => p.id);
+  return peopleWhoPass(prisma, ids, { organizationId: task.organizationId, active: true, notClients: true });
 }
 
 /**
@@ -249,6 +245,6 @@ export class ChatTasksService {
       task.organizationId,
       task.workflowId ?? task.space?.workflowId ?? null,
     );
-    return taskChatClosed(task.status, (workflow?.statuses ?? []));
+    return taskChatClosed(task.status, workflow?.statuses ?? []);
   }
 }

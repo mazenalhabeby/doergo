@@ -121,3 +121,4 @@ export * from './data/leave';
 export * from './data/documents';
 export * from './data/activity';
 export * from './data/people-work';
+export * from './data/chat-contacts';
