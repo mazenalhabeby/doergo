@@ -9,7 +9,7 @@ import {
   type RosterFn,
   peopleWorkingWeek,
 } from '@hbcfield/shared';
-import { shiftRuleOf } from '../technicians/cover.service';
+import { shiftRuleOf } from '../technicians/cover-helpers';
 import { PlaceCalendar } from './calendar-rules-helpers';
 import { CalendarRulesBase } from './calendar-rules.base';
 

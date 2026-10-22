@@ -775,10 +775,7 @@
    "part"
   ]
  },
- "cycles": [
-  "apps/api/task-service/src/modules/calendar/calendar-rules.service.ts ⇄ apps/api/task-service/src/modules/technicians/cover.base.ts ⇄ apps/api/task-service/src/modules/technicians/cover.service.ts",
-  "apps/web-app/src/i18n/index.ts ⇄ apps/web-app/src/i18n/languages.ts"
- ],
+ "cycles": [],
  "boundary": [],
  "i18n": {
   "web": [

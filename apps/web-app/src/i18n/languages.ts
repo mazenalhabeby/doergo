@@ -22,26 +22,9 @@
  * approximately never.
  */
 
-import {
-  LANGUAGE_CHOICES,
-  SUPPORTED_LOCALES,
-  isSupportedLocale,
-  type SupportedLocale,
-} from '@hbcfield/shared/client';
+import { isSupported } from "./language-list"
 
-export const LANGUAGE_KEY = 'hbcfield_language';
-
-// The list itself is shared with the phone and the server (notifications/locale.ts
-// in shared): a language offered here that the server refused would only fail on
-// save. The shared module is plain data, so this file stays catalogue-free.
-export const SUPPORTED = SUPPORTED_LOCALES;
-export type Supported = SupportedLocale;
-
-export function isSupported(lang: string): lang is Supported {
-  return isSupportedLocale(lang);
-}
-
-export const supportedLanguages = LANGUAGE_CHOICES;
+export { LANGUAGE_KEY, SUPPORTED, isSupported, supportedLanguages, type Supported } from "./language-list"
 
 /**
  * Switch language, loading the machinery only when asked.
@@ -54,8 +37,8 @@ export const supportedLanguages = LANGUAGE_CHOICES;
  * bundles; this is a door to it that costs nothing until it is opened.
  */
 export async function changeLanguage(lang: string): Promise<void> {
-  if (typeof window === 'undefined') return;
-  if (!isSupported(lang)) return;
-  const mod = await import('./index');
-  await mod.changeLanguage(lang);
+  if (typeof window === "undefined") return
+  if (!isSupported(lang)) return
+  const mod = await import("./index")
+  await mod.changeLanguage(lang)
 }
