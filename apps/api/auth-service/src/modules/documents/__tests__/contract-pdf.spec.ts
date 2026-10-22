@@ -1,6 +1,6 @@
 import { PDFDocument } from 'pdf-lib';
 import { createHash } from 'node:crypto';
-import { renderContractPdf, sealSignedPdf } from '../contract-pdf';
+import { renderContractPdf, sealSignedPdf } from '../core/contract-pdf';
 import {
   parseBlocks,
   wrap,

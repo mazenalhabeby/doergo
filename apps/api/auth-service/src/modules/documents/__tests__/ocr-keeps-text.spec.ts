@@ -1,5 +1,5 @@
 import sharp from 'sharp';
-import { MrzOcrService } from '../mrz-ocr.service';
+import { MrzOcrService } from '../reading/mrz-ocr.service';
 
 /**
  * The OCR returns what it read — not only what looks like a passport.

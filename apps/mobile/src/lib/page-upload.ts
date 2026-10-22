@@ -18,7 +18,7 @@ export * from './page-order';
  * last one or two.
  *
  * ⚠️ The compression bound matches the server's `MAX_EDGE` in
- * `apps/api/auth-service/src/modules/documents/pages-pdf.ts`. Sending a 12-
+ * `apps/api/auth-service/src/modules/documents/core/pages-pdf.ts`. Sending a 12-
  * megapixel original spends the member's mobile data on pixels the server
  * immediately throws away — on a van's hotspot that is the whole difference
  * between this feeling instant and feeling broken.

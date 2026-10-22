@@ -1,5 +1,5 @@
 import sharp from 'sharp';
-import { openUntrustedImage, MAX_INPUT_PIXELS } from '../image-input';
+import { openUntrustedImage, MAX_INPUT_PIXELS } from '../core/image-input';
 
 /**
  * The decode bound on images somebody else chose.

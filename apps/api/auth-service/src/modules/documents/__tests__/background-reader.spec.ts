@@ -1,12 +1,12 @@
 import { mrzCheckDigit } from '@hbcfield/shared';
-import { OcrRulesReader, isHeic } from '../document-reader';
-import { DocumentReadQueue, readingOf } from '../document-read-queue.service';
+import { OcrRulesReader, isHeic } from '../reading/document-reader';
+import { DocumentReadQueue, readingOf } from '../reading/document-read-queue.service';
 
 // pdf.js handed in directly: the service's `new Function` import resolves, under
 // Jest, against whichever test file a worker ran first — torn down by now. A
 // DIRECT eval keeps this test file's own import hook, so it loads into this
 // file's environment every time.
-jest.mock('../pdfjs-loader', () => ({
+jest.mock('../reading/pdfjs-loader', () => ({
   // eslint-disable-next-line no-eval
   loadPdfjs: () => eval("import('pdfjs-dist/legacy/build/pdf.mjs')"),
 }));
@@ -139,7 +139,7 @@ describe('a later, proven read', () => {
 describe('PdfTextReader — PDFs members upload', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { PDFDocument, StandardFonts } = require('pdf-lib');
-  const { PdfTextReader } = require('../document-reader');
+  const { PdfTextReader } = require('../reading/document-reader');
 
   async function pdf(rows: { y: number; size: number; text: string }[]): Promise<Buffer> {
     const doc = await PDFDocument.create();

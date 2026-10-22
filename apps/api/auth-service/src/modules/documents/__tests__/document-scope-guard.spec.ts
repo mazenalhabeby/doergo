@@ -22,13 +22,13 @@ describe('every document read is scoped by type visibility', () => {
   */
   const DIR = join(__dirname, '..');
   const FILES = [
-    ...readFileSync(join(DIR, 'document-services.ts'), 'utf8').matchAll(/from '\.\/([\w.-]+)'/g),
+    ...readFileSync(join(DIR, 'document-services.ts'), 'utf8').matchAll(/from '\.\/([\w./-]+)'/g),
   ].map((m) => `${m[1]}.ts`);
   const SOURCES = FILES.map((file) => ({ file, src: readFileSync(join(DIR, file), 'utf8') }));
   const SRC = SOURCES.map((s) => s.src).join('\n');
 
   it('reads the whole service, not only the facade', () => {
-    expect(FILES).toEqual(expect.arrayContaining(['documents.service.ts', 'document-registers.service.ts']));
+    expect(FILES).toEqual(expect.arrayContaining(['documents.service.ts', 'registers/document-registers.service.ts']));
     expect(FILES.length).toBeGreaterThan(10);
   });
 

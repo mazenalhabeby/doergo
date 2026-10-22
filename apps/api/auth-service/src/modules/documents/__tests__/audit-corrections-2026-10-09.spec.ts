@@ -2,11 +2,11 @@ import { Test } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { MrzOcrService } from '../mrz-ocr.service';
+import { MrzOcrService } from '../reading/mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';
 import { credentialExpiryParts } from './credential-expiry.service.fixture';
-import { OBJECT_STORE } from '../object-store.provider';
+import { OBJECT_STORE } from '../core/object-store.provider';
 
 /**
  * The personnel-file corrections from the 2026-10-09 audit.

@@ -1,6 +1,6 @@
 import { PDFDocument } from 'pdf-lib';
 import sharp from 'sharp';
-import { assemblePagesPdf, MAX_PAGES } from '../pages-pdf';
+import { assemblePagesPdf, MAX_PAGES } from '../core/pages-pdf';
 
 /*
   Sheets of paper photographed one at a time must arrive as ONE document.

@@ -1,52 +1,31 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule } from '@nestjs/microservices';
-import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { DocumentsController } from './documents.controller';
 import { DocumentsService } from './documents.service';
-import { DOCUMENT_SERVICES } from './document-services';
-import { CustomerSignLinkService } from './customer-sign-link.service';
-import { CustomerSignMailerService } from './customer-sign-mailer.service';
-import { MrzOcrService } from './mrz-ocr.service';
-import { objectStoreProvider } from './object-store.provider';
-import { CredentialExpiryService } from './credential-expiry.service';
-import { DOCUMENT_READERS, OcrRulesReader, PdfTextReader } from './document-reader';
-import { DocumentReadQueue } from './document-read-queue.service';
-import { ComplianceBoardService } from './compliance-board.service';
+import { DocumentCoreModule } from './core/document-core.module';
+import { DocumentTypesModule } from './types/document-types.module';
+import { DocumentTemplatesModule } from './templates/document-templates.module';
+import { DocumentIssuingModule } from './issuing/document-issuing.module';
+import { DocumentSigningModule } from './signing/document-signing.module';
+import { DocumentReadingModule } from './reading/document-reading.module';
+import { DocumentRegistersModule } from './registers/document-registers.module';
 
+/**
+ * The personnel file. Each part is its own module (code-structure-fix 4.3): core · types · templates ·
+ * issuing · signing · reading · registers. This module holds only the DocumentsService facade and the
+ * controller, and re-exports what other modules use (signing links, the credential-expiry sweep).
+ */
 @Module({
   imports: [
-    // Outbound only: telling a member a document is waiting for them.
-    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
+    DocumentCoreModule,
+    DocumentTypesModule,
+    DocumentTemplatesModule,
+    DocumentIssuingModule,
+    DocumentSigningModule,
+    DocumentReadingModule,
+    DocumentRegistersModule,
   ],
   controllers: [DocumentsController],
-  providers: [
-    // The facade and its collaborators — see document-services.ts.
-    ...DOCUMENT_SERVICES,
-    CustomerSignLinkService,
-    CustomerSignMailerService,
-    CredentialExpiryService,
-    ComplianceBoardService,
-    // Reads a document's machine-readable zone in-process, so members'
-    // passports never leave the box.
-    MrzOcrService,
-    objectStoreProvider,
-    /*
-      The readers, in the order they are tried. Today: this server's OCR plus
-      the shared rules. A local AI engine later is one more entry here — the
-      queue, the review screen and the approval do not change.
-    */
-    OcrRulesReader,
-    PdfTextReader,
-    {
-      provide: DOCUMENT_READERS,
-      // Each reader declines what it cannot read (an image to the PDF reader,
-      // a PDF to the OCR), so the order only decides ties.
-      useFactory: (pdf: PdfTextReader, ocr: OcrRulesReader) => [pdf, ocr],
-      inject: [PdfTextReader, OcrRulesReader],
-    },
-    // Reads members' documents after they are filed, never while they wait.
-    DocumentReadQueue,
-  ],
-  exports: [DocumentsService, CredentialExpiryService, CustomerSignLinkService, CustomerSignMailerService],
+  providers: [DocumentsService],
+  exports: [DocumentsService, DocumentRegistersModule, DocumentSigningModule],
 })
 export class DocumentsModule {}

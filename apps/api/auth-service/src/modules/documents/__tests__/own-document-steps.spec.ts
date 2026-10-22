@@ -1,5 +1,5 @@
-import { extraSheets, parseOwnExpiry, scannedExpiryOf } from '../own-document-steps';
-import { MAX_PAGES } from '../pages-pdf';
+import { extraSheets, parseOwnExpiry, scannedExpiryOf } from '../issuing/own-document-steps';
+import { MAX_PAGES } from '../core/pages-pdf';
 
 describe('own document steps', () => {
   it('a missing expiry is fine; unreadable or 50+ years out is refused; the past is allowed', () => {

@@ -6,10 +6,10 @@ import {
   resolveAudiences,
 } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { MrzOcrService } from '../mrz-ocr.service';
+import { MrzOcrService } from '../reading/mrz-ocr.service';
 import { DocumentsService } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';
-import { OBJECT_STORE } from '../object-store.provider';
+import { OBJECT_STORE } from '../core/object-store.provider';
 
 /**
  * Which contract a person gets — asked twice, and the two answers have to agree.

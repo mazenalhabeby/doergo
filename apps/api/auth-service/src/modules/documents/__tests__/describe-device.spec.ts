@@ -1,4 +1,4 @@
-import { describeDevice } from '../contract-pdf';
+import { describeDevice } from '../core/contract-pdf';
 
 /**
  * What the certificate of completion says somebody was using.

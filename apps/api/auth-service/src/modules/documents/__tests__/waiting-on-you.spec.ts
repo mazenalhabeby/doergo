@@ -1,10 +1,10 @@
 import { Test } from '@nestjs/testing';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { MrzOcrService } from '../mrz-ocr.service';
+import { MrzOcrService } from '../reading/mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';
-import { OBJECT_STORE } from '../object-store.provider';
+import { OBJECT_STORE } from '../core/object-store.provider';
 
 /**
  * "Needs your signature" has to mean YOURS.

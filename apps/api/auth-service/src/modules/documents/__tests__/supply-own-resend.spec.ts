@@ -2,7 +2,7 @@
  * A document a member supplied offline, sent twice, is filed once — the second
  * send must not fail on the upload the first already moved out of staging.
  */
-import { DocumentSupplyService } from '../document-supply.service';
+import { DocumentSupplyService } from '../issuing/document-supply.service';
 
 it('returns the filed document for a resend, before touching staging', async () => {
   const prisma: any = { document: { findUnique: jest.fn(async () => ({ id: 'doc-phone-00000001', userId: 'u1', organizationId: 'o1' })) } };

@@ -1,5 +1,5 @@
 import sharp from 'sharp';
-import { MrzOcrService } from '../mrz-ocr.service';
+import { MrzOcrService } from '../reading/mrz-ocr.service';
 import { parseMrz, mrzCheckDigit } from '@hbcfield/shared';
 
 /**

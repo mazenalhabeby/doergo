@@ -1,8 +1,8 @@
-import { ComplianceBoardService } from '../compliance-board.service';
+import { ComplianceBoardService } from '../registers/compliance-board.service';
 import { Test } from '@nestjs/testing';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { CredentialExpiryService } from '../credential-expiry.service';
+import { CredentialExpiryService } from '../registers/credential-expiry.service';
 import { credentialExpiryPartsOf, type CredentialExpiryServiceParts } from './credential-expiry.service.fixture';
 
 /**
@@ -194,7 +194,7 @@ describe('CredentialExpiryService', () => {
     const fs = require('fs') as typeof import('fs');
     const path = require('path') as typeof import('path');
     const src = fs.readFileSync(
-      path.join(__dirname, '..', 'credential-expiry.service.ts'),
+      path.join(__dirname, '..', 'registers/credential-expiry.service.ts'),
       'utf8',
     );
 

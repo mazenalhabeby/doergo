@@ -1,10 +1,10 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { DocumentsService } from './documents.service';
-import { CustomerSignLinkService } from './customer-sign-link.service';
-import { CustomerSignMailerService } from './customer-sign-mailer.service';
-import { OwnUploadReaderService } from './own-upload-reader.service';
-import { ComplianceBoardService } from './compliance-board.service';
+import { CustomerSignLinkService } from './signing/customer-sign-link.service';
+import { CustomerSignMailerService } from './signing/customer-sign-mailer.service';
+import { OwnUploadReaderService } from './reading/own-upload-reader.service';
+import { ComplianceBoardService } from './registers/compliance-board.service';
 
 import { pattern, type RpcRequest } from '@hbcfield/shared/microservices';
 // The handlers' message contracts — one namespace, so the list is not repeated here.

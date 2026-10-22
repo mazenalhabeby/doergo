@@ -2,10 +2,10 @@ import { Test } from '@nestjs/testing';
 import { ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { MrzOcrService } from '../mrz-ocr.service';
+import { MrzOcrService } from '../reading/mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';
-import { OBJECT_STORE } from '../object-store.provider';
+import { OBJECT_STORE } from '../core/object-store.provider';
 
 /**
  * A member supplying their own document.
@@ -455,7 +455,7 @@ describe('DocumentsService — what the member supplies', () => {
 describe('verification settles a missing expiry', () => {
   // Verification lives in its own collaborator behind the DocumentsService facade.
   const src = require('fs').readFileSync(
-    require('path').join(__dirname, '..', 'document-verification.service.ts'),
+    require('path').join(__dirname, '..', 'issuing/document-verification.service.ts'),
     'utf8',
   );
 

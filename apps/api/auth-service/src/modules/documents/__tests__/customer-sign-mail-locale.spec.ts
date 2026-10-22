@@ -1,4 +1,4 @@
-import { CustomerSignMailerService } from '../customer-sign-mailer.service';
+import { CustomerSignMailerService } from '../signing/customer-sign-mailer.service';
 
 /*
   A client's signing link is written in the client's language — the client rule

@@ -4,10 +4,10 @@ import { PDFDocument } from 'pdf-lib';
 import { inflateSync } from 'node:zlib';
 import { SERVICE_NAMES, MERGE_FIELDS } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { MrzOcrService } from '../mrz-ocr.service';
+import { MrzOcrService } from '../reading/mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';
-import { OBJECT_STORE } from '../object-store.provider';
+import { OBJECT_STORE } from '../core/object-store.provider';
 
 /**
  * Laying a draft out as the PDF a member would receive.

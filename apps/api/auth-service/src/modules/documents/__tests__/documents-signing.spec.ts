@@ -3,11 +3,11 @@ import { NotFoundException, ConflictException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { sha256 } from '@hbcfield/shared/storage';
 import { PrismaService } from '@hbcfield/shared';
-import { MrzOcrService } from '../mrz-ocr.service';
+import { MrzOcrService } from '../reading/mrz-ocr.service';
 import { DocumentsService, CONSENT_TEXT, type DocumentActor } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';
-import { OBJECT_STORE } from '../object-store.provider';
-import { renderContractPdf } from '../contract-pdf';
+import { OBJECT_STORE } from '../core/object-store.provider';
+import { renderContractPdf } from '../core/contract-pdf';
 
 /**
  * Signing.

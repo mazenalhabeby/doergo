@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '@hbcfield/shared';
-import { CustomerSignLinkService } from '../customer-sign-link.service';
+import { CustomerSignLinkService } from '../signing/customer-sign-link.service';
 import { hashSecret, SIGN_LINK_TTL_DAYS } from '@hbcfield/shared';
 
 /**

@@ -1,26 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { DocumentRoutingService } from './document-routing.service';
-import { DocumentSigningService } from './document-signing.service';
-import { DocumentTypesService } from './document-types.service';
-import { DocumentTemplatesService } from './document-templates.service';
-import { DocumentIssuingService } from './document-issuing.service';
-import { DocumentSupplyService } from './document-supply.service';
-import { DocumentVerificationService } from './document-verification.service';
-import { DocumentCustomerSigningService } from './document-customer-signing.service';
-import { DocumentRegistersService } from './document-registers.service';
-import { DocumentDownloadsService } from './document-downloads.service';
-import { DocumentControlService } from './document-control.service';
-import { DocumentChainService } from './document-chain.service';
-import { DocumentSendBackService } from './document-send-back.service';
-import { IssuedRegisterService } from './issued-register.service';
-import { MemberDocumentsService } from './member-documents.service';
-import { DocumentDraftsService } from './document-drafts.service';
-import { DocumentRequirementsService } from './document-requirements.service';
-import { ContractIssueService } from './contract-issue.service';
-import { CustomerSignBatchService } from './customer-sign-batch.service';
-import { DocumentTypeUpdateService } from './document-type-update.service';
+import { DocumentRoutingService } from './core/document-routing.service';
+import { DocumentSigningService } from './signing/document-signing.service';
+import { DocumentTypesService } from './types/document-types.service';
+import { DocumentTemplatesService } from './templates/document-templates.service';
+import { DocumentIssuingService } from './issuing/document-issuing.service';
+import { DocumentSupplyService } from './issuing/document-supply.service';
+import { DocumentVerificationService } from './issuing/document-verification.service';
+import { DocumentCustomerSigningService } from './signing/document-customer-signing.service';
+import { DocumentRegistersService } from './registers/document-registers.service';
+import { DocumentDownloadsService } from './registers/document-downloads.service';
+import { DocumentControlService } from './issuing/document-control.service';
+import { DocumentChainService } from './core/document-chain.service';
+import { DocumentSendBackService } from './signing/document-send-back.service';
+import { IssuedRegisterService } from './registers/issued-register.service';
+import { MemberDocumentsService } from './registers/member-documents.service';
+import { DocumentDraftsService } from './issuing/document-drafts.service';
+import { DocumentRequirementsService } from './issuing/document-requirements.service';
+import { ContractIssueService } from './templates/contract-issue.service';
+import { CustomerSignBatchService } from './signing/customer-sign-batch.service';
+import { DocumentTypeUpdateService } from './types/document-type-update.service';
 
-export { CONSENT_TEXT, type DocumentActor, type RouteCandidateStep } from './document-common';
+export { CONSENT_TEXT, type DocumentActor, type RouteCandidateStep } from './core/document-common';
 
 /**
  * The personnel file.

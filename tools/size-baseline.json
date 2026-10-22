@@ -1,5 +1,5 @@
 {
- "apps/api/auth-service/src/modules/documents/mrz-ocr.service.ts": {
+ "apps/api/auth-service/src/modules/documents/reading/mrz-ocr.service.ts": {
   "lines": 320,
   "long": 0
  },

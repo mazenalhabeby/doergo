@@ -86,7 +86,7 @@ describe('the meaning of a page is decided in one place', () => {
     const callers: [string, string][] = [
       ['phone', path.join(MOBILE, 'src/lib/document-scan.ts')],
       ['browser', path.join(WEB, 'src/app/(dashboard)/my/documents/_components/supply-document-dialog.tsx')],
-      ['server', path.join(AUTH, 'src/modules/documents/own-upload-reader.service.ts')],
+      ['server', path.join(AUTH, 'src/modules/documents/reading/own-upload-reader.service.ts')],
     ];
     for (const [where, file] of callers) {
       expect({ where, uses: stripComments(read(file)).includes('suggestExpiry') })

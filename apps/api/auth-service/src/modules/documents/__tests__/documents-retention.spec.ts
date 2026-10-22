@@ -1,14 +1,14 @@
-import { ComplianceBoardService } from '../compliance-board.service';
+import { ComplianceBoardService } from '../registers/compliance-board.service';
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
-import { CredentialExpiryService } from '../credential-expiry.service';
+import { CredentialExpiryService } from '../registers/credential-expiry.service';
 import { credentialExpiryPartsOf, type CredentialExpiryServiceParts } from './credential-expiry.service.fixture';
-import { MrzOcrService } from '../mrz-ocr.service';
+import { MrzOcrService } from '../reading/mrz-ocr.service';
 import { DocumentsService, type DocumentActor } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';
-import { OBJECT_STORE } from '../object-store.provider';
+import { OBJECT_STORE } from '../core/object-store.provider';
 
 /**
  * Retention, and a member taking their file away.

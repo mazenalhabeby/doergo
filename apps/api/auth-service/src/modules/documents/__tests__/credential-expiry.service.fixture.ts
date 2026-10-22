@@ -1,6 +1,6 @@
 import { combinedServices } from '../../../common/testing/combined-services';
-import { CredentialExpiryService } from '../credential-expiry.service';
-import { ComplianceBoardService } from '../compliance-board.service';
+import { CredentialExpiryService } from '../registers/credential-expiry.service';
+import { ComplianceBoardService } from '../registers/compliance-board.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };
