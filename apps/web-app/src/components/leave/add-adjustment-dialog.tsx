@@ -4,16 +4,29 @@ import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
-import { MANUAL_ADJUSTMENT_KINDS, LEAVE_ADJUSTMENT_LIMITS, parseLeaveAdjustment, type LeaveAdjustmentKind } from "@hbcfield/shared/client"
+import {
+  MANUAL_ADJUSTMENT_KINDS,
+  LEAVE_ADJUSTMENT_LIMITS,
+  parseLeaveAdjustment,
+  type LeaveAdjustmentKind,
+} from "@hbcfield/shared/client"
 import { leaveLedgerApi } from "@/lib/api"
 import { todayKey } from "@/lib/leave-ledger"
 import { serverErrorMessage } from "@/lib/server-error"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
 /**
@@ -45,7 +58,11 @@ export function AddAdjustmentDialog({
   // A fresh dialog is a fresh line — never the last one's numbers.
   useEffect(() => {
     if (!open) return
-    setKind("CORRECTION"); setDays(""); setOn(todayKey()); setReason(""); setTried(false)
+    setKind("CORRECTION")
+    setDays("")
+    setOn(todayKey())
+    setReason("")
+    setTried(false)
   }, [open])
 
   const parsed = useMemo(() => parseLeaveAdjustment({ kind, days, on, reason }), [kind, days, on, reason])
@@ -119,7 +136,7 @@ export function AddAdjustmentDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="adj-on">{t("leaveLedger.adjust.date")}</Label>
-              <Input id="adj-on" type="date" value={on} onChange={(e) => setOn(e.target.value)} />
+              <DatePicker id="adj-on" value={on} onChange={setOn} />
             </div>
           </div>
           <p className="-mt-2 text-xs text-muted-foreground">{t(`leaveLedger.kinds.${kind}.daysHint`)}</p>
@@ -127,7 +144,9 @@ export function AddAdjustmentDialog({
           <div className="space-y-1.5">
             <Label htmlFor="adj-reason">
               {t("leaveLedger.adjust.reason")}
-              {!reasonRequired && <span className="ml-1 font-normal text-muted-foreground">{t("leaveLedger.adjust.optional")}</span>}
+              {!reasonRequired && (
+                <span className="ml-1 font-normal text-muted-foreground">{t("leaveLedger.adjust.optional")}</span>
+              )}
             </Label>
             <Textarea
               id="adj-reason"
@@ -140,7 +159,9 @@ export function AddAdjustmentDialog({
           </div>
 
           {tried && !parsed.ok && (
-            <p role="alert" className="text-xs text-red-600 dark:text-red-400">{t(`serverErrors.${parsed.code}`)}</p>
+            <p role="alert" className="text-xs text-red-600 dark:text-red-400">
+              {t(`serverErrors.${parsed.code}`)}
+            </p>
           )}
         </div>
 

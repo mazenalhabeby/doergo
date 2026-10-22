@@ -15,6 +15,7 @@ import { serverErrorMessage } from "@/lib/server-error"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { PAGE_WIDTH } from "@/components/ui/page-width"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -167,12 +168,12 @@ export default function LeaveOpeningPage() {
                 <label htmlFor="opening-on" className="mb-1 block text-xs font-medium text-muted-foreground">
                   {t("leaveLedger.opening.startedOn")}
                 </label>
-                <Input
+                <DatePicker
                   id="opening-on"
-                  type="date"
                   value={on}
-                  onChange={(e) => chooseDay(e.target.value)}
-                  className="h-8 w-44 bg-background"
+                  onChange={chooseDay}
+                  className="w-44"
+                  triggerClassName="h-8 bg-background"
                 />
               </div>
               <p className="min-w-0 flex-1 text-[13px] text-muted-foreground">

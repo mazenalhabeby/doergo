@@ -671,7 +671,8 @@
     "selectDate": "Elegir fecha",
     "noPageAccessTitle": "No tienes acceso a esta página",
     "noPageAccessBody": "Tu rol no incluye esta página. Si la necesitas, pídeselo a un administrador de tu organización.",
-    "noPageAccessOption": "Tu organización no ha activado esta función. Un administrador puede activarla en Suscripción y facturación."
+    "noPageAccessOption": "Tu organización no ha activado esta función. Un administrador puede activarla en Suscripción y facturación.",
+    "cannotBeUndone": "Esta acción no se puede deshacer."
   },
   "auth": {
     "sessionEnded": {
@@ -2130,6 +2131,11 @@
           "origin": "Origen del trabajo"
         }
       }
+    },
+    "deleteConfirm": {
+      "one": "¿Eliminar «{{title}}»?",
+      "many_one": "¿Eliminar {{count}} tarea?",
+      "many_other": "¿Eliminar {{count}} tareas?"
     }
   },
   "technicians": {

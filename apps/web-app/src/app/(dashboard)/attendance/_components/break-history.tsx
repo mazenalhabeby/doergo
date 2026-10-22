@@ -2,11 +2,11 @@ import { cn } from "@/lib/utils"
 import { type Break } from "@/lib/api"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Coffee, UtensilsCrossed, Pause, RefreshCw, Calendar, UserPen } from "lucide-react"
+import { Coffee, UtensilsCrossed, Pause, RefreshCw, UserPen } from "lucide-react"
 import { formatTime, NoteCell } from "./attendance-helpers"
 import { formatDuration, personName, countryFromTz, isLabelCode, labelWord } from "@hbcfield/shared/client"
 import { useTranslation } from "react-i18next"
@@ -58,15 +58,11 @@ export function BreakHistory({
             </Select>
 
             {/* Date Filter */}
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              <Input
-                type="date"
-                value={breakDate}
-                onChange={(e) => setBreakDate(e.target.value)}
-                className="pl-9 w-[160px] h-10 bg-card/80 border-border/80 rounded-lg shadow-sm"
-              />
-            </div>
+            <DatePicker
+              value={breakDate}
+              onChange={setBreakDate}
+              triggerClassName="w-[160px] h-10 bg-card/80 border-border/80 rounded-lg shadow-sm"
+            />
 
             <Button
               variant="outline"

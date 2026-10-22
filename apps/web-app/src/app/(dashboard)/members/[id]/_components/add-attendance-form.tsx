@@ -3,6 +3,7 @@
 import { personName } from "@hbcfield/shared/client"
 import { BreakFields } from "@/components/attendance/break-fields"
 import { Checkbox } from "@/components/ui/checkbox"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -170,22 +171,32 @@ export function AddAttendanceForm({
       {mode === "single" ? (
         <div className="space-y-1.5">
           <Label>{t("technicians.addAttendance.date")}</Label>
-          <Input type="date" value={startDate} max={today} onChange={(e) => setStartDate(e.target.value)} />
+          <DatePicker
+            value={startDate}
+            max={today}
+            onChange={setStartDate}
+            aria-label={t("technicians.addAttendance.date")}
+          />
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label>{t("technicians.addAttendance.startDate")}</Label>
-            <Input type="date" value={startDate} max={today} onChange={(e) => setStartDate(e.target.value)} />
+            <DatePicker
+              value={startDate}
+              max={today}
+              onChange={setStartDate}
+              aria-label={t("technicians.addAttendance.startDate")}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>{t("technicians.addAttendance.endDate")}</Label>
-            <Input
-              type="date"
+            <DatePicker
               value={endDate}
               min={startDate || undefined}
               max={today}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={setEndDate}
+              aria-label={t("technicians.addAttendance.endDate")}
             />
           </div>
         </div>

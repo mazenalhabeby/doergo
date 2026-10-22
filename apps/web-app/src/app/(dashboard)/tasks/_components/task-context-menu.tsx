@@ -19,6 +19,7 @@ import type { TaskContextMenuProps } from "./task-context-menu-types"
 import { TaskStatusSubmenu } from "./task-status-submenu"
 import { TaskAssignSubmenu } from "./task-assign-submenu"
 import { TaskPlanningSubmenus } from "./task-planning-submenus"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 export { type TaskContextMenuActions } from "./task-context-menu-types"
 
 /** A task's right-click menu: open, status, priority, assignee, planning, delete. */
@@ -34,91 +35,105 @@ export function TaskContextMenuInner({
 }: TaskContextMenuProps) {
   const { t } = useTranslation()
   const router = useRouter()
+  const [confirmDelete, setConfirmDelete] = React.useState(false)
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-      <ContextMenuContent className="w-[200px]">
-        {/* Open */}
-        <ContextMenuItem onClick={() => router.push(`/tasks/${task.id}`)}>
-          <ExternalLink className="size-4 mr-2" />
-          {t("tasks.menu.open")}
-        </ContextMenuItem>
-
-        <ContextMenuSeparator />
-
-        {/* Status submenu */}
-        <TaskStatusSubmenu task={task} onStatusChange={actions.onStatusChange} />
-
-        {/* Priority submenu */}
-        {actions.onPriorityChange && (
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              {(() => {
-                const pc = getPriorityConfig(task.priority)
-                const Icon = pc.icon
-                return <Icon className="size-3.5 mr-2 flex-shrink-0" style={{ color: pc.hex }} />
-              })()}
-              Priority
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent className="w-[160px]">
-              {TASK_PRIORITIES.map((priority) => {
-                const config = getPriorityConfig(priority)
-                const Icon = config.icon
-                const isCurrent = task.priority === priority
-                return (
-                  <ContextMenuItem
-                    key={priority}
-                    disabled={isCurrent}
-                    onClick={() => actions.onPriorityChange!(task.id, priority)}
-                    className={isCurrent ? "opacity-50" : ""}
-                  >
-                    <Icon className="size-3.5 mr-2 flex-shrink-0" style={{ color: config.hex }} />
-                    {config.label}
-                  </ContextMenuItem>
-                )
-              })}
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-        )}
-
-        {/* Assign to submenu */}
-        <TaskAssignSubmenu task={task} recentAssignees={recentAssignees} onAssigneeChange={actions.onAssigneeChange} />
-
-        <ContextMenuSeparator />
-
-        {/* Sprint, phase, epic, workspace, story points */}
-        <TaskPlanningSubmenus
-          task={task}
-          sprints={sprints}
-          phases={phases}
-          epics={epics}
-          spaces={spaces}
-          actions={actions}
+    <>
+      {actions.onDelete && (
+        <ConfirmDialog
+          open={confirmDelete}
+          onOpenChange={setConfirmDelete}
+          title={t("tasks.deleteConfirm.one", { title: task.title })}
+          description={t("common.cannotBeUndone")}
+          confirmLabel={t("common.delete")}
+          onConfirm={() => actions.onDelete!(task.id)}
+          destructive
         />
-
-        {(actions.onSprintChange ||
-          actions.onPhaseChange ||
-          actions.onEpicChange ||
-          actions.onStoryPointsChange ||
-          actions.onSpaceChange) && <ContextMenuSeparator />}
-
-        {/* Delete */}
-        {actions.onDelete && (
-          <ContextMenuItem
-            onClick={() => {
-              if (window.confirm(`Delete "${task.title}"?`)) {
-                actions.onDelete!(task.id)
-              }
-            }}
-            className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-500/10"
-          >
-            <Trash2 className="size-4 mr-2" />
-            {t("tasks.menu.delete")}
+      )}
+      <ContextMenu>
+        <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+        <ContextMenuContent className="w-[200px]">
+          {/* Open */}
+          <ContextMenuItem onClick={() => router.push(`/tasks/${task.id}`)}>
+            <ExternalLink className="size-4 mr-2" />
+            {t("tasks.menu.open")}
           </ContextMenuItem>
-        )}
-      </ContextMenuContent>
-    </ContextMenu>
+
+          <ContextMenuSeparator />
+
+          {/* Status submenu */}
+          <TaskStatusSubmenu task={task} onStatusChange={actions.onStatusChange} />
+
+          {/* Priority submenu */}
+          {actions.onPriorityChange && (
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>
+                {(() => {
+                  const pc = getPriorityConfig(task.priority)
+                  const Icon = pc.icon
+                  return <Icon className="size-3.5 mr-2 flex-shrink-0" style={{ color: pc.hex }} />
+                })()}
+                Priority
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent className="w-[160px]">
+                {TASK_PRIORITIES.map((priority) => {
+                  const config = getPriorityConfig(priority)
+                  const Icon = config.icon
+                  const isCurrent = task.priority === priority
+                  return (
+                    <ContextMenuItem
+                      key={priority}
+                      disabled={isCurrent}
+                      onClick={() => actions.onPriorityChange!(task.id, priority)}
+                      className={isCurrent ? "opacity-50" : ""}
+                    >
+                      <Icon className="size-3.5 mr-2 flex-shrink-0" style={{ color: config.hex }} />
+                      {config.label}
+                    </ContextMenuItem>
+                  )
+                })}
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+          )}
+
+          {/* Assign to submenu */}
+          <TaskAssignSubmenu
+            task={task}
+            recentAssignees={recentAssignees}
+            onAssigneeChange={actions.onAssigneeChange}
+          />
+
+          <ContextMenuSeparator />
+
+          {/* Sprint, phase, epic, workspace, story points */}
+          <TaskPlanningSubmenus
+            task={task}
+            sprints={sprints}
+            phases={phases}
+            epics={epics}
+            spaces={spaces}
+            actions={actions}
+          />
+
+          {(actions.onSprintChange ||
+            actions.onPhaseChange ||
+            actions.onEpicChange ||
+            actions.onStoryPointsChange ||
+            actions.onSpaceChange) && <ContextMenuSeparator />}
+
+          {/* Delete */}
+          {actions.onDelete && (
+            <ContextMenuItem
+              onClick={() => setConfirmDelete(true)}
+              className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-500/10"
+            >
+              <Trash2 className="size-4 mr-2" />
+              {t("tasks.menu.delete")}
+            </ContextMenuItem>
+          )}
+        </ContextMenuContent>
+      </ContextMenu>
+    </>
   )
 }
 

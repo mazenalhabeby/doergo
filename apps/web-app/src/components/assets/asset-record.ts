@@ -23,7 +23,7 @@ export interface AssetRecord {
   _count?: { tasks?: number }
 }
 
-/** A stored date -> what `<input type="date">` holds. */
+/** A stored date -> what the date picker holds (`YYYY-MM-DD`). */
 const dayOf = (v?: string | null) => (v ? v.slice(0, 10) : "")
 
 /** The plate as the form holds it: every fact a string, empty meaning unset. */

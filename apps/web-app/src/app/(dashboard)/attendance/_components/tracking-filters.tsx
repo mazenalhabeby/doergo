@@ -6,8 +6,12 @@ import { type CompanyLocation } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MapPin, RefreshCw, Search, Calendar, ArrowRight } from "lucide-react"
+import { MapPin, RefreshCw, Search, ArrowRight } from "lucide-react"
+import { DatePicker } from "@/components/ui/date-picker"
 import type { TrackingTabProps } from "./tracking-types"
+
+/** A date inside the From → To pill: the pill is the field, so the trigger draws no box of its own. */
+const PILL_TRIGGER = "h-9 w-[132px] border-0 bg-transparent px-1 shadow-none hover:bg-transparent"
 
 type FilterProps = Pick<
   TrackingTabProps,
@@ -127,31 +131,28 @@ export function TrackingFilters({
           "focus-within:ring-foreground/10"
         }
       >
-        <Calendar className="size-4 shrink-0 text-muted-foreground" />
-        <Input
-          type="date"
+        <DatePicker
           aria-label={t("attendance.tracking.fromDate")}
           title={t("attendance.tracking.fromDate")}
           value={selectedDate}
-          max={endDate || undefined}
-          onChange={(e) => {
-            setSelectedDate(e.target.value)
+          max={endDate}
+          onChange={(v) => {
+            setSelectedDate(v)
             setPage(1)
           }}
-          className="h-9 w-[124px] border-0 bg-transparent px-1 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          triggerClassName={PILL_TRIGGER}
         />
         <ArrowRight className="size-3.5 shrink-0 text-muted-foreground/50" />
-        <Input
-          type="date"
+        <DatePicker
           aria-label={t("attendance.tracking.toDate")}
           title={t("attendance.tracking.toDate")}
           value={endDate}
-          min={selectedDate || undefined}
-          onChange={(e) => {
-            setEndDate(e.target.value)
+          min={selectedDate}
+          onChange={(v) => {
+            setEndDate(v)
             setPage(1)
           }}
-          className="h-9 w-[124px] border-0 bg-transparent px-1 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          triggerClassName={PILL_TRIGGER}
         />
       </div>
 

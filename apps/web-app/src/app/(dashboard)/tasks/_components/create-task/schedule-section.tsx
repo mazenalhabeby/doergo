@@ -1,20 +1,15 @@
 "use client"
 
 import { useTranslation } from "react-i18next"
-import { Calendar as CalendarIcon, Clock } from "lucide-react"
+import { Clock } from "lucide-react"
+import { parseISO } from "date-fns"
+import { localDateKey } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Calendar } from "@/components/ui/calendar"
-import { cn } from "@/lib/utils"
-import { format } from "date-fns"
+import { DatePicker } from "@/components/ui/date-picker"
 import { withTime } from "@/lib/due-time"
 import { CollapsibleSection } from "./collapsible-section"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import { type CreateTaskForm } from "./use-create-task-form"
 
 /** Start date, due date, "be there at" and the estimate. */
@@ -38,59 +33,31 @@ export function ScheduleSection({ form }: { form: CreateTaskForm }) {
     <CollapsibleSection icon={Clock} label={t("tasks.view.schedule")} indicator={scheduleIndicator}>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-muted-foreground">{t("tasks.sidebar.startDate")}</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "h-9 w-full justify-start text-left text-sm font-normal rounded-lg border-border bg-card hover:bg-accent",
-                  !startDate && "text-muted-foreground",
-                )}
-                disabled={isSubmitting}
-              >
-                <CalendarIcon className="mr-2 size-3.5 text-muted-foreground" />
-                {startDate ? format(startDate, "MMM d, yyyy") : t("tasks.create.selectDate")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
-            </PopoverContent>
-          </Popover>
+          <Label htmlFor="create-task-start" className="text-xs font-medium text-muted-foreground">
+            {t("tasks.sidebar.startDate")}
+          </Label>
+          {/* The form holds Dates; the picker speaks `YYYY-MM-DD` — converted here, on local parts. */}
+          <DatePicker
+            id="create-task-start"
+            value={startDate ? localDateKey(startDate) : ""}
+            onChange={(day) => setStartDate(day ? parseISO(day) : undefined)}
+            disabled={isSubmitting}
+            placeholder={t("tasks.create.selectDate")}
+          />
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-muted-foreground">
+          <Label htmlFor="create-task-due" className="text-xs font-medium text-muted-foreground">
             {t("tasks.create.preferredDateLabel")}
           </Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "h-9 w-full justify-start text-left text-sm font-normal rounded-lg border-border bg-card hover:bg-accent",
-                  !dueDate && "text-muted-foreground",
-                )}
-                disabled={isSubmitting}
-              >
-                <CalendarIcon className="mr-2 size-3.5 text-muted-foreground" />
-                {dueDate
-                  ? dueTime
-                    ? `${format(dueDate, "MMM d, yyyy")} · ${dueTime}`
-                    : format(dueDate, "MMM d, yyyy")
-                  : t("tasks.create.selectDate")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={dueDate}
-                onSelect={(d) => setDueDate(withTime(d, dueTime))}
-                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          <DatePicker
+            id="create-task-due"
+            value={dueDate ? localDateKey(dueDate) : ""}
+            onChange={(day) => setDueDate(withTime(day ? parseISO(day) : undefined, dueTime))}
+            min={localDateKey(new Date())}
+            disabled={isSubmitting}
+            placeholder={t("tasks.create.selectDate")}
+          />
         </div>
 
         {/*
@@ -137,7 +104,7 @@ export function ScheduleSection({ form }: { form: CreateTaskForm }) {
         </div>
       </div>
 
-      {hasModule('time_tracking') && (
+      {hasModule("time_tracking") && (
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-muted-foreground">{t("tasks.sidebar.estimatedHours")}</Label>
           <Input

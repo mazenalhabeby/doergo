@@ -1,17 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useId, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { format } from "date-fns"
-import { Loader2, CheckCircle2, Calendar } from "lucide-react"
+import { parseISO } from "date-fns"
+import { localDateKey } from "@hbcfield/shared/client"
+import { Loader2, CheckCircle2 } from "lucide-react"
 import { type Sprint, type Task } from "@/lib/api"
-import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarPicker } from "@/components/ui/calendar"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Checkbox } from "@/components/ui/checkbox"
-import { cn } from "@/lib/utils"
 
 // A labelled date button opening a calendar — the sprint and epic dialogs ask
 // for their dates the same way.
@@ -28,27 +26,20 @@ export function DateField({
   placeholder: string
   disabled: boolean
 }) {
+  const id = useId()
   return (
     <div className="space-y-1.5">
-      <Label className="text-sm">{label}</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn(
-              "h-9 w-full justify-start text-left font-normal rounded-lg text-sm",
-              !value && "text-muted-foreground",
-            )}
-            disabled={disabled}
-          >
-            <Calendar className="mr-2 size-3.5 text-muted-foreground" />
-            {value ? format(value, "MMM d, yyyy") : placeholder}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <CalendarPicker mode="single" selected={value} onSelect={onSelect} initialFocus />
-        </PopoverContent>
-      </Popover>
+      <Label htmlFor={id} className="text-sm">
+        {label}
+      </Label>
+      {/* The callers hold Dates; the picker speaks `YYYY-MM-DD` — converted here, on local parts. */}
+      <DatePicker
+        id={id}
+        value={value ? localDateKey(value) : ""}
+        onChange={(day) => onSelect(day ? parseISO(day) : undefined)}
+        placeholder={placeholder}
+        disabled={disabled}
+      />
     </div>
   )
 }
@@ -117,11 +108,7 @@ export function CompleteSprintDialog({
         </div>
       )}
 
-      {incompleteCount === 0 && (
-        <p className="text-sm text-muted-foreground py-2">
-          {t("tasks.sprint.allComplete")}
-        </p>
-      )}
+      {incompleteCount === 0 && <p className="text-sm text-muted-foreground py-2">{t("tasks.sprint.allComplete")}</p>}
     </ConfirmDialog>
   )
 }
@@ -129,6 +116,14 @@ export function CompleteSprintDialog({
 // ─── Epic Form Dialog ───────────────────────────────────────────────────────
 
 export const EPIC_COLORS = [
-  "#8B5CF6", "#2563EB", "#DC2626", "#16A34A", "#CA8A04",
-  "#EC4899", "#0891B2", "#EA580C", "#7C3AED", "#059669",
+  "#8B5CF6",
+  "#2563EB",
+  "#DC2626",
+  "#16A34A",
+  "#CA8A04",
+  "#EC4899",
+  "#0891B2",
+  "#EA580C",
+  "#7C3AED",
+  "#059669",
 ]

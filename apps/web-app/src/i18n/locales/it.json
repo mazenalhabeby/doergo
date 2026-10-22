@@ -671,7 +671,8 @@
     "selectDate": "Scegli una data",
     "noPageAccessTitle": "Non hai accesso a questa pagina",
     "noPageAccessBody": "Il tuo ruolo non include questa pagina. Se ti serve, chiedi a un amministratore della tua organizzazione.",
-    "noPageAccessOption": "La tua organizzazione non ha attivato questa funzione. Un amministratore può attivarla in Abbonamento e fatturazione."
+    "noPageAccessOption": "La tua organizzazione non ha attivato questa funzione. Un amministratore può attivarla in Abbonamento e fatturazione.",
+    "cannotBeUndone": "Questa azione non può essere annullata."
   },
   "auth": {
     "sessionEnded": {
@@ -2130,6 +2131,11 @@
           "origin": "Origine del lavoro"
         }
       }
+    },
+    "deleteConfirm": {
+      "one": "Eliminare \"{{title}}\"?",
+      "many_one": "Eliminare {{count}} attività?",
+      "many_other": "Eliminare {{count}} attività?"
     }
   },
   "technicians": {

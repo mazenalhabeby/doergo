@@ -22,8 +22,7 @@ import { readSource } from "../test-utils/read-source"
 const SRC = path.join(process.cwd(), "src")
 
 /** Comments quote the very patterns this forbids; a brace opens a JSX one. */
-const code = (s: string) =>
-  s.replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
+const code = (s: string) => s.replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -46,15 +45,9 @@ const rel = (f: string) => path.relative(process.cwd(), f).replace(/\\/g, "/")
   ⚠️ The list may only ever get SHORTER. Adding to it is the failure this test
   exists to prevent.
 */
-const KNOWN_INLINE_PICKERS = [
-  // The New Task dialog's copies (start/due date, a DATE custom field) — the
-  // same ones, moved out of create-task-dialog.tsx when it was split.
-  "src/app/(dashboard)/tasks/_components/create-task/schedule-section.tsx",
-  "src/app/(dashboard)/tasks/_components/create-task/custom-field-input.tsx",
-  "src/app/(dashboard)/tasks/_components/complete-sprint-dialog.tsx", // moved out of sprint-management.tsx
-  "src/app/(dashboard)/tasks/[id]/_components/edit-task-dialog.tsx",
-  "src/app/(dashboard)/tasks/[id]/_components/edit-task-when-fields.tsx", // the same picker, moved out of edit-task-dialog.tsx
-  "src/app/(dashboard)/tasks/[id]/_components/inline-edit-field.tsx",
+const KNOWN_INLINE_PICKERS: string[] = [
+  // Empty since step 5.4 of docs/plans/code-structure-fix.md: every copy now
+  // renders the shared DatePicker. Nothing may be added back.
 ]
 
 describe("one date picker", () => {
@@ -104,14 +97,27 @@ describe("one date picker", () => {
     expect(current.filter((f) => !KNOWN_INLINE_PICKERS.includes(f))).toEqual([])
   })
 
+  it("no screen uses the browser's own date input", () => {
+    // Every field is the shared DatePicker now (5.4). A native one renders differently per browser.
+    const offenders = files.filter((f) => /type="date"/.test(code(fs.readFileSync(f, "utf8")))).map(rel)
+    expect(offenders).toEqual([])
+  })
+
   it("the invoice screen uses the shared one", () => {
     // The page plus the pieces it was split into — the screen, not the file.
     const NEW = path.join(SRC, "app/(dashboard)/invoices/new")
     const s = [
       path.join(NEW, "page.tsx"),
       ...["_components", "_lib"].flatMap((d) =>
-        fs.readdirSync(path.join(NEW, d)).filter((f) => /\.tsx?$/.test(f)).sort().map((f) => path.join(NEW, d, f))),
-    ].map((f) => code(readSource(f, "utf8"))).join("\n")
+        fs
+          .readdirSync(path.join(NEW, d))
+          .filter((f) => /\.tsx?$/.test(f))
+          .sort()
+          .map((f) => path.join(NEW, d, f)),
+      ),
+    ]
+      .map((f) => code(readSource(f, "utf8")))
+      .join("\n")
     // The period is a range now — the shared PeriodPicker, built on the same Calendar.
     expect(s).toMatch(/<(DatePicker|PeriodPicker)\b/)
     // …and no native date input survived there.

@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils"
 import { formatTimeAgo } from "@/lib/format-date"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Combobox } from "@/components/ui/combobox"
 import { auditDetail, EVENT_COLORS, EVENT_TYPES } from "./audit-log-events"
 import { ListPager } from "@/components/ui/list-pager"
@@ -122,26 +122,28 @@ export function AuditLogSection() {
             className="h-8 rounded-lg text-sm w-[180px]"
             contentClassName="w-[240px]"
           />
-          <Input
-            type="date"
+          <DatePicker
             value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value)
+            onChange={(v) => {
+              setStartDate(v)
               setPage(1)
             }}
-            className="h-8 text-sm w-[150px]"
+            clearable
+            triggerClassName="h-8 text-sm w-[150px]"
             title={t("auditLog.fromDate")}
+            aria-label={t("auditLog.fromDate")}
           />
           <span className="text-xs text-muted-foreground">{t("common.to")}</span>
-          <Input
-            type="date"
+          <DatePicker
             value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value)
+            onChange={(v) => {
+              setEndDate(v)
               setPage(1)
             }}
-            className="h-8 text-sm w-[150px]"
+            clearable
+            triggerClassName="h-8 text-sm w-[150px]"
             title={t("auditLog.toDate")}
+            aria-label={t("auditLog.toDate")}
           />
           {(startDate || endDate || eventFilter !== "__all__" || userFilter !== "__all__") && (
             <Button

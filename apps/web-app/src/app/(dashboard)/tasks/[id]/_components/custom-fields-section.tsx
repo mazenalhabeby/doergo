@@ -3,34 +3,15 @@
 import { useState, useEffect, useCallback, memo } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  Type,
-  Hash,
-  Calendar,
-  ChevronDown,
-  CheckSquare,
-  Link2,
-  Mail,
-  Loader2,
-  Settings2,
-} from "lucide-react"
+import { Type, Hash, Calendar, ChevronDown, CheckSquare, Link2, Mail, Loader2, Settings2 } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { CollapsibleSection } from "./collapsible-section"
 
-import {
-  customFieldsApi,
-  type CustomFieldDefinition,
-  type CustomFieldType,
-} from "@/lib/api"
+import { customFieldsApi, type CustomFieldDefinition, type CustomFieldType } from "@/lib/api"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useDebouncedCallback } from "@/hooks/use-debounced-value"
 import { keys } from "@/lib/query-keys"
 
@@ -96,20 +77,15 @@ const FieldInput = memo(function FieldInput({
       )
 
     case "DATE":
-      return (
-        <Input
-          type="date"
-          className="h-9 text-sm"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      )
+      return <DatePicker clearable value={value} onChange={onChange} />
 
     case "DROPDOWN":
       return (
         <Select value={value || ""} onValueChange={onChange}>
           <SelectTrigger className="h-9 text-sm">
-            <SelectValue placeholder={t("tasks.customFields.selectPlaceholder", { name: definition.name.toLowerCase() })} />
+            <SelectValue
+              placeholder={t("tasks.customFields.selectPlaceholder", { name: definition.name.toLowerCase() })}
+            />
           </SelectTrigger>
           <SelectContent>
             {(definition.options || []).map((opt) => (
@@ -124,10 +100,7 @@ const FieldInput = memo(function FieldInput({
     case "CHECKBOX":
       return (
         <div className="flex items-center gap-2 py-1">
-          <Checkbox
-            checked={value === "true"}
-            onCheckedChange={(checked) => onChange(checked ? "true" : "false")}
-          />
+          <Checkbox checked={value === "true"} onCheckedChange={(checked) => onChange(checked ? "true" : "false")} />
           <span className="text-sm text-muted-foreground">{definition.name}</span>
         </div>
       )
@@ -161,13 +134,7 @@ const FieldInput = memo(function FieldInput({
       )
 
     default:
-      return (
-        <Input
-          className="h-9 text-sm"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      )
+      return <Input className="h-9 text-sm" value={value} onChange={(e) => onChange(e.target.value)} />
   }
 })
 
@@ -203,8 +170,7 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
 
   // Save mutation
   const saveMutation = useMutation({
-    mutationFn: (values: { definitionId: string; value: string }[]) =>
-      customFieldsApi.setTaskValues(taskId, values),
+    mutationFn: (values: { definitionId: string; value: string }[]) => customFieldsApi.setTaskValues(taskId, values),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.taskExtras.customFieldValues(taskId) })
     },
@@ -256,41 +222,37 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
 
   return (
     <div data-tour="task-custom-fields">
-    <CollapsibleSection id="custom-fields" icon={Settings2} title={t("tasks.sections.customFields")}>
-      <div>
-        {saveMutation.isPending && (
-          <div className="flex justify-end mb-2">
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              {t("common.saving")}
-            </span>
+      <CollapsibleSection id="custom-fields" icon={Settings2} title={t("tasks.sections.customFields")}>
+        <div>
+          {saveMutation.isPending && (
+            <div className="flex justify-end mb-2">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {t("common.saving")}
+              </span>
+            </div>
+          )}
+          <div className="space-y-4">
+            {activeDefinitions
+              .sort((a, b) => a.position - b.position)
+              .map((def) => (
+                <div key={def.id} className="space-y-1.5">
+                  {def.type !== "CHECKBOX" && (
+                    <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                      {def.name}
+                      {def.isRequired && <span className="text-red-500">*</span>}
+                    </label>
+                  )}
+                  <FieldInput
+                    definition={def}
+                    value={localValues[def.id] || ""}
+                    onChange={(value) => handleChange(def.id, value)}
+                  />
+                </div>
+              ))}
           </div>
-        )}
-        <div className="space-y-4">
-          {activeDefinitions
-            .sort((a, b) => a.position - b.position)
-            .map((def) => (
-              <div key={def.id} className="space-y-1.5">
-                {def.type !== "CHECKBOX" && (
-                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                    {def.name}
-                    {def.isRequired && (
-                      <span className="text-red-500">*</span>
-                    )}
-                  </label>
-                )}
-                <FieldInput
-                  definition={def}
-                  value={localValues[def.id] || ""}
-                  onChange={(value) => handleChange(def.id, value)}
-                />
-              </div>
-            ))}
         </div>
-      </div>
-    </CollapsibleSection>
+      </CollapsibleSection>
     </div>
   )
 }
-
-

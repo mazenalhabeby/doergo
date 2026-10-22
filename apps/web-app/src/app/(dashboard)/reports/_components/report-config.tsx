@@ -3,7 +3,7 @@
 import { Play } from "lucide-react"
 import { type ReportDatePreset, type ReportGranularity } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toISODateString } from "@hbcfield/shared/client"
 import { DATE_PRESETS, GRANULARITIES } from "./report-options"
@@ -118,36 +118,40 @@ export function ReportConfig({
           <>
             <div className="space-y-1.5">
               <label className="text-xs text-muted-foreground">{t("reports.from", "From")}</label>
-              <Input
-                type="date"
+              <DatePicker
                 value={toDateInput(active.def.dateRange?.from)}
                 max={toDateInput(active.def.dateRange?.to) || undefined}
-                onChange={(e) =>
+                onChange={(day) =>
                   patchDef({
                     dateRange: {
                       ...active.def.dateRange,
-                      from: e.target.value ? new Date(e.target.value).toISOString() : undefined,
+                      from: day ? new Date(day).toISOString() : undefined,
                     },
                   })
                 }
-                className="h-9 w-[150px] text-xs"
+                clearable
+                aria-label={t("reports.from", "From")}
+                className="w-[150px]"
+                triggerClassName="text-xs"
               />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs text-muted-foreground">{t("reports.to", "To")}</label>
-              <Input
-                type="date"
+              <DatePicker
                 value={toDateInput(active.def.dateRange?.to)}
                 min={toDateInput(active.def.dateRange?.from) || undefined}
-                onChange={(e) =>
+                onChange={(day) =>
                   patchDef({
                     dateRange: {
                       ...active.def.dateRange,
-                      to: e.target.value ? new Date(e.target.value + "T23:59:59").toISOString() : undefined,
+                      to: day ? new Date(day + "T23:59:59").toISOString() : undefined,
                     },
                   })
                 }
-                className="h-9 w-[150px] text-xs"
+                clearable
+                aria-label={t("reports.to", "To")}
+                className="w-[150px]"
+                triggerClassName="text-xs"
               />
             </div>
           </>

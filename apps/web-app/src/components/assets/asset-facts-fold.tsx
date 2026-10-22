@@ -6,6 +6,7 @@ import { ChevronDown, ChevronRight } from "lucide-react"
 import { ASSET_RECORD_LIMITS, type AssetDateProblem } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { Facts } from "./asset-record"
@@ -66,16 +67,22 @@ export function AssetFactsFold({
           <div className="hidden sm:block" />
           <div className="space-y-1">
             <Label className="text-xs">{t("assetFacts.more.installDate", "Installed on")}</Label>
-            <Input type="date" value={facts.installDate} onChange={(e) => setFact("installDate", e.target.value)} />
+            <DatePicker
+              value={facts.installDate}
+              onChange={(v) => setFact("installDate", v)}
+              clearable
+              aria-label={t("assetFacts.more.installDate", "Installed on")}
+            />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{t("assetFacts.more.warrantyExpiry", "Warranty until")}</Label>
-            <Input
-              type="date"
+            <DatePicker
               value={facts.warrantyExpiry}
               min={facts.installDate || undefined}
-              onChange={(e) => setFact("warrantyExpiry", e.target.value)}
-              className={cn(dateProblems.length > 0 && "border-destructive")}
+              onChange={(v) => setFact("warrantyExpiry", v)}
+              clearable
+              aria-label={t("assetFacts.more.warrantyExpiry", "Warranty until")}
+              triggerClassName={cn(dateProblems.length > 0 && "border-destructive")}
             />
           </div>
           {dateProblems.length > 0 && (

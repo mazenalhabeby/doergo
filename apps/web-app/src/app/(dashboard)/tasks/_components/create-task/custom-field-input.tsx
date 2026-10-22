@@ -1,25 +1,12 @@
 "use client"
 
-import { format } from "date-fns"
-import { Calendar as CalendarIcon } from "lucide-react"
+import { parseISO } from "date-fns"
+import { localDateKey } from "@hbcfield/shared/client"
 import { type CustomFieldDefinition } from "@/lib/api"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { cn } from "@/lib/utils"
+import { DatePicker } from "@/components/ui/date-picker"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // ---------------------------------------------------------------------------
 // Custom field input renderer
@@ -58,30 +45,18 @@ export function renderCustomFieldInput(
       )
 
     case "DATE":
+      /*
+        What is sent is unchanged: the picked LOCAL midnight as an instant
+        (`toISOString()`), as this field always sent it. The picker itself
+        speaks `YYYY-MM-DD`, so the conversion happens here, at the edge.
+      */
       return (
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "h-9 w-full justify-start text-left text-sm font-normal rounded-lg border-border bg-card hover:bg-accent",
-                !value && "text-muted-foreground",
-              )}
-              disabled={disabled}
-            >
-              <CalendarIcon className="mr-2 size-3.5 text-muted-foreground" />
-              {value ? format(new Date(value), "MMM d, yyyy") : t("tasks.customFields.selectPlaceholder", { name: field.name })}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={value ? new Date(value) : undefined}
-              onSelect={(date) => onChange(date?.toISOString() ?? "")}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+        <DatePicker
+          value={value ? localDateKey(new Date(value)) : ""}
+          onChange={(day) => onChange(day ? parseISO(day).toISOString() : "")}
+          disabled={disabled}
+          placeholder={t("tasks.customFields.selectPlaceholder", { name: field.name })}
+        />
       )
 
     case "DROPDOWN":
@@ -109,10 +84,7 @@ export function renderCustomFieldInput(
             onCheckedChange={(checked) => onChange(checked ? "true" : "false")}
             disabled={disabled}
           />
-          <label
-            htmlFor={`cf-dialog-${field.id}`}
-            className="text-sm text-foreground cursor-pointer"
-          >
+          <label htmlFor={`cf-dialog-${field.id}`} className="text-sm text-foreground cursor-pointer">
             {field.name}
           </label>
         </div>

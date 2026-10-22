@@ -5,8 +5,8 @@ import { Upload, Loader2, FileText, AlertTriangle, ShieldCheck, CalendarDays, Pe
 import { formatCalendarDate } from "@hbcfield/shared/client"
 import { type DocumentTypeRow } from "@/lib/api"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { useSupplyDocumentDialog } from "./use-supply-document-dialog"
 
@@ -225,12 +225,7 @@ export function SupplyDocumentDialog({
                 <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                   {t("documents.supply.expiresOn")}
                 </span>
-                <Input
-                  type="date"
-                  autoFocus={prompt.reason === "CORRECTING"}
-                  value={expiresOn}
-                  onChange={(e) => setExpiresOn(e.target.value)}
-                />
+                <DatePicker value={expiresOn} onChange={setExpiresOn} clearable autoFocus={prompt.reason === "CORRECTING"} />
                 <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
                   {prompt.reason === "CORRECTING"
                     ? t("documents.supply.dateCorrecting")

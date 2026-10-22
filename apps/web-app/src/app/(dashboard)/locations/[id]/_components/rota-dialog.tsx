@@ -9,6 +9,7 @@ import { notify } from "@/lib/toast"
 import { rotaApi, shiftsApi, employeesApi, type CreateRotaInput } from "@/lib/api"
 import { personName, type ShiftAssignment, ShiftRecurrence } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -230,7 +231,7 @@ export function RotaDialog({
             <div className="space-y-2">
               <Label className="text-xs">{t("scheduling.rota.fields.dates")}</Label>
               <div className="flex gap-2">
-                <Input type="date" value={dateInput} onChange={(e) => setDateInput(e.target.value)} />
+                <DatePicker value={dateInput} onChange={setDateInput} className="flex-1" />
                 <Button type="button" variant="outline" onClick={addDate} disabled={!dateInput}>
                   {t("common.add")}
                 </Button>
@@ -254,16 +255,11 @@ export function RotaDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="rota-from">{t("scheduling.rota.fields.effectiveFrom")}</Label>
-              <Input
-                id="rota-from"
-                type="date"
-                value={effectiveFrom}
-                onChange={(e) => setEffectiveFrom(e.target.value)}
-              />
+              <DatePicker id="rota-from" value={effectiveFrom} onChange={setEffectiveFrom} clearable />
             </div>
             <div className="space-y-2">
               <Label htmlFor="rota-to">{t("scheduling.rota.fields.effectiveTo")}</Label>
-              <Input id="rota-to" type="date" value={effectiveTo} onChange={(e) => setEffectiveTo(e.target.value)} />
+              <DatePicker id="rota-to" value={effectiveTo} onChange={setEffectiveTo} clearable />
             </div>
           </div>
 

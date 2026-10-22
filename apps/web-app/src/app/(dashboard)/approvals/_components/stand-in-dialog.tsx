@@ -10,8 +10,8 @@ import { keys } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
 import { formatMediumDate } from "@/lib/format-date"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Combobox } from "@/components/ui/combobox"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -39,34 +39,53 @@ export function StandInDialog({ open, onOpenChange }: { open: boolean; onOpenCha
   const [note, setNote] = useState("")
   useEffect(() => {
     if (!open) return
-    setTo(""); setFrom(""); setStart(todayKey()); setEnd(todayKey()); setNote("")
+    setTo("")
+    setFrom("")
+    setStart(todayKey())
+    setEnd(todayKey())
+    setNote("")
   }, [open])
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: keys.approvals.all() })
   }
   const create = useMutation({
-    mutationFn: () => approvalsApi.createStandIn({ toUserId, startsOn, endsOn, note: note.trim() || null, fromUserId: fromUserId || null }),
+    mutationFn: () =>
+      approvalsApi.createStandIn({
+        toUserId,
+        startsOn,
+        endsOn,
+        note: note.trim() || null,
+        fromUserId: fromUserId || null,
+      }),
     onSuccess: (v) => {
       notify.success(t("approvals.standIn.created", { name: v.to.name, from: day(v.startsOn), to: day(v.endsOn) }))
-      setTo(""); setNote("")
+      setTo("")
+      setNote("")
       refresh()
     },
     onError: (e: Error) => notify.error(e.message),
   })
   const end = useMutation({
     mutationFn: (id: string) => approvalsApi.endStandIn(id),
-    onSuccess: () => { notify.success(t("approvals.standIn.ended")); refresh() },
+    onSuccess: () => {
+      notify.success(t("approvals.standIn.ended"))
+      refresh()
+    },
     onError: (e: Error) => notify.error(e.message),
   })
 
-  const people = useMemo(() => (data?.candidates ?? [])
-    .filter((c) => c.id !== fromUserId)
-    .map((c) => ({ value: c.id, label: c.name })), [data, fromUserId])
-  const leaders = useMemo(() => [
-    { value: "", label: t("approvals.standIn.me") },
-    ...(data?.leaders ?? []).map((c) => ({ value: c.id, label: c.name })),
-  ], [data, t])
+  const people = useMemo(
+    () => (data?.candidates ?? []).filter((c) => c.id !== fromUserId).map((c) => ({ value: c.id, label: c.name })),
+    [data, fromUserId],
+  )
+  const leaders = useMemo(
+    () => [
+      { value: "", label: t("approvals.standIn.me") },
+      ...(data?.leaders ?? []).map((c) => ({ value: c.id, label: c.name })),
+    ],
+    [data, t],
+  )
 
   const canFill = !!data && (data.mayHandOver || data.mayArrange)
   const ready = !!toUserId && !!startsOn && !!endsOn && endsOn >= startsOn && !create.isPending
@@ -86,27 +105,45 @@ export function StandInDialog({ open, onOpenChange }: { open: boolean; onOpenCha
             {data!.mayArrange && (
               <div className="space-y-1.5">
                 <Label>{t("approvals.standIn.whose")}</Label>
-                <Combobox value={fromUserId} onChange={setFrom} options={leaders} placeholder={t("approvals.standIn.me")} />
+                <Combobox
+                  value={fromUserId}
+                  onChange={setFrom}
+                  options={leaders}
+                  placeholder={t("approvals.standIn.me")}
+                />
               </div>
             )}
             <div className="space-y-1.5">
               <Label>{t("approvals.standIn.who")}</Label>
-              <Combobox value={toUserId} onChange={setTo} options={people} placeholder={t("approvals.standIn.pickPerson")} />
+              <Combobox
+                value={toUserId}
+                onChange={setTo}
+                options={people}
+                placeholder={t("approvals.standIn.pickPerson")}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="stand-in-from">{t("approvals.standIn.firstDay")}</Label>
-                <Input id="stand-in-from" type="date" value={startsOn} min={todayKey()} onChange={(e) => setStart(e.target.value)} />
+                <DatePicker id="stand-in-from" value={startsOn} min={todayKey()} onChange={setStart} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="stand-in-to">{t("approvals.standIn.lastDay")}</Label>
-                <Input id="stand-in-to" type="date" value={endsOn} min={startsOn} onChange={(e) => setEnd(e.target.value)} />
+                <DatePicker id="stand-in-to" value={endsOn} min={startsOn} onChange={setEnd} />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">{t("approvals.standIn.maxDays", { count: DELEGATION_MAX_DAYS })}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("approvals.standIn.maxDays", { count: DELEGATION_MAX_DAYS })}
+            </p>
             <div className="space-y-1.5">
               <Label htmlFor="stand-in-note">{t("approvals.standIn.note")}</Label>
-              <Textarea id="stand-in-note" rows={2} maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
+              <Textarea
+                id="stand-in-note"
+                rows={2}
+                maxLength={300}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
             </div>
             <Button className="w-full rounded-lg" disabled={!ready} onClick={() => create.mutate()}>
               {t("approvals.standIn.save")}
@@ -147,7 +184,13 @@ export function StandInDialog({ open, onOpenChange }: { open: boolean; onOpenCha
   )
 }
 
-function StandInList({ title, rows, show, onEnd, busy }: {
+function StandInList({
+  title,
+  rows,
+  show,
+  onEnd,
+  busy,
+}: {
   title: string
   rows: StandInView[]
   show: "to" | "from" | "both"

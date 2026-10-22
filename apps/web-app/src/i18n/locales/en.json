@@ -671,7 +671,8 @@
     "selectDate": "Pick a date",
     "noPageAccessTitle": "You don't have access to this page",
     "noPageAccessBody": "Your role doesn't include this page. If you need it, ask an administrator in your organization.",
-    "noPageAccessOption": "Your organization hasn't switched this on. An administrator can turn it on under Subscription & billing."
+    "noPageAccessOption": "Your organization hasn't switched this on. An administrator can turn it on under Subscription & billing.",
+    "cannotBeUndone": "This can't be undone."
   },
   "auth": {
     "sessionEnded": {
@@ -2130,6 +2131,11 @@
           "origin": "Where the job came from"
         }
       }
+    },
+    "deleteConfirm": {
+      "one": "Delete \"{{title}}\"?",
+      "many_one": "Delete {{count}} task?",
+      "many_other": "Delete {{count}} tasks?"
     }
   },
   "technicians": {

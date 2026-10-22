@@ -2,33 +2,27 @@
 
 import { useState, useRef, useEffect, useCallback, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
+import { parseISO } from "date-fns"
+import { localDateKey } from "@hbcfield/shared/client"
 import { Pencil, Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import dynamic from "next/dynamic"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
+import { DatePicker } from "@/components/ui/date-picker"
 import { timeOf, withTime, formatDue } from "@/lib/due-time"
 import { dateLocale } from "@/lib/format-date"
 
-/*
-  The month grid (react-day-picker) loads when the date popover opens — it is
-  never on screen before that, and it was ~16 kB of every task page's first load.
-  The placeholder is the grid's own size, so the popover does not resize.
-*/
-const Calendar = dynamic(() => import("@/components/ui/calendar").then((m) => m.Calendar), {
-  ssr: false,
-  loading: () => <div className="h-[298px] w-[252px]" aria-hidden />,
-})
+/** The day reads as text in the sidebar, like every other inline field, until it is clicked. */
+const INLINE_DAY_TRIGGER = "h-auto w-auto -mx-1.5 border-0 bg-transparent px-1.5 py-0.5 shadow-none hover:bg-muted/50"
 
 interface InlineEditFieldProps {
   /** `undefined` means the same as null here — the field is simply not set. */
   value: string | number | null | undefined
   onSave: (value: string) => Promise<void> | void
-  type?: "text" | "textarea" | "number" | "date" | "select"
+  /** `day`: a day picked from a calendar, keeping (and offering) an optional hour. */
+  type?: "text" | "textarea" | "number" | "day" | "select"
   disabled?: boolean
   placeholder?: string
   options?: { value: string; label: string; color?: string }[]
@@ -97,19 +91,33 @@ export function InlineEditField({
     }
   }, [draft, value, onSave])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Escape") { e.preventDefault(); cancel() }
-    if (e.key === "Enter" && type !== "textarea") { e.preventDefault(); save() }
-    if (e.key === "Enter" && e.metaKey && type === "textarea") { e.preventDefault(); save() }
-  }, [cancel, save, type])
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault()
+        cancel()
+      }
+      if (e.key === "Enter" && type !== "textarea") {
+        e.preventDefault()
+        save()
+      }
+      if (e.key === "Enter" && e.metaKey && type === "textarea") {
+        e.preventDefault()
+        save()
+      }
+    },
+    [cancel, save, type],
+  )
 
   // ─── Select type ──────────────────────────────────────────────────────
   if (type === "select" && options) {
     if (disabled) {
-      const selected = options.find(o => o.value === String(value ?? ""))
+      const selected = options.find((o) => o.value === String(value ?? ""))
       return (
         <span className={cn("text-sm text-foreground", className)}>
-          {renderDisplay ? renderDisplay(value) : selected?.label || <span className="text-muted-foreground">{resolvedPlaceholder}</span>}
+          {renderDisplay
+            ? renderDisplay(value)
+            : selected?.label || <span className="text-muted-foreground">{resolvedPlaceholder}</span>}
         </span>
       )
     }
@@ -119,15 +127,21 @@ export function InlineEditField({
         onValueChange={async (v) => {
           const saveValue = v === "__none__" ? "" : v
           setSaving(true)
-          try { await onSave(saveValue) } finally { setSaving(false) }
+          try {
+            await onSave(saveValue)
+          } finally {
+            setSaving(false)
+          }
         }}
         disabled={saving}
       >
-        <SelectTrigger className={cn("h-8 text-sm border-none shadow-none px-0 hover:bg-muted/50 transition-colors", className)}>
+        <SelectTrigger
+          className={cn("h-8 text-sm border-none shadow-none px-0 hover:bg-muted/50 transition-colors", className)}
+        >
           <SelectValue placeholder={resolvedPlaceholder} />
         </SelectTrigger>
         <SelectContent>
-          {options.map(opt => (
+          {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
               <span className="flex items-center gap-2">
                 {opt.color && <span className="size-2 rounded-full" style={{ backgroundColor: opt.color }} />}
@@ -140,72 +154,71 @@ export function InlineEditField({
     )
   }
 
-  // ─── Date type ────────────────────────────────────────────────────────
-  if (type === "date") {
+  // ─── Day type (+ an optional hour) ────────────────────────────────────
+  if (type === "day") {
     if (disabled) {
       return (
         <span className={cn("text-sm text-foreground", className)}>
-          {renderDisplay
-            ? renderDisplay(value)
-            : (value ? formatDue(String(value), dateLocale()) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>)}
+          {renderDisplay ? (
+            renderDisplay(value)
+          ) : value ? (
+            formatDue(String(value), dateLocale())
+          ) : (
+            <span className="text-muted-foreground">{resolvedPlaceholder}</span>
+          )}
         </span>
       )
     }
+    const current = value == null || value === "" ? null : String(value)
+    const saveAs = async (next: Date | undefined) => {
+      setSaving(true)
+      try {
+        await onSave(next!.toISOString())
+      } finally {
+        setSaving(false)
+      }
+    }
     return (
-      <Popover>
-        <PopoverTrigger asChild>
-          <button
-            className={cn(
-              ("text-sm text-foreground hover:bg-muted/50 px-1.5 py-0.5 -mx-1.5 rounded " +
-                "transition-colors group flex items-center gap-1.5"),
-              className)}>
-            {value ? formatDue(String(value), dateLocale()) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>}
-            <Pencil className="size-3 text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-colors" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={value ? new Date(String(value)) : undefined}
-            onSelect={async (date) => {
-              if (date) {
-                setSaving(true)
-                // Picking a new day keeps whatever hour was already set.
-                try { await onSave(
-                  withTime(date, timeOf(value == null ? null : String(value)))!.toISOString()) } finally { setSaving(false) }
-              }
-            }}
+      <div className={cn("flex items-center gap-1.5", className)}>
+        {/*
+          The value is an instant; the picker speaks `YYYY-MM-DD` on local parts.
+          Picking a new day keeps whatever hour was already set.
+        */}
+        <DatePicker
+          value={current ? localDateKey(new Date(current)) : ""}
+          onChange={(day) => {
+            if (day) void saveAs(withTime(parseISO(day), timeOf(current)))
+          }}
+          disabled={saving}
+          placeholder={resolvedPlaceholder}
+          triggerClassName={INLINE_DAY_TRIGGER}
+        />
+        {/*
+          Optional. A job with no hour is the normal case; setting one is what
+          makes the phone tell the member when to set off.
+        */}
+        {current && (
+          <Input
+            type="time"
+            aria-label={t("tasks.create.beThereAt", "Be there at (optional)")}
+            title={t("tasks.create.beThereAt", "Be there at (optional)")}
+            value={timeOf(current)}
+            disabled={saving}
+            onChange={(e) => void saveAs(withTime(new Date(current), e.target.value))}
+            className="h-7 w-[92px] rounded-md px-1.5 text-xs"
           />
-          {/*
-            Optional. A job with no hour is the normal case; setting one is what
-            makes the phone tell the member when to set off.
-          */}
-          <div className="border-t border-border p-3">
-            <Label className="text-xs font-medium text-muted-foreground">
-              {t("tasks.create.beThereAt", "Be there at (optional)")}
-            </Label>
-            <Input
-              type="time"
-              value={timeOf(value == null ? null : String(value))}
-              disabled={!value || saving}
-              onChange={async (e) => {
-                if (!value) return
-                setSaving(true)
-                try {
-                  await onSave(withTime(new Date(String(value)), e.target.value)!.toISOString())
-                } finally { setSaving(false) }
-              }}
-              className="mt-1.5 h-9 rounded-lg text-sm"
-            />
-          </div>
-        </PopoverContent>
-      </Popover>
+        )}
+      </div>
     )
   }
 
   // ─── Display mode (text, textarea, number) ────────────────────────────
   if (!editing) {
-    const displayValue = renderDisplay ? renderDisplay(value) : (value != null && String(value) !== "" ? String(value) : null)
+    const displayValue = renderDisplay
+      ? renderDisplay(value)
+      : value != null && String(value) !== ""
+        ? String(value)
+        : null
 
     return (
       <button

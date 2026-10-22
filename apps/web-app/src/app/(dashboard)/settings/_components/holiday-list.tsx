@@ -11,6 +11,7 @@ import { dateLocale } from "@/lib/format-date"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -247,11 +248,10 @@ function HolidayDialog({ open, row, onClose, onSave }: {
             <div
               className="space-y-1.5"><Label
                 htmlFor="hol-date">{t(
-                  "holidays.firstDay")}</Label><Input
+                  "holidays.firstDay")}</Label><DatePicker
                     id="hol-date"
-                    type="date"
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    onChange={setDate}
                   /></div>
             <div
               className="space-y-1.5"><Label

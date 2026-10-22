@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { durationText } from "@hbcfield/shared/client"
 import { CalendarDays } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
@@ -44,26 +45,25 @@ export function EventWhenFields({
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="cal-date">{t("calendar.from")}</Label>
-            <Input
+            <DatePicker
               id="cal-date"
-              type="date"
               value={date}
-              onChange={(e) => {
-                setDate(e.target.value)
-                if (endDate < e.target.value) setEndDate(e.target.value)
+              onChange={(day) => {
+                setDate(day)
+                if (endDate < day) setEndDate(day)
               }}
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cal-end">{t("calendar.to")}</Label>
-            <Input id="cal-end" type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} />
+            <DatePicker id="cal-end" value={endDate} min={date} onChange={setEndDate} />
           </div>
         </div>
       ) : (
         <div className="space-y-2">
           <div className="grid grid-cols-[4.5rem_1fr_7rem] items-center gap-2">
             <Label htmlFor="cal-date">{t("calendar.starts")}</Label>
-            <Input id="cal-date" type="date" value={date} onChange={(e) => setStart(e.target.value, time)} />
+            <DatePicker id="cal-date" value={date} onChange={(day) => setStart(day, time)} />
             <Input
               id="cal-time"
               aria-label={t("calendar.time")}
@@ -75,13 +75,7 @@ export function EventWhenFields({
           </div>
           <div className="grid grid-cols-[4.5rem_1fr_7rem] items-center gap-2">
             <Label htmlFor="cal-end-date">{t("calendar.ends")}</Label>
-            <Input
-              id="cal-end-date"
-              type="date"
-              value={endDate}
-              min={date}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
+            <DatePicker id="cal-end-date" value={endDate} min={date} onChange={setEndDate} />
             <Input
               id="cal-end-time"
               aria-label={t("calendar.time")}

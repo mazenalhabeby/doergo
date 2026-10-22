@@ -186,6 +186,15 @@ Each becomes a folder of real Nest sub-modules with their own providers and test
 > `useSpaceDirectory`. 26 call sites moved (they had drifted to 1, 2, 5 minutes and none). Guard:
 > `src/__tests__/shared-reads.spec.ts` — each read has exactly one caller.
 
+> **Status (2026-10-22): 5.4 DONE.** Dates: every native `type="date"` (~40 fields, 26 files) and the six hand-built
+> Popover+Calendar copies use `components/ui/date-picker.tsx` (which gained `min`/`max`, `aria-label`, `title`,
+> `triggerClassName`, `autoFocus`, and loads the month grid on first open). Deletes: the five browser `confirm()`s go
+> through `ConfirmDialog` (two printed English to everyone). Person rows: the Assign dialog's row and the add-contact
+> row are `PersonPickRow` (optional avatar, disabled). Guards: `one-date-picker.spec` (no native date input, the
+> inline-copy list is empty), `one-confirm.spec`. Kept on purpose, a decision for the owner: the New Task dialog's
+> custom DATE field still sends local midnight as an instant (the task page sends `YYYY-MM-DD`); the report builder
+> still stores `from` as UTC midnight and `to` as local end of day.
+
 ---
 
 ## Phase 6 — Phone app *(≈ 2 weeks; JS-only, OTA-safe except where noted)*

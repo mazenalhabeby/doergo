@@ -8,6 +8,7 @@ import { CompanyField, companyName } from "@/components/companies/company-select
 import { DatedRateField, currentOf } from "@/components/rates/dated-rate"
 import { employeesApi, type LegalEntity, type OrgMember, type rateHistoryApi } from "@/lib/api"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { todayKey } from "@hbcfield/shared/client"
@@ -105,14 +106,7 @@ export function EmploymentFields({
         <Label htmlFor="member-dob" className="text-xs font-medium text-muted-foreground">
           {t("members.memberEditor.dateOfBirth", "Date of birth")}
         </Label>
-        <Input
-          id="member-dob"
-          type="date"
-          value={dateOfBirth}
-          onChange={(e) => setDateOfBirth(e.target.value)}
-          max={todayKey()}
-          className="h-9 rounded-lg text-sm"
-        />
+        <DatePicker id="member-dob" value={dateOfBirth} onChange={setDateOfBirth} max={todayKey()} clearable />
       </div>
 
       {/* Employment type — only when the org distinguishes in-house vs external.
@@ -143,11 +137,11 @@ export function EmploymentFields({
           <Label className="text-xs font-medium text-muted-foreground">
             {t("members.memberEditor.startDateLabel")}
           </Label>
-          <Input
-            type="date"
+          <DatePicker
             value={employmentStartDate}
-            onChange={(e) => setEmploymentStartDate(e.target.value)}
-            className="h-9"
+            onChange={setEmploymentStartDate}
+            clearable
+            aria-label={t("members.memberEditor.startDateLabel")}
           />
           <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.startDateHint")}</p>
         </div>

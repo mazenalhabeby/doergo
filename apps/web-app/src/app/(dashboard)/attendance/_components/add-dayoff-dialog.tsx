@@ -10,6 +10,7 @@ import { employeesApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Label } from "@/components/ui/label"
 import {
   Dialog,
@@ -20,13 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { keys, invalidateTimeOff } from "@/lib/query-keys"
 import { serverErrorMessage } from "@/lib/server-error"
 
@@ -103,11 +98,7 @@ export function AddDayOffDialog() {
             <Select value={employeeId} onValueChange={setEmployeeId}>
               <SelectTrigger>
                 <SelectValue
-                  placeholder={
-                    employeesLoading
-                      ? t("common.loading")
-                      : t("attendance.addDayOff.employeePlaceholder")
-                  }
+                  placeholder={employeesLoading ? t("common.loading") : t("attendance.addDayOff.employeePlaceholder")}
                 />
               </SelectTrigger>
               <SelectContent>
@@ -123,22 +114,12 @@ export function AddDayOffDialog() {
           {/* Dates */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>{t("attendance.addDayOff.startDate")}</Label>
-              <Input
-                type="date"
-                value={startDate}
-                max={endDate || undefined}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
+              <Label htmlFor="add-dayoff-start">{t("attendance.addDayOff.startDate")}</Label>
+              <DatePicker id="add-dayoff-start" value={startDate} max={endDate} onChange={setStartDate} />
             </div>
             <div className="space-y-1.5">
-              <Label>{t("attendance.addDayOff.endDate")}</Label>
-              <Input
-                type="date"
-                value={endDate}
-                min={startDate || undefined}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+              <Label htmlFor="add-dayoff-end">{t("attendance.addDayOff.endDate")}</Label>
+              <DatePicker id="add-dayoff-end" value={endDate} min={startDate} onChange={setEndDate} />
             </div>
           </div>
           <p className="text-[11px] text-muted-foreground">{t("attendance.addDayOff.datesHint")}</p>
@@ -159,9 +140,11 @@ export function AddDayOffDialog() {
                     key={key}
                     type="button"
                     onClick={() => setReason(label)}
-                    className={"rounded-full border border-border/70 bg-muted/40 px-2.5 py-1 text-xs " +
+                    className={
+                      "rounded-full border border-border/70 bg-muted/40 px-2.5 py-1 text-xs " +
                       "text-muted-foreground transition-colors hover:bg-background " +
-                      "hover:text-foreground"}
+                      "hover:text-foreground"
+                    }
                   >
                     {label}
                   </button>

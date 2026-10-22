@@ -1,14 +1,12 @@
 "use client"
 
-import { format } from "date-fns"
-import { Calendar as CalendarIcon } from "lucide-react"
+import { parseISO } from "date-fns"
+import { localDateKey } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { withTime } from "@/lib/due-time"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { cn } from "@/lib/utils"
+import { DatePicker } from "@/components/ui/date-picker"
 import { useTranslation } from "react-i18next"
 
 interface EditTaskWhenFieldsProps {
@@ -36,30 +34,18 @@ export function EditTaskWhenFields({
   return (
     <div className="grid gap-4 sm:grid-cols-3">
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-foreground">{t("tasks.sidebar.dueDate")}</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "h-10 w-full justify-start text-left font-normal rounded-lg border-border bg-card hover:bg-accent",
-                !dueDate && "text-muted-foreground",
-              )}
-              disabled={saving}
-            >
-              <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
-              {dueDate ? format(dueDate, "MMM d, yyyy") : t("tasks.create.selectDate")}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={dueDate}
-              onSelect={(d) => setDueDate(withTime(d, dueTime))}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+        <Label htmlFor="edit-due-date" className="text-sm font-medium text-foreground">
+          {t("tasks.sidebar.dueDate")}
+        </Label>
+        {/* The form holds a Date; the picker speaks `YYYY-MM-DD` — converted here, on local parts. */}
+        <DatePicker
+          id="edit-due-date"
+          value={dueDate ? localDateKey(dueDate) : ""}
+          onChange={(day) => setDueDate(withTime(day ? parseISO(day) : undefined, dueTime))}
+          disabled={saving}
+          placeholder={t("tasks.create.selectDate")}
+          triggerClassName="h-10"
+        />
       </div>
 
       <div className="space-y-2">

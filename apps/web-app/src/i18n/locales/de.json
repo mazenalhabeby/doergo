@@ -671,7 +671,8 @@
     "selectDate": "Datum wählen",
     "noPageAccessTitle": "Sie haben keinen Zugriff auf diese Seite",
     "noPageAccessBody": "Ihre Rolle umfasst diese Seite nicht. Wenn Sie sie benötigen, wenden Sie sich bitte an eine Administratorin oder einen Administrator Ihrer Organisation.",
-    "noPageAccessOption": "Ihre Organisation hat diese Funktion nicht aktiviert. Eine Administratorin oder ein Administrator kann sie unter Abonnement & Abrechnung einschalten."
+    "noPageAccessOption": "Ihre Organisation hat diese Funktion nicht aktiviert. Eine Administratorin oder ein Administrator kann sie unter Abonnement & Abrechnung einschalten.",
+    "cannotBeUndone": "Das kann nicht rückgängig gemacht werden."
   },
   "auth": {
     "sessionEnded": {
@@ -2130,6 +2131,11 @@
           "origin": "Herkunft des Auftrags"
         }
       }
+    },
+    "deleteConfirm": {
+      "one": "„{{title}}“ löschen?",
+      "many_one": "{{count}} Aufgabe löschen?",
+      "many_other": "{{count}} Aufgaben löschen?"
     }
   },
   "technicians": {

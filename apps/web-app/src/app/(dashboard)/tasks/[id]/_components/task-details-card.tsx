@@ -173,7 +173,7 @@ export function TaskDetailsCard({
             <InlineEditField
               value={task.dueDate}
               onSave={(v) => onFieldSave("dueDate", v)}
-              type="date"
+              type="day"
               disabled={!canEdit}
               placeholder={t("tasks.sidebar.setDueDate")}
             />
@@ -186,7 +186,7 @@ export function TaskDetailsCard({
           <InlineEditField
             value={task.startDate}
             onSave={(v) => onFieldSave("startDate", v)}
-            type="date"
+            type="day"
             disabled={!canEdit}
             placeholder={t("tasks.sidebar.setStartDate")}
           />

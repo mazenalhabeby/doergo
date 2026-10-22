@@ -1,8 +1,6 @@
 "use client"
 
-import { Building2, Check, Plus } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Truncated } from "@/components/common/truncated"
+import { Building2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,8 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PhoneInput } from "@/components/ui/phone-input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
-import { personInitials } from "@hbcfield/shared/client"
 import { useAddContactDialog, type AddContactDialogProps } from "../_hooks/use-add-contact-dialog"
+import { PersonPickRow } from "@/components/common/person-pick-row"
 
 /**
  * Attach a person, or create one.
@@ -98,34 +96,18 @@ export function AddContactDialog({ companyId, onSaved, trigger, startName, mine 
                     <ul className="max-h-52 divide-y divide-border overflow-y-auto">
                       {results.map((r) => (
                         <li key={r.id}>
-                          <button
-                            type="button"
+                          <PersonPickRow
+                            name={r.name}
+                            /* Say where they already are rather than hiding them — that is what stops a duplicate. */
+                            sub={
+                              r.contactOf
+                                ? t("customers.alreadyContactAt", "contact at {{name}}", { name: r.contactOf.name })
+                                : r.email || r.phone || ""
+                            }
+                            selected={personId === r.id}
                             onClick={() => setPersonId(r.id)}
-                            className={cn(
-                              "flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors",
-                              personId === r.id ? "bg-primary/5" : "hover:bg-muted/50",
-                            )}
-                          >
-                            <span
-                              className={
-                                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full " +
-                                "bg-primary/10 text-[10px] font-semibold text-primary"
-                              }
-                            >
-                              {personInitials(r.name)}
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <Truncated text={r.name} className="font-medium text-foreground" />
-                              <span className="block truncate text-[11px] text-muted-foreground">
-                                {/* Say where they already are rather than hiding
-                                    them — that is what stops a duplicate. */}
-                                {r.contactOf
-                                  ? t("customers.alreadyContactAt", "contact at {{name}}", { name: r.contactOf.name })
-                                  : r.email || r.phone || ""}
-                              </span>
-                            </span>
-                            {personId === r.id && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                          </button>
+                            className="rounded-none px-3 py-2"
+                          />
                         </li>
                       ))}
                     </ul>

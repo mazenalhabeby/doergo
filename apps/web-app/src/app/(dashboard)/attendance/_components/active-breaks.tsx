@@ -9,6 +9,8 @@ import { personName } from "@hbcfield/shared/client"
 import { formatTime } from "./attendance-helpers"
 import { breakTypeKey, breakTz } from "./break-format"
 import type { BreaksTabProps } from "./breaks-tab"
+import { useState } from "react"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 
 /** Who is on a break right now — and, for whoever may correct attendance, ending one for them. */
 export function ActiveBreaks({
@@ -23,8 +25,18 @@ export function ActiveBreaks({
 >) {
   const { t } = useTranslation()
   const { hour12, locale } = useTimeFormat()
+  // The break somebody asked to end, waiting for the confirm.
+  const [endingId, setEndingId] = useState<string | null>(null)
   return (
     <div className="bg-card rounded-2xl border border-border/60 shadow-sm mb-6">
+      <ConfirmDialog
+        open={endingId !== null}
+        onOpenChange={(open) => !open && setEndingId(null)}
+        title={t("attendance.breaks.endBreakConfirm")}
+        description={t("common.cannotBeUndone")}
+        confirmLabel={t("attendance.breaks.endBreak")}
+        onConfirm={() => endingId && endBreakManually.mutate({ breakId: endingId })}
+      />
       <div className="p-6 border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -105,11 +117,7 @@ export function ActiveBreaks({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      if (confirm(t("attendance.breaks.endBreakConfirm"))) {
-                        endBreakManually.mutate({ breakId: breakItem.id })
-                      }
-                    }}
+                    onClick={() => setEndingId(breakItem.id)}
                     disabled={endBreakManually.isPending}
                     className="rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   >

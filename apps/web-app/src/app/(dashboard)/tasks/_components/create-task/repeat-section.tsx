@@ -3,15 +3,10 @@
 import { useTranslation } from "react-i18next"
 import { Repeat } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { type RecurringFrequency } from "@/lib/api"
 import { type CreateTaskForm } from "./use-create-task-form"
 
@@ -53,11 +48,19 @@ export function RepeatSection({ form }: { form: CreateTaskForm }) {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">{t("tasks.recurring.frequency")}</Label>
-              <Select value={frequency} onValueChange={(v) => setFrequency(v as RecurringFrequency)} disabled={isSubmitting}>
-                <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue /></SelectTrigger>
+              <Select
+                value={frequency}
+                onValueChange={(v) => setFrequency(v as RecurringFrequency)}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger className="h-9 rounded-lg text-sm">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {["DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY", "QUARTERLY", "YEARLY", "CUSTOM"].map((f) => (
-                    <SelectItem key={f} value={f}>{t(`tasks.recurring.frequencies.${f}`)}</SelectItem>
+                    <SelectItem key={f} value={f}>
+                      {t(`tasks.recurring.frequencies.${f}`)}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -78,11 +81,19 @@ export function RepeatSection({ form }: { form: CreateTaskForm }) {
             {["WEEKLY", "BIWEEKLY"].includes(frequency) && (
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">{t("tasks.recurring.dayOfWeek")}</Label>
-                <Select value={String(dayOfWeek)} onValueChange={(v) => setDayOfWeek(parseInt(v))} disabled={isSubmitting}>
-                  <SelectTrigger className="h-9 rounded-lg text-sm"><SelectValue /></SelectTrigger>
+                <Select
+                  value={String(dayOfWeek)}
+                  onValueChange={(v) => setDayOfWeek(parseInt(v))}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger className="h-9 rounded-lg text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].map((d, i) => (
-                      <SelectItem key={i} value={String(i)}>{t(`tasks.weekdaysFull.${d}`)}</SelectItem>
+                      <SelectItem key={i} value={String(i)}>
+                        {t(`tasks.weekdaysFull.${d}`)}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -105,29 +116,19 @@ export function RepeatSection({ form }: { form: CreateTaskForm }) {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">{t("tasks.sidebar.startDate")}</Label>
-              <Input
-                type="date"
-                value={recurStart}
-                onChange={(e) => setRecurStart(e.target.value)}
-                className="h-9 rounded-lg text-sm"
-                disabled={isSubmitting}
-              />
+              <Label htmlFor="repeat-start" className="text-xs font-medium text-muted-foreground">
+                {t("tasks.sidebar.startDate")}
+              </Label>
+              <DatePicker id="repeat-start" value={recurStart} onChange={setRecurStart} disabled={isSubmitting} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">{t("tasks.recurring.endDateOptional")}</Label>
-              <Input
-                type="date"
-                value={recurEnd}
-                onChange={(e) => setRecurEnd(e.target.value)}
-                className="h-9 rounded-lg text-sm"
-                disabled={isSubmitting}
-              />
+              <Label htmlFor="repeat-end" className="text-xs font-medium text-muted-foreground">
+                {t("tasks.recurring.endDateOptional")}
+              </Label>
+              <DatePicker id="repeat-end" clearable value={recurEnd} onChange={setRecurEnd} disabled={isSubmitting} />
             </div>
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            {t("tasks.recurring.generatesHint")}
-          </p>
+          <p className="text-[11px] text-muted-foreground">{t("tasks.recurring.generatesHint")}</p>
         </div>
       )}
     </div>

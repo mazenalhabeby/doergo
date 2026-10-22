@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import dynamic from "next/dynamic"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 // Date → `YYYY-MM-DD` from the LOCAL parts, for the same reason.
 import { localDateKey } from "@hbcfield/shared/client"
@@ -43,9 +43,29 @@ interface DatePickerProps {
   fromDate?: Date
   /** Nothing after this may be chosen — something that happened is not dated tomorrow. */
   toDate?: Date
+  /** The same bounds as `YYYY-MM-DD`, as a native date input took them ("" = none). */
+  min?: string
+  max?: string
   className?: string
+  /** The trigger's own classes — a filter bar's taller field, a narrow column. */
+  triggerClassName?: string
   id?: string
+  /** The field's name for a screen reader when no `<Label htmlFor>` points at it. */
+  "aria-label"?: string
+  title?: string
+  /** Put the focus on the field when it appears (a form that opens to fix this one date). */
+  autoFocus?: boolean
 }
+
+/*
+  The month grid (react-day-picker) loads when a picker first opens — it is never on screen
+  before that, and it was ~16 kB of the first load of every page with a date field. The
+  placeholder is the grid's own size, so the popover does not resize.
+*/
+const Calendar = dynamic(() => import("@/components/ui/calendar").then((m) => m.Calendar), {
+  ssr: false,
+  loading: () => <div className="h-[298px] w-[252px]" aria-hidden />,
+})
 
 /** `YYYY-MM-DD` → Date, without letting a timezone move it. */
 function parseIsoDay(iso: string): Date | undefined {
@@ -54,20 +74,27 @@ function parseIsoDay(iso: string): Date | undefined {
   return isValid(d) ? d : undefined
 }
 
-
 export function DatePicker({
   value,
   onChange,
   placeholder,
   clearable = false,
   disabled = false,
-  fromDate,
-  toDate,
+  fromDate: fromDateProp,
+  toDate: toDateProp,
+  min,
+  max,
   className,
+  triggerClassName,
   id,
+  "aria-label": ariaLabel,
+  title,
+  autoFocus,
 }: DatePickerProps) {
   const { t } = useTranslation()
   const selected = parseIsoDay(value)
+  const fromDate = fromDateProp ?? parseIsoDay(min ?? "")
+  const toDate = toDateProp ?? parseIsoDay(max ?? "")
 
   return (
     <div className={cn("relative", className)}>
@@ -76,17 +103,21 @@ export function DatePicker({
           <Button
             id={id}
             type="button"
+            aria-label={ariaLabel}
+            title={title}
+            autoFocus={autoFocus}
             variant="outline"
             disabled={disabled}
             className={cn(
               "h-9 w-full justify-start rounded-lg border-border bg-card text-left text-sm font-normal hover:bg-accent",
               !selected && "text-muted-foreground",
               clearable && selected && "pr-8",
+              triggerClassName,
             )}
           >
             <CalendarIcon className="mr-2 size-3.5 shrink-0 text-muted-foreground" />
             <span className="truncate">
-              {selected ? format(selected, "d MMM yyyy") : placeholder ?? t("common.selectDate", "Pick a date")}
+              {selected ? format(selected, "d MMM yyyy") : (placeholder ?? t("common.selectDate", "Pick a date"))}
             </span>
           </Button>
         </PopoverTrigger>
@@ -100,10 +131,11 @@ export function DatePicker({
               DateInterval in react-day-picker — it disables the days BETWEEN
               them, which is exactly the days that should stay open.
             */
-            disabled={fromDate || toDate ? [
-              ...(fromDate ? [{ before: fromDate }] : []),
-              ...(toDate ? [{ after: toDate }] : []),
-            ] : undefined}
+            disabled={
+              fromDate || toDate
+                ? [...(fromDate ? [{ before: fromDate }] : []), ...(toDate ? [{ after: toDate }] : [])]
+                : undefined
+            }
             defaultMonth={selected ?? toDate ?? fromDate}
             initialFocus
           />

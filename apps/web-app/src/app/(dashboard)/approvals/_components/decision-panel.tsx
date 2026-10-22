@@ -17,6 +17,7 @@ import {
 import { assetsApi, documentsApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -65,7 +66,8 @@ export function DecisionPanel({
   const needsForm = (a: ApprovalActionSpec) => a.reason !== "none" || !!a.input
   const reasonMissing = armed?.reason === "required" && !reason.trim()
   const minutesValue = Number(minutes)
-  const minutesBad = armed?.input === "minutes" && !(Number.isInteger(minutesValue) && minutesValue >= 1 && minutesValue <= 1440)
+  const minutesBad =
+    armed?.input === "minutes" && !(Number.isInteger(minutesValue) && minutesValue >= 1 && minutesValue <= 1440)
 
   const send = (a: ApprovalActionSpec) => {
     if (needsForm(a) && armed?.id !== a.id) {
@@ -80,9 +82,10 @@ export function DecisionPanel({
       reason: a.reason !== "none" && reason.trim() ? reason.trim() : undefined,
       minutes: a.input === "minutes" ? minutesValue : undefined,
       expiresOn: a.input === "expiresOn" && expiresOn ? expiresOn : undefined,
-      spaceId: item.kind === "clientRequest"
-        ? (item.space?.id ?? (item.data.suggestedSpaceId as string | undefined))
-        : undefined,
+      spaceId:
+        item.kind === "clientRequest"
+          ? (item.space?.id ?? (item.data.suggestedSpaceId as string | undefined))
+          : undefined,
     })
   }
 
@@ -102,14 +105,18 @@ export function DecisionPanel({
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t(`approvals.kinds.${item.kind}`)}
           </p>
-          <h2 className="truncate text-lg font-semibold text-foreground">{item.subject.name || t("approvals.someone")}</h2>
+          <h2 className="truncate text-lg font-semibold text-foreground">
+            {item.subject.name || t("approvals.someone")}
+          </h2>
           <p className="text-sm text-muted-foreground">{text.headline}</p>
         </div>
       </div>
 
       <dl className="divide-y divide-border rounded-lg border border-border bg-card text-sm">
         {item.space && <Fact label={t("approvals.fact.workspace")} value={item.space.name} />}
-        {text.facts.map((f) => <Fact key={f.label} {...f} />)}
+        {text.facts.map((f) => (
+          <Fact key={f.label} {...f} />
+        ))}
         {item.raisedAt && <Fact label={t("approvals.fact.raised")} value={formatTimeAgo(item.raisedAt)} />}
       </dl>
 
@@ -146,7 +153,7 @@ export function DecisionPanel({
           {armed.input === "expiresOn" && (
             <div className="space-y-1.5">
               <Label htmlFor="approval-expires">{t("approvals.expiresOn")}</Label>
-              <Input id="approval-expires" type="date" value={expiresOn} onChange={(e) => setExpiresOn(e.target.value)} className="w-44" />
+              <DatePicker id="approval-expires" value={expiresOn} onChange={setExpiresOn} clearable className="w-44" />
             </div>
           )}
           {armed.reason !== "none" && (
@@ -178,11 +185,18 @@ export function DecisionPanel({
                 variant={a.tone === "danger" ? (isArmed ? "destructive" : "outline") : "default"}
                 disabled={busy || blocked}
                 onClick={() => send(a)}
-                className={cn("rounded-lg", a.tone === "danger" && !isArmed && "text-destructive hover:text-destructive")}
+                className={cn(
+                  "rounded-lg",
+                  a.tone === "danger" && !isArmed && "text-destructive hover:text-destructive",
+                )}
               >
-                {busy && isArmed
-                  ? <Loader2 className="size-4 animate-spin" />
-                  : a.id === "approve" ? <Check className="size-4" /> : <X className="size-4" />}
+                {busy && isArmed ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : a.id === "approve" ? (
+                  <Check className="size-4" />
+                ) : (
+                  <X className="size-4" />
+                )}
                 {t(`approvals.actions.${a.labelKey}`)}
               </Button>
             )
@@ -245,10 +259,13 @@ function ViewFile({ item }: { item: ApprovalItem }) {
   const { t } = useTranslation()
   const [busy, setBusy] = useState(false)
   const mint =
-    item.kind === "document" ? () => documentsApi.downloadUrl(item.id)
-    : item.kind === "expense" && item.data.hasReceipt ? () => assetsApi.getReceiptUrl(item.id)
-    : item.kind === "assetProposal" ? () => assetsApi.getProposalDocumentUrl(item.id)
-    : null
+    item.kind === "document"
+      ? () => documentsApi.downloadUrl(item.id)
+      : item.kind === "expense" && item.data.hasReceipt
+        ? () => assetsApi.getReceiptUrl(item.id)
+        : item.kind === "assetProposal"
+          ? () => assetsApi.getProposalDocumentUrl(item.id)
+          : null
   if (!mint) return null
   const open = async () => {
     // Opened before the await, or the browser treats the later window as a pop-up.

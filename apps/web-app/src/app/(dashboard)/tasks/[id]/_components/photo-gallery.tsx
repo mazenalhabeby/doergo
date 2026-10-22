@@ -7,6 +7,7 @@ import { Camera, ChevronLeft, ChevronRight, ZoomIn, Loader2, X } from "lucide-re
 import { keys } from "@/lib/query-keys"
 import { reportAttachmentsApi, type ReportAttachment } from "@/lib/api"
 import { useTranslation } from "react-i18next"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 
 /** A service report's photos, one at a time with arrows; removable where the viewer may delete. */
 export function PhotoGallery({
@@ -132,6 +133,7 @@ function AttachmentDeleteButton({
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const [confirming, setConfirming] = useState(false)
   const deleteMutation = useMutation({
     mutationFn: () => reportAttachmentsApi.delete(reportId, attachmentId),
     onSuccess: () => {
@@ -142,18 +144,32 @@ function AttachmentDeleteButton({
   })
 
   return (
-    <button
-      onClick={(e) => {
-        e.stopPropagation()
-        if (confirm(t("tasks.serviceReport.removePhotoConfirm"))) deleteMutation.mutate()
-      }}
-      disabled={deleteMutation.isPending}
-      className={
-        "absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 " +
-        "group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
-      }
-    >
-      {deleteMutation.isPending ? <Loader2 className="size-3 animate-spin" /> : <X className="size-3" />}
-    </button>
+    <>
+      {/* A portal still bubbles through React's tree — keep the dialog's clicks off the photo. */}
+      <span onClick={(e) => e.stopPropagation()}>
+        <ConfirmDialog
+          open={confirming}
+          onOpenChange={setConfirming}
+          title={t("tasks.serviceReport.removePhotoConfirm")}
+          description={t("common.cannotBeUndone")}
+          confirmLabel={t("common.remove")}
+          onConfirm={() => deleteMutation.mutate()}
+          destructive
+        />
+      </span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          setConfirming(true)
+        }}
+        disabled={deleteMutation.isPending}
+        className={
+          "absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 " +
+          "group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
+        }
+      >
+        {deleteMutation.isPending ? <Loader2 className="size-3 animate-spin" /> : <X className="size-3" />}
+      </button>
+    </>
   )
 }

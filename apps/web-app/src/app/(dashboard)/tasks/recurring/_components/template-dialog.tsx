@@ -3,6 +3,7 @@
 import { type RecurringTaskTemplate, type RecurringFrequency } from "@/lib/api"
 import { SaveDialogFooter } from "@/components/common/save-dialog-footer"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -178,12 +179,12 @@ export function TemplateDialog({
           {/* Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>{t("tasks.sidebar.startDate")}</Label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <Label htmlFor="template-start">{t("tasks.sidebar.startDate")}</Label>
+              <DatePicker id="template-start" value={startDate} onChange={setStartDate} />
             </div>
             <div className="space-y-2">
-              <Label>{t("tasks.recurring.endDateOptional")}</Label>
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <Label htmlFor="template-end">{t("tasks.recurring.endDateOptional")}</Label>
+              <DatePicker id="template-end" clearable value={endDate} onChange={setEndDate} />
             </div>
           </div>
 

@@ -1,19 +1,15 @@
 "use client"
 
-import React, { useCallback } from "react"
+import React, { useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
 import { X, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { getStatusConfig, getPriorityConfig, TASK_STATUSES, TASK_PRIORITIES } from "@/lib/constants"
 import type { Sprint } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -49,11 +45,8 @@ function BulkActionBarInner({
   const count = selectedIds.size
   const ids = Array.from(selectedIds)
 
-  const handleDelete = useCallback(() => {
-    if (window.confirm(`Delete ${count} task${count !== 1 ? "s" : ""}?`)) {
-      onBulkDelete?.(ids)
-    }
-  }, [count, ids, onBulkDelete])
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const handleDelete = useCallback(() => setConfirmDelete(true), [])
 
   if (count === 0) return null
 
@@ -68,9 +61,7 @@ function BulkActionBarInner({
       style={{ animationTimingFunction: "cubic-bezier(0.32, 0.72, 0, 1)" }}
     >
       {/* Count */}
-      <span className="text-sm font-semibold text-foreground whitespace-nowrap pr-1">
-        {count} selected
-      </span>
+      <span className="text-sm font-semibold text-foreground whitespace-nowrap pr-1">{count} selected</span>
 
       <div className="w-px h-5 bg-border/60 mx-1" />
 
@@ -83,17 +74,11 @@ function BulkActionBarInner({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" side="top" className="w-[180px]">
-            {TASK_STATUSES.filter(s => s !== "DRAFT").map((status) => {
+            {TASK_STATUSES.filter((s) => s !== "DRAFT").map((status) => {
               const config = getStatusConfig(status)
               return (
-                <DropdownMenuItem
-                  key={status}
-                  onClick={() => onBulkStatusChange(ids, status)}
-                >
-                  <span
-                    className="size-2 rounded-full mr-2 flex-shrink-0"
-                    style={{ backgroundColor: config.hex }}
-                  />
+                <DropdownMenuItem key={status} onClick={() => onBulkStatusChange(ids, status)}>
+                  <span className="size-2 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: config.hex }} />
                   {config.label}
                 </DropdownMenuItem>
               )
@@ -115,10 +100,7 @@ function BulkActionBarInner({
               const config = getPriorityConfig(priority)
               const Icon = config.icon
               return (
-                <DropdownMenuItem
-                  key={priority}
-                  onClick={() => onBulkPriorityChange(ids, priority)}
-                >
+                <DropdownMenuItem key={priority} onClick={() => onBulkPriorityChange(ids, priority)}>
                   <Icon className="size-3.5 mr-2 flex-shrink-0" style={{ color: config.hex }} />
                   {config.label}
                 </DropdownMenuItem>
@@ -129,7 +111,7 @@ function BulkActionBarInner({
       )}
 
       {/* Sprint */}
-      {hasModule('sprints') && onBulkSprintChange && sprints.length > 0 && (
+      {hasModule("sprints") && onBulkSprintChange && sprints.length > 0 && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs font-medium rounded-lg">
@@ -137,14 +119,9 @@ function BulkActionBarInner({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" side="top" className="w-[180px]">
-            <DropdownMenuItem onClick={() => onBulkSprintChange(ids, null)}>
-              {t("tasks.menu.backlog")}
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onBulkSprintChange(ids, null)}>{t("tasks.menu.backlog")}</DropdownMenuItem>
             {sprints.map((sprint) => (
-              <DropdownMenuItem
-                key={sprint.id}
-                onClick={() => onBulkSprintChange(ids, sprint.id)}
-              >
+              <DropdownMenuItem key={sprint.id} onClick={() => onBulkSprintChange(ids, sprint.id)}>
                 {sprint.name}
               </DropdownMenuItem>
             ))}
@@ -161,14 +138,9 @@ function BulkActionBarInner({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" side="top" className="w-[180px]">
-            <DropdownMenuItem onClick={() => onBulkSpaceChange(ids, null)}>
-              {t("tasks.menu.noSpace")}
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onBulkSpaceChange(ids, null)}>{t("tasks.menu.noSpace")}</DropdownMenuItem>
             {spaces.map((space) => (
-              <DropdownMenuItem
-                key={space.id}
-                onClick={() => onBulkSpaceChange(ids, space.id)}
-              >
+              <DropdownMenuItem key={space.id} onClick={() => onBulkSpaceChange(ids, space.id)}>
                 {space.name}
               </DropdownMenuItem>
             ))}
@@ -200,6 +172,16 @@ function BulkActionBarInner({
       >
         <X className="size-3.5" />
       </Button>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={t("tasks.deleteConfirm.many", { count })}
+        description={t("common.cannotBeUndone")}
+        confirmLabel={t("common.delete")}
+        onConfirm={() => onBulkDelete?.(ids)}
+        destructive
+      />
     </div>
   )
 }

@@ -1,17 +1,13 @@
 "use client"
 
-import { memo } from "react"
+import { memo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { MapPin, ShieldCheck, Trash2, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { ConfirmDialog } from "@/components/common/confirm-dialog"
 
 // ---------------------------------------------------------------------------
 // Bulk Action Bar for members
@@ -38,6 +34,7 @@ export const MemberBulkActionBar = memo(function MemberBulkActionBar({
 }: MemberBulkActionBarProps) {
   const { t } = useTranslation()
   const count = selectedIds.size
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const ids = Array.from(selectedIds)
 
   if (count === 0) return null
@@ -67,7 +64,9 @@ export const MemberBulkActionBar = memo(function MemberBulkActionBar({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="center" side="top" className="w-[160px]">
           <DropdownMenuItem onClick={() => onBulkRoleChange(ids, "ADMIN")}>{t("members.roles.admin")}</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onBulkRoleChange(ids, "EMPLOYEE")}>{t("members.roles.employee")}</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onBulkRoleChange(ids, "EMPLOYEE")}>
+            {t("members.roles.employee")}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -81,10 +80,7 @@ export const MemberBulkActionBar = memo(function MemberBulkActionBar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" side="top" className="w-[180px]">
             {locations.map((loc) => (
-              <DropdownMenuItem
-                key={loc.id}
-                onClick={() => onBulkSpaceAssign(ids, loc.id)}
-              >
+              <DropdownMenuItem key={loc.id} onClick={() => onBulkSpaceAssign(ids, loc.id)}>
                 <MapPin className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
                 {loc.name}
               </DropdownMenuItem>
@@ -111,11 +107,7 @@ export const MemberBulkActionBar = memo(function MemberBulkActionBar({
         variant="ghost"
         size="sm"
         className="h-7 px-2.5 text-xs font-medium rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10"
-        onClick={() => {
-          if (window.confirm(t("members.bulk.removeConfirm", { count }))) {
-            onBulkRemove(ids)
-          }
-        }}
+        onClick={() => setConfirmRemove(true)}
       >
         <Trash2 className="size-3.5 mr-1" />
         {t("members.actions.remove")}
@@ -130,6 +122,16 @@ export const MemberBulkActionBar = memo(function MemberBulkActionBar({
       >
         <X className="size-3.5" />
       </Button>
+
+      <ConfirmDialog
+        open={confirmRemove}
+        onOpenChange={setConfirmRemove}
+        title={t("members.bulk.removeConfirm", { count })}
+        description={t("common.cannotBeUndone")}
+        confirmLabel={t("members.actions.remove")}
+        onConfirm={() => onBulkRemove(ids)}
+        destructive
+      />
     </div>
   )
 })

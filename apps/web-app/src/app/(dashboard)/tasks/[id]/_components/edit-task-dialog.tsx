@@ -2,8 +2,9 @@
 
 import { Suspense, lazy } from "react"
 import { useTranslation } from "react-i18next"
-import { format } from "date-fns"
-import { Calendar as CalendarIcon, Loader2 } from "lucide-react"
+import { parseISO } from "date-fns"
+import { localDateKey } from "@hbcfield/shared/client"
+import { Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,10 +19,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
 import { PrioritySelector } from "@/components/tasks"
 import { useEditTaskDialog, type EditTaskDialogProps } from "./use-edit-task-dialog"
 import { EditTaskWhenFields } from "./edit-task-when-fields"
@@ -178,25 +177,18 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
           {/* Start Date */}
           <div className="grid gap-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">{t("tasks.sidebar.startDate")}</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "h-10 w-full justify-start text-left font-normal rounded-lg border-border bg-card hover:bg-accent",
-                      !startDate && "text-muted-foreground",
-                    )}
-                    disabled={updateMutation.isPending}
-                  >
-                    <CalendarIcon className="mr-2 size-4 text-muted-foreground" />
-                    {startDate ? format(startDate, "MMM d, yyyy") : t("tasks.create.selectDate")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
-                </PopoverContent>
-              </Popover>
+              <Label htmlFor="edit-start-date" className="text-sm font-medium text-foreground">
+                {t("tasks.sidebar.startDate")}
+              </Label>
+              {/* The form holds a Date; the picker speaks `YYYY-MM-DD` — converted here, on local parts. */}
+              <DatePicker
+                id="edit-start-date"
+                value={startDate ? localDateKey(startDate) : ""}
+                onChange={(day) => setStartDate(day ? parseISO(day) : undefined)}
+                disabled={updateMutation.isPending}
+                placeholder={t("tasks.create.selectDate")}
+                triggerClassName="h-10"
+              />
               <p className="text-[11px] text-muted-foreground">
                 {t(
                   "tasks.sidebar.startDateHint",
