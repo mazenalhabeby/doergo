@@ -6,22 +6,20 @@ import { CheckCircle2, CalendarOff } from "lucide-react"
 import { toDate, NoteCell } from "./attendance-helpers"
 import { personName } from "@hbcfield/shared/client"
 import { EditDayOffDialog } from "./edit-dayoff-dialog"
-import type { TrackingTabState } from "./use-tracking-tab"
-import type { TrackingTabTracking } from "./tracking-tab-tracking"
+import { useTranslation } from "react-i18next"
+import type { DayOffRow } from "./tracking-types"
 
-/** Part of the parent component's markup, moved here unchanged; it reads the state from `vm`. */
+/** Approved time off in the range, as its own table — these rows never have clock times. */
 export function TrackingDaysOff({
-  vm,
   daysOff,
   canReconcile,
   isAdmin,
 }: {
-  vm: TrackingTabState
-  daysOff: Parameters<typeof TrackingTabTracking>[0]["daysOff"]
-  canReconcile: Parameters<typeof TrackingTabTracking>[0]["canReconcile"]
-  isAdmin: Parameters<typeof TrackingTabTracking>[0]["isAdmin"]
+  daysOff: DayOffRow[]
+  canReconcile: boolean
+  isAdmin: boolean
 }) {
-  const { t } = vm
+  const { t } = useTranslation()
   return daysOff.length === 0 ? (
     <div className="p-12 text-center">
       <CalendarOff className="size-12 text-muted-foreground mx-auto mb-4" />

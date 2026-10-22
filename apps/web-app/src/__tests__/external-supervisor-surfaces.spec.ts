@@ -107,7 +107,7 @@ describe('canDeleteAttendance', () => {
     const dialog = read('src/app/(dashboard)/attendance/_components/edit-entry-dialog.tsx');
     expect(dialog).toContain('{canDelete && (');
     expect(dialog).toContain('{canEdit && (');
-    const tab = read('src/app/(dashboard)/attendance/_components/tracking-tab.tsx');
+    const tab = read('src/app/(dashboard)/attendance/_components/tracking-entries-table.tsx');
     expect(tab).toContain('canEdit={canReconcile} canDelete={canDelete}');
   });
 });

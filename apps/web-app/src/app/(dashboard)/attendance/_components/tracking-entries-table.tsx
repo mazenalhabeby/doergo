@@ -11,37 +11,43 @@ import { EditEntryDialog } from "./edit-entry-dialog"
 import { AddOvertimeDialog } from "./add-overtime-dialog"
 import { PresenceDay } from "@/components/attendance/presence-day"
 import { workedMinutes } from "@hbcfield/shared/client"
-import { SortHead } from "./tracking-tab-helpers"
-import type { TrackingTabState } from "./use-tracking-tab"
-import type { TrackingTabTracking } from "./tracking-tab-tracking"
+import { SortHead } from "./sort-head"
+import { useTranslation } from "react-i18next"
+import { useTimeFormat } from "@/hooks"
+import { useOvertimeAction } from "@/hooks/use-overtime-action"
+import type { TrackingTabProps } from "./tracking-types"
 
-/** Part of the parent component's markup, moved here unchanged; it reads the state from `vm`. */
+/**
+ * The clock entries, one row each — opens to the day's presence and work log. The row's actions
+ * follow the permissions their routes ask: correct (canReconcile), delete (canDelete), overtime.
+ */
 export function TrackingEntriesTable({
-  vm,
+  entries,
   canReconcile,
+  canDelete,
   isAdmin,
-  filteredEntries,
   sort,
   onSort,
-  canDelete,
   meta,
   page,
   limit,
   setPage,
-}: {
-  vm: TrackingTabState
-  canReconcile: Parameters<typeof TrackingTabTracking>[0]["canReconcile"]
-  isAdmin: Parameters<typeof TrackingTabTracking>[0]["isAdmin"]
-  filteredEntries: Parameters<typeof TrackingTabTracking>[0]["filteredEntries"]
-  sort: Parameters<typeof TrackingTabTracking>[0]["sort"]
-  onSort: Parameters<typeof TrackingTabTracking>[0]["onSort"]
-  canDelete: Parameters<typeof TrackingTabTracking>[0]["canDelete"]
-  meta: Parameters<typeof TrackingTabTracking>[0]["meta"]
-  page: Parameters<typeof TrackingTabTracking>[0]["page"]
-  limit: Parameters<typeof TrackingTabTracking>[0]["limit"]
-  setPage: Parameters<typeof TrackingTabTracking>[0]["setPage"]
+}: Pick<
+  TrackingTabProps,
+  "canReconcile" | "canDelete" | "isAdmin" | "sort" | "onSort" | "meta" | "page" | "limit" | "setPage"
+> & {
+  entries: TrackingTabProps["filteredEntries"]
 }) {
-  const { t, showActions, expandedId, setExpandedId, hour12, locale, overtime, canOpenEntry } = vm
+  const { t } = useTranslation()
+  const { hour12, locale } = useTimeFormat()
+  // Overtime on a closed shift: the approval permission and the Option its route
+  // is sold under — one gate, shared with the member's attendance tab.
+  const overtime = useOvertimeAction()
+  // The entry dialog opens for whoever may correct OR delete; it shows each
+  // half only to the permission its route asks.
+  const canOpenEntry = canReconcile || canDelete
+  const showActions = canOpenEntry || overtime.enabled
+  const [expandedId, setExpandedId] = React.useState<string | null>(null)
   return (
     <>
       <>
@@ -89,7 +95,7 @@ export function TrackingEntriesTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredEntries.map((entry: TimeEntry) => {
+            {entries.map((entry: TimeEntry) => {
               const isOpen = expandedId === entry.id
               return (
                 <React.Fragment key={entry.id}>

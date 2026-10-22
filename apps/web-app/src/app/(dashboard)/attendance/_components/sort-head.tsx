@@ -2,7 +2,6 @@ import { cn } from "@/lib/utils"
 import { TableHead } from "@/components/ui/table"
 import { ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react"
 
-/** TrackingTab's module-level helpers, moved here unchanged so its sections can read them too. */
 // Sortable column header — click to cycle asc → desc → off.
 export function SortHead({
   label,

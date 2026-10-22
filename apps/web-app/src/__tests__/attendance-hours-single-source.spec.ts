@@ -56,7 +56,7 @@ describe('hours worked come from one helper', () => {
     // Named directly: these are the two that disagreed, and a regression in
     // either is the one this suite exists to catch.
     for (const rel of [
-      'app/(dashboard)/attendance/_components/tracking-tab.tsx',
+      'app/(dashboard)/attendance/_components/tracking-entries-table.tsx',
       'app/(dashboard)/members/[id]/_components/attendance-tab.tsx',
     ]) {
       expect(readSource(join(SRC, rel), 'utf8')).toContain('workedMinutes(entry)')

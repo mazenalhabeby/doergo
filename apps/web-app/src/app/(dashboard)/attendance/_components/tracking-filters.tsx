@@ -1,46 +1,69 @@
+import React from "react"
+import { useTranslation } from "react-i18next"
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, subMonths } from "date-fns"
 import { cn } from "@/lib/utils"
 import { type CompanyLocation } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MapPin, RefreshCw, Search, Calendar, ArrowRight } from "lucide-react"
-import type { TrackingTabState } from "./use-tracking-tab"
-import type { TrackingTab } from "./tracking-tab"
+import type { TrackingTabProps } from "./tracking-types"
 
-/** Part of TrackingTab's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function TrackingTabTracking2(
-  {
-    vm,
-    searchQuery,
-    setSearchQuery,
-    selectedLocationId,
-    setSelectedLocationId,
-    setPage,
-    locations,
-    selectedStatus,
-    setSelectedStatus,
-    selectedDate,
-    endDate,
-    setSelectedDate,
-    setEndDate,
-    refetch
-  }: {
-    vm: TrackingTabState;
-    searchQuery: Parameters<typeof TrackingTab>[0]['searchQuery'];
-    setSearchQuery: Parameters<typeof TrackingTab>[0]['setSearchQuery'];
-    selectedLocationId: Parameters<typeof TrackingTab>[0]['selectedLocationId'];
-    setSelectedLocationId: Parameters<typeof TrackingTab>[0]['setSelectedLocationId'];
-    setPage: Parameters<typeof TrackingTab>[0]['setPage'];
-    locations: Parameters<typeof TrackingTab>[0]['locations'];
-    selectedStatus: Parameters<typeof TrackingTab>[0]['selectedStatus'];
-    setSelectedStatus: Parameters<typeof TrackingTab>[0]['setSelectedStatus'];
-    selectedDate: Parameters<typeof TrackingTab>[0]['selectedDate'];
-    endDate: Parameters<typeof TrackingTab>[0]['endDate'];
-    setSelectedDate: Parameters<typeof TrackingTab>[0]['setSelectedDate'];
-    setEndDate: Parameters<typeof TrackingTab>[0]['setEndDate'];
-    refetch: Parameters<typeof TrackingTab>[0]['refetch']
-  }) {
-  const { t, presets, applyRange } = vm
+type FilterProps = Pick<
+  TrackingTabProps,
+  | "searchQuery"
+  | "setSearchQuery"
+  | "selectedLocationId"
+  | "setSelectedLocationId"
+  | "selectedStatus"
+  | "setSelectedStatus"
+  | "selectedDate"
+  | "setSelectedDate"
+  | "endDate"
+  | "setEndDate"
+  | "setPage"
+  | "locations"
+  | "refetch"
+>
+
+/** Search, workspace, status, the date range and its quick presets. Every change goes back to page 1. */
+export function TrackingFilters({
+  searchQuery,
+  setSearchQuery,
+  selectedLocationId,
+  setSelectedLocationId,
+  selectedStatus,
+  setSelectedStatus,
+  selectedDate,
+  setSelectedDate,
+  endDate,
+  setEndDate,
+  setPage,
+  locations,
+  refetch,
+}: FilterProps) {
+  const { t } = useTranslation()
+
+  // Quick date-range presets (computed once on mount).
+  const presets = React.useMemo(() => {
+    const now = new Date()
+    const f = (d: Date) => format(d, "yyyy-MM-dd")
+    return [
+      { key: "today", from: f(now), to: f(now) },
+      { key: "last7", from: f(subDays(now, 6)), to: f(now) },
+      { key: "thisWeek", from: f(startOfWeek(now, { weekStartsOn: 1 })), to: f(endOfWeek(now, { weekStartsOn: 1 })) },
+      { key: "thisMonth", from: f(startOfMonth(now)), to: f(endOfMonth(now)) },
+      // The whole previous calendar month — the range payroll is checked against.
+      { key: "lastMonth", from: f(startOfMonth(subMonths(now, 1))), to: f(endOfMonth(subMonths(now, 1))) },
+    ]
+  }, [])
+
+  const applyRange = (from: string, to: string) => {
+    setSelectedDate(from)
+    setEndDate(to)
+    setPage(1)
+  }
+
   return (
     <div data-tour="tracking-filters" className="flex flex-wrap items-center gap-3 mb-6">
       {/* Search */}
@@ -97,10 +120,13 @@ export function TrackingTabTracking2(
 
       {/* Date range — unified From → To pill */}
       <div
-        className={"group inline-flex items-center h-11 gap-1 rounded-xl border " +
+        className={
+          "group inline-flex items-center h-11 gap-1 rounded-xl border " +
           "border-border/80 bg-card/80 px-3 shadow-sm transition-colors " +
           "focus-within:border-foreground/30 focus-within:ring-2 " +
-          "focus-within:ring-foreground/10"}>
+          "focus-within:ring-foreground/10"
+        }
+      >
         <Calendar className="size-4 shrink-0 text-muted-foreground" />
         <Input
           type="date"
@@ -152,7 +178,7 @@ export function TrackingTabTracking2(
                 "h-9 rounded-lg px-3 text-xs font-medium transition-all",
                 active
                   ? "bg-foreground text-background shadow-sm"
-                  : "text-muted-foreground hover:bg-background hover:text-foreground"
+                  : "text-muted-foreground hover:bg-background hover:text-foreground",
               )}
             >
               {t(`attendance.tracking.presets.${p.key}`)}
