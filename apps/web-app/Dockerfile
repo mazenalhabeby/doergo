@@ -8,6 +8,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 # pnpm refuses a frozen install when a patch listed in package.json is missing.
 COPY patches ./patches
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/db/package.json ./packages/db/
 COPY apps/web-app/package.json ./apps/web-app/
 RUN pnpm install --frozen-lockfile --prod=false
 
@@ -37,6 +38,9 @@ ENV NEXT_PUBLIC_MAP_TILE_ATTRIBUTION=$NEXT_PUBLIC_MAP_TILE_ATTRIBUTION
 COPY packages/shared/ ./packages/shared/
 COPY apps/web-app/ ./apps/web-app/
 COPY tsconfig.base.json ./
+# The database TYPES only (shared's data readers are typed by them; nothing of Prisma reaches the browser).
+COPY packages/db/prisma/ ./packages/db/prisma/
+RUN cd packages/db && npx prisma generate
 RUN pnpm --filter @hbcfield/shared build
 RUN pnpm --filter @hbcfield/web-app build
 

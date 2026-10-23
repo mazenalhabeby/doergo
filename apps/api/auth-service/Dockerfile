@@ -30,8 +30,9 @@ COPY packages/shared/ ./packages/shared/
 COPY apps/api/auth-service/ ./apps/api/auth-service/
 COPY packages/db/prisma/ ./packages/db/prisma/
 COPY tsconfig.base.json ./
-RUN pnpm --filter @hbcfield/shared build
+# The database types first: shared's data readers use them (code-structure-fix 3.2).
 RUN cd packages/db && npx prisma generate
+RUN pnpm --filter @hbcfield/shared build
 RUN pnpm --filter @hbcfield/auth-service build
 
 # -- Production dependencies, exactly as pnpm-lock.yaml pins them --

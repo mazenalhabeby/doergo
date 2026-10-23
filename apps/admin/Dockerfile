@@ -8,10 +8,11 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 # pnpm refuses a frozen install when a patch listed in package.json is missing.
 COPY patches ./patches
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/db/package.json ./packages/db/
 COPY apps/admin/package.json ./apps/admin/
 # `@hbcfield/admin...` = the console AND its workspace dependencies (shared), so
 # shared's own build dependencies are installed too.
-RUN pnpm install --frozen-lockfile --prod=false --filter @hbcfield/admin...
+RUN pnpm install --frozen-lockfile --prod=false --filter @hbcfield/admin... --filter @hbcfield/db
 
 # -- Build --
 FROM deps AS build
@@ -23,6 +24,9 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
 COPY tsconfig.base.json ./
 COPY packages/shared/ ./packages/shared/
+# The database TYPES only (shared's data readers are typed by them; nothing of Prisma reaches the browser).
+COPY packages/db/prisma/ ./packages/db/prisma/
+RUN cd packages/db && npx prisma generate
 # Shared first: the console imports its built entry (@hbcfield/shared/client → dist-esm).
 RUN pnpm --filter @hbcfield/shared build
 COPY apps/admin/ ./apps/admin/
