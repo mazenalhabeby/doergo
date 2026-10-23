@@ -54,7 +54,7 @@ jobs:
           [ "$CONFIRM" = "deploy" ] || { echo "::error::confirm must be exactly \"deploy\""; exit 1; }
           [[ "$SHA_IN" =~ ^[0-9a-f]{7,40}$ ]] || { echo "::error::sha must be a hex commit id"; exit 1; }
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
