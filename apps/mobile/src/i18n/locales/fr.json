@@ -3293,7 +3293,7 @@
       "BREAK_ALREADY_ENDED": "Cette pause était déjà terminée avant l'arrivée de votre modification.",
       "OUT_OF_ORDER": "Cela s'est produit avant l'étape qui le précède, donc impossible à appliquer.",
       "OCCURRED_IN_FUTURE": "L'horloge de ce téléphone est en avance. Vérifiez la date et l'heure.",
-      "FIX_NOT_AT_TAP": "La position n'a pas été prise au moment de l'action.",
+      "FIX_NOT_AT_TAP": "Votre position n'est plus à jour. Réessayez pour en obtenir une nouvelle.",
       "FIX_INACCURATE": "La position n'était pas assez précise.",
       "FIX_MISSING": "La position n'a pas pu être déterminée.",
       "REPORT_EXISTS": "Cette intervention a déjà un rapport, le vôtre n'a donc pas été ajouté.",

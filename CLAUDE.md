@@ -466,7 +466,15 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > ⚠️ **Time outside the shift is decided by MOVING THE PLAN** (shared `attendance/outside-shift.ts`): after the end through the existing `addOvertimeToClosedEntry` (an APPROVED overtime round — the Overtime page's record, the member told), before the start by moving `expectedClockInAt`; then the one counted-time rule recounts. `TimeEntry.outsideDecidedAt/ById/CountedMinutes` (migration `20261023150000_outside_shift_decision`, additive) make it once-only. `kindNeedsMinutes` (shared) is what keeps it out of "Approve day".
 >
-> E2E: `python3 tools/outside-shift-e2e.py` (LOCAL, 11 checks). Web: Schedule wallchart → a person's day → "Change hours for this day". Phone: Time page shows today's changed hours and time waiting for a decision (needs an OTA).
+> ⚠️ **Setting a day's hours re-shapes only the sessions they are ABOUT**: those overlapping the new hours, never a finished no-shift session (`endIsDailyLimit`) — re-planning one counted its 12 h down to the overlap (found by `tools/time-counting-e2e.py`).
+>
+> ⚠️ **The migration marks every entry closed before it as decided** (`outsideDecidedById` NULL = "from before"), so the inbox asks only about work from deploy day on — 71 old items appeared at once on the local data. Remove that UPDATE to ask about the last 31 days instead.
+>
+> ⚠️ **"Waiting for …" names people who can DECIDE** (overtime approvers through `askAboutOwnRequest`), never the people merely told about the member.
+>
+> ⚠️ **A clock-out never sends a stale position** (`fixForTap`, shared `sync/occurrence.ts`): the phone's last-known fix carries its old time and the server refused it as FIX_NOT_AT_TAP — nobody could go home (seen on the iOS simulator). Clock-in stays strict.
+>
+> E2E: `python3 tools/time-counting-e2e.py` (LOCAL, ~50 checks incl. attacks + speed), `python3 tools/outside-shift-e2e.py` (11), web `node tools/video/time-counting-web-e2e.ts <outDir>` (10, as Anna). Phone driven on the iOS simulator with Maestro (needs `JAVA_HOME=/opt/homebrew/opt/openjdk@17/...`). Web: Schedule wallchart → a person's day → "Change hours for this day". Phone: Time page shows today's changed hours and time waiting for a decision (needs an OTA).
 
 ### The approvals inbox (`/approvals`) — every decision waiting for the caller, in one place
 > Thirteen kinds (hours, away, extra time, overtime, requests, no-shows, shift issues, expenses, asset papers, documents, join requests, client requests, guest workspaces) lived on nine pages. Rules + wording: `packages/shared/src/approvals/` (`approval-kinds.ts` specs/routes, `approval-items.ts` normalizers, `approval-text.ts` the words — ONE module for web and phone); gateway `modules/approvals/` (aggregator via `common/self-dispatch.ts`). Web `/approvals` + the inbox count beside the bell; phone More → Approvals (`/(app)/approvals`, `/(app)/approval/[key]`).

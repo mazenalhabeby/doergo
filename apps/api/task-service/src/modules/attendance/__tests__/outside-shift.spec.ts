@@ -7,6 +7,11 @@
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { OutsideShiftService } from '../extra-time/outside-shift.service';
 
+// Whom it waits for is the own-request rule's answer (tested on its own): here, Anna.
+jest.mock('../../approvals/own-request-route', () => ({
+  askAboutOwnRequest: jest.fn(async () => ({ route: 'USUAL', ids: ['anna'] })),
+}));
+
 const at = (hm: string) => new Date(`2026-10-23T${hm}:00.000Z`);
 
 function entry(over: Record<string, unknown> = {}) {
@@ -49,7 +54,7 @@ function make(opts: { row?: unknown; claimed?: number; gate?: unknown; mayApprov
     }),
   };
   const decisions = { addOvertimeToClosedEntry: jest.fn().mockResolvedValue({ success: true }) };
-  const routing = { resolveWatchers: jest.fn().mockResolvedValue({ ids: ['anna'] }) };
+  const routing = { notifyTargetsFor: jest.fn().mockResolvedValue(['anna']) };
   const rules = { gate: jest.fn().mockResolvedValue(opts.gate ?? { finalize: true }), clear: jest.fn() };
   const client = { emit: jest.fn() };
   const svc = new OutsideShiftService(

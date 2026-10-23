@@ -198,3 +198,17 @@ export function flagsForReview(flags: readonly string[]): string[] {
   return flags.filter((f) => !INFORMATIONAL_FLAGS.has(f));
 }
 
+/**
+ * A position that still counts as "taken at the tap" when the action is sent now — else null.
+ *
+ * ⚠️ For an action that may go WITHOUT a position (a clock-out: the server then skips the site
+ * check), never for one that needs it. The phone's last-known position carries its own, older time;
+ * sent anyway, the server refuses it (FIX_NOT_AT_TAP) and the person cannot clock out — seen on the
+ * iOS simulator, and on a phone indoors with no new GPS reading. A small margin keeps a fix taken
+ * just inside the limit from crossing it on the way.
+ */
+export function fixForTap<T extends { fixAt: string }>(fix: T | null | undefined, now: Date = new Date()): T | null {
+  if (!fix) return null;
+  const at = new Date(fix.fixAt).getTime();
+  return Number.isFinite(at) && Math.abs(now.getTime() - at) <= OCCURRENCE_RULES.FIX_MAX_GAP_MS - 15_000 ? fix : null;
+}

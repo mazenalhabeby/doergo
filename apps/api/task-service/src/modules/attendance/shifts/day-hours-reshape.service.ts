@@ -66,9 +66,32 @@ export class DayHoursReshapeService {
       include: { location: { select: { timezone: true } } },
       orderBy: { clockInAt: 'asc' },
     });
-    const today = entries.filter(
+    const sameDay = entries.filter(
       (e) => localPartsIn(e.clockInAt, zoneOf(e.location?.timezone, e.timezone)).dateStr === change.date,
     );
+    /*
+      ⚠️ Only the sessions the new hours are ABOUT: those that overlap them (a running one counts as
+      running until now). An earlier session that day which ended before the new hours start — a
+      morning without a plan, a long no-shift day — is a session of its own: re-planned to hours it
+      never touched, its counted time would fall to nothing, silently. Found by tools/time-counting-e2e.py.
+    */
+    const today = sameDay.filter((e) => {
+      // A FINISHED no-shift session was counted by the no-shift rule (all of it, long day flagged);
+      // hours set afterwards are about the rest of the day, never a reason to re-count it.
+      if (e.clockOutAt && e.endIsDailyLimit) return false;
+      const tz = zoneOf(e.location?.timezone, e.timezone);
+      const w = dayRequestEffect([change.request], {
+        spaceId: e.locationId,
+        at: e.clockInAt,
+        tz,
+        expectedClockInAt: null,
+        expectedClockOutAt: null,
+      });
+      const end = (e.clockOutAt ?? new Date()).getTime();
+      const from = w.expectedClockInAt?.getTime() ?? -Infinity;
+      const to = w.expectedClockOutAt?.getTime() ?? Infinity;
+      return e.clockInAt.getTime() < to && end > from;
+    });
     if (!today.length) return 0;
 
     // Agreed overtime extends the NEW end too — only when the end is replaced (else it is already in it).

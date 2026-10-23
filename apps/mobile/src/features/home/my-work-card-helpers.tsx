@@ -9,7 +9,7 @@ import { weekdayName } from '@/lib/app-dates';
 import type { ScheduleEntry, Task } from '@/lib/api/types';
 import { AText, Eyebrow, WellDivider } from '@/components/amazen';
 import { LinearGradient } from 'expo-linear-gradient';
-import { weekOf, sameDay, hasHour, shiftOn, shiftHours, figuresFor } from './my-work';
+import { weekOf, sameDay, hasHour, shiftOn, shiftHours, figuresFor, type DayHoursChange } from './my-work';
 
 /** MyWorkCard's module-level helpers, moved here unchanged so its sections can read them too. */
 /* ---------------- parts ---------------- */
@@ -18,7 +18,17 @@ import { weekOf, sameDay, hasHour, shiftOn, shiftHours, figuresFor } from './my-
  * The first open job of the day, WHEN IT IS THE READER'S OWN — raised one step
  * out of the well and carrying its decision.
  */
-export function ActiveRow({ task, label, clock, onOpen }: { task: Task; label: string; clock: (d: string) => string; onOpen: () => void }) {
+export function ActiveRow({
+  task,
+  label,
+  clock,
+  onOpen,
+}: {
+  task: Task;
+  label: string;
+  clock: (d: string) => string;
+  onOpen: () => void;
+}) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const c = amazen.color;
@@ -27,16 +37,22 @@ export function ActiveRow({ task, label, clock, onOpen }: { task: Task; label: s
     animation corrupted the home column on Android (mobile-cross-platform-traps).
   */
   const fade = useRef(new RNAnimated.Value(0.35)).current;
-  useEffect(() => { RNAnimated.timing(fade, { toValue: 1, duration: 220, useNativeDriver: true }).start(); }, [fade]);
+  useEffect(() => {
+    RNAnimated.timing(fade, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+  }, [fade]);
 
   const late = daysLate(task.dueDate ?? null) ?? 0;
   const meta = [
     late > 0
       ? t('myWork.late', { count: late, defaultValue: `${late} days late` })
-      : hasHour(task.dueDate) ? clock(task.dueDate!) : null,
+      : hasHour(task.dueDate)
+        ? clock(task.dueDate!)
+        : null,
     task.locationAddress,
     (task as unknown as { space?: { name?: string } }).space?.name,
-  ].filter(Boolean).join(' · ');
+  ]
+    .filter(Boolean)
+    .join(' · ');
   const open = t('myWork.openJob', { defaultValue: 'Open the job' });
 
   return (
@@ -48,14 +64,23 @@ export function ActiveRow({ task, label, clock, onOpen }: { task: Task; label: s
         padding: amazen.space(3.5),
         gap: 4,
         marginVertical: amazen.space(1),
-      }}>
+      }}
+    >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5) }}>
         <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: late > 0 ? c.warn : c.accent }} />
-        <Eyebrow tone={late > 0 ? 'warn' : 'muted'} style={{ flexShrink: 1 }}>{label}</Eyebrow>
+        <Eyebrow tone={late > 0 ? 'warn' : 'muted'} style={{ flexShrink: 1 }}>
+          {label}
+        </Eyebrow>
         <SyncChip entityId={task.id} />
       </View>
-      <AText variant="h3" tone="strong" numberOfLines={2}>{task.title}</AText>
-      {meta ? <AText variant="caption" tone="muted" numberOfLines={1}>{meta}</AText> : null}
+      <AText variant="h3" tone="strong" numberOfLines={2}>
+        {task.title}
+      </AText>
+      {meta ? (
+        <AText variant="caption" tone="muted" numberOfLines={1}>
+          {meta}
+        </AText>
+      ) : null}
 
       {/* ⚠️ The lift sits on a wrapper: `overflow: hidden` on the pill would clip its own shadow on iOS. */}
       <View
@@ -68,9 +93,18 @@ export function ActiveRow({ task, label, clock, onOpen }: { task: Task; label: s
           shadowRadius: 8,
           shadowOffset: { width: 0, height: 3 },
           elevation: 3,
-        }}>
-        <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`${open}: ${task.title}`}
-          style={({ pressed }) => ({ borderRadius: amazen.radius.full, overflow: 'hidden', opacity: pressed ? 0.88 : 1 })}>
+        }}
+      >
+        <Pressable
+          onPress={onOpen}
+          accessibilityRole="button"
+          accessibilityLabel={`${open}: ${task.title}`}
+          style={({ pressed }) => ({
+            borderRadius: amazen.radius.full,
+            overflow: 'hidden',
+            opacity: pressed ? 0.88 : 1,
+          })}
+        >
           <LinearGradient
             colors={amazen.gradient.primary as unknown as [string, string, ...string[]]}
             style={{
@@ -80,7 +114,9 @@ export function ActiveRow({ task, label, clock, onOpen }: { task: Task; label: s
               paddingHorizontal: amazen.space(4),
             }}
           >
-            <AText variant="body" tone="accentInk" style={{ fontFamily: amazen.type.h3.fontFamily }}>{open}</AText>
+            <AText variant="body" tone="accentInk" style={{ fontFamily: amazen.type.h3.fontFamily }}>
+              {open}
+            </AText>
           </LinearGradient>
         </Pressable>
       </View>
@@ -133,8 +169,13 @@ export function PlainRow({
         variant="body"
         tone={done ? 'muted' : 'strong'}
         numberOfLines={1}
-        style={{ flex: 1, textDecorationLine: done ? 'line-through' : 'none' }}>
-        {who ? <AText variant="body" tone="muted">{who} · </AText> : null}
+        style={{ flex: 1, textDecorationLine: done ? 'line-through' : 'none' }}
+      >
+        {who ? (
+          <AText variant="body" tone="muted">
+            {who} ·{' '}
+          </AText>
+        ) : null}
         {task.title}
       </AText>
       <SyncChip entityId={task.id} />
@@ -143,15 +184,25 @@ export function PlainRow({
           ? t('myWork.done', { defaultValue: 'done' })
           : (daysLate(task.dueDate ?? null) ?? 0) > 0
             ? t('myWork.late', { count: daysLate(task.dueDate ?? null), defaultValue: 'late' })
-            : hasHour(task.dueDate) ? clock(task.dueDate!) : ''}
+            : hasHour(task.dueDate)
+              ? clock(task.dueDate!)
+              : ''}
       </AText>
     </Pressable>
   );
 }
 
 /** Clock-only: the active row IS the shift, and the week's other shifts sit under it. */
-export function ShiftList({ schedule, selected, today, live, onOpen }: {
+export function ShiftList({
+  schedule,
+  changes,
+  selected,
+  today,
+  live,
+  onOpen,
+}: {
   schedule: ScheduleEntry[];
+  changes?: DayHoursChange[];
   selected: Date;
   today: Date;
   live: { clockInAt?: string; location?: { name?: string } | null } | null | undefined;
@@ -161,19 +212,22 @@ export function ShiftList({ schedule, selected, today, live, onOpen }: {
   const { t } = useTranslation();
   const { formatTime } = useTimeFormat();
   const c = amazen.color;
-  const sel = shiftOn(schedule, selected);
+  const sel = shiftOn(schedule, selected, changes);
   const week = weekOf(today);
-  const others = week.filter((d) => !sameDay(d, selected) && shiftOn(schedule, d));
+  const others = week.filter((d) => !sameDay(d, selected) && shiftOn(schedule, d, changes));
   return (
     <>
       <Pressable
         onPress={onOpen}
         accessibilityRole="button"
-        style={{ backgroundColor: c.tile, borderRadius: 20, padding: amazen.space(3.5), gap: 4 }}>
+        style={{ backgroundColor: c.tile, borderRadius: 20, padding: amazen.space(3.5), gap: 4 }}
+      >
         {live ? (
           <>
             <Eyebrow tone="accent">{t('myWork.onTheClock', { defaultValue: 'On the clock' })}</Eyebrow>
-            <AText variant="h3" tone="strong">{live.location?.name ?? t('myWork.shift', { defaultValue: 'Shift' })}</AText>
+            <AText variant="h3" tone="strong">
+              {live.location?.name ?? t('myWork.shift', { defaultValue: 'Shift' })}
+            </AText>
             <AText variant="caption" tone="muted" numeric>
               {live.clockInAt
                 ? t('myWork.since', {
@@ -187,19 +241,24 @@ export function ShiftList({ schedule, selected, today, live, onOpen }: {
         ) : sel ? (
           <>
             <Eyebrow tone="muted">{t('myWork.shift', { defaultValue: 'Shift' })}</Eyebrow>
-            <AText variant="h3" tone="strong" numeric>{sel.startTime} → {sel.endTime}</AText>
+            <AText variant="h3" tone="strong" numeric>
+              {sel.startTime} → {sel.endTime}
+            </AText>
             <AText variant="caption" tone="muted">
               {t('myWork.hours', { count: shiftHours(sel), defaultValue: `${shiftHours(sel)} h` })}
             </AText>
           </>
         ) : (
           <AText variant="body" tone="muted">
-            {t('myWork.noShift', { day: weekdayName(selected, 'long'), defaultValue: `No shift on ${weekdayName(selected, 'long')}.` })}
+            {t('myWork.noShift', {
+              day: weekdayName(selected, 'long'),
+              defaultValue: `No shift on ${weekdayName(selected, 'long')}.`,
+            })}
           </AText>
         )}
       </Pressable>
       {others.map((d, i) => {
-        const e = shiftOn(schedule, d)!;
+        const e = shiftOn(schedule, d, changes)!;
         return (
           <React.Fragment key={d.toISOString()}>
             {i > 0 ? <WellDivider /> : null}
@@ -211,10 +270,17 @@ export function ShiftList({ schedule, selected, today, live, onOpen }: {
                 alignItems: 'center',
                 gap: amazen.space(2.5),
                 paddingVertical: amazen.space(2),
-              }}>
-              <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: d < today ? c.inkMuted : c.accent }} />
-              <AText variant="body" tone="strong" style={{ flex: 1 }}>{weekdayName(d, 'long')}</AText>
-              <AText variant="caption" tone="muted" numeric>{e.startTime} → {e.endTime}</AText>
+              }}
+            >
+              <View
+                style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: d < today ? c.inkMuted : c.accent }}
+              />
+              <AText variant="body" tone="strong" style={{ flex: 1 }}>
+                {weekdayName(d, 'long')}
+              </AText>
+              <AText variant="caption" tone="muted" numeric>
+                {e.startTime} → {e.endTime}
+              </AText>
             </Pressable>
           </React.Fragment>
         );
@@ -224,18 +290,34 @@ export function ShiftList({ schedule, selected, today, live, onOpen }: {
 }
 
 /** Org-wide: reach changes the FORM, not the length. */
-export function Figures({ others, open, onPress }: { others: Task[]; open: (t: Task) => boolean; onPress: () => void }) {
+export function Figures({
+  others,
+  open,
+  onPress,
+}: {
+  others: Task[];
+  open: (t: Task) => boolean;
+  onPress: () => void;
+}) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const f = figuresFor(others, open);
   const cell = (n: number, label: string, tone: 'strong' | 'critical' | 'warn') => (
     <View style={{ flex: 1 }}>
-      <AText variant="decimal" tone={n > 0 ? tone : 'muted'} numeric>{n}</AText>
-      <AText variant="caption" tone="muted">{label}</AText>
+      <AText variant="decimal" tone={n > 0 ? tone : 'muted'} numeric>
+        {n}
+      </AText>
+      <AText variant="caption" tone="muted">
+        {label}
+      </AText>
     </View>
   );
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={{ gap: amazen.space(2), marginTop: amazen.space(2) }}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={{ gap: amazen.space(2), marginTop: amazen.space(2) }}
+    >
       <Eyebrow tone="muted">{t('myWork.across', { count: f.sites, defaultValue: `Across ${f.sites} sites` })}</Eyebrow>
       <View style={{ flexDirection: 'row' }}>
         {cell(f.open, t('myWork.open', { defaultValue: 'open' }), 'strong')}
@@ -259,8 +341,14 @@ export function Sentence({
 }) {
   return (
     <View style={{ gap: 2, paddingVertical: 4 }}>
-      <AText variant="body" tone={tone} style={{ fontWeight: '500' }}>{title}</AText>
-      {body ? <AText variant="caption" tone="muted">{body}</AText> : null}
+      <AText variant="body" tone={tone} style={{ fontWeight: '500' }}>
+        {title}
+      </AText>
+      {body ? (
+        <AText variant="caption" tone="muted">
+          {body}
+        </AText>
+      ) : null}
       {children}
     </View>
   );
@@ -270,7 +358,8 @@ export type T = (k: string, o?: Record<string, unknown>) => string;
 
 export function dayEyebrow(d: Date, today: Date, t: T): string {
   if (sameDay(d, today)) return t('common.today', { defaultValue: 'Today' });
-  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
   if (sameDay(d, tomorrow)) return t('common.tomorrow', { defaultValue: 'Tomorrow' });
   return weekdayName(d, 'long');
 }

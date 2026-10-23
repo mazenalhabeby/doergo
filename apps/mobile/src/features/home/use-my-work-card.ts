@@ -12,8 +12,9 @@ import { isUnreachable } from '@/offline/actions/unreachable';
 import { useShift } from '@/offline/attendance/use-shift';
 import { useTimeFormat } from '@/hooks/use-time-format';
 import { useLiveRefresh } from '@/hooks/use-live-refresh';
-import { scheduleApi } from '@/lib/api';
+import { scheduleApi, timeOffApi } from '@/lib/api';
 import type { ScheduleEntry, Task } from '@/lib/api/types';
+import type { DayHoursChange } from './my-work';
 import { usePitch } from './pitch';
 import {
   shapeFor,
@@ -88,8 +89,11 @@ export function useMyWorkCard({ style }: Pick<{ style?: StyleProp<ViewStyle> }, 
       turned out to be empty of this week. `opening` holds until the copy
       lands (the effect below) or the database settles the question.
     */
-    try { if (await load()) setPhase('ready'); }
-    catch (err) { setPhase(isUnreachable(err) ? 'absent' : 'refused'); }
+    try {
+      if (await load()) setPhase('ready');
+    } catch (err) {
+      setPhase(isUnreachable(err) ? 'absent' : 'refused');
+    }
   }, [load]);
   /*
     ⚠️ "TODAY" MOVES. It was memoised once on mount, and the home stays
@@ -113,8 +117,13 @@ export function useMyWorkCard({ style }: Pick<{ style?: StyleProp<ViewStyle> }, 
   }, []);
   useEffect(() => {
     const timer = setTimeout(syncDay, msUntilNextDay() + 1000);
-    const off = onAppStateChange((st) => { if (st === 'active') syncDay(); });
-    return () => { clearTimeout(timer); off(); };
+    const off = onAppStateChange((st) => {
+      if (st === 'active') syncDay();
+    });
+    return () => {
+      clearTimeout(timer);
+      off();
+    };
   }, [todayMs, syncDay]);
 
   /*
@@ -123,12 +132,16 @@ export function useMyWorkCard({ style }: Pick<{ style?: StyleProp<ViewStyle> }, 
     showing that morning's copy: jobs created since simply were not there
     (08.png). `load()` reads the phone's copy AND kicks a background pull.
   */
-  useFocusEffect(useCallback(() => {
-    syncDay();
-    if (shape !== 'none' && shape !== 'shifts') void fetchList();
-  }, [fetchList, shape, syncDay]));
+  useFocusEffect(
+    useCallback(() => {
+      syncDay();
+      if (shape !== 'none' && shape !== 'shifts') void fetchList();
+    }, [fetchList, shape, syncDay]),
+  );
   // The phone's copy arriving means it has loaded, whatever load() is still doing — an empty copy too.
-  useEffect(() => { if (loaded && phase === 'opening') setPhase('ready'); }, [loaded, phase]);
+  useEffect(() => {
+    if (loaded && phase === 'opening') setPhase('ready');
+  }, [loaded, phase]);
   /*
     ⚠️ THE DATABASE FINISHED OPENING WITH THE CARD STILL WAITING: ask once more.
     Now there is either a copy (ready) or there will never be one this launch,
@@ -151,11 +164,38 @@ export function useMyWorkCard({ style }: Pick<{ style?: StyleProp<ViewStyle> }, 
     ⚠️ No schedule (offline, or none set) draws no bars. Never invented ones.
   */
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
+  const [changes, setChanges] = useState<DayHoursChange[]>([]);
   useEffect(() => {
     if (!user?.id || (shape !== 'both' && shape !== 'shifts')) return;
     let live = true;
-    scheduleApi.getMine(user.id).then((s) => { if (live) setSchedule(s); }).catch(() => undefined);
-    return () => { live = false; };
+    scheduleApi
+      .getMine(user.id)
+      .then((s) => {
+        if (live) setSchedule(s);
+      })
+      .catch(() => undefined);
+    // Changed hours for a date (approved requests) sit on top of the weekly schedule (work-shape shiftOn).
+    timeOffApi
+      .list(user.id)
+      .then((rows) => {
+        if (!live || !Array.isArray(rows)) return;
+        setChanges(
+          rows
+            .filter(
+              (r) =>
+                r.kind === 'HOURS' && r.status === 'APPROVED' && r.startDate.slice(0, 10) === r.endDate.slice(0, 10),
+            )
+            .map((r) => ({
+              date: r.startDate.slice(0, 10),
+              startTime: r.startTime ?? null,
+              endTime: r.endTime ?? null,
+            })),
+        );
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
   }, [user?.id, shape]);
 
   /*
@@ -173,7 +213,10 @@ export function useMyWorkCard({ style }: Pick<{ style?: StyleProp<ViewStyle> }, 
   const open = useCallback((task: Task) => !isClosed(task, stepsFor(task, flows)), [flows]);
   const underWay = useCallback((task: Task) => isUnderWay(task, stepsFor(task, flows)), [flows]);
   const dayTasks = useMemo(() => (shape === 'shifts' ? [] : tasksOn(tasks, selected)), [shape, tasks, selected]);
-  const dots = useMemo(() => week.map((d) => (shape === 'shifts' ? 0 : tasksOn(tasks, d).length)), [shape, tasks, week]);
+  const dots = useMemo(
+    () => week.map((d) => (shape === 'shifts' ? 0 : tasksOn(tasks, d).length)),
+    [shape, tasks, week],
+  );
 
   /*
     ⚠️ MINE ALWAYS LEADS — and on TODAY, mine also carries what is already in
@@ -187,7 +230,10 @@ export function useMyWorkCard({ style }: Pick<{ style?: StyleProp<ViewStyle> }, 
       isToday && shape !== 'shifts'
         ? todaysOwn(own, selected, open, undefined, underWay)
         : dayTasks.filter((x) => face === 'executor' || isMine(x, user?.id));
-    return { mine: mineList, theirs: face === 'executor' ? [] as Task[] : dayTasks.filter((x) => !isMine(x, user?.id)) };
+    return {
+      mine: mineList,
+      theirs: face === 'executor' ? ([] as Task[]) : dayTasks.filter((x) => !isMine(x, user?.id)),
+    };
   }, [tasks, dayTasks, face, user?.id, isToday, selected, open, underWay, shape]);
 
   /*
@@ -197,7 +243,9 @@ export function useMyWorkCard({ style }: Pick<{ style?: StyleProp<ViewStyle> }, 
     reshuffle under their thumb; the sheet opens only from the active row.
   */
   const [focusId, setFocusId] = useState<string | null>(null);
-  useEffect(() => { setFocusId(null); }, [selected]);
+  useEffect(() => {
+    setFocusId(null);
+  }, [selected]);
   const active = useMemo(() => {
     if (phase === 'opening') return null;
     const focused = focusId ? mine.find((x) => x.id === focusId && isMine(x, user?.id) && open(x)) : null;
@@ -220,9 +268,13 @@ export function useMyWorkCard({ style }: Pick<{ style?: StyleProp<ViewStyle> }, 
     run between renders the day somebody's modules change.
   */
   const todayOpen = isToday ? mine.filter((x) => isMine(x, user?.id) && open(x)).length : 0;
-  usePitch(phase === 'opening' ? null : todayOpen
-    ? { need: 0, line: t('pitch.myWork', { count: todayOpen }) }
-    : { need: 0, line: t('pitch.myWorkCalm') });
+  usePitch(
+    phase === 'opening'
+      ? null
+      : todayOpen
+        ? { need: 0, line: t('pitch.myWork', { count: todayOpen }) }
+        : { need: 0, line: t('pitch.myWorkCalm') },
+  );
 
   return {
     user,
@@ -241,6 +293,7 @@ export function useMyWorkCard({ style }: Pick<{ style?: StyleProp<ViewStyle> }, 
     selected,
     setSelected,
     schedule,
+    changes,
     today,
     week,
     tasks,

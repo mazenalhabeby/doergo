@@ -3293,7 +3293,7 @@
       "BREAK_ALREADY_ENDED": "Diese Pause war bereits beendet, bevor Ihre Änderung ankam.",
       "OUT_OF_ORDER": "Dies geschah vor dem Schritt, auf den es folgt, und konnte daher nicht übernommen werden.",
       "OCCURRED_IN_FUTURE": "Die Uhr dieses Telefons geht vor. Prüfen Sie die Datums- und Uhrzeiteinstellungen.",
-      "FIX_NOT_AT_TAP": "Der Standort wurde nicht im Moment der Aktion bestimmt.",
+      "FIX_NOT_AT_TAP": "Ihr Standort ist veraltet. Versuchen Sie es erneut, um ihn neu zu bestimmen.",
       "FIX_INACCURATE": "Der Standort war nicht genau genug.",
       "FIX_MISSING": "Der Standort konnte nicht bestimmt werden.",
       "REPORT_EXISTS": "Für diesen Auftrag gibt es bereits einen Servicebericht, daher wurde Ihrer nicht hinzugefügt.",

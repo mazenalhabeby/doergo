@@ -53,7 +53,13 @@ export class DayHoursService {
   ) {}
 
   /** What the form shows before anything changes: the plan, hours already set, clocked in, leave. */
-  async getDayHours(data: { organizationId: string; technicianId: string; scopeSpaceIds?: string[]; date: string; spaceId: string }) {
+  async getDayHours(data: {
+    organizationId: string;
+    technicianId: string;
+    scopeSpaceIds?: string[];
+    date: string;
+    spaceId: string;
+  }) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data.date) || !data.spaceId) {
       throw new BadRequestException({ code: 'REQUEST_DATES_INVALID', message: 'Choose a day and a workspace.' });
     }
@@ -64,6 +70,11 @@ export class DayHoursService {
 
   async setDayHours(data: SetDayHoursInput) {
     const { organizationId, technicianId, editorId } = data;
+    // An exact day: the shared parser reads the first ten characters of a timestamp, which would let a
+    // day with anything after it through as that day.
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(data.date ?? ''))) {
+      throw new BadRequestException({ code: 'REQUEST_DATES_INVALID', message: REQUEST_REFUSALS.REQUEST_DATES_INVALID });
+    }
     // ONE reader of a request body: the same times, the same refusals as the member's own request.
     const parsed = parseRequestInput({
       kind: 'HOURS',

@@ -14,7 +14,7 @@ import {
   TimeEntryStatus,
   localPartsIn,
   outsideShift,
-  peopleNames,
+  peopleNamesSorted,
   personName,
   planAfterCounting,
   scopeWhere,
@@ -26,7 +26,8 @@ import {
 import { emitEvent, attendanceChangedEvent } from '@hbcfield/shared/microservices';
 import { CountedTimeService } from '../core/counted-time.service';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
-import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
+import { AttendanceRoutingService } from '../core/attendance-routing.service';
+import { askAboutOwnRequest } from '../../approvals/own-request-route';
 import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { ExtraTimeDecisionService } from './extra-time-decision.service';
 
@@ -70,7 +71,7 @@ export class OutsideShiftService {
     private readonly countedTime: CountedTimeService,
     private readonly approval: ExtraTimeApprovalService,
     private readonly decisions: ExtraTimeDecisionService,
-    private readonly routing: NotificationRoutingService,
+    private readonly routing: AttendanceRoutingService,
     @Optional() private readonly rules?: ApprovalRulesService,
   ) {}
 
@@ -117,6 +118,7 @@ export class OutsideShiftService {
       select: {
         id: true,
         shiftId: true,
+        locationId: true,
         clockInAt: true,
         clockOutAt: true,
         expectedClockInAt: true,
@@ -133,10 +135,22 @@ export class OutsideShiftService {
       .map((r) => ({ r, o: outsideShift(r, tol.get(r.shiftId ?? '') ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN) }))
       .filter((x) => x.o);
     if (!items.length) return success([]);
-    // Whom it waits for: the people told about this member — the same routing as their hours.
-    const { ids } = await this.routing.resolveWatchers(data.userId, data.organizationId, 'attendance');
-    const people = ids.length ? await peopleNames(this.prisma, ids.slice(0, 3)) : [];
-    const askedOf = { names: people.map((p) => personName(p)), more: Math.max(0, ids.length - people.length) };
+    // Whom it waits for: the people who may DECIDE it (overtime approvers of the workspace, through the
+    // own-request rule) — the same answer as "Waiting for Anna to approve your extra time". Not the
+    // people merely told about this member: a watcher who cannot decide is nobody to wait for.
+    const first = items[0]!.r;
+    const ask = await askAboutOwnRequest(this.prisma, {
+      organizationId: data.organizationId,
+      subjectId: data.userId,
+      kind: 'extraTime',
+      spaceIds: first.locationId ? [first.locationId] : [],
+      usual: await this.routing.notifyTargetsFor(
+        { locationId: first.locationId, organizationId: data.organizationId, userId: data.userId },
+        'canApproveOvertime',
+      ),
+    });
+    const people = ask.ids.length ? await peopleNamesSorted(this.prisma, ask.ids.slice(0, 3)) : [];
+    const askedOf = { names: people.map((p) => personName(p)), more: Math.max(0, ask.ids.length - people.length) };
     return success(
       items.map(({ r, o }) => ({
         entryId: r.id,

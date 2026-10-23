@@ -3293,7 +3293,7 @@
       "BREAK_ALREADY_ENDED": "This rest was already ended before your change arrived.",
       "OUT_OF_ORDER": "This happened before the step it follows, so it couldn't be applied.",
       "OCCURRED_IN_FUTURE": "This phone's clock is ahead. Check its date and time settings.",
-      "FIX_NOT_AT_TAP": "The location wasn't taken at the moment of the action.",
+      "FIX_NOT_AT_TAP": "Your location is out of date. Try again to take a fresh one.",
       "FIX_INACCURATE": "The location wasn't precise enough.",
       "FIX_MISSING": "The location couldn't be determined.",
       "REPORT_EXISTS": "This job already has a service report, so yours wasn't added.",

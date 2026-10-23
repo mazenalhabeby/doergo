@@ -214,6 +214,26 @@ describe('DayHoursReshapeService — through the same rule as a clock-in', () =>
     expect(updates[0].data.paidMinutes).toBe(780);
   });
 
+  it('an earlier session that day which ended before the new hours is left alone', async () => {
+    // 05:00–07:00 Vienna, then the office sets 18:00–22:00: that morning is not re-planned (nor cut).
+    const morning = entry({ id: 'm', clockInAt: at('2026-10-24T03:00:00Z'), clockOutAt: at('2026-10-24T05:00:00Z') });
+    const { svc, updates } = make([morning, entry()]);
+    await svc.reshapeDay(change(request('22:00', '18:00')));
+    expect(updates.map((u) => u.where.id)).not.toContain('m');
+  });
+
+  it('a finished no-shift session is never re-counted by hours set afterwards', async () => {
+    const longDay = entry({
+      id: 'n',
+      endIsDailyLimit: true,
+      clockInAt: at('2026-10-24T04:00:00Z'),
+      clockOutAt: at('2026-10-24T17:00:00Z'),
+    });
+    const { svc, updates } = make([longDay]);
+    expect(await svc.reshapeDay(change(request('20:00', '15:00')))).toBe(0);
+    expect(updates).toHaveLength(0);
+  });
+
   it('an entry of another local day is left alone', async () => {
     const { svc, updates } = make([entry({ clockInAt: at('2026-10-24T22:30:00Z') })]); // 00:30 on the 25th, Vienna
     expect(await svc.reshapeDay(change(request('18:00')))).toBe(0);
