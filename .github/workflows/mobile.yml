@@ -55,7 +55,7 @@ jobs:
       CHANNEL: ${{ inputs.channel }}
       PROD_API_URL: https://hbcfield.com/api/v1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
