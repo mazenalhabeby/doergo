@@ -1,10 +1,6 @@
 import {
-  isTaskAssignee,
-  getFlowSteps,
-  getStartOfDay,
-  rankMyWork,
-  workBand,
-  workflowStatusLabel,
+  isTaskAssignee, getFlowSteps, getStartOfDay,
+  rankMyWork, workBand, workflowStatusLabel,
   type FlowStatus,
 } from '@hbcfield/shared/client';
 import type { ScheduleEntry, Task } from '@/lib/api/types';
@@ -58,10 +54,7 @@ export {
  * shared answer to "what do I do next" — so they cannot disagree.
  */
 export function todaysOwn(
-  mine: Task[],
-  today: Date,
-  isOpen: (t: Task) => boolean,
-  now: Date = new Date(),
+  mine: Task[], today: Date, isOpen: (t: Task) => boolean, now: Date = new Date(),
   /** A custom workflow's "under way" (`isUnderWay`); the built-in steps need nothing. */
   underWay: (t: Task) => boolean = () => false,
 ): Task[] {
@@ -79,11 +72,7 @@ export function todaysOwn(
   */
   // The shared ranking, then a stable pass so a custom step under way sorts with the built-in ones.
   const ORDER: Record<string, number> = { doing: 0, blocked: 1, overdue: 2, today: 3, upcoming: 4 };
-  const byBand = (list: Task[]) =>
-    list
-      .map((t, i) => ({ t, i }))
-      .sort((a, b) => ORDER[band(a.t)] - ORDER[band(b.t)] || a.i - b.i)
-      .map((x) => x.t);
+  const byBand = (list: Task[]) => list.map((t, i) => ({ t, i })).sort((a, b) => (ORDER[band(a.t)] - ORDER[band(b.t)]) || a.i - b.i).map((x) => x.t);
   const first = byBand(rankMyWork(carried as never[], now) as unknown as Task[]);
   const today_ = tasksOn(mine, today).filter((t) => !first.includes(t));
   const ranked = rankMyWork(today_ as never[], now) as unknown as Task[];

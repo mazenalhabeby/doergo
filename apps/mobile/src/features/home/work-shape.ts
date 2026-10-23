@@ -25,11 +25,7 @@ export function shapeFor(has: { tasks: boolean; clock: boolean }): WorkShape {
 /** Axis 2 — grants decide the content. */
 export type WorkFace = 'executor' | 'spaceSupervisor' | 'orgWide';
 
-export function faceFor(caller: {
-  canViewAllTasks?: boolean;
-  role?: string | null;
-  viewAllSpaceIds?: string[];
-}): WorkFace {
+export function faceFor(caller: { canViewAllTasks?: boolean; role?: string | null; viewAllSpaceIds?: string[] }): WorkFace {
   if (caller.role === 'ADMIN' || caller.canViewAllTasks) return 'orgWide';
   /*
     ⚠️ Path 4 — the SAME grant held by a space role. Re-deriving visibility
@@ -168,17 +164,7 @@ export function isCanceled(task: Task, steps: FlowStatus[] | null): boolean {
  * and an undated one appeared nowhere on the card. Read from the flow instead:
  * a step that is not where the flow starts, not a waiting step, and not over.
  */
-export const WAITING = new Set([
-  'DRAFT',
-  'NEW',
-  'OPEN',
-  'TODO',
-  'PENDING',
-  'ASSIGNED',
-  'BACKLOG',
-  'SCHEDULED',
-  'BLOCKED',
-]);
+export const WAITING = new Set(['DRAFT', 'NEW', 'OPEN', 'TODO', 'PENDING', 'ASSIGNED', 'BACKLOG', 'SCHEDULED', 'BLOCKED']);
 
 export function isUnderWay(task: Task, steps: FlowStatus[] | null): boolean {
   if (!steps?.length || WAITING.has(task.status)) return false;
@@ -217,9 +203,7 @@ export function stepLabelFor(task: Task, flows: Map<string, unknown>, t: Transla
   if (row) {
     const name = row.name ?? row.label ?? task.status;
     if (!row.nameKey) return name;
-    return workflowStatusLabel({ name, nameKey: row.nameKey }, (key, o) =>
-      t(key, { defaultValue: canonical(o.defaultValue) }),
-    );
+    return workflowStatusLabel({ name, nameKey: row.nameKey }, (key, o) => t(key, { defaultValue: canonical(o.defaultValue) }));
   }
   const step = stepsFor(task, flows)?.find((x) => x.key === task.status);
   // The built-in flow is shipped English — ours to translate.
@@ -237,39 +221,25 @@ export function stepLabelFor(task: Task, flows: Map<string, unknown>, t: Transla
  * one day late.
  */
 /** Changed hours for one date (an approved changed-hours request — set by the office, or agreed). */
-export interface DayHoursChange {
-  date: string;
-  startTime: string | null;
-  endTime: string | null;
-}
+export interface DayHoursChange { date: string; startTime: string | null; endTime: string | null }
 
 /**
- * The shift on a day: the weekly schedule, with that DATE's changed hours on top. ⚠️ Without them
- * Home said "07:00 → 15:30" on a day the office had moved to 19:05–22:35 — while the clock (which
- * reads the approved request) counted the new hours (docs/plans/time-counting-model.md).
+ * The shift on a day: the weekly schedule, with that DATE's changed hours on top. ⚠️ Without them Home
+ * said "07:00 → 15:30" on a day moved to 19:05–22:35, while the clock counted the new hours.
  */
-export function shiftOn(
-  schedule: ScheduleEntry[],
-  day: Date,
-  changes: readonly DayHoursChange[] = [],
-): ScheduleEntry | null {
+export function shiftOn(schedule: ScheduleEntry[], day: Date, changes: readonly DayHoursChange[] = []): ScheduleEntry | null {
   const dow = day.getDay();
   const base = schedule.find((e) => e.isActive && e.dayOfWeek === dow) ?? null;
-  const key = localDateKey(day);
-  const ch = changes.find((c) => c.date === key);
-  if (!ch) return base;
-  const startTime = ch.startTime ?? base?.startTime;
-  const endTime = ch.endTime ?? base?.endTime;
-  if (!startTime || !endTime) return base;
+  const ch = changes.find((c) => c.date === localDateKey(day));
+  const startTime = ch?.startTime ?? base?.startTime;
+  const endTime = ch?.endTime ?? base?.endTime;
+  if (!ch || !startTime || !endTime) return base;
   return { ...(base ?? ({ dayOfWeek: dow, isActive: true } as ScheduleEntry)), startTime, endTime };
 }
 
 /** Whole hours in a shift, for the eyebrow. `08:00`→`16:30` is 8.5. */
 export function shiftHours(e: ScheduleEntry): number {
-  const m = (s: string) => {
-    const [h, mm] = s.split(':').map(Number);
-    return (h ?? 0) * 60 + (mm ?? 0);
-  };
+  const m = (s: string) => { const [h, mm] = s.split(':').map(Number); return (h ?? 0) * 60 + (mm ?? 0); };
   let span = m(e.endTime) - m(e.startTime);
   if (span <= 0) span += 24 * 60;
   return Math.round(span / 30) / 2;
@@ -281,11 +251,9 @@ export function shiftHours(e: ScheduleEntry): number {
  */
 export function nextJobAfter(tasks: Task[], day: Date, isOpen: (t: Task) => boolean): Task | null {
   const from = nextDayStart(day).getTime();
-  return (
-    tasks
-      .filter((t) => t.dueDate && new Date(t.dueDate).getTime() >= from && isOpen(t))
-      .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())[0] ?? null
-  );
+  return tasks
+    .filter((t) => t.dueDate && new Date(t.dueDate).getTime() >= from && isOpen(t))
+    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())[0] ?? null;
 }
 
 /** Org-wide: the day as three figures instead of forty-seven rows. */

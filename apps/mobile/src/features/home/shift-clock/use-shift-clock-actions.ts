@@ -17,12 +17,7 @@ import { stopGeofence } from '@/services/background-geofence';
  * place. The sheet's frozen clock-out time stays with the card: it is what the
  * member is looking at, not part of the write.
  */
-export function useShiftClockActions({
-  shift,
-  entryId,
-  clockIn,
-  handovers,
-}: {
+export function useShiftClockActions({ shift, entryId, clockIn, handovers }: {
   shift: ReturnType<typeof useShift>;
   entryId: string | undefined;
   clockIn: ReturnType<typeof useClockIn>;
@@ -35,49 +30,43 @@ export function useShiftClockActions({
   const breaks = shift.breaks;
   const [busy, setBusy] = useState(false);
 
-  const confirmClockOut = useCallback(
-    async (input: {
-      notes?: string;
-      earlyReason?: string;
-      overtimeReason?: string;
-      handovers?: { taskId: string; note: string }[];
-    }) => {
-      if (!entryId) return;
-      setBusy(true);
-      try {
-        /*
+  const confirmClockOut = useCallback(async (input: {
+    notes?: string; earlyReason?: string; overtimeReason?: string; handovers?: { taskId: string; note: string }[];
+  }) => {
+    if (!entryId) return;
+    setBusy(true);
+    try {
+      /*
         ⚠️ A MISSING FIX IS NOT A FAILURE. `ClockOutInput` says a clock-out with
         no coordinates SKIPS the geofence check rather than faking (0,0) — so
         location being off must not stop somebody going home. The old flow
         returned early when `getCurrentLocation()` gave null, which is the same
         bug as a required note wearing a different hat.
       */
-        // A stale last-known position is dropped, not sent: the server would refuse it as "not taken
-        // at the moment" and nobody could go home (fixForTap, shared sync/occurrence.ts).
-        const fix = fixForTap(await clockIn.getCurrentLocation().catch(() => null));
-        const outcome = await actions.clockOut({ entryId, fix, ...input });
-        if (outcome.kind === 'refused') {
-          toast.error(
-            t('common.error'),
-            (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
-              outcome.message ||
-              t('home.fullTime.failedToClockOut'),
-          );
-          return;
-        }
-        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-        await stopBackgroundHeartbeat();
-        await stopGeofence();
-        await refresh();
-        handovers.refetch();
-      } catch (err) {
-        toast.error(t('common.error'), (err as Error)?.message || t('home.fullTime.failedToClockOut'));
-      } finally {
-        setBusy(false);
+      // A stale last-known position is dropped, not sent: the server would refuse it as "not taken
+      // at the moment" and nobody could go home (fixForTap, shared sync/occurrence.ts).
+      const fix = fixForTap(await clockIn.getCurrentLocation().catch(() => null));
+      const outcome = await actions.clockOut({ entryId, fix, ...input });
+      if (outcome.kind === 'refused') {
+        toast.error(
+          t('common.error'),
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+            outcome.message ||
+            t('home.fullTime.failedToClockOut'),
+        );
+        return;
       }
-    },
-    [entryId, clockIn, actions, toast, t, refresh, handovers],
-  );
+      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+      await stopBackgroundHeartbeat();
+      await stopGeofence();
+      await refresh();
+      handovers.refetch();
+    } catch (err) {
+      toast.error(t('common.error'), (err as Error)?.message || t('home.fullTime.failedToClockOut'));
+    } finally {
+      setBusy(false);
+    }
+  }, [entryId, clockIn, actions, toast, t, refresh, handovers]);
 
   /*
     The rests. Both go through `useShiftActions`, so they queue with no signal
@@ -88,24 +77,18 @@ export function useShiftClockActions({
     right for the Break disc. The overdue one names the rule, so the plan is
     marked taken rather than a second rest appearing beside the one that is due.
   */
-  const startRest = useCallback(
-    async (input?: { ruleId?: string; type?: BreakType; notes?: string }) => {
-      if (!entryId) return;
-      setBusy(true);
-      try {
-        const outcome = await actions.startRest({ entryId, ...input });
-        if (outcome.kind === 'refused') {
-          toast.error(t('common.error'), outcome.message || t('common.error'));
-          return;
-        }
-        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-        await refresh();
-      } finally {
-        setBusy(false);
-      }
-    },
-    [entryId, actions, toast, t, refresh],
-  );
+  const startRest = useCallback(async (input?: {
+    ruleId?: string; type?: BreakType; notes?: string;
+  }) => {
+    if (!entryId) return;
+    setBusy(true);
+    try {
+      const outcome = await actions.startRest({ entryId, ...input });
+      if (outcome.kind === 'refused') { toast.error(t('common.error'), outcome.message || t('common.error')); return; }
+      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+      await refresh();
+    } finally { setBusy(false); }
+  }, [entryId, actions, toast, t, refresh]);
 
   const endRest = useCallback(async () => {
     const breakId = breaks?.currentBreak?.id;
@@ -113,15 +96,10 @@ export function useShiftClockActions({
     setBusy(true);
     try {
       const outcome = await actions.endRest({ entryId, breakId });
-      if (outcome.kind === 'refused') {
-        toast.error(t('common.error'), outcome.message || t('common.error'));
-        return;
-      }
+      if (outcome.kind === 'refused') { toast.error(t('common.error'), outcome.message || t('common.error')); return; }
       if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
       await refresh();
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   }, [entryId, breaks?.currentBreak?.id, actions, toast, t, refresh]);
 
   return { busy, confirmClockOut, startRest, endRest };

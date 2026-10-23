@@ -21,26 +21,9 @@ import { AText, Eyebrow, CardSurface, WellDivider } from '@/components/amazen';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePitch } from './pitch';
 import {
-  shapeFor,
-  faceFor,
-  viewAllSpaceIds,
-  weekOf,
-  sameDay,
-  startOfDay,
-  tasksOn,
-  hasHour,
-  isMine,
-  stepsFor,
-  isClosed,
-  isUnderWay,
-  shiftOn,
-  shiftHours,
-  nextJobAfter,
-  figuresFor,
-  todaysOwn,
-  msUntilNextDay,
-  withoutCanceled,
-  stepLabelFor,
+  shapeFor, faceFor, viewAllSpaceIds, weekOf, sameDay, startOfDay, tasksOn, hasHour, isMine,
+  stepsFor, isClosed, isUnderWay, shiftOn, shiftHours, nextJobAfter, figuresFor, todaysOwn,
+  msUntilNextDay, withoutCanceled, stepLabelFor,
 } from './my-work';
 import { useTaskFlows } from './use-task-flows';
 import { useMyWorkCard } from './use-my-work-card';
@@ -112,15 +95,11 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
       <CardSurface style={{ padding: amazen.space(4.5), gap: amazen.space(3) }}>
         {/* The header. The pill goes to the whole list; the card itself is not a target. */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
-          <AText variant="h3" tone="strong" style={{ flex: 1 }}>
-            {t('widgets.myWork', { defaultValue: 'My work' })}
-          </AText>
+          <AText variant="h3" tone="strong" style={{ flex: 1 }}>{t('widgets.myWork', { defaultValue: 'My work' })}</AText>
           <FreshnessLabel at={updatedAt} />
           {phase === 'ready' || shape === 'shifts' ? (
             <Pressable
-              onPress={() =>
-                router.push((shape === 'shifts' ? '/(app)/(tabs)/attendance' : '/(app)/(tabs)/tasks') as Href)
-              }
+              onPress={() => router.push((shape === 'shifts' ? '/(app)/(tabs)/attendance' : '/(app)/(tabs)/tasks') as Href)}
               accessibilityRole="button"
               hitSlop={8}
               style={{
@@ -130,9 +109,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 backgroundColor: c.tile,
               }}
             >
-              <AText variant="caption" tone="strong">
-                {t('myWork.all', { count: pillCount, defaultValue: `All ${pillCount}` })} ›
-              </AText>
+              <AText variant="caption" tone="strong">{t('myWork.all', { count: pillCount, defaultValue: `All ${pillCount}` })} ›</AText>
             </Pressable>
           ) : null}
         </View>
@@ -152,21 +129,14 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 accessibilityState={{ selected: on }}
                 accessibilityLabel={weekdayName(d, 'long')}
                 style={{
-                  flex: 1,
-                  height: 54,
-                  borderRadius: amazen.radius.full,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 4,
+                  flex: 1, height: 54, borderRadius: amazen.radius.full,
+                  alignItems: 'center', justifyContent: 'center', gap: 4,
                   /* Every day is a capsule with a hairline ring; the day shown is jade. */
                   backgroundColor: on ? c.accentTint : 'transparent',
-                  borderWidth: on ? 1.5 : 1,
-                  borderColor: on ? c.accent : c.lineGlass,
+                  borderWidth: on ? 1.5 : 1, borderColor: on ? c.accent : c.lineGlass,
                 }}
               >
-                <AText variant="caption" tone={on ? 'strong' : 'muted'}>
-                  {weekdayName(d, 'narrow')}
-                </AText>
+                <AText variant="caption" tone={on ? 'strong' : 'muted'}>{weekdayName(d, 'narrow')}</AText>
                 <View
                   style={{
                     width: 14,
@@ -177,10 +147,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 />
                 <View style={{ flexDirection: 'row', gap: 2, height: 4 }}>
                   {Array.from({ length: n }).map((_, k) => (
-                    <View
-                      key={k}
-                      style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: on ? c.accent : c.ink }}
-                    />
+                    <View key={k} style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: on ? c.accent : c.ink }} />
                   ))}
                 </View>
               </Pressable>
@@ -192,8 +159,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
           <Sentence
             tone="critical"
             title={t('myWork.refused', { defaultValue: 'Could not load your jobs.' })}
-            body={t('myWork.refusedBody', { defaultValue: 'The office refused the request.' })}
-          >
+            body={t('myWork.refusedBody', { defaultValue: 'The office refused the request.' })}>
             <Pressable
               onPress={() => {
                 setPhase('opening');
@@ -207,11 +173,8 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 paddingVertical: amazen.space(1.5),
                 borderRadius: amazen.radius.full,
                 backgroundColor: c.tile,
-              }}
-            >
-              <AText variant="caption" tone="strong">
-                {t('common.retry', { defaultValue: 'Retry' })}
-              </AText>
+              }}>
+              <AText variant="caption" tone="strong">{t('common.retry', { defaultValue: 'Retry' })}</AText>
             </Pressable>
           </Sentence>
         ) : phase === 'absent' && shape !== 'shifts' ? (
@@ -228,9 +191,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
             <Eyebrow tone="accent">
               {dayEyebrow(selected, today, t)}
               {/* ⚠️ The rows the list SHOWS — carried-over work included — not only the jobs dated that day: "1 job" over four rows read as a miscount. */}
-              {shape === 'tasks' && pillCount > 0
-                ? ` · ${t('myWork.jobs', { count: pillCount, defaultValue: `${pillCount} jobs` })}`
-                : ''}
+              {shape === 'tasks' && pillCount > 0 ? ` · ${t('myWork.jobs', { count: pillCount, defaultValue: `${pillCount} jobs` })}` : ''}
               {shape === 'both' && selShift ? ` · ${shiftHours(selShift)}h` : ''}
               {shape === 'both' && todayShift?.location?.name ? ` · ${todayShift.location.name}` : ''}
             </Eyebrow>
@@ -246,9 +207,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
               />
             ) : phase === 'opening' ? (
               <View style={{ gap: amazen.space(2.5), paddingVertical: amazen.space(1) }}>
-                {[88, 64, 76].map((w) => (
-                  <View key={w} style={{ width: `${w}%`, height: 12, borderRadius: 6, backgroundColor: c.tile }} />
-                ))}
+                {[88, 64, 76].map((w) => <View key={w} style={{ width: `${w}%`, height: 12, borderRadius: 6, backgroundColor: c.tile }} />)}
               </View>
             ) : (
               <>
@@ -259,14 +218,12 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 ) : null}
                 {mine.length === 0 && (face === 'executor' || theirs.length === 0) ? (
                   <Sentence
-                    title={
-                      sameDay(selected, today)
-                        ? t('myWork.nothingToday', { defaultValue: 'Nothing scheduled today.' })
-                        : t('myWork.nothingOn', {
-                            day: weekdayName(selected, 'long'),
-                            defaultValue: `Nothing scheduled on ${weekdayName(selected, 'long')}.`,
-                          })
-                    }
+                    title={sameDay(selected, today)
+                      ? t('myWork.nothingToday', { defaultValue: 'Nothing scheduled today.' })
+                      : t('myWork.nothingOn', {
+                          day: weekdayName(selected, 'long'),
+                          defaultValue: `Nothing scheduled on ${weekdayName(selected, 'long')}.`,
+                        })}
                     body={nextJobLine(
                       nextJobAfter(
                         face === 'executor' ? tasks : tasks.filter((x) => isMine(x, user?.id)),
@@ -297,10 +254,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                         first name in front of every title ("Karim · …").
                       */
                       <PlainRow
-                        task={task}
-                        done={!open(task)}
-                        mine
-                        clock={clock}
+                        task={task} done={!open(task)} mine clock={clock}
                         /* Yours and still open: focus it here. Anything else opens the job. */
                         onPress={() => (isMine(task, user?.id) && open(task) ? setFocusId(task.id) : openTask(task))}
                       />
@@ -310,9 +264,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
 
                 {face === 'spaceSupervisor' && theirs.length > 0 ? (
                   <>
-                    <Eyebrow tone="muted" style={{ marginTop: amazen.space(2) }}>
-                      {siteLabel(theirs, t)}
-                    </Eyebrow>
+                    <Eyebrow tone="muted" style={{ marginTop: amazen.space(2) }}>{siteLabel(theirs, t)}</Eyebrow>
                     {theirs.slice(0, 3).map((task) => (
                       <PlainRow
                         key={task.id}
@@ -324,11 +276,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                       />
                     ))}
                     {theirs.length > 3 ? (
-                      <Pressable
-                        onPress={() => router.push('/(app)/(tabs)/tasks' as Href)}
-                        accessibilityRole="button"
-                        hitSlop={6}
-                      >
+                      <Pressable onPress={() => router.push('/(app)/(tabs)/tasks' as Href)} accessibilityRole="button" hitSlop={6}>
                         <AText variant="caption" tone="accent">
                           {t('myWork.more', { count: theirs.length - 3, defaultValue: `+${theirs.length - 3} more` })}
                         </AText>
@@ -345,6 +293,7 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
           </>
         )}
       </CardSurface>
+
     </View>
   );
 }
