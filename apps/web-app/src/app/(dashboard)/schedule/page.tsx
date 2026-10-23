@@ -62,7 +62,8 @@ export default function ScheduleAndTimeOffPage() {
   const [picked, setPicked] = useState<PickedDay | null>(null)
   const pickDay = (pick: Omit<PickedDay, "self">) => {
     setSelectedId(null)
-    setPicked({ ...pick, self: pick.personId === user?.id })
+    // Nobody sets their own day — except an administrator (the server's own-decision rule).
+    setPicked({ ...pick, self: pick.personId === user?.id && user?.role !== "ADMIN" })
   }
 
   if (!canManage) {
