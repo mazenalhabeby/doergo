@@ -2,6 +2,7 @@ import { TaskSupportService } from './core/task-support.service';
 import { TaskRecordsService } from './records/task-records.service';
 import { TaskPortalService } from './records/task-portal.service';
 import { TaskQueryService } from './query/task-query.service';
+import { TaskSubmissionsService } from './query/task-submissions.service';
 import { TaskStatusService } from './status/task-status.service';
 import { TaskAssignmentService } from './assignment/task-assignment.service';
 import { TaskChecklistService } from './checklist/task-checklist.service';
@@ -10,6 +11,7 @@ import { TechnicianSuggestionService } from './assignment/technician-suggestion.
 import { TaskHierarchyService } from './records/task-hierarchy.service';
 import { TaskDeclineService } from './assignment/task-decline.service';
 import { TaskCrewMembersService } from './assignment/task-crew-members.service';
+import { TaskCrewChangeService } from './assignment/task-crew-change.service';
 import { TaskUpdateService } from './records/task-update.service';
 import { WorkflowResyncService } from './records/workflow-resync.service';
 import { TaskDetailService } from './query/task-detail.service';
@@ -30,11 +32,13 @@ export const TASK_SERVICE_PARTS = [
   TaskPortalService,
   TaskTriageService,
   TaskQueryService,
+  TaskSubmissionsService,
   TaskDetailService,
   TaskStatusService,
   TaskAssignmentService,
   TaskDeclineService,
   TaskCrewMembersService,
+  TaskCrewChangeService,
   TaskChecklistService,
   TaskActivityService,
   TechnicianSuggestionService,

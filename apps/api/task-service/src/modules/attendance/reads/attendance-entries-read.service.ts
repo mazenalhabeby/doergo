@@ -10,7 +10,8 @@ import {
 import { scopeWhere, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { EDITOR_SELECT, MEMBER_SELECT } from '../core/attendance-selects';
-import { AttendanceReadBase } from './attendance-read.base';
+import { PrismaService } from '@hbcfield/shared';
+import { entriesOrderBy, mayViewSpaceAttendance } from './entries-read-rules';
 import type { Prisma, TimeEntryStatus } from '@prisma/client';
 
 /**
@@ -18,7 +19,8 @@ import type { Prisma, TimeEntryStatus } from '@prisma/client';
  * is on the clock now, and the organization's whole list.
  */
 @Injectable()
-export class AttendanceEntriesReadService extends AttendanceReadBase {
+export class AttendanceEntriesReadService {
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Get time entries for a location (admin view)
@@ -63,7 +65,10 @@ export class AttendanceEntriesReadService extends AttendanceReadBase {
     // External Observer, whose role grants no attendance at all. Being on a
     // workspace is not the permission to read its people's clock-ins; the
     // External Supervisor keeps access because its role grants exactly this.
-    if (!isShared && !(await this.mayViewSpaceAttendance(data.locationId, data.requesterId, data.viewScopeSpaceIds))) {
+    if (
+      !isShared &&
+      !(await mayViewSpaceAttendance(this.prisma, data.locationId, data.requesterId, data.viewScopeSpaceIds))
+    ) {
       // 404, the answer for a workspace that does not exist — a 403 confirms it does.
       throw new NotFoundException('Location not found');
     }
@@ -93,7 +98,7 @@ export class AttendanceEntriesReadService extends AttendanceReadBase {
           user: { select: MEMBER_SELECT },
           editedBy: { select: EDITOR_SELECT },
         },
-        orderBy: this.buildEntriesOrderBy(data.sortBy, data.sortOrder),
+        orderBy: entriesOrderBy(data.sortBy, data.sortOrder),
       }),
       this.prisma.timeEntry.count({ where }),
     ]);
@@ -184,10 +189,7 @@ export class AttendanceEntriesReadService extends AttendanceReadBase {
         locationId: { in: validIds },
         // Today's entries PLUS any still-open shift (even one that started before
         // midnight) so overnight clock-ins stay "on duty" after the date rolls.
-        OR: [
-          { clockInAt: buildSingleDayFilter(data.date || new Date().toISOString()) },
-          { status: 'CLOCKED_IN' },
-        ],
+        OR: [{ clockInAt: buildSingleDayFilter(data.date || new Date().toISOString()) }, { status: 'CLOCKED_IN' }],
       },
       include: {
         user: { select: MEMBER_SELECT },
@@ -264,7 +266,7 @@ export class AttendanceEntriesReadService extends AttendanceReadBase {
           },
           editedBy: { select: EDITOR_SELECT },
         },
-        orderBy: this.buildEntriesOrderBy(data.sortBy, data.sortOrder),
+        orderBy: entriesOrderBy(data.sortBy, data.sortOrder),
       }),
       this.prisma.timeEntry.count({ where }),
     ]);

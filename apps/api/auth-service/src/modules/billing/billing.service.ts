@@ -1,10 +1,22 @@
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { stripeLinesForBill, isAddOn, ADD_ON_KEYS, billsThroughStripe, isMaterialDrop } from '@hbcfield/shared';
 import { ok, fail } from './billing-helpers';
-import { BillingBase } from './billing.base';
+import { PrismaService } from '@hbcfield/shared';
+import { StripeService } from './stripe.service';
+import { OrgBillService } from './org-bill.service';
+import { StripeLinesService } from './stripe-lines.service';
 
 @Injectable()
-export class BillingService extends BillingBase {
+export class BillingService {
+  private readonly logger = new Logger(BillingService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly stripe: StripeService,
+    private readonly bill: OrgBillService,
+    private readonly stripeLines: StripeLinesService,
+  ) {}
+
   // ── the module model ─────────────────────────────────────────────────────────
 
   /**
@@ -100,7 +112,10 @@ export class BillingService extends BillingBase {
   async reconcileSeats(organizationId: string) {
     const bill = await this.bill.compute(organizationId);
 
-    const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, include: { subscription: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      include: { subscription: true },
+    });
 
     /*
       Billed by agreement — never charge automatically.

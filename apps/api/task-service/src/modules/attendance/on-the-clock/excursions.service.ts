@@ -1,9 +1,12 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { success, TimeEntryStatus, peopleBriefWithEmail } from '@hbcfield/shared';
 import { scopeWhereOn, type AttendanceScope } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { ATTENDANCE_LOCATION_SELECT } from '../core/attendance-selects';
-import { HeartbeatBase } from './heartbeat.base';
+import { PrismaService } from '@hbcfield/shared';
+import { ExcursionNotices } from './excursion-notices.service';
+import { ClockOutService } from '../clock-out/clock-out.service';
+import { activeExcursion, clampExcursionMinutes, loadOrgExcursion } from './excursion-records';
 import type { GeofenceExcursionStatus } from '@prisma/client';
 
 /**
@@ -11,7 +14,15 @@ import type { GeofenceExcursionStatus } from '@prisma/client';
  * list, and the sweep that expires an unanswered one.
  */
 @Injectable()
-export class ExcursionsService extends HeartbeatBase {
+export class ExcursionsService {
+  private readonly logger = new Logger(ExcursionsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly clockOuts: ClockOutService,
+    private readonly excursionNotices: ExcursionNotices,
+  ) {}
+
   /**
    * Employee submits a reason + how long they'll be out → OUT_UNREPORTED → PENDING.
    * Notifies the responsible person(s) to approve/reject.
@@ -30,12 +41,12 @@ export class ExcursionsService extends HeartbeatBase {
     });
     if (!entry) throw new BadRequestException('You are not currently clocked in');
 
-    const active = await this.getActiveExcursion(entry.id);
+    const active = await activeExcursion(this.prisma, entry.id);
     if (!active || active.status !== 'OUT_UNREPORTED') {
       throw new BadRequestException('No pending out-of-ring warning to report');
     }
 
-    const minutes = this.clampExcursionMinutes(data.requestedMinutes);
+    const minutes = clampExcursionMinutes(data.requestedMinutes);
     // Atomic guard: only flip if it's still OUT_UNREPORTED.
     const res = await this.prisma.geofenceExcursion.updateMany({
       where: { id: active.id, status: 'OUT_UNREPORTED' },
@@ -49,7 +60,7 @@ export class ExcursionsService extends HeartbeatBase {
     if (res.count === 0) throw new BadRequestException('This warning was already handled');
 
     const updated = await this.prisma.geofenceExcursion.findUnique({ where: { id: active.id } });
-    await this.emitExcursionEvent('geofence_excursion_requested', entry, updated!, {
+    await this.excursionNotices.announce('geofence_excursion_requested', entry, updated!, {
       distanceM: updated?.lastDistanceM ?? undefined,
     });
     return success(updated, 'Out-of-ring reason submitted');
@@ -67,7 +78,7 @@ export class ExcursionsService extends HeartbeatBase {
     organizationId: string;
     grantedMinutes?: number;
   }) {
-    const excursion = await this.loadOrgExcursion(data.excursionId, data.organizationId, data.scopeSpaceIds);
+    const excursion = await loadOrgExcursion(this.prisma, data.excursionId, data.organizationId, data.scopeSpaceIds);
     if (excursion.status !== 'PENDING') {
       throw new BadRequestException('This request is no longer pending');
     }
@@ -78,7 +89,7 @@ export class ExcursionsService extends HeartbeatBase {
       organizationId: data.organizationId,
       message: 'You cannot approve your own request to leave the site. Ask a manager or an administrator.',
     });
-    const minutes = this.clampExcursionMinutes(data.grantedMinutes ?? excursion.requestedMinutes ?? 0);
+    const minutes = clampExcursionMinutes(data.grantedMinutes ?? excursion.requestedMinutes ?? 0);
     const expiresAt = new Date(Date.now() + minutes * 60_000);
 
     const res = await this.prisma.geofenceExcursion.updateMany({
@@ -99,7 +110,7 @@ export class ExcursionsService extends HeartbeatBase {
       include: { location: { select: ATTENDANCE_LOCATION_SELECT } },
     });
     const updated = await this.prisma.geofenceExcursion.findUnique({ where: { id: excursion.id } });
-    if (entry) await this.emitExcursionEvent('geofence_excursion_approved', entry, updated!, {});
+    if (entry) await this.excursionNotices.announce('geofence_excursion_approved', entry, updated!, {});
     return success(updated, 'Out-of-ring request approved');
   }
 
@@ -114,7 +125,7 @@ export class ExcursionsService extends HeartbeatBase {
     approverId: string;
     organizationId: string;
   }) {
-    const excursion = await this.loadOrgExcursion(data.excursionId, data.organizationId, data.scopeSpaceIds);
+    const excursion = await loadOrgExcursion(this.prisma, data.excursionId, data.organizationId, data.scopeSpaceIds);
     if (excursion.status !== 'PENDING') {
       throw new BadRequestException('This request is no longer pending');
     }
@@ -135,7 +146,7 @@ export class ExcursionsService extends HeartbeatBase {
       include: { location: { select: ATTENDANCE_LOCATION_SELECT } },
     });
     const updated = await this.prisma.geofenceExcursion.findUnique({ where: { id: excursion.id } });
-    if (entry) await this.emitExcursionEvent('geofence_excursion_rejected', entry, updated!, {});
+    if (entry) await this.excursionNotices.announce('geofence_excursion_rejected', entry, updated!, {});
 
     // Clock the worker out (geofence-exempt; no GPS available server-side).
     try {
@@ -211,7 +222,7 @@ export class ExcursionsService extends HeartbeatBase {
         where: { id: ex.timeEntryId },
         include: { location: { select: ATTENDANCE_LOCATION_SELECT } },
       });
-      if (entry) await this.emitExcursionEvent('geofence_excursion_expired', entry, ex, {});
+      if (entry) await this.excursionNotices.announce('geofence_excursion_expired', entry, ex, {});
     }
     this.logger.log(`Geofence excursion sweep: flagged ${due.length} lapsed timer(s)`);
     return { flagged: due.length };

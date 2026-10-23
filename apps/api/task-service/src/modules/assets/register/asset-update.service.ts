@@ -1,39 +1,58 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Prisma, AssetStatus } from '@prisma/client';
-import { success, normalizeDetailRows, keepFieldsForKind, type HandoverPlan, assertFoundInOrg } from '@hbcfield/shared';
-import { type AssetActor } from '../core/asset-access.service';
+import {
+  PrismaService,
+  success,
+  normalizeDetailRows,
+  keepFieldsForKind,
+  type HandoverPlan,
+  assertFoundInOrg,
+} from '@hbcfield/shared';
+import { AssetAccessService, type AssetActor } from '../core/asset-access.service';
+import { AssetActivityService } from '../core/asset-activity.service';
 import { AssetHoldersService, type HolderInput } from '../core/asset-holders.service';
-import { AssetsBase } from './assets.base';
+import { AssetCustodyService } from '../custody/asset-custody.service';
+import { assertAssetDates, assertAssetStatus, withHolderNames } from './asset-record-rules';
 
 /**
  * Changing an asset record — its fields, its kind (a move between workspaces), its
  * holders through custody.
  */
 @Injectable()
-export class AssetUpdateService extends AssetsBase {
+export class AssetUpdateService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: AssetAccessService,
+    private readonly activity: AssetActivityService,
+    private readonly holderService: AssetHoldersService,
+    private readonly custody: AssetCustodyService,
+  ) {}
+
   /**
    * Update an asset
    */
-  async update(data: {
-    id: string;
-    holderUserId?: string | null;
-    customerId?: string | null;
-    details?: unknown;
-    name?: string;
-    serialNumber?: string | null;
-    model?: string | null;
-    manufacturer?: string | null;
-    status?: string;
-    installDate?: string | null;
-    warrantyExpiry?: string | null;
-    locationAddress?: string;
-    locationLat?: number;
-    locationLng?: number;
-    notes?: string | null;
-    categoryId?: string;
-    typeId?: string;
-  } & AssetActor) {
-    this.assertStatus(data.status);
+  async update(
+    data: {
+      id: string;
+      holderUserId?: string | null;
+      customerId?: string | null;
+      details?: unknown;
+      name?: string;
+      serialNumber?: string | null;
+      model?: string | null;
+      manufacturer?: string | null;
+      status?: string;
+      installDate?: string | null;
+      warrantyExpiry?: string | null;
+      locationAddress?: string;
+      locationLat?: number;
+      locationLng?: number;
+      notes?: string | null;
+      categoryId?: string;
+      typeId?: string;
+    } & AssetActor,
+  ) {
+    assertAssetStatus(data.status);
     // The record as it is NOW must be in a workspace they manage, or 404.
     await this.access.assetInScope(data.id, data, 'manage');
 
@@ -43,7 +62,7 @@ export class AssetUpdateService extends AssetsBase {
 
     assertFoundInOrg(asset, data.organizationId, 'Asset');
 
-    this.assertDates(data, asset);
+    assertAssetDates(data, asset);
 
     // Verify category if changing
     /*
@@ -67,7 +86,11 @@ export class AssetUpdateService extends AssetsBase {
           manager could post their van into another depot's register (or into
           no workspace at all, where only an org-wide grant reaches it).
         */
-        if (!category || category.organizationId !== data.organizationId || !this.access.mayIn(data, 'manage', category.spaceId)) {
+        if (
+          !category ||
+          category.organizationId !== data.organizationId ||
+          !this.access.mayIn(data, 'manage', category.spaceId)
+        ) {
           throw new BadRequestException('Invalid category');
         }
         // Only an actual change; re-saving the same kind is not a move and must
@@ -88,7 +111,11 @@ export class AssetUpdateService extends AssetsBase {
         });
 
         // A subtype of another workspace's kind is that workspace's vocabulary.
-        if (!type || type.category.organizationId !== data.organizationId || !this.access.mayIn(data, 'manage', type.category.spaceId)) {
+        if (
+          !type ||
+          type.category.organizationId !== data.organizationId ||
+          !this.access.mayIn(data, 'manage', type.category.spaceId)
+        ) {
           throw new BadRequestException('Invalid type');
         }
       }
@@ -153,23 +180,25 @@ export class AssetUpdateService extends AssetsBase {
     // Captured inside the transaction, announced only once it has committed.
     let handover: HandoverPlan | null = null;
     const updated = await this.prisma.$transaction(async (tx) => {
-    const row = await tx.asset.update({
-      where: { id: data.id },
-      data: {
-        ...(data.name && { name: data.name }),
-        ...(data.serialNumber !== undefined && { serialNumber: data.serialNumber }),
-        ...(data.model !== undefined && { model: data.model }),
-        ...(data.manufacturer !== undefined && { manufacturer: data.manufacturer }),
-        ...(data.status && { status: data.status as AssetStatus }),
-        ...(data.installDate !== undefined && { installDate: data.installDate ? new Date(data.installDate) : null }),
-        ...(data.warrantyExpiry !== undefined && { warrantyExpiry: data.warrantyExpiry ? new Date(data.warrantyExpiry) : null }),
-        ...(data.locationAddress !== undefined && { locationAddress: data.locationAddress }),
-        ...(data.locationLat !== undefined && { locationLat: data.locationLat }),
-        ...(data.locationLng !== undefined && { locationLng: data.locationLng }),
-        ...(data.notes !== undefined && { notes: data.notes }),
-        ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
-        ...(data.typeId !== undefined && { typeId: data.typeId }),
-        /*
+      const row = await tx.asset.update({
+        where: { id: data.id },
+        data: {
+          ...(data.name && { name: data.name }),
+          ...(data.serialNumber !== undefined && { serialNumber: data.serialNumber }),
+          ...(data.model !== undefined && { model: data.model }),
+          ...(data.manufacturer !== undefined && { manufacturer: data.manufacturer }),
+          ...(data.status && { status: data.status as AssetStatus }),
+          ...(data.installDate !== undefined && { installDate: data.installDate ? new Date(data.installDate) : null }),
+          ...(data.warrantyExpiry !== undefined && {
+            warrantyExpiry: data.warrantyExpiry ? new Date(data.warrantyExpiry) : null,
+          }),
+          ...(data.locationAddress !== undefined && { locationAddress: data.locationAddress }),
+          ...(data.locationLat !== undefined && { locationLat: data.locationLat }),
+          ...(data.locationLng !== undefined && { locationLng: data.locationLng }),
+          ...(data.notes !== undefined && { notes: data.notes }),
+          ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
+          ...(data.typeId !== undefined && { typeId: data.typeId }),
+          /*
           ⚠️ Holders are NOT written here any more.
 
           They are the open end of a custody period, and the custody service
@@ -240,9 +269,14 @@ export class AssetUpdateService extends AssetsBase {
     }
     // An edit that changes the driver is a handover, and is told as one.
     if (handover) {
-      await this.custody.announce({ organizationId: data.organizationId, assetId: data.id, actorId: data.userId, plan: handover });
+      await this.custody.announce({
+        organizationId: data.organizationId,
+        assetId: data.id,
+        actorId: data.userId,
+        plan: handover,
+      });
     }
 
-    return success(await this.withHolders(full));
+    return success(await withHolderNames(this.prisma, full));
   }
 }

@@ -1,3 +1,4 @@
+import { CustomerCrmCalls } from '../customer-crm-calls';
 import { fakeServiceCalls } from '../../../common/testing/service-calls';
 import { BadRequestException } from '@nestjs/common';
 import { of } from 'rxjs';
@@ -18,8 +19,7 @@ describe('customer body — locale', () => {
     const spaceModules = { assertEnabled: jest.fn(async () => undefined) };
     const orgEvents = { customerChanged: jest.fn() };
     const controller = new CustomersController(
-      fakeServiceCalls({ auth: authClient }),
-      spaceModules as any,
+      new CustomerCrmCalls(fakeServiceCalls({ auth: authClient }), spaceModules as any, orgEvents as any),
       {} as any,
       orgEvents as any,
     );

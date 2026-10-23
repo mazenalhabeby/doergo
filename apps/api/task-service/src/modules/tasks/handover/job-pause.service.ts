@@ -1,19 +1,13 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { TaskEventType } from '@prisma/client';
-import {
-  personName,
-  HANDOVER_CODES,
-  HANDOVER_PHOTOS_MAX,
-  cleanHandoverNote,
-  pausesAtClockOut,
-  createOnce,
-  success,
-  assertFoundInOrg,
-} from '@hbcfield/shared';
-import { ClockOutHandover, AUTHOR } from './job-pause-helpers';
-import { JobPauseBase } from './job-pause.base';
-import { emitEvent, taskHandoverAddedEvent, tasksPausedEvent } from '@hbcfield/shared/microservices';
-import { TASK_JOBS, type JobData } from '@hbcfield/shared';
+import { cleanHandoverNote, pausesAtClockOut, PrismaService, TASK_JOBS, type JobData } from '@hbcfield/shared';
+import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
+import { ClockOutHandover, Candidate } from './job-pause-helpers';
+import { HandoverNoteService } from './handover-note.service';
+import { JobTimeService } from './job-time.service';
+import { crewOnJobs, workingJobsOf } from './working-jobs';
+import { emitEvent, tasksPausedEvent } from '@hbcfield/shared/microservices';
 
 export { type ClockOutHandover } from './job-pause-helpers';
 
@@ -29,7 +23,23 @@ export { type ClockOutHandover } from './job-pause-helpers';
  * runs; a job that could not be paused is logged, never a clock-out refused.
  */
 @Injectable()
-export class JobPauseService extends JobPauseBase {
+export class JobPauseService {
+  private readonly logger = new Logger(JobPauseService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workflows: WorkflowConfigCache,
+    @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
+    // The one job-time rule — the pause records what it says the worker put in.
+    private readonly jobTime: JobTimeService,
+    private readonly notes: HandoverNoteService,
+  ) {}
+
+  /** The jobs this person is working right now (working-jobs.ts) — what the clock-out pauses. */
+  workingJobsOf(userId: string, organizationId: string, opts: { includePaused?: boolean } = {}): Promise<Candidate[]> {
+    return workingJobsOf({ prisma: this.prisma, workflows: this.workflows }, userId, organizationId, opts);
+  }
+
   /**
    * A shift ended at `at`: pause what this person was working on, and keep the
    * notes they wrote. A job somebody else on its crew is still clocked in for
@@ -91,7 +101,7 @@ export class JobPauseService extends JobPauseBase {
       job "running" with nobody counted on it; somebody joined and still on
       the clock keeps it running, and is not stopped under.
     */
-    const { joinedOf, onClock } = await this.crewOnJobs(jobs, userId, organizationId);
+    const { joinedOf, onClock } = await crewOnJobs(this.prisma, this.jobTime, jobs, userId, organizationId);
     const toPause = jobs.filter((j) =>
       pausesAtClockOut({ leaverId: userId, joined: joinedOf.get(j.id) ?? [], onClock }),
     );
@@ -135,16 +145,18 @@ export class JobPauseService extends JobPauseBase {
 
     // The notes — for paused jobs, and for any job they are on that kept running.
     for (const h of notes.values()) {
-      await this.addHandover({
-        id: h.id,
-        taskId: h.taskId,
-        note: h.note,
-        attachmentIds: h.attachmentIds,
-        userId,
-        organizationId,
-      }).catch((err) =>
-        this.logger.warn(`Handover at clock-out not saved (task=${h.taskId}): ${(err as Error).message}`),
-      );
+      await this.notes
+        .addHandover({
+          id: h.id,
+          taskId: h.taskId,
+          note: h.note,
+          attachmentIds: h.attachmentIds,
+          userId,
+          organizationId,
+        })
+        .catch((err) =>
+          this.logger.warn(`Handover at clock-out not saved (task=${h.taskId}): ${(err as Error).message}`),
+        );
     }
 
     if (paused.length) {
@@ -179,113 +191,8 @@ export class JobPauseService extends JobPauseBase {
     return true;
   }
 
-  /**
-   * "What I did, and what is left." Written by somebody on the job, or by the
-   * person who owes it (they may have been taken off it since — the note is
-   * exactly what the next person needs). Clears what they owed.
-   */
-  async addHandover(data: JobData<typeof TASK_JOBS.addHandover>) {
-    const note = cleanHandoverNote(data.note);
-    const task = await this.prisma.task.findUnique({
-      where: { id: data.taskId },
-      select: {
-        id: true,
-        title: true,
-        organizationId: true,
-        assignedToId: true,
-        pausedById: true,
-        handoverDueById: true,
-      },
-    });
-    // Another organization's job is not there, as far as this caller knows.
-    assertFoundInOrg(task, data.organizationId, 'Task');
-    const onTheJob =
-      task.assignedToId === data.userId ||
-      task.handoverDueById === data.userId ||
-      task.pausedById === data.userId ||
-      !!(await this.prisma.taskAssignee.findFirst({
-        where: { taskId: task.id, userId: data.userId },
-        select: { id: true },
-      }));
-    if (!onTheJob) {
-      throw new ForbiddenException({
-        message: 'Only somebody on this job can write its handover',
-        code: HANDOVER_CODES.NOT_ON_THE_JOB,
-      });
-    }
-    if (!note)
-      throw new ForbiddenException({ message: 'Write what you did and what is left', code: 'HANDOVER_NOTE_REQUIRED' });
-
-    // Photos are the job's own attachments — never another job's, whatever was sent.
-    const wanted = [...new Set((data.attachmentIds ?? []).filter((x) => typeof x === 'string'))].slice(
-      0,
-      HANDOVER_PHOTOS_MAX,
-    );
-    const attachmentIds = wanted.length
-      ? (
-          await this.prisma.attachment.findMany({
-            where: { id: { in: wanted }, taskId: task.id },
-            select: { id: true },
-          })
-        ).map((a) => a.id)
-      : [];
-
-    const lastPause = await this.prisma.taskEvent.findFirst({
-      where: { taskId: task.id, userId: data.userId, eventType: TaskEventType.PAUSED },
-      orderBy: { createdAt: 'desc' },
-      select: { metadata: true },
-    });
-    const workedMinutes = (lastPause?.metadata as { workedMinutes?: number } | null)?.workedMinutes ?? null;
-
-    const include = { author: AUTHOR } as const;
-    const { row, created } = await createOnce({
-      id: data.id,
-      find: (id) => this.prisma.taskHandover.findUnique({ where: { id }, include }),
-      isSame: (h) => h.taskId === task.id && h.authorId === data.userId,
-      create: () =>
-        this.prisma.taskHandover.create({
-          data: {
-            ...(data.id ? { id: data.id } : {}),
-            organizationId: task.organizationId,
-            taskId: task.id,
-            authorId: data.userId,
-            note,
-            attachmentIds,
-            workedMinutes,
-          },
-          include,
-        }),
-    });
-    if (!created) return success(row);
-
-    await this.prisma.task.updateMany({
-      where: { id: task.id, handoverDueById: data.userId },
-      data: { handoverDueById: null },
-    });
-    await this.prisma.taskEvent.create({
-      data: {
-        taskId: task.id,
-        userId: data.userId,
-        eventType: TaskEventType.HANDOVER_ADDED,
-        metadata: { handoverId: row.id, content: note.length > 100 ? `${note.slice(0, 100)}...` : note },
-      },
-    });
-
-    // Whoever has the job now hears it — including a note written after they were given it.
-    const crew = await this.prisma.taskAssignee.findMany({ where: { taskId: task.id }, select: { userId: true } });
-    const recipientIds = [
-      ...new Set(
-        [task.assignedToId, ...crew.map((c) => c.userId)].filter((id): id is string => !!id && id !== data.userId),
-      ),
-    ];
-    emitEvent(this.notifications, taskHandoverAddedEvent, {
-      taskId: task.id,
-      taskTitle: task.title,
-      authorId: data.userId,
-      authorName: personName(row.author),
-      recipientIds,
-      organizationId: task.organizationId,
-    });
-    return success(row);
+  /** "What I did, and what is left" (HandoverNoteService). */
+  addHandover(data: JobData<typeof TASK_JOBS.addHandover>) {
+    return this.notes.addHandover(data);
   }
 }

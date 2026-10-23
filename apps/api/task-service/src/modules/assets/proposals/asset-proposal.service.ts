@@ -1,12 +1,19 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
 import { randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
-import { success, normalizeKindShape, activeAssignmentWhere, personPasses } from '@hbcfield/shared';
+import { PrismaService, success, normalizeKindShape, activeAssignmentWhere, personPasses } from '@hbcfield/shared';
 import { type ContractFields } from './asset-contract.service';
 import { findPrior } from '../../../common/create-once.util';
-import { ALLOWED, MAX_FILE_SIZE, MAX_OPEN_PER_MEMBER, PROPOSAL_STATUS } from './asset-proposal-helpers';
-import { AssetProposalBase } from './asset-proposal.base';
+import {
+  ALLOWED,
+  MAX_FILE_SIZE,
+  MAX_OPEN_PER_MEMBER,
+  PROPOSAL_STATUS,
+  cleanProposalFields,
+  proposalPrefix,
+} from './asset-proposal-helpers';
+import { ProposalNoticesService } from './proposal-notices.service';
 
 /**
  * A member sends in a document; somebody responsible decides whether it becomes
@@ -33,7 +40,15 @@ import { AssetProposalBase } from './asset-proposal.base';
  * left waiting for an answer that will never come.
  */
 @Injectable()
-export class AssetProposalService extends AssetProposalBase {
+export class AssetProposalService {
+  private readonly logger = new Logger(AssetProposalService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notices: ProposalNoticesService,
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+  ) {}
+
   // ── The page ───────────────────────────────────────────────────────────────
 
   /**
@@ -49,7 +64,7 @@ export class AssetProposalService extends AssetProposalBase {
 
     // Never taken from the client: a filename is attacker-controlled and this
     // one becomes an object key.
-    const key = `${this.prefix(data.organizationId, data.userId)}${randomUUID()}.${extensionForMime(data.mimeType)}`;
+    const key = `${proposalPrefix(data.organizationId, data.userId)}${randomUUID()}.${extensionForMime(data.mimeType)}`;
     const upload = await requireObjectStore(this.store).presignUpload(key, data.mimeType, undefined, 900);
     return success({ uploadUrl: upload.url, fileKey: key, expiresIn: 900, maxFileSize: MAX_FILE_SIZE });
   }
@@ -80,7 +95,7 @@ export class AssetProposalService extends AssetProposalBase {
     });
     if (prior) return success(prior);
 
-    const fields = this.cleanFields(data.fields);
+    const fields = cleanProposalFields(data.fields);
     /*
       Something has to identify the thing, or there is nothing for a reviewer to
       decide. Refused here rather than accepted and shown as an empty card,
@@ -115,7 +130,7 @@ export class AssetProposalService extends AssetProposalBase {
     // The key must be one WE presigned, for THIS organization.
     let fileKey: string | null = null;
     if (data.fileKey) {
-      if (data.fileKey.includes('..') || !data.fileKey.startsWith(this.prefix(data.organizationId, data.userId))) {
+      if (data.fileKey.includes('..') || !data.fileKey.startsWith(proposalPrefix(data.organizationId, data.userId))) {
         throw new BadRequestException('Invalid document');
       }
       const object = await requireObjectStore(this.store).head(data.fileKey);
@@ -153,7 +168,7 @@ export class AssetProposalService extends AssetProposalBase {
       },
     });
 
-    await this.announce(proposal.id, data.organizationId, data.userId, fields);
+    await this.notices.raised(proposal.id, data.organizationId, data.userId, fields);
     return success(proposal);
   }
 
@@ -235,5 +250,11 @@ export class AssetProposalService extends AssetProposalBase {
     });
     if (!count) throw new NotFoundException('That is not yours, or it has been decided');
     return success({ id: data.id, status: PROPOSAL_STATUS.WITHDRAWN });
+  }
+
+  /** Remove the page behind a proposal nobody needs any more. Best effort. */
+  async forgetDocument(key: string | null | undefined): Promise<void> {
+    if (!key || !this.store) return;
+    if (!(await this.store.delete(key))) this.logger.warn(`Could not remove proposal document ${key}`);
   }
 }

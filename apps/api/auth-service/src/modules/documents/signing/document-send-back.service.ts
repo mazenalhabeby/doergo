@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { nextPendingStep, maySignStep } from '@hbcfield/shared';
+import { nextPendingStep, maySignStep, PrismaService } from '@hbcfield/shared';
 import {
   type DocumentActor,
   assertTypeVisible,
@@ -7,14 +7,21 @@ import {
   type RequestContext,
   eventContext,
 } from '../core/document-common';
-import { DocumentSigningBase } from './document-signing.base';
+import { DocumentLookupService } from '../core/document-lookup.service';
+import { DocumentNotifierService } from '../core/document-notifier.service';
 
 /**
  * Sending a document back for changes instead of signing it — the reason, the
  * chain reset, who is told.
  */
 @Injectable()
-export class DocumentSendBackService extends DocumentSigningBase {
+export class DocumentSendBackService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly lookup: DocumentLookupService,
+    private readonly notifier: DocumentNotifierService,
+  ) {}
+
   /**
    * Send a document back to an earlier signer, with a reason.
    *

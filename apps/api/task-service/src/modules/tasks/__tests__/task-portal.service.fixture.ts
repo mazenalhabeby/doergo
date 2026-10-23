@@ -8,8 +8,10 @@ type Public<T> = { [K in keyof T]: T[K] };
 /** Every service split out of TaskPortalService, as ONE object — the tests were written against the single class. */
 export type TaskPortalServiceParts = Public<TaskPortalService> & Public<TaskTriageService>;
 
+/** Takes the dependencies in the old shared order: prisma, notifications, media, support, assignment. */
 export function taskPortalParts(...args: unknown[]): TaskPortalServiceParts {
-  const taskPortalService = new (TaskPortalService as unknown as new (...a: unknown[]) => object)(...args) as any;
-  const taskTriageService = new (TaskTriageService as unknown as new (...a: unknown[]) => object)(...args) as any;
+  const [prisma, notificationClient, media, support, assignment] = args as any[];
+  const taskPortalService = new TaskPortalService(prisma, media);
+  const taskTriageService = new TaskTriageService(prisma, notificationClient, support, assignment);
   return combinedServices<TaskPortalServiceParts>(taskPortalService, taskTriageService);
 }

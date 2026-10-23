@@ -1,18 +1,27 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { requireObjectStore } from '@hbcfield/shared/storage';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { OBJECT_STORE, ObjectStore, requireObjectStore } from '@hbcfield/shared/storage';
 import { Prisma } from '@prisma/client';
-import { success, mayReviewProposal, proposalInSpace, peopleFaces } from '@hbcfield/shared';
-import { type ContractActor, type ContractFields } from './asset-contract.service';
+import { PrismaService, success, mayReviewProposal, proposalInSpace, peopleFaces } from '@hbcfield/shared';
+import { AssetContractService, type ContractActor, type ContractFields } from './asset-contract.service';
 import { assetScope } from '../core/asset-access.service';
-import { ALLOWED, PENDING_SCAN, PROPOSAL_STATUS } from './asset-proposal-helpers';
-import { AssetProposalBase } from './asset-proposal.base';
+import { ALLOWED, PENDING_SCAN, PROPOSAL_STATUS, cleanProposalFields } from './asset-proposal-helpers';
+import { ProposalPlacesService } from './proposal-places.service';
+import { ProposalNoticesService } from './proposal-notices.service';
 
 /**
  * The office's side of a page a member sent in: the queue, accepting (which runs
  * the contract apply), refusing, opening the page.
  */
 @Injectable()
-export class ProposalReviewService extends AssetProposalBase {
+export class ProposalReviewService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly contracts: AssetContractService,
+    private readonly places: ProposalPlacesService,
+    private readonly notices: ProposalNoticesService,
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+  ) {}
+
   /**
    * A short-lived link to one page.
    *
@@ -32,7 +41,8 @@ export class ProposalReviewService extends AssetProposalBase {
       pages their queue would show them, by the same rule.
     */
     const manage = assetScope(data, 'manage');
-    const mayDecide = manage === null || (manage.length > 0 && (await this.reviewable(p, data.organizationId, manage)));
+    const mayDecide =
+      manage === null || (manage.length > 0 && (await this.places.reviewable(p, data.organizationId, manage)));
     if (p.raisedById !== data.userId && !mayDecide) {
       throw new NotFoundException('No document on that');
     }
@@ -86,7 +96,7 @@ export class ProposalReviewService extends AssetProposalBase {
     if (narrowed && found.length > 0) {
       // Kinds and assignments are read inside THIS organization only, so a
       // workspace id from somewhere else places nothing and matches nothing.
-      const places = await this.placesOf(found, data.organizationId);
+      const places = await this.places.placesOf(found, data.organizationId);
       rows = found
         .filter((r) => {
           const place = places.get(r.id)!;
@@ -134,7 +144,7 @@ export class ProposalReviewService extends AssetProposalBase {
     this.contracts.assertMay(data, 'update assets');
     // Out of scope answers exactly like decided or missing — and before the
     // claim, so a refused reviewer never takes it out of somebody else's queue.
-    await this.assertReviewable(data.id, data);
+    await this.places.assertReviewable(data.id, data);
 
     const proposal = await this.claim(data.id, data.organizationId);
 
@@ -145,7 +155,7 @@ export class ProposalReviewService extends AssetProposalBase {
     try {
       // The reviewer's corrections win over what was sent in; they are looking
       // at the page too, on a bigger screen.
-      const fields = { ...(proposal.fields as ContractFields), ...this.cleanFields(data.fields) };
+      const fields = { ...(proposal.fields as ContractFields), ...cleanProposalFields(data.fields) };
       const applied = await this.contracts.apply(
         {
           categoryId,
@@ -192,7 +202,13 @@ export class ProposalReviewService extends AssetProposalBase {
         },
       });
 
-      this.tell(proposal.raisedById, proposal.id, data.organizationId, 'accepted', applied?.data?.name ?? '');
+      this.notices.decided(
+        proposal.raisedById,
+        proposal.id,
+        data.organizationId,
+        'accepted',
+        applied?.data?.name ?? '',
+      );
       return success({ id: proposal.id, assetId, status: PROPOSAL_STATUS.ACCEPTED });
     } catch (e) {
       /*
@@ -214,7 +230,7 @@ export class ProposalReviewService extends AssetProposalBase {
   /** Refuse it, with a reason the member reads. */
   async reject(data: { id: string; note?: string } & ContractActor) {
     this.contracts.assertMay(data, 'update assets');
-    await this.assertReviewable(data.id, data);
+    await this.places.assertReviewable(data.id, data);
     const { count } = await this.prisma.assetProposal.updateMany({
       where: { id: data.id, organizationId: data.organizationId, status: PROPOSAL_STATUS.PENDING },
       data: {
@@ -230,7 +246,24 @@ export class ProposalReviewService extends AssetProposalBase {
       where: { id: data.id },
       select: { raisedById: true },
     });
-    if (p) this.tell(p.raisedById, data.id, data.organizationId, 'rejected', data.note ?? '');
+    if (p) this.notices.decided(p.raisedById, data.id, data.organizationId, 'rejected', data.note ?? '');
     return success({ id: data.id, status: PROPOSAL_STATUS.REJECTED });
+  }
+
+  /**
+   * Take it out of the queue before acting on it.
+   *
+   * A conditional update rather than a read-then-write: two reviewers opening
+   * the queue at once would otherwise both see it pending, and the second would
+   * create a SECOND vehicle from the same page.
+   */
+  private async claim(id: string, organizationId: string) {
+    const { count } = await this.prisma.assetProposal.updateMany({
+      where: { id, organizationId, status: PROPOSAL_STATUS.PENDING },
+      data: { status: PROPOSAL_STATUS.ACCEPTED },
+    });
+    if (!count) throw new NotFoundException('That is not waiting for a decision');
+    const row = await this.prisma.assetProposal.findUniqueOrThrow({ where: { id } });
+    return row;
   }
 }

@@ -12,6 +12,7 @@ import { SpaceRosterService } from './space-roster.service';
 import { MemberSpacesService } from './member-spaces.service';
 import { SpaceMembershipService } from './space-membership.service';
 import { AssignmentTermsService } from './assignment-terms.service';
+import { SpaceAnnouncer } from './space-announcer.service';
 
 const SPACE_SERVICES = [
   SpacesService,
@@ -35,7 +36,7 @@ import { SpacesProcessor } from './spaces.processor';
     ]),
   ],
   controllers: [SpacesController],
-  providers: [...SPACE_SERVICES, SpacesProcessor],
+  providers: [...SPACE_SERVICES, SpaceAnnouncer, SpacesProcessor],
   exports: SPACE_SERVICES,
 })
 export class SpacesModule {}

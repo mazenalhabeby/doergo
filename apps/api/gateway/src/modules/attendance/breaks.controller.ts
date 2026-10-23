@@ -6,7 +6,8 @@ import { RequirePermissionInSpace } from '../../common/decorators';
 import { StartBreakDto, EndBreakDto, AddBreakForMemberDto, BreakRuleDto, SnoozeBreakDto } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { AllowWhenLocked } from '../../common/guards/subscription.guard';
-import { AttendanceControllerBase } from './attendance-controller.base';
+import { BreaksGatewayService } from './breaks.gateway-service';
+import { scopeFor } from '../../common/permission-scope';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -15,7 +16,9 @@ import { DecisionNotesDto } from './dto/decision-bodies.dto';
 @ApiTags('attendance')
 @ApiBearerAuth()
 @Controller('attendance')
-export class BreaksController extends AttendanceControllerBase {
+export class BreaksController {
+  constructor(private readonly breaksGateway: BreaksGatewayService) {}
+
   // =========================================================================
   // BREAKS
   // =========================================================================
@@ -89,7 +92,7 @@ export class BreaksController extends AttendanceControllerBase {
       organizationId: callerOrgId(req.user),
       // The guard passes a grant in ANY workspace; the service narrows it to
       // the rule's own workspace (`BreakRulesService.assertMayManage`).
-      scopeSpaceIds: this.scope(req, 'canManageWorkspaces'),
+      scopeSpaceIds: scopeFor(req.user, 'canManageWorkspaces'),
     });
   }
 
@@ -102,7 +105,7 @@ export class BreaksController extends AttendanceControllerBase {
       ...dto,
       id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canManageWorkspaces'),
+      scopeSpaceIds: scopeFor(req.user, 'canManageWorkspaces'),
     });
   }
 
@@ -114,7 +117,7 @@ export class BreaksController extends AttendanceControllerBase {
     return this.breaksGateway.deleteBreakRule({
       id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canManageWorkspaces'),
+      scopeSpaceIds: scopeFor(req.user, 'canManageWorkspaces'),
     });
   }
 
@@ -153,7 +156,7 @@ export class BreaksController extends AttendanceControllerBase {
       timeEntryId,
       organizationId: callerOrgId(req.user),
       requesterId: req.user.id,
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
     });
   }
 
@@ -163,7 +166,7 @@ export class BreaksController extends AttendanceControllerBase {
   async getActiveBreaks(@Request() req: AuthedRequest) {
     return this.breaksGateway.getActiveBreaks({
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
     });
   }
 
@@ -185,7 +188,7 @@ export class BreaksController extends AttendanceControllerBase {
   ) {
     return this.breaksGateway.getBreakHistory({
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
       date,
       userId,
       type,
@@ -217,7 +220,7 @@ export class BreaksController extends AttendanceControllerBase {
     const result = await this.breaksGateway.addBreakForMember({
       timeEntryId,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canReconcileAttendance'),
       editorId: req.user.id,
       type: dto.type,
       startedAt: dto.startedAt,
@@ -241,7 +244,7 @@ export class BreaksController extends AttendanceControllerBase {
     const result = await this.breaksGateway.deleteBreak({
       breakId,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canReconcileAttendance'),
       editorId: req.user.id,
     });
     return assertServiceOk(result);
@@ -255,7 +258,7 @@ export class BreaksController extends AttendanceControllerBase {
       breakId,
       adminId: req.user.id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canReconcileAttendance'),
       notes: body?.notes,
     });
   }
@@ -274,7 +277,7 @@ export class BreaksController extends AttendanceControllerBase {
   ) {
     return this.breaksGateway.getBreakSummary({
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
       startDate,
       endDate,
       userId,

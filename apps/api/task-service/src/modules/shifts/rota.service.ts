@@ -1,4 +1,6 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Optional } from '@nestjs/common';
+import { PrismaService } from '@hbcfield/shared';
+import { ShiftRematchService } from '../attendance/shifts/shift-rematch.service';
 import { assertSpaceInOrg, assertUserInOrg } from '../../common/tenant-scope.util';
 import {
   personName,
@@ -16,11 +18,21 @@ import {
   workspaceSchedulesShifts,
 } from '@hbcfield/shared';
 import { weekOf } from './shifts-helpers';
-import { ShiftsBase } from './shifts.base';
+import { getOwnedShift } from './shift-rules';
 
 /** The week's rota as the office sees it, and setting one person's day on it. */
 @Injectable()
-export class RotaService extends ShiftsBase {
+export class RotaService {
+  constructor(
+    private readonly prisma: PrismaService,
+    /*
+      A shift added after somebody already clocked in must reach that entry —
+      the clock-in matches once and never looks again. Optional only so a unit
+      test can build this service bare; the module always provides it.
+    */
+    @Optional() private readonly rematch?: ShiftRematchService,
+  ) {}
+
   // ── The week, as the clock-in reads it ─────────────────────────────────
 
   /**
@@ -194,7 +206,7 @@ export class RotaService extends ShiftsBase {
     await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { scope: data.editScope, activeOnly: true });
     await assertUserInOrg(this.prisma, data.userId, data.organizationId);
     if (data.shiftId) {
-      const shift = await this.getOwnedShift(data.organizationId, data.shiftId, data.editScope);
+      const shift = await getOwnedShift(this.prisma, data.organizationId, data.shiftId, data.editScope);
       if (shift.spaceId && shift.spaceId !== data.spaceId) throw new BadRequestException('That shift belongs to a different space');
     }
 

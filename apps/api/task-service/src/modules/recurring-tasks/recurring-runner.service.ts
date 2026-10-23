@@ -1,10 +1,14 @@
-import { Injectable, BadRequestException, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { success, assertFoundInOrg } from '@hbcfield/shared';
-import { RecurringTasksBase } from './recurring-tasks.base';
+import { Injectable, BadRequestException, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import { success, assertFoundInOrg, PrismaService } from '@hbcfield/shared';
+import { calculateNextRun } from './recurring-schedule';
+import { materializeTask } from './recurring-materialize';
 
 /** Running repeats: the poller that makes every task that is due, and making one now by hand. */
 @Injectable()
-export class RecurringRunnerService extends RecurringTasksBase implements OnModuleInit, OnModuleDestroy {
+export class RecurringRunnerService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(RecurringRunnerService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
 
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   /** How often the scheduler scans for due templates. */
@@ -33,7 +37,8 @@ export class RecurringRunnerService extends RecurringTasksBase implements OnModu
    */
   async generate(data: { id: string; organizationId: string; userId: string }) {
     const template = await this.prisma.recurringTaskTemplate.findUnique({
-      where: { id: data.id } });
+      where: { id: data.id },
+    });
 
     assertFoundInOrg(template, data.organizationId, 'Recurring task template');
 
@@ -47,11 +52,11 @@ export class RecurringRunnerService extends RecurringTasksBase implements OnModu
     }
 
     // Create the task (space-, type- and flow-aware)
-    const task = await this.materializeTask(template, data.userId);
+    const task = await materializeTask(this.prisma, template, data.userId);
 
     // Update template: set lastGeneratedAt and calculate next run
     const now = new Date();
-    const nextRunAt = this.calculateNextRun(
+    const nextRunAt = calculateNextRun(
       template.frequency,
       template.startDate,
       now,
@@ -61,15 +66,15 @@ export class RecurringRunnerService extends RecurringTasksBase implements OnModu
     );
 
     // If nextRunAt is past endDate, keep it null (template expired)
-    const finalNextRunAt = template.endDate && nextRunAt && nextRunAt > template.endDate
-      ? null
-      : nextRunAt;
+    const finalNextRunAt = template.endDate && nextRunAt && nextRunAt > template.endDate ? null : nextRunAt;
 
     await this.prisma.recurringTaskTemplate.update({
       where: { id: template.id },
       data: {
         lastGeneratedAt: now,
-        nextRunAt: finalNextRunAt } });
+        nextRunAt: finalNextRunAt,
+      },
+    });
 
     // Return the created task with includes
     const fullTask = await this.prisma.task.findUnique({
@@ -78,8 +83,11 @@ export class RecurringRunnerService extends RecurringTasksBase implements OnModu
         assignedTo: { select: { id: true, firstName: true, lastName: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         assignees: {
-          include: { user: { select: { id: true, firstName: true, lastName: true } } } },
-        checklistItems: { orderBy: { position: 'asc' } } } });
+          include: { user: { select: { id: true, firstName: true, lastName: true } } },
+        },
+        checklistItems: { orderBy: { position: 'asc' } },
+      },
+    });
 
     return success(fullTask, 'Task generated from recurring template');
   }
@@ -95,12 +103,14 @@ export class RecurringRunnerService extends RecurringTasksBase implements OnModu
       where: {
         isActive: true,
         nextRunAt: { lte: now },
-        OR: [{ endDate: null }, { endDate: { gte: now } }] },
-      take: 200 });
+        OR: [{ endDate: null }, { endDate: { gte: now } }],
+      },
+      take: 200,
+    });
 
     let generated = 0;
     for (const template of due) {
-      const next = this.calculateNextRun(
+      const next = calculateNextRun(
         template.frequency,
         template.startDate,
         now,
@@ -113,11 +123,12 @@ export class RecurringRunnerService extends RecurringTasksBase implements OnModu
       // Claim: only proceed if nextRunAt is still exactly what we read.
       const claim = await this.prisma.recurringTaskTemplate.updateMany({
         where: { id: template.id, nextRunAt: template.nextRunAt },
-        data: { lastGeneratedAt: now, nextRunAt: finalNext } });
+        data: { lastGeneratedAt: now, nextRunAt: finalNext },
+      });
       if (claim.count !== 1) continue;
 
       try {
-        await this.materializeTask(template, template.createdById);
+        await materializeTask(this.prisma, template, template.createdById);
         generated++;
       } catch (e) {
         this.logger.error(`Recurring generate failed for template ${template.id}: ${e}`);

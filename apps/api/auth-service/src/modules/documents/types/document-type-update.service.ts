@@ -2,12 +2,19 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { routeProblem } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
 import { assertCanManageTypes, assertCanManageVisibility, sameIdSet } from '../core/document-common';
-import { DocumentTypesBase } from './document-types.base';
+import { PrismaService } from '@hbcfield/shared';
+import { DocumentLookupService } from '../core/document-lookup.service';
+import { assertPageShape, assertTypeRefsInOrg } from './document-type-rules';
 import { type documentsUpdateType, type RpcRequest } from '@hbcfield/shared/microservices';
 
 /** Editing a document type: its fields, its route, who sees it. */
 @Injectable()
-export class DocumentTypeUpdateService extends DocumentTypesBase {
+export class DocumentTypeUpdateService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly lookup: DocumentLookupService,
+  ) {}
+
   // The request is the message contract's (shared with the gateway) — one definition, not two.
   async updateType(data: RpcRequest<typeof documentsUpdateType>) {
     assertCanManageTypes(data.actor);
@@ -16,7 +23,7 @@ export class DocumentTypeUpdateService extends DocumentTypesBase {
     // Checked against what the type WILL be, not only what the edit names —
     // turning on multiPage alone, for a type already two-sided, is the same
     // misconfiguration arrived at in two steps.
-    this.assertPageShape(
+    assertPageShape(
       data.patch.twoSided ?? existing.twoSided,
       data.patch.multiPage ?? (existing as { multiPage?: boolean }).multiPage,
     );
@@ -42,7 +49,7 @@ export class DocumentTypeUpdateService extends DocumentTypesBase {
     ) {
       assertCanManageVisibility(data.actor);
     }
-    await this.assertTypeRefsInOrg(data.actor.organizationId, data.patch);
+    await assertTypeRefsInOrg(this.prisma, data.actor.organizationId, data.patch);
 
     // `cadence` and `direction` are absent from the patch on purpose. Changing
     // either would re-interpret every document already filed under the type —

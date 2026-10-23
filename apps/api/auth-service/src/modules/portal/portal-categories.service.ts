@@ -1,11 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { scopeWhereOn, type SpaceScopeIds, workspaceInOrg } from '@hbcfield/shared';
+import { scopeWhereOn, type SpaceScopeIds, workspaceInOrg, PrismaService } from '@hbcfield/shared';
 import { configCache } from './portal-helpers';
-import { PortalServiceBase } from './portal-service.base';
+import { PortalReachService } from './portal-reach.service';
+import { assertSpaceRefInScope, categoryScope } from './portal-scope';
 
 /** A portal's request categories: create, edit, delete, reorder. */
 @Injectable()
-export class PortalCategoriesService extends PortalServiceBase {
+export class PortalCategoriesService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reach: PortalReachService,
+  ) {}
+
   // ── Intake category editor (per portal) ──
 
   async createCategory(data: {
@@ -29,10 +35,10 @@ export class PortalCategoriesService extends PortalServiceBase {
     });
     if (!portal) throw new NotFoundException('Portal not found');
     // The routing space is a body id too — same tenant check updateCategory makes.
-    await this.assertUnitRefsInOrg(data.organizationId, { spaceId: data.spaceId });
+    await this.reach.assertUnitRefsInOrg(data.organizationId, { spaceId: data.spaceId });
     // …and a workspace-scoped manager may only route their portal's requests
     // into a workspace they run — never into the one next door.
-    this.assertSpaceRefInScope(data.scopeSpaceIds, data.spaceId);
+    assertSpaceRefInScope(data.scopeSpaceIds, data.spaceId);
     const cat = await this.prisma.intakeCategory.create({
       data: {
         organizationId: data.organizationId,
@@ -68,13 +74,13 @@ export class PortalCategoriesService extends PortalServiceBase {
     scopeSpaceIds?: SpaceScopeIds;
   }) {
     const existing = await this.prisma.intakeCategory.findFirst({
-      where: { id: data.id, organizationId: data.organizationId, ...this.categoryScope(data.scopeSpaceIds) },
+      where: { id: data.id, organizationId: data.organizationId, ...categoryScope(data.scopeSpaceIds) },
       select: { id: true, portalId: true },
     });
     if (!existing) throw new NotFoundException('Category not found');
     // Routing target in reach (null = "no routing space" is a value only the
     // org-wide key may choose, like every other organization-level setting).
-    this.assertSpaceRefInScope(data.scopeSpaceIds, data.spaceId);
+    assertSpaceRefInScope(data.scopeSpaceIds, data.spaceId);
     // Validate the target space belongs to this org (defence in depth — the
     // onDelete:SetNull relation already guards deletions).
     if (data.spaceId) {
@@ -101,7 +107,7 @@ export class PortalCategoriesService extends PortalServiceBase {
 
   async deleteCategory(data: { id: string; organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
     const existing = await this.prisma.intakeCategory.findFirst({
-      where: { id: data.id, organizationId: data.organizationId, ...this.categoryScope(data.scopeSpaceIds) },
+      where: { id: data.id, organizationId: data.organizationId, ...categoryScope(data.scopeSpaceIds) },
       select: { id: true, portalId: true },
     });
     if (!existing) throw new NotFoundException('Category not found');

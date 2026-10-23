@@ -14,8 +14,8 @@ import {
   spaceRoleCards,
   spaceRolesWithCounts,
 } from '@hbcfield/shared';
-import { userSelect } from './space-roles-helpers';
-import { SpaceRolesBase } from './space-roles.base';
+import { assertNameFree, getOwnedRole, uniqueSlug, useWorkRoleIn } from './space-role-rules';
+import { userSelect, normalizePermissions } from './space-roles-helpers';
 import { RoleWriter } from './role-writer.service';
 import { PrismaService } from '@hbcfield/shared';
 import type { SpaceRoleWrite } from '@hbcfield/shared/microservices';
@@ -39,13 +39,11 @@ export { type SpaceMemberAuthority } from './space-roles-helpers';
  * workspace role lists and day rates in ONE transaction with the role — the agreed exception.
  */
 @Injectable()
-export class SpaceRolesService extends SpaceRolesBase {
+export class SpaceRolesService {
   constructor(
-    prisma: PrismaService,
+    private readonly prisma: PrismaService,
     private readonly writer: RoleWriter,
-  ) {
-    super(prisma);
-  }
+  ) {}
 
   // ── Roles (AccessRole, scope SPACE) ────────────────────────────────────────
 
@@ -137,8 +135,8 @@ export class SpaceRolesService extends SpaceRolesBase {
     if (data.spaceId) await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: true });
     if (!name) throw new BadRequestException('Role name is required');
     const kind: RoleKindValue = isRoleKind(data.kind) ? data.kind : 'MANAGEMENT';
-    await this.assertNameFree(data.organizationId, name);
-    const slug = await this.uniqueSlug(data.organizationId, name);
+    await assertNameFree(this.prisma, data.organizationId, name);
+    const slug = await uniqueSlug(this.prisma, data.organizationId, name);
     const max = await maxRolePosition(this.prisma, data.organizationId);
     // auth-service writes it (it owns AccessRole); every column is decided here.
     const role = await this.writer.create(data.organizationId, {
@@ -150,10 +148,10 @@ export class SpaceRolesService extends SpaceRolesBase {
       isSystem: false,
       kind,
       // ⚠️ A work role grants nothing — forced here, whatever the request said.
-      permissions: permissionsForKind(kind, this.normalizePermissions(data.permissions)) as Record<string, boolean>,
+      permissions: permissionsForKind(kind, normalizePermissions(data.permissions)) as Record<string, boolean>,
       position: (max._max.position ?? -1) + 1,
     });
-    if (data.spaceId && kind === 'WORK') await this.useWorkRoleIn(this.prisma, data.spaceId, role.id);
+    if (data.spaceId && kind === 'WORK') await useWorkRoleIn(this.prisma, data.spaceId, role.id);
     return success(role, 'Space role created');
   }
 
@@ -169,7 +167,7 @@ export class SpaceRolesService extends SpaceRolesBase {
     /** Ceiling on what the caller may author. Null/undefined = admin. */
     requesterPerms?: PermissionSet | null;
   }) {
-    const role = await this.getOwnedRole(data.organizationId, data.roleId);
+    const role = await getOwnedRole(this.prisma, data.organizationId, data.roleId);
     /*
       The ceiling applies to what the role ALREADY grants, not only to the edit.
 
@@ -184,9 +182,10 @@ export class SpaceRolesService extends SpaceRolesBase {
     if (data.name !== undefined) {
       const name = data.name.trim();
       if (!name) throw new BadRequestException('Role name cannot be empty');
-      if (name.toLowerCase() !== role.name.toLowerCase()) await this.assertNameFree(data.organizationId, name, role.id);
+      if (name.toLowerCase() !== role.name.toLowerCase())
+        await assertNameFree(this.prisma, data.organizationId, name, role.id);
       patch.name = name;
-      if (!role.isSystem) patch.slug = await this.uniqueSlug(data.organizationId, name, role.id);
+      if (!role.isSystem) patch.slug = await uniqueSlug(this.prisma, data.organizationId, name, role.id);
     }
     if (data.description !== undefined) patch.description = data.description?.trim() || null;
     if (data.color !== undefined) patch.color = data.color;
@@ -221,7 +220,7 @@ export class SpaceRolesService extends SpaceRolesBase {
       patch.permissions = {};
     } else {
       if (data.permissions !== undefined) {
-        patch.permissions = this.normalizePermissions({
+        patch.permissions = normalizePermissions({
           ...(role.permissions as PermissionSet),
           ...data.permissions,
         });

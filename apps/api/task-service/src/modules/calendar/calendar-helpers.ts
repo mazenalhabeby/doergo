@@ -1,4 +1,4 @@
-/** Module-level helpers of calendar.service.ts — moved here unchanged. */
+/** What the calendar read and its sources share. */
 import { TaskStatus } from '@hbcfield/shared';
 import type { CalendarItemsQuery } from '@hbcfield/shared/microservices';
 
@@ -13,4 +13,9 @@ const CANCELED_TASK_KEYS: string[] = [TaskStatus.CANCELED, 'CANCELLED'];
 
 export type ItemsQuery = CalendarItemsQuery;
 
-export { DATE, CANCELED_TASK_KEYS };
+/** Is a workspace inside a scope? undefined = everywhere (org-wide). */
+function withinScope(scope: string[] | undefined, spaceId: string) {
+  return scope === undefined || scope.includes(spaceId);
+}
+
+export { DATE, CANCELED_TASK_KEYS, withinScope };

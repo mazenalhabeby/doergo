@@ -1,6 +1,5 @@
 import { ChatNotificationHandler } from '../chat-notification.handler';
-import { WebsocketGateway } from '../../../websocket/websocket.gateway';
-import { ChatMembersCache } from '../../../websocket/chat-members';
+import { buildGateway } from '../../../websocket/__tests__/gateway-fixture';
 
 /**
  * A chat push only where it adds something: never to somebody who muted the
@@ -8,14 +7,13 @@ import { ChatMembersCache } from '../../../websocket/chat-members';
  */
 describe('chat push', () => {
   function setup() {
-    const gateway = Object.create(WebsocketGateway.prototype) as any;
-    gateway.connectedClients = new Map();
-    gateway.server = { to: () => ({ emit: jest.fn() }) };
-    gateway.chatMembers = new ChatMembersCache(async () => ['anna', 'mike', 'karim']);
+    const built = buildGateway({ members: async () => ['anna', 'mike', 'karim'] });
+    const gateway = built.gateway as any;
+    const registry = built.registry;
     const push = { sendToUsers: jest.fn(async () => undefined) };
     const handler = new ChatNotificationHandler(push as any, gateway);
     const connect = (sid: string, userId: string) =>
-      gateway.connectedClients.set(sid, {
+      registry.clients.set(sid, {
         userId,
         role: 'EMPLOYEE',
         organizationId: 'o',

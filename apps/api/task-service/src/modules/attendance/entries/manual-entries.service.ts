@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, Optional } from '@nestjs/common';
 import { zoneOf, success, personPasses } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { zonedWallTimeToUtc as sharedZonedWallTimeToUtc, localPartsIn, parseHm } from '@hbcfield/shared';
 import { scopeAllows } from '@hbcfield/shared';
-import { EntryServiceBase } from './entry-service.base';
+import { PrismaService } from '@hbcfield/shared';
+import { NoShowSettleService } from '../no-shows/no-show-settle.service';
+import { EntryChangeLog } from './entry-change-log';
 import {
   assertManualRangeShape,
   manualBreakPlacement,
@@ -15,7 +17,15 @@ import {
 
 /** Hours the office adds by hand ("they were here") — one person or several, one day or many. */
 @Injectable()
-export class ManualEntriesService extends EntryServiceBase {
+export class ManualEntriesService {
+  private readonly logger = new Logger(ManualEntriesService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly changes: EntryChangeLog,
+    // Hours added for a day somebody was marked missing close that no-show ("They were here").
+    @Optional() private readonly noShowSettle?: NoShowSettleService,
+  ) {}
   /**
    * Admin: manually add (back-date) attendance for an employee.
    * Generates one CLOCKED_OUT entry per selected working day in [startDate, endDate],
@@ -100,7 +110,7 @@ export class ManualEntriesService extends EntryServiceBase {
       `Manual attendance added: user=${data.userId}, editor=${data.editorId}, created=${toCreate.length}, skipped=${skipped}`,
     );
     if (toCreate.length) {
-      this.emitChanged(data.organizationId, 'manual-add');
+      this.changes.announce(data.organizationId, 'manual-add');
       const from = toCreate.reduce((m, e) => (e.clockInAt < m ? e.clockInAt : m), toCreate[0].clockInAt as Date);
       const to = toCreate.reduce((m, e) => (e.clockOutAt > m ? e.clockOutAt : m), toCreate[0].clockOutAt as Date);
       await this.noShowSettle

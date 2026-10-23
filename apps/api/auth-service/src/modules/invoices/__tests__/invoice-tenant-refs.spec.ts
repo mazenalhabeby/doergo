@@ -1,4 +1,6 @@
 import { InvoiceCreateService } from '../invoice-create.service';
+import { InvoiceCurrencyService } from '../invoice-currency.service';
+import { InvoiceIssuerService } from '../invoice-issuer.service';
 
 /*
   Ids on an invoice arrive from a browser.
@@ -18,10 +20,12 @@ describe('invoice — only this organization’s workspace, jobs and reports', (
       user: { count: jest.fn().mockResolvedValue(0) },
       invoice: { create: jest.fn().mockImplementation(({ data }: any) => ({ id: 'inv-1', ...data })) },
     };
-    const svc = new InvoiceCreateService(prisma, {} as never, {} as never);
-    jest.spyOn(svc as any, 'issuingEntity').mockResolvedValue({ entity: { id: 'le-1', invoicePrefix: 'INV', currency: 'EUR' } });
-    jest.spyOn(svc as any, 'currencyFields').mockResolvedValue({ currency: 'EUR' });
-    jest.spyOn(svc as any, 'generateInvoiceNumber').mockResolvedValue('INV-2026-0001');
+    const money = new InvoiceCurrencyService(prisma, {} as never);
+    const issuer = new InvoiceIssuerService(prisma, {} as never);
+    jest.spyOn(issuer, 'issuingEntity').mockResolvedValue({ entity: { id: 'le-1', invoicePrefix: 'INV', currency: 'EUR' } } as never);
+    jest.spyOn(money, 'currencyFields').mockResolvedValue({ currency: 'EUR' } as never);
+    jest.spyOn(issuer, 'generateInvoiceNumber').mockResolvedValue('INV-2026-0001');
+    const svc = new InvoiceCreateService(prisma, money, issuer);
     return { svc, prisma };
   };
 

@@ -6,6 +6,8 @@ import { AssetCustodyModule } from '../custody/asset-custody.module';
 import { AssetExpensesModule } from '../expenses/asset-expenses.module';
 import { AssetLogService } from './asset-log.service';
 import { AssetLogReadService } from './asset-log-read.service';
+import { AssetLogAccessService } from './asset-log-access.service';
+import { AssetLogStateService } from './asset-log-state.service';
 import { AssetLogReminderService } from './asset-log-reminder.service';
 import { AssetLedgerService } from './asset-ledger.service';
 import { AssetRowsService } from './asset-rows.service';
@@ -23,7 +25,15 @@ import { AssetMoneyRpcController } from './asset-money.rpc.controller';
     AssetExpensesModule,
   ],
   controllers: [AssetLogRpcController, AssetMoneyRpcController],
-  providers: [AssetLogService, AssetLogReadService, AssetLogReminderService, AssetLedgerService, AssetRowsService],
+  providers: [
+    AssetLogAccessService,
+    AssetLogStateService,
+    AssetLogService,
+    AssetLogReadService,
+    AssetLogReminderService,
+    AssetLedgerService,
+    AssetRowsService,
+  ],
   exports: [AssetLogService, AssetLogReadService, AssetLogReminderService, AssetLedgerService, AssetRowsService],
 })
 export class AssetLogbookModule {}

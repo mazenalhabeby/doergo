@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Inject, Logger } from '@nestjs/common';
 import {
   SUPPORT_JOB_TYPES,
   supportPriority,
@@ -6,10 +6,16 @@ import {
   type SupportAuthorType,
   type SupportStatus,
   type SupportAgentScope,
+  PrismaService,
+  SERVICE_NAMES,
+  QUEUE_NAMES,
 } from '@hbcfield/shared';
 import { findPrior } from '../../common/create-once.util';
-import { Attachment } from './support-helpers';
-import { SupportBase } from './support.base';
+import { Attachment, slaJobId, createdBySelect } from './support-helpers';
+import { ClientProxy } from '@nestjs/microservices';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { SupportTicketLookup } from './support-ticket-lookup.service';
 import {
   emitEvent,
   supportMessageEvent,
@@ -20,7 +26,18 @@ import {
 import type { SupportCategory, SupportChannel, Prisma, SupportMessage, SupportTicket } from '@prisma/client';
 
 @Injectable()
-export class SupportService extends SupportBase {
+export class SupportService {
+  private readonly logger = new Logger(SupportService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION)
+    private readonly notificationClient: ClientProxy,
+    @InjectQueue(QUEUE_NAMES.SUPPORT)
+    private readonly supportQueue: Queue,
+    private readonly tickets: SupportTicketLookup,
+  ) {}
+
   // ── customer: create ticket ────────────────────────────────────────────────
   async createTicket(data: {
     organizationId: string;
@@ -40,7 +57,7 @@ export class SupportService extends SupportBase {
       find: (id) =>
         this.prisma.supportTicket.findUnique({
           where: { id },
-          include: { messages: true, createdBy: this.createdBySelect() },
+          include: { messages: true, createdBy: createdBySelect() },
         }),
       isSame: (t) => t.createdById === data.createdById,
     });
@@ -53,7 +70,7 @@ export class SupportService extends SupportBase {
     const dueAt = slaFirstResponseDueAt(addOns, now);
 
     // Dynamic routing: resolve the owning team from the org's manual pin / rules.
-    const assignedTeamId = await this.resolveTeamForOrg(data.organizationId);
+    const assignedTeamId = await this.tickets.resolveTeamForOrg(data.organizationId);
 
     const ticket = await this.prisma.supportTicket.create({
       data: {
@@ -77,11 +94,11 @@ export class SupportService extends SupportBase {
             authorId: data.createdById,
             authorType: 'CUSTOMER',
             body: data.body,
-            attachments: (data.attachments ?? []),
+            attachments: data.attachments ?? [],
           },
         },
       },
-      include: { messages: true, createdBy: this.createdBySelect() },
+      include: { messages: true, createdBy: createdBySelect() },
     });
 
     // Schedule the SLA-breach check exactly at the deadline (cancelled on first reply).
@@ -89,7 +106,7 @@ export class SupportService extends SupportBase {
     await this.supportQueue.add(
       SUPPORT_JOB_TYPES.SLA_BREACH_CHECK,
       { ticketId: ticket.id },
-      { jobId: this.slaJobId(ticket.id), delay, removeOnComplete: true, removeOnFail: true },
+      { jobId: slaJobId(ticket.id), delay, removeOnComplete: true, removeOnFail: true },
     );
 
     emitEvent(this.notificationClient, supportTicketCreatedEvent, { ticket });
@@ -113,7 +130,7 @@ export class SupportService extends SupportBase {
     id?: string;
   }) {
     const ticket = data.asAgent
-      ? await this.agentTicket(data.ticketId, data.scope)
+      ? await this.tickets.agentTicket(data.ticketId, data.scope)
       : await this.prisma.supportTicket.findUnique({ where: { id: data.ticketId } });
     if (!ticket) throw new NotFoundException('Ticket not found');
     // A customer may only touch a ticket they OPENED — org-scope alone would let a
@@ -165,7 +182,7 @@ export class SupportService extends SupportBase {
           authorId: data.authorId,
           authorType: data.authorType,
           body: data.body,
-          attachments: (data.attachments ?? []),
+          attachments: data.attachments ?? [],
           isInternalNote: isInternal,
         },
       }),
@@ -201,7 +218,7 @@ export class SupportService extends SupportBase {
   // and/or `teamId` (each optional) patches only the provided fields; pass null
   // to clear. Reassigning the team moves the ticket between scoped queues.
   async assign(data: { ticketId: string; agentId?: string | null; teamId?: string | null; scope?: SupportAgentScope }) {
-    await this.agentTicket(data.ticketId, data.scope);
+    await this.tickets.agentTicket(data.ticketId, data.scope);
     const patch: Record<string, unknown> = {};
     if ('agentId' in data) patch.assignedAgentId = data.agentId ?? null;
     if ('teamId' in data) patch.assignedTeamId = data.teamId ?? null;
@@ -214,7 +231,7 @@ export class SupportService extends SupportBase {
   }
 
   async setStatus(data: { ticketId: string; status: SupportStatus; scope?: SupportAgentScope }) {
-    await this.agentTicket(data.ticketId, data.scope);
+    await this.tickets.agentTicket(data.ticketId, data.scope);
     const now = new Date();
     const extra: Record<string, unknown> = {};
     if (data.status === 'RESOLVED') extra.resolvedAt = now;
@@ -228,7 +245,7 @@ export class SupportService extends SupportBase {
   }
 
   async markRead(data: { ticketId: string; reader: 'CUSTOMER' | 'AGENT'; userId?: string; scope?: SupportAgentScope }) {
-    if (data.reader === 'AGENT') await this.agentTicket(data.ticketId, data.scope);
+    if (data.reader === 'AGENT') await this.tickets.agentTicket(data.ticketId, data.scope);
     // Customer path must own the ticket — otherwise any authed user could mark
     // someone else's ticket read by id (write IDOR).
     if (data.reader === 'CUSTOMER') {
@@ -266,5 +283,14 @@ export class SupportService extends SupportBase {
     emitEvent(this.notificationClient, supportSlaBreachedEvent, { ticket: updated });
     emitEvent(this.notificationClient, supportTicketUpdatedEvent, { ticket: updated });
     return { success: true, breached: true };
+  }
+
+  private async cancelSlaJob(ticketId: string) {
+    try {
+      const job = await this.supportQueue.getJob(slaJobId(ticketId));
+      if (job) await job.remove();
+    } catch (e) {
+      this.logger.debug(`cancelSlaJob(${ticketId}) noop: ${(e as Error).message}`);
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { WebsocketGateway } from '../websocket.gateway';
+import { buildGateway } from './gateway-fixture';
 
 /**
  * Four things a socket used to get by believing the client or its token:
@@ -8,41 +8,67 @@ import { WebsocketGateway } from '../websocket.gateway';
  *   - staying authenticated after removal, suspension or token expiry.
  */
 function gatewayWith(prisma: Record<string, any>) {
-  const g = Object.create(WebsocketGateway.prototype) as any;
-  g.connectedClients = new Map();
-  g.agentSockets = new Set();
-  g.ticketCreatorCache = new Map();
-  g.prisma = prisma;
-  g.logger = { log: jest.fn(), warn: jest.fn(), debug: jest.fn() };
-  g.emitted = [] as Array<{ room: string; event: string; data: any }>;
-  g.sockets = new Map();
-  g.server = {
-    to: (room: string) => ({ emit: (event: string, data: any) => g.emitted.push({ room, event, data }) }),
-    emit: jest.fn(),
-    sockets: { sockets: g.sockets },
-  };
-  return g;
+  const { gateway, registry, tokens, emitted, sockets } = buildGateway({ prisma });
+  // The gateway's surface, plus the state it reaches through the registry.
+  return Object.assign(gateway, {
+    connectedClients: registry.clients,
+    agentSockets: registry.agentSockets,
+    armExpiry: tokens.armExpiry.bind(tokens),
+    emitted,
+    sockets,
+  }) as any;
 }
 
 const memberRow = (over: Record<string, unknown> = {}) => ({
-  role: 'EMPLOYEE', isActive: true, organizationId: 'org-1',
-  canCreateTasks: false, canViewAllTasks: false, canAssignTasks: false, canManageUsers: false, canViewReports: false,
-  organization: { suspendedAt: null }, memberRole: null, spaceAssignments: [], ...over,
+  role: 'EMPLOYEE',
+  isActive: true,
+  organizationId: 'org-1',
+  canCreateTasks: false,
+  canViewAllTasks: false,
+  canAssignTasks: false,
+  canManageUsers: false,
+  canViewReports: false,
+  organization: { suspendedAt: null },
+  memberRole: null,
+  spaceAssignments: [],
+  ...over,
 });
 
-const socket = (id: string) => ({ id, join: jest.fn(), leave: jest.fn(), emit: jest.fn(), disconnect: jest.fn(), rooms: new Set([id]) });
+const socket = (id: string) => ({
+  id,
+  join: jest.fn(),
+  leave: jest.fn(),
+  emit: jest.fn(),
+  disconnect: jest.fn(),
+  rooms: new Set([id]),
+});
 
 describe('join_task asks the API rule, not just the organization', () => {
-  const task = (over: Record<string, unknown> = {}) => ({ organizationId: 'org-1', spaceId: 'sp-1', assignedToId: null, assignees: [], ...over });
+  const task = (over: Record<string, unknown> = {}) => ({
+    organizationId: 'org-1',
+    spaceId: 'sp-1',
+    assignedToId: null,
+    assignees: [],
+    ...over,
+  });
 
   const setup = (user: any, t: any) => {
-    const prisma = { user: { findUnique: jest.fn().mockResolvedValue(user) }, task: { findFirst: jest.fn().mockResolvedValue(t) } };
+    const prisma = {
+      user: { findUnique: jest.fn().mockResolvedValue(user) },
+      task: { findFirst: jest.fn().mockResolvedValue(t) },
+    };
     const g = gatewayWith(prisma);
-    g.connectedClients.set('s1', { userId: 'u1', role: user?.role ?? 'EMPLOYEE', organizationId: 'org-1', connectedAt: new Date(), rooms: [] });
+    g.connectedClients.set('s1', {
+      userId: 'u1',
+      role: user?.role ?? 'EMPLOYEE',
+      organizationId: 'org-1',
+      connectedAt: new Date(),
+      rooms: [],
+    });
     return { g, prisma, s: socket('s1') };
   };
 
-  it("refuses a plain member a task in their organization they are not on", async () => {
+  it('refuses a plain member a task in their organization they are not on', async () => {
     const { g, s } = setup(memberRow(), task());
     expect(await g.handleJoinTask(s, { taskId: 't1' })).toEqual({ success: false, error: 'Task not found' });
     expect(s.join).not.toHaveBeenCalled();
@@ -55,7 +81,9 @@ describe('join_task asks the API rule, not just the organization', () => {
   });
 
   it('admits "view all tasks" held in THAT space through a role, and only there', async () => {
-    const user = memberRow({ spaceAssignments: [{ spaceId: 'sp-1', role: { isActive: true, permissions: { canViewAllTasks: true } } }] });
+    const user = memberRow({
+      spaceAssignments: [{ spaceId: 'sp-1', role: { isActive: true, permissions: { canViewAllTasks: true } } }],
+    });
     const ok = setup(user, task({ spaceId: 'sp-1' }));
     expect(await ok.g.handleJoinTask(ok.s, { taskId: 't1' })).toEqual({ success: true });
     const no = setup(user, task({ spaceId: 'sp-2' }));
@@ -65,7 +93,10 @@ describe('join_task asks the API rule, not just the organization', () => {
   it('refuses a deactivated account and a suspended organization', async () => {
     const off = setup(memberRow({ isActive: false }), task({ assignees: [{ userId: 'u1' }] }));
     expect((await off.g.handleJoinTask(off.s, { taskId: 't1' })).success).toBe(false);
-    const sus = setup(memberRow({ organization: { suspendedAt: new Date() } }), task({ assignees: [{ userId: 'u1' }] }));
+    const sus = setup(
+      memberRow({ organization: { suspendedAt: new Date() } }),
+      task({ assignees: [{ userId: 'u1' }] }),
+    );
     expect((await sus.g.handleJoinTask(sus.s, { taskId: 't1' })).success).toBe(false);
   });
 
@@ -95,7 +126,7 @@ describe('support_typing derives the target from the ticket', () => {
     expect(g.emitted.map((e: any) => [e.room, e.data.from])).toEqual([['user:owner', 'AGENT']]);
   });
 
-  it("a member reaches the agents only for their OWN ticket", async () => {
+  it('a member reaches the agents only for their OWN ticket', async () => {
     const g = setup('owner');
     g.connectedClients.set('s-other', { userId: 'someone', role: 'EMPLOYEE', organizationId: 'o', rooms: [] });
     await g.handleSupportTyping(socket('s-other'), { ticketId: 't1', from: 'CUSTOMER' });
@@ -109,7 +140,6 @@ describe('support_typing derives the target from the ticket', () => {
 describe('authenticate_agent no longer accepts the static platform key', () => {
   it('the platform key alone is refused — only a console staff token opens an agent socket', async () => {
     const g = gatewayWith({});
-    (g as any).platformAdminKey = 'operator-secret';
     const sock = (auth: Record<string, unknown>) => ({ ...socket('a'), handshake: { auth } });
     expect((await g.handleAuthenticateAgent(sock({ platformKey: 'operator-secret' }))).success).toBe(false);
     expect((await g.handleAuthenticateAgent(sock({}))).success).toBe(false);
@@ -120,7 +150,11 @@ describe('authenticate_agent no longer accepts the static platform key', () => {
 describe('revocation reaches live sockets', () => {
   it('a suspended organization loses every socket, other organizations keep theirs', () => {
     const g = gatewayWith({});
-    for (const [id, org] of [['a', 'org-1'], ['b', 'org-1'], ['c', 'org-2']]) {
+    for (const [id, org] of [
+      ['a', 'org-1'],
+      ['b', 'org-1'],
+      ['c', 'org-2'],
+    ]) {
       g.connectedClients.set(id, { userId: id, role: 'EMPLOYEE', organizationId: org, rooms: [] });
       g.sockets.set(id, socket(id));
     }

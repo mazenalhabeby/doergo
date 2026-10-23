@@ -357,7 +357,7 @@ describe('self-decisions', () => {
   it('the org owner (ADMIN) still may — nobody is above them', async () => {
     const svc = approval(own);
     svc.prisma.user = { findFirst: jest.fn().mockResolvedValue({ id: 'lead' }) };
-    svc.emitChanged = jest.fn(); // on every part (a proxy cannot be spied on)
+    svc.changes = { announce: jest.fn() }; // on every part (a proxy cannot be spied on)
     svc.logger = { log: jest.fn(), warn: jest.fn() };
     await expect(svc.approveEntry({ entryId: 'e1', approverId: 'lead', organizationId: ORG })).resolves.toBeDefined();
   });
@@ -365,7 +365,7 @@ describe('self-decisions', () => {
   it('bulk approval passes the scope through (it spread a where-fragment before, i.e. org-wide)', async () => {
     const svc = Object.create(ApprovalService.prototype) as any;
     svc.approveEntry = jest.fn().mockResolvedValue({});
-    svc.emitChanged = jest.fn();
+    svc.changes = { announce: jest.fn() };
     await svc.bulkApprove({ entryIds: ['e1'], approverId: 'm', organizationId: ORG, scopeSpaceIds: ['space-a'] });
     expect(svc.approveEntry.mock.calls[0][0].scopeSpaceIds).toEqual(['space-a']);
     expect(svc.approveEntry.mock.calls[0][0]).not.toHaveProperty('locationId');

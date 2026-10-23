@@ -1,12 +1,24 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { crmCapsIn, crmCapsAnywhere, crmCreateScope, crmSpacesWhere } from '@hbcfield/shared';
+import {
+  crmCapsIn,
+  crmCapsAnywhere,
+  crmCreateScope,
+  crmSpacesWhere,
+  PrismaService,
+  type CrmReach,
+} from '@hbcfield/shared';
 import { notFound, CrmCaller, customerSelect } from './customers-helpers';
-import { CustomersServiceBase } from './customers-service.base';
+import { CrmReachService } from './crm-reach.service';
 
 export { type CrmCaller, type CustomerDetail, type CustomerInput, withContactKeys } from './customers-helpers';
 
 @Injectable()
-export class CustomersService extends CustomersServiceBase {
+export class CustomersService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reach: CrmReachService,
+  ) {}
+
   /** List an org's customers (search + active filter + pagination). */
   async list(data: {
     organizationId: string;
@@ -34,7 +46,7 @@ export class CustomersService extends CustomersServiceBase {
     const page = Math.max(data.page || 1, 1);
     const limit = Math.min(Math.max(data.limit || 20, 1), 100);
     const isPortalPath = data.portalResident === true || !!data.portalId;
-    const reach = await this.crmReachFor(data.caller, data.organizationId);
+    const reach = await this.reach.crmReachFor(data.caller, data.organizationId);
     const and: Record<string, unknown>[] = [];
     /*
       Portal-resident management is a manager surface (not CRM rep scope):
@@ -50,7 +62,7 @@ export class CustomersService extends CustomersServiceBase {
       }
     } else {
       if (!crmCapsAnywhere(reach).canAccess) throw new ForbiddenException('No CRM access');
-      and.push(this.reachableWhere(reach, data.caller));
+      and.push(this.reach.reachableWhere(reach, data.caller));
     }
     const where: Record<string, unknown> = { organizationId: data.organizationId };
     if (data.status === 'active' || !data.status) where.isActive = true;
@@ -139,10 +151,10 @@ export class CustomersService extends CustomersServiceBase {
     // manager surface; CRM clients are reachable by owner/co-manager or view-all.
     // Decided by the workspace the client is filed in (org ∪ that workspace).
     // 404 (not 403) when out of reach, so a member can't probe which ids exist.
-    const reach = await this.crmReachFor(caller, organizationId);
+    const reach = await this.reach.crmReachFor(caller, organizationId);
     const caps = customer.isPortalResident
-      ? this.assertManage(reach, customer, caller)
-      : this.capsOn(reach, customer, caller);
+      ? this.reach.assertManage(reach, customer, caller)
+      : this.reach.capsOn(reach, customer, caller);
 
     // App-access status. `isPortalResident` only means "invited"; a CUSTOMER
     // User bound to this customer is proof they ACCEPTED and can log in. Also
@@ -186,8 +198,8 @@ export class CustomersService extends CustomersServiceBase {
       select: { id: true, spaceId: true, ownerId: true, managerIds: true },
     });
     if (!existing) throw notFound();
-    const reach = await this.crmReachFor(caller, organizationId);
-    this.assertManage(reach, existing, caller, 'Not allowed to delete clients');
+    const reach = await this.reach.crmReachFor(caller, organizationId);
+    this.reach.assertManage(reach, existing, caller, 'Not allowed to delete clients');
     // Grab the portal login ids first so the gateway can bust their cached tokens
     // (instant revocation, not just at the 60s cache TTL).
     const portalUsers = await this.prisma.user.findMany({ where: { customerId: id }, select: { id: true } });
@@ -198,5 +210,79 @@ export class CustomersService extends CustomersServiceBase {
       this.prisma.user.updateMany({ where: { customerId: id }, data: { isActive: false } }),
     ]);
     return { success: true, deactivatedUserIds: portalUsers.map((u) => u.id) };
+  }
+
+  /** Where the caller may work the client book (see CrmReachService). Public: the contacts import and the portal ask it. */
+  crmReachFor(caller: CrmCaller | undefined, organizationId: string): Promise<CrmReach> {
+    return this.reach.crmReachFor(caller, organizationId);
+  }
+
+  /** `crmReachesClientIn` for a caller — all-scope where it is filed, or owns / co-manages it there. */
+  canReach(
+    reach: CrmReach,
+    client: { spaceId?: string | null; ownerId?: string | null; managerIds?: string[] },
+    caller: CrmCaller | undefined,
+  ): boolean {
+    return this.reach.canReach(reach, client, caller);
+  }
+
+  /** `canReach` as a `where` — one rule, so a list and a single-record check cannot disagree. */
+  reachableWhere(reach: CrmReach, caller: CrmCaller | undefined): Record<string, unknown> {
+    return this.reach.reachableWhere(reach, caller);
+  }
+
+  /**
+   * Add each row's contact relationships, in one query for the whole page.
+   *
+   * A company gets a count ("3 contact people"); a person gets the company they
+   * contact, primary first. Both come out of the same read — the ids are already
+   * in hand, and asking twice, or once per row, would be work for a subtitle.
+   */
+  private async decorateContacts(items: Array<Record<string, unknown>>, organizationId: string) {
+    const companyIds = items.filter((c) => c.type === 'COMPANY').map((c) => c.id as string);
+    const personIds = items.filter((c) => c.type !== 'COMPANY').map((c) => c.id as string);
+    if (!companyIds.length && !personIds.length) return items;
+
+    const links = await this.prisma.customerContact.findMany({
+      where: {
+        organizationId,
+        OR: [
+          ...(companyIds.length ? [{ companyId: { in: companyIds } }] : []),
+          ...(personIds.length ? [{ personId: { in: personIds } }] : []),
+        ],
+      },
+      select: {
+        companyId: true,
+        personId: true,
+        isPrimary: true,
+        role: true,
+        company: { select: { id: true, name: true } },
+        person: { select: { id: true, name: true } },
+      },
+      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+    });
+
+    const counts = new Map<string, number>();
+    const primary = new Map<string, { id: string; name: string; role: string | null }>();
+    const worksAt = new Map<string, { id: string; name: string; role: string | null }>();
+    for (const l of links) {
+      counts.set(l.companyId, (counts.get(l.companyId) ?? 0) + 1);
+      // Primary-first ordering above means the first one seen is the one to name.
+      if (!primary.has(l.companyId)) {
+        primary.set(l.companyId, { id: l.person.id, name: l.person.name, role: l.role });
+      }
+      // Ordered primary-first above, so the first one seen is the one to show.
+      if (!worksAt.has(l.personId)) {
+        worksAt.set(l.personId, { id: l.company.id, name: l.company.name, role: l.role });
+      }
+    }
+
+    return items.map((c) => ({
+      ...c,
+      contactCount: c.type === 'COMPANY' ? (counts.get(c.id as string) ?? 0) : 0,
+      // Who to ring at this company — the name the row prints.
+      primaryContact: c.type === 'COMPANY' ? (primary.get(c.id as string) ?? null) : null,
+      contactOf: c.type === 'COMPANY' ? null : (worksAt.get(c.id as string) ?? null),
+    }));
   }
 }

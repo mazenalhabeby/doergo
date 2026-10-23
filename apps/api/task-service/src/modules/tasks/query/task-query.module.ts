@@ -6,6 +6,7 @@ import { HandoverModule } from '../handover/handover.module';
 import { TaskQueryService } from './task-query.service';
 import { TaskDetailService } from './task-detail.service';
 import { TaskActivityService } from './task-activity.service';
+import { TaskSubmissionsService } from './task-submissions.service';
 
 /**
  * Reading jobs: the lists, one job's page, its activity.
@@ -16,7 +17,7 @@ import { TaskActivityService } from './task-activity.service';
     HandoverModule,
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
-  providers: [TaskQueryService, TaskDetailService, TaskActivityService],
+  providers: [TaskQueryService, TaskSubmissionsService, TaskDetailService, TaskActivityService],
   exports: [TaskQueryService, TaskDetailService, TaskActivityService],
 })
 export class TaskQueryModule {}

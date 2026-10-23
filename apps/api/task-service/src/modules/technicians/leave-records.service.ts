@@ -6,16 +6,34 @@ import {
   ABSENCE_WHERE,
 } from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { success } from '@hbcfield/shared';
-import { leaveYearFor } from './leave-ledger.service';
-import { GetTimeOffDto } from './dto';
+import { PrismaService, success } from '@hbcfield/shared';
+import { LeaveLedgerService, leaveYearFor } from './leave-ledger.service';
+import { GetOrgTimeOffDto, GetTimeOffDto } from './dto';
 import { SPACE_BRIEF } from './technicians-helpers';
-import { LeaveRecordsOrgBase } from './leave-records-org.base';
+import { CalendarRulesService } from '../calendar/calendar-rules.service';
+import { CoverService } from './cover.service';
+import { workingDaysOf } from './member-requests';
+import { orgTimeOff } from './org-leave-list';
 import type { Prisma } from '@prisma/client';
 
 /** Leave as a record: entered by the office, listed, counted in working days, the balance. */
 @Injectable()
-export class LeaveRecordsService extends LeaveRecordsOrgBase {
+export class LeaveRecordsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    // The org-wide list carries a cover verdict per pending request (org-leave-list.ts).
+    private readonly cover: CoverService,
+    // What a range of leave COSTS — weekends, rota rest days and holidays left out (shared calendar/days.ts).
+    private readonly calendarRules: CalendarRulesService,
+    // The ONE vacation balance (allowance + adjustments − taken, in the leave year).
+    private readonly leaveLedger: LeaveLedgerService,
+  ) {}
+
+  /** Time off across the organization — or across the spaces a member leads (org-leave-list.ts). */
+  getOrgTimeOff(dto: GetOrgTimeOffDto & { scopeSpaceIds?: string[]; withCover?: boolean }) {
+    return orgTimeOff(this.prisma, this.cover, dto);
+  }
+
   /**
    * Admin: add an already-APPROVED day off for an employee. Unlike
    * requestTimeOff (employee self-service), this allows any date (incl. past,
@@ -90,7 +108,14 @@ export class LeaveRecordsService extends LeaveRecordsOrgBase {
     }
 
     // The office recording a day off is never refused — it records what the range costs.
-    const workingDays = await this.workingDaysOf(data.organizationId, data.technicianId, start, end, true);
+    const workingDays = await workingDaysOf(
+      this.calendarRules,
+      data.organizationId,
+      data.technicianId,
+      start,
+      end,
+      true,
+    );
     const timeOff = await this.prisma.timeOff.create({
       data: {
         technicianId: data.technicianId,

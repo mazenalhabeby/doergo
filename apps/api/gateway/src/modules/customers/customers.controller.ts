@@ -4,7 +4,9 @@ import { Throttle } from '@nestjs/throttler';
 import { DenyExternal } from '../../common/decorators';
 import { moduleAnywhere, parseContactImport, CONTACT_IMPORT_MESSAGES } from '@hbcfield/shared';
 import { CustomerDto, assertClientLocale } from './customers-controller-helpers';
-import { CustomersControllerBase } from './customers-controller.base';
+import { CustomerCrmCalls, crmCaller } from './customer-crm-calls';
+import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
+import { OrgEventsService } from '../../common/events/org-events.service';
 import {
   listCustomers,
   customersDue,
@@ -53,7 +55,13 @@ import { UpdateCustomerContactDto } from './dto/customer-bodies.dto';
   is a workspace's. The service is the boundary on every route here.
 */
 @Controller('customers')
-export class CustomersController extends CustomersControllerBase {
+export class CustomersController {
+  constructor(
+    private readonly crm: CustomerCrmCalls,
+    private readonly authCache: AuthTokenCache,
+    private readonly orgEvents: OrgEventsService,
+  ) {}
+
   // CRM read/work endpoints are authorization-enforced IN the service against the
   // caller's CRM caps + per-record ownership (see customers.service). We pass the
   // caller and drop the flat @RequirePermission so scoped CRM members (not just
@@ -72,7 +80,7 @@ export class CustomersController extends CustomersControllerBase {
     @Query('contacts') contacts?: 'exclude' | 'only' | 'all',
     @Query('type') type?: string,
   ) {
-    return this.auth(listCustomers, {
+    return this.crm.auth(listCustomers, {
       contacts,
       type,
       organizationId: callerOrgId(req.user),
@@ -84,7 +92,7 @@ export class CustomersController extends CustomersControllerBase {
       limit: limit ? Number(limit) : undefined,
       // 'false' → B2B customers only; 'true' → residents only; omitted → all.
       portalResident: portalResident === undefined ? undefined : portalResident === 'true',
-      caller: this.caller(req),
+      caller: crmCaller(req),
     });
   }
 
@@ -101,9 +109,9 @@ export class CustomersController extends CustomersControllerBase {
     @Query('dayEnd') dayEnd?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.auth(customersDue, {
+    return this.crm.auth(customersDue, {
       organizationId: callerOrgId(req.user),
-      caller: this.caller(req),
+      caller: crmCaller(req),
       // ⚠️ CRM must RUN in a workspace the caller is assigned to — read off the
       // session (no lookup), the same question the phone asks before showing
       // the card. A CRM view in an organization whose workspaces all have CRM
@@ -130,7 +138,7 @@ export class CustomersController extends CustomersControllerBase {
     summary: "Hashed keys of the organization's clients — the phone marks 'already a client' without sending a contact",
   })
   matchKeys(@Request() req: AuthedRequest) {
-    return this.auth(customerMatchKeys, { organizationId: callerOrgId(req.user), caller: this.caller(req) });
+    return this.crm.auth(customerMatchKeys, { organizationId: callerOrgId(req.user), caller: crmCaller(req) });
   }
 
   @Post('import')
@@ -150,10 +158,10 @@ export class CustomersController extends CustomersControllerBase {
       });
     }
     const orgId = callerOrgId(req.user);
-    await this.requireSpaceModule(parsed.value.spaceId, orgId, 'crm');
-    return this.authMutation(
+    await this.crm.requireSpaceModule(parsed.value.spaceId, orgId, 'crm');
+    return this.crm.authMutation(
       importCustomerContacts,
-      { organizationId: orgId, body: parsed.value, caller: this.caller(req) },
+      { organizationId: orgId, body: parsed.value, caller: crmCaller(req) },
       orgId,
     );
   }
@@ -177,29 +185,29 @@ export class CustomersController extends CustomersControllerBase {
     @Body() body: UpdateCustomerContactDto,
     @Request() req: AuthedRequest,
   ) {
-    return this.auth(updateCustomerContact, {
+    return this.crm.auth(updateCustomerContact, {
       linkId,
       role: body?.role,
       isPrimary: body?.isPrimary,
       organizationId: callerOrgId(req.user),
-      caller: this.caller(req),
+      caller: crmCaller(req),
     });
   }
 
   @Delete('contacts/:linkId')
   @ApiOperation({ summary: 'Detach a contact person (the person record is kept)' })
   async removeContact(@Param('linkId') linkId: string, @Request() req: AuthedRequest) {
-    return this.auth(removeCustomerContact, {
+    return this.crm.auth(removeCustomerContact, {
       linkId,
       organizationId: callerOrgId(req.user),
-      caller: this.caller(req),
+      caller: crmCaller(req),
     });
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a customer' })
   async get(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return this.auth(getCustomer, { id, organizationId: callerOrgId(req.user), caller: this.caller(req) });
+    return this.crm.auth(getCustomer, { id, organizationId: callerOrgId(req.user), caller: crmCaller(req) });
   }
 
   @Post()
@@ -208,10 +216,10 @@ export class CustomersController extends CustomersControllerBase {
     assertClientLocale(dto);
     const orgId = callerOrgId(req.user);
     if (dto.spaceId) {
-      await this.requireSpaceModule(dto.spaceId, orgId, 'crm');
+      await this.crm.requireSpaceModule(dto.spaceId, orgId, 'crm');
       dto = { ...dto, ownerId: dto.ownerId ?? req.user.id };
     }
-    return this.authMutation(createCustomer, { organizationId: orgId, dto, caller: this.caller(req) }, orgId);
+    return this.crm.authMutation(createCustomer, { organizationId: orgId, dto, caller: crmCaller(req) }, orgId);
   }
 
   @Patch(':id')
@@ -220,10 +228,10 @@ export class CustomersController extends CustomersControllerBase {
     assertClientLocale(dto);
     // Moving a customer into a space requires that space to have the CRM module
     // (parity with create; the service also validates the space belongs to org).
-    if (dto.spaceId) await this.requireSpaceModule(dto.spaceId, callerOrgId(req.user), 'crm');
-    return this.authMutation(
+    if (dto.spaceId) await this.crm.requireSpaceModule(dto.spaceId, callerOrgId(req.user), 'crm');
+    return this.crm.authMutation(
       updateCustomer,
-      { id, organizationId: callerOrgId(req.user), dto, actorId: req.user.id, caller: this.caller(req) },
+      { id, organizationId: callerOrgId(req.user), dto, actorId: req.user.id, caller: crmCaller(req) },
       callerOrgId(req.user),
       id,
     );
@@ -232,10 +240,10 @@ export class CustomersController extends CustomersControllerBase {
   @Delete(':id')
   @ApiOperation({ summary: 'Deactivate a customer (soft delete; revokes any app login)' })
   async remove(@Param('id') id: string, @Request() req: AuthedRequest) {
-    const result: any = await this.auth(deleteCustomer, {
+    const result: any = await this.crm.auth(deleteCustomer, {
       id,
       organizationId: callerOrgId(req.user),
-      caller: this.caller(req),
+      caller: crmCaller(req),
     });
     // Instantly revoke the deactivated portal logins (don't wait for the 60s
     // token-cache TTL) — consistent with every other access-change path.

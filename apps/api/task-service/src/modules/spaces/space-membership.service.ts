@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import {
   success,
   accessAllowsInSpace,
@@ -9,12 +9,20 @@ import {
   personPasses,
 } from '@hbcfield/shared';
 import { assertValidScheduleDays } from './space-helpers';
-import { SpaceServiceBase } from './space-service.base';
+import { PrismaService } from '@hbcfield/shared';
+import { SpaceAnnouncer } from './space-announcer.service';
 import type { ResolvedAccess } from '@hbcfield/shared';
 
 /** Putting a person into a workspace, and taking them out. */
 @Injectable()
-export class SpaceMembershipService extends SpaceServiceBase {
+export class SpaceMembershipService {
+  private readonly logger = new Logger(SpaceMembershipService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly announcer: SpaceAnnouncer,
+  ) {}
+
   // ==================== MEMBER ASSIGNMENT METHODS ====================
 
   /**
@@ -121,7 +129,7 @@ export class SpaceMembershipService extends SpaceServiceBase {
     });
 
     this.logger.log(`Member assignment created/updated: ${assignment.id}`);
-    this.announce('space_roster_changed', data.organizationId, data.locationId);
+    this.announcer.announce('space_roster_changed', data.organizationId, data.locationId);
     // Alias to the legacy shape (locationId/location) for client compat.
     const { space, spaceId, ...rest } = assignment;
     return success({ ...rest, locationId: spaceId, location: space }, 'Member assigned to location successfully');
@@ -162,7 +170,7 @@ export class SpaceMembershipService extends SpaceServiceBase {
     });
 
     this.logger.log(`Assignment removed: ${data.assignmentId}`);
-    this.announce('space_roster_changed', data.organizationId, assignment.spaceId);
+    this.announcer.announce('space_roster_changed', data.organizationId, assignment.spaceId);
     return success(null, 'Assignment removed successfully');
   }
 }

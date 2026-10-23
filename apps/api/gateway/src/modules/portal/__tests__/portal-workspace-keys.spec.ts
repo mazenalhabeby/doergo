@@ -95,7 +95,7 @@ describe('a route that names no workspace narrows by the SAME key', () => {
         for (const key of r.inSpace) {
           const narrowed =
             src.includes(`portalScope(req.user, '${key}')`) ||
-            (key === 'canManagePortals' && src.includes('this.assertManageReach('));
+            (key === 'canManagePortals' && /this\.(?:portalAuth\.)?assertManageReach\(/.test(src));
           expect({ route: r.name, key, narrowed }).toEqual({ route: r.name, key, narrowed: true });
         }
         // Never narrowed by a DIFFERENT key than the one the guard asked.

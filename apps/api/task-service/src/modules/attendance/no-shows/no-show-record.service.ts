@@ -11,7 +11,8 @@ import {
 } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { DAY } from './no-show-record-helpers';
-import { NoShowRecordBase } from './no-show-record.base';
+import { PrismaService } from '@hbcfield/shared';
+import { monthFacts, runHints, runsFor, spaceRows } from './no-show-run-facts';
 
 /**
  * The no-show RECORD and its decisions (shared attendance/no-show.ts):
@@ -25,7 +26,9 @@ import { NoShowRecordBase } from './no-show-record.base';
  *  - `summary` — the Attendance → No-shows record, one row per person.
  */
 @Injectable()
-export class NoShowRecordService extends NoShowRecordBase {
+export class NoShowRecordService {
+  constructor(private readonly prisma: PrismaService) {}
+
   async list(data: {
     organizationId: string;
     days?: number;
@@ -52,15 +55,16 @@ export class NoShowRecordService extends NoShowRecordBase {
     const openRows = rows.filter((r) => isOpenNoShow(r.state));
     const [users, spaces, runs, facts] = await Promise.all([
       peopleFacesAndPresence(this.prisma, userIds),
-      this.spaceRows(
+      spaceRows(
+        this.prisma,
         data.organizationId,
         rows.flatMap((r) => [r.spaceId, r.settledSpaceId]),
       ),
-      this.runsFor(openRows, now),
-      this.monthFacts(openRows),
+      runsFor(this.prisma, openRows, now),
+      monthFacts(this.prisma, openRows),
     ]);
     const uMap = new Map(users.map((u) => [u.id, u]));
-    const hints = await this.runHints(openRows, runs, data.organizationId);
+    const hints = await runHints(this.prisma, openRows, runs, data.organizationId);
 
     return success(
       rows.map((r) => {
@@ -145,7 +149,9 @@ export class NoShowRecordService extends NoShowRecordBase {
 
     if (!isOpenNoShow(inst.state))
       throw new BadRequestException({ code: 'NO_SHOW_ALREADY_DECIDED', message: 'This no-show was already decided.' });
-    const ids = data.wholeRun ? ((await this.runsFor([inst], new Date())).get(inst.id)?.ids ?? [inst.id]) : [inst.id];
+    const ids = data.wholeRun
+      ? ((await runsFor(this.prisma, [inst], new Date())).get(inst.id)?.ids ?? [inst.id])
+      : [inst.id];
     const now = new Date();
     const excuse = data.action === 'excuse';
     const res = await this.prisma.shiftInstance.updateMany({

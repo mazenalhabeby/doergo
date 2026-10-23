@@ -1,12 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { personName, success, recordHistory } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
-import { EntryServiceBase } from './entry-service.base';
+import { PrismaService } from '@hbcfield/shared';
+import { EntryChangeLog } from './entry-change-log';
 
 /** One entry's change history, and deleting an entry. */
 @Injectable()
-export class EntryRecordService extends EntryServiceBase {
+export class EntryRecordService {
+  private readonly logger = new Logger(EntryRecordService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly changes: EntryChangeLog,
+  ) {}
   /**
    * Full edit history for an entry — the per-edit audit rows written on each
    * editEntry (org-scoped, newest-first, served by the [resourceId, createdAt]
@@ -86,7 +93,7 @@ export class EntryRecordService extends EntryServiceBase {
     // Break has onDelete: Cascade, so removing the entry removes its breaks.
     await this.prisma.timeEntry.delete({ where: { id: data.entryId } });
     // The row is gone, so this is the record that it existed and who removed it.
-    await this.auditEntry({
+    await this.changes.audit({
       eventType: 'TIME_ENTRY_DELETED',
       entryId: data.entryId,
       actorId: data.editorId,
@@ -106,7 +113,7 @@ export class EntryRecordService extends EntryServiceBase {
       },
     });
     this.logger.log(`Entry deleted: entry=${data.entryId}, editor=${data.editorId}`);
-    this.emitChanged(data.organizationId, 'delete', data.entryId);
+    this.changes.announce(data.organizationId, 'delete', data.entryId);
     return success({ id: data.entryId }, 'Time entry removed');
   }
 }

@@ -1,13 +1,29 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { dueWave, isOpenToRole, minutesWaited, roleOfferTimings, runWithCronLock } from '@hbcfield/shared';
+import {
+  PrismaService,
+  dueWave,
+  isOpenToRole,
+  minutesWaited,
+  roleOfferTimings,
+  runWithCronLock,
+} from '@hbcfield/shared';
 import { OVER, ROLE_WAVE_CLOSED } from './role-pool-helpers';
-import { RolePoolBase } from './role-pool.base';
+import { RoleOfferService } from './role-offer.service';
 import { emitEvent, roleTaskUnclaimedEvent } from '@hbcfield/shared/microservices';
 
 /** The minute sweep that widens an open role's offer in waves and alerts the creator. */
 @Injectable()
-export class RolePoolSweepService extends RolePoolBase {
+export class RolePoolSweepService {
+  private readonly logger = new Logger(RolePoolSweepService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
+    private readonly offers: RoleOfferService,
+  ) {}
+
   // ── Waves ─────────────────────────────────────────────────────────────
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -57,7 +73,7 @@ export class RolePoolSweepService extends RolePoolBase {
       if (claimed.count === 0) continue;
       moved++;
       try {
-        if (t.openWave < 1) await this.offer(t.id, 1);
+        if (t.openWave < 1) await this.offers.offer(t.id, 1);
         if (due === 2) await this.alertCreator(t.id, now);
       } catch (e) {
         this.logger.error(`Role offer wave for ${t.id} failed: ${e}`);
@@ -86,7 +102,7 @@ export class RolePoolSweepService extends RolePoolBase {
       },
     });
     if (!task || !task.spaceId || !isOpenToRole(task)) return;
-    const ranked = await this.candidates(task.organizationId, task.spaceId, task.openRoleId!, {
+    const ranked = await this.offers.candidates(task.organizationId, task.spaceId, task.openRoleId!, {
       lat: task.locationLat,
       lng: task.locationLng,
     });

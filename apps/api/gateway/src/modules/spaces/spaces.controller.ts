@@ -1,3 +1,4 @@
+// size-exempt: the literal /locations reads (team, rosters) must register before ':id' in this one class
 import { scopeFor } from '../../common/permission-scope';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import {
@@ -28,7 +29,12 @@ import {
 import { capModulesToCatalogue } from '../../common/entitlements';
 import { CreateSpaceDto, UpdateSpaceDto } from './dto';
 import { spaceListScope, shapeSpaceList } from './spaces-controller-helpers';
-import { SpacesControllerBase } from './spaces-controller.base';
+import { WorkspacePlaceDetector } from '../calendar/workspace-place.detector';
+import { RebillService } from '../../common/billing/rebill.service';
+import { SpaceModulesService } from '../../common/space-modules.service';
+import { SpacesService } from './spaces.service';
+import { SpacesQueueService } from './spaces.queue.service';
+import { ChatReachLookup } from '../chat/chat-reach.lookup';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -38,7 +44,16 @@ export { spaceListScope, shapeSpaceList } from './spaces-controller-helpers';
 @ApiBearerAuth()
 @UseInterceptors(LabourCostInterceptor)
 @Controller('locations')
-export class SpacesController extends SpacesControllerBase {
+export class SpacesController {
+  constructor(
+    private readonly locationsService: SpacesService,
+    private readonly locationsQueueService: SpacesQueueService,
+    private readonly billing: RebillService,
+    private readonly placeDetector: WorkspacePlaceDetector,
+    private readonly spaceModules: SpaceModulesService,
+    private readonly chatReach: ChatReachLookup,
+  ) {}
+
   @Post()
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Create a new company location' })
@@ -52,7 +67,7 @@ export class SpacesController extends SpacesControllerBase {
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });
-    this.rebill(callerOrgId(req.user));
+    this.billing.rebill(callerOrgId(req.user));
     // Where is it? Looked up once for its public holidays (in the background).
     this.placeDetector.nudge();
     return created;
@@ -210,7 +225,7 @@ export class SpacesController extends SpacesControllerBase {
       // organization, so a guessed id from another tenant finds nothing.
       organizationId: callerOrgId(req.user),
     });
-    this.rebill(callerOrgId(req.user));
+    this.billing.rebill(callerOrgId(req.user));
     return result;
   }
 
@@ -228,7 +243,7 @@ export class SpacesController extends SpacesControllerBase {
       organizationId: req.user.organizationId,
     });
     // Modules may have changed — and an archived space stops being billed.
-    this.rebill(callerOrgId(req.user));
+    this.billing.rebill(callerOrgId(req.user));
     // …and the module gates read this space's list from a 30-second cache; a
     // module switched on must not stay refused (or off stay allowed) until it lapses.
     this.spaceModules.invalidate(id, callerOrgId(req.user));
@@ -246,7 +261,7 @@ export class SpacesController extends SpacesControllerBase {
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });
-    this.rebill(callerOrgId(req.user));
+    this.billing.rebill(callerOrgId(req.user));
     return result;
   }
 
@@ -259,7 +274,7 @@ export class SpacesController extends SpacesControllerBase {
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });
-    this.rebill(callerOrgId(req.user));
+    this.billing.rebill(callerOrgId(req.user));
     return result;
   }
 

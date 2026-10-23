@@ -11,16 +11,34 @@ import { ReminderSweepService } from './reminder-sweep.service';
 import { EventAnswersService } from './event-answers.service';
 import { EventReadService } from './event-read.service';
 import { AvailabilityService } from './availability.service';
+import { CalendarSourcesService } from './calendar-sources.service';
+import { HolidayOverridesService } from './holiday-overrides.service';
+import { EventViewService } from './event-view.service';
+import { EventPeopleService } from './event-people.service';
+import { EventNoticesService } from './event-notices.service';
+import { EventChecksService } from './event-checks.service';
+import { EventUpdateService } from './event-update.service';
 
 @Module({
-  imports: [PrismaModule, CalendarRulesModule, ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)])],
+  imports: [
+    PrismaModule,
+    CalendarRulesModule,
+    ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
+  ],
   controllers: [CalendarController],
   providers: [
+    CalendarSourcesService,
     CalendarService,
+    EventViewService,
+    EventPeopleService,
+    EventNoticesService,
+    EventChecksService,
+    EventUpdateService,
     EventsService,
     EventAnswersService,
     EventReadService,
     AvailabilityService,
+    HolidayOverridesService,
     HolidaysService,
     FeedService,
     ReminderSweepService,

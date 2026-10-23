@@ -10,18 +10,26 @@ import {
   personName,
   personSearchOr,
   inviteCandidates,
+  PrismaService,
 } from '@hbcfield/shared';
 import { Caller, clean } from './events-helpers';
-import { EventsBase } from './events.base';
+import { EventPeopleService } from './event-people.service';
+import { EventViewService } from './event-view.service';
 
 /** Reading the calendar's events: the items in a window, and the people one may invite. */
 @Injectable()
-export class EventReadService extends EventsBase {
+export class EventReadService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly invitees: EventPeopleService,
+    private readonly view: EventViewService,
+  ) {}
+
   /** Colleagues for the invite picker — the same circle `inviteable` accepts. */
   async people(dto: Caller & { q?: string }) {
     const q = clean(dto.q, 60);
     const wide = isAdmin({ role: dto.role as string }) || dto.canManageUsers || dto.orgWideView;
-    const circle = wide ? null : await this.circleOf(dto);
+    const circle = wide ? null : await this.invitees.circleOf(dto);
     const rows = await inviteCandidates(this.prisma, {
       organizationId: dto.organizationId,
       callerId: dto.userId,
@@ -33,7 +41,7 @@ export class EventReadService extends EventsBase {
 
   /** My events as calendar items, every occurrence in the window. */
   async itemsFor(caller: Caller, from: Date, to: Date): Promise<CalendarItem[]> {
-    const rows = await this.eventsFor(caller.organizationId, [caller.userId], from, to, true);
+    const rows = await this.view.eventsFor(caller.organizationId, [caller.userId], from, to, true);
     const out: CalendarItem[] = [];
     for (const ev of rows) {
       const mine = ev.attendees.find((a) => a.userId === caller.userId);

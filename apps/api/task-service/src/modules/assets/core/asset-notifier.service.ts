@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { personName, type HandoverPlan, peopleIds, personBrief } from '@hbcfield/shared';
-import { AssetNotifierBase } from './asset-notifier.base';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { PrismaService, personName, type HandoverPlan, peopleIds, personBrief } from '@hbcfield/shared';
+import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
+import { AssetAudienceService } from './asset-audience.service';
 import {
   emitEvent,
   assetExpenseDecidedEvent,
@@ -25,10 +27,24 @@ import {
  * Watchers and space routing are chosen "about a member", not "about the
  * register": a shift leader watching a driver is a perfectly good person to
  * hear about their late clock-out and not somebody entitled to the fleet list.
- * Routed people are therefore filtered by `whoCanSee` before anything is sent.
+ * Routed people are therefore filtered by `whoCanSee` (AssetAudienceService) before anything is sent.
  */
 @Injectable()
-export class AssetNotifier extends AssetNotifierBase {
+export class AssetNotifier {
+  private readonly logger = new Logger(AssetNotifier.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly routing: NotificationRoutingService,
+    @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
+    private readonly audience: AssetAudienceService,
+  ) {}
+
+  /** Everyone who could actually decide — see AssetAudienceService.approvers. */
+  approvers(organizationId: string, exceptUserId: string, spaceId?: string | null): Promise<string[]> {
+    return this.audience.approvers(organizationId, exceptUserId, spaceId);
+  }
+
   // ── Expenses ───────────────────────────────────────────────────────────────
 
   /**
@@ -70,9 +86,9 @@ export class AssetNotifier extends AssetNotifierBase {
       const spaceId = asset.category?.spaceId ?? null;
 
       const { ids } = await this.routing.resolveWatchers(entry.authorId, entry.organizationId, 'tasks', false);
-      let recipientIds = await this.whoCanSee(entry.organizationId, ids, spaceId, entry.authorId);
+      let recipientIds = await this.audience.whoCanSee(entry.organizationId, ids, spaceId, entry.authorId);
       if (recipientIds.length === 0) {
-        recipientIds = await this.approvers(entry.organizationId, entry.authorId, spaceId);
+        recipientIds = await this.audience.approvers(entry.organizationId, entry.authorId, spaceId);
       }
       if (recipientIds.length === 0) return;
 

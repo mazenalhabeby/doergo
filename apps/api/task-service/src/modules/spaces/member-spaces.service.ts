@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { assertMemberInScope, notEndedWhere, success, personPasses } from '@hbcfield/shared';
-import { SpaceServiceBase } from './space-service.base';
+import { assertMemberInScope, notEndedWhere, success, personPasses, PrismaService } from '@hbcfield/shared';
 
 /** One member's side: the workspaces they are in, the colleagues they share them with. */
 @Injectable()
-export class MemberSpacesService extends SpaceServiceBase {
+export class MemberSpacesService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * Get all members assigned to a location
    */

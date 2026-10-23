@@ -4,6 +4,7 @@ import { EpicsService } from '../../modules/epics/epics.service';
 import { PhasesService } from '../../modules/phases/phases.service';
 import { recurringParts } from '../../modules/recurring-tasks/__tests__/recurring-tasks.service.fixture';
 import { SpacesService } from '../../modules/spaces/spaces.service';
+import { SpaceAnnouncer } from '../../modules/spaces/space-announcer.service';
 import { AssetProposalService } from '../../modules/assets/proposals/asset-proposal.service';
 
 /**
@@ -84,7 +85,7 @@ describe('client-supplied ids are checked before the write', () => {
 
   it('a workspace’s task type must be the organization’s', async () => {
     prisma.statusWorkflow.findFirst.mockResolvedValue(null);
-    const svc = new SpacesService(prisma, { emit: jest.fn() } as any);
+    const svc = new SpacesService(prisma, new SpaceAnnouncer(prisma, { emit: jest.fn() } as any));
     await expect(
       svc.create({ name: 'W', workflowId: 'theirs', organizationId: ORG, userId: 'u' }),
     ).rejects.toBeInstanceOf(NotFoundException);
@@ -92,8 +93,8 @@ describe('client-supplied ids are checked before the write', () => {
   });
 
   describe('a proposal’s chosen kind', () => {
-    const svc = () =>
-      new AssetProposalService(prisma, {} as any, {} as any, {} as any, {} as any, { emit: jest.fn() } as any, null);
+    // Who is told is ProposalNoticesService's; here it is quiet.
+    const svc = () => new AssetProposalService(prisma, { raised: jest.fn().mockResolvedValue(undefined) } as any, null);
     const raise = () =>
       svc().raise({
         fields: { name: 'Van' } as any,
@@ -120,9 +121,7 @@ describe('client-supplied ids are checked before the write', () => {
       prisma.assetCategory.findFirst.mockResolvedValue({ id: 'kind-1', spaceId: 'depot-A' });
       prisma.spaceAssignment.findFirst.mockResolvedValue({ id: 'sa' });
       prisma.assetProposal.create.mockResolvedValue({ id: 'p' });
-      const quiet = jest.spyOn(AssetProposalService.prototype as any, 'announce').mockResolvedValue(undefined);
       await raise();
-      quiet.mockRestore();
       expect(prisma.assetProposal.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ categoryId: 'kind-1' }) }),
       );

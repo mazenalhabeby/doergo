@@ -3,7 +3,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { taskActor } from '../../common/task-actor';
 import { HandoverDto, ResumeWorkDto, CrewJoinDto, CrewLeaveDto, CrewIssueDto, ChangeLeadDto } from './dto';
-import { TasksControllerBase } from './tasks-controller.base';
+import { TasksQueueService } from './tasks.queue.service';
+import { TasksService } from './tasks.service';
 
 import type { AuthedRequest } from '../../common/request.types';
 /**
@@ -13,7 +14,12 @@ import type { AuthedRequest } from '../../common/request.types';
 @ApiTags('tasks')
 @ApiBearerAuth()
 @Controller('tasks')
-export class TaskCrewController extends TasksControllerBase {
+export class TaskCrewController {
+  constructor(
+    private readonly tasksQueueService: TasksQueueService,
+    private readonly tasksService: TasksService,
+  ) {}
+
   /** "Resume work" on a job paused at a clock-out. The clock gate applies. */
   @Post(':id/resume')
   @ApiOperation({ summary: 'Resume work on a job paused at a clock-out' })

@@ -34,7 +34,6 @@ const ALLOWED = [
   { file: 'apps/api/auth-service/src/common/seed-default-workflow.ts', models: ['StatusWorkflow'] },
   // Deleting/merging a workspace role moves its holders and deletes it in ONE transaction.
   { file: 'apps/api/task-service/src/modules/space-roles/role-admin.service.ts', models: ['AccessRole'] },
-  { file: 'apps/api/task-service/src/modules/space-roles/space-roles.base.ts', models: ['AccessRole'] },
   {
     file: 'apps/api/auth-service/src/modules/invitations/invitation-apply/placement.ts',
     models: ['SpaceAssignment', 'TechnicianSchedule'],

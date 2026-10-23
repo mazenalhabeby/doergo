@@ -1,13 +1,21 @@
 import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { success, personName, personBrief } from '@hbcfield/shared';
+import { success, personName, personBrief, PrismaService } from '@hbcfield/shared';
 import { createOnce } from '../../common/create-once.util';
 import { BODY_MAX, Attachment } from './shift-issues-helpers';
-import { ShiftIssuesBase } from './shift-issues.base';
+import { assertParticipant, loadIssue } from './shift-issue-access';
+import { ShiftIssueFiles } from './shift-issue-files.service';
+import { ShiftIssueNotices } from './shift-issue-notices.service';
 import type { ShiftIssueStatus } from '@prisma/client';
 
 /** Working an issue: a message, acknowledging it, giving it to somebody, changing its status. */
 @Injectable()
-export class ShiftIssueActionsService extends ShiftIssuesBase {
+export class ShiftIssueActionsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly files: ShiftIssueFiles,
+    private readonly notices: ShiftIssueNotices,
+  ) {}
+
   // ── add a message to the thread ───────────────────────────────────────────────
   async addMessage(data: {
     organizationId: string;
@@ -20,10 +28,10 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
     /** Made on the phone: a message sent twice is still one message. */
     id?: string;
   }) {
-    const issue = await this.loadIssue(data.issueId, data.organizationId);
-    this.assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
+    const issue = await loadIssue(this.prisma, data.issueId, data.organizationId);
+    assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
     const body = (data.body ?? '').trim();
-    const attachments = this.cleanAttachments(issue, data.attachments);
+    const attachments = this.files.cleanAttachments(issue, data.attachments);
     if (!body && !attachments.length) throw new BadRequestException('Empty message');
 
     const { row: event, created } = await createOnce({
@@ -45,16 +53,16 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
     if (!created) {
       return success({
         ...event,
-        attachments: await this.signAttachments(issue, event.attachments),
-        actorName: await this.nameOf(data.callerUserId),
+        attachments: await this.files.signAttachments(issue, event.attachments),
+        actorName: await this.notices.nameOf(data.callerUserId),
       });
     }
     await this.prisma.shiftIssue.update({ where: { id: issue.id }, data: { updatedAt: new Date() } });
-    await this.broadcast(issue, data.callerUserId, event);
+    await this.notices.broadcast(issue, data.callerUserId, event);
     const signed = {
       ...event,
-      attachments: await this.signAttachments(issue, event.attachments),
-      actorName: await this.nameOf(data.callerUserId),
+      attachments: await this.files.signAttachments(issue, event.attachments),
+      actorName: await this.notices.nameOf(data.callerUserId),
     };
     return success(signed);
   }
@@ -67,7 +75,7 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
     canManage?: boolean;
     ledSpaceIds?: string[];
   }) {
-    const issue = await this.loadIssue(data.issueId, data.organizationId);
+    const issue = await loadIssue(this.prisma, data.issueId, data.organizationId);
     if (!data.canManage && issue.assignedToId !== data.callerUserId)
       throw new ForbiddenException('Only the responsible can acknowledge');
     const updated = await this.prisma.shiftIssue.update({
@@ -81,7 +89,7 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
     const event = await this.prisma.shiftIssueEvent.create({
       data: { issueId: issue.id, type: 'ACKNOWLEDGED', actorId: data.callerUserId },
     });
-    await this.broadcast(updated, data.callerUserId, event);
+    await this.notices.broadcast(updated, data.callerUserId, event);
     return success(updated);
   }
 
@@ -94,7 +102,7 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
     ledSpaceIds?: string[];
     assignToId: string;
   }) {
-    const issue = await this.loadIssue(data.issueId, data.organizationId);
+    const issue = await loadIssue(this.prisma, data.issueId, data.organizationId);
     if (!data.canManage) throw new ForbiddenException('Only the responsible can dispatch');
     const assignee = await personBrief(this.prisma, data.assignToId, { organizationId: data.organizationId });
     if (!assignee) throw new BadRequestException('Assignee not found');
@@ -115,7 +123,7 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
         metadata: { assignedToId: assignee.id, assignedToName },
       },
     });
-    await this.broadcast(updated, data.callerUserId, event, [assignee.id]);
+    await this.notices.broadcast(updated, data.callerUserId, event, [assignee.id]);
     return success({ ...updated, assigneeName: assignedToName });
   }
 
@@ -129,7 +137,7 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
     status: string;
     note?: string;
   }) {
-    const issue = await this.loadIssue(data.issueId, data.organizationId);
+    const issue = await loadIssue(this.prisma, data.issueId, data.organizationId);
     // Reporter can only cancel their own; managers/assignee can drive the rest.
     const isAssignee = issue.assignedToId === data.callerUserId;
     if (!data.canManage && !isAssignee && !(issue.reportedById === data.callerUserId && data.status === 'CANCELED')) {
@@ -160,7 +168,7 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
         metadata: { fromStatus: issue.status, toStatus: data.status },
       },
     });
-    await this.broadcast(updated, data.callerUserId, event);
+    await this.notices.broadcast(updated, data.callerUserId, event);
     return success(updated);
   }
 }

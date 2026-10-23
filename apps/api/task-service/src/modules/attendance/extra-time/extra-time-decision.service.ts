@@ -1,8 +1,18 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { success, TimeEntryStatus } from '@hbcfield/shared';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Optional,
+} from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { PrismaService, SERVICE_NAMES, success, TimeEntryStatus } from '@hbcfield/shared';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { decidableExtraTimeWhere, overtimeEndFor, refusalNudge } from './extra-time-helpers';
-import { ExtraTimeBase } from './extra-time.base';
+import { CountedTimeService } from '../core/counted-time.service';
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { relabelAfterEndMoved } from './label-end-moved';
 import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
 
@@ -11,7 +21,18 @@ import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/mic
  * overtime, adding overtime to a closed shift.
  */
 @Injectable()
-export class ExtraTimeDecisionService extends ExtraTimeBase {
+export class ExtraTimeDecisionService {
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION)
+    private readonly notificationClient: ClientProxy,
+    private readonly countedTime: CountedTimeService,
+    // Who may decide, nobody their own, and the ONE approval path.
+    private readonly approval: ExtraTimeApprovalService,
+    // Office rules: a refusal ends any two-step. Global in the app; absent only in narrow unit tests.
+    @Optional() private readonly rules?: ApprovalRulesService,
+  ) {}
+
   /**
    * Remove an APPROVED overtime round as if it had never been approved.
    *
@@ -38,9 +59,9 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
       where: { id: round.timeEntryId, organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) },
     });
     if (!entry) throw new NotFoundException('Approved overtime not found');
-    const allowed = await this.userCanApproveOvertime(data.actorId, entry.locationId, data.organizationId);
+    const allowed = await this.approval.userCanApproveOvertime(data.actorId, entry.locationId, data.organizationId);
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
-    await this.assertNotSelfOvertimeDecision(data.actorId, entry.userId, data.organizationId);
+    await this.approval.assertNotSelfOvertimeDecision(data.actorId, entry.userId, data.organizationId);
 
     const later = await this.prisma.overtimeRequest.count({
       where: { timeEntryId: entry.id, status: { in: ['APPROVED', 'COMPLETED'] }, cycle: { gt: round.cycle } },
@@ -104,7 +125,7 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
     });
     if (!entry || !entry.clockOutAt) throw new NotFoundException('Time entry not found');
     if (entry.overtimeRequests.length) {
-      return this.approveExtraTime({
+      return this.approval.approveExtraTime({
         approverId: data.approverId,
         entryId: entry.id,
         minutes,
@@ -114,9 +135,9 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
       });
     }
 
-    const allowed = await this.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
+    const allowed = await this.approval.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
-    await this.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
+    await this.approval.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
 
     const now = new Date();
     const newExpected = overtimeEndFor({
@@ -179,9 +200,9 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
     if (!entry) throw new BadRequestException('No matching open shift found');
     const closed = entry.status === TimeEntryStatus.CLOCKED_OUT;
 
-    const allowed = await this.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
+    const allowed = await this.approval.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
-    await this.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
+    await this.approval.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
     // A rejection ends any two-step under an office rule.
     await this.rules?.clear(data.organizationId, 'overtime', entry.id);
 

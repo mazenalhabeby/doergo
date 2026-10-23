@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { HttpStatus } from '@nestjs/common';
-import { hashCode } from '@hbcfield/shared';
+import { hashCode, PrismaService, SERVICE_NAMES } from '@hbcfield/shared';
 import {
   normalizeAccessProfile,
   Role,
@@ -8,11 +9,14 @@ import {
   loadOrgPermissionCeiling,
   type PermissionSet,
 } from '@hbcfield/shared';
-import { InvitationServiceBase } from './invitation-service.base';
+import { checkExternalSpaceGrant } from './invitation-external-grant';
+import { clientInviteLocale } from './invitation-locale';
 import {
+  capAccessProfilePerms,
   checkPreassignedOrgRole,
   createdInvitationView,
   customerTargetRefusal,
+  generateCode,
   invitationExpiresAt,
   invitationTargetFields,
   refuse,
@@ -23,7 +27,14 @@ import {
 import { emitEvent, invitationCreatedEvent } from '@hbcfield/shared/microservices';
 
 @Injectable()
-export class InvitationService extends InvitationServiceBase {
+export class InvitationService {
+  private readonly logger = new Logger(InvitationService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+  ) {}
+
   /**
    * Create a new invitation.
    * ADMIN can invite DISPATCHER or TECHNICIAN.
@@ -67,7 +78,7 @@ export class InvitationService extends InvitationServiceBase {
       spacePermissions: null,
     };
     if (inviteIsExternal || data.spacePermissions != null) {
-      const checked = await this.checkExternalSpaceGrant(data, creatorIsAdmin, inviteIsExternal);
+      const checked = await checkExternalSpaceGrant(this.prisma, data, creatorIsAdmin, inviteIsExternal);
       if ('refusal' in checked) return checked.refusal;
       externalGrant = checked;
     }
@@ -122,7 +133,7 @@ export class InvitationService extends InvitationServiceBase {
           // more than the creator holds. Only read for a member invite.
           accessProfile:
             data.targetRole === Role.EMPLOYEE
-              ? this.capAccessProfilePerms(normalizeAccessProfile(data.accessProfile), creatorIsAdmin, creatorPerms)
+              ? capAccessProfilePerms(normalizeAccessProfile(data.accessProfile), creatorIsAdmin, creatorPerms)
               : undefined,
         }),
       },
@@ -145,7 +156,7 @@ export class InvitationService extends InvitationServiceBase {
   /** A fresh code whose hash no invitation holds yet — null after five collisions. */
   private async uniqueInvitationCode(): Promise<{ code: string; codeHash: string } | null> {
     for (let attempts = 0; attempts < 5; attempts++) {
-      const code = this.generateCode();
+      const code = generateCode();
       const codeHash = hashCode(code);
       const existing = await this.prisma.invitation.findUnique({ where: { codeHash } });
       if (!existing) return { code, codeHash };
@@ -167,7 +178,7 @@ export class InvitationService extends InvitationServiceBase {
     const email = data.email!.trim();
     // Outside the try: the lookup already turns a failure into English.
     const clientLocale = isCustomerInvite
-      ? await this.clientInviteLocale(data.organizationId, email, data.customerId)
+      ? await clientInviteLocale(this.prisma, this.logger, data.organizationId, email, data.customerId)
       : undefined;
     try {
       emitEvent(this.notificationClient, invitationCreatedEvent, {

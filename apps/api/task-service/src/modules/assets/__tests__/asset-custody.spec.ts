@@ -1,5 +1,7 @@
 import { AssetExpenseReviewService } from '../expenses/asset-expense-review.service';
+import { AssetExpenseGateService } from '../expenses/asset-expense-gate.service';
 import { CustodyReadService } from '../custody/custody-read.service';
+import { CustodyWriterService } from '../custody/custody-writer.service';
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
@@ -58,6 +60,7 @@ describe('AssetCustodyService.handOver', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        CustodyWriterService,
         AssetCustodyService,
         CustodyReadService,
         { provide: PrismaService, useValue: prisma },
@@ -222,6 +225,7 @@ describe('filing an expense is gated on custody', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        AssetExpenseGateService,
         AssetExpenseService,
         AssetExpenseReviewService,
         { provide: PrismaService, useValue: prisma },
@@ -368,6 +372,7 @@ describe('reviewing one', () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        AssetExpenseGateService,
         AssetExpenseService,
         AssetExpenseReviewService,
         { provide: PrismaService, useValue: prisma },

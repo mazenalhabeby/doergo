@@ -1,16 +1,35 @@
 import { randomUUID } from 'node:crypto';
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { clampListLimit, parseHistoryCursor, messagePreview } from '@hbcfield/shared';
+import { Injectable, BadRequestException, Inject } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { clampListLimit, parseHistoryCursor, messagePreview, PrismaService, SERVICE_NAMES } from '@hbcfield/shared';
 import { findPrior } from '../../common/create-once.util';
 import { CHAT_USER_SELECT as userSelect, previewOf, visibleMessage } from './chat-shape';
 import type { TaskAccessFacts } from '../tasks/access/task-access.service';
-import { ChatServiceBase } from './chat-service.base';
+import { findMembership } from './chat-membership';
+import { ChatCountersService } from './chat-counters.service';
+import { ChatReachService } from './chat-reach.service';
+import { ChatFilesService } from './chat-files.service';
+import { ChatTasksService } from './chat-tasks.service';
 import { emitEvent, chatBadgeEvent, chatMessageEvent, chatReadEvent } from '@hbcfield/shared/microservices';
 import type { Prisma } from '@prisma/client';
 
 /** Inside one conversation: its history, sending (with an attachment), marking read, muting. */
 @Injectable()
-export class ChatMessagesService extends ChatServiceBase {
+export class ChatMessagesService {
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+    private readonly counters: ChatCountersService,
+    private readonly reach: ChatReachService,
+    private readonly files: ChatFilesService,
+    private readonly tasks: ChatTasksService,
+  ) {}
+
+  /** Membership is the grant (chat-membership.ts); kept as a method so callers and specs share one seam. */
+  private assertMember(conversationId: string, userId: string) {
+    return findMembership(this.prisma, conversationId, userId);
+  }
+
   // ── message history: a page OLDER than the cursor, newest first then reversed ─
   // The cursor is "createdAt|id" (shared historyCursor), so two messages written
   // in the same millisecond are never skipped or repeated between pages.

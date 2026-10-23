@@ -6,6 +6,9 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CREW_CODES } from '@hbcfield/shared';
 import { CrewService } from '../handover/crew.service';
+import { CrewReader } from '../handover/crew-reader.service';
+import { CrewPresenceService } from '../handover/crew-presence.service';
+import { CrewLeadService } from '../handover/crew-lead.service';
 import { JobTimeService } from '../handover/job-time.service';
 import { TaskAccessService } from '../access/task-access.service';
 
@@ -67,7 +70,12 @@ function setup(opts: { task?: Record<string, unknown>; events?: any[]; onClock?:
   const clockGate: any = { assertWorkerClockedIn: jest.fn().mockResolvedValue({ userId: 'x', clockInAt: T('07:00') }) };
   const jobPause: any = { workingJobsOf: jest.fn().mockResolvedValue([]), pauseOnLeave: jest.fn().mockResolvedValue(true) };
   const emit = jest.fn();
-  const service = new CrewService(prisma, workflows, clockGate, jobPause, new JobTimeService(prisma, workflows), { emit } as any, new TaskAccessService(prisma));
+  const jobTime = new JobTimeService(prisma, workflows);
+  const notifications = { emit } as any;
+  const reader = new CrewReader(prisma, workflows, jobTime, new TaskAccessService(prisma));
+  const presence = new CrewPresenceService(prisma, reader, jobTime, jobPause, clockGate, notifications);
+  const lead = new CrewLeadService(prisma, reader, jobTime, notifications);
+  const service = new CrewService(prisma, reader, presence, lead, jobTime, notifications);
   return { service, prisma, events, clockGate, jobPause, emit, task };
 }
 

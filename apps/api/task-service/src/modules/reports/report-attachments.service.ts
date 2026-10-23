@@ -1,18 +1,26 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
+import { Injectable, Inject, Logger, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { newObjectKey, requireObjectStore, OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';
 import { createOnce } from '../../common/create-once.util';
-import { Role, success, assertFoundInOrg } from '@hbcfield/shared';
+import { Role, success, assertFoundInOrg, PrismaService } from '@hbcfield/shared';
 import {
   REPORT_ALLOWED_TYPES,
   REPORT_MAX_FILE_SIZE,
   REPORT_UPLOAD_TTL_SECONDS,
   reportKeyPrefixes,
 } from './reports-helpers';
-import { ReportsBase } from './reports.base';
+import { MediaSigner } from '../../common/storage/media-signer.service';
 
 /** A service report's photos: upload link, add, delete. */
 @Injectable()
-export class ReportAttachmentsService extends ReportsBase {
+export class ReportAttachmentsService {
+  private readonly logger = new Logger(ReportAttachmentsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+    private readonly media: MediaSigner,
+  ) {}
+
   /**
    * Add an attachment to the report
    * Called after file is uploaded to S3
@@ -53,7 +61,11 @@ export class ReportAttachmentsService extends ReportsBase {
     // arbitrary key, which would put another report's (or tenant's) file into
     // this report's gallery and PDF behind a signed link. (Sec audit H5.)
     const key = typeof data.fileKey === 'string' && data.fileKey ? data.fileKey : store.keyFromUrl(data.fileUrl);
-    if (!key || key.includes('..') || !reportKeyPrefixes(report.organizationId, data.reportId).some((p) => key.startsWith(p))) {
+    if (
+      !key ||
+      key.includes('..') ||
+      !reportKeyPrefixes(report.organizationId, data.reportId).some((p) => key.startsWith(p))
+    ) {
       throw new BadRequestException('Invalid file');
     }
     if (!data.fileName || data.fileName.length > 255) {
@@ -80,20 +92,21 @@ export class ReportAttachmentsService extends ReportsBase {
       id: data.attachmentId,
       find: (id) => this.prisma.reportAttachment.findUnique({ where: { id } }),
       isSame: (a) => a.reportId === data.reportId,
-      create: () => this.prisma.reportAttachment.create({
-      data: {
-        ...(data.attachmentId ? { id: data.attachmentId } : {}),
-        reportId: data.reportId,
-        type: data.type,
-        fileName: data.fileName,
-        fileKey: key,
-        // Written for app 1.0.5 only; nothing server-side reads it any more.
-        fileUrl: store.privateUrl(key),
-        mimeType,
-        fileSize: object.sizeBytes,
-        caption: data.caption,
-      },
-      }),
+      create: () =>
+        this.prisma.reportAttachment.create({
+          data: {
+            ...(data.attachmentId ? { id: data.attachmentId } : {}),
+            reportId: data.reportId,
+            type: data.type,
+            fileName: data.fileName,
+            fileKey: key,
+            // Written for app 1.0.5 only; nothing server-side reads it any more.
+            fileUrl: store.privateUrl(key),
+            mimeType,
+            fileSize: object.sizeBytes,
+            caption: data.caption,
+          },
+        }),
     });
 
     return success(await this.media.sign(attachment));

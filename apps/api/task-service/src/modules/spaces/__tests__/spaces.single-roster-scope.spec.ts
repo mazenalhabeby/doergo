@@ -19,7 +19,7 @@ describe('SpaceRosterService.getLocationAssignments — space scope', () => {
       },
       task: { findMany: jest.fn().mockResolvedValue([]) },
     };
-    return { prisma, service: new SpaceRosterService(prisma, { emit: jest.fn() } as any) };
+    return { prisma, service: new SpaceRosterService(prisma) };
   }
 
   it("'own' scope: a space the caller is not assigned to reads as not found", async () => {

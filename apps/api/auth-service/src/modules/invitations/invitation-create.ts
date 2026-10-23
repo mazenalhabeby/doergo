@@ -1,4 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { Prisma } from '@prisma/client';
 import {
   Role,
@@ -12,6 +13,9 @@ import {
   SHARED_ROLE_WHERE,
   type PermissionSet,
   assetInOrg,
+  normalizeAccessProfile,
+  INVITATION_CODE_LENGTH,
+  INVITATION_CODE_CHARSET,
 } from '@hbcfield/shared';
 import type { PrismaService } from '@hbcfield/shared';
 import { jsonColumn } from '../../common/records/json-column';
@@ -225,4 +229,41 @@ export function createdInvitationView(invitation: CreatedInvitation, code: strin
     createdBy: invitation.createdBy,
     createdAt: invitation.createdAt.toISOString(),
   };
+}
+
+/**
+ * Cap an Access Profile's permission flags at the creator's ceiling. For a true
+ * admin the profile passes through unchanged; otherwise any permission flag the
+ * creator does not hold is forced false, so an invite can never grant more than
+ * its creator (privilege escalation via the Access Profile).
+ */
+export function capAccessProfilePerms(
+  profile: ReturnType<typeof normalizeAccessProfile>,
+  isAdmin: boolean,
+  creatorPerms: Record<string, boolean | undefined>,
+): ReturnType<typeof normalizeAccessProfile> {
+  if (!profile || isAdmin) return profile;
+  const canCreateTasks = profile.canCreateTasks && creatorPerms.canCreateTasks === true;
+  return {
+    ...profile,
+    canCreateTasks,
+    taskCreationScope: canCreateTasks ? profile.taskCreationScope : 'NONE',
+    canAssignTasks: profile.canAssignTasks && creatorPerms.canAssignTasks === true,
+    canViewAllTasks: profile.canViewAllTasks && creatorPerms.canViewAllTasks === true,
+    canManageUsers: profile.canManageUsers && creatorPerms.canManageUsers === true,
+    canViewReports: profile.canViewReports && creatorPerms.canViewReports === true,
+  };
+}
+
+/**
+ * Generate a short alphanumeric code using secure randomness.
+ * Uses a charset that excludes confusing characters (I, O, 0, 1).
+ */
+export function generateCode(): string {
+  const bytes = randomBytes(INVITATION_CODE_LENGTH);
+  let code = '';
+  for (let i = 0; i < INVITATION_CODE_LENGTH; i++) {
+    code += INVITATION_CODE_CHARSET[bytes[i] % INVITATION_CODE_CHARSET.length];
+  }
+  return code;
 }

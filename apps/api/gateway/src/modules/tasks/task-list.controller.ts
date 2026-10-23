@@ -7,7 +7,8 @@ import { RequirePermissionInSpace } from '../../common/decorators';
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { taskActor } from '../../common/task-actor';
 import { normalizeQueryParams } from './tasks-controller-helpers';
-import { TasksControllerBase } from './tasks-controller.base';
+import { TasksService } from './tasks.service';
+import { assertMayAssignIn } from './task-write-checks';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -19,7 +20,9 @@ import { callerOrgId } from '../../common/caller-org';
 @ApiTags('tasks')
 @ApiBearerAuth()
 @Controller('tasks')
-export class TaskListController extends TasksControllerBase {
+export class TaskListController {
+  constructor(private readonly tasksService: TasksService) {}
+
   // Literal route registered before the param route so it can't be shadowed.
   @Post('resync-all')
   @Roles(Role.ADMIN)
@@ -149,7 +152,7 @@ export class TaskListController extends TasksControllerBase {
   @ApiOperation({ summary: 'Work roles a task in this workspace can be opened to, with how many hold each' })
   @ApiQuery({ name: 'spaceId', required: true })
   async roleOptions(@Query('spaceId') spaceId: string, @Request() req: AuthedRequest) {
-    this.assertMayAssignIn(req, spaceId);
+    assertMayAssignIn(req, spaceId);
     return this.tasksService.roleTaskOptions({ organizationId: callerOrgId(req.user), spaceId: String(spaceId ?? '') });
   }
 
@@ -159,7 +162,7 @@ export class TaskListController extends TasksControllerBase {
   @ApiQuery({ name: 'spaceId', required: true })
   @ApiQuery({ name: 'roleId', required: true })
   async rolePreview(@Query() q: Record<string, string>, @Request() req: AuthedRequest) {
-    this.assertMayAssignIn(req, q.spaceId);
+    assertMayAssignIn(req, q.spaceId);
     const num = (v?: string) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null);
     return this.tasksService.roleTaskPreview({
       userId: req.user.id,

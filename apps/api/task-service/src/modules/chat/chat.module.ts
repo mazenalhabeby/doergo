@@ -5,6 +5,7 @@ import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 import { ChatCountersService } from './chat-counters.service';
 import { ChatReachService } from './chat-reach.service';
+import { ChatContactTargets } from './chat-contact-targets.service';
 import { ChatCrossOrgService } from './chat-cross-org.service';
 import { ChatEditService } from './chat-edit.service';
 import { ChatFilesService } from './chat-files.service';
@@ -19,6 +20,7 @@ export const CHAT_PROVIDERS = [
   ChatMessagesService,
   ChatCountersService,
   ChatReachService,
+  ChatContactTargets,
   ChatCrossOrgService,
   ChatEditService,
   ChatFilesService,

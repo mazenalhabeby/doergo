@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+// size-exempt: one office correction read top to bottom — check, recompute, one write, then its effects
+import { Injectable, NotFoundException, BadRequestException, Logger, Optional } from '@nestjs/common';
 import {
   success,
   judgedByLabelRules,
@@ -12,12 +13,29 @@ import { assertNotSelfDecision } from '../core/self-decision';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { approvalFor } from '../core/attendance-occurrence';
 import { editTimeFlags, officeCloseFacts } from './entry-edit-labels';
-import { EntryServiceBase } from './entry-service.base';
+import { PrismaService } from '@hbcfield/shared';
+import { JobPauseService } from '../../tasks/handover/job-pause.service';
+import { CountedTimeService } from '../core/counted-time.service';
+import { ShiftRematchService } from '../shifts/shift-rematch.service';
+import { EntryChangeLog } from './entry-change-log';
+import { shiftExpectation } from './shift-expectation';
 import type { Prisma } from '@prisma/client';
 
 /** The office correcting one entry: times, rests, the reason — audited. */
 @Injectable()
-export class EntryEditService extends EntryServiceBase {
+export class EntryEditService {
+  private readonly logger = new Logger(EntryEditService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    // An admin editing hours moves the paid figure like any other close path.
+    private readonly countedTime: CountedTimeService,
+    private readonly changes: EntryChangeLog,
+    // An edited entry that still holds no shift gets another look at the rota.
+    @Optional() private readonly rematch?: ShiftRematchService,
+    // A manager closing an open shift ends it like any clock-out: jobs left in work pause.
+    @Optional() private readonly jobPause?: JobPauseService,
+  ) {}
   /**
    * Edit a time entry (manager correction)
    */
@@ -133,7 +151,8 @@ export class EntryEditService extends EntryServiceBase {
     let toleranceMin: number | undefined;
     let labelFacts = judgedByLabelRules(entry) ? readLabelFacts(entry.labelFacts) : null;
     if (timesChanged) {
-      const edited = editTimeFlags({ entry, flags, expectation: await this.expectationFor(entry), newClockIn, newClockOut });
+      const expectation = await shiftExpectation(this.prisma, this.countedTime, entry);
+      const edited = editTimeFlags({ entry, flags, expectation, newClockIn, newClockOut });
       ({ flags, toleranceMin } = edited);
       labelFacts = edited.labelFacts ?? labelFacts;
 
@@ -270,7 +289,7 @@ export class EntryEditService extends EntryServiceBase {
     cmp('clockOutAt', entry.clockOutAt, updated.clockOutAt);
     cmp('notes', entry.notes, updated.notes);
     cmp('timezone', entry.timezone, updated.timezone);
-    await this.auditEntry({
+    await this.changes.audit({
       eventType: 'TIME_ENTRY_EDITED',
       entryId: data.entryId,
       actorId: data.editorId,
@@ -289,7 +308,7 @@ export class EntryEditService extends EntryServiceBase {
         actorId: data.editorId,
       });
     }
-    this.emitChanged(data.organizationId, 'edit', data.entryId);
+    this.changes.announce(data.organizationId, 'edit', data.entryId);
     return success(updated, 'Time entry updated');
   }
 }

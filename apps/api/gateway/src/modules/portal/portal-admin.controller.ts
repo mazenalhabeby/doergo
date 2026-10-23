@@ -20,7 +20,9 @@ import { join } from 'path';
 import { mkdir, writeFile } from 'fs/promises';
 import { portalScope } from '../../common/portal-scope';
 import { assignSpaceIds } from '../../common/task-actor';
-import { PortalAdminControllerBase } from './portal-admin-controller.base';
+import { ServiceCalls } from '../../common/microservices/service-calls';
+import { StorageService } from '../../common/storage/storage.service';
+import { PortalAdminCalls } from './portal-admin-calls';
 import { portalList, portalCreate, portalGet, portalUpdate, portalDelete } from '@hbcfield/shared/microservices';
 import {
   portalListRequestsByPortal,
@@ -60,14 +62,20 @@ import { CreatePortalDto, TriageRequestDto, UpdatePortalDto } from './dto/portal
 @ApiTags('portal-admin')
 @ApiBearerAuth()
 @Controller('portal/admin')
-export class PortalAdminController extends PortalAdminControllerBase {
+export class PortalAdminController {
+  constructor(
+    private readonly services: ServiceCalls,
+    private readonly storage: StorageService,
+    private readonly portalAuth: PortalAdminCalls,
+  ) {}
+
   // ── Portals ──
 
   @Get('portals')
   @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: 'List the org’s portals (those in the caller’s workspaces)' })
   listPortals(@Request() req: AuthedRequest) {
-    return this.auth(portalList, {
+    return this.portalAuth.ask(portalList, {
       organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
     });
@@ -82,7 +90,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @DenyExternal()
   @ApiOperation({ summary: 'Create a portal (from a template)' })
   createPortal(@Body() body: CreatePortalDto, @Request() req: AuthedRequest) {
-    return this.auth(portalCreate, {
+    return this.portalAuth.ask(portalCreate, {
       templateKey: body?.templateKey,
       name: body?.name,
       organizationId: callerOrgId(req.user),
@@ -93,7 +101,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: 'Get a portal (config + categories)' })
   getPortal(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return this.auth(portalGet, {
+    return this.portalAuth.ask(portalGet, {
       id,
       organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
@@ -153,7 +161,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
     // Reach BEFORE the bytes are stored: the setter below would refuse a portal
     // outside the caller's workspaces, but only after the file had been written
     // under that portal's key.
-    await this.assertManageReach(req, { portalId: id });
+    await this.portalAuth.assertManageReach(req, { portalId: id });
     // Object storage so any gateway replica can serve it — see StorageService.
     const fileName = `${Date.now()}.${ext}`;
     let coverImageUrl: string;
@@ -165,7 +173,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
       await writeFile(join(dir, fileName), file.buffer);
       coverImageUrl = `/uploads/portals/${id}/${fileName}`;
     }
-    await this.auth(portalUpdate, {
+    await this.portalAuth.ask(portalUpdate, {
       id,
       organizationId: callerOrgId(req.user),
       coverImageUrl,
@@ -179,7 +187,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: 'Remove the portal cover image' })
   removeCover(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return this.auth(portalUpdate, {
+    return this.portalAuth.ask(portalUpdate, {
       id,
       organizationId: callerOrgId(req.user),
       coverImageUrl: null,
@@ -223,7 +231,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
   updatePortal(@Param('id') id: string, @Body() body: UpdatePortalDto, @Request() req: AuthedRequest) {
     // Whitelisted: a spread body also carried `coverImageUrl` (any string, onto
     // a page every resident opens) — the cover has its own upload route.
-    return this.auth(portalUpdate, {
+    return this.portalAuth.ask(portalUpdate, {
       name: body?.name,
       templateKey: body?.templateKey,
       reseed: body?.reseed,
@@ -242,7 +250,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @DenyExternal()
   @ApiOperation({ summary: 'Delete a portal' })
   deletePortal(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return this.auth(portalDelete, {
+    return this.portalAuth.ask(portalDelete, {
       id,
       organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),

@@ -8,8 +8,9 @@ type Public<T> = { [K in keyof T]: T[K] };
 /** Every service split out of OvertimeRecordService, as ONE object — the tests were written against the single class. */
 export type OvertimeRecordServiceParts = Public<OvertimeRecordService> & Public<OvertimeSummaryService>;
 
-export function overtimeRecordParts(...args: unknown[]): OvertimeRecordServiceParts {
-  const overtimeRecordService = new (OvertimeRecordService as unknown as new (...a: unknown[]) => object)(...args) as any;
-  const overtimeSummaryService = new (OvertimeSummaryService as unknown as new (...a: unknown[]) => object)(...args) as any;
-  return combinedServices<OvertimeRecordServiceParts>(overtimeRecordService, overtimeSummaryService);
+export function overtimeRecordParts(prisma?: unknown): OvertimeRecordServiceParts {
+  return combinedServices<OvertimeRecordServiceParts>(
+    new OvertimeRecordService(prisma as never),
+    new OvertimeSummaryService(prisma as never),
+  );
 }

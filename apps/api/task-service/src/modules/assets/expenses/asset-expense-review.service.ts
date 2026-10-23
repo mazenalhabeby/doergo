@@ -1,16 +1,25 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { success, clampListLimit, peopleFaces } from '@hbcfield/shared';
-import { type AssetActor } from '../core/asset-access.service';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { PrismaService, success, clampListLimit, peopleFaces } from '@hbcfield/shared';
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
+import { AssetAccessService, type AssetActor } from '../core/asset-access.service';
+import { AssetNotifier } from '../core/asset-notifier.service';
 import { assertNotSelfDecision } from '../../attendance/core/self-decision';
 import { EXPENSE_STATUS } from './asset-expense-helpers';
-import { AssetExpenseBase } from './asset-expense.base';
 
 /**
  * What happens to an expense after it is sent: the member's own list, the office's
  * queue, and the decision (with the office's rules).
  */
 @Injectable()
-export class AssetExpenseReviewService extends AssetExpenseBase {
+export class AssetExpenseReviewService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: AssetAccessService,
+    private readonly notifier: AssetNotifier,
+    // Office rules (a threshold → a second approval). Global in the app; absent only in narrow unit tests.
+    @Optional() private readonly rules?: ApprovalRulesService,
+  ) {}
+
   /** What the caller has sent in, newest first — the phone's "my expenses". */
   async mine(data: { userId: string; organizationId: string; limit?: number }) {
     const take = clampListLimit(data.limit, 50, 100);

@@ -1,13 +1,21 @@
 import type { Prisma, InvitationStatus } from '@prisma/client';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { HttpStatus } from '@nestjs/common';
-import { clampListLimit } from '@hbcfield/shared';
-import { InvitationServiceBase } from './invitation-service.base';
+import { clampListLimit, PrismaService, SERVICE_NAMES } from '@hbcfield/shared';
+import { clientInviteLocale } from './invitation-locale';
 import { emitEvent, invitationCreatedEvent } from '@hbcfield/shared/microservices';
 
 /** The office's invitations: the list, sending one again, revoking one. */
 @Injectable()
-export class InvitationAdminService extends InvitationServiceBase {
+export class InvitationAdminService {
+  private readonly logger = new Logger(InvitationAdminService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+  ) {}
+
   /**
    * Validate an invitation code (public endpoint).
    * Returns org name and target role if valid.
@@ -43,7 +51,7 @@ export class InvitationAdminService extends InvitationServiceBase {
       // resend carries no caller, and the creator is who chose this client.
       inviterId: invitation.createdById,
       // A portal invitation always names its client, so the client rule decides.
-      locale: await this.clientInviteLocale(data.organizationId, customer.email, data.customerId),
+      locale: await clientInviteLocale(this.prisma, this.logger, data.organizationId, customer.email, data.customerId),
     });
     return { success: true, data: { sentTo: customer.email } };
   }

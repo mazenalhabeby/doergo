@@ -1,15 +1,24 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, Logger } from '@nestjs/common';
 import { success, paginated, ApprovalStatus } from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { MEMBER_SELECT } from '../core/attendance-selects';
-import { EntryServiceBase } from './entry-service.base';
+import { ClientProxy } from '@nestjs/microservices';
+import { PrismaService, SERVICE_NAMES } from '@hbcfield/shared';
+import { EntryChangeLog } from './entry-change-log';
 import type { TimeEntryStatus } from '@prisma/client';
 import { announceDayDecided, type DecidedEntry } from './day-decided';
 
 @Injectable()
-export class ApprovalService extends EntryServiceBase {
+export class ApprovalService {
+  private readonly logger = new Logger(ApprovalService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly changes: EntryChangeLog,
+    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+  ) {}
   /**
    * Get entries pending approval
    */
@@ -107,9 +116,7 @@ export class ApprovalService extends EntryServiceBase {
     });
 
     if (entry.approvalStatus !== 'PENDING') {
-      throw new BadRequestException(
-        `Entry is already ${entry.approvalStatus.toLowerCase()}`,
-      );
+      throw new BadRequestException(`Entry is already ${entry.approvalStatus.toLowerCase()}`);
     }
 
     const updated = await this.prisma.timeEntry.update({
@@ -130,11 +137,9 @@ export class ApprovalService extends EntryServiceBase {
       },
     });
 
-    this.logger.log(
-      `Entry approved: entry=${data.entryId}, approver=${data.approverId}`,
-    );
+    this.logger.log(`Entry approved: entry=${data.entryId}, approver=${data.approverId}`);
 
-    this.emitChanged(data.organizationId, 'approve', data.entryId);
+    this.changes.announce(data.organizationId, 'approve', data.entryId);
     await this.tellDayDecided(entry);
     return success(updated, 'Time entry approved');
   }
@@ -177,9 +182,7 @@ export class ApprovalService extends EntryServiceBase {
     });
 
     if (entry.approvalStatus !== 'PENDING') {
-      throw new BadRequestException(
-        `Entry is already ${entry.approvalStatus.toLowerCase()}`,
-      );
+      throw new BadRequestException(`Entry is already ${entry.approvalStatus.toLowerCase()}`);
     }
 
     const updated = await this.prisma.timeEntry.update({
@@ -197,11 +200,9 @@ export class ApprovalService extends EntryServiceBase {
       },
     });
 
-    this.logger.log(
-      `Entry rejected: entry=${data.entryId}, approver=${data.approverId}, reason=${data.reason}`,
-    );
+    this.logger.log(`Entry rejected: entry=${data.entryId}, approver=${data.approverId}, reason=${data.reason}`);
 
-    this.emitChanged(data.organizationId, 'reject', data.entryId);
+    this.changes.announce(data.organizationId, 'reject', data.entryId);
     await this.tellDayDecided(entry);
     return success(updated, 'Time entry rejected');
   }
@@ -241,7 +242,7 @@ export class ApprovalService extends EntryServiceBase {
       }
     }
 
-    if (results.approved.length) this.emitChanged(data.organizationId, 'bulk-approve');
+    if (results.approved.length) this.changes.announce(data.organizationId, 'bulk-approve');
     return success(results, `Approved ${results.approved.length} entries`);
   }
 

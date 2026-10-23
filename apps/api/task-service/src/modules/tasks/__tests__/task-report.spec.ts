@@ -14,6 +14,7 @@ import {
 } from '@hbcfield/shared';
 import { TaskReportService } from '../report/task-report.service';
 import { TaskQueryService } from '../query/task-query.service';
+import { TaskSubmissionsService } from '../query/task-submissions.service';
 import { TaskAccessService } from '../access/task-access.service';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
 
@@ -223,7 +224,8 @@ describe('TaskReportService', () => {
         startedBy: { user: null, forUser: null, office: false, reason: null, at: '2026-10-09T08:00:00.000Z' },
       }),
     };
-    const query = new TaskQueryService(prisma, { getWorkflow: jest.fn() } as any, new MediaSigner(null), jobTime, {} as any, support);
+    const submissions = new TaskSubmissionsService(prisma, new MediaSigner(null), support);
+    const query = new TaskQueryService(prisma, { getWorkflow: jest.fn() } as any, submissions);
     deps = {
       workflows: { getWorkflow: jest.fn().mockResolvedValue({ statuses: [{ key: 'COMPLETED', name: 'Done', color: '#0a0', isFinal: true, isCanceled: false }] }) },
       jobTime,

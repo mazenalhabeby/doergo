@@ -7,6 +7,7 @@ import { PresenceModule } from '../presence/presence.module';
 import { HeartbeatService } from './heartbeat.service';
 import { HeartbeatBatchService } from './heartbeat-batch.service';
 import { ExcursionsService } from './excursions.service';
+import { ExcursionNotices } from './excursion-notices.service';
 
 /**
  * While a member is on the clock: the heartbeat (single and batched) and leaving the site.
@@ -18,7 +19,7 @@ import { ExcursionsService } from './excursions.service';
     PresenceModule,
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
-  providers: [HeartbeatService, HeartbeatBatchService, ExcursionsService],
+  providers: [HeartbeatService, HeartbeatBatchService, ExcursionsService, ExcursionNotices],
   exports: [HeartbeatService, HeartbeatBatchService, ExcursionsService],
 })
 export class OnTheClockModule {}

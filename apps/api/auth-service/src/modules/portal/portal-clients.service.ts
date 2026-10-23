@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { scopeWhereOn, type SpaceScopeIds } from '@hbcfield/shared';
-import { PortalServiceBase } from './portal-service.base';
+import { scopeWhereOn, type SpaceScopeIds, PrismaService } from '@hbcfield/shared';
 
 /** Who a portal can still take, and taking a client out of it. */
 @Injectable()
-export class PortalClientsService extends PortalServiceBase {
+export class PortalClientsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /** Vacant apartments the office can assign when inviting a client — the
    *  portal's space catalog, minus any already occupied (member or client).
    *  Staff-only (portal-admin); no apartments-module gate. */

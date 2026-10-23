@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { success } from '@hbcfield/shared';
-import { ReportsBase } from './reports.base';
+import { success, PrismaService } from '@hbcfield/shared';
 
 /** Parts used on a service report: add, change, remove. */
 @Injectable()
-export class ReportPartsService extends ReportsBase {
+export class ReportPartsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * Add a part to the report
    */

@@ -1,14 +1,27 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { SNOOZE_MINUTES, nextReminder, occurrences, success, type Repeat, type RsvpResponse } from '@hbcfield/shared';
+import {
+  PrismaService,
+  SNOOZE_MINUTES,
+  nextReminder,
+  occurrences,
+  success,
+  type Repeat,
+  type RsvpResponse,
+} from '@hbcfield/shared';
 import { ISO, Caller, EventRow, reminderEventOf } from './events-helpers';
-import { EventsBase } from './events.base';
+import { EventNoticesService } from './event-notices.service';
 
 /**
  * An attendee's answers and reminders: accept/decline, snooze, done, and the
  * minute sweep that sends what is due.
  */
 @Injectable()
-export class EventAnswersService extends EventsBase {
+export class EventAnswersService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notices: EventNoticesService,
+  ) {}
+
   private async myRow(caller: Caller, eventId: string) {
     const row = await this.prisma.calendarAttendee.findFirst({
       where: { eventId, userId: caller.userId, organizationId: caller.organizationId, event: { canceledAt: null } },
@@ -36,17 +49,17 @@ export class EventAnswersService extends EventsBase {
       },
     });
     if (row.response !== dto.response) {
-      this.notify('calendar_responded', {
+      this.notices.notify('calendar_responded', {
         organizationId: dto.organizationId,
         eventId: row.eventId,
         title: row.event.title,
         organizerId: row.event.createdById,
         responderId: dto.userId,
-        responderName: await this.nameOf(dto.userId),
+        responderName: await this.notices.nameOf(dto.userId),
         response: dto.response,
       });
     }
-    this.refresh(dto.organizationId, [dto.userId, row.event.createdById]);
+    this.notices.refresh(dto.organizationId, [dto.userId, row.event.createdById]);
     return success({ response: dto.response });
   }
 
@@ -132,7 +145,7 @@ export class EventAnswersService extends EventsBase {
       const occurrence = row.remindOccurrence ?? ev.startAt;
       // A reminder for something already over is dropped silently — the phone was off, not the person.
       if (occurrence.getTime() + Math.max(ev.endAt.getTime() - ev.startAt.getTime(), 0) < now.getTime()) continue;
-      this.notify('calendar_reminder', {
+      this.notices.notify('calendar_reminder', {
         organizationId: ev.organizationId,
         userId: row.userId,
         eventId: ev.id,

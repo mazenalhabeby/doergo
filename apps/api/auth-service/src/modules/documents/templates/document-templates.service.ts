@@ -6,14 +6,20 @@ import {
   type SignatureMode,
   MERGE_FIELDS,
   toISODateString,
+  scoreTemplateBinding,
+  PrismaService,
 } from '@hbcfield/shared';
 import { renderContractPdf } from '../core/contract-pdf';
 import { type DocumentActor, assertCanManageTypes, contractValues } from '../core/document-common';
 import { CONTRACT_MEMBER_SELECT } from './document-templates-helpers';
-import { DocumentTemplatesBase } from './document-templates.base';
+import { DocumentLookupService } from '../core/document-lookup.service';
 
 @Injectable()
-export class DocumentTemplatesService extends DocumentTemplatesBase {
+export class DocumentTemplatesService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly lookup: DocumentLookupService,
+  ) {}
 
   async listTemplates(data: { actor: DocumentActor; includeInactive?: boolean }) {
     assertCanManageTypes(data.actor);
@@ -241,9 +247,35 @@ export class DocumentTemplatesService extends DocumentTemplatesBase {
 
     const unknown = unknownTokens(body);
     if (unknown.length > 0) {
-      throw new BadRequestException(
-        `This template refers to fields that do not exist: ${unknown.join(', ')}`,
-      );
+      throw new BadRequestException(`This template refers to fields that do not exist: ${unknown.join(', ')}`);
     }
+  }
+
+  /**
+   * The template that applies to a role and a job title.
+   *
+   * Most specific wins: role AND position, then role alone, then position
+   * alone, then the organization default. A template bound to nothing is the
+   * fallback, so an organization can start with one contract and get more
+   * precise later without re-pointing anything.
+   */
+  async resolveTemplate(data: { organizationId: string; roleId?: string | null; position?: string | null }) {
+    const candidates = await this.prisma.documentTemplate.findMany({
+      where: { organizationId: data.organizationId, isActive: true },
+      include: { type: { select: { id: true, label: true, retentionMonths: true } } },
+    });
+    if (candidates.length === 0) return null;
+
+    // The scoring lives in the shared package because the admin screen shows
+    // who a template will reach BEFORE it is saved. A second copy here would be
+    // a screen that promises one contract and an invitation that issues another.
+    const person = { memberRoleId: data.roleId ?? null, position: data.position ?? null };
+
+    const best = candidates
+      .map((t) => ({ t, s: scoreTemplateBinding(t, person) }))
+      .filter((x) => x.s >= 0)
+      .sort((a, b) => b.s - a.s)[0];
+
+    return best?.t ?? null;
   }
 }

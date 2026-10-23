@@ -1,11 +1,27 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { success, assertFoundInOrg } from '@hbcfield/shared';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { success, assertFoundInOrg, PrismaService } from '@hbcfield/shared';
 import { stepFormForSave } from './step-form.util';
-import { WorkflowServiceBase } from './workflow-service.base';
+import { WorkflowConfigCache } from './config-cache/workflow-config-cache.service';
 
 /** A workflow's steps: adding, changing, reordering, removing. */
 @Injectable()
-export class WorkflowStatusesService extends WorkflowServiceBase {
+export class WorkflowStatusesService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workflowCache: WorkflowConfigCache,
+  ) {}
+
+  /** A step of one of this organization's workflows — or 404, whichever part is missing. */
+  private async stepOf(data: { workflowId: string; statusId: string; organizationId: string }) {
+    const workflow = await this.prisma.statusWorkflow.findUnique({ where: { id: data.workflowId } });
+    assertFoundInOrg(workflow, data.organizationId, 'Workflow');
+    const step = await this.prisma.workflowStatus.findUnique({ where: { id: data.statusId } });
+    if (!step || step.workflowId !== data.workflowId) {
+      throw new NotFoundException('Status not found in this workflow');
+    }
+    return step;
+  }
+
   /**
    * Add a status to a workflow
    */
@@ -132,13 +148,8 @@ export class WorkflowStatusesService extends WorkflowServiceBase {
     assertFoundInOrg(workflow, data.organizationId, 'Workflow');
 
     const existingIds = new Set(workflow.statuses.map((s) => s.id));
-    if (
-      data.statusIds.length !== existingIds.size ||
-      !data.statusIds.every((id) => existingIds.has(id))
-    ) {
-      throw new BadRequestException(
-        'statusIds must contain exactly the statuses of this workflow.',
-      );
+    if (data.statusIds.length !== existingIds.size || !data.statusIds.every((id) => existingIds.has(id))) {
+      throw new BadRequestException('statusIds must contain exactly the statuses of this workflow.');
     }
 
     await this.prisma.$transaction(

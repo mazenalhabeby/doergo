@@ -2,20 +2,54 @@ import { Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
 import { createHash } from 'node:crypto';
 import { type StripeLine } from '@hbcfield/shared';
-import { StripeBase } from './stripe.base';
+import { ConfigService } from '@nestjs/config';
+import { StripeClientService } from './stripe-client.service';
+import { StripePricesService } from './stripe-prices.service';
 
 /**
  * A bill as Stripe subscription lines: syncing them, a checkout for them, an
  * invoice-mode subscription.
  */
 @Injectable()
-export class StripeLinesService extends StripeBase {
+export class StripeLinesService {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly stripeClient: StripeClientService,
+    private readonly prices: StripePricesService,
+  ) {}
+
+  get isConfigured(): boolean {
+    return this.stripeClient.isConfigured;
+  }
+
+  private get stripe(): Stripe {
+    return this.stripeClient.api;
+  }
+
+  /**
+   * Make a subscription hold exactly these lines, prorated.
+   *
+   * "Exactly" is the important word: a line that is no longer in the bill is
+   * DELETED, not left at its old quantity. A module switched off in the last
+   * space that had it must stop being charged, and the failure mode of forgetting
+   * is charging somebody for something they cannot see.
+   *
+   * Proration timing follows the rule the seat sync already used:
+   *   • invoiceNow → `always_invoice`, charge now. For annual INCREASES, so a
+   *     mid-term addition is not free until the yearly renewal.
+   *   • otherwise → `create_prorations`, banked onto the next invoice. Monthly
+   *     (the next invoice is soon) and annual DECREASES, so a credit accrues
+   *     against the renewal instead of cutting an immediate credit note.
+   *
+   * The idempotency key is derived from the target line-up, so a retry of the
+   * same change is free and a different change is not mistaken for one.
+   */
   async setSubscriptionLines(
     subscriptionId: string,
     lines: StripeLine[],
     opts?: { invoiceNow?: boolean },
   ): Promise<Stripe.Subscription> {
-    const priceIds = await this.resolvePriceIds(lines.map((l) => l.lookupKey));
+    const priceIds = await this.prices.resolvePriceIds(lines.map((l) => l.lookupKey));
 
     /*
       Every line must resolve to a real price before ANY of them is applied.
@@ -50,7 +84,7 @@ export class StripeLinesService extends StripeBase {
       The product is stable, so "the Workspaces line" stays the same line while
       its amount moves.
     */
-    const built = await Promise.all(lines.map((l) => this.lineToItem(l, priceIds.get(l.lookupKey)!)));
+    const built = await Promise.all(lines.map((l) => this.prices.lineToItem(l, priceIds.get(l.lookupKey)!)));
     const wanted = new Map(built.map((b) => [b.productId, b]));
 
     const sub = await this.stripe.subscriptions.retrieve(subscriptionId);
@@ -96,7 +130,9 @@ export class StripeLinesService extends StripeBase {
     return this.stripe.subscriptions.update(
       subscriptionId,
       { items, proration_behavior: opts?.invoiceNow ? 'always_invoice' : 'create_prorations' },
-      { idempotencyKey: `lines_${subscriptionId}_${createHash('sha256').update(fingerprint).digest('hex').slice(0, 32)}` },
+      {
+        idempotencyKey: `lines_${subscriptionId}_${createHash('sha256').update(fingerprint).digest('hex').slice(0, 32)}`,
+      },
     );
   }
 
@@ -108,7 +144,7 @@ export class StripeLinesService extends StripeBase {
     cancelUrl: string;
     trialDays?: number;
   }): Promise<Stripe.Checkout.Session> {
-    const priceIds = await this.resolvePriceIds(p.lines.map((l) => l.lookupKey));
+    const priceIds = await this.prices.resolvePriceIds(p.lines.map((l) => l.lookupKey));
     const missing = p.lines.map((l) => l.lookupKey).filter((k) => !priceIds.get(k));
     if (missing.length) {
       // Same refusal as setSubscriptionQuantities: never build a line list
@@ -135,7 +171,7 @@ export class StripeLinesService extends StripeBase {
       customer: p.customerId,
       line_items: await Promise.all(
         p.lines.map(async (l) => {
-          const { productId: _p, ...i } = await this.lineToItem(l, priceIds.get(l.lookupKey)!);
+          const { productId: _p, ...i } = await this.prices.lineToItem(l, priceIds.get(l.lookupKey)!);
           return i as Stripe.Checkout.SessionCreateParams.LineItem;
         }),
       ),
@@ -168,7 +204,7 @@ export class StripeLinesService extends StripeBase {
     invoiceDueDays: number;
     trialDays?: number;
   }): Promise<Stripe.Subscription> {
-    const priceIds = await this.resolvePriceIds(p.lines.map((l) => l.lookupKey));
+    const priceIds = await this.prices.resolvePriceIds(p.lines.map((l) => l.lookupKey));
     const missing = p.lines.map((l) => l.lookupKey).filter((k) => !priceIds.get(k));
     if (missing.length) {
       throw new Error(
@@ -176,7 +212,7 @@ export class StripeLinesService extends StripeBase {
           'Run the catalogue sync before this organization can be billed.',
       );
     }
-    const items = await Promise.all(p.lines.map((l) => this.lineToItem(l, priceIds.get(l.lookupKey)!)));
+    const items = await Promise.all(p.lines.map((l) => this.prices.lineToItem(l, priceIds.get(l.lookupKey)!)));
     return this.stripe.subscriptions.create({
       customer: p.customerId,
       items: items.map(({ productId: _p, ...i }) => i),

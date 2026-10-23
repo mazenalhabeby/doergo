@@ -5,14 +5,15 @@
  * signal; both arrive at 19:30, in that order. A leader must still be able to
  * approve the ninety minutes, and the timesheet must then pay them.
  */
-// The rules are still imported from the facade (re-exported); the methods live in ExtraTimeDecisionService (and its base).
+// The rules are still imported from the facade (re-exported); approving lives in ExtraTimeApprovalService.
 import { decidableExtraTimeWhere, respondedAt } from '../attendance.service';
+import { ExtraTimeApprovalService } from '../extra-time/extra-time-approval.service';
 import { ExtraTimeDecisionService } from '../extra-time/extra-time-decision.service';
 
 const at = (hhmm: string) => new Date(`2026-09-14T${hhmm}:00.000Z`);
 
 function service(entry: any, round: any = { id: 'round-1' }) {
-  const svc = Object.create(ExtraTimeDecisionService.prototype) as any;
+  const svc = Object.create(ExtraTimeApprovalService.prototype) as any;
   svc.logger = { log: jest.fn(), debug: jest.fn(), warn: jest.fn() };
   svc.prisma = {
     timeEntry: {
@@ -29,6 +30,16 @@ function service(entry: any, round: any = { id: 'round-1' }) {
   svc.assertNotSelfOvertimeDecision = jest.fn().mockResolvedValue(undefined);
   svc.countedTime = { recomputeClosed: jest.fn().mockResolvedValue(undefined) };
   svc.notificationClient = { emit: jest.fn() };
+  // Refusing lives in ExtraTimeDecisionService; it asks the same approval service who may decide.
+  svc.rejectExtraTime = (data: any) => {
+    const decisions = Object.assign(Object.create(ExtraTimeDecisionService.prototype), {
+      prisma: svc.prisma,
+      countedTime: svc.countedTime,
+      notificationClient: svc.notificationClient,
+      approval: svc,
+    });
+    return decisions.rejectExtraTime(data);
+  };
   return svc;
 }
 

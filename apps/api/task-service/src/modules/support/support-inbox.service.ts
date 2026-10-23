@@ -6,14 +6,20 @@ import {
   normalizeSupportScope,
   supportScopeWhere,
   type SupportAgentScope,
+  PrismaService,
 } from '@hbcfield/shared';
-import { publicMessageWhere } from './support-helpers';
-import { SupportBase } from './support.base';
+import { publicMessageWhere, createdBySelect } from './support-helpers';
+import { SupportTicketLookup } from './support-ticket-lookup.service';
 import type { Prisma, SupportStatus } from '@prisma/client';
 
 /** Reading support: a customer's tickets, one thread, and the agents' inbox. */
 @Injectable()
-export class SupportInboxService extends SupportBase {
+export class SupportInboxService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tickets: SupportTicketLookup,
+  ) {}
+
   // ── reads ──────────────────────────────────────────────────────────────────
   async listForCustomer(data: { createdById: string; status?: string; page?: number; limit?: number }) {
     const page = clampListPage(data.page);
@@ -29,7 +35,7 @@ export class SupportInboxService extends SupportBase {
       }),
       this.prisma.supportTicket.count({ where }),
     ]);
-    const enriched = await this.attachUnread(rows, 'CUSTOMER');
+    const enriched = await this.tickets.attachUnread(rows, 'CUSTOMER');
     return paginated(enriched, { page, limit, total });
   }
 
@@ -40,11 +46,11 @@ export class SupportInboxService extends SupportBase {
     asAgent?: boolean;
     scope?: SupportAgentScope;
   }) {
-    if (data.asAgent) await this.agentTicket(data.ticketId, data.scope);
+    if (data.asAgent) await this.tickets.agentTicket(data.ticketId, data.scope);
     const ticket = await this.prisma.supportTicket.findUnique({
       where: { id: data.ticketId },
       include: {
-        createdBy: this.createdBySelect(),
+        createdBy: createdBySelect(),
         messages: {
           where: data.asAgent ? undefined : publicMessageWhere,
           orderBy: { createdAt: 'asc' },
@@ -59,7 +65,7 @@ export class SupportInboxService extends SupportBase {
     }
     if (!data.asAgent) return { success: true, data: ticket };
     // Agents see who handled it by NAME; the id stays for the "mine" match.
-    const names = await this.agentNames([
+    const names = await this.tickets.agentNames([
       ticket.assignedAgentId,
       ...ticket.messages.filter((m) => m.authorType === 'AGENT').map((m) => m.authorId),
     ]);
@@ -133,12 +139,12 @@ export class SupportInboxService extends SupportBase {
         orderBy: [{ priority: 'asc' }, { createdAt: 'asc' }],
         skip: (page - 1) * limit,
         take: limit,
-        include: { createdBy: this.createdBySelect() },
+        include: { createdBy: createdBySelect() },
       }),
       this.prisma.supportTicket.count({ where }),
     ]);
-    const enriched = await this.attachUnread(rows, 'AGENT');
-    const names = await this.agentNames(rows.map((r) => r.assignedAgentId));
+    const enriched = await this.tickets.attachUnread(rows, 'AGENT');
+    const names = await this.tickets.agentNames(rows.map((r) => r.assignedAgentId));
     return paginated(
       enriched.map((r) => ({
         ...r,

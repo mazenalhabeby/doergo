@@ -16,7 +16,10 @@ import {
   orgAllows,
   type OrgAccessRow,
 } from '@hbcfield/shared';
-import { ChatReachBase } from './chat-reach.base';
+import { PrismaService, personOrgAccess } from '@hbcfield/shared';
+import { ChatCrossOrgService } from './chat-cross-org.service';
+import { ChatContactTargets } from './chat-contact-targets.service';
+import { canReach } from './chat-reach-rule';
 import type { ChatMemberContact } from './chat-membership';
 
 /**
@@ -28,7 +31,19 @@ import type { ChatMemberContact } from './chat-membership';
  * unit and the two never drift.
  */
 @Injectable()
-export class ChatReachService extends ChatReachBase {
+export class ChatReachService {
+  constructor(
+    private readonly prisma: PrismaService,
+    readonly crossOrg: ChatCrossOrgService,
+    private readonly contactTargets: ChatContactTargets,
+  ) {}
+
+  /** Does this person manage people org-wide (resolved access, not the legacy column)? */
+  async managesPeople(userId: string): Promise<boolean> {
+    const me = await personOrgAccess(this.prisma, userId);
+    return !!me && orgAllows(me as OrgAccessRow, 'canManageUsers');
+  }
+
   /**
    * May this person START a group? Managers and leaders (D3): org-wide
    * `canManageUsers`, or the space-leader permission in a workspace — the same
@@ -61,8 +76,8 @@ export class ChatReachService extends ChatReachBase {
     const me = await personContactRules(this.prisma, actorId);
     if (!me) throw new NotFoundException('User not found');
     const people = await chatPeople(this.prisma, userIds, organizationId);
-    const targets = this.contactTargetsResolver(actorId, organizationId);
-    const verdicts = await Promise.all(people.map((u) => this.canReach(me, u, targets)));
+    const targets = this.contactTargets.resolver(actorId, organizationId);
+    const verdicts = await Promise.all(people.map((u) => canReach(me, u, targets)));
     if (people.length !== new Set(userIds).size || verdicts.some((ok) => !ok)) {
       throw new ForbiddenException({
         message: 'You can only add people you are allowed to message',
@@ -85,8 +100,8 @@ export class ChatReachService extends ChatReachBase {
     const all = await chatDirectory(this.prisma, data.organizationId, data.userId);
     // One resolver shared by every candidate below: resolved server-side (so it
     // can't be spoofed) and at most once, however many people we test.
-    const spaceTargets = this.contactTargetsResolver(data.userId, data.organizationId);
-    const verdicts = await Promise.all(all.map((u) => this.canReach(me, u, spaceTargets)));
+    const spaceTargets = this.contactTargets.resolver(data.userId, data.organizationId);
+    const verdicts = await Promise.all(all.map((u) => canReach(me, u, spaceTargets)));
     const reachable: unknown[] = all.filter((_, i) => verdicts[i]);
 
     // Colleagues at other companies, reachable through an actively shared space
@@ -124,7 +139,7 @@ export class ChatReachService extends ChatReachBase {
     // fall through to an unintended row. Also re-check self by resolved id.
     if (!me || !other || other.id !== otherUserId) throw new NotFoundException('Member not found');
     if (other.id === senderId) throw new ForbiddenException('Cannot message yourself');
-    const reachable = await this.canReach(me, other, this.contactTargetsResolver(senderId, organizationId));
+    const reachable = await canReach(me, other, this.contactTargets.resolver(senderId, organizationId));
     if (!reachable) throw new ForbiddenException(deniedMessage);
     return other;
   }
@@ -256,6 +271,6 @@ export class ChatReachService extends ChatReachBase {
     if (!canContactColleagues({ enabledModules: sender.enabledModules })) return false;
     if (!other.contactable) return false;
     // And the counterpart's, asked their way round: may THEY still reach the sender?
-    return this.canReach(other, sender, this.contactTargetsResolver(otherId, organizationId));
+    return canReach(other, sender, this.contactTargets.resolver(otherId, organizationId));
   }
 }

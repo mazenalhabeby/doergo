@@ -9,6 +9,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AUTO_CLOCK_DEFAULTS } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
 import { SpaceUpdateService } from '../space-update.service';
+import { SpaceAnnouncer } from '../space-announcer.service';
 import { AssignmentTermsService } from '../assignment-terms.service';
 
 /** The workspace edit and a member's terms — two services since the split, one fixture. */
@@ -24,16 +25,14 @@ function build(space: Record<string, unknown> = {}, assignment: Record<string, u
       findUnique: jest.fn(async () => ({ timezone: 'America/Los_Angeles' })),
     },
     spaceAssignment: {
-      findFirst: jest
-        .fn()
-        .mockResolvedValue({
-          id: 'a1',
-          organizationId: 'org-1',
-          userId: 'u1',
-          spaceId: 'loc-1',
-          user: { isExternal: false },
-          ...assignment,
-        }),
+      findFirst: jest.fn().mockResolvedValue({
+        id: 'a1',
+        organizationId: 'org-1',
+        userId: 'u1',
+        spaceId: 'loc-1',
+        user: { isExternal: false },
+        ...assignment,
+      }),
       update: jest.fn(async ({ data }: any) => ({ id: 'a1', spaceId: 'loc-1', space: {}, user: {}, ...data })),
       updateMany: jest.fn(),
       findMany: jest.fn().mockResolvedValue([{ userId: 'u1' }]),
@@ -44,8 +43,8 @@ function build(space: Record<string, unknown> = {}, assignment: Record<string, u
     $executeRaw: jest.fn().mockResolvedValue(0),
   };
   const client = { emit: jest.fn() };
-  const update = new SpaceUpdateService(prisma, client as any);
-  const terms = new AssignmentTermsService(prisma, client as any);
+  const update = new SpaceUpdateService(prisma, new SpaceAnnouncer(prisma, client as any));
+  const terms = new AssignmentTermsService(prisma, new SpaceAnnouncer(prisma, client as any));
   const svc: Svc = { update: update.update.bind(update), updateAssignment: terms.updateAssignment.bind(terms) };
   return { prisma, client, svc };
 }

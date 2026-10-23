@@ -1,10 +1,14 @@
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { isAddOn } from '@hbcfield/shared';
-import { BillingBase } from './billing.base';
+import { PrismaService } from '@hbcfield/shared';
 
 /** Operator billing actions: every organization's add-ons. */
 @Injectable()
-export class BillingAdminService extends BillingBase {
+export class BillingAdminService {
+  private readonly logger = new Logger(BillingAdminService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * PLATFORM-OPERATOR action (gated by a secret at the gateway — NOT a customer
    * action). Force an org onto a tier — mainly ENTERPRISE, whose price is a

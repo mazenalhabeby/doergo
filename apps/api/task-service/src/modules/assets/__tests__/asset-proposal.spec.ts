@@ -11,6 +11,9 @@ import { AssetProposalService } from '../proposals/asset-proposal.service';
 import { ProposalReviewService } from '../proposals/proposal-review.service';
 import { assetProposalServicesOf, type AssetProposalServiceParts } from './asset-proposal.service.fixture';
 import { AssetNotifier } from '../core/asset-notifier.service';
+import { AssetAudienceService } from '../core/asset-audience.service';
+import { ProposalPlacesService } from '../proposals/proposal-places.service';
+import { ProposalNoticesService } from '../proposals/proposal-notices.service';
 import { AssetResponsibleService } from '../core/asset-responsible.service';
 
 /**
@@ -67,8 +70,11 @@ describe('AssetProposalService', () => {
       providers: [
         AssetProposalService,
         ProposalReviewService,
+        ProposalPlacesService,
+        ProposalNoticesService,
         // The real one: the fallback it owns is what these tests pin.
         AssetNotifier,
+        AssetAudienceService,
         AssetResponsibleService,
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: { get: (_k: string, d?: string) => d ?? '' } },

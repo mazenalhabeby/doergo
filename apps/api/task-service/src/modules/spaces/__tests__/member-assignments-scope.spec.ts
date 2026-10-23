@@ -27,7 +27,7 @@ describe('MemberSpacesService.getTechnicianAssignments — workspace scope', () 
         ),
       },
     };
-    return { prisma, service: new MemberSpacesService(prisma, { emit: jest.fn() } as any) };
+    return { prisma, service: new MemberSpacesService(prisma) };
   }
   const ids = (res: any) => res.data.map((a: any) => a.locationId);
 

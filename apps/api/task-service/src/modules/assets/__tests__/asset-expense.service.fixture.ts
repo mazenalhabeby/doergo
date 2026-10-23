@@ -1,6 +1,7 @@
 import { combinedServices } from '../../../common/testing/combined-services';
 import { AssetExpenseService } from '../expenses/asset-expense.service';
 import { AssetExpenseReviewService } from '../expenses/asset-expense-review.service';
+import { AssetExpenseGateService } from '../expenses/asset-expense-gate.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };
@@ -8,10 +9,20 @@ type Public<T> = { [K in keyof T]: T[K] };
 /** Every service split out of AssetExpenseService, as ONE object — the tests were written against the single class. */
 export type AssetExpenseServiceParts = Public<AssetExpenseService> & Public<AssetExpenseReviewService>;
 
-export function assetExpenseParts(...args: unknown[]): AssetExpenseServiceParts {
-  const assetExpenseService = new (AssetExpenseService as unknown as new (...a: unknown[]) => object)(...args) as any;
-  const assetExpenseReviewService = new (AssetExpenseReviewService as unknown as new (...a: unknown[]) => object)(...args) as any;
-  return combinedServices<AssetExpenseServiceParts>(assetExpenseService, assetExpenseReviewService);
+/** Filing and reviewing over the same collaborators; the custody gate is the real one. */
+export function assetExpenseParts(
+  prisma?: any,
+  access?: any,
+  custodyRead?: any,
+  notifier?: any,
+  store?: any,
+  rules?: any,
+): AssetExpenseServiceParts {
+  const gate = new AssetExpenseGateService(prisma, access, custodyRead);
+  return combinedServices<AssetExpenseServiceParts>(
+    new AssetExpenseService(prisma, access, gate, notifier, store),
+    new AssetExpenseReviewService(prisma, access, notifier, rules),
+  );
 }
 
 /** The same, from a Nest test module that registered them all. */

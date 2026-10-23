@@ -1,6 +1,6 @@
 import type { CustomerActivityType } from '@prisma/client';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { findPrior } from '@hbcfield/shared';
+import { findPrior, PrismaService } from '@hbcfield/shared';
 import {
   CLIENT_ID,
   CrmCaller,
@@ -9,15 +9,22 @@ import {
   normalizeRepeat,
   advanceDate,
 } from './customers-helpers';
-import { CustomersServiceBase } from './customers-service.base';
+import { CrmReachService } from './crm-reach.service';
+import { CustomerRefsService } from './customer-refs.service';
 import { withAuthors } from '../../common/records/with-authors';
 
 /** A client's timeline: notes, calls, reminders. */
 @Injectable()
-export class CustomerActivitiesService extends CustomersServiceBase {
+export class CustomerActivitiesService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reach: CrmReachService,
+    private readonly refs: CustomerRefsService,
+  ) {}
+
   /** Timeline (newest first), author names resolved. */
   async listActivities(data: { customerId: string; organizationId: string; caller?: CrmCaller }) {
-    await this.assertCrmReach(data.customerId, data.organizationId, data.caller);
+    await this.reach.assertCrmReach(data.customerId, data.organizationId, data.caller);
     const rows = await this.prisma.customerActivity.findMany({
       where: { customerId: data.customerId, organizationId: data.organizationId },
       orderBy: { createdAt: 'desc' },
@@ -41,7 +48,7 @@ export class CustomerActivitiesService extends CustomersServiceBase {
     /** Made on the phone: an activity logged twice is one activity. */
     clientId?: string;
   }) {
-    await this.assertCrmReach(data.customerId, data.organizationId, data.caller, { needWork: true });
+    await this.reach.assertCrmReach(data.customerId, data.organizationId, data.caller, { needWork: true });
     const clientId = typeof data.clientId === 'string' && CLIENT_ID.test(data.clientId) ? data.clientId : undefined;
     const prior = await findPrior({
       id: clientId,
@@ -57,7 +64,7 @@ export class CustomerActivitiesService extends CustomersServiceBase {
     // A reminder assignee must be a member of this org (else drop → all managers).
     const assigneeId =
       isReminder && data.reminderAssigneeId
-        ? ((await this.keepOrgUserIds([data.reminderAssigneeId], data.organizationId))[0] ?? null)
+        ? ((await this.refs.keepOrgUserIds([data.reminderAssigneeId], data.organizationId))[0] ?? null)
         : null;
     const activity = await this.prisma.customerActivity.create({
       data: {
@@ -91,7 +98,7 @@ export class CustomerActivitiesService extends CustomersServiceBase {
     repeat?: string;
     caller?: CrmCaller;
   }) {
-    await this.assertCrmReach(data.customerId, data.organizationId, data.caller, { needWork: true });
+    await this.reach.assertCrmReach(data.customerId, data.organizationId, data.caller, { needWork: true });
     const existing = await this.prisma.customerActivity.findFirst({
       where: { id: data.id, customerId: data.customerId },
       select: {
@@ -115,7 +122,7 @@ export class CustomerActivitiesService extends CustomersServiceBase {
     if (data.remindBeforeMin !== undefined) upd.remindBeforeMin = Math.max(0, Math.floor(data.remindBeforeMin));
     if (data.reminderAssigneeId !== undefined) {
       upd.reminderAssigneeId = data.reminderAssigneeId
-        ? ((await this.keepOrgUserIds([data.reminderAssigneeId], data.organizationId))[0] ?? null)
+        ? ((await this.refs.keepOrgUserIds([data.reminderAssigneeId], data.organizationId))[0] ?? null)
         : null;
     }
     if (data.repeat !== undefined) upd.repeat = normalizeRepeat(data.repeat);
@@ -156,7 +163,7 @@ export class CustomerActivitiesService extends CustomersServiceBase {
   }
 
   async deleteActivity(data: { id: string; customerId: string; organizationId: string; caller?: CrmCaller }) {
-    await this.assertCrmReach(data.customerId, data.organizationId, data.caller, { needWork: true });
+    await this.reach.assertCrmReach(data.customerId, data.organizationId, data.caller, { needWork: true });
     await this.prisma.customerActivity.deleteMany({ where: { id: data.id, customerId: data.customerId } });
     return { success: true };
   }

@@ -3,6 +3,7 @@ import { ApprovalService } from '../entries/approval.service';
 import { EntryEditService } from '../entries/entry-edit.service';
 import { EntryRecordService } from '../entries/entry-record.service';
 import { ManualEntriesService } from '../entries/manual-entries.service';
+import { EntryChangeLog } from '../entries/entry-change-log';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };
@@ -13,12 +14,26 @@ export type ApprovalServiceParts = Public<ApprovalService> &
   Public<EntryRecordService> &
   Public<ManualEntriesService>;
 
-export function entryServices(...args: unknown[]): ApprovalServiceParts {
+type Ctor = new (...a: unknown[]) => object;
+
+/**
+ * Built by hand, in the order the old shared constructor took them — each service is
+ * handed the collaborators it actually uses, all sharing ONE change log.
+ */
+export function entryServices(
+  prisma?: unknown,
+  countedTime?: unknown,
+  notificationClient?: unknown,
+  rematch?: unknown,
+  jobPause?: unknown,
+  noShowSettle?: unknown,
+): ApprovalServiceParts {
+  const changes = new EntryChangeLog(prisma as never, notificationClient as never);
   return combinedServices<ApprovalServiceParts>(
-    new (ApprovalService as unknown as new (...a: unknown[]) => object)(...args),
-    new (EntryEditService as unknown as new (...a: unknown[]) => object)(...args),
-    new (EntryRecordService as unknown as new (...a: unknown[]) => object)(...args),
-    new (ManualEntriesService as unknown as new (...a: unknown[]) => object)(...args),
+    new (ApprovalService as unknown as Ctor)(prisma, changes, notificationClient),
+    new (EntryEditService as unknown as Ctor)(prisma, countedTime, changes, rematch, jobPause),
+    new (EntryRecordService as unknown as Ctor)(prisma, changes),
+    new (ManualEntriesService as unknown as Ctor)(prisma, changes, noShowSettle),
   );
 }
 

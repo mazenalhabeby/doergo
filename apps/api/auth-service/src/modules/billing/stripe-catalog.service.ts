@@ -1,15 +1,54 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import Stripe from 'stripe';
 import { STRIPE_PRICE_ENV_KEYS } from '@hbcfield/shared';
-import type { PlanTier, BillingInterval } from '@hbcfield/shared';
-import { StripeBase } from './stripe.base';
+import type { PlanTier, BillingInterval, SeatType } from '@hbcfield/shared';
+import { ConfigService } from '@nestjs/config';
+import { StripeClientService } from './stripe-client.service';
 
 /**
  * The operator's price book and the legacy tier subscription: products, prices,
  * tier checkout and quantities.
  */
 @Injectable()
-export class StripeCatalogService extends StripeBase {
+export class StripeCatalogService {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly stripeClient: StripeClientService,
+  ) {}
+
+  get isConfigured(): boolean {
+    return this.stripeClient.isConfigured;
+  }
+
+  private get stripe(): Stripe {
+    return this.stripeClient.api;
+  }
+
+  /** Resolve a Stripe Price ID from env for a billable line. Server-side only. */
+  priceId(seat: SeatType, tier: PlanTier, interval: BillingInterval): string {
+    let envKey: string | undefined;
+    if (seat === 'field') {
+      envKey = STRIPE_PRICE_ENV_KEYS.field[interval];
+    } else if (seat === 'field_inhouse') {
+      envKey = STRIPE_PRICE_ENV_KEYS.fieldInhouse[interval];
+    } else if (tier === 'starter' || tier === 'professional' || tier === 'business') {
+      envKey = STRIPE_PRICE_ENV_KEYS[tier].office[interval];
+    }
+    let id = envKey ? this.config.get<string>(envKey) : undefined;
+    // Safety net: until a dedicated in-house Stripe price is configured, an
+    // in-house field seat bills at the standard field price (no missing-env
+    // error, no discount). Once STRIPE_PRICE_FIELD_INHOUSE_* is set it takes over.
+    if (!id && seat === 'field_inhouse') {
+      id = this.config.get<string>(STRIPE_PRICE_ENV_KEYS.field[interval]);
+    }
+    if (!id) {
+      throw new InternalServerErrorException(
+        `Missing Stripe price for ${seat}/${tier}/${interval} (env ${envKey ?? 'n/a'})`,
+      );
+    }
+    return id;
+  }
+
   // ── C3 pricing-sync primitives ──────────────────────────────────────────────
   /** Current unit amount (cents) + product of a live Stripe price (read-only). */
   async getPriceInfo(

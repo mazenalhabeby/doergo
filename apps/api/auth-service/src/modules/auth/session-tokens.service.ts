@@ -7,10 +7,13 @@ import {
   ORG_SUSPENDED_MESSAGE,
   memberAccessOf,
   parseClockInPick,
+  PrismaService,
 } from '@hbcfield/shared';
 import { Injectable, HttpStatus } from '@nestjs/common';
 import { resolveProfileBadges, orgPermissionFields, type AuthResult } from './auth-common';
-import { SessionTokensBase } from './session-tokens.base';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { TokenPairService } from './token-pair.service';
+import { visibleSpaceModules } from './session-modules';
 import type { Organization, User } from '@prisma/client';
 import type { ResolvedAccess } from '@hbcfield/shared';
 
@@ -66,7 +69,23 @@ type SessionUser = Pick<
  * Part of authentication; `AuthService` is the facade every caller uses.
  */
 @Injectable()
-export class SessionTokensService extends SessionTokensBase {
+export class SessionTokensService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditLog: AuditLogService,
+    private readonly tokenPair: TokenPairService,
+  ) {}
+
+  /** Every feature module switched on in a workspace this member can see (see session-modules). */
+  visibleSpaceModules(userId: string, organizationId: string, isAdminUser: boolean, orgFallback: string[] = []) {
+    return visibleSpaceModules(this.prisma, userId, organizationId, isAdminUser, orgFallback);
+  }
+
+  /** The token pair for a session (see TokenPairService) — login, refresh and biometric sign-in all mint here. */
+  generateTokens(...args: Parameters<TokenPairService['generateTokens']>) {
+    return this.tokenPair.generateTokens(...args);
+  }
+
   /*
     Everything after "this is definitely the member" — resolved access, the
     tokens, and the payload the client is built against.

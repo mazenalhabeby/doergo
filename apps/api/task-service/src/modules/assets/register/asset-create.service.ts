@@ -1,34 +1,42 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { Prisma, AssetStatus } from '@prisma/client';
-import { success, normalizeDetailRows } from '@hbcfield/shared';
-import { type AssetActor } from '../core/asset-access.service';
+import { PrismaService, success, normalizeDetailRows } from '@hbcfield/shared';
+import { AssetAccessService, type AssetActor } from '../core/asset-access.service';
 import { AssetHoldersService } from '../core/asset-holders.service';
-import { AssetsBase } from './assets.base';
+import { assertAssetDates, assertAssetStatus, withHolderNames } from './asset-record-rules';
 
 /** Creating an asset record. */
 @Injectable()
-export class AssetCreateService extends AssetsBase {
-  async create(data: {
-    name: string;
-    serialNumber?: string;
-    model?: string;
-    manufacturer?: string;
-    status?: string;
-    installDate?: string;
-    warrantyExpiry?: string;
-    locationAddress?: string;
-    locationLat?: number;
-    locationLng?: number;
-    notes?: string;
-    categoryId?: string;
-    typeId?: string;
-    holderUserId?: string | null;
-    customerId?: string | null;
-    details?: unknown;
-  } & AssetActor) {
+export class AssetCreateService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: AssetAccessService,
+    private readonly holderService: AssetHoldersService,
+  ) {}
+
+  async create(
+    data: {
+      name: string;
+      serialNumber?: string;
+      model?: string;
+      manufacturer?: string;
+      status?: string;
+      installDate?: string;
+      warrantyExpiry?: string;
+      locationAddress?: string;
+      locationLat?: number;
+      locationLng?: number;
+      notes?: string;
+      categoryId?: string;
+      typeId?: string;
+      holderUserId?: string | null;
+      customerId?: string | null;
+      details?: unknown;
+    } & AssetActor,
+  ) {
     this.access.assertMay(data, 'manage', 'create assets');
-    this.assertStatus(data.status);
-    this.assertDates(data);
+    assertAssetStatus(data.status);
+    assertAssetDates(data);
 
     // Verify category if provided. Its config comes back with it: the kind is
     // what decides how many holders a record may have, and asking for it twice
@@ -47,7 +55,11 @@ export class AssetCreateService extends AssetsBase {
         another tenant's — "that kind exists, just not for you" names what
         another workspace runs.
       */
-      if (!category || category.organizationId !== data.organizationId || !this.access.mayIn(data, 'manage', category.spaceId)) {
+      if (
+        !category ||
+        category.organizationId !== data.organizationId ||
+        !this.access.mayIn(data, 'manage', category.spaceId)
+      ) {
         throw new BadRequestException('Invalid category');
       }
       kindConfig = category.config;
@@ -69,7 +81,11 @@ export class AssetCreateService extends AssetsBase {
         include: { category: true },
       });
 
-      if (!type || type.category.organizationId !== data.organizationId || !this.access.mayIn(data, 'manage', type.category.spaceId)) {
+      if (
+        !type ||
+        type.category.organizationId !== data.organizationId ||
+        !this.access.mayIn(data, 'manage', type.category.spaceId)
+      ) {
         throw new BadRequestException('Invalid type');
       }
 
@@ -135,6 +151,6 @@ export class AssetCreateService extends AssetsBase {
       },
     });
 
-    return success(await this.withHolders(asset));
+    return success(await withHolderNames(this.prisma, asset));
   }
 }

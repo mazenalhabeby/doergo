@@ -8,21 +8,26 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { instrument } from '@socket.io/admin-ui';
-import { OnModuleDestroy, Optional } from '@nestjs/common';
-import { MemberFactsClient } from '../../common/member-facts/member-facts.client';
-import { ConfigService } from '@nestjs/config';
-import { SocketEvents, PrismaService } from '@hbcfield/shared';
-import { typingRecipients } from './chat-members';
-import { GatewayAuthBase } from './gateway-auth.base';
+import { Logger, OnModuleDestroy } from '@nestjs/common';
+import { ChatEvents } from './chat-events';
+import { MemberEvents } from './member-events';
+import { PresenceService } from './presence.service';
+import { SocketAuthenticator } from './socket-authenticator';
+import { SocketRegistry } from './socket-registry';
+import { SocketTokens } from './socket-tokens';
+import { SupportEvents } from './support-events';
+import { TaskEvents } from './task-events';
+import { TaskRooms } from './task-rooms';
 
 export { SOCKET_REVOCATION_EVENTS, type ClientInfo, type SocketStats } from './gateway.types';
 
 /*
-  The gateway is a chain, each part moved unchanged out of what was one 1,190-line
-  class: gateway-core.base (state, access, disconnects, stats) → gateway-task-emits
-  → gateway-presence → gateway-chat-emits → gateway-auth (the handshake bodies) →
-  this class. The decorators and every @SubscribeMessage stay HERE, on the class
-  Nest scans; the larger handlers call their body in gateway-auth.base.
+  The Socket.IO gateway: the class Nest scans, so the decorators, the lifecycle hooks
+  and every @SubscribeMessage live here. The work is done by its collaborators —
+  SocketRegistry owns the live state (server, sockets, agents, counters), and
+  SocketTokens, SocketAuthenticator, PresenceService, TaskRooms and the emitters
+  (TaskEvents, ChatEvents, SupportEvents, MemberEvents) each reach it explicitly.
+  The public emit methods below are the surface every event handler calls.
 */
 @WebSocketGateway({
   cors: {
@@ -32,19 +37,26 @@ export { SOCKET_REVOCATION_EVENTS, type ClientInfo, type SocketStats } from './g
     credentials: true,
   },
 })
-export class WebsocketGateway
-  extends GatewayAuthBase
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy
-{
+export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy {
   @WebSocketServer()
   server: Server;
 
-  constructor(prisma: PrismaService, configService: ConfigService, @Optional() memberFacts?: MemberFactsClient) {
-    super(prisma, configService);
-    this.memberFacts = memberFacts;
-  }
+  private readonly logger = new Logger('WebSocketGateway');
+
+  constructor(
+    private readonly registry: SocketRegistry,
+    private readonly tokens: SocketTokens,
+    private readonly authenticator: SocketAuthenticator,
+    private readonly presence: PresenceService,
+    private readonly taskRooms: TaskRooms,
+    private readonly tasks: TaskEvents,
+    private readonly chat: ChatEvents,
+    private readonly support: SupportEvents,
+    private readonly members: MemberEvents,
+  ) {}
 
   afterInit(server: Server) {
+    this.registry.attach(server);
     this.logger.log('Socket.IO Gateway initialized');
 
     // Socket.IO Admin UI (https://admin.socket.io) — FAIL CLOSED: in production it
@@ -70,28 +82,23 @@ export class WebsocketGateway
     // waste. Event names only.
     server.use((socket, next) => {
       socket.onAny((event) => {
-        this.messagesReceived++;
+        this.registry.messagesReceived++;
         this.logger.debug(`[RECV] ${socket.id} -> ${event}`);
       });
       socket.onAnyOutgoing((event) => {
         if (event !== 'disconnect') {
-          this.messagesSent++;
+          this.registry.messagesSent++;
           this.logger.debug(`[SEND] ${socket.id} <- ${event}`);
         }
       });
       next();
     });
 
-    // Keep connected users "online" while their tab is open (see HEARTBEAT_MS).
-    this.heartbeatTimer = setInterval(() => {
-      void this.refreshConnectedPresence();
-    }, this.HEARTBEAT_MS);
+    this.presence.startHeartbeat();
   }
 
   onModuleDestroy() {
-    if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
-    for (const timer of this.offlineTimers.values()) clearTimeout(timer);
-    this.offlineTimers.clear();
+    this.presence.stop();
   }
 
   handleConnection(client: Socket) {
@@ -112,7 +119,7 @@ export class WebsocketGateway
     // haven't sent a valid `authenticate` by then. Stops unauthenticated
     // connections from piling up (cheap resource exhaustion).
     (client as unknown as { __authTimer?: NodeJS.Timeout }).__authTimer = setTimeout(() => {
-      if (!this.connectedClients.has(client.id)) {
+      if (!this.registry.clients.has(client.id)) {
         this.logger.warn(`[AUTH] Disconnecting ${client.id}: not authenticated within 15s`);
         client.disconnect(true);
       }
@@ -120,7 +127,7 @@ export class WebsocketGateway
   }
 
   handleDisconnect(client: Socket) {
-    const clientInfo = this.connectedClients.get(client.id);
+    const clientInfo = this.registry.clients.get(client.id);
 
     if (clientInfo) {
       this.logger.log(`[DISCONNECT] Client ${client.id} (user: ${clientInfo.userId}, role: ${clientInfo.role})`);
@@ -135,26 +142,26 @@ export class WebsocketGateway
     client.offAny();
     client.offAnyOutgoing();
 
-    this.connectedClients.delete(client.id);
+    this.registry.clients.delete(client.id);
 
     // Support agent presence: if this was an agent socket and the last one, tell
     // customers live chat just went offline.
-    if (this.agentSockets.delete(client.id) && !this.anyAgentOnline()) {
-      this.server.emit(SocketEvents.SUPPORT_AGENT_PRESENCE, { online: false });
+    if (this.registry.agentSockets.delete(client.id) && !this.registry.anyAgentOnline()) {
+      this.support.announceAgentPresence(false);
     }
 
     // Real-time offline: if this was the user's LAST socket, start a grace timer.
     // If they don't reconnect within the window AND they aren't on the clock,
     // clear lastActiveAt + broadcast offline so teammates' dashboards move them
     // to "Off Duty" immediately (instead of waiting out the 3-min stale window).
-    if (clientInfo && !this.userHasActiveSocket(clientInfo.userId)) {
-      this.scheduleOfflineCheck(clientInfo.userId, clientInfo.organizationId);
+    if (clientInfo && !this.registry.userHasActiveSocket(clientInfo.userId)) {
+      this.presence.scheduleOfflineCheck(clientInfo.userId, clientInfo.organizationId);
     }
   }
 
   @SubscribeMessage('authenticate')
   async handleAuthenticate(client: Socket, payload: { userId: string; role: string; organizationId: string }) {
-    return this.authenticateClient(client, payload);
+    return this.authenticator.authenticateClient(client, payload);
   }
 
   // Support agents (operator staff) authenticate with their CONSOLE token, not an
@@ -162,124 +169,41 @@ export class WebsocketGateway
   // ticket event (including internal notes) and drive live-chat presence.
   @SubscribeMessage('authenticate_agent')
   async handleAuthenticateAgent(client: Socket) {
-    return this.authenticateAgent(client);
+    return this.authenticator.authenticateAgent(client);
   }
 
-  /**
-   * Live-chat typing indicator relay. Customer → agents; agent → the ticket owner.
-   *
-   * ⚠️ Nothing here is taken from the client but the ticket id. It used to
-   * relay to any `customerId` the payload named and trust `from` — so ANY
-   * socket, authenticated or not, could put "…is typing" on any user's screen
-   * and into the operator inbox. Now:
-   *   - an AGENT socket (verified in authenticate_agent) reaches the ticket's
-   *     own creator, read from the ticket;
-   *   - an app user reaches the agents only for a ticket THEY raised;
-   *   - everyone else (unauthenticated, portal customers) is ignored.
-   */
+  /** Live-chat typing relay — the target is read from the ticket (SupportEvents.relayTyping). */
   @SubscribeMessage('support_typing')
   async handleSupportTyping(client: Socket, payload: { ticketId: string }) {
-    const ticketId = payload?.ticketId;
-    if (!ticketId || typeof ticketId !== 'string' || ticketId.length > 64) return;
-
-    const isAgent = this.agentSockets.has(client.id);
-    const member = this.connectedClients.get(client.id);
-    // Portal customers have a live socket but no support surface.
-    if (!isAgent && (!member || member.role === 'CUSTOMER')) return;
-
-    const createdById = await this.ticketCreator(ticketId);
-    if (!createdById) return;
-
-    if (isAgent) {
-      this.server.to(`user:${createdById}`).emit(SocketEvents.SUPPORT_TYPING, { ticketId, from: 'AGENT' });
-    } else if (member && member.userId === createdById) {
-      this.server.to('support-agents').emit(SocketEvents.SUPPORT_TYPING, { ticketId, from: 'CUSTOMER' });
-    }
+    return this.support.relayTyping(client, payload);
   }
 
-  /**
-   * "I am looking at this conversation" (null: at none). A person reading a
-   * thread gets no push for it — the message is already on their screen. Only
-   * a conversation they are a member of is recorded.
-   */
+  /** "I am looking at this conversation" (null: at none) — no push for it (ChatEvents.viewConversation). */
   @SubscribeMessage('chat_view')
   async handleChatView(client: Socket, payload: { conversationId?: string | null }) {
-    const info = this.connectedClients.get(client.id);
-    if (!info || info.role === 'CUSTOMER') return;
-    const id = typeof payload?.conversationId === 'string' ? payload.conversationId : null;
-    if (!id) {
-      info.viewingConversationId = null;
-      return;
-    }
-    const members = await this.chatMembers.members(id).catch(() => [] as string[]);
-    info.viewingConversationId = members.includes(info.userId) ? id : null;
+    return this.chat.viewConversation(client, payload);
   }
 
-  /**
-   * Chat typing indicator — relayed to the other conversation members.
-   *
-   * Two things this must not do, both of which it used to.
-   *
-   * It must not leave the organization. A cross-org conversation is held open
-   * by a shared space so two companies can coordinate work; that is agreement
-   * to exchange messages, not a licence to watch someone type in real time.
-   * Presence and typing say when a person is at their desk and how they are
-   * composing a sentence, which is a level of visibility into another
-   * business's staff nobody signed up for.
-   *
-   * And it must not take the recipient list from the client. `recipientIds`
-   * arrives over the wire, so anything a member could name, they could make
-   * "…is typing" appear on — including people they share no conversation with.
-   * The sender's own organization is read from their authenticated socket, and
-   * every recipient is checked against the sockets actually connected. Typing
-   * is ephemeral: a recipient who is not connected has nothing to receive, so
-   * resolving through live sockets costs nothing and closes both holes at once.
-   */
+  /** Chat typing — to the conversation's members in the sender's organization (ChatEvents.relayTyping). */
   @SubscribeMessage('chat_typing')
   async handleChatTyping(client: Socket, payload: { conversationId: string; recipientIds?: string[]; from?: string }) {
-    const sender = this.connectedClients.get(client.id);
-    // Portal customers are excluded from member chat entirely — reject any
-    // chat-typing relay from a customer socket (spoof defense).
-    if (!sender || sender.role === 'CUSTOMER') return;
-    if (typeof payload?.conversationId !== 'string' || !payload.conversationId) return;
-
-    // Recipients come from the conversation's membership, never from the client
-    // (`recipientIds` is ignored). Organizations of everyone connected are read
-    // from live sockets, so no recipient costs a database round trip.
-    const members = await this.chatMembers.members(payload.conversationId).catch(() => [] as string[]);
-    const orgByUser = new Map<string, string>();
-    for (const info of this.connectedClients.values()) {
-      if (info.role !== 'CUSTOMER') orgByUser.set(info.userId, info.organizationId);
-    }
-    const evt = { conversationId: payload.conversationId, from: sender.userId };
-    for (const uid of typingRecipients(members, sender.userId, (id) => orgByUser.get(id), sender.organizationId)) {
-      this.server.to(`user:${uid}`).emit(SocketEvents.CHAT_TYPING, evt);
-    }
+    return this.chat.relayTyping(client, payload);
   }
 
   // Lets a client ask whether a human agent is online right now (live-chat gating).
   @SubscribeMessage('support_agent_presence')
   handleSupportAgentPresenceQuery() {
-    return { online: this.anyAgentOnline() };
+    return { online: this.registry.anyAgentOnline() };
   }
 
   @SubscribeMessage('join_task')
   async handleJoinTask(client: Socket, payload: { taskId: string }) {
-    return this.joinTask(client, payload);
+    return this.taskRooms.join(client, payload);
   }
 
   @SubscribeMessage('leave_task')
   handleLeaveTask(client: Socket, payload: { taskId: string }) {
-    const roomName = `task:${payload.taskId}`;
-    client.leave(roomName);
-
-    const clientInfo = this.connectedClients.get(client.id);
-    if (clientInfo) {
-      clientInfo.rooms = clientInfo.rooms.filter((r) => r !== roomName);
-    }
-
-    this.logger.log(`[LEAVE] Client ${client.id} left room ${roomName}`);
-    return { success: true };
+    return this.taskRooms.leave(client, payload);
   }
 
   @SubscribeMessage('ping')
@@ -287,4 +211,53 @@ export class WebsocketGateway
     this.logger.debug(`[PING] Client ${client.id}`);
     return { pong: true, timestamp: Date.now() };
   }
+
+  // =========================================================================
+  // THE SURFACE EVENT HANDLERS AND THE HTTP CONTROLLER CALL
+  // =========================================================================
+
+  verifyStatsAccess = (authHeader: string | undefined) => this.tokens.verifyStatsAccess(authHeader);
+  getStats = () => this.registry.getStats();
+  getConnectedClients = () => this.registry.getConnectedClients();
+  isViewingConversation = (userId: string, conversationId: string) =>
+    this.registry.isViewingConversation(userId, conversationId);
+  forceDisconnectUser: SocketRegistry['forceDisconnectUser'] = (...a) => this.registry.forceDisconnectUser(...a);
+  disconnectOrganization: SocketRegistry['disconnectOrganization'] = (...a) =>
+    this.registry.disconnectOrganization(...a);
+
+  emitToOrganization: MemberEvents['emitToOrganization'] = (...a) => this.members.emitToOrganization(...a);
+  emitToUser: MemberEvents['emitToUser'] = (...a) => this.members.emitToUser(...a);
+  emitToRole: MemberEvents['emitToRole'] = (...a) => this.members.emitToRole(...a);
+  emitClockIn: MemberEvents['emitClockIn'] = (...a) => this.members.emitClockIn(...a);
+  emitClockOut: MemberEvents['emitClockOut'] = (...a) => this.members.emitClockOut(...a);
+  emitBreakStarted: MemberEvents['emitBreakStarted'] = (...a) => this.members.emitBreakStarted(...a);
+  emitBreakEnded: MemberEvents['emitBreakEnded'] = (...a) => this.members.emitBreakEnded(...a);
+  emitPresenceChanged: PresenceService['emitPresenceChanged'] = (...a) => this.presence.emitPresenceChanged(...a);
+
+  emitTaskCreated: TaskEvents['emitTaskCreated'] = (...a) => this.tasks.emitTaskCreated(...a);
+  emitTaskAssigned: TaskEvents['emitTaskAssigned'] = (...a) => this.tasks.emitTaskAssigned(...a);
+  emitTaskUpdated: TaskEvents['emitTaskUpdated'] = (...a) => this.tasks.emitTaskUpdated(...a);
+  emitTaskDeleted: TaskEvents['emitTaskDeleted'] = (...a) => this.tasks.emitTaskDeleted(...a);
+  emitTaskDeclined: TaskEvents['emitTaskDeclined'] = (...a) => this.tasks.emitTaskDeclined(...a);
+  emitTaskStatusChanged: TaskEvents['emitTaskStatusChanged'] = (...a) => this.tasks.emitTaskStatusChanged(...a);
+  announceTaskChanged: TaskEvents['announceTaskChanged'] = (...a) => this.tasks.announceTaskChanged(...a);
+  emitCommentAdded: TaskEvents['emitCommentAdded'] = (...a) => this.tasks.emitCommentAdded(...a);
+  emitAttachmentAdded: TaskEvents['emitAttachmentAdded'] = (...a) => this.tasks.emitAttachmentAdded(...a);
+  emitWorkerLocationUpdated: TaskEvents['emitWorkerLocationUpdated'] = (...a) =>
+    this.tasks.emitWorkerLocationUpdated(...a);
+  emitSpaceChanged: TaskEvents['emitSpaceChanged'] = (...a) => this.tasks.emitSpaceChanged(...a);
+  emitSpaceRosterChanged: TaskEvents['emitSpaceRosterChanged'] = (...a) => this.tasks.emitSpaceRosterChanged(...a);
+  emitDocumentTypesChanged: TaskEvents['emitDocumentTypesChanged'] = (...a) =>
+    this.tasks.emitDocumentTypesChanged(...a);
+
+  emitChatMessage: ChatEvents['emitChatMessage'] = (...a) => this.chat.emitChatMessage(...a);
+  emitChatRead: ChatEvents['emitChatRead'] = (...a) => this.chat.emitChatRead(...a);
+  emitChatMessageChanged: ChatEvents['emitChatMessageChanged'] = (...a) => this.chat.emitChatMessageChanged(...a);
+  emitChatMembersChanged: ChatEvents['emitChatMembersChanged'] = (...a) => this.chat.emitChatMembersChanged(...a);
+  emitChatBadge: ChatEvents['emitChatBadge'] = (...a) => this.chat.emitChatBadge(...a);
+
+  emitSupportMessage: SupportEvents['emitSupportMessage'] = (...a) => this.support.emitSupportMessage(...a);
+  emitSupportTicketUpdated: SupportEvents['emitSupportTicketUpdated'] = (...a) =>
+    this.support.emitSupportTicketUpdated(...a);
+  emitSupportSlaBreached: SupportEvents['emitSupportSlaBreached'] = (...a) => this.support.emitSupportSlaBreached(...a);
 }

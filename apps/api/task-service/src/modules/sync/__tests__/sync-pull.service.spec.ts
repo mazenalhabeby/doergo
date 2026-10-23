@@ -7,17 +7,27 @@
  * These pin the rules that made the difference.
  */
 import { SyncPullService, encodeCursor, decodeCursor } from '../sync-pull.service';
+import { TaskChildrenReader } from '../task-children.reader';
+
+/** The service with its collaborators, from the four stubs the tests were written against. */
+function syncPull(prisma: any, workflows: any, media: any, chat: any) {
+  return new SyncPullService(prisma, workflows, chat, new TaskChildrenReader(prisma, media));
+}
 
 const ORG = 'org_1';
 const workflowsStub = { getWorkflow: async () => null, getOrgWorkflows: async () => [{ id: 'wf1', statuses: [] }] };
-const mediaStub = { signAll: async (rows: any[]) => rows.map((r) => ({ ...r, url: r.fileKey ? `https://signed/${r.fileKey}` : null })) };
+const mediaStub = {
+  signAll: async (rows: any[]) => rows.map((r) => ({ ...r, url: r.fileKey ? `https://signed/${r.fileKey}` : null })),
+};
 const day = 86_400_000;
 const facts = { userId: 'u1', userRole: 'EMPLOYEE', organizationId: ORG };
 
 function prismaWith(tasks: any[], tombstones: any[] = []) {
   return {
     task: {
-      findMany: jest.fn(async (args: any) => (args.include ? tasks.slice(0, args.take) : tasks.map((t) => ({ id: t.id })))),
+      findMany: jest.fn(async (args: any) =>
+        args.include ? tasks.slice(0, args.take) : tasks.map((t) => ({ id: t.id })),
+      ),
     },
     syncTombstone: {
       findMany: jest.fn(async () => tombstones),
@@ -36,7 +46,12 @@ describe('cursor', () => {
   it('round-trips and refuses anything malformed', () => {
     const c = encodeCursor({ t: '2026-03-01T10:00:00.000Z', i: 't9', d: '41', s: '2026-09-14T10:00:00.000Z' });
     expect(decodeCursor(c)).toMatchObject({ v: 1, t: '2026-03-01T10:00:00.000Z', i: 't9', d: '41' });
-    for (const bad of ['', 'not-base64-json', Buffer.from('{"v":2}').toString('base64url'), encodeCursor({ t: 'x', i: '', d: '1', s: 'y' })]) {
+    for (const bad of [
+      '',
+      'not-base64-json',
+      Buffer.from('{"v":2}').toString('base64url'),
+      encodeCursor({ t: 'x', i: '', d: '1', s: 'y' }),
+    ]) {
       expect(decodeCursor(bad)).toBeNull();
     }
   });
@@ -45,7 +60,7 @@ describe('cursor', () => {
 describe('SyncPullService tasks', () => {
   it('first pull is a reset with the scope membership on the last page', async () => {
     const prisma = prismaWith([task('a'), task('b')]);
-    const r = await new SyncPullService(prisma as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
+    const r = await syncPull(prisma as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
       ...facts,
       scope: 'tasks',
     });
@@ -61,7 +76,7 @@ describe('SyncPullService tasks', () => {
   it('pages without sending membership until the last page', async () => {
     const rows = Array.from({ length: 5 }, (_, i) => task(`t${i}`));
     const prisma = prismaWith(rows);
-    const r = await new SyncPullService(prisma as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
+    const r = await syncPull(prisma as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
       ...facts,
       scope: 'tasks',
       limit: 2,
@@ -80,7 +95,7 @@ describe('SyncPullService tasks', () => {
       d: '41',
       s: new Date().toISOString(),
     });
-    const r = await new SyncPullService(prisma as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
+    const r = await syncPull(prisma as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
       ...facts,
       scope: 'tasks',
       cursor,
@@ -96,7 +111,7 @@ describe('SyncPullService tasks', () => {
       d: '1',
       s: new Date(Date.now() - 120 * day).toISOString(),
     });
-    const r = await new SyncPullService(prisma as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
+    const r = await syncPull(prisma as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
       ...facts,
       scope: 'tasks',
       cursor,
@@ -105,21 +120,31 @@ describe('SyncPullService tasks', () => {
   });
 
   it('reports deletions since the cursor, scoped to the organization, and advances the watermark', async () => {
-    const prisma = prismaWith([], [{ id: BigInt(42), entityId: 'gone1' }, { id: BigInt(47), entityId: 'gone2' }]);
+    const prisma = prismaWith(
+      [],
+      [
+        { id: BigInt(42), entityId: 'gone1' },
+        { id: BigInt(47), entityId: 'gone2' },
+      ],
+    );
     const cursor = encodeCursor({ t: '2026-09-01T00:00:00.000Z', i: 'a', d: '41', s: new Date().toISOString() });
-    const r = await new SyncPullService(prisma as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
+    const r = await syncPull(prisma as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
       ...facts,
       scope: 'tasks',
       cursor,
     });
     expect(r.deleted).toEqual(['gone1', 'gone2']);
-    expect((prisma.syncTombstone.findMany.mock.calls as any)[0][0].where).toMatchObject({ entity: 'tasks', organizationId: ORG, id: { gt: BigInt(41) } });
+    expect((prisma.syncTombstone.findMany.mock.calls as any)[0][0].where).toMatchObject({
+      entity: 'tasks',
+      organizationId: ORG,
+      id: { gt: BigInt(41) },
+    });
     expect(decodeCursor(r.cursor)!.d).toBe('47');
   });
 
   it('scopes rows by the task list visibility rule (a member sees only their own work)', async () => {
     const prisma = prismaWith([]);
-    await new SyncPullService(prisma as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
+    await syncPull(prisma as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
       ...facts,
       scope: 'tasks',
     });
@@ -130,7 +155,7 @@ describe('SyncPullService tasks', () => {
 
   it('refuses an unknown scope', async () => {
     await expect(
-      new SyncPullService(prismaWith([]) as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
+      syncPull(prismaWith([]) as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
         ...facts,
         scope: 'payroll' as any,
       }),
@@ -141,7 +166,9 @@ describe('SyncPullService tasks', () => {
 describe('SyncPullService task children', () => {
   it('scopes notes by a join to the task scope, and reports only deletions under visible tasks', async () => {
     const prisma: any = {
-      comment: { findMany: jest.fn(async () => [{ id: 'c1', taskId: 't1', updatedAt: new Date('2026-09-01T00:00:00Z') }]) },
+      comment: {
+        findMany: jest.fn(async () => [{ id: 'c1', taskId: 't1', updatedAt: new Date('2026-09-01T00:00:00Z') }]),
+      },
       task: { findMany: jest.fn(async () => [{ id: 't1' }]) },
       syncTombstone: {
         findMany: jest.fn(async () => [
@@ -152,7 +179,7 @@ describe('SyncPullService task children', () => {
       },
     };
     const cursor = encodeCursor({ t: '2026-08-01T00:00:00.000Z', i: '', d: '49', s: new Date().toISOString() });
-    const r = await new SyncPullService(prisma, workflowsStub as any, mediaStub as any, chatStub as any).pull({
+    const r = await syncPull(prisma, workflowsStub as any, mediaStub as any, chatStub as any).pull({
       ...facts,
       scope: 'comments',
       cursor,
@@ -168,7 +195,7 @@ describe('SyncPullService task children', () => {
       attachment: { findMany: jest.fn(async () => []) },
       syncTombstone: { aggregate: jest.fn(async () => ({ _max: { id: null } })) },
     };
-    await new SyncPullService(prisma, workflowsStub as any, mediaStub as any, chatStub as any).pull({
+    await syncPull(prisma, workflowsStub as any, mediaStub as any, chatStub as any).pull({
       ...facts,
       scope: 'attachments',
     });
@@ -180,7 +207,7 @@ describe('SyncPullService task children', () => {
 
 describe('SyncPullService workflows', () => {
   it('sends the organization flows whole, from the same cache the transition check reads', async () => {
-    const r = await new SyncPullService({} as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
+    const r = await syncPull({} as any, workflowsStub as any, mediaStub as any, chatStub as any).pull({
       ...facts,
       scope: 'workflows',
     });
@@ -196,12 +223,10 @@ describe('SyncPullService media links', () => {
     ]);
     const prisma = { ...prismaWith([]), attachment: { findMany } };
     const ids = Array.from({ length: 150 }, (_, i) => `id${i}`);
-    const links = await new SyncPullService(
-      prisma as any,
-      workflowsStub as any,
-      mediaStub as any,
-      chatStub as any,
-    ).mediaLinks({ ...facts, ids });
+    const links = await syncPull(prisma as any, workflowsStub as any, mediaStub as any, chatStub as any).mediaLinks({
+      ...facts,
+      ids,
+    });
 
     const where = (findMany.mock.calls[0] as any)[0].where;
     expect(where.id.in).toHaveLength(100);

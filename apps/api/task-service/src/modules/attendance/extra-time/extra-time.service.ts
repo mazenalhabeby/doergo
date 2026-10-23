@@ -1,10 +1,13 @@
 import { standInGrant } from '../../approvals/stand-in';
 import { personName, zoneOf } from '@hbcfield/shared';
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { success, TimeEntryStatus } from '@hbcfield/shared';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { PrismaService, SERVICE_NAMES, success, TimeEntryStatus } from '@hbcfield/shared';
 import { endOfLocalDay } from '@hbcfield/shared';
-import { decidableExtraTimeWhere, respondedAt } from './extra-time-helpers';
-import { ExtraTimeBase } from './extra-time.base';
+import { ExtraTimeDecision, decidableExtraTimeWhere, respondedAt } from './extra-time-helpers';
+import { AttendanceRoutingService } from '../core/attendance-routing.service';
+import { askAboutOwnRequest, type OwnRequestAsk } from '../../approvals/own-request-route';
+import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { emitEvent, attendanceOvertimeRequestEvent } from '@hbcfield/shared/microservices';
 
 export { decidableExtraTimeWhere, respondedAt } from './extra-time-helpers';
@@ -15,7 +18,38 @@ export { decidableExtraTimeWhere, respondedAt } from './extra-time-helpers';
  * adding it to a closed shift.
  */
 @Injectable()
-export class ExtraTimeService extends ExtraTimeBase {
+export class ExtraTimeService {
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION)
+    private readonly notificationClient: ClientProxy,
+    // Who is told about this member, at this workspace.
+    private readonly routing: AttendanceRoutingService,
+    // The ONE approval path — an automatic approval goes through it too.
+    private readonly approval: ExtraTimeApprovalService,
+  ) {}
+
+  /**
+   * Who is asked about this member's extra time: the shared own-request rule
+   * (a leader's own → the administrators, the only administrator's own →
+   * approved automatically) over the usual workspace routing.
+   */
+  async askFor(entry: { locationId: string; organizationId: string; userId: string }): Promise<OwnRequestAsk> {
+    const usual = await this.routing.notifyTargetsFor(entry, 'canApproveOvertime');
+    return askAboutOwnRequest(this.prisma, {
+      organizationId: entry.organizationId,
+      subjectId: entry.userId,
+      kind: 'extraTime',
+      spaceIds: entry.locationId ? [entry.locationId] : [],
+      usual,
+    });
+  }
+
+  /** Leader approves N more minutes of work → extends the expected end + re-arms reminders. */
+  async approveExtraTime(data: ExtraTimeDecision) {
+    return this.approval.approveExtraTime(data);
+  }
+
   /**
    * Worker responds "I'm working extra time". Pauses reminders and routes the
    * request to the space's overtime approvers. The entry stays open.
@@ -84,7 +118,7 @@ export class ExtraTimeService extends ExtraTimeBase {
       const from = entry.expectedClockOutAt ?? respondedAt(data.occurredAt, entry.clockInAt);
       const dayEnd = endOfLocalDay(from, zoneOf(entry.location?.timezone));
       const minutes = Math.max(1, Math.min(1440, Math.round((dayEnd.getTime() - from.getTime()) / 60_000)));
-      await this.decide(
+      await this.approval.decide(
         { approverId: entry.userId, entryId: entry.id, minutes, organizationId: data.organizationId },
         true,
       );
@@ -147,7 +181,7 @@ export class ExtraTimeService extends ExtraTimeBase {
       // The only administrator: exactly the time worked past the end, approved at once.
       const from = entry.expectedClockOutAt ?? clockOutAt;
       const minutes = Math.max(1, Math.min(1440, Math.ceil((clockOutAt.getTime() - from.getTime()) / 60_000)));
-      await this.decide(
+      await this.approval.decide(
         { approverId: entry.userId, entryId: entry.id, minutes, organizationId: entry.organizationId },
         true,
       );

@@ -7,10 +7,12 @@ import {
   type HandoverPlan,
   clientIds,
   peopleIds,
+  PrismaService,
 } from '@hbcfield/shared';
-import { type AssetActor } from '../core/asset-access.service';
+import { AssetAccessService, type AssetActor } from '../core/asset-access.service';
+import { AssetNotifier } from '../core/asset-notifier.service';
 import { Db } from './asset-custody-helpers';
-import { AssetCustodyBase } from './asset-custody.base';
+import { CustodyWriterService } from './custody-writer.service';
 
 /**
  * Who held a thing, and when.
@@ -28,7 +30,23 @@ import { AssetCustodyBase } from './asset-custody.base';
  * whole feature.
  */
 @Injectable()
-export class AssetCustodyService extends AssetCustodyBase {
+export class AssetCustodyService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: AssetAccessService,
+    private readonly notifier: AssetNotifier,
+    private readonly writer: CustodyWriterService,
+  ) {}
+
+  /**
+   * Apply a change of holder, whatever asked for it — inside the CALLER's
+   * transaction. The plan, the periods and the `AssetHolder` mirror are
+   * CustodyWriterService's; this is the only door to it from outside the module.
+   */
+  apply(db: Db, input: Parameters<CustodyWriterService['apply']>[1]): Promise<HandoverPlan> {
+    return this.writer.apply(db, input);
+  }
+
   /**
    * Tell the people a handover moved something towards or away from.
    *
@@ -119,7 +137,7 @@ export class AssetCustodyService extends AssetCustodyBase {
     let released = 0;
     for (const h of held) {
       const limit = maxHolders(normalizeKindShape(h.asset?.category?.config));
-      const others = (await this.openFor(this.prisma as unknown as Db, h.assetId))
+      const others = (await this.writer.openFor(this.prisma as unknown as Db, h.assetId))
         .filter((p) => p.userId !== userId)
         .map((p) => (p.userId ? { userId: p.userId } : { customerId: p.customerId! })) as CustodyParty[];
       await this.prisma.$transaction((tx) =>

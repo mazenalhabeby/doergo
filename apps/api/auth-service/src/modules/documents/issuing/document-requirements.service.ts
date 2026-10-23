@@ -1,11 +1,22 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { personName, requirementStatuses, waitingOnMember, isCurrentSigner, type SignerStep } from '@hbcfield/shared';
+import {
+  personName,
+  requirementStatuses,
+  waitingOnMember,
+  isCurrentSigner,
+  type SignerStep,
+  PrismaService,
+} from '@hbcfield/shared';
 import { type DocumentActor } from '../core/document-common';
-import { DocumentSupplyBase } from './document-supply.base';
+import { DocumentChainService } from '../core/document-chain.service';
 
 /** What is required OF a member, and what waits ON them. */
 @Injectable()
-export class DocumentRequirementsService extends DocumentSupplyBase {
+export class DocumentRequirementsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly chain: DocumentChainService,
+  ) {}
 
   /**
    * What a member still owes the organization, and whose turn it is.
@@ -91,7 +102,9 @@ export class DocumentRequirementsService extends DocumentSupplyBase {
           hiddenFromMember: true,
           // Same reason as the documents list: with a route, AWAITING_SIGNATURE
           // means somebody has to sign, not that THIS person does.
-          signers: { select: { order: true, role: true, status: true, userId: true, eligibleUserIds: true, customerId: true } },
+          signers: {
+            select: { order: true, role: true, status: true, userId: true, eligibleUserIds: true, customerId: true },
+          },
         },
         orderBy: { issuedAt: 'desc' },
       }),

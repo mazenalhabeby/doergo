@@ -1,7 +1,6 @@
-
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { crmCapsIn } from '@hbcfield/shared';
-import { findPrior } from '@hbcfield/shared';
+import { findPrior, PrismaService } from '@hbcfield/shared';
 import {
   CLIENT_ID,
   notFound,
@@ -15,12 +14,19 @@ import {
   sanitizeIds,
   withContactKeys,
 } from './customers-helpers';
-import { CustomersServiceBase } from './customers-service.base';
+import { CrmReachService } from './crm-reach.service';
+import { CustomerRefsService } from './customer-refs.service';
 import { jsonColumn, optionalJsonColumn } from '../../common/records/json-column';
 
 /** Creating a client and changing one. */
 @Injectable()
-export class CustomerWriteService extends CustomersServiceBase {
+export class CustomerWriteService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reach: CrmReachService,
+    private readonly refs: CustomerRefsService,
+  ) {}
+
   async create(organizationId: string, dto: CustomerInput, caller?: CrmCaller) {
     /*
       Adding a client is its own permission now.
@@ -30,8 +36,8 @@ export class CustomerWriteService extends CustomersServiceBase {
       reassigning are still manage: those act on somebody else's work, and
       adding does not.
     */
-    const reach = await this.crmReachFor(caller, organizationId);
-    this.assertMayCreateIn(reach, dto.spaceId ?? null);
+    const reach = await this.reach.crmReachFor(caller, organizationId);
+    this.reach.assertMayCreateIn(reach, dto.spaceId ?? null);
 
     // A client added from the phone and sent twice is one client. The id is the
     // phone's (UUIDv7); anything else in that field is ignored, never stored.
@@ -44,7 +50,7 @@ export class CustomerWriteService extends CustomersServiceBase {
     });
     // The replay answers only to somebody who can reach it — an id is not a key.
     if (prior) {
-      if (!this.canReach(reach, prior, caller)) throw notFound();
+      if (!this.reach.canReach(reach, prior, caller)) throw notFound();
       return { data: prior };
     }
 
@@ -52,12 +58,12 @@ export class CustomerWriteService extends CustomersServiceBase {
     if (!name) throw new BadRequestException('Customer name is required');
     const locale = clientLocaleFrom(dto.locale) ?? null;
     const currency = clientCurrencyFrom(dto.currency) ?? null;
-    const legalEntityId = (await this.clientCompany(organizationId, dto.legalEntityId)) ?? null;
-    await this.assertRefsInOrg(dto, organizationId);
+    const legalEntityId = (await this.refs.clientCompany(organizationId, dto.legalEntityId)) ?? null;
+    await this.refs.assertRefsInOrg(dto, organizationId);
     // ownerId must be a real member of this org (else drop it).
-    const ownerId = dto.ownerId ? ((await this.keepOrgUserIds([dto.ownerId], organizationId))[0] ?? null) : null;
+    const ownerId = dto.ownerId ? ((await this.refs.keepOrgUserIds([dto.ownerId], organizationId))[0] ?? null) : null;
     // Assigned managers must be real members of THIS org (default: the creator).
-    const managerIds = await this.keepOrgUserIds(
+    const managerIds = await this.refs.keepOrgUserIds(
       sanitizeIds(dto.managerIds) ?? (ownerId ? [ownerId] : []),
       organizationId,
     );
@@ -103,7 +109,7 @@ export class CustomerWriteService extends CustomersServiceBase {
 
     // ── CRM access enforcement (server-authoritative), by what's being changed ──
     // Decided by the workspace the client is filed in NOW (read above, never the body's).
-    const reach = await this.crmReachFor(caller, organizationId);
+    const reach = await this.reach.crmReachFor(caller, organizationId);
     const touchesPortal = dto.isPortalResident !== undefined || dto.portalId !== undefined;
     const touchesOwnership = dto.ownerId !== undefined || dto.managerIds !== undefined;
     const touchesStatus = dto.status !== undefined;
@@ -130,9 +136,9 @@ export class CustomerWriteService extends CustomersServiceBase {
     const touchesInfo = infoKeys.some((k) => dto[k] !== undefined);
     if (existing.isPortalResident || touchesPortal || touchesOwnership) {
       // Portal/app-access + ownership reassignment are manage-level.
-      this.assertManage(reach, existing, caller);
+      this.reach.assertManage(reach, existing, caller);
     } else {
-      const caps = this.capsOn(reach, existing, caller);
+      const caps = this.reach.capsOn(reach, existing, caller);
       if (touchesStatus && !(caps.work || caps.manage)) throw new ForbiddenException('Not allowed to change stage');
       if (touchesInfo && !(caps.editInfo || caps.manage))
         throw new ForbiddenException('Not allowed to edit client info');
@@ -200,16 +206,16 @@ export class CustomerWriteService extends CustomersServiceBase {
     const currency = clientCurrencyFrom(dto.currency);
     if (currency !== undefined) data.currency = currency;
     // Who invoices this client — info, under the same editInfo gate as the currency.
-    const company = await this.clientCompany(organizationId, dto.legalEntityId);
+    const company = await this.refs.clientCompany(organizationId, dto.legalEntityId);
     if (company !== undefined) data.legalEntityId = company;
     if (dto.type !== undefined) data.type = dto.type === 'COMPANY' ? 'COMPANY' : 'PERSON';
     if (dto.details !== undefined) data.details = jsonColumn(sanitizeDetails(dto.details) ?? []);
     if (dto.managerIds !== undefined)
-      data.managerIds = await this.keepOrgUserIds(sanitizeIds(dto.managerIds) ?? [], organizationId);
+      data.managerIds = await this.refs.keepOrgUserIds(sanitizeIds(dto.managerIds) ?? [], organizationId);
     // Cross-tenant guards: refs (space/portal) and ownerId must belong to the org.
-    await this.assertRefsInOrg(dto, organizationId);
+    await this.refs.assertRefsInOrg(dto, organizationId);
     if (dto.ownerId !== undefined)
-      data.ownerId = dto.ownerId ? ((await this.keepOrgUserIds([dto.ownerId], organizationId))[0] ?? null) : null;
+      data.ownerId = dto.ownerId ? ((await this.refs.keepOrgUserIds([dto.ownerId], organizationId))[0] ?? null) : null;
 
     // ── Smart app-access handoff ──
     // When a customer gains app access, they're self-serve: sales stops working

@@ -4,8 +4,11 @@ import { Module } from '@nestjs/common';
 import { AssetCoreModule } from '../core/asset-core.module';
 import { AssetCustodyModule } from '../custody/asset-custody.module';
 import { AssetContractService } from './asset-contract.service';
+import { ContractPlanService } from './contract-plan.service';
 import { AssetProposalService } from './asset-proposal.service';
 import { ProposalReviewService } from './proposal-review.service';
+import { ProposalPlacesService } from './proposal-places.service';
+import { ProposalNoticesService } from './proposal-notices.service';
 import { AssetIntakeRpcController } from './asset-intake.rpc.controller';
 
 /**
@@ -19,7 +22,14 @@ import { AssetIntakeRpcController } from './asset-intake.rpc.controller';
     AssetCustodyModule,
   ],
   controllers: [AssetIntakeRpcController],
-  providers: [AssetContractService, AssetProposalService, ProposalReviewService],
+  providers: [
+    ContractPlanService,
+    AssetContractService,
+    ProposalPlacesService,
+    ProposalNoticesService,
+    AssetProposalService,
+    ProposalReviewService,
+  ],
   exports: [AssetContractService, AssetProposalService, ProposalReviewService],
 })
 export class AssetProposalsModule {}

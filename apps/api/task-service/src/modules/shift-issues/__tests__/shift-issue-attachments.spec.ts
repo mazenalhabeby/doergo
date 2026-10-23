@@ -3,7 +3,7 @@
  * `fileUrl` and then signed from `fileKey` as sent, so a valid-looking URL
  * paired with another organization's key yielded a signed link to that file.
  */
-import { shiftIssuesParts } from './shift-issues.service.fixture';
+import { ShiftIssueFiles } from '../shift-issue-files.service';
 
 const LEGACY = 'https://hel1.your-objectstorage.com/hbcfield';
 const issue = { id: 'iss_1', organizationId: 'org_1' };
@@ -13,12 +13,17 @@ const store: any = {
   keyFromUrl: (u?: string | null) => (u && u.startsWith(`${LEGACY}/`) ? u.slice(LEGACY.length + 1) : null),
   privateUrl: (k: string) => `${LEGACY}/${k}`,
 };
-const service = shiftIssuesParts({} as any, {} as any, {} as any, store, {} as any);
+const service = new ShiftIssueFiles(store, {} as any);
 
 describe('shift issue attachments', () => {
   it('drops a foreign key even when the URL looks right', () => {
     const out = service.cleanAttachments(issue, [
-      { fileUrl: `${LEGACY}/${prefix}ok.jpg`, fileKey: 'org_2/documents/ab/payslip.pdf', fileName: 'x', mimeType: 'image/jpeg' },
+      {
+        fileUrl: `${LEGACY}/${prefix}ok.jpg`,
+        fileKey: 'org_2/documents/ab/payslip.pdf',
+        fileName: 'x',
+        mimeType: 'image/jpeg',
+      },
     ]);
     // Falls back to the key inside the URL, which IS under this issue.
     expect(out.map((a) => a.fileKey)).toEqual([`${prefix}ok.jpg`]);
@@ -35,7 +40,9 @@ describe('shift issue attachments', () => {
   });
 
   it('keeps a key under this issue and rewrites the stored URL from it', () => {
-    const [a] = service.cleanAttachments(issue, [{ fileKey: `${prefix}p.png`, fileUrl: 'https://evil.example/p.png', mimeType: 'image/svg+xml' }]);
+    const [a] = service.cleanAttachments(issue, [
+      { fileKey: `${prefix}p.png`, fileUrl: 'https://evil.example/p.png', mimeType: 'image/svg+xml' },
+    ]);
     expect(a.fileKey).toBe(`${prefix}p.png`);
     expect(a.fileUrl).toBe(`${LEGACY}/${prefix}p.png`);
     expect(a.mimeType).toBe('');

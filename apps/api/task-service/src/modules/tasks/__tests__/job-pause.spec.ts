@@ -6,29 +6,61 @@
  * had been done.
  */
 import { ForbiddenException } from '@nestjs/common';
-import { TaskStatus, workedMinutesOnJob, cleanHandoverNote, HANDOVER_NOTE_MAX, type WorkTimelineEvent } from '@hbcfield/shared';
+import {
+  TaskStatus,
+  workedMinutesOnJob,
+  cleanHandoverNote,
+  HANDOVER_NOTE_MAX,
+  type WorkTimelineEvent,
+} from '@hbcfield/shared';
 import { JobPauseService } from '../handover/job-pause.service';
 import { JobTimeService } from '../handover/job-time.service';
+import { HandoverNoteService } from '../handover/handover-note.service';
 
 const T = (hhmm: string) => new Date(`2026-10-01T${hhmm}:00Z`);
 // The shared rule's kinds: travel on the way, working on site, blocked apart.
-const working = (s: string) => (s === 'EN_ROUTE' ? 'travel' : ['ARRIVED', 'IN_PROGRESS'].includes(s) ? 'working' : s === 'BLOCKED' ? 'blocked' : null) as any;
+const working = (s: string) =>
+  (s === 'EN_ROUTE'
+    ? 'travel'
+    : ['ARRIVED', 'IN_PROGRESS'].includes(s)
+      ? 'working'
+      : s === 'BLOCKED'
+        ? 'blocked'
+        : null) as any;
 
 describe('workedMinutesOnJob (shared)', () => {
-  const ev = (at: string, userId: string, kind: WorkTimelineEvent['kind'], status?: string): WorkTimelineEvent => ({ at: T(at), userId, kind, status });
+  const ev = (at: string, userId: string, kind: WorkTimelineEvent['kind'], status?: string): WorkTimelineEvent => ({
+    at: T(at),
+    userId,
+    kind,
+    status,
+  });
 
   it('counts time in working steps, not blocked time', () => {
-    const events = [ev('08:00', 'mike', 'STATUS', 'ACCEPTED'), ev('09:00', 'mike', 'STATUS', 'IN_PROGRESS'), ev('10:00', 'mike', 'STATUS', 'BLOCKED'), ev('10:30', 'mike', 'STATUS', 'IN_PROGRESS')];
+    const events = [
+      ev('08:00', 'mike', 'STATUS', 'ACCEPTED'),
+      ev('09:00', 'mike', 'STATUS', 'IN_PROGRESS'),
+      ev('10:00', 'mike', 'STATUS', 'BLOCKED'),
+      ev('10:30', 'mike', 'STATUS', 'IN_PROGRESS'),
+    ];
     expect(workedMinutesOnJob(events, 'mike', T('11:15'), working)).toBe(60 + 45);
   });
 
   it('stops at a pause and starts again at the resume', () => {
-    const events = [ev('09:00', 'mike', 'STATUS', 'IN_PROGRESS'), ev('11:00', 'mike', 'PAUSED'), ev('13:00', 'mike', 'RESUMED')];
+    const events = [
+      ev('09:00', 'mike', 'STATUS', 'IN_PROGRESS'),
+      ev('11:00', 'mike', 'PAUSED'),
+      ev('13:00', 'mike', 'RESUMED'),
+    ];
     expect(workedMinutesOnJob(events, 'mike', T('14:00'), working)).toBe(120 + 60);
   });
 
   it('credits somebody who joined later only from their own first move', () => {
-    const events = [ev('08:00', 'mike', 'STATUS', 'IN_PROGRESS'), ev('11:00', 'mike', 'PAUSED'), ev('12:00', 'ali', 'RESUMED')];
+    const events = [
+      ev('08:00', 'mike', 'STATUS', 'IN_PROGRESS'),
+      ev('11:00', 'mike', 'PAUSED'),
+      ev('12:00', 'ali', 'RESUMED'),
+    ];
     expect(workedMinutesOnJob(events, 'ali', T('13:30'), working)).toBe(90);
     expect(workedMinutesOnJob(events, 'nobody', T('13:30'), working)).toBe(0);
   });
@@ -40,7 +72,9 @@ describe('workedMinutesOnJob (shared)', () => {
       { start: new Date('2026-09-30T08:00:00Z'), end: new Date('2026-09-30T12:00:00Z') },
       { start: T('08:00'), end: null },
     ];
-    const yesterday = [{ at: new Date('2026-09-30T08:00:00Z'), userId: 'mike', kind: 'STATUS' as const, status: 'IN_PROGRESS' }];
+    const yesterday = [
+      { at: new Date('2026-09-30T08:00:00Z'), userId: 'mike', kind: 'STATUS' as const, status: 'IN_PROGRESS' },
+    ];
     expect(workedMinutesOnJob(yesterday, 'mike', T('11:15'), working, shifts)).toBe(240 + 195);
     expect(workedMinutesOnJob(events, 'mike', T('11:15'), working, [])).toBe(0);
   });
@@ -57,8 +91,15 @@ describe('JobPauseService', () => {
   let prisma: any;
   let service: JobPauseService;
   const job = (over: Record<string, unknown> = {}) => ({
-    id: 't1', title: 'Boiler', status: TaskStatus.IN_PROGRESS, workflowId: null, spaceId: null,
-    organizationId: 'o1', assignedToId: 'mike', pausedAt: null, ...over,
+    id: 't1',
+    title: 'Boiler',
+    status: TaskStatus.IN_PROGRESS,
+    workflowId: null,
+    spaceId: null,
+    organizationId: 'o1',
+    assignedToId: 'mike',
+    pausedAt: null,
+    ...over,
   });
 
   beforeEach(() => {
@@ -67,13 +108,33 @@ describe('JobPauseService', () => {
       task: {
         findMany: jest.fn().mockResolvedValue([job()]),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-        findUnique: jest.fn().mockResolvedValue({ id: 't1', title: 'Boiler', organizationId: 'o1', assignedToId: 'ali', pausedById: 'mike', handoverDueById: 'mike' }),
+        findUnique: jest.fn().mockResolvedValue({
+          id: 't1',
+          title: 'Boiler',
+          organizationId: 'o1',
+          assignedToId: 'ali',
+          pausedById: 'mike',
+          handoverDueById: 'mike',
+        }),
       },
       taskAssignee: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
       // On the clock since 08:00 (the shifts the worked time is counted inside).
-      timeEntry: { findMany: jest.fn().mockResolvedValue([{ userId: 'mike', clockInAt: T('08:00'), clockOutAt: null, breaks: [] }]), count: jest.fn().mockResolvedValue(1) },
+      timeEntry: {
+        findMany: jest
+          .fn()
+          .mockResolvedValue([{ userId: 'mike', clockInAt: T('08:00'), clockOutAt: null, breaks: [] }]),
+        count: jest.fn().mockResolvedValue(1),
+      },
       taskEvent: {
-        findMany: jest.fn().mockResolvedValue([{ taskId: 't1', createdAt: T('09:00'), userId: 'mike', eventType: 'STATUS_CHANGED', metadata: { newStatus: 'IN_PROGRESS' } }]),
+        findMany: jest.fn().mockResolvedValue([
+          {
+            taskId: 't1',
+            createdAt: T('09:00'),
+            userId: 'mike',
+            eventType: 'STATUS_CHANGED',
+            metadata: { newStatus: 'IN_PROGRESS' },
+          },
+        ]),
         findFirst: jest.fn().mockResolvedValue({ metadata: { workedMinutes: 135 } }),
         create: jest.fn(),
         createMany: jest.fn(),
@@ -82,13 +143,23 @@ describe('JobPauseService', () => {
       attachment: { findMany: jest.fn().mockResolvedValue([{ id: 'a1' }]) },
       taskHandover: {
         findUnique: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockImplementation(async ({ data }: any) => ({ ...data, id: data.id ?? 'h1', author: { firstName: 'Mike', lastName: 'Weber' } })),
+        create: jest.fn().mockImplementation(async ({ data }: any) => ({
+          ...data,
+          id: data.id ?? 'h1',
+          author: { firstName: 'Mike', lastName: 'Weber' },
+        })),
       },
       spaceWorkflow: { findFirst: jest.fn().mockResolvedValue(null) },
       companyLocation: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const workflows: any = { getWorkflow: jest.fn().mockResolvedValue(null) };
-    service = new JobPauseService(prisma, workflows, { emit } as any, new JobTimeService(prisma, workflows));
+    service = new JobPauseService(
+      prisma,
+      workflows,
+      { emit } as any,
+      new JobTimeService(prisma, workflows),
+      new HandoverNoteService(prisma, { emit } as any),
+    );
   });
 
   const clockOut = (over: Record<string, unknown> = {}) =>
@@ -100,48 +171,95 @@ describe('JobPauseService', () => {
       where: { id: 't1', pausedAt: null, status: TaskStatus.IN_PROGRESS },
       data: { pausedAt: T('11:15'), pausedById: 'mike', handoverDueById: 'mike' },
     });
-    expect(prisma.taskEvent.create.mock.calls[0][0].data).toMatchObject({ eventType: 'PAUSED', metadata: { workedMinutes: 135, reason: 'CLOCK_OUT' } });
+    expect(prisma.taskEvent.create.mock.calls[0][0].data).toMatchObject({
+      eventType: 'PAUSED',
+      metadata: { workedMinutes: 135, reason: 'CLOCK_OUT' },
+    });
     expect(emit).toHaveBeenCalledWith('tasks_paused', expect.objectContaining({ taskIds: ['t1'] }));
   });
 
   it('a note written in the clock-out sheet owes nothing, and is kept', async () => {
     await clockOut({ handovers: [{ id: 'h-phone', taskId: 't1', note: 'Pump swapped, test run left' }] });
-    expect(prisma.task.updateMany.mock.calls.find((c: any) => c[0].where.pausedAt === null)[0].data.handoverDueById).toBeNull();
-    expect(prisma.taskHandover.create.mock.calls[0][0].data).toMatchObject({ id: 'h-phone', note: 'Pump swapped, test run left', authorId: 'mike' });
+    expect(
+      prisma.task.updateMany.mock.calls.find((c: any) => c[0].where.pausedAt === null)[0].data.handoverDueById,
+    ).toBeNull();
+    expect(prisma.taskHandover.create.mock.calls[0][0].data).toMatchObject({
+      id: 'h-phone',
+      note: 'Pump swapped, test run left',
+      authorId: 'mike',
+    });
   });
 
   it('leaves alone a job that is not in a working step', async () => {
-    prisma.task.findMany.mockResolvedValue([job({ status: TaskStatus.ACCEPTED }), job({ id: 't2', status: TaskStatus.BLOCKED })]);
+    prisma.task.findMany.mockResolvedValue([
+      job({ status: TaskStatus.ACCEPTED }),
+      job({ id: 't2', status: TaskStatus.BLOCKED }),
+    ]);
     await expect(clockOut()).resolves.toEqual({ paused: [] });
     expect(prisma.task.updateMany).not.toHaveBeenCalled();
   });
 
   it('keeps a crew job running while somebody else who JOINED it is still clocked in', async () => {
     prisma.task.findMany.mockResolvedValue([job({ assignedToId: 'ali' })]);
-    prisma.taskAssignee.findMany.mockResolvedValue([{ taskId: 't1', userId: 'mike' }, { taskId: 't1', userId: 'ali' }]);
+    prisma.taskAssignee.findMany.mockResolvedValue([
+      { taskId: 't1', userId: 'mike' },
+      { taskId: 't1', userId: 'ali' },
+    ]);
     prisma.taskEvent.findMany.mockResolvedValue([
-      { taskId: 't1', createdAt: T('09:00'), userId: 'mike', eventType: 'STATUS_CHANGED', metadata: { newStatus: 'IN_PROGRESS' } },
-      { taskId: 't1', createdAt: T('09:05'), userId: 'ali', eventType: 'CREW_JOINED', metadata: { at: T('09:05').toISOString() } },
+      {
+        taskId: 't1',
+        createdAt: T('09:00'),
+        userId: 'mike',
+        eventType: 'STATUS_CHANGED',
+        metadata: { newStatus: 'IN_PROGRESS' },
+      },
+      {
+        taskId: 't1',
+        createdAt: T('09:05'),
+        userId: 'ali',
+        eventType: 'CREW_JOINED',
+        metadata: { at: T('09:05').toISOString() },
+      },
     ]);
     prisma.timeEntry.findMany.mockResolvedValue([{ userId: 'ali' }]);
     await expect(clockOut()).resolves.toEqual({ paused: [] });
     // Mike's clock-out is his leaving the job.
-    expect(prisma.taskEvent.createMany.mock.calls[0][0].data).toEqual([expect.objectContaining({ taskId: 't1', userId: 'mike', eventType: 'CREW_LEFT' })]);
+    expect(prisma.taskEvent.createMany.mock.calls[0][0].data).toEqual([
+      expect.objectContaining({ taskId: 't1', userId: 'mike', eventType: 'CREW_LEFT' }),
+    ]);
   });
 
   it('pauses a crew job when nobody who joined it is left on the clock — even with crew members who never joined', async () => {
     prisma.task.findMany.mockResolvedValue([job({ assignedToId: 'ali' })]);
     // Ali is on the crew and on the clock, but never joined: the job does not run on for nobody.
-    prisma.timeEntry.findMany.mockImplementation(async ({ select }: any) => (select?.breaks ? [{ userId: 'mike', clockInAt: T('08:00'), clockOutAt: null, breaks: [] }] : [{ userId: 'ali' }]));
+    prisma.timeEntry.findMany.mockImplementation(async ({ select }: any) =>
+      select?.breaks ? [{ userId: 'mike', clockInAt: T('08:00'), clockOutAt: null, breaks: [] }] : [{ userId: 'ali' }],
+    );
     await expect(clockOut()).resolves.toEqual({ paused: ['t1'] });
   });
 
   it('a dispatcher moving the card is not on the job: the last WORKER out still pauses it', async () => {
     prisma.taskEvent.findMany.mockResolvedValue([
-      { taskId: 't1', createdAt: T('09:00'), userId: 'mike', eventType: 'STATUS_CHANGED', metadata: { newStatus: 'IN_PROGRESS' } },
-      { taskId: 't1', createdAt: T('10:00'), userId: 'dispatcher', eventType: 'STATUS_CHANGED', metadata: { newStatus: 'IN_PROGRESS' } },
+      {
+        taskId: 't1',
+        createdAt: T('09:00'),
+        userId: 'mike',
+        eventType: 'STATUS_CHANGED',
+        metadata: { newStatus: 'IN_PROGRESS' },
+      },
+      {
+        taskId: 't1',
+        createdAt: T('10:00'),
+        userId: 'dispatcher',
+        eventType: 'STATUS_CHANGED',
+        metadata: { newStatus: 'IN_PROGRESS' },
+      },
     ]);
-    prisma.timeEntry.findMany.mockImplementation(async ({ select }: any) => (select?.breaks ? [{ userId: 'mike', clockInAt: T('08:00'), clockOutAt: null, breaks: [] }] : [{ userId: 'dispatcher' }]));
+    prisma.timeEntry.findMany.mockImplementation(async ({ select }: any) =>
+      select?.breaks
+        ? [{ userId: 'mike', clockInAt: T('08:00'), clockOutAt: null, breaks: [] }]
+        : [{ userId: 'dispatcher' }],
+    );
     await expect(clockOut()).resolves.toEqual({ paused: ['t1'] });
   });
 
@@ -164,9 +282,18 @@ describe('JobPauseService', () => {
 
     it('the person who owes it writes it after being taken off the job; the new assignee hears it', async () => {
       await write({ attachmentIds: ['a1', 'someone-elses'] });
-      expect(prisma.taskHandover.create.mock.calls[0][0].data).toMatchObject({ attachmentIds: ['a1'], workedMinutes: 135 });
-      expect(prisma.attachment.findMany.mock.calls[0][0].where).toEqual({ id: { in: ['a1', 'someone-elses'] }, taskId: 't1' });
-      expect(prisma.task.updateMany).toHaveBeenCalledWith({ where: { id: 't1', handoverDueById: 'mike' }, data: { handoverDueById: null } });
+      expect(prisma.taskHandover.create.mock.calls[0][0].data).toMatchObject({
+        attachmentIds: ['a1'],
+        workedMinutes: 135,
+      });
+      expect(prisma.attachment.findMany.mock.calls[0][0].where).toEqual({
+        id: { in: ['a1', 'someone-elses'] },
+        taskId: 't1',
+      });
+      expect(prisma.task.updateMany).toHaveBeenCalledWith({
+        where: { id: 't1', handoverDueById: 'mike' },
+        data: { handoverDueById: null },
+      });
       expect(emit).toHaveBeenCalledWith('task_handover_added', expect.objectContaining({ recipientIds: ['ali'] }));
     });
 

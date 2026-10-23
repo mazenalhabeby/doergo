@@ -6,6 +6,7 @@ import { SupportService } from './support.service';
 import { SupportController } from './support.controller';
 import { SupportProcessor } from './support.processor';
 import { SupportInboxService } from './support-inbox.service';
+import { SupportTicketLookup } from './support-ticket-lookup.service';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { SupportInboxService } from './support-inbox.service';
     BullModule.registerQueue({ name: QUEUE_NAMES.SUPPORT }),
   ],
   controllers: [SupportController],
-  providers: [SupportService, SupportInboxService, SupportProcessor],
+  providers: [SupportService, SupportInboxService, SupportTicketLookup, SupportProcessor],
   exports: [SupportService],
 })
 export class SupportModule {}

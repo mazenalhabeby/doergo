@@ -1,14 +1,26 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException, Inject } from '@nestjs/common';
-import { AssetExpenseReviewService } from '../expenses/asset-expense-review.service';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import { extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
-import { success, findLogType, validateLogValues, findPrior, COST_LOG_KEY } from '@hbcfield/shared';
-import { EXPENSE_STATUS } from '../expenses/asset-expense.service';
+import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
+import {
+  success,
+  findLogType,
+  validateLogValues,
+  findPrior,
+  COST_LOG_KEY,
+  PrismaService,
+  type AssetLogState,
+  type KindShape,
+} from '@hbcfield/shared';
+import { AssetAccessService } from '../core/asset-access.service';
+import { AssetExpenseService, EXPENSE_STATUS } from '../expenses/asset-expense.service';
+import { AssetExpenseReviewService } from '../expenses/asset-expense-review.service';
 import { ASSET_FILE_MAX_BYTES, ASSET_FILE_MIMES, isAssetFileKey, assetFilePrefix } from '../core/asset-files';
 import { readAssetEntryDate } from '../core/asset-entry-date';
-import { Actor } from './asset-log-helpers';
-import { AssetLogBase } from './asset-log.base';
+import { Actor, Db } from './asset-log-helpers';
+import { AssetLogAccessService } from './asset-log-access.service';
+import { AssetLogStateService } from './asset-log-state.service';
+import { presentLogEntry } from './asset-log-view';
 
 /**
  * The logbook: what gets done to a thing, and when it is due again.
@@ -36,9 +48,18 @@ import { AssetLogBase } from './asset-log.base';
  * way the set of RECORDED entries can change.
  */
 @Injectable()
-export class AssetLogService extends AssetLogBase {
-  @Inject(AssetExpenseReviewService) private readonly expenseReviews!: AssetExpenseReviewService;
+export class AssetLogService {
+  private readonly logger = new Logger(AssetLogService.name);
 
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: AssetAccessService,
+    private readonly logAccess: AssetLogAccessService,
+    private readonly state: AssetLogStateService,
+    private readonly expenses: AssetExpenseService,
+    private readonly expenseReviews: AssetExpenseReviewService,
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+  ) {}
 
   // ── The photograph ─────────────────────────────────────────────────────────
 
@@ -48,15 +69,18 @@ export class AssetLogService extends AssetLogBase {
    * serve this: it asks custody for every type, and a colleague reporting a
    * dent is not the driver.
    */
-  async presign(data: Actor & { id: string; logType?: string | null; fileName: string; mimeType: string; occurredAt?: string }) {
+  async presign(
+    data: Actor & { id: string; logType?: string | null; fileName: string; mimeType: string; occurredAt?: string },
+  ) {
     const when = readAssetEntryDate(data.occurredAt, data);
-    const asset = await this.loadAsset(data.id, data.organizationId);
+    const asset = await this.logAccess.loadAsset(data.id, data.organizationId);
     const type = findLogType(asset.shape, data.logType);
     if (!type) throw new BadRequestException('That is not something this kind logs');
     if (!type.fields.some((f) => f.type === 'photo')) throw new BadRequestException('This log takes no photo');
-    await this.assertMayLog(data, asset, type.holderOnly, when);
+    await this.logAccess.assertMayLog(data, asset, type.holderOnly, when);
 
-    if (!ASSET_FILE_MIMES.includes(data.mimeType)) throw new BadRequestException('That kind of file cannot be attached');
+    if (!ASSET_FILE_MIMES.includes(data.mimeType))
+      throw new BadRequestException('That kind of file cannot be attached');
     if (!data.fileName || data.fileName.length > 255) throw new BadRequestException('Invalid file name');
 
     // Never the client's filename: this becomes an object key.
@@ -82,11 +106,11 @@ export class AssetLogService extends AssetLogBase {
     },
   ) {
     const when = readAssetEntryDate(data.occurredAt, data);
-    const asset = await this.loadAsset(data.id, data.organizationId);
+    const asset = await this.logAccess.loadAsset(data.id, data.organizationId);
     const type = findLogType(asset.shape, data.logType);
     if (!type) throw new BadRequestException('That is not something this kind logs');
 
-    await this.assertMayLog(data, asset, type.holderOnly, when);
+    await this.logAccess.assertMayLog(data, asset, type.holderOnly, when);
 
     // Filed already — after the gate, so a guessed id reveals nothing.
     const prior = await findPrior({
@@ -94,7 +118,7 @@ export class AssetLogService extends AssetLogBase {
       find: (id) => this.prisma.assetMoney.findUnique({ where: { id } }),
       isSame: (m) => m.authorId === data.userId && m.assetId === data.id,
     });
-    if (prior) return success(this.present(prior));
+    if (prior) return success(presentLogEntry(prior));
 
     let receiptKey: string | null = null;
     if (data.receiptKey) {
@@ -102,13 +126,18 @@ export class AssetLogService extends AssetLogBase {
       if (!isAssetFileKey(data.receiptKey, data.organizationId, data.id)) throw new BadRequestException('Invalid file');
       const object = await requireObjectStore(this.store).head(data.receiptKey);
       if (!object.exists) throw new BadRequestException('The photo upload did not finish — please try again');
-      if (object.sizeBytes <= 0 || object.sizeBytes > ASSET_FILE_MAX_BYTES) throw new BadRequestException('That file is too large');
+      if (object.sizeBytes <= 0 || object.sizeBytes > ASSET_FILE_MAX_BYTES)
+        throw new BadRequestException('That file is too large');
       receiptKey = data.receiptKey;
     }
 
     const checked = validateLogValues(type, data.values, { hasPhoto: !!receiptKey, shape: asset.shape });
     if (!checked.ok) {
-      throw new BadRequestException({ message: 'Some answers need another look', code: 'LOG_VALUES', problems: checked.problems });
+      throw new BadRequestException({
+        message: 'Some answers need another look',
+        code: 'LOG_VALUES',
+        problems: checked.problems,
+      });
     }
 
     /*
@@ -117,9 +146,10 @@ export class AssetLogService extends AssetLogBase {
       be able to move the organization's figures — or reset a service interval
       — by photographing something.
     */
-    const status = type.needsApproval && !this.access.mayIn(data, 'manage', asset.spaceId)
-      ? EXPENSE_STATUS.SUBMITTED
-      : EXPENSE_STATUS.RECORDED;
+    const status =
+      type.needsApproval && !this.access.mayIn(data, 'manage', asset.spaceId)
+        ? EXPENSE_STATUS.SUBMITTED
+        : EXPENSE_STATUS.RECORDED;
     const isCost = type.key === COST_LOG_KEY;
 
     const entry = await this.prisma.$transaction(async (tx) => {
@@ -139,17 +169,17 @@ export class AssetLogService extends AssetLogBase {
           occurredAt: when,
           authorId: data.userId,
           receiptKey,
-          receiptName: receiptKey ? data.receiptName?.slice(0, 255) ?? null : null,
-          receiptMime: receiptKey ? data.receiptMime ?? null : null,
+          receiptName: receiptKey ? (data.receiptName?.slice(0, 255) ?? null) : null,
+          receiptMime: receiptKey ? (data.receiptMime ?? null) : null,
           status,
         },
       });
       // Only a RECORDED entry can move a reading or a due date.
-      if (status === EXPENSE_STATUS.RECORDED) await this.recompute(tx, data.id, asset.shape);
+      if (status === EXPENSE_STATUS.RECORDED) await this.state.recompute(tx, data.id, asset.shape);
       return row;
     });
 
-    return success(this.present(entry));
+    return success(presentLogEntry(entry));
   }
 
   // ── Decisions and removal ──────────────────────────────────────────────────
@@ -165,7 +195,7 @@ export class AssetLogService extends AssetLogBase {
       select: { assetId: true, logType: true },
     });
     // A cost moves no reading and no due date; only a log entry does.
-    if (entry?.logType) await this.recomputeAsset(entry.assetId);
+    if (entry?.logType) await this.state.recomputeAsset(entry.assetId);
     return result;
   }
 
@@ -178,7 +208,12 @@ export class AssetLogService extends AssetLogBase {
     const entry = await this.prisma.assetMoney.findFirst({
       where: { id: data.entryId, assetId: data.id, organizationId: data.organizationId },
       select: {
-        id: true, assetId: true, authorId: true, status: true, receiptKey: true, logType: true,
+        id: true,
+        assetId: true,
+        authorId: true,
+        status: true,
+        receiptKey: true,
+        logType: true,
         asset: { select: { category: { select: { spaceId: true } } } },
       },
     });
@@ -190,13 +225,23 @@ export class AssetLogService extends AssetLogBase {
 
     await this.prisma.$transaction(async (tx) => {
       await tx.assetMoney.delete({ where: { id: entry.id } });
-      if (entry.logType && entry.status === EXPENSE_STATUS.RECORDED) await this.recompute(tx, entry.assetId);
+      if (entry.logType && entry.status === EXPENSE_STATUS.RECORDED) await this.state.recompute(tx, entry.assetId);
     });
     void this.expenses.forgetReceipt(entry.receiptKey);
     return success({ id: entry.id });
   }
 
   // ── Derived state ──────────────────────────────────────────────────────────
+
+  /** Recompute outside a caller's transaction — see AssetLogStateService. */
+  recomputeAsset(assetId: string): Promise<void> {
+    return this.state.recomputeAsset(assetId);
+  }
+
+  /** The asset's latest readings and due states, from its RECORDED entries — see AssetLogStateService. */
+  recompute(db: Db, assetId: string, knownShape?: KindShape, now = new Date()): Promise<AssetLogState> {
+    return this.state.recompute(db, assetId, knownShape, now);
+  }
 
   /**
    * Every record of a kind, after its rules changed. One asset at a time and
@@ -208,7 +253,7 @@ export class AssetLogService extends AssetLogBase {
     let done = 0;
     for (const a of assets) {
       try {
-        await this.recomputeAsset(a.id);
+        await this.state.recomputeAsset(a.id);
         done++;
       } catch (e) {
         this.logger.warn(`logbook recompute for ${a.id} failed: ${(e as Error).message}`);

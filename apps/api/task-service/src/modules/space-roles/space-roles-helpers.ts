@@ -4,6 +4,7 @@ import {
   ROLE_COMBO_MESSAGES,
   RateChangeError,
   AssignmentPermissionsError,
+  type PermissionSet,
 } from '@hbcfield/shared';
 import type { SpaceMemberAuthorityMessage } from '@hbcfield/shared/microservices';
 
@@ -77,3 +78,9 @@ async function withRateErrors<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 export { SPACE_PERMISSION_KEYS, userSelect, roleSelect, authorityRefusal, toHttp, comboRefusal, withRateErrors };
+
+export function normalizePermissions(input?: PermissionSet): PermissionSet {
+  const out: PermissionSet = {};
+  for (const key of SPACE_PERMISSION_KEYS) if (input?.[key] === true) out[key] = true;
+  return out;
+}

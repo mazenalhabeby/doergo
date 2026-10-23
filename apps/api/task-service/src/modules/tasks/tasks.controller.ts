@@ -2,6 +2,7 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TasksService } from './tasks.service';
 import { RolePoolService } from './assignment/role-pool.service';
+import { RoleOfferService } from './assignment/role-offer.service';
 import { TaskReportService } from './report/task-report.service';
 import { RoleTakeService } from './assignment/role-take.service';
 import { RoleStatsService } from './assignment/role-stats.service';
@@ -56,6 +57,7 @@ export class TasksController {
     private readonly tasksService: TasksService,
     private readonly pausedJobs: JobPauseReadService,
     private readonly rolePool: RolePoolService,
+    private readonly roleOffers: RoleOfferService,
     private readonly roleStats: RoleStatsService,
     private readonly roleTake: RoleTakeService,
     private readonly taskReport: TaskReportService,
@@ -87,12 +89,12 @@ export class TasksController {
 
   @MessagePattern(pattern(roleTaskOptions))
   async roleTaskOptions(@Payload() data: RpcRequest<typeof roleTaskOptions>) {
-    return this.rolePool.roleOptions(data);
+    return this.roleOffers.roleOptions(data);
   }
 
   @MessagePattern(pattern(roleTaskPreview))
   async roleTaskPreview(@Payload() data: RpcRequest<typeof roleTaskPreview>) {
-    return this.rolePool.preview(data);
+    return this.roleOffers.preview(data);
   }
 
   @MessagePattern(pattern(roleTaskStats))

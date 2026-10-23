@@ -3,7 +3,8 @@ import { Controller, Get, Post, Delete, Body, Param, Query, Request, BadRequestE
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RequirePermissionInSpace } from '@hbcfield/shared';
 import { portalScope } from '../../common/portal-scope';
-import { PortalAdminControllerBase } from './portal-admin-controller.base';
+import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
+import { PortalAdminCalls } from './portal-admin-calls';
 import {
   listCustomers,
   portalListAvailableUnits,
@@ -24,7 +25,12 @@ import { InviteResidentDto } from './dto/portal-bodies.dto';
 @ApiTags('portal-admin')
 @ApiBearerAuth()
 @Controller('portal/admin')
-export class PortalResidentsController extends PortalAdminControllerBase {
+export class PortalResidentsController {
+  constructor(
+    private readonly authCache: AuthTokenCache,
+    private readonly portalAuth: PortalAdminCalls,
+  ) {}
+
   // ── Residents (B2C, per portal) ──
 
   @Get('residents')
@@ -44,9 +50,9 @@ export class PortalResidentsController extends PortalAdminControllerBase {
       // so the portal is checked HERE first — and without one, "every resident
       // of every portal" is an org-wide question.
       if (!portalId) throw new BadRequestException('Pick a portal');
-      await this.assertManageReach(req, { portalId });
+      await this.portalAuth.assertManageReach(req, { portalId });
     }
-    return this.auth(listCustomers, {
+    return this.portalAuth.ask(listCustomers, {
       organizationId: callerOrgId(req.user),
       portalResident: true,
       portalId,
@@ -59,7 +65,7 @@ export class PortalResidentsController extends PortalAdminControllerBase {
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: "Vacant apartments in the portal's space, for the invite picker" })
   availableUnits(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return this.auth(portalListAvailableUnits, {
+    return this.portalAuth.ask(portalListAvailableUnits, {
       organizationId: callerOrgId(req.user),
       portalId: id,
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
@@ -70,7 +76,7 @@ export class PortalResidentsController extends PortalAdminControllerBase {
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: "Existing CRM customers (non-residents) in the portal's space, for the invite picker" })
   availableCustomers(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return this.auth(portalListAssignableCustomers, {
+    return this.portalAuth.ask(portalListAssignableCustomers, {
       organizationId: callerOrgId(req.user),
       portalId: id,
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
@@ -96,12 +102,16 @@ export class PortalResidentsController extends PortalAdminControllerBase {
     // Every id the body names, in reach, BEFORE anything is created: the CRM and
     // invitation calls below are org-scoped only.
     if (!body?.portalId) throw new BadRequestException('Pick a portal');
-    await this.assertManageReach(req, { portalId: body.portalId, customerId: body.customerId, unitId: body.unitId });
+    await this.portalAuth.assertManageReach(req, {
+      portalId: body.portalId,
+      customerId: body.customerId,
+      unitId: body.unitId,
+    });
     // Promote an EXISTING CRM customer into the portal, or create a new one.
     // Name is optional for new — the resident sets their own name on register.
     let customer: any;
     if (body.customerId) {
-      const updRes: any = await this.auth(updateCustomer, {
+      const updRes: any = await this.portalAuth.ask(updateCustomer, {
         id: body.customerId,
         organizationId: orgId,
         actorId: req.user.id,
@@ -110,7 +120,7 @@ export class PortalResidentsController extends PortalAdminControllerBase {
       customer = updRes?.data ?? updRes;
     } else {
       const initialName = body.name?.trim() || body.unitName?.trim() || 'Pending client';
-      const customerRes: any = await this.auth(createCustomer, {
+      const customerRes: any = await this.portalAuth.ask(createCustomer, {
         organizationId: orgId,
         dto: { name: initialName, email: body.email, isPortalResident: true, portalId: body.portalId },
       });
@@ -118,7 +128,7 @@ export class PortalResidentsController extends PortalAdminControllerBase {
     }
     // Assign an EXISTING vacant apartment, or create a new one from free text.
     const unit: any = body.unitId
-      ? await this.auth(portalUpdateUnit, {
+      ? await this.portalAuth.ask(portalUpdateUnit, {
           id: body.unitId,
           organizationId: orgId,
           customerId: customer.id,
@@ -126,7 +136,7 @@ export class PortalResidentsController extends PortalAdminControllerBase {
           isPrimary: true,
           scopeSpaceIds,
         })
-      : await this.auth(portalCreateUnit, {
+      : await this.portalAuth.ask(portalCreateUnit, {
           organizationId: orgId,
           customerId: customer.id,
           portalId: body.portalId,
@@ -134,7 +144,7 @@ export class PortalResidentsController extends PortalAdminControllerBase {
           address: body.unitAddress,
           scopeSpaceIds,
         });
-    const inviteRes: any = await this.auth(createInvitation, {
+    const inviteRes: any = await this.portalAuth.ask(createInvitation, {
       targetRole: 'CUSTOMER',
       organizationId: orgId,
       createdById: req.user.id,
@@ -153,8 +163,8 @@ export class PortalResidentsController extends PortalAdminControllerBase {
   @DenyExternal()
   @ApiOperation({ summary: "Re-send a pending client's invite by email" })
   async resendResidentInvite(@Param('customerId') customerId: string, @Request() req: AuthedRequest) {
-    await this.assertManageReach(req, { customerId });
-    return this.auth(resendInvitation, {
+    await this.portalAuth.assertManageReach(req, { customerId });
+    return this.portalAuth.ask(resendInvitation, {
       organizationId: callerOrgId(req.user),
       customerId,
     });
@@ -166,7 +176,7 @@ export class PortalResidentsController extends PortalAdminControllerBase {
   @DenyExternal()
   @ApiOperation({ summary: 'Remove a client from the portal (revokes app access, detaches, vacates units)' })
   async removeResident(@Param('customerId') customerId: string, @Request() req: AuthedRequest) {
-    const result: any = await this.auth(portalRemoveClient, {
+    const result: any = await this.portalAuth.ask(portalRemoveClient, {
       organizationId: callerOrgId(req.user),
       customerId,
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),

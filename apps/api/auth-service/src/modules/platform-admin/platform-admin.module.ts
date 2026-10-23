@@ -11,14 +11,14 @@ import { PlatformPricingController } from './platform-pricing.controller';
 import { PricingService } from './platform-pricing.service';
 import { PlatformSupportTeamsController } from './platform-support-teams.controller';
 import { PlatformSupportTeamsService } from './platform-support-teams.service';
-// The billing mode moves a live subscription's collection method.
-import { StripeService } from '../billing/stripe.service';
 /*
   An agreed price is a billing decision, so it reuses the billing engine rather
   than growing a second one here: OrgBillService to read the list price it is
   being agreed against, BillingService to push the new amount to Stripe at once.
   Imported as a MODULE — instantiating those providers again would give this
-  console its own copies with their own state.
+  console its own copies with their own state. The billing mode moves a live
+  subscription's collection method through BillingModule's StripeService (and
+  so its one Stripe client).
 */
 import { BillingModule } from '../billing/billing.module';
 import { PlatformBillingService } from './platform-billing.service';
@@ -26,6 +26,7 @@ import { PlatformBillingAlertsService } from './platform-billing-alerts.service'
 import { PlatformTrialService } from './platform-trial.service';
 import { PlatformTwoFactorService } from './platform-two-factor.service';
 import { PlatformStaffService } from './platform-staff.service';
+import { PlatformSessionService } from './platform-session.service';
 
 // PrismaService (global PrismaModule) + JwtService (global JwtModule) are available.
 @Module({
@@ -45,10 +46,10 @@ import { PlatformStaffService } from './platform-staff.service';
     PlatformAuthService,
     PlatformTwoFactorService,
     PlatformStaffService,
+    PlatformSessionService,
     PlatformAuditService,
     PricingService,
     PlatformSupportTeamsService,
-    StripeService,
   ],
   exports: [
     PlatformAdminService,

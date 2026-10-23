@@ -1,11 +1,21 @@
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import type Stripe from 'stripe';
 import { PrismaStatus, ok, fail } from './billing-helpers';
-import { BillingBase } from './billing.base';
+import { PrismaService } from '@hbcfield/shared';
+import { StripeService } from './stripe.service';
+import { SubscriptionSyncService } from './subscription-sync.service';
 
 /** Stripe's webhook events, applied once each. */
 @Injectable()
-export class StripeWebhookService extends BillingBase {
+export class StripeWebhookService {
+  private readonly logger = new Logger(StripeWebhookService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly stripe: StripeService,
+    private readonly subscriptions: SubscriptionSyncService,
+  ) {}
+
   // ── webhook (verified event applied idempotently) ──────────────────────────────
   async applyWebhook(rawBody: string, signature: string) {
     if (!this.stripe.isConfigured) return fail(HttpStatus.SERVICE_UNAVAILABLE, 'Billing not configured');
@@ -51,14 +61,14 @@ export class StripeWebhookService extends BillingBase {
         const subId = typeof s.subscription === 'string' ? s.subscription : s.subscription?.id;
         if (subId) {
           const sub = await this.stripe.getSubscription(subId);
-          return this.syncSubscription(sub);
+          return this.subscriptions.syncSubscription(sub);
         }
-        return this.orgIdByCustomer(s.customer);
+        return this.subscriptions.orgIdByCustomer(s.customer);
       }
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
-        return this.syncSubscription(event.data.object as Stripe.Subscription);
+        return this.subscriptions.syncSubscription(event.data.object as Stripe.Subscription);
       }
       case 'invoice.payment_failed': {
         const inv = event.data.object as Stripe.Invoice;
@@ -77,7 +87,7 @@ export class StripeWebhookService extends BillingBase {
     customer: string | Stripe.Customer | Stripe.DeletedCustomer | null,
     status: PrismaStatus,
   ): Promise<string | null> {
-    const orgId = await this.orgIdByCustomer(customer);
+    const orgId = await this.subscriptions.orgIdByCustomer(customer);
     if (!orgId) return null;
     await this.prisma.organization.update({ where: { id: orgId }, data: { subStatus: status } });
     await this.prisma.subscription.updateMany({ where: { organizationId: orgId }, data: { status } });

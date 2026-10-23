@@ -8,11 +8,15 @@ import {
   liveJobKind,
   crewPresence,
   type JobTime,
+  type WorkTimelineEvent,
   peopleNames,
   personBrief,
 } from '@hbcfield/shared';
+import { PrismaService } from '@hbcfield/shared';
+import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
 import { TaskRef, MoveMeta } from './job-time-helpers';
-import { JobTimeBase } from './job-time.base';
+import { jobStartedBy, jobTimeline, jobWorkers } from './job-timeline';
+import { jobEventsOf, stepKindsFor, timesForWorker, type JobTimeDeps } from './job-time-reads';
 
 /**
  * Job time (packages/shared/src/tasks/job-time.ts), read from the database:
@@ -21,18 +25,33 @@ import { JobTimeBase } from './job-time.base';
  * background — the same answer for the job page, the handover and the report.
  */
 @Injectable()
-export class JobTimeService extends JobTimeBase {
+export class JobTimeService {
+  private readonly deps: JobTimeDeps;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    workflows: WorkflowConfigCache,
+  ) {
+    this.deps = { prisma, workflows };
+  }
+
+  /** Several jobs' histories as job time reads them — one query (crew presence, the pause rule). */
+  async timelinesOf(taskIds: string[]): Promise<Map<string, WorkTimelineEvent[]>> {
+    const events = await jobEventsOf(this.prisma, taskIds);
+    return new Map(taskIds.map((id) => [id, jobTimeline(events.get(id) ?? [])]));
+  }
+
   /** One job: the total, each worker's share, and what is running now. */
   async forTask(task: TaskRef & { assignedToId: string | null }, until: Date = new Date()) {
     const [kindOf, events, crew] = await Promise.all([
-      this.kindsFor(task.organizationId)(task),
-      this.eventsOf([task.id]),
+      stepKindsFor(this.deps, task.organizationId)(task),
+      jobEventsOf(this.prisma, [task.id]),
       this.prisma.taskAssignee.findMany({ where: { taskId: task.id }, select: { userId: true } }),
     ]);
     const rows = events.get(task.id) ?? [];
-    const timeline = this.timeline(rows);
+    const timeline = jobTimeline(rows);
     const spans = jobSpans(timeline, until, kindOf);
-    const workerIds = this.workersOf(
+    const workerIds = jobWorkers(
       timeline,
       kindOf,
       [task.assignedToId, ...crew.map((c) => c.userId)].filter((x): x is string => !!x),
@@ -41,7 +60,7 @@ export class JobTimeService extends JobTimeBase {
     const [shares, people] = await Promise.all([
       Promise.all(
         workerIds.map((id) =>
-          this.timesForWorker(id, task.organizationId, firstAt, until, [task.id]).then((r) => ({ id, ...r })),
+          timesForWorker(this.deps, id, task.organizationId, firstAt, until, [task.id]).then((r) => ({ id, ...r })),
         ),
       ),
       peopleNames(this.prisma, workerIds),
@@ -61,7 +80,7 @@ export class JobTimeService extends JobTimeBase {
     const total = byWorker.reduce<JobTime>((sum, w) => addJobTime(sum, w), NO_JOB_TIME);
     // Ticking on a screen only while somebody counted on it is on the clock.
     const onClock = byWorker.filter((w) => w.live).length;
-    const started = this.startedBy(rows, kindOf);
+    const started = jobStartedBy(rows, kindOf);
     const names = new Map(people.map((p) => [p.id, p]));
     let startedBy = null as null | {
       user: { id: string; firstName: string; lastName: string } | null;
@@ -91,7 +110,7 @@ export class JobTimeService extends JobTimeBase {
 
   /** One worker's working minutes on a job up to `until` — what a pause records. */
   async workedFor(task: TaskRef, userId: string, until: Date): Promise<number> {
-    const { times } = await this.timesForWorker(userId, task.organizationId, null, until, [task.id]);
+    const { times } = await timesForWorker(this.deps, userId, task.organizationId, null, until, [task.id]);
     return times.get(task.id)?.working ?? 0;
   }
 
@@ -99,7 +118,8 @@ export class JobTimeService extends JobTimeBase {
   async workedForMany(tasks: TaskRef[], userId: string, until: Date = new Date()): Promise<Map<string, number>> {
     const out = new Map<string, number>();
     if (!tasks.length) return out;
-    const { times } = await this.timesForWorker(
+    const { times } = await timesForWorker(
+      this.deps,
       userId,
       tasks[0]!.organizationId,
       null,
@@ -117,13 +137,13 @@ export class JobTimeService extends JobTimeBase {
   async report(data: { userId: string; organizationId: string; from: Date; to: Date }) {
     const { userId, organizationId, from, to } = data;
     const until = new Date(Math.min(to.getTime(), Date.now()));
-    const { jobs, times, shifts } = await this.timesForWorker(userId, organizationId, from, until);
+    const { jobs, times, shifts } = await timesForWorker(this.deps, userId, organizationId, from, until);
     const starters = new Set<string>();
     const inWindow = (d: Date) => d >= from && d <= to;
     const rows = jobs.flatMap(({ task: t, rows: evs, kindOf }) => {
       const time = times.get(t.id) ?? NO_JOB_TIME;
       if (time.travel + time.working + time.blocked === 0) return [];
-      const started = this.startedBy(evs, kindOf);
+      const started = jobStartedBy(evs, kindOf);
       if (started) starters.add(started.userId);
       const pause = [...evs]
         .reverse()

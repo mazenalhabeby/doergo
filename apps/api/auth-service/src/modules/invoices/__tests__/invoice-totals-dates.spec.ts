@@ -1,5 +1,7 @@
 import { invoiceTotals, lineAmount } from '@hbcfield/shared';
 import { InvoiceCreateService } from '../invoice-create.service';
+import { InvoiceCurrencyService } from '../invoice-currency.service';
+import { InvoiceIssuerService } from '../invoice-issuer.service';
 import { InvoiceItemsService } from '../invoice-items.service';
 import { invoiceDay, dayEnd } from '../work-source';
 
@@ -29,10 +31,12 @@ describe('invoice — totals the draft screen showed, dates as days', () => {
       },
       invoiceItem: { findMany: jest.fn() },
     };
-    const svc = new InvoiceCreateService(prisma, {} as never, {} as never);
-    jest.spyOn(svc as any, 'issuingEntity').mockResolvedValue({ entity: { id: 'le-1', invoicePrefix: 'INV', currency: 'EUR' } });
-    jest.spyOn(svc as any, 'currencyFields').mockResolvedValue({ currency: 'EUR' });
-    jest.spyOn(svc as any, 'generateInvoiceNumber').mockResolvedValue('INV-2026-0001');
+    const money = new InvoiceCurrencyService(prisma, {} as never);
+    const issuer = new InvoiceIssuerService(prisma, {} as never);
+    jest.spyOn(issuer, 'issuingEntity').mockResolvedValue({ entity: { id: 'le-1', invoicePrefix: 'INV', currency: 'EUR' } } as never);
+    jest.spyOn(money, 'currencyFields').mockResolvedValue({ currency: 'EUR' } as never);
+    jest.spyOn(issuer, 'generateInvoiceNumber').mockResolvedValue('INV-2026-0001');
+    const svc = new InvoiceCreateService(prisma, money, issuer);
     return { svc, prisma };
   };
 
@@ -62,7 +66,7 @@ describe('invoice — totals the draft screen showed, dates as days', () => {
 
   it('a recomputed draft (line added/removed) re-rounds old unrounded lines', async () => {
     const { prisma } = make();
-    const items = new InvoiceItemsService(prisma, {} as never, {} as never);
+    const items = new InvoiceItemsService(prisma);
     prisma.invoiceItem.findMany.mockResolvedValue([{ amount: 49.995 }, { amount: 49.995 }]);
     prisma.invoice.findUnique.mockResolvedValue({ taxRate: 0.2, discount: 0 });
     await (items as any).recalculateAndReturn('inv-1');

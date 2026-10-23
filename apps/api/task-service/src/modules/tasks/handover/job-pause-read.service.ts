@@ -1,11 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { success } from '@hbcfield/shared';
+import { PrismaService } from '@hbcfield/shared';
+import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
 import { NEVER_WORKING } from './job-pause-helpers';
-import { JobPauseBase } from './job-pause.base';
+import { JobTimeService } from './job-time.service';
+import { crewCarriesOn, workingJobsOf } from './working-jobs';
 
 /** The caller's own paused jobs, waiting to be resumed. */
 @Injectable()
-export class JobPauseReadService extends JobPauseBase {
+export class JobPauseReadService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workflows: WorkflowConfigCache,
+    private readonly jobTime: JobTimeService,
+  ) {}
+
   /**
    * The member's own picture: what they are working on (the clock-out sheet),
    * what they owe a note for (asked on every open), and what is paused on them
@@ -22,7 +31,7 @@ export class JobPauseReadService extends JobPauseBase {
       customer: { select: { name: true } },
     } as const;
     const [working, owed, paused] = await Promise.all([
-      this.workingJobsOf(data.userId, data.organizationId),
+      workingJobsOf({ prisma: this.prisma, workflows: this.workflows }, data.userId, data.organizationId),
       this.prisma.task.findMany({
         where: { organizationId: data.organizationId, handoverDueById: data.userId },
         select,
@@ -60,7 +69,7 @@ export class JobPauseReadService extends JobPauseBase {
         .then((refs) => this.jobTime.workedForMany(refs, data.userId)),
       // Which open jobs the crew carries on after this person clocks out (shared crew.ts) —
       // the clock-out sheet says "leave the crew a note" there, not "pauses".
-      this.crewCarriesOn(working, data.userId, data.organizationId),
+      crewCarriesOn(this.prisma, this.jobTime, working, data.userId, data.organizationId),
       // …and "2 of your items are still open" (shared tasks/checklist.ts): one grouped read on the
       // owner index, only for the jobs in work, only when there are any.
       workingIds.length

@@ -1,13 +1,30 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
-import { requireObjectStore } from '@hbcfield/shared/storage';
-import { success } from '@hbcfield/shared';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Inject, Logger } from '@nestjs/common';
+import { requireObjectStore, OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';
+import { success, PrismaService } from '@hbcfield/shared';
 import { createOnce } from '../../common/create-once.util';
-import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES, UPLOAD_TTL_SECONDS } from './worklog-helpers';
-import { WorklogBase } from './worklog.base';
+import {
+  MAX_FILE_SIZE,
+  ALLOWED_FILE_TYPES,
+  UPLOAD_TTL_SECONDS,
+  objectKey,
+  sessionPrefix,
+  deleteStoredObject,
+} from './worklog-helpers';
+import { MediaSigner } from '../../common/storage/media-signer.service';
+import { WorklogAccess } from './worklog-access.service';
 
 /** Photos and files on a work-log note: an upload link, filing it, deleting it. */
 @Injectable()
-export class WorklogAttachmentsService extends WorklogBase {
+export class WorklogAttachmentsService {
+  private readonly logger = new Logger(WorklogAttachmentsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+    private readonly media: MediaSigner,
+    private readonly access: WorklogAccess,
+  ) {}
+
   // ── Attachments (S3) ────────────────────────────────────────────────────────
 
   async presignAttachment(data: {
@@ -20,7 +37,7 @@ export class WorklogAttachmentsService extends WorklogBase {
     fileName: string;
     mimeType: string;
   }) {
-    const { te } = await this.sessionForNote(
+    const { te } = await this.access.sessionForNote(
       data.noteId,
       data.organizationId,
       data.callerUserId,
@@ -37,7 +54,7 @@ export class WorklogAttachmentsService extends WorklogBase {
     if (!data.fileName || data.fileName.length > 255) throw new BadRequestException('Invalid file name');
 
     const store = requireObjectStore(this.store);
-    const key = this.objectKey(te, data.mimeType);
+    const key = objectKey(te, data.mimeType);
     const upload = await store.presignUpload(key, data.mimeType, undefined, UPLOAD_TTL_SECONDS);
     return success({
       uploadUrl: upload.url,
@@ -67,7 +84,7 @@ export class WorklogAttachmentsService extends WorklogBase {
     id?: string;
   }) {
     const store = requireObjectStore(this.store);
-    const { note, te } = await this.sessionForNote(
+    const { note, te } = await this.access.sessionForNote(
       data.noteId,
       data.organizationId,
       data.callerUserId,
@@ -85,7 +102,7 @@ export class WorklogAttachmentsService extends WorklogBase {
     }
     // The confirmed object MUST live under THIS session's prefix (anti-IDOR / cross-tenant).
     const fileKey = typeof data.fileKey === 'string' && data.fileKey ? data.fileKey : store.keyFromUrl(data.fileUrl);
-    if (!fileKey || fileKey.includes('..') || !fileKey.startsWith(this.sessionPrefix(te))) {
+    if (!fileKey || fileKey.includes('..') || !fileKey.startsWith(sessionPrefix(te))) {
       throw new BadRequestException('Invalid file');
     }
     if (!ALLOWED_FILE_TYPES.includes(data.mimeType)) throw new BadRequestException('File type not allowed');
@@ -136,7 +153,7 @@ export class WorklogAttachmentsService extends WorklogBase {
       select: { id: true, fileKey: true, noteId: true },
     });
     if (!att) throw new NotFoundException('Attachment not found');
-    await this.sessionForNote(
+    await this.access.sessionForNote(
       att.noteId,
       data.organizationId,
       data.callerUserId,
@@ -144,7 +161,7 @@ export class WorklogAttachmentsService extends WorklogBase {
       data.manageSpaceIds,
     ); // owner or manager (canManage)
     await this.prisma.timeEntryNoteAttachment.delete({ where: { id: att.id } });
-    void this.deleteObject(att.fileKey);
+    void deleteStoredObject(this.store, att.fileKey, this.logger);
     return success({ success: true });
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { success, scopeAllows, type SpaceScopeIds, activePortals, portalInOrg } from '@hbcfield/shared';
-import { TaskPortalBase } from './task-portal.base';
+import { PrismaService, success, scopeAllows, type SpaceScopeIds, activePortals, portalInOrg } from '@hbcfield/shared';
+import { MediaSigner } from '../../../common/storage/media-signer.service';
+import { portalRequestShape, portalRequestScope } from './portal-request';
 
 /**
  * The customer portal's side of tasks: a customer's own requests (always
@@ -12,7 +13,12 @@ import { TaskPortalBase } from './task-portal.base';
 const WAITING_REQUESTS_MAX_PORTALS = 20;
 
 @Injectable()
-export class TaskPortalService extends TaskPortalBase {
+export class TaskPortalService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly media: MediaSigner,
+  ) {}
+
   /**
    * One client's requests (newest first) — the customer's own list, and the
    * office's view of one resident (`scopeSpaceIds` set by the office route
@@ -24,7 +30,7 @@ export class TaskPortalService extends TaskPortalBase {
         organizationId: data.organizationId,
         customerId: data.customerId,
         source: 'CUSTOMER_PORTAL',
-        ...this.requestScope(data.scopeSpaceIds),
+        ...portalRequestScope(data.scopeSpaceIds),
       },
       orderBy: { createdAt: 'desc' },
       include: {
@@ -32,7 +38,7 @@ export class TaskPortalService extends TaskPortalBase {
         workflow: { select: { statuses: { orderBy: { position: 'asc' } } } },
       },
     });
-    return success(tasks.map((t) => this.portalRequestShape(t)));
+    return success(tasks.map((t) => portalRequestShape(t)));
   }
 
   /**
@@ -75,7 +81,7 @@ export class TaskPortalService extends TaskPortalBase {
     });
     return success(
       tasks.map((t) => ({
-        ...this.portalRequestShape(t),
+        ...portalRequestShape(t),
         description: t.description ?? null,
         customerId: t.customerId ?? null,
         customerName: t.customer?.name ?? null,
@@ -133,7 +139,7 @@ export class TaskPortalService extends TaskPortalBase {
         return tasks
           .filter((t) => t.customer?.portalId === p.id)
           .map((t) => ({
-            ...this.portalRequestShape(t),
+            ...portalRequestShape(t),
             description: t.description ?? null,
             customerId: t.customerId ?? null,
             customerName: t.customer?.name ?? null,
@@ -167,6 +173,6 @@ export class TaskPortalService extends TaskPortalBase {
       throw new NotFoundException('Request not found');
     }
     const attachments = (await this.media.signAll(task.attachments)).map(({ fileKey: _k, ...a }) => a);
-    return success({ ...this.portalRequestShape(task), description: task.description, attachments });
+    return success({ ...portalRequestShape(task), description: task.description, attachments });
   }
 }

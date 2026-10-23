@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import {
   CALENDAR_LAYERS,
   CALENDAR_MAX_RANGE_DAYS,
@@ -12,10 +12,13 @@ import {
   type CalendarPlace,
   type DayKind,
   orgTimezone,
+  PrismaService,
 } from '@hbcfield/shared';
-import { type PlaceCalendar } from './calendar-rules.service';
-import { DATE, ItemsQuery } from './calendar-helpers';
-import { CalendarSourcesBase } from './calendar-sources.base';
+import { CalendarRulesService, type PlaceCalendar } from './calendar-rules.service';
+import { type Caller } from './events.service';
+import { EventReadService } from './event-read.service';
+import { DATE, ItemsQuery, withinScope } from './calendar-helpers';
+import { CalendarSourcesService } from './calendar-sources.service';
 
 export { type ItemsQuery } from './calendar-helpers';
 
@@ -28,7 +31,14 @@ export { type ItemsQuery } from './calendar-helpers';
  * a member could already read elsewhere.
  */
 @Injectable()
-export class CalendarService extends CalendarSourcesBase {
+export class CalendarService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rules: CalendarRulesService,
+    private readonly eventRead: EventReadService,
+    private readonly sources: CalendarSourcesService,
+  ) {}
+
   async items(q: ItemsQuery) {
     if (!DATE.test(q.from ?? '') || !DATE.test(q.to ?? '') || q.to < q.from)
       throw new BadRequestException('from and to are days, from first');
@@ -81,11 +91,11 @@ export class CalendarService extends CalendarSourcesBase {
     const [shade, ...lists] = await Promise.all([
       daysP,
       layers.has('events') ? this.eventRead.itemsFor(q, fromAt, toAt) : [],
-      layers.has('jobs') ? this.jobs(q, fromAt, toAt, tz, spaceId) : [],
-      layers.has('leave') ? this.leave(q, spaceId) : [],
-      layers.has('shifts') ? this.shifts(q) : [],
-      layers.has('crm') ? this.crm(q, fromAt, toAt) : [],
-      layers.has('documents') ? this.documents(q) : [],
+      layers.has('jobs') ? this.sources.jobs(q, fromAt, toAt, tz, spaceId) : [],
+      layers.has('leave') ? this.sources.leave(q, spaceId) : [],
+      layers.has('shifts') ? this.sources.shifts(q) : [],
+      layers.has('crm') ? this.sources.crm(q, fromAt, toAt) : [],
+      layers.has('documents') ? this.sources.documents(q) : [],
     ]);
     const holidays: CalendarItem[] = [];
     if (layers.has('holidays')) {
@@ -114,5 +124,22 @@ export class CalendarService extends CalendarSourcesBase {
     const items = [...holidays, ...lists.flat()].sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0));
     const places: CalendarPlace[] = shade.places.map((p) => p.place);
     return success({ from: q.from, to: q.to, timezone: tz, places, days: shade.days, items });
+  }
+
+  /** What a workspace's day looks like for the whole team — the calendar's Team view. */
+  async team(q: Caller & { spaceId: string; from: string; to: string; teamSpaces?: string[] }) {
+    if (!q.spaceId || !withinScope(q.teamSpaces, q.spaceId))
+      throw new ForbiddenException('You do not lead that workspace');
+    if (!DATE.test(q.from ?? '') || !DATE.test(q.to ?? '') || q.to < q.from)
+      throw new BadRequestException('from and to are days, from first');
+    if (eachDay(q.from, q.to, CALENDAR_MAX_RANGE_DAYS + 2).length > CALENDAR_MAX_RANGE_DAYS)
+      throw new BadRequestException(`At most ${CALENDAR_MAX_RANGE_DAYS} days at a time`);
+    const place = await this.rules.place(q.organizationId, q.spaceId, q.from, q.to);
+    if (!place) throw new BadRequestException('Workspace not found');
+    return success({
+      place: place.place,
+      holidays: place.holidays,
+      days: eachDay(q.from, q.to).map((day) => ({ day, kind: dayKind(day, place.rules) })),
+    });
   }
 }

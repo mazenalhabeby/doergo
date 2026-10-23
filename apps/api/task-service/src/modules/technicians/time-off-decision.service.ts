@@ -1,18 +1,37 @@
-import { notEndedWhere, isAbsence, toISODateString } from '@hbcfield/shared';
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { success } from '@hbcfield/shared';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Optional,
+} from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { notEndedWhere, isAbsence, toISODateString, PrismaService, SERVICE_NAMES, success } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../attendance/core/self-decision';
 import { ApproveTimeOffDto, CancelTimeOffDto } from './dto';
 import { SPACE_BRIEF, requestFacts } from './technicians-helpers';
-import { MemberServiceBase } from './member-service.base';
+import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
+import { CalendarRulesService } from '../calendar/calendar-rules.service';
+import { CoverService } from './cover.service';
+import { workingDaysOf } from './member-requests';
 import { emitEvent, timeOffDecidedEvent } from '@hbcfield/shared/microservices';
 
-/** Deciding time off: approve or refuse, cancel, change, delete. */
+/** Deciding time off: approve or refuse, cancel, change, delete. Cover and working days as the member saw them. */
 @Injectable()
-export class TimeOffDecisionService extends MemberServiceBase {
-  /**
-   * Approve or reject a time-off request
-   */
+export class TimeOffDecisionService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cover: CoverService,
+    private readonly calendarRules: CalendarRulesService,
+    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+    @Optional() private readonly rules?: ApprovalRulesService, // office rules; absent only in narrow unit tests
+  ) {}
+
+  private recountedWorkingDays(organizationId: string, userId: string, start: Date, end: Date) {
+    return workingDaysOf(this.calendarRules, organizationId, userId, start, end, true);
+  }
+
   /** `automatic`: the only administrator's own request (approvals/own-request.ts) — never reachable from a request body. */
   async approveTimeOff(dto: ApproveTimeOffDto & { scopeSpaceIds?: string[] }, automatic = false) {
     const { timeOffId, organizationId, approverId, approved, rejectionReason, scopeSpaceIds } = dto;
@@ -76,7 +95,7 @@ export class TimeOffDecisionService extends MemberServiceBase {
     // Recounted at the decision: a holiday confirmed since the request moves the number once, here.
     const workingDays =
       approved && isAbsence(timeOff.kind)
-        ? await this.workingDaysOf(organizationId, timeOff.technicianId, timeOff.startDate, timeOff.endDate, true)
+        ? await this.recountedWorkingDays(organizationId, timeOff.technicianId, timeOff.startDate, timeOff.endDate)
         : undefined;
 
     // Office rules: past a threshold this approval is step 1 of 2 and the request stays pending.
@@ -252,7 +271,7 @@ export class TimeOffDecisionService extends MemberServiceBase {
 
     const workingDays =
       (data.startDate || data.endDate) && isAbsence(timeOff.kind)
-        ? await this.workingDaysOf(data.organizationId, timeOff.technicianId, start, end, true)
+        ? await this.recountedWorkingDays(data.organizationId, timeOff.technicianId, start, end)
         : undefined;
     const updated = await this.prisma.timeOff.update({
       where: { id: data.timeOffId },

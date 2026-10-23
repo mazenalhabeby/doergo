@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { personName, success, roleNames } from '@hbcfield/shared';
+import { PrismaService, personName, success, roleNames } from '@hbcfield/shared';
 import { TaskEventType } from '@prisma/client';
 import { OVER } from './role-pool-helpers';
-import { RolePoolBase } from './role-pool.base';
 
 /** Per role: opened, taken, how long it took, open and overdue now, who takes them. */
 @Injectable()
-export class RoleStatsService extends RolePoolBase {
+export class RoleStatsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   // ── The report ────────────────────────────────────────────────────────
 
   /**

@@ -2,12 +2,24 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { directConversationKey, activeShareOwner, personPasses } from '@hbcfield/shared';
 import { CHAT_TASK_SELECT, CHAT_USER_SELECT as userSelect, shapeConversation } from './chat-shape';
 import { CONVERSATION_LIST_ORDER } from './chat-service-helpers';
-import { ChatServiceBase } from './chat-service.base';
+import { PrismaService } from '@hbcfield/shared';
+import { ChatCountersService } from './chat-counters.service';
+import { ChatReachService } from './chat-reach.service';
+import { ChatCrossOrgService } from './chat-cross-org.service';
+import { ChatTasksService } from './chat-tasks.service';
 
 export { CONVERSATION_LIST_ORDER } from './chat-service-helpers';
 
 @Injectable()
-export class ChatService extends ChatServiceBase {
+export class ChatService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly counters: ChatCountersService,
+    private readonly reach: ChatReachService,
+    private readonly crossOrg: ChatCrossOrgService,
+    private readonly tasks: ChatTasksService,
+  ) {}
+
   // ── contacts directory (who the current user is allowed to message) ─────────
   listContacts(data: { userId: string; organizationId: string }) {
     return this.reach.listContacts(data);

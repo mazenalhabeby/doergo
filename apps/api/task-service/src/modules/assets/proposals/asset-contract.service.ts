@@ -8,9 +8,12 @@ import {
   fieldsForKind,
   nameFromContract,
   type HandoverPlan,
+  PrismaService,
 } from '@hbcfield/shared';
-import { ContractFields, Db, ContractActor } from './asset-contract-helpers';
-import { AssetContractBase } from './asset-contract.base';
+import { AssetAccessService } from '../core/asset-access.service';
+import { AssetCustodyService } from '../custody/asset-custody.service';
+import { ContractFields, Db, ContractActor, asParsedContract, kindInScope } from './asset-contract-helpers';
+import { ContractPlanService } from './contract-plan.service';
 
 export { type ContractFields, type ContractActor } from './asset-contract-helpers';
 
@@ -36,18 +39,46 @@ export { type ContractFields, type ContractActor } from './asset-contract-helper
  * the books.
  */
 @Injectable()
-export class AssetContractService extends AssetContractBase {
+export class AssetContractService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: AssetAccessService,
+    private readonly custody: AssetCustodyService,
+    private readonly plans: ContractPlanService,
+  ) {}
+
+  /** Is a kind in a workspace this caller may manage? (see `kindInScope` in the helpers) */
+  static kindInScope(kindSpaceId: string | null | undefined, manageSpaceIds: string[] | null | undefined): boolean {
+    return kindInScope(kindSpaceId, manageSpaceIds);
+  }
+
+  /**
+   * May they use the contract flow at all?
+   *
+   * Managing assets SOMEWHERE opens the door — org-wide or in a workspace.
+   * Which kinds they then reach is decided in `ContractPlanService.resolve`, by
+   * each kind's own workspace. It used to fall back to `canViewAllTasks` for the
+   * org-wide caller: a READ permission deciding who may create, hand over and retire.
+   *
+   * Public because deciding a proposal is the same door: accepting one IS
+   * `apply`, and refusing or listing them must not ask a different question.
+   */
+  assertMay(actor: ContractActor, doing: string): void {
+    this.access.assertMay(actor, 'manage', doing);
+  }
 
   /** What accepting it would do — nothing is written. */
-  async preview(data: {
-    categoryId: string;
-    typeId?: string;
-    holderUserId: string;
-    fields: ContractFields;
-    retireReplaced?: boolean;
-  } & ContractActor) {
+  async preview(
+    data: {
+      categoryId: string;
+      typeId?: string;
+      holderUserId: string;
+      fields: ContractFields;
+      retireReplaced?: boolean;
+    } & ContractActor,
+  ) {
     this.assertMay(data, 'use the contract flow');
-    const { proposal, startsAt, startClamped } = await this.resolve(data);
+    const { proposal, startsAt, startClamped } = await this.plans.resolve(data);
     return success({
       ...proposal,
       startsAt,
@@ -64,25 +95,28 @@ export class AssetContractService extends AssetContractBase {
    * happening, since every later cost then lands against both vehicles and
    * nothing on screen says why.
    */
-  async apply(data: {
-    categoryId: string;
-    typeId?: string;
-    holderUserId: string;
-    fields: ContractFields;
-    retireReplaced?: boolean;
-  } & ContractActor, options: {
-    /**
-     * Tell the people who received or lost something. Off only for a caller
-     * that announces the same event in its own words — a proposal accepted.
-     * A second ARGUMENT, not a field on `data`, because `data` arrives from a
-     * request body and a client must not be able to switch notifications off.
-     */
-    announceHandover?: boolean;
-  } = {}) {
+  async apply(
+    data: {
+      categoryId: string;
+      typeId?: string;
+      holderUserId: string;
+      fields: ContractFields;
+      retireReplaced?: boolean;
+    } & ContractActor,
+    options: {
+      /**
+       * Tell the people who received or lost something. Off only for a caller
+       * that announces the same event in its own words — a proposal accepted.
+       * A second ARGUMENT, not a field on `data`, because `data` arrives from a
+       * request body and a client must not be able to switch notifications off.
+       */
+      announceHandover?: boolean;
+    } = {},
+  ) {
     this.assertMay(data, 'manage assets');
 
     // Recomputed from scratch, on the server, exactly as the preview was.
-    const { proposal, shape, startsAt, startClamped } = await this.resolve(data);
+    const { proposal, shape, startsAt, startClamped } = await this.plans.resolve(data);
     if (!canApply(proposal)) {
       const first = proposal.problems[0]!;
       throw new BadRequestException(
@@ -92,7 +126,7 @@ export class AssetContractService extends AssetContractBase {
       );
     }
 
-    const parsed = this.asParsed(data.fields);
+    const parsed = asParsedContract(data.fields);
     const details = fieldsForKind(shape, parsed);
     const limit = maxHolders(shape);
 
@@ -185,7 +219,10 @@ export class AssetContractService extends AssetContractBase {
     if (options.announceHandover !== false) {
       for (const h of handovers) {
         await this.custody.announce({
-          organizationId: data.organizationId, assetId: h.assetId, actorId: data.userId, plan: h.plan,
+          organizationId: data.organizationId,
+          assetId: h.assetId,
+          actorId: data.userId,
+          plan: h.plan,
         });
       }
     }

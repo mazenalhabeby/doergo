@@ -20,7 +20,9 @@ import { MergeRoleDto, RateHistoryQueryDto, SetDayRateDto } from './space-roles.
 import { RequirePermission } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { canManageSpace, assertCanManageSpace } from './space-roles-controller-helpers';
-import { SpaceRolesControllerBase } from './space-roles-controller.base';
+import { SpaceRolesService } from './space-roles.service';
+import { RebillService } from '../../common/billing/rebill.service';
+import { thenRebill } from './then-rebill';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -40,7 +42,12 @@ import { CreateSpaceRoleDto, UpdateSpaceRoleDto } from './dto/role-bodies.dto';
 @RequirePlan('shift_scheduling')
 @UseInterceptors(LabourCostInterceptor)
 @Controller()
-export class SpaceRolesController extends SpaceRolesControllerBase {
+export class SpaceRolesController {
+  constructor(
+    private readonly service: SpaceRolesService,
+    private readonly billing: RebillService,
+  ) {}
+
   @Get('space-roles')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: "List the org's dynamic space sub-roles" })
@@ -79,7 +86,8 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
     @Request() req: AuthedRequest,
   ) {
     if (body.permissions !== undefined) assertMayGrant(req.user, body.permissions);
-    return this.thenRebill(
+    return thenRebill(
+      this.billing,
       req,
       this.service.updateRole({
         name: body.name,
@@ -102,7 +110,7 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Delete a custom space sub-role' })
   deleteRole(@Param('id') roleId: string, @Request() req: AuthedRequest) {
-    return this.thenRebill(req, this.service.deleteRole({ roleId, organizationId: callerOrgId(req.user) }));
+    return thenRebill(this.billing, req, this.service.deleteRole({ roleId, organizationId: callerOrgId(req.user) }));
   }
 
   /**
@@ -184,7 +192,8 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Merge a work role into another (holders and day rates move; the role is deleted)' })
   mergeRole(@Param('roleId') roleId: string, @Body() body: MergeRoleDto, @Request() req: AuthedRequest) {
-    return this.thenRebill(
+    return thenRebill(
+      this.billing,
       req,
       this.service.mergeRole({ roleId, intoRoleId: body.intoRoleId, organizationId: callerOrgId(req.user) }),
     );

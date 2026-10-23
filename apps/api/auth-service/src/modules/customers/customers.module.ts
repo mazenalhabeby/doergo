@@ -9,6 +9,8 @@ import { CustomerWriteService } from './customer-write.service';
 import { CustomerContactsService } from './customer-contacts.service';
 import { CustomerActivitiesService } from './customer-activities.service';
 import { CustomerDueService } from './customer-due.service';
+import { CrmReachService } from './crm-reach.service';
+import { CustomerRefsService } from './customer-refs.service';
 
 @Module({
   imports: [ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)])],
@@ -21,6 +23,8 @@ import { CustomerDueService } from './customer-due.service';
     CustomerDueService,
     ContactImportService,
     CustomerReminderScheduler,
+    CrmReachService,
+    CustomerRefsService,
   ],
   exports: [
     CustomersService,

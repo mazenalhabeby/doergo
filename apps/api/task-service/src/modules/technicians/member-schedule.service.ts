@@ -1,13 +1,19 @@
 import { dowOf, availabilityRoster, personBrief, personPasses } from '@hbcfield/shared';
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { success } from '@hbcfield/shared';
+import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
+import { PrismaService, success } from '@hbcfield/shared';
 import { SetScheduleDto, GetScheduleDto, GetAvailabilityDto } from './dto';
 import { dateKeyOf, availabilityDays } from './technicians-helpers';
-import { MemberServiceBase } from './member-service.base';
+import { ShiftRematchService } from '../attendance/shifts/shift-rematch.service';
 
 /** A member's working week, and who is available on a day. */
 @Injectable()
-export class MemberScheduleService extends MemberServiceBase {
+export class MemberScheduleService {
+  constructor(
+    private readonly prisma: PrismaService,
+    // A weekly schedule set after the clock-in reaches the entries it now covers.
+    @Optional() private readonly rematch?: ShiftRematchService,
+  ) {}
+
   // ========================================================================
   // SCHEDULE MANAGEMENT
   // ========================================================================

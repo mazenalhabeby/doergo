@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { resolveSpaceDefaultWorkflowId } from '../../workflows/space-workflow.util';
 import {
+  PrismaService,
   personName,
   notEndedWhere,
   TaskStatus,
@@ -12,13 +13,23 @@ import {
   unitAddress,
   workerToAssign,
 } from '@hbcfield/shared';
-import { TaskPortalBase } from './task-portal.base';
+import { ClientProxy } from '@nestjs/microservices';
+import { TaskSupportService } from '../core/task-support.service';
+import { TaskAssignmentService } from '../assignment/task-assignment.service';
+import { portalRequestScope } from './portal-request';
 import { emitEvent, taskAssignedEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 import type { TaskPriority } from '@prisma/client';
 
 /** Turning a client's request into a job, closing it, or sending it back — triage. */
 @Injectable()
-export class TaskTriageService extends TaskPortalBase {
+export class TaskTriageService {
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
+    private readonly support: TaskSupportService,
+    private readonly assignment: TaskAssignmentService,
+  ) {}
+
   /**
    * Triage a pending portal request → a live task. The admin picks the SPACE
    * (required, so the task is always related to a space), the FLOW (task type /
@@ -49,7 +60,7 @@ export class TaskTriageService extends TaskPortalBase {
         id: data.id,
         organizationId: data.organizationId,
         source: 'CUSTOMER_PORTAL',
-        ...this.requestScope(data.scopeSpaceIds),
+        ...portalRequestScope(data.scopeSpaceIds),
       },
     });
     if (!task) throw new NotFoundException('Request not found');

@@ -4,6 +4,7 @@ import { PrismaService } from '@hbcfield/shared';
 import { AssetAccessService } from '../core/asset-access.service';
 import { AssetCustodyService } from '../custody/asset-custody.service';
 import { AssetContractService } from '../proposals/asset-contract.service';
+import { ContractPlanService } from '../proposals/contract-plan.service';
 import { assetCatalogParts } from './asset-catalog.service.fixture';
 
 /**
@@ -61,6 +62,7 @@ describe('AssetContractService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AssetContractService,
+        ContractPlanService,
         { provide: PrismaService, useValue: prisma },
         AssetAccessService,
         { provide: AssetCustodyService, useValue: custody },

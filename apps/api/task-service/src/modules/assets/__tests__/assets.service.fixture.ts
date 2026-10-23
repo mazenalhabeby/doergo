@@ -9,11 +9,18 @@ type Public<T> = { [K in keyof T]: T[K] };
 /** Every service split out of AssetsService, as ONE object — the tests were written against the single class. */
 export type AssetsServiceParts = Public<AssetsService> & Public<AssetCreateService> & Public<AssetUpdateService>;
 
-export function assetServices(...args: unknown[]): AssetsServiceParts {
+/** The three record services over the same collaborators, in the order the old single class took them. */
+export function assetServices(
+  prisma?: any,
+  access?: any,
+  activity?: any,
+  holderService?: any,
+  custody?: any,
+): AssetsServiceParts {
   return combinedServices<AssetsServiceParts>(
-    new (AssetsService as unknown as new (...a: unknown[]) => object)(...args),
-    new (AssetCreateService as unknown as new (...a: unknown[]) => object)(...args),
-    new (AssetUpdateService as unknown as new (...a: unknown[]) => object)(...args),
+    new AssetsService(prisma, access),
+    new AssetCreateService(prisma, access, holderService),
+    new AssetUpdateService(prisma, access, activity, holderService, custody),
   );
 }
 

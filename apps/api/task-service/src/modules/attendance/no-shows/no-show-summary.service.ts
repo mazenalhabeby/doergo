@@ -12,11 +12,14 @@ import {
   peopleFaces,
 } from '@hbcfield/shared';
 import { DAY, MARK_RANK, Instance } from './no-show-record-helpers';
-import { NoShowRecordBase } from './no-show-record.base';
+import { PrismaService } from '@hbcfield/shared';
+import { spaceNames } from './no-show-run-facts';
 
 /** The no-show record as a summary: one row per person, in a period. */
 @Injectable()
-export class NoShowSummaryService extends NoShowRecordBase {
+export class NoShowSummaryService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /** The Attendance → No-shows record: one row per person who missed a planned shift in the period. */
   async summary(data: { organizationId: string; days?: number; spaceId?: string; scopeSpaceIds?: AttendanceScope }) {
     const now = new Date();
@@ -48,7 +51,8 @@ export class NoShowSummaryService extends NoShowRecordBase {
     const entryIds = all.map((r) => r.timeEntryId).filter((v): v is string => !!v);
     const [users, spaces, entries] = await Promise.all([
       peopleFaces(this.prisma, userIds),
-      this.spaceNames(
+      spaceNames(
+        this.prisma,
         data.organizationId,
         all.map((r) => r.spaceId),
       ),

@@ -19,6 +19,8 @@ import {
   readAssignmentPermissions,
   type AssignmentPermissionsChoice,
 } from '@hbcfield/shared';
+import { getOwnedRole, useWorkRoleIn } from './space-role-rules';
+import { dropStalePersonalRole } from './role-admin.service';
 import {
   userSelect,
   roleSelect,
@@ -27,11 +29,13 @@ import {
   toHttp,
   comboRefusal,
 } from './space-roles-helpers';
-import { SpaceRolesBase } from './space-roles.base';
+import { PrismaService } from '@hbcfield/shared';
 
 /** A member's roles and permissions in one workspace, and taking them out. */
 @Injectable()
-export class MemberRolesService extends SpaceRolesBase {
+export class MemberRolesService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * A member's roles and billing here, edited in place: their trade, their
    * management role, whether they may hold both, and how they are billed.
@@ -64,13 +68,22 @@ export class MemberRolesService extends SpaceRolesBase {
     if (!member) throw new NotFoundException('Space member not found');
     const may: SpaceMemberAuthority = data.authority ?? { addMembers: true, grantRoles: true, manageTerms: true };
     // The trade, the two-role switch and the billing terms are the space's people management (canManageUsers here).
-    const touchesTerms = [data.workRoleId, data.allowSecondRole, data.billBy, data.hoursBasis].some((v) => v !== undefined);
+    const touchesTerms = [data.workRoleId, data.allowSecondRole, data.billBy, data.hoursBasis].some(
+      (v) => v !== undefined,
+    );
     if (touchesTerms && !may.manageTerms) throw authorityRefusal("change people's trade or billing");
     if (data.managementRoleId !== undefined && (data.managementRoleId ?? null) !== (member.roleId ?? null)) {
       if (!may.grantRoles) throw authorityRefusal('give roles');
-      if (data.outrankCheck && data.requesterPerms && member.role
-        && permissionsExceed(data.requesterPerms, permissionsFromOrgRole(member.role.permissions))) {
-        throw new ForbiddenException({ message: 'This person holds more in this workspace than you do', code: 'MEMBER_ABOVE_YOU' });
+      if (
+        data.outrankCheck &&
+        data.requesterPerms &&
+        member.role &&
+        permissionsExceed(data.requesterPerms, permissionsFromOrgRole(member.role.permissions))
+      ) {
+        throw new ForbiddenException({
+          message: 'This person holds more in this workspace than you do',
+          code: 'MEMBER_ABOVE_YOU',
+        });
       }
     }
 
@@ -79,13 +92,13 @@ export class MemberRolesService extends SpaceRolesBase {
         ? member.workRole
         : data.workRoleId === null
           ? null
-          : await this.getOwnedRole(data.organizationId, data.workRoleId);
+          : await getOwnedRole(this.prisma, data.organizationId, data.workRoleId);
     const mgmtRole =
       data.managementRoleId === undefined
         ? member.role
         : data.managementRoleId === null
           ? null
-          : await this.getOwnedRole(data.organizationId, data.managementRoleId, { assignmentId: member.id });
+          : await getOwnedRole(this.prisma, data.organizationId, data.managementRoleId, { assignmentId: member.id });
     const allowSecondRole = data.allowSecondRole ?? member.allowSecondRole;
 
     const problem = roleComboProblem({
@@ -137,8 +150,9 @@ export class MemberRolesService extends SpaceRolesBase {
       include: { user: userSelect, role: roleSelect, workRole: roleSelect },
     });
     // A trade somebody holds here is a role this workspace uses.
-    if (data.workRoleId && workRole) await this.useWorkRoleIn(this.prisma, data.spaceId, workRole.id);
-    if (data.managementRoleId !== undefined) await this.dropStalePersonalRole(updated.id, updated.roleId ?? null);
+    if (data.workRoleId && workRole) await useWorkRoleIn(this.prisma, data.spaceId, workRole.id);
+    if (data.managementRoleId !== undefined)
+      await dropStalePersonalRole(this.prisma, updated.id, updated.roleId ?? null);
     return success(
       {
         id: updated.id,
@@ -169,8 +183,15 @@ export class MemberRolesService extends SpaceRolesBase {
     });
     if (!member) throw new NotFoundException('Space member not found');
     // Taking somebody off a workspace who holds more there than you is not yours to do.
-    if (data.outrankPerms && member.role && permissionsExceed(data.outrankPerms, permissionsFromOrgRole(member.role.permissions))) {
-      throw new ForbiddenException({ message: 'This person holds more in this workspace than you do', code: 'MEMBER_ABOVE_YOU' });
+    if (
+      data.outrankPerms &&
+      member.role &&
+      permissionsExceed(data.outrankPerms, permissionsFromOrgRole(member.role.permissions))
+    ) {
+      throw new ForbiddenException({
+        message: 'This person holds more in this workspace than you do',
+        code: 'MEMBER_ABOVE_YOU',
+      });
     }
     await this.prisma.spaceAssignment.delete({ where: { id: member.id } });
     return success({ id: member.id }, 'Member removed');
@@ -213,17 +234,19 @@ export class MemberRolesService extends SpaceRolesBase {
   }) {
     await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
     const ceiling = data.requesterPerms ?? null;
-    await this.prisma.$transaction((tx) =>
-      setAssignmentPermissions(tx, {
-        organizationId: data.organizationId,
-        spaceId: data.spaceId,
-        assignmentId: data.assignmentId,
-        choice: data.choice,
-        ceiling,
-        actorId: data.requesterId ?? null,
-        outrankCheck: data.outrankCheck !== false,
-      }),
-    ).catch(toHttp);
+    await this.prisma
+      .$transaction((tx) =>
+        setAssignmentPermissions(tx, {
+          organizationId: data.organizationId,
+          spaceId: data.spaceId,
+          assignmentId: data.assignmentId,
+          choice: data.choice,
+          ceiling,
+          actorId: data.requesterId ?? null,
+          outrankCheck: data.outrankCheck !== false,
+        }),
+      )
+      .catch(toHttp);
     // Answer with what is now true, read back — the screen re-renders from it.
     return this.getMemberPermissions({ ...data, requesterPerms: ceiling });
   }

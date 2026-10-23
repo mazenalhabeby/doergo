@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import {
+  PrismaService,
   personName,
   notEndedWhere,
   TaskStatus,
@@ -11,7 +12,9 @@ import {
   peopleTaskGate,
 } from '@hbcfield/shared';
 import { assertMayAssign, assertTargetIsInSpace } from '../core/task-scope';
-import { TaskAssignmentBase } from './task-assignment.base';
+import { TaskSupportService } from '../core/task-support.service';
+import { assertAssigneesAreQualified as assertQualified } from './assignee-credentials';
+import { TaskCrewChangeService } from './task-crew-change.service';
 import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 /**
@@ -20,7 +23,30 @@ import { TASK_JOBS, type JobData } from '@hbcfield/shared';
  * leaver, and the one writer that decides what an assignment implies.
  */
 @Injectable()
-export class TaskAssignmentService extends TaskAssignmentBase {
+export class TaskAssignmentService {
+  private readonly logger = new Logger(TaskAssignmentService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly support: TaskSupportService,
+    private readonly crewChange: TaskCrewChangeService,
+  ) {}
+
+  /** Refuse an assignment to somebody whose required credential is missing or expired (assignee-credentials.ts). */
+  assertAssigneesAreQualified(
+    userIds: string[],
+    users: { id: string; firstName: string; lastName: string }[],
+    workflowId?: string | null,
+    organizationId?: string | null,
+  ) {
+    return assertQualified(this.prisma, userIds, users, workflowId, organizationId);
+  }
+
+  /** For the role pool: a crew change goes through the office's own path (primary, status, push). */
+  onAssigneesChanged(taskId: string, newlyAssigned: string[], actorId: string) {
+    return this.crewChange.onAssigneesChanged(taskId, newlyAssigned, actorId);
+  }
+
   /**
    * Assign a task to a technician (CLIENT or DISPATCHER)
    */
@@ -198,7 +224,7 @@ export class TaskAssignmentService extends TaskAssignmentBase {
 
     // The primary, the status and the notification — the same writer as every
     // other path. It re-derives `assignedToId` from the rows, which now agree.
-    await this.afterAssigneesChanged(data.id, alreadyOn ? [] : [data.workerId], data.userId);
+    await this.crewChange.afterAssigneesChanged(data.id, alreadyOn ? [] : [data.workerId], data.userId);
 
     this.support.invalidateStatusCountsCache(updatedTask.organizationId);
 

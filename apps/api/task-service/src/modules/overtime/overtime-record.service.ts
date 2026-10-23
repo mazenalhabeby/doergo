@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import {
+  PrismaService,
   clampListLimit,
   clampListPage,
   overtimeRoundMinutes,
@@ -9,7 +10,7 @@ import {
   type SpaceScopeIds,
 } from '@hbcfield/shared';
 import { ROUND_SELECT, signatureUrl } from './overtime-record-helpers';
-import { OvertimeRecordBase } from './overtime-record.base';
+import { createdWindow, latestCycles, roundRow } from './overtime-round-rows';
 import type { Prisma, OvertimeRequestStatus } from '@prisma/client';
 
 /**
@@ -26,7 +27,9 @@ import type { Prisma, OvertimeRequestStatus } from '@prisma/client';
  * caller's scope; a round outside it reads as not found.
  */
 @Injectable()
-export class OvertimeRecordService extends OvertimeRecordBase {
+export class OvertimeRecordService {
+  constructor(private readonly prisma: PrismaService) {}
+
   async history(data: {
     organizationId: string;
     scopeSpaceIds?: SpaceScopeIds;
@@ -45,7 +48,7 @@ export class OvertimeRecordService extends OvertimeRecordBase {
       AND: [scopeWhere(data.scopeSpaceIds), data.spaceId ? { locationId: data.spaceId } : {}],
       ...(data.technicianId ? { technicianId: data.technicianId } : {}),
       ...(data.status ? { status: data.status as OvertimeRequestStatus } : {}),
-      ...this.window(data.from, data.to, false),
+      ...createdWindow(data.from, data.to, false),
     };
     const [rows, total] = await Promise.all([
       this.prisma.overtimeRequest.findMany({
@@ -57,8 +60,11 @@ export class OvertimeRecordService extends OvertimeRecordBase {
       }),
       this.prisma.overtimeRequest.count({ where }),
     ]);
-    const latest = await this.latestCycles(rows.map((r) => r.timeEntryId));
-    const out = rows.map((r) => this.row(r, latest));
+    const latest = await latestCycles(
+      this.prisma,
+      rows.map((r) => r.timeEntryId),
+    );
+    const out = rows.map((r) => roundRow(r, latest));
     const { data: list, meta } = paginated(out, { page, limit, total });
     return success({ data: list, meta });
   }
@@ -92,7 +98,7 @@ export class OvertimeRecordService extends OvertimeRecordBase {
     const latest = new Map([[r.timeEntryId, Math.max(...siblings.map((s) => s.cycle))]]);
     const { leaderSignature, ...rest } = r;
     return success({
-      ...this.row(rest as never, latest),
+      ...roundRow(rest as never, latest),
       rejectedAt: r.rejectedAt,
       technicianTimeoutAt: r.technicianTimeoutAt,
       approvalTimeoutAt: r.approvalTimeoutAt,

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import {
   success,
@@ -9,11 +9,20 @@ import {
   orgTimezone,
 } from '@hbcfield/shared';
 import { tzFromCoords, spaceCurrency } from './space-helpers';
-import { SpaceServiceBase } from './space-service.base';
+import { PrismaService } from '@hbcfield/shared';
+import { SpaceAnnouncer } from './space-announcer.service';
+import { spaceCompany, cleanPolygon, writeSpaceRates } from './space-write-rules';
 import type { SpaceKind } from '@prisma/client';
 
 @Injectable()
-export class SpacesService extends SpaceServiceBase {
+export class SpacesService {
+  private readonly logger = new Logger(SpacesService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly announcer: SpaceAnnouncer,
+  ) {}
+
   /**
    * Create a new company location
    */
@@ -71,7 +80,7 @@ export class SpacesService extends SpaceServiceBase {
         // enough to refuse somebody standing at the building, and chosen by
         // nobody.
         geofenceRadius: data.geofenceRadius ?? ATTENDANCE_CONSTANTS.DEFAULT_GEOFENCE_RADIUS,
-        geofencePolygon: this.cleanPolygon(data.geofencePolygon) ?? undefined,
+        geofencePolygon: cleanPolygon(data.geofencePolygon) ?? undefined,
         // Resolved above: explicit → pin-derived → org tz → schema default.
         timezone,
         // The staffing floor. Omitted means 0 — no floor — which is what every
@@ -87,16 +96,16 @@ export class SpacesService extends SpaceServiceBase {
         contactEmail: data.contactEmail ?? undefined,
         contactPhone: data.contactPhone ?? undefined,
         currency: data.currency !== undefined ? spaceCurrency(data.currency) : undefined,
-        legalEntityId: await this.spaceCompany(data.organizationId, data.legalEntityId),
+        legalEntityId: await spaceCompany(this.prisma, data.organizationId, data.legalEntityId),
         organizationId: data.organizationId,
         isDefault: existingDefault === 0,
       },
     });
     // Rates go through the ONE dated writer, so a new workspace starts with history.
-    await this.writeSpaceRates(location.id, data.organizationId, data, data.userId);
+    await writeSpaceRates(this.prisma, location.id, data.organizationId, data, data.userId);
 
     this.logger.log(`Company location created: ${location.id}`);
-    this.announce('space_changed', data.organizationId, location.id);
+    this.announcer.announce('space_changed', data.organizationId, location.id);
     return success(location, 'Company location created successfully');
   }
 

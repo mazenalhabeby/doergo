@@ -6,9 +6,11 @@ import {
   scopeWhereOn,
   type SpaceScopeIds,
   workspaceInOrg,
+  PrismaService,
 } from '@hbcfield/shared';
-import { configCache, cacheConfig } from './portal-helpers';
-import { PortalServiceBase } from './portal-service.base';
+import { configCache, cacheConfig, shapeConfig } from './portal-helpers';
+import { PortalReachService } from './portal-reach.service';
+import { assertSpaceRefInScope } from './portal-scope';
 
 /**
  * Customer-portal service. A Portal is a first-class entity (an org can run
@@ -17,7 +19,12 @@ import { PortalServiceBase } from './portal-service.base';
  * by the caller's own portal (via their Customer).
  */
 @Injectable()
-export class PortalService extends PortalServiceBase {
+export class PortalService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reach: PortalReachService,
+  ) {}
+
   // ── Portals (office) ──
 
   async listPortals(data: { organizationId: string; spaceId?: string; scopeSpaceIds?: SpaceScopeIds }) {
@@ -76,10 +83,10 @@ export class PortalService extends PortalServiceBase {
     // A workspace-scoped manager may not carry the portal OUT of their reach —
     // into another workspace, or up to organization level (spaceId null), where
     // only the org-wide key reaches it. Same 404 as a portal they cannot see.
-    if (data.spaceId !== undefined) this.assertSpaceRefInScope(data.scopeSpaceIds, data.spaceId);
+    if (data.spaceId !== undefined) assertSpaceRefInScope(data.scopeSpaceIds, data.spaceId);
     // Switching to the Apartment entity requires the space's Assets module.
     if (data.templateKey === 'rental' && portal.spaceId) {
-      await this.assertApartmentsModule(data.organizationId, portal.spaceId);
+      await this.reach.assertApartmentsModule(data.organizationId, portal.spaceId);
     }
 
     // Validate the routing space belongs to this org (fk-less link, defence in depth).
@@ -167,8 +174,25 @@ export class PortalService extends PortalServiceBase {
       where: { portalId: portal.id, isActive: true },
       orderBy: { position: 'asc' },
     });
-    const result = this.shapeConfig(portal, categories);
+    const result = shapeConfig(portal, categories);
     cacheConfig(customer.portalId, result);
     return result;
+  }
+
+  async getPortal(data: { id: string; organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
+    const portal = await this.prisma.portal.findFirst({
+      where: { id: data.id, organizationId: data.organizationId, ...scopeWhereOn('spaceId', data.scopeSpaceIds) },
+    });
+    if (!portal) throw new NotFoundException('Portal not found');
+    const categories = await this.prisma.intakeCategory.findMany({
+      where: { portalId: portal.id, isActive: true },
+      orderBy: { position: 'asc' },
+    });
+    return shapeConfig(portal, categories);
+  }
+
+  /** Is this portal, client or unit inside the caller's reach? (see PortalReachService) */
+  assertPortalReach(...args: Parameters<PortalReachService['assertPortalReach']>) {
+    return this.reach.assertPortalReach(...args);
   }
 }

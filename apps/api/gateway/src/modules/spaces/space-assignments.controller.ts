@@ -24,7 +24,10 @@ import {
 import { outrankCeiling } from '../space-roles/space-member-access';
 import { AssignMemberDto, UpdateAssignmentDto } from './dto';
 import { AUTO_CLOCK_MEMBER_FIELDS } from './spaces-controller-helpers';
-import { SpacesControllerBase } from './spaces-controller.base';
+import { RebillService } from '../../common/billing/rebill.service';
+import { SpacesService } from './spaces.service';
+import { SpacesQueueService } from './spaces.queue.service';
+import { assertMayManageMembersIn } from './space-members-gate';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -36,7 +39,13 @@ import { callerOrgId } from '../../common/caller-org';
 @ApiBearerAuth()
 @UseInterceptors(LabourCostInterceptor)
 @Controller('locations')
-export class SpaceAssignmentsController extends SpacesControllerBase {
+export class SpaceAssignmentsController {
+  constructor(
+    private readonly locationsService: SpacesService,
+    private readonly locationsQueueService: SpacesQueueService,
+    private readonly billing: RebillService,
+  ) {}
+
   // ==================== MEMBER ASSIGNMENT ENDPOINTS ====================
 
   @Get(':id/members')
@@ -94,7 +103,7 @@ export class SpaceAssignmentsController extends SpacesControllerBase {
   @Post(':id/members')
   @ApiOperation({ summary: 'Assign a member to a location' })
   async assignMember(@Param('id') locationId: string, @Body() dto: AssignMemberDto, @Request() req: AuthedRequest) {
-    this.assertMayManageMembersIn(req, locationId);
+    assertMayManageMembersIn(req, locationId);
     const result = await this.locationsQueueService.assignMember({
       ...dto,
       locationId,
@@ -113,7 +122,7 @@ export class SpaceAssignmentsController extends SpacesControllerBase {
       day billed at the wrong rate, and — worse to use — a price that does not
       move when you change the thing that sets it.
     */
-    this.rebill(callerOrgId(req.user));
+    this.billing.rebill(callerOrgId(req.user));
     return result;
   }
 
@@ -156,7 +165,7 @@ export class SpaceAssignmentsController extends SpacesControllerBase {
       spaceId: orgWide ? undefined : locationId,
     });
     // Same reason as assignMember: this route can change the assignment's role.
-    this.rebill(callerOrgId(req.user));
+    this.billing.rebill(callerOrgId(req.user));
     return result;
   }
 
@@ -175,7 +184,7 @@ export class SpaceAssignmentsController extends SpacesControllerBase {
     @Param('assignmentId') assignmentId: string,
     @Request() req: AuthedRequest,
   ) {
-    this.assertMayManageMembersIn(req, locationId);
+    assertMayManageMembersIn(req, locationId);
     const orgWide = isAdmin(req.user) || accessAllows(req.user?.access, 'canManageWorkspaces');
     const result = await this.locationsQueueService.removeAssignment({
       assignmentId,
@@ -184,7 +193,7 @@ export class SpaceAssignmentsController extends SpacesControllerBase {
       outrankPerms: outrankCeiling(req.user, locationId),
     });
     // Losing a space role can move an external member back to the full seat.
-    this.rebill(callerOrgId(req.user));
+    this.billing.rebill(callerOrgId(req.user));
     return result;
   }
 }

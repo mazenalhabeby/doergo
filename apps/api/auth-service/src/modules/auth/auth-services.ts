@@ -1,5 +1,6 @@
 import { AuthService } from './auth.service';
 import { SessionTokensService } from './session-tokens.service';
+import { TokenPairService } from './token-pair.service';
 import { SignInService } from './sign-in.service';
 import { AuthMailService } from './auth-mail.service';
 import { SessionsService } from './sessions.service';
@@ -20,6 +21,7 @@ import { AccountDeletionService } from './account-deletion.service';
 export const AUTH_SERVICES = [
   AuthService,
   SessionTokensService,
+  TokenPairService,
   SignInService,
   AuthMailService,
   RegisterService,

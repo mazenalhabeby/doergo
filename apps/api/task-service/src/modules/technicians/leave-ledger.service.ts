@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
+  PrismaService,
   assertFoundInOrg,
   assertMemberInScope,
   parseLeaveAdjustment,
@@ -7,8 +8,24 @@ import {
   type LeaveBalanceResponse,
   type LeaveLedgerResponse,
 } from '@hbcfield/shared';
-import { asDate, leaveYearFor, ADJUSTMENT_REFUSALS } from './leave-ledger-helpers';
-import { LeaveLedgerBase } from './leave-ledger.base';
+import { CalendarRulesService } from '../calendar/calendar-rules.service';
+import {
+  asDate,
+  leaveYearFor,
+  ADJUSTMENT_REFUSALS,
+  type OrgLeave,
+  type PersonLeave,
+  type PersonLeaveYear,
+} from './leave-ledger-helpers';
+import {
+  LEAVE_ENTRY_SELECT,
+  assertMayWriteLeave,
+  leaveDayFrom,
+  leaveEntryOf,
+  loadLeavePerson,
+  mayWriteLeave,
+} from './leave-ledger-access';
+import { leaveBalanceResponse, leaveYears } from './leave-years';
 
 export {
   ORG_LEAVE_SELECT,
@@ -35,7 +52,26 @@ export {
  * vacation in the window.
  */
 @Injectable()
-export class LeaveLedgerService extends LeaveLedgerBase {
+export class LeaveLedgerService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly calendarRules: CalendarRulesService,
+  ) {}
+
+  /** Each person's leave year containing the day `onFor` names — the balance core (leave-years.ts). */
+  years(
+    org: OrgLeave,
+    people: PersonLeave[],
+    onFor: (p: PersonLeave) => string,
+  ): Promise<Map<string, PersonLeaveYear>> {
+    return leaveYears(this.prisma, this.calendarRules, org, people, onFor);
+  }
+
+  /** The response every client reads — the old fields first, so a phone from before keeps working. */
+  toResponse(y: PersonLeaveYear): LeaveBalanceResponse {
+    return leaveBalanceResponse(y);
+  }
+
   /** GET /employees/:id/leave-balance — the leave year containing `on` (default today). */
   async getBalance(dto: {
     technicianId: string;
@@ -43,8 +79,8 @@ export class LeaveLedgerService extends LeaveLedgerBase {
     on?: string;
     year?: number | string;
   }): Promise<LeaveBalanceResponse> {
-    const { person, org } = await this.loadPerson(dto.organizationId, dto.technicianId);
-    const on = this.dayFrom(dto, org);
+    const { person, org } = await loadLeavePerson(this.prisma, dto.organizationId, dto.technicianId);
+    const on = leaveDayFrom(dto, org);
     const y = (await this.years(org, [person], () => on)).get(person.id)!;
     return this.toResponse(y);
   }
@@ -63,7 +99,7 @@ export class LeaveLedgerService extends LeaveLedgerBase {
     on?: string;
     year?: number | string;
   }): Promise<LeaveLedgerResponse> {
-    const { person, org } = await this.loadPerson(dto.organizationId, dto.technicianId);
+    const { person, org } = await loadLeavePerson(this.prisma, dto.organizationId, dto.technicianId);
     if (dto.callerId !== dto.technicianId) {
       await assertMemberInScope(this.prisma as never, {
         userId: person.id,
@@ -71,21 +107,22 @@ export class LeaveLedgerService extends LeaveLedgerBase {
         scopeSpaceIds: dto.scopeSpaceIds,
       });
     }
-    const leaveYear = leaveYearFor(org, person, this.dayFrom(dto, org));
+    const leaveYear = leaveYearFor(org, person, leaveDayFrom(dto, org));
     const [rows, canEdit] = await Promise.all([
       this.prisma.leaveAdjustment.findMany({
         where: { organizationId: dto.organizationId, userId: person.id, leaveYearStart: asDate(leaveYear.start) },
         orderBy: { createdAt: 'desc' },
-        select: this.entrySelect,
+        select: LEAVE_ENTRY_SELECT,
       }),
-      this.mayWrite(
+      mayWriteLeave(
+        this.prisma,
         dto.organizationId,
         person.id,
         dto.callerId,
         dto.editScope === 'ORG' ? undefined : (dto.editScope ?? null),
       ),
     ]);
-    return { leaveYear, items: rows.map((r) => this.entryOf(r)), canEdit };
+    return { leaveYear, items: rows.map((r) => leaveEntryOf(r)), canEdit };
   }
 
   /** POST /employees/:id/leave-adjustments — a hand-entered line (shared parseLeaveAdjustment). */
@@ -98,8 +135,8 @@ export class LeaveLedgerService extends LeaveLedgerBase {
   }) {
     const parsed = parseLeaveAdjustment(dto.body);
     if (!parsed.ok) throw new BadRequestException({ code: parsed.code, message: ADJUSTMENT_REFUSALS[parsed.code] });
-    const { person, org } = await this.loadPerson(dto.organizationId, dto.technicianId);
-    await this.assertMayWrite(dto.organizationId, person.id, dto.callerId, dto.scopeSpaceIds);
+    const { person, org } = await loadLeavePerson(this.prisma, dto.organizationId, dto.technicianId);
+    await assertMayWriteLeave(this.prisma, dto.organizationId, person.id, dto.callerId, dto.scopeSpaceIds);
     const leaveYear = leaveYearFor(org, person, parsed.value.on);
     const row = await this.prisma.leaveAdjustment.create({
       data: {
@@ -111,10 +148,10 @@ export class LeaveLedgerService extends LeaveLedgerBase {
         reason: parsed.value.reason,
         createdById: dto.callerId,
       },
-      select: this.entrySelect,
+      select: LEAVE_ENTRY_SELECT,
     });
     const y = (await this.years(org, [person], () => leaveYear.start)).get(person.id)!;
-    return { entry: this.entryOf(row), balance: this.toResponse(y) };
+    return { entry: leaveEntryOf(row), balance: this.toResponse(y) };
   }
 
   /**
@@ -133,7 +170,7 @@ export class LeaveLedgerService extends LeaveLedgerBase {
       select: { id: true, organizationId: true, userId: true, voidedAt: true },
     });
     assertFoundInOrg(found, dto.organizationId, 'Adjustment');
-    await this.assertMayWrite(dto.organizationId, found.userId, dto.callerId, dto.scopeSpaceIds);
+    await assertMayWriteLeave(this.prisma, dto.organizationId, found.userId, dto.callerId, dto.scopeSpaceIds);
     const claimed = await this.prisma.leaveAdjustment.updateMany({
       where: { id: found.id, voidedAt: null },
       data: { voidedAt: new Date(), voidedById: dto.callerId },
@@ -142,11 +179,11 @@ export class LeaveLedgerService extends LeaveLedgerBase {
       throw new BadRequestException({ code: 'ADJUSTMENT_ALREADY_VOIDED', message: 'This line was already undone.' });
     const row = await this.prisma.leaveAdjustment.findUniqueOrThrow({
       where: { id: found.id },
-      select: this.entrySelect,
+      select: LEAVE_ENTRY_SELECT,
     });
-    const { person, org } = await this.loadPerson(dto.organizationId, found.userId);
+    const { person, org } = await loadLeavePerson(this.prisma, dto.organizationId, found.userId);
     const start = toISODateString(row.leaveYearStart);
     const y = (await this.years(org, [person], () => start)).get(person.id)!;
-    return { entry: this.entryOf(row), balance: this.toResponse(y) };
+    return { entry: leaveEntryOf(row), balance: this.toResponse(y) };
   }
 }

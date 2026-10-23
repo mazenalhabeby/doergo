@@ -6,14 +6,23 @@ import {
   lineAmount,
   PERSON_BRIEF_SELECT,
   workspaceInvoiceHeader,
+  PrismaService,
 } from '@hbcfield/shared';
 import { dayStart, dayEnd, invoiceDay } from './work-source';
-import { InvoiceServiceBase } from './invoice-service.base';
+import { InvoiceCurrencyService } from './invoice-currency.service';
+import { InvoiceIssuerService } from './invoice-issuer.service';
+import { dayLineFields, unknownWorkRef, unknownWorker } from './invoice-line-checks';
 import { type invoiceCreate, type RpcRequest } from '@hbcfield/shared/microservices';
 
 /** Creating an invoice: its lines, its company, its number. */
 @Injectable()
-export class InvoiceCreateService extends InvoiceServiceBase {
+export class InvoiceCreateService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly money: InvoiceCurrencyService,
+    private readonly issuer: InvoiceIssuerService,
+  ) {}
+
   // The request is the message contract's (shared with the gateway) — one definition, not two.
   async create(data: RpcRequest<typeof invoiceCreate>) {
     // When tied to a CUSTOMER space, snapshot its contact details as fallbacks so
@@ -84,16 +93,16 @@ export class InvoiceCreateService extends InvoiceServiceBase {
           typeof item.billedHours === 'number' && Number.isFinite(item.billedHours) && item.billedHours >= 0
             ? Math.min(item.billedHours, 100_000)
             : null,
-        ...this.dayLineFields(item),
+        ...dayLineFields(item),
       };
     });
-    const badWorker = await this.unknownWorker(data.organizationId, items);
+    const badWorker = await unknownWorker(this.prisma, data.organizationId, items);
     if (badWorker) return badWorker;
-    const badRef = await this.unknownWorkRef(data.organizationId, items);
+    const badRef = await unknownWorkRef(this.prisma, data.organizationId, items);
     if (badRef) return badRef;
 
     // Who issues it — resolved once and stored, so the number series and the paper agree.
-    const issuer = await this.issuingEntity(
+    const issuer = await this.issuer.issuingEntity(
       data.organizationId,
       data.legalEntityId,
       spaceEntityId,
@@ -102,7 +111,7 @@ export class InvoiceCreateService extends InvoiceServiceBase {
     if ('error' in issuer) return issuer.error;
 
     // The currency: what the screen sent, else the workspace's, else the company's, else the organization's.
-    const money = await this.currencyFields(
+    const money = await this.money.currencyFields(
       data.organizationId,
       data,
       currencyOrNull(spaceCurrencyValue) ?? currencyOrNull(issuer.entity.currency),
@@ -118,10 +127,10 @@ export class InvoiceCreateService extends InvoiceServiceBase {
     // pick the same sequence. @@unique([organizationId, invoiceNumber]) makes the
     // collision loud (P2002) instead of silently duplicating; retry a few times,
     // re-reading the latest number each pass, before surfacing the error.
-    const defaultIssueDay = await this.todayFor(data.organizationId, foundSpaceId);
+    const defaultIssueDay = await this.money.todayFor(data.organizationId, foundSpaceId);
     let invoice;
     for (let attempt = 0; ; attempt++) {
-      const invoiceNumber = await this.generateInvoiceNumber(data.organizationId, issuer.entity.invoicePrefix);
+      const invoiceNumber = await this.issuer.generateInvoiceNumber(data.organizationId, issuer.entity.invoicePrefix);
       try {
         invoice = await this.prisma.invoice.create({
           data: {

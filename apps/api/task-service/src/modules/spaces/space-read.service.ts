@@ -12,12 +12,14 @@ import {
   orgCurrency,
 } from '@hbcfield/shared';
 import { readAutoClock } from './space-helpers';
-import { SpaceServiceBase } from './space-service.base';
+import { PrismaService } from '@hbcfield/shared';
 import type { Prisma, SpaceKind } from '@prisma/client';
 
 /** Reading workspaces: the list, one workspace. */
 @Injectable()
-export class SpaceReadService extends SpaceServiceBase {
+export class SpaceReadService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * Get all company locations for an organization
    */

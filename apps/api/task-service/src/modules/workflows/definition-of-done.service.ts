@@ -1,11 +1,12 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { success, assertFoundInOrg } from '@hbcfield/shared';
-import { WorkflowServiceBase } from './workflow-service.base';
+import { success, assertFoundInOrg, PrismaService } from '@hbcfield/shared';
 import type { Prisma } from '@prisma/client';
 
 /** A step's definition of done: reading, setting, removing it. */
 @Injectable()
-export class DefinitionOfDoneService extends WorkflowServiceBase {
+export class DefinitionOfDoneService {
+  constructor(private readonly prisma: PrismaService) {}
+
   // ==================== Definition of Done ====================
 
   /**

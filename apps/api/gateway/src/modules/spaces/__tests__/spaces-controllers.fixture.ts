@@ -11,6 +11,7 @@ export type SpacesControllers = Public<SpacesController> & Public<SpaceAssignmen
 export function spacesControllers(...args: unknown[]): SpacesControllers {
   return combinedServices<SpacesControllers>(
     new (SpacesController as unknown as new (...a: unknown[]) => object)(...args),
-    new (SpaceAssignmentsController as unknown as new (...a: unknown[]) => object)(...args),
+    // The members routes take only the first three (the spaces services and billing).
+    new (SpaceAssignmentsController as unknown as new (...a: unknown[]) => object)(...args.slice(0, 3)),
   );
 }

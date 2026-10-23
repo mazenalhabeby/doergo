@@ -8,10 +8,11 @@ import {
   type LeaveCount,
   type RosterFn,
   peopleWorkingWeek,
+  PrismaService,
 } from '@hbcfield/shared';
 import { shiftRuleOf } from '../technicians/cover-helpers';
-import { PlaceCalendar } from './calendar-rules-helpers';
-import { CalendarRulesBase } from './calendar-rules.base';
+import { PlaceCalendar, composePlace, orgHolidayCountry } from './calendar-rules-helpers';
+import { PlaceRulesService } from './place-rules.service';
 
 export { type PlaceCalendar } from './calendar-rules-helpers';
 
@@ -21,7 +22,37 @@ export { type PlaceCalendar } from './calendar-rules-helpers';
  * comes through here, so they cannot disagree.
  */
 @Injectable()
-export class CalendarRulesService extends CalendarRulesBase {
+export class CalendarRulesService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly placeRules: PlaceRulesService,
+  ) {}
+
+  /** The country an organization's holidays follow. */
+  static orgCountry(o: Parameters<typeof orgHolidayCountry>[0]): string | null {
+    return orgHolidayCountry(o);
+  }
+
+  /** Compose one place from rows already in hand (see `composePlace`). */
+  static compose(...args: Parameters<typeof composePlace>): PlaceCalendar {
+    return composePlace(...args);
+  }
+
+  /** The organization, or one workspace of it. Null when the workspace is not this org's. */
+  place(...args: Parameters<PlaceRulesService['place']>): Promise<PlaceCalendar | null> {
+    return this.placeRules.place(...args);
+  }
+
+  /** Several workspaces at once (the calendar's team view, the wallchart). Three queries total. */
+  places(...args: Parameters<PlaceRulesService['places']>): Promise<Map<string | null, PlaceCalendar>> {
+    return this.placeRules.places(...args);
+  }
+
+  /** The workspaces a person works in right now (not the Remote bucket, not archived). */
+  workspacesOf(organizationId: string, userId: string): Promise<string[]> {
+    return this.placeRules.workspacesOf(organizationId, userId);
+  }
+
   /**
    * Several people's days at once — the invite dialog asks for up to twenty. A fixed number of
    * queries however many people: their workspaces, their weeks, their rotas, then every place once.
@@ -59,7 +90,7 @@ export class CalendarRulesService extends CalendarRulesBase {
     const out = new Map<string, { rules: DayRules; roster?: RosterFn; spaceIds: string[] }>();
     if (!ids.length) return { byUser: out, places: null };
     const [spacesOf, users, rotas] = await Promise.all([
-      this.workspacesOfMany(organizationId, ids),
+      this.placeRules.workspacesOfMany(organizationId, ids),
       peopleWorkingWeek(this.prisma, ids, organizationId),
       this.prisma.shiftAssignment.findMany({
         where: { organizationId, userId: { in: ids }, isActive: true },
@@ -75,7 +106,7 @@ export class CalendarRulesService extends CalendarRulesBase {
       }),
     ]);
     const allSpaces = [...new Set([...spacesOf.values()].flat())];
-    const places = await this.places(organizationId, allSpaces, from, to, lang);
+    const places = await this.placeRules.places(organizationId, allSpaces, from, to, lang);
     for (const u of users) {
       const spaceIds = spacesOf.get(u.id) ?? [];
       const list = (spaceIds.length ? spaceIds.map((id) => places.get(id)) : [places.get(null)]).filter(
@@ -107,7 +138,7 @@ export class CalendarRulesService extends CalendarRulesBase {
   ): Promise<{ rules: DayRules; roster?: RosterFn; spaceIds: string[] }> {
     const r = (await this.personRulesMany(organizationId, [userId], from, to)).get(userId);
     if (r) return r;
-    const org = (await this.places(organizationId, [], from, to)).get(null);
+    const org = (await this.placeRules.places(organizationId, [], from, to)).get(null);
     return { rules: org?.rules ?? intersectDayRules([]), spaceIds: [] };
   }
 
@@ -125,7 +156,7 @@ export class CalendarRulesService extends CalendarRulesBase {
     const { byUser, places } = await this.rulesAndPlaces(organizationId, [userId], from, to, lang);
     const r = byUser.get(userId);
     if (r && places) return { ...r, places };
-    const map = places ?? (await this.places(organizationId, [], from, to, lang));
+    const map = places ?? (await this.placeRules.places(organizationId, [], from, to, lang));
     if (r) return { ...r, places: map };
     return { rules: map.get(null)?.rules ?? intersectDayRules([]), spaceIds: [], places: map };
   }

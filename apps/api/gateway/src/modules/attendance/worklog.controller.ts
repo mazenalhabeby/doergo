@@ -9,7 +9,7 @@ import {
   PresignWorklogAttachmentDto,
   ConfirmWorklogAttachmentDto,
 } from './dto';
-import { AttendanceControllerBase } from './attendance-controller.base';
+import { AttendanceService } from './attendance.service';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -17,7 +17,9 @@ import { callerOrgId } from '../../common/caller-org';
 @ApiTags('attendance')
 @ApiBearerAuth()
 @Controller('attendance')
-export class WorklogController extends AttendanceControllerBase {
+export class WorklogController {
+  constructor(private readonly attendanceService: AttendanceService) {}
+
   // ── Session work-log ("what I did today") ──────────────────────────────────
   // Ownership is enforced in the service (a member manages their OWN session's
   // log). Anybody else's: reading needs canViewSpaceAttendance, changing needs

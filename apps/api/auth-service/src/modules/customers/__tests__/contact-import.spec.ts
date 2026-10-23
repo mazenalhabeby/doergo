@@ -13,6 +13,7 @@ import {
 } from '@hbcfield/shared';
 import { createHash } from 'crypto';
 import { CustomersService, withContactKeys } from '../customers.service';
+import { CrmReachService } from '../crm-reach.service';
 import { ContactImportService } from '../contact-import.service';
 import { PrismaService } from '@hbcfield/shared';
 
@@ -126,7 +127,7 @@ describe('ContactImportService', () => {
     prisma.companyLocation.findFirst.mockResolvedValue({ id: 'sp-1' });
     prisma.user.findFirst.mockResolvedValue({ firstName: 'Anna', lastName: 'Müller' });
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ContactImportService, CustomersService, { provide: PrismaService, useValue: prisma }],
+      providers: [ContactImportService, CustomersService, CrmReachService, { provide: PrismaService, useValue: prisma }],
     }).compile();
     service = module.get(ContactImportService);
     customers = module.get(CustomersService);

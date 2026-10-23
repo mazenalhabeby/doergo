@@ -1,8 +1,17 @@
 import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { TASK_LIST_INCLUDE, annotateTracksLocation } from '../core/task-list-shape';
 import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from '../core/task-visibility';
-import { TaskStatus, paginated, buildDateRangeFilter, clampListLimit, clampListPage } from '@hbcfield/shared';
-import { TaskQueryBase } from './task-query.base';
+import {
+  PrismaService,
+  TaskStatus,
+  paginated,
+  buildDateRangeFilter,
+  clampListLimit,
+  clampListPage,
+} from '@hbcfield/shared';
+import { WorkflowConfigCache } from '../../workflows/config-cache/workflow-config-cache.service';
+import { type TaskAccessFacts } from '../access/task-access.service';
+import { TaskSubmissionsService } from './task-submissions.service';
 import type { Prisma } from '@prisma/client';
 import type { RpcRequest, findAllTasks } from '@hbcfield/shared/microservices';
 
@@ -11,7 +20,12 @@ import type { RpcRequest, findAllTasks } from '@hbcfield/shared/microservices';
  * submissions recorded on it. Nothing here writes.
  */
 @Injectable()
-export class TaskQueryService extends TaskQueryBase {
+export class TaskQueryService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workflowCache: WorkflowConfigCache,
+    private readonly submissions: TaskSubmissionsService,
+  ) {}
 
   private static readonly MAX_SEARCH_LENGTH = 200;
 
@@ -82,7 +96,10 @@ export class TaskQueryService extends TaskQueryBase {
     const statusList = Array.isArray(query.statuses)
       ? query.statuses
       : typeof query.statuses === 'string' && query.statuses.trim()
-        ? query.statuses.split(',').map((x: string) => x.trim()).filter(Boolean)
+        ? query.statuses
+            .split(',')
+            .map((x: string) => x.trim())
+            .filter(Boolean)
         : null;
     if (statusList?.length) where.status = { in: statusList };
     else if (status) where.status = status;
@@ -115,9 +132,16 @@ export class TaskQueryService extends TaskQueryBase {
       where.spaceId = spaceId;
     } else {
       // Visibility — one rule, shared with getStatusCounts (see above).
-      const visibility = this.buildVisibilityWhere({ userId, userRole, canViewAllTasks, organizationId, viewAllSpaceIds });
+      const visibility = this.buildVisibilityWhere({
+        userId,
+        userRole,
+        canViewAllTasks,
+        organizationId,
+        viewAllSpaceIds,
+      });
       where.organizationId = visibility.organizationId;
-      if (visibility.AND) where.AND = [...((where.AND as Prisma.TaskWhereInput[] | undefined) || []), ...visibility.AND];
+      if (visibility.AND)
+        where.AND = [...((where.AND as Prisma.TaskWhereInput[] | undefined) || []), ...visibility.AND];
 
       // Space filter — verify it belongs to the user's org before applying
       if (spaceId) {
@@ -191,8 +215,15 @@ export class TaskQueryService extends TaskQueryBase {
       this.prisma.task.count({ where }),
     ]);
 
-    const withTracking = await annotateTracksLocation(tasks, (id) => this.workflowCache.getWorkflow(query.organizationId, id));
+    const withTracking = await annotateTracksLocation(tasks, (id) =>
+      this.workflowCache.getWorkflow(query.organizationId, id),
+    );
 
     return paginated(withTracking, { page: safePage, limit: safeLimit, total });
+  }
+
+  /** The step forms answered on the way through this job — see TaskSubmissionsService. */
+  getSubmissions(data: TaskAccessFacts & { id: string }) {
+    return this.submissions.getSubmissions(data);
   }
 }

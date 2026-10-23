@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  PrismaService,
   zoneOf,
   localPartsIn,
   overtimeRoundMinutes,
@@ -11,11 +12,12 @@ import {
   type SpaceScopeIds,
 } from '@hbcfield/shared';
 import { SUMMARY_CAP, ROUND_SELECT, name } from './overtime-record-helpers';
-import { OvertimeRecordBase } from './overtime-record.base';
+import { latestCycles, overtimePeriod, roundFacts } from './overtime-round-rows';
 
 /** The Overtime page's numbers for a period: totals, running now, and per person by day. */
 @Injectable()
-export class OvertimeSummaryService extends OvertimeRecordBase {
+export class OvertimeSummaryService {
+  constructor(private readonly prisma: PrismaService) {}
 
   async summary(data: {
     organizationId: string;
@@ -25,7 +27,7 @@ export class OvertimeSummaryService extends OvertimeRecordBase {
     from?: string;
     to?: string;
   }) {
-    const { from, to } = this.period(data.from, data.to);
+    const { from, to } = overtimePeriod(data.from, data.to);
     const scope = {
       organizationId: data.organizationId,
       AND: [scopeWhere(data.scopeSpaceIds), data.spaceId ? { locationId: data.spaceId } : {}],
@@ -48,7 +50,10 @@ export class OvertimeSummaryService extends OvertimeRecordBase {
         take: 200,
       }),
     ]);
-    const latest = await this.latestCycles([...rows, ...runningRows].map((r) => r.timeEntryId));
+    const latest = await latestCycles(
+      this.prisma,
+      [...rows, ...runningRows].map((r) => r.timeEntryId),
+    );
 
     const people = new Map<string, OvertimePersonRow>();
     let workedMinutes = 0;
@@ -58,7 +63,7 @@ export class OvertimeSummaryService extends OvertimeRecordBase {
       if (r.status === 'EXPIRED_NO_APPROVAL') noAnswer++;
       if (r.status !== 'APPROVED' && r.status !== 'COMPLETED') continue;
       rounds++;
-      const m = overtimeRoundMinutes(this.facts(r, latest), now);
+      const m = overtimeRoundMinutes(roundFacts(r, latest), now);
       workedMinutes += m.worked;
       const p = people.get(r.technicianId) ?? {
         userId: r.technicianId,
@@ -107,7 +112,9 @@ export class OvertimeSummaryService extends OvertimeRecordBase {
       to: to.toISOString(),
       totals: { workedMinutes, rounds, people: people.size, noAnswer, waiting },
       running,
-      people: [...people.values()].sort((a, b) => b.workedMinutes - a.workedMinutes || a.userName.localeCompare(b.userName)),
+      people: [...people.values()].sort(
+        (a, b) => b.workedMinutes - a.workedMinutes || a.userName.localeCompare(b.userName),
+      ),
     };
     return success(summary);
   }

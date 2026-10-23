@@ -6,6 +6,7 @@ import { DocumentLookupService } from './document-lookup.service';
 import { DocumentNotifierService } from './document-notifier.service';
 import { DocumentRoutingService } from './document-routing.service';
 import { DocumentChainService } from './document-chain.service';
+import { SignerCandidatesService } from './signer-candidates.service';
 import { OBJECT_STORE, objectStoreProvider } from './object-store.provider';
 
 /**
@@ -19,6 +20,7 @@ import { OBJECT_STORE, objectStoreProvider } from './object-store.provider';
     DocumentLookupService,
     DocumentNotifierService,
     DocumentRoutingService,
+    SignerCandidatesService,
     DocumentChainService,
     objectStoreProvider,
   ],
@@ -27,6 +29,7 @@ import { OBJECT_STORE, objectStoreProvider } from './object-store.provider';
     DocumentLookupService,
     DocumentNotifierService,
     DocumentRoutingService,
+    SignerCandidatesService,
     DocumentChainService,
     OBJECT_STORE,
   ],

@@ -7,16 +7,22 @@ import {
   type CustodyPeriod,
   clientContacts,
   peopleContacts,
+  PrismaService,
 } from '@hbcfield/shared';
-import { type AssetActor } from '../core/asset-access.service';
-import { AssetCustodyBase } from './asset-custody.base';
+import { AssetAccessService, type AssetActor } from '../core/asset-access.service';
+import { CUSTODY_SELECT } from './asset-custody-helpers';
 
 /**
  * Reading custody: one asset's timeline, what a member holds and has held, what I
  * hold, who holds a thing now.
  */
 @Injectable()
-export class CustodyReadService extends AssetCustodyBase {
+export class CustodyReadService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: AssetAccessService,
+  ) {}
+
   // ───────────────────────────────────────────────────────────────────────────
   // Reading
   // ───────────────────────────────────────────────────────────────────────────
@@ -36,7 +42,7 @@ export class CustodyReadService extends AssetCustodyBase {
       this.prisma.assetCustody.findMany({
         where: { assetId: data.id },
         orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
-        select: AssetCustodyBase.select,
+        select: CUSTODY_SELECT,
       }),
       // Only what counts. A submitted-but-unreviewed receipt must not move a
       // driver's total before anybody has accepted it.
@@ -142,7 +148,7 @@ export class CustodyReadService extends AssetCustodyBase {
       orderBy: [{ endedAt: 'asc' }, { startedAt: 'desc' }],
       take: 200,
       select: {
-        ...AssetCustodyBase.select,
+        ...CUSTODY_SELECT,
         asset: {
           select: {
             id: true,

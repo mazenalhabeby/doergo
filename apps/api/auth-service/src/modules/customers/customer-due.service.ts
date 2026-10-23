@@ -1,13 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { CRM_COLD_DAYS, CRM_CONTACT_TYPES, toISODateString } from '@hbcfield/shared';
+import { CRM_COLD_DAYS, CRM_CONTACT_TYPES, toISODateString, PrismaService } from '@hbcfield/shared';
 import { crmReachOrgOnly, crmCapsAnywhere, NO_CRM_CAPS } from '@hbcfield/shared';
 import { ownedBy, CrmCaller, DUE_ROWS, reachSql } from './customers-helpers';
-import { CustomersServiceBase } from './customers-service.base';
+import { CrmReachService } from './crm-reach.service';
 
 /** The home Clients card: reminders owed today, clients going cold, the book's size. */
 @Injectable()
-export class CustomerDueService extends CustomersServiceBase {
+export class CustomerDueService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reach: CrmReachService,
+  ) {}
+
   /**
    * ⭐ WHAT IS OWED TODAY — the home screen's Clients card (docs/design/clients).
    *
@@ -40,7 +45,9 @@ export class CustomerDueService extends CustomersServiceBase {
     const counts = { call: 0, email: 0, other: 0, overdue: 0 };
     // `crmOn === false` only: an older gateway sends nothing and keeps today's answer.
     const reach =
-      data.crmOn === false ? crmReachOrgOnly(NO_CRM_CAPS) : await this.crmReachFor(data.caller, data.organizationId);
+      data.crmOn === false
+        ? crmReachOrgOnly(NO_CRM_CAPS)
+        : await this.reach.crmReachFor(data.caller, data.organizationId);
     if (!crmCapsAnywhere(reach).canAccess || !me)
       return {
         data: {
@@ -84,7 +91,7 @@ export class CustomerDueService extends CustomersServiceBase {
       isContact: false,
       isPortalResident: false,
       // The book the member can reach — org-wide, and the workspaces they hold CRM in.
-      ...this.reachableWhere(reach, data.caller),
+      ...this.reach.reachableWhere(reach, data.caller),
     };
 
     const dueWhere = {

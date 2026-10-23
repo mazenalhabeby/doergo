@@ -11,7 +11,8 @@ import {
   ReorderChecklistDto,
   CreateDependencyDto,
 } from './dto';
-import { TasksControllerBase } from './tasks-controller.base';
+import { TasksQueueService } from './tasks.queue.service';
+import { TasksService } from './tasks.service';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -19,7 +20,12 @@ import { callerOrgId } from '../../common/caller-org';
 @ApiTags('tasks')
 @ApiBearerAuth()
 @Controller('tasks')
-export class TaskChecklistController extends TasksControllerBase {
+export class TaskChecklistController {
+  constructor(
+    private readonly tasksQueueService: TasksQueueService,
+    private readonly tasksService: TasksService,
+  ) {}
+
   // ============ Checklist Endpoints ============
 
   /*

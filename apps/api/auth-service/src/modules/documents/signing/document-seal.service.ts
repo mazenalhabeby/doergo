@@ -1,13 +1,18 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { personName, signatureStrength, type SignerStep } from '@hbcfield/shared';
+import { personName, signatureStrength, type SignerStep, PrismaService } from '@hbcfield/shared';
 import { documentKey, sha256 } from '@hbcfield/shared/storage';
 import { sealSignedPdf } from '../core/contract-pdf';
 import { type RequestContext, type SealSigner, CONSENT_TEXT, roleLabel, eventContext } from '../core/document-common';
-import { DocumentSigningBase } from './document-signing.base';
+import { DocumentStorageService } from '../core/document-storage.service';
 
 /** Sealing a signature: the evidence (who, when, where from), the stamped file, the chain moved on. */
 @Injectable()
-export class DocumentSealService extends DocumentSigningBase {
+export class DocumentSealService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: DocumentStorageService,
+  ) {}
+
   /**
    * Attach one signature to one document, re-seal it, and record the act.
    *
@@ -211,9 +216,8 @@ export class DocumentSealService extends DocumentSigningBase {
       const alreadyConsented = await tx.documentEvent.count({
         where: { documentId: document.id, type: 'CONSENTED' },
       });
-      const types = alreadyConsented > 0
-        ? (['SIGNED', 'SEALED'] as const)
-        : (['CONSENTED', 'SIGNED', 'SEALED'] as const);
+      const types =
+        alreadyConsented > 0 ? (['SIGNED', 'SEALED'] as const) : (['CONSENTED', 'SIGNED', 'SEALED'] as const);
 
       for (const type of types) {
         await tx.documentEvent.create({

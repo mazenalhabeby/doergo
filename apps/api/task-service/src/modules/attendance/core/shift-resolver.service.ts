@@ -5,7 +5,8 @@ import { notEndedWhere, zoneOf, rotaFor, dowOfDay, workspaceSchedulesShifts } fr
 // two chances to be an hour wrong twice a year.
 import { localPartsIn, addDaysStr } from '@hbcfield/shared';
 import { ResolverSpace, ResolvedShift, shiftWindowOn } from './shift-resolver-helpers';
-import { ShiftResolverBase } from './shift-resolver.base';
+import { PrismaService } from '@hbcfield/shared';
+import { shiftFromLegacySchedule, shiftFromRota, rotaWindowOnDate } from './shift-sources';
 
 export { type ResolverSpace } from './shift-resolver-helpers';
 
@@ -21,7 +22,22 @@ export { type ResolverSpace } from './shift-resolver-helpers';
  *   3. null (no expectation → no reminders; e.g. TASK/NONE spaces)
  */
 @Injectable()
-export class ShiftResolverService extends ShiftResolverBase {
+export class ShiftResolverService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * MATERIALIZATION helper (no clock-in): does this rota assignment run on the
+   * given local calendar date, and if so, the shift's absolute UTC start/end?
+   * Used to precompute expected shifts for no-show detection. `tz` is the space's
+   * tz (physical) or the member's/org tz (logical).
+   */
+  matchAndWindowForDate(
+    assignment: Parameters<typeof rotaWindowOnDate>[0],
+    tz: string,
+    dateStr: string, // YYYY-MM-DD in tz
+  ): { expectedClockInAt: Date; expectedClockOutAt: Date } | null {
+    return rotaWindowOnDate(assignment, tz, dateStr);
+  }
 
   async resolveForClockIn(params: {
     userId: string;
@@ -58,11 +74,11 @@ export class ShiftResolverService extends ShiftResolverBase {
     const local = localPartsIn(clockInAt, tz);
 
     // ── 1. Rota assignment ──────────────────────────────────────────────
-    const assignment = await this.resolveAssignment(userId, space.id, clockInAt, tz, local, params.firstMatch);
+    const assignment = await shiftFromRota(this.prisma, userId, space.id, clockInAt, tz, local, params.firstMatch);
     if (assignment) return assignment;
 
     // ── 2. Legacy weekly schedule (FIXED) ───────────────────────────────
-    return this.resolveLegacySchedule(userId, clockInAt, tz, local);
+    return shiftFromLegacySchedule(this.prisma, userId, clockInAt, tz, local);
   }
 
   /**
@@ -80,8 +96,13 @@ export class ShiftResolverService extends ShiftResolverBase {
     userId: string,
     spaces: readonly ResolverSpace[],
     days: (space: ResolverSpace) => string[],
-  ): Promise<Map<string, Array<{ dateStr: string; shiftId: string | null; expectedClockInAt: Date; expectedClockOutAt: Date }>>> {
-    const out = new Map<string, Array<{ dateStr: string; shiftId: string | null; expectedClockInAt: Date; expectedClockOutAt: Date }>>();
+  ): Promise<
+    Map<string, Array<{ dateStr: string; shiftId: string | null; expectedClockInAt: Date; expectedClockOutAt: Date }>>
+  > {
+    const out = new Map<
+      string,
+      Array<{ dateStr: string; shiftId: string | null; expectedClockInAt: Date; expectedClockOutAt: Date }>
+    >();
     const scheduling = spaces.filter((s) => workspaceSchedulesShifts(s.workModel));
     if (!scheduling.length) return out;
     const daysBySpace = new Map(scheduling.map((s) => [s.id, days(s)]));
@@ -100,17 +121,25 @@ export class ShiftResolverService extends ShiftResolverBase {
           ...notEndedWhere(from),
         },
         include: { shift: true },
-        // The same order resolveAssignment reads them in: the first match wins.
+        // The same order shiftFromRota reads them in: the first match wins.
         orderBy: [{ priority: 'desc' }, { effectiveFrom: 'desc' }],
       }),
       this.prisma.technicianSchedule.findMany({ where: { technicianId: userId, isActive: true } }),
     ]);
     for (const space of scheduling) {
       const tz = zoneOf(space.timezone);
-      const windows: Array<{ dateStr: string; shiftId: string | null; expectedClockInAt: Date; expectedClockOutAt: Date }> = [];
+      const windows: Array<{
+        dateStr: string;
+        shiftId: string | null;
+        expectedClockInAt: Date;
+        expectedClockOutAt: Date;
+      }> = [];
       for (const dateStr of daysBySpace.get(space.id) ?? []) {
         // The shared rota rule (`rotaFor`: priority, then most recently effective, in force, runs that day).
-        const a = rotaFor(assignments.filter((x) => x.spaceId === space.id), dateStr);
+        const a = rotaFor(
+          assignments.filter((x) => x.spaceId === space.id),
+          dateStr,
+        );
         let found: (typeof windows)[number] | null = a?.shift
           ? { dateStr, shiftId: a.shift.id, ...shiftWindowOn(a.shift, tz, dateStr) }
           : null;
@@ -121,7 +150,11 @@ export class ShiftResolverService extends ShiftResolverBase {
             found = {
               dateStr,
               shiftId: null,
-              ...shiftWindowOn({ startLocal: legacy.startTime, endLocal: legacy.endTime!, crossesMidnight: false }, tz, dateStr),
+              ...shiftWindowOn(
+                { startLocal: legacy.startTime, endLocal: legacy.endTime!, crossesMidnight: false },
+                tz,
+                dateStr,
+              ),
             };
           }
         }

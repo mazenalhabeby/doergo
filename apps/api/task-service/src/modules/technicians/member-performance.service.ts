@@ -1,13 +1,14 @@
 import { assertMemberInScope, toISODateString, dayKeyIn, tripDistanceOf } from '@hbcfield/shared';
 import { Injectable } from '@nestjs/common';
-import { TaskStatus, success } from '@hbcfield/shared';
+import { PrismaService, TaskStatus, success } from '@hbcfield/shared';
 import { GetEmployeePerformanceDto } from './dto';
 import { workspaceZone } from '../../common/zone.util';
-import { MemberServiceBase } from './member-service.base';
 
 /** A member's performance: trends by day, compared with the period before. */
 @Injectable()
-export class MemberPerformanceService extends MemberServiceBase {
+export class MemberPerformanceService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * Get detailed performance metrics for an employee
    */

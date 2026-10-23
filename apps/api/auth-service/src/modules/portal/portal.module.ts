@@ -8,6 +8,8 @@ import { PortalUnitsService } from './portal-units.service';
 import { UnitWriteService } from './unit-write.service';
 import { PortalClientsService } from './portal-clients.service';
 import { PortalCategoriesService } from './portal-categories.service';
+import { PortalReachService } from './portal-reach.service';
+import { UnitResidentsService } from './unit-residents.service';
 
 @Module({
   imports: [CustomersModule],
@@ -19,6 +21,8 @@ import { PortalCategoriesService } from './portal-categories.service';
     UnitWriteService,
     PortalClientsService,
     PortalCategoriesService,
+    PortalReachService,
+    UnitResidentsService,
   ],
   exports: [
     PortalService,

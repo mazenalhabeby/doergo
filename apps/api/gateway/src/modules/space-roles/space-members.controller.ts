@@ -22,7 +22,9 @@ import {
 import { UpdateMemberRateDto, UpdateMemberRolesDto } from './space-roles.dto';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { assertCanManageSpace } from './space-roles-controller-helpers';
-import { SpaceRolesControllerBase } from './space-roles-controller.base';
+import { SpaceRolesService } from './space-roles.service';
+import { RebillService } from '../../common/billing/rebill.service';
+import { thenRebill } from './then-rebill';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -36,7 +38,12 @@ import { AssignSpaceMemberDto, MemberRoutingDto } from './dto/role-bodies.dto';
 @RequirePlan('shift_scheduling')
 @UseInterceptors(LabourCostInterceptor)
 @Controller()
-export class SpaceMembersController extends SpaceRolesControllerBase {
+export class SpaceMembersController {
+  constructor(
+    private readonly service: SpaceRolesService,
+    private readonly billing: RebillService,
+  ) {}
+
   // Member endpoints allow EITHER org canManageUsers OR the space-manager
   // delegation (canManageUsers within THIS space). Enforced manually against the
   // route's spaceId — so the generic org-only guard is intentionally omitted.
@@ -69,7 +76,8 @@ export class SpaceMembersController extends SpaceRolesControllerBase {
   ) {
     const authority = spaceMemberAuthority(req.user, spaceId);
     assertAnyAuthority(authority);
-    return this.thenRebill(
+    return thenRebill(
+      this.billing,
       req,
       this.service.updateMemberRoles({
         spaceId,
@@ -99,7 +107,8 @@ export class SpaceMembersController extends SpaceRolesControllerBase {
   assignMember(@Param('spaceId') spaceId: string, @Body() body: AssignSpaceMemberDto, @Request() req: AuthedRequest) {
     const authority = spaceMemberAuthority(req.user, spaceId);
     assertAnyAuthority(authority);
-    return this.thenRebill(
+    return thenRebill(
+      this.billing,
       req,
       this.service.assignMember({
         spaceId,
@@ -124,7 +133,8 @@ export class SpaceMembersController extends SpaceRolesControllerBase {
     if (!spaceMemberAuthority(req.user, spaceId).addMembers) {
       throw new ForbiddenException('You do not have permission to remove people from this workspace');
     }
-    return this.thenRebill(
+    return thenRebill(
+      this.billing,
       req,
       this.service.removeMember({
         spaceId,

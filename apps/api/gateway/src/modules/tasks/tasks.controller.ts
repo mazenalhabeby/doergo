@@ -7,7 +7,9 @@ import { RequirePermissionInSpace } from '../../common/decorators';
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { taskActor, assignSpaceIds, grantedSpaceIds } from '../../common/task-actor';
 import { CreateTaskDto, UpdateTaskDto, AssignTaskDto, UpdateStatusDto, SetOpenRoleDto, ReturnToRoleDto } from './dto';
-import { TasksControllerBase } from './tasks-controller.base';
+import { TasksQueueService } from './tasks.queue.service';
+import { TasksService } from './tasks.service';
+import { assertTaskFieldEntitlements } from './task-write-checks';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -16,12 +18,17 @@ export { normalizeQueryParams } from './tasks-controller-helpers';
 @ApiTags('tasks')
 @ApiBearerAuth()
 @Controller('tasks')
-export class TasksController extends TasksControllerBase {
+export class TasksController {
+  constructor(
+    private readonly tasksQueueService: TasksQueueService,
+    private readonly tasksService: TasksService,
+  ) {}
+
   @Post()
   @RequirePermissionInSpace('canCreateTasks')
   @ApiOperation({ summary: 'Create a new task' })
   async create(@Body() createTaskDto: CreateTaskDto, @Request() req: AuthedRequest) {
-    this.assertTaskFieldEntitlements(req.user, createTaskDto);
+    assertTaskFieldEntitlements(req.user, createTaskDto);
 
     // Creating into a cross-org space shared with the caller: the caller's OWN-org
     // taskCreationScope (NONE/SELF/SPACE) doesn't apply — the per-space grant
@@ -176,7 +183,7 @@ export class TasksController extends TasksControllerBase {
   @RequirePermissionInSpace('canCreateTasks')
   @ApiOperation({ summary: 'Update a task' })
   async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto, @Request() req: AuthedRequest) {
-    this.assertTaskFieldEntitlements(req.user, updateTaskDto);
+    assertTaskFieldEntitlements(req.user, updateTaskDto);
     return this.tasksQueueService.updateTask({
       id,
       ...updateTaskDto,

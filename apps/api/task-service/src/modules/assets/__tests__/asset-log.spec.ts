@@ -59,9 +59,8 @@ function setup(opts: { held?: boolean; spaceId?: string | null } = {}) {
   const custody: any = { heldBy: jest.fn(async () => opts.held ?? false) };
   const expenses: any = { review: jest.fn(async () => ({ data: { status: 'RECORDED' } })), forgetReceipt: jest.fn() };
   const store: any = { head: jest.fn(async () => ({ exists: true, sizeBytes: 1000 })), presignUpload: jest.fn(async () => ({ url: 'u' })) };
+  // `expenses` doubles as the review service: review moved to AssetExpenseReviewService.
   const service = assetLogParts(prisma, new AssetAccessService(prisma), custody, expenses, store);
-  // review moved to AssetExpenseReviewService, injected as a property (2026-10-17).
-  (service as any).expenseReviews = expenses;
   return { service, prisma, tx, custody, expenses, store };
 }
 

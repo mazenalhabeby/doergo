@@ -1,5 +1,5 @@
 import type { Prisma, InvoiceStatus } from '@prisma/client';
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import {
   paginated,
   clientDocumentLocale,
@@ -8,19 +8,31 @@ import {
   parseCurrency,
   CURRENCY_INVALID_MESSAGE,
   PERSON_BRIEF_SELECT,
+  PrismaService,
 } from '@hbcfield/shared';
-import { InvoiceServiceBase } from './invoice-service.base';
+import { InvoiceCurrencyService } from './invoice-currency.service';
+import { InvoiceIssuerService } from './invoice-issuer.service';
+import { ExchangeRateService } from './exchange-rate.service';
 
 @Injectable()
-export class InvoiceService extends InvoiceServiceBase {
+export class InvoiceService {
+  private readonly logger = new Logger(InvoiceService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly money: InvoiceCurrencyService,
+    private readonly rates: ExchangeRateService,
+    private readonly issuer: InvoiceIssuerService,
+  ) {}
+
   /** `1 {currency} = rate {the organization's}` on a day, for the invoice screen. */
   async exchangeRate(data: { organizationId: string; currency: string; date?: string }) {
     const parsed = parseCurrency(data.currency);
     if (!parsed.ok || !parsed.currency)
       return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: CURRENCY_INVALID_MESSAGE };
-    const base = await this.organizationCurrency(data.organizationId);
+    const base = await this.money.organizationCurrency(data.organizationId);
     const day =
-      data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : await this.todayFor(data.organizationId);
+      data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : await this.money.todayFor(data.organizationId);
     const answer = await this.rates.rate(parsed.currency, base, day);
     return {
       success: true,
@@ -93,7 +105,11 @@ export class InvoiceService extends InvoiceServiceBase {
 
     return {
       success: true,
-      data: { ...invoice, issuer: await this.issuerFor(invoice), documentLocale: await this.documentLocale(invoice) },
+      data: {
+        ...invoice,
+        issuer: await this.issuer.issuerFor(invoice),
+        documentLocale: await this.documentLocale(invoice),
+      },
     };
   }
 

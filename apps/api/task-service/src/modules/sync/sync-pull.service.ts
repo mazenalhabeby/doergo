@@ -4,11 +4,17 @@ import {
   SYNC_TOMBSTONE_RETENTION_DAYS,
   type SyncPullResponse,
   clampListLimit,
+  activeAssignmentWhere,
+  type SyncMediaLink,
+  PrismaService,
 } from '@hbcfield/shared';
+import { type TaskVisibilityFacts } from '../tasks/core/task-visibility';
 import { TASK_LIST_INCLUDE, annotateTracksLocation } from '../tasks/core/task-list-shape';
-import { decodeCursor, pageResponse } from './sync-cursor';
-import { MAX_SCOPE_IDS, PullRequest } from './sync-pull-helpers';
-import { SyncPullBase } from './sync-pull.base';
+import { decodeCursor, encodeCursor, pageResponse } from './sync-cursor';
+import { MAX_SCOPE_IDS, PullRequest, tasksInScope } from './sync-pull-helpers';
+import { WorkflowConfigCache } from '../workflows/config-cache/workflow-config-cache.service';
+import { ChatPullReader } from './chat-pull.reader';
+import { TaskChildrenReader } from './task-children.reader';
 
 export { decodeCursor, encodeCursor } from './sync-cursor';
 
@@ -23,7 +29,18 @@ export { type PullRequest } from './sync-pull-helpers';
  * job the worker cannot open in the basement.
  */
 @Injectable()
-export class SyncPullService extends SyncPullBase {
+export class SyncPullService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workflows: WorkflowConfigCache,
+    private readonly chat: ChatPullReader,
+    private readonly children: TaskChildrenReader,
+  ) {}
+
+  /** Short-lived links to task photos for offline viewing — see TaskChildrenReader.mediaLinks. */
+  mediaLinks(req: TaskVisibilityFacts & { ids: string[] }): Promise<SyncMediaLink[]> {
+    return this.children.mediaLinks(req);
+  }
 
   async pull(req: PullRequest): Promise<SyncPullResponse> {
     switch (req.scope) {
@@ -34,9 +51,9 @@ export class SyncPullService extends SyncPullBase {
       case 'workflows':
         return this.workflowScope(req);
       case 'comments':
-        return this.taskChildren(req, 'comments');
+        return this.children.pull(req, 'comments');
       case 'attachments':
-        return this.taskChildren(req, 'attachments');
+        return this.children.pull(req, 'attachments');
       case 'chat_conversations':
         return this.chat.conversations(req);
       case 'chat_messages':
@@ -54,7 +71,7 @@ export class SyncPullService extends SyncPullBase {
     const reset = !cursor || Date.parse(cursor.s) < retentionEdge;
     const from = reset ? null : cursor;
 
-    const inScope = this.tasksInScope(req);
+    const inScope = tasksInScope(req);
 
     const rows = await this.prisma.task.findMany({
       where: {
@@ -81,17 +98,19 @@ export class SyncPullService extends SyncPullBase {
     // Deletions since the last pull. A reset sends none: the phone is replacing
     // the scope wholesale, and `scopeIds` below settles membership.
     const tombstoneFrom = from ? BigInt(from.d) : null;
-    const tombstones = tombstoneFrom === null
-      ? []
-      : await this.prisma.syncTombstone.findMany({
-          where: { id: { gt: tombstoneFrom }, entity: 'tasks', organizationId: req.organizationId },
-          orderBy: { id: 'asc' },
-          take: 5000,
-          select: { id: true, entityId: true },
-        });
-    const highestTombstone = tombstoneFrom === null
-      ? (await this.prisma.syncTombstone.aggregate({ _max: { id: true } }))._max.id ?? BigInt(0)
-      : tombstones.at(-1)?.id ?? tombstoneFrom;
+    const tombstones =
+      tombstoneFrom === null
+        ? []
+        : await this.prisma.syncTombstone.findMany({
+            where: { id: { gt: tombstoneFrom }, entity: 'tasks', organizationId: req.organizationId },
+            orderBy: { id: 'asc' },
+            take: 5000,
+            select: { id: true, entityId: true },
+          });
+    const highestTombstone =
+      tombstoneFrom === null
+        ? ((await this.prisma.syncTombstone.aggregate({ _max: { id: true } }))._max.id ?? BigInt(0))
+        : (tombstones.at(-1)?.id ?? tombstoneFrom);
 
     // On the last page, the complete membership of the scope.
     let scopeIds: string[] | undefined;
@@ -108,6 +127,73 @@ export class SyncPullService extends SyncPullBase {
         { from, highestTombstone, hasMore, reset },
       ),
       scopeIds,
+    };
+  }
+
+  /**
+   * Workspaces the member is assigned to right now, with everything the phone
+   * needs to decide a clock-in offline: coordinates, radius, drawn boundary,
+   * policy, timezone. Small, so always sent whole.
+   */
+  private async spaces(req: PullRequest): Promise<SyncPullResponse> {
+    const assignments = await this.prisma.spaceAssignment.findMany({
+      where: { ...activeAssignmentWhere(req.userId), organizationId: req.organizationId, space: { isActive: true } },
+      select: {
+        id: true,
+        roleId: true,
+        isPrimary: true,
+        schedule: true,
+        allowRemote: true,
+        effectiveFrom: true,
+        effectiveTo: true,
+        space: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            lat: true,
+            lng: true,
+            geofenceRadius: true,
+            geofencePolygon: true,
+            geofencePolicy: true,
+            timezone: true,
+            workModel: true,
+            kind: true,
+            isRemote: true,
+            updatedAt: true,
+          },
+        },
+      },
+    });
+    const now = new Date().toISOString();
+    return {
+      scope: 'spaces',
+      rows: assignments.map(({ space, ...assignment }) => ({ ...space, assignment })),
+      deleted: [],
+      cursor: encodeCursor({ t: now, i: '', d: '0', s: now }),
+      hasMore: false,
+      reset: true,
+      serverTime: now,
+    };
+  }
+
+  /**
+   * The organization's task flows with their statuses and transitions — what
+   * the task screen needs to offer the right next step with no connection.
+   * Read from the same cache the server's own transition check uses. Small,
+   * always sent whole.
+   */
+  private async workflowScope(req: PullRequest): Promise<SyncPullResponse> {
+    const rows = (await this.workflows.getOrgWorkflows(req.organizationId)) as { id: string }[];
+    const now = new Date().toISOString();
+    return {
+      scope: 'workflows',
+      rows,
+      deleted: [],
+      cursor: encodeCursor({ t: now, i: '', d: '0', s: now }),
+      hasMore: false,
+      reset: true,
+      serverTime: now,
     };
   }
 }

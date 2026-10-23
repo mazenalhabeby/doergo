@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { personName, isCurrentSigner, chainProgress, type SignerStep } from '@hbcfield/shared';
+import { personName, isCurrentSigner, chainProgress, type SignerStep, PrismaService } from '@hbcfield/shared';
 import { type DocumentActor, assertTypeVisible, assertNotHiddenDraft } from './document-common';
-import { DocumentRoutingBase } from './document-routing.base';
 
 /** Reading a signing chain: who has signed one document, and what waits on me. */
 @Injectable()
-export class DocumentChainService extends DocumentRoutingBase {
+export class DocumentChainService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * The chain on one document, for somebody about to sign it.
    *

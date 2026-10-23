@@ -11,13 +11,23 @@ import {
   type Repeat,
   toISODateString,
   peopleNames,
+  PrismaService,
 } from '@hbcfield/shared';
-import { DAY, ISO, Caller, validZone } from './events-helpers';
-import { EventsBase } from './events.base';
+import { DAY, ISO, Caller, validZone, orgZoneOf } from './events-helpers';
+import { CalendarRulesService } from './calendar-rules.service';
+import { EventPeopleService } from './event-people.service';
+import { EventViewService } from './event-view.service';
 
 /** Free/busy and finding a time that suits everybody. */
 @Injectable()
-export class AvailabilityService extends EventsBase {
+export class AvailabilityService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rules: CalendarRulesService,
+    private readonly invitees: EventPeopleService,
+    private readonly view: EventViewService,
+  ) {}
+
   /**
    * Free / busy for colleagues around a time — the invite dialog's strips. Times only, never titles.
    */
@@ -27,10 +37,10 @@ export class AvailabilityService extends EventsBase {
       to = new Date(dto.to);
     if (!(to > from) || to.getTime() - from.getTime() > 14 * DAY)
       throw new BadRequestException('At most two weeks at a time');
-    const people = await this.inviteable(dto, (dto.userIds ?? []).slice(0, 20));
+    const people = await this.invitees.inviteable(dto, (dto.userIds ?? []).slice(0, 20));
     const ids = [dto.userId, ...people.keys()];
     const [events, leave, users] = await Promise.all([
-      this.eventsFor(dto.organizationId, ids, from, to),
+      this.view.eventsFor(dto.organizationId, ids, from, to),
       this.prisma.timeOff.findMany({
         where: {
           technicianId: { in: ids },
@@ -43,7 +53,7 @@ export class AvailabilityService extends EventsBase {
       }),
       peopleNames(this.prisma, ids),
     ]);
-    const tz = await this.orgZone(dto.organizationId);
+    const tz = await orgZoneOf(this.prisma, dto.organizationId);
     const fromKey = localPartsIn(from, tz).dateStr,
       toKey = localPartsIn(to, tz).dateStr;
     const [rulesOf, team] = await Promise.all([
@@ -107,13 +117,13 @@ export class AvailabilityService extends EventsBase {
     const from = dto.from && ISO.test(dto.from) ? new Date(dto.from) : new Date();
     const start = new Date(Math.max(from.getTime(), Date.now()));
     const to = new Date(start.getTime() + days * DAY);
-    const people = await this.inviteable(dto, (dto.userIds ?? []).slice(0, 20));
+    const people = await this.invitees.inviteable(dto, (dto.userIds ?? []).slice(0, 20));
     const ids = [dto.userId, ...people.keys()];
-    const tz = validZone(dto.timezone) ? dto.timezone : await this.orgZone(dto.organizationId);
+    const tz = validZone(dto.timezone) ? dto.timezone : await orgZoneOf(this.prisma, dto.organizationId);
     const fromKey = localPartsIn(start, tz).dateStr,
       toKey = localPartsIn(to, tz).dateStr;
     const [events, leave] = await Promise.all([
-      this.eventsFor(dto.organizationId, ids, start, to),
+      this.view.eventsFor(dto.organizationId, ids, start, to),
       this.prisma.timeOff.findMany({
         where: {
           technicianId: { in: ids },

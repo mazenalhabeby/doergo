@@ -7,12 +7,15 @@ import {
   toISODateString,
   personPasses,
 } from '@hbcfield/shared';
+import { assertRoutingInOrg } from './space-role-rules';
 import { withRateErrors } from './space-roles-helpers';
-import { SpaceRolesBase } from './space-roles.base';
+import { PrismaService } from '@hbcfield/shared';
 
 /** A member's terms in one workspace: their rate and its history, and who is told about them. */
 @Injectable()
-export class MemberTermsService extends SpaceRolesBase {
+export class MemberTermsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /** Set the per-member, per-space routing override. Whitelists ids to arrays. */
   /**
    * What this member is billed at, AT THIS CLIENT — the top rung of the ladder.
@@ -168,7 +171,7 @@ export class MemberTermsService extends SpaceRolesBase {
     if (!member) throw new NotFoundException('Space member not found');
     const arr = (v?: string[]) =>
       Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string'))] : undefined;
-    await this.assertRoutingInOrg(data.organizationId, {
+    await assertRoutingInOrg(this.prisma, data.organizationId, {
       roleIds: [data.notifyRoleIds, data.contactRoleIds, data.approveRoleIds].flatMap((v) => arr(v) ?? []),
       userIds: [data.notifyUserIds, data.contactUserIds, data.approveUserIds].flatMap((v) => arr(v) ?? []),
     });

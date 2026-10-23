@@ -8,29 +8,45 @@ import {
   toISODateString,
 } from '@hbcfield/shared';
 import { Inject, Injectable, BadRequestException } from '@nestjs/common';
-import { success } from '@hbcfield/shared';
+import { ClientProxy } from '@nestjs/microservices';
+import { PrismaService, SERVICE_NAMES, success } from '@hbcfield/shared';
 import { askAboutOwnRequest } from '../approvals/own-request-route';
 import { findPrior } from '../../common/create-once.util';
 import { RequestTimeOffDto } from './dto';
 import { SPACE_BRIEF, REQUEST_REFUSALS, requestFacts } from './technicians-helpers';
-import { MemberServiceBase } from './member-service.base';
+import { NotificationRoutingService } from '../notification-routing/notification-routing.service';
+import { CalendarRulesService } from '../calendar/calendar-rules.service';
+import { CoverService } from './cover.service';
+import { requestClashes, requestSpaces, workingDaysOf } from './member-requests';
 import { TimeOffDecisionService } from './time-off-decision.service';
 import { emitEvent, timeOffRequestedEvent } from '@hbcfield/shared/microservices';
 
 /** A member asking for time off (or another request): what they may ask, and sending it. */
 @Injectable()
-export class TimeOffRequestService extends MemberServiceBase {
-  /*
-    Injected as a PROPERTY, not a constructor parameter: Nest's @Inject/@Optional
-    markers are inherited from MemberServiceBase by index, so an extra constructor
-    parameter would shift them and hand the notification client to calendarRules.
-    Used for one thing — a sole administrator's own request is approved at once.
-  */
-  @Inject(TimeOffDecisionService) private readonly decisions!: TimeOffDecisionService;
+export class TimeOffRequestService {
+  constructor(
+    private readonly prisma: PrismaService,
+    /*
+      Who is told ABOUT this member. Leave asks the organization for time, so the
+      question "who hears about it" is the same question attendance already
+      answers, and it is answered in one place: explicit watchers chosen on the
+      member's Access page, UNION the routing configured on the spaces they work
+      in (their per-space override first, the space's own notify roles second).
+      Nothing configured anywhere → nobody is told, deliberately.
+    */
+    private readonly notificationRouting: NotificationRoutingService,
+    // A member asking for days deserves the same cover answer the approver will see.
+    private readonly cover: CoverService,
+    // What a range of leave COSTS — weekends, rota rest days and holidays left out (shared calendar/days.ts).
+    private readonly calendarRules: CalendarRulesService,
+    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+    // Used for one thing — a sole administrator's own request is approved at once.
+    private readonly decisions: TimeOffDecisionService,
+  ) {}
 
   /** What the CALLER may ask for, and where they may ask for a remote day. Only their own. */
   async requestOptions(dto: { userId: string; organizationId: string }) {
-    const { spaces, kinds } = await this.requestSpaces(dto.organizationId, dto.userId);
+    const { spaces, kinds } = await requestSpaces(this.prisma, dto.organizationId, dto.userId);
     return success({
       kinds,
       remoteSpaces: spaces.filter((s) => s.kinds.includes('REMOTE')).map((s) => ({ id: s.id, name: s.name })),
@@ -42,7 +58,7 @@ export class TimeOffRequestService extends MemberServiceBase {
    * offered there, and a remote day is something they may do there. Coded refusals.
    */
   private async assertRequestAllowed(organizationId: string, technicianId: string, value: RequestInput): Promise<void> {
-    const ctx = await this.requestSpaces(organizationId, technicianId);
+    const ctx = await requestSpaces(this.prisma, organizationId, technicianId);
     if (value.spaceId) {
       const mine = ctx.spaces.find((s) => s.id === value.spaceId);
       if (!mine) {
@@ -129,7 +145,7 @@ export class TimeOffRequestService extends MemberServiceBase {
       the same day (two answers to one question) — and with leave: a remote day, changed hours
       or overtime on a day off asks to work on a day the person will not be working.
     */
-    const clashes = await this.requestClashes(technicianId, value.kind, start, end);
+    const clashes = await requestClashes(this.prisma, technicianId, value.kind, start, end);
     const sameKind = clashes.find((c) => c.kind === value.kind);
     if (sameKind) {
       throw new BadRequestException({
@@ -158,7 +174,7 @@ export class TimeOffRequestService extends MemberServiceBase {
     // Only a vacation request is refused for falling on days off; sickness is recorded as it came.
     // A request that is not leave costs no allowance at all.
     const workingDays = leave
-      ? await this.workingDaysOf(organizationId, technicianId, start, end, type !== 'VACATION')
+      ? await workingDaysOf(this.calendarRules, organizationId, technicianId, start, end, type !== 'VACATION')
       : null;
 
     const timeOff = await this.prisma.timeOff.create({

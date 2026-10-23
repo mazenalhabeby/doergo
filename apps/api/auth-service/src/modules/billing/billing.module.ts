@@ -12,6 +12,9 @@ import { BillingAdminService } from './billing-admin.service';
 import { UsageSweepService } from './usage-sweep.service';
 import { StripeLinesService } from './stripe-lines.service';
 import { StripeCatalogService } from './stripe-catalog.service';
+import { StripeClientService } from './stripe-client.service';
+import { StripePricesService } from './stripe-prices.service';
+import { SubscriptionSyncService } from './subscription-sync.service';
 
 @Module({
   controllers: [BillingController, StripeSyncController],
@@ -25,6 +28,9 @@ import { StripeCatalogService } from './stripe-catalog.service';
     StripeService,
     StripeLinesService,
     StripeCatalogService,
+    StripeClientService,
+    StripePricesService,
+    SubscriptionSyncService,
     StripeSyncService,
     OrgBillService,
   ],
@@ -36,6 +42,8 @@ import { StripeCatalogService } from './stripe-catalog.service';
     BillingAdminService,
     UsageSweepService,
     OrgBillService,
+    // The console's billing mode moves a live subscription through the same client.
+    StripeService,
   ],
 })
 export class BillingModule {}

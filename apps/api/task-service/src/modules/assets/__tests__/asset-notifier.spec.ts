@@ -3,6 +3,7 @@ import { PrismaService } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { AssetNotifier } from '../core/asset-notifier.service';
 import { AssetResponsibleService } from '../core/asset-responsible.service';
+import { AssetAudienceService } from '../core/asset-audience.service';
 
 /**
  * Who is told about the organization's things.
@@ -45,6 +46,7 @@ describe('AssetNotifier', () => {
         AssetNotifier,
         // The real one: who can decide is part of what these tests pin.
         AssetResponsibleService,
+        AssetAudienceService,
         { provide: PrismaService, useValue: prisma },
         { provide: NotificationRoutingService, useValue: routing },
         { provide: 'NOTIFICATION_SERVICE', useValue: notifications },

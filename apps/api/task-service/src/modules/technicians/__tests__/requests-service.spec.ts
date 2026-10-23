@@ -33,9 +33,8 @@ function build(opts: {
   const cover = { assessMany: jest.fn().mockResolvedValue(new Map()) };
   const calendarRules = { countLeaveFor: jest.fn().mockResolvedValue({ counted: 3 }) };
   const notify = { emit: jest.fn() };
-  const deps = [prisma, routing as any, cover as any, calendarRules as any, notify as any, {} as any] as const;
-  const service = new TimeOffRequestService(...deps);
-  Object.assign(service, { decisions: new TimeOffDecisionService(...deps) });
+  const decisions = new TimeOffDecisionService(prisma, cover as any, calendarRules as any, notify as any);
+  const service = new TimeOffRequestService(prisma, routing as any, cover as any, calendarRules as any, notify as any, decisions);
   return { service, prisma, cover, calendarRules, notify };
 }
 

@@ -9,6 +9,8 @@ import { SiteTimeService } from './site-time.service';
 import { StatementService } from './statement.service';
 import { ExchangeRateService } from './exchange-rate.service';
 import { LegalEntitiesService } from './legal-entities.service';
+import { InvoiceCurrencyService } from './invoice-currency.service';
+import { InvoiceIssuerService } from './invoice-issuer.service';
 import { LegalEntitiesController } from './legal-entities.controller';
 
 @Module({
@@ -23,6 +25,8 @@ import { LegalEntitiesController } from './legal-entities.controller';
     StatementService,
     ExchangeRateService,
     LegalEntitiesService,
+    InvoiceCurrencyService,
+    InvoiceIssuerService,
   ],
   exports: [InvoiceService, LegalEntitiesService],
 })

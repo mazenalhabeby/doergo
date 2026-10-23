@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  PrismaService,
   zoneOf,
   coverOn,
   floorStatus,
@@ -11,11 +12,16 @@ import {
   tradeOf,
   zonedWallTimeToUtc,
 } from '@hbcfield/shared';
-import { CoverBase } from './cover.base';
+import { CalendarRulesService } from '../calendar/calendar-rules.service';
+import { approvedLeave, coverRosters } from './cover-reads';
 
 /** The live floor: who is expected now, who is in, who is late, who is off — per workspace. */
 @Injectable()
-export class CoverFloorService extends CoverBase {
+export class CoverFloorService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly calendarRules: CalendarRulesService,
+  ) {}
 
   /**
    * Who is on the floor right now.
@@ -44,13 +50,22 @@ export class CoverFloorService extends CoverBase {
     const spaceIds = spaces.map((s) => s.id);
     const nowForSpan = new Date();
     const spanKeys = spaces.map((s) => localPartsIn(nowForSpan, zoneOf(s.timezone)).dateStr).sort();
-    const rosterBySpace = await this.rosters(organizationId, spaceIds, { from: spanKeys[0]!, to: spanKeys[spanKeys.length - 1]! });
+    const rosterBySpace = await coverRosters(this.prisma, this.calendarRules, organizationId, spaceIds, {
+      from: spanKeys[0]!,
+      to: spanKeys[spanKeys.length - 1]!,
+    });
     const people = [...rosterBySpace.values()].flat();
     const personIds = [...new Set(people.map((p) => p.id))];
     if (!personIds.length) {
       return spaces.map((s) => ({
-        spaceId: s.id, spaceName: s.name, minCover: s.minCover,
-        here: 0, expected: 0, status: 'ok', rotaKnown: false, people: [],
+        spaceId: s.id,
+        spaceName: s.name,
+        minCover: s.minCover,
+        here: 0,
+        expected: 0,
+        status: 'ok',
+        rotaKnown: false,
+        people: [],
       }));
     }
 
@@ -69,7 +84,7 @@ export class CoverFloorService extends CoverBase {
     const to = todaySpan[todaySpan.length - 1]!;
 
     const [leave, entries, breaks, tasks, shiftInstances] = await Promise.all([
-      this.approvedLeave(personIds, from, to),
+      approvedLeave(this.prisma, personIds, from, to),
       this.prisma.timeEntry.findMany({
         where: { organizationId, status: 'CLOCKED_IN', userId: { in: personIds } },
         select: { id: true, userId: true, clockInAt: true, locationId: true, isRemote: true },
@@ -107,9 +122,7 @@ export class CoverFloorService extends CoverBase {
     const taskByUser = new Map<string, (typeof tasks)[number]>();
     for (const t of tasks) if (t.assignedToId && !taskByUser.has(t.assignedToId)) taskByUser.set(t.assignedToId, t);
     const instanceKey = (u: string, sp: string) => `${u}:${sp}`;
-    const dueByPerson = new Map(
-      shiftInstances.map((i) => [instanceKey(i.userId, i.spaceId), i.expectedClockInAt]),
-    );
+    const dueByPerson = new Map(shiftInstances.map((i) => [instanceKey(i.userId, i.spaceId), i.expectedClockInAt]));
 
     return spaces.map((space) => {
       const tz = zoneOf(space.timezone);
@@ -156,7 +169,9 @@ export class CoverFloorService extends CoverBase {
             : onBreak
               ? 'break'
               : entry
-                ? (task ? 'busy' : 'working')
+                ? task
+                  ? 'busy'
+                  : 'working'
                 : 'expected';
 
         // Only somebody who is expected and absent can be LATE. A person on a

@@ -1,11 +1,19 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
-import { invoiceTotalsFromSubtotalCents, lineAmount, roundCents, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
+import {
+  invoiceTotalsFromSubtotalCents,
+  lineAmount,
+  roundCents,
+  PERSON_BRIEF_SELECT,
+  PrismaService,
+} from '@hbcfield/shared';
 import type { InvoiceItemInput } from '@hbcfield/shared/microservices';
-import { InvoiceServiceBase } from './invoice-service.base';
+import { dayLineFields, unknownWorkRef, unknownWorker } from './invoice-line-checks';
 
 /** An invoice's lines: adding, removing, and the totals after. */
 @Injectable()
-export class InvoiceItemsService extends InvoiceServiceBase {
+export class InvoiceItemsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   async addItem(invoiceId: string, organizationId: string, item: InvoiceItemInput) {
     const invoice = await this.prisma.invoice.findFirst({
       where: { id: invoiceId, organizationId },
@@ -31,10 +39,10 @@ export class InvoiceItemsService extends InvoiceServiceBase {
     const unitPrice = item.unitPrice ?? 0;
     const amount = lineAmount(quantity, unitPrice);
     // A re-added line keeps which job and which days it covers (cleaned, as on create).
-    const dayFields = this.dayLineFields(item);
-    const badWorker = await this.unknownWorker(organizationId, [dayFields]);
+    const dayFields = dayLineFields(item);
+    const badWorker = await unknownWorker(this.prisma, organizationId, [dayFields]);
     if (badWorker) return badWorker;
-    const badRef = await this.unknownWorkRef(organizationId, [item]);
+    const badRef = await unknownWorkRef(this.prisma, organizationId, [item]);
     if (badRef) return badRef;
 
     await this.prisma.invoiceItem.create({

@@ -1,5 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import {
+  PrismaService,
+  SERVICE_NAMES,
   resolveWeekend,
   success,
   resolveHolidayPlace,
@@ -9,7 +12,9 @@ import {
 } from '@hbcfield/shared';
 import { countryList, matchRegion, regionList, validCountry } from './holiday-library';
 import { Scope } from './holidays-helpers';
-import { HolidaysBase } from './holidays.base';
+import { CalendarRulesService } from './calendar-rules.service';
+import { HolidayOverridesService } from './holiday-overrides.service';
+import { announceCalendarChange, assertSpaceScope, findWorkspace, readPlaceSettings } from './holiday-writes';
 
 /**
  * Holidays & weekends — the settings behind the calendar.
@@ -20,7 +25,24 @@ import { HolidaysBase } from './holidays.base';
  * leave counts and shading everywhere at once.
  */
 @Injectable()
-export class HolidaysService extends HolidaysBase {
+export class HolidaysService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rules: CalendarRulesService,
+    @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notifications: ClientProxy,
+    private readonly overrides: HolidayOverridesService,
+  ) {}
+
+  /** Change a library holiday for one year, or add a company day — see HolidayOverridesService. */
+  save(dto: Parameters<HolidayOverridesService['save']>[0]) {
+    return this.overrides.save(dto);
+  }
+
+  /** Delete a company day, or undo a change to a library holiday — see HolidayOverridesService. */
+  remove(dto: Parameters<HolidayOverridesService['remove']>[0]) {
+    return this.overrides.remove(dto);
+  }
+
   /** Everything the settings screen shows, in one read. */
   async settings(dto: { organizationId: string; year?: number; lang?: string; scopeSpaceIds?: Scope }) {
     const year = Number.isInteger(dto.year) ? dto.year! : new Date().getFullYear();
@@ -147,7 +169,7 @@ export class HolidaysService extends HolidaysBase {
     holidayRegion?: unknown;
     calendarFeedsEnabled?: unknown;
   }) {
-    const data: Record<string, unknown> = this.readPlace(dto, false);
+    const data: Record<string, unknown> = readPlaceSettings(dto, false);
     if (data.holidayRegion !== undefined && data.holidayCountry === undefined) {
       const org = await orgHolidayPlace(this.prisma, dto.organizationId);
       const c = org?.holidayCountry || org?.country;
@@ -178,7 +200,7 @@ export class HolidaysService extends HolidaysBase {
       so nothing outside those four columns can be written through this path.
     */
     await this.prisma.organization.update({ where: { id: dto.organizationId }, data });
-    this.changed(dto.organizationId);
+    announceCalendarChange(this.notifications, dto.organizationId);
     return success({ ok: true });
   }
 
@@ -191,9 +213,9 @@ export class HolidaysService extends HolidaysBase {
     holidayCountry?: unknown;
     holidayRegion?: unknown;
   }) {
-    this.assertSpaceScope(dto.spaceId, dto.scopeSpaceIds);
-    await this.assertSpace(dto.organizationId, dto.spaceId);
-    const data = this.readPlace(dto, true);
+    assertSpaceScope(dto.spaceId, dto.scopeSpaceIds);
+    await findWorkspace(this.prisma, dto.organizationId, dto.spaceId);
+    const data = readPlaceSettings(dto, true);
     if (
       data.holidayRegion &&
       typeof data.holidayCountry === 'string' &&
@@ -202,7 +224,7 @@ export class HolidaysService extends HolidaysBase {
       throw new BadRequestException({ code: 'REGION_UNKNOWN', message: 'That region is not known.' });
     }
     await this.prisma.companyLocation.update({ where: { id: dto.spaceId }, data });
-    this.changed(dto.organizationId);
+    announceCalendarChange(this.notifications, dto.organizationId);
     return success({ ok: true });
   }
 

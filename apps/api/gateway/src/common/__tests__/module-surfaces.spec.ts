@@ -87,7 +87,7 @@ describe('a module nobody bought cannot be used', () => {
     const src = tasksControllerSource();
     for (const f of ['sprints', 'epics', 'phases', 'story_points']) expect(src).toContain(`'${f}'`);
     // Create and update, not just create.
-    expect(src.match(/this\.assertTaskFieldEntitlements\(/g) ?? []).toHaveLength(2);
+    expect(src.match(/\bassertTaskFieldEntitlements\(req\.user,/g) ?? []).toHaveLength(2);
   });
 
   it('names only modules that exist', () => {

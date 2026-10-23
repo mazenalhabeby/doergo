@@ -98,7 +98,7 @@ describe('availability days', () => {
       const prisma = { user: { findMany: jest.fn().mockResolvedValue([tech]) } };
       return {
         prisma,
-        svc: new MemberScheduleService(prisma as any, {} as any, {} as any, {} as any, {} as any, {} as any),
+        svc: new MemberScheduleService(prisma as any),
       };
     };
 

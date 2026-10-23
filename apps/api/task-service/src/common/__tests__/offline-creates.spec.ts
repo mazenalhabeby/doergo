@@ -110,9 +110,8 @@ describe('support', () => {
 describe('expenses', () => {
   it('files an expense once, and only after the custody gate', async () => {
     const prisma: any = { assetMoney: { findUnique: jest.fn(async () => ({ id: 'ex-phone-0000000001', authorId: 'u1', assetId: 'a1' })), create: jest.fn() } };
-    const svc = withDeps(AssetExpenseService, { prisma });
     const gate = jest.fn(async () => ({ category: { config: {} } }));
-    (svc as any).gate = gate;
+    const svc = withDeps(AssetExpenseService, { prisma, expenseGate: { assertMayFile: gate } });
     const res: any = await svc.submit({ id: 'a1', entryId: 'ex-phone-0000000001', category: 'Fuel', amountCents: 5000, userId: 'u1', userRole: 'EMPLOYEE', organizationId: 'o1' });
     expect(gate).toHaveBeenCalled();
     expect(res.data.id).toBe('ex-phone-0000000001');

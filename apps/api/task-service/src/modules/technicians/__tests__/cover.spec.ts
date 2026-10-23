@@ -344,8 +344,8 @@ describe('the live floor', () => {
 */
 describe('cover is attached only when the gateway said so', () => {
   it('treats a missing withCover flag as no', () => {
-    // The org-wide leave list moved to leave-records-org.base.ts (LeaveRecordsService extends it).
-    const src = ['leave-records.service.ts', 'leave-records-org.base.ts']
+    // The org-wide leave list lives in org-leave-list.ts (LeaveRecordsService delegates to it).
+    const src = ['leave-records.service.ts', 'org-leave-list.ts']
       .map((f) => readFileSync(join(__dirname, '..', f), 'utf8'))
       .join('\n');
     expect(src).toContain('dto.withCover === true');

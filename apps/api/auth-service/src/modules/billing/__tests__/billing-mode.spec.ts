@@ -72,7 +72,7 @@ describe('the collection method is applied where it can be', () => {
   /** The billing service was split by job (2026-10-16): read every part of it as one source. */
   const BILLING_PARTS = [
     'billing.service.ts',
-    'billing.base.ts',
+    'subscription-sync.service.ts',
     'subscription.service.ts',
     'stripe-webhook.service.ts',
     'billing-trial.service.ts',
@@ -81,7 +81,13 @@ describe('the collection method is applied where it can be', () => {
   ];
   const billingSource = () => BILLING_PARTS.map((f) => read(`../${f}`)).join('\n');
   /** The Stripe service, split the same way: every part as one source. */
-  const STRIPE_PARTS = ['stripe.service.ts', 'stripe.base.ts', 'stripe-lines.service.ts', 'stripe-catalog.service.ts'];
+  const STRIPE_PARTS = [
+    'stripe.service.ts',
+    'stripe-client.service.ts',
+    'stripe-prices.service.ts',
+    'stripe-lines.service.ts',
+    'stripe-catalog.service.ts',
+  ];
   const stripeSource = () => STRIPE_PARTS.map((f) => read(`../${f}`)).join('\n');
 
   it('is never sent to Checkout', () => {
@@ -193,7 +199,7 @@ describe('the collection method is applied where it can be', () => {
       idempotent, so the webhook landing a second later writes the same thing.
     */
     const billing = billingSource();
-    expect(billing).toContain('await this.syncSubscription(created)');
+    expect(billing).toContain('await this.subscriptions.syncSubscription(created)');
   });
 
   it('refuses a missing country in our words, before Stripe’s', () => {

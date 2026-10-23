@@ -1,15 +1,22 @@
-import { Injectable } from '@nestjs/common';
-import { maskEmail } from '@hbcfield/shared';
+import { Injectable, Logger } from '@nestjs/common';
+import { maskEmail, PrismaService } from '@hbcfield/shared';
 import { generateBase32Secret, matchTotpStep, otpauthUri } from './totp.util';
-import { ok, fail } from './platform-auth-helpers';
-import { PlatformAuthBase } from './platform-auth.base';
+import { ok, fail, consumeTotp } from './platform-auth-helpers';
+import { PlatformSessionService } from './platform-session.service';
 
 /**
  * An operator's second factor: setting it up, switching it on and off, and an
  * owner resetting somebody's.
  */
 @Injectable()
-export class PlatformTwoFactorService extends PlatformAuthBase {
+export class PlatformTwoFactorService {
+  private readonly logger = new Logger(PlatformTwoFactorService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sessions: PlatformSessionService,
+  ) {}
+
   // ── Self-service: 2FA (TOTP) ──────────────────────────────────────────────────
   /**
    * Start enrolling an authenticator.
@@ -32,12 +39,12 @@ export class PlatformTwoFactorService extends PlatformAuthBase {
           ...fail('Enter a current code from your authenticator to replace it', 400),
           code: 'PLATFORM_2FA_CODE_REQUIRED',
         };
-      if (!(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) return fail('Invalid code', 400);
+      if (!(await consumeTotp(this.prisma, user.id, user.twoFactorSecret, data.code))) return fail('Invalid code', 400);
     }
     const secret = generateBase32Secret();
     await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorPendingSecret: secret } });
     this.logger.warn(`[PLATFORM] ${maskEmail(user.email)} started 2FA enrolment`);
-    const session = await this.rotateSessions(user.id, data.authTime);
+    const session = await this.sessions.rotateSessions(user.id, data.authTime);
     return ok({ secret, otpauthUri: otpauthUri(user.email, secret), ...session });
   }
 
@@ -60,7 +67,7 @@ export class PlatformTwoFactorService extends PlatformAuthBase {
     });
     if (claimed.count !== 1) return fail('Start 2FA setup first', 409);
     this.logger.warn(`[PLATFORM] ${maskEmail(user.email)} enabled 2FA`);
-    return ok({ twoFactorEnabled: true, ...(await this.rotateSessions(user.id, data.authTime)) });
+    return ok({ twoFactorEnabled: true, ...(await this.sessions.rotateSessions(user.id, data.authTime)) });
   }
 
   /**
@@ -73,13 +80,13 @@ export class PlatformTwoFactorService extends PlatformAuthBase {
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
     if (!user) return fail('Not found', 404);
     if (!user.twoFactorEnabled) return fail('Two-factor authentication is not on', 400);
-    if (!(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) return fail('Invalid code', 400);
+    if (!(await consumeTotp(this.prisma, user.id, user.twoFactorSecret, data.code))) return fail('Invalid code', 400);
     await this.prisma.platformUser.update({
       where: { id: user.id },
       data: { twoFactorEnabled: false, twoFactorSecret: null, twoFactorPendingSecret: null },
     });
     this.logger.warn(`[PLATFORM] ${maskEmail(user.email)} disabled 2FA`);
-    return ok({ twoFactorEnabled: false, ...(await this.rotateSessions(user.id, data.authTime)) });
+    return ok({ twoFactorEnabled: false, ...(await this.sessions.rotateSessions(user.id, data.authTime)) });
   }
 
   /**

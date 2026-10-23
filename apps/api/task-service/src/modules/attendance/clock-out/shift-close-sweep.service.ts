@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { isAbandoned } from '../core/open-shift-close';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
   success,
   TimeEntryStatus,
@@ -12,14 +12,25 @@ import {
   NO_SHIFT_LIMIT,
 } from '@hbcfield/shared';
 import { CLOSE_ENTRY_INCLUDE } from './clock-out-helpers';
-import { ShiftCloseBase } from './shift-close.base';
+import { PrismaService } from '@hbcfield/shared';
+import { AutoClockService } from '../auto-clock/auto-clock.service';
+import { ShiftCloser } from './shift-closer.service';
 
 /**
  * The sweeps that close what nobody closed: abandoned shifts, automatic shifts
  * past their end, presence past the workspace's hours.
  */
 @Injectable()
-export class ShiftCloseSweepService extends ShiftCloseBase {
+export class ShiftCloseSweepService {
+  private readonly logger = new Logger(ShiftCloseSweepService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly closer: ShiftCloser,
+    // Absent, nothing is automatic: only the abandoned-shift close runs.
+    @Optional() private readonly autoClock?: AutoClockService,
+  ) {}
+
   /**
    * Close shifts left open with a TEMPORARY clock-out.
    *
@@ -59,7 +70,7 @@ export class ShiftCloseSweepService extends ShiftCloseBase {
     let closed = autoClosed;
     for (const entry of due) {
       if (!isAbandoned(entry, now)) continue;
-      if (await this.closeProvisionally(entry, now)) closed++;
+      if (await this.closer.closeProvisionally(entry, now)) closed++;
     }
     if (closed) this.logger.log(`Closed ${closed} abandoned shift(s) with a temporary clock-out`);
     return success({ closed });
@@ -107,7 +118,7 @@ export class ShiftCloseSweepService extends ShiftCloseBase {
         where: { id: { in: dueIds }, status: TimeEntryStatus.CLOCKED_IN },
         include: { ...CLOSE_ENTRY_INCLUDE, location: { select: { name: true, noShiftDailyMinutes: true } } },
       });
-      for (const entry of due) if (await this.closeProvisionally(entry, now)) closed++;
+      for (const entry of due) if (await this.closer.closeProvisionally(entry, now)) closed++;
     }
     return closed + (await this.closePresencePastHours(now));
   }
@@ -163,7 +174,10 @@ export class ShiftCloseSweepService extends ShiftCloseBase {
         lastSeenAt: entry.lastSeenAt ?? null,
         presence: entry.presence ?? null,
       });
-      if (verdict.due && (await this.closeProvisionally(entry, now, { lastSeenOnSiteAt: verdict.lastSeenOnSiteAt })))
+      if (
+        verdict.due &&
+        (await this.closer.closeProvisionally(entry, now, { lastSeenOnSiteAt: verdict.lastSeenOnSiteAt }))
+      )
         closed++;
     }
     return closed;

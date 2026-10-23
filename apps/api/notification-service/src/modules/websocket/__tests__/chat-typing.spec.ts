@@ -1,5 +1,7 @@
 import { WebsocketGateway } from '../websocket.gateway';
 import { ChatMembersCache } from '../chat-members';
+import type { SocketRegistry } from '../socket-registry';
+import { buildGateway } from './gateway-fixture';
 
 /**
  * The typing relay believed the client: it took the recipient list off the
@@ -10,7 +12,8 @@ import { ChatMembersCache } from '../chat-members';
  */
 describe('WebsocketGateway.handleChatTyping', () => {
   let gateway: WebsocketGateway;
-  let emitted: Array<{ room: string; event: string; payload: any }>;
+  let registry: SocketRegistry;
+  let emitted: Array<{ room: string; event: string; data: any }>;
   let members: Record<string, string[]>;
   let loads: number;
 
@@ -18,24 +21,24 @@ describe('WebsocketGateway.handleChatTyping', () => {
   const OTHER_ORG = 'org-theirs';
 
   const connect = (socketId: string, userId: string, organizationId: string, role = 'EMPLOYEE') => {
-    (gateway as any).connectedClients.set(socketId, {
-      userId, role, organizationId, connectedAt: new Date(), rooms: [],
+    registry.clients.set(socketId, {
+      userId,
+      role,
+      organizationId,
+      connectedAt: new Date(),
+      rooms: [],
     });
   };
 
   beforeEach(() => {
-    gateway = Object.create(WebsocketGateway.prototype) as WebsocketGateway;
-    (gateway as any).connectedClients = new Map();
-    emitted = [];
     members = { c1: ['me', 'mate'] };
     loads = 0;
-    (gateway as any).chatMembers = new ChatMembersCache(async (id) => {
-      loads++;
-      return members[id] ?? [];
-    });
-    (gateway as any).server = {
-      to: (room: string) => ({ emit: (event: string, payload: any) => emitted.push({ room, event, payload }) }),
-    };
+    ({ gateway, registry, emitted } = buildGateway({
+      members: async (id) => {
+        loads++;
+        return members[id] ?? [];
+      },
+    }));
     connect('s-me', 'me', ORG);
   });
 
@@ -91,7 +94,7 @@ describe('WebsocketGateway.handleChatTyping', () => {
   it('reports the sender from their own socket, not the payload', async () => {
     connect('s-mate', 'mate', ORG);
     await gateway.handleChatTyping({ id: 's-me' } as any, { conversationId: 'c1', from: 'someone-else' });
-    expect(emitted[0]!.payload.from).toBe('me');
+    expect(emitted[0]!.data.from).toBe('me');
   });
 
   it('ignores a malformed payload and an unauthenticated socket', async () => {

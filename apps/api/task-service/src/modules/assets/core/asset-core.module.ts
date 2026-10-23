@@ -4,6 +4,7 @@ import { SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetResponsibleService } from './asset-responsible.service';
 import { AssetNotifier } from './asset-notifier.service';
+import { AssetAudienceService } from './asset-audience.service';
 import { AssetActivityService } from './asset-activity.service';
 import { AssetHoldersService } from './asset-holders.service';
 
@@ -13,7 +14,14 @@ import { AssetHoldersService } from './asset-holders.service';
  */
 @Module({
   imports: [ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)])],
-  providers: [AssetAccessService, AssetResponsibleService, AssetNotifier, AssetActivityService, AssetHoldersService],
+  providers: [
+    AssetAccessService,
+    AssetResponsibleService,
+    AssetAudienceService,
+    AssetNotifier,
+    AssetActivityService,
+    AssetHoldersService,
+  ],
   exports: [AssetAccessService, AssetResponsibleService, AssetNotifier, AssetActivityService, AssetHoldersService],
 })
 export class AssetCoreModule {}

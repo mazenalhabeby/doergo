@@ -1,16 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { BCRYPT_COST_FACTOR, type PlatformRole, normalizeEmail, maskEmail } from '@hbcfield/shared';
-import { ok, fail } from './platform-auth-helpers';
-import { PlatformAuthBase } from './platform-auth.base';
+import { BCRYPT_COST_FACTOR, type PlatformRole, normalizeEmail, maskEmail, PrismaService } from '@hbcfield/shared';
+import { ok, fail, publicUser, validRole } from './platform-auth-helpers';
 
 /** The operators themselves: listing, adding, editing, resetting a password, the first owner. */
 @Injectable()
-export class PlatformStaffService extends PlatformAuthBase {
+export class PlatformStaffService {
+  private readonly logger = new Logger(PlatformStaffService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
   // ── Staff management (OWNER only — enforced at the gateway) ────────────────────
   async listUsers() {
     const users = await this.prisma.platformUser.findMany({ orderBy: [{ isActive: 'desc' }, { createdAt: 'asc' }] });
-    return ok(users.map((u) => this.publicUser(u)));
+    return ok(users.map((u) => publicUser(u)));
   }
 
   async createUser(data: {
@@ -22,7 +25,7 @@ export class PlatformStaffService extends PlatformAuthBase {
     byUserId?: string;
   }) {
     const email = normalizeEmail(data.email ?? '');
-    const role = this.validRole(data.role);
+    const role = validRole(data.role);
     if (!email || !email.includes('@')) return fail('Valid email required');
     if (!data.password || data.password.length < 10) return fail('Password must be at least 10 characters');
     if (!role) return fail('Invalid role');
@@ -40,7 +43,7 @@ export class PlatformStaffService extends PlatformAuthBase {
       },
     });
     this.logger.warn(`[PLATFORM] user created: ${maskEmail(email)} (${role}) by ${data.byUserId ?? 'bootstrap'}`);
-    return ok(this.publicUser(user));
+    return ok(publicUser(user));
   }
 
   /**
@@ -60,7 +63,7 @@ export class PlatformStaffService extends PlatformAuthBase {
     if (!user) return fail('Not found', 404);
     const patch: { role?: PlatformRole; isActive?: boolean } = {};
     if (data.role !== undefined) {
-      const r = this.validRole(data.role);
+      const r = validRole(data.role);
       if (!r) return fail('Invalid role');
       patch.role = r;
     }
@@ -85,7 +88,7 @@ export class PlatformStaffService extends PlatformAuthBase {
     this.logger.warn(
       `[PLATFORM] user ${maskEmail(user.email)} updated (${JSON.stringify(patch)}) by ${data.byUserId ?? 'operator'}`,
     );
-    return ok(this.publicUser(updated));
+    return ok(publicUser(updated));
   }
 
   async resetPassword(data: { id: string; password?: string; byUserId?: string }) {

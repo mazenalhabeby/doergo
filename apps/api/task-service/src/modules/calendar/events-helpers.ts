@@ -1,4 +1,4 @@
-import { addDaysStr, occurrences, type Repeat, type ReminderEvent } from '@hbcfield/shared';
+import { PrismaService, addDaysStr, occurrences, orgTimezone, type Repeat, type ReminderEvent } from '@hbcfield/shared';
 import type { CalendarCaller, CalendarEventMessage } from '@hbcfield/shared/microservices';
 
 const DAY = 86400000;
@@ -88,3 +88,9 @@ export function seriesEndOf(startAt: Date, endAt: Date, repeat: Repeat | null, t
 }
 
 export { DAY, ISO, DATE, MEETING_KEYS, EventRow, validZone, clean };
+
+/** The organization's zone — where an event without its own is placed. */
+export async function orgZoneOf(prisma: PrismaService, organizationId: string): Promise<string> {
+  const o = await orgTimezone(prisma, organizationId);
+  return o?.timezone || 'Europe/Vienna';
+}

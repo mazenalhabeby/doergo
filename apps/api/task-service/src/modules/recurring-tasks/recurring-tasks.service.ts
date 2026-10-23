@@ -1,13 +1,16 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { workspaceZone } from '../../common/zone.util';
-import { success, localPartsIn, assertFoundInOrg } from '@hbcfield/shared';
-import { RecurringTasksBase } from './recurring-tasks.base';
+import { success, localPartsIn, assertFoundInOrg, PrismaService } from '@hbcfield/shared';
+import { calculateNextRun, validateFrequencyFields } from './recurring-schedule';
+import { assertTemplateRefsInOrg } from './recurring-materialize';
 // Requests are the message contracts' (shared with the gateway) — one definition, not two.
 import { type createRecurringTask, type updateRecurringTask, type RpcRequest } from '@hbcfield/shared/microservices';
 import type { RecurrenceFrequency, TaskPriority } from '@prisma/client';
 
 @Injectable()
-export class RecurringTasksService extends RecurringTasksBase {
+export class RecurringTasksService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * List all recurring task templates for an organization
    */
@@ -42,10 +45,11 @@ export class RecurringTasksService extends RecurringTasksBase {
    */
   async create(data: RpcRequest<typeof createRecurringTask>) {
     // Validate frequency-specific fields
-    this.validateFrequencyFields(data.frequency, data);
+    validateFrequencyFields(data.frequency, data);
 
     // Validate space + task type + client belong to this org (if provided)
-    await this.assertSpaceAndWorkflow(
+    await assertTemplateRefsInOrg(
+      this.prisma,
       data.organizationId,
       data.spaceId,
       data.workflowId,
@@ -76,7 +80,7 @@ export class RecurringTasksService extends RecurringTasksBase {
     }
 
     // Calculate the first nextRunAt
-    const nextRunAt = this.calculateNextRun(
+    const nextRunAt = calculateNextRun(
       data.frequency,
       startDate,
       null, // no lastGenerated yet
@@ -128,7 +132,8 @@ export class RecurringTasksService extends RecurringTasksBase {
     assertFoundInOrg(existing, data.organizationId, 'Recurring task template');
 
     // Validate any newly-set space / task type belong to this org
-    await this.assertSpaceAndWorkflow(
+    await assertTemplateRefsInOrg(
+      this.prisma,
       data.organizationId,
       data.spaceId === undefined ? undefined : (data.spaceId ?? undefined),
       data.workflowId === undefined ? undefined : (data.workflowId ?? undefined),
@@ -139,7 +144,7 @@ export class RecurringTasksService extends RecurringTasksBase {
     // If frequency changed, validate and recalculate nextRunAt
     const frequency = data.frequency || existing.frequency;
     if (data.frequency) {
-      this.validateFrequencyFields(data.frequency, {
+      validateFrequencyFields(data.frequency, {
         customDays: data.customDays ?? existing.customDays ?? undefined,
         dayOfWeek: data.dayOfWeek ?? existing.dayOfWeek ?? undefined,
         dayOfMonth: data.dayOfMonth ?? existing.dayOfMonth ?? undefined,
@@ -154,7 +159,7 @@ export class RecurringTasksService extends RecurringTasksBase {
       data.dayOfMonth !== undefined ||
       data.customDays !== undefined
     ) {
-      nextRunAt = this.calculateNextRun(
+      nextRunAt = calculateNextRun(
         frequency,
         existing.startDate,
         existing.lastGeneratedAt,

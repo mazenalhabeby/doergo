@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  PrismaService,
   zoneOf,
   assessLeave,
   coverOn,
@@ -16,12 +17,18 @@ import {
   type CoverVerdict,
   type DateKey,
 } from '@hbcfield/shared';
-import { CoverBase } from './cover.base';
+import { CalendarRulesService } from '../calendar/calendar-rules.service';
+import { approvedLeave, coverRosters, coverDayKey, spaceOfEach } from './cover-reads';
 
 export { shiftRuleOf } from './cover-helpers';
 
 @Injectable()
-export class CoverService extends CoverBase {
+export class CoverService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly calendarRules: CalendarRulesService,
+  ) {}
+
   /**
    * A cover verdict for each of these leave requests.
    *
@@ -40,7 +47,7 @@ export class CoverService extends CoverBase {
     if (!requests.length) return out;
 
     const personIds = [...new Set(requests.map((r) => r.technicianId))];
-    const spaceOf = await this.spaceOfEach(organizationId, personIds);
+    const spaceOf = await spaceOfEach(this.prisma, organizationId, personIds);
     const spaceIds = [...new Set([...spaceOf.values()])];
     if (!spaceIds.length) return out;
 
@@ -52,14 +59,14 @@ export class CoverService extends CoverBase {
       spaces.map((s) => [s.id, { id: s.id, name: s.name, minCover: s.minCover }]),
     );
 
-    const from = requests.map((r) => CoverBase.key(r.startDate)).sort()[0]!;
+    const from = requests.map((r) => coverDayKey(r.startDate)).sort()[0]!;
     const to = requests
-      .map((r) => CoverBase.key(r.endDate))
+      .map((r) => coverDayKey(r.endDate))
       .sort()
       .at(-1)!;
-    const rosterBySpace = await this.rosters(organizationId, spaceIds, { from, to });
+    const rosterBySpace = await coverRosters(this.prisma, this.calendarRules, organizationId, spaceIds, { from, to });
     const rosterIds = [...new Set([...rosterBySpace.values()].flat().map((p) => p.id))];
-    const leave = await this.approvedLeave(rosterIds, from, to);
+    const leave = await approvedLeave(this.prisma, rosterIds, from, to);
 
     for (const req of requests) {
       const spaceId = spaceOf.get(req.technicianId);
@@ -72,8 +79,8 @@ export class CoverService extends CoverBase {
         {
           id: req.id,
           personId: req.technicianId,
-          from: CoverBase.key(req.startDate),
-          to: CoverBase.key(req.endDate),
+          from: coverDayKey(req.startDate),
+          to: coverDayKey(req.endDate),
         },
         person,
         space,
@@ -116,13 +123,15 @@ export class CoverService extends CoverBase {
     });
     if (!spaces.length) return [];
 
-    const rosterBySpace = await this.rosters(
+    const rosterBySpace = await coverRosters(
+      this.prisma,
+      this.calendarRules,
       organizationId,
       spaces.map((s) => s.id),
       { from, to },
     );
     const personIds = [...new Set([...rosterBySpace.values()].flat().map((p) => p.id))];
-    const leave = await this.approvedLeave(personIds, from, to);
+    const leave = await approvedLeave(this.prisma, personIds, from, to);
 
     return spaces.map((space) => {
       const roster = rosterBySpace.get(space.id) ?? [];
@@ -154,9 +163,13 @@ export class CoverService extends CoverBase {
   ): Promise<Map<string, { rostered: boolean; onLeave: boolean }>> {
     const out = new Map<string, { rostered: boolean; onLeave: boolean }>();
     const today = localPartsIn(new Date(), zoneOf(timezone)).dateStr;
-    const roster = (await this.rosters(organizationId, [spaceId], { from: today, to: today })).get(spaceId) ?? [];
+    const roster =
+      (await coverRosters(this.prisma, this.calendarRules, organizationId, [spaceId], { from: today, to: today })).get(
+        spaceId,
+      ) ?? [];
     if (!roster.length) return out;
-    const leave = await this.approvedLeave(
+    const leave = await approvedLeave(
+      this.prisma,
       roster.map((p) => p.id),
       today,
       today,

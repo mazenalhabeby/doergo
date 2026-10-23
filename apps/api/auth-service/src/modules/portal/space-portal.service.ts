@@ -1,10 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PORTAL_TEMPLATES, templateToIntakeCategories, workspaceInOrg } from '@hbcfield/shared';
-import { PortalServiceBase } from './portal-service.base';
+import { PORTAL_TEMPLATES, templateToIntakeCategories, workspaceInOrg, PrismaService } from '@hbcfield/shared';
+import { PortalReachService } from './portal-reach.service';
+import { PortalService } from './portal.service';
+import { UnitResidentsService } from './unit-residents.service';
 
 /** A workspace's own portal: creating it, finding it, its template, its addresses. */
 @Injectable()
-export class SpacePortalService extends PortalServiceBase {
+export class SpacePortalService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reach: PortalReachService,
+    private readonly portals: PortalService,
+    private readonly residents: UnitResidentsService,
+  ) {}
+
   // Entity-type → label for the space's portal (what a "unit" is called there).
   private static readonly ENTITY_LABELS: Record<string, string> = {
     rental: 'Apartment',
@@ -16,7 +25,7 @@ export class SpacePortalService extends PortalServiceBase {
   async createPortal(data: { organizationId: string; templateKey?: string; name?: string }) {
     const template = PORTAL_TEMPLATES[data.templateKey || 'rental'] || PORTAL_TEMPLATES.rental;
     const portal = await this.seedPortal(data.organizationId, template, data.name);
-    return this.getPortal({ id: portal.id, organizationId: data.organizationId });
+    return this.portals.getPortal({ id: portal.id, organizationId: data.organizationId });
   }
 
   async createSpacePortal(data: { organizationId: string; spaceId: string; templateKey?: string; name?: string }) {
@@ -24,9 +33,9 @@ export class SpacePortalService extends PortalServiceBase {
     if (!space) throw new NotFoundException('Space not found');
     const template = PORTAL_TEMPLATES[data.templateKey || 'rental'] || PORTAL_TEMPLATES.rental;
     // Apartment entity ⇒ the Assets module must be on (fail before creating).
-    if (template.key === 'rental') await this.assertApartmentsModule(data.organizationId, data.spaceId);
+    if (template.key === 'rental') await this.reach.assertApartmentsModule(data.organizationId, data.spaceId);
     const portal = await this.seedPortal(data.organizationId, template, data.name, data.spaceId);
-    return this.getPortal({ id: portal.id, organizationId: data.organizationId });
+    return this.portals.getPortal({ id: portal.id, organizationId: data.organizationId });
   }
 
   /**
@@ -71,7 +80,7 @@ export class SpacePortalService extends PortalServiceBase {
   async updateSpacePortal(data: { organizationId: string; spaceId: string; templateKey?: string }) {
     const ensured = await this.ensurePortalForSpace({ organizationId: data.organizationId, spaceId: data.spaceId });
     if (data.templateKey) {
-      if (data.templateKey === 'rental') await this.assertApartmentsModule(data.organizationId, data.spaceId);
+      if (data.templateKey === 'rental') await this.reach.assertApartmentsModule(data.organizationId, data.spaceId);
       await this.prisma.portal.update({
         where: { id: ensured.data.id },
         data: {
@@ -91,7 +100,7 @@ export class SpacePortalService extends PortalServiceBase {
       include: { customer: { select: { id: true, name: true } } },
       take: 500,
     });
-    return { data: await this.withResidentUsers(rows) };
+    return { data: await this.residents.withResidentUsers(rows) };
   }
 
   /**

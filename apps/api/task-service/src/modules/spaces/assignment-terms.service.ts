@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
   zoneOf,
@@ -11,11 +11,19 @@ import {
   type AutoClockStartWindow,
 } from '@hbcfield/shared';
 import { assertValidScheduleDays } from './space-helpers';
-import { SpaceServiceBase } from './space-service.base';
+import { PrismaService } from '@hbcfield/shared';
+import { SpaceAnnouncer } from './space-announcer.service';
 
 /** A member's terms in one workspace: roles, bill terms, the automatic clock. */
 @Injectable()
-export class AssignmentTermsService extends SpaceServiceBase {
+export class AssignmentTermsService {
+  private readonly logger = new Logger(AssignmentTermsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly announcer: SpaceAnnouncer,
+  ) {}
+
   /**
    * "This workspace uses the automatic clock — switch it on?" to members the
    * office has just chosen here and who have not agreed yet. Their phone shows
@@ -157,10 +165,10 @@ export class AssignmentTermsService extends SpaceServiceBase {
     });
 
     this.logger.log(`Assignment updated: ${updated.id}`);
-    this.announce('space_roster_changed', data.organizationId, updated.spaceId ?? null);
+    this.announcer.announce('space_roster_changed', data.organizationId, updated.spaceId ?? null);
     // Chosen for the automatic clock just now → tell them the switch is there.
     if (data.autoClock === true && assignment.autoClock !== true && updated.spaceId) {
-      void this.offerAutoClock(data.organizationId, updated.spaceId, [assignment.userId]);
+      void this.announcer.offerAutoClock(data.organizationId, updated.spaceId, [assignment.userId]);
     }
     // Alias to the legacy shape (locationId/location) for client compat.
     const { space, spaceId, ...rest } = updated;

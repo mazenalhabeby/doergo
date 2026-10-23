@@ -12,7 +12,10 @@ import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { ATTENDANCE_LOCATION_SELECT } from '../core/attendance-selects';
 import { isClockableAssignment, STATUS_SPACE_SELECT, statusSpace } from './status-clockable';
-import { AttendanceReadBase } from './attendance-read.base';
+import { PrismaService } from '@hbcfield/shared';
+import { PresenceService } from '../presence/presence.service';
+import { HeartbeatService } from '../on-the-clock/heartbeat.service';
+import { ClockInLocationsService } from '../clock-in/clock-in-locations.service';
 import type { Prisma } from '@prisma/client';
 
 /**
@@ -21,7 +24,15 @@ import type { Prisma } from '@prisma/client';
  * organization's entries, and one entry's presence trail.
  */
 @Injectable()
-export class AttendanceReadService extends AttendanceReadBase {
+export class AttendanceReadService {
+  constructor(
+    private readonly prisma: PrismaService,
+    // Where they are working now — display only, and never in the way of a clock-in.
+    private readonly presence: PresenceService,
+    private readonly clockInLocations: ClockInLocationsService,
+    private readonly heartbeats: HeartbeatService,
+  ) {}
+
   /**
    * The day's changes of where somebody worked, for one entry in the caller's
    * spaces. Group, reason and time — never a position. Outside the caller's

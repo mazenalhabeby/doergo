@@ -1,5 +1,7 @@
 import { clientDocumentLocale } from '@hbcfield/shared';
 import { InvoiceService } from '../invoice.service';
+import { InvoiceCurrencyService } from '../invoice-currency.service';
+import { InvoiceIssuerService } from '../invoice-issuer.service';
 
 /*
   The invoice response says which language the client's copy is written in.
@@ -51,7 +53,10 @@ function setup(opts: {
       }),
     },
   };
-  return { service: new InvoiceService(prisma as any, { rate: async () => null } as any, { ensureMain: async () => 'le-main', entityWithBank: async () => null } as any), prisma };
+  const rates = { rate: async () => null } as any;
+  const entities = { ensureMain: async () => 'le-main', entityWithBank: async () => null } as any;
+  const issuer = new InvoiceIssuerService(prisma as any, entities);
+  return { service: new InvoiceService(prisma as any, new InvoiceCurrencyService(prisma as any, rates), rates, issuer), prisma };
 }
 
 describe('invoice documentLocale', () => {

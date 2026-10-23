@@ -6,6 +6,7 @@ import { ClockOutService } from './clock-out/clock-out.service';
 import { ClockOutAlertsService } from './clock-out/clock-out-alerts.service';
 import { DecidedCloseService } from './clock-out/decided-close.service';
 import { ShiftCloseSweepService } from './clock-out/shift-close-sweep.service';
+import { ShiftCloser } from './clock-out/shift-closer.service';
 import { ClockInService } from './clock-in/clock-in.service';
 import { ClockInContextService } from './clock-in/clock-in-context.service';
 import { ClockInRemoteService } from './clock-in/clock-in-remote.service';
@@ -17,8 +18,10 @@ import { AutoClockService } from './auto-clock/auto-clock.service';
 import { NoShowSettleService } from './no-shows/no-show-settle.service';
 import { NoShowRecordService } from './no-shows/no-show-record.service';
 import { ExtraTimeDecisionService } from './extra-time/extra-time-decision.service';
+import { ExtraTimeApprovalService } from './extra-time/extra-time-approval.service';
 import { HeartbeatBatchService } from './on-the-clock/heartbeat-batch.service';
 import { ExcursionsService } from './on-the-clock/excursions.service';
+import { ExcursionNotices } from './on-the-clock/excursion-notices.service';
 import { AttendanceEntriesReadService } from './reads/attendance-entries-read.service';
 import { ShiftReminderSweepService } from './shifts/shift-reminder-sweep.service';
 import { ShiftInstancesService } from './shifts/shift-instances.service';
@@ -42,7 +45,10 @@ export const ATTENDANCE_SERVICE_PARTS = [
   NoShowSummaryService,
   ExtraTimeService,
   ExtraTimeDecisionService,
+  ExtraTimeApprovalService,
   ClockOutAlertsService,
+  // The ONE way a shift closes, shared by every closer below.
+  ShiftCloser,
   ClockOutService,
   // Closing a shift by an answer, and the sweeps that close what nobody closed.
   DecidedCloseService,
@@ -56,6 +62,7 @@ export const ATTENDANCE_SERVICE_PARTS = [
   HeartbeatService,
   HeartbeatBatchService,
   ExcursionsService,
+  ExcursionNotices,
   AttendanceReadService,
   AttendanceEntriesReadService,
   // The automatic clock: plan, consent, undo, and "is this member automatic" for the closers and sweeps.

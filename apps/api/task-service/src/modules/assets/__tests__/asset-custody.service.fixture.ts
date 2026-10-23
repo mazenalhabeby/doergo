@@ -1,6 +1,7 @@
 import { combinedServices } from '../../../common/testing/combined-services';
 import { AssetCustodyService } from '../custody/asset-custody.service';
 import { CustodyReadService } from '../custody/custody-read.service';
+import { CustodyWriterService } from '../custody/custody-writer.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };
@@ -8,10 +9,11 @@ type Public<T> = { [K in keyof T]: T[K] };
 /** Every service split out of AssetCustodyService, as ONE object — the tests were written against the single class. */
 export type AssetCustodyServiceParts = Public<AssetCustodyService> & Public<CustodyReadService>;
 
-export function custodyServices(...args: unknown[]): AssetCustodyServiceParts {
+/** Writing and reading custody over the same collaborators, with the real writer. */
+export function custodyServices(prisma?: any, access?: any, notifier?: any): AssetCustodyServiceParts {
   return combinedServices<AssetCustodyServiceParts>(
-    new (AssetCustodyService as unknown as new (...a: unknown[]) => object)(...args),
-    new (CustodyReadService as unknown as new (...a: unknown[]) => object)(...args),
+    new AssetCustodyService(prisma, access, notifier, new CustodyWriterService()),
+    new CustodyReadService(prisma, access),
   );
 }
 

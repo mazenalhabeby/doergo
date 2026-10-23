@@ -22,26 +22,31 @@ export const ATTENDANCE_CONTROLLERS = [
   EntryEditsController,
 ] as const;
 
-export type AttendanceControllers = AttendanceController &
-  WorklogController &
-  AttendanceRecordsController &
-  AttendanceReportsController &
-  BreaksController &
-  AttendanceApprovalsController &
-  ExtraTimeController &
-  EntryEditsController;
-
-const SPLIT_SERVICE_FIELDS = ['attendanceReports', 'breaksGateway', 'entryDecisions', 'extraTimeGateway'];
+/** The public face of a class (an intersection of classes with private members is `never`). */
+type Public<T> = { [K in keyof T]: T[K] };
+export type AttendanceControllers = Public<AttendanceController> &
+  Public<WorklogController> &
+  Public<AttendanceRecordsController> &
+  Public<AttendanceReportsController> &
+  Public<BreaksController> &
+  Public<AttendanceApprovalsController> &
+  Public<ExtraTimeController> &
+  Public<EntryEditsController>;
 
 /** All of them over the same two services, as one object. */
 export function attendanceControllers(service: unknown, queue: unknown): AttendanceControllers {
-  // The gateway services split out of AttendanceService (2026-10-17) are properties — the one mock answers for all.
-  const parts = ATTENDANCE_CONTROLLERS.map((C) => {
-    const c = new C(service as never, queue as never);
-    for (const f of SPLIT_SERVICE_FIELDS) Object.assign(c, { [f]: service });
-    return c;
-  });
-  return combinedServices<AttendanceControllers>(...parts);
+  // Every gateway service (AttendanceService and the ones split out of it) is the one mock; the queue is the other.
+  const s = service as never;
+  return combinedServices<AttendanceControllers>(
+    new AttendanceController(s, queue as never),
+    new WorklogController(s),
+    new AttendanceRecordsController(s),
+    new AttendanceReportsController(s),
+    new BreaksController(s),
+    new AttendanceApprovalsController(s),
+    new ExtraTimeController(s),
+    new EntryEditsController(s),
+  );
 }
 
 /** The route handler named `name`, from whichever controller owns it (for its decorator metadata). */

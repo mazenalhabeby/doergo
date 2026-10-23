@@ -4,6 +4,7 @@
 // AttendanceService hands these to the collaborators that own them.
 import { ShiftCloseSweepService } from '../clock-out/shift-close-sweep.service';
 import { DecidedCloseService } from '../clock-out/decided-close.service';
+import { ShiftCloser } from '../clock-out/shift-closer.service';
 import { ExtraTimeDecisionService } from '../extra-time/extra-time-decision.service';
 import { isAbandoned, provisionalClockOut } from '../core/open-shift-close';
 
@@ -59,6 +60,8 @@ describe('closeAbandonedShifts', () => {
     };
     svc.countedTime = { columnsFor: jest.fn().mockResolvedValue({ countedStartAt: at('14T08:00'), countedEndAt: at('14T17:00'), paidMinutes: 510 }) };
     svc.notificationClient = { emit: jest.fn() };
+    // The one close, over the same doubles (no automatic clock: absent, nothing is automatic).
+    svc.closer = new ShiftCloser(svc.prisma, svc.notificationClient, undefined as any, svc.countedTime);
     return { svc, tx };
   }
   const entry = (over: any = {}) => ({
@@ -122,11 +125,13 @@ describe('overtime added by a manager to a closed shift', () => {
       overtimeRequest: { findFirst: jest.fn().mockResolvedValue({ cycle: 1 }), create: jest.fn((a: any) => ({ kind: 'round', a })) },
       $transaction: jest.fn(async (ops: any[]) => ops),
     };
-    svc.userCanApproveOvertime = jest.fn().mockResolvedValue(true);
-    svc.assertNotSelfOvertimeDecision = jest.fn().mockResolvedValue(undefined);
+    svc.approval = {
+      userCanApproveOvertime: jest.fn().mockResolvedValue(true),
+      assertNotSelfOvertimeDecision: jest.fn().mockResolvedValue(undefined),
+      approveExtraTime: jest.fn().mockResolvedValue({ success: true }),
+    };
     svc.countedTime = { recomputeClosed: jest.fn() };
     svc.notificationClient = { emit: jest.fn() };
-    svc.approveExtraTime = jest.fn().mockResolvedValue({ success: true });
     return svc;
   }
   const closed = { id: 'e1', userId: 'member', locationId: 's1', organizationId: 'org-1', status: 'CLOCKED_OUT', clockInAt: at('14T08:00'), clockOutAt: at('14T18:40'), expectedClockOutAt: at('14T17:00'), overtimeRequests: [] };
@@ -143,7 +148,7 @@ describe('overtime added by a manager to a closed shift', () => {
   it('approves the member’s own waiting request instead of adding a second one', async () => {
     const svc = service({ ...closed, overtimeRequests: [{ id: 'r1' }] });
     await svc.addOvertimeToClosedEntry({ approverId: 'manager', entryId: 'e1', minutes: 60, organizationId: 'org-1' });
-    expect(svc.approveExtraTime).toHaveBeenCalledWith(expect.objectContaining({ entryId: 'e1', minutes: 60 }));
+    expect(svc.approval.approveExtraTime).toHaveBeenCalledWith(expect.objectContaining({ entryId: 'e1', minutes: 60 }));
     expect(svc.prisma.$transaction).not.toHaveBeenCalled();
   });
 
@@ -172,7 +177,8 @@ describe('"when did you leave?" on a shift closed with a temporary time', () => 
       toleranceFor: jest.fn().mockResolvedValue(10),
     };
     svc.notificationClient = { emit: jest.fn() };
-    svc.sendPendingApprovalAlert = jest.fn();
+    svc.closer = new ShiftCloser(svc.prisma, svc.notificationClient, undefined as any, svc.countedTime);
+    svc.closer.sendPendingApprovalAlert = jest.fn();
     return svc;
   }
   const provisional = {

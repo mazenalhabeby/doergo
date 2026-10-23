@@ -69,7 +69,7 @@ describe('heartbeatBatch', () => {
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
     };
-    svc.emitExcursionEvent = jest.fn();
+    svc.excursionNotices = { announce: jest.fn() };
     return svc;
   }
 
@@ -85,7 +85,7 @@ describe('heartbeatBatch', () => {
     expect(svc.prisma.geofenceExcursion.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ status: 'RETURNED', leftRingAt: at('09:10'), resolvedAt: at('09:25') }),
     });
-    expect(svc.emitExcursionEvent).not.toHaveBeenCalled();
+    expect(svc.excursionNotices.announce).not.toHaveBeenCalled();
     expect(res.data).toEqual({ recorded: 1, opened: false, returned: false });
   });
 
@@ -95,12 +95,12 @@ describe('heartbeatBatch', () => {
     expect(fresh.prisma.geofenceExcursion.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ status: 'OUT_UNREPORTED', leftRingAt: at('11:30') }),
     });
-    expect(fresh.emitExcursionEvent).toHaveBeenCalledWith('geofence_excursion_out', expect.anything(), expect.anything(), expect.anything());
+    expect(fresh.excursionNotices.announce).toHaveBeenCalledWith('geofence_excursion_out', expect.anything(), expect.anything(), expect.anything());
 
     const stale = service();
     await stale.heartbeatBatch({ userId: 'u1', organizationId: 'org-1', points: [point(SITE, '09:00'), point(FAR, '09:10')] });
     expect(stale.prisma.geofenceExcursion.create).not.toHaveBeenCalled();
-    expect(stale.emitExcursionEvent).not.toHaveBeenCalled();
+    expect(stale.excursionNotices.announce).not.toHaveBeenCalled();
   });
 
   it('closes an open excursion at the moment they came back, not now', async () => {

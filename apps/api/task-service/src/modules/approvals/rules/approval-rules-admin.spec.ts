@@ -29,7 +29,7 @@ function setup() {
       findMany: jest.fn().mockResolvedValue([]),
     },
   };
-  return { prisma, svc: new ApprovalRulesAdminService(prisma, { emit: jest.fn() } as any) };
+  return { prisma, svc: new ApprovalRulesAdminService(prisma) };
 }
 
 describe('saving an office rule', () => {

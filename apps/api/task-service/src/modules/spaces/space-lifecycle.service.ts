@@ -1,27 +1,27 @@
 import {
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
-import { SERVICE_NAMES, success, activeShareCount } from '@hbcfield/shared';
+import { SERVICE_NAMES, success, activeShareCount, PrismaService } from '@hbcfield/shared';
 import { sendRpc, spacePurgeAuthSide } from '@hbcfield/shared/microservices';
-import { PrismaService } from '@hbcfield/shared';
-import { SpaceServiceBase } from './space-service.base';
+import { SpaceAnnouncer } from './space-announcer.service';
 
 /** A workspace's life: the default one, archiving, purging. */
 @Injectable()
-export class SpaceLifecycleService extends SpaceServiceBase {
+export class SpaceLifecycleService {
+  private readonly logger = new Logger(SpaceLifecycleService.name);
+
   constructor(
-    prisma: PrismaService,
-    @Inject(SERVICE_NAMES.NOTIFICATION) notificationClient: ClientProxy,
+    private readonly prisma: PrismaService,
+    private readonly announcer: SpaceAnnouncer,
     @Inject(SERVICE_NAMES.AUTH) private readonly authClient: ClientProxy,
-  ) {
-    super(prisma, notificationClient);
-  }
+  ) {}
 
   /** auth-service drops what it owns for the workspace (portal categories, old shares) — docs/data-ownership.md, group B. */
   private async purgeAuthSide(organizationId: string, spaceId: string): Promise<void> {
@@ -147,7 +147,7 @@ export class SpaceLifecycleService extends SpaceServiceBase {
     });
 
     this.logger.log(`Company location deactivated: ${location.id} (tasks reassigned: ${tasksReassigned})`);
-    this.announce('space_changed', data.organizationId, location.id);
+    this.announcer.announce('space_changed', data.organizationId, location.id);
     return success({ ...location, tasksReassigned }, 'Company location deleted successfully');
   }
 
@@ -235,7 +235,7 @@ export class SpaceLifecycleService extends SpaceServiceBase {
     this.logger.warn(`Company location PURGED: ${existing.name} (${existing.id}) by ${data.userId}`);
     // Create, update and deactivate all announce; purge — the one that cannot be undone
     // — did not, so other admins kept seeing a space that no longer existed (S-D1).
-    this.announce('space_changed', data.organizationId, data.id);
+    this.announcer.announce('space_changed', data.organizationId, data.id);
     return success({ id: existing.id }, 'Space permanently deleted');
   }
 }

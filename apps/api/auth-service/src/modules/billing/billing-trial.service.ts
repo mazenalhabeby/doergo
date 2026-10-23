@@ -1,14 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Role } from '@prisma/client';
 import { ADD_ON_KEYS, DEFAULT_ORG_MODULES, countSeats, TRIAL_DAYS, runWithCronLock } from '@hbcfield/shared';
 import type { SeatCounts } from '@hbcfield/shared';
 import { ok } from './billing-helpers';
-import { BillingBase } from './billing.base';
+import { PrismaService } from '@hbcfield/shared';
 
 /** The 14-day trial: starting one (with today's seats), and locking those that ran out with no card. */
 @Injectable()
-export class BillingTrialService extends BillingBase {
+export class BillingTrialService {
+  private readonly logger = new Logger(BillingTrialService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
   // ── seat counting ──────────────────────────────────────────────────────────
   private async countOrgSeats(organizationId: string): Promise<SeatCounts> {
     const [org, users] = await Promise.all([
@@ -84,10 +88,8 @@ export class BillingTrialService extends BillingBase {
    */
   @Cron(CronExpression.EVERY_HOUR)
   async expireTrialsCron(): Promise<void> {
-    await runWithCronLock(
-      this.prisma,
-      { name: 'billing:expireTrials', ttlSeconds: 600, logger: this.logger },
-      () => this.expireTrials(),
+    await runWithCronLock(this.prisma, { name: 'billing:expireTrials', ttlSeconds: 600, logger: this.logger }, () =>
+      this.expireTrials(),
     );
   }
 

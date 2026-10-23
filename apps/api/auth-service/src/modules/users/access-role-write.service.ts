@@ -6,14 +6,22 @@ import {
   permissionsExceed,
   permissionsForKind,
   SHARED_ROLE_WHERE,
+  type PermissionSet,
+  whitelistPermissions,
+  PrismaService,
 } from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException, HttpStatus } from '@nestjs/common';
-import { AccessRolesBase } from './access-roles.base';
+import { MemberAccessChecksService } from './member-access-checks.service';
 import { jsonColumn } from '../../common/records/json-column';
 
 /** Changing the organization's roles: adding one, editing it (within the grant ceiling), deleting it. */
 @Injectable()
-export class AccessRoleWriteService extends AccessRolesBase {
+export class AccessRoleWriteService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly accessChecks: MemberAccessChecksService,
+  ) {}
+
   /** Create a custom ORG-wide role. Permissions are whitelisted to known keys. */
   async createAccessRole(data: {
     organizationId: string;
@@ -120,7 +128,7 @@ export class AccessRoleWriteService extends AccessRolesBase {
       });
       if (requester && requester.role !== Role.ADMIN && requester.memberRoleId === role.id) {
         const before = permissionsFromOrgRole(role.permissions);
-        const after = this.sanitizeRolePermissions(data.permissions);
+        const after = whitelistPermissions(data.permissions, 'org');
         const losing = PERMISSION_KEYS.filter((k) => before[k] === true && after[k] !== true);
         if (losing.length > 0) {
           return {
@@ -227,5 +235,49 @@ export class AccessRoleWriteService extends AccessRolesBase {
     }
     await this.prisma.accessRole.delete({ where: { id: role.id } });
     return { success: true, data: { id: role.id }, message: 'Role deleted' };
+  }
+
+  /** A slug for a role name, unique within the organization (`-2`, `-3`, … on a clash). */
+  private async uniqueRoleSlug(organizationId: string, name: string, excludeId?: string): Promise<string> {
+    const base =
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 40) || 'role';
+    let slug = base;
+    let n = 1;
+    while (true) {
+      const clash = await this.prisma.accessRole.findFirst({
+        where: { organizationId, slug, ...(excludeId ? { id: { not: excludeId } } : {}) },
+        select: { id: true },
+      });
+      if (!clash) return slug;
+      slug = `${base}-${++n}`;
+    }
+  }
+
+  /**
+   * Whitelist incoming permissions to the known keys (fail-closed — the shared
+   * `whitelistPermissions` task-service also reads) AND cap them at the
+   * requester's own ceiling. A true ADMIN may author any permission; anyone else
+   * can only grant what they already hold — so a non-admin `canManageUsers`
+   * holder can't mint a super-role.
+   */
+  private async sanitizeRolePermissionsForRequester(
+    input: unknown,
+    requesterId: string | undefined,
+    organizationId: string,
+    scope: 'org' | 'space' = 'org',
+  ): Promise<PermissionSet> {
+    const requested = whitelistPermissions(input, scope);
+    if (!requesterId) return requested; // no requester context → whitelist only
+    const { isAdmin, perms } = await this.accessChecks.resolveRequesterOrgPerms(requesterId, organizationId);
+    if (isAdmin) return requested;
+    const capped: PermissionSet = {};
+    for (const key of PERMISSION_KEYS) {
+      if (requested[key] === true && perms[key] === true) capped[key] = true;
+    }
+    return capped;
   }
 }

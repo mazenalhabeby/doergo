@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { personName, success, peopleNames } from '@hbcfield/shared';
+import { Injectable, Inject, Logger } from '@nestjs/common';
+import { personName, success, peopleNames, PrismaService } from '@hbcfield/shared';
 import { createOnce } from '../../common/create-once.util';
-import { BODY_MAX, BATCH_MAX } from './worklog-helpers';
-import { WorklogBase } from './worklog.base';
+import { BODY_MAX, BATCH_MAX, cleanBody, parseAt, deleteStoredObject } from './worklog-helpers';
+import { OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';
+import { MediaSigner } from '../../common/storage/media-signer.service';
+import { WorklogAccess } from './worklog-access.service';
 
 /**
  * Session work-log: timestamped notes (optionally with S3 photos/files) added
@@ -11,7 +13,16 @@ import { WorklogBase } from './worklog.base';
  * manage any session in their org. Bytes go phone→S3 direct; the DB holds only keys.
  */
 @Injectable()
-export class WorklogService extends WorklogBase {
+export class WorklogService {
+  private readonly logger = new Logger(WorklogService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+    private readonly media: MediaSigner,
+    private readonly access: WorklogAccess,
+  ) {}
+
   // ── Notes ──────────────────────────────────────────────────────────────────
 
   async addNote(data: {
@@ -28,16 +39,16 @@ export class WorklogService extends WorklogBase {
     id?: string;
   }) {
     // Writable by the session owner (the member) OR a manager/responsible party (canManage).
-    const te = await this.session(
+    const te = await this.access.session(
       data.timeEntryId,
       data.organizationId,
       data.callerUserId,
       !!data.canManage,
       data.manageSpaceIds,
     );
-    const body = this.cleanBody(data.body);
-    const at = this.parseAt(data.at);
-    const taskId = await this.keepOrgTaskId(data.taskId, data.organizationId);
+    const body = cleanBody(data.body);
+    const at = parseAt(data.at);
+    const taskId = await this.access.keepOrgTaskId(data.taskId, data.organizationId);
     const { row } = await createOnce({
       id: data.id,
       find: (id) => this.prisma.timeEntryNote.findUnique({ where: { id } }),
@@ -70,7 +81,7 @@ export class WorklogService extends WorklogBase {
     manageSpaceIds?: string[];
     notes: Array<{ body: string; at?: string; taskId?: string }>;
   }) {
-    const te = await this.session(
+    const te = await this.access.session(
       data.timeEntryId,
       data.organizationId,
       data.callerUserId,
@@ -88,8 +99,8 @@ export class WorklogService extends WorklogBase {
         authorId: data.callerUserId,
         organizationId: data.organizationId,
         body,
-        at: this.parseAt(n.at),
-        taskId: await this.keepOrgTaskId(n.taskId, data.organizationId),
+        at: parseAt(n.at),
+        taskId: await this.access.keepOrgTaskId(n.taskId, data.organizationId),
       });
     }
     if (rows.length) await this.prisma.timeEntryNote.createMany({ data: rows });
@@ -103,7 +114,7 @@ export class WorklogService extends WorklogBase {
     canManage?: boolean;
     manageSpaceIds?: string[];
   }) {
-    const te = await this.session(
+    const te = await this.access.session(
       data.timeEntryId,
       data.organizationId,
       data.callerUserId,
@@ -148,7 +159,7 @@ export class WorklogService extends WorklogBase {
     canManage?: boolean;
     manageSpaceIds?: string[];
   }) {
-    const { note } = await this.sessionForNote(
+    const { note } = await this.access.sessionForNote(
       data.noteId,
       data.organizationId,
       data.callerUserId,
@@ -160,7 +171,7 @@ export class WorklogService extends WorklogBase {
       select: { fileKey: true },
     });
     await this.prisma.timeEntryNote.delete({ where: { id: note.id } }); // cascades attachment rows
-    for (const a of atts) void this.deleteObject(a.fileKey);
+    for (const a of atts) void deleteStoredObject(this.store, a.fileKey, this.logger);
     return success({ success: true });
   }
 }

@@ -1,3 +1,5 @@
+import type { Portal } from '@prisma/client';
+import { DEFAULT_PORTAL_FEATURES } from '@hbcfield/shared';
 import { sanitizeLabelValueRows, UNIT_DETAIL_LIMITS } from '../../common/records/label-value-rows';
 
 // Keep only well-formed { label, value } detail rows — the one sanitizer the
@@ -27,4 +29,36 @@ function cacheConfig(portalId: string, data: unknown) {
   configCache.set(portalId, { data, exp: Date.now() + CONFIG_TTL_MS });
 }
 
-export { sanitizeUnitDetails, CONFIG_TTL_MS, CONFIG_CACHE_MAX, configCache, cacheConfig };
+/** A portal and its categories in the shape every config read returns. */
+function shapeConfig<C>(
+  portal: Pick<
+    Portal,
+    | 'id'
+    | 'name'
+    | 'isActive'
+    | 'templateKey'
+    | 'entityLabel'
+    | 'contactLabel'
+    | 'accent'
+    | 'coverImageUrl'
+    | 'spaceId'
+    | 'features'
+  >,
+  categories: C[],
+) {
+  return {
+    id: portal.id,
+    name: portal.name,
+    enabled: portal.isActive,
+    templateKey: portal.templateKey,
+    entityLabel: portal.entityLabel ?? 'Unit',
+    contactLabel: portal.contactLabel ?? 'Support',
+    accent: portal.accent ?? 'emerald',
+    coverImageUrl: portal.coverImageUrl ?? null,
+    spaceId: portal.spaceId ?? null,
+    features: { ...DEFAULT_PORTAL_FEATURES, ...((portal.features as Record<string, boolean>) || {}) },
+    categories,
+  };
+}
+
+export { shapeConfig, sanitizeUnitDetails, CONFIG_TTL_MS, CONFIG_CACHE_MAX, configCache, cacheConfig };

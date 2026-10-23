@@ -6,16 +6,19 @@ import {
   type RuleKind,
   sharedRoleInOrg,
   roleNames,
+  PrismaService,
 } from '@hbcfield/shared';
 import { RULE_MESSAGES } from './approval-rules-helpers';
-import { ApprovalRulesBase } from './approval-rules.base';
+import { closeStepsOf } from './approval-steps';
 
 /**
  * The office rules themselves: listing, saving and deleting them (closing the
  * steps a removed rule left open).
  */
 @Injectable()
-export class ApprovalRulesAdminService extends ApprovalRulesBase {
+export class ApprovalRulesAdminService {
+  constructor(private readonly prisma: PrismaService) {}
+
   // ── The office's rules ────────────────────────────────────────────────
 
   async listRules(organizationId: string): Promise<ApprovalRuleView[]> {
@@ -87,7 +90,7 @@ export class ApprovalRulesAdminService extends ApprovalRulesBase {
       const { count } = await this.prisma.approvalRule.updateMany({ where: { id, organizationId }, data });
       if (!count) throw new NotFoundException('Rule not found');
       // Switched off: items half-way under it finish on their next approval, and stop saying "needs …" now.
-      if (!data.isActive) await this.closeStepsOf(organizationId, id);
+      if (!data.isActive) await closeStepsOf(this.prisma, organizationId, id);
       return { id };
     }
     return this.prisma.approvalRule.create({
@@ -100,7 +103,7 @@ export class ApprovalRulesAdminService extends ApprovalRulesBase {
     const { count } = await this.prisma.approvalRule.deleteMany({ where: { id, organizationId } });
     if (!count) throw new NotFoundException('Rule not found');
     // Items half-way under it finish on their next approval, and stop saying "needs …" now.
-    await this.closeStepsOf(organizationId, id);
+    await closeStepsOf(this.prisma, organizationId, id);
     return { deleted: true };
   }
 }

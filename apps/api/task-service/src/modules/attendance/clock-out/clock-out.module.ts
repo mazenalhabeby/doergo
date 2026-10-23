@@ -9,6 +9,7 @@ import { ClockOutService } from './clock-out.service';
 import { ClockOutAlertsService } from './clock-out-alerts.service';
 import { DecidedCloseService } from './decided-close.service';
 import { ShiftCloseSweepService } from './shift-close-sweep.service';
+import { ShiftCloser } from './shift-closer.service';
 
 /**
  * Closing a shift — by the member, by an answer, or by the sweeps that close what nobody closed. The one
@@ -22,7 +23,7 @@ import { ShiftCloseSweepService } from './shift-close-sweep.service';
     HandoverModule,
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
-  providers: [ClockOutService, ClockOutAlertsService, DecidedCloseService, ShiftCloseSweepService],
+  providers: [ShiftCloser, ClockOutService, ClockOutAlertsService, DecidedCloseService, ShiftCloseSweepService],
   exports: [ClockOutService, ClockOutAlertsService, DecidedCloseService, ShiftCloseSweepService],
 })
 export class ClockOutModule {}

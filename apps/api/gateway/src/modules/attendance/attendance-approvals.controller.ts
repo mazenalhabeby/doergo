@@ -4,7 +4,8 @@ import { Role } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermissionInSpace } from '../../common/decorators';
 import { BulkApproveEntriesDto } from './dto';
-import { AttendanceControllerBase } from './attendance-controller.base';
+import { EntryDecisionsGatewayService } from './entry-decisions.gateway-service';
+import { scopeFor } from '../../common/permission-scope';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -13,7 +14,9 @@ import { DecisionNotesDto, RejectEntryDto, ReportExcursionDto, ApproveExcursionD
 @ApiTags('attendance')
 @ApiBearerAuth()
 @Controller('attendance')
-export class AttendanceApprovalsController extends AttendanceControllerBase {
+export class AttendanceApprovalsController {
+  constructor(private readonly entryDecisions: EntryDecisionsGatewayService) {}
+
   // =========================================================================
   // APPROVAL WORKFLOW
   // =========================================================================
@@ -32,7 +35,7 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   ) {
     return this.entryDecisions.getPendingApprovals({
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
       summary: summary === 'true',
@@ -49,7 +52,7 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
     asks `canDeleteAttendance`; correcting stays `canReconcileAttendance`.
 
     ⚠️ The decorator and the narrowing must ALWAYS name the same key. The guard
-    only widens (a grant in any space passes it); `this.scope(req, key)` is what
+    only widens (a grant in any space passes it); `scopeFor(req.user, key)` is what
     keeps the service inside the spaces granting THAT key. A route gated on one
     key and narrowed by another lets a grant in space A act on space B.
     `attendance-decision-keys.spec.ts` reads every route and fails on a mismatch.
@@ -62,7 +65,7 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
       entryId,
       approverId: req.user.id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canApproveAttendance'),
       notes: body?.notes,
     });
   }
@@ -75,7 +78,7 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
       entryId,
       approverId: req.user.id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canApproveAttendance'),
       reason: body.reason,
     });
   }
@@ -104,7 +107,7 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   ) {
     return this.entryDecisions.listExcursions({
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
       status,
     });
   }
@@ -121,7 +124,7 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
       excursionId,
       approverId: req.user.id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canApproveAttendance'),
       grantedMinutes: body?.grantedMinutes != null ? Number(body.grantedMinutes) : undefined,
     });
   }
@@ -134,7 +137,7 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
       excursionId,
       approverId: req.user.id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canApproveAttendance'),
     });
   }
 
@@ -146,7 +149,7 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
       entryIds: body.entryIds,
       approverId: req.user.id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canApproveAttendance'),
       notes: body.notes,
     });
   }

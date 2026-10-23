@@ -11,10 +11,21 @@ export type InvitationServiceParts = Public<InvitationService> &
   Public<InvitationAcceptService> &
   Public<InvitationAdminService>;
 
-export function invitationServices(...args: unknown[]): InvitationServiceParts {
+/**
+ * The three services wired by hand: `(prisma, notificationClient, documents?, billing?)`,
+ * each given only the collaborators its constructor asks for.
+ */
+export function invitationServices(
+  prisma: unknown,
+  notificationClient: unknown,
+  documents?: unknown,
+  billing?: unknown,
+): InvitationServiceParts {
+  const db = prisma as never;
+  const notify = notificationClient as never;
   return combinedServices<InvitationServiceParts>(
-    new (InvitationService as unknown as new (...a: unknown[]) => object)(...args),
-    new (InvitationAcceptService as unknown as new (...a: unknown[]) => object)(...args),
-    new (InvitationAdminService as unknown as new (...a: unknown[]) => object)(...args),
+    new InvitationService(db, notify),
+    new InvitationAcceptService(db, documents as never, billing as never),
+    new InvitationAdminService(db, notify),
   );
 }

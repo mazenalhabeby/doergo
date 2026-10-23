@@ -1,5 +1,5 @@
 import { lastReadingIsFresh, replayRing, type RingReading } from './heartbeat-replay';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import {
   success,
   TimeEntryStatus,
@@ -9,11 +9,24 @@ import {
   GEOFENCE_EXCURSION,
 } from '@hbcfield/shared';
 import { ATTENDANCE_LOCATION_SELECT } from '../core/attendance-selects';
-import { HeartbeatBase } from './heartbeat.base';
+import { PrismaService } from '@hbcfield/shared';
+import { ExcursionNotices } from './excursion-notices.service';
+import { PresenceService } from '../presence/presence.service';
+import { RestAwayService } from '../rests/rest-away.service';
+import { activeExcursion } from './excursion-records';
 
 /** A phone's buffered heartbeats, flushed in one go (the offline path). */
 @Injectable()
-export class HeartbeatBatchService extends HeartbeatBase {
+export class HeartbeatBatchService {
+  constructor(
+    private readonly prisma: PrismaService,
+    // Where they are working now — display only, and never in the way of a clock-in.
+    private readonly presence: PresenceService,
+    private readonly excursionNotices: ExcursionNotices,
+    // Lunch off site is the rest (rest-away.service); optional so a bare test construction still runs.
+    @Optional() private readonly restAway?: RestAwayService,
+  ) {}
+
   /**
    * Check-ins a phone kept while it had no signal, sent together.
    *
@@ -89,7 +102,7 @@ export class HeartbeatBatchService extends HeartbeatBase {
       });
     if (readings.length === 0) return success({ recorded: 0, opened: false, returned: false });
 
-    const active = await this.getActiveExcursion(entry.id);
+    const active = await activeExcursion(this.prisma, entry.id);
     // An excursion already open was judged live; points from before it began cannot change it.
     const relevant = active ? readings.filter((r) => r.at >= active.leftRingAt) : readings;
     const periods = replayRing(relevant, active ? active.leftRingAt : null);
@@ -108,7 +121,7 @@ export class HeartbeatBatchService extends HeartbeatBase {
           });
           if (closed.count > 0) {
             returned = true;
-            await this.emitExcursionEvent('geofence_excursion_returned', entry, active, {
+            await this.excursionNotices.announce('geofence_excursion_returned', entry, active, {
               distanceM: period.maxDistanceM,
             });
           }
@@ -157,7 +170,9 @@ export class HeartbeatBatchService extends HeartbeatBase {
           },
         });
         opened = true;
-        await this.emitExcursionEvent('geofence_excursion_out', entry, created, { distanceM: period.maxDistanceM });
+        await this.excursionNotices.announce('geofence_excursion_out', entry, created, {
+          distanceM: period.maxDistanceM,
+        });
       }
     }
 

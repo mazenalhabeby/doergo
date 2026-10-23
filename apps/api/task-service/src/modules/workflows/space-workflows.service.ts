@@ -11,11 +11,17 @@ import {
 } from '@hbcfield/shared';
 import { assertSpaceInOrg, assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { resolveSpaceDefaultWorkflowId } from './space-workflow.util';
-import { WorkflowServiceBase } from './workflow-service.base';
+import { PrismaService } from '@hbcfield/shared';
+import { WorkflowConfigCache } from './config-cache/workflow-config-cache.service';
 
 /** Workflows in a workspace: which it uses, attaching and detaching one, the default. */
 @Injectable()
-export class SpaceWorkflowsService extends WorkflowServiceBase {
+export class SpaceWorkflowsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workflowCache: WorkflowConfigCache,
+  ) {}
+
   /**
    * Set a workflow as the organization default
    */

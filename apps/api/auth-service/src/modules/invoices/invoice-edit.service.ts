@@ -5,15 +5,23 @@ import {
   invoiceTotalsFromSubtotal,
   PERSON_BRIEF_SELECT,
   workspaceIssuerFacts,
+  PrismaService,
 } from '@hbcfield/shared';
 import { dayStart, dayEnd, invoiceDay } from './work-source';
 import type { InvoiceUpdateFields } from '@hbcfield/shared/microservices';
-import { InvoiceServiceBase } from './invoice-service.base';
+import { InvoiceCurrencyService } from './invoice-currency.service';
+import { InvoiceIssuerService } from './invoice-issuer.service';
 import { jsonColumn } from '../../common/records/json-column';
 
 /** Changing an invoice: its fields, and its state (draft, issued, sent, paid, cancelled). */
 @Injectable()
-export class InvoiceEditService extends InvoiceServiceBase {
+export class InvoiceEditService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly money: InvoiceCurrencyService,
+    private readonly issuer: InvoiceIssuerService,
+  ) {}
+
   async update(id: string, organizationId: string, data: InvoiceUpdateFields) {
     const invoice = await this.prisma.invoice.findFirst({
       where: { id, organizationId },
@@ -44,7 +52,7 @@ export class InvoiceEditService extends InvoiceServiceBase {
     const ratesFollowDay =
       data.issueDate !== undefined && invoice.exchangeRateSource !== 'MANUAL' && data.exchangeRate === undefined;
     if (data.currency !== undefined || data.exchangeRate !== undefined || ratesFollowDay) {
-      const money = await this.currencyFields(
+      const money = await this.money.currencyFields(
         organizationId,
         {
           ...data,
@@ -80,7 +88,7 @@ export class InvoiceEditService extends InvoiceServiceBase {
     let renumber: string | null = null;
     if (data.legalEntityId !== undefined) {
       const space = invoice.spaceId ? await workspaceIssuerFacts(this.prisma, invoice.spaceId, organizationId) : null;
-      const issuer = await this.issuingEntity(
+      const issuer = await this.issuer.issuingEntity(
         organizationId,
         data.legalEntityId,
         space?.legalEntityId ?? null,
@@ -99,7 +107,8 @@ export class InvoiceEditService extends InvoiceServiceBase {
 
     let updated;
     for (let attempt = 0; ; attempt++) {
-      if (renumber !== null) updateData.invoiceNumber = await this.generateInvoiceNumber(organizationId, renumber);
+      if (renumber !== null)
+        updateData.invoiceNumber = await this.issuer.generateInvoiceNumber(organizationId, renumber);
       try {
         updated = await this.prisma.invoice.update({
           where: { id },
@@ -188,7 +197,7 @@ export class InvoiceEditService extends InvoiceServiceBase {
       rewrites a filed document. Back to draft clears it — the draft reads the live company again.
     */
     if (status === 'ISSUED') {
-      const live = await this.issuerFor({ ...invoice, issuer: null });
+      const live = await this.issuer.issuerFor({ ...invoice, issuer: null });
       if (!live) {
         return {
           success: false,

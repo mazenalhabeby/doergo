@@ -15,12 +15,16 @@ import {
   peopleCostRates,
   orgRates,
 } from '@hbcfield/shared';
+import { getOwnedRole, useWorkRoleIn } from './space-role-rules';
+import { dropStalePersonalRole } from './role-admin.service';
 import { userSelect, roleSelect, SpaceMemberAuthority, authorityRefusal, comboRefusal } from './space-roles-helpers';
-import { SpaceRolesBase } from './space-roles.base';
+import { PrismaService } from '@hbcfield/shared';
 
 /** A workspace's members: the list, and adding somebody. */
 @Injectable()
-export class SpaceMembersService extends SpaceRolesBase {
+export class SpaceMembersService {
+  constructor(private readonly prisma: PrismaService) {}
+
   // ── Members (SpaceAssignment) ───────────────────────────────────────────────
 
   async listMembers(data: { organizationId: string; spaceId: string }) {
@@ -165,7 +169,7 @@ export class SpaceMembersService extends SpaceRolesBase {
     */
     if (data.spaceRoleId) {
       // Only a shared role, or this very assignment's own personal role — never somebody else's.
-      const picked = await this.getOwnedRole(data.organizationId, data.spaceRoleId, {
+      const picked = await getOwnedRole(this.prisma, data.organizationId, data.spaceRoleId, {
         assignmentId: existing?.id ?? null,
       });
       if (picked.kind === 'WORK') {
@@ -185,7 +189,7 @@ export class SpaceMembersService extends SpaceRolesBase {
           update: { workRoleId: picked.id },
           include: { user: userSelect, role: roleSelect, workRole: roleSelect },
         });
-        await this.useWorkRoleIn(this.prisma, data.spaceId, picked.id);
+        await useWorkRoleIn(this.prisma, data.spaceId, picked.id);
         return success(
           {
             id: member.id,
@@ -213,7 +217,7 @@ export class SpaceMembersService extends SpaceRolesBase {
       });
     }
     if (data.spaceRoleId) {
-      const role = await this.getOwnedRole(data.organizationId, data.spaceRoleId, {
+      const role = await getOwnedRole(this.prisma, data.organizationId, data.spaceRoleId, {
         assignmentId: existing?.id ?? null,
       });
       /*
@@ -267,7 +271,7 @@ export class SpaceMembersService extends SpaceRolesBase {
       update: { roleId: data.spaceRoleId ?? null },
       include: { user: userSelect, role: roleSelect, workRole: roleSelect },
     });
-    await this.dropStalePersonalRole(member.id, member.roleId ?? null);
+    await dropStalePersonalRole(this.prisma, member.id, member.roleId ?? null);
     return success(
       { id: member.id, userId: member.userId, user: member.user, spaceRole: member.role, workRole: member.workRole },
       'Member assigned',

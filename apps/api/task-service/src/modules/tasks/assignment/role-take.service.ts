@@ -1,13 +1,33 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { personName, minutesWaited, success, personNameOf } from '@hbcfield/shared';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import {
+  PrismaService,
+  personName,
+  minutesWaited,
+  success,
+  personNameOf,
+  holdsOpenRole as holdsOpenRoleRule,
+} from '@hbcfield/shared';
 import { TaskEventType } from '@prisma/client';
 import { Facts } from './role-pool-helpers';
-import { RolePoolBase } from './role-pool.base';
+import { TaskAssignmentService } from './task-assignment.service';
 import { emitEvent, roleTaskTakenEvent } from '@hbcfield/shared/microservices';
 
 /** Taking a place on a task open to a role — one conditional update, the first to take it gets it. */
 @Injectable()
-export class RoleTakeService extends RolePoolBase {
+export class RoleTakeService {
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
+    /** What an assignment change sets off — the office's own path. */
+    private readonly assignment: TaskAssignmentService,
+  ) {}
+
+  /** Does this person hold the task's open role in its workspace, right now? (role-holder.ts — one rule) */
+  holdsOpenRole(task: Parameters<typeof holdsOpenRoleRule>[1], userId: string): Promise<boolean> {
+    return holdsOpenRoleRule(this.prisma as never, task, userId);
+  }
+
   async take(data: Facts & { taskId: string }) {
     const task = await this.prisma.task.findFirst({
       where: { id: data.taskId, organizationId: data.organizationId },
@@ -110,5 +130,16 @@ export class RoleTakeService extends RolePoolBase {
       });
     }
     return success({ id: task.id, spotsLeft, waitedMinutes: waited }, 'Task taken');
+  }
+
+  /** Who holds the places — for "Ahmad took it" on a refusal. */
+  private async takers(taskId: string): Promise<string[]> {
+    const rows = await this.prisma.taskAssignee.findMany({
+      where: { taskId },
+      select: { user: { select: { firstName: true, lastName: true } } },
+      orderBy: { createdAt: 'asc' },
+      take: 5,
+    });
+    return rows.map((r) => personName(r.user));
   }
 }

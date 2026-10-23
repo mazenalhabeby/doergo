@@ -1,10 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { PrismaService } from '@hbcfield/shared';
 import { CrmCaller, withContactKeys } from './customers-helpers';
-import { CustomersServiceBase } from './customers-service.base';
+import { CrmReachService } from './crm-reach.service';
 
 /** Contact people: who works at a company, linking, changing, unlinking, promoting. */
 @Injectable()
-export class CustomerContactsService extends CustomersServiceBase {
+export class CustomerContactsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reach: CrmReachService,
+  ) {}
+
   // ── Contact people ──────────────────────────────────────────────────────────
   /*
     A person who works at a company.
@@ -23,8 +29,8 @@ export class CustomerContactsService extends CustomersServiceBase {
 
   /** Who works at this company. */
   async listContacts(data: { companyId: string; organizationId: string; caller?: CrmCaller }) {
-    const reach = await this.crmReachFor(data.caller, data.organizationId);
-    await this.reachable(data.companyId, data.organizationId, reach, data.caller);
+    const reach = await this.reach.crmReachFor(data.caller, data.organizationId);
+    await this.reach.reachable(data.companyId, data.organizationId, reach, data.caller);
     const rows = await this.prisma.customerContact.findMany({
       where: { companyId: data.companyId, organizationId: data.organizationId },
       select: {
@@ -40,8 +46,8 @@ export class CustomerContactsService extends CustomersServiceBase {
 
   /** Which companies this person is a contact at. */
   async listContactCompanies(data: { personId: string; organizationId: string; caller?: CrmCaller }) {
-    const reach = await this.crmReachFor(data.caller, data.organizationId);
-    await this.reachable(data.personId, data.organizationId, reach, data.caller);
+    const reach = await this.reach.crmReachFor(data.caller, data.organizationId);
+    await this.reach.reachable(data.personId, data.organizationId, reach, data.caller);
     const rows = await this.prisma.customerContact.findMany({
       where: { personId: data.personId, organizationId: data.organizationId },
       select: {
@@ -71,8 +77,8 @@ export class CustomerContactsService extends CustomersServiceBase {
     isPrimary?: boolean;
     caller?: CrmCaller;
   }) {
-    const reach = await this.crmReachFor(data.caller, data.organizationId);
-    const company = await this.reachable(data.companyId, data.organizationId, reach, data.caller);
+    const reach = await this.reach.crmReachFor(data.caller, data.organizationId);
+    const company = await this.reach.reachable(data.companyId, data.organizationId, reach, data.caller);
     // Linking is editing the COMPANY — decided by the workspace it is filed in.
     if (!company.caps.editInfo) throw new ForbiddenException('Not allowed to change this client');
 
@@ -92,7 +98,7 @@ export class CustomerContactsService extends CustomersServiceBase {
     */
     let personId = data.personId;
     if (personId) {
-      const person = await this.reachable(personId, data.organizationId, reach, data.caller);
+      const person = await this.reach.reachable(personId, data.organizationId, reach, data.caller);
       if (person.id === company.id) throw new BadRequestException('A client cannot be its own contact.');
       /*
         Not both ways round.
@@ -216,7 +222,7 @@ export class CustomerContactsService extends CustomersServiceBase {
     isPrimary?: boolean;
     caller?: CrmCaller;
   }) {
-    const reach = await this.crmReachFor(data.caller, data.organizationId);
+    const reach = await this.reach.crmReachFor(data.caller, data.organizationId);
     const link = await this.prisma.customerContact.findFirst({
       where: { id: data.linkId, organizationId: data.organizationId },
       select: { id: true, companyId: true },
@@ -224,7 +230,7 @@ export class CustomerContactsService extends CustomersServiceBase {
     if (!link) throw new NotFoundException('Contact not found');
     // The COMPANY is the record being changed, so that is the one whose access
     // decides — reached the same way as everywhere else.
-    const company = await this.reachable(link.companyId, data.organizationId, reach, data.caller);
+    const company = await this.reach.reachable(link.companyId, data.organizationId, reach, data.caller);
     if (!company.caps.editInfo) throw new ForbiddenException('Not allowed to change this client');
 
     return this.prisma.$transaction(async (tx) => {
@@ -256,13 +262,13 @@ export class CustomerContactsService extends CustomersServiceBase {
    * history is worth keeping either way. Removing the link is the whole action.
    */
   async removeContact(data: { linkId: string; organizationId: string; caller?: CrmCaller }) {
-    const reach = await this.crmReachFor(data.caller, data.organizationId);
+    const reach = await this.reach.crmReachFor(data.caller, data.organizationId);
     const link = await this.prisma.customerContact.findFirst({
       where: { id: data.linkId, organizationId: data.organizationId },
       select: { id: true, companyId: true },
     });
     if (!link) throw new NotFoundException('Contact not found');
-    const company = await this.reachable(link.companyId, data.organizationId, reach, data.caller);
+    const company = await this.reach.reachable(link.companyId, data.organizationId, reach, data.caller);
     if (!company.caps.editInfo) throw new ForbiddenException('Not allowed to change this client');
     await this.prisma.customerContact.delete({ where: { id: link.id } });
     return { data: { id: link.id } };
@@ -276,8 +282,8 @@ export class CustomerContactsService extends CustomersServiceBase {
    * takes to add a client any other way.
    */
   async promoteContact(data: { personId: string; organizationId: string; caller?: CrmCaller }) {
-    const reach = await this.crmReachFor(data.caller, data.organizationId);
-    const person = await this.reachable(data.personId, data.organizationId, reach, data.caller);
+    const reach = await this.reach.crmReachFor(data.caller, data.organizationId);
+    const person = await this.reach.reachable(data.personId, data.organizationId, reach, data.caller);
     // Promoting puts them on the client list of the workspace they are filed in.
     if (!person.caps.create) throw new ForbiddenException('Not allowed to create clients');
     if (!person.isContact) return { data: { id: person.id, isContact: false } };

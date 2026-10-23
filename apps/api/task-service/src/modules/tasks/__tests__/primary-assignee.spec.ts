@@ -21,7 +21,7 @@ import { readTaskServiceSource } from './task-service-source';
 describe('the primary assignee follows the assignee rows', () => {
   const SRC = readTaskServiceSource();
   const fn = (() => {
-    // `protected` since the assignment service was split (it lives on the shared base).
+    // Private to TaskCrewChangeService, the one writer of what a crew change implies.
     const start = SRC.search(/(private|protected) async syncPrimaryAssignee\(/);
     expect(start).toBeGreaterThan(-1);
     const rest = SRC.slice(start);
@@ -63,7 +63,7 @@ describe('the primary assignee follows the assignee rows', () => {
 describe('one writer owns what an assignment implies', () => {
   const SRC = readTaskServiceSource();
   const writer = (() => {
-    const start = SRC.search(/(private|protected) async afterAssigneesChanged\(/);
+    const start = SRC.search(/\n {2}async afterAssigneesChanged\(/);
     expect(start).toBeGreaterThan(-1);
     const rest = SRC.slice(start);
     return rest.slice(0, rest.indexOf('\n  }\n') + 4);

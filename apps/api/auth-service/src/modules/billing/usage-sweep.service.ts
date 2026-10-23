@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   agreementFrom,
@@ -7,8 +7,9 @@ import {
   runWithCronLock,
   formatCents,
   toISODateString,
+  PrismaService,
 } from '@hbcfield/shared';
-import { BillingBase } from './billing.base';
+import { OrgBillService } from './org-bill.service';
 import { BillingService } from './billing.service';
 
 /**
@@ -16,8 +17,14 @@ import { BillingService } from './billing.service';
  * checked against the list.
  */
 @Injectable()
-export class UsageSweepService extends BillingBase {
-  @Inject(BillingService) private readonly billing!: BillingService;
+export class UsageSweepService {
+  private readonly logger = new Logger(UsageSweepService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bill: OrgBillService,
+    private readonly billing: BillingService,
+  ) {}
 
   /**
    * Hourly sweep: lock "no-card" trials whose 14-day window has ended.
@@ -99,9 +106,14 @@ export class UsageSweepService extends BillingBase {
     const orgs = await this.prisma.organization.findMany({
       where: { agreedMonthlyCents: { not: null } },
       select: {
-        id: true, name: true,
-        agreedMonthlyCents: true, agreedListCents: true, agreedUntil: true,
-        agreedNote: true, agreedSetAt: true, agreedSetById: true,
+        id: true,
+        name: true,
+        agreedMonthlyCents: true,
+        agreedListCents: true,
+        agreedUntil: true,
+        agreedNote: true,
+        agreedSetAt: true,
+        agreedSetById: true,
       },
     });
     if (!orgs.length) return;

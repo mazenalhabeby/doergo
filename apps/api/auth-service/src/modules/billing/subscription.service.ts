@@ -1,13 +1,27 @@
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import type Stripe from 'stripe';
 import { stripeLinesForBill, billsThroughStripe, type BillingMode, isLocked, trialDaysLeft } from '@hbcfield/shared';
 import type { SubscriptionView } from '@hbcfield/shared';
 import { statusFromPrisma, ok, fail } from './billing-helpers';
-import { BillingBase } from './billing.base';
+import { PrismaService } from '@hbcfield/shared';
+import { StripeService } from './stripe.service';
+import { OrgBillService } from './org-bill.service';
+import { StripeLinesService } from './stripe-lines.service';
+import { SubscriptionSyncService } from './subscription-sync.service';
 
 /** The customer's subscription: its status, checkout, the Stripe portal, cancelling. */
 @Injectable()
-export class SubscriptionService extends BillingBase {
+export class SubscriptionService {
+  private readonly logger = new Logger(SubscriptionService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly stripe: StripeService,
+    private readonly bill: OrgBillService,
+    private readonly stripeLines: StripeLinesService,
+    private readonly subscriptions: SubscriptionSyncService,
+  ) {}
+
   // ── read ─────────────────────────────────────────────────────────────────────
   /**
    * Subscription STATUS — the Stripe side only.
@@ -168,7 +182,7 @@ export class SubscriptionService extends BillingBase {
           way, which is idempotent, so the webhook landing a second later writes
           the same thing and nothing is duplicated.
         */
-        await this.syncSubscription(created);
+        await this.subscriptions.syncSubscription(created);
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         this.logger.error(`Invoice subscription failed for org ${organizationId}: ${message}`);

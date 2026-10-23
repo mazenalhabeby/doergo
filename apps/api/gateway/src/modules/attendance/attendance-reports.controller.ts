@@ -1,7 +1,8 @@
 import { Controller, Get, Query, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { RequirePermissionInSpace } from '../../common/decorators';
-import { AttendanceControllerBase } from './attendance-controller.base';
+import { AttendanceReportsGatewayService } from './attendance-reports.gateway-service';
+import { scopeFor } from '../../common/permission-scope';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -9,7 +10,9 @@ import { callerOrgId } from '../../common/caller-org';
 @ApiTags('attendance')
 @ApiBearerAuth()
 @Controller('attendance')
-export class AttendanceReportsController extends AttendanceControllerBase {
+export class AttendanceReportsController {
+  constructor(private readonly attendanceReports: AttendanceReportsGatewayService) {}
+
   // =========================================================================
   // REPORTS
   // =========================================================================
@@ -28,7 +31,7 @@ export class AttendanceReportsController extends AttendanceControllerBase {
   ) {
     return this.attendanceReports.getAttendanceSummary({
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
       userId,
       startDate,
       endDate,
@@ -52,7 +55,7 @@ export class AttendanceReportsController extends AttendanceControllerBase {
   ) {
     return this.attendanceReports.getWeeklyReport({
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
       userId,
       weekStartDate,
     });
@@ -72,7 +75,7 @@ export class AttendanceReportsController extends AttendanceControllerBase {
   ) {
     return this.attendanceReports.getMonthlyReport({
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
       userId,
       year: year ? Number(year) : undefined,
       month: month ? Number(month) : undefined,
@@ -93,7 +96,7 @@ export class AttendanceReportsController extends AttendanceControllerBase {
   ) {
     return this.attendanceReports.exportToCSV({
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
       startDate,
       endDate,
       userId,

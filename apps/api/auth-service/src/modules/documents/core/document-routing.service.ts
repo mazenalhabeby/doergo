@@ -1,8 +1,8 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { parseRoute, isUsableEmail, isSelfSigning, normalizeEmail, personName } from '@hbcfield/shared';
+import { parseRoute, isUsableEmail, isSelfSigning, normalizeEmail, personName, PrismaService } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
 import { type DocumentActor, type SignerCandidate, type RouteCandidateStep } from './document-common';
-import { DocumentRoutingBase } from './document-routing.base';
+import { SignerCandidatesService, noSignerMessage } from './signer-candidates.service';
 
 /**
  * The signing route: who each step of a type's chain resolves to, frozen onto a
@@ -11,7 +11,9 @@ import { DocumentRoutingBase } from './document-routing.base';
  * Part of the personnel file; `DocumentsService` is the facade every caller uses.
  */
 @Injectable()
-export class DocumentRoutingService extends DocumentRoutingBase {
+export class DocumentRoutingService {
+  constructor(private readonly prisma: PrismaService, private readonly signers: SignerCandidatesService) {}
+
   /**
    * Turn a type's route into real signer rows for one document.
    *
@@ -63,7 +65,7 @@ export class DocumentRoutingService extends DocumentRoutingBase {
       const candidates: SignerCandidate[] =
         step.role === 'MEMBER'
           ? [{ kind: 'USER', id: document.userId, name: '', email: null }]
-          : await this.candidatesForRole(document.organizationId, document.userId, step.role);
+          : await this.signers.candidatesForRole(document.organizationId, document.userId, step.role);
 
       let userId: string | null = null;
       let customerId: string | null = null;
@@ -169,7 +171,7 @@ export class DocumentRoutingService extends DocumentRoutingBase {
           than through the member's space membership, which is where the answer
           is.
         */
-        throw new BadRequestException(this.noSignerMessage(step.role, order));
+        throw new BadRequestException(noSignerMessage(step.role, order));
       }
 
       /*
@@ -288,7 +290,7 @@ export class DocumentRoutingService extends DocumentRoutingBase {
       steps.push({
         order: i + 1,
         role: s.role,
-        candidates: await this.candidatesForRole(org, member.id, s.role),
+        candidates: await this.signers.candidatesForRole(org, member.id, s.role),
       });
     }
     return { steps };

@@ -3,6 +3,7 @@ import { ClockOutService } from '../clock-out/clock-out.service';
 import { ClockOutAlertsService } from '../clock-out/clock-out-alerts.service';
 import { DecidedCloseService } from '../clock-out/decided-close.service';
 import { ShiftCloseSweepService } from '../clock-out/shift-close-sweep.service';
+import { ShiftCloser } from '../clock-out/shift-closer.service';
 
 /** The public face of a class (an intersection of classes with private members is `never`). */
 type Public<T> = { [K in keyof T]: T[K] };
@@ -12,16 +13,43 @@ export type ClockOutServiceParts = Public<ClockOutService> &
   Public<DecidedCloseService> &
   Public<ShiftCloseSweepService>;
 
+type Ctor = new (...a: unknown[]) => object;
+
+/**
+ * Built by hand from the arguments the old shared constructor took, in its order:
+ * (prisma, notificationClient, notificationRouting, countedTime, routing, geocoder,
+ * extraTime, jobPause?, autoClock?) — each service gets what it uses, all closing
+ * through ONE ShiftCloser.
+ */
 export function clockOutServices(...args: unknown[]): ClockOutServiceParts {
+  const [
+    prisma,
+    notificationClient,
+    notificationRouting,
+    countedTime,
+    routing,
+    geocoder,
+    extraTime,
+    jobPause,
+    autoClock,
+  ] = args;
+  const closer = new (ShiftCloser as unknown as Ctor)(
+    prisma,
+    notificationClient,
+    notificationRouting,
+    countedTime,
+    jobPause,
+    autoClock,
+  );
+  const alerts = new (ClockOutAlertsService as unknown as Ctor)(
+    prisma,
+    notificationClient,
+    notificationRouting,
+    routing,
+  );
   return combinedServices<ClockOutServiceParts>(
-    // ShiftCloseBase's seven required arguments, the alerts (built from the same doubles), then the two optional ones.
-    new (ClockOutService as unknown as new (...a: unknown[]) => object)(
-      ...Array.from({ length: 7 }, (_, i) => args[i]),
-      new (ClockOutAlertsService as unknown as new (...a: unknown[]) => object)(args[0], args[1], args[2], args[4]),
-      args[7],
-      args[8],
-    ),
-    new (DecidedCloseService as unknown as new (...a: unknown[]) => object)(...args),
-    new (ShiftCloseSweepService as unknown as new (...a: unknown[]) => object)(...args),
+    new (ClockOutService as unknown as Ctor)(prisma, closer, geocoder, extraTime, alerts, autoClock),
+    new (DecidedCloseService as unknown as Ctor)(prisma, closer),
+    new (ShiftCloseSweepService as unknown as Ctor)(prisma, closer, autoClock),
   );
 }

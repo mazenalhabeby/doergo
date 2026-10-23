@@ -6,7 +6,7 @@ import { HttpStatus } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from '../auth.service';
 import { AUTH_SERVICES } from '../auth-services';
-import { SessionTokensService } from '../session-tokens.service';
+import { TokenPairService } from '../token-pair.service';
 import { PrismaService } from '@hbcfield/shared';
 import { AuditLogService } from '../../audit-log/audit-log.service';
 import { BillingService } from '../../billing/billing.service';
@@ -27,7 +27,7 @@ jest.mock('bcryptjs');
 */
 describe('sign-in hardening', () => {
   let service: AuthService;
-  let tokens: SessionTokensService;
+  let tokens: TokenPairService;
   const jwt = { sign: jest.fn(() => 'jwt'), verify: jest.fn() };
 
   const member = {
@@ -76,7 +76,7 @@ describe('sign-in hardening', () => {
       ],
     }).compile();
     service = module.get(AuthService);
-    tokens = module.get(SessionTokensService);
+    tokens = module.get(TokenPairService);
   });
 
   describe('one refusal for every failed sign-in', () => {
@@ -129,7 +129,7 @@ describe('sign-in hardening', () => {
     it('no part of the refresh-token hash is logged on a successful sign-in', async () => {
       prisma.user.findUnique.mockResolvedValue({ ...member });
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      // Tokens are minted by SessionTokensService, behind the AuthService facade.
+      // Tokens are minted by TokenPairService (through SessionTokensService), behind the AuthService facade.
       const log = jest.spyOn((tokens as any).logger, 'log');
       await service.login(creds);
       const lines = log.mock.calls.map((c) => String(c[0]));

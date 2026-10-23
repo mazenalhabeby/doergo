@@ -13,11 +13,18 @@ export type ReportsServiceParts = Public<ReportsService> &
   Public<ReportPartsService> &
   Public<ReportAttachmentsService>;
 
-export function reportServices(...args: unknown[]): ReportsServiceParts {
+/** All four over the same collaborators, given as (prisma, store, media, notificationClient, taskAccess). */
+export function reportServices(
+  prisma: any,
+  store: any,
+  media: any,
+  notificationClient: any,
+  taskAccess: any,
+): ReportsServiceParts {
   return combinedServices<ReportsServiceParts>(
-    new (ReportsService as unknown as new (...a: unknown[]) => object)(...args),
-    new (ReportReadService as unknown as new (...a: unknown[]) => object)(...args),
-    new (ReportPartsService as unknown as new (...a: unknown[]) => object)(...args),
-    new (ReportAttachmentsService as unknown as new (...a: unknown[]) => object)(...args),
+    new ReportsService(prisma, media, notificationClient),
+    new ReportReadService(prisma, media, taskAccess),
+    new ReportPartsService(prisma),
+    new ReportAttachmentsService(prisma, store, media),
   );
 }

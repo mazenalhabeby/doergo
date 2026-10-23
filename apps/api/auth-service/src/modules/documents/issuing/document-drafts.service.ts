@@ -15,6 +15,7 @@ import {
 import { DocumentStorageService } from '../core/document-storage.service';
 import { DocumentNotifierService } from '../core/document-notifier.service';
 import { DocumentRoutingService } from '../core/document-routing.service';
+import { SignerCandidatesService } from '../core/signer-candidates.service';
 
 /**
  * A batch of issued pages before it goes out: the drafts, publishing them,
@@ -29,8 +30,8 @@ export class DocumentDraftsService {
     private readonly storage: DocumentStorageService,
     private readonly notifier: DocumentNotifierService,
     private readonly routing: DocumentRoutingService,
+    private readonly signers: SignerCandidatesService,
   ) {}
-
 
   /**
    * Everything staged and not yet released, with who it is for — and, where the
@@ -90,12 +91,7 @@ export class DocumentDraftsService {
                       email: d.user.email,
                     },
                   ]
-                : await this.routing.cachedCandidatesForRole(
-                    cache,
-                    data.actor.organizationId,
-                    d.user.id,
-                    s.role,
-                  ),
+                : await this.signers.cachedCandidatesForRole(cache, data.actor.organizationId, d.user.id, s.role),
           })),
         );
 
@@ -154,9 +150,7 @@ export class DocumentDraftsService {
     });
 
     if (drafts.length !== ids.length) {
-      throw new BadRequestException(
-        'Some of these documents are no longer staged. Reload the batch and try again.',
-      );
+      throw new BadRequestException('Some of these documents are no longer staged. Reload the batch and try again.');
     }
 
     const published = await this.prisma.$transaction(async (tx) => {
@@ -200,13 +194,7 @@ export class DocumentDraftsService {
     // Notifications AFTER the transaction commits. Emitting inside it would
     // tell thirty people about documents that a rollback then un-published.
     for (const doc of published) {
-      this.notifier.notifyIssued(
-        doc.id,
-        doc.user,
-        doc.type.label,
-        doc.title,
-        isBlocking(doc.type.signatureMode),
-      );
+      this.notifier.notifyIssued(doc.id, doc.user, doc.type.label, doc.title, isBlocking(doc.type.signatureMode));
     }
 
     return { published: published.length };

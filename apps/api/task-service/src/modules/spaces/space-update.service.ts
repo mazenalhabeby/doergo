@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { Prisma, WorkModel, SpaceKind } from '@prisma/client';
 import { rearmNoShiftSessions } from '../attendance/core/no-shift-rearm';
 import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
@@ -15,12 +15,21 @@ import {
   validateMinCover,
 } from '@hbcfield/shared';
 import { tzFromCoords, spaceCurrency, readAutoClock } from './space-helpers';
-import { SpaceServiceBase } from './space-service.base';
+import { PrismaService } from '@hbcfield/shared';
+import { SpaceAnnouncer } from './space-announcer.service';
+import { spaceCompany, cleanPolygon, writeSpaceRates } from './space-write-rules';
 import { siteBoundaryChanged } from './site-boundary';
 
 /** Editing a workspace: its settings, boundary, rates, auto-clock. */
 @Injectable()
-export class SpaceUpdateService extends SpaceServiceBase {
+export class SpaceUpdateService {
+  private readonly logger = new Logger(SpaceUpdateService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly announcer: SpaceAnnouncer,
+  ) {}
+
   async update(data: {
     id: string;
     organizationId: string;
@@ -87,7 +96,7 @@ export class SpaceUpdateService extends SpaceServiceBase {
     if ('geofencePolygon' in data) {
       // A cleared boundary is a database NULL, like a space that never had one. A plain `null` here
       // stored the JSON value null — read back the same, but "IS NULL" would count it as drawn.
-      const polygon = this.cleanPolygon(data.geofencePolygon);
+      const polygon = cleanPolygon(data.geofencePolygon);
       updateData.geofencePolygon = polygon === null ? Prisma.DbNull : polygon;
     }
     // Only a move of the site itself (pin, radius, drawn area) — not a rename — is a boundary change.
@@ -211,7 +220,7 @@ export class SpaceUpdateService extends SpaceServiceBase {
     if (data.currency !== undefined) updateData.currency = spaceCurrency(data.currency);
     // Who invoices it. Issued invoices keep the company frozen on them.
     if (data.legalEntityId !== undefined)
-      updateData.legalEntityId = await this.spaceCompany(data.organizationId, data.legalEntityId);
+      updateData.legalEntityId = await spaceCompany(this.prisma, data.organizationId, data.legalEntityId);
     /*
       Rates are NOT written here: they go through `writeSpaceRates` below — a
       dated history row and then the column — so a change never re-prices work
@@ -241,7 +250,7 @@ export class SpaceUpdateService extends SpaceServiceBase {
       where: { id: data.id },
       data: updateData,
     });
-    await this.writeSpaceRates(data.id, data.organizationId, data, data.userId);
+    await writeSpaceRates(this.prisma, data.id, data.organizationId, data, data.userId);
     const location = await this.prisma.companyLocation.findUniqueOrThrow({ where: { id: data.id } });
 
     this.logger.log(`Company location updated: ${location.id}`);
@@ -254,14 +263,14 @@ export class SpaceUpdateService extends SpaceServiceBase {
         toMinutes: location.noShiftDailyMinutes,
       }).catch((err) => this.logger.error(`Re-timing running sessions in ${location.id} failed: ${err}`));
     }
-    this.announce('space_changed', data.organizationId, location.id);
+    this.announcer.announce('space_changed', data.organizationId, location.id);
     // The workspace's automatic clock switched ON → the members already chosen here learn the switch is there.
     if (
       data.autoClock !== undefined &&
       !wasOn &&
       autoClockOffered({ settings: location.autoClock, assignmentAutoClock: true })
     ) {
-      void this.offerAutoClock(data.organizationId, location.id);
+      void this.announcer.offerAutoClock(data.organizationId, location.id);
     }
     return success(
       { ...location, autoClock: readAutoClock(location.autoClock) },

@@ -3,6 +3,7 @@ import { DocumentStorageService } from './core/document-storage.service';
 import { DocumentLookupService } from './core/document-lookup.service';
 import { DocumentNotifierService } from './core/document-notifier.service';
 import { DocumentRoutingService } from './core/document-routing.service';
+import { SignerCandidatesService } from './core/signer-candidates.service';
 import { DocumentSigningService } from './signing/document-signing.service';
 import { DocumentTypesService } from './types/document-types.service';
 import { DocumentTemplatesService } from './templates/document-templates.service';
@@ -39,6 +40,7 @@ export const DOCUMENT_SERVICES = [
   DocumentLookupService,
   DocumentNotifierService,
   DocumentRoutingService,
+  SignerCandidatesService,
   DocumentChainService,
   DocumentSigningService,
   DocumentSendBackService,

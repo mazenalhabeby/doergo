@@ -14,10 +14,8 @@ import {
 } from '@hbcfield/shared';
 import { jobsInPeriod, FINISHED } from './work-source';
 import { PrismaService } from '@hbcfield/shared';
-import { ExchangeRateService } from './exchange-rate.service';
-import { LegalEntitiesService } from './legal-entities.service';
 import { SiteTimeService } from './site-time.service';
-import { InvoiceServiceBase } from './invoice-service.base';
+import { InvoiceIssuerService } from './invoice-issuer.service';
 import {
   billByFor,
   billedTaskIds,
@@ -29,15 +27,12 @@ import {
 
 /** Gathering a period's work into invoice lines: jobs, hours and days. */
 @Injectable()
-export class InvoiceGatherService extends InvoiceServiceBase {
+export class InvoiceGatherService {
   constructor(
-    prisma: PrismaService,
-    rates: ExchangeRateService,
-    entities: LegalEntitiesService,
+    private readonly prisma: PrismaService,
+    private readonly issuer: InvoiceIssuerService,
     private readonly siteTime: SiteTimeService,
-  ) {
-    super(prisma, rates, entities);
-  }
+  ) {}
 
   /**
    * Build (but do NOT persist) a rich, system-sourced view of a CUSTOMER space's
@@ -77,7 +72,7 @@ export class InvoiceGatherService extends InvoiceServiceBase {
       select: { billableRateCents: true, costRateCents: true, currency: true },
     });
     // Who would issue it — the same rule the create applies — so the screen can say so before it exists.
-    const issuer = await this.issuingEntity(
+    const issuer = await this.issuer.issuingEntity(
       data.organizationId,
       null,
       space?.legalEntityId ?? null,

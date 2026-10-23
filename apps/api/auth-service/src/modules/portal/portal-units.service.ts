@@ -1,25 +1,33 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { type CrmCaller } from '../customers/customers.service';
-import { SELECTABLE_ASSET_WHERE, type SpaceScopeIds, clientAssets } from '@hbcfield/shared';
-import { PortalServiceBase } from './portal-service.base';
+import { SELECTABLE_ASSET_WHERE, type SpaceScopeIds, clientAssets, PrismaService } from '@hbcfield/shared';
+import { PortalReachService } from './portal-reach.service';
+import { UnitResidentsService } from './unit-residents.service';
+import { unitScope } from './portal-scope';
 import { withAuthors } from '../../common/records/with-authors';
 
 /** Reading addresses (units): one, a client's, a list, their activity, the assets on them. */
 @Injectable()
-export class PortalUnitsService extends PortalServiceBase {
+export class PortalUnitsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reach: PortalReachService,
+    private readonly residents: UnitResidentsService,
+  ) {}
+
   async getUnit(data: { id: string; organizationId: string; scopeSpaceIds?: string[] }) {
     const unit = await this.prisma.customerUnit.findFirst({
-      where: { id: data.id, organizationId: data.organizationId, ...this.unitScope(data.scopeSpaceIds) },
+      where: { id: data.id, organizationId: data.organizationId, ...unitScope(data.scopeSpaceIds) },
       include: { customer: { select: { id: true, name: true, email: true, phone: true } } },
     });
     if (!unit) throw new NotFoundException('Unit not found');
-    const [enriched] = await this.withResidentUsers([unit]);
+    const [enriched] = await this.residents.withResidentUsers([unit]);
     return { data: enriched };
   }
 
   async listUnitActivities(data: { id: string; organizationId: string; scopeSpaceIds?: string[] }) {
     const unit = await this.prisma.customerUnit.findFirst({
-      where: { id: data.id, organizationId: data.organizationId, ...this.unitScope(data.scopeSpaceIds) },
+      where: { id: data.id, organizationId: data.organizationId, ...unitScope(data.scopeSpaceIds) },
       select: { id: true },
     });
     if (!unit) throw new NotFoundException('Unit not found');
@@ -39,7 +47,7 @@ export class PortalUnitsService extends PortalServiceBase {
     scopeSpaceIds?: SpaceScopeIds;
   }) {
     const unit = await this.prisma.customerUnit.findFirst({
-      where: { id: data.id, organizationId: data.organizationId, ...this.unitScope(data.scopeSpaceIds) },
+      where: { id: data.id, organizationId: data.organizationId, ...unitScope(data.scopeSpaceIds) },
       select: { id: true },
     });
     if (!unit) throw new NotFoundException('Unit not found');
@@ -76,7 +84,7 @@ export class PortalUnitsService extends PortalServiceBase {
   }) {
     if (data.crmCaller) {
       if (!data.customerId) throw new BadRequestException('A client is required');
-      await this.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
+      await this.reach.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
     }
     const unit = await this.prisma.customerUnit.findFirst({
       where: {
@@ -109,7 +117,7 @@ export class PortalUnitsService extends PortalServiceBase {
         organizationId: data.organizationId,
         isActive: true,
         ...(data.customerId ? { customerId: data.customerId } : {}),
-        ...this.unitScope(data.scopeSpaceIds),
+        ...unitScope(data.scopeSpaceIds),
       },
       orderBy: { createdAt: 'asc' },
       take: 500,

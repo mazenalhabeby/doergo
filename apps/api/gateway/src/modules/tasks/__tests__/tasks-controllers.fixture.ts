@@ -28,7 +28,16 @@ export type TaskControllers = Public<TasksController> &
 
 /** All of them over the same two services, as one object. */
 export function tasksControllers(queue: unknown, direct: unknown): TaskControllers {
-  return combinedServices<TaskControllers>(...TASK_CONTROLLERS.map((C) => new C(queue as never, direct as never)));
+  const q = queue as never;
+  const d = direct as never;
+  return combinedServices<TaskControllers>(
+    new TaskListController(d),
+    new TasksController(q, d),
+    new TaskCrewController(q, d),
+    new TaskActivityController(q, d),
+    new TaskChecklistController(q, d),
+    new TaskAttachmentsController(q, d),
+  );
 }
 
 /** The route handler named `name`, from whichever controller owns it (for its decorator metadata). */
@@ -40,9 +49,9 @@ export function taskRoute(name: string): (...a: unknown[]) => unknown {
   throw new Error(`no /tasks route ${name}`);
 }
 
-/** The source of every /tasks controller (and their base), concatenated — for the tests that read decorators as text. */
+/** The source of every /tasks controller (and their write checks), concatenated — for the tests that read decorators as text. */
 export const TASK_CONTROLLER_FILES = [
-  'tasks-controller.base.ts',
+  'task-write-checks.ts',
   'task-list.controller.ts',
   'tasks.controller.ts',
   'task-crew.controller.ts',

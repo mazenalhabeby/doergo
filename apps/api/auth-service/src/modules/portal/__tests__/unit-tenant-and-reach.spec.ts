@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { portalServices } from './portal-services.fixture';
 import { CustomersService } from '../../customers/customers.service';
+import { CrmReachService } from '../../customers/crm-reach.service';
 
 /*
   A unit write names ids from a request body — a space, a portal, a client, a
@@ -23,7 +24,7 @@ function setup() {
     customerUnitActivity: { create: jest.fn() },
     $transaction: jest.fn(),
   };
-  const customers = new CustomersService(prisma as any);
+  const customers = new CustomersService(prisma as any, new CrmReachService(prisma as any));
   const service = portalServices(prisma, customers);
   return { prisma, service };
 }

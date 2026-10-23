@@ -1,14 +1,32 @@
 import { standInGrant } from '../approvals/stand-in';
 import { notEndedWhere, grantHolds, approverFacts } from '@hbcfield/shared';
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { assertNotSelfDecision } from '../attendance/core/self-decision';
-import { success, OVERTIME_CONSTANTS, type SpaceScopeIds } from '@hbcfield/shared';
-import { SIGNED_CONFIRM_WINDOW_MINUTES } from './overtime-helpers';
-import { OvertimeBase } from './overtime.base';
+import {
+  PrismaService,
+  SERVICE_NAMES,
+  success,
+  OVERTIME_CONSTANTS,
+  scopeWhere,
+  type SpaceScopeIds,
+} from '@hbcfield/shared';
+import { AttendanceService } from '../attendance/attendance.service';
+import { SIGNED_CONFIRM_WINDOW_MINUTES, afterOvertimeRefusal, notifyOvertime } from './overtime-helpers';
 
 /** The leader's decision on overtime: approve, approve with the member's signature in person, refuse. */
 @Injectable()
-export class OvertimeDecisionService extends OvertimeBase {
+export class OvertimeDecisionService {
+  private readonly logger = new Logger(OvertimeDecisionService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION)
+    private readonly notificationClient: ClientProxy,
+    // Approving is ONE rule, owned by attendance (approveExtraTime) — see approveRequest.
+    private readonly attendance: AttendanceService,
+  ) {}
+
   /**
    * Team leader approves remotely (Path A)
    */
@@ -143,7 +161,7 @@ export class OvertimeDecisionService extends OvertimeBase {
     });
     // Asked once per signer: a repeated signature does not push them again.
     if (!request.signedAt || request.signedById !== approver.id) {
-      this.notify({
+      notifyOvertime(this.notificationClient, {
         recipientIds: [approver.id],
         organizationId: data.organizationId,
         kind: 'confirmSignature',
@@ -199,10 +217,10 @@ export class OvertimeDecisionService extends OvertimeBase {
     }
 
     // A refusal never clocks anyone out: the time after the planned end is not counted, and they are nudged.
-    await this.afterRefusal(request.timeEntryId, now);
+    await afterOvertimeRefusal(this.prisma, request.timeEntryId, now);
 
     // Notify technician
-    this.notify({
+    notifyOvertime(this.notificationClient, {
       recipientIds: [request.technicianId],
       organizationId: data.organizationId,
       kind: 'rejected',
@@ -211,5 +229,67 @@ export class OvertimeDecisionService extends OvertimeBase {
     });
 
     return success({ status: 'REJECTED' }, 'Overtime request rejected');
+  }
+
+  /** A pending round the caller may decide — one loader for approve and reject. */
+  private async findPendingApproval(requestId: string, organizationId: string, scope?: SpaceScopeIds) {
+    const request = await this.prisma.overtimeRequest.findFirst({
+      where: {
+        id: requestId,
+        organizationId,
+        status: 'PENDING_APPROVAL',
+        // Only the caller's granted spaces. One loader serves approve and
+        // reject, so the check cannot be present on one and missing from the
+        // other — a request outside their spaces reads as 'not found'.
+        ...scopeWhere(scope),
+      },
+    });
+    if (!request) {
+      throw new NotFoundException('Overtime request not found or not pending approval');
+    }
+    return request;
+  }
+
+  /*
+    ⚠️ APPROVING IS ONE RULE, AND IT LIVES IN ATTENDANCE.
+
+    This used to mark the round APPROVED from the click, schedule a job that
+    clocked the member out when the minutes ran out, and never touch the shift.
+    Counted time stops at `expectedClockOutAt`, so an approval from the web
+    Overtime page or a signature read "Approved" and counted nothing — and on a
+    shift sent in the next day from a phone without signal, the job had nobody
+    to clock out and recorded minutes since the click. The phone's extra-time
+    screen already did it right: minutes from the shift end, the expected end
+    moved, a closed shift recounted. Every approval goes through that now.
+  */
+  private async approveRequest(
+    request: { id: string; timeEntryId: string; organizationId: string },
+    approval: {
+      approverId: string;
+      maxDurationMinutes: number;
+      notes?: string;
+      method: 'REMOTE' | 'SIGNATURE';
+      leaderName?: string;
+      leaderSignature?: string;
+    },
+  ) {
+    const minutes = Math.min(approval.maxDurationMinutes, OVERTIME_CONSTANTS.MAX_OVERTIME_DURATION_MINUTES);
+    const result = await this.attendance.approveExtraTime({
+      approverId: approval.approverId,
+      entryId: request.timeEntryId,
+      minutes,
+      organizationId: request.organizationId,
+      signature: approval.method === 'SIGNATURE' ? (approval.leaderSignature ?? null) : null,
+      notes: approval.notes ?? null,
+    });
+    if (approval.leaderName) {
+      await this.prisma.overtimeRequest.update({
+        where: { id: request.id },
+        data: { leaderName: approval.leaderName },
+      });
+    }
+
+    this.logger.log(`Overtime ${request.id} approved: ${minutes} min by ${approval.approverId} via ${approval.method}`);
+    return result;
   }
 }

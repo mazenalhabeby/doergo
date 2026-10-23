@@ -1,8 +1,15 @@
 import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { success, paginated, TaskStatus, SELECTABLE_ASSET_WHERE, assertFoundInOrg } from '@hbcfield/shared';
-import { type AssetActor } from '../core/asset-access.service';
+import {
+  PrismaService,
+  success,
+  paginated,
+  TaskStatus,
+  SELECTABLE_ASSET_WHERE,
+  assertFoundInOrg,
+} from '@hbcfield/shared';
+import { AssetAccessService, type AssetActor } from '../core/asset-access.service';
 import { AssetHoldersService } from '../core/asset-holders.service';
-import { AssetsBase } from './assets.base';
+import { withHolderNames, withHolderNamesMany } from './asset-record-rules';
 import type { Prisma, AssetStatus } from '@prisma/client';
 
 /**
@@ -13,22 +20,38 @@ import type { Prisma, AssetStatus } from '@prisma/client';
  * pattern still resolves.
  */
 @Injectable()
-export class AssetsService extends AssetsBase {
+export class AssetsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: AssetAccessService,
+  ) {}
+
+  /** The workspace an asset lives in (through its kind), or null. The space id only — no asset data. */
+  async spaceOf(data: { id: string; organizationId: string }) {
+    const asset = await this.prisma.asset.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+      select: { category: { select: { spaceId: true } } },
+    });
+    return success({ spaceId: asset?.category?.spaceId ?? null });
+  }
+
   /**
    * Get all assets with filters
    */
-  async findAll(query: {
-    page?: number;
-    limit?: number;
-    categoryId?: string;
-    typeId?: string;
-    status?: string;
-    /** Leave RETIRED out unless a status is asked for explicitly. */
-    hideRetired?: boolean | string;
-    search?: string;
-    /** Narrow to one workspace — intersected with what the caller holds. */
-    spaceId?: string;
-  } & AssetActor) {
+  async findAll(
+    query: {
+      page?: number;
+      limit?: number;
+      categoryId?: string;
+      typeId?: string;
+      status?: string;
+      /** Leave RETIRED out unless a status is asked for explicitly. */
+      hideRetired?: boolean | string;
+      search?: string;
+      /** Narrow to one workspace — intersected with what the caller holds. */
+      spaceId?: string;
+    } & AssetActor,
+  ) {
     this.access.assertMay(query, 'view');
 
     const page = Math.max(1, query.page || 1);
@@ -91,7 +114,7 @@ export class AssetsService extends AssetsBase {
 
     // One member lookup for the whole page, not one per row: a list is exactly
     // where an N+1 hides until the page it is on gets long.
-    return paginated(await this.withHoldersMany(assets, query.organizationId), { page, limit, total });
+    return paginated(await withHolderNamesMany(this.prisma, assets, query.organizationId), { page, limit, total });
   }
 
   /**
@@ -163,7 +186,7 @@ export class AssetsService extends AssetsBase {
 
     assertFoundInOrg(asset, data.organizationId, 'Asset');
 
-    return success(await this.withHolders(asset));
+    return success(await withHolderNames(this.prisma, asset));
   }
 
   /**
@@ -201,18 +224,20 @@ export class AssetsService extends AssetsBase {
   /**
    * Get maintenance history for an asset (completed tasks)
    */
-  async getMaintenanceHistory(data: {
-    id: string;
-    page?: number;
-    limit?: number;
-    /**
-     * 'done' — finished work only, which is what a maintenance history means.
-     * 'all'  — everything, including work still open. The record page wants
-     *          this: somebody standing at the machine needs to know a job is
-     *          already raised before raising a second one.
-     */
-    scope?: 'done' | 'all';
-  } & AssetActor) {
+  async getMaintenanceHistory(
+    data: {
+      id: string;
+      page?: number;
+      limit?: number;
+      /**
+       * 'done' — finished work only, which is what a maintenance history means.
+       * 'all'  — everything, including work still open. The record page wants
+       *          this: somebody standing at the machine needs to know a job is
+       *          already raised before raising a second one.
+       */
+      scope?: 'done' | 'all';
+    } & AssetActor,
+  ) {
     await this.access.assetInScope(data.id, data, 'view');
 
     const asset = await this.prisma.asset.findUnique({
@@ -252,9 +277,10 @@ export class AssetsService extends AssetsBase {
       status: task.status,
       priority: task.priority,
       completedAt: task.updatedAt,
-      duration: task.routeStartedAt && task.routeEndedAt
-        ? Math.floor((task.routeEndedAt.getTime() - task.routeStartedAt.getTime()) / 1000)
-        : null,
+      duration:
+        task.routeStartedAt && task.routeEndedAt
+          ? Math.floor((task.routeEndedAt.getTime() - task.routeStartedAt.getTime()) / 1000)
+          : null,
       assignedTo: task.assignedTo,
     }));
 

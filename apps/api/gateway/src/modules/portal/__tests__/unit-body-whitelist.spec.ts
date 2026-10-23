@@ -60,7 +60,9 @@ describe('unit routes in the gateway', () => {
     const code = strip(fs.readFileSync(path.join(ROOT, file), 'utf8'));
     // The write names its message as a string or as its contract (portalCreateUnit / portalUpdateUnit).
     const writes = code
-      .split(/this\.auth\(\s*(?:'portal_(?:create|update)_unit'|portal(?:Create|Update)Unit)\s*,/)
+      .split(
+        /this\.(?:auth|portalAuth\.ask|crm\.auth)\(\s*(?:'portal_(?:create|update)_unit'|portal(?:Create|Update)Unit)\s*,/,
+      )
       .slice(1);
     expect(writes.length).toBeGreaterThan(0);
     for (const w of writes) {
@@ -92,10 +94,10 @@ describe('unit routes in the gateway', () => {
       portal_delete_unit: 'portalDeleteUnit',
     };
     for (const cmd of Object.keys(CONTRACT)) {
-      const byName = code.search(new RegExp(`this\\.auth\\(\\s*${CONTRACT[cmd]}\\s*,`));
+      const byName = code.search(new RegExp(`this\\.crm\\.auth\\(\\s*${CONTRACT[cmd]}\\s*,`));
       const at = byName !== -1 ? byName : code.indexOf(`'${cmd}'`);
       expect(at).toBeGreaterThan(-1);
-      expect(code.slice(at, code.indexOf('});', at))).toContain('crmCaller: this.caller(req)');
+      expect(code.slice(at, code.indexOf('});', at))).toContain('crmCaller: crmCaller(req)');
     }
   });
 });

@@ -1,6 +1,5 @@
 import { clockOutTimeFlags } from '../core/open-shift-close';
-import { Injectable, BadRequestException, ConflictException, Inject, Optional } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, BadRequestException, ConflictException, Logger, Optional } from '@nestjs/common';
 import {
   success,
   TimeEntryStatus,
@@ -10,17 +9,13 @@ import {
   autoClockOutAfterEnd,
   clocksByPresence,
 } from '@hbcfield/shared';
-import { flagsWithMissedRest, parseBreakPlan, SERVICE_NAMES } from '@hbcfield/shared';
+import { flagsWithMissedRest, parseBreakPlan } from '@hbcfield/shared';
 import { fixOfTap, judgeOccurrence } from '../../../common/occurrence.util';
 import { approvalFor } from '../core/attendance-occurrence';
 import { CLOSE_ENTRY_INCLUDE } from './clock-out-helpers';
-import { ShiftCloseBase } from './shift-close.base';
+import { ShiftCloser } from './shift-closer.service';
 import { ClockOutAlertsService } from './clock-out-alerts.service';
 import { PrismaService } from '@hbcfield/shared';
-import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
-import { JobPauseService } from '../../tasks/handover/job-pause.service';
-import { CountedTimeService } from '../core/counted-time.service';
-import { AttendanceRoutingService } from '../core/attendance-routing.service';
 import { AttendanceGeocoderService } from '../core/attendance-geocoder.service';
 import { ExtraTimeService } from '../extra-time/extra-time.service';
 import { AutoClockService } from '../auto-clock/auto-clock.service';
@@ -36,33 +31,20 @@ export { CLOSE_ENTRY_INCLUDE } from './clock-out-helpers';
  * of them raises.
  */
 @Injectable()
-export class ClockOutService extends ShiftCloseBase {
+export class ClockOutService {
+  private readonly logger = new Logger(ClockOutService.name);
+
   constructor(
-    prisma: PrismaService,
-    @Inject(SERVICE_NAMES.NOTIFICATION) notificationClient: ClientProxy,
-    notificationRouting: NotificationRoutingService,
-    countedTime: CountedTimeService,
-    routing: AttendanceRoutingService,
-    geocoder: AttendanceGeocoderService,
-    extraTime: ExtraTimeService,
+    private readonly prisma: PrismaService,
+    // The ONE way a shift closes.
+    private readonly closer: ShiftCloser,
+    private readonly geocoder: AttendanceGeocoderService,
+    private readonly extraTime: ExtraTimeService,
     // Who is told what when the shift ends (escalation resolved, left early, outside the site).
     private readonly alerts: ClockOutAlertsService,
     // ⚠️ Optional as `?`, never `T | undefined` — Nest would inject nothing (injectable-metadata.spec).
-    @Optional() jobPause?: JobPauseService,
-    @Optional() autoClock?: AutoClockService,
-  ) {
-    super(
-      prisma,
-      notificationClient,
-      notificationRouting,
-      countedTime,
-      routing,
-      geocoder,
-      extraTime,
-      jobPause,
-      autoClock,
-    );
-  }
+    @Optional() private readonly autoClock?: AutoClockService,
+  ) {}
 
   /**
    * Clock out from current shift
@@ -135,7 +117,7 @@ export class ClockOutService extends ShiftCloseBase {
     // time in server-local time, which for a cross-midnight or cross-timezone
     // session matched the wrong day's schedule and produced a false "Early
     // Departure" alongside the "Unscheduled" tag.)
-    const toleranceMin = await this.getShiftFlagTolerance(entry.shiftId);
+    const toleranceMin = await this.closer.getShiftFlagTolerance(entry.shiftId);
     flagReasons.push(...clockOutTimeFlags(entry, clockOutTime, toleranceMin));
 
     if (autoOut) flagReasons.push(AUTO_CLOCK_OUT_FLAG);
@@ -169,7 +151,7 @@ export class ClockOutService extends ShiftCloseBase {
       ends a rest still running, recounts, closes open excursions and pauses the
       jobs — the same close every other way a shift ends goes through.
     */
-    const updatedEntry = await this.closeEntry(entry, {
+    const updatedEntry = await this.closer.closeEntry(entry, {
       at: clockOutTime,
       from: replacingProvisional ? 'PROVISIONAL' : 'OPEN',
       toleranceMin,
@@ -238,7 +220,7 @@ export class ClockOutService extends ShiftCloseBase {
     // Entry landed in the approvals queue → nudge managers (bell + push).
     // What the close SAVED — it may have settled a missed rest with the automatic one.
     if (updatedEntry.approvalStatus === 'PENDING') {
-      await this.sendPendingApprovalAlert({
+      await this.closer.sendPendingApprovalAlert({
         entryId: updatedEntry.id,
         userId: data.userId,
         organizationId: data.organizationId,

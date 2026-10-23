@@ -2,14 +2,20 @@ import { CLOCK_OUT_TIME_FLAGS, clockOutTimeFlags } from '../core/open-shift-clos
 import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { success, TimeEntryStatus } from '@hbcfield/shared';
 import { CLOSE_ENTRY_INCLUDE } from './clock-out-helpers';
-import { ShiftCloseBase } from './shift-close.base';
+import { PrismaService } from '@hbcfield/shared';
+import { ShiftCloser } from './shift-closer.service';
 
 /**
  * A shift closed by somebody's answer: the member's "I forgot to clock out", or an
  * office/overtime decision.
  */
 @Injectable()
-export class DecidedCloseService extends ShiftCloseBase {
+export class DecidedCloseService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly closer: ShiftCloser,
+  ) {}
+
   // ==========================================================================
   // SHIFT REMINDER RESPONSES — worker actions + leader approval (Phase 3)
   // These are how an open shift gets resolved. Nothing here is auto-closed by
@@ -76,13 +82,13 @@ export class DecidedCloseService extends ShiftCloseBase {
       EARLY_DEPARTURE — a forgotten clock-out is a late clock-out, not a
       different kind of day, so it is judged by the same rule.
     */
-    const toleranceMin = await this.getShiftFlagTolerance(entry.shiftId);
+    const toleranceMin = await this.closer.getShiftFlagTolerance(entry.shiftId);
     const timeFlags = clockOutTimeFlags(entry, clockOutTime, toleranceMin);
     const uniqueFlags = [...new Set<string>([...base, 'MISSED_CLOCK_OUT', ...timeFlags])];
     const isOvertime = timeFlags.includes('OVERTIME') || timeFlags.includes('PAST_DAILY_LIMIT');
 
     // Claimed: the answer and a real clock-out arriving together must not both write.
-    const updated = await this.closeEntry(entry, {
+    const updated = await this.closer.closeEntry(entry, {
       at: clockOutTime,
       from: wasProvisional ? 'PROVISIONAL' : 'OPEN',
       toleranceMin,
@@ -104,7 +110,7 @@ export class DecidedCloseService extends ShiftCloseBase {
       });
     }
 
-    await this.sendPendingApprovalAlert({
+    await this.closer.sendPendingApprovalAlert({
       entryId: updated.id,
       userId: data.userId,
       organizationId: data.organizationId,
@@ -158,11 +164,11 @@ export class DecidedCloseService extends ShiftCloseBase {
     if (!entry) return false;
     const now = new Date();
     const at = input.at ?? now;
-    const toleranceMin = await this.getShiftFlagTolerance(entry.shiftId);
+    const toleranceMin = await this.closer.getShiftFlagTolerance(entry.shiftId);
     const flags = [
       ...new Set([...(entry.flagReasons ?? []), 'MISSED_CLOCK_OUT', ...clockOutTimeFlags(entry, at, toleranceMin)]),
     ];
-    const closed = await this.closeEntry(entry, {
+    const closed = await this.closer.closeEntry(entry, {
       at,
       from: 'OPEN',
       status: TimeEntryStatus.AUTO_OUT,

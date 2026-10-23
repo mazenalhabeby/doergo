@@ -1,8 +1,19 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { getOwnedRole, useWorkRoleIn } from './space-role-rules';
 import { assertSpaceInOrg } from '../../common/tenant-scope.util';
-import { success, writeRateChange, utcTodayKey } from '@hbcfield/shared';
+import { success, writeRateChange, utcTodayKey, PrismaService } from '@hbcfield/shared';
 import { withRateErrors } from './space-roles-helpers';
-import { SpaceRolesBase } from './space-roles.base';
+
+/**
+ * An assignment that no longer holds its personal role must not keep one: a
+ * stale personal role would come back the moment the builder reads "is there
+ * one already?". Deleted in the same breath as the change that orphaned it.
+ */
+export async function dropStalePersonalRole(prisma: PrismaService, assignmentId: string, keepRoleId: string | null) {
+  await prisma.accessRole.deleteMany({
+    where: { personalAssignmentId: assignmentId, ...(keepRoleId ? { id: { not: keepRoleId } } : {}) },
+  });
+}
 
 /**
  * Managing a role as a whole: merging two, switching a work role on in a
@@ -13,7 +24,9 @@ import { SpaceRolesBase } from './space-roles.base';
  * message, a failure would leave people on a deleted role. Creating and editing go through auth.
  */
 @Injectable()
-export class RoleAdminService extends SpaceRolesBase {
+export class RoleAdminService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * Fold one work role into another — the clean-up for two roles that are the
    * same trade ("Electric" twice, priced in different workspaces).
@@ -27,8 +40,8 @@ export class RoleAdminService extends SpaceRolesBase {
   async mergeRole(data: { organizationId: string; roleId: string; intoRoleId: string }) {
     if (data.roleId === data.intoRoleId) throw new BadRequestException('A role cannot be merged into itself');
     const [from, into] = await Promise.all([
-      this.getOwnedRole(data.organizationId, data.roleId),
-      this.getOwnedRole(data.organizationId, data.intoRoleId),
+      getOwnedRole(this.prisma, data.organizationId, data.roleId),
+      getOwnedRole(this.prisma, data.organizationId, data.intoRoleId),
     ]);
     if (from.isSystem) throw new BadRequestException('A built-in role cannot be merged away');
     if (from.kind !== 'WORK' || into.kind !== 'WORK') {
@@ -57,7 +70,7 @@ export class RoleAdminService extends SpaceRolesBase {
       // Where the merged role was PRICED, the kept role is now used — even if the
       // merged one had been switched off there in the meantime.
       for (const spaceId of new Set(fromRows.map((r) => r.spaceId).filter((x): x is string => !!x))) {
-        await this.useWorkRoleIn(tx, spaceId, into.id);
+        await useWorkRoleIn(tx, spaceId, into.id);
       }
       // Any list that names the role by id names the kept one instead.
       // The workspaces that used the merged role now use the kept one — once each.
@@ -97,10 +110,10 @@ export class RoleAdminService extends SpaceRolesBase {
    */
   async setWorkRoleHere(data: { organizationId: string; spaceId: string; roleId: string; active: boolean }) {
     await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: data.active });
-    const role = await this.getOwnedRole(data.organizationId, data.roleId);
+    const role = await getOwnedRole(this.prisma, data.organizationId, data.roleId);
     if (role.kind !== 'WORK') throw new BadRequestException('Only a work role is switched on per workspace');
     if (data.active) {
-      await this.useWorkRoleIn(this.prisma, data.spaceId, role.id);
+      await useWorkRoleIn(this.prisma, data.spaceId, role.id);
     } else {
       const held = await this.prisma.spaceAssignment.count({ where: { spaceId: data.spaceId, workRoleId: role.id } });
       if (held > 0) {
@@ -120,7 +133,7 @@ export class RoleAdminService extends SpaceRolesBase {
   }
 
   async deleteRole(data: { organizationId: string; roleId: string }) {
-    const role = await this.getOwnedRole(data.organizationId, data.roleId);
+    const role = await getOwnedRole(this.prisma, data.organizationId, data.roleId);
     if (role.isSystem) throw new BadRequestException('Built-in roles cannot be deleted (deactivate instead)');
     const inUse = await this.prisma.spaceAssignment.count({
       where: { OR: [{ roleId: role.id }, { workRoleId: role.id }] },
@@ -159,7 +172,7 @@ export class RoleAdminService extends SpaceRolesBase {
     createdById?: string;
   }) {
     if (data.spaceId) await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: true });
-    const role = await this.getOwnedRole(data.organizationId, data.roleId);
+    const role = await getOwnedRole(this.prisma, data.organizationId, data.roleId);
     if (role.kind !== 'WORK') throw new BadRequestException('Only a work role has a day rate');
     const result = await withRateErrors(() =>
       this.prisma.$transaction((tx) =>
@@ -176,7 +189,7 @@ export class RoleAdminService extends SpaceRolesBase {
       ),
     );
     // Pricing a role in a workspace is using it there.
-    if (data.spaceId && role.kind === 'WORK') await this.useWorkRoleIn(this.prisma, data.spaceId, role.id);
+    if (data.spaceId && role.kind === 'WORK') await useWorkRoleIn(this.prisma, data.spaceId, role.id);
     return success(
       { roleId: role.id, spaceId: data.spaceId, ...result },
       result.effectiveFrom > utcTodayKey() ? 'Day rate scheduled' : 'Day rate updated',

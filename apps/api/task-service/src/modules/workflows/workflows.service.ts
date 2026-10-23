@@ -1,11 +1,16 @@
 import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
-import { success, isTypeCapability, assertFoundInOrg } from '@hbcfield/shared';
+import { success, isTypeCapability, assertFoundInOrg, PrismaService } from '@hbcfield/shared';
 import { assertSpaceInOrg } from '../../common/tenant-scope.util';
 import { stepFormForSave } from './step-form.util';
-import { WorkflowServiceBase } from './workflow-service.base';
+import { WorkflowConfigCache } from './config-cache/workflow-config-cache.service';
 
 @Injectable()
-export class WorkflowsService extends WorkflowServiceBase {
+export class WorkflowsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workflowCache: WorkflowConfigCache,
+  ) {}
+
   /**
    * List all workflows for an organization
    */
@@ -114,51 +119,51 @@ export class WorkflowsService extends WorkflowServiceBase {
     let workflow;
     try {
       workflow = await this.prisma.$transaction(async (tx) => {
-      // The organization default is what an org-wide fallback resolves to, so a
-      // type only one space can offer must never become it.
-      if (data.isDefault && !data.ownerSpaceId) {
-        await tx.statusWorkflow.updateMany({
-          where: { organizationId: data.organizationId, isDefault: true },
-          data: { isDefault: false },
+        // The organization default is what an org-wide fallback resolves to, so a
+        // type only one space can offer must never become it.
+        if (data.isDefault && !data.ownerSpaceId) {
+          await tx.statusWorkflow.updateMany({
+            where: { organizationId: data.organizationId, isDefault: true },
+            data: { isDefault: false },
+          });
+        }
+
+        const created = await tx.statusWorkflow.create({
+          data: {
+            name,
+            isDefault: (data.isDefault && !data.ownerSpaceId) || false,
+            organizationId: data.organizationId,
+            ownerSpaceId: data.ownerSpaceId ?? null,
+            // Only TYPE capabilities here. A step capability on the type would
+            // name a module nothing at this level can honour.
+            capabilities: (data.capabilities ?? []).filter(isTypeCapability),
+            ...(data.statuses?.length
+              ? {
+                  statuses: {
+                    create: data.statuses.map((s, i) => ({
+                      ...(statusForms[i] !== undefined ? { form: statusForms[i] } : {}),
+                      name: s.name,
+                      nameKey: s.nameKey ?? null,
+                      key: s.key.toUpperCase(),
+                      color: s.color || '#3b82f6',
+                      icon: s.icon,
+                      position: s.position ?? i,
+                      isFinal: s.isFinal || false,
+                      isCanceled: s.isCanceled || false,
+                      transitions: s.transitions || [],
+                      capabilities: s.capabilities || [],
+                    })),
+                  },
+                }
+              : {}),
+          },
+          include: {
+            statuses: { orderBy: { position: 'asc' } },
+            _count: { select: { tasks: true } },
+          },
         });
-      }
 
-      const created = await tx.statusWorkflow.create({
-        data: {
-          name,
-          isDefault: (data.isDefault && !data.ownerSpaceId) || false,
-          organizationId: data.organizationId,
-          ownerSpaceId: data.ownerSpaceId ?? null,
-          // Only TYPE capabilities here. A step capability on the type would
-          // name a module nothing at this level can honour.
-          capabilities: (data.capabilities ?? []).filter(isTypeCapability),
-          ...(data.statuses?.length
-            ? {
-                statuses: {
-                  create: data.statuses.map((s, i) => ({
-                    ...(statusForms[i] !== undefined ? { form: statusForms[i] } : {}),
-                    name: s.name,
-                    nameKey: s.nameKey ?? null,
-                    key: s.key.toUpperCase(),
-                    color: s.color || '#3b82f6',
-                    icon: s.icon,
-                    position: s.position ?? i,
-                    isFinal: s.isFinal || false,
-                    isCanceled: s.isCanceled || false,
-                    transitions: s.transitions || [],
-                    capabilities: s.capabilities || [],
-                  })),
-                },
-              }
-            : {}),
-        },
-        include: {
-          statuses: { orderBy: { position: 'asc' } },
-          _count: { select: { tasks: true } },
-        },
-      });
-
-      return created;
+        return created;
       });
     } catch (err) {
       // Race: another request created the same name between the check and insert.

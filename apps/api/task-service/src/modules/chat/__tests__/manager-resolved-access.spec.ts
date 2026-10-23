@@ -1,4 +1,4 @@
-import { ChatReachService } from '../chat-reach.service';
+import { canReach as reachRule } from '../chat-reach-rule';
 
 /**
  * "Managers reach anyone in chat" asked the flat `User.canManageUsers` column.
@@ -7,10 +7,9 @@ import { ChatReachService } from '../chat-reach.service';
  * granting once the legacy columns were retired. It reads resolved access now.
  */
 describe('chat: who counts as a manager', () => {
-  const svc = new ChatReachService({} as any, {} as any);
   const canReach = (me: any) =>
-    (svc as any).canReach(
-      { enabledModules: null, contactScope: 'NONE', contactAllowedIds: [], ...me },
+    reachRule(
+      { enabledModules: null, contactScope: 'NONE', contactAllowedIds: [], ...me } as any,
       { id: 't', role: 'EMPLOYEE', contactable: true },
       async () => new Set<string>(),
     );

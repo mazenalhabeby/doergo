@@ -26,7 +26,7 @@ describe('SpaceReadService.findOne — scope and client terms', () => {
     rateHistory: { count: jest.fn().mockResolvedValue(2) },
     organization: { findUnique: jest.fn().mockResolvedValue({ currency: 'EUR' }) },
   };
-  const svc = new SpaceReadService(prisma, { emit: jest.fn() } as any);
+  const svc = new SpaceReadService(prisma);
   beforeEach(() => jest.clearAllMocks());
 
   it('404s a workspace outside the caller’s view scope without reading it', async () => {

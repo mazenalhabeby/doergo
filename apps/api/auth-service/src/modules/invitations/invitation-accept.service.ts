@@ -1,14 +1,31 @@
 import * as bcrypt from 'bcryptjs';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
-import { hashCode } from '@hbcfield/shared';
+import { hashCode, PrismaService } from '@hbcfield/shared';
 import { BCRYPT_COST_FACTOR, normalizeAccessProfile, Role, normalizeEmail } from '@hbcfield/shared';
-import { memberFieldsFromInvitation, claimInvitation, InvitationAlreadyClaimedError, applyInvitationPlacement } from './invitation-apply';
-import { InvitationServiceBase } from './invitation-service.base';
+import {
+  memberFieldsFromInvitation,
+  claimInvitation,
+  InvitationAlreadyClaimedError,
+  applyInvitationPlacement,
+} from './invitation-apply';
+import { DocumentsService } from '../documents/documents.service';
+import { BillingService } from '../billing/billing.service';
 
 /** Using an invitation: checking a code, accepting it (and the joining contract it may carry). */
 @Injectable()
-export class InvitationAcceptService extends InvitationServiceBase {
+export class InvitationAcceptService {
+  private readonly logger = new Logger(InvitationAcceptService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    // A local call, not a message: the contract belongs to the same service and
+    // the same database as the member who just accepted.
+    private readonly documents: DocumentsService,
+    // Optional so a unit test that never adds a member need not wire billing.
+    @Optional() private readonly billing?: BillingService,
+  ) {}
+
   async validateCode(code: string) {
     const codeHashValue = hashCode(code.toUpperCase().trim());
     const invitation = await this.prisma.invitation.findUnique({
@@ -67,7 +84,11 @@ export class InvitationAcceptService extends InvitationServiceBase {
     }
 
     if (invitation.status !== 'PENDING') {
-      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'This invitation has already been used or revoked' };
+      return {
+        success: false,
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'This invitation has already been used or revoked',
+      };
     }
 
     if (invitation.expiresAt < new Date()) {

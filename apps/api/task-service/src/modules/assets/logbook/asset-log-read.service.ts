@@ -9,14 +9,23 @@ import {
   creditsByLogType,
   COST_LOG_KEY,
   clampListLimit,
+  PrismaService,
 } from '@hbcfield/shared';
+import { AssetAccessService } from '../core/asset-access.service';
 import { EXPENSE_STATUS } from '../expenses/asset-expense.service';
 import { Actor } from './asset-log-helpers';
-import { AssetLogBase } from './asset-log.base';
+import { AssetLogAccessService } from './asset-log-access.service';
+import { dueFor, facesById, presentLogEntry } from './asset-log-view';
 
 /** Reading the logbook: an asset's entries, its summary, what is due for me, and what I logged. */
 @Injectable()
-export class AssetLogReadService extends AssetLogBase {
+export class AssetLogReadService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: AssetAccessService,
+    private readonly logAccess: AssetLogAccessService,
+  ) {}
+
   /**
    * One asset's log, newest first, a page at a time.
    *
@@ -33,8 +42,8 @@ export class AssetLogReadService extends AssetLogBase {
       limit?: number;
     },
   ) {
-    const asset = await this.loadAsset(data.id, data.organizationId);
-    this.assertSees(data, asset.spaceId);
+    const asset = await this.logAccess.loadAsset(data.id, data.organizationId);
+    this.logAccess.assertSees(data, asset.spaceId);
     const take = this.access.pageSize(data.limit, 50);
 
     const where: Prisma.AssetMoneyWhereInput = { assetId: data.id, organizationId: data.organizationId };
@@ -58,13 +67,17 @@ export class AssetLogReadService extends AssetLogBase {
       take: take + 1,
     });
     const page = rows.slice(0, take);
-    const authors = await this.names(
+    const authors = await facesById(
+      this.prisma,
       page.map((r) => r.authorId),
       data.organizationId,
     );
 
     return success({
-      entries: page.map((r) => ({ ...this.present(r), author: r.authorId ? (authors.get(r.authorId) ?? null) : null })),
+      entries: page.map((r) => ({
+        ...presentLogEntry(r),
+        author: r.authorId ? (authors.get(r.authorId) ?? null) : null,
+      })),
       nextCursor: rows.length > take ? page[page.length - 1]!.id : null,
     });
   }
@@ -78,8 +91,8 @@ export class AssetLogReadService extends AssetLogBase {
    * same functions the phone and the browser would use.
    */
   async summary(data: Actor & { id: string; from?: string; to?: string }) {
-    const asset = await this.loadAsset(data.id, data.organizationId);
-    this.assertSees(data, asset.spaceId);
+    const asset = await this.logAccess.loadAsset(data.id, data.organizationId);
+    this.logAccess.assertSees(data, asset.spaceId);
 
     const now = new Date();
     const from = data.from ? new Date(data.from) : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
@@ -104,12 +117,12 @@ export class AssetLogReadService extends AssetLogBase {
 
     const byAuthor = creditsByAuthor(inPeriod);
     const byType = creditsByLogType(inPeriod);
-    const authors = await this.names([...byAuthor.keys()], data.organizationId);
+    const authors = await facesById(this.prisma, [...byAuthor.keys()], data.organizationId);
 
     return success({
       period: { from: from.toISOString(), to: to.toISOString() },
       readings: state.readings,
-      due: this.dueFor(state, asset.shape, now),
+      due: dueFor(state, asset.shape, now),
       waitingCount: waiting,
       byAuthor: [...byAuthor.entries()]
         .map(([authorId, c]) => ({
@@ -152,7 +165,7 @@ export class AssetLogReadService extends AssetLogBase {
     });
     const now = new Date();
     const items = assets.flatMap((a) =>
-      this.dueFor(readLogState(a.logState), normalizeKindShape(a.category?.config), now)
+      dueFor(readLogState(a.logState), normalizeKindShape(a.category?.config), now)
         .filter((d) => d.stage !== 'ok')
         .map((d) => ({ assetId: a.id, assetName: a.name, ...d })),
     );
@@ -190,6 +203,6 @@ export class AssetLogReadService extends AssetLogBase {
         asset: { select: { id: true, name: true } },
       },
     });
-    return success(rows.map((r) => this.present(r)));
+    return success(rows.map((r) => presentLogEntry(r)));
   }
 }

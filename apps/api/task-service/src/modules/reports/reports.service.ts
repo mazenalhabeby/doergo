@@ -4,16 +4,25 @@ import {
   BadRequestException,
   ForbiddenException,
   ConflictException,
+  Inject,
 } from '@nestjs/common';
-import { TaskStatus, TaskEventType, success, type OccurrenceEvidence } from '@hbcfield/shared';
+import { TaskStatus, TaskEventType, success, type OccurrenceEvidence, PrismaService } from '@hbcfield/shared';
 import { judgeOccurrence } from '../../common/occurrence.util';
-import { ReportsBase } from './reports.base';
+import { ClientProxy } from '@nestjs/microservices';
+import { MediaSigner } from '../../common/storage/media-signer.service';
+import { withSignedAttachments } from './reports-helpers';
 import { emitEvent, taskStatusChangedEvent } from '@hbcfield/shared/microservices';
 
 export { reportKeyPrefixes } from './reports-helpers';
 
 @Injectable()
-export class ReportsService extends ReportsBase {
+export class ReportsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly media: MediaSigner,
+    @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
+  ) {}
+
   /**
    * Create a service report when completing a task
    * This is the main completion flow for TECHNICIAN
@@ -263,6 +272,6 @@ export class ReportsService extends ReportsBase {
       },
     });
 
-    return success(await this.withSignedAttachments(updatedReport));
+    return success(await withSignedAttachments(this.media, updatedReport));
   }
 }

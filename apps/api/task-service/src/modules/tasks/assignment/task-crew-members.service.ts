@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
 import {
+  PrismaService,
   personName,
   TaskEventType,
   success,
@@ -9,14 +10,24 @@ import {
   workerToAssign,
 } from '@hbcfield/shared';
 import { assertMayAssign, assertTargetIsInSpace } from '../core/task-scope';
-import { TaskAssignmentBase } from './task-assignment.base';
+import { ClientProxy } from '@nestjs/microservices';
+import { TaskSupportService } from '../core/task-support.service';
+import { assertAssigneesAreQualified } from './assignee-credentials';
+import { TaskCrewChangeService } from './task-crew-change.service';
 import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 import type { TaskAssigneeRole } from '@prisma/client';
 import { TASK_JOBS, type JobData } from '@hbcfield/shared';
 
 /** Adding and removing people on a job's crew, and releasing a member who left from their open work. */
 @Injectable()
-export class TaskCrewMembersService extends TaskAssignmentBase {
+export class TaskCrewMembersService {
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
+    private readonly support: TaskSupportService,
+    private readonly crewChange: TaskCrewChangeService,
+  ) {}
+
   async addAssignee(data: JobData<typeof TASK_JOBS.addAssignee>) {
     const task = await this.prisma.task.findUnique({ where: { id: data.taskId } });
     assertFoundInOrg(task, data.organizationId, 'Task');
@@ -38,7 +49,13 @@ export class TaskCrewMembersService extends TaskAssignmentBase {
       where: { id: data.taskId, organizationId: data.organizationId },
       select: { workflowId: true, organizationId: true },
     });
-    await this.assertAssigneesAreQualified([user.id], [user], assigneeTask?.workflowId, assigneeTask?.organizationId);
+    await assertAssigneesAreQualified(
+      this.prisma,
+      [user.id],
+      [user],
+      assigneeTask?.workflowId,
+      assigneeTask?.organizationId,
+    );
 
     const role = (data.role as TaskAssigneeRole) || 'MEMBER';
 
@@ -69,7 +86,7 @@ export class TaskCrewMembersService extends TaskAssignmentBase {
     // Primary, status and the notification — all of it, in one place.
     // `wasAlreadyOn` decides whether this is news: re-adding somebody to change
     // their role must not push them a second time about work they already have.
-    await this.afterAssigneesChanged(data.taskId, wasAlreadyOn ? [] : [data.userId], data.requestUserId);
+    await this.crewChange.afterAssigneesChanged(data.taskId, wasAlreadyOn ? [] : [data.userId], data.requestUserId);
 
     await this.support.createTaskEvent(data.taskId, data.requestUserId, TaskEventType.ASSIGNEE_ADDED, {
       assigneeId: data.userId,
@@ -104,7 +121,7 @@ export class TaskCrewMembersService extends TaskAssignmentBase {
     // Sync the primary assignedToId field
     // Same writer as every other change to who is on this task. Nobody is newly
     // assigned by a removal, so nobody is told they have new work.
-    await this.afterAssigneesChanged(data.taskId, [], data.requestUserId);
+    await this.crewChange.afterAssigneesChanged(data.taskId, [], data.requestUserId);
 
     await this.support.createTaskEvent(data.taskId, data.requestUserId, TaskEventType.ASSIGNEE_REMOVED, {
       assigneeId: data.userId,
@@ -177,7 +194,7 @@ export class TaskCrewMembersService extends TaskAssignmentBase {
       await this.prisma.taskAssignee.deleteMany({ where: { taskId: id, userId } });
       // The primary column too: a job assigned the old way has no crew row to remove.
       await this.prisma.task.updateMany({ where: { id, assignedToId: userId }, data: { assignedToId: null } });
-      await this.afterAssigneesChanged(id, [], actorId);
+      await this.crewChange.afterAssigneesChanged(id, [], actorId);
       await this.support.createTaskEvent(id, actorId, TaskEventType.ASSIGNEE_REMOVED, {
         assigneeId: userId,
         reason: 'MEMBER_LEFT',

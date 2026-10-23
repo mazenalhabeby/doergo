@@ -3,14 +3,21 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RequirePermissionInSpace } from '../../common/decorators';
 import { taskActor, taskRequester, assignSpaceIds } from '../../common/task-actor';
 import { AddAssigneeDto, AddCommentDto } from './dto';
-import { TasksControllerBase } from './tasks-controller.base';
+import { TasksQueueService } from './tasks.queue.service';
+import { TasksService } from './tasks.service';
+import { assertExternalMayWrite } from './task-write-checks';
 
 import type { AuthedRequest } from '../../common/request.types';
 /** /tasks/:id — a job's history, comments, step answers and assignees. */
 @ApiTags('tasks')
 @ApiBearerAuth()
 @Controller('tasks')
-export class TaskActivityController extends TasksControllerBase {
+export class TaskActivityController {
+  constructor(
+    private readonly tasksQueueService: TasksQueueService,
+    private readonly tasksService: TasksService,
+  ) {}
+
   @Get(':id/submissions')
   @ApiOperation({ summary: "The job's step-form submissions (its reports), with signed file links" })
   async getSubmissions(@Param('id') id: string, @Request() req: AuthedRequest) {
@@ -33,7 +40,7 @@ export class TaskActivityController extends TasksControllerBase {
   @Post(':id/comments')
   @ApiOperation({ summary: 'Add a comment to a task' })
   async addComment(@Param('id') id: string, @Body() body: AddCommentDto, @Request() req: AuthedRequest) {
-    await this.assertExternalMayWrite(req, id);
+    await assertExternalMayWrite(this.tasksService, req, id);
     return this.tasksQueueService.addComment({
       taskId: id,
       ...body,

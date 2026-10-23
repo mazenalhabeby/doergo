@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { SpaceLifecycleService } from '../space-lifecycle.service';
+import { SpaceAnnouncer } from '../space-announcer.service';
 import { PrismaService } from '@hbcfield/shared';
 
 /**
@@ -72,6 +73,7 @@ describe('SpaceLifecycleService.purge — what counts as empty (S-B1, S-B2)', ()
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SpaceLifecycleService,
+        SpaceAnnouncer,
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: notificationClient },
         { provide: SERVICE_NAMES.AUTH, useValue: authClient },

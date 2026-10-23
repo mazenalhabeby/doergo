@@ -9,6 +9,7 @@ import { ApprovalService } from './approval.service';
 import { EntryEditService } from './entry-edit.service';
 import { EntryRecordService } from './entry-record.service';
 import { ManualEntriesService } from './manual-entries.service';
+import { ENTRY_SERVICES } from './entry-services';
 import { EntryDecisionsRpcController } from './entry-decisions.rpc.controller';
 
 /**
@@ -23,7 +24,7 @@ import { EntryDecisionsRpcController } from './entry-decisions.rpc.controller';
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
   controllers: [EntryDecisionsRpcController],
-  providers: [ApprovalService, EntryEditService, EntryRecordService, ManualEntriesService],
+  providers: ENTRY_SERVICES,
   exports: [ApprovalService, EntryEditService, EntryRecordService, ManualEntriesService],
 })
 export class AttendanceEntriesModule {}

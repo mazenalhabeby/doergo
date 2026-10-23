@@ -6,8 +6,10 @@ import { TechniciansModule } from '../../technicians/technicians.module';
 import { TaskAssignmentService } from './task-assignment.service';
 import { TaskDeclineService } from './task-decline.service';
 import { TaskCrewMembersService } from './task-crew-members.service';
+import { TaskCrewChangeService } from './task-crew-change.service';
 import { RoleOpeningService } from './role-opening.service';
 import { RolePoolService } from './role-pool.service';
+import { RoleOfferService } from './role-offer.service';
 import { RoleTakeService } from './role-take.service';
 import { RoleStatsService } from './role-stats.service';
 import { RolePoolSweepService } from './role-pool-sweep.service';
@@ -25,10 +27,12 @@ import { TechnicianSuggestionService } from './technician-suggestion.service';
   ],
   providers: [
     TaskAssignmentService,
+    TaskCrewChangeService,
     TaskDeclineService,
     TaskCrewMembersService,
     RoleOpeningService,
     RolePoolService,
+    RoleOfferService,
     RoleTakeService,
     RoleStatsService,
     RolePoolSweepService,
@@ -40,6 +44,7 @@ import { TechnicianSuggestionService } from './technician-suggestion.service';
     TaskCrewMembersService,
     RoleOpeningService,
     RolePoolService,
+    RoleOfferService,
     RoleTakeService,
     RoleStatsService,
     RolePoolSweepService,

@@ -10,7 +10,7 @@ import { join } from 'path';
 describe('gateway controllers call services through ServiceCalls', () => {
   const root = join(__dirname, '..', '..');
   const controllers = (readdirSync(root, { recursive: true, encoding: 'utf8' }) as string[]).filter(
-    (f) => (f.endsWith('.controller.ts') || f.endsWith('controller.base.ts')) && !f.includes('__tests__'),
+    (f) => (f.endsWith('.controller.ts')) && !f.includes('__tests__'),
   );
 
   it('finds the controllers', () => {

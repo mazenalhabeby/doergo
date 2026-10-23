@@ -1,13 +1,18 @@
 import { Inject, Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
-import { success } from '@hbcfield/shared';
+import { success, PrismaService } from '@hbcfield/shared';
 import { assertSpaceInOrg } from '../../common/tenant-scope.util';
-import { WorkflowServiceBase } from './workflow-service.base';
+import { WorkflowConfigCache } from './config-cache/workflow-config-cache.service';
 import { WorkflowsService } from './workflows.service';
 import { SpaceWorkflowsService } from './space-workflows.service';
 
 /** Sharing a workspace's workflow with the organization, and forking one into a workspace. */
 @Injectable()
-export class WorkflowSharingService extends WorkflowServiceBase {
+export class WorkflowSharingService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workflowCache: WorkflowConfigCache,
+  ) {}
+
   @Inject(WorkflowsService) private readonly workflows!: WorkflowsService;
 
   @Inject(SpaceWorkflowsService) private readonly spaceWorkflows!: SpaceWorkflowsService;
@@ -69,8 +74,16 @@ export class WorkflowSharingService extends WorkflowServiceBase {
         statuses: {
           orderBy: { position: 'asc' },
           select: {
-            name: true, key: true, color: true, icon: true, position: true,
-            isFinal: true, isCanceled: true, transitions: true, capabilities: true, form: true,
+            name: true,
+            key: true,
+            color: true,
+            icon: true,
+            position: true,
+            isFinal: true,
+            isCanceled: true,
+            transitions: true,
+            capabilities: true,
+            form: true,
           },
         },
       },

@@ -1,4 +1,6 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Optional } from '@nestjs/common';
+import { PrismaService } from '@hbcfield/shared';
+import { ShiftRematchService } from '../attendance/shifts/shift-rematch.service';
 import { assertSpaceInOrg } from '../../common/tenant-scope.util';
 import {
   success,
@@ -7,7 +9,7 @@ import {
   SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
   type SpaceScopeIds,
 } from '@hbcfield/shared';
-import { ShiftsBase } from './shifts.base';
+import { assertTime, clampInt, getOwnedShift } from './shift-rules';
 import type { Prisma } from '@prisma/client';
 
 export { weekOf } from './shifts-helpers';
@@ -19,7 +21,17 @@ export { weekOf } from './shifts-helpers';
  * to that org before use.
  */
 @Injectable()
-export class ShiftsService extends ShiftsBase {
+export class ShiftsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    /*
+      A shift added after somebody already clocked in must reach that entry —
+      the clock-in matches once and never looks again. Optional only so a unit
+      test can build this service bare; the module always provides it.
+    */
+    @Optional() private readonly rematch?: ShiftRematchService,
+  ) {}
+
   // ── Shifts ─────────────────────────────────────────────────────────────
 
   /** List shifts for an org; optionally only those usable in a given space (space-scoped + org-wide). */
@@ -67,8 +79,8 @@ export class ShiftsService extends ShiftsBase {
   }) {
     const name = (data.name || '').trim();
     if (!name) throw new BadRequestException('Shift name is required');
-    this.assertTime(data.startLocal, 'start');
-    this.assertTime(data.endLocal, 'end');
+    assertTime(data.startLocal, 'start');
+    assertTime(data.endLocal, 'end');
     if (data.spaceId) {
       await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, {
         scope: data.scopeSpaceIds,
@@ -95,16 +107,16 @@ export class ShiftsService extends ShiftsBase {
         startLocal: data.startLocal,
         endLocal: data.endLocal,
         crossesMidnight: shiftCrossesMidnight(data.startLocal, data.endLocal),
-        breakMinutes: this.clampInt(data.breakMinutes, 0, 0, 1440),
-        graceMin: this.clampInt(data.graceMin, SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES, 0, 120),
-        reminderIntervalMin: this.clampInt(
+        breakMinutes: clampInt(data.breakMinutes, 0, 0, 1440),
+        graceMin: clampInt(data.graceMin, SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES, 0, 120),
+        reminderIntervalMin: clampInt(
           data.reminderIntervalMin,
           SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES,
           1,
           120,
         ),
-        maxReminders: this.clampInt(data.maxReminders, SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS, 1, 10),
-        flagToleranceMin: this.clampInt(data.flagToleranceMin, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, 0, 240),
+        maxReminders: clampInt(data.maxReminders, SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS, 1, 10),
+        flagToleranceMin: clampInt(data.flagToleranceMin, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, 0, 240),
       },
     });
     return success(shift, 'Shift created');
@@ -127,7 +139,7 @@ export class ShiftsService extends ShiftsBase {
     flagToleranceMin?: number;
     isActive?: boolean;
   }) {
-    const shift = await this.getOwnedShift(data.organizationId, data.shiftId, data.scopeSpaceIds);
+    const shift = await getOwnedShift(this.prisma, data.organizationId, data.shiftId, data.scopeSpaceIds);
 
     const patch: Record<string, unknown> = {};
     if (data.name !== undefined) {
@@ -138,27 +150,27 @@ export class ShiftsService extends ShiftsBase {
     if (data.description !== undefined) patch.description = data.description?.trim() || null;
     if (data.color !== undefined) patch.color = data.color;
     if (data.startLocal !== undefined) {
-      this.assertTime(data.startLocal, 'start');
+      assertTime(data.startLocal, 'start');
       patch.startLocal = data.startLocal;
     }
     if (data.endLocal !== undefined) {
-      this.assertTime(data.endLocal, 'end');
+      assertTime(data.endLocal, 'end');
       patch.endLocal = data.endLocal;
     }
-    if (data.breakMinutes !== undefined) patch.breakMinutes = this.clampInt(data.breakMinutes, 0, 0, 1440);
+    if (data.breakMinutes !== undefined) patch.breakMinutes = clampInt(data.breakMinutes, 0, 0, 1440);
     if (data.graceMin !== undefined)
-      patch.graceMin = this.clampInt(data.graceMin, SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES, 0, 120);
+      patch.graceMin = clampInt(data.graceMin, SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES, 0, 120);
     if (data.reminderIntervalMin !== undefined)
-      patch.reminderIntervalMin = this.clampInt(
+      patch.reminderIntervalMin = clampInt(
         data.reminderIntervalMin,
         SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES,
         1,
         120,
       );
     if (data.maxReminders !== undefined)
-      patch.maxReminders = this.clampInt(data.maxReminders, SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS, 1, 10);
+      patch.maxReminders = clampInt(data.maxReminders, SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS, 1, 10);
     if (data.flagToleranceMin !== undefined)
-      patch.flagToleranceMin = this.clampInt(data.flagToleranceMin, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, 0, 240);
+      patch.flagToleranceMin = clampInt(data.flagToleranceMin, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, 0, 240);
     if (data.isActive !== undefined) patch.isActive = data.isActive;
 
     // Recompute crossesMidnight if either time changed.
@@ -181,7 +193,7 @@ export class ShiftsService extends ShiftsBase {
   }
 
   async deleteShift(data: { organizationId: string; shiftId: string; scopeSpaceIds?: SpaceScopeIds }) {
-    const shift = await this.getOwnedShift(data.organizationId, data.shiftId, data.scopeSpaceIds);
+    const shift = await getOwnedShift(this.prisma, data.organizationId, data.shiftId, data.scopeSpaceIds);
     // Cascades to its rota assignments (schema onDelete: Cascade).
     await this.prisma.shift.delete({ where: { id: shift.id } });
     return success({ id: shift.id }, 'Shift deleted');

@@ -1,8 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { visibleTypeSelfWhere, routeProblem } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
-import { type DocumentActor, assertCanManageTypes, assertCanManageVisibility, normaliseKey } from '../core/document-common';
-import { DocumentTypesBase } from './document-types.base';
+import {
+  type DocumentActor,
+  assertCanManageTypes,
+  assertCanManageVisibility,
+  normaliseKey,
+} from '../core/document-common';
+import { PrismaService } from '@hbcfield/shared';
+import { DocumentLookupService } from '../core/document-lookup.service';
+import { assertPageShape, assertTypeRefsInOrg } from './document-type-rules';
 import { type documentsCreateType, type RpcRequest } from '@hbcfield/shared/microservices';
 
 /**
@@ -11,7 +18,12 @@ import { type documentsCreateType, type RpcRequest } from '@hbcfield/shared/micr
  * Part of the personnel file; `DocumentsService` is the facade every caller uses.
  */
 @Injectable()
-export class DocumentTypesService extends DocumentTypesBase {
+export class DocumentTypesService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly lookup: DocumentLookupService,
+  ) {}
+
   async listTypes(data: {
     organizationId: string;
     includeInactive?: boolean;
@@ -59,7 +71,7 @@ export class DocumentTypesService extends DocumentTypesBase {
     const key = normaliseKey(data.key);
     if (!key) throw new BadRequestException('A document type needs a key');
 
-    this.assertPageShape(data.twoSided, data.multiPage);
+    assertPageShape(data.twoSided, data.multiPage);
 
     /*
       Validated by the SAME rule as an edit. Two definitions of a legal route is
@@ -77,7 +89,7 @@ export class DocumentTypesService extends DocumentTypesBase {
     if (data.visibleToRoleIds && data.visibleToRoleIds.length > 0) {
       assertCanManageVisibility(data.actor);
     }
-    await this.assertTypeRefsInOrg(data.actor.organizationId, data);
+    await assertTypeRefsInOrg(this.prisma, data.actor.organizationId, data);
 
     try {
       return await this.prisma.documentType.create({

@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { notEndedWhere, success, WORKING_NOW_STATUSES } from '@hbcfield/shared';
-import { SpaceServiceBase } from './space-service.base';
+import { notEndedWhere, success, WORKING_NOW_STATUSES, PrismaService } from '@hbcfield/shared';
 
 /** Who is in a workspace: one roster, or many at once — read only where the caller may. */
 @Injectable()
-export class SpaceRosterService extends SpaceServiceBase {
+export class SpaceRosterService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * Which of these spaces' rosters the caller may read — ONE rule for the
    * single roster and the dashboard batch.

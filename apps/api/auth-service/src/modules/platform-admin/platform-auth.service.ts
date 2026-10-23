@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import {
   BCRYPT_COST_FACTOR,
@@ -9,9 +10,10 @@ import {
   nextLockStateAfterFailure,
   platformLogoutCutoff,
   mayRefreshPlatformSession,
+  PrismaService,
 } from '@hbcfield/shared';
-import { ok, fail } from './platform-auth-helpers';
-import { PlatformAuthBase } from './platform-auth.base';
+import { ok, fail, publicUser, consumeTotp } from './platform-auth-helpers';
+import { PlatformSessionService } from './platform-session.service';
 
 /**
  * Platform-staff authentication + RBAC. Fully isolated from customer auth:
@@ -21,7 +23,15 @@ import { PlatformAuthBase } from './platform-auth.base';
  * lockout after repeated failures, RBAC via the shared permission matrix.
  */
 @Injectable()
-export class PlatformAuthService extends PlatformAuthBase {
+export class PlatformAuthService {
+  private readonly logger = new Logger(PlatformAuthService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwt: JwtService,
+    private readonly sessions: PlatformSessionService,
+  ) {}
+
   // ── Login (2FA-aware) ─────────────────────────────────────────────────────────
   async login(data: { email?: string; password?: string; code?: string }) {
     const email = normalizeEmail(data.email ?? '');
@@ -48,7 +58,7 @@ export class PlatformAuthService extends PlatformAuthBase {
     // Second factor.
     if (user.twoFactorEnabled) {
       if (!data.code) return ok({ needs2fa: true }); // password OK → prompt for the code
-      if (!(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) {
+      if (!(await consumeTotp(this.prisma, user.id, user.twoFactorSecret, data.code))) {
         await bump();
         return fail('Invalid authentication code', 401);
       }
@@ -58,7 +68,7 @@ export class PlatformAuthService extends PlatformAuthBase {
       where: { id: user.id },
       data: { failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() },
     });
-    const session = await this.session(user);
+    const session = await this.sessions.session(user);
     this.logger.log(
       `[PLATFORM] login: ${maskEmail(user.email)} (${user.role})${session.user.enrolmentRequired ? ' — 2FA enrolment required' : ''}`,
     );
@@ -97,7 +107,7 @@ export class PlatformAuthService extends PlatformAuthBase {
     if (!mayRefreshPlatformSession(data.authTime)) return fail('Session expired — sign in again', 401);
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
     if (!user || !user.isActive) return fail('Session expired — sign in again', 401);
-    return ok(await this.session(user, data.authTime));
+    return ok(await this.sessions.session(user, data.authTime));
   }
 
   // ── Self-service: change own password ─────────────────────────────────────────
@@ -116,22 +126,22 @@ export class PlatformAuthService extends PlatformAuthBase {
     });
     this.logger.log(`[PLATFORM] ${maskEmail(user.email)} changed their password`);
     // Every OTHER session ends; this one continues on a fresh token.
-    return ok({ id: user.id, ...(await this.session(updated, data.authTime)) });
+    return ok({ id: user.id, ...(await this.sessions.session(updated, data.authTime)) });
   }
 
   // ── Validate (called by the gateway guard on every request) ───────────────────
   async validateToken(token: string) {
     try {
-      const payload = this.jwt.verify(token, { secret: this.secret(), algorithms: ['HS256'] });
+      const payload = this.jwt.verify(token, { secret: this.sessions.secret(), algorithms: ['HS256'] });
       if (payload?.typ !== 'platform' || !payload?.sub) return { valid: false };
       const user = await this.prisma.platformUser.findUnique({ where: { id: payload.sub } });
       if (!user || !user.isActive) return { valid: false };
       // Issued before the operator's last password change/reset → dead.
       if (tokenIssuedBeforeCutoff(payload.iat, user.tokensValidAfter)) return { valid: false };
-      const scope = await this.supportScope(user.id, user.role);
+      const scope = await this.sessions.supportScope(user.id, user.role);
       return {
         valid: true,
-        user: { ...this.publicUser(user), ...scope },
+        user: { ...publicUser(user), ...scope },
         permissions: platformCapsFor(user.role),
         // What logout and refresh need about THIS token (not the account).
         session: {
@@ -147,7 +157,7 @@ export class PlatformAuthService extends PlatformAuthBase {
   async me(userId: string) {
     const user = await this.prisma.platformUser.findUnique({ where: { id: userId } });
     if (!user) return fail('Not found', 404);
-    const scope = await this.supportScope(user.id, user.role);
-    return ok({ user: { ...this.publicUser(user), ...scope }, permissions: platformCapsFor(user.role) });
+    const scope = await this.sessions.supportScope(user.id, user.role);
+    return ok({ user: { ...publicUser(user), ...scope }, permissions: platformCapsFor(user.role) });
   }
 }

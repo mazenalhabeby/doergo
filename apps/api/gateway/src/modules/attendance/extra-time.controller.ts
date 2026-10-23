@@ -5,7 +5,8 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { RequestExtraTimeDto, ApproveExtraTimeDto, RejectExtraTimeDto, AddOvertimeDto } from './dto';
 import { AllowWhenLocked } from '../../common/guards/subscription.guard';
-import { AttendanceControllerBase } from './attendance-controller.base';
+import { ExtraTimeGatewayService } from './extra-time.gateway-service';
+import { scopeFor } from '../../common/permission-scope';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -14,7 +15,9 @@ import { ForgotClockOutDto } from './dto/decision-bodies.dto';
 @ApiTags('attendance')
 @ApiBearerAuth()
 @Controller('attendance')
-export class ExtraTimeController extends AttendanceControllerBase {
+export class ExtraTimeController {
+  constructor(private readonly extraTimeGateway: ExtraTimeGatewayService) {}
+
   // ── Shift reminder responses ──────────────────────────────────────────────
 
   @Post('entries/:id/forgot-clock-out')
@@ -106,7 +109,7 @@ export class ExtraTimeController extends AttendanceControllerBase {
       reason: body.reason ?? null,
       approverId: req.user.id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
+      scopeSpaceIds: scopeFor(req.user, 'canApproveOvertime'),
     });
   }
 
@@ -124,7 +127,7 @@ export class ExtraTimeController extends AttendanceControllerBase {
       overtimeId,
       actorId: req.user.id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
+      scopeSpaceIds: scopeFor(req.user, 'canApproveOvertime'),
     });
   }
 

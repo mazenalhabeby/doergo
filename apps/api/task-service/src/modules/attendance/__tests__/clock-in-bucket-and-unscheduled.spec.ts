@@ -31,6 +31,7 @@ import { NotificationRoutingService } from '../../notification-routing/notificat
 import { PrismaService } from '@hbcfield/shared';
 import { PresenceService } from '../presence/presence.service';
 import { SpaceUpdateService } from '../../spaces/space-update.service';
+import { SpaceAnnouncer } from '../../spaces/space-announcer.service';
 
 const NOW = new Date('2026-09-15T12:00:00.000Z');
 const SITE = { lat: 47.9813, lng: 13.8269 };
@@ -72,15 +73,13 @@ async function build(
   const space = { ...SPACE, ...opts.space };
   const prisma: any = {
     user: {
-      findFirst: jest
-        .fn()
-        .mockResolvedValue({
-          id: 'u1',
-          organizationId: 'org-1',
-          allowRemote: opts.allowRemote ?? true,
-          role: opts.role ?? 'EMPLOYEE',
-          organization: { timezone: 'Europe/Vienna' },
-        }),
+      findFirst: jest.fn().mockResolvedValue({
+        id: 'u1',
+        organizationId: 'org-1',
+        allowRemote: opts.allowRemote ?? true,
+        role: opts.role ?? 'EMPLOYEE',
+        organization: { timezone: 'Europe/Vienna' },
+      }),
       findUnique: jest.fn().mockResolvedValue({ firstName: 'Mike', lastName: 'Weber' }),
       findMany: jest.fn().mockResolvedValue([]),
     },
@@ -325,7 +324,7 @@ describe('saving the workspace settings', () => {
         update: jest.fn(async ({ data }: any) => ({ ...row, ...data })),
       },
     };
-    return { svc: new SpaceUpdateService(prisma, { emit: jest.fn() } as never), prisma };
+    return { svc: new SpaceUpdateService(prisma, new SpaceAnnouncer(prisma, { emit: jest.fn() } as never)), prisma };
   };
   const base = { id: 'loc-1', organizationId: 'org-1', userId: 'admin' };
 

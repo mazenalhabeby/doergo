@@ -1,5 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { personName, retentionUntil, isBlocking, renderTemplate, missingRequired } from '@hbcfield/shared';
+import {
+  personName,
+  retentionUntil,
+  isBlocking,
+  renderTemplate,
+  missingRequired,
+  PrismaService,
+} from '@hbcfield/shared';
 import { documentKey, sha256 } from '@hbcfield/shared/storage';
 import { renderContractPdf } from '../core/contract-pdf';
 import {
@@ -12,14 +19,22 @@ import {
   eventContext,
 } from '../core/document-common';
 import { CONTRACT_MEMBER_SELECT } from './document-templates-helpers';
-import { DocumentTemplatesBase } from './document-templates.base';
+import { DocumentStorageService } from '../core/document-storage.service';
+import { DocumentNotifierService } from '../core/document-notifier.service';
+import { DocumentTemplatesService } from './document-templates.service';
 
 /**
  * Issuing a contract from a template: filled with the member's and the company's
  * values, rendered, filed and routed for signing.
  */
 @Injectable()
-export class ContractIssueService extends DocumentTemplatesBase {
+export class ContractIssueService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: DocumentStorageService,
+    private readonly notifier: DocumentNotifierService,
+    private readonly templates: DocumentTemplatesService,
+  ) {}
 
   /**
    * Render a contract for one member and issue it.
@@ -56,7 +71,7 @@ export class ContractIssueService extends DocumentTemplatesBase {
           },
           include: { type: { select: { id: true, label: true, retentionMonths: true } } },
         })
-      : await this.resolveTemplate({
+      : await this.templates.resolveTemplate({
           organizationId: data.actor.organizationId,
           roleId: member.memberRoleId,
           position: member.position,
@@ -129,9 +144,7 @@ export class ContractIssueService extends DocumentTemplatesBase {
     if (missing.length > 0) {
       // Refusing beats issuing a contract with a blank where a start date
       // belongs — a document that looks complete and is not.
-      throw new BadRequestException(
-        `This contract cannot be issued yet — missing: ${missing.join(', ')}`,
-      );
+      throw new BadRequestException(`This contract cannot be issued yet — missing: ${missing.join(', ')}`);
     }
 
     const { text, missing: unfilled } = renderTemplate(template.body, values);
@@ -185,13 +198,7 @@ export class ContractIssueService extends DocumentTemplatesBase {
       return created;
     });
 
-    this.notifier.notifyIssued(
-      document.id,
-      member,
-      template.type.label,
-      title,
-      isBlocking(template.signatureMode),
-    );
+    this.notifier.notifyIssued(document.id, member, template.type.label, title, isBlocking(template.signatureMode));
     return document;
   }
 }

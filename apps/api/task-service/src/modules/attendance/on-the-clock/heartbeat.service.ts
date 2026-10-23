@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
   success,
   TimeEntryStatus,
@@ -8,7 +8,11 @@ import {
   GEOFENCE_EXCURSION,
 } from '@hbcfield/shared';
 import { ATTENDANCE_LOCATION_SELECT } from '../core/attendance-selects';
-import { HeartbeatBase } from './heartbeat.base';
+import { PrismaService } from '@hbcfield/shared';
+import { ExcursionNotices } from './excursion-notices.service';
+import { PresenceService } from '../presence/presence.service';
+import { RestAwayService } from '../rests/rest-away.service';
+import { activeExcursion } from './excursion-records';
 
 /**
  * Where a clocked-in member is: the heartbeat (live and replayed from the
@@ -16,7 +20,23 @@ import { HeartbeatBase } from './heartbeat.base';
  * rejected, listed and expired.
  */
 @Injectable()
-export class HeartbeatService extends HeartbeatBase {
+export class HeartbeatService {
+  private readonly logger = new Logger(HeartbeatService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    // Where they are working now — display only, and never in the way of a clock-in.
+    private readonly presence: PresenceService,
+    private readonly excursionNotices: ExcursionNotices,
+    // Lunch off site is the rest (rest-away.service); optional so a bare test construction still runs.
+    @Optional() private readonly restAway?: RestAwayService,
+  ) {}
+
+  /** Latest active excursion for a session (OUT_UNREPORTED / PENDING / APPROVED) — the status read shows it. */
+  async getActiveExcursion(timeEntryId: string) {
+    return activeExcursion(this.prisma, timeEntryId);
+  }
+
   /**
    * Process location heartbeat while clocked in (mobile → server ~every 5 min).
    *
@@ -122,7 +142,7 @@ export class HeartbeatService extends HeartbeatBase {
     const isOutPastBuffer = hasRing && (raw?.metresOutside ?? 0) > GEOFENCE_EXCURSION.RING_HYSTERESIS_M;
 
     // Latest active excursion for this session (OUT_UNREPORTED / PENDING / APPROVED)
-    const active = await this.getActiveExcursion(entry.id);
+    const active = await activeExcursion(this.prisma, entry.id);
 
     if (active) {
       if (isBackInRing) {
@@ -131,7 +151,7 @@ export class HeartbeatService extends HeartbeatBase {
           where: { id: active.id, status: active.status },
           data: { status: 'RETURNED', resolvedAt: new Date() },
         });
-        await this.emitExcursionEvent('geofence_excursion_returned', entry, active, { distanceM });
+        await this.excursionNotices.announce('geofence_excursion_returned', entry, active, { distanceM });
         return success(
           { withinGeofence: true, inRing: true, distance: distanceM, autoClockedOut: false, activeExcursion: null },
           'Back inside ring',
@@ -156,7 +176,7 @@ export class HeartbeatService extends HeartbeatBase {
             lastDistanceM: distanceM,
           },
         });
-        await this.emitExcursionEvent('geofence_excursion_expired', entry, active, { distanceM });
+        await this.excursionNotices.announce('geofence_excursion_expired', entry, active, { distanceM });
         return success(
           { withinGeofence: false, inRing: false, distance: distanceM, autoClockedOut: false, activeExcursion: fresh },
           'Grace period expired, still outside ring',
@@ -201,7 +221,7 @@ export class HeartbeatService extends HeartbeatBase {
           lastDistanceM: distanceM,
         },
       });
-      await this.emitExcursionEvent('geofence_excursion_out', entry, created, { distanceM });
+      await this.excursionNotices.announce('geofence_excursion_out', entry, created, { distanceM });
       return success(
         { withinGeofence: false, inRing: false, distance: distanceM, autoClockedOut: false, activeExcursion: created },
         'Left the ring',

@@ -1,3 +1,4 @@
+import { CustomerCrmCalls } from '../customer-crm-calls';
 import { fakeServiceCalls } from '../../../common/testing/service-calls';
 import { of } from 'rxjs';
 import { CustomerInviteController } from '../customer-invite.controller';
@@ -19,10 +20,11 @@ describe('POST /customers/:id/invite', () => {
     const authClient = { send: jest.fn(({ cmd }: { cmd: string }) => of(replies[cmd] ?? {})) };
     const spaceModules = { assertEnabled: jest.fn(async () => undefined) };
     const c = new CustomerInviteController(
-      fakeServiceCalls({ auth: authClient }),
-      spaceModules as any,
-      {} as any,
-      { customerChanged: jest.fn() } as any,
+      new CustomerCrmCalls(
+        fakeServiceCalls({ auth: authClient }),
+        spaceModules as any,
+        { customerChanged: jest.fn() } as any,
+      ),
     );
     await c.invite('c1', {}, fakeReq({ user: fakeUser({ id: 'u1', role: 'EMPLOYEE', organizationId: 'org-1' }) }));
 
@@ -56,10 +58,11 @@ describe('POST /customers/:id/invite', () => {
       ),
     };
     const c = new CustomerInviteController(
-      fakeServiceCalls({ auth: authClient }),
-      { assertEnabled: jest.fn() } as any,
-      {} as any,
-      { customerChanged: jest.fn() } as any,
+      new CustomerCrmCalls(
+        fakeServiceCalls({ auth: authClient }),
+        { assertEnabled: jest.fn() } as any,
+        { customerChanged: jest.fn() } as any,
+      ),
     );
     await expect(
       c.invite('c1', {}, fakeReq({ user: fakeUser({ id: 'u1', role: 'EMPLOYEE', organizationId: 'org-1' }) })),
@@ -74,10 +77,7 @@ describe('POST /customers/:id/invite', () => {
       ),
     };
     const c = new CustomerInviteController(
-      fakeServiceCalls({ auth: authClient }),
-      {} as any,
-      {} as any,
-      { customerChanged: jest.fn() } as any,
+      new CustomerCrmCalls(fakeServiceCalls({ auth: authClient }), {} as any, { customerChanged: jest.fn() } as any),
     );
     await expect(
       c.resendInvite('c1', fakeReq({ user: fakeUser({ id: 'u1', role: 'EMPLOYEE', organizationId: 'org-1' }) })),

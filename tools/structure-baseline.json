@@ -21,21 +21,6 @@
   "apps/api/gateway/src/modules/tasks/dto/parts/task-dtos.ts": [
    "moved"
   ],
-  "apps/api/notification-service/src/modules/websocket/gateway-auth.base.ts": [
-   "moved"
-  ],
-  "apps/api/notification-service/src/modules/websocket/gateway-chat-emits.base.ts": [
-   "moved"
-  ],
-  "apps/api/notification-service/src/modules/websocket/gateway-core.base.ts": [
-   "moved"
-  ],
-  "apps/api/notification-service/src/modules/websocket/gateway-presence.base.ts": [
-   "moved"
-  ],
-  "apps/api/notification-service/src/modules/websocket/gateway-task-emits.base.ts": [
-   "moved"
-  ],
   "apps/api/notification-service/src/modules/websocket/gateway.types.ts": [
    "moved"
   ],
@@ -54,47 +39,14 @@
   "apps/api/task-service/src/modules/attendance/attendance-service-parts.ts": [
    "part"
   ],
-  "apps/api/task-service/src/modules/calendar/calendar-helpers.ts": [
-   "moved"
-  ],
-  "apps/api/task-service/src/modules/calendar/calendar-rules-helpers.ts": [
-   "moved"
-  ],
-  "apps/api/task-service/src/modules/calendar/calendar-rules.base.ts": [
-   "moved"
-  ],
-  "apps/api/task-service/src/modules/calendar/calendar-sources.base.ts": [
-   "moved"
-  ],
-  "apps/api/task-service/src/modules/calendar/events-update.base.ts": [
-   "moved"
-  ],
   "apps/api/task-service/src/modules/calendar/holidays-helpers.ts": [
-   "moved"
-  ],
-  "apps/api/task-service/src/modules/calendar/holidays.base.ts": [
    "moved"
   ],
   "apps/api/task-service/src/modules/reports/report-parts.service.ts": [
    "part"
   ],
-  "apps/api/task-service/src/modules/sync/sync-pull-helpers.ts": [
-   "moved"
-  ],
-  "apps/api/task-service/src/modules/sync/sync-pull.base.ts": [
-   "moved"
-  ],
-  "apps/api/task-service/src/modules/tasks/handover/crew-lead.base.ts": [
-   "moved"
-  ],
-  "apps/api/task-service/src/modules/tasks/query/task-query.base.ts": [
-   "moved"
-  ],
   "apps/api/task-service/src/modules/tasks/task-service-parts.ts": [
    "part"
-  ],
-  "apps/api/task-service/src/modules/technicians/leave-records-org.base.ts": [
-   "moved"
   ],
   "apps/mobile/src/components/amazen/index.ts": [
    "moved"

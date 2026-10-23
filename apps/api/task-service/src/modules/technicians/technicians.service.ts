@@ -1,12 +1,29 @@
 import { assertMemberInScope, paginated } from '@hbcfield/shared';
 import { Injectable } from '@nestjs/common';
-import { TaskStatus, success } from '@hbcfield/shared';
+import { PrismaService, TaskStatus, success } from '@hbcfield/shared';
 import { GetEmployeeStatsDto, GetEmployeeTaskHistoryDto } from './dto';
-import { MemberServiceBase } from './member-service.base';
+import { CalendarRulesService } from '../calendar/calendar-rules.service';
+import { requestClashes, workingDaysOf } from './member-requests';
 import type { Prisma } from '@prisma/client';
 
 @Injectable()
-export class TechniciansService extends MemberServiceBase {
+export class TechniciansService {
+  constructor(
+    private readonly prisma: PrismaService,
+    // What a range of leave COSTS — weekends, rota rest days and holidays left out (shared calendar/days.ts).
+    private readonly calendarRules: CalendarRulesService,
+  ) {}
+
+  /** What a request would collide with — the ONE overlap reader (member-requests.ts), for the pre-check. */
+  requestClashes(technicianId: string, kind: string, start: Date, end: Date) {
+    return requestClashes(this.prisma, technicianId, kind, start, end);
+  }
+
+  /** Working days a range costs this member (weekend, holidays and their rota left out). */
+  countWorkingDays(organizationId: string, userId: string, start: Date, end: Date): Promise<number> {
+    return workingDaysOf(this.calendarRules, organizationId, userId, start, end);
+  }
+
   /**
    * Get basic stats for an employee
    */
@@ -35,10 +52,7 @@ export class TechniciansService extends MemberServiceBase {
           organizationId,
           status: { in: [TaskStatus.COMPLETED, TaskStatus.CLOSED] },
           // On-time = no due date, or finished (updatedAt) on/before the due date.
-          OR: [
-            { dueDate: null },
-            { updatedAt: { lte: this.prisma.task.fields.dueDate } },
-          ],
+          OR: [{ dueDate: null }, { updatedAt: { lte: this.prisma.task.fields.dueDate } }],
         },
       }),
     ]);
@@ -50,10 +64,7 @@ export class TechniciansService extends MemberServiceBase {
     const total = [...countByStatus.values()].reduce((a, b) => a + b, 0);
     const completed = c(TaskStatus.COMPLETED) + c(TaskStatus.CLOSED);
     const inProgress =
-      c(TaskStatus.IN_PROGRESS) +
-      c(TaskStatus.ACCEPTED) +
-      c(TaskStatus.EN_ROUTE) +
-      c(TaskStatus.ARRIVED);
+      c(TaskStatus.IN_PROGRESS) + c(TaskStatus.ACCEPTED) + c(TaskStatus.EN_ROUTE) + c(TaskStatus.ARRIVED);
     const blocked = c(TaskStatus.BLOCKED);
 
     return success({

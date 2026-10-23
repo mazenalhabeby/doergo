@@ -1,6 +1,6 @@
-import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
-import { success, personName, peopleNames } from '@hbcfield/shared';
-import { newObjectKey, requireObjectStore } from '@hbcfield/shared/storage';
+import { Injectable, Inject, BadRequestException, ConflictException } from '@nestjs/common';
+import { success, personName, peopleNames, PrismaService } from '@hbcfield/shared';
+import { newObjectKey, requireObjectStore, OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';
 import { shiftIssueCreatedEvent } from '@hbcfield/shared/microservices';
 import {
   MAX_FILE_SIZE,
@@ -10,7 +10,9 @@ import {
   BODY_MAX,
   Attachment,
 } from './shift-issues-helpers';
-import { ShiftIssuesBase } from './shift-issues.base';
+import { assertParticipant, loadIssue } from './shift-issue-access';
+import { ShiftIssueFiles } from './shift-issue-files.service';
+import { ShiftIssueNotices } from './shift-issue-notices.service';
 import type { Prisma, ShiftIssueStatus, ShiftIssueSeverity } from '@prisma/client';
 
 /**
@@ -21,7 +23,14 @@ import type { Prisma, ShiftIssueStatus, ShiftIssueSeverity } from '@prisma/clien
  * existing notification-service (`shift_issue_*` emits). Photos go phone→S3.
  */
 @Injectable()
-export class ShiftIssuesService extends ShiftIssuesBase {
+export class ShiftIssuesService {
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+    private readonly files: ShiftIssueFiles,
+    private readonly notices: ShiftIssueNotices,
+  ) {}
+
   // ── create ───────────────────────────────────────────────────────────────
   async create(data: {
     organizationId: string;
@@ -95,9 +104,9 @@ export class ShiftIssuesService extends ShiftIssuesBase {
       include: { events: true },
     });
 
-    const recipientIds = await this.watcherIds(data.callerUserId, data.organizationId);
-    const reporterName = await this.nameOf(data.callerUserId);
-    this.emit(shiftIssueCreatedEvent, {
+    const recipientIds = await this.notices.watcherIds(data.callerUserId, data.organizationId);
+    const reporterName = await this.notices.nameOf(data.callerUserId);
+    this.notices.emit(shiftIssueCreatedEvent, {
       issueId: issue.id,
       organizationId: data.organizationId,
       title: issue.title,
@@ -171,8 +180,8 @@ export class ShiftIssuesService extends ShiftIssuesBase {
     canManage?: boolean;
     ledSpaceIds?: string[];
   }) {
-    const issue = await this.loadIssue(data.issueId, data.organizationId);
-    this.assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
+    const issue = await loadIssue(this.prisma, data.issueId, data.organizationId);
+    assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
 
     const events = await this.prisma.shiftIssueEvent.findMany({
       where: { issueId: issue.id },
@@ -189,7 +198,7 @@ export class ShiftIssuesService extends ShiftIssuesBase {
       events.map(async (e) => ({
         ...e,
         actorName: e.actorId ? (nameById.get(e.actorId) ?? '') : '',
-        attachments: await this.signAttachments(issue, e.attachments),
+        attachments: await this.files.signAttachments(issue, e.attachments),
       })),
     );
 
@@ -211,8 +220,8 @@ export class ShiftIssuesService extends ShiftIssuesBase {
     fileName: string;
     mimeType: string;
   }) {
-    const issue = await this.loadIssue(data.issueId, data.organizationId);
-    this.assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
+    const issue = await loadIssue(this.prisma, data.issueId, data.organizationId);
+    assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
     if (!ALLOWED_FILE_TYPES.includes(data.mimeType)) throw new BadRequestException('File type not allowed');
     if (!data.fileName || data.fileName.length > 255) throw new BadRequestException('Invalid file name');
     const store = requireObjectStore(this.store);

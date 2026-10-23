@@ -3,7 +3,8 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { Role, clampListLimit, isNoShowExcuseReason } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermissionInSpace } from '../../common/decorators';
-import { AttendanceControllerBase } from './attendance-controller.base';
+import { AttendanceService } from './attendance.service';
+import { scopeFor } from '../../common/permission-scope';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -12,7 +13,9 @@ import { ResolveNoShowDto } from './dto/decision-bodies.dto';
 @ApiTags('attendance')
 @ApiBearerAuth()
 @Controller('attendance')
-export class AttendanceRecordsController extends AttendanceControllerBase {
+export class AttendanceRecordsController {
+  constructor(private readonly attendanceService: AttendanceService) {}
+
   @Get('history')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get own attendance history' })
@@ -58,7 +61,7 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
       // Same rule as GET locations/:id/entries — the attendance permission
       // (org-wide, or in that space through an active assignment), never the
       // roster and never "view all tasks". The service narrows per space.
-      viewScopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      viewScopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
     });
   }
 
@@ -102,7 +105,7 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
       sortBy,
       sortOrder,
       requesterId: req.user.id,
-      viewScopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      viewScopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
       // Cross-org shared spaces whose owner enabled "show attendance".
       sharedSpaceIds: (req.user.access?.sharedSpaces ?? []).filter((s) => s.showAttendance).map((s) => s.spaceId),
     });
@@ -142,7 +145,7 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
     const parsedLimit = clampListLimit(limit, 20, 500);
     return this.attendanceService.getAllEntries({
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
       date,
       startDate,
       endDate,
@@ -161,7 +164,7 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
   async getActiveEntries(@Request() req: AuthedRequest) {
     return this.attendanceService.getActiveEntries({
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
     });
   }
 
@@ -181,7 +184,7 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
   ) {
     return this.attendanceService.listNoShows({
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
       days: days ? Math.min(Math.max(1, Number(days) || 7), 60) : 7,
       spaceId: spaceId || undefined,
       open: open === 'true' || open === '1',
@@ -202,7 +205,7 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
   ) {
     return this.attendanceService.noShowSummary({
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
       days: days ? Math.min(Math.max(1, Number(days) || 30), 90) : 30,
       spaceId: spaceId || undefined,
     });
@@ -218,7 +221,7 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
     return this.attendanceService.resolveNoShow({
       id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canReconcileAttendance'),
       action,
       reasonCode: isNoShowExcuseReason(body?.reasonCode) ? body.reasonCode : undefined,
       reason: typeof body?.reason === 'string' ? body.reason.slice(0, 500) : undefined,

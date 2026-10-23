@@ -1,6 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { askAboutOwnRequest } from '../approvals/own-request-route';
 import {
+  PrismaService,
+  SERVICE_NAMES,
   success,
   OVERTIME_CONSTANTS,
   scopeWhere,
@@ -9,10 +12,26 @@ import {
   peopleNamesSorted,
 } from '@hbcfield/shared';
 import { personName } from '@hbcfield/shared';
-import { OvertimeBase } from './overtime.base';
+import { AttendanceService } from '../attendance/attendance.service';
+import { DecidedCloseService } from '../attendance/clock-out/decided-close.service';
+import { afterOvertimeRefusal, notifyOvertime } from './overtime-helpers';
 
+/** The overtime flow outside a leader's decision: the member's answer, the timeout sweep, the reads. */
 @Injectable()
-export class OvertimeService extends OvertimeBase {
+export class OvertimeService {
+  private readonly logger = new Logger(OvertimeService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.NOTIFICATION)
+    private readonly notificationClient: ClientProxy,
+    private readonly attendance: AttendanceService,
+    // ⚠️ Ending the shift is attendance's ONE close (DecidedCloseService.closeByDecision):
+    // counted time, rests, excursions, reminders, jobs and the event, never a
+    // hand-written status flip. Needs DecidedCloseService in AttendanceModule's exports.
+    private readonly decidedClose: DecidedCloseService,
+  ) {}
+
   /**
    * Technician responds YES or NO to overtime prompt
    *
@@ -58,7 +77,13 @@ export class OvertimeService extends OvertimeBase {
         },
       });
 
-      await this.endShift(request.timeEntryId, request.organizationId, 'Overtime declined by technician', 'CLOCK_OUT');
+      await this.decidedClose.closeByDecision({
+        entryId: request.timeEntryId,
+        organizationId: request.organizationId,
+        note: 'Overtime declined by technician',
+        reason: 'CLOCK_OUT',
+        at: undefined,
+      });
 
       return success({ status: 'CANCELED' }, 'Overtime declined, clocked out');
     }
@@ -96,7 +121,7 @@ export class OvertimeService extends OvertimeBase {
       )
     ).filter((id) => id !== request.technicianId);
 
-    this.notify({
+    notifyOvertime(this.notificationClient, {
       recipientIds: leaderIds,
       organizationId: request.organizationId,
       kind: 'approvalRequest',
@@ -136,9 +161,9 @@ export class OvertimeService extends OvertimeBase {
       });
       if (claim.count === 0) continue;
       // Unanswered: still clocked in, nudged; nothing after the planned end counts.
-      await this.afterRefusal(req.timeEntryId, now);
+      await afterOvertimeRefusal(this.prisma, req.timeEntryId, now);
 
-      this.notify({
+      notifyOvertime(this.notificationClient, {
         recipientIds: [req.technicianId],
         organizationId: req.organizationId,
         kind: 'expiredPrompt',
@@ -168,9 +193,9 @@ export class OvertimeService extends OvertimeBase {
         what COUNTS still stops at the planned end, because a request nobody
         approved never moved it.
       */
-      await this.afterRefusal(req.timeEntryId, now);
+      await afterOvertimeRefusal(this.prisma, req.timeEntryId, now);
 
-      this.notify({
+      notifyOvertime(this.notificationClient, {
         recipientIds: [req.technicianId],
         organizationId: req.organizationId,
         kind: 'expiredApproval',

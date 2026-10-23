@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { type Rect } from '@hbcfield/shared';
-import { documentKey, sha256 } from '@hbcfield/shared/storage';
+import { BadRequestException, Inject, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { type Rect, PrismaService } from '@hbcfield/shared';
+import { documentKey, sha256, ObjectStore } from '@hbcfield/shared/storage';
 import { assemblePagesPdf } from './pages-pdf';
 import {
   MAX_DOCUMENT_BYTES,
@@ -9,7 +9,8 @@ import {
   sharedStagingPrefix,
   assertStagingKey,
 } from './document-common';
-import { DocumentStorageBase } from './document-storage.base';
+import { OBJECT_STORE } from './object-store.provider';
+import { applyCrop, composeSides } from './staged-image';
 
 /**
  * Object storage for the personnel file: staging, filing by content address, and freeing
@@ -18,7 +19,51 @@ import { DocumentStorageBase } from './document-storage.base';
  * Part of the personnel file; `DocumentsService` is the facade every caller uses.
  */
 @Injectable()
-export class DocumentStorageService extends DocumentStorageBase {
+export class DocumentStorageService {
+  private readonly logger = new Logger(DocumentStorageService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    // Injected, not constructed here — see object-store.provider.ts. Null when
+    // no credentials are configured; every path that needs it says so plainly.
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+  ) {
+    if (!this.store) {
+      this.logger.warn('S3 is not configured — document upload and download are unavailable');
+    }
+  }
+
+  requireStore(): ObjectStore {
+    if (!this.store) {
+      throw new BadRequestException('Document storage is not configured on this server');
+    }
+    return this.store;
+  }
+
+  /**
+   * Run a storage call and translate any failure into something a person can act on.
+   *
+   * The SDK's own messages are about buckets and regions — "The specified
+   * bucket does not exist" told a payroll administrator nothing and, reaching a
+   * toast verbatim, is exactly the class of leak this codebase already fixed
+   * once for Prisma errors. The real message is logged; the caller gets a
+   * sentence about their document.
+   */
+  async withStorage<T>(what: string, fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (err) {
+      this.logger.error(`Storage failed while ${what}: ${(err as Error).message}`);
+      throw new ServiceUnavailableException(
+        'Document storage is unavailable right now. Nothing was changed — please try again.',
+      );
+    }
+  }
+
+  /** Two sides of one card, as one image (see `composeSides` in staged-image). */
+  async composeSides(front: Buffer, back: Buffer | null): Promise<Buffer> {
+    return composeSides(front, back, this.logger);
+  }
 
   /**
    * Take a staged object, hash it, and move it to its content-addressed home.
@@ -70,7 +115,7 @@ export class DocumentStorageService extends DocumentStorageBase {
       the bytes that are stored. Hashing one side and storing two would make the
       integrity check fail against the document's own file for ever.
     */
-    const cropped = await this.applyCrop(staged, crop);
+    const cropped = await applyCrop(staged, crop, this.logger);
 
     let bytes = cropped;
     let mimeType = head.contentType ?? 'application/pdf';
@@ -96,7 +141,7 @@ export class DocumentStorageService extends DocumentStorageBase {
             const pageHead = await this.withStorage('checking an upload', () => store.head(page.key));
             if (!pageHead.exists) return null;
             const raw = await this.withStorage('reading an upload', () => store.get(page.key));
-            return await this.applyCrop(raw, page.crop);
+            return await applyCrop(raw, page.crop, this.logger);
           } catch {
             return null;
           }
@@ -116,9 +161,7 @@ export class DocumentStorageService extends DocumentStorageBase {
       }
 
       // Claimed or not, the staged sheets are litter once we are past here.
-      await Promise.all(
-        pages.map((page) => store.delete(page.key).catch(() => undefined)),
-      );
+      await Promise.all(pages.map((page) => store.delete(page.key).catch(() => undefined)));
 
       if (bytes.length > MAX_DOCUMENT_BYTES) {
         throw new BadRequestException('That document is larger than the limit');
@@ -129,7 +172,7 @@ export class DocumentStorageService extends DocumentStorageBase {
       const backHead = await this.withStorage('checking an upload', () => store.head(back.key));
       if (backHead.exists) {
         const backRaw = await this.withStorage('reading an upload', () => store.get(back.key));
-        bytes = await this.composeSides(cropped, await this.applyCrop(backRaw, back.crop));
+        bytes = await composeSides(cropped, await applyCrop(backRaw, back.crop, this.logger), this.logger);
         // The composite is written as JPEG whatever the two sides arrived as.
         if (bytes !== cropped) mimeType = 'image/jpeg';
       }
@@ -178,13 +221,17 @@ export class DocumentStorageService extends DocumentStorageBase {
       as filing a document; the pixel bound is `openUntrustedImage`'s.
     */
     if (typeof head.sizeBytes === 'number' && head.sizeBytes > MAX_DOCUMENT_BYTES) {
-      throw new BadRequestException(`That file is larger than the ${Math.floor(MAX_DOCUMENT_BYTES / 1024 / 1024)} MB limit`);
+      throw new BadRequestException(
+        `That file is larger than the ${Math.floor(MAX_DOCUMENT_BYTES / 1024 / 1024)} MB limit`,
+      );
     }
     const raw = await this.withStorage('reading an upload', () => store.get(stagingKey));
     if (raw.length > MAX_DOCUMENT_BYTES) {
-      throw new BadRequestException(`That file is larger than the ${Math.floor(MAX_DOCUMENT_BYTES / 1024 / 1024)} MB limit`);
+      throw new BadRequestException(
+        `That file is larger than the ${Math.floor(MAX_DOCUMENT_BYTES / 1024 / 1024)} MB limit`,
+      );
     }
-    const bytes = await this.applyCrop(raw, crop);
+    const bytes = await applyCrop(raw, crop, this.logger);
     /*
       ⚠️ The type CAME BACK WITH THE OBJECT and was being thrown away, then
       replaced with a hard-coded 'image/jpeg' at the read. A staged PDF was
@@ -198,7 +245,7 @@ export class DocumentStorageService extends DocumentStorageBase {
       identity check is what tells the two apart, and a PDF (which the crop
       silently declines) keeps the type it arrived with.
     */
-    const mimeType = bytes !== raw ? 'image/jpeg' : head.contentType ?? 'application/octet-stream';
+    const mimeType = bytes !== raw ? 'image/jpeg' : (head.contentType ?? 'application/octet-stream');
     return { bytes, mimeType };
   }
 

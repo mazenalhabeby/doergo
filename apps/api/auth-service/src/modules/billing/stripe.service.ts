@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import Stripe from 'stripe';
-import { StripeBase } from './stripe.base';
+import { ConfigService } from '@nestjs/config';
+import { StripeClientService } from './stripe-client.service';
 
 /**
  * Thin wrapper around the Stripe SDK. The client is created lazily so the
@@ -11,7 +12,20 @@ import { StripeBase } from './stripe.base';
  * service; price IDs are resolved server-side from env, never trusted from clients.
  */
 @Injectable()
-export class StripeService extends StripeBase {
+export class StripeService {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly stripeClient: StripeClientService,
+  ) {}
+
+  get isConfigured(): boolean {
+    return this.stripeClient.isConfigured;
+  }
+
+  private get stripe(): Stripe {
+    return this.stripeClient.api;
+  }
+
   /**
    * Move a live subscription between collection methods.
    *

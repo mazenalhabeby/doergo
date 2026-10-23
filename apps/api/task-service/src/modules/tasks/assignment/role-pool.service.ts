@@ -1,5 +1,8 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import {
+  PrismaService,
+  activeWindowWhere,
   canReceiveTasks,
   isOpenToRole,
   isWorkOver,
@@ -7,14 +10,14 @@ import {
   parseRoleSpots,
   success,
   TaskStatus,
-  type CandidateState,
   lastPointOf,
   personTaskGate,
-  workRolesByName,
 } from '@hbcfield/shared';
 import { TaskEventType } from '@prisma/client';
 import { OVER, OpenRole, Facts } from './role-pool-helpers';
-import { RolePoolBase } from './role-pool.base';
+import { RoleOpeningService } from './role-opening.service';
+import { RoleOfferService } from './role-offer.service';
+import { TaskAssignmentService } from './task-assignment.service';
 import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
 
 export { ROLE_WAVE_CLOSED } from './role-pool-helpers';
@@ -37,7 +40,20 @@ export { ROLE_WAVE_CLOSED } from './role-pool-helpers';
  * the assignment push, the checklist and the lead rules are not written twice.
  */
 @Injectable()
-export class RolePoolService extends RolePoolBase {
+export class RolePoolService {
+  private readonly logger = new Logger(RolePoolService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
+    /** Opening a task to a role, and its places — shared with assignment without a cycle. */
+    private readonly opening: RoleOpeningService,
+    /** Who may assign / receive, and what an assignment change sets off — the assignment service itself. */
+    private readonly assignment: TaskAssignmentService,
+    /** Who could take it, and offering it in waves. */
+    private readonly offers: RoleOfferService,
+  ) {}
+
   /** After a task is opened (created, or re-opened by the office): the record, then the first wave. */
   async afterOpened(taskId: string, actorId: string, role: OpenRole, spots: number): Promise<void> {
     // The task already exists: nothing here may turn its creation into an error.
@@ -54,10 +70,10 @@ export class RolePoolService extends RolePoolBase {
       if (t?.priority === 'URGENT') {
         // Urgent goes to everyone working today at once — claimed, so the sweep cannot send it a second time.
         const claimed = await this.prisma.task.updateMany({ where: { id: taskId, openWave: 0 }, data: { openWave: 1 } });
-        if (claimed.count === 1) await this.offer(taskId, 1);
+        if (claimed.count === 1) await this.offers.offer(taskId, 1);
       } else {
         // The first wave goes now — a push a minute late is a minute a free person waited for nothing.
-        await this.offer(taskId, 0);
+        await this.offers.offer(taskId, 0);
       }
     } catch (e) {
       this.logger.error(`Opening ${taskId} to a role: record/offer failed: ${e}`);
@@ -124,47 +140,6 @@ export class RolePoolService extends RolePoolBase {
   }
 
   /**
-   * The work roles a task in this workspace can be opened to — switched on
-   * here, or held by somebody here — each with how many hold it. Two queries.
-   */
-  async roleOptions(data: { organizationId: string; spaceId: string }) {
-    const space = await this.prisma.companyLocation.findFirst({
-      where: { id: data.spaceId, organizationId: data.organizationId },
-      select: { workRoleIds: true },
-    });
-    if (!space) throw new NotFoundException('Workspace not found');
-    const holders = await this.prisma.spaceAssignment.groupBy({
-      by: ['workRoleId'],
-      where: { spaceId: data.spaceId, workRoleId: { not: null }, ...this.activeNow(), user: { isActive: true } },
-      _count: { _all: true },
-    });
-    const count = new Map(holders.map((h) => [h.workRoleId!, h._count._all]));
-    const roles = await workRolesByName(this.prisma, data.organizationId, [...new Set([...space.workRoleIds, ...count.keys()])]);
-    return success(roles.map((r) => ({ id: r.id, name: r.name, holders: count.get(r.id) ?? 0 })));
-  }
-
-  /**
-   * What the office sees before saving: how many hold the role here, how many
-   * are free now, and the best ten. Read-only; asks the right to assign.
-   */
-  async preview(data: Facts & { spaceId: string; roleId: string; lat?: number | null; lng?: number | null }) {
-    const role = await this.opening.resolveOpenRole(data.organizationId, data.spaceId, data.roleId);
-    const ranked = await this.candidates(data.organizationId, data.spaceId, role.id, { lat: data.lat ?? null, lng: data.lng ?? null });
-    const count = (s: CandidateState) => ranked.filter((c) => c.state === s).length;
-    return success({
-      role,
-      total: ranked.length,
-      free: count('FREE'),
-      busy: count('BUSY'),
-      notWorking: count('NOT_WORKING'),
-      onLeave: count('ON_LEAVE'),
-      candidates: ranked.slice(0, 10).map((c) => ({
-        userId: c.userId, name: c.name, state: c.state, distanceKm: c.distanceKm, jobsToday: c.jobsToday, takenThisWeek: c.takenThisWeek,
-      })),
-    });
-  }
-
-  /**
    * Hand a role task back. It goes back to its ROLE, not to nobody, and is
    * offered again. Only before the work has started — after that, leaving is
    * the crew's own "Leave", which keeps the time.
@@ -223,7 +198,7 @@ export class RolePoolService extends RolePoolBase {
       data: { status: TaskStatus.NEW, assignedToId: null },
     });
     emitEvent(this.notifications, taskUpdatedEvent, { task: { id: task.id, organizationId: task.organizationId } });
-    await this.offer(task.id, 0, new Set([data.userId])).catch((e) => this.logger.error(`Re-offer for ${task.id} failed: ${e}`));
+    await this.offers.offer(task.id, 0, new Set([data.userId])).catch((e) => this.logger.error(`Re-offer for ${task.id} failed: ${e}`));
     return success({ id: task.id }, 'Returned to the role');
   }
 
@@ -238,7 +213,12 @@ export class RolePoolService extends RolePoolBase {
     const me = await personTaskGate(this.prisma, data.userId);
     if (!me || !canReceiveTasks(me)) return success([]);
     const mine = await this.prisma.spaceAssignment.findMany({
-      where: { userId: data.userId, workRoleId: { not: null }, ...this.activeNow(), space: { organizationId: data.organizationId } },
+      where: {
+        userId: data.userId,
+        workRoleId: { not: null },
+        ...activeWindowWhere(new Date()),
+        space: { organizationId: data.organizationId },
+      },
       select: { spaceId: true, workRoleId: true },
     });
     if (!mine.length) return success([]);

@@ -3,14 +3,21 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { taskActor } from '../../common/task-actor';
 import { PresignAttachmentDto, ConfirmAttachmentDto } from './dto';
-import { TasksControllerBase } from './tasks-controller.base';
+import { TasksQueueService } from './tasks.queue.service';
+import { TasksService } from './tasks.service';
+import { assertExternalMayWrite } from './task-write-checks';
 
 import type { AuthedRequest } from '../../common/request.types';
 /** /tasks/:id/attachments — upload, list, delete. */
 @ApiTags('tasks')
 @ApiBearerAuth()
 @Controller('tasks')
-export class TaskAttachmentsController extends TasksControllerBase {
+export class TaskAttachmentsController {
+  constructor(
+    private readonly tasksQueueService: TasksQueueService,
+    private readonly tasksService: TasksService,
+  ) {}
+
   // ============ Attachment Endpoints ============
 
   /*
@@ -24,7 +31,7 @@ export class TaskAttachmentsController extends TasksControllerBase {
   @Post(':id/attachments/presign')
   @ApiOperation({ summary: 'Get presigned URL for uploading an attachment' })
   async getPresignedUrl(@Param('id') id: string, @Body() body: PresignAttachmentDto, @Request() req: AuthedRequest) {
-    await this.assertExternalMayWrite(req, id);
+    await assertExternalMayWrite(this.tasksService, req, id);
     return this.tasksQueueService.getPresignedUrl({
       taskId: id,
       fileName: body.fileName,
@@ -37,7 +44,7 @@ export class TaskAttachmentsController extends TasksControllerBase {
   @Post(':id/attachments')
   @ApiOperation({ summary: 'Confirm attachment upload after S3 upload' })
   async addAttachment(@Param('id') id: string, @Body() body: ConfirmAttachmentDto, @Request() req: AuthedRequest) {
-    await this.assertExternalMayWrite(req, id);
+    await assertExternalMayWrite(this.tasksService, req, id);
     return this.tasksQueueService.addAttachment({
       taskId: id,
       attachmentId: body.id,
@@ -69,7 +76,7 @@ export class TaskAttachmentsController extends TasksControllerBase {
     @Param('attachmentId') attachmentId: string,
     @Request() req: AuthedRequest,
   ) {
-    await this.assertExternalMayWrite(req, id, { attachmentId });
+    await assertExternalMayWrite(this.tasksService, req, id, { attachmentId });
     return this.tasksQueueService.deleteAttachment({
       id: attachmentId,
       ...taskActor(req),

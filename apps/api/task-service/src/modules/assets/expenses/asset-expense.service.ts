@@ -1,13 +1,15 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
 import { pdfToLines } from './pdf-lines';
 import { randomUUID } from 'crypto';
 import { findPrior } from '../../../common/create-once.util';
-import { success, normalizeKindShape, findMoneyCategory, parseReceipt } from '@hbcfield/shared';
-import { type AssetActor } from '../core/asset-access.service';
+import { PrismaService, success, normalizeKindShape, findMoneyCategory, parseReceipt } from '@hbcfield/shared';
+import { AssetAccessService, type AssetActor } from '../core/asset-access.service';
+import { AssetNotifier } from '../core/asset-notifier.service';
+import { assetFilePrefix } from '../core/asset-files';
 import { readAssetEntryDate } from '../core/asset-entry-date';
 import { ALLOWED, MAX_FILE_SIZE, EXPENSE_STATUS } from './asset-expense-helpers';
-import { AssetExpenseBase } from './asset-expense.base';
+import { AssetExpenseGateService } from './asset-expense-gate.service';
 
 export { EXPENSE_STATUS } from './asset-expense-helpers';
 
@@ -32,8 +34,16 @@ export { EXPENSE_STATUS } from './asset-expense-helpers';
  * — the same rule as every other financial record in this product.
  */
 @Injectable()
-export class AssetExpenseService extends AssetExpenseBase {
+export class AssetExpenseService {
+  private readonly logger = new Logger(AssetExpenseService.name);
 
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: AssetAccessService,
+    private readonly expenseGate: AssetExpenseGateService,
+    private readonly notifier: AssetNotifier,
+    @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+  ) {}
   // ── The slip ───────────────────────────────────────────────────────────────
 
   /**
@@ -44,22 +54,24 @@ export class AssetExpenseService extends AssetExpenseBase {
    * asset, and the confirm step refuses anything outside it — which is what
    * stops a key from another tenant being attached to an entry here.
    */
-  async presignReceipt(data: {
-    id: string;
-    fileName: string;
-    mimeType: string;
-    occurredAt?: string;
-  } & AssetActor) {
+  async presignReceipt(
+    data: {
+      id: string;
+      fileName: string;
+      mimeType: string;
+      occurredAt?: string;
+    } & AssetActor,
+  ) {
     // The same date rule as a logbook entry — they are the same row.
     const when = readAssetEntryDate(data.occurredAt, data);
-    await this.gate(data, when);
+    await this.expenseGate.assertMayFile(data, when);
 
     if (!ALLOWED.includes(data.mimeType)) throw new BadRequestException('That kind of file is not a receipt');
     if (!data.fileName || data.fileName.length > 255) throw new BadRequestException('Invalid file name');
 
     // The name is never taken from the client: a filename is attacker-controlled
     // and this one becomes an object key.
-    const key = `${this.prefix(data.organizationId, data.id)}${randomUUID()}.${extensionForMime(data.mimeType)}`;
+    const key = `${assetFilePrefix(data.organizationId, data.id)}${randomUUID()}.${extensionForMime(data.mimeType)}`;
     const upload = await requireObjectStore(this.store).presignUpload(key, data.mimeType, undefined, 900);
     return success({ uploadUrl: upload.url, fileKey: key, expiresIn: 900, maxFileSize: MAX_FILE_SIZE });
   }
@@ -85,21 +97,23 @@ export class AssetExpenseService extends AssetExpenseBase {
    * corrupt one has nothing at all; both come back `read: false`, and the
    * person types the amount as they would have anyway.
    */
-  async readReceipt(data: {
-    id: string;
-    fileKey: string;
-    occurredAt?: string;
-  } & AssetActor) {
+  async readReceipt(
+    data: {
+      id: string;
+      fileKey: string;
+      occurredAt?: string;
+    } & AssetActor,
+  ) {
     // The same date rule as a logbook entry — they are the same row.
     const when = readAssetEntryDate(data.occurredAt, data);
-    await this.gate(data, when);
+    await this.expenseGate.assertMayFile(data, when);
 
     /*
       The key must be one WE presigned, for THIS asset, in THIS organization —
       the same check `submit` makes. Without it the field is a reader for any
       object in the bucket whose key somebody can guess.
     */
-    if (data.fileKey.includes('..') || !data.fileKey.startsWith(this.prefix(data.organizationId, data.id))) {
+    if (data.fileKey.includes('..') || !data.fileKey.startsWith(assetFilePrefix(data.organizationId, data.id))) {
       throw new BadRequestException('That file does not belong to this asset');
     }
     if (!data.fileKey.endsWith('.pdf')) {
@@ -141,13 +155,18 @@ export class AssetExpenseService extends AssetExpenseBase {
    * outlives the reason it was issued; minting one per request keeps looking at
    * a member's spending an act rather than a side effect of opening a page.
    */
-  async receiptUrl(data: {
-    entryId: string;
-  } & AssetActor) {
+  async receiptUrl(
+    data: {
+      entryId: string;
+    } & AssetActor,
+  ) {
     const entry = await this.prisma.assetMoney.findFirst({
       where: { id: data.entryId, organizationId: data.organizationId },
       select: {
-        id: true, receiptKey: true, receiptMime: true, authorId: true,
+        id: true,
+        receiptKey: true,
+        receiptMime: true,
+        authorId: true,
         asset: { select: { category: { select: { spaceId: true } } } },
       },
     });
@@ -171,21 +190,23 @@ export class AssetExpenseService extends AssetExpenseBase {
 
   // ── Filing it ──────────────────────────────────────────────────────────────
 
-  async submit(data: {
-    id: string;
-    category: string;
-    amountCents: number;
-    note?: string;
-    occurredAt?: string;
-    receiptKey?: string;
-    receiptName?: string;
-    receiptMime?: string;
-    /** Made on the phone: an expense filed twice is one expense. */
-    entryId?: string;
-  } & AssetActor) {
+  async submit(
+    data: {
+      id: string;
+      category: string;
+      amountCents: number;
+      note?: string;
+      occurredAt?: string;
+      receiptKey?: string;
+      receiptName?: string;
+      receiptMime?: string;
+      /** Made on the phone: an expense filed twice is one expense. */
+      entryId?: string;
+    } & AssetActor,
+  ) {
     // The same date rule as a logbook entry — they are the same row.
     const when = readAssetEntryDate(data.occurredAt, data);
-    const asset = await this.gate(data, when);
+    const asset = await this.expenseGate.assertMayFile(data, when);
 
     // Filed already (after the custody gate, so a guessed id reveals nothing).
     const prior = await findPrior({
@@ -208,13 +229,17 @@ export class AssetExpenseService extends AssetExpenseBase {
     // Anything else is a key from somewhere the caller should not be reading.
     let receiptKey: string | null = null;
     if (data.receiptKey) {
-      if (data.receiptKey.includes('..') || !data.receiptKey.startsWith(this.prefix(data.organizationId, data.id))) {
+      if (
+        data.receiptKey.includes('..') ||
+        !data.receiptKey.startsWith(assetFilePrefix(data.organizationId, data.id))
+      ) {
         throw new BadRequestException('Invalid receipt');
       }
       // The slip must actually be there, and be a slip-sized file.
       const object = await requireObjectStore(this.store).head(data.receiptKey);
       if (!object.exists) throw new BadRequestException('The receipt upload did not finish — please try again');
-      if (object.sizeBytes <= 0 || object.sizeBytes > MAX_FILE_SIZE) throw new BadRequestException('That receipt file is too large');
+      if (object.sizeBytes <= 0 || object.sizeBytes > MAX_FILE_SIZE)
+        throw new BadRequestException('That receipt file is too large');
       receiptKey = data.receiptKey;
     }
 
@@ -230,8 +255,8 @@ export class AssetExpenseService extends AssetExpenseBase {
         occurredAt: when,
         authorId: data.userId,
         receiptKey,
-        receiptName: receiptKey ? data.receiptName?.slice(0, 255) ?? null : null,
-        receiptMime: receiptKey ? data.receiptMime ?? null : null,
+        receiptName: receiptKey ? (data.receiptName?.slice(0, 255) ?? null) : null,
+        receiptMime: receiptKey ? (data.receiptMime ?? null) : null,
         /*
           Somebody who manages THIS record's register is the office. Their
           entry counts immediately — asking them to approve their own typing

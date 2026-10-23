@@ -70,7 +70,7 @@ describe('TasksService.releaseMemberFromOpenWork — a custom flow’s finish is
     };
     const svc = Object.create(TaskCrewMembersService.prototype);
     svc.prisma = prisma;
-    svc.afterAssigneesChanged = jest.fn();
+    svc.crewChange = { afterAssigneesChanged: jest.fn() };
     svc.support = { createTaskEvent: jest.fn() };
     const n = await svc.releaseMemberFromOpenWork('o1', 'u1', 'admin');
     expect(n).toBe(1);

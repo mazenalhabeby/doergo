@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { CustomersControllerBase } from './customers-controller.base';
+import { CustomerCrmCalls, crmCaller } from './customer-crm-calls';
 import { unitFieldsFor } from '../../common/unit-fields';
 import {
   getCustomer,
@@ -23,15 +23,17 @@ import { AddCustomerActivityDto, UpdateCustomerActivityDto } from './dto/custome
 @ApiTags('customers')
 @ApiBearerAuth()
 @Controller('customers')
-export class CustomerAddressesController extends CustomersControllerBase {
+export class CustomerAddressesController {
+  constructor(private readonly crm: CustomerCrmCalls) {}
+
   // ── Addresses (a customer's units; one is primary → shown on the map) ──
   // Read gated by CRM reach (get_customer enforces it); writes stay manager-only
   // in Phase 1 (address editing for scoped members is a follow-up).
   @Get(':id/addresses')
   async listAddresses(@Param('id') id: string, @Request() req: AuthedRequest) {
     // Enforce the caller may reach this client before exposing its units.
-    await this.auth(getCustomer, { id, organizationId: callerOrgId(req.user), caller: this.caller(req) });
-    return this.auth(portalListUnits, { organizationId: callerOrgId(req.user), customerId: id });
+    await this.crm.auth(getCustomer, { id, organizationId: callerOrgId(req.user), caller: crmCaller(req) });
+    return this.crm.auth(portalListUnits, { organizationId: callerOrgId(req.user), customerId: id });
   }
 
   /*
@@ -53,12 +55,12 @@ export class CustomerAddressesController extends CustomersControllerBase {
     @Request() req: AuthedRequest,
   ) {
     const fields = unitFieldsFor(portalCreateUnit, body, { relations: false });
-    return this.auth(portalCreateUnit, {
+    return this.crm.auth(portalCreateUnit, {
       ...fields,
       name: body?.name?.trim() || body?.address || 'Address',
       organizationId: callerOrgId(req.user),
       customerId: id,
-      crmCaller: this.caller(req),
+      crmCaller: crmCaller(req),
     });
   }
 
@@ -70,33 +72,33 @@ export class CustomerAddressesController extends CustomersControllerBase {
     @Request() req: AuthedRequest,
   ) {
     // scopeCustomerId binds the unit to THIS customer (no cross-customer edits).
-    return this.auth(portalUpdateUnit, {
+    return this.crm.auth(portalUpdateUnit, {
       ...unitFieldsFor(portalUpdateUnit, body, { relations: false }),
       id: unitId,
       organizationId: callerOrgId(req.user),
       scopeCustomerId: id,
       actorId: req.user.id,
-      crmCaller: this.caller(req),
+      crmCaller: crmCaller(req),
     });
   }
 
   @Post(':id/addresses/:unitId/primary')
   setPrimaryAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: AuthedRequest) {
-    return this.auth(portalSetPrimaryUnit, {
+    return this.crm.auth(portalSetPrimaryUnit, {
       id: unitId,
       organizationId: callerOrgId(req.user),
       customerId: id,
-      crmCaller: this.caller(req),
+      crmCaller: crmCaller(req),
     });
   }
 
   @Delete(':id/addresses/:unitId')
   deleteAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: AuthedRequest) {
-    return this.auth(portalDeleteUnit, {
+    return this.crm.auth(portalDeleteUnit, {
       id: unitId,
       organizationId: callerOrgId(req.user),
       customerId: id,
-      crmCaller: this.caller(req),
+      crmCaller: crmCaller(req),
     });
   }
 
@@ -104,10 +106,10 @@ export class CustomerAddressesController extends CustomersControllerBase {
   @Get(':id/activities')
   @ApiOperation({ summary: "A customer's CRM timeline (notes, calls, reminders, status)" })
   listActivities(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return this.auth(listCustomerActivities, {
+    return this.crm.auth(listCustomerActivities, {
       customerId: id,
       organizationId: callerOrgId(req.user),
-      caller: this.caller(req),
+      caller: crmCaller(req),
     });
   }
 
@@ -119,7 +121,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
     body: AddCustomerActivityDto,
     @Request() req: AuthedRequest,
   ) {
-    return this.authMutation(
+    return this.crm.authMutation(
       addCustomerActivity,
       {
         clientId: body.id,
@@ -133,7 +135,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
         remindBeforeMin: body.remindBeforeMin,
         reminderAssigneeId: body.reminderAssigneeId,
         repeat: body.repeat,
-        caller: this.caller(req),
+        caller: crmCaller(req),
       },
       callerOrgId(req.user),
       id,
@@ -148,7 +150,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
     body: UpdateCustomerActivityDto,
     @Request() req: AuthedRequest,
   ) {
-    return this.authMutation(
+    return this.crm.authMutation(
       updateCustomerActivity,
       {
         id: activityId,
@@ -161,7 +163,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
         remindBeforeMin: body.remindBeforeMin,
         reminderAssigneeId: body.reminderAssigneeId,
         repeat: body.repeat,
-        caller: this.caller(req),
+        caller: crmCaller(req),
       },
       callerOrgId(req.user),
       id,
@@ -170,9 +172,9 @@ export class CustomerAddressesController extends CustomersControllerBase {
 
   @Delete(':id/activities/:activityId')
   deleteActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Request() req: AuthedRequest) {
-    return this.authMutation(
+    return this.crm.authMutation(
       deleteCustomerActivity,
-      { id: activityId, customerId: id, organizationId: callerOrgId(req.user), caller: this.caller(req) },
+      { id: activityId, customerId: id, organizationId: callerOrgId(req.user), caller: crmCaller(req) },
       callerOrgId(req.user),
       id,
     );

@@ -3,7 +3,7 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { RequirePermissionInSpace } from '@hbcfield/shared';
 import { portalScope } from '../../common/portal-scope';
 import { unitFieldsFor } from '../../common/unit-fields';
-import { PortalAdminControllerBase } from './portal-admin-controller.base';
+import { PortalAdminCalls } from './portal-admin-calls';
 import {
   portalCreateCategory,
   portalUpdateCategory,
@@ -23,7 +23,9 @@ import { UnitBodyDto } from '../../common/dto/unit-body.dto';
 @ApiTags('portal-admin')
 @ApiBearerAuth()
 @Controller('portal/admin')
-export class PortalSetupController extends PortalAdminControllerBase {
+export class PortalSetupController {
+  constructor(private readonly portalAuth: PortalAdminCalls) {}
+
   // ── Intake categories (per portal) ──
   // Reach is the category's PORTAL's workspace; a routing `spaceId` in the body
   // is a target and must be in reach too (guard + service).
@@ -31,7 +33,7 @@ export class PortalSetupController extends PortalAdminControllerBase {
   @Post('categories')
   @RequirePermissionInSpace('canManagePortals')
   createCategory(@Body() body: CreatePortalCategoryDto, @Request() req: AuthedRequest) {
-    return this.auth(portalCreateCategory, {
+    return this.portalAuth.ask(portalCreateCategory, {
       ...body,
       organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
@@ -41,7 +43,7 @@ export class PortalSetupController extends PortalAdminControllerBase {
   @Patch('categories/:id')
   @RequirePermissionInSpace('canManagePortals')
   updateCategory(@Param('id') id: string, @Body() body: UpdatePortalCategoryDto, @Request() req: AuthedRequest) {
-    return this.auth(portalUpdateCategory, {
+    return this.portalAuth.ask(portalUpdateCategory, {
       ...body,
       id,
       organizationId: callerOrgId(req.user),
@@ -52,7 +54,7 @@ export class PortalSetupController extends PortalAdminControllerBase {
   @Delete('categories/:id')
   @RequirePermissionInSpace('canManagePortals')
   deleteCategory(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return this.auth(portalDeleteCategory, {
+    return this.portalAuth.ask(portalDeleteCategory, {
       id,
       organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
@@ -62,7 +64,7 @@ export class PortalSetupController extends PortalAdminControllerBase {
   @Post('categories/reorder')
   @RequirePermissionInSpace('canManagePortals')
   reorderCategories(@Body() body: ReorderPortalCategoriesDto, @Request() req: AuthedRequest) {
-    return this.auth(portalReorderCategories, {
+    return this.portalAuth.ask(portalReorderCategories, {
       portalId: body?.portalId,
       orderedIds: Array.isArray(body?.orderedIds) ? body.orderedIds : [],
       organizationId: callerOrgId(req.user),
@@ -76,7 +78,7 @@ export class PortalSetupController extends PortalAdminControllerBase {
   @RequirePermissionInSpace('canManagePortals')
   createUnit(@Body() body: UnitBodyDto, @Request() req: AuthedRequest) {
     // Whitelisted like every unit route (pickUnitFields); identity last.
-    return this.auth(portalCreateUnit, {
+    return this.portalAuth.ask(portalCreateUnit, {
       ...unitFieldsFor(portalCreateUnit, body),
       // The body is unchecked here; `address` is used as sent, whatever it is (as before).
       name: (typeof body?.name === 'string' && body.name.trim()) || (body?.address as string) || 'Unit',
@@ -90,7 +92,7 @@ export class PortalSetupController extends PortalAdminControllerBase {
   @RequirePermissionInSpace('canManagePortals')
   updateUnit(@Param('id') id: string, @Body() body: UnitBodyDto, @Request() req: AuthedRequest) {
     // Whitelisted: a spread body could carry scopeCustomerId, actorId or a CRM caller.
-    return this.auth(portalUpdateUnit, {
+    return this.portalAuth.ask(portalUpdateUnit, {
       ...unitFieldsFor(portalUpdateUnit, body),
       id,
       organizationId: callerOrgId(req.user),
@@ -102,7 +104,7 @@ export class PortalSetupController extends PortalAdminControllerBase {
   @Delete('units/:id')
   @RequirePermissionInSpace('canManagePortals')
   deleteUnit(@Param('id') id: string, @Request() req: AuthedRequest) {
-    return this.auth(portalDeleteUnit, {
+    return this.portalAuth.ask(portalDeleteUnit, {
       id,
       organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
@@ -112,7 +114,7 @@ export class PortalSetupController extends PortalAdminControllerBase {
   @Get('units')
   @RequirePermissionInSpace('canViewPortal')
   listUnits(@Query('customerId') customerId: string | undefined, @Request() req: AuthedRequest) {
-    return this.auth(portalAdminListUnits, {
+    return this.portalAuth.ask(portalAdminListUnits, {
       organizationId: callerOrgId(req.user),
       customerId,
       scopeSpaceIds: portalScope(req.user, 'canViewPortal'),

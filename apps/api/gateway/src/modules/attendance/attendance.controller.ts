@@ -13,14 +13,20 @@ import {
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { AllowWhenLocked } from '../../common/guards/subscription.guard';
-import { AttendanceControllerBase } from './attendance-controller.base';
+import { AttendanceService } from './attendance.service';
+import { AttendanceQueueService } from './attendance.queue.service';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
 @ApiTags('attendance')
 @ApiBearerAuth()
 @Controller('attendance')
-export class AttendanceController extends AttendanceControllerBase {
+export class AttendanceController {
+  constructor(
+    private readonly attendanceService: AttendanceService,
+    private readonly attendanceQueueService: AttendanceQueueService,
+  ) {}
+
   @Post('clock-in')
   // Entry point only — clock-out and break-end stay open so removing the tab mid-shift cannot strand an open entry.
   @RequireAccessModule('clock')

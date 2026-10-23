@@ -1,7 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { TaskEventType } from '@prisma/client';
+import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import {
-  CREW_CODES,
   crewPresence,
   mayMoveStep,
   success,
@@ -9,12 +8,17 @@ import {
   personName,
   personNameOf,
   orgCrewMode,
+  PrismaService,
+  type OccurrenceEvidence,
+  TASK_JOBS,
+  type JobData,
 } from '@hbcfield/shared';
-import { judgeOccurrence } from '../../../common/occurrence.util';
-import { CrewActor, CrewTask, TASK_SELECT, evidenceMeta, cleanReason } from './crew-helpers';
-import { CrewLeadBase } from './crew-lead.base';
-import { emitEvent, taskCrewIssueEvent, taskCrewStartedEvent } from '@hbcfield/shared/microservices';
-import { TASK_JOBS, type JobData } from '@hbcfield/shared';
+import { emitEvent, taskCrewStartedEvent } from '@hbcfield/shared/microservices';
+import { CrewActor, CrewTask, TASK_SELECT } from './crew-helpers';
+import { CrewReader } from './crew-reader.service';
+import { CrewPresenceService } from './crew-presence.service';
+import { CrewLeadService } from './crew-lead.service';
+import { JobTimeService } from './job-time.service';
 
 export { type CrewActor } from './crew-helpers';
 
@@ -30,7 +34,37 @@ export { type CrewActor } from './crew-helpers';
  * act on is a 400 with a code.
  */
 @Injectable()
-export class CrewService extends CrewLeadBase {
+export class CrewService {
+  private readonly logger = new Logger(CrewService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reader: CrewReader,
+    private readonly presence: CrewPresenceService,
+    private readonly lead: CrewLeadService,
+    private readonly jobTime: JobTimeService,
+    @Inject('NOTIFICATION_SERVICE') private readonly notifications: ClientProxy,
+  ) {}
+
+  /** A join as it is written (CrewPresenceService) — also a crew member's tap on the step the job is in. */
+  joinAs(
+    task: CrewTask,
+    who: string,
+    opts: { evidence?: OccurrenceEvidence; viaLeaderStart?: boolean; byUserId?: string; reason?: string },
+  ): Promise<boolean> {
+    return this.presence.joinAs(task, who, opts);
+  }
+
+  /** One job at a time: joining one leaves the others they were on (CrewPresenceService). */
+  leaveOtherJobs(userId: string, organizationId: string, exceptTaskId: string, at: Date): Promise<void> {
+    return this.presence.leaveOtherJobs(userId, organizationId, exceptTaskId, at);
+  }
+
+  /** Hand THIS job's lead to somebody already on its crew (CrewLeadService). */
+  changeLead(data: JobData<typeof TASK_JOBS.crewChangeLead>) {
+    return this.lead.changeLead(data);
+  }
+
   /**
    * Who may give this job's checklist items to whom (shared tasks/checklist.ts):
    * the crew, the office, and who leads now. The leader is only worked out for
@@ -38,20 +72,20 @@ export class CrewService extends CrewLeadBase {
    * The caller's access to the task itself is checked BEFORE this, by the task gate.
    */
   async checklistAuthority(taskId: string, actor: CrewActor): Promise<ChecklistAuthority> {
-    const task = await this.taskOf(taskId, actor.organizationId);
-    const crew = await this.crewOf(task);
+    const task = await this.reader.taskOf(taskId, actor.organizationId);
+    const crew = await this.reader.crewOf(task);
     const crewIds = crew.map((c) => c.userId);
-    const isOffice = this.isOffice(actor, task, 'canAssignTasks');
+    const isOffice = this.reader.isOffice(actor, task, 'canAssignTasks');
     if (isOffice || !crewIds.includes(actor.userId))
       return { actorId: actor.userId, isOffice, leaderId: null, crewIds };
     const [timeline, onClock] = await Promise.all([
       this.jobTime.timelinesOf([task.id]).then((m) => m.get(task.id) ?? []),
-      this.onClock(crewIds, task.organizationId),
+      this.reader.onClock(crewIds, task.organizationId),
     ]);
     return {
       actorId: actor.userId,
       isOffice,
-      leaderId: this.leaderFrom(task, crew, timeline, onClock).userId,
+      leaderId: this.reader.leaderFrom(task, crew, timeline, onClock).userId,
       crewIds,
     };
   }
@@ -62,150 +96,32 @@ export class CrewService extends CrewLeadBase {
    * clock read, one people read.
    */
   async view(taskId: string, actor: CrewActor) {
-    const task = await this.visibleTaskOf(taskId, actor);
-    return success(await this.viewOf(task));
+    const task = await this.reader.visibleTaskOf(taskId, actor);
+    return success(await this.reader.viewOf(task));
   }
 
   /** The crew panel for a job the caller was already allowed to read (GET /tasks/:id/time). */
   async viewFor(taskId: string) {
     const task = await this.prisma.task.findUnique({ where: { id: taskId }, select: TASK_SELECT });
-    return task ? this.viewOf(task) : null;
+    return task ? this.reader.viewOf(task) : null;
   }
 
-  // ─────────────────────────── presence ───────────────────────────
+  // ─────────────────────────── presence (CrewPresenceService) ───────────────────────────
 
-  /**
-   * Join a crew job: "I'm with him" (from the leader's start, within the
-   * window), the step the job is already in, or the office for somebody
-   * (with a reason). Idempotent while joined. The clock gate applies.
-   */
-  async join(data: JobData<typeof TASK_JOBS.crewJoin>) {
-    const task = await this.visibleTaskOf(data.taskId, data);
-    const forOther = !!data.forUserId && data.forUserId !== data.userId;
-    // Putting somebody ON a job is a decision about who works it: assign rights, not "view all".
-    if (forOther && !this.isOffice(data, task, 'canAssignTasks')) throw new NotFoundException('Task not found');
-    const reason = cleanReason(data.reason);
-    if (forOther && !reason)
-      throw new BadRequestException({
-        message: 'Say why you are adding them to the job.',
-        code: 'OFFICE_START_REASON_REQUIRED',
-      });
-    const who = forOther ? data.forUserId! : data.userId;
-    await this.joinAs(task, who, {
-      evidence: data.evidence,
-      viaLeaderStart: !!data.viaLeaderStart,
-      byUserId: forOther ? data.userId : undefined,
-      reason: forOther ? reason : undefined,
-    });
-    return success(await this.viewOf(task));
+  join(data: JobData<typeof TASK_JOBS.crewJoin>) {
+    return this.presence.join(data);
   }
 
-  /**
-   * Leave a crew job (their own, or the office for them). The last joined
-   * member on the clock leaving pauses it, and owes the note — the same pause
-   * a clock-out makes.
-   */
-  async leave(data: JobData<typeof TASK_JOBS.crewLeave>) {
-    const task = await this.visibleTaskOf(data.taskId, data);
-    const forOther = !!data.forUserId && data.forUserId !== data.userId;
-    if (forOther && !this.isOffice(data, task, 'canAssignTasks')) throw new NotFoundException('Task not found');
-    const who = forOther ? data.forUserId! : data.userId;
-    const crew = await this.crewOf(task);
-    if (!crew.some((c) => c.userId === who))
-      throw new BadRequestException({ message: 'They are not on this job.', code: CREW_CODES.NOT_ON_CREW });
-
-    const timeline = (await this.jobTime.timelinesOf([task.id])).get(task.id) ?? [];
-    const presence = crewPresence(
-      timeline,
-      crew.map((c) => c.userId),
-    );
-    const mine = presence.get(who);
-    if (!mine?.joined) return success(await this.viewOf(task));
-
-    const judged = judgeOccurrence(data.evidence, mine.since != null ? new Date(mine.since) : null);
-    const at = judged.at;
-    /*
-      ⚠️ ONE LEAVE AT A TIME PER JOB. The last two leaving at the same moment
-      would each see the other still on and neither would pause it — a job
-      running with nobody counted. The job's row is locked for the write, and
-      who is still on is read only AFTER it — the second to commit sees both.
-    */
-    await this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM "tasks" WHERE id = ${task.id} FOR UPDATE`;
-      await tx.taskEvent.create({
-        data: {
-          taskId: task.id,
-          userId: who,
-          eventType: TaskEventType.CREW_LEFT,
-          metadata: {
-            at: at.toISOString(),
-            why: forOther ? 'OFFICE' : 'SELF',
-            ...(forOther ? { byUserId: data.userId, reason: cleanReason(data.reason) } : {}),
-            ...evidenceMeta(data.evidence, judged.flags),
-          },
-        },
-      });
-    });
-    const after = crewPresence(
-      (await this.jobTime.timelinesOf([task.id])).get(task.id) ?? [],
-      crew.map((c) => c.userId),
-    );
-    const othersJoined = [...after].filter(([id, p]) => id !== who && p.joined).map(([id]) => id);
-    const stillOn = await this.onClock(othersJoined, task.organizationId);
-    if (stillOn.size === 0) await this.jobPause.pauseOnLeave(task.id, who, task.organizationId, at);
-    this.changed(task, who);
-    return success(await this.viewOf(task));
+  leave(data: JobData<typeof TASK_JOBS.crewLeave>) {
+    return this.presence.leave(data);
   }
 
-  /** "My issue": only this person's time is blocked — the job and the crew carry on. */
-  async selfIssue(data: JobData<typeof TASK_JOBS.crewSelfIssue>) {
-    const task = await this.visibleTaskOf(data.taskId, data);
-    const reason = cleanReason(data.reason);
-    if (!reason) throw new BadRequestException({ message: 'Say what stopped you.', code: 'REASON_REQUIRED' });
-    const { presence } = await this.mustBeJoined(task, data.userId);
-    if (presence.selfBlockedSince != null) return success(await this.viewOf(task));
-    const judged = judgeOccurrence(data.evidence, presence.since != null ? new Date(presence.since) : null);
-    await this.prisma.taskEvent.create({
-      data: {
-        taskId: task.id,
-        userId: data.userId,
-        eventType: TaskEventType.SELF_BLOCKED,
-        metadata: { at: judged.at.toISOString(), reason, ...evidenceMeta(data.evidence, judged.flags) },
-      },
-    });
-    // The leader is told why one of the crew has stopped.
-    const view = await this.viewOf(task);
-    if (view.leader.userId && view.leader.userId !== data.userId) {
-      const me = view.members.find((m) => m.user.id === data.userId)?.user;
-      emitEvent(this.notifications, taskCrewIssueEvent, {
-        taskId: task.id,
-        taskTitle: task.title,
-        leaderId: view.leader.userId,
-        name: personName(me),
-        reason,
-      });
-    }
-    this.changed(task, data.userId);
-    return success(view);
+  selfIssue(data: JobData<typeof TASK_JOBS.crewSelfIssue>) {
+    return this.presence.selfIssue(data);
   }
 
-  /** Back to work after their own stop — a move into work, so the clock gate applies. */
-  async selfResume(data: JobData<typeof TASK_JOBS.crewSelfResume>) {
-    const task = await this.visibleTaskOf(data.taskId, data);
-    const { presence } = await this.mustBeJoined(task, data.userId);
-    if (presence.selfBlockedSince == null) return success(await this.viewOf(task));
-    await this.clockGate.assertWorkerClockedIn(task, data.userId, task.organizationId, true);
-    const judged = judgeOccurrence(data.evidence, new Date(presence.selfBlockedSince));
-    await this.prisma.taskEvent.create({
-      data: {
-        taskId: task.id,
-        userId: data.userId,
-        eventType: TaskEventType.SELF_RESUMED,
-        metadata: { at: judged.at.toISOString(), ...evidenceMeta(data.evidence, judged.flags) },
-      },
-    });
-    this.changed(task, data.userId);
-    return success(await this.viewOf(task));
+  selfResume(data: JobData<typeof TASK_JOBS.crewSelfResume>) {
+    return this.presence.selfResume(data);
   }
 
   // ─────────────────────────── hooks for TasksService ───────────────────────────
@@ -217,17 +133,17 @@ export class CrewService extends CrewLeadBase {
    */
   async assertMayMoveStep(task: CrewTask, actor: CrewActor, isOffice: boolean): Promise<void> {
     // The office — org-wide, or "view all tasks" in THIS job's workspace — always moves it.
-    if (isOffice || this.isOffice(actor, task, 'canViewAllTasks')) return;
+    if (isOffice || this.reader.isOffice(actor, task, 'canViewAllTasks')) return;
     const org = await orgCrewMode(this.prisma, task.organizationId);
     if (!org?.crewMode) return;
-    const crew = await this.crewOf(task);
+    const crew = await this.reader.crewOf(task);
     if (crew.length <= 1) return; // a job with one worker: they lead it
     const ids = crew.map((c) => c.userId);
     const [timeline, onClock] = await Promise.all([
       this.jobTime.timelinesOf([task.id]).then((m) => m.get(task.id) ?? []),
-      this.onClock(ids, task.organizationId),
+      this.reader.onClock(ids, task.organizationId),
     ]);
-    const leader = this.leaderFrom(task, crew, timeline, onClock);
+    const leader = this.reader.leaderFrom(task, crew, timeline, onClock);
     const verdict = mayMoveStep({
       actorId: actor.userId,
       isOffice: false,
@@ -236,7 +152,7 @@ export class CrewService extends CrewLeadBase {
       leader,
     });
     if (!verdict.ok) {
-      const name = leader.userId ? await this.nameOf(leader.userId) : '';
+      const name = leader.userId ? await this.reader.nameOf(leader.userId) : '';
       throw new BadRequestException({
         message: `${name || 'The leader'} moves this job's steps.`,
         code: verdict.code,
@@ -254,12 +170,12 @@ export class CrewService extends CrewLeadBase {
     try {
       const task = await this.prisma.task.findUnique({ where: { id: taskId }, select: TASK_SELECT });
       if (!task) return;
-      const crew = await this.crewOf(task);
+      const crew = await this.reader.crewOf(task);
       const others = crew.map((c) => c.userId).filter((id) => id !== starterId);
       if (!others.length) return;
       const [timeline, onClock, starter] = await Promise.all([
         this.jobTime.timelinesOf([task.id]).then((m) => m.get(task.id) ?? []),
-        this.onClock(others, task.organizationId),
+        this.reader.onClock(others, task.organizationId),
         personNameOf(this.prisma, starterId),
       ]);
       const presence = crewPresence(timeline, others);

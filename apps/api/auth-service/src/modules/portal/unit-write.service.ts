@@ -1,23 +1,31 @@
 import type { Prisma } from '@prisma/client';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { type CrmCaller } from '../customers/customers.service';
-import { type SpaceScopeIds, activeAssignmentWhere, memberActiveIn } from '@hbcfield/shared';
+import { type SpaceScopeIds, activeAssignmentWhere, memberActiveIn, PrismaService } from '@hbcfield/shared';
 import { sanitizeUnitDetails } from './portal-helpers';
-import { PortalServiceBase } from './portal-service.base';
+import { PortalReachService } from './portal-reach.service';
+import { UnitResidentsService } from './unit-residents.service';
+import { unitScope } from './portal-scope';
 import { type portalCreateUnit, type portalUpdateUnit, type RpcRequest } from '@hbcfield/shared/microservices';
 import { jsonColumn, optionalJsonColumn } from '../../common/records/json-column';
 
 /** Changing addresses (units): create, edit, delete, and a member's home address. */
 @Injectable()
-export class UnitWriteService extends PortalServiceBase {
+export class UnitWriteService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reach: PortalReachService,
+    private readonly residents: UnitResidentsService,
+  ) {}
+
   // The request is the message contract's (shared with the gateway) — one definition, not two.
   async createUnit(data: RpcRequest<typeof portalCreateUnit>) {
     if (data.crmCaller) {
       if (!data.customerId) throw new BadRequestException('A client is required');
-      await this.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
+      await this.reach.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
     }
-    await this.assertUnitRefsInOrg(data.organizationId, { spaceId: data.spaceId, portalId: data.portalId });
-    await this.assertUnitRefsInScope(
+    await this.reach.assertUnitRefsInOrg(data.organizationId, { spaceId: data.spaceId, portalId: data.portalId });
+    await this.reach.assertUnitRefsInScope(
       data.organizationId,
       data.scopeSpaceIds,
       { spaceId: data.spaceId, portalId: data.portalId, customerId: data.customerId },
@@ -25,10 +33,10 @@ export class UnitWriteService extends PortalServiceBase {
     );
     // Resident is a MEMBER or a CLIENT, never both. A valid member wins.
     const residentUserId = data.residentUserId
-      ? ((await this.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null)
+      ? ((await this.residents.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null)
       : null;
     const clientId = residentUserId ? null : data.customerId || null;
-    const c = await this.assertCustomerInOrg(data.organizationId, clientId || undefined);
+    const c = await this.reach.assertCustomerInOrg(data.organizationId, clientId || undefined);
     data.customerId = clientId || undefined;
     // First address for a customer becomes primary automatically.
     const existing = data.customerId
@@ -57,18 +65,19 @@ export class UnitWriteService extends PortalServiceBase {
       },
     });
     // A member lives in exactly one apartment per space — vacate any prior one.
-    if (residentUserId) await this.clearMemberElsewhere(residentUserId, data.spaceId, data.organizationId, created.id);
+    if (residentUserId)
+      await this.residents.clearMemberElsewhere(residentUserId, data.spaceId, data.organizationId, created.id);
     // Activity: created + initial resident (best-effort, never blocks).
-    await this.logUnitActivity({
+    await this.residents.logUnitActivity({
       unitId: created.id,
       organizationId: data.organizationId,
       type: 'SYSTEM',
       authorId: data.actorId,
       body: 'Apartment created',
     });
-    const rn = await this.residentDisplayName(residentUserId, clientId, data.organizationId);
+    const rn = await this.residents.residentDisplayName(residentUserId, clientId, data.organizationId);
     if (rn)
-      await this.logUnitActivity({
+      await this.residents.logUnitActivity({
         unitId: created.id,
         organizationId: data.organizationId,
         type: 'SYSTEM',
@@ -84,10 +93,10 @@ export class UnitWriteService extends PortalServiceBase {
     if (data.crmCaller) {
       // The CRM route always scopes to the client in its path; no scope, no edit.
       if (!data.scopeCustomerId) throw new BadRequestException('A client is required');
-      await this.assertClientAddressesEditable(data.organizationId, data.scopeCustomerId, data.crmCaller);
+      await this.reach.assertClientAddressesEditable(data.organizationId, data.scopeCustomerId, data.crmCaller);
     }
-    await this.assertUnitRefsInOrg(data.organizationId, { spaceId: data.spaceId, portalId: data.portalId });
-    await this.assertUnitRefsInScope(data.organizationId, data.scopeSpaceIds, {
+    await this.reach.assertUnitRefsInOrg(data.organizationId, { spaceId: data.spaceId, portalId: data.portalId });
+    await this.reach.assertUnitRefsInScope(data.organizationId, data.scopeSpaceIds, {
       spaceId: data.spaceId,
       portalId: data.portalId,
       customerId: data.customerId,
@@ -98,17 +107,17 @@ export class UnitWriteService extends PortalServiceBase {
         organizationId: data.organizationId,
         ...(data.scopeCustomerId ? { customerId: data.scopeCustomerId } : {}),
         ...(data.scopeSpaceId ? { spaceId: data.scopeSpaceId } : {}),
-        ...this.unitScope(data.scopeSpaceIds),
+        ...unitScope(data.scopeSpaceIds),
       },
       select: { id: true, customerId: true, residentUserId: true, spaceId: true },
     });
     if (!existing) throw new NotFoundException('Unit not found');
-    await this.assertCustomerInOrg(data.organizationId, data.customerId);
+    await this.reach.assertCustomerInOrg(data.organizationId, data.customerId);
     // Resident is a MEMBER or a CLIENT, never both — setting one clears the other.
     const residentUserId =
       data.residentUserId !== undefined
         ? data.residentUserId
-          ? ((await this.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null)
+          ? ((await this.residents.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null)
           : null
         : undefined;
     if (data.isPrimary && existing.customerId) {
@@ -141,7 +150,7 @@ export class UnitWriteService extends PortalServiceBase {
     // A member lives in exactly one apartment per space — vacate any prior one
     // (spaceId may move in the same call, so prefer the new one).
     if (residentUserId)
-      await this.clearMemberElsewhere(
+      await this.residents.clearMemberElsewhere(
         residentUserId,
         data.spaceId ?? existing.spaceId,
         data.organizationId,
@@ -149,8 +158,12 @@ export class UnitWriteService extends PortalServiceBase {
       );
     // Activity: log a resident change (best-effort).
     if (updated.residentUserId !== existing.residentUserId || updated.customerId !== existing.customerId) {
-      const rn = await this.residentDisplayName(updated.residentUserId, updated.customerId, data.organizationId);
-      await this.logUnitActivity({
+      const rn = await this.residents.residentDisplayName(
+        updated.residentUserId,
+        updated.customerId,
+        data.organizationId,
+      );
+      await this.residents.logUnitActivity({
         unitId: updated.id,
         organizationId: data.organizationId,
         type: 'SYSTEM',
@@ -173,7 +186,7 @@ export class UnitWriteService extends PortalServiceBase {
     unitId?: string | null;
     actorId?: string;
   }) {
-    const [uid] = await this.keepOrgUserIds([data.userId], data.organizationId);
+    const [uid] = await this.residents.keepOrgUserIds([data.userId], data.organizationId);
     if (!uid) throw new NotFoundException('Member not found in this organization');
     /*
       Only somebody who works in THIS workspace can live in one of its apartments
@@ -214,7 +227,7 @@ export class UnitWriteService extends PortalServiceBase {
 
     // Activity (best-effort, never blocks the write).
     for (const id of toClear)
-      void this.logUnitActivity({
+      void this.residents.logUnitActivity({
         unitId: id,
         organizationId: data.organizationId,
         type: 'SYSTEM',
@@ -222,8 +235,8 @@ export class UnitWriteService extends PortalServiceBase {
         body: 'Resident removed',
       });
     if (targetId && !currentIds.includes(targetId)) {
-      const rn = await this.residentDisplayName(uid, null, data.organizationId);
-      void this.logUnitActivity({
+      const rn = await this.residents.residentDisplayName(uid, null, data.organizationId);
+      void this.residents.logUnitActivity({
         unitId: targetId,
         organizationId: data.organizationId,
         type: 'SYSTEM',
@@ -246,7 +259,7 @@ export class UnitWriteService extends PortalServiceBase {
   }) {
     if (data.crmCaller) {
       if (!data.customerId) throw new BadRequestException('A client is required');
-      await this.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
+      await this.reach.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
     }
     const existing = await this.prisma.customerUnit.findFirst({
       where: {
@@ -254,7 +267,7 @@ export class UnitWriteService extends PortalServiceBase {
         organizationId: data.organizationId,
         ...(data.customerId ? { customerId: data.customerId } : {}),
         ...(data.scopeSpaceId ? { spaceId: data.scopeSpaceId } : {}),
-        ...this.unitScope(data.scopeSpaceIds),
+        ...unitScope(data.scopeSpaceIds),
       },
       select: { id: true },
     });

@@ -1,7 +1,7 @@
 import { BUILTIN_ROLES, builtInRoleGrants, builtInRoleCreateData, SHARED_ROLE_WHERE } from '@hbcfield/shared';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '@hbcfield/shared';
 import { Prisma, type RoleScope } from '@prisma/client';
-import { AccessRolesBase } from './access-roles.base';
 import { jsonColumn } from '../../common/records/json-column';
 
 /**
@@ -11,7 +11,11 @@ import { jsonColumn } from '../../common/records/json-column';
  * Part of member management; `UsersService` is the facade every caller uses.
  */
 @Injectable()
-export class AccessRolesService extends AccessRolesBase {
+export class AccessRolesService {
+  private readonly logger = new Logger(AccessRolesService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * ⭐ BUILT-IN ROLES FOLLOW THEIR DEFINITION — ADDITIVELY, UNTIL AN ADMIN EDITS THEM.
    *

@@ -2,7 +2,8 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Request } from '@nestj
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { RequirePermissionInSpace } from '../../common/decorators';
 import { AddManualEntriesDto } from './dto';
-import { AttendanceControllerBase } from './attendance-controller.base';
+import { EntryDecisionsGatewayService } from './entry-decisions.gateway-service';
+import { scopeFor } from '../../common/permission-scope';
 
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
@@ -11,7 +12,9 @@ import { EditEntryDto } from './dto/decision-bodies.dto';
 @ApiTags('attendance')
 @ApiBearerAuth()
 @Controller('attendance')
-export class EntryEditsController extends AttendanceControllerBase {
+export class EntryEditsController {
+  constructor(private readonly entryDecisions: EntryDecisionsGatewayService) {}
+
   @Put('entries/:id/edit')
   @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Edit a time entry (manager correction)' })
@@ -20,7 +23,7 @@ export class EntryEditsController extends AttendanceControllerBase {
       entryId,
       editorId: req.user.id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canReconcileAttendance'),
       clockInAt: body.clockInAt,
       clockOutAt: body.clockOutAt,
       notes: body.notes,
@@ -41,7 +44,7 @@ export class EntryEditsController extends AttendanceControllerBase {
     return this.entryDecisions.getEntryPresence({
       entryId,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
     });
   }
 
@@ -52,7 +55,7 @@ export class EntryEditsController extends AttendanceControllerBase {
     return this.entryDecisions.getEntryHistory({
       entryId,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canViewSpaceAttendance'),
     });
   }
 
@@ -66,7 +69,7 @@ export class EntryEditsController extends AttendanceControllerBase {
       entryId,
       editorId: req.user.id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canDeleteAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canDeleteAttendance'),
     });
   }
 
@@ -93,7 +96,7 @@ export class EntryEditsController extends AttendanceControllerBase {
       reason: body.reason,
       editorId: req.user.id,
       organizationId: callerOrgId(req.user),
-      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      scopeSpaceIds: scopeFor(req.user, 'canReconcileAttendance'),
     });
   }
 }

@@ -1,10 +1,18 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { Role, success, paginated, clampListLimit, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
-import { ReportsBase } from './reports.base';
+import { Role, success, paginated, clampListLimit, PERSON_BRIEF_SELECT, PrismaService } from '@hbcfield/shared';
+import { MediaSigner } from '../../common/storage/media-signer.service';
+import { TaskAccessService } from '../tasks/access/task-access.service';
+import { withSignedAttachments } from './reports-helpers';
 
 /** Reading service reports: a job's, and an asset's maintenance history. */
 @Injectable()
-export class ReportReadService extends ReportsBase {
+export class ReportReadService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly media: MediaSigner,
+    private readonly taskAccess: TaskAccessService,
+  ) {}
+
   /**
    * Get service report by task ID
    */
@@ -39,7 +47,7 @@ export class ReportReadService extends ReportsBase {
     // A task with no service report is a normal state (report only exists after
     // completion) — return null rather than throwing, so the endpoint responds
     // 200 with data:null instead of an error the clients have to special-case.
-    return success(await this.withSignedAttachments(report ?? null));
+    return success(await withSignedAttachments(this.media, report ?? null));
   }
 
   /**
@@ -129,8 +137,8 @@ export class ReportReadService extends ReportsBase {
       partsCount: report.partsUsed.length,
       partsTotal: report.partsUsed.reduce((sum, part) => sum + (part.unitCost || 0) * part.quantity, 0),
       attachmentCount: report.attachments.length,
-      hasBeforePhotos: report.attachments.some(a => a.type === 'BEFORE'),
-      hasAfterPhotos: report.attachments.some(a => a.type === 'AFTER'),
+      hasBeforePhotos: report.attachments.some((a) => a.type === 'BEFORE'),
+      hasAfterPhotos: report.attachments.some((a) => a.type === 'AFTER'),
     }));
 
     return paginated(summaries, { page, limit, total });

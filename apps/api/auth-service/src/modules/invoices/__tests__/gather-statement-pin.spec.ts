@@ -136,9 +136,8 @@ function gatherService(prisma: any) {
       },
     })),
   };
-  const entities = { assertUsable: jest.fn().mockResolvedValue(null) };
-  const service = new InvoiceGatherService(prisma, {} as any, entities as any, siteTime as any);
-  (service as any).issuingEntity = jest.fn().mockResolvedValue({ entity: { id: 'le1', currency: null } });
+  const issuer = { issuingEntity: jest.fn().mockResolvedValue({ entity: { id: 'le1', currency: null } }) };
+  const service = new InvoiceGatherService(prisma, issuer as any, siteTime as any);
   return { service, siteTime };
 }
 

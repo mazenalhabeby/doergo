@@ -10,27 +10,36 @@ import {
   type LeaveYearMode,
   orgLeaveTrackingStart,
   leavePeopleIn,
+  leaveRoster,
+  PrismaService,
 } from '@hbcfield/shared';
+import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { assertNotSelfDecision } from '../attendance/core/self-decision';
 import { PersonLeaveYear, asDate, dayOf, leaveYearFor, nameKey, readOpeningRows } from './leave-ledger-helpers';
-import { LeaveLedgerBase } from './leave-ledger.base';
+import { leaveDayFrom, leaveToday, loadLeaveOrg } from './leave-ledger-access';
+import { leaveYears } from './leave-years';
 
 /**
  * Starting balances: what the organization opens the ledger with, matching people
  * from a sheet, saving it.
  */
 @Injectable()
-export class LeaveOpeningService extends LeaveLedgerBase {
+export class LeaveOpeningService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly calendarRules: CalendarRulesService,
+  ) {}
+
   /** GET /employees/leave-opening — everybody in the caller's scope, with what is saved for the leave year containing `on`. */
   async getOpening(dto: {
     organizationId: string;
     scopeSpaceIds?: string[];
     on?: string;
   }): Promise<LeaveOpeningResponse> {
-    const org = await this.loadOrg(dto.organizationId);
-    const on = dto.on ? this.dayFrom({ on: dto.on }, org) : (dayOf(org.leaveTrackingStartedOn) ?? this.today(org));
-    const people = await this.membersInScope(dto.organizationId, dto.scopeSpaceIds);
-    const years = await this.years(org, people, () => on);
+    const org = await loadLeaveOrg(this.prisma, dto.organizationId);
+    const on = dto.on ? leaveDayFrom({ on: dto.on }, org) : (dayOf(org.leaveTrackingStartedOn) ?? leaveToday(org));
+    const people = await leaveRoster(this.prisma, dto.organizationId, dto.scopeSpaceIds);
+    const years = await leaveYears(this.prisma, this.calendarRules, org, people, () => on);
     const keyed = (y: PersonLeaveYear, key: string) => y.adjustments.find((a) => a.sourceKey === key)?.days ?? 0;
     return {
       on,
@@ -67,13 +76,13 @@ export class LeaveOpeningService extends LeaveLedgerBase {
     on?: unknown;
     rows?: unknown;
   }): Promise<LeaveOpeningSaveResponse> {
-    const org = await this.loadOrg(dto.organizationId);
+    const org = await loadLeaveOrg(this.prisma, dto.organizationId);
     if (typeof dto.on !== 'string' || !dto.on)
       throw new BadRequestException({
         code: 'LEAVE_DAY_INVALID',
         message: 'Choose the day you started counting leave in HBCField',
       });
-    const on = this.dayFrom({ on: dto.on }, org);
+    const on = leaveDayFrom({ on: dto.on }, org);
     const rows = readOpeningRows(dto.rows);
     const ids = rows.map((r) => r.userId);
 
@@ -213,7 +222,7 @@ export class LeaveOpeningService extends LeaveLedgerBase {
         code: 'OPENING_TOO_MANY_ROWS',
         message: `At most ${OPENING_LIMITS.MAX_ROWS} people at a time`,
       });
-    const people = await this.membersInScope(dto.organizationId, dto.scopeSpaceIds);
+    const people = await leaveRoster(this.prisma, dto.organizationId, dto.scopeSpaceIds);
     const byEmail = new Map(people.map((p) => [p.email.trim().toLowerCase(), p]));
     const byName = new Map<string, typeof people>();
     for (const p of people) {

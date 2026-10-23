@@ -24,9 +24,9 @@ describe('personName', () => {
   });
 
   it.each([
-    'modules/shift-issues/shift-issues.base.ts',
-    'modules/tasks/handover/crew-lookup.base.ts', // the crew's name helper, since the split
-    'modules/calendar/events.base.ts', // the events service's name helper, since the split
+    'modules/shift-issues/shift-issue-notices.service.ts', // the shift issues' name helper
+    'modules/tasks/handover/crew-reader.service.ts', // the crew's name helper
+    'modules/calendar/event-notices.service.ts', // the events' name helper
   ])('%s names people through the shared rule', (file) => {
     const src = readFileSync(join(__dirname, '..', '..', file), 'utf8');
     expect(src).toMatch(/personNameById\(/);
