@@ -22,10 +22,11 @@ export async function workingJobsOf(
   { prisma, workflows }: WorkingJobsDeps,
   userId: string,
   organizationId: string,
-  opts: { includePaused?: boolean } = {},
+  opts: { includePaused?: boolean; taskId?: string } = {},
 ): Promise<Candidate[]> {
   const rows = await prisma.task.findMany({
     where: {
+      ...(opts.taskId ? { id: opts.taskId } : {}),
       organizationId,
       status: { notIn: NEVER_WORKING },
       ...(opts.includePaused ? {} : { pausedAt: null }),
@@ -41,6 +42,12 @@ export async function workingJobsOf(
       assignedToId: true,
       pausedAt: true,
     },
+    /*
+      ⚠️ Newest first. A person can sit on more than 50 jobs that never finished (old ones left
+      blocked); unordered, the job they are working on NOW fell outside the 50 — the clock-out
+      paused nothing and the last one out of a crew left it running.
+    */
+    orderBy: { updatedAt: 'desc' },
     take: 50,
   });
   if (rows.length === 0) return [];

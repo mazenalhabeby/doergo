@@ -36,7 +36,11 @@ export class JobPauseService {
   ) {}
 
   /** The jobs this person is working right now (working-jobs.ts) — what the clock-out pauses. */
-  workingJobsOf(userId: string, organizationId: string, opts: { includePaused?: boolean } = {}): Promise<Candidate[]> {
+  workingJobsOf(
+    userId: string,
+    organizationId: string,
+    opts: { includePaused?: boolean; taskId?: string } = {},
+  ): Promise<Candidate[]> {
     return workingJobsOf({ prisma: this.prisma, workflows: this.workflows }, userId, organizationId, opts);
   }
 
@@ -171,7 +175,8 @@ export class JobPauseService {
    * clock-out makes, for one job. False when it was not in work.
    */
   async pauseOnLeave(taskId: string, userId: string, organizationId: string, at: Date): Promise<boolean> {
-    const job = (await this.workingJobsOf(userId, organizationId)).find((j) => j.id === taskId);
+    // This one job, whatever else the person sits on (a list of 50 could miss it).
+    const job = (await this.workingJobsOf(userId, organizationId, { taskId }))[0];
     if (!job) return false;
     const workedMinutes = (await this.jobTime.workedForMany([job], userId, at)).get(job.id) ?? 0;
     const claimed = await this.prisma.task.updateMany({
