@@ -52,8 +52,9 @@ describe('checkClockInLocally — the same answer offline as online', () => {
     const tag = { policy: 'LIMIT' as const, dailyMinutes: 480, hasShiftNow: false, workedTodayMinutes: 480, dayEndsAt: '2026-09-15T22:00:00.000Z' };
     const at = (over: Record<string, unknown>) => ({ ...warehouse, noShift: { ...tag, ...over } }) as CompanyLocation;
 
-    it('refuses when today’s hours are used up, naming the limit', () => {
-      expect(checkClockInLocally({ location: at({}), fix: north(5), alreadyClockedIn: false, now: NOW })).toEqual({ ok: false, code: 'NO_HOURS_LEFT', hours: 8 });
+    it('lets them in when today’s hours are used up — the server keeps it and flags the long day', () => {
+      expect(checkClockInLocally({ location: at({}), fix: north(5), alreadyClockedIn: false, now: NOW })).not.toMatchObject({ code: 'NO_HOURS_LEFT' });
+      expect(checkClockInLocally({ location: at({}), fix: north(5), alreadyClockedIn: false, now: NOW })).not.toMatchObject({ code: 'NO_SHIFT_TODAY' });
     });
 
     it('refuses where a shift is required, and lets somebody with a shift in', () => {

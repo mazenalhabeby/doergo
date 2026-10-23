@@ -90,4 +90,15 @@ describe('counted time, persisted', () => {
       expect(workedMinutes({ totalMinutes: 10, breakMinutes: 60 })).toBe(0);
     });
   });
+  // HBC USA, Oct 2026: a no-shift daily limit cut a 12 h 22 m night to 7 h 54 m. The limit is a
+  // marker for the long-day flag, never a shift end: everything until the clock-out counts.
+  it('counts past a no-shift daily limit to the clock-out', async () => {
+    prisma.shift.findUnique.mockResolvedValue(null);
+    const night = { clockInAt: at('00:00'), expectedClockOutAt: at('08:00'), breakMinutes: 0, shiftId: null };
+    const capped = await service.columnsFor(night, at('12:00'));
+    expect(capped.paidMinutes).toBe(480);
+    const limit = await service.columnsFor({ ...night, endIsDailyLimit: true }, at('12:00'));
+    expect(limit.paidMinutes).toBe(720);
+    expect(limit.countedEndAt).toEqual(at('12:00'));
+  });
 });

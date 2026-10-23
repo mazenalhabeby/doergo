@@ -3385,8 +3385,8 @@
       "subtitle": "Cosa succede quando un membro senza turno oggi timbra qui.",
       "allow": "Consenti",
       "allowHint": "I membri timbrano liberamente. Ogni ora conta.",
-      "limit": "Consenti fino a un numero di ore al giorno",
-      "limitHint": "Il tempo oltre il limite conta solo se un responsabile lo approva come straordinario.",
+      "limit": "Segnala i giorni più lunghi di un numero di ore",
+      "limitHint": "Ogni ora conta. Un giorno più lungo viene segnalato al responsabile.",
       "shiftOnly": "Solo con un turno",
       "shiftOnlyHint": "I membri senza turno oggi non possono timbrare qui.",
       "note": "I membri con un turno non sono interessati. Il limite conta ogni ora lavorata oggi, in qualsiasi spazio, nel fuso orario di questo spazio.",
@@ -8268,7 +8268,7 @@
     "REQUEST_DATES_INVALID": "Scegli date valide: la fine non può precedere l’inizio e questo tipo copre un solo giorno.",
     "REQUEST_TYPE_INVALID": "Scegli un motivo per l’assenza.",
     "REQUEST_SPACE_REQUIRED": "Scegli lo spazio di lavoro per il giorno da remoto.",
-    "REQUEST_TIME_INVALID": "Indica un nuovo orario di inizio o di fine; la fine deve venire dopo l’inizio.",
+    "REQUEST_TIME_INVALID": "Indica un nuovo orario di inizio o di fine. Una fine prima dell’inizio è la mattina dopo, al massimo 16 ore.",
     "REQUEST_MINUTES_INVALID": "Gli straordinari devono essere tra 15 minuti e 12 ore.",
     "REQUEST_REASON_REQUIRED": "Scrivi che cosa chiedi.",
     "REQUEST_REASON_TOO_LONG": "Il motivo è troppo lungo: meno di 500 caratteri.",
@@ -8323,7 +8323,10 @@
     "RULE_KIND_INVALID": "Le regole esistono per straordinari, richieste e spese.",
     "RULE_EMPTY": "Una regola richiede una seconda approvazione, un promemoria o un passaggio.",
     "RULE_HOURS_INVALID": "Le ore devono essere un numero intero tra 1 e 720.",
-    "RULE_ESCALATE_ROLE_REQUIRED": "Scelga a chi passa se nessuno risponde."
+    "RULE_ESCALATE_ROLE_REQUIRED": "Scelga a chi passa se nessuno risponde.",
+    "REQUEST_OVERLAPS_LEAVE": "Quel giorno cade in ferie già chieste o approvate.",
+    "SELF_DECISION": "Non puoi decidere questo per te stesso. Chiedi a un responsabile o a un amministratore.",
+    "DAY_HOURS_SPACE_NOT_YOURS": "Scegli uno spazio di lavoro che gestisci."
   },
   "signLink": {
     "tabs": {
@@ -9609,7 +9612,8 @@
       "document": "Documenti",
       "join": "Richieste di adesione",
       "clientRequest": "Richieste dei clienti",
-      "guestRequest": "Spazi ospite"
+      "guestRequest": "Spazi ospite",
+      "outside": "Tempo fuori turno"
     },
     "headline": {
       "hours": "Ore da approvare",
@@ -9619,7 +9623,8 @@
       "noShow": "Non ha timbrato l’ingresso del turno",
       "assetProposal": "Ha inviato un documento per un nuovo bene",
       "join": "Vuole unirsi all’organizzazione",
-      "noShowRun": "{{count}} turni saltati di fila"
+      "noShowRun": "{{count}} turni saltati di fila",
+      "outside": "Tempo fuori turno"
     },
     "fact": {
       "workspace": "Spazio di lavoro",
@@ -9662,7 +9667,11 @@
       "reminded": "Promemoria",
       "appLastUsed": "Ultimo uso dell’app",
       "thisMonth": "Questo mese",
-      "likely": "Probabilmente"
+      "likely": "Probabilmente",
+      "planned": "Previsto",
+      "clocked": "Timbrato",
+      "before": "Prima dell’inizio",
+      "after": "Dopo la fine"
     },
     "cover": {
       "ok": "Restano abbastanza persone",
@@ -9682,7 +9691,9 @@
       "accept": "Accetta",
       "verify": "Verifica",
       "turnIntoJob": "Trasforma in intervento",
-      "absent": "Assente"
+      "absent": "Assente",
+      "count": "Contalo",
+      "notCount": "Non contare"
     },
     "needsPage": {
       "assetProposal": "Accettando si crea un bene: scelga il tipo nella pagina completa.",
@@ -10009,5 +10020,48 @@
     "getItOn": "Disponibile su",
     "getOnGooglePlay": "Disponibile su Google Play",
     "getOnAppStore": "Scarica su App Store"
+  },
+  "dayHours": {
+    "cellLabel": "{{name}}, {{day}}: cambia orario",
+    "start": "Inizio",
+    "end": "Fine",
+    "reason": "Motivo (facoltativo)",
+    "reasonPlaceholder": "La consegna arriva prima",
+    "plan": {
+      "shift": "Previsto: turno {{start}}–{{end}}",
+      "none": "Previsto: nessun turno · conta dall’entrata all’uscita",
+      "changed": "Orario cambiato: {{start}}–{{end}} · fissato da {{by}}",
+      "clockedIn": "entrata alle {{time}}"
+    },
+    "quick": {
+      "startEarlier": "Inizia 1 h prima",
+      "finishLater": "Finisci 1 h dopo",
+      "finishEarlier": "Finisci 1 h prima"
+    },
+    "nextMorning": "la mattina dopo",
+    "was": "prima {{duration}}",
+    "error": {
+      "same": "Inizio e fine sono la stessa ora.",
+      "tooLong": "{{start}} → {{end}} sarebbero {{duration}}. Una notte dura al massimo 16 ore: controlla gli orari.",
+      "missing": "Scegli un inizio e una fine."
+    },
+    "note": {
+      "plain": "{{name}} riceve una notifica. L’orologio conta queste ore, senza approvazione successiva.",
+      "clockedIn": "{{name}} ha timbrato: anche la registrazione di oggi viene aggiornata e il promemoria di uscita passa alle {{end}}. {{name}} riceve una notifica.",
+      "night": "La notte conta per {{day}}."
+    },
+    "stop": {
+      "self": "Non puoi fissare il tuo orario. Chiedi a un responsabile o a un amministratore.",
+      "onLeave": "{{name}} è in ferie dal {{from}} al {{to}}. Cambia prima le ferie.",
+      "leaveAsked": "{{name}} ha chiesto ferie per questo giorno. Decidi prima la richiesta."
+    },
+    "set": "Fissa orario",
+    "change": "Cambia orario",
+    "toast": {
+      "set": "Orario fissato per {{name}} il {{day}}",
+      "changed": "Orario cambiato per {{name}} il {{day}}",
+      "told": "{{name}} riceve una notifica."
+    },
+    "setBy": "Fissato da {{name}} · {{date}}"
   }
 }

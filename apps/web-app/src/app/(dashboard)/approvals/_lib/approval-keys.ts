@@ -12,6 +12,7 @@ export const KIND_KEYS: Partial<Record<ApprovalKind, QueryKey[]>> = {
   away: [keys.attendance.excursions()],
   extraTime: [keys.overtime.pending()],
   overtime: [keys.overtime.pending()],
+  outside: [keys.attendance.approvals(), keys.overtime.pending()],
   noShow: [keys.attendance.noShows()],
   issue: [keys.shiftIssues.list()],
   expense: [keys.assets.expensesPending()],

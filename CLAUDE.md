@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-10-13 (approvals inbox, phase 1 — local, not deployed)
+> **Last Updated**: 2026-10-23 (time counting model phases 1–3 — local, not deployed)
 
 ---
 
@@ -449,6 +449,24 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 > ⚠️ **Still inside after the end** reuses the existing sweeps with the workspace's thresholds: the leader at planned end + `leaderAfterMinutes` (the reminder is ARMED for that at clock-in; no worker nudges — the phone asks; routing as any escalation, never every admin), a provisional close at + `closeAfterMinutes` through `closeProvisionally` — the phone's later AUTO clock-out replaces it like any real one. "Is this member automatic" for a sweep's batch is ONE query (`settingsForEntries`).
 >
 > ⚠️ **The plan is a FIXED number of queries** whatever the workspaces (`ShiftResolverService.plannedWindows` — the shared `rotaFor` + legacy schedule, two queries). Radius = `geofenceArmRadius` (a drawn boundary → its enclosing circle; the decision is still `isAtSite`).
+
+### Counting time — with and without a shift (`docs/plans/time-counting-model.md`, LOCAL, not deployed)
+> One question per person per day: **is there a planned shift?** No shift → everything from clock-in to clock-out counts; past the workspace's daily hours the entry is flagged `PAST_DAILY_LIMIT` for the leader, nothing is cut. Shift → the plan counts; changes count when agreed (before: the day's hours change; after: ONE decision in Approvals).
+
+| Method | Endpoint | Description | Gate |
+|---|---|---|---|
+| GET · PUT | `/employees/:id/day-hours?date&spaceId` · `{date, spaceId?, startTime?, endTime?, reason?}` | The day-hours form's read (plan from the rota, hours already set, clocked in, leave) · set ONE day's hours — written as the member's `HOURS` request, APPROVED; a day already clocked is re-shaped; the member is pushed | `canManageRota` org-wide or in the workspace (a workspace leader must name one they lead); never your own day |
+| GET | `/attendance/outside/pending` | Undecided time worked before the planned start / after the planned end (last 31 days, never the caller's own) — the inbox kind `outside` | `canApproveOvertime` (in a space or org-wide) |
+| GET | `/attendance/outside/mine` | The member's own, with whom it waits for (the phone's "1 h 30 m … waiting for Anna") | the member; `@DenyExternal` |
+| POST | `/attendance/entries/:id/outside` `{minutes, reason?}` | Count N of those minutes (0 = don't count) — decided ONCE | `canApproveOvertime`; office rules (`gate` kind overtime) |
+
+> ⚠️ **A no-shift daily limit is a MARKER, not a cut** (`endIsDailyLimit`): `CountedTimeService.columnsFor` ignores such an end; clocking in with no hours left is kept + flagged (only `SHIFT_ONLY` refuses — the phone's offline check too). A night belongs to the day it STARTED (`countedMinutesOfDay`); the day's zone is member → workspace → organization (`memberDayZone`).
+>
+> ⚠️ **Changed hours across midnight**: an `HOURS` end at/before its start is the NEXT morning, at most 16 h (`REQUEST_LIMITS.HOURS_MAX_OVERNIGHT_MINUTES`); `applyApprovedRequests` rolls the end over (`atLocal(hhmm, nextDay)`).
+>
+> ⚠️ **Time outside the shift is decided by MOVING THE PLAN** (shared `attendance/outside-shift.ts`): after the end through the existing `addOvertimeToClosedEntry` (an APPROVED overtime round — the Overtime page's record, the member told), before the start by moving `expectedClockInAt`; then the one counted-time rule recounts. `TimeEntry.outsideDecidedAt/ById/CountedMinutes` (migration `20261023150000_outside_shift_decision`, additive) make it once-only. `kindNeedsMinutes` (shared) is what keeps it out of "Approve day".
+>
+> E2E: `python3 tools/outside-shift-e2e.py` (LOCAL, 11 checks). Web: Schedule wallchart → a person's day → "Change hours for this day". Phone: Time page shows today's changed hours and time waiting for a decision (needs an OTA).
 
 ### The approvals inbox (`/approvals`) — every decision waiting for the caller, in one place
 > Thirteen kinds (hours, away, extra time, overtime, requests, no-shows, shift issues, expenses, asset papers, documents, join requests, client requests, guest workspaces) lived on nine pages. Rules + wording: `packages/shared/src/approvals/` (`approval-kinds.ts` specs/routes, `approval-items.ts` normalizers, `approval-text.ts` the words — ONE module for web and phone); gateway `modules/approvals/` (aggregator via `common/self-dispatch.ts`). Web `/approvals` + the inbox count beside the bell; phone More → Approvals (`/(app)/approvals`, `/(app)/approval/[key]`).

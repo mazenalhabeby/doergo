@@ -856,10 +856,10 @@
       "noHoursTitle": "No hours left today",
       "noHoursBody": "{{location}} allows {{hours}} a day without a shift, and you have worked them. Ask your leader for a shift.",
       "countsUntil": "Counts until {{time}} · today's limit",
-      "minutesLeft_one": "{{count}} min left today",
-      "minutesLeft_other": "{{count}} min left today",
-      "afterLimit": "After {{time}}, your time counts only if your leader approves overtime.",
-      "reachedShort": "{{location}} allows {{hours}} a day without a shift. You've reached it."
+      "minutesLeft_one": "{{count}} min to today’s hours",
+      "minutesLeft_other": "{{count}} min to today’s hours",
+      "afterLimit": "After {{time}} your time still counts, and your leader sees the long day.",
+      "reachedShort": "{{location}}: you are past today’s {{hours}} without a shift. Your time still counts — your leader will see the long day."
     },
     "picker": {
       "title": "Where are you clocking in?",
@@ -871,7 +871,20 @@
       "inRange": "{{distance}} · You are here",
       "away": "{{distance}} away"
     },
-    "noAssignedLocations": "You are not assigned to a workspace yet. Ask your admin to add you to one."
+    "noAssignedLocations": "You are not assigned to a workspace yet. Ask your admin to add you to one.",
+    "dayHours": {
+      "today": "Today you work {{hours}}",
+      "todayBy": "Today you work {{hours}} · set by {{name}}",
+      "nextMorning": "(next morning)",
+      "startsAt": "from {{time}}",
+      "endsAt": "until {{time}}"
+    },
+    "outside": {
+      "waiting": "{{duration}} outside your shift on {{day}} is waiting for {{names}}",
+      "waitingNoName": "{{duration}} outside your shift on {{day}} is waiting for a decision",
+      "andMore_one": "{{names}} and {{count}} more",
+      "andMore_other": "{{names}} and {{count}} more"
+    }
   },
   "overtime": {
     "title": "Overtime",
@@ -3320,7 +3333,7 @@
       "REQUEST_DATES_INVALID": "Check the dates — the last day cannot come before the first.",
       "REQUEST_TYPE_INVALID": "Choose the kind of leave.",
       "REQUEST_SPACE_REQUIRED": "Choose the workspace.",
-      "REQUEST_TIME_INVALID": "Choose a new start or end — and the end after the start.",
+      "REQUEST_TIME_INVALID": "Choose a new start or end. An end before the start is the next morning — at most 16 hours.",
       "REQUEST_MINUTES_INVALID": "Choose between 15 minutes and 12 hours.",
       "REQUEST_REASON_REQUIRED": "Say what you are asking for.",
       "REQUEST_REASON_TOO_LONG": "The reason is too long — 500 characters at most.",
@@ -3444,7 +3457,7 @@
       "dismiss": "Dismiss",
       "clockInNow": "Clock in now"
     },
-    "noShiftLeft": "At {{location}} · no shift · {{left}} left today",
+    "noShiftLeft": "At {{location}} · no shift · {{left}} to today’s hours",
     "askMoreTime": "Ask for more time",
     "askMoreTimeHint": "Your leader is asked. You can clock in once they agree.",
     "arrivedStartsAt": "You're at {{workspace}} · your shift starts at {{time}}"
@@ -5171,7 +5184,8 @@
       "document": "Documents",
       "join": "Join requests",
       "clientRequest": "Client requests",
-      "guestRequest": "Guest workspaces"
+      "guestRequest": "Guest workspaces",
+      "outside": "Time outside the shift"
     },
     "headline": {
       "hours": "Hours to approve",
@@ -5181,7 +5195,8 @@
       "noShow": "Didn't clock in for the shift",
       "assetProposal": "Sent in a paper for a new asset",
       "join": "Wants to join the organization",
-      "noShowRun": "Missed {{count}} shifts in a row"
+      "noShowRun": "Missed {{count}} shifts in a row",
+      "outside": "Time outside the shift"
     },
     "fact": {
       "workspace": "Workspace",
@@ -5224,7 +5239,11 @@
       "reminded": "Reminded",
       "appLastUsed": "App last used",
       "thisMonth": "This month",
-      "likely": "Likely"
+      "likely": "Likely",
+      "planned": "Planned",
+      "clocked": "Clocked",
+      "before": "Before the start",
+      "after": "After the end"
     },
     "cover": {
       "ok": "Enough people stay",
@@ -5244,7 +5263,9 @@
       "accept": "Accept",
       "verify": "Verify",
       "turnIntoJob": "Turn into a job",
-      "absent": "Absent"
+      "absent": "Absent",
+      "count": "Count it",
+      "notCount": "Don’t count"
     },
     "needsPage": {
       "assetProposal": "Accepting this creates an asset — choose its kind on the full page.",

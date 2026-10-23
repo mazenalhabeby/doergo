@@ -6,6 +6,7 @@ export const APPROVAL_KINDS = [
   'away',
   'extraTime',
   'overtime',
+  'outside',
   'request',
   'noShow',
   'issue',
@@ -132,6 +133,13 @@ export const APPROVAL_KIND_SPECS: Record<ApprovalKind, ApprovalKindSpec> = {
     decideKey: 'canApproveOvertime',
     orgWide: false,
     actions: [approve('approve', { input: 'minutes' }), reject('reject', 'required')],
+  },
+  // Time worked before the planned start / after the planned end (attendance/outside-shift.ts): count all or part of it
+  // (the minutes, filled with all of it), or don't count it. Counting moves the plan, like approved overtime.
+  outside: {
+    decideKey: 'canApproveOvertime',
+    orgWide: false,
+    actions: [approve('count', { input: 'minutes' }), { ...reject('notCount', 'optional'), tone: 'neutral' }],
   },
   request: { decideKey: 'canManageRota', orgWide: false, actions: [approve('approve'), reject('reject', 'optional')] },
   // Two answers that CLOSE it (attendance/no-show.ts): excused, with what happened — or a real missed day.

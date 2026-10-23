@@ -856,10 +856,10 @@
       "noHoursTitle": "No quedan horas hoy",
       "noHoursBody": "{{location}} permite {{hours}} al día sin turno y ya las has trabajado. Pide un turno a tu responsable.",
       "countsUntil": "Cuenta hasta las {{time}} · límite de hoy",
-      "minutesLeft_one": "Queda {{count}} min hoy",
-      "minutesLeft_other": "Quedan {{count}} min hoy",
-      "afterLimit": "Después de las {{time}}, tu tiempo solo cuenta si tu responsable aprueba horas extra.",
-      "reachedShort": "{{location}} permite {{hours}} al día sin turno. Ya lo ha alcanzado."
+      "minutesLeft_one": "Falta {{count}} min para las horas de hoy",
+      "minutesLeft_other": "Faltan {{count}} min para las horas de hoy",
+      "afterLimit": "Después de las {{time}} tu tiempo sigue contando, y tu responsable verá el día largo.",
+      "reachedShort": "{{location}}: has pasado las {{hours}} de hoy sin turno. Tu tiempo sigue contando; tu responsable verá el día largo."
     },
     "picker": {
       "title": "¿Dónde fichas la entrada?",
@@ -871,7 +871,20 @@
       "inRange": "{{distance}} · Estás aquí",
       "away": "a {{distance}}"
     },
-    "noAssignedLocations": "Aún no tienes un espacio de trabajo asignado. Pide a tu administrador que te añada."
+    "noAssignedLocations": "Aún no tienes un espacio de trabajo asignado. Pide a tu administrador que te añada.",
+    "dayHours": {
+      "today": "Hoy trabajas {{hours}}",
+      "todayBy": "Hoy trabajas {{hours}} · fijado por {{name}}",
+      "nextMorning": "(hasta la mañana siguiente)",
+      "startsAt": "desde las {{time}}",
+      "endsAt": "hasta las {{time}}"
+    },
+    "outside": {
+      "waiting": "{{duration}} fuera de tu turno el {{day}} esperan a {{names}}",
+      "waitingNoName": "{{duration}} fuera de tu turno el {{day}} esperan una decisión",
+      "andMore_one": "{{names}} y {{count}} más",
+      "andMore_other": "{{names}} y {{count}} más"
+    }
   },
   "overtime": {
     "title": "Horas extra",
@@ -3320,7 +3333,7 @@
       "REQUEST_DATES_INVALID": "Revise las fechas: el último día no puede ser anterior al primero.",
       "REQUEST_TYPE_INVALID": "Elija el tipo de ausencia.",
       "REQUEST_SPACE_REQUIRED": "Elija el espacio de trabajo.",
-      "REQUEST_TIME_INVALID": "Elija un nuevo inicio o fin, con el fin después del inicio.",
+      "REQUEST_TIME_INVALID": "Elija un nuevo inicio o fin. Un fin anterior al inicio es a la mañana siguiente, como máximo 16 horas.",
       "REQUEST_MINUTES_INVALID": "Elija entre 15 minutos y 12 horas.",
       "REQUEST_REASON_REQUIRED": "Indique qué solicita.",
       "REQUEST_REASON_TOO_LONG": "El motivo es demasiado largo: 500 caracteres como máximo.",
@@ -3444,7 +3457,7 @@
       "dismiss": "Descartar",
       "clockInNow": "Marcar entrada ahora"
     },
-    "noShiftLeft": "En {{location}} · sin turno · quedan {{left}} hoy",
+    "noShiftLeft": "En {{location}} · sin turno · {{left}} para las horas de hoy",
     "askMoreTime": "Pedir más tiempo",
     "askMoreTimeHint": "Se pregunta a su responsable. Podrá fichar cuando lo apruebe.",
     "arrivedStartsAt": "Estás en {{workspace}} · tu turno empieza a las {{time}}"
@@ -5171,7 +5184,8 @@
       "document": "Documentos",
       "join": "Solicitudes de ingreso",
       "clientRequest": "Solicitudes de clientes",
-      "guestRequest": "Espacios invitados"
+      "guestRequest": "Espacios invitados",
+      "outside": "Tiempo fuera del turno"
     },
     "headline": {
       "hours": "Horas por aprobar",
@@ -5181,7 +5195,8 @@
       "noShow": "No fichó la entrada del turno",
       "assetProposal": "Envió un documento para un activo nuevo",
       "join": "Quiere unirse a la organización",
-      "noShowRun": "{{count}} turnos seguidos sin venir"
+      "noShowRun": "{{count}} turnos seguidos sin venir",
+      "outside": "Tiempo fuera del turno"
     },
     "fact": {
       "workspace": "Espacio de trabajo",
@@ -5224,7 +5239,11 @@
       "reminded": "Recordatorios",
       "appLastUsed": "Último uso de la app",
       "thisMonth": "Este mes",
-      "likely": "Probablemente"
+      "likely": "Probablemente",
+      "planned": "Previsto",
+      "clocked": "Fichado",
+      "before": "Antes del inicio",
+      "after": "Después del fin"
     },
     "cover": {
       "ok": "Quedan suficientes personas",
@@ -5244,7 +5263,9 @@
       "accept": "Aceptar",
       "verify": "Verificar",
       "turnIntoJob": "Convertir en trabajo",
-      "absent": "Ausente"
+      "absent": "Ausente",
+      "count": "Contarlo",
+      "notCount": "No contar"
     },
     "needsPage": {
       "assetProposal": "Al aceptarlo se crea un activo: elija su tipo en la página completa.",

@@ -3385,8 +3385,8 @@
       "subtitle": "Was passiert, wenn ein Mitglied ohne Schicht heute hier einstempelt.",
       "allow": "Erlauben",
       "allowHint": "Mitglieder stempeln frei ein und aus. Jede Stunde zählt.",
-      "limit": "Bis zu einer Anzahl Stunden pro Tag erlauben",
-      "limitHint": "Zeit über dem Limit zählt nur, wenn eine Leitung sie als Überstunden genehmigt.",
+      "limit": "Tage über einer Anzahl Stunden markieren",
+      "limitHint": "Jede Stunde zählt. Ein längerer Tag wird für die Leitung zur Prüfung markiert.",
       "shiftOnly": "Nur mit Schicht",
       "shiftOnlyHint": "Mitglieder ohne Schicht heute können hier nicht einstempeln.",
       "note": "Mitglieder mit Schicht sind nicht betroffen. Das Limit zählt jede heute gearbeitete Stunde, an jedem Arbeitsbereich, in der Zeitzone dieses Arbeitsbereichs.",
@@ -8268,7 +8268,7 @@
     "REQUEST_DATES_INVALID": "Wählen Sie gültige Daten — das Ende darf nicht vor dem Beginn liegen, und diese Art gilt für einen Tag.",
     "REQUEST_TYPE_INVALID": "Wählen Sie einen Grund für die Abwesenheit.",
     "REQUEST_SPACE_REQUIRED": "Wählen Sie den Arbeitsbereich für den Remote-Tag.",
-    "REQUEST_TIME_INVALID": "Geben Sie einen neuen Beginn oder ein neues Ende an — das Ende muss nach dem Beginn liegen.",
+    "REQUEST_TIME_INVALID": "Geben Sie einen neuen Beginn oder ein neues Ende an. Ein Ende vor dem Beginn ist am nächsten Morgen – höchstens 16 Stunden.",
     "REQUEST_MINUTES_INVALID": "Überstunden müssen zwischen 15 Minuten und 12 Stunden liegen.",
     "REQUEST_REASON_REQUIRED": "Beschreiben Sie, was Sie beantragen.",
     "REQUEST_REASON_TOO_LONG": "Der Grund ist zu lang — bitte unter 500 Zeichen.",
@@ -8323,7 +8323,10 @@
     "RULE_KIND_INVALID": "Regeln gibt es für Überstunden, Anträge und Ausgaben.",
     "RULE_EMPTY": "Eine Regel braucht eine zweite Freigabe, eine Erinnerung oder eine Weitergabe.",
     "RULE_HOURS_INVALID": "Stunden müssen eine ganze Zahl zwischen 1 und 720 sein.",
-    "RULE_ESCALATE_ROLE_REQUIRED": "Wählen Sie, an wen es weitergeht, wenn niemand antwortet."
+    "RULE_ESCALATE_ROLE_REQUIRED": "Wählen Sie, an wen es weitergeht, wenn niemand antwortet.",
+    "REQUEST_OVERLAPS_LEAVE": "Dieser Tag liegt in bereits beantragtem oder genehmigtem Urlaub.",
+    "SELF_DECISION": "Darüber können Sie nicht selbst entscheiden. Fragen Sie eine Führungskraft oder einen Administrator.",
+    "DAY_HOURS_SPACE_NOT_YOURS": "Wählen Sie einen Arbeitsbereich, den Sie leiten."
   },
   "signLink": {
     "tabs": {
@@ -9609,7 +9612,8 @@
       "document": "Dokumente",
       "join": "Beitrittsanfragen",
       "clientRequest": "Kundenanfragen",
-      "guestRequest": "Gast-Arbeitsbereiche"
+      "guestRequest": "Gast-Arbeitsbereiche",
+      "outside": "Zeit außerhalb der Schicht"
     },
     "headline": {
       "hours": "Stunden zur Freigabe",
@@ -9619,7 +9623,8 @@
       "noShow": "Hat sich nicht zur Schicht eingestempelt",
       "assetProposal": "Hat ein Dokument für eine neue Anlage eingereicht",
       "join": "Möchte der Organisation beitreten",
-      "noShowRun": "{{count}} Schichten in Folge verpasst"
+      "noShowRun": "{{count}} Schichten in Folge verpasst",
+      "outside": "Zeit außerhalb der Schicht"
     },
     "fact": {
       "workspace": "Arbeitsbereich",
@@ -9662,7 +9667,11 @@
       "reminded": "Erinnert",
       "appLastUsed": "App zuletzt genutzt",
       "thisMonth": "Diesen Monat",
-      "likely": "Vermutlich"
+      "likely": "Vermutlich",
+      "planned": "Geplant",
+      "clocked": "Gestempelt",
+      "before": "Vor Beginn",
+      "after": "Nach Ende"
     },
     "cover": {
       "ok": "Genug Personen bleiben",
@@ -9682,7 +9691,9 @@
       "accept": "Annehmen",
       "verify": "Bestätigen",
       "turnIntoJob": "Zu einem Auftrag machen",
-      "absent": "Abwesend"
+      "absent": "Abwesend",
+      "count": "Anrechnen",
+      "notCount": "Nicht anrechnen"
     },
     "needsPage": {
       "assetProposal": "Beim Annehmen entsteht eine Anlage — wählen Sie ihre Art auf der vollständigen Seite.",
@@ -10009,5 +10020,48 @@
     "getItOn": "Jetzt bei",
     "getOnGooglePlay": "Jetzt bei Google Play",
     "getOnAppStore": "Im App Store laden"
+  },
+  "dayHours": {
+    "cellLabel": "{{name}}, {{day}}: Arbeitszeit ändern",
+    "start": "Beginn",
+    "end": "Ende",
+    "reason": "Grund (optional)",
+    "reasonPlaceholder": "Lieferung kommt früher",
+    "plan": {
+      "shift": "Geplant: Schicht {{start}}–{{end}}",
+      "none": "Geplant: keine Schicht · zählt vom Einstempeln bis zum Ausstempeln",
+      "changed": "Geänderte Arbeitszeit: {{start}}–{{end}} · festgelegt von {{by}}",
+      "clockedIn": "eingestempelt um {{time}}"
+    },
+    "quick": {
+      "startEarlier": "1 Std. früher beginnen",
+      "finishLater": "1 Std. später enden",
+      "finishEarlier": "1 Std. früher enden"
+    },
+    "nextMorning": "am nächsten Morgen",
+    "was": "vorher {{duration}}",
+    "error": {
+      "same": "Beginn und Ende sind gleich.",
+      "tooLong": "{{start}} → {{end}} wären {{duration}}. Eine Nacht dauert höchstens 16 Stunden – bitte die Zeiten prüfen.",
+      "missing": "Wählen Sie Beginn und Ende."
+    },
+    "note": {
+      "plain": "{{name}} erhält eine Benachrichtigung. Die Uhr zählt diese Zeit, ohne spätere Genehmigung.",
+      "clockedIn": "{{name}} ist eingestempelt: Der heutige Eintrag wird ebenfalls angepasst, und die Erinnerung zum Ausstempeln kommt um {{end}}. {{name}} erhält eine Benachrichtigung.",
+      "night": "Die Nacht zählt zum {{day}}."
+    },
+    "stop": {
+      "self": "Ihre eigene Arbeitszeit können Sie nicht festlegen. Fragen Sie eine Führungskraft oder einen Administrator.",
+      "onLeave": "{{name}} ist vom {{from}} bis {{to}} im Urlaub. Ändern Sie zuerst den Urlaub.",
+      "leaveAsked": "{{name}} hat für diesen Tag Urlaub beantragt. Entscheiden Sie zuerst den Antrag."
+    },
+    "set": "Zeit festlegen",
+    "change": "Zeit ändern",
+    "toast": {
+      "set": "Arbeitszeit für {{name}} am {{day}} festgelegt",
+      "changed": "Arbeitszeit für {{name}} am {{day}} geändert",
+      "told": "{{name}} erhält eine Benachrichtigung."
+    },
+    "setBy": "Festgelegt von {{name}} · {{date}}"
   }
 }

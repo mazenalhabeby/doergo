@@ -2,7 +2,13 @@
 
 import { useTranslation } from "react-i18next"
 import { CheckCheck, ChevronRight } from "lucide-react"
-import { describeApproval, type ApprovalDay, type ApprovalItem, type ApprovalT } from "@hbcfield/shared/client"
+import {
+  describeApproval,
+  kindNeedsMinutes,
+  type ApprovalDay,
+  type ApprovalItem,
+  type ApprovalT,
+} from "@hbcfield/shared/client"
 import { dateLocale, formatMediumDate } from "@/lib/format-date"
 import { Button } from "@/components/ui/button"
 import { UserAvatar } from "@/components/common/user-avatar"
@@ -30,7 +36,7 @@ export function DayPanel({
   orgCurrency?: string | null
 }) {
   const { t, i18n } = useTranslation()
-  const needsMinutes = day.kinds.some((k) => k === "extraTime" || k === "overtime")
+  const needsMinutes = day.kinds.some(kindNeedsMinutes)
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">

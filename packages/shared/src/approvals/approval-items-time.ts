@@ -73,6 +73,30 @@ export const timeApprovals = {
     });
   },
 
+  /** Worked outside the planned shift and not counted — the leader counts all, part or none of it. */
+  outside(r: Row, ctx: ApprovalContext): ApprovalItem {
+    const raised = iso(r.clockOutAt) ?? iso(r.clockInAt);
+    return item('outside', ctx, {
+      id: r.id, // the time entry: the route takes it
+      subject: person(r.user),
+      space: spaceOf(r.location),
+      raisedAt: raised,
+      dueAt: null,
+      group: raised && ctx.now.getTime() - new Date(raised).getTime() < 36 * HOUR ? 'TODAY' : 'LATER',
+      data: {
+        clockInAt: iso(r.clockInAt),
+        clockOutAt: iso(r.clockOutAt),
+        plannedStart: iso(r.expectedClockInAt),
+        plannedEnd: iso(r.expectedClockOutAt),
+        beforeMinutes: r.outside?.before ?? 0,
+        afterMinutes: r.outside?.after ?? 0,
+        // The minutes box opens on all of it: "Count it" is one tap, "Change" is editing the number.
+        requestedMinutes: r.outside?.total ?? 0,
+        timezone: r.timezone ?? r.location?.timezone ?? null,
+      },
+    });
+  },
+
   /** The formal overtime round (asked, signed, waiting for a leader). */
   overtime(r: Row, ctx: ApprovalContext): ApprovalItem {
     return item('overtime', ctx, {

@@ -12,6 +12,8 @@ interface CountableEntry {
   /** The ones that do not count as work — what payroll subtracts. */
   unpaidBreakMinutes?: number | null;
   shiftId?: string | null;
+  /** The planned end is only a no-shift daily limit (a marker for the long-day flag), not a shift end. */
+  endIsDailyLimit?: boolean | null;
 }
 
 interface CountedColumns {
@@ -56,17 +58,18 @@ export class CountedTimeService {
    * clock-out path needs it for the flags anyway, and asking the database twice
    * for the same integer on the hottest write in the product is a waste.
    */
-  async columnsFor(
-    entry: CountableEntry,
-    clockOutAt: Date,
-    knownToleranceMin?: number,
-  ): Promise<CountedColumns> {
+  async columnsFor(entry: CountableEntry, clockOutAt: Date, knownToleranceMin?: number): Promise<CountedColumns> {
     const toleranceMin = knownToleranceMin ?? (await this.toleranceFor(entry.shiftId ?? null));
     const { countedStartAt, countedEndAt, paidMinutes } = computeCountedTime({
       clockInAt: entry.clockInAt,
       clockOutAt,
       expectedStartAt: entry.expectedClockInAt ?? null,
-      expectedEndAt: entry.expectedClockOutAt ?? null,
+      /*
+        A no-shift daily limit is NOT a shift end: past it the time still counts and the
+        entry is flagged PAST_DAILY_LIMIT for the leader (docs/plans/time-counting-model.md).
+        Capping here is what cut HBC USA's night shifts short in October 2026.
+      */
+      expectedEndAt: entry.endIsDailyLimit ? null : (entry.expectedClockOutAt ?? null),
       toleranceMin,
       /*
         Only the unpaid minutes come off.
@@ -106,9 +109,7 @@ export class CountedTimeService {
     if (!entry.clockOutAt) return;
     const counted = await this.columnsFor(entry, entry.clockOutAt);
     await (tx ?? this.prisma).timeEntry.update({ where: { id: entry.id }, data: counted });
-    this.logger.debug(
-      `Recounted entry ${entry.id}: paid=${counted.paidMinutes}m (breaks ${entry.breakMinutes ?? 0}m)`,
-    );
+    this.logger.debug(`Recounted entry ${entry.id}: paid=${counted.paidMinutes}m (breaks ${entry.breakMinutes ?? 0}m)`);
   }
 }
 

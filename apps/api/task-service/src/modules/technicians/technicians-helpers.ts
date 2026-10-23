@@ -25,7 +25,10 @@ function dateKeyOf(v: Date | string): DateKey {
  * the 26th, past `end`, and the last day was silently dropped. West of UTC the same Date is the
  * evening BEFORE, so `getDay()` also named the wrong weekday. A date key has no zone.
  */
-export function availabilityDays(q: { date?: string; startDate?: string; endDate?: string }, now = new Date()): DateKey[] {
+export function availabilityDays(
+  q: { date?: string; startDate?: string; endDate?: string },
+  now = new Date(),
+): DateKey[] {
   if (q.startDate && q.endDate) {
     const from = dateKeyOf(q.startDate);
     const to = dateKeyOf(q.endDate);
@@ -48,7 +51,8 @@ export const REQUEST_REFUSALS: Record<RequestInputError, string> = {
   REQUEST_DATES_INVALID: 'Choose a start day on or before the end day.',
   REQUEST_TYPE_INVALID: 'That is not a kind of leave.',
   REQUEST_SPACE_REQUIRED: 'Choose the workspace.',
-  REQUEST_TIME_INVALID: 'Give a start and/or end time (HH:MM), the end after the start.',
+  REQUEST_TIME_INVALID:
+    'Give a start and/or end time (HH:MM). An end before the start is the next morning, at most 16 hours.',
   REQUEST_MINUTES_INVALID: `Overtime is between ${REQUEST_LIMITS.OVERTIME_MIN_MINUTES} and ${REQUEST_LIMITS.OVERTIME_MAX_MINUTES} minutes.`,
   REQUEST_REASON_REQUIRED: 'Say what you are asking for.',
   REQUEST_REASON_TOO_LONG: `Keep the reason under ${REQUEST_LIMITS.REASON_MAX} characters.`,

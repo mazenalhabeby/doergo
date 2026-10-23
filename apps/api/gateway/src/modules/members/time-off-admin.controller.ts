@@ -1,5 +1,5 @@
 import { ServiceCalls } from '../../common/microservices/service-calls';
-import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Param, Query, Body, UseInterceptors } from '@nestjs/common';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Role, CurrentUser, RequirePermissionInSpace } from '@hbcfield/shared';
@@ -15,9 +15,11 @@ import {
   updateTimeOff,
   adminDeleteTimeOff,
   cancelTimeOff,
+  setDayHours,
+  getDayHours,
 } from '@hbcfield/shared/microservices';
 import type { SessionUser } from '../../common/request.types';
-import { ApproveTimeOffDto, AddTimeOffDto, UpdateTimeOffDto } from './dto/leave-bodies.dto';
+import { ApproveTimeOffDto, AddTimeOffDto, UpdateTimeOffDto, SetDayHoursDto } from './dto/leave-bodies.dto';
 
 /**
  * /employees/time-off — the organization's leave: the list, approving, entering,
@@ -116,6 +118,48 @@ export class TimeOffAdminController {
       startDate: body.startDate,
       endDate: body.endDate,
       reason: body.reason,
+    });
+  }
+
+  /*
+    The hours of ONE day, set by the office (docs/plans/time-counting-model.md, phase 2):
+    written as an approved changed-hours request; a day already clocked is re-shaped.
+    Space-aware: a workspace leader sets hours only in a workspace they lead (checked in the service).
+  */
+  @Get(':id/day-hours')
+  @ApiOperation({ summary: 'What the day-hours form shows: the plan, hours already set, clocked in, leave' })
+  @ApiParam({ name: 'id', description: 'Member ID' })
+  @RequirePermissionInSpace('canManageRota')
+  async getDayHours(
+    @Param('id') id: string,
+    @Query('date') date: string,
+    @Query('spaceId') spaceId: string,
+    @CurrentUser() user: SessionUser,
+  ) {
+    return this.services.task.ask(getDayHours, {
+      organizationId: callerOrgId(user),
+      technicianId: id,
+      scopeSpaceIds: leaveWriteScope(user),
+      date: typeof date === 'string' ? date.slice(0, 10) : '',
+      spaceId: typeof spaceId === 'string' ? spaceId : '',
+    });
+  }
+
+  @Put(':id/day-hours')
+  @ApiOperation({ summary: "Set one day's hours for a member (an approved changed-hours request)" })
+  @ApiParam({ name: 'id', description: 'Member ID' })
+  @RequirePermissionInSpace('canManageRota')
+  async setDayHours(@Param('id') id: string, @Body() body: SetDayHoursDto, @CurrentUser() user: SessionUser) {
+    return this.services.task.ask(setDayHours, {
+      editorId: user.id,
+      organizationId: callerOrgId(user),
+      technicianId: id,
+      scopeSpaceIds: leaveWriteScope(user),
+      date: body.date,
+      spaceId: body.spaceId ?? null,
+      startTime: body.startTime ?? null,
+      endTime: body.endTime ?? null,
+      reason: body.reason ?? null,
     });
   }
 

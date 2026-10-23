@@ -12,7 +12,11 @@ const read = (rel: string) => fs.readFileSync(path.join(MODULES, rel), 'utf8');
 describe('office rules are asked on every approve path of their kinds', () => {
   // A kind whose approve and refuse paths live in two files since a split names both (`a + b`).
   const paths: Array<[string, string]> = [
-    ['attendance/extra-time/extra-time-approval.service.ts + attendance/extra-time/extra-time-decision.service.ts', 'overtime'],
+    [
+      'attendance/extra-time/extra-time-approval.service.ts + attendance/extra-time/extra-time-decision.service.ts',
+      'overtime',
+    ],
+    ['attendance/extra-time/outside-shift.service.ts', 'overtime'],
     ['technicians/time-off-decision.service.ts', 'request'],
     ['assets/expenses/asset-expense-review.service.ts', 'expense'],
   ];

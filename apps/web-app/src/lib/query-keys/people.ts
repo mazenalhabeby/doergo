@@ -2,7 +2,7 @@
  * Query keys for people's time: attendance, overtime, leave, rotas, approvals, issues, documents,
  * chat, the calendar, rates.
  */
-import { named } from './work';
+import { named } from "./work"
 
 /*
 Everything below is keyed by names chosen by hand before the endpoint table
@@ -62,6 +62,8 @@ const timeOffKeys = {
   org: () => named("orgTimeOff"),
   orgApproved: () => named("orgTimeOff", ["APPROVED"]),
   orgWindow: (start: string, end: string) => named("orgTimeOff", ["window", start, end]),
+  /** The day-hours form's read for one person, day and workspace. */
+  dayHours: (memberId: string, date: string, spaceId: string) => named("dayHours", [memberId, date, spaceId]),
   /** One member's leave on their record. */
   member: (...a: [memberId?: string, status?: string]) => named("employeeTimeOff", a),
   mine: (userId: string | undefined) => named("my-time-off", [userId]),
@@ -77,7 +79,8 @@ const timeOffKeys = {
   /** The cover chart's footer. */
   coverRange: (...a: [start?: string, end?: string]) => named("cover-range", a),
   /** A member's jobs inside a leave request's window. */
-  memberTasksInWindow: (memberId: string, start: string, end: string) => named("employee-tasks-window", [memberId, start, end]),
+  memberTasksInWindow: (memberId: string, start: string, end: string) =>
+    named("employee-tasks-window", [memberId, start, end]),
 } as const
 
 const schedulesKeys = {
@@ -169,7 +172,8 @@ const supportKeys = {
 const calendarKeys = {
   /** Every calendar window. */
   all: () => named("calendar"),
-  window: (from: string, to: string, scope: string, layers: string, lang: string) => named("calendar", [from, to, scope, layers, lang]),
+  window: (from: string, to: string, scope: string, layers: string, lang: string) =>
+    named("calendar", [from, to, scope, layers, lang]),
   event: (...a: [eventId?: string | null]) => named("calendar-event", a),
   feed: () => named("calendar-feed"),
   holidays: (...a: [scope?: string, year?: number, lang?: string]) => named("calendar-holidays", a),
@@ -201,4 +205,4 @@ export {
   supportKeys,
   calendarKeys,
   ratesKeys,
-};
+}

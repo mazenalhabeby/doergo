@@ -169,10 +169,11 @@ export function TimeBanners({
         />
       ) : null}
 
-      {/* One line, only when the workspace they are at refuses them — never one per workspace. */}
+      {/* One line, only for the workspace they are at — never one per workspace. Needing a shift refuses;
+          past today's hours still counts and is flagged for the leader, so it only warns. */}
       {noShiftHere?.allowance.kind === 'refused' ? (
         <Banner
-          tone="critical"
+          tone={noShiftHere.allowance.reason === 'SHIFT_ONLY' ? 'critical' : 'warn'}
           text={noShiftHere.allowance.reason === 'SHIFT_ONLY'
             ? t('attendance.noShift.shiftOnlyBody', { location: noShiftHere.location.name })
             : t('attendance.noShift.reachedShort', {

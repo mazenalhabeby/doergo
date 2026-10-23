@@ -39,7 +39,7 @@ describe('requests — the shared contract', () => {
     [{ kind: 'REMOTE', startDate: '2026-11-14' }, 'REQUEST_SPACE_REQUIRED'],
     [{ kind: 'REMOTE', spaceId: 's', startDate: '2026-11-01', endDate: '2026-12-15' }, 'REQUEST_TOO_MANY_DAYS'],
     [{ kind: 'HOURS', startDate: '2026-11-14' }, 'REQUEST_TIME_INVALID'],
-    [{ kind: 'HOURS', startDate: '2026-11-14', startTime: '17:00', endTime: '09:00' }, 'REQUEST_TIME_INVALID'],
+    [{ kind: 'HOURS', startDate: '2026-11-14', startTime: '17:00', endTime: '10:00' }, 'REQUEST_TIME_INVALID'],
     [{ kind: 'HOURS', startDate: '2026-11-14', endDate: '2026-11-15', startTime: '10:00' }, 'REQUEST_DATES_INVALID'],
     [{ kind: 'OVERTIME', startDate: '2026-11-14', minutes: 5 }, 'REQUEST_MINUTES_INVALID'],
     [{ kind: 'OTHER', startDate: '2026-11-14' }, 'REQUEST_REASON_REQUIRED'],

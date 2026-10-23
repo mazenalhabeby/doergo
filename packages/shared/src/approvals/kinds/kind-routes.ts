@@ -68,6 +68,13 @@ export function approvalRoute(d: ApprovalDecision): ApprovalRoute {
       return yes
         ? { ok: true, method: 'POST', path: `/overtime/${id}/approve`, body: { maxDurationMinutes: minutes } }
         : { ok: true, method: 'POST', path: `/overtime/${id}/reject`, body: { reason } };
+    case 'outside':
+      return {
+        ok: true,
+        method: 'POST',
+        path: `/attendance/entries/${id}/outside`,
+        body: { minutes: yes ? minutes : 0, ...(reason ? { reason } : {}) },
+      };
     case 'request':
       return {
         ok: true,
@@ -135,6 +142,8 @@ export function approvalWebPath(item: ApprovalItem): string {
     case 'extraTime':
     case 'overtime':
       return '/overtime';
+    case 'outside':
+      return '/attendance?tab=approvals';
     case 'request':
       return '/schedule';
     case 'issue':

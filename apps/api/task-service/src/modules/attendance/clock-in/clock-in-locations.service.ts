@@ -54,14 +54,16 @@ export class ClockInLocationsService {
     /*
       ONE day for the person, whichever workspace asks (memberDayZone): today's
       hours are read once, in their zone, and only if some workspace limits them.
+      With no zone of their own, the zone of their main workspace (else the first).
     */
+    const homeTz = (spaces.find((s) => primarySpaceIds.has(s.id)) ?? spaces[0])?.timezone ?? null;
     let dayTz: Promise<string> | null = null;
     let worked: Promise<number> | null = null;
     let overtimeRows: Promise<DayRequestRow[]> | null = null;
     // Asked by every workspace at once (Promise.all), so the promise is shared, not the answer.
-    const memberDay = (fallback: string): Promise<string> =>
+    const memberDay = (): Promise<string> =>
       (dayTz ??= personZones(this.prisma, userId).then((u) =>
-        memberDayZone(u?.timezone, u?.organization?.timezone, fallback),
+        memberDayZone(u?.timezone, u?.organization?.timezone, homeTz),
       ));
     return Promise.all(
       spaces.map(async (space) => {
@@ -85,7 +87,7 @@ export class ClockInLocationsService {
             : false;
         const isPrimary = primarySpaceIds.has(space.id);
         if (!limited) return { ...space, noShift: null, shiftToday: hasShiftNow, isPrimary };
-        const day = await memberDay(tz);
+        const day = await memberDay();
         let workedTodayMinutes = 0;
         let extraMinutes = 0;
         if (policy === 'LIMIT' && !hasShiftNow) {

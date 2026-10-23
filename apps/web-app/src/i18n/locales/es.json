@@ -3385,8 +3385,8 @@
       "subtitle": "Qué ocurre cuando un miembro sin turno hoy ficha aquí.",
       "allow": "Permitir",
       "allowHint": "Los miembros fichan la entrada y la salida libremente. Cada hora cuenta.",
-      "limit": "Permitir hasta un número de horas al día",
-      "limitHint": "El tiempo por encima del límite solo cuenta si un responsable lo aprueba como horas extra.",
+      "limit": "Marcar los días de más de un número de horas",
+      "limitHint": "Cada hora cuenta. Un día más largo se marca para que lo revise el responsable.",
       "shiftOnly": "Solo con turno",
       "shiftOnlyHint": "Los miembros sin turno hoy no pueden fichar aquí.",
       "note": "Los miembros con turno no se ven afectados. El límite cuenta cada hora trabajada hoy, en cualquier espacio de trabajo, en la zona horaria de este espacio.",
@@ -8268,7 +8268,7 @@
     "REQUEST_DATES_INVALID": "Elige fechas válidas: el fin no puede ser anterior al inicio y este tipo cubre un solo día.",
     "REQUEST_TYPE_INVALID": "Elige un motivo para la ausencia.",
     "REQUEST_SPACE_REQUIRED": "Elige el espacio de trabajo del día en remoto.",
-    "REQUEST_TIME_INVALID": "Indica una nueva hora de inicio o de fin; el fin debe ser posterior al inicio.",
+    "REQUEST_TIME_INVALID": "Indica una nueva hora de inicio o de fin. Un fin anterior al inicio es a la mañana siguiente, como máximo 16 horas.",
     "REQUEST_MINUTES_INVALID": "Las horas extra deben estar entre 15 minutos y 12 horas.",
     "REQUEST_REASON_REQUIRED": "Escribe lo que solicitas.",
     "REQUEST_REASON_TOO_LONG": "El motivo es demasiado largo: menos de 500 caracteres.",
@@ -8323,7 +8323,10 @@
     "RULE_KIND_INVALID": "Hay reglas para horas extra, solicitudes y gastos.",
     "RULE_EMPTY": "Una regla necesita una segunda aprobación, un recordatorio o un paso a otro.",
     "RULE_HOURS_INVALID": "Las horas deben ser un número entero entre 1 y 720.",
-    "RULE_ESCALATE_ROLE_REQUIRED": "Elija a quién pasa si nadie responde."
+    "RULE_ESCALATE_ROLE_REQUIRED": "Elija a quién pasa si nadie responde.",
+    "REQUEST_OVERLAPS_LEAVE": "Ese día cae en vacaciones ya pedidas o aprobadas.",
+    "SELF_DECISION": "No puedes decidir esto sobre ti. Pídelo a un responsable o a un administrador.",
+    "DAY_HOURS_SPACE_NOT_YOURS": "Elige un espacio de trabajo que gestiones."
   },
   "signLink": {
     "tabs": {
@@ -9609,7 +9612,8 @@
       "document": "Documentos",
       "join": "Solicitudes de ingreso",
       "clientRequest": "Solicitudes de clientes",
-      "guestRequest": "Espacios invitados"
+      "guestRequest": "Espacios invitados",
+      "outside": "Tiempo fuera del turno"
     },
     "headline": {
       "hours": "Horas por aprobar",
@@ -9619,7 +9623,8 @@
       "noShow": "No fichó la entrada del turno",
       "assetProposal": "Envió un documento para un activo nuevo",
       "join": "Quiere unirse a la organización",
-      "noShowRun": "{{count}} turnos seguidos sin venir"
+      "noShowRun": "{{count}} turnos seguidos sin venir",
+      "outside": "Tiempo fuera del turno"
     },
     "fact": {
       "workspace": "Espacio de trabajo",
@@ -9662,7 +9667,11 @@
       "reminded": "Recordatorios",
       "appLastUsed": "Último uso de la app",
       "thisMonth": "Este mes",
-      "likely": "Probablemente"
+      "likely": "Probablemente",
+      "planned": "Previsto",
+      "clocked": "Fichado",
+      "before": "Antes del inicio",
+      "after": "Después del fin"
     },
     "cover": {
       "ok": "Quedan suficientes personas",
@@ -9682,7 +9691,9 @@
       "accept": "Aceptar",
       "verify": "Verificar",
       "turnIntoJob": "Convertir en trabajo",
-      "absent": "Ausente"
+      "absent": "Ausente",
+      "count": "Contarlo",
+      "notCount": "No contar"
     },
     "needsPage": {
       "assetProposal": "Al aceptarlo se crea un activo: elija su tipo en la página completa.",
@@ -10009,5 +10020,48 @@
     "getItOn": "Disponible en",
     "getOnGooglePlay": "Disponible en Google Play",
     "getOnAppStore": "Descargar en el App Store"
+  },
+  "dayHours": {
+    "cellLabel": "{{name}}, {{day}}: cambiar horario",
+    "start": "Inicio",
+    "end": "Fin",
+    "reason": "Motivo (opcional)",
+    "reasonPlaceholder": "La entrega llega antes",
+    "plan": {
+      "shift": "Previsto: turno {{start}}–{{end}}",
+      "none": "Previsto: sin turno · cuenta desde la entrada hasta la salida",
+      "changed": "Horario cambiado: {{start}}–{{end}} · fijado por {{by}}",
+      "clockedIn": "entrada a las {{time}}"
+    },
+    "quick": {
+      "startEarlier": "Empezar 1 h antes",
+      "finishLater": "Terminar 1 h después",
+      "finishEarlier": "Terminar 1 h antes"
+    },
+    "nextMorning": "a la mañana siguiente",
+    "was": "antes {{duration}}",
+    "error": {
+      "same": "El inicio y el fin son la misma hora.",
+      "tooLong": "{{start}} → {{end}} serían {{duration}}. Una noche dura como máximo 16 horas; revisa las horas.",
+      "missing": "Elige un inicio y un fin."
+    },
+    "note": {
+      "plain": "{{name}} recibe una notificación. El reloj cuenta estas horas, sin aprobación posterior.",
+      "clockedIn": "{{name}} ha fichado: el registro de hoy también se actualiza y el recordatorio de salida pasa a las {{end}}. {{name}} recibe una notificación.",
+      "night": "La noche cuenta para el {{day}}."
+    },
+    "stop": {
+      "self": "No puedes fijar tu propio horario. Pídelo a un responsable o a un administrador.",
+      "onLeave": "{{name}} está de vacaciones del {{from}} al {{to}}. Cambia primero las vacaciones.",
+      "leaveAsked": "{{name}} ha pedido vacaciones para este día. Decide primero la solicitud."
+    },
+    "set": "Fijar horario",
+    "change": "Cambiar horario",
+    "toast": {
+      "set": "Horario fijado para {{name}} el {{day}}",
+      "changed": "Horario cambiado para {{name}} el {{day}}",
+      "told": "{{name}} recibe una notificación."
+    },
+    "setBy": "Fijado por {{name}} · {{date}}"
   }
 }

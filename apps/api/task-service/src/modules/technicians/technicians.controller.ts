@@ -8,6 +8,7 @@ import { MemberScheduleService } from './member-schedule.service';
 import { TimeOffRequestService } from './time-off-request.service';
 import { LeaveRecordsService } from './leave-records.service';
 import { TimeOffDecisionService } from './time-off-decision.service';
+import { DayHoursService } from './day-hours.service';
 import { CoverService } from './cover.service';
 import { LeaveLedgerService } from './leave-ledger.service';
 import { LeaveOpeningService } from './leave-opening.service';
@@ -40,6 +41,8 @@ import {
   updateTimeOff,
   adminDeleteTimeOff,
   addTimeOff,
+  setDayHours,
+  getDayHours,
   getTechniciansAvailability,
 } from '@hbcfield/shared/microservices';
 
@@ -57,6 +60,7 @@ export class TechniciansController {
     private readonly requests: TimeOffRequestService,
     private readonly leaveRecords: LeaveRecordsService,
     private readonly decisions: TimeOffDecisionService,
+    private readonly dayHours: DayHoursService,
   ) {}
 
   // ========================================================================
@@ -162,9 +166,7 @@ export class TechniciansController {
   }
 
   @MessagePattern(pattern(getLeaveBalance))
-  async getLeaveBalance(
-    @Payload() dto: RpcRequest<typeof getLeaveBalance>,
-  ) {
+  async getLeaveBalance(@Payload() dto: RpcRequest<typeof getLeaveBalance>) {
     return this.leaveRecords.getLeaveBalance(dto);
   }
 
@@ -183,9 +185,7 @@ export class TechniciansController {
 
   /** Cover for every day of a window, per workspace — the wallchart's footer. */
   @MessagePattern(pattern(getCoverRange))
-  async getCoverRange(
-    @Payload() data: RpcRequest<typeof getCoverRange>,
-  ) {
+  async getCoverRange(@Payload() data: RpcRequest<typeof getCoverRange>) {
     return success(await this.coverService.coverRange(data.organizationId, data.start, data.end, data.scopeSpaceIds));
   }
 
@@ -223,6 +223,16 @@ export class TechniciansController {
     data: RpcRequest<typeof addTimeOff>,
   ) {
     return this.leaveRecords.addTimeOff(data);
+  }
+
+  @MessagePattern(pattern(setDayHours))
+  async setDayHours(@Payload() data: RpcRequest<typeof setDayHours>) {
+    return this.dayHours.setDayHours(data);
+  }
+
+  @MessagePattern(pattern(getDayHours))
+  async getDayHours(@Payload() data: RpcRequest<typeof getDayHours>) {
+    return this.dayHours.getDayHours(data);
   }
 
   // ========================================================================

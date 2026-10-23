@@ -12,11 +12,9 @@ type LocalClockInVerdict =
   | { ok: true; away: boolean; distanceM: number | null }
   | {
       ok: false;
-      code: 'ALREADY_CLOCKED_IN' | 'FIX_MISSING' | 'FIX_INACCURATE' | 'FIX_NOT_AT_TAP' | 'OUTSIDE_SITE' | 'NO_SHIFT_TODAY' | 'NO_HOURS_LEFT';
+      code: 'ALREADY_CLOCKED_IN' | 'FIX_MISSING' | 'FIX_INACCURATE' | 'FIX_NOT_AT_TAP' | 'OUTSIDE_SITE' | 'NO_SHIFT_TODAY';
       distanceM?: number | null;
       radiusM?: number;
-      /** The workspace's daily limit, for NO_HOURS_LEFT. */
-      hours?: number;
     };
 
 /**
@@ -46,13 +44,14 @@ export function checkClockInLocally(input: {
 }): LocalClockInVerdict {
   if (input.alreadyClockedIn) return { ok: false, code: 'ALREADY_CLOCKED_IN' };
 
-  // Clocking in with no shift, from the allowance the server tagged this workspace with.
+  /*
+    Clocking in with no shift, from the allowance the server tagged this workspace with.
+    ⚠️ Only a workspace that NEEDS a shift refuses. Today's hours used up is KEPT and flagged for the
+    leader on the server (docs/plans/time-counting-model.md) — refusing it here stopped the person at
+    the door with every hour they then worked lost.
+  */
   const allowance = noShiftAllowanceNow(input.location?.noShift, input.now ?? new Date());
-  if (allowance.kind === 'refused') {
-    return allowance.reason === 'SHIFT_ONLY'
-      ? { ok: false, code: 'NO_SHIFT_TODAY' }
-      : { ok: false, code: 'NO_HOURS_LEFT', hours: Math.round(((allowance.dailyMinutes ?? 0) / 60) * 10) / 10 };
-  }
+  if (allowance.kind === 'refused' && allowance.reason === 'SHIFT_ONLY') return { ok: false, code: 'NO_SHIFT_TODAY' };
 
   const checked = assessFix(input.fix, input.fixCheckedAt ?? input.now ?? new Date());
   // A mock location is flagged by the server, not refused — mirror that.

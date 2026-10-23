@@ -97,4 +97,24 @@ export const addTimeOff = rpc<{
   endDate: string;
   reason?: string;
 }>('add_time_off');
+/** The office sets one day's hours for a member: an APPROVED changed-hours request (docs/plans/time-counting-model.md). */
+export const setDayHours = rpc<{
+  editorId: string;
+  organizationId: string;
+  technicianId: string;
+  scopeSpaceIds?: string[];
+  date: string;
+  spaceId?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  reason?: string | null;
+}>('set_day_hours');
+/** What the day-hours form shows first: the plan, hours already set, clocked in, leave. */
+export const getDayHours = rpc<{
+  organizationId: string;
+  technicianId: string;
+  scopeSpaceIds?: string[];
+  date: string;
+  spaceId: string;
+}>('get_day_hours');
 export const getTechniciansAvailability = rpc<GetAvailabilityMessage>('get_technicians_availability');

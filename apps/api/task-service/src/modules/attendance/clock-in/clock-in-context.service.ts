@@ -8,7 +8,7 @@ import {
   noShiftReminderAt,
   noShiftAllowance,
   effectiveNoShiftPolicy,
-  countedMinutesBetween,
+  countedMinutesOfDay,
   startOfDayIn,
   type NoShiftAllowance,
   spaceRunsClock,
@@ -97,14 +97,13 @@ export class ClockInContextService {
     const entries = await this.prisma.timeEntry.findMany({
       where: {
         userId,
-        // Bounded below so the index does the work; nothing stays open a day (the sweep closes it).
-        clockInAt: { gte: new Date(dayStart.getTime() - 24 * 3_600_000), lt: at },
-        OR: [{ clockOutAt: null }, { clockOutAt: { gt: dayStart } }],
+        // Only sessions that STARTED today: a night shift belongs to the day it began (countedMinutesOfDay).
+        clockInAt: { gte: dayStart, lt: at },
         approvalStatus: { not: 'REJECTED' },
       },
       select: { clockInAt: true, clockOutAt: true, paidMinutes: true, totalMinutes: true, unpaidBreakMinutes: true },
     });
-    const workedTodayMinutes = countedMinutesBetween(entries, dayStart, at);
+    const workedTodayMinutes = countedMinutesOfDay(entries, dayStart, at);
     return {
       ...noShiftAllowance({ policy, dailyMinutes: space.noShiftDailyMinutes, workedTodayMinutes, at, extraMinutes }),
       workedTodayMinutes,

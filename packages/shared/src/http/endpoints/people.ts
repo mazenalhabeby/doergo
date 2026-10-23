@@ -17,6 +17,7 @@ import type {
 } from '../../types';
 import type { LeaveCount } from '../../calendar/days';
 import type { RequestInput, RequestKind, RequestKindOptions } from '../../requests/request-kinds';
+import type { DayHoursView } from '../../requests/day-hours';
 import type {
   LeaveAdjustmentWriteResponse,
   LeaveBalanceResponse,
@@ -194,6 +195,27 @@ export const timeOffEndpoints = defineEndpoints('timeOff', {
   manual: endpoint<void, TimeOffRequest, Record<string, unknown>>({
     method: 'POST',
     path: () => '/employees/time-off/manual',
+  }),
+  /** What the day-hours form shows first (requests/day-hours.ts). */
+  dayHours: endpoint<{ employeeId: string; date: string; spaceId: string }, DayHoursView>({
+    method: 'GET',
+    path: ({ employeeId, ...q }) => withQuery(path`/employees/${employeeId}/day-hours`, q),
+    keep: false,
+  }),
+  /** The office sets one day's hours for somebody (an approved changed-hours request). */
+  setDayHours: endpoint<
+    { employeeId: string },
+    TimeOffRequest & { entriesChanged: number },
+    {
+      date: string;
+      spaceId?: string | null;
+      startTime?: string | null;
+      endTime?: string | null;
+      reason?: string | null;
+    }
+  >({
+    method: 'PUT',
+    path: (a) => path`/employees/${a.employeeId}/day-hours`,
   }),
 });
 

@@ -3,6 +3,8 @@
 import { personName } from "@hbcfield/shared/client"
 import { format, parseISO } from "date-fns"
 import { useTranslation } from "react-i18next"
+import { Clock } from "lucide-react"
+import { PopoverAnchor } from "@/components/ui/popover"
 import type { OrgTimeOffRequest } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { isAbsence, requestDetail, requestKindLabelKey, requestKindOf } from "@/lib/requests"
@@ -29,6 +31,8 @@ export function SpaceBlock({
   selected,
   selectedInThisSpace,
   onSelect,
+  onPickDay,
+  pickedKey,
 }: {
   restDays?: Set<string>
   holidays?: Map<string, string>
@@ -46,6 +50,10 @@ export function SpaceBlock({
   selected: OrgTimeOffRequest | null
   selectedInThisSpace: boolean
   onSelect: (id: string) => void
+  /** Set for a leader with the rota permission: a person's day opens "Change hours for this day". */
+  onPickDay?: (person: { id: string; firstName: string; lastName: string }, dayKey: string) => void
+  /** `${personId}:${dayKey}` of the day whose form is open — the pop-over's anchor. */
+  pickedKey?: string | null
 }) {
   const { t } = useTranslation()
   if (!people.length) return null
@@ -101,9 +109,40 @@ export function SpaceBlock({
               </span>
             </div>
 
-            {days.map((d) => (
-              <div key={d.toISOString()} className={cn("border-l border-border", isWeekend(d) && "bg-muted/60")} />
-            ))}
+            {days.map((d, i) => {
+              const cell = cn("border-l border-border", isWeekend(d) && "bg-muted/60")
+              if (!onPickDay) return <div key={d.toISOString()} className={cell} />
+              const key = `${p.id}:${dayKeys[i]}`
+              const button = (
+                <button
+                  key={d.toISOString()}
+                  type="button"
+                  onClick={() => onPickDay(p, dayKeys[i]!)}
+                  aria-label={t("dayHours.cellLabel", { name: personName(p), day: format(d, "EEE d MMM") })}
+                  className={cn(
+                    cell,
+                    "group grid place-items-center text-primary transition-colors hover:bg-primary/10",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
+                    pickedKey === key && "bg-primary/10 ring-2 ring-inset ring-primary",
+                  )}
+                >
+                  <Clock
+                    className={cn(
+                      "size-3.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100",
+                      pickedKey === key && "opacity-100",
+                    )}
+                    aria-hidden
+                  />
+                </button>
+              )
+              return pickedKey === key ? (
+                <PopoverAnchor asChild key={d.toISOString()}>
+                  {button}
+                </PopoverAnchor>
+              ) : (
+                button
+              )
+            })}
 
             {bars.map((bar) => {
               const from = bar.startDate.slice(0, 10)

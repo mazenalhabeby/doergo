@@ -287,5 +287,7 @@ export const timeOffDecidedEvent = event<
     rejectionReason?: string | null;
     startDate: string;
     endDate: string;
+    /** Set by the office, not asked for (a day's hours): who set it — the push says "changed", not "approved". */
+    setBy?: string | null;
   } & TimeOffRequestFacts
 >('time_off_decided');

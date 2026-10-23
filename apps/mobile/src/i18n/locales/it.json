@@ -856,10 +856,10 @@
       "noHoursTitle": "Nessuna ora rimasta oggi",
       "noHoursBody": "{{location}} consente {{hours}} al giorno senza turno e le hai già lavorate. Chiedi un turno al tuo responsabile.",
       "countsUntil": "Conta fino alle {{time}} · limite di oggi",
-      "minutesLeft_one": "Ancora {{count}} min oggi",
-      "minutesLeft_other": "Ancora {{count}} min oggi",
-      "afterLimit": "Dopo le {{time}}, il tuo tempo conta solo se il tuo responsabile approva gli straordinari.",
-      "reachedShort": "{{location}} consente {{hours}} al giorno senza turno. L'hai raggiunto."
+      "minutesLeft_one": "Ancora {{count}} min alle ore di oggi",
+      "minutesLeft_other": "Ancora {{count}} min alle ore di oggi",
+      "afterLimit": "Dopo le {{time}} il tuo tempo conta ancora, e il tuo responsabile vede la giornata lunga.",
+      "reachedShort": "{{location}}: hai superato le {{hours}} di oggi senza turno. Il tuo tempo conta ancora: il tuo responsabile vedrà la giornata lunga."
     },
     "picker": {
       "title": "Dove timbri?",
@@ -871,7 +871,20 @@
       "inRange": "{{distance}} · Sei qui",
       "away": "a {{distance}}"
     },
-    "noAssignedLocations": "Non sei ancora assegnato a uno spazio. Chiedi al tuo amministratore di aggiungerti."
+    "noAssignedLocations": "Non sei ancora assegnato a uno spazio. Chiedi al tuo amministratore di aggiungerti.",
+    "dayHours": {
+      "today": "Oggi lavori {{hours}}",
+      "todayBy": "Oggi lavori {{hours}} · fissato da {{name}}",
+      "nextMorning": "(fino alla mattina dopo)",
+      "startsAt": "dalle {{time}}",
+      "endsAt": "fino alle {{time}}"
+    },
+    "outside": {
+      "waiting": "{{duration}} fuori dal tuo turno il {{day}} aspettano {{names}}",
+      "waitingNoName": "{{duration}} fuori dal tuo turno il {{day}} aspettano una decisione",
+      "andMore_one": "{{names}} e {{count}} altro",
+      "andMore_other": "{{names}} e altri {{count}}"
+    }
   },
   "overtime": {
     "title": "Straordinario",
@@ -3320,7 +3333,7 @@
       "REQUEST_DATES_INVALID": "Controlli le date: l’ultimo giorno non può precedere il primo.",
       "REQUEST_TYPE_INVALID": "Scelga il tipo di assenza.",
       "REQUEST_SPACE_REQUIRED": "Scelga lo spazio di lavoro.",
-      "REQUEST_TIME_INVALID": "Scelga un nuovo inizio o una nuova fine, con la fine dopo l’inizio.",
+      "REQUEST_TIME_INVALID": "Scelga un nuovo inizio o una nuova fine. Una fine prima dell’inizio è la mattina dopo, al massimo 16 ore.",
       "REQUEST_MINUTES_INVALID": "Scelga tra 15 minuti e 12 ore.",
       "REQUEST_REASON_REQUIRED": "Indichi cosa richiede.",
       "REQUEST_REASON_TOO_LONG": "Il motivo è troppo lungo: al massimo 500 caratteri.",
@@ -3444,7 +3457,7 @@
       "dismiss": "Ignora",
       "clockInNow": "Timbra ora"
     },
-    "noShiftLeft": "A {{location}} · senza turno · ancora {{left}} oggi",
+    "noShiftLeft": "A {{location}} · senza turno · ancora {{left}} alle ore di oggi",
     "askMoreTime": "Chiedi più tempo",
     "askMoreTimeHint": "Viene chiesto al tuo responsabile. Potrai timbrare quando approva.",
     "arrivedStartsAt": "Sei a {{workspace}} · il tuo turno inizia alle {{time}}"
@@ -5171,7 +5184,8 @@
       "document": "Documenti",
       "join": "Richieste di adesione",
       "clientRequest": "Richieste dei clienti",
-      "guestRequest": "Spazi ospite"
+      "guestRequest": "Spazi ospite",
+      "outside": "Tempo fuori turno"
     },
     "headline": {
       "hours": "Ore da approvare",
@@ -5181,7 +5195,8 @@
       "noShow": "Non ha timbrato l’ingresso del turno",
       "assetProposal": "Ha inviato un documento per un nuovo bene",
       "join": "Vuole unirsi all’organizzazione",
-      "noShowRun": "{{count}} turni saltati di fila"
+      "noShowRun": "{{count}} turni saltati di fila",
+      "outside": "Tempo fuori turno"
     },
     "fact": {
       "workspace": "Spazio di lavoro",
@@ -5224,7 +5239,11 @@
       "reminded": "Promemoria",
       "appLastUsed": "Ultimo uso dell’app",
       "thisMonth": "Questo mese",
-      "likely": "Probabilmente"
+      "likely": "Probabilmente",
+      "planned": "Previsto",
+      "clocked": "Timbrato",
+      "before": "Prima dell’inizio",
+      "after": "Dopo la fine"
     },
     "cover": {
       "ok": "Restano abbastanza persone",
@@ -5244,7 +5263,9 @@
       "accept": "Accetta",
       "verify": "Verifica",
       "turnIntoJob": "Trasforma in intervento",
-      "absent": "Assente"
+      "absent": "Assente",
+      "count": "Contalo",
+      "notCount": "Non contare"
     },
     "needsPage": {
       "assetProposal": "Accettando si crea un bene: scelga il tipo nella pagina completa.",

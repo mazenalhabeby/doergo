@@ -71,6 +71,11 @@ export const REQUEST_LIMITS = {
   REMOTE_MAX_DAYS: 31,
   OVERTIME_MIN_MINUTES: 15,
   OVERTIME_MAX_MINUTES: 720,
+  /**
+   * Changed hours whose end is before the start END THE NEXT MORNING (a night: 18:00–06:00).
+   * At most this long, so a slip of the finger (14:00–09:00, 19 h) is refused, not a day planned.
+   */
+  HOURS_MAX_OVERNIGHT_MINUTES: 16 * 60,
 } as const;
 
 export type RequestInputError =
@@ -142,7 +147,8 @@ export function parseRequestInput(
     }
     case 'REMOTE':
       if (!spaceId) return { ok: false, code: 'REQUEST_SPACE_REQUIRED' };
-      if (daysBetween(startDate, endDate) > REQUEST_LIMITS.REMOTE_MAX_DAYS) return { ok: false, code: 'REQUEST_TOO_MANY_DAYS' };
+      if (daysBetween(startDate, endDate) > REQUEST_LIMITS.REMOTE_MAX_DAYS)
+        return { ok: false, code: 'REQUEST_TOO_MANY_DAYS' };
       value.spaceId = spaceId;
       break;
     case 'HOURS': {
@@ -151,7 +157,10 @@ export function parseRequestInput(
       if ((!startTime && !endTime) || (startTime && !HHMM.test(startTime)) || (endTime && !HHMM.test(endTime))) {
         return { ok: false, code: 'REQUEST_TIME_INVALID' };
       }
-      if (startTime && endTime && endTime <= startTime) return { ok: false, code: 'REQUEST_TIME_INVALID' };
+      // The same time is no day at all; an end before the start is the next morning, within limits.
+      if (startTime && endTime && (endTime === startTime || overnightTooLong(startTime, endTime))) {
+        return { ok: false, code: 'REQUEST_TIME_INVALID' };
+      }
       Object.assign(value, { startTime, endTime, spaceId });
       break;
     }
@@ -170,6 +179,13 @@ export function parseRequestInput(
       break;
   }
   return { ok: true, value };
+}
+
+/** Does `start`–`end` cross midnight for longer than a night may last? (HH:MM strings.) */
+function overnightTooLong(start: string, end: string): boolean {
+  if (end > start) return false;
+  const mins = (hm: string) => Number(hm.slice(0, 2)) * 60 + Number(hm.slice(3, 5));
+  return 24 * 60 - mins(start) + mins(end) > REQUEST_LIMITS.HOURS_MAX_OVERNIGHT_MINUTES;
 }
 
 /** An approved request, as the clock-in reads it for one day. */
@@ -196,18 +212,23 @@ export interface DayRequestEffect {
 /**
  * Apply a day's APPROVED requests to a clock-in's expected window.
  *
- * `atLocal(hhmm)` turns a wall time on the clock-in's local day into an instant
- * (the caller owns time zones). A request tied to another workspace does not
- * apply here; one with no workspace applies anywhere. A changed day replaces
- * the start/end it names; agreed overtime extends the (possibly changed) end —
- * so the existing counted-time rule counts it with no special case.
+ * `atLocal(hhmm, nextDay)` turns a wall time on the clock-in's local day (or the
+ * day after) into an instant (the caller owns time zones). A request tied to
+ * another workspace does not apply here; one with no workspace applies anywhere.
+ * A changed day replaces the start/end it names; agreed overtime extends the
+ * (possibly changed) end — so the existing counted-time rule counts it with no
+ * special case.
+ *
+ * ⚠️ A NIGHT: an end the request names that falls at or before the day's start
+ * (its own start, or the shift's) is the NEXT morning — 18:00–06:00 ends at 06:00
+ * the day after. The request belongs to the day the night STARTS.
  */
 export function applyApprovedRequests(input: {
   spaceId: string | null;
   expectedClockInAt: Date | null;
   expectedClockOutAt: Date | null;
   requests: readonly ApprovedDayRequest[];
-  atLocal: (hhmm: string) => Date;
+  atLocal: (hhmm: string, nextDay?: boolean) => Date;
 }): DayRequestEffect {
   const here = input.requests.filter((r) => !r.spaceId || !input.spaceId || r.spaceId === input.spaceId);
   let start = input.expectedClockInAt;
@@ -220,7 +241,10 @@ export function applyApprovedRequests(input: {
       used.push(r.id);
     } else if (r.kind === 'HOURS') {
       if (r.startTime) start = input.atLocal(r.startTime);
-      if (r.endTime) end = input.atLocal(r.endTime);
+      if (r.endTime) {
+        end = input.atLocal(r.endTime);
+        if (start && end.getTime() <= start.getTime()) end = input.atLocal(r.endTime, true);
+      }
       if (r.startTime || r.endTime) used.push(r.id);
     }
   }

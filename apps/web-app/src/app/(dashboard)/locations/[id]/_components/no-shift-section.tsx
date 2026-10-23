@@ -92,8 +92,8 @@ export function NoShiftSection({
     },
     {
       value: "LIMIT",
-      title: t("attendance.noShift.limit", "Allow up to a number of hours a day"),
-      body: t("attendance.noShift.limitHint", "Time past the limit counts only when a leader approves it as overtime."),
+      title: t("attendance.noShift.limit", "Flag days longer than a number of hours"),
+      body: t("attendance.noShift.limitHint", "Every hour counts. A day longer than this is flagged for the leader to look at."),
     },
     {
       value: "SHIFT_ONLY",

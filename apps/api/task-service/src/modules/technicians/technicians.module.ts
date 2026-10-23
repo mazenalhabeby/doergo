@@ -16,6 +16,7 @@ import { AttendanceModule } from '../attendance/attendance.module';
 import { CalendarRulesModule } from '../calendar/calendar-rules.module';
 import { LeaveOpeningService } from './leave-opening.service';
 import { CoverFloorService } from './cover-floor.service';
+import { DayHoursService } from './day-hours.service';
 
 @Module({
   // NotificationRoutingService needs no import — NotificationRoutingModule is
@@ -40,6 +41,7 @@ import { CoverFloorService } from './cover-floor.service';
     LeaveOpeningService,
     LeaveCarryOverService,
     RequestPrecheckService,
+    DayHoursService,
   ],
   exports: [TechniciansService, LeaveRecordsService, TimeOffDecisionService, CoverService, LeaveLedgerService],
 })

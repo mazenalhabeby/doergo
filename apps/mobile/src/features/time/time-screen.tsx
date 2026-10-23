@@ -18,7 +18,7 @@ import { useShift, useShiftActions } from '@/offline/attendance/use-shift';
 import { OfflineBanner } from '@/offline/components/offline-banner';
 import { stopBackgroundHeartbeat } from '@/services/background-heartbeat';
 import { stopGeofence } from '@/services/background-geofence';
-import { Ground, ScreenHeader, Well, useTabSafe } from '@/components/amazen';
+import { Banner, Ground, ScreenHeader, Well, useTabSafe } from '@/components/amazen';
 import { centeredContent } from '@/components/screen-container';
 import { ApproveGlyph } from '@/components/glyphs/glyphs';
 import { ShiftClockCardView } from '../home/shift-clock-card';
@@ -35,6 +35,9 @@ import { TimeAutoClock } from './time-auto-clock';
 import { TimeToday } from './time-today';
 import { TimeWeek } from './time-week';
 import { useMyTimeOff } from './use-my-time-off';
+import { changedHoursToday } from './changed-hours';
+import { OutsideWaiting } from './outside-waiting';
+import { localDateKey } from '@hbcfield/shared/client';
 import { useShiftWatch } from './use-shift-watch';
 import { useTimeScreen } from './use-time-screen';
 
@@ -99,6 +102,16 @@ export function TimeScreen() {
     wide,
     tourScroll,
   } = useTimeScreen();
+  // Hours changed for today (set by the office, or agreed): the clock counts them; the page says so, with who.
+  const changed = changedHoursToday(leave.requests ?? [], localDateKey(now));
+  const nextMorning = t('attendance.dayHours.nextMorning');
+  const changedHours = changed
+    ? changed.start && changed.end
+      ? `${changed.start}–${changed.end}${changed.night ? ` ${nextMorning}` : ''}`
+      : changed.start
+        ? t('attendance.dayHours.startsAt', { time: changed.start })
+        : t('attendance.dayHours.endsAt', { time: changed.end })
+    : null;
 
   return (
     <Ground style={{ flex: 1 }}>
@@ -122,7 +135,10 @@ export function TimeScreen() {
         {...tourScroll}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) }, wide]}
+        contentContainerStyle={[
+          { paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) },
+          wide,
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -148,6 +164,22 @@ export function TimeScreen() {
           onClockOut={requestClockOut}
         />
 
+        {changed && changedHours ? (
+          <Banner
+            tone="accent"
+            text={[
+              changed.by
+                ? t('attendance.dayHours.todayBy', { hours: changedHours, name: changed.by })
+                : t('attendance.dayHours.today', { hours: changedHours }),
+              changed.reason,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          />
+        ) : null}
+
+        <OutsideWaiting />
+
         <TourTarget name="attendance-clock">
           <ShiftClockCardView
             shift={shift}
@@ -172,7 +204,12 @@ export function TimeScreen() {
         </TourTarget>
 
         <TourTarget name="attendance-week">
-          <TimeWeek weekDays={totals.weekDays} runningMinutes={runningMinutes} monthMinutes={totals.monthMinutes} now={now} />
+          <TimeWeek
+            weekDays={totals.weekDays}
+            runningMinutes={runningMinutes}
+            monthMinutes={totals.monthMinutes}
+            now={now}
+          />
         </TourTarget>
 
         {timeOffOn ? (

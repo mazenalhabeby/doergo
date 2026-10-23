@@ -8,14 +8,14 @@ import { type OrgTimeOffRequest } from "@/lib/api"
 import { requestDetail, requestKindEffectKey, formatRequestMinutes } from "@/lib/requests"
 import { RequestKindChip } from "@/components/requests/request-kind"
 import { LeaveBalanceBreakdown } from "@/components/leave/leave-balance-breakdown"
-import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { coverDetail, coverTitle } from "../_lib/cover-labels"
-import { Inbox } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useRequestFacts } from "./use-request-facts"
 import { Section, Fact } from "./drawer-section"
+import { DrawerActions } from "./drawer-actions"
+import type { PickedDay } from "./day-hours-form"
 
 /**
  * The decision, with the reason to make it — for ANY kind of request.
@@ -35,23 +35,34 @@ export function LeaveDecisionDrawer({
   request,
   canManage,
   onClose,
+  onChangeHours,
 }: {
   request: OrgTimeOffRequest | null
   canManage: boolean
   onClose: () => void
+  /** Approved changed hours for one day can be changed again (rota permission). */
+  onChangeHours?: (pick: Omit<PickedDay, "self">) => void
 }) {
   const open = !!request
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-md flex flex-col gap-0 p-0">
-        {request && <DrawerBody request={request} canManage={canManage} />}
+        {request && <DrawerBody request={request} canManage={canManage} onChangeHours={onChangeHours} />}
       </SheetContent>
     </Sheet>
   )
 }
 
-function DrawerBody({ request, canManage }: { request: OrgTimeOffRequest; canManage: boolean }) {
+function DrawerBody({
+  request,
+  canManage,
+  onChangeHours,
+}: {
+  request: OrgTimeOffRequest
+  canManage: boolean
+  onChangeHours?: (pick: Omit<PickedDay, "self">) => void
+}) {
   const { t } = useTranslation()
   const { kind, leave, v, tone, span, days, pendingVacation, balance, usual, openJobs } = useRequestFacts(request)
 
@@ -281,17 +292,7 @@ function DrawerBody({ request, canManage }: { request: OrgTimeOffRequest; canMan
         )}
       </div>
 
-      {/* What it costs is read here; the decision is made in Approvals — the one place. */}
-      {canManage && request.status === "PENDING" && (
-        <div className="border-t border-border px-5 py-3.5">
-          <Button asChild className="w-full">
-            <Link href={`/approvals?kind=request&id=${encodeURIComponent(request.id)}`}>
-              <Inbox className="h-4 w-4" />
-              {t("approvals.decideInApprovals")}
-            </Link>
-          </Button>
-        </div>
-      )}
+      <DrawerActions request={request} canManage={canManage} onChangeHours={onChangeHours} />
     </>
   )
 }

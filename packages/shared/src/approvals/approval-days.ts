@@ -11,14 +11,31 @@
  */
 import { localDateKey } from '../utils/date';
 import { reviewLabels } from '../attendance/labels/catalogue';
-import type { ApprovalGroup, ApprovalItem, ApprovalKind, ApprovalsResponse } from './approval-kinds';
+import {
+  APPROVAL_KIND_SPECS,
+  type ApprovalGroup,
+  type ApprovalItem,
+  type ApprovalKind,
+  type ApprovalsResponse,
+} from './approval-kinds';
 
 /** The kinds that belong to a person's working day. */
-export const DAY_KINDS = ['hours', 'away', 'extraTime', 'overtime'] as const satisfies readonly ApprovalKind[];
+export const DAY_KINDS = [
+  'hours',
+  'away',
+  'extraTime',
+  'overtime',
+  'outside',
+] as const satisfies readonly ApprovalKind[];
 export type WorkDayKind = (typeof DAY_KINDS)[number];
 
-/** Kinds "Approve day" may decide with no extra input; extra time and overtime need minutes, so they are reviewed. */
+/** Kinds "Approve day" may decide with no extra input; extra time, overtime and time outside the shift need minutes. */
 export const DAY_APPROVABLE_KINDS: readonly WorkDayKind[] = ['hours', 'away'];
+
+/** A kind whose decision needs minutes (extra time, overtime, time outside the shift) — reviewed, never "Approve day". */
+export function kindNeedsMinutes(kind: ApprovalKind): boolean {
+  return APPROVAL_KIND_SPECS[kind].actions.some((a) => a.input === 'minutes');
+}
 
 /** The most a day may carry — a sanity bound for the replay. */
 export const MAX_DAY_ITEMS = 10;
@@ -58,6 +75,7 @@ function momentOf(i: ApprovalItem): string | null {
   switch (i.kind) {
     case 'hours':
     case 'extraTime':
+    case 'outside':
       return pick(d.clockInAt) ?? i.raisedAt;
     case 'overtime':
       return pick(d.overtimeStartAt) ?? i.raisedAt;

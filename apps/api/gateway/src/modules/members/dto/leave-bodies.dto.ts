@@ -20,6 +20,15 @@ export class AddTimeOffDto {
   @OptString() reason?: string;
 }
 
+/** PUT /employees/:id/day-hours — the times are checked by the shared request parser. */
+export class SetDayHoursDto {
+  @OptString() date!: string;
+  @OptString() spaceId?: string | null;
+  @OptString() startTime?: string | null;
+  @OptString() endTime?: string | null;
+  @OptString() reason?: string | null;
+}
+
 /** PATCH /employees/time-off/:timeOffId */
 export class UpdateTimeOffDto {
   @OptString() startDate?: string;

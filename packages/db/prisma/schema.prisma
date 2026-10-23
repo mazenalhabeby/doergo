@@ -2869,6 +2869,12 @@ model TimeEntry {
   /// The planned end is the workspace's daily limit for clocking in with no
   /// shift (see noShiftAllowance): not early before it, "past today's limit" after.
   endIsDailyLimit Boolean @default(false)
+  /// Time worked outside the planned shift, DECIDED once (shared attendance/outside-shift.ts):
+  /// when, by whom, and how many of those minutes were counted (0 = not counted).
+  /// NULL = not decided yet — the approvals inbox asks.
+  outsideDecidedAt      DateTime?
+  outsideDecidedById    String?
+  outsideCountedMinutes Int?
   /// Where they are working now — ON_SITE | FIELD | REMOTE — decided from evidence
   /// (see packages/shared/src/attendance/presence.ts) and written only on a change.
   /// Display only: nothing that counts time reads it.

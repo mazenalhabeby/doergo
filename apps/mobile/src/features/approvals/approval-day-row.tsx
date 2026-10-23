@@ -8,6 +8,7 @@ import {
   type ApprovalDay,
   type ApprovalItem,
   type ApprovalT,
+  kindNeedsMinutes,
 } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
 import { formatDay } from '@/lib/money';
@@ -116,7 +117,7 @@ export function ApprovalDayRow({
               />
             ))}
           </View>
-          {day.kinds.some((k) => k === 'extraTime' || k === 'overtime') ? (
+          {day.kinds.some(kindNeedsMinutes) ? (
             <AText variant="caption" tone="muted">
               {t('approvals.day.needsMinutes')}
             </AText>

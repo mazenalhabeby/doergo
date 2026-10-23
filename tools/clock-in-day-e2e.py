@@ -148,8 +148,14 @@ def main():
         check('her phone is told the hours are used up', tag.get('workedTodayMinutes', 0) >= 45 and tag.get('dailyMinutes') == 30, tag)
 
         fix = {'locationId': target['id'], 'lat': target['lat'], 'lng': target['lng'], 'accuracy': 5}
-        s, b = call('POST', '/attendance/clock-in', noor, fix, label='clock-in (refused)')
-        check('clocking in there is refused: no hours left', s == 400 and b.get('code') == 'NO_HOURS_LEFT', (s, b.get('code'), b.get('message')))
+        # Since 2026-10-23 (docs/plans/time-counting-model.md): no hours left is KEPT and flagged, never refused.
+        s, b = call('POST', '/attendance/clock-in', noor, fix, label='clock-in (past the hours)')
+        kept = data(b) if s in (200, 201) else {}
+        check('clocking in with no hours left is kept, and flagged for the leader',
+              s in (200, 201) and 'PAST_DAILY_LIMIT' in (kept.get('flagReasons') or []), (s, b.get('code'), kept.get('flagReasons')))
+        if kept.get('id'):
+            # Removed at once, so the rest of the day is asked about from the same 45 minutes.
+            call('DELETE', f"/attendance/entries/{kept['id']}", owner)
 
         today = now_local.strftime('%Y-%m-%d')
         s, b = call('POST', f"/employees/{noor_user['id']}/time-off", noor, {

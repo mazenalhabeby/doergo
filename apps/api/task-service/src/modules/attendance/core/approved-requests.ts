@@ -46,13 +46,26 @@ export async function approvedRequestsAround(
       startDate: { lte: new Date(`${toISODateString(new Date(at.getTime() + DAY_MS))}T00:00:00.000Z`) },
       endDate: { gte: new Date(`${toISODateString(new Date(at.getTime() - DAY_MS))}T00:00:00.000Z`) },
     },
-    select: { id: true, kind: true, spaceId: true, startTime: true, endTime: true, minutes: true, startDate: true, endDate: true },
+    select: {
+      id: true,
+      kind: true,
+      spaceId: true,
+      startTime: true,
+      endTime: true,
+      minutes: true,
+      startDate: true,
+      endDate: true,
+    },
   });
   return rows as DayRequestRow[];
 }
 
 /** The requests covering the local date of `at` in `tz` (DATE columns read as their UTC day). */
-export function requestsOnLocalDay(rows: readonly DayRequestRow[], at: Date, tz: string): { dateKey: string; rows: DayRequestRow[] } {
+export function requestsOnLocalDay(
+  rows: readonly DayRequestRow[],
+  at: Date,
+  tz: string,
+): { dateKey: string; rows: DayRequestRow[] } {
   const dateKey = localPartsIn(at, tz).dateStr;
   return {
     dateKey,
@@ -64,9 +77,14 @@ export function requestsOnLocalDay(rows: readonly DayRequestRow[], at: Date, tz:
  * Overtime agreed in advance for the local day of `at`, at this workspace (a request with no
  * workspace counts everywhere). It raises a no-shift day's limit (`noShiftAllowance` extraMinutes).
  */
-export function agreedOvertimeMinutes(rows: readonly DayRequestRow[], spaceId: string | null, at: Date, tz: string): number {
-  return requestsOnLocalDay(rows, at, tz).rows
-    .filter((r) => r.kind === 'OVERTIME' && (!r.spaceId || !spaceId || r.spaceId === spaceId))
+export function agreedOvertimeMinutes(
+  rows: readonly DayRequestRow[],
+  spaceId: string | null,
+  at: Date,
+  tz: string,
+): number {
+  return requestsOnLocalDay(rows, at, tz)
+    .rows.filter((r) => r.kind === 'OVERTIME' && (!r.spaceId || !spaceId || r.spaceId === spaceId))
     .reduce((sum, r) => sum + (r.minutes ?? 0), 0);
 }
 
@@ -78,7 +96,13 @@ export function remoteApprovedAt(rows: readonly DayRequestRow[], spaceId: string
 /** What the day's approved requests change about a clock-in at `spaceId` (shared rule, local zone here). */
 export function dayRequestEffect(
   rows: readonly DayRequestRow[],
-  input: { spaceId: string | null; at: Date; tz: string; expectedClockInAt: Date | null; expectedClockOutAt: Date | null },
+  input: {
+    spaceId: string | null;
+    at: Date;
+    tz: string;
+    expectedClockInAt: Date | null;
+    expectedClockOutAt: Date | null;
+  },
 ): DayRequestEffect {
   const { dateKey, rows: today } = requestsOnLocalDay(rows, input.at, input.tz);
   return applyApprovedRequests({
@@ -86,9 +110,10 @@ export function dayRequestEffect(
     expectedClockInAt: input.expectedClockInAt,
     expectedClockOutAt: input.expectedClockOutAt,
     requests: today,
-    atLocal: (hhmm) => {
+    atLocal: (hhmm, nextDay) => {
       const [h, m] = parseHm(hhmm);
-      return zonedWallTimeToUtc(dateKey, h, m, input.tz);
+      const day = nextDay ? toISODateString(new Date(Date.parse(`${dateKey}T00:00:00.000Z`) + DAY_MS)) : dateKey;
+      return zonedWallTimeToUtc(day, h, m, input.tz);
     },
   });
 }

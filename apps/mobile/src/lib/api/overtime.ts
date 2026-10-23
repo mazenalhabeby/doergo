@@ -1,4 +1,4 @@
-import type { OvertimeRequest } from '@hbcfield/shared/client';
+import type { OutsideShiftWaiting, OvertimeRequest } from '@hbcfield/shared/client';
 import { call, E } from './client';
 
 export type { OvertimeRequest };
@@ -6,6 +6,11 @@ export type { OvertimeRequest };
 export const overtimeApi = {
   getActive: async (): Promise<OvertimeRequest | null> => {
     return call(E.overtime.active);
+  },
+
+  /** The caller's own time outside the shift, waiting for a leader — and whom it waits for. */
+  outsideMine: async (): Promise<OutsideShiftWaiting[]> => {
+    return call(E.overtime.outsideMine);
   },
 
   respond: async (data: { response: 'YES' | 'NO'; reason?: string }): Promise<unknown> => {

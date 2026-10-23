@@ -137,9 +137,10 @@ export class DecidedCloseService {
    * It goes through `closeEntry` like every other close now.
    *
    * The time recorded is the decision time — evidence of how long they were
-   * there. What COUNTS still stops at the planned end (`computeCountedTime`'s
+   * there. What COUNTS still stops at a SHIFT's planned end (`computeCountedTime`'s
    * min with `expectedClockOutAt`), which a refused or lapsed request never
-   * moved: unapproved overtime counts for nothing.
+   * moved: unapproved overtime counts for nothing. An end that is only a no-shift
+   * daily limit (`endIsDailyLimit`) cuts nothing — the time counts and is flagged.
    *
    * Quiet when the shift is no longer open (closed meanwhile, or never this
    * organization's): there is nothing left to end.

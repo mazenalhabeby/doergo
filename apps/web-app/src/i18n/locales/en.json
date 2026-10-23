@@ -3385,8 +3385,8 @@
       "subtitle": "What happens when a member who has no shift today clocks in here.",
       "allow": "Allow",
       "allowHint": "Members clock in and out freely. Every hour counts.",
-      "limit": "Allow up to a number of hours a day",
-      "limitHint": "Time past the limit counts only when a leader approves it as overtime.",
+      "limit": "Flag days longer than a number of hours",
+      "limitHint": "Every hour counts. A day longer than this is flagged for the leader to look at.",
       "shiftOnly": "Only with a shift",
       "shiftOnlyHint": "Members without a shift today cannot clock in here.",
       "note": "Members with a shift are not affected. The limit counts every hour the member worked today, at any workspace, in this workspace's time zone.",
@@ -8268,7 +8268,7 @@
     "REQUEST_DATES_INVALID": "Choose valid dates — the end cannot be before the start, and this kind covers one day.",
     "REQUEST_TYPE_INVALID": "Choose a reason for the leave.",
     "REQUEST_SPACE_REQUIRED": "Choose the workspace the remote day is for.",
-    "REQUEST_TIME_INVALID": "Give a new start or finish time — and the finish must come after the start.",
+    "REQUEST_TIME_INVALID": "Give a new start or finish time. A finish before the start is the next morning — at most 16 hours.",
     "REQUEST_MINUTES_INVALID": "Overtime must be between 15 minutes and 12 hours.",
     "REQUEST_REASON_REQUIRED": "Write what you are asking for.",
     "REQUEST_REASON_TOO_LONG": "The reason is too long — keep it under 500 characters.",
@@ -8323,7 +8323,10 @@
     "RULE_KIND_INVALID": "Rules exist for overtime, requests and expenses.",
     "RULE_EMPTY": "A rule needs a second approval, a reminder or an escalation.",
     "RULE_HOURS_INVALID": "Hours must be a whole number between 1 and 720.",
-    "RULE_ESCALATE_ROLE_REQUIRED": "Choose who it passes to when nobody answers."
+    "RULE_ESCALATE_ROLE_REQUIRED": "Choose who it passes to when nobody answers.",
+    "REQUEST_OVERLAPS_LEAVE": "That day falls in leave already asked for or approved.",
+    "SELF_DECISION": "You cannot decide this about yourself. Ask a manager or an administrator.",
+    "DAY_HOURS_SPACE_NOT_YOURS": "Choose a workspace you manage."
   },
   "signLink": {
     "tabs": {
@@ -9609,7 +9612,8 @@
       "document": "Documents",
       "join": "Join requests",
       "clientRequest": "Client requests",
-      "guestRequest": "Guest workspaces"
+      "guestRequest": "Guest workspaces",
+      "outside": "Time outside the shift"
     },
     "headline": {
       "hours": "Hours to approve",
@@ -9619,7 +9623,8 @@
       "noShow": "Didn't clock in for the shift",
       "assetProposal": "Sent in a paper for a new asset",
       "join": "Wants to join the organization",
-      "noShowRun": "Missed {{count}} shifts in a row"
+      "noShowRun": "Missed {{count}} shifts in a row",
+      "outside": "Time outside the shift"
     },
     "fact": {
       "workspace": "Workspace",
@@ -9662,7 +9667,11 @@
       "reminded": "Reminded",
       "appLastUsed": "App last used",
       "thisMonth": "This month",
-      "likely": "Likely"
+      "likely": "Likely",
+      "planned": "Planned",
+      "clocked": "Clocked",
+      "before": "Before the start",
+      "after": "After the end"
     },
     "cover": {
       "ok": "Enough people stay",
@@ -9682,7 +9691,9 @@
       "accept": "Accept",
       "verify": "Verify",
       "turnIntoJob": "Turn into a job",
-      "absent": "Absent"
+      "absent": "Absent",
+      "count": "Count it",
+      "notCount": "Don’t count"
     },
     "needsPage": {
       "assetProposal": "Accepting this creates an asset — choose its kind on the full page.",
@@ -10009,5 +10020,48 @@
     "getItOn": "Get it on",
     "getOnGooglePlay": "Get it on Google Play",
     "getOnAppStore": "Download on the App Store"
+  },
+  "dayHours": {
+    "cellLabel": "{{name}}, {{day}}: change hours",
+    "start": "Start",
+    "end": "End",
+    "reason": "Reason (optional)",
+    "reasonPlaceholder": "Delivery arrives early",
+    "plan": {
+      "shift": "Planned: shift {{start}}–{{end}}",
+      "none": "Planned: no shift · counts from clock-in to clock-out",
+      "changed": "Changed hours: {{start}}–{{end}} · set by {{by}}",
+      "clockedIn": "clocked in at {{time}}"
+    },
+    "quick": {
+      "startEarlier": "Start 1 h earlier",
+      "finishLater": "Finish 1 h later",
+      "finishEarlier": "Finish 1 h earlier"
+    },
+    "nextMorning": "next morning",
+    "was": "was {{duration}}",
+    "error": {
+      "same": "Start and end are the same time.",
+      "tooLong": "{{start}} → {{end}} would be {{duration}}. A night is at most 16 hours — check the times.",
+      "missing": "Choose a start and an end."
+    },
+    "note": {
+      "plain": "{{name}} gets a notification. The clock counts these hours, with no approval afterwards.",
+      "clockedIn": "{{name}} is clocked in: today’s entry is updated too, and the clock-out reminder moves to {{end}}. {{name}} gets a notification.",
+      "night": "The night counts toward {{day}}."
+    },
+    "stop": {
+      "self": "You cannot set your own hours. Ask a manager or an administrator.",
+      "onLeave": "{{name}} is on leave from {{from}} to {{to}}. Change the leave first.",
+      "leaveAsked": "{{name}} asked for leave on this day. Decide the request first."
+    },
+    "set": "Set hours",
+    "change": "Change hours",
+    "toast": {
+      "set": "Hours set for {{name}} on {{day}}",
+      "changed": "Hours changed for {{name}} on {{day}}",
+      "told": "{{name}} gets a notification."
+    },
+    "setBy": "Set by {{name}} · {{date}}"
   }
 }

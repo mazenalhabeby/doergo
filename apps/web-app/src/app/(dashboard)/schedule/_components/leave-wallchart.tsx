@@ -2,16 +2,23 @@
 
 import { useMemo } from "react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { format, isSameDay } from "date-fns"
 import { Users } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { personName } from "@hbcfield/shared/client"
 
 import type { FloorSpace, OrgTimeOffRequest } from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Popover, PopoverContent } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { isAbsence } from "@/lib/requests"
 import { SpaceBlock } from "./space-block"
 import { type CoverRangeSpace, restingFn } from "./wallchart-days"
+import type { PickedDay } from "./day-hours-form"
+
+// The form is opened by somebody who changes a day's hours — loaded when they do.
+const DayHoursForm = dynamic(() => import("./day-hours-form").then((m) => m.DayHoursForm), { ssr: false })
 
 /**
  * The wallchart: people down the side, days across, leave drawn as bars.
@@ -44,6 +51,9 @@ export function LeaveWallchart({
   isLoading,
   restDays,
   holidays,
+  picked,
+  onPickDay,
+  onClosePick,
 }: {
   /** The workspace's rest days (its weekend) and holidays, from the calendar — never a hard-coded Sat+Sun. */
   restDays?: Set<string>
@@ -55,6 +65,10 @@ export function LeaveWallchart({
   selectedId: string | null
   onSelect: (id: string) => void
   isLoading: boolean
+  /** "Change hours for this day" (rota permission only): the day open, opening one, closing it. */
+  picked?: PickedDay | null
+  onPickDay?: (pick: Omit<PickedDay, "self">) => void
+  onClosePick?: () => void
 }) {
   const { t } = useTranslation()
   const dayKeys = useMemo(() => days.map((d) => format(d, "yyyy-MM-dd")), [days])
@@ -143,94 +157,126 @@ export function LeaveWallchart({
   const template = { gridTemplateColumns: `13rem repeat(${days.length}, minmax(2.1rem, 1fr))` }
   const isWeekend = restingFn(restDays, holidays)
 
+  const pickedKey = picked ? `${picked.personId}:${picked.dayKey}` : null
+
   return (
-    <div className={cn("overflow-hidden rounded-2xl border border-border bg-card", selected && "is-focused")}>
-      <div className="overflow-x-auto">
-        <div className="min-w-max">
-          {/* Dates */}
-          <div className="grid bg-muted/50 border-b border-border" style={template}>
-            <div
-              className={
-                "sticky left-0 z-20 bg-muted/50 px-3 py-1.5 text-[11px] font-semibold " +
-                "uppercase tracking-wider text-muted-foreground border-r border-border"
-              }
-            >
-              {t("cover.chart.team", "Team")}
-            </div>
-            {days.map((d) => (
-              // The day opens in the calendar — everything on it, not only the leave.
-              <Link
-                key={d.toISOString()}
-                href={`/calendar?date=${format(d, "yyyy-MM-dd")}&view=day`}
-                title={t("cover.chart.openDay", "Open this day in the calendar")}
-                className={cn(
-                  "border-l border-border py-1.5 text-center transition-colors hover:bg-primary/10",
-                  isWeekend(d) && "bg-muted",
-                )}
+    <Popover open={!!picked} onOpenChange={(open) => !open && onClosePick?.()}>
+      <div className={cn("overflow-hidden rounded-2xl border border-border bg-card", selected && "is-focused")}>
+        <div className="overflow-x-auto">
+          <div className="min-w-max">
+            {/* Dates */}
+            <div className="grid bg-muted/50 border-b border-border" style={template}>
+              <div
+                className={
+                  "sticky left-0 z-20 bg-muted/50 px-3 py-1.5 text-[11px] font-semibold " +
+                  "uppercase tracking-wider text-muted-foreground border-r border-border"
+                }
               >
-                <span className="block text-[9px] uppercase tracking-wider text-muted-foreground/70">
-                  {format(d, "EEEEE")}
-                </span>
-                <span
+                {t("cover.chart.team", "Team")}
+              </div>
+              {days.map((d) => (
+                // The day opens in the calendar — everything on it, not only the leave.
+                <Link
+                  key={d.toISOString()}
+                  href={`/calendar?date=${format(d, "yyyy-MM-dd")}&view=day`}
+                  title={t("cover.chart.openDay", "Open this day in the calendar")}
                   className={cn(
-                    "block text-[12px] font-semibold tabular-nums text-muted-foreground",
-                    isSameDay(d, new Date()) &&
-                      "mx-auto grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground",
+                    "border-l border-border py-1.5 text-center transition-colors hover:bg-primary/10",
+                    isWeekend(d) && "bg-muted",
                   )}
                 >
-                  {format(d, "d")}
-                </span>
-              </Link>
-            ))}
-          </div>
+                  <span className="block text-[9px] uppercase tracking-wider text-muted-foreground/70">
+                    {format(d, "EEEEE")}
+                  </span>
+                  <span
+                    className={cn(
+                      "block text-[12px] font-semibold tabular-nums text-muted-foreground",
+                      isSameDay(d, new Date()) &&
+                        "mx-auto grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground",
+                    )}
+                  >
+                    {format(d, "d")}
+                  </span>
+                </Link>
+              ))}
+            </div>
 
-          {spaces.map((space) => {
-            const c = coverBySpace.get(space.spaceId)
-            return (
+            {spaces.map((space) => {
+              const c = coverBySpace.get(space.spaceId)
+              return (
+                <SpaceBlock
+                  restDays={restDays}
+                  holidays={holidays}
+                  key={space.spaceId}
+                  title={space.spaceName}
+                  minCover={space.minCover}
+                  rotaKnown={c?.rotaKnown ?? space.rotaKnown}
+                  people={space.people}
+                  days={days}
+                  dayKeys={dayKeys}
+                  todayKey={todayKey}
+                  template={template}
+                  barsByPerson={barsByPerson}
+                  marksByPerson={marksByPerson}
+                  cover={c}
+                  selected={selected}
+                  selectedInThisSpace={!!selected && space.people.some((p) => p.id === selected.technicianId)}
+                  onSelect={onSelect}
+                  pickedKey={pickedKey}
+                  onPickDay={
+                    onPickDay &&
+                    ((person, dayKey) =>
+                      onPickDay({
+                        personId: person.id,
+                        personName: personName(person),
+                        firstName: person.firstName,
+                        dayKey,
+                        spaceId: space.spaceId,
+                        spaceName: space.spaceName,
+                      }))
+                  }
+                />
+              )
+            })}
+
+            {unassigned.length > 0 && (
               <SpaceBlock
                 restDays={restDays}
                 holidays={holidays}
-                key={space.spaceId}
-                title={space.spaceName}
-                minCover={space.minCover}
-                rotaKnown={c?.rotaKnown ?? space.rotaKnown}
-                people={space.people}
+                title={t("cover.chart.unassigned", "Not in any workspace")}
+                minCover={0}
+                rotaKnown={false}
+                people={unassigned.map((p) => ({ ...p, position: null }))}
                 days={days}
                 dayKeys={dayKeys}
                 todayKey={todayKey}
                 template={template}
                 barsByPerson={barsByPerson}
                 marksByPerson={marksByPerson}
-                cover={c}
+                cover={undefined}
                 selected={selected}
-                selectedInThisSpace={!!selected && space.people.some((p) => p.id === selected.technicianId)}
+                selectedInThisSpace={false}
                 onSelect={onSelect}
               />
-            )
-          })}
-
-          {unassigned.length > 0 && (
-            <SpaceBlock
-              restDays={restDays}
-              holidays={holidays}
-              title={t("cover.chart.unassigned", "Not in any workspace")}
-              minCover={0}
-              rotaKnown={false}
-              people={unassigned.map((p) => ({ ...p, position: null }))}
-              days={days}
-              dayKeys={dayKeys}
-              todayKey={todayKey}
-              template={template}
-              barsByPerson={barsByPerson}
-              marksByPerson={marksByPerson}
-              cover={undefined}
-              selected={selected}
-              selectedInThisSpace={false}
-              onSelect={onSelect}
-            />
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
+      {picked && (
+        <PopoverContent
+          align="center"
+          sideOffset={6}
+          className="w-[22rem] max-w-[calc(100vw-2rem)] rounded-xl p-3.5"
+          // Opened from the drawer, the drawer hands focus back as it closes: that is not "leaving the form".
+          onFocusOutside={(e) => e.preventDefault()}
+        >
+          <DayHoursForm
+            key={`${picked.personId}:${picked.dayKey}:${picked.spaceId}`}
+            picked={picked}
+            onClose={() => onClosePick?.()}
+          />
+        </PopoverContent>
+      )}
+    </Popover>
   )
 }

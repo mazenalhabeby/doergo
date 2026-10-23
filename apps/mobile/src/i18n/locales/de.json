@@ -856,10 +856,10 @@
       "noHoursTitle": "Heute keine Stunden mehr",
       "noHoursBody": "{{location}} erlaubt {{hours}} pro Tag ohne Schicht, und Sie haben sie gearbeitet. Fragen Sie Ihre Leitung nach einer Schicht.",
       "countsUntil": "Zählt bis {{time}} · Tageslimit",
-      "minutesLeft_one": "Noch {{count}} Min. heute",
-      "minutesLeft_other": "Noch {{count}} Min. heute",
-      "afterLimit": "Nach {{time}} zählt Ihre Zeit nur, wenn Ihre Leitung Überstunden genehmigt.",
-      "reachedShort": "{{location}} erlaubt {{hours}} pro Tag ohne Schicht. Sie haben das erreicht."
+      "minutesLeft_one": "Noch {{count}} Min. bis zu den heutigen Stunden",
+      "minutesLeft_other": "Noch {{count}} Min. bis zu den heutigen Stunden",
+      "afterLimit": "Nach {{time}} zählt Ihre Zeit weiter, und Ihre Leitung sieht den langen Tag.",
+      "reachedShort": "{{location}}: Sie sind über den heutigen {{hours}} ohne Schicht. Ihre Zeit zählt weiter – Ihre Leitung sieht den langen Tag."
     },
     "picker": {
       "title": "Wo stempeln Sie ein?",
@@ -871,7 +871,20 @@
       "inRange": "{{distance}} · Sie sind hier",
       "away": "{{distance}} entfernt"
     },
-    "noAssignedLocations": "Sie sind noch keinem Arbeitsbereich zugewiesen. Bitten Sie Ihre Verwaltung, Sie hinzuzufügen."
+    "noAssignedLocations": "Sie sind noch keinem Arbeitsbereich zugewiesen. Bitten Sie Ihre Verwaltung, Sie hinzuzufügen.",
+    "dayHours": {
+      "today": "Heute arbeiten Sie {{hours}}",
+      "todayBy": "Heute arbeiten Sie {{hours}} · festgelegt von {{name}}",
+      "nextMorning": "(bis zum nächsten Morgen)",
+      "startsAt": "ab {{time}}",
+      "endsAt": "bis {{time}}"
+    },
+    "outside": {
+      "waiting": "{{duration}} außerhalb Ihrer Schicht am {{day}} warten auf {{names}}",
+      "waitingNoName": "{{duration}} außerhalb Ihrer Schicht am {{day}} warten auf eine Entscheidung",
+      "andMore_one": "{{names}} und {{count}} weitere Person",
+      "andMore_other": "{{names}} und {{count}} weitere"
+    }
   },
   "overtime": {
     "title": "Überstunden",
@@ -3320,7 +3333,7 @@
       "REQUEST_DATES_INVALID": "Prüfen Sie die Daten – der letzte Tag kann nicht vor dem ersten liegen.",
       "REQUEST_TYPE_INVALID": "Wählen Sie die Art der Abwesenheit.",
       "REQUEST_SPACE_REQUIRED": "Wählen Sie den Arbeitsbereich.",
-      "REQUEST_TIME_INVALID": "Wählen Sie einen neuen Beginn oder ein neues Ende – das Ende nach dem Beginn.",
+      "REQUEST_TIME_INVALID": "Wählen Sie einen neuen Beginn oder ein neues Ende. Ein Ende vor dem Beginn ist am nächsten Morgen – höchstens 16 Stunden.",
       "REQUEST_MINUTES_INVALID": "Wählen Sie zwischen 15 Minuten und 12 Stunden.",
       "REQUEST_REASON_REQUIRED": "Beschreiben Sie, was Sie beantragen.",
       "REQUEST_REASON_TOO_LONG": "Die Begründung ist zu lang – höchstens 500 Zeichen.",
@@ -3444,7 +3457,7 @@
       "dismiss": "Ausblenden",
       "clockInNow": "Jetzt einstempeln"
     },
-    "noShiftLeft": "Bei {{location}} · keine Schicht · noch {{left}} heute",
+    "noShiftLeft": "Bei {{location}} · keine Schicht · noch {{left}} bis zu den heutigen Stunden",
     "askMoreTime": "Mehr Zeit anfragen",
     "askMoreTimeHint": "Ihre Leitung wird gefragt. Sobald sie zustimmt, können Sie einstempeln.",
     "arrivedStartsAt": "Sie sind bei {{workspace}} · Ihre Schicht beginnt um {{time}}"
@@ -5171,7 +5184,8 @@
       "document": "Dokumente",
       "join": "Beitrittsanfragen",
       "clientRequest": "Kundenanfragen",
-      "guestRequest": "Gast-Arbeitsbereiche"
+      "guestRequest": "Gast-Arbeitsbereiche",
+      "outside": "Zeit außerhalb der Schicht"
     },
     "headline": {
       "hours": "Stunden zur Freigabe",
@@ -5181,7 +5195,8 @@
       "noShow": "Hat sich nicht zur Schicht eingestempelt",
       "assetProposal": "Hat ein Dokument für eine neue Anlage eingereicht",
       "join": "Möchte der Organisation beitreten",
-      "noShowRun": "{{count}} Schichten in Folge verpasst"
+      "noShowRun": "{{count}} Schichten in Folge verpasst",
+      "outside": "Zeit außerhalb der Schicht"
     },
     "fact": {
       "workspace": "Arbeitsbereich",
@@ -5224,7 +5239,11 @@
       "reminded": "Erinnert",
       "appLastUsed": "App zuletzt genutzt",
       "thisMonth": "Diesen Monat",
-      "likely": "Vermutlich"
+      "likely": "Vermutlich",
+      "planned": "Geplant",
+      "clocked": "Gestempelt",
+      "before": "Vor Beginn",
+      "after": "Nach Ende"
     },
     "cover": {
       "ok": "Genug Personen bleiben",
@@ -5244,7 +5263,9 @@
       "accept": "Annehmen",
       "verify": "Bestätigen",
       "turnIntoJob": "Zu einem Auftrag machen",
-      "absent": "Abwesend"
+      "absent": "Abwesend",
+      "count": "Anrechnen",
+      "notCount": "Nicht anrechnen"
     },
     "needsPage": {
       "assetProposal": "Beim Annehmen entsteht eine Anlage — wählen Sie ihre Art auf der vollständigen Seite.",

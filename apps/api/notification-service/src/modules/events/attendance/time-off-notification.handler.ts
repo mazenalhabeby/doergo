@@ -150,23 +150,26 @@ export class TimeOffNotificationHandler {
     // The reason travels IN the message when it was refused. A refusal that
     // only says "no" sends somebody to ask their manager what happened.
     const what = requestWhat(data, range);
-    const text: LocalizedText = isAbsence(data.kind)
-      ? {
-          title: msg(data.approved ? 'timeOff.decided.titleApproved' : 'timeOff.decided.titleRejected'),
-          body: data.approved
-            ? msg('timeOff.decided.bodyApproved', { range })
-            : data.rejectionReason
-              ? msg('timeOff.decided.bodyRejectedReason', { range, reason: data.rejectionReason })
-              : msg('timeOff.decided.bodyRejected', { range }),
-        }
-      : {
-          title: msg(data.approved ? 'request.decided.titleApproved' : 'request.decided.titleRejected'),
-          body: data.approved
-            ? msg('request.decided.bodyApproved', { what })
-            : data.rejectionReason
-              ? msg('request.decided.bodyRejectedReason', { what, reason: data.rejectionReason })
-              : msg('request.decided.bodyRejected', { what }),
-        };
+    // Set by the office, not asked for: the member is TOLD their day changed, and by whom.
+    const text: LocalizedText = data.setBy
+      ? { title: msg('attendance.hoursSet.title'), body: msg('attendance.hoursSet.body', { by: data.setBy, what }) }
+      : isAbsence(data.kind)
+        ? {
+            title: msg(data.approved ? 'timeOff.decided.titleApproved' : 'timeOff.decided.titleRejected'),
+            body: data.approved
+              ? msg('timeOff.decided.bodyApproved', { range })
+              : data.rejectionReason
+                ? msg('timeOff.decided.bodyRejectedReason', { range, reason: data.rejectionReason })
+                : msg('timeOff.decided.bodyRejected', { range }),
+          }
+        : {
+            title: msg(data.approved ? 'request.decided.titleApproved' : 'request.decided.titleRejected'),
+            body: data.approved
+              ? msg('request.decided.bodyApproved', { what })
+              : data.rejectionReason
+                ? msg('request.decided.bodyRejectedReason', { what, reason: data.rejectionReason })
+                : msg('request.decided.bodyRejected', { what }),
+          };
 
     this.websocketGateway.emitToUser(data.memberId, 'time_off_decided', {
       timeOffId: data.timeOffId,

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
@@ -16,6 +17,8 @@ import { FloorNowPanel } from "./_components/floor-now-panel"
 import { LeaveWallchart } from "./_components/leave-wallchart"
 import { useScheduleAndTimeOffPage } from "./_hooks/use-schedule-and-time-off-page"
 import { RequestSummary } from "./_components/request-summary"
+import type { PickedDay } from "./_components/day-hours-form"
+import { useAuth } from "@/contexts/auth-context"
 
 // The drawer is a decision somebody may never open — loaded when they do.
 const LeaveDecisionDrawer = dynamic(
@@ -54,6 +57,13 @@ export default function ScheduleAndTimeOffPage() {
     loadError,
     step,
   } = useScheduleAndTimeOffPage()
+  const { user } = useAuth()
+  // "Change hours for this day": the person and day whose form is open (rota permission only).
+  const [picked, setPicked] = useState<PickedDay | null>(null)
+  const pickDay = (pick: Omit<PickedDay, "self">) => {
+    setSelectedId(null)
+    setPicked({ ...pick, self: pick.personId === user?.id })
+  }
 
   if (!canManage) {
     return (
@@ -216,6 +226,9 @@ export default function ScheduleAndTimeOffPage() {
               cover={coverQuery.data ?? []}
               selectedId={selectedId}
               onSelect={setSelectedId}
+              picked={picked}
+              onPickDay={canDecide ? pickDay : undefined}
+              onClosePick={() => setPicked(null)}
               // `!space` counts as loading: until a workspace is resolved the
               // chart has nothing to draw, and its empty state would otherwise
               // flash "nobody to show" at somebody whose data is on its way.
@@ -258,7 +271,12 @@ export default function ScheduleAndTimeOffPage() {
       </div>
 
       {drawerMounted && (
-        <LeaveDecisionDrawer request={selected} canManage={canDecide} onClose={() => setSelectedId(null)} />
+        <LeaveDecisionDrawer
+          request={selected}
+          canManage={canDecide}
+          onClose={() => setSelectedId(null)}
+          onChangeHours={canDecide ? pickDay : undefined}
+        />
       )}
     </TooltipProvider>
   )

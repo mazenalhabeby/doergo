@@ -85,6 +85,17 @@ export function describeApproval(
       add('plannedEnd', when(locale, d.plannedEnd, tz));
       if (d.stillWorking === true) add('status', t('approvals.stillWorking'), 'warn');
       return { headline: t('approvals.headline.extraTime'), facts };
+    case 'outside': {
+      const ps = when(locale, d.plannedStart, tz);
+      const pe = when(locale, d.plannedEnd, tz, false);
+      const from = when(locale, d.clockInAt, tz);
+      const to = when(locale, d.clockOutAt, tz, false);
+      add('planned', ps && pe ? `${ps} – ${pe}` : null);
+      add('clocked', from && to ? `${from} – ${to}` : null);
+      add('before', num(d.beforeMinutes) ? formatDuration(num(d.beforeMinutes)) : null, 'warn');
+      add('after', num(d.afterMinutes) ? formatDuration(num(d.afterMinutes)) : null, 'warn');
+      return { headline: t('approvals.headline.outside'), facts };
+    }
     case 'overtime':
       add('from', when(locale, d.overtimeStartAt));
       add('round', num(d.cycle) != null ? String(num(d.cycle)) : null);

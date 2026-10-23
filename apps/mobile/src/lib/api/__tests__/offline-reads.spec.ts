@@ -51,6 +51,8 @@ const ONLINE_ONLY: Record<string, string> = {
   '/chat/badge':
     'the unread total — set live by the socket and asked again on resume; offline the tab keeps the last number',
   '/approvals/count': 'the same, as one number on More — a kept count is a number from another moment',
+  '/attendance/outside/mine':
+    'time outside the shift still waiting for a leader — decided elsewhere at any moment; offline the Time page simply says nothing',
   '/app/version': 'the update gate — any failure lets the app run, and an old answer would hide a required update',
   '/calendar/people': 'the invite picker — inviting somebody is itself online, so a kept colleague list would only offer a send that cannot happen',
   '/auth/me': 'reconciliation only — the signed-in member is restored from SecureStore, and the failure is swallowed',

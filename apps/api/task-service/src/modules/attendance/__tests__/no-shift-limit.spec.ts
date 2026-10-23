@@ -9,7 +9,7 @@ import { Test } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import {
   QUEUE_NAMES, SERVICE_NAMES, TimeEntryStatus,
-  noShiftAllowance, noShiftAllowanceNow, countedMinutesBetween, startOfDayIn, endOfDayIn, clampDailyMinutes,
+  noShiftAllowance, noShiftAllowanceNow, countedMinutesBetween, countedMinutesOfDay, memberDayZone, startOfDayIn, endOfDayIn, clampDailyMinutes,
 } from '@hbcfield/shared';
 import { AttendanceService } from '../attendance.service';
 import { ATTENDANCE_SERVICE_PARTS } from '../attendance-service-parts';
@@ -65,6 +65,30 @@ describe('the rule', () => {
       // Still open since 11:00.
       { clockInAt: '2026-09-15T11:00:00Z', clockOutAt: null },
     ], from, to)).toBe(120 + 90 + 60);
+  });
+
+  /*
+    HBC USA, Oct 2026: a night worker at a New York workspace limited to 12 h a day.
+    Each night's hours after midnight were charged to the NEXT night as well, so
+    18/19 Oct counted 7 h 54 m of a 12 h 22 m night. A session belongs to its start day.
+  */
+  it('charges a night shift only to the day it started', () => {
+    const nightBefore = { clockInAt: '2026-10-17T21:55:52Z', clockOutAt: '2026-10-18T10:11:41Z', paidMinutes: 720 };
+    const clockInAt = at('2026-10-18T21:48:16Z'); // 17:48 in New York
+    const dayStart = startOfDayIn(clockInAt, 'America/New_York');
+    expect(countedMinutesOfDay([nightBefore], dayStart, clockInAt)).toBe(0);
+    // The old count charged its morning share (about 6 h) to this night too.
+    expect(countedMinutesBetween([nightBefore], dayStart, clockInAt)).toBeGreaterThan(300);
+    // Sessions that did start today still count in full, an open one up to now.
+    const today = { clockInAt: '2026-10-18T13:00:00Z', clockOutAt: '2026-10-18T15:00:00Z', paidMinutes: 120 };
+    expect(countedMinutesOfDay([nightBefore, today], dayStart, clockInAt)).toBe(120);
+  });
+
+  it('takes the day from the member, then the workspace, then the organization', () => {
+    expect(memberDayZone('Europe/Vienna', 'America/Bahia_Banderas', 'America/New_York')).toBe('Europe/Vienna');
+    expect(memberDayZone(null, 'America/Bahia_Banderas', 'America/New_York')).toBe('America/New_York');
+    expect(memberDayZone(null, 'America/Bahia_Banderas', null)).toBe('America/Bahia_Banderas');
+    expect(memberDayZone(null, null, null)).toBe('UTC');
   });
 
   it('knows the local day, across a daylight-saving change', () => {
@@ -159,13 +183,19 @@ describe('clocking in with no shift', () => {
     const where = prisma.timeEntry.findMany.mock.calls[0][0].where;
     expect(where.userId).toBe('u1');
     expect(where.locationId).toBeUndefined();
-    expect(where.OR[1].clockOutAt.gt.toISOString()).toBe('2026-09-14T22:00:00.000Z');
+    // Sessions that STARTED today, from local midnight (a night shift belongs to the day it began).
+    expect(where.clockInAt.gte.toISOString()).toBe('2026-09-14T22:00:00.000Z');
+    expect(where.OR).toBeUndefined();
   });
 
-  it('refuses with a code when no hours are left', async () => {
+  // Nothing is cut any more (docs/plans/time-counting-model.md): with no hours left the clock-in is
+  // KEPT and flagged for the leader, as an offline one always was. Only SHIFT_ONLY refuses.
+  it('keeps a clock-in with no hours left and flags it for the leader', async () => {
     const { service, prisma } = await build({ worked: [{ ...MORNING[0], paidMinutes: 480 }] });
-    await expect(service.clockIn(clockIn())).rejects.toMatchObject({ response: expect.objectContaining({ code: 'NO_HOURS_LEFT' }) });
-    expect(prisma.timeEntry.create).not.toHaveBeenCalled();
+    await service.clockIn(clockIn());
+    const data = prisma.timeEntry.create.mock.calls[0][0].data;
+    expect(data.flagReasons).toEqual(expect.arrayContaining(['PAST_DAILY_LIMIT']));
+    expect(data.endIsDailyLimit).toBe(true);
   });
 
   /*

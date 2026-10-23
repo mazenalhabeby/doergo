@@ -5,10 +5,11 @@
  * every hour counted. Each workspace now chooses: allow it, allow up to a number
  * of hours a day, or only clock in with a shift.
  *
- * ⚠️ THE LIMIT BECOMES THE SESSION'S PLANNED END. Nothing downstream learns a
- * new rule: counted time stops at `expectedClockOutAt`, the reminders fire past
- * it, the late clock-out asks for overtime past it, and a forgotten session is
- * closed from it — exactly as for a shift.
+ * ⚠️ THE LIMIT BECOMES THE SESSION'S PLANNED END, AS A MARKER (`endIsDailyLimit`).
+ * The reminders fire past it, staying past it flags PAST_DAILY_LIMIT for the
+ * leader, and a forgotten session is closed from it. Counted time is NOT cut at
+ * it (since 2026-10-23, docs/plans/time-counting-model.md): everything until the
+ * clock-out counts, and the leader sees the long day.
  *
  * ⚠️ HOURS ARE COUNTED AT EVERY WORKSPACE. A limit per workspace that only
  * counted its own hours is walked around by clocking in next door.
@@ -59,7 +60,10 @@ export function workspaceSchedulesShifts(workModel: string | null | undefined): 
  * (`noShiftPolicyConflict`); any row that already holds it reads as ALLOW.
  * LIMIT is unaffected: "up to N hours a day" means exactly as much without a rota.
  */
-export function effectiveNoShiftPolicy(policy: string | null | undefined, workModel: string | null | undefined): NoShiftPolicy {
+export function effectiveNoShiftPolicy(
+  policy: string | null | undefined,
+  workModel: string | null | undefined,
+): NoShiftPolicy {
   const p = isNoShiftPolicy(policy) ? policy : DEFAULT_NO_SHIFT_POLICY;
   return p === 'SHIFT_ONLY' && !workspaceSchedulesShifts(workModel) ? 'ALLOW' : p;
 }
@@ -75,7 +79,7 @@ export function noShiftPolicyConflict(
 export type NoShiftAllowance =
   /** No limit applies. */
   | { kind: 'free' }
-  /** Clocking in is refused: this workspace needs a shift, or today's hours are used up. */
+  /** This workspace needs a shift (the clock-in is refused), or today's hours are used up (kept and flagged). */
   | { kind: 'refused'; reason: 'SHIFT_ONLY' | 'NO_HOURS_LEFT'; dailyMinutes: number | null }
   /** Allowed, counted until `until`. */
   | { kind: 'limited'; remainingMinutes: number; until: Date; dailyMinutes: number };
@@ -122,17 +126,21 @@ export function clampDailyMinutes(minutes: number | null | undefined): number {
 }
 
 /**
- * Whose "today" a no-shift limit counts: the MEMBER's — their own zone, else the
- * organization's, else the workspace's. ONE day for the person at every workspace.
+ * Whose "today" a no-shift limit counts: the MEMBER's own zone, else the zone of
+ * the WORKSPACE they work at (derived from its map point), else the organization's.
  *
- * ⚠️ Not each workspace's own zone. Counting "today" per workspace split one
- * session differently everywhere: a shift ending 06:10 in Vienna read as 6h 11m
- * at a Vienna workspace, 11m at a New York one and 12h at a Chicago one — three
- * contradicting answers on one screen, and a refusal at one workspace while the
- * next said hours were left.
+ * ⚠️ The workspace before the organization. An organization's zone is one setting
+ * for a company that may work in several countries (HBC USA was set to Mexico while
+ * its people work in New York): the place where the work happens knows its own day.
+ * A session belongs to the day it STARTED (`countedMinutesOfDay`), so the zone only
+ * decides which day a clock-in falls on.
  */
-export function memberDayZone(userTz: string | null | undefined, orgTz: string | null | undefined, fallback?: string | null): string {
-  return zoneOf(userTz, orgTz, fallback);
+export function memberDayZone(
+  userTz: string | null | undefined,
+  orgTz: string | null | undefined,
+  workspaceTz?: string | null,
+): string {
+  return zoneOf(userTz, workspaceTz, orgTz);
 }
 
 /** Local midnight of the day `at` falls on, in `tz`, as an instant. */
@@ -171,11 +179,28 @@ export function countedMinutesBetween(entries: readonly WorkedEntry[], from: Dat
     if (overlap <= 0) continue;
     const span = (end - start) / 60_000;
     const counted = e.clockOutAt
-      ? e.paidMinutes ?? (e.totalMinutes != null ? e.totalMinutes - (e.unpaidBreakMinutes ?? 0) : span)
+      ? (e.paidMinutes ?? (e.totalMinutes != null ? e.totalMinutes - (e.unpaidBreakMinutes ?? 0) : span))
       : span - (e.unpaidBreakMinutes ?? 0);
     sum += Math.max(0, counted) * (overlap / 60_000 / span);
   }
   return Math.round(sum);
+}
+
+/**
+ * Counted minutes of the sessions that STARTED between `dayStart` and `at` — what a
+ * day's no-shift limit has used up.
+ *
+ * ⚠️ A session belongs to the day it started. A night shift (18:00 → 06:00) was
+ * already held to ITS day's limit when it began; charging its hours after midnight
+ * to the next day as well cut the next night short (HBC USA, Oct 2026: a 12 h
+ * night counted 7 h 54 m). An entry still open is counted up to `at`.
+ */
+export function countedMinutesOfDay(entries: readonly WorkedEntry[], dayStart: Date, at: Date): number {
+  const started = entries.filter((e) => {
+    const t = new Date(e.clockInAt).getTime();
+    return t >= dayStart.getTime() && t < at.getTime();
+  });
+  return countedMinutesBetween(started, dayStart, at);
 }
 
 /**
@@ -204,7 +229,7 @@ export function noShiftAllowanceNow(tag: NoShiftTag | null | undefined, now: Dat
     policy: tag.policy,
     dailyMinutes: tag.dailyMinutes,
     workedTodayMinutes: newDay ? 0 : tag.workedTodayMinutes,
-    extraMinutes: newDay ? 0 : tag.extraMinutes ?? 0,
+    extraMinutes: newDay ? 0 : (tag.extraMinutes ?? 0),
     at: now,
   });
 }

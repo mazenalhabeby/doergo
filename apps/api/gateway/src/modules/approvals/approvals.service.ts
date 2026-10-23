@@ -104,6 +104,8 @@ export class ApprovalsService {
       ]);
     }
     add('overtime', async () => rows(await get('/overtime/pending-approvals')).map((r) => toApproval.overtime(r, ctx)));
+    // Time worked outside the planned shift, not counted until a leader decides it (attendance/outside-shift.ts).
+    add('outside', async () => rows(await get('/attendance/outside/pending')).map((r) => toApproval.outside(r, ctx)));
     add('request', async () =>
       rows(await get('/employees/time-off?status=PENDING')).map((r) => toApproval.request(r, ctx)),
     );

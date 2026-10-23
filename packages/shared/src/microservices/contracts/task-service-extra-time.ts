@@ -38,3 +38,18 @@ export const rejectExtraTime = rpc<{
 export const listPendingExtraTime = rpc<{ userId: string; organizationId: string; isAdmin?: boolean }>(
   'list_pending_extra_time',
 );
+
+/** Time worked outside the planned shift (attendance/outside-shift.ts): the leaders' list, the member's own, the decision. */
+export const listOutsideShift = rpc<{ userId: string; organizationId: string; scopeSpaceIds?: AttendanceScope }>(
+  'list_outside_shift',
+);
+export const listMyOutsideShift = rpc<{ userId: string; organizationId: string }>('list_my_outside_shift');
+export const decideOutsideShift = rpc<{
+  approverId: string;
+  organizationId: string;
+  entryId: string;
+  /** How many of the minutes count — all, part, or 0 = don't count. */
+  minutes: number;
+  reason?: string | null;
+  scopeSpaceIds?: AttendanceScope;
+}>('decide_outside_shift');

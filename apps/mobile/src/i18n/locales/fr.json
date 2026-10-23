@@ -856,10 +856,10 @@
       "noHoursTitle": "Plus d'heures aujourd'hui",
       "noHoursBody": "{{location}} autorise {{hours}} par jour sans service, et vous les avez travaillées. Demandez un service à votre responsable.",
       "countsUntil": "Compte jusqu'à {{time}} · limite du jour",
-      "minutesLeft_one": "Encore {{count}} min aujourd'hui",
-      "minutesLeft_other": "Encore {{count}} min aujourd'hui",
-      "afterLimit": "Après {{time}}, votre temps ne compte que si votre responsable approuve des heures supplémentaires.",
-      "reachedShort": "{{location}} autorise {{hours}} par jour sans poste. Vous l'avez atteint."
+      "minutesLeft_one": "Encore {{count}} min avant les heures du jour",
+      "minutesLeft_other": "Encore {{count}} min avant les heures du jour",
+      "afterLimit": "Après {{time}}, votre temps compte toujours, et votre responsable voit la longue journée.",
+      "reachedShort": "{{location}} : vous avez dépassé les {{hours}} du jour sans poste. Votre temps compte toujours — votre responsable verra la longue journée."
     },
     "picker": {
       "title": "Où pointez-vous ?",
@@ -871,7 +871,20 @@
       "inRange": "{{distance}} · Vous êtes ici",
       "away": "à {{distance}}"
     },
-    "noAssignedLocations": "Vous n'êtes affecté à aucun espace. Demandez à votre administrateur de vous ajouter."
+    "noAssignedLocations": "Vous n'êtes affecté à aucun espace. Demandez à votre administrateur de vous ajouter.",
+    "dayHours": {
+      "today": "Aujourd’hui, vous travaillez {{hours}}",
+      "todayBy": "Aujourd’hui, vous travaillez {{hours}} · fixé par {{name}}",
+      "nextMorning": "(jusqu’au lendemain matin)",
+      "startsAt": "à partir de {{time}}",
+      "endsAt": "jusqu’à {{time}}"
+    },
+    "outside": {
+      "waiting": "{{duration}} hors de votre poste le {{day}} attendent {{names}}",
+      "waitingNoName": "{{duration}} hors de votre poste le {{day}} attendent une décision",
+      "andMore_one": "{{names}} et {{count}} autre",
+      "andMore_other": "{{names}} et {{count}} autres"
+    }
   },
   "overtime": {
     "title": "Heures supplémentaires",
@@ -3320,7 +3333,7 @@
       "REQUEST_DATES_INVALID": "Vérifiez les dates : le dernier jour ne peut pas précéder le premier.",
       "REQUEST_TYPE_INVALID": "Choisissez le type de congé.",
       "REQUEST_SPACE_REQUIRED": "Choisissez l’espace de travail.",
-      "REQUEST_TIME_INVALID": "Choisissez un nouveau début ou une nouvelle fin, la fin après le début.",
+      "REQUEST_TIME_INVALID": "Choisissez un nouveau début ou une nouvelle fin. Une fin avant le début est le lendemain matin — 16 heures au plus.",
       "REQUEST_MINUTES_INVALID": "Choisissez entre 15 minutes et 12 heures.",
       "REQUEST_REASON_REQUIRED": "Dites ce que vous demandez.",
       "REQUEST_REASON_TOO_LONG": "Le motif est trop long : 500 caractères au maximum.",
@@ -3444,7 +3457,7 @@
       "dismiss": "Ignorer",
       "clockInNow": "Pointer maintenant"
     },
-    "noShiftLeft": "À {{location}} · sans poste · encore {{left}} aujourd'hui",
+    "noShiftLeft": "À {{location}} · sans poste · encore {{left}} avant les heures du jour",
     "askMoreTime": "Demander plus de temps",
     "askMoreTimeHint": "Votre responsable est sollicité. Vous pourrez pointer dès son accord.",
     "arrivedStartsAt": "Vous êtes à {{workspace}} · votre service commence à {{time}}"
@@ -5171,7 +5184,8 @@
       "document": "Documents",
       "join": "Demandes d’adhésion",
       "clientRequest": "Demandes clients",
-      "guestRequest": "Espaces invités"
+      "guestRequest": "Espaces invités",
+      "outside": "Temps hors du poste"
     },
     "headline": {
       "hours": "Heures à valider",
@@ -5181,7 +5195,8 @@
       "noShow": "N’a pas pointé pour le poste",
       "assetProposal": "A envoyé un document pour un nouvel équipement",
       "join": "Souhaite rejoindre l’organisation",
-      "noShowRun": "{{count}} services manqués d’affilée"
+      "noShowRun": "{{count}} services manqués d’affilée",
+      "outside": "Temps hors du poste"
     },
     "fact": {
       "workspace": "Espace de travail",
@@ -5224,7 +5239,11 @@
       "reminded": "Rappels",
       "appLastUsed": "Dernière utilisation de l’app",
       "thisMonth": "Ce mois-ci",
-      "likely": "Probablement"
+      "likely": "Probablement",
+      "planned": "Prévu",
+      "clocked": "Pointé",
+      "before": "Avant le début",
+      "after": "Après la fin"
     },
     "cover": {
       "ok": "Assez de personnes restent",
@@ -5244,7 +5263,9 @@
       "accept": "Accepter",
       "verify": "Vérifier",
       "turnIntoJob": "Transformer en intervention",
-      "absent": "Absent"
+      "absent": "Absent",
+      "count": "Le compter",
+      "notCount": "Ne pas compter"
     },
     "needsPage": {
       "assetProposal": "Accepter crée un équipement — choisissez son type sur la page complète.",

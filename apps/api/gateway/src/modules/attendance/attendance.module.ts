@@ -12,6 +12,7 @@ import { AttendanceReportsController } from './attendance-reports.controller';
 import { BreaksController } from './breaks.controller';
 import { AttendanceApprovalsController } from './attendance-approvals.controller';
 import { ExtraTimeController } from './extra-time.controller';
+import { OutsideShiftController } from './outside-shift.controller';
 import { EntryEditsController } from './entry-edits.controller';
 import { AttendanceService } from './attendance.service';
 import { AttendanceReportsGatewayService } from './attendance-reports.gateway-service';
@@ -40,6 +41,7 @@ import { AttendanceQueueService } from './attendance.queue.service';
     AttendanceApprovalsController,
     ExtraTimeController,
     EntryEditsController,
+    OutsideShiftController,
   ],
   providers: [
     AttendanceService,

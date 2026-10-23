@@ -46,17 +46,17 @@ describe("the no-shift limit counts the MEMBER's day", () => {
     const ends = new Set(tagged.map((s: any) => s.noShift.dayEndsAt));
     expect(worked.size).toBe(1);
     expect(ends.size).toBe(1);
-    // Vienna midnight 22:00 UTC → 04:10 UTC = 6h 10m of that session falls on the member's today.
-    expect([...worked][0]).toBe(370);
+    // The session STARTED 20:52 Vienna on the 13th: it belongs to that day, not to the member's today.
+    expect([...worked][0]).toBe(0);
     // Today's hours are read ONCE, and the member once, whatever the number of workspaces.
     expect(prisma.timeEntry.findMany).toHaveBeenCalledTimes(1);
     expect(prisma.user.findUnique).toHaveBeenCalledTimes(1);
   });
 
-  it("a member with no zone of their own counts the organization's day", async () => {
-    const { self } = harness(null, 'America/Chicago');
-    const tagged = await self.tagClockInContext(spaces, 'u1', now, new Set());
-    // Chicago: the whole session is Oct 13 → 558 minutes, the same everywhere.
+  it("a member with no zone of their own counts their main workspace's day, not the organization's", async () => {
+    const { self } = harness(null, 'Europe/Vienna');
+    const tagged = await self.tagClockInContext(spaces, 'u1', now, new Set(['chicago']));
+    // Chicago: the session started and it is still Oct 13 → 558 minutes, the same everywhere.
     expect(tagged.map((s: any) => s.noShift.workedTodayMinutes)).toEqual([558, 558, 558]);
   });
 });

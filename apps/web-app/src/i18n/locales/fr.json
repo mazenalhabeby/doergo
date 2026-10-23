@@ -3385,8 +3385,8 @@
       "subtitle": "Ce qui se passe quand un membre sans service aujourd'hui pointe ici.",
       "allow": "Autoriser",
       "allowHint": "Les membres pointent librement. Chaque heure compte.",
-      "limit": "Autoriser jusqu'à un nombre d'heures par jour",
-      "limitHint": "Le temps au-delà de la limite ne compte que si un responsable l'approuve en heures supplémentaires.",
+      "limit": "Signaler les journées de plus d’un nombre d’heures",
+      "limitHint": "Chaque heure compte. Une journée plus longue est signalée au responsable.",
       "shiftOnly": "Seulement avec un service",
       "shiftOnlyHint": "Les membres sans service aujourd'hui ne peuvent pas pointer ici.",
       "note": "Les membres ayant un service ne sont pas concernés. La limite compte chaque heure travaillée aujourd'hui, dans n'importe quel espace, dans le fuseau horaire de cet espace.",
@@ -8268,7 +8268,7 @@
     "REQUEST_DATES_INVALID": "Choisissez des dates valides — la fin ne peut précéder le début, et ce type porte sur un seul jour.",
     "REQUEST_TYPE_INVALID": "Choisissez un motif pour le congé.",
     "REQUEST_SPACE_REQUIRED": "Choisissez l’espace de travail concerné par le télétravail.",
-    "REQUEST_TIME_INVALID": "Indiquez une nouvelle heure de début ou de fin — la fin doit suivre le début.",
+    "REQUEST_TIME_INVALID": "Indiquez une nouvelle heure de début ou de fin. Une fin avant le début est le lendemain matin — 16 heures au plus.",
     "REQUEST_MINUTES_INVALID": "Les heures sup. doivent être comprises entre 15 minutes et 12 heures.",
     "REQUEST_REASON_REQUIRED": "Écrivez ce que vous demandez.",
     "REQUEST_REASON_TOO_LONG": "Le motif est trop long — moins de 500 caractères.",
@@ -8323,7 +8323,10 @@
     "RULE_KIND_INVALID": "Les règles existent pour les heures supplémentaires, les demandes et les dépenses.",
     "RULE_EMPTY": "Une règle demande une seconde validation, un rappel ou une transmission.",
     "RULE_HOURS_INVALID": "Les heures doivent être un nombre entier entre 1 et 720.",
-    "RULE_ESCALATE_ROLE_REQUIRED": "Choisissez à qui transmettre si personne ne répond."
+    "RULE_ESCALATE_ROLE_REQUIRED": "Choisissez à qui transmettre si personne ne répond.",
+    "REQUEST_OVERLAPS_LEAVE": "Ce jour tombe dans un congé déjà demandé ou validé.",
+    "SELF_DECISION": "Vous ne pouvez pas décider cela pour vous-même. Demandez à un responsable ou à un administrateur.",
+    "DAY_HOURS_SPACE_NOT_YOURS": "Choisissez un espace de travail que vous gérez."
   },
   "signLink": {
     "tabs": {
@@ -9609,7 +9612,8 @@
       "document": "Documents",
       "join": "Demandes d’adhésion",
       "clientRequest": "Demandes clients",
-      "guestRequest": "Espaces invités"
+      "guestRequest": "Espaces invités",
+      "outside": "Temps hors du poste"
     },
     "headline": {
       "hours": "Heures à valider",
@@ -9619,7 +9623,8 @@
       "noShow": "N’a pas pointé pour le poste",
       "assetProposal": "A envoyé un document pour un nouvel équipement",
       "join": "Souhaite rejoindre l’organisation",
-      "noShowRun": "{{count}} services manqués d’affilée"
+      "noShowRun": "{{count}} services manqués d’affilée",
+      "outside": "Temps hors du poste"
     },
     "fact": {
       "workspace": "Espace de travail",
@@ -9662,7 +9667,11 @@
       "reminded": "Rappels",
       "appLastUsed": "Dernière utilisation de l’app",
       "thisMonth": "Ce mois-ci",
-      "likely": "Probablement"
+      "likely": "Probablement",
+      "planned": "Prévu",
+      "clocked": "Pointé",
+      "before": "Avant le début",
+      "after": "Après la fin"
     },
     "cover": {
       "ok": "Assez de personnes restent",
@@ -9682,7 +9691,9 @@
       "accept": "Accepter",
       "verify": "Vérifier",
       "turnIntoJob": "Transformer en intervention",
-      "absent": "Absent"
+      "absent": "Absent",
+      "count": "Le compter",
+      "notCount": "Ne pas compter"
     },
     "needsPage": {
       "assetProposal": "Accepter crée un équipement — choisissez son type sur la page complète.",
@@ -10009,5 +10020,48 @@
     "getItOn": "Disponible sur",
     "getOnGooglePlay": "Disponible sur Google Play",
     "getOnAppStore": "Télécharger dans l’App Store"
+  },
+  "dayHours": {
+    "cellLabel": "{{name}}, {{day}} : modifier les horaires",
+    "start": "Début",
+    "end": "Fin",
+    "reason": "Motif (facultatif)",
+    "reasonPlaceholder": "La livraison arrive plus tôt",
+    "plan": {
+      "shift": "Prévu : poste {{start}}–{{end}}",
+      "none": "Prévu : aucun poste · compte du pointage d’arrivée au pointage de départ",
+      "changed": "Horaires modifiés : {{start}}–{{end}} · fixés par {{by}}",
+      "clockedIn": "arrivée pointée à {{time}}"
+    },
+    "quick": {
+      "startEarlier": "Commencer 1 h plus tôt",
+      "finishLater": "Finir 1 h plus tard",
+      "finishEarlier": "Finir 1 h plus tôt"
+    },
+    "nextMorning": "le lendemain matin",
+    "was": "avant {{duration}}",
+    "error": {
+      "same": "Le début et la fin sont à la même heure.",
+      "tooLong": "{{start}} → {{end}} feraient {{duration}}. Une nuit dure au plus 16 heures — vérifiez les horaires.",
+      "missing": "Choisissez un début et une fin."
+    },
+    "note": {
+      "plain": "{{name}} reçoit une notification. Le pointage compte ces heures, sans validation ensuite.",
+      "clockedIn": "{{name}} a pointé : l’entrée du jour est aussi mise à jour, et le rappel de départ passe à {{end}}. {{name}} reçoit une notification.",
+      "night": "La nuit compte pour le {{day}}."
+    },
+    "stop": {
+      "self": "Vous ne pouvez pas fixer vos propres horaires. Demandez à un responsable ou à un administrateur.",
+      "onLeave": "{{name}} est en congé du {{from}} au {{to}}. Modifiez d’abord le congé.",
+      "leaveAsked": "{{name}} a demandé un congé ce jour-là. Décidez d’abord la demande."
+    },
+    "set": "Fixer les horaires",
+    "change": "Modifier les horaires",
+    "toast": {
+      "set": "Horaires fixés pour {{name}} le {{day}}",
+      "changed": "Horaires modifiés pour {{name}} le {{day}}",
+      "told": "{{name}} reçoit une notification."
+    },
+    "setBy": "Fixé par {{name}} · {{date}}"
   }
 }

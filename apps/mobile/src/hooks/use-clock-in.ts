@@ -123,7 +123,6 @@ export function useClockIn(opts: {
                 distance: formatDistance(verdict.distanceM),
                 radius: formatDistance(verdict.radiusM),
                 location: location?.name ?? '',
-                hours: verdict.hours ?? '',
               }),
               verdict.code,
               location,

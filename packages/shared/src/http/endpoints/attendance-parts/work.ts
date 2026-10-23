@@ -10,6 +10,7 @@ import type {
 } from '../../types';
 import { path, withQuery } from '../../core/path';
 import type { OvertimeSummary } from '../../../attendance/overtime-round';
+import type { OutsideShiftWaiting } from '../../../attendance/outside-shift';
 import type { Id } from './clock';
 
 /** A session's work log: timestamped notes (optionally with photos) during a clock-in. */
@@ -93,6 +94,12 @@ export const shiftIssuesEndpoints = defineEndpoints('shiftIssues', {
 
 export const overtimeEndpoints = defineEndpoints('overtime', {
   active: endpoint<void, OvertimeRequest | null>({ method: 'GET', path: () => '/overtime/active', keep: true }),
+  /** The caller's own time outside the shift, waiting for a decision (presence-like: never kept). */
+  outsideMine: endpoint<void, OutsideShiftWaiting[]>({
+    method: 'GET',
+    path: () => '/attendance/outside/mine',
+    keep: false,
+  }),
   respond: endpoint<void, unknown, { response: 'YES' | 'NO'; reason?: string }>({
     method: 'POST',
     path: () => '/overtime/respond',
