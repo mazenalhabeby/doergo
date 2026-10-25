@@ -128,6 +128,8 @@ export interface CurrentUserData {
   timeFormat?: string;
   // Several workspaces: 'AUTO' (inside one area clocks in there) | 'ASK' (always choose).
   clockInPick?: string;
+  // An administrator who switched their own clock off (clock review A7).
+  clockOff?: boolean;
   // Customer portal: for role=CUSTOMER, the Customer they act as + default unit.
   // Null for staff. Portal endpoints scope every query to this customerId.
   customerId?: string | null;
@@ -177,20 +179,38 @@ export const PERMISSIONS_KEY = 'required_permissions';
 // auth-service populates from the RESOLVED access (see orgPermissionFields), so a
 // grant made on a role satisfies these exactly like a legacy column did.
 export type PermissionField =
-  | 'canCreateTasks' | 'canViewAllTasks' | 'canAssignTasks' | 'canManageUsers'
-  | 'canViewReports' | 'canManageInvoices' | 'canManageAssets'
-  | 'canManageWorkspaces' | 'canManageRota'
-  | 'canManagePortals' | 'canManageTaskTypes' | 'canViewTracking'
-  | 'canViewPortal' | 'canAnswerPortal'
-  | 'canReconcileAttendance' | 'canViewSpaceAttendance' | 'canApproveOvertime'
-  | 'canApproveAttendance' | 'canDeleteAttendance'
-  | 'crmEditInfo' | 'crmManageClients'
-  | 'canViewMemberDocuments' | 'canOpenMemberDocuments'
-  | 'canIssueDocuments' | 'canManageDocumentTemplates'
-  | 'canManageDocumentVisibility' | 'canReplaceDocuments' | 'canDeleteDocuments'
+  | 'canCreateTasks'
+  | 'canViewAllTasks'
+  | 'canAssignTasks'
+  | 'canManageUsers'
+  | 'canViewReports'
+  | 'canManageInvoices'
+  | 'canManageAssets'
+  | 'canManageWorkspaces'
+  | 'canManageRota'
+  | 'canManagePortals'
+  | 'canManageTaskTypes'
+  | 'canViewTracking'
+  | 'canViewPortal'
+  | 'canAnswerPortal'
+  | 'canReconcileAttendance'
+  | 'canViewSpaceAttendance'
+  | 'canApproveOvertime'
+  | 'canApproveAttendance'
+  | 'canDeleteAttendance'
+  | 'crmEditInfo'
+  | 'crmManageClients'
+  | 'canViewMemberDocuments'
+  | 'canOpenMemberDocuments'
+  | 'canIssueDocuments'
+  | 'canManageDocumentTemplates'
+  | 'canManageDocumentVisibility'
+  | 'canReplaceDocuments'
+  | 'canDeleteDocuments'
   | 'canViewLabourCost'
   // The asset register's three levels (manage is above): read, then log.
-  | 'canViewAssets' | 'canLogAssets';
+  | 'canViewAssets'
+  | 'canLogAssets';
 
 /**
  * Decorator to specify required permissions for a route.
@@ -207,8 +227,7 @@ export type PermissionField =
  * @Patch('tasks/:id/assign')
  * assignTask() {}
  */
-export const RequirePermission = (...permissions: PermissionField[]) =>
-  SetMetadata(PERMISSIONS_KEY, permissions);
+export const RequirePermission = (...permissions: PermissionField[]) => SetMetadata(PERMISSIONS_KEY, permissions);
 
 /**
  * Space-aware permission gate. Like @RequirePermission, but the guard ALSO passes
@@ -238,8 +257,7 @@ export const ACCESS_MODULE_KEY = 'required_access_module';
  * ADMIN and to any user with no profile stored, so this only ever refuses a
  * member whose profile explicitly excludes the surface.
  */
-export const RequireAccessModule = (module: 'tasks' | 'clock' | 'time_off') =>
-  SetMetadata(ACCESS_MODULE_KEY, module);
+export const RequireAccessModule = (module: 'tasks' | 'clock' | 'time_off') => SetMetadata(ACCESS_MODULE_KEY, module);
 
 // =============================================================================
 // SKIP ONBOARDING CHECK

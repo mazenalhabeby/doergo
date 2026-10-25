@@ -93,6 +93,8 @@ export * from './access/builtin-role-sync';
 export * from './access/permission-whitelist';
 // Every permission as an org-wide request field, bridges applied (access/org-flags.ts)
 export * from './access/org-flags';
+// Who may hear a member's clock live: attendance rooms by workspace (access/attendance-rooms.ts, clock review A1)
+export * from './access/attendance-rooms';
 // A member's org-wide access from their row, resolved like the session (access/org-access.ts).
 export * from './access/org-access';
 // A stand-in: a leader's approval decisions handed over for whole days (access/delegation.ts).

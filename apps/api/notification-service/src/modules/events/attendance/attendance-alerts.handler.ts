@@ -127,7 +127,7 @@ export class AttendanceAlertsHandler {
       this.logger.error(`Failed to send geofence alert push: ${error}`);
     }
 
-    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance_geofence_alert', {
+    this.websocketGateway.emitAttendance(data.organizationId, data.locationId, null, 'attendance_geofence_alert', {
       userId: data.userId,
       userName: data.userName,
       locationName: data.locationName,

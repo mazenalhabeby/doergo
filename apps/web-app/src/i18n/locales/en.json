@@ -2610,7 +2610,14 @@
       "oneWorkspace": "You work in one workspace, so there is nothing to choose.",
       "footnote": "Saved for you on the web and on your phone. Where you may clock in stays the same either way.",
       "saved": "Saved",
-      "failed": "Could not save your choice"
+      "failed": "Could not save your choice",
+      "usesQuestion": "Do you use the clock yourself?",
+      "usesOnTitle": "Yes, I clock in and out",
+      "usesOnHint": "The Clock in button, reminders and your hours, like everyone on the team.",
+      "usesOffTitle": "No, I don't use the clock",
+      "usesOffHint": "No Clock in button or reminders for you. You still see and decide everyone's hours.",
+      "usesSaved": "Saved — the clock follows on your next screen",
+      "usesOpenShift": "Clock out first, then switch the clock off."
     }
   },
   "notifications": {

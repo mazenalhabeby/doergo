@@ -149,6 +149,8 @@ export * from './attendance/away-policy';
 // Clocking in with no shift: allow, limit per day, or shift only.
 export * from './attendance/no-shift-limit';
 export * from './attendance/outside-shift';
+// When "Ask for more time" is offered and accepted: a real planned end, the Option (attendance/more-time-rule.ts)
+export * from './attendance/more-time-rule';
 // A no-show: what the system closes itself, runs of them, the record (attendance/no-show.ts).
 export * from './attendance/no-show';
 export * from './attendance/labels';

@@ -9,7 +9,7 @@ import {
   autoClockOutAfterEnd,
   clocksByPresence,
 } from '@hbcfield/shared';
-import { flagsWithMissedRest, parseBreakPlan } from '@hbcfield/shared';
+import { flagsWithMissedRest, moreTimeRefusal, parseBreakPlan } from '@hbcfield/shared';
 import { fixOfTap, judgeOccurrence } from '../../../common/occurrence.util';
 import { approvalFor } from '../core/attendance-occurrence';
 import { CLOSE_ENTRY_INCLUDE } from './clock-out-helpers';
@@ -182,6 +182,8 @@ export class ClockOutService {
     const overtimeReason = (data.overtimeReason ?? '').trim().slice(0, 500);
     if (
       overtimeReason &&
+      // Only a real planned end — never the daily-hours marker, which cuts nothing (B2).
+      !moreTimeRefusal(entry) &&
       entry.expectedClockOutAt &&
       clockOutTime.getTime() > entry.expectedClockOutAt.getTime() + toleranceMin * 60_000
     ) {
@@ -214,6 +216,7 @@ export class ClockOutService {
         distance: Math.round(distance),
         allowedRadius: entry.location.geofenceRadius,
         action: 'clock_out',
+        locationId: entry.locationId,
       });
     }
 
@@ -224,6 +227,7 @@ export class ClockOutService {
         entryId: updatedEntry.id,
         userId: data.userId,
         organizationId: data.organizationId,
+        locationId: entry.locationId,
         locationName: entry.location.name,
         flagReasons: updatedEntry.flagReasons ?? uniqueFlags,
         totalMinutes,

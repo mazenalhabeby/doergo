@@ -41,6 +41,7 @@ export const attendanceGeofenceAlertEvent = event<{
   dispatcherEmails: string[];
   dispatcherIds: string[];
   organizationId: string;
+  locationId?: string | null; // who may hear it live (clock review A1)
 }>('attendance_geofence_alert');
 
 export const attendancePendingApprovalEvent = event<{
@@ -82,9 +83,11 @@ export const attendanceClockOutEvent = event<{ userId: string; organizationId: s
   'attendance_clock_out',
 );
 
-export const attendanceChangedEvent = event<{ organizationId: string; action: string; entryId?: string }>(
+/** A refresh signal; `spaceId`/`userId` decide who hears it live (clock review A1). */
+export const attendanceChangedEvent = event<{ organizationId: string; action: string } & AttendanceAbout>(
   'attendance_changed',
 );
+type AttendanceAbout = { entryId?: string; spaceId?: string | null; userId?: string | null };
 
 export const breakStartedEvent = event<{
   userId: string;
@@ -93,6 +96,7 @@ export const breakStartedEvent = event<{
   breakType: string;
   startedAt: string;
   organizationId: string;
+  spaceId?: string | null; // who may hear it live (clock review A1)
 }>('break_started');
 
 export const breakEndedEvent = event<{
@@ -104,6 +108,7 @@ export const breakEndedEvent = event<{
   endedAt: string;
   durationMinutes: number;
   organizationId: string;
+  spaceId?: string | null; // who may hear it live (clock review A1)
 }>('break_ended');
 
 export const attendanceShiftReminderEvent = event<{

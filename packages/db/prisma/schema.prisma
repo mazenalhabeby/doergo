@@ -923,6 +923,9 @@ model User {
   timeFormat String? @default("24h")
   /// Several workspaces: AUTO = inside one area clocks in there; ASK = always choose (shared clock-in-choice.ts).
   clockInPick String @default("AUTO")
+  /// An administrator who does not use the clock (review A7): no clock tab or button, the clock-in refused.
+  /// Only an ADMIN may set it, on themselves; everyone else's clock is their access profile's `clock` module.
+  clockOff    Boolean @default(false)
 
   // The language this person reads the app in: en | de | es | fr | it.
   // Written by the phone when it registers for push and by either app when the

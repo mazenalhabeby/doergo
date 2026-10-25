@@ -3,7 +3,8 @@ import { AppState, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { useTranslation } from 'react-i18next';
-import { MEMBER_EMAIL_PREF, MEMBER_EMAILS, type MemberEmail } from '@hbcfield/shared/client';
+import { MEMBER_EMAIL_PREF, MEMBER_EMAILS, receivesTeamClockPushes, type MemberEmail } from '@hbcfield/shared/client';
+import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/island/island-context';
 import { userApi } from '@/lib/api';
@@ -13,7 +14,7 @@ import { SettingsPage, StateCard, SwitchRow } from './settings-ui';
 /** Where the switches used to live — on the phone, read by nothing. Moved to the account once, then forgotten. */
 const OLD_PHONE_KEY = 'hbcfield_notification_prefs';
 
-const PUSH = ['tasks', 'attendance', 'timeOff'] as const;
+const PUSH = ['tasks', 'attendance', 'attendanceTeam', 'timeOff'] as const;
 type Push = (typeof PUSH)[number];
 
 const EMAIL_LABEL: Record<MemberEmail, string> = {
@@ -35,6 +36,9 @@ export function NotificationsPage() {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const toast = useToast();
+  const { user } = useAuth();
+  // "My team's clock" only for whoever is told about other people's clock (clock review A5).
+  const pushKeys = PUSH.filter((k) => k !== 'attendanceTeam' || receivesTeamClockPushes(user as never));
   const [permission, setPermission] = useState<{ granted: boolean } | null>(null);
   const [prefs, setPrefs] = useState<Record<string, boolean> | null>(null);
   const [orgAllows, setOrgAllows] = useState<Record<string, boolean>>({});
@@ -47,7 +51,9 @@ export function NotificationsPage() {
   /* Back from the phone's settings → read it again. */
   useEffect(() => {
     void readPermission();
-    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') void readPermission(); });
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') void readPermission();
+    });
     return () => sub.remove();
   }, [readPermission]);
 
@@ -61,16 +67,24 @@ export function NotificationsPage() {
         const old = await AsyncStorage.getItem(OLD_PHONE_KEY).catch(() => null);
         if (old) {
           const parsed = JSON.parse(old) as Partial<Record<Push, boolean>>;
-          const carry = Object.fromEntries(PUSH.filter((k) => parsed[k] === false && server[k] === undefined).map((k) => [k, false]));
-          if (Object.keys(carry).length) server = { ...server, ...(await userApi.updateNotificationPrefs(carry).catch(() => carry)) };
+          const carry = Object.fromEntries(
+            PUSH.filter((k) => parsed[k] === false && server[k] === undefined).map((k) => [k, false]),
+          );
+          if (Object.keys(carry).length)
+            server = { ...server, ...(await userApi.updateNotificationPrefs(carry).catch(() => carry)) };
           await AsyncStorage.removeItem(OLD_PHONE_KEY).catch(() => undefined);
         }
-        if (live) { setPrefs(server); setOrgAllows(res?.organizationAllows ?? {}); }
+        if (live) {
+          setPrefs(server);
+          setOrgAllows(res?.organizationAllows ?? {});
+        }
       } catch {
         if (live) setPrefs(null);
       }
     })();
-    return () => { live = false; };
+    return () => {
+      live = false;
+    };
   }, []);
 
   const set = async (key: string, value: boolean) => {
@@ -99,8 +113,18 @@ export function NotificationsPage() {
   const granted = permission?.granted ?? true;
   const on = (key: string) => prefs?.[key] !== false;
   const PUSH_TEXT: Record<Push, [string, string]> = {
-    tasks: [t('settings.notif.jobs', 'Jobs'), t('settings.notif.jobsSub', 'Assigned to you, changed, a comment on yours')],
-    attendance: [t('settings.notif.clock', 'Clock and shifts'), t('settings.notif.clockSub', 'Time to clock in, a rest, overtime answers')],
+    tasks: [
+      t('settings.notif.jobs', 'Jobs'),
+      t('settings.notif.jobsSub', 'Assigned to you, changed, a comment on yours'),
+    ],
+    attendance: [
+      t('settings.notif.clock', 'Clock and shifts'),
+      t('settings.notif.clockSub', 'Time to clock in, a rest, overtime answers'),
+    ],
+    attendanceTeam: [
+      t('settings.notif.teamClock', "My team's clock"),
+      t('settings.notif.teamClockSub', 'Still clocked in, gone early, not arrived, a day to review'),
+    ],
     timeOff: [t('settings.notif.timeOff', 'Time off'), t('settings.notif.timeOffSub', 'Your requests answered')],
   };
 
@@ -115,15 +139,24 @@ export function NotificationsPage() {
             ? t('settings.notif.allowed', 'This phone can notify you')
             : t('settings.notif.blocked', 'Notifications are off for this app')
         }
-        sub={granted ? t('settings.notif.allowedSub', "Allowed in the phone's settings") : t('settings.notif.blockedSub', ("You will not hear about new jobs or your shift. Turn them on in the " + "phone's settings."))}
+        sub={
+          granted
+            ? t('settings.notif.allowedSub', "Allowed in the phone's settings")
+            : t(
+                'settings.notif.blockedSub',
+                'You will not hear about new jobs or your shift. Turn them on in the ' + "phone's settings.",
+              )
+        }
       />
-      {!granted ? <PrimaryButton label={t('settings.notif.allow', 'Allow notifications')} onPress={() => void fixPermission()} /> : null}
+      {!granted ? (
+        <PrimaryButton label={t('settings.notif.allow', 'Allow notifications')} onPress={() => void fixPermission()} />
+      ) : null}
 
       <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>
         {t('settings.notif.onPhone', 'On this phone')}
       </SectionLabel>
       <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-        {PUSH.map((k, i) => (
+        {pushKeys.map((k, i) => (
           <SwitchRow
             key={k}
             first={i === 0}
@@ -144,8 +177,15 @@ export function NotificationsPage() {
           const allowed = orgAllows[kind] !== false;
           const key = MEMBER_EMAIL_PREF[kind];
           return (
-            <SwitchRow key={kind} first={i === 0} title={t(EMAIL_LABEL[kind])} value={allowed && on(key)} onChange={(v) => void set(key, v)}
-              disabled={!allowed || prefs === null} note={allowed ? undefined : t('profile.notifications.emailOffByOrg')} />
+            <SwitchRow
+              key={kind}
+              first={i === 0}
+              title={t(EMAIL_LABEL[kind])}
+              value={allowed && on(key)}
+              onChange={(v) => void set(key, v)}
+              disabled={!allowed || prefs === null}
+              note={allowed ? undefined : t('profile.notifications.emailOffByOrg')}
+            />
           );
         })}
       </Well>

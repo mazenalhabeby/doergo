@@ -2610,7 +2610,14 @@
       "oneWorkspace": "Lavori in un solo spazio di lavoro, quindi non c'è nulla da scegliere.",
       "footnote": "Salvato per te sul web e sul telefono. Dove puoi timbrare resta uguale.",
       "saved": "Salvato",
-      "failed": "Impossibile salvare la scelta"
+      "failed": "Impossibile salvare la scelta",
+      "usesQuestion": "Usi tu stesso la timbratura?",
+      "usesOnTitle": "Sì, timbro entrata e uscita",
+      "usesOnHint": "Il pulsante di timbratura, i promemoria e le tue ore, come per tutto il team.",
+      "usesOffTitle": "No, non uso la timbratura",
+      "usesOffHint": "Nessun pulsante di timbratura né promemoria per te. Continui a vedere e decidere le ore di tutti.",
+      "usesSaved": "Salvato: la timbratura si aggiorna alla prossima schermata",
+      "usesOpenShift": "Prima timbra l'uscita, poi disattiva la timbratura."
     }
   },
   "notifications": {

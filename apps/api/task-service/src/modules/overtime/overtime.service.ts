@@ -117,7 +117,7 @@ export class OvertimeService {
     const leaderIds = (
       await this.attendance.notifyTargetsFor(
         { locationId: request.locationId, organizationId: request.organizationId, userId: request.technicianId },
-        'canApproveOvertime',
+        'extraTime',
       )
     ).filter((id) => id !== request.technicianId);
 
@@ -245,7 +245,7 @@ export class OvertimeService {
       spaceIds: [request.locationId],
       usual: await this.attendance.notifyTargetsFor(
         { locationId: request.locationId, organizationId: request.organizationId, userId: request.technicianId },
-        'canApproveOvertime',
+        'extraTime',
       ),
     });
     const people = ask.ids.length ? await peopleNamesSorted(this.prisma, ask.ids.slice(0, 3)) : [];

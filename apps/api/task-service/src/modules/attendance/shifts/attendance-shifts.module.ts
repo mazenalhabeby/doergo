@@ -7,6 +7,7 @@ import { ShiftRematchService } from './shift-rematch.service';
 import { ShiftInstancesService } from './shift-instances.service';
 import { ShiftReminderSweepService } from './shift-reminder-sweep.service';
 import { DayHoursReshapeService } from './day-hours-reshape.service';
+import { MemberClockController } from './member-clock.controller';
 
 /**
  * Shifts as attendance sees them: today's instances, re-matching entries to a shift added later, the reminders,
@@ -18,6 +19,7 @@ import { DayHoursReshapeService } from './day-hours-reshape.service';
     AutoClockModule,
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
+  controllers: [MemberClockController],
   providers: [ShiftRematchService, ShiftInstancesService, ShiftReminderSweepService, DayHoursReshapeService],
   exports: [ShiftRematchService, ShiftInstancesService, ShiftReminderSweepService, DayHoursReshapeService],
 })

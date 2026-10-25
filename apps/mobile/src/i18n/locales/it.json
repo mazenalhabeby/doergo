@@ -4530,7 +4530,9 @@
       "onPhone": "Su questo telefono",
       "byEmail": "Via e-mail",
       "offline": "Serve una connessione per modificarle.",
-      "always": "I messaggi di un collega e ciò che blocca il suo lavoro le arrivano sempre."
+      "always": "I messaggi di un collega e ciò che blocca il suo lavoro le arrivano sempre.",
+      "teamClock": "La timbratura del mio team",
+      "teamClockSub": "Ancora in servizio, uscito prima, non arrivato, un giorno da verificare"
     },
     "theme": {
       "systemSub": "Chiaro o scuro, come il telefono",
@@ -5081,7 +5083,7 @@
       "presenceEndTitle_one": "{{count}} ora a {{place}}: stai ancora lavorando?",
       "presenceEndTitle_other": "{{count}} ore a {{place}}: stai ancora lavorando?",
       "presenceEndBody": "Timbra l’uscita se hai finito, oppure continua.",
-      "presenceEndBodyLimit": "È il limite di oggi qui. Timbra l’uscita o chiedi tempo extra.",
+      "presenceEndBodyLimit": "Sono le ore di oggi qui. Il tuo tempo continua a contare: timbra l'uscita quando vai via.",
       "arrivedOutsideBody": "È fuori dal tuo orario abituale. Inizi a lavorare? Tocca per timbrare."
     },
     "result": {

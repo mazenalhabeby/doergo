@@ -192,6 +192,7 @@ export const updateOwnProfile = rpc<{
     guidesSeen?: boolean;
     locale?: string;
     clockInPick?: string;
+    usesClock?: boolean;
   };
 }>('update_own_profile');
 export const updateOwnEmail = rpc<{ userId: string; newEmail: string; currentPassword: string }>('update_own_email');

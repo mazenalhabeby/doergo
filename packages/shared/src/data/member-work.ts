@@ -73,6 +73,11 @@ export function memberClockInsSince(
   });
 }
 
+/** Is this member on the clock right now (an open time entry)? One indexed count. */
+export async function memberIsClockedIn(db: On<'timeEntry', 'count'>, memberId: string): Promise<boolean> {
+  return (await db.timeEntry.count({ where: { userId: memberId, status: 'CLOCKED_IN' } })) > 0;
+}
+
 /** A member's latest 10 job events (the activity panel). */
 export function memberRecentJobEvents(db: On<'taskEvent', 'findMany'>, memberId: string, spaceIds?: string[]) {
   return db.taskEvent.findMany({

@@ -71,7 +71,9 @@ describe('ShiftRematchService', () => {
 
   it('gives an unscheduled entry its shift, counts from the shift start and checks the departure', async () => {
     prisma.timeEntry.findMany.mockResolvedValue([entry()]);
-    await expect(service.rematch({ organizationId: ORG, userId: USER, spaceId: SPACE, actorId: 'admin-1' })).resolves.toBe(1);
+    await expect(
+      service.rematch({ organizationId: ORG, userId: USER, spaceId: SPACE, actorId: 'admin-1' }),
+    ).resolves.toBe(1);
 
     const { where, data } = written();
     expect(where).toEqual({ id: 'e-1', shiftId: null, flagReasons: { has: 'UNSCHEDULED_DAY' } });
@@ -90,7 +92,12 @@ describe('ShiftRematchService', () => {
       resourceId: 'e-1',
       organizationId: ORG,
     });
-    expect(client.emit).toHaveBeenCalledWith('attendance_changed', { organizationId: ORG, action: 'rematch' });
+    expect(client.emit).toHaveBeenCalledWith('attendance_changed', {
+      organizationId: ORG,
+      action: 'rematch',
+      userId: 'u-1',
+      spaceId: 'space-1',
+    });
   });
 
   it('only ever looks at UNSCHEDULED entries of that person, in that workspace, in that organization', async () => {
@@ -155,7 +162,12 @@ describe('ShiftRematchService', () => {
     try {
       const run = jest.spyOn(service, 'rematch').mockResolvedValue(0);
       for (let d = 1; d <= 10; d++) {
-        service.schedule({ organizationId: ORG, userId: USER, spaceId: SPACE, from: new Date(`2026-10-${String(d).padStart(2, '0')}T00:00:00Z`) });
+        service.schedule({
+          organizationId: ORG,
+          userId: USER,
+          spaceId: SPACE,
+          from: new Date(`2026-10-${String(d).padStart(2, '0')}T00:00:00Z`),
+        });
       }
       jest.advanceTimersByTime(2000);
       expect(run).toHaveBeenCalledTimes(1);

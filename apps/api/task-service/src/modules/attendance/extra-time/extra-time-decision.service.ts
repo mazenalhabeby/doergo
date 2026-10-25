@@ -7,7 +7,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService, SERVICE_NAMES, success, TimeEntryStatus } from '@hbcfield/shared';
+import { PrismaService, SERVICE_NAMES, refusalSettlesOutside, success, TimeEntryStatus } from '@hbcfield/shared';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { decidableExtraTimeWhere, overtimeEndFor, refusalNudge } from './extra-time-helpers';
 import { CountedTimeService } from '../core/counted-time.service';
@@ -195,10 +195,20 @@ export class ExtraTimeDecisionService {
   async rejectExtraTime(data: { approverId: string; entryId: string; organizationId: string; reason?: string | null }) {
     const entry = await this.prisma.timeEntry.findFirst({
       where: { id: data.entryId, organizationId: data.organizationId, ...decidableExtraTimeWhere(new Date()) },
-      select: { id: true, locationId: true, userId: true, status: true },
+      select: {
+        id: true,
+        locationId: true,
+        userId: true,
+        status: true,
+        shiftId: true,
+        clockInAt: true,
+        expectedClockInAt: true,
+      },
     });
     if (!entry) throw new BadRequestException('No matching open shift found');
     const closed = entry.status === TimeEntryStatus.CLOCKED_OUT;
+    // The "no" is the answer about the time after the end — never asked again as "outside the shift" (B1).
+    const settles = refusalSettlesOutside(entry, await this.countedTime.toleranceFor(entry.shiftId));
 
     const allowed = await this.approval.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
@@ -219,6 +229,14 @@ export class ExtraTimeDecisionService {
     await this.prisma.$transaction([
       // A closed shift has nobody to nudge; only the round records the answer.
       ...(closed ? [] : [this.prisma.timeEntry.updateMany(refusalNudge(entry.id))]),
+      ...(settles
+        ? [
+            this.prisma.timeEntry.updateMany({
+              where: { id: entry.id, outsideDecidedAt: null },
+              data: { outsideDecidedAt: new Date(), outsideDecidedById: data.approverId, outsideCountedMinutes: 0 },
+            }),
+          ]
+        : []),
       ...(round
         ? [
             this.prisma.overtimeRequest.update({

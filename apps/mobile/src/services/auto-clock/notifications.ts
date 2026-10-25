@@ -40,7 +40,8 @@ export function isAutoClockAction(actionId: string | null | undefined): actionId
   return !!actionId && (Object.values(AUTO_CLOCK_ACTIONS) as string[]).includes(actionId);
 }
 
-export const notificationIdFor = (kind: ReminderKind | 'arrived' | 'forgot', key: string) => `auto-clock:${kind}:${key}`;
+export const notificationIdFor = (kind: ReminderKind | 'arrived' | 'forgot', key: string) =>
+  `auto-clock:${kind}:${key}`;
 
 /** What the runner asks of notifications — injected, so the decisions are tested without a phone. */
 export interface AutoClockNotifier {
@@ -58,7 +59,13 @@ export interface AutoClockNotifier {
     presence?: { hours: number; limit: boolean };
   }): Promise<void>;
   /** Arrived, but the phone could not clock in on its own: "tap to clock in" — or, outside their usual hours, "starting work?". */
-  arrivedPrompt(i: { userId: string; spaceId: string; place: string; outsideHours?: boolean; startsAt?: Date }): Promise<void>;
+  arrivedPrompt(i: {
+    userId: string;
+    spaceId: string;
+    place: string;
+    outsideHours?: boolean;
+    startsAt?: Date;
+  }): Promise<void>;
   /** Take back what a shift scheduled (all kinds when none are named). */
   cancel(entryId: string, kinds?: ReminderKind[]): Promise<void>;
   /** "You left X at 16:42 — clock out at 16:42?", at `at` (lib/clock-smart.ts). Null `leftAt` takes it back. */
@@ -103,7 +110,11 @@ export const autoClockNotifier: AutoClockNotifier = {
     await schedule({
       identifier: notificationIdFor('in', entryId),
       title: i18n.t('autoClock.push.clockedInTitle'),
-      body: i18n.t('autoClock.push.clockedInBody', { place, time: formatTimeOfDay(at, await hour12()), minutes: AUTO_CLOCK_UNDO_MINUTES }),
+      body: i18n.t('autoClock.push.clockedInBody', {
+        place,
+        time: formatTimeOfDay(at, await hour12()),
+        minutes: AUTO_CLOCK_UNDO_MINUTES,
+      }),
       // `recipientId`: a button pressed after somebody else signed in on this phone must not act for them.
       data: { kind: 'in', entryId, recipientId: userId, at: at.toISOString() },
       category: AUTO_CLOCK_CATEGORIES.in,
@@ -118,7 +129,10 @@ export const autoClockNotifier: AutoClockNotifier = {
       await schedule({
         identifier: notificationIdFor('rest', entryId),
         title: i18n.t('autoClock.push.restTitle'),
-        body: i18n.t('autoClock.push.restBody', { start: formatTimeOfDay(rest.startAt, h12), end: formatTimeOfDay(rest.endAt, h12) }),
+        body: i18n.t('autoClock.push.restBody', {
+          start: formatTimeOfDay(rest.startAt, h12),
+          end: formatTimeOfDay(rest.endAt, h12),
+        }),
         data: { kind: 'rest', entryId, recipientId: userId },
         category: AUTO_CLOCK_CATEGORIES.rest,
         at: rest.startAt,
@@ -133,8 +147,13 @@ export const autoClockNotifier: AutoClockNotifier = {
         body: presence
           ? i18n.t(presence.limit ? 'autoClock.push.presenceEndBodyLimit' : 'autoClock.push.presenceEndBody')
           : i18n.t('autoClock.push.endBody', { place }),
-        // `presence` tells the button what "Still working" means: past a limit it asks for extra time; otherwise it just goes on.
-        data: { kind: 'end', entryId, recipientId: userId, ...(presence ? { presence: true, limit: presence.limit } : {}) },
+        // `presence` tells the button what "Still working" means: with no shift it just goes on — all of the time counts (B2).
+        data: {
+          kind: 'end',
+          entryId,
+          recipientId: userId,
+          ...(presence ? { presence: true, limit: presence.limit } : {}),
+        },
         category: AUTO_CLOCK_CATEGORIES.end,
         at: endAt,
       });
@@ -158,7 +177,10 @@ export const autoClockNotifier: AutoClockNotifier = {
   async forgotOffer({ userId, entryId, place, leftAt, at }) {
     const id = notificationIdFor('forgot', entryId);
     await Notifications.cancelScheduledNotificationAsync(id).catch(() => undefined);
-    if (!leftAt) { await Notifications.dismissNotificationAsync(id).catch(() => undefined); return; }
+    if (!leftAt) {
+      await Notifications.dismissNotificationAsync(id).catch(() => undefined);
+      return;
+    }
     await i18nReady.catch(() => undefined);
     const time = formatTimeOfDay(leftAt, await hour12());
     await schedule({
@@ -188,16 +210,31 @@ export async function registerAutoClockCategories(): Promise<void> {
   const open = { opensAppToForeground: true };
   // ⚠️ In turn, never `Promise.all`: each call rewrites iOS's whole category set (see usePushNotifications).
   const categories: Array<[string, Notifications.NotificationAction[]]> = [
-    [AUTO_CLOCK_CATEGORIES.in, [
-      { identifier: AUTO_CLOCK_ACTIONS.undo, buttonTitle: i18n.t('autoClock.push.undo'), options: { ...open, isDestructive: true } },
-    ]],
-    [AUTO_CLOCK_CATEGORIES.rest, [
-      { identifier: AUTO_CLOCK_ACTIONS.skipRest, buttonTitle: i18n.t('autoClock.push.stillWorking'), options: open },
-    ]],
-    [AUTO_CLOCK_CATEGORIES.end, [
-      { identifier: AUTO_CLOCK_ACTIONS.clockOut, buttonTitle: i18n.t('autoClock.push.clockOut'), options: open },
-      { identifier: AUTO_CLOCK_ACTIONS.stillWorking, buttonTitle: i18n.t('autoClock.push.stillWorking'), options: open },
-    ]],
+    [
+      AUTO_CLOCK_CATEGORIES.in,
+      [
+        {
+          identifier: AUTO_CLOCK_ACTIONS.undo,
+          buttonTitle: i18n.t('autoClock.push.undo'),
+          options: { ...open, isDestructive: true },
+        },
+      ],
+    ],
+    [
+      AUTO_CLOCK_CATEGORIES.rest,
+      [{ identifier: AUTO_CLOCK_ACTIONS.skipRest, buttonTitle: i18n.t('autoClock.push.stillWorking'), options: open }],
+    ],
+    [
+      AUTO_CLOCK_CATEGORIES.end,
+      [
+        { identifier: AUTO_CLOCK_ACTIONS.clockOut, buttonTitle: i18n.t('autoClock.push.clockOut'), options: open },
+        {
+          identifier: AUTO_CLOCK_ACTIONS.stillWorking,
+          buttonTitle: i18n.t('autoClock.push.stillWorking'),
+          options: open,
+        },
+      ],
+    ],
   ];
   for (const [id, actions] of categories) {
     await Notifications.setNotificationCategoryAsync(id, actions).catch(() => undefined);

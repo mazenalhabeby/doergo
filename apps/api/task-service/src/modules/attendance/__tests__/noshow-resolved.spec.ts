@@ -35,7 +35,10 @@ describe('a late clock-in after a no-show escalation', () => {
       expect.objectContaining({ data: { state: 'PRESENT', nextRemindAt: null, timeEntryId: 'entry-1' } }),
     );
     // Same routing as the escalation: the space's reconcile-attendance people.
-    expect(svc.routing.notifyTargetsFor).toHaveBeenCalledWith({ spaceId: 'space-1', organizationId: 'org-1', userId: 'u1' }, 'canReconcileAttendance');
+    expect(svc.routing.notifyTargetsFor).toHaveBeenCalledWith(
+      { spaceId: 'space-1', organizationId: 'org-1', userId: 'u1' },
+      'attendance',
+    );
     expect(svc.notificationClient.emit).toHaveBeenCalledWith(
       'attendance_noshow_resolved',
       expect.objectContaining({

@@ -21,9 +21,21 @@ export class EntryChangeLog {
    * add) so every open attendance view refreshes in real time — same idea as the
    * clock-in/out events, but for manager-side changes which had no signal before.
    */
-  announce(organizationId: string, action: string, entryId?: string) {
+  announce(
+    organizationId: string,
+    action: string,
+    entryId?: string,
+    // Whose and where — who hears it live (attendance rooms, clock review A1). Unknown = org-wide viewers only.
+    about: { userId?: string | null; spaceId?: string | null } = {},
+  ) {
     try {
-      emitEvent(this.notificationClient, attendanceChangedEvent, { organizationId, action, entryId });
+      emitEvent(this.notificationClient, attendanceChangedEvent, {
+        organizationId,
+        action,
+        entryId,
+        userId: about.userId ?? null,
+        spaceId: about.spaceId ?? null,
+      });
     } catch (err) {
       this.logger.warn(`attendance_changed emit failed (${action}): ${err}`);
     }

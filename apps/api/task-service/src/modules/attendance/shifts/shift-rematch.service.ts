@@ -139,10 +139,8 @@ export class ShiftRematchService implements OnModuleDestroy {
         `Re-matched ${matched}/${entries.length} unscheduled entries for user=${scope.userId} org=${scope.organizationId}`,
       );
       try {
-        emitEvent(this.notificationClient, attendanceChangedEvent, {
-          organizationId: scope.organizationId,
-          action: 'rematch',
-        });
+        const { organizationId, userId, spaceId } = scope; // who hears it live (clock review A1)
+        emitEvent(this.notificationClient, attendanceChangedEvent, { organizationId, action: 'rematch', userId, spaceId });
       } catch (err) {
         this.logger.warn(`attendance_changed emit failed after re-match: ${err}`);
       }

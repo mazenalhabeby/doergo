@@ -3,8 +3,14 @@
  * the one-button workspace choice, and the service that keeps it in step.
  */
 import {
-  PRESENCE, decidePresence, replayPresence, presenceFreshness, chooseClockInLocation, rankClockInLocations,
-  type PresenceJob, type PresenceState,
+  PRESENCE,
+  decidePresence,
+  replayPresence,
+  presenceFreshness,
+  chooseClockInLocation,
+  rankClockInLocations,
+  type PresenceJob,
+  type PresenceState,
 } from '@hbcfield/shared';
 import { PresenceService } from '../presence/presence.service';
 
@@ -70,13 +76,34 @@ describe('the rules, case by case', () => {
   });
 
   it('a job on its way, or standing at its address, is the field', () => {
-    expect(decidePresence({ point: OFFICE, insideArea: false, jobs: [{ lat: null, lng: null, onTheWay: true }], state: START }).reason).toBe('ON_THE_WAY');
+    expect(
+      decidePresence({
+        point: OFFICE,
+        insideArea: false,
+        jobs: [{ lat: null, lng: null, onTheWay: true }],
+        state: START,
+      }).reason,
+    ).toBe('ON_THE_WAY');
     const job = north(OFFICE, 15000);
-    expect(decidePresence({ point: north(job, PRESENCE.AT_JOB_METERS - 20), insideArea: false, jobs: [{ ...job, onTheWay: false }], state: START }).reason).toBe('AT_JOB');
+    expect(
+      decidePresence({
+        point: north(job, PRESENCE.AT_JOB_METERS - 20),
+        insideArea: false,
+        jobs: [{ ...job, onTheWay: false }],
+        state: START,
+      }).reason,
+    ).toBe('AT_JOB');
   });
 
   it('inside the area wins over everything, a job on its way included', () => {
-    expect(decidePresence({ point: OFFICE, insideArea: true, jobs: [{ lat: null, lng: null, onTheWay: true }], state: START }).presence).toBe('ON_SITE');
+    expect(
+      decidePresence({
+        point: OFFICE,
+        insideArea: true,
+        jobs: [{ lat: null, lng: null, onTheWay: true }],
+        state: START,
+      }).presence,
+    ).toBe('ON_SITE');
   });
 
   it('an offline batch returns only the changes, each with its own time', () => {
@@ -91,14 +118,21 @@ describe('the rules, case by case', () => {
         { ...north(OFFICE, 3100), at: t(15), insideArea: false },
       ],
     });
-    expect(run.changes.map((c) => [c.at.getUTCMinutes(), c.presence, c.reason])).toEqual([[0, 'ON_SITE', 'INSIDE_AREA'], [10, 'FIELD', 'MOVED']]);
+    expect(run.changes.map((c) => [c.at.getUTCMinutes(), c.presence, c.reason])).toEqual([
+      [0, 'ON_SITE', 'INSIDE_AREA'],
+      [10, 'FIELD', 'MOVED'],
+    ]);
     expect(run.state.presence).toBe('FIELD');
   });
 
   it('says how fresh the group is', () => {
     const now = new Date('2026-09-15T12:00:00Z');
-    expect(presenceFreshness({ clockInAt: '2026-09-15T08:00:00Z', lastSeenAt: '2026-09-15T11:50:00Z', now })).toBe('LIVE');
-    expect(presenceFreshness({ clockInAt: '2026-09-15T08:00:00Z', lastSeenAt: '2026-09-15T10:40:00Z', now })).toBe('NO_SIGNAL');
+    expect(presenceFreshness({ clockInAt: '2026-09-15T08:00:00Z', lastSeenAt: '2026-09-15T11:50:00Z', now })).toBe(
+      'LIVE',
+    );
+    expect(presenceFreshness({ clockInAt: '2026-09-15T08:00:00Z', lastSeenAt: '2026-09-15T10:40:00Z', now })).toBe(
+      'NO_SIGNAL',
+    );
     expect(presenceFreshness({ clockInAt: '2026-09-15T08:00:00Z', lastSeenAt: null, now })).toBe('NO_LIVE_UPDATES');
     expect(presenceFreshness({ clockInAt: '2026-09-15T11:55:00Z', lastSeenAt: null, now })).toBe('LIVE');
   });
@@ -111,7 +145,11 @@ describe('one-button clock-in: which workspace', () => {
 
   it('clocks in without asking with one workspace, or inside exactly one area', () => {
     expect(chooseClockInLocation([office], null)).toMatchObject({ kind: 'auto', why: 'ONLY_ONE' });
-    expect(chooseClockInLocation([office, warehouse], { ...warehouse, accuracy: 10 })).toMatchObject({ kind: 'auto', why: 'INSIDE_AREA', location: { id: 'warehouse' } });
+    expect(chooseClockInLocation([office, warehouse], { ...warehouse, accuracy: 10 })).toMatchObject({
+      kind: 'auto',
+      why: 'INSIDE_AREA',
+      location: { id: 'warehouse' },
+    });
     expect(chooseClockInLocation([], null)).toEqual({ kind: 'none' });
   });
 
@@ -122,9 +160,16 @@ describe('one-button clock-in: which workspace', () => {
 
   it('orders the list: a shift today, then primary, then nearest', () => {
     const fix = { ...north(OFFICE, 2400), accuracy: 10 };
-    const ranked = rankClockInLocations([{ ...service, isPrimary: true }, warehouse, { ...office, shiftToday: true }], fix);
+    const ranked = rankClockInLocations(
+      [{ ...service, isPrimary: true }, warehouse, { ...office, shiftToday: true }],
+      fix,
+    );
     expect(ranked.map((r) => r.location.id)).toEqual(['office', 'service', 'warehouse']);
-    expect(rankClockInLocations([service, warehouse, office], fix).map((r) => r.location.id)).toEqual(['office', 'warehouse', 'service']);
+    expect(rankClockInLocations([service, warehouse, office], fix).map((r) => r.location.id)).toEqual([
+      'office',
+      'warehouse',
+      'service',
+    ]);
   });
 
   it('never counts a workspace with no area as "inside"', () => {
@@ -135,11 +180,19 @@ describe('one-button clock-in: which workspace', () => {
 
 describe('PresenceService', () => {
   const entry = (over: Record<string, unknown> = {}) => ({
-    id: 'e1', userId: 'u1', organizationId: 'org-1', timezone: 'Europe/Vienna',
-    presence: 'ON_SITE', presenceAt: new Date('2026-09-15T08:00:00Z'), lastSeenAt: new Date('2026-09-15T11:55:00Z'), ...over,
+    id: 'e1',
+    userId: 'u1',
+    organizationId: 'org-1',
+    timezone: 'Europe/Vienna',
+    presence: 'ON_SITE',
+    presenceAt: new Date('2026-09-15T08:00:00Z'),
+    lastSeenAt: new Date('2026-09-15T11:55:00Z'),
+    ...over,
   });
 
-  function build(opts: { claimed?: number; anchor?: { anchorLat: number; anchorLng: number } | null; jobs?: any[] } = {}) {
+  function build(
+    opts: { claimed?: number; anchor?: { anchorLat: number; anchorLng: number } | null; jobs?: any[] } = {},
+  ) {
     const tx: any = {
       timeEntry: { updateMany: jest.fn().mockResolvedValue({ count: opts.claimed ?? 1 }) },
       timeEntryPresence: { createMany: jest.fn().mockResolvedValue({ count: 1 }) },
@@ -147,7 +200,11 @@ describe('PresenceService', () => {
     const prisma: any = {
       timeEntry: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), findFirst: jest.fn() },
       timeEntryPresence: {
-        findFirst: jest.fn().mockResolvedValue(opts.anchor === undefined ? { anchorLat: OFFICE.lat, anchorLng: OFFICE.lng } : opts.anchor),
+        findFirst: jest
+          .fn()
+          .mockResolvedValue(
+            opts.anchor === undefined ? { anchorLat: OFFICE.lat, anchorLng: OFFICE.lng } : opts.anchor,
+          ),
         findMany: jest.fn().mockResolvedValue([]),
       },
       task: { findMany: jest.fn().mockResolvedValue(opts.jobs ?? []) },
@@ -169,7 +226,12 @@ describe('PresenceService', () => {
 
   it('refreshes "last seen" at most every ten minutes', async () => {
     const { svc, prisma } = build();
-    await svc.onPosition(entry({ lastSeenAt: new Date(NOW.getTime() - PRESENCE.SEEN_WRITE_EVERY_MS) }), OFFICE, true, NOW);
+    await svc.onPosition(
+      entry({ lastSeenAt: new Date(NOW.getTime() - PRESENCE.SEEN_WRITE_EVERY_MS) }),
+      OFFICE,
+      true,
+      NOW,
+    );
     expect(prisma.timeEntry.updateMany).toHaveBeenCalledWith({ where: { id: 'e1' }, data: { lastSeenAt: NOW } });
   });
 
@@ -180,8 +242,18 @@ describe('PresenceService', () => {
       where: { id: 'e1', status: 'CLOCKED_IN', presenceAt: entry().presenceAt },
       data: { presence: 'FIELD', presenceReason: 'MOVED', presenceAt: NOW, lastSeenAt: NOW },
     });
-    expect(tx.timeEntryPresence.createMany.mock.calls[0][0].data[0]).toMatchObject({ presence: 'FIELD', reason: 'MOVED', sentLate: false });
-    expect(emit).toHaveBeenCalledWith('attendance_changed', { organizationId: 'org-1', action: 'presence', entryId: 'e1' });
+    expect(tx.timeEntryPresence.createMany.mock.calls[0][0].data[0]).toMatchObject({
+      presence: 'FIELD',
+      reason: 'MOVED',
+      sentLate: false,
+    });
+    expect(emit).toHaveBeenCalledWith('attendance_changed', {
+      organizationId: 'org-1',
+      action: 'presence',
+      entryId: 'e1',
+      userId: 'u1',
+      spaceId: null,
+    });
     expect(JSON.stringify(emit.mock.calls)).not.toMatch(/lat|lng/i);
   });
 
@@ -237,8 +309,15 @@ describe('PresenceService', () => {
     const { svc, prisma, tx } = build();
     prisma.timeEntry.findFirst.mockResolvedValue(entry({ presence: 'REMOTE' }));
     await svc.onJobMoved({ userId: 'u1', organizationId: 'org-1', reason: 'ON_THE_WAY', at: NOW });
-    expect(prisma.timeEntry.findFirst.mock.calls[0][0].where).toEqual({ userId: 'u1', organizationId: 'org-1', status: 'CLOCKED_IN' });
-    expect(tx.timeEntry.updateMany.mock.calls[0][0].data).toMatchObject({ presence: 'FIELD', presenceReason: 'ON_THE_WAY' });
+    expect(prisma.timeEntry.findFirst.mock.calls[0][0].where).toEqual({
+      userId: 'u1',
+      organizationId: 'org-1',
+      status: 'CLOCKED_IN',
+    });
+    expect(tx.timeEntry.updateMany.mock.calls[0][0].data).toMatchObject({
+      presence: 'FIELD',
+      presenceReason: 'ON_THE_WAY',
+    });
 
     const again = build();
     again.prisma.timeEntry.findFirst.mockResolvedValue(entry({ presence: 'FIELD' }));
@@ -271,8 +350,14 @@ describe('getEntryPresence', () => {
     const svc = Object.create(AttendanceReadService.prototype);
     svc.prisma = { timeEntry: { findFirst: jest.fn().mockResolvedValue(null) } };
     svc.presence = { history: jest.fn() };
-    await expect(svc.getEntryPresence({ entryId: 'e1', organizationId: 'org-1', scopeSpaceIds: ['loc-2'] })).rejects.toThrow('not found');
-    expect(svc.prisma.timeEntry.findFirst.mock.calls[0][0].where).toEqual({ id: 'e1', organizationId: 'org-1', locationId: { in: ['loc-2'] } });
+    await expect(
+      svc.getEntryPresence({ entryId: 'e1', organizationId: 'org-1', scopeSpaceIds: ['loc-2'] }),
+    ).rejects.toThrow('not found');
+    expect(svc.prisma.timeEntry.findFirst.mock.calls[0][0].where).toEqual({
+      id: 'e1',
+      organizationId: 'org-1',
+      locationId: { in: ['loc-2'] },
+    });
     expect(svc.presence.history).not.toHaveBeenCalled();
   });
 });

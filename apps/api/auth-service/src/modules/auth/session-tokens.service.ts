@@ -33,6 +33,7 @@ type SessionUser = Pick<
   | 'canCreateTasks'
   | 'taskCreationScope'
   | 'clockInPick'
+  | 'clockOff'
   | 'enabledModules'
   | 'guidesSeen'
   | 'position'
@@ -172,6 +173,7 @@ export class SessionTokensService {
           timeFormat: user.timeFormat ?? '24h',
           // Several workspaces: clock in where they stand, or always choose.
           clockInPick: parseClockInPick(user.clockInPick),
+          clockOff: user.clockOff ?? false,
           // One-time welcome-tour flag (false = auto-run the welcome guide once).
           guidesSeen: user.guidesSeen ?? false,
           // Access Profile (mobile tabs / web screens) — per-user overrides org.

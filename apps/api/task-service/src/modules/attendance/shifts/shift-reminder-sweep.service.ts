@@ -12,7 +12,7 @@ import {
   SERVICE_NAMES,
   judgedByLabelRules,
 } from '@hbcfield/shared';
-import { AttendanceRoutingService } from '../core/attendance-routing.service';
+import { AttendanceRoutingService, type DeciderCache } from '../core/attendance-routing.service';
 import { AutoClockService } from '../auto-clock/auto-clock.service';
 import { shiftNudgeCadence } from '../core/shift-sweep-helpers';
 import {
@@ -115,10 +115,10 @@ export class ShiftReminderSweepService {
     // The workspace half is resolved ONCE per distinct escalating space — it is
     // the same answer for everybody there. The member half, when a space has
     // nobody, is resolved per entry inside `notifyTargetsFor`.
-    const leadersBySpace = new Map<string, string[]>();
+    const leadersBySpace: DeciderCache = new Map();
     const targetsByEntry = new Map<string, string[]>();
     for (const e of toEscalate) {
-      targetsByEntry.set(e.id, await this.routing.notifyTargetsFor(e, 'canReconcileAttendance', leadersBySpace));
+      targetsByEntry.set(e.id, await this.routing.notifyTargetsFor(e, 'attendance', leadersBySpace));
     }
 
     // Deferred writes (thunks) so we can cap DB concurrency.

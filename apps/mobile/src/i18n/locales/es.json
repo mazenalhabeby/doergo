@@ -4530,7 +4530,9 @@
       "onPhone": "En este teléfono",
       "byEmail": "Por correo",
       "offline": "Se necesita conexión para cambiarlo.",
-      "always": "Los mensajes de un compañero y lo que bloquea su trabajo siempre le llegan."
+      "always": "Los mensajes de un compañero y lo que bloquea su trabajo siempre le llegan.",
+      "teamClock": "El fichaje de mi equipo",
+      "teamClockSub": "Aún fichado, salida anticipada, sin llegar, un día por revisar"
     },
     "theme": {
       "systemSub": "Claro u oscuro, como el teléfono",
@@ -5081,7 +5083,7 @@
       "presenceEndTitle_one": "{{count}} hora en {{place}}: ¿sigues trabajando?",
       "presenceEndTitle_other": "{{count}} horas en {{place}}: ¿sigues trabajando?",
       "presenceEndBody": "Ficha la salida si has terminado, o sigue.",
-      "presenceEndBodyLimit": "Es el límite de hoy aquí. Ficha la salida o pide tiempo extra.",
+      "presenceEndBodyLimit": "Son las horas de hoy aquí. Su tiempo sigue contando: fiche la salida cuando se vaya.",
       "arrivedOutsideBody": "Es fuera de tu horario habitual. ¿Empiezas a trabajar? Toca para fichar."
     },
     "result": {

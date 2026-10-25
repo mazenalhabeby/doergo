@@ -38,13 +38,13 @@ describe('overtime pushes', () => {
     return { svc, prisma, emit, attendance };
   };
 
-  it('asks the workspace routing for canApproveOvertime, never the org-wide admin list', async () => {
+  it('asks the workspace routing for who decides extra time, never the org-wide admin list', async () => {
     const { svc, prisma, emit, attendance } = build(['leader', 'tech']);
     await svc.technicianRespond({ userId: 'tech', response: 'YES', organizationId: 'org1' });
 
     expect(attendance.notifyTargetsFor).toHaveBeenCalledWith(
       { locationId: 'site-a', organizationId: 'org1', userId: 'tech' },
-      'canApproveOvertime',
+      'extraTime',
     );
     expect(prisma.user.findMany).not.toHaveBeenCalled();
     expect(emit).toHaveBeenCalledWith(OVERTIME_NOTICE_EVENT, {

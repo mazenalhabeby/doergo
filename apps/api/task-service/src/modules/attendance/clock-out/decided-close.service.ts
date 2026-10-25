@@ -114,6 +114,7 @@ export class DecidedCloseService {
       entryId: updated.id,
       userId: data.userId,
       organizationId: data.organizationId,
+      locationId: entry.locationId,
       locationName: entry.location?.name || 'Unknown',
       flagReasons: uniqueFlags,
       totalMinutes,

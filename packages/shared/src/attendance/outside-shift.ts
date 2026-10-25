@@ -15,6 +15,14 @@
  * nothing (no-shift-limit.ts), so there is nothing outside it to decide.
  */
 
+/**
+ * Who decides time outside the shift (clock review A10, 2026-10-25): it changes counted hours AFTER the
+ * shift — the payroll sign-off — so a person must hold BOTH approve hours and approve overtime (the overtime
+ * the decision writes). A team leader answers extra time live, on site, but not minutes after the fact.
+ * The gateway guards and scopes on these, task-service routes "waiting for" to their holders.
+ */
+export const OUTSIDE_SHIFT_DECIDE_KEYS = ['canApproveAttendance', 'canApproveOvertime'] as const;
+
 export interface OutsideShiftEntry {
   clockInAt: Date | string;
   clockOutAt: Date | string | null;
@@ -45,6 +53,21 @@ export function outsideShift(entry: OutsideShiftEntry, toleranceMin = 0): Outsid
   const b = before > toleranceMin ? before : 0;
   const a = after > toleranceMin ? after : 0;
   return b + a > 0 ? { before: b, after: a, total: b + a } : null;
+}
+
+/**
+ * Does refusing extra time settle this entry's time outside the shift (clock review B1)? A "no" to more
+ * time IS the answer about the time after the end — asked again later as "outside the shift" it was a
+ * second, contradicting question. It settles it only when nothing was worked before the start too (that
+ * part was never asked about); then the entry is marked decided, counted 0.
+ */
+export function refusalSettlesOutside(
+  entry: Pick<OutsideShiftEntry, 'clockInAt' | 'expectedClockInAt'>,
+  toleranceMin = 0,
+): boolean {
+  if (!entry.expectedClockInAt) return true;
+  const early = Math.round((ms(entry.expectedClockInAt) - ms(entry.clockInAt)) / 60_000);
+  return early <= toleranceMin;
 }
 
 /**

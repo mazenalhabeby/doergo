@@ -126,6 +126,8 @@ export class AutoClockUndoService {
       organizationId: data.organizationId,
       action: 'auto-undo',
       entryId: entry.id,
+      userId: entry.userId,
+      spaceId: entry.locationId,
     });
     return success({ undone: true as const }, 'Clock-in undone');
   }

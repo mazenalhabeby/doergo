@@ -1,6 +1,10 @@
 import { sessionStartedAt } from '@/lib/api/client';
 import { mayActOnPush } from '@/lib/push-recipient';
-import { requestExtraTimeFromPhone, skipAutoRestFromPhone, undoAutoClockInFromPhone } from '@/offline/attendance/shift-actions';
+import {
+  requestExtraTimeFromPhone,
+  skipAutoRestFromPhone,
+  undoAutoClockInFromPhone,
+} from '@/offline/attendance/shift-actions';
 import { liveEngineFor } from '@/offline/live-engine';
 import { AUTO_CLOCK_ACTIONS, autoClockNotifier, type AutoClockAction } from './notifications';
 
@@ -38,7 +42,8 @@ export async function runAutoClockAction(
   who: { userId: string | null; deliveredAt: number | null },
 ): Promise<AutoClockActionResult> {
   const started = await sessionStartedAt().catch(() => null);
-  if (!mayActOnPush({ data, deliveredAt: who.deliveredAt, userId: who.userId, sessionStartedAt: started })) return 'notYours';
+  if (!mayActOnPush({ data, deliveredAt: who.deliveredAt, userId: who.userId, sessionStartedAt: started }))
+    return 'notYours';
   if (action === AUTO_CLOCK_ACTIONS.clockOut) return 'openClock';
   const entryId = typeof data?.entryId === 'string' ? data.entryId : null;
   const engine = who.userId ? liveEngineFor(who.userId)?.engine : null;
@@ -61,13 +66,20 @@ export async function runAutoClockAction(
       return r.kind === 'queued' ? 'restSkipQueued' : 'restSkipped';
     }
     if (action === AUTO_CLOCK_ACTIONS.stillWorking) {
-      if (data?.presence === true && data?.limit !== true) {
+      // A session with no shift, or past only the daily-hours marker: all of the time counts, there is no
+      // planned end to extend — carrying on is the whole answer (clock review B2).
+      if (data?.presence === true || data?.limit === true) {
         await autoClockNotifier.cancel(entryId, ['end']);
         return 'carryOn';
       }
-      // Still here after the end (or past the daily limit): the same "I'm working extra time" as the Clock screen — a leader decides.
+      // Still here after a real shift end: the same "I'm working extra time" as the Clock screen — a leader decides.
       const r = await requestExtraTimeFromPhone(engine, { entryId });
-      if (r.kind === 'refused') return 'failed';
+      if (r.kind === 'refused') {
+        // Nothing to ask here (no planned end, or the organization has no extra time): keep working; the time
+        // after the end is decided with the day, as time outside the shift (A8).
+        await autoClockNotifier.cancel(entryId, ['end']);
+        return 'carryOn';
+      }
       await autoClockNotifier.cancel(entryId, ['end']);
       return r.kind === 'queued' ? 'extraQueued' : 'extraSent';
     }

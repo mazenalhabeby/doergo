@@ -5,8 +5,13 @@ import {
   orgAllowsEmail,
   pickBooleanPrefs,
   normalizeEmail,
+  isAdmin,
+  memberIsClockedIn,
+  SERVICE_NAMES,
 } from '@hbcfield/shared';
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { emitEvent, memberClockSwitchedEvent } from '@hbcfield/shared/microservices';
 import { PrismaService } from '@hbcfield/shared';
 import * as bcrypt from 'bcryptjs';
 
@@ -18,7 +23,10 @@ import * as bcrypt from 'bcryptjs';
  */
 @Injectable()
 export class OwnAccountService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
+  ) {}
 
   /**
    * Self-service profile update — a user updating their OWN record. Scoped to
@@ -35,6 +43,7 @@ export class OwnAccountService {
       guidesSeen?: boolean;
       locale?: string;
       clockInPick?: string;
+      usesClock?: boolean;
     },
   ) {
     const data: {
@@ -45,6 +54,7 @@ export class OwnAccountService {
       guidesSeen?: boolean;
       locale?: string;
       clockInPick?: string;
+      clockOff?: boolean;
     } = {};
     if (dto.firstName !== undefined) data.firstName = dto.firstName.trim();
     if (dto.lastName !== undefined) data.lastName = dto.lastName.trim();
@@ -54,6 +64,7 @@ export class OwnAccountService {
     if (dto.timeFormat === '12h' || dto.timeFormat === '24h') data.timeFormat = dto.timeFormat;
     // clockInPick: with several workspaces, clock in where they stand or always choose.
     if (dto.clockInPick === 'AUTO' || dto.clockInPick === 'ASK') data.clockInPick = dto.clockInPick;
+    if (dto.usesClock !== undefined) data.clockOff = await this.clockOffFor(userId, dto.usesClock);
     // guidesSeen: one-time welcome-tour flag (only ever set to true by the client).
     if (dto.guidesSeen === true) data.guidesSeen = true;
     // locale: the language this member's pushes are written in. Only one the
@@ -74,12 +85,47 @@ export class OwnAccountService {
         presence: true,
         timeFormat: true,
         clockInPick: true,
+        clockOff: true,
+        organizationId: true,
         guidesSeen: true,
         locale: true,
       },
     });
 
+    if (data.clockOff !== undefined && updated.organizationId) {
+      // Task-service owns the rota's expected shifts: off → the ones still ahead are not expected (no chasing).
+      emitEvent(this.taskClient, memberClockSwitchedEvent, {
+        organizationId: updated.organizationId,
+        userId,
+        clockOff: data.clockOff,
+      });
+    }
+
     return { success: true, data: updated };
+  }
+
+  /**
+   * An administrator taking themselves off the clock, or back on (review A7). Everyone else's clock is
+   * their access profile's `clock` module, set by the office — so the switch is refused for them.
+   * Never while a shift is running: the clock would disappear with the shift still open.
+   */
+  private async clockOffFor(userId: string, usesClock: boolean): Promise<boolean> {
+    const me = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (!isAdmin({ role: me?.role ?? '' })) {
+      throw new BadRequestException({
+        code: 'CLOCK_SWITCH_ADMIN_ONLY',
+        message: 'Only an administrator can switch their own clock off.',
+      });
+    }
+    if (!usesClock) {
+      if (await memberIsClockedIn(this.prisma, userId)) {
+        throw new ConflictException({
+          code: 'CLOCK_SWITCH_WHILE_CLOCKED_IN',
+          message: 'Clock out first, then switch the clock off.',
+        });
+      }
+    }
+    return !usesClock;
   }
 
   /**

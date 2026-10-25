@@ -35,3 +35,21 @@ export function scopeFor(user: SessionUser | null | undefined, key: AccessPermis
 export function scopeIdsFor(user: SessionUser | null | undefined, key: AccessPermissionKey): string[] | undefined {
   return scopeFor(user, key) ?? undefined;
 }
+
+/**
+ * Where the caller holds EVERY one of `keys` — the intersection of `scopeFor` per key, in the same shape
+ * (null = org-wide, [ids] = only these, [] = nowhere). For a decision that needs two permissions at once,
+ * e.g. counting time outside the shift = approve hours AND approve overtime (clock review A10).
+ */
+export function scopeForAll(
+  user: SessionUser | null | undefined,
+  keys: readonly AccessPermissionKey[],
+): string[] | null {
+  let out: string[] | null = null;
+  for (const key of keys) {
+    const scope = scopeFor(user, key);
+    if (scope === null) continue;
+    out = out === null ? scope : out.filter((id) => scope.includes(id));
+  }
+  return out;
+}

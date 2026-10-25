@@ -23,6 +23,7 @@ interface PresenceEntry {
   id: string;
   userId: string;
   organizationId: string;
+  locationId?: string | null;
   timezone?: string | null;
   presence?: string | null;
   presenceAt?: Date | null;
@@ -167,7 +168,15 @@ export class PresenceService {
     try {
       const entry = await this.prisma.timeEntry.findFirst({
         where: { userId: input.userId, organizationId: input.organizationId, status: 'CLOCKED_IN' },
-        select: { id: true, userId: true, organizationId: true, presence: true, presenceAt: true, lastSeenAt: true },
+        select: {
+          id: true,
+          userId: true,
+          organizationId: true,
+          locationId: true,
+          presence: true,
+          presenceAt: true,
+          lastSeenAt: true,
+        },
       });
       if (!entry || entry.presence === 'FIELD') return;
       // No position with a tap: movement stays measured from the last place that counted.
@@ -229,6 +238,8 @@ export class PresenceService {
       organizationId: entry.organizationId,
       action: 'presence',
       entryId: entry.id,
+      userId: entry.userId,
+      spaceId: entry.locationId ?? null,
     });
   }
 

@@ -136,8 +136,10 @@ export const APPROVAL_KIND_SPECS: Record<ApprovalKind, ApprovalKindSpec> = {
   },
   // Time worked before the planned start / after the planned end (attendance/outside-shift.ts): count all or part of it
   // (the minutes, filled with all of it), or don't count it. Counting moves the plan, like approved overtime.
+  // Decided by who approves HOURS (review A10): it changes counted time after the shift — the payroll
+  // sign-off. The overtime it writes is still checked against canApproveOvertime in task-service.
   outside: {
-    decideKey: 'canApproveOvertime',
+    decideKey: 'canApproveAttendance',
     orgWide: false,
     actions: [approve('count', { input: 'minutes' }), { ...reject('notCount', 'optional'), tone: 'neutral' }],
   },

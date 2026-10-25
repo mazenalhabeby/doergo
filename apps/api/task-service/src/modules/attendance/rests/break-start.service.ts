@@ -167,6 +167,7 @@ export class BreakStartService {
       breakType: breakRecord.type,
       startedAt: breakRecord.startedAt.toISOString(),
       organizationId: data.organizationId,
+      spaceId: entry.locationId,
     });
 
     this.logger.log(`Break started: break=${breakRecord.id}, entry=${entry.id}`);

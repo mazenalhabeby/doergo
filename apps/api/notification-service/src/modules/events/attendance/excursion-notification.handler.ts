@@ -155,7 +155,7 @@ export class ExcursionNotificationHandler {
   }
 
   /**
-   * Emit an excursion socket event. Always emits to the org room (drives the web
+   * Emit an excursion socket event. Always to the attendance rooms (drives the web
    * dashboard + approver list via use-realtime-sync). Optionally targets the
    * employee (self-facing states) and/or the resolved watchers (fallback ADMIN room).
    */
@@ -178,10 +178,15 @@ export class ExcursionNotificationHandler {
       distanceM: data.distanceM ?? null,
       timestamp: new Date().toISOString(),
     };
-    this.websocketGateway.emitToOrganization(data.organizationId, event, payload);
-    if (opts.includeEmployee) {
-      this.websocketGateway.emitToUser(data.userId, event, payload);
-    }
+    // The people who may read this member's hours (attendance rooms, clock review A1) — and the member,
+    // for the states they see themselves. Never the whole organization: the reason and distance are theirs.
+    this.websocketGateway.emitAttendance(
+      data.organizationId,
+      data.spaceId,
+      opts.includeEmployee ? data.userId : null,
+      event,
+      payload,
+    );
     if (opts.toWatchers) {
       const ids = data.watcherIds || [];
       if (ids.length) {

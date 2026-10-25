@@ -1,5 +1,5 @@
 import { standInGrant } from '../../approvals/stand-in';
-import { personName, zoneOf } from '@hbcfield/shared';
+import { moreTimeRefusal, personName, zoneOf } from '@hbcfield/shared';
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, success, TimeEntryStatus } from '@hbcfield/shared';
@@ -35,7 +35,7 @@ export class ExtraTimeService {
    * approved automatically) over the usual workspace routing.
    */
   async askFor(entry: { locationId: string; organizationId: string; userId: string }): Promise<OwnRequestAsk> {
-    const usual = await this.routing.notifyTargetsFor(entry, 'canApproveOvertime');
+    const usual = await this.routing.notifyTargetsFor(entry, 'extraTime');
     return askAboutOwnRequest(this.prisma, {
       organizationId: entry.organizationId,
       subjectId: entry.userId,
@@ -73,43 +73,69 @@ export class ExtraTimeService {
       },
     });
     if (!entry) throw new BadRequestException('No matching open shift found');
+    // Nothing to extend: no planned end, or only the daily-hours marker — all of the time counts already (B2).
+    const refusal = moreTimeRefusal(entry);
+    if (refusal) {
+      throw new BadRequestException({
+        code: refusal,
+        message: 'There is no planned end to extend — all of this time counts already.',
+      });
+    }
 
     /*
-      One record per ROUND.
+      One record per ROUND — and ONE open round per shift (clock review B1).
 
       The state machine on the entry is what drives the reminder engine, but it
       holds only "where are we now" — it cannot say that this is the second time
       today, who approved the first ninety minutes, or that they signed for them.
       A row per cycle is what makes the loop auditable, and it is why the unique
-      index on `timeEntryId` had to go.
+      index on `timeEntryId` had to go. A second tap or an offline replay while a
+      round waits used to open ANOTHER pending round; deciding acts on the newest
+      only, so the older ones stayed pending for ever. The entry is CLAIMED
+      (OVERTIME_PENDING) in the same transaction that creates the round; a request
+      that finds it already claimed answers with the round that waits.
     */
-    const previous = await this.prisma.overtimeRequest.findFirst({
-      where: { timeEntryId: entry.id },
-      orderBy: { cycle: 'desc' },
-      select: { cycle: true },
-    });
-    const cycle = (previous?.cycle ?? 0) + 1;
-
-    await this.prisma.$transaction([
-      this.prisma.timeEntry.update({
-        where: { id: entry.id },
+    const asked = respondedAt(data.occurredAt, entry.clockInAt);
+    const created = await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.timeEntry.updateMany({
+        where: { id: entry.id, reminderState: { not: 'OVERTIME_PENDING' } },
         data: { reminderState: 'OVERTIME_PENDING', nextRemindAt: null },
-      }),
-      this.prisma.overtimeRequest.create({
+      });
+      if (!claimed.count) return null;
+      const previous = await tx.overtimeRequest.findFirst({
+        where: { timeEntryId: entry.id },
+        orderBy: { cycle: 'desc' },
+        select: { cycle: true },
+      });
+      const next = (previous?.cycle ?? 0) + 1;
+      await tx.overtimeRequest.create({
         data: {
           timeEntryId: entry.id,
-          cycle,
+          cycle: next,
           technicianId: entry.userId,
           locationId: entry.locationId,
           organizationId: data.organizationId,
           status: 'PENDING_APPROVAL',
           // When they said it — sent later from a phone without signal, that is not now.
-          technicianRespondedAt: respondedAt(data.occurredAt, entry.clockInAt),
-          // Where the overtime begins: the shift end, or — with no planned end — when they asked.
-          overtimeStartAt: entry.expectedClockOutAt ?? respondedAt(data.occurredAt, entry.clockInAt),
+          technicianRespondedAt: asked,
+          // Where the overtime begins: the shift end.
+          overtimeStartAt: entry.expectedClockOutAt ?? asked,
         },
-      }),
-    ]);
+      });
+      return next;
+    });
+    if (created === null) {
+      const waiting = await this.prisma.overtimeRequest.findFirst({
+        where: { timeEntryId: entry.id, status: 'PENDING_APPROVAL' },
+        orderBy: { cycle: 'desc' },
+        select: { cycle: true },
+      });
+      return success(
+        { entryId: entry.id, status: 'OVERTIME_PENDING', cycle: waiting?.cycle ?? null, alreadyAsked: true },
+        'Already asked — waiting for a decision',
+      );
+    }
+    const cycle = created;
 
     const ask = await this.askFor({ ...entry, organizationId: data.organizationId });
     if (ask.route === 'AUTOMATIC') {

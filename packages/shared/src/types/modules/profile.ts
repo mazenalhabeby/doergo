@@ -23,10 +23,10 @@ export type SpaceScope = 'own' | 'tasks' | 'all';
 export type AccessPlatform = 'web' | 'mobile' | 'both';
 
 export interface AccessProfile {
-  modules: MobileModule[];     // mobile tabs / home modules
-  spaceScope?: SpaceScope;     // space visibility
-  platforms?: AccessPlatform;  // web / mobile / both
-  canContact?: boolean;        // can message & call colleagues
+  modules: MobileModule[]; // mobile tabs / home modules
+  spaceScope?: SpaceScope; // space visibility
+  platforms?: AccessPlatform; // web / mobile / both
+  canContact?: boolean; // can message & call colleagues
 }
 
 function asProfile(em: unknown): AccessProfile | null {
@@ -161,6 +161,8 @@ export function hasAccessModule(
     access?: { org?: Record<string, boolean>; perSpace?: Record<string, Record<string, boolean>> } | null;
     /** Works for a client or partner (server-resolved on the session). */
     isExternal?: boolean | null;
+    /** An administrator who switched their own clock off (review A7). */
+    clockOff?: boolean | null;
   } & UserPermissionFields,
   module: MobileModule,
 ): boolean {
@@ -168,6 +170,12 @@ export function hasAccessModule(
   // any stored per-user access profile. This keeps "admin = full access" true and
   // immune to a stale/partial enabledModules profile (there are no admin access
   // choices to configure — see AccessBuilder).
+  /*
+    An administrator may take themselves off the clock (review A7): full access everywhere else, but no
+    clock tab, button or widget, and the gateway's @RequireAccessModule('clock') refuses the clock-in.
+    Asked before the admin rule, which would otherwise answer yes to every module.
+  */
+  if (module === 'clock' && user.clockOff === true) return false;
   const role = (user.role || '').toUpperCase();
   if (role === 'ADMIN' || role === 'CLIENT') return true;
   /*
@@ -193,10 +201,16 @@ export function hasAccessModule(
     independently.
   */
   if (module === 'create_task') {
-    return user.canCreateTasks === true || accessAllowsAnywhere(user.access as PermissionGrants | null | undefined, 'canCreateTasks');
+    return (
+      user.canCreateTasks === true ||
+      accessAllowsAnywhere(user.access as PermissionGrants | null | undefined, 'canCreateTasks')
+    );
   }
   if (module === 'manage') {
-    return user.canManageUsers === true || accessAllowsAnywhere(user.access as PermissionGrants | null | undefined, 'canManageUsers');
+    return (
+      user.canManageUsers === true ||
+      accessAllowsAnywhere(user.access as PermissionGrants | null | undefined, 'canManageUsers')
+    );
   }
   const profile = asProfile(user.enabledModules);
   if (!profile) return true; // no per-user profile → full access
@@ -234,9 +248,7 @@ export function canUsePlatform(
  * must have the `tasks` module, otherwise the task is invisible on their mobile.
  * Used by every assignee picker so the rule lives in one place.
  */
-export function canReceiveTasks(
-  user: { enabledModules?: unknown } & UserPermissionFields,
-): boolean {
+export function canReceiveTasks(user: { enabledModules?: unknown } & UserPermissionFields): boolean {
   return hasAccessModule(user, 'tasks');
 }
 

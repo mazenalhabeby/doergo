@@ -14,6 +14,9 @@
  * out on schedule.
  */
 
+import { localPartsIn } from '../attendance/zoned-time';
+import { zoneOf } from '../utils/workspace-zone';
+
 /** At most this many clock nudges per person per day. */
 export const CLOCK_PUSH_DAILY_BUDGET = 4;
 
@@ -36,9 +39,14 @@ export function isBudgetedClockPush(type: unknown): type is BudgetedClockPushTyp
   return typeof type === 'string' && (BUDGETED_CLOCK_PUSH_TYPES as readonly string[]).includes(type);
 }
 
-/** The day a budget belongs to — UTC, so every replica counts the same day. */
-export function clockPushBudgetDay(at: Date): string {
-  return at.toISOString().slice(0, 10);
+/**
+ * The day a budget belongs to — the PERSON's own day (clock review A6). It was the UTC date, so the four
+ * nudges started over at 01:00–02:00 in Austria and 19:00–20:00 in New York — in the middle of a shift.
+ * Every replica still counts the same day: the zone comes from the member's row, not the server.
+ * No zone → UTC, as before.
+ */
+export function clockPushBudgetDay(at: Date, zone?: string | null): string {
+  return zone ? localPartsIn(at, zoneOf(zone)).dateStr : at.toISOString().slice(0, 10);
 }
 
 /**

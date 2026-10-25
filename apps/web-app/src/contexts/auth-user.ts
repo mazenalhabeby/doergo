@@ -77,6 +77,8 @@ export interface User {
   timeFormat?: "12h" | "24h"
   // Several workspaces: clock in where they stand ("AUTO") or always choose ("ASK").
   clockInPick?: "AUTO" | "ASK"
+  // An administrator who switched their own clock off (clock review A7).
+  clockOff?: boolean
   // One-time welcome-tour flag: false → auto-run the welcome guide once.
   guidesSeen?: boolean
   // Access Profile (mobile tabs / web screens) — array or object form.

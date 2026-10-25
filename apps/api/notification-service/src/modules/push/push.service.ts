@@ -1,8 +1,8 @@
-import { memberNotificationPrefs } from '@hbcfield/shared';
+import { memberDayZones, memberNotificationPrefs } from '@hbcfield/shared';
 import Expo, { ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { DEFAULT_LOCALE, PrismaService, type SupportedLocale } from '@hbcfield/shared';
-import { pushRouting, pushCategory, memberWantsPush, barePushToken } from '@hbcfield/shared';
+import { pushRouting, pushCategory, memberWantsPush, barePushToken, isBudgetedClockPush } from '@hbcfield/shared';
 import { RecipientLocales } from '../../i18n/recipient-locales.service';
 import { renderText, type LocalizedText } from '../../i18n/translate';
 import { PushTarget } from './push-helpers';
@@ -136,7 +136,8 @@ export class PushService {
 
     // At most four clock nudges a day, a kind repeated at most once — counted only for people still asked.
     if (this.clockBudget) {
-      ids = await this.clockBudget.allowed(ids, data?.type);
+      const zones = isBudgetedClockPush(data?.type) ? await memberDayZones(this.prisma, ids) : undefined;
+      ids = await this.clockBudget.allowed(ids, data?.type, new Date(), zones);
       if (ids.length === 0) return { success: true, sent: 0, reason: 'clock_budget' };
     }
 

@@ -107,6 +107,8 @@ export class DayHoursReshapeService {
       emitEvent(this.notificationClient, attendanceChangedEvent, {
         organizationId: change.organizationId,
         action: 'day_hours_set',
+        userId: change.userId,
+        spaceId: change.spaceId,
       });
     }
     return changed;

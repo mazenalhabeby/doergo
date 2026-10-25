@@ -4530,7 +4530,9 @@
       "onPhone": "Sur ce téléphone",
       "byEmail": "Par e-mail",
       "offline": "Une connexion est nécessaire pour modifier.",
-      "always": "Les messages d’un collègue et ce qui bloque votre travail vous parviennent toujours."
+      "always": "Les messages d’un collègue et ce qui bloque votre travail vous parviennent toujours.",
+      "teamClock": "Pointage de mon équipe",
+      "teamClockSub": "Toujours pointé, parti tôt, pas arrivé, une journée à vérifier"
     },
     "theme": {
       "systemSub": "Clair ou sombre, comme le téléphone",
@@ -5081,7 +5083,7 @@
       "presenceEndTitle_one": "{{count}} heure à {{place}} — toujours au travail ?",
       "presenceEndTitle_other": "{{count}} heures à {{place}} — toujours au travail ?",
       "presenceEndBody": "Dépointez si vous avez fini, ou continuez.",
-      "presenceEndBodyLimit": "C’est la limite d’aujourd’hui ici. Dépointez, ou demandez du temps en plus.",
+      "presenceEndBodyLimit": "Ce sont les heures du jour ici. Votre temps compte toujours – pointez votre départ en partant.",
       "arrivedOutsideBody": "C’est en dehors de vos heures habituelles. Vous commencez ? Touchez pour pointer."
     },
     "result": {

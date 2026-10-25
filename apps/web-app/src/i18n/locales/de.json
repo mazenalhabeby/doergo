@@ -2610,7 +2610,14 @@
       "oneWorkspace": "Sie arbeiten in einem Arbeitsbereich, es gibt also nichts zu wählen.",
       "footnote": "Gilt für Sie im Web und auf dem Telefon. Wo Sie einstempeln dürfen, bleibt gleich.",
       "saved": "Gespeichert",
-      "failed": "Ihre Auswahl konnte nicht gespeichert werden"
+      "failed": "Ihre Auswahl konnte nicht gespeichert werden",
+      "usesQuestion": "Nutzen Sie die Stempeluhr selbst?",
+      "usesOnTitle": "Ja, ich stempele ein und aus",
+      "usesOnHint": "Der Einstempeln-Knopf, Erinnerungen und Ihre Stunden – wie für alle im Team.",
+      "usesOffTitle": "Nein, ich nutze die Stempeluhr nicht",
+      "usesOffHint": "Kein Einstempeln-Knopf und keine Erinnerungen für Sie. Die Stunden aller sehen und entscheiden Sie weiterhin.",
+      "usesSaved": "Gespeichert – die Stempeluhr folgt auf dem nächsten Bildschirm",
+      "usesOpenShift": "Stempeln Sie zuerst aus und schalten Sie dann die Stempeluhr aus."
     }
   },
   "notifications": {

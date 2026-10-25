@@ -139,7 +139,10 @@ export class ApprovalService {
 
     this.logger.log(`Entry approved: entry=${data.entryId}, approver=${data.approverId}`);
 
-    this.changes.announce(data.organizationId, 'approve', data.entryId);
+    this.changes.announce(data.organizationId, 'approve', data.entryId, {
+      userId: entry.userId,
+      spaceId: entry.locationId,
+    });
     await this.tellDayDecided(entry);
     return success(updated, 'Time entry approved');
   }
@@ -202,7 +205,10 @@ export class ApprovalService {
 
     this.logger.log(`Entry rejected: entry=${data.entryId}, approver=${data.approverId}, reason=${data.reason}`);
 
-    this.changes.announce(data.organizationId, 'reject', data.entryId);
+    this.changes.announce(data.organizationId, 'reject', data.entryId, {
+      userId: entry.userId,
+      spaceId: entry.locationId,
+    });
     await this.tellDayDecided(entry);
     return success(updated, 'Time entry rejected');
   }

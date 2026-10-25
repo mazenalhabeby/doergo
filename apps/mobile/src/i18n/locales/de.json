@@ -4530,7 +4530,9 @@
       "onPhone": "Auf diesem Telefon",
       "byEmail": "Per E-Mail",
       "offline": "Zum Ändern ist eine Verbindung nötig.",
-      "always": "Nachrichten von Kollegen und alles, was Ihre Arbeit blockiert, erreicht Sie immer."
+      "always": "Nachrichten von Kollegen und alles, was Ihre Arbeit blockiert, erreicht Sie immer.",
+      "teamClock": "Stempeluhr meines Teams",
+      "teamClockSub": "Noch eingestempelt, früher gegangen, nicht gekommen, ein Tag zur Prüfung"
     },
     "theme": {
       "systemSub": "Hell oder dunkel, wie das Telefon",
@@ -5081,7 +5083,7 @@
       "presenceEndTitle_one": "{{count}} Stunde bei {{place}} – arbeiten Sie noch?",
       "presenceEndTitle_other": "{{count}} Stunden bei {{place}} – arbeiten Sie noch?",
       "presenceEndBody": "Stempeln Sie aus, wenn Sie fertig sind, oder arbeiten Sie weiter.",
-      "presenceEndBodyLimit": "Das ist die heutige Grenze hier. Stempeln Sie aus oder bitten Sie um Mehrarbeit.",
+      "presenceEndBodyLimit": "Das sind die heutigen Stunden hier. Ihre Zeit zählt weiter – stempeln Sie aus, wenn Sie gehen.",
       "arrivedOutsideBody": "Das ist außerhalb Ihrer üblichen Zeiten. Beginnen Sie mit der Arbeit? Tippen Sie zum Einstempeln."
     },
     "result": {

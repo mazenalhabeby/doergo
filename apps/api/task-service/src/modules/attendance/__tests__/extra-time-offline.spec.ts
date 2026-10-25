@@ -19,6 +19,7 @@ function service(entry: any, round: any = { id: 'round-1' }) {
     timeEntry: {
       findFirst: jest.fn().mockResolvedValue(entry),
       update: jest.fn((args: any) => ({ kind: 'entry.update', args })),
+      updateMany: jest.fn((args: any) => ({ kind: args.where.status ? 'entry.nudge' : 'entry.outsideDecided', args })),
     },
     overtimeRequest: {
       findFirst: jest.fn().mockResolvedValue(round),
@@ -28,7 +29,10 @@ function service(entry: any, round: any = { id: 'round-1' }) {
   };
   svc.userCanApproveOvertime = jest.fn().mockResolvedValue(true);
   svc.assertNotSelfOvertimeDecision = jest.fn().mockResolvedValue(undefined);
-  svc.countedTime = { recomputeClosed: jest.fn().mockResolvedValue(undefined) };
+  svc.countedTime = {
+    recomputeClosed: jest.fn().mockResolvedValue(undefined),
+    toleranceFor: jest.fn().mockResolvedValue(10),
+  };
   svc.notificationClient = { emit: jest.fn() };
   // Refusing lives in ExtraTimeDecisionService; it asks the same approval service who may decide.
   svc.rejectExtraTime = (data: any) => {
@@ -44,9 +48,16 @@ function service(entry: any, round: any = { id: 'round-1' }) {
 }
 
 const closedEntry = {
-  id: 'e1', userId: 'member', locationId: 'space-1', organizationId: 'org-1',
-  status: 'CLOCKED_OUT', clockInAt: at('08:00'), clockOutAt: at('18:40'), expectedClockOutAt: at('17:00'),
-  breakMinutes: 30, shift: { graceMin: 10 },
+  id: 'e1',
+  userId: 'member',
+  locationId: 'space-1',
+  organizationId: 'org-1',
+  status: 'CLOCKED_OUT',
+  clockInAt: at('08:00'),
+  clockOutAt: at('18:40'),
+  expectedClockOutAt: at('17:00'),
+  breakMinutes: 30,
+  shift: { graceMin: 10 },
 };
 
 describe('extra time decided after the clock-out arrived', () => {
@@ -57,12 +68,22 @@ describe('extra time decided after the clock-out arrived', () => {
     const [entryUpdate] = svc.prisma.$transaction.mock.calls[0][0];
     // From 17:00, not from "now" — the work is over.
     expect(entryUpdate.args.data).toEqual({ expectedClockOutAt: at('18:30') });
-    expect(svc.countedTime.recomputeClosed).toHaveBeenCalledWith(expect.objectContaining({ id: 'e1', expectedClockOutAt: at('18:30') }));
-    expect(svc.notificationClient.emit).toHaveBeenCalledWith('attendance_overtime_decision', expect.objectContaining({ decision: 'approved', minutes: 90 }));
+    expect(svc.countedTime.recomputeClosed).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'e1', expectedClockOutAt: at('18:30') }),
+    );
+    expect(svc.notificationClient.emit).toHaveBeenCalledWith(
+      'attendance_overtime_decision',
+      expect.objectContaining({ decision: 'approved', minutes: 90 }),
+    );
   });
 
   it('an open shift is approved as before — reminders re-armed, nothing recounted', async () => {
-    const svc = service({ ...closedEntry, status: 'CLOCKED_IN', clockOutAt: null, expectedClockOutAt: new Date(Date.now() + 3_600_000) });
+    const svc = service({
+      ...closedEntry,
+      status: 'CLOCKED_IN',
+      clockOutAt: null,
+      expectedClockOutAt: new Date(Date.now() + 3_600_000),
+    });
     await svc.approveExtraTime({ approverId: 'leader', entryId: 'e1', minutes: 30, organizationId: 'org-1' });
     const [entryUpdate] = svc.prisma.$transaction.mock.calls[0][0];
     expect(entryUpdate.args.data).toEqual(expect.objectContaining({ reminderState: 'OVERTIME_APPROVED' }));
@@ -72,6 +93,25 @@ describe('extra time decided after the clock-out arrived', () => {
   it('rejecting a closed shift’s request records the answer and nudges nobody', async () => {
     const svc = service({ id: 'e1', locationId: 'space-1', userId: 'member', status: 'CLOCKED_OUT' });
     await svc.rejectExtraTime({ approverId: 'leader', entryId: 'e1', organizationId: 'org-1', reason: 'Not needed' });
+    const ops = svc.prisma.$transaction.mock.calls[0][0];
+    // The "no" also settles the time after the end — it is not asked again as "outside the shift" (B1).
+    expect(ops.map((o: any) => o.kind)).toEqual(['entry.outsideDecided', 'round.update']);
+    expect(ops[0].args).toMatchObject({
+      where: { id: 'e1', outsideDecidedAt: null },
+      data: { outsideCountedMinutes: 0 },
+    });
+  });
+
+  it('a refusal does not settle a day that ALSO started early — that part was never asked about', async () => {
+    const svc = service({
+      id: 'e1',
+      locationId: 'space-1',
+      userId: 'member',
+      status: 'CLOCKED_OUT',
+      clockInAt: at('06:00'),
+      expectedClockInAt: at('07:00'),
+    });
+    await svc.rejectExtraTime({ approverId: 'leader', entryId: 'e1', organizationId: 'org-1' });
     const ops = svc.prisma.$transaction.mock.calls[0][0];
     expect(ops.map((o: any) => o.kind)).toEqual(['round.update']);
   });
@@ -86,7 +126,10 @@ describe('extra time decided after the clock-out arrived', () => {
     });
     expect(where.OR[1].clockOutAt.gte.getTime()).toBe(now.getTime() - 7 * 24 * 3_600_000);
     // The leader's list needs a request actually waiting on an open shift.
-    expect((decidableExtraTimeWhere(now, { openMustBePending: true }) as any).OR[0]).toEqual({ status: 'CLOCKED_IN', reminderState: 'OVERTIME_PENDING' });
+    expect((decidableExtraTimeWhere(now, { openMustBePending: true }) as any).OR[0]).toEqual({
+      status: 'CLOCKED_IN',
+      reminderState: 'OVERTIME_PENDING',
+    });
   });
 
   it('records when the member asked — never in the future, never before the shift', () => {

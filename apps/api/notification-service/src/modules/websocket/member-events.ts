@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { SocketEvents } from '@hbcfield/shared';
+import { SocketEvents, attendanceEventRooms } from '@hbcfield/shared';
 import { SocketRegistry } from './socket-registry';
 
 /**
@@ -42,40 +42,46 @@ export class MemberEvents {
   }
 
   // =========================================================================
-  // ATTENDANCE EVENTS
+  // ATTENDANCE EVENTS — never the organization room (clock review A1)
   // =========================================================================
 
-  emitClockIn(userId: string, organizationId: string, timeEntry: unknown) {
-    this.logger.log(`[EMIT] attendance.clockIn for user ${userId}`);
+  /**
+   * A member's clock event: to the people who may read those hours (attendance rooms, shared
+   * `attendanceEventRooms`) and, when given, the member. One de-duplicated emit — a socket in several of
+   * those rooms receives it once. Without a workspace only the org-wide viewers hear it (fewer, never more).
+   */
+  emitAttendance(
+    organizationId: string,
+    spaceId: string | null | undefined,
+    subjectUserId: string | null | undefined,
+    event: string,
+    data: unknown,
+  ) {
+    if (!organizationId) return;
+    this.logger.log(`[EMIT] ${event} to attendance:${organizationId}${spaceId ? `:${spaceId}` : ''}`);
     this.registry.messagesSent += 1;
-    // Single de-duplicated emit: a socket in BOTH rooms (e.g. the user viewing
-    // their own org) would otherwise receive two copies.
-    this.toMemberAndOrg(userId, organizationId).emit(SocketEvents.CLOCK_IN, { userId, timeEntry });
+    this.registry.server.to(attendanceEventRooms(organizationId, spaceId, subjectUserId)).emit(event, data);
+  }
+
+  emitClockIn(userId: string, organizationId: string, timeEntry: unknown) {
+    this.emitAttendance(organizationId, entrySpace(timeEntry), userId, SocketEvents.CLOCK_IN, { userId, timeEntry });
   }
 
   emitClockOut(userId: string, organizationId: string, timeEntry: unknown) {
-    this.logger.log(`[EMIT] attendance.clockOut for user ${userId}`);
-    this.registry.messagesSent += 1;
-    this.toMemberAndOrg(userId, organizationId).emit(SocketEvents.CLOCK_OUT, { userId, timeEntry });
+    this.emitAttendance(organizationId, entrySpace(timeEntry), userId, SocketEvents.CLOCK_OUT, { userId, timeEntry });
   }
 
-  // =========================================================================
-  // BREAK EVENTS
-  // =========================================================================
-
-  emitBreakStarted(userId: string, organizationId: string, breakData: unknown) {
-    this.logger.log(`[EMIT] break.started for user ${userId}`);
-    this.registry.messagesSent += 1;
-    this.toMemberAndOrg(userId, organizationId).emit(SocketEvents.BREAK_STARTED, { userId, break: breakData });
+  emitBreakStarted(userId: string, organizationId: string, breakData: unknown, spaceId?: string | null) {
+    this.emitAttendance(organizationId, spaceId, userId, SocketEvents.BREAK_STARTED, { userId, break: breakData });
   }
 
-  emitBreakEnded(userId: string, organizationId: string, breakData: unknown) {
-    this.logger.log(`[EMIT] break.ended for user ${userId}`);
-    this.registry.messagesSent += 1;
-    this.toMemberAndOrg(userId, organizationId).emit(SocketEvents.BREAK_ENDED, { userId, break: breakData });
+  emitBreakEnded(userId: string, organizationId: string, breakData: unknown, spaceId?: string | null) {
+    this.emitAttendance(organizationId, spaceId, userId, SocketEvents.BREAK_ENDED, { userId, break: breakData });
   }
+}
 
-  private toMemberAndOrg(userId: string, organizationId: string) {
-    return this.registry.server.to(`user:${userId}`).to(`org:${organizationId}`);
-  }
+/** The workspace a passed-through time entry belongs to (`locationId`), if it carries one. */
+function entrySpace(timeEntry: unknown): string | null {
+  const id = (timeEntry as { locationId?: unknown } | null)?.locationId;
+  return typeof id === 'string' && id ? id : null;
 }

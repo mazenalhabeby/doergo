@@ -228,6 +228,7 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   emitToOrganization: MemberEvents['emitToOrganization'] = (...a) => this.members.emitToOrganization(...a);
   emitToUser: MemberEvents['emitToUser'] = (...a) => this.members.emitToUser(...a);
   emitToRole: MemberEvents['emitToRole'] = (...a) => this.members.emitToRole(...a);
+  emitAttendance: MemberEvents['emitAttendance'] = (...a) => this.members.emitAttendance(...a);
   emitClockIn: MemberEvents['emitClockIn'] = (...a) => this.members.emitClockIn(...a);
   emitClockOut: MemberEvents['emitClockOut'] = (...a) => this.members.emitClockOut(...a);
   emitBreakStarted: MemberEvents['emitBreakStarted'] = (...a) => this.members.emitBreakStarted(...a);

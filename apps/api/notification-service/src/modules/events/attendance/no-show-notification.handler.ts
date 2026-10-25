@@ -44,7 +44,7 @@ export class NoShowNotificationHandler {
     } catch (error) {
       this.logger.error(`Failed to send no-show reminder push: ${error}`);
     }
-    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance_noshow_reminder', {
+    this.websocketGateway.emitAttendance(data.organizationId, data.spaceId, null, 'attendance_noshow_reminder', {
       instanceId: data.instanceId,
       userId: data.userId,
       userName: data.userName,

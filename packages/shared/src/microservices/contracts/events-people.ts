@@ -64,5 +64,13 @@ export const notificationRoutingChangedEvent = event<{ organizationId?: string; 
   'notification_routing_changed',
 );
 
+/**
+ * Handled by task-service (MemberClockController): an administrator switched their own clock off or on (clock
+ * review A7). Off: the shifts still ahead are not expected any more (no no-show chasing) — the owner's write.
+ */
+export const memberClockSwitchedEvent = event<{ organizationId: string; userId: string; clockOff: boolean }>(
+  'member_clock_switched',
+);
+
 /** Handled by auth-service (UsersController): which app version a member's phone runs. */
 export const appVersionSeenEvent = event<{ userId: string; version: string; platform?: string }>('app_version_seen');

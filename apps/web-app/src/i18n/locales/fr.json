@@ -2610,7 +2610,14 @@
       "oneWorkspace": "Vous travaillez dans un seul espace de travail, il n'y a donc rien à choisir.",
       "footnote": "Enregistré pour vous sur le web et sur votre téléphone. Les lieux où vous pouvez pointer restent les mêmes.",
       "saved": "Enregistré",
-      "failed": "Impossible d'enregistrer votre choix"
+      "failed": "Impossible d'enregistrer votre choix",
+      "usesQuestion": "Utilisez-vous vous-même la pointeuse ?",
+      "usesOnTitle": "Oui, je pointe l'arrivée et le départ",
+      "usesOnHint": "Le bouton de pointage, les rappels et vos heures, comme toute l'équipe.",
+      "usesOffTitle": "Non, je n'utilise pas la pointeuse",
+      "usesOffHint": "Pas de bouton de pointage ni de rappels pour vous. Vous voyez et décidez toujours les heures de chacun.",
+      "usesSaved": "Enregistré – la pointeuse suit à l'écran suivant",
+      "usesOpenShift": "Pointez d'abord votre départ, puis désactivez la pointeuse."
     }
   },
   "notifications": {

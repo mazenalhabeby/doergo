@@ -30,8 +30,16 @@ const SITE = { lat: 47.9813, lng: 13.8269 };
 const FAR = { lat: 48.2082, lng: 16.3738 }; // Vienna — where the phone is when it syncs
 
 const location = {
-  id: 'loc-1', name: 'Main Office', organizationId: 'org-1', isActive: true, isRemote: false,
-  ...SITE, geofenceRadius: 50, geofencePolygon: null, geofencePolicy: 'STRICT', timezone: 'Europe/Vienna',
+  id: 'loc-1',
+  name: 'Main Office',
+  organizationId: 'org-1',
+  isActive: true,
+  isRemote: false,
+  ...SITE,
+  geofenceRadius: 50,
+  geofencePolygon: null,
+  geofencePolicy: 'STRICT',
+  timezone: 'Europe/Vienna',
   updatedAt: new Date('2026-09-01T00:00:00.000Z'),
 };
 
@@ -49,13 +57,24 @@ function evidence(at = TAP, fix: { lat: number; lng: number } | null = SITE) {
 function prismaDouble() {
   const p: any = {
     user: {
-      findFirst: jest.fn().mockResolvedValue({ id: 'u1', organizationId: 'org-1', allowRemote: false, role: 'EMPLOYEE', organization: { timezone: 'Europe/Vienna' } }),
+      findFirst: jest
+        .fn()
+        .mockResolvedValue({
+          id: 'u1',
+          organizationId: 'org-1',
+          allowRemote: false,
+          role: 'EMPLOYEE',
+          organization: { timezone: 'Europe/Vienna' },
+        }),
       findUnique: jest.fn().mockResolvedValue({ firstName: 'Mike', lastName: 'Weber' }),
       findMany: jest.fn().mockResolvedValue([]),
     },
     companyLocation: { findFirst: jest.fn().mockResolvedValue(location) },
     timeOff: { findMany: jest.fn().mockResolvedValue([]) },
-    spaceAssignment: { findFirst: jest.fn().mockResolvedValue({ id: 'a1', allowRemote: null }), findMany: jest.fn().mockResolvedValue([]) },
+    spaceAssignment: {
+      findFirst: jest.fn().mockResolvedValue({ id: 'a1', allowRemote: null }),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     timeEntry: {
       findFirst: jest.fn().mockResolvedValue(null),
       // A close claims with every column in one write, then reads the row back.
@@ -63,8 +82,18 @@ function prismaDouble() {
         const claim = p.timeEntry.updateMany.mock.calls.at(-1);
         return claim ? { id: 'e1', ...claim[0].data, location, user: { firstName: 'Mike', lastName: 'Weber' } } : null;
       }),
-      create: jest.fn(async ({ data }: any) => ({ id: data.id ?? 'server-id', ...data, location, user: { firstName: 'Mike', lastName: 'Weber' } })),
-      update: jest.fn(async ({ data }: any) => ({ id: 'e1', ...data, location, user: { firstName: 'Mike', lastName: 'Weber' } })),
+      create: jest.fn(async ({ data }: any) => ({
+        id: data.id ?? 'server-id',
+        ...data,
+        location,
+        user: { firstName: 'Mike', lastName: 'Weber' },
+      })),
+      update: jest.fn(async ({ data }: any) => ({
+        id: 'e1',
+        ...data,
+        location,
+        user: { firstName: 'Mike', lastName: 'Weber' },
+      })),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     break: {
@@ -87,15 +116,30 @@ async function build() {
   const prisma = prismaDouble();
   const moduleRef = await Test.createTestingModule({
     providers: [
-      AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } },
+      AttendanceService,
+      ...ATTENDANCE_SERVICE_PARTS,
+      {
+        provide: PresenceService,
+        useValue: {
+          atClockIn: jest.fn().mockResolvedValue({}),
+          onPosition: jest.fn().mockResolvedValue(undefined),
+          onBatch: jest.fn().mockResolvedValue(undefined),
+        },
+      },
       ...BREAK_SERVICES,
       CountedTimeService,
       BreakRulesService,
       BreakReminderService,
       { provide: PrismaService, useValue: prisma },
       { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit: jest.fn() } },
-      { provide: getQueueToken(QUEUE_NAMES.OVERTIME), useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) } },
-      { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) } },
+      {
+        provide: getQueueToken(QUEUE_NAMES.OVERTIME),
+        useValue: { add: jest.fn(), getRepeatableJobs: jest.fn().mockResolvedValue([]) },
+      },
+      {
+        provide: NotificationRoutingService,
+        useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [], emails: [] }) },
+      },
       { provide: ShiftResolverService, useValue: { resolveForClockIn: jest.fn().mockResolvedValue(null) } },
     ],
   }).compile();
@@ -123,8 +167,14 @@ describe('attendance recorded offline', () => {
   afterAll(() => jest.useRealTimers());
 
   const clockIn = (over: Record<string, unknown> = {}) => ({
-    userId: 'u1', organizationId: 'org-1', locationId: 'loc-1', ...FAR, accuracy: 30,
-    id: '0190f3c2-7b1a-7c3d-9e4f-000000000001', evidence: evidence(), ...over,
+    userId: 'u1',
+    organizationId: 'org-1',
+    locationId: 'loc-1',
+    ...FAR,
+    accuracy: 30,
+    id: '0190f3c2-7b1a-7c3d-9e4f-000000000001',
+    evidence: evidence(),
+    ...over,
   });
 
   describe('clock-in', () => {
@@ -148,7 +198,12 @@ describe('attendance recorded offline', () => {
 
     it('returns the same entry when the phone sends the clock-in again', async () => {
       const { service, prisma } = await build();
-      const prior = { id: '0190f3c2-7b1a-7c3d-9e4f-000000000001', userId: 'u1', status: TimeEntryStatus.CLOCKED_OUT, location };
+      const prior = {
+        id: '0190f3c2-7b1a-7c3d-9e4f-000000000001',
+        userId: 'u1',
+        status: TimeEntryStatus.CLOCKED_OUT,
+        location,
+      };
       prisma.timeEntry.findUnique.mockResolvedValue(prior);
       const res: any = await service.clockIn(clockIn());
       expect(res.data).toBe(prior);
@@ -158,29 +213,41 @@ describe('attendance recorded offline', () => {
     it("refuses somebody else's id rather than returning their shift", async () => {
       const { service, prisma } = await build();
       prisma.timeEntry.findUnique.mockResolvedValue({ id: 'x', userId: 'someone-else', location });
-      await expect(service.clockIn(clockIn())).rejects.toMatchObject({ response: expect.objectContaining({ code: 'ID_IN_USE' }) });
+      await expect(service.clockIn(clockIn())).rejects.toMatchObject({
+        response: expect.objectContaining({ code: 'ID_IN_USE' }),
+      });
     });
 
     it('is a conflict naming the open shift when the member is already clocked in', async () => {
       const { service, prisma } = await build();
       prisma.timeEntry.findFirst.mockImplementation(async ({ where }: any) =>
-        where.status === TimeEntryStatus.CLOCKED_IN ? { id: 'open-1', locationId: 'loc-1', clockInAt: new Date('2026-09-14T06:00:00Z'), location } : null,
+        where.status === TimeEntryStatus.CLOCKED_IN
+          ? { id: 'open-1', locationId: 'loc-1', clockInAt: new Date('2026-09-14T06:00:00Z'), location }
+          : null,
       );
       await expect(service.clockIn(clockIn())).rejects.toMatchObject({
         status: 409,
-        response: expect.objectContaining({ code: 'ALREADY_CLOCKED_IN', params: { current: expect.objectContaining({ id: 'open-1' }) } }),
+        response: expect.objectContaining({
+          code: 'ALREADY_CLOCKED_IN',
+          params: { current: expect.objectContaining({ id: 'open-1' }) },
+        }),
       });
     });
 
     it('turns the one-open-shift index refusing a racing insert into the same conflict', async () => {
       const { service, prisma } = await build();
       let open: any = null;
-      prisma.timeEntry.findFirst.mockImplementation(async ({ where }: any) => (where.status === TimeEntryStatus.CLOCKED_IN ? open : null));
+      prisma.timeEntry.findFirst.mockImplementation(async ({ where }: any) =>
+        where.status === TimeEntryStatus.CLOCKED_IN ? open : null,
+      );
       prisma.timeEntry.create.mockImplementation(async () => {
         open = { id: 'raced', locationId: 'loc-1', clockInAt: NOW, location };
         throw Object.assign(new Error('Unique constraint'), { code: 'P2002' });
       });
-      await expect(service.clockIn(clockIn())).rejects.toMatchObject({ status: 409, response: expect.objectContaining({ code: 'ALREADY_CLOCKED_IN' }) });
+      await expect(service.clockIn(clockIn())).rejects.toMatchObject({
+        status: 409,
+        response: expect.objectContaining({ code: 'ALREADY_CLOCKED_IN' }),
+      });
     });
 
     it('refuses a clock-in from before the previous shift ended', async () => {
@@ -188,7 +255,9 @@ describe('attendance recorded offline', () => {
       prisma.timeEntry.findFirst.mockImplementation(async ({ where }: any) =>
         where.clockOutAt ? { clockOutAt: new Date('2026-09-14T09:00:00Z') } : null,
       );
-      await expect(service.clockIn(clockIn())).rejects.toMatchObject({ response: expect.objectContaining({ code: 'OUT_OF_ORDER' }) });
+      await expect(service.clockIn(clockIn())).rejects.toMatchObject({
+        response: expect.objectContaining({ code: 'OUT_OF_ORDER' }),
+      });
     });
 
     it('flags an entry whose site boundary changed while it was on its way', async () => {
@@ -210,14 +279,19 @@ describe('attendance recorded offline', () => {
 
     it('still refuses a tap that happened outside a strict site', async () => {
       const { service } = await build();
-      await expect(service.clockIn(clockIn({ evidence: evidence(TAP, FAR) }))).rejects.toThrow(/can only be clocked in at on site/);
+      await expect(service.clockIn(clockIn({ evidence: evidence(TAP, FAR) }))).rejects.toThrow(
+        /can only be clocked in at on site/,
+      );
     });
 
     it('says the strict-site refusal with a code and the figures, in words a person reads', async () => {
       const { service } = await build();
       const err = await service.clockIn(clockIn({ evidence: evidence(TAP, FAR) })).catch((e) => e);
       const body = err.getResponse();
-      expect(body).toMatchObject({ code: 'OUTSIDE_GEOFENCE', params: { distanceMetres: expect.any(Number), radiusMetres: expect.any(Number) } });
+      expect(body).toMatchObject({
+        code: 'OUTSIDE_GEOFENCE',
+        params: { distanceMetres: expect.any(Number), radiusMetres: expect.any(Number) },
+      });
       expect(body.message).toMatch(/You are [\d.,]+\u00A0k?m away\./);
     });
 
@@ -233,11 +307,29 @@ describe('attendance recorded offline', () => {
 
   describe('clock-out', () => {
     const open = () => ({
-      id: 'e1', userId: 'u1', organizationId: 'org-1', locationId: 'loc-1', status: TimeEntryStatus.CLOCKED_IN,
-      clockInAt: new Date('2026-09-14T06:00:00Z'), isRemote: false, flagReasons: [], breakMinutes: 0, unpaidBreakMinutes: 0,
-      expectedClockOutAt: null, shiftId: null, location, breaks: [],
+      id: 'e1',
+      userId: 'u1',
+      organizationId: 'org-1',
+      locationId: 'loc-1',
+      status: TimeEntryStatus.CLOCKED_IN,
+      clockInAt: new Date('2026-09-14T06:00:00Z'),
+      isRemote: false,
+      flagReasons: [],
+      breakMinutes: 0,
+      unpaidBreakMinutes: 0,
+      expectedClockOutAt: null,
+      shiftId: null,
+      location,
+      breaks: [],
     });
-    const clockOut = (over: Record<string, unknown> = {}) => ({ userId: 'u1', organizationId: 'org-1', entryId: 'e1', ...FAR, evidence: evidence(TAP), ...over });
+    const clockOut = (over: Record<string, unknown> = {}) => ({
+      userId: 'u1',
+      organizationId: 'org-1',
+      entryId: 'e1',
+      ...FAR,
+      evidence: evidence(TAP),
+      ...over,
+    });
 
     it('closes the named shift at the tap, claimed so a racing close cannot also win', async () => {
       const { service, prisma } = await build();
@@ -246,7 +338,10 @@ describe('attendance recorded offline', () => {
       const named = prisma.timeEntry.findFirst.mock.calls[0][0].where;
       expect(named).toMatchObject({ userId: 'u1' });
       expect(named.OR).toContainEqual({ id: 'e1' }); // …or the entry its clock-in joined (clock-in-join.ts)
-      expect(prisma.timeEntry.updateMany).toHaveBeenCalledWith({ where: { id: 'e1', status: TimeEntryStatus.CLOCKED_IN }, data: expect.objectContaining({ clockOutAt: TAP }) });
+      expect(prisma.timeEntry.updateMany).toHaveBeenCalledWith({
+        where: { id: 'e1', status: TimeEntryStatus.CLOCKED_IN },
+        data: expect.objectContaining({ clockOutAt: TAP }),
+      });
       const data = prisma.timeEntry.updateMany.mock.calls[0][0].data;
       expect(data.clockOutAt).toEqual(TAP);
       expect(data.totalMinutes).toBe(118);
@@ -263,20 +358,38 @@ describe('attendance recorded offline', () => {
 
     it('is a conflict when the shift was closed some other way meanwhile', async () => {
       const { service, prisma } = await build();
-      prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), status: TimeEntryStatus.CLOCKED_OUT, clockOutAt: new Date('2026-09-14T10:00:00Z') });
-      await expect(service.clockOut(clockOut())).rejects.toMatchObject({ status: 409, response: expect.objectContaining({ code: 'ENTRY_ALREADY_CLOSED' }) });
+      prisma.timeEntry.findFirst.mockResolvedValue({
+        ...open(),
+        status: TimeEntryStatus.CLOCKED_OUT,
+        clockOutAt: new Date('2026-09-14T10:00:00Z'),
+      });
+      await expect(service.clockOut(clockOut())).rejects.toMatchObject({
+        status: 409,
+        response: expect.objectContaining({ code: 'ENTRY_ALREADY_CLOSED' }),
+      });
     });
 
     it('tells the supervisors who were alerted "still clocked in" that the clock-out has arrived', async () => {
       const { service, prisma, routing, notifications } = await build();
-      prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), reminderState: 'ESCALATED', timezone: 'Europe/Vienna' });
+      prisma.timeEntry.findFirst.mockResolvedValue({
+        ...open(),
+        reminderState: 'ESCALATED',
+        timezone: 'Europe/Vienna',
+      });
       const targets = jest.spyOn(routing, 'notifyTargetsFor').mockResolvedValue(['leader-1']);
       const emit = notifications.emit;
       await service.clockOut(clockOut());
-      expect(targets).toHaveBeenCalledWith(expect.objectContaining({ id: 'e1' }), 'canReconcileAttendance');
-      expect(emit).toHaveBeenCalledWith('attendance_shift_escalation_resolved', expect.objectContaining({
-        entryId: 'e1', clockOutAt: TAP.toISOString(), recordedOffline: true, leaderIds: ['leader-1'], timezone: 'Europe/Vienna',
-      }));
+      expect(targets).toHaveBeenCalledWith(expect.objectContaining({ id: 'e1' }), 'attendance');
+      expect(emit).toHaveBeenCalledWith(
+        'attendance_shift_escalation_resolved',
+        expect.objectContaining({
+          entryId: 'e1',
+          clockOutAt: TAP.toISOString(),
+          recordedOffline: true,
+          leaderIds: ['leader-1'],
+          timezone: 'Europe/Vienna',
+        }),
+      );
     });
 
     it('says nothing extra when nobody had been alerted', async () => {
@@ -290,8 +403,12 @@ describe('attendance recorded offline', () => {
     it('replaces a temporary close with the real clock-out the phone was holding', async () => {
       const { service, prisma } = await build();
       prisma.timeEntry.findFirst.mockResolvedValue({
-        ...open(), status: TimeEntryStatus.CLOCKED_OUT, clockOutAt: new Date('2026-09-14T17:00:00Z'),
-        clockOutProvisional: true, clockOutBasis: 'SHIFT_END', flagReasons: ['LATE_ARRIVAL', 'MISSED_CLOCK_OUT', 'CLOCK_OUT_PROVISIONAL'],
+        ...open(),
+        status: TimeEntryStatus.CLOCKED_OUT,
+        clockOutAt: new Date('2026-09-14T17:00:00Z'),
+        clockOutProvisional: true,
+        clockOutBasis: 'SHIFT_END',
+        flagReasons: ['LATE_ARRIVAL', 'MISSED_CLOCK_OUT', 'CLOCK_OUT_PROVISIONAL'],
       });
       await service.clockOut(clockOut());
       expect(prisma.timeEntry.updateMany).toHaveBeenCalledWith({
@@ -313,33 +430,59 @@ describe('attendance recorded offline', () => {
       jest.spyOn(routing, 'notifyTargetsFor').mockResolvedValue(['leader-1']);
       const emit = notifications.emit;
       await service.clockOut(clockOut({ overtimeReason: 'Boiler part arrived late' }));
-      expect(prisma.overtimeRequest.create).toHaveBeenCalledWith({ data: expect.objectContaining({
-        status: 'PENDING_APPROVAL', technicianReason: 'Boiler part arrived late', technicianRespondedAt: TAP,
-        overtimeStartAt: new Date('2026-09-14T06:30:00Z'),
-      }) });
-      expect(emit).toHaveBeenCalledWith('attendance_overtime_request', expect.objectContaining({ entryId: 'e1', leaderIds: ['leader-1'] }));
+      expect(prisma.overtimeRequest.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          status: 'PENDING_APPROVAL',
+          technicianReason: 'Boiler part arrived late',
+          technicianRespondedAt: TAP,
+          overtimeStartAt: new Date('2026-09-14T06:30:00Z'),
+        }),
+      });
+      expect(emit).toHaveBeenCalledWith(
+        'attendance_overtime_request',
+        expect.objectContaining({ entryId: 'e1', leaderIds: ['leader-1'] }),
+      );
     });
 
     it('does not open a second request when one is already waiting', async () => {
       const { service, prisma } = await build();
       prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), expectedClockOutAt: new Date('2026-09-14T06:30:00Z') });
-      prisma.overtimeRequest = { findMany: jest.fn().mockResolvedValue([{ cycle: 1, status: 'PENDING_APPROVAL' }]), create: jest.fn() };
+      prisma.overtimeRequest = {
+        findMany: jest.fn().mockResolvedValue([{ cycle: 1, status: 'PENDING_APPROVAL' }]),
+        create: jest.fn(),
+      };
       await service.clockOut(clockOut({ overtimeReason: 'Stayed' }));
       expect(prisma.overtimeRequest.create).not.toHaveBeenCalled();
     });
 
     it('refuses a clock-out from before a rest in the shift ended', async () => {
       const { service, prisma } = await build();
-      prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), breaks: [{ endedAt: new Date('2026-09-14T08:30:00Z') }] });
-      await expect(service.clockOut(clockOut())).rejects.toMatchObject({ response: expect.objectContaining({ code: 'OUT_OF_ORDER' }) });
+      prisma.timeEntry.findFirst.mockResolvedValue({
+        ...open(),
+        breaks: [{ endedAt: new Date('2026-09-14T08:30:00Z') }],
+      });
+      await expect(service.clockOut(clockOut())).rejects.toMatchObject({
+        response: expect.objectContaining({ code: 'OUT_OF_ORDER' }),
+      });
     });
   });
 
   describe('breaks', () => {
     it('starts a break at the tap, under the id the phone made, in the shift it names', async () => {
       const { breaks, prisma } = await build();
-      prisma.timeEntry.findFirst.mockResolvedValue({ id: 'e1', clockInAt: new Date('2026-09-14T06:00:00Z'), breakPlan: null, breaks: [] });
-      await breaks.startBreak({ userId: 'u1', organizationId: 'org-1', id: 'b-phone-000000000001', entryId: 'e1', evidence: evidence(TAP, null) });
+      prisma.timeEntry.findFirst.mockResolvedValue({
+        id: 'e1',
+        clockInAt: new Date('2026-09-14T06:00:00Z'),
+        breakPlan: null,
+        breaks: [],
+      });
+      await breaks.startBreak({
+        userId: 'u1',
+        organizationId: 'org-1',
+        id: 'b-phone-000000000001',
+        entryId: 'e1',
+        evidence: evidence(TAP, null),
+      });
       expect(prisma.timeEntry.findFirst.mock.calls[0][0].where).toMatchObject({ id: 'e1' });
       expect(prisma.break.create.mock.calls[0][0].data).toMatchObject({ id: 'b-phone-000000000001', startedAt: TAP });
     });
@@ -347,9 +490,13 @@ describe('attendance recorded offline', () => {
     it('answers a resend of the same break end, and is a conflict if it ended differently', async () => {
       const { breaks, prisma } = await build();
       prisma.break.findFirst.mockResolvedValue({ id: 'b1', endedAt: TAP });
-      await expect(breaks.endBreak({ userId: 'u1', organizationId: 'org-1', breakId: 'b1', evidence: evidence(TAP, null) })).resolves.toMatchObject({ data: { id: 'b1' } });
+      await expect(
+        breaks.endBreak({ userId: 'u1', organizationId: 'org-1', breakId: 'b1', evidence: evidence(TAP, null) }),
+      ).resolves.toMatchObject({ data: { id: 'b1' } });
       prisma.break.findFirst.mockResolvedValue({ id: 'b1', endedAt: new Date('2026-09-14T09:00:00Z') });
-      await expect(breaks.endBreak({ userId: 'u1', organizationId: 'org-1', breakId: 'b1', evidence: evidence(TAP, null) })).rejects.toMatchObject({
+      await expect(
+        breaks.endBreak({ userId: 'u1', organizationId: 'org-1', breakId: 'b1', evidence: evidence(TAP, null) }),
+      ).rejects.toMatchObject({
         response: expect.objectContaining({ code: 'BREAK_ALREADY_ENDED' }),
       });
     });

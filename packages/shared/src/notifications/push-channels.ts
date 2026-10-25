@@ -101,13 +101,32 @@ const TIME_SENSITIVE_PREFIXES = [
 const ATTENDANCE_PREFIXES = ['attendance', 'shift_', 'break_', 'overtime', 'noshow'] as const;
 
 /**
+ * Pushes about OTHER people's clock — what a leader is told (clock review A5): somebody still clocked in, gone
+ * early, not arrived, a day to review, a request for time. They were filed under the member's own "Clock and
+ * shifts", so a leader muting their own reminders silently muted their team too. Their own switch now
+ * ("My team's clock", `attendanceTeam`), on the attendance channel (a day to review was on the tasks one).
+ */
+export const TEAM_CLOCK_PUSH_TYPES: ReadonlySet<string> = new Set([
+  'shift_escalation',
+  'shift_escalation_resolved',
+  'noshow_escalation',
+  'noshow_resolved',
+  'geofence_alert',
+  'attendance_left_early',
+  'pending_approval',
+  'overtime_request',
+  'overtime.approval_request',
+  'attendance.geofence_excursion_requested',
+]);
+
+/**
  * The one routing decision, read by the notification service when it sends and
  * by the app when it registers. Unknown types fall to the task channel at normal
  * urgency: a new notification is quiet until somebody says it should not be.
  */
 export function pushRouting(type?: string | null): PushRouting {
   const t = (type ?? '').toLowerCase();
-  const isAttendance = ATTENDANCE_PREFIXES.some((p) => t.startsWith(p));
+  const isAttendance = ATTENDANCE_PREFIXES.some((p) => t.startsWith(p)) || TEAM_CLOCK_PUSH_TYPES.has(t);
   const isTimeSensitive = TIME_SENSITIVE_PREFIXES.some((p) => t.startsWith(p));
   /*
     "A new version is ready" is about the app, not a task: the DEFAULT channel, which every build
@@ -120,8 +139,8 @@ export function pushRouting(type?: string | null): PushRouting {
   };
 }
 
-/** The three switches a member has for their own pushes (Profile → Notifications). */
-export type PushCategory = 'tasks' | 'attendance' | 'timeOff';
+/** The switches a member has for their pushes (Profile → Notifications); `attendanceTeam` only for leaders. */
+export type PushCategory = 'tasks' | 'attendance' | 'attendanceTeam' | 'timeOff';
 
 /**
  * Which of the member's switches a push falls under — or null for one that
@@ -136,6 +155,7 @@ export type PushCategory = 'tasks' | 'attendance' | 'timeOff';
 export function pushCategory(type?: string | null): PushCategory | null {
   const t = (type ?? '').toLowerCase();
   if (t.startsWith('time_off')) return 'timeOff';
+  if (TEAM_CLOCK_PUSH_TYPES.has(t)) return 'attendanceTeam';
   if (ATTENDANCE_PREFIXES.some((p) => t.startsWith(p)) || t.startsWith('geofence')) return 'attendance';
   if (t.startsWith('task_') || t === 'status_change' || t === 'comment_added') return 'tasks';
   return null;
@@ -155,3 +175,23 @@ export function memberWantsPush(memberPrefs: unknown, type?: string | null): boo
  * one constant, so the two cannot disagree.
  */
 export const SHIFT_ENDED_CATEGORY = 'shift_ended';
+
+/**
+ * Does this member get pushes about other people's clock — so the "My team's clock" switch is worth showing?
+ * An administrator, or anybody who sees or decides hours anywhere (the keys the alerts are routed by).
+ */
+export function receivesTeamClockPushes(
+  user:
+    | {
+        role?: string | null;
+        access?: { org?: Record<string, boolean>; perSpace?: Record<string, Record<string, boolean>> } | null;
+      }
+    | null
+    | undefined,
+): boolean {
+  if (!user) return false;
+  if ((user.role ?? '').toUpperCase() === 'ADMIN') return true;
+  const keys = ['canViewSpaceAttendance', 'canApproveAttendance', 'canReconcileAttendance', 'canApproveOvertime'];
+  const held = (grants?: Record<string, boolean>) => !!grants && keys.some((k) => grants[k] === true);
+  return held(user.access?.org) || Object.values(user.access?.perSpace ?? {}).some(held);
+}

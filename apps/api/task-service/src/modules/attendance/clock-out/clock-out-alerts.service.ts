@@ -53,7 +53,7 @@ export class ClockOutAlertsService {
     clockOutTime: Date,
     recordedOffline: boolean,
   ) {
-    const leaderIds = await this.routing.notifyTargetsFor(entry, 'canReconcileAttendance');
+    const leaderIds = await this.routing.notifyTargetsFor(entry, 'attendance');
     emitEvent(this.notificationClient, attendanceShiftEscalationResolvedEvent, {
       entryId: entry.id,
       userId: entry.userId,
@@ -75,7 +75,7 @@ export class ClockOutAlertsService {
    * out at the end of the month is finding out too late.
    */
   async announceLeftEarly(entry: AlertEntry, closed: ClosedFacts, shortBy: number, earlyReason: string) {
-    const leaderIds = await this.routing.notifyTargetsFor(entry, 'canReconcileAttendance');
+    const leaderIds = await this.routing.notifyTargetsFor(entry, 'attendance');
     emitEvent(this.notificationClient, attendanceLeftEarlyEvent, {
       entryId: entry.id,
       userId: entry.userId,
@@ -100,6 +100,7 @@ export class ClockOutAlertsService {
     distance: number;
     allowedRadius: number;
     action: 'clock_in' | 'clock_out';
+    locationId?: string | null;
   }) {
     try {
       // Get user info
@@ -127,6 +128,7 @@ export class ClockOutAlertsService {
         dispatcherEmails,
         dispatcherIds,
         organizationId: data.organizationId,
+        locationId: data.locationId ?? null,
       });
 
       this.logger.warn(

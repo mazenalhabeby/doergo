@@ -4530,7 +4530,9 @@
       "onPhone": "On this phone",
       "byEmail": "By email",
       "offline": "Needs a connection to change these.",
-      "always": "Messages from a colleague and anything that blocks your work always reach you."
+      "always": "Messages from a colleague and anything that blocks your work always reach you.",
+      "teamClock": "My team's clock",
+      "teamClockSub": "Still clocked in, gone early, not arrived, a day to review"
     },
     "theme": {
       "systemSub": "Light or dark, as the phone is",
@@ -5081,7 +5083,7 @@
       "presenceEndTitle_one": "{{count}} hour at {{place}} — still working?",
       "presenceEndTitle_other": "{{count}} hours at {{place}} — still working?",
       "presenceEndBody": "Clock out if you are done, or carry on.",
-      "presenceEndBodyLimit": "That is today's limit here. Clock out, or ask for extra time.",
+      "presenceEndBodyLimit": "That is today's hours here. Your time still counts — clock out when you leave.",
       "arrivedOutsideBody": "It is outside your usual hours. Starting work? Tap to clock in."
     },
     "result": {

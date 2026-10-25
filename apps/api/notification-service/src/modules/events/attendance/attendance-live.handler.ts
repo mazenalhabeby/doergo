@@ -67,7 +67,7 @@ export class AttendanceLiveHandler {
   // broadcast so every open attendance view refreshes live, no page reload.
   @EventPattern(eventPattern(attendanceChangedEvent))
   handleAttendanceChanged(@Payload() data: EventPayload<typeof attendanceChangedEvent>) {
-    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance.changed', {
+    this.websocketGateway.emitAttendance(data.organizationId, data.spaceId, data.userId, 'attendance.changed', {
       action: data.action,
       entryId: data.entryId ?? null,
       timestamp: new Date().toISOString(),
@@ -77,26 +77,36 @@ export class AttendanceLiveHandler {
   @EventPattern(eventPattern(breakStartedEvent))
   async handleBreakStarted(@Payload() data: EventPayload<typeof breakStartedEvent>) {
     this.logger.log(`Break started: user=${data.userName}, type=${data.breakType}`);
-    this.websocketGateway.emitBreakStarted(data.userId, data.organizationId, {
-      breakId: data.breakId,
-      userId: data.userId,
-      userName: data.userName,
-      type: data.breakType,
-      startedAt: data.startedAt,
-    });
+    this.websocketGateway.emitBreakStarted(
+      data.userId,
+      data.organizationId,
+      {
+        breakId: data.breakId,
+        userId: data.userId,
+        userName: data.userName,
+        type: data.breakType,
+        startedAt: data.startedAt,
+      },
+      data.spaceId,
+    );
   }
 
   @EventPattern(eventPattern(breakEndedEvent))
   async handleBreakEnded(@Payload() data: EventPayload<typeof breakEndedEvent>) {
     this.logger.log(`Break ended: user=${data.userName}, duration=${data.durationMinutes}min`);
-    this.websocketGateway.emitBreakEnded(data.userId, data.organizationId, {
-      breakId: data.breakId,
-      userId: data.userId,
-      userName: data.userName,
-      type: data.breakType,
-      startedAt: data.startedAt,
-      endedAt: data.endedAt,
-      durationMinutes: data.durationMinutes,
-    });
+    this.websocketGateway.emitBreakEnded(
+      data.userId,
+      data.organizationId,
+      {
+        breakId: data.breakId,
+        userId: data.userId,
+        userName: data.userName,
+        type: data.breakType,
+        startedAt: data.startedAt,
+        endedAt: data.endedAt,
+        durationMinutes: data.durationMinutes,
+      },
+      data.spaceId,
+    );
   }
 }

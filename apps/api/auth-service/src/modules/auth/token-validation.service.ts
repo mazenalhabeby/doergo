@@ -71,6 +71,8 @@ export class TokenValidationService {
           // Per-user clock display preference ("24h" | "12h")
           timeFormat: true,
           clockInPick: true,
+          // An administrator off the clock (A7) — hasAccessModule('clock') reads it on every surface.
+          clockOff: true,
           // One-time welcome-tour flag (carried on req.user → /auth/me → web).
           guidesSeen: true,
           enabledModules: true,

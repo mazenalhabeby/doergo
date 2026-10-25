@@ -113,7 +113,10 @@ export class EntryRecordService {
       },
     });
     this.logger.log(`Entry deleted: entry=${data.entryId}, editor=${data.editorId}`);
-    this.changes.announce(data.organizationId, 'delete', data.entryId);
+    this.changes.announce(data.organizationId, 'delete', data.entryId, {
+      userId: entry.userId,
+      spaceId: entry.locationId,
+    });
     return success({ id: data.entryId }, 'Time entry removed');
   }
 }

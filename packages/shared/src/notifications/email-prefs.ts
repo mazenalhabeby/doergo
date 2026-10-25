@@ -60,6 +60,7 @@ export const ORG_NOTIFICATION_PREF_KEYS = [
  */
 export const MEMBER_NOTIFICATION_PREF_KEYS = [
   'attendance',
+  'attendanceTeam',
   'tasks',
   'timeOff',
   ...Object.values(MEMBER_EMAIL_PREF),

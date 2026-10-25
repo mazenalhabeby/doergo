@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { platformCan, PrismaService, sharedSpacesFor, SocketEvents } from '@hbcfield/shared';
+import { attendanceRoomsFor, platformCan, PrismaService, sharedSpacesFor, SocketEvents } from '@hbcfield/shared';
 import { operatorMaySupport, resolveSocketAccess, type SocketAccess } from './socket-access';
 import type { ClientInfo } from './gateway.types';
 import type { AccessTokenClaims } from './socket-payloads';
@@ -128,6 +128,14 @@ export class SocketAuthenticator {
     // Join user-specific room
     client.join(`user:${userId}`);
     clientInfo.rooms.push(`user:${userId}`);
+
+    // Attendance rooms (clock review A1): a member's clock events go only to who may read those hours —
+    // org-wide viewers, or the viewers of that workspace — never to the organization room. From the
+    // resolved access; without it (database blip) only an administrator joins.
+    for (const room of attendanceRoomsFor(socketAccess?.role ?? role, socketAccess?.access, organizationId)) {
+      client.join(room);
+      clientInfo.rooms.push(room);
+    }
 
     // "Task viewers" room — admins and members granted "view all tasks". Org-wide
     // task events go here instead of to the whole org, so plain employees don't

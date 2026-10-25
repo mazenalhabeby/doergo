@@ -110,7 +110,10 @@ export class ManualEntriesService {
       `Manual attendance added: user=${data.userId}, editor=${data.editorId}, created=${toCreate.length}, skipped=${skipped}`,
     );
     if (toCreate.length) {
-      this.changes.announce(data.organizationId, 'manual-add');
+      this.changes.announce(data.organizationId, 'manual-add', undefined, {
+        userId: data.userId,
+        spaceId: data.locationId,
+      });
       const from = toCreate.reduce((m, e) => (e.clockInAt < m ? e.clockInAt : m), toCreate[0].clockInAt as Date);
       const to = toCreate.reduce((m, e) => (e.clockOutAt > m ? e.clockOutAt : m), toCreate[0].clockOutAt as Date);
       await this.noShowSettle

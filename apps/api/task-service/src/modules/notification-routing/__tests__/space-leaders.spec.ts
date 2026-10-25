@@ -32,7 +32,11 @@ describe('spaceRoleHolders', () => {
       { userId: 'b', role: { isActive: false, permissions: { canApproveOvertime: true } } },
       { userId: 'c', role: { isActive: true, permissions: {} } },
     ]);
-    const ids = await spaceRoleHolders(prisma, { organizationId: 'o', spaceId: 's', grants: (p) => p.canApproveOvertime === true });
+    const ids = await spaceRoleHolders(prisma, {
+      organizationId: 'o',
+      spaceId: 's',
+      grants: (p) => p.canApproveOvertime === true,
+    });
     expect(ids).toEqual(['a']);
   });
 
@@ -42,14 +46,21 @@ describe('spaceRoleHolders', () => {
     expect(findMany).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['attendance', '../../attendance/core/attendance-routing.service.ts', 'resolveSpaceLeaders'],
-    ['assets', '../../assets/core/asset-responsible.service.ts', 'spaceManagers'],
-  ])('%s asks it through the one function', (_n, file, method) => {
-    const src = readFileSync(join(__dirname, file), 'utf8');
-    const body = src.slice(src.indexOf(`async ${method}(`), src.indexOf(`async ${method}(`) + 1500);
-    expect(body).toContain('spaceRoleHolders(');
-    expect(body).not.toContain('spaceAssignment.findMany');
+  it.each([['assets', '../../assets/core/asset-responsible.service.ts', 'spaceManagers']])(
+    '%s asks it through the one function',
+    (_n, file, method) => {
+      const src = readFileSync(join(__dirname, file), 'utf8');
+      const body = src.slice(src.indexOf(`async ${method}(`), src.indexOf(`async ${method}(`) + 1500);
+      expect(body).toContain('spaceRoleHolders(');
+      expect(body).not.toContain('spaceAssignment.findMany');
+    },
+  );
+
+  // Attendance asks the approvals inbox's own "who may decide" (clock review A2): never a role list of its own.
+  it('attendance asks who may decide through the approvals resolver', () => {
+    const src = readFileSync(join(__dirname, '../../attendance/core/attendance-routing.service.ts'), 'utf8');
+    expect(src).toContain('workspaceDeciders(');
+    expect(src).not.toContain('spaceAssignment.findMany');
   });
 });
 

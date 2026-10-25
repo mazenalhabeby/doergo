@@ -22,11 +22,7 @@ import type {
   JobTimeView,
   OpenRoleTask,
 } from '@hbcfield/shared/client';
-export {
-  type TimeOffRequest,
-  type AvailabilityResponse,
-  type ScheduleEntry,
-} from './time-off-request';
+export { type TimeOffRequest, type AvailabilityResponse, type ScheduleEntry } from './time-off-request';
 export {
   type CreateTaskInput,
   type UpdateTaskInput,
@@ -180,6 +176,8 @@ export interface User {
   timeFormat?: '12h' | '24h' | null;
   // Several workspaces: clock in where they stand ('AUTO') or always choose ('ASK').
   clockInPick?: 'AUTO' | 'ASK' | null;
+  // An administrator who switched their own clock off (clock review A7).
+  clockOff?: boolean | null;
   // IANA timezone of the org (e.g. "Europe/Vienna"). Default display zone for
   // times so they render in a fixed, labeled zone instead of the device's local
   // zone. Attendance call sites override per-entry with the location's timezone.

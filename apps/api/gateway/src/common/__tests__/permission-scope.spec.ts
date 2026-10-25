@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { scopeFor, scopeIdsFor } from '../permission-scope';
+import { scopeFor, scopeForAll, scopeIdsFor } from '../permission-scope';
 
 import { fakeUser } from '../testing/fake-request';
 /**
@@ -96,5 +96,47 @@ describe('ONE narrowing rule in the gateway', () => {
       .filter((f) => /spacesGranting\(/.test(fs.readFileSync(f, 'utf8')))
       .map((f) => path.relative(root, f));
     expect(callers.filter((f) => !ALLOWED[f])).toEqual([]);
+  });
+});
+
+/** Two permissions at once (clock review A10: approve hours AND overtime). */
+describe('scopeForAll', () => {
+  const access = (org: Record<string, boolean>, perSpace: Record<string, Record<string, boolean>> = {}) => ({
+    org,
+    perSpace,
+  });
+  const keys = ['canApproveAttendance', 'canApproveOvertime'] as const;
+
+  it('an administrator is org-wide', () => {
+    expect(scopeForAll(fakeUser({ role: 'ADMIN', access: access({}) }), keys)).toBeNull();
+  });
+
+  it('only the workspaces where BOTH are held', () => {
+    const user = {
+      role: 'EMPLOYEE',
+      access: access(
+        {},
+        {
+          A: { canApproveAttendance: true, canApproveOvertime: true },
+          B: { canApproveOvertime: true }, // a team leader here: overtime only
+          C: { canApproveAttendance: true },
+        },
+      ),
+    };
+    expect(scopeForAll(fakeUser(user), keys)).toEqual(['A']);
+  });
+
+  it('one key org-wide narrows to where the other is held', () => {
+    const user = {
+      role: 'EMPLOYEE',
+      canApproveOvertime: true,
+      access: access({ canApproveOvertime: true }, { A: { canApproveAttendance: true } }),
+    };
+    expect(scopeForAll(fakeUser(user), keys)).toEqual(['A']);
+  });
+
+  it('a team leader (overtime only) matches nothing', () => {
+    const user = { role: 'EMPLOYEE', access: access({}, { A: { canApproveOvertime: true } }) };
+    expect(scopeForAll(fakeUser(user), keys)).toEqual([]);
   });
 });

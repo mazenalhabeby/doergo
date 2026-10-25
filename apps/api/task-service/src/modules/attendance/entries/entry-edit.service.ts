@@ -262,7 +262,10 @@ export class EntryEditService {
     const updated = endedBreaks.length
       ? await this.prisma.$transaction(async (tx) => {
           for (const b of endedBreaks) {
-            await tx.break.update({ where: { id: b.id }, data: { endedAt: b.endedAt, durationMinutes: b.durationMinutes } });
+            await tx.break.update({
+              where: { id: b.id },
+              data: { endedAt: b.endedAt, durationMinutes: b.durationMinutes },
+            });
           }
           return tx.timeEntry.update({ where: { id: data.entryId }, data: updateData, include });
         })
@@ -308,7 +311,10 @@ export class EntryEditService {
         actorId: data.editorId,
       });
     }
-    this.changes.announce(data.organizationId, 'edit', data.entryId);
+    this.changes.announce(data.organizationId, 'edit', data.entryId, {
+      userId: updated.userId,
+      spaceId: updated.locationId,
+    });
     return success(updated, 'Time entry updated');
   }
 }

@@ -148,6 +148,7 @@ export class BreakService {
       endedAt: now.toISOString(),
       durationMinutes,
       organizationId: data.organizationId,
+      spaceId: entry.locationId,
     });
 
     this.logger.log(

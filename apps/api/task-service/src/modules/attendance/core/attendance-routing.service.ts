@@ -1,119 +1,93 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { Injectable, Optional } from '@nestjs/common';
+import type { ApprovalKind } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
-import { spaceRoleHolders } from '../../notification-routing/space-leaders.util';
+import { ApprovalRouteService } from '../../approvals/rules/approval-route.service';
+import { alertRecipients, type WorkspaceDecider } from '../../approvals/rules/workspace-deciders';
 
 /**
- * Who is told about an attendance event: the workspace's leaders for the
- * action, then the member's own watchers. Shared by clock-out, extra time,
- * the shift sweeps and the overtime service.
+ * What an attendance notice is about — which decisions make somebody worth telling.
+ *
+ *   attendance  still clocked in, left early, no-show, an escalation resolved: whoever acts on this
+ *               person's hours there — approves the day, decides extra time, settles a no-show (a team
+ *               leader included, clock review A2/A10). May escalate to org-wide deciders, then admins.
+ *   extraTime   a member asking for more time — those who decide it; never padded with admins (the
+ *               own-request rule sends a leader's own to the administrators itself).
+ *   outside     time outside the shift waiting for a decision — those who decide it (A10).
+ */
+export type AttendanceAudience = 'attendance' | 'extraTime' | 'outside';
+
+const AUDIENCE_KINDS: Record<AttendanceAudience, readonly ApprovalKind[]> = {
+  attendance: ['hours', 'extraTime', 'noShow'],
+  extraTime: ['extraTime'],
+  outside: ['outside'],
+};
+
+/** Per sweep: the workspace's deciders, built once per (audience, workspace) and reused for every member. */
+export type DeciderCache = Map<string, WorkspaceDecider[]>;
+
+/**
+ * Who is told about one member's attendance (clock review A2–A4).
+ *
+ * One answer, the approvals inbox's own: "who may decide" from THE access resolver and each kind's decide
+ * key, today's stand-ins in, nobody on leave, never the person themselves, never a stand-in about the
+ * leader they cover. Tiered (`alertRecipients`): the workspace's own → the member's watchers → org-wide
+ * deciders → admins, each only when the one before found nobody — so an alert that needs somebody always
+ * reaches somebody, and the owner is not told about every late departure in a fifty-person company.
+ * Shared by clock-out, extra time, the shift sweeps and the overtime service.
  */
 @Injectable()
 export class AttendanceRoutingService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly notificationRouting: NotificationRoutingService,
+    // Global in the app (ApprovalRulesModule). Absent only in narrow unit tests: then the watchers alone.
+    @Optional() private readonly deciders?: ApprovalRouteService,
   ) {}
 
-  /**
-   * Resolve who to notify for a space attendance action: members of the space
-   * whose dynamic sub-role grants the given permission. Falls back to org admins
-   * when the space has no such leaders configured, so escalations/approvals are
-   * never silently dropped.
-   */
-  /**
-   * Who is told about this member, at this workspace.
-   *
-   * Three steps, and each one only runs because the one before it found nobody:
-   *
-   *   1. THE WORKSPACE'S OWN PEOPLE — whoever holds the permission there, by a
-   *      space role. A site with a manager or a shift leader has an answer, and
-   *      it is them.
-   *   2. THE MEMBER'S OWN ROUTING — the watchers chosen on their Access page,
-   *      through the same explicit-only resolver every other attendance
-   *      notification uses.
-   *   3. NOBODY.
-   *
-   * ⚠️ Step 3 replaces a fallback to every org ADMIN and everyone holding
-   * `canManageUsers`. That fallback meant a workspace with nobody configured
-   * sent every late departure, overtime request and no-show to the owner — who
-   * in a fifty-person organization is the one person guaranteed not to be
-   * managing that shift. Owners learn to ignore a channel like that, and then
-   * they miss the one that mattered.
-   *
-   * Silence is not data loss. A flagged entry is still in the approval queue, a
-   * no-show is still on the no-show board, and an overtime request still shows
-   * as pending — all of them findable by anybody who looks. What stops is the
-   * PUSH, to people who did not ask for it and cannot act on it.
-   */
-  async resolveSpaceLeaders(
-    spaceId: string,
-    organizationId: string,
-    permission: 'canApproveOvertime' | 'canReconcileAttendance',
-  ): Promise<string[]> {
-    /*
-      The same query assets asks (space-leaders.util): an assignment active NOW,
-      an active member (external supervisors included), an active role granting
-      it. This read every row of the space, so somebody who had left the
-      workspace kept being told about its shifts.
-    */
-    return spaceRoleHolders(this.prisma as never, {
-      organizationId,
-      spaceId,
-      grants: (p) => p[permission] === true,
-      // The External Supervisor approves overtime and reconciles shifts here.
-      includeExternal: true,
-    });
+  private async listFor(organizationId: string, spaceId: string | null, kinds: readonly ApprovalKind[]) {
+    return this.deciders ? this.deciders.workspaceDeciders(organizationId, spaceId, kinds) : [];
   }
 
   /**
-   * Who to tell about ONE member's shift.
-   *
-   * The workspace's own people first — cached per space, because a site with a
-   * shift leader has the same answer for everybody working there. Only when it
-   * has nobody does this fall to the MEMBER's routing, and that half must be
-   * resolved per member.
-   *
-   * ⚠️ That distinction is the whole reason this is a separate method. The
-   * escalation sweeps resolve once per space and reuse it for every member
-   * escalating there — correct while the fallback was org-wide admins, and
-   * quietly wrong the moment it became per-member: everyone at that site would
-   * have been routed to whichever member the sweep happened to look at first.
+   * Who to tell about ONE member's shift. The workspace half is cached per (audience, space) for a sweep — a
+   * site has the same deciders for everybody there; the member half (watchers, the subject left out) is per
+   * member, and is read only when the workspace has nobody on duty.
    */
-  // Public: the overtime-request flow (OvertimeService) asks the SAME routing,
-  // rather than keeping its own "every admin" list.
   async notifyTargetsFor(
-    entry: { locationId?: string; spaceId?: string; organizationId: string; userId: string },
-    permission: 'canApproveOvertime' | 'canReconcileAttendance',
-    spaceCache?: Map<string, string[]>,
+    entry: { locationId?: string | null; spaceId?: string | null; organizationId: string; userId: string },
+    audience: AttendanceAudience,
+    cache?: DeciderCache,
   ): Promise<string[]> {
-    const spaceId = entry.locationId ?? entry.spaceId!;
-    let leaders = spaceCache?.get(spaceId);
-    if (leaders === undefined) {
-      leaders = await this.resolveSpaceLeaders(spaceId, entry.organizationId, permission);
-      spaceCache?.set(spaceId, leaders);
+    const spaceId = entry.locationId ?? entry.spaceId ?? null;
+    const key = `${audience}:${spaceId ?? '-'}`;
+    let list = cache?.get(key);
+    if (list === undefined) {
+      list = await this.listFor(entry.organizationId, spaceId, AUDIENCE_KINDS[audience]);
+      cache?.set(key, list);
     }
-    if (leaders.length > 0) return leaders;
+    const mayEscalate = audience === 'attendance';
+    const local = alertRecipients(list, [], { subjectUserId: entry.userId, mayEscalate: false });
+    if (local.length) return local;
+    const { ids } = await this.notificationRouting.resolveWatchers(entry.userId, entry.organizationId, 'attendance');
+    return alertRecipients(list, ids, { subjectUserId: entry.userId, mayEscalate });
+  }
 
-    /*
-      The member half, and its cost, stated plainly.
-
-      This resolves per member, so a sweep escalating N people at workspaces with
-      no leaders does N resolutions rather than one. Three things keep that
-      bounded: the resolver caches per subject for a minute, a sweep is capped at
-      500 entries a tick, and this branch runs ONLY where a workspace has nobody
-      configured — which is the case this change exists to make visible and which
-      an organization fixes by naming a shift leader.
-
-      A batch resolver would remove even that, and is the right move if a real
-      deployment ever escalates dozens of people at once at leaderless sites. It
-      is not worth the shared-service change before somebody has that problem.
-    */
-    const { ids } = await this.notificationRouting.resolveWatchers(
-      entry.userId,
-      entry.organizationId,
-      'attendance',
-    );
-    return ids;
+  /**
+   * A day waiting for review (clock review A3): the member's watchers AND the workspace's approvers — a watcher
+   * is told, an approver can act, and an unconfigured workspace used to push nobody although its shift leader
+   * could approve. Neither → org-wide approvers → admins.
+   */
+  async reviewTargetsFor(entry: {
+    locationId?: string | null;
+    organizationId: string;
+    userId: string;
+  }): Promise<string[]> {
+    const spaceId = entry.locationId ?? null;
+    const [list, watchers] = await Promise.all([
+      this.listFor(entry.organizationId, spaceId, ['hours']),
+      this.notificationRouting.resolveWatchers(entry.userId, entry.organizationId, 'attendance'),
+    ]);
+    const local = alertRecipients(list, [], { subjectUserId: entry.userId, mayEscalate: false });
+    const both = [...new Set([...watchers.ids.filter((id) => id !== entry.userId), ...local])];
+    return both.length ? both : alertRecipients(list, [], { subjectUserId: entry.userId, mayEscalate: true });
   }
 }

@@ -2,7 +2,7 @@ import { Injectable, Inject, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, peopleNames, personNameOf } from '@hbcfield/shared';
 import { personName, success, SERVICE_NAMES } from '@hbcfield/shared';
-import { AttendanceRoutingService } from '../core/attendance-routing.service';
+import { AttendanceRoutingService, type DeciderCache } from '../core/attendance-routing.service';
 import { NoShowSettleService } from './no-show-settle.service';
 import { shiftNudgeCadence } from '../core/shift-sweep-helpers';
 import {
@@ -68,7 +68,7 @@ export class ShiftSweepService {
     const member = await personNameOf(this.prisma, userId);
     const leaderIds = await this.routing.notifyTargetsFor(
       { spaceId, organizationId: context.organizationId, userId },
-      'canReconcileAttendance',
+      'attendance',
     );
     for (const inst of escalated) {
       emitEvent(this.notificationClient, attendanceNoshowResolvedEvent, {
@@ -134,10 +134,10 @@ export class ShiftSweepService {
       else toEscalate.push(inst);
     }
 
-    const leadersBySpace = new Map<string, string[]>();
+    const leadersBySpace: DeciderCache = new Map();
     const targetsByEntry = new Map<string, string[]>();
     for (const e of toEscalate) {
-      targetsByEntry.set(e.id, await this.routing.notifyTargetsFor(e, 'canReconcileAttendance', leadersBySpace));
+      targetsByEntry.set(e.id, await this.routing.notifyTargetsFor(e, 'attendance', leadersBySpace));
     }
 
     const tasks: Array<() => Promise<void>> = [];

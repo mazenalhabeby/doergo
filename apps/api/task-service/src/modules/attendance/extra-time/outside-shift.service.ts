@@ -23,7 +23,7 @@ import {
   SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
   type AttendanceScope,
 } from '@hbcfield/shared';
-import { emitEvent, attendanceChangedEvent } from '@hbcfield/shared/microservices';
+import { emitEvent, attendanceChangedEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/microservices';
 import { CountedTimeService } from '../core/counted-time.service';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { AttendanceRoutingService } from '../core/attendance-routing.service';
@@ -135,9 +135,7 @@ export class OutsideShiftService {
       .map((r) => ({ r, o: outsideShift(r, tol.get(r.shiftId ?? '') ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN) }))
       .filter((x) => x.o);
     if (!items.length) return success([]);
-    // Whom it waits for: the people who may DECIDE it (overtime approvers of the workspace, through the
-    // own-request rule) — the same answer as "Waiting for Anna to approve your extra time". Not the
-    // people merely told about this member: a watcher who cannot decide is nobody to wait for.
+    // Whom it waits for: who may DECIDE it (A10), through the own-request rule — never a mere watcher.
     const first = items[0]!.r;
     const ask = await askAboutOwnRequest(this.prisma, {
       organizationId: data.organizationId,
@@ -146,7 +144,7 @@ export class OutsideShiftService {
       spaceIds: first.locationId ? [first.locationId] : [],
       usual: await this.routing.notifyTargetsFor(
         { locationId: first.locationId, organizationId: data.organizationId, userId: data.userId },
-        'canApproveOvertime',
+        'outside',
       ),
     });
     const people = ask.ids.length ? await peopleNamesSorted(this.prisma, ask.ids.slice(0, 3)) : [];
@@ -224,22 +222,47 @@ export class OutsideShiftService {
 
     const before = entry.expectedClockInAt!.getTime() - plan.expectedClockInAt.getTime();
     const after = plan.expectedClockOutAt.getTime() - entry.expectedClockOutAt!.getTime();
-    if (before > 0) {
-      await this.prisma.timeEntry.update({
-        where: { id: entry.id },
-        data: { expectedClockInAt: plan.expectedClockInAt },
+    try {
+      if (before > 0) {
+        await this.prisma.timeEntry.update({
+          where: { id: entry.id },
+          data: { expectedClockInAt: plan.expectedClockInAt },
+        });
+        await this.countedTime.recomputeClosed({ ...entry, expectedClockInAt: plan.expectedClockInAt });
+      }
+      if (after > 0) {
+        // The overtime path: a round on the record, the end moved, recounted, relabelled, the member told.
+        await this.decisions.addOvertimeToClosedEntry({
+          approverId: data.approverId,
+          entryId: entry.id,
+          minutes: Math.round(after / 60_000),
+          reason: data.reason ?? null,
+          organizationId: data.organizationId,
+          scopeSpaceIds: data.scopeSpaceIds,
+        });
+      }
+    } catch (err) {
+      // Claimed, then not written (B1): put the claim back so it is asked again — never vanish uncounted.
+      await this.prisma.timeEntry.updateMany({
+        where: { id: entry.id, outsideDecidedById: data.approverId },
+        data: {
+          outsideDecidedAt: null,
+          outsideDecidedById: null,
+          outsideCountedMinutes: null,
+          expectedClockInAt: entry.expectedClockInAt,
+        },
       });
-      await this.countedTime.recomputeClosed({ ...entry, expectedClockInAt: plan.expectedClockInAt });
+      if (before > 0) await this.countedTime.recomputeClosed(entry);
+      throw err;
     }
-    if (after > 0) {
-      // The overtime path: a round on the record, the end moved, recounted, relabelled, the member told.
-      await this.decisions.addOvertimeToClosedEntry({
-        approverId: data.approverId,
+    // The member hears every outcome (A9); time counted after the end was told by the overtime path.
+    if (after <= 0) {
+      emitEvent(this.notificationClient, attendanceOvertimeDecisionEvent, {
         entryId: entry.id,
-        minutes: Math.round(after / 60_000),
-        reason: data.reason ?? null,
+        userId: entry.userId,
+        decision: plan.counted > 0 ? 'approved' : 'rejected',
+        ...(plan.counted > 0 ? { minutes: plan.counted } : {}),
         organizationId: data.organizationId,
-        scopeSpaceIds: data.scopeSpaceIds,
       });
     }
 
@@ -267,6 +290,8 @@ export class OutsideShiftService {
       organizationId: data.organizationId,
       action: 'outside_decided',
       entryId: entry.id,
+      userId: entry.userId,
+      spaceId: entry.locationId,
     });
     return success({ entryId: entry.id, counted: plan.counted, of: outside.total }, note);
   }

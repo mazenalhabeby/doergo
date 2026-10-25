@@ -2610,7 +2610,14 @@
       "oneWorkspace": "Trabaja en un solo espacio de trabajo, así que no hay nada que elegir.",
       "footnote": "Se guarda para usted en la web y en el teléfono. Dónde puede fichar no cambia.",
       "saved": "Guardado",
-      "failed": "No se pudo guardar su elección"
+      "failed": "No se pudo guardar su elección",
+      "usesQuestion": "¿Usa usted el reloj de fichaje?",
+      "usesOnTitle": "Sí, ficho la entrada y la salida",
+      "usesOnHint": "El botón de fichar, los recordatorios y sus horas, como el resto del equipo.",
+      "usesOffTitle": "No, no uso el reloj de fichaje",
+      "usesOffHint": "Sin botón de fichar ni recordatorios para usted. Sigue viendo y decidiendo las horas de todos.",
+      "usesSaved": "Guardado: el reloj se actualiza en la próxima pantalla",
+      "usesOpenShift": "Fiche la salida primero y luego desactive el reloj."
     }
   },
   "notifications": {

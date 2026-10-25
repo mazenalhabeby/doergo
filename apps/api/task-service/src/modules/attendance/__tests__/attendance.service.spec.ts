@@ -11,13 +11,12 @@ import { ENTRY_SERVICES } from '../entries/entry-services';
 import { AttendanceReportService } from '../reports/attendance-report.service';
 import { ShiftResolverService } from '../core/shift-resolver.service';
 import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
+import { ApprovalRouteService } from '../../approvals/rules/approval-route.service';
+
+const mockDeciders = { workspaceDeciders: jest.fn() };
+const spaceDecider = (id: string) => ({ id, name: id, avatarUrl: null, via: 'SPACE', onLeave: false, covers: [] });
 import { PrismaService } from '@hbcfield/shared';
-import {
-  TimeEntryStatus,
-  ApprovalStatus,
-  SERVICE_NAMES,
-  QUEUE_NAMES,
-} from '@hbcfield/shared';
+import { TimeEntryStatus, ApprovalStatus, SERVICE_NAMES, QUEUE_NAMES } from '@hbcfield/shared';
 import { CountedTimeService } from '../core/counted-time.service';
 import { BreakRulesService } from '../core/break-rules.service';
 import { BreakReminderService } from '../rests/break-reminder.service';
@@ -46,7 +45,7 @@ describe('AttendanceService', () => {
     lastName: 'Doe',
     email: 'john@example.com',
     role: 'EMPLOYEE',
-    
+
     organizationId: 'org-123',
     isActive: true,
   };
@@ -120,9 +119,7 @@ describe('AttendanceService', () => {
       time entry and its overtime round in step, and the callback form used
       elsewhere. A double that supports only one silently fails the other.
     */
-    $transaction: jest.fn((ops: any): Promise<any> =>
-      Array.isArray(ops) ? Promise.all(ops) : ops(mockPrismaService),
-    ),
+    $transaction: jest.fn((ops: any): Promise<any> => (Array.isArray(ops) ? Promise.all(ops) : ops(mockPrismaService))),
     // Batched lookups used by autoClockOut's overtime/schedule resolution, plus
     // the per-ROUND record the extra-time loop now writes.
     overtimeRequest: {
@@ -167,6 +164,7 @@ describe('AttendanceService', () => {
 
   beforeEach(async () => {
     mockNotificationRouting.resolveWatchers.mockResolvedValue({ ids: [], emails: [] });
+    mockDeciders.workspaceDeciders.mockResolvedValue([]);
     jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
@@ -174,7 +172,16 @@ describe('AttendanceService', () => {
         BreakReminderService,
         BreakRulesService,
         CountedTimeService,
-        AttendanceService, ...ATTENDANCE_SERVICE_PARTS, { provide: PresenceService, useValue: { atClockIn: jest.fn().mockResolvedValue({}), onPosition: jest.fn().mockResolvedValue(undefined), onBatch: jest.fn().mockResolvedValue(undefined) } },
+        AttendanceService,
+        ...ATTENDANCE_SERVICE_PARTS,
+        {
+          provide: PresenceService,
+          useValue: {
+            atClockIn: jest.fn().mockResolvedValue({}),
+            onPosition: jest.fn().mockResolvedValue(undefined),
+            onBatch: jest.fn().mockResolvedValue(undefined),
+          },
+        },
         ...BREAK_SERVICES,
         ...ENTRY_SERVICES,
         AttendanceReportService,
@@ -185,6 +192,8 @@ describe('AttendanceService', () => {
           provide: NotificationRoutingService,
           useValue: mockNotificationRouting,
         },
+        // Who may decide in a workspace (the approvals resolver, clock review A2): none unless a test says so.
+        { provide: ApprovalRouteService, useValue: mockDeciders },
         // Default: resolver returns null (no shift stamp) so existing clock-in
         // assertions are unaffected. Shift resolution is covered by its own spec.
         {
@@ -221,7 +230,7 @@ describe('AttendanceService', () => {
       mockPrismaService.companyLocation.findFirst.mockResolvedValue(mockLocation);
       mockPrismaService.timeEntry.create.mockResolvedValue(mockTimeEntry);
 
-      const result = await service.clockIn(clockInData) as any;
+      const result = (await service.clockIn(clockInData)) as any;
 
       expect(result.success).toBe(true);
       expect(mockPrismaService.timeEntry.create).toHaveBeenCalledWith(
@@ -305,7 +314,7 @@ describe('AttendanceService', () => {
       // The close claims with every column in one write, then reads the row back.
       mockPrismaService.timeEntry.findUnique.mockResolvedValue(updatedEntry);
 
-      const result = await service.clockOut(clockOutData) as any;
+      const result = (await service.clockOut(clockOutData)) as any;
 
       expect(result.success).toBe(true);
       expect(mockPrismaService.timeEntry.updateMany).toHaveBeenCalledWith(
@@ -359,10 +368,10 @@ describe('AttendanceService', () => {
         { ...mockAssignment, spaceId: mockLocation.id, space: { ...mockLocation, isActive: true, isRemote: false } },
       ]);
 
-      const result = await service.getStatus({
+      const result = (await service.getStatus({
         userId: 'tech-123',
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.isClockedIn).toBe(true);
@@ -374,10 +383,10 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
       mockPrismaService.spaceAssignment.findMany.mockResolvedValue([]);
 
-      const result = await service.getStatus({
+      const result = (await service.getStatus({
         userId: 'tech-123',
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.isClockedIn).toBe(false);
@@ -391,12 +400,12 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findMany.mockResolvedValue(entries);
       mockPrismaService.timeEntry.count.mockResolvedValue(2);
 
-      const result = await service.getHistory({
+      const result = (await service.getHistory({
         userId: 'tech-123',
         organizationId: 'org-123',
         page: 1,
         limit: 10,
-      }) as any;
+      })) as any;
 
       expect(result.data).toHaveLength(2);
       expect(result.meta.total).toBe(2);
@@ -491,10 +500,7 @@ describe('AttendanceService', () => {
     it('escalates to a space leader after max reminders, then stops nudging', async () => {
       mockPrismaService.timeEntry.findMany.mockResolvedValue([dueEntry({ reminderCount: 3 })]); // already at max=3
       mockPrismaService.timeEntry.update.mockResolvedValue({});
-      mockPrismaService.spaceAssignment.findMany.mockResolvedValue([
-        { userId: 'leader-1', role: { isActive: true, permissions: { canReconcileAttendance: true } } },
-        { userId: 'other', role: { permissions: { canReconcileAttendance: false } } },
-      ]);
+      mockDeciders.workspaceDeciders.mockResolvedValue([spaceDecider('leader-1')]);
 
       const result = (await service.runShiftReminders()) as any;
 
@@ -586,7 +592,12 @@ describe('AttendanceService', () => {
       it('closes at the self-reported time within the shift (no overtime flag)', async () => {
         mockPrismaService.timeEntry.findFirst.mockResolvedValue(openEntry());
         mockPrismaService.timeEntry.findUnique.mockImplementation(() =>
-          Promise.resolve({ id: 'entry-123', ...mockPrismaService.timeEntry.updateMany.mock.calls.at(-1)[0].data, location: { name: 'Main Office' }, user: {} }),
+          Promise.resolve({
+            id: 'entry-123',
+            ...mockPrismaService.timeEntry.updateMany.mock.calls.at(-1)[0].data,
+            location: { name: 'Main Office' },
+            user: {},
+          }),
         );
 
         const result = (await service.resolveForgotClockOut({
@@ -608,7 +619,12 @@ describe('AttendanceService', () => {
       it('flags OVERTIME when the reported time is past the expected end', async () => {
         mockPrismaService.timeEntry.findFirst.mockResolvedValue(openEntry());
         mockPrismaService.timeEntry.findUnique.mockImplementation(() =>
-          Promise.resolve({ id: 'entry-123', ...mockPrismaService.timeEntry.updateMany.mock.calls.at(-1)[0].data, location: { name: 'Main Office' }, user: {} }),
+          Promise.resolve({
+            id: 'entry-123',
+            ...mockPrismaService.timeEntry.updateMany.mock.calls.at(-1)[0].data,
+            location: { name: 'Main Office' },
+            user: {},
+          }),
         );
 
         await service.resolveForgotClockOut({
@@ -639,10 +655,8 @@ describe('AttendanceService', () => {
     describe('requestExtraTime', () => {
       it('sets OVERTIME_PENDING, stops reminders, and routes to approvers', async () => {
         mockPrismaService.timeEntry.findFirst.mockResolvedValue(openEntry());
-        mockPrismaService.timeEntry.update.mockResolvedValue({});
-        mockPrismaService.spaceAssignment.findMany.mockResolvedValue([
-          { userId: 'leader-1', role: { isActive: true, permissions: { canApproveOvertime: true } } },
-        ]);
+        mockPrismaService.timeEntry.updateMany.mockResolvedValue({ count: 1 });
+        mockDeciders.workspaceDeciders.mockResolvedValue([spaceDecider('leader-1')]);
 
         const result = (await service.requestExtraTime({
           userId: 'tech-123',
@@ -651,7 +665,10 @@ describe('AttendanceService', () => {
         })) as any;
 
         expect(result.success).toBe(true);
-        const data = mockPrismaService.timeEntry.update.mock.calls[0][0].data;
+        // Claimed in the same transaction that opens the round — one open round per shift (B1).
+        const claim = mockPrismaService.timeEntry.updateMany.mock.calls[0][0];
+        expect(claim.where).toEqual({ id: 'entry-123', reminderState: { not: 'OVERTIME_PENDING' } });
+        const data = claim.data;
         expect(data.reminderState).toBe('OVERTIME_PENDING');
         expect(data.nextRemindAt).toBeNull();
         expect(mockNotificationClient.emit).toHaveBeenCalledWith(
@@ -695,20 +712,34 @@ describe('AttendanceService', () => {
         mockPrismaService.user.findFirst.mockResolvedValue(null); // not an admin either
 
         await expect(
-          service.approveExtraTime({ approverId: 'nobody', entryId: 'entry-123', minutes: 30, organizationId: 'org-123' }),
+          service.approveExtraTime({
+            approverId: 'nobody',
+            entryId: 'entry-123',
+            minutes: 30,
+            organizationId: 'org-123',
+          }),
         ).rejects.toThrow(ForbiddenException);
       });
 
       it('rejects invalid minutes', async () => {
         await expect(
-          service.approveExtraTime({ approverId: 'admin-1', entryId: 'entry-123', minutes: 0, organizationId: 'org-123' }),
+          service.approveExtraTime({
+            approverId: 'admin-1',
+            entryId: 'entry-123',
+            minutes: 0,
+            organizationId: 'org-123',
+          }),
         ).rejects.toThrow(BadRequestException);
       });
     });
 
     describe('rejectExtraTime', () => {
       it('re-arms an immediate reminder and notifies the worker', async () => {
-        mockPrismaService.timeEntry.findFirst.mockResolvedValue({ id: 'entry-123', locationId: 'loc-123', userId: 'tech-123' });
+        mockPrismaService.timeEntry.findFirst.mockResolvedValue({
+          id: 'entry-123',
+          locationId: 'loc-123',
+          userId: 'tech-123',
+        });
         mockPrismaService.timeEntry.updateMany.mockResolvedValue({ count: 1 });
         mockPrismaService.spaceAssignment.findFirst.mockResolvedValue({
           role: { permissions: { canApproveOvertime: true } },
@@ -722,7 +753,7 @@ describe('AttendanceService', () => {
 
         expect(result.success).toBe(true);
         // The shared refusal nudge: only a shift still open is re-armed (refusalNudge).
-        const nudge = mockPrismaService.timeEntry.updateMany.mock.calls.at(-1)[0];
+        const nudge = mockPrismaService.timeEntry.updateMany.mock.calls.find((c: any) => c[0].where.status)[0];
         expect(nudge.where).toEqual({ id: 'entry-123', status: 'CLOCKED_IN' });
         const data = nudge.data;
         expect(data.reminderState).toBe('REMINDED');
@@ -750,17 +781,14 @@ describe('AttendanceService', () => {
       mockPrismaService.break.create.mockResolvedValue(newBreak);
       mockPrismaService.user.findUnique.mockResolvedValue(mockTechnician);
 
-      const result = await breakService.startBreak({
+      const result = (await breakService.startBreak({
         userId: 'tech-123',
         organizationId: 'org-123',
         type: 'SHORT',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
-      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
-        'break_started',
-        expect.any(Object),
-      );
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith('break_started', expect.any(Object));
     });
 
     it('should throw BadRequestException if not clocked in', async () => {
@@ -808,16 +836,13 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.update.mockResolvedValue(mockTimeEntry);
       mockPrismaService.user.findUnique.mockResolvedValue(mockTechnician);
 
-      const result = await breakService.endBreak({
+      const result = (await breakService.endBreak({
         userId: 'tech-123',
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
-      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
-        'break_ended',
-        expect.any(Object),
-      );
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith('break_ended', expect.any(Object));
     });
 
     it('should throw BadRequestException if not clocked in', async () => {
@@ -851,10 +876,10 @@ describe('AttendanceService', () => {
 
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(entryWithBreak);
 
-      const result = await breakService.getBreakStatus({
+      const result = (await breakService.getBreakStatus({
         userId: 'tech-123',
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.isClockedIn).toBe(true);
@@ -866,10 +891,10 @@ describe('AttendanceService', () => {
       const entryWithNoBreaks = { ...mockTimeEntry, breaks: [] };
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(entryWithNoBreaks);
 
-      const result = await breakService.getBreakStatus({
+      const result = (await breakService.getBreakStatus({
         userId: 'tech-123',
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.isClockedIn).toBe(true);
@@ -879,10 +904,10 @@ describe('AttendanceService', () => {
     it('should return not clocked in status', async () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
 
-      const result = await breakService.getBreakStatus({
+      const result = (await breakService.getBreakStatus({
         userId: 'tech-123',
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.isClockedIn).toBe(false);
@@ -898,11 +923,11 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findMany.mockResolvedValue(pendingEntries);
       mockPrismaService.timeEntry.count.mockResolvedValue(1);
 
-      const result = await approvalService.getPendingApprovals({
+      const result = (await approvalService.getPendingApprovals({
         organizationId: 'org-123',
         page: 1,
         limit: 20,
-      }) as any;
+      })) as any;
 
       expect(result.data).toHaveLength(1);
       expect(result.meta.total).toBe(1);
@@ -921,11 +946,11 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(pendingEntry);
       mockPrismaService.timeEntry.update.mockResolvedValue(approvedEntry);
 
-      const result = await approvalService.approveEntry({
+      const result = (await approvalService.approveEntry({
         entryId: 'entry-123',
         approverId: 'admin-123',
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(mockPrismaService.timeEntry.update).toHaveBeenCalledWith(
@@ -979,12 +1004,12 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(pendingEntry);
       mockPrismaService.timeEntry.update.mockResolvedValue(rejectedEntry);
 
-      const result = await approvalService.rejectEntry({
+      const result = (await approvalService.rejectEntry({
         entryId: 'entry-123',
         approverId: 'admin-123',
         organizationId: 'org-123',
         reason: 'Invalid clock-in location',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
     });
@@ -1031,13 +1056,13 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(existingEntry);
       mockPrismaService.timeEntry.update.mockResolvedValue(editedEntry);
 
-      const result = await approvalService.editEntry({
+      const result = (await approvalService.editEntry({
         entryId: 'entry-123',
         editorId: 'admin-123',
         organizationId: 'org-123',
         reason: 'Correcting clock-in time',
         clockInAt: '2026-01-30T09:00:00Z',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
     });
@@ -1097,11 +1122,11 @@ describe('AttendanceService', () => {
         approvalStatus: ApprovalStatus.APPROVED,
       });
 
-      const result = await approvalService.bulkApprove({
+      const result = (await approvalService.bulkApprove({
         entryIds: ['entry-1', 'entry-2', 'entry-3'],
         approverId: 'admin-123',
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.approved).toHaveLength(3);
@@ -1124,11 +1149,11 @@ describe('AttendanceService', () => {
         approvalStatus: ApprovalStatus.APPROVED,
       });
 
-      const result = await approvalService.bulkApprove({
+      const result = (await approvalService.bulkApprove({
         entryIds: ['entry-1', 'entry-2', 'entry-3'],
         approverId: 'admin-123',
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.approved).toHaveLength(1);
@@ -1158,11 +1183,11 @@ describe('AttendanceService', () => {
 
       mockPrismaService.timeEntry.findMany.mockResolvedValue(entries);
 
-      const result = await reportService.getAttendanceSummary({
+      const result = (await reportService.getAttendanceSummary({
         organizationId: 'org-123',
         startDate: '2026-01-01',
         endDate: '2026-01-31',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.summary.totalShifts).toBe(2);
@@ -1186,11 +1211,11 @@ describe('AttendanceService', () => {
 
       mockPrismaService.timeEntry.findMany.mockResolvedValue(entries);
 
-      const result = await reportService.exportToCSV({
+      const result = (await reportService.exportToCSV({
         organizationId: 'org-123',
         startDate: '2026-01-01',
         endDate: '2026-01-31',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.mimeType).toBe('text/csv');
@@ -1218,10 +1243,17 @@ describe('AttendanceService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue({ firstName: 'Joe', lastName: 'X', email: 'j@x.io' });
 
       // ~1.4km away → well past radius(50)+hysteresis(15)
-      const res: any = await service.heartbeat({ userId: 'tech-123', lat: 40.01, lng: -74.0, organizationId: 'org-123' });
+      const res: any = await service.heartbeat({
+        userId: 'tech-123',
+        lat: 40.01,
+        lng: -74.0,
+        organizationId: 'org-123',
+      });
 
       expect(mockPrismaService.geofenceExcursion.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ status: 'OUT_UNREPORTED', timeEntryId: 'entry-1' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'OUT_UNREPORTED', timeEntryId: 'entry-1' }),
+        }),
       );
       expect(res.data.inRing).toBe(false);
       expect(res.data.autoClockedOut).toBe(false);
@@ -1233,7 +1265,12 @@ describe('AttendanceService', () => {
       mockPrismaService.geofenceExcursion.findFirst.mockResolvedValue({ id: 'ex-1', status: 'PENDING' });
       mockPrismaService.user.findUnique.mockResolvedValue({ firstName: 'Joe', lastName: 'X' });
 
-      const res: any = await service.heartbeat({ userId: 'tech-123', lat: 40.0, lng: -74.0, organizationId: 'org-123' });
+      const res: any = await service.heartbeat({
+        userId: 'tech-123',
+        lat: 40.0,
+        lng: -74.0,
+        organizationId: 'org-123',
+      });
 
       expect(mockPrismaService.geofenceExcursion.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ status: 'RETURNED' }) }),
@@ -1246,36 +1283,69 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(clockedInEntry);
       mockPrismaService.geofenceExcursion.findFirst.mockResolvedValue({ id: 'ex-1', status: 'OUT_UNREPORTED' });
       mockPrismaService.geofenceExcursion.updateMany.mockResolvedValue({ count: 1 });
-      mockPrismaService.geofenceExcursion.findUnique.mockResolvedValue({ id: 'ex-1', status: 'PENDING', reason: 'lunch', requestedMinutes: 30 });
+      mockPrismaService.geofenceExcursion.findUnique.mockResolvedValue({
+        id: 'ex-1',
+        status: 'PENDING',
+        reason: 'lunch',
+        requestedMinutes: 30,
+      });
       mockPrismaService.user.findUnique.mockResolvedValue({ firstName: 'Joe', lastName: 'X' });
 
-      const res: any = await service.reportExcursion({ userId: 'tech-123', organizationId: 'org-123', reason: 'lunch', requestedMinutes: 30 });
+      const res: any = await service.reportExcursion({
+        userId: 'tech-123',
+        organizationId: 'org-123',
+        reason: 'lunch',
+        requestedMinutes: 30,
+      });
 
       expect(mockPrismaService.geofenceExcursion.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ status: 'OUT_UNREPORTED' }), data: expect.objectContaining({ status: 'PENDING', requestedMinutes: 30 }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ status: 'OUT_UNREPORTED' }),
+          data: expect.objectContaining({ status: 'PENDING', requestedMinutes: 30 }),
+        }),
       );
       expect(res.success).toBe(true);
     });
 
     it('approveExcursion: PENDING → APPROVED sets expiresAt from granted minutes', async () => {
       mockPrismaService.geofenceExcursion.findUnique
-        .mockResolvedValueOnce({ id: 'ex-1', organizationId: 'org-123', status: 'PENDING', requestedMinutes: 30, timeEntryId: 'entry-1', userId: 'tech-123' })
+        .mockResolvedValueOnce({
+          id: 'ex-1',
+          organizationId: 'org-123',
+          status: 'PENDING',
+          requestedMinutes: 30,
+          timeEntryId: 'entry-1',
+          userId: 'tech-123',
+        })
         .mockResolvedValueOnce({ id: 'ex-1', status: 'APPROVED', grantedMinutes: 60 });
       mockPrismaService.geofenceExcursion.updateMany.mockResolvedValue({ count: 1 });
       mockPrismaService.timeEntry.findUnique.mockResolvedValue(clockedInEntry);
       mockPrismaService.user.findUnique.mockResolvedValue({ firstName: 'Joe', lastName: 'X' });
 
-      const res: any = await service.approveExcursion({ excursionId: 'ex-1', approverId: 'mgr-1', organizationId: 'org-123', grantedMinutes: 60 });
+      const res: any = await service.approveExcursion({
+        excursionId: 'ex-1',
+        approverId: 'mgr-1',
+        organizationId: 'org-123',
+        grantedMinutes: 60,
+      });
 
       expect(mockPrismaService.geofenceExcursion.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ status: 'APPROVED', grantedMinutes: 60, expiresAt: expect.any(Date) }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'APPROVED', grantedMinutes: 60, expiresAt: expect.any(Date) }),
+        }),
       );
       expect(res.success).toBe(true);
     });
 
     it('rejectExcursion: PENDING → REJECTED then clocks the worker out', async () => {
       mockPrismaService.geofenceExcursion.findUnique
-        .mockResolvedValueOnce({ id: 'ex-1', organizationId: 'org-123', status: 'PENDING', timeEntryId: 'entry-1', userId: 'tech-123' })
+        .mockResolvedValueOnce({
+          id: 'ex-1',
+          organizationId: 'org-123',
+          status: 'PENDING',
+          timeEntryId: 'entry-1',
+          userId: 'tech-123',
+        })
         .mockResolvedValueOnce({ id: 'ex-1', status: 'REJECTED' });
       mockPrismaService.geofenceExcursion.updateMany.mockResolvedValue({ count: 1 });
       mockPrismaService.timeEntry.findUnique.mockResolvedValue(clockedInEntry);
@@ -1284,7 +1354,11 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue({ ...clockedInEntry, breaks: [] });
       mockPrismaService.timeEntry.update.mockResolvedValue({ ...clockedInEntry, status: 'CLOCKED_OUT' });
 
-      const res: any = await service.rejectExcursion({ excursionId: 'ex-1', approverId: 'mgr-1', organizationId: 'org-123' });
+      const res: any = await service.rejectExcursion({
+        excursionId: 'ex-1',
+        approverId: 'mgr-1',
+        organizationId: 'org-123',
+      });
 
       expect(mockPrismaService.geofenceExcursion.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ status: 'REJECTED' }) }),
@@ -1330,10 +1404,18 @@ describe('AttendanceService', () => {
 
     it('flags overtime and early departure off the expected end', () => {
       expect(
-        computeScheduleFlags({ clockOutAt: new Date('2026-08-11T10:30:00Z'), expectedClockOutAt: end, toleranceMin: 10 }),
+        computeScheduleFlags({
+          clockOutAt: new Date('2026-08-11T10:30:00Z'),
+          expectedClockOutAt: end,
+          toleranceMin: 10,
+        }),
       ).toContain('OVERTIME');
       expect(
-        computeScheduleFlags({ clockOutAt: new Date('2026-08-11T09:30:00Z'), expectedClockOutAt: end, toleranceMin: 10 }),
+        computeScheduleFlags({
+          clockOutAt: new Date('2026-08-11T09:30:00Z'),
+          expectedClockOutAt: end,
+          toleranceMin: 10,
+        }),
       ).toContain('EARLY_DEPARTURE');
     });
 

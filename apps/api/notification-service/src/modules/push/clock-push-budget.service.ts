@@ -39,11 +39,17 @@ export class ClockPushBudgetService implements OnModuleDestroy {
    * budget pass untouched. ⚠️ Fails OPEN: a reminder sent once too often is a smaller
    * harm than a shift end nobody was told about because Redis was briefly away.
    */
-  async allowed(userIds: string[], type: unknown, now: Date = new Date()): Promise<string[]> {
+  async allowed(
+    userIds: string[],
+    type: unknown,
+    now: Date = new Date(),
+    // Each person's own day zone (A6): the budget starts over at THEIR midnight. Missing → UTC.
+    zones?: ReadonlyMap<string, string | null>,
+  ): Promise<string[]> {
     if (!isBudgetedClockPush(type) || userIds.length === 0) return userIds;
-    const day = clockPushBudgetDay(now);
     const verdicts = await Promise.all(
       userIds.map(async (id) => {
+        const day = clockPushBudgetDay(now, zones?.get(id));
         try {
           const took = await this.redis.eval(
             TAKE_PLACE,

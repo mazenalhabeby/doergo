@@ -7,7 +7,6 @@ import { localPartsIn } from '@hbcfield/shared';
 /** Writing the expected shifts (instances) for the days ahead, from the rota and the weekly schedule. */
 @Injectable()
 export class ShiftInstancesService {
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly shiftResolver: ShiftResolverService,
@@ -66,6 +65,8 @@ export class ShiftInstancesService {
           isActive: true,
           effectiveFrom: { lte: horizon },
           ...notEndedWhere(now),
+          // An administrator off the clock (review A7) is never expected to clock in, so never a no-show.
+          user: { clockOff: false },
         },
         include: {
           shift: true,
@@ -115,5 +116,13 @@ export class ShiftInstancesService {
       created += res.count;
     }
     return success({ processed, created });
+  }
+
+  /** The shifts still ahead that nobody has acted on yet — dropped when a member stops using the clock (A7). */
+  async dropUpcomingFor(userId: string, organizationId: string): Promise<number> {
+    const res = await this.prisma.shiftInstance.deleteMany({
+      where: { userId, organizationId, state: 'PENDING', expectedClockInAt: { gt: new Date() } },
+    });
+    return res.count;
   }
 }

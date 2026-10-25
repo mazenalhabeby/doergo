@@ -22,6 +22,7 @@ import {
  * tolerance, and the pending-approval alert — held once, used by every closer
  * (the clock-out, a close by decision, the sweeps).
  */
+import { AttendanceRoutingService } from '../core/attendance-routing.service';
 @Injectable()
 export class ShiftCloser {
   private readonly logger = new Logger(ShiftCloser.name);
@@ -36,6 +37,7 @@ export class ShiftCloser {
     // The automatic clock (attendance/auto-clock.ts): its re-check, its rest, its thresholds.
     // Optional, like the job pause: a shift always closes; absent, nothing is automatic.
     @Optional() private readonly autoClock?: AutoClockService,
+    @Optional() private readonly routing?: AttendanceRoutingService, // who hears "day needs review" (A3)
   ) {}
 
   /** One temporary close — the abandoned-shift sweep's, and the automatic clock's. False when somebody closed it first. */
@@ -258,6 +260,7 @@ export class ShiftCloser {
     entryId: string;
     userId: string;
     organizationId: string;
+    locationId?: string | null;
     locationName: string;
     flagReasons: string[];
     totalMinutes: number;
@@ -266,11 +269,13 @@ export class ShiftCloser {
       const user = await personNameOf(this.prisma, data.userId);
       if (!user) return;
 
-      const { ids: managerIds } = await this.notificationRouting.resolveWatchers(
-        data.userId,
-        data.organizationId,
-        'attendance',
-      );
+      const managerIds = this.routing
+        ? await this.routing.reviewTargetsFor({
+            locationId: data.locationId ?? null,
+            organizationId: data.organizationId,
+            userId: data.userId,
+          })
+        : (await this.notificationRouting.resolveWatchers(data.userId, data.organizationId, 'attendance')).ids;
 
       emitEvent(this.notificationClient, attendancePendingApprovalEvent, {
         entryId: data.entryId,

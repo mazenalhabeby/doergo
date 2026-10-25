@@ -62,7 +62,7 @@ export class AttendanceNotificationHandler {
       this.logger.error(`Failed to send shift-reminder push: ${error}`);
     }
 
-    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance_shift_reminder', {
+    this.websocketGateway.emitAttendance(data.organizationId, data.locationId, null, 'attendance_shift_reminder', {
       entryId: data.entryId,
       userId: data.userId,
       userName: data.userName,
@@ -96,7 +96,7 @@ export class AttendanceNotificationHandler {
       this.logger.error(`Failed to send left-early push: ${error}`);
     }
 
-    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance_left_early', {
+    this.websocketGateway.emitAttendance(data.organizationId, data.locationId, null, 'attendance_left_early', {
       entryId: data.entryId,
       userId: data.userId,
       userName: data.userName,
@@ -189,8 +189,8 @@ export class AttendanceNotificationHandler {
       entryId: data.entryId,
       clockOutAt: data.clockOutAt,
     });
-    // Boards refresh: the same org-wide signal a clock-out sends.
-    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance.changed', {
+    // Boards refresh: the same signal a clock-out sends, to the people who may read those hours.
+    this.websocketGateway.emitAttendance(data.organizationId, null, data.userId, 'attendance.changed', {
       userId: data.userId,
       entryId: data.entryId,
       reason: 'provisional_clock_out',

@@ -73,6 +73,11 @@ class UpdateMeDto {
   @IsOptional()
   @IsIn(CLOCK_IN_PICK_MODES)
   clockInPick?: ClockInPick;
+
+  // An administrator switching their own clock on or off (refused for anyone else in auth-service).
+  @IsOptional()
+  @IsBoolean()
+  usesClock?: boolean;
 }
 
 class UpdateMyEmailDto {

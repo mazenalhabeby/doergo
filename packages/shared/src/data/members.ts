@@ -16,6 +16,16 @@ export function memberNotificationPrefs(db: On<'user', 'findMany'>, ids: string[
   return db.user.findMany({ where: { id: { in: ids } }, select: { id: true, notificationPrefs: true } });
 }
 
+/** Each member's own day zone (member → organization) — the clock push budget's day (clock review A6). */
+export async function memberDayZones(db: On<'user', 'findMany'>, ids: string[]): Promise<Map<string, string | null>> {
+  const rows: Array<{ id: string; timezone: string | null; organization: { timezone: string | null } | null }> =
+    await db.user.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, timezone: true, organization: { select: { timezone: true } } },
+    });
+  return new Map(rows.map((r) => [r.id, r.timezone || r.organization?.timezone || null]));
+}
+
 /** What deciding whether a member gets an email needs: the address, who they are, both switch sets. */
 export function memberEmailFacts(db: On<'user', 'findMany'>, ids: string[]) {
   return db.user.findMany({
