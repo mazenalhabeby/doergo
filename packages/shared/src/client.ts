@@ -153,6 +153,8 @@ export * from './attendance/outside-shift';
 export * from './attendance/more-time-rule';
 // How people work at a workspace, and a worker's own way (attendance/work-presets.ts, clock review D1)
 export * from './attendance/work-presets';
+// Where a clock-in was, for the words beside it (attendance/clock-in-place.ts)
+export * from './attendance/clock-in-place';
 // A no-show: what the system closes itself, runs of them, the record (attendance/no-show.ts).
 export * from './attendance/no-show';
 export * from './attendance/labels';

@@ -11,9 +11,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * permission, and a mounted <LocationConsentModal> renders the actual dialog.
  *
  * The decision is persisted so the disclosure is shown once, not on every trip.
+ * "Not now" is remembered too, for a day: the shift heartbeat and the geofence
+ * ask on every visit to the Time screen, and an unremembered decline put the
+ * sheet back in front of the member each time (clock review, found on the
+ * simulator). The "Always location" banner stays as the way to change their mind.
  */
 
 const CONSENT_KEY = '@hbcfield/bg-location-consent';
+const DECLINED_KEY = '@hbcfield/bg-location-declined-at';
+/** How long a "Not now" holds before the disclosure may be shown again. */
+export const CONSENT_ASK_AGAIN_MS = 24 * 60 * 60 * 1000;
 
 type ShowFn = (show: boolean) => void;
 
@@ -37,6 +44,16 @@ async function hasBackgroundLocationConsent(): Promise<boolean> {
   }
 }
 
+/** Did the member say "Not now" within the last day? */
+async function declinedRecently(now = Date.now()): Promise<boolean> {
+  try {
+    const at = Number(await AsyncStorage.getItem(DECLINED_KEY));
+    return Number.isFinite(at) && at > 0 && now - at < CONSENT_ASK_AGAIN_MS;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Ensure the user has seen and accepted the background-location disclosure.
  * Resolves true if consent is (already) granted, false if declined or no UI is
@@ -45,6 +62,7 @@ async function hasBackgroundLocationConsent(): Promise<boolean> {
 export function requestBackgroundLocationConsent(): Promise<boolean> {
   return (async () => {
     if (await hasBackgroundLocationConsent()) return true;
+    if (await declinedRecently()) return false; // asked today already — the answer was "Not now"
     if (!showUI) return false; // fail closed — never request bg permission silently
     return new Promise<boolean>((resolve) => {
       waiters.push(resolve);
@@ -55,12 +73,15 @@ export function requestBackgroundLocationConsent(): Promise<boolean> {
 
 /** Called by the modal when the user decides. Persists an accept and resolves all waiters. */
 export async function resolveBackgroundLocationConsent(granted: boolean): Promise<void> {
-  if (granted) {
-    try {
+  try {
+    if (granted) {
       await AsyncStorage.setItem(CONSENT_KEY, 'granted');
-    } catch {
-      /* ignore */
+      await AsyncStorage.removeItem(DECLINED_KEY);
+    } else {
+      await AsyncStorage.setItem(DECLINED_KEY, String(Date.now()));
     }
+  } catch {
+    /* ignore */
   }
   showUI?.(false);
   const pending = waiters;

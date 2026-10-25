@@ -9,7 +9,13 @@ import { PlusGlyph } from '../job/job-glyphs';
 import { ActivityGlyph } from '@/components/glyphs/glyphs';
 import { WorkLogSheet } from '../worklog/worklog-sheet';
 import { useWorklog } from '../worklog/use-worklog';
-import { formatDuration } from '@hbcfield/shared/client';
+import { clockInPlace, formatDuration, type ClockInPlace } from '@hbcfield/shared/client';
+
+const PLACE_WORDS: Record<ClockInPlace, (t: (k: string, d: string) => string) => string> = {
+  ON_SITE: (t) => t('time.today.onSite', 'on the site'),
+  OUTSIDE: (t) => t('time.today.offSite', 'outside the site'),
+  AWAY: (t) => t('time.today.away', 'away from a site'),
+};
 
 /**
  * TODAY — the shift as it happened, with its work log on top.
@@ -58,7 +64,8 @@ export function TimeToday({
     at: entry.clockInAt,
     kind: 'in',
     title: t('time.today.clockedIn', 'Clocked in'),
-    sub: [entry.location?.name, entry.isRemote ? t('time.today.away', 'away from a site') : entry.clockInWithinGeofence ? t('time.today.onSite', 'on the site') : t('time.today.offSite', 'outside the site'), countedFrom]
+    // Where the clock-in WAS, not whether it was admitted (shared clock-in-place.ts — a ring switched off admits far away).
+    sub: [entry.location?.name, PLACE_WORDS[clockInPlace(entry as never)](t), countedFrom]
       .filter(Boolean).join(' · '),
   });
   for (const b of breaks.filter((x) => x.timeEntryId === entry.id)) {
