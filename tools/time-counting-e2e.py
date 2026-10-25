@@ -190,7 +190,8 @@ def main():
               s in (200, 201) and local(e.get('expectedClockInAt')) == s_t and local(e.get('expectedClockOutAt')) == e_t and e.get('endIsDailyLimit') is False,
               (s, local(e.get('expectedClockInAt')), local(e.get('expectedClockOutAt')), e.get('endIsDailyLimit')))
         later = (now_l + timedelta(hours=4)).strftime('%H:%M')
-        if later > s_t:
+        # Late in the evening now + 4 h is tomorrow morning — a window that no longer overlaps her entry.
+        if later > s_t and (now_l + timedelta(hours=4)).date() == now_l.date():
             s, b = call('PUT', f"/employees/{noor_u['id']}/day-hours", leader, {**body, 'endTime': later}, label='set day hours')
             check('changing it while she works moves today’s running entry — and only it', s == 200 and data(b).get('entriesChanged') == 1, (s, data(b).get('entriesChanged')))
             st = data(call('GET', '/attendance/status', noor)[1])

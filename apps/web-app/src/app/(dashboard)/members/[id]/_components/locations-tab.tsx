@@ -9,7 +9,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTimeFormat } from "@/hooks"
 import { locationsApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
-import { spaceAllowsAway, resolveAwayAccess } from "@hbcfield/shared/client"
+import { effectiveClockRules, spaceAllowsAway, resolveAwayAccess } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { WorkAsRow } from "./work-as-row"
 
@@ -214,10 +214,13 @@ function AwayGrantRow({
   const { t } = useTranslation()
   const loc = assignment.location
   const hasPin = loc.lat != null && loc.lng != null
+  // The rules THIS member clocks by here — the server's own answer (clock review D1), so "In the field" is not
+  // contradicted by the workspace's strict ring.
+  const policy = effectiveClockRules(loc, assignment).geofencePolicy
 
   // A workspace that never admits an away day makes the whole question moot —
   // showing a control that cannot change the outcome is worse than showing none.
-  if (!spaceAllowsAway(hasPin, loc.geofencePolicy)) {
+  if (!spaceAllowsAway(hasPin, policy)) {
     return (
       <div className="mt-3.5 rounded-lg bg-muted/40 px-2.5 py-2 text-[11px] leading-snug text-muted-foreground">
         {t("attendance.away.siteStrictHere", "This workspace can only be clocked in at on site.")}
@@ -228,7 +231,7 @@ function AwayGrantRow({
 
   const effective = resolveAwayAccess({
     spaceHasPin: hasPin,
-    policy: loc.geofencePolicy,
+    policy,
     userAllowRemote: memberAllowRemote,
     assignmentAllowRemote: assignment.allowRemote,
   })

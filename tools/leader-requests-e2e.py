@@ -94,6 +94,24 @@ def clock_in_somewhere(token, name=None):
     return None, places
 
 
+def hours_now():
+    """Planned hours around now, local: one hour back to 45 minutes ahead (an end past midnight is next morning)."""
+    from datetime import datetime as _dt
+    from zoneinfo import ZoneInfo
+    now = _dt.now(ZoneInfo('Europe/Vienna'))
+    return now.strftime('%Y-%m-%d'), (now - timedelta(hours=1)).strftime('%H:%M'), (now + timedelta(minutes=45)).strftime('%H:%M')
+
+
+def plan_day(setter, user_id, space_id):
+    """More time extends a PLANNED end (clock review B1): the office sets the person's hours today. Returns the
+    request id to remove afterwards."""
+    day, start, end = hours_now()
+    s, b = call('PUT', f'/employees/{user_id}/day-hours', setter,
+                {'date': day, 'spaceId': space_id, 'startTime': start, 'endTime': end, 'reason': 'e2e: planned'})
+    check(f'the office plans {start}–{end} today', s == 200, (s, b))
+    return (data(b) or {}).get('id') if s == 200 else None
+
+
 def main():
     print('— A. a leader asks: the administrators are asked')
     karim, karim_user = login('dana@example.com')
@@ -101,6 +119,9 @@ def main():
     if status.get('isClockedIn'):
         print('SKIP A (Dana is clocked in right now)')
     else:
+        john0, _ = login('client@example.com')
+        billa = next((p for p in data(call('GET', '/attendance/clock-in-locations', karim)[1]) or [] if p['name'] == 'BILLA demo'), None)
+        planned = plan_day(john0, karim_user['id'], billa['id']) if billa else None
         entry, where = clock_in_somewhere(karim, 'BILLA demo')
         check('Dana (runs BILLA demo) clocks in there', bool(entry), where)
         if entry:
@@ -121,6 +142,8 @@ def main():
                 call('POST', '/attendance/clock-out', karim, {'lat': 47.98, 'lng': 13.82, 'accuracy': 5})
                 owner, _ = login('client@example.com')
                 call('DELETE', f"/attendance/entries/{entry['id']}", owner)
+                if planned:
+                    call('DELETE', f'/employees/time-off/{planned}/manage', owner)
 
     print('\n— B. the only administrator asks: approved automatically')
     solo, solo_user = login(SOLO, password=SOLO_PASSWORD, register={'email': SOLO, 'password': SOLO_PASSWORD, 'firstName': 'Solo', 'lastName': 'Owner', 'companyName': 'E2E Solo Owner', 'firstSpaceName': 'Solo Site'})
@@ -128,6 +151,7 @@ def main():
     status = data(call('GET', '/attendance/status', solo)[1])
     entry = None
     leave = None
+    undo = []
     try:
         if status.get('isClockedIn'):
             entry = status.get('currentEntry')
@@ -141,6 +165,16 @@ def main():
                 check('the owner adds their site', bool(spaces), (st, b))
             for sp in spaces:
                 call('POST', f"/locations/{sp['id']}/members", solo, {'userId': solo_user['id']})
+            # An administrator cannot set their own day; their own throwaway site works in shifts for the test.
+            day, start, end = hours_now()
+            dow = (date.fromisoformat(day).weekday() + 1) % 7
+            for sp in spaces:
+                call('PATCH', f"/locations/{sp['id']}", solo, {'workModel': 'SHIFT'})
+                undo.append(('PATCH', f"/locations/{sp['id']}", {'workModel': sp.get('workModel') or 'NONE'}))
+            s, b = call('POST', f"/employees/{solo_user['id']}/schedule", solo,
+                        {'schedule': [{'dayOfWeek': dow, 'startTime': start, 'endTime': end if end > start else '23:59'}]})
+            check('the owner plans their own hours today', s in (200, 201), (s, b))
+            undo.append(('POST', f"/employees/{solo_user['id']}/schedule", {'schedule': []}))
             entry, where = clock_in_somewhere(solo)
         check('the owner clocks in', bool(entry), None if entry else where)
         if entry:
@@ -148,6 +182,10 @@ def main():
             check('asks for extra time → approved at once', s in (200, 201) and data(b).get('automatic') is True, (s, b))
             ot = data(call('GET', '/overtime/active', solo)[1]) or {}
             check('recorded as approved automatically, by the owner', ot.get('status') == 'APPROVED' and ot.get('approvalMethod') == 'AUTOMATIC' and ot.get('approvedById') == solo_user['id'], {k: ot.get(k) for k in ('status', 'approvalMethod', 'approvedById')})
+        # Back to how the site was before the leave check — a one-day rota would make every other day a rest day.
+        for m_, p_, b_ in undo:
+            call(m_, p_, solo, b_)
+        undo = []
         d = date.today() + timedelta(days=30)
         while d.weekday() >= 5:
             d += timedelta(days=1)
@@ -163,6 +201,8 @@ def main():
             call('DELETE', f"/attendance/entries/{entry['id']}", solo)
         if leave:
             call('DELETE', f"/employees/time-off/{leave['id']}/manage", solo)
+        for m_, p_, b_ in undo:
+            call(m_, p_, solo, b_)
 
 
 if __name__ == '__main__':
