@@ -11,7 +11,7 @@ Leaves the data as it found it: Mike's own rules are put back, the entry it make
 
     python3 tools/clock-review-e2e.py
 """
-import json, sys, time, urllib.request, urllib.error
+import json, subprocess, sys, time, urllib.request, urllib.error
 
 API = 'http://localhost:4000/api/v1'
 FAR = {'lat': 48.2082, 'lng': 16.3738, 'accuracy': 10}  # Vienna — hundreds of km from every demo site
@@ -123,7 +123,7 @@ def main():
         check('C2 a pinned site with no position says FIX_MISSING', s >= 400 and code(b) == 'FIX_MISSING', (s, b))
 
     # ── D1 attacks ──────────────────────────────────────────────────────
-    rows = data(call('GET', f'/technicians/{mike_id}/assignments', owner)[1]) or []
+    rows = data(call('GET', f'/employees/{mike_id}/assignments', owner)[1]) or []
     assignment = next((a for a in rows if (a.get('locationId') or a.get('spaceId')) == site['id']), None)
     check('D1 the office reads Mike\'s assignment there, own rules included', bool(assignment) and 'workAs' in assignment,
           rows[:1])
@@ -162,8 +162,7 @@ def main():
               mine.get('geofencePolicy') == 'NONE' and mine.get('noShiftDailyMinutes') == 360 and mine.get('ownRules') is True,
               {k: mine.get(k) for k in ('geofencePolicy', 'noShiftPolicy', 'noShiftDailyMinutes', 'ownRules')})
         st = status_of(mike)
-        rows_st = st.get('assignments') or []
-        sp = next((a.get('space') or {} for a in rows_st if (a.get('space') or {}).get('id') == site['id']), {})
+        sp = next((a for a in st.get('assignedLocations') or [] if a.get('id') == site['id']), {})
         check('D1 the status read (the phone\'s offline check) says the same',
               sp.get('geofencePolicy') == 'NONE' and sp.get('noShiftDailyMinutes') == 360,
               {k: sp.get(k) for k in ('geofencePolicy', 'noShiftDailyMinutes')})
@@ -174,11 +173,13 @@ def main():
         check('D1 after: the same far-away clock-in is taken', s in (200, 201) and bool(made), (s, b))
         if made:
             # ── B1, B9 while the entry is open ──────────────────────────
-            s, b = call('POST', f'/attendance/entries/{made}/request-extra-time', mike, {'minutes': 30, 'reason': 'e2e'})
+            s, b = call('POST', f'/attendance/entries/{made}/request-extra-time', mike, {})
             check('B1 asking for more time with no shift says EXTRA_TIME_NO_SHIFT',
                   s >= 400 and code(b) == 'EXTRA_TIME_NO_SHIFT', (s, b))
             s, b = call('POST', f'/attendance/approvals/{made}/approve', owner, {})
-            check('B9 an open entry cannot be approved — ENTRY_STILL_OPEN', s >= 400 and code(b) == 'ENTRY_STILL_OPEN', (s, b))
+            # An open entry is refused — as still open, or (where the workspace approves on its own) as already decided.
+            check('B9 an open entry cannot be approved', s >= 400 and code(b) in ('ENTRY_STILL_OPEN', 'ENTRY_ALREADY_DECIDED'),
+                  (s, b))
             s, b = call('POST', '/attendance/clock-out', mike, {**FAR, 'entryId': made})
             check('D1 he clocks out from where the work was', s in (200, 201), (s, b))
     finally:
@@ -192,15 +193,45 @@ def main():
         check('cleanup: Mike\'s rules there are put back', s == 200, s)
 
     # ── A10 ─────────────────────────────────────────────────────────────
-    s, _ = call('GET', '/attendance/outside/pending', mike)
-    check('A10 a worker cannot read the outside-the-shift list', s == 403, s)
-    s, _ = call('POST', f'/attendance/entries/{made or "00000000-0000-0000-0000-000000000000"}/outside', mike, {'minutes': 0})
-    check('A10 a worker cannot decide one', s == 403, s)
-    me = data(call('GET', '/auth/me', anna)[1]) or {}
-    acc = json.dumps(me.get('access') or {})
-    s, _ = call('GET', '/attendance/outside/pending', anna)
-    expect = 200 if 'canApproveAttendance' in acc else 403
-    check(f'A10 Anna reads the list only if she approves hours (expected {expect})', s == expect, s)
+    # Decided by who approves HOURS — canApproveAttendance, or what carries it (ORG_FLAG_BRIDGES), anywhere.
+    deciders = ('canApproveAttendance', 'canReconcileAttendance', 'canManageUsers')
+
+    def may_decide(token):
+        acc = (data(call('GET', '/auth/me', token)[1]) or {}).get('access') or {}
+        grants = [acc.get('org') or {}, *(acc.get('perSpace') or {}).values()]
+        return any(g.get(k) for g in grants for k in deciders)
+
+    tried = 0
+    for email in ('mike@example.com', 'manager@example.com', 'sarah@example.com', 'karim@example.com', 'lisa@example.com',
+                  'hassan@example.com', 'dana@example.com', 'david@example.com', 'noor@example.com'):
+        tok, _ = login(email)
+        expect = 200 if may_decide(tok) else 403
+        s, _ = call('GET', '/attendance/outside/pending', tok)
+        check(f'A10 {email} reads the outside-the-shift list only if they approve hours ({expect})', s == expect, s)
+        if expect == 403:
+            tried += 1
+            s, _ = call('POST', '/attendance/entries/00000000-0000-0000-0000-000000000000/outside', tok, {'minutes': 0})
+            check(f'A10 and cannot decide one ({email})', s == 403, s)
+    if not tried:
+        # The local demo data gives everyone a legacy canManageUsers flag; take Noor's away for one check.
+        flip = lambda v: subprocess.run(['docker', 'exec', 'hbcfield-postgres', 'psql', '-qU', 'hbcfield', 'hbcfield', '-c',
+                                         f"update users set \"canManageUsers\"={v} where email='noor@example.com'"],
+                                        check=True, capture_output=True)
+        was = subprocess.run(['docker', 'exec', 'hbcfield-postgres', 'psql', '-tAU', 'hbcfield', 'hbcfield', '-c',
+                              "select \"canManageUsers\" from users where email='noor@example.com'"],
+                             capture_output=True, text=True).stdout.strip() == 't'
+        flip('false')
+        try:
+            tok, _ = login('noor@example.com')
+            if not may_decide(tok):
+                tried += 1
+                s, _ = call('GET', '/attendance/outside/pending', tok)
+                check('A10 Noor without the right cannot read the list', s == 403, s)
+                s, _ = call('POST', '/attendance/entries/00000000-0000-0000-0000-000000000000/outside', tok, {'minutes': 0})
+                check('A10 and cannot decide one', s == 403, s)
+        finally:
+            flip('true' if was else 'false')
+    check('A10 at least one person without the right was tried', tried > 0, tried)
     s, _ = call('GET', '/attendance/outside/pending', owner)
     check('A10 the owner reads it', s == 200, s)
 
