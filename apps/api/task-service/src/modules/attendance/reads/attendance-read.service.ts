@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import {
+  effectiveClockRules,
   notEndedWhere,
   success,
   paginated,
@@ -130,7 +131,11 @@ export class AttendanceReadService {
     const clockableIds = new Set(
       assignments.filter((a) => isClockableAssignment(a, data.organizationId, now)).map((a) => a.spaceId),
     );
-    const listed = assignments.map((a) => ({ ...a, space: statusSpace(a.space) }));
+    // Each workspace as THIS member clocks there (clock review D1) — the phone's offline check reads these.
+    const listed = assignments.map((a) => {
+      const space = statusSpace(a.space);
+      return { ...a, space: { ...space, ...effectiveClockRules(space, a) } as typeof space };
+    });
 
     // The workspace tags and the active excursion depend on the reads above, not on each other.
     const [tagged, activeExcursion] = await Promise.all([

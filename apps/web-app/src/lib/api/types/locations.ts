@@ -144,4 +144,8 @@ export interface UpdateAssignmentInput {
   /** By their shift, or by arriving and leaving. Switching to PRESENCE without hours → suggested from their clock-ins. */
   autoClockMode?: AutoClockMode;
   autoClockStartWindow?: AutoClockStartWindow | null;
+  /** How they work here when it differs from the workspace (clock review D1); null = the workspace's way. */
+  workAs?: 'FIXED_SHIFTS' | 'FLEXIBLE_HOURS' | 'IN_THE_FIELD' | null;
+  /** Their own hours a day without a shift here, in minutes; null = the workspace's. */
+  workDailyMinutes?: number | null;
 }

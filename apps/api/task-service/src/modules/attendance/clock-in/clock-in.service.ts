@@ -15,6 +15,7 @@ import {
   activeAssignmentWhere,
   resolveAwayAccess,
   ringSwitchedOff,
+  effectiveClockRules,
   mayClockInRemotely as canClockInRemotely,
   personForClockIn,
 } from '@hbcfield/shared';
@@ -192,7 +193,7 @@ export class ClockInService {
     if (existingEntry) throw alreadyClockedIn(existingEntry, occurrence.fromEvidence);
 
     // Get location details
-    const location = await this.prisma.companyLocation.findFirst({
+    const workspace = await this.prisma.companyLocation.findFirst({
       where: {
         id: data.locationId,
         organizationId: data.organizationId,
@@ -200,9 +201,12 @@ export class ClockInService {
       },
     });
 
-    if (!location) {
+    if (!workspace) {
       throw new NotFoundException('Location not found or inactive');
     }
+    // The rules THIS member clocks by here (clock review D1): the workspace's, unless their assignment says
+    // they work here another way, with their own daily hours. Everything below reads the result.
+    const location = { ...workspace, ...effectiveClockRules(workspace, assignment) } as typeof workspace;
 
     // Check GPS accuracy
     const accuracyRefusal = gpsAccuracyRefusal(data.accuracy);

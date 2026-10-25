@@ -6014,8 +6014,6 @@
     "workModel": {
       "heading": "Work model",
       "intro": "Choose how this workspace interprets attendance and time expectations.",
-      "saved": "Work model updated",
-      "saveFailed": "Failed to update work model",
       "remindersBadge": "Enables reminders",
       "remindersNote": "Shift-based and fixed schedule models enable automatic clock-out reminders when someone stays past their expected end time.",
       "options": {
@@ -6251,11 +6249,6 @@
       "intro": "How this workspace tracks time.",
       "clockTitle": "Time clock — always on",
       "clockDesc": "Everyone with the Clock module clocks in and out — on-site (geofence) or remotely. Set the geofence and remote clock-in in the General tab.",
-      "modeQuestion": "How are hours tracked here?",
-      "openTitle": "Open hours",
-      "openDesc": "Clock in and out freely. No fixed shifts, no reminders.",
-      "scheduledTitle": "Scheduled shifts",
-      "scheduledDesc": "Assign people to shifts. Scheduled members get end-of-shift reminders; anyone left unassigned works open hours.",
       "openHoursNote": "Nothing else to set up — members clock in and out on their own hours.",
       "geofenceOn": "On-site clock-in is verified within {{radius}} of the location pin.",
       "geofenceOff": "Location-free clock-in — no geofence set for this workspace."
@@ -10093,5 +10086,29 @@
       "told": "{{name}} gets a notification."
     },
     "setBy": "Set by {{name}} · {{date}}"
+  },
+  "workPreset": {
+    "question": "How do people work here?",
+    "saved": "Saved",
+    "failed": "Could not save",
+    "custom": "Custom — the details below were changed. Choose a way above to reset them.",
+    "details": "Change details",
+    "FIXED_SHIFTS": {
+      "title": "Fixed shifts",
+      "desc": "A rota. Clock in on site, at the shift; late after the shift's grace. Nobody clocks in without a shift."
+    },
+    "FLEXIBLE_HOURS": {
+      "title": "Flexible hours",
+      "desc": "No shift needed. Clock in on site; all of the time counts. Past the day's hours it is flagged, never cut."
+    },
+    "IN_THE_FIELD": {
+      "title": "In the field",
+      "desc": "No ring. Clock in wherever the work is; all of the time counts."
+    },
+    "sameAsWorkspace": "Same as workspace",
+    "worksHereAs": "Works here as",
+    "ownRules": "Own rules",
+    "ownHours": "Hours a day without a shift",
+    "useWorkspaceHours": "Use the workspace's"
   }
 }

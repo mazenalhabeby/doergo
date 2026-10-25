@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
+  isWorkPreset,
+  clampDailyMinutes,
   zoneOf,
   success,
   assertFoundInOrg,
@@ -74,6 +76,10 @@ export class AssignmentTermsService {
     autoClockMode?: string;
     /** PRESENCE: usual start hours, or null for any time. Omitted when switching to PRESENCE → suggested from their clock-ins here. */
     autoClockStartWindow?: unknown;
+    /** How they work here when it differs from the workspace (D1); null = the workspace's way. */
+    workAs?: string | null;
+    /** Their own hours a day without a shift here; null = the workspace's. */
+    workDailyMinutes?: number | null;
     /**
      * Set when the caller manages only THIS workspace (not org-wide): the
      * assignment must be in it, or it reads as not found.
@@ -121,6 +127,16 @@ export class AssignmentTermsService {
     // Tri-state on purpose: true / false / null-meaning-follow-the-account.
     if (data.allowRemote !== undefined) updateData.allowRemote = data.allowRemote;
     if (data.autoClock !== undefined) updateData.autoClock = data.autoClock === true;
+    // A worker's own way of working here (clock review D1) — strictly one of the three, or back to the workspace's.
+    if (data.workAs !== undefined) {
+      if (data.workAs !== null && !isWorkPreset(data.workAs)) {
+        throw new BadRequestException({ message: 'Unknown way of working', code: 'WORK_AS_INVALID' });
+      }
+      updateData.workAs = data.workAs;
+    }
+    if (data.workDailyMinutes !== undefined) {
+      updateData.workDailyMinutes = data.workDailyMinutes === null ? null : clampDailyMinutes(data.workDailyMinutes);
+    }
     if (data.autoClockMode !== undefined) {
       if (!isAutoClockMode(data.autoClockMode)) {
         throw new BadRequestException({

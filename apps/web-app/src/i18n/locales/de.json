@@ -6014,8 +6014,6 @@
     "workModel": {
       "heading": "Arbeitsmodell",
       "intro": "Wählen Sie, wie dieser Arbeitsbereich Anwesenheit und Zeitvorgaben interpretiert.",
-      "saved": "Arbeitsmodell aktualisiert",
-      "saveFailed": "Arbeitsmodell konnte nicht aktualisiert werden",
       "remindersBadge": "Aktiviert Erinnerungen",
       "remindersNote": "Die Modelle „Schichtbasiert“ und „Feste Wochenplanung“ aktivieren automatische Ausstempel-Erinnerungen, wenn jemand über das erwartete Ende hinaus bleibt.",
       "options": {
@@ -6251,11 +6249,6 @@
       "intro": "Wie dieser Arbeitsbereich die Zeit erfasst.",
       "clockTitle": "Stempeluhr — immer aktiv",
       "clockDesc": "Jeder mit dem Zeiterfassungs-Modul stempelt ein und aus — vor Ort (Geofence) oder remote. Geofence und Remote-Zeiterfassung im Tab „Allgemein“ festlegen.",
-      "modeQuestion": "Wie werden die Stunden hier erfasst?",
-      "openTitle": "Offene Zeiten",
-      "openDesc": "Frei ein- und ausstempeln. Keine festen Schichten, keine Erinnerungen.",
-      "scheduledTitle": "Geplante Schichten",
-      "scheduledDesc": "Personen zu Schichten zuweisen. Eingeplante Mitglieder erhalten Erinnerungen zum Schichtende; nicht zugewiesene arbeiten zu offenen Zeiten.",
       "openHoursNote": "Nichts weiter einzurichten — Mitglieder stempeln zu ihren eigenen Zeiten ein und aus.",
       "geofenceOn": "Vor-Ort-Zeiterfassung wird im Umkreis von {{radius}} um die Markierung geprüft.",
       "geofenceOff": "Standortfreie Zeiterfassung — für diesen Arbeitsbereich ist kein Geofence festgelegt."
@@ -10093,5 +10086,29 @@
       "told": "{{name}} erhält eine Benachrichtigung."
     },
     "setBy": "Festgelegt von {{name}} · {{date}}"
+  },
+  "workPreset": {
+    "question": "Wie wird hier gearbeitet?",
+    "saved": "Gespeichert",
+    "failed": "Konnte nicht gespeichert werden",
+    "custom": "Angepasst – die Details unten wurden geändert. Wählen Sie oben eine Arbeitsweise, um sie zurückzusetzen.",
+    "details": "Details ändern",
+    "FIXED_SHIFTS": {
+      "title": "Feste Schichten",
+      "desc": "Ein Dienstplan. Einstempeln vor Ort, zur Schicht; verspätet nach der Kulanz der Schicht. Ohne Schicht kein Einstempeln."
+    },
+    "FLEXIBLE_HOURS": {
+      "title": "Flexible Zeiten",
+      "desc": "Keine Schicht nötig. Einstempeln vor Ort; die ganze Zeit zählt. Über den Tagesstunden wird markiert, nie gekürzt."
+    },
+    "IN_THE_FIELD": {
+      "title": "Im Außendienst",
+      "desc": "Kein Umkreis. Einstempeln, wo die Arbeit ist; die ganze Zeit zählt."
+    },
+    "sameAsWorkspace": "Wie der Arbeitsort",
+    "worksHereAs": "Arbeitet hier als",
+    "ownRules": "Eigene Regeln",
+    "ownHours": "Stunden pro Tag ohne Schicht",
+    "useWorkspaceHours": "Die des Arbeitsorts verwenden"
   }
 }

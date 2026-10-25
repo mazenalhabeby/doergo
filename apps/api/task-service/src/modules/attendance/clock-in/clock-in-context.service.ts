@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@hbcfield/shared';
+import { effectiveClockRules, PrismaService } from '@hbcfield/shared';
 import { ShiftResolverService, ResolverSpace } from '../core/shift-resolver.service';
 import {
   TimeEntryStatus,
@@ -173,7 +173,7 @@ export class ClockInContextService {
       where: activeAssignmentWhere(userId, at),
       // The per-workspace override rides along: it is half of the answer to
       // "may they work away from HERE", and it is on the row we already read.
-      select: { spaceId: true, allowRemote: true, isPrimary: true },
+      select: { spaceId: true, allowRemote: true, isPrimary: true, workAs: true, workDailyMinutes: true },
     });
     const spaceIds = [...new Set(assignments.map((a) => a.spaceId))];
     if (!spaceIds.length) return { assignments, locations: [] };
@@ -218,7 +218,15 @@ export class ClockInContextService {
         // The same answer the job-start gate uses (shared clock-gate.ts).
         spaceRunsClock(l.enabledModules as string[] | null, l.organization?.enabledModules as string[] | null),
       )
-      .map(({ enabledModules: _m, organization: _o, ...rest }) => rest);
+      .map(({ enabledModules: _m, organization: _o, ...rest }) => ({
+        ...rest,
+        // The rules THIS member clocks by there (clock review D1) — what the list offers, the phone's offline
+        // check and the clock-in itself all read the same answer.
+        ...effectiveClockRules(
+          rest,
+          assignments.find((a) => a.spaceId === rest.id),
+        ),
+      }));
     return { assignments, locations: clockable };
   }
 

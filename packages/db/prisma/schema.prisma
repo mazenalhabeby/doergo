@@ -3633,6 +3633,11 @@ model SpaceAssignment {
   /// For the person who travels for one site and is only ever physically at
   /// another: granted on the account, refused on the yard's assignment.
   allowRemote   Boolean?
+  /// How THIS member works here when it differs from the workspace (clock review D1, shared
+  /// attendance/work-presets.ts): FIXED_SHIFTS | FLEXIBLE_HOURS | IN_THE_FIELD. NULL = same as the workspace.
+  workAs           String?
+  /// Their own hours a day without a shift here. NULL = the workspace's `noShiftDailyMinutes`.
+  workDailyMinutes Int?
   /// Chosen for the automatic clock in THIS workspace (shared attendance/auto-clock.ts).
   /// Only arms when the workspace switched it on AND the member consented.
   autoClock     Boolean   @default(false)

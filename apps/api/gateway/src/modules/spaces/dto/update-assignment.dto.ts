@@ -1,6 +1,12 @@
 import { ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
-import { IsBoolean, IsIn, IsObject, IsOptional, ValidateIf } from 'class-validator';
-import { AUTO_CLOCK_MODES, type AutoClockMode, type AutoClockStartWindow } from '@hbcfield/shared';
+import { IsBoolean, IsIn, IsInt, IsObject, IsOptional, Max, Min, ValidateIf } from 'class-validator';
+import {
+  AUTO_CLOCK_MODES,
+  WORK_PRESETS,
+  type AutoClockMode,
+  type AutoClockStartWindow,
+  type WorkPreset,
+} from '@hbcfield/shared';
 import { AssignMemberDto } from './assign-member.dto';
 
 /** What assigning accepts, minus WHO (an assignment's member never changes), plus the away override. */
@@ -49,4 +55,23 @@ export class UpdateAssignmentDto extends PartialType(OmitType(AssignMemberDto, [
   @IsOptional()
   @ValidateIf((_o, v) => v !== null)
   autoClockStartWindow?: AutoClockStartWindow | null;
+
+  /**
+   * How THIS member works here when it differs from the workspace (clock review D1): one of the three ways of
+   * working, or null to follow the workspace again. Checked strictly by the service.
+   */
+  @ApiPropertyOptional({ nullable: true, enum: WORK_PRESETS })
+  @IsIn(WORK_PRESETS as unknown as string[])
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  workAs?: WorkPreset | null;
+
+  /** Their own hours a day without a shift here, in minutes; null = the workspace's. */
+  @ApiPropertyOptional({ nullable: true, minimum: 30, maximum: 1440 })
+  @IsInt()
+  @Min(30)
+  @Max(1440)
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  workDailyMinutes?: number | null;
 }

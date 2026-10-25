@@ -1,26 +1,22 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useFormatDistance } from "@/hooks/use-format-distance"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { CalendarClock, CalendarRange, Clock, Loader2, MapPin, Users } from "lucide-react"
+import { CalendarClock, Clock, MapPin, Users } from "lucide-react"
 
-import { notify } from "@/lib/toast"
-import { locationsApi, type CompanyLocation } from "@/lib/api"
-import { WorkModel } from "@hbcfield/shared/client"
-import { cn } from "@/lib/utils"
+import { type CompanyLocation } from "@/lib/api"
 import { Card } from "@/components/ui/card"
 import { SectionHeader } from "../../../../../components/common/section-header"
 import { ShiftsTab } from "./shifts-tab"
 import { RotaTab } from "./rota-tab"
 import { RestsSection } from "./rests-section"
 import { AwayPolicySection } from "./away-policy-section"
+import { WorkPresetPicker } from "./work-preset-picker"
 import { NoShiftSection } from "./no-shift-section"
 import { RequestKindsSection } from "./request-kinds-section"
 import { AutoClockSection } from "./auto-clock-section"
-import { workspaceSchedulesShifts } from "@hbcfield/shared/client"
+import { presetOfWorkspace, workspaceSchedulesShifts } from "@hbcfield/shared/client"
 import { MinCoverSection } from "./min-cover-section"
 
 /**
@@ -37,30 +33,9 @@ import { MinCoverSection } from "./min-cover-section"
 export function AttendanceTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
   const formatDistance = useFormatDistance()
-  const queryClient = useQueryClient()
 
-  const initialScheduled = workspaceSchedulesShifts(space.workModel)
-  const [scheduled, setScheduled] = useState(initialScheduled)
-
-  const mutation = useMutation({
-    mutationFn: (workModel: WorkModel) => locationsApi.update(space.id, { workModel }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
-      queryClient.invalidateQueries({ queryKey: keys.locations.lists() })
-      notify.success(t("scheduling.workModel.saved"))
-    },
-    onError: (err: Error) => {
-      notify.error(err.message || t("scheduling.workModel.saveFailed"))
-      // Revert the optimistic toggle on failure.
-      setScheduled((s) => !s)
-    },
-  })
-
-  const choose = (next: boolean) => {
-    if (next === scheduled || mutation.isPending) return
-    setScheduled(next)
-    mutation.mutate(next ? WorkModel.SHIFT : WorkModel.NONE)
-  }
+  const isCustom = presetOfWorkspace(space as never) === "CUSTOM"
+  const [scheduled, setScheduled] = useState(workspaceSchedulesShifts(space.workModel))
 
   return (
     <div className="space-y-6">
@@ -74,9 +49,12 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
       {/* Time clock — the universal baseline (informational). */}
       <Card className="flex items-start gap-3 border-dashed bg-muted/30 p-4">
         <span
-          className={"flex size-9 shrink-0 items-center justify-center rounded-lg " +
+          className={
+            "flex size-9 shrink-0 items-center justify-center rounded-lg " +
             "bg-emerald-100 text-emerald-600 dark:bg-emerald-950 " +
-            "dark:text-emerald-300"}>
+            "dark:text-emerald-300"
+          }
+        >
           <Clock className="h-[18px] w-[18px]" />
         </span>
         <div>
@@ -92,45 +70,8 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
         </div>
       </Card>
 
-      {/* Mode: Open hours vs Scheduled shifts (saves on click). */}
-      <div>
-        <p className="mb-2 text-sm font-medium text-foreground">{t("scheduling.attendanceTab.modeQuestion")}</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => choose(false)}
-            disabled={mutation.isPending}
-            className={cn(
-              "rounded-xl border p-4 text-left transition-all disabled:opacity-70",
-              !scheduled
-                ? "border-blue-600 bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-900/20 dark:ring-blue-800"
-                : "border-border hover:border-muted-foreground/30",
-            )}
-          >
-            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Clock className="h-4 w-4 text-blue-600" /> {t("scheduling.attendanceTab.openTitle")}
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">{t("scheduling.attendanceTab.openDesc")}</p>
-          </button>
-          <button
-            type="button"
-            onClick={() => choose(true)}
-            disabled={mutation.isPending}
-            className={cn(
-              "rounded-xl border p-4 text-left transition-all disabled:opacity-70",
-              scheduled
-                ? "border-blue-600 bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-900/20 dark:ring-blue-800"
-                : "border-border hover:border-muted-foreground/30",
-            )}
-          >
-            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <CalendarRange className="h-4 w-4 text-blue-600" /> {t("scheduling.attendanceTab.scheduledTitle")}
-              {mutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">{t("scheduling.attendanceTab.scheduledDesc")}</p>
-          </button>
-        </div>
-      </div>
+      {/* One question — the way people work here (clock review D1); saves on click. */}
+      <WorkPresetPicker space={space} onScheduledChange={setScheduled} />
 
       {/* Scheduling layer — only when Scheduled is on. */}
       {scheduled && (
@@ -150,14 +91,22 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
         Outside the `scheduled` branch and above the rests, because it applies to
         every attendance model: an open-hours workspace has a geofence too.
       */}
-      <div className="border-t border-border/60 pt-6">
-        <AwayPolicySection space={space} />
-      </div>
+      {/* The details the way of working sets — open to change, closed until somebody wants to (D1). */}
+      <details className="group rounded-xl border border-border/60 px-4 py-3" open={isCustom}>
+        <summary className="cursor-pointer select-none text-sm font-medium text-foreground">
+          {t("workPreset.details", "Change details")}
+        </summary>
+        <div className="space-y-6 pt-4">
+          <div className="border-t border-border/60 pt-6">
+            <AwayPolicySection space={space} />
+          </div>
 
-      {/* Clocking in with no shift — every attendance model, like the geofence. */}
-      <div className="border-t border-border/60 pt-6">
-        <NoShiftSection space={space} schedulesShifts={scheduled} />
-      </div>
+          {/* Clocking in with no shift — every attendance model, like the geofence. */}
+          <div className="border-t border-border/60 pt-6">
+            <NoShiftSection space={space} schedulesShifts={scheduled} />
+          </div>
+        </div>
+      </details>
 
       {/* What members may ask for here — leave, remote, a changed day, overtime, other. */}
       <div className="border-t border-border/60 pt-6">

@@ -11,6 +11,7 @@ import { locationsApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { spaceAllowsAway, resolveAwayAccess } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
+import { WorkAsRow } from "./work-as-row"
 
 interface Assignment {
   id: string
@@ -21,6 +22,9 @@ interface Assignment {
   effectiveTo?: string
   /** true = allowed here · false = refused here · null = follow their account. */
   allowRemote?: boolean | null
+  /** How they work here when it differs from the workspace (D1). */
+  workAs?: string | null
+  workDailyMinutes?: number | null
   location: {
     id: string
     name: string
@@ -155,6 +159,13 @@ export function LocationsTab({ assignments, memberAllowRemote, canManage }: Loca
                 canManage={canManage}
                 pending={setGrant.isPending}
                 onChange={(value) => setGrant.mutate({ a: assignment, value })}
+              />
+              <WorkAsRow
+                locationId={assignment.locationId}
+                assignmentId={assignment.id}
+                workAs={assignment.workAs}
+                workDailyMinutes={assignment.workDailyMinutes}
+                canManage={canManage}
               />
 
               {/* Effective-from footer */}

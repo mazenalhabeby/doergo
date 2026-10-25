@@ -6014,8 +6014,6 @@
     "workModel": {
       "heading": "Modello di lavoro",
       "intro": "Scegli come questo spazio di lavoro interpreta le presenze e le aspettative di orario.",
-      "saved": "Modello di lavoro aggiornato",
-      "saveFailed": "Impossibile aggiornare il modello di lavoro",
       "remindersBadge": "Attiva i promemoria",
       "remindersNote": "I modelli a turni e a orario fisso attivano promemoria di uscita automatici quando qualcuno rimane oltre l’orario di fine previsto.",
       "options": {
@@ -6251,11 +6249,6 @@
       "intro": "Come questo spazio di lavoro registra il tempo.",
       "clockTitle": "Timbratore — sempre attivo",
       "clockDesc": "Chiunque abbia il modulo Timbratura entra ed esce — in sede (geofence) o da remoto. Imposta il geofence e la timbratura remota nella scheda Generale.",
-      "modeQuestion": "Come vengono registrate le ore qui?",
-      "openTitle": "Orario libero",
-      "openDesc": "Timbra entrata e uscita liberamente. Nessun turno fisso, nessun promemoria.",
-      "scheduledTitle": "Turni pianificati",
-      "scheduledDesc": "Assegna le persone ai turni. I membri pianificati ricevono promemoria di fine turno; chi resta non assegnato lavora a orario libero.",
       "openHoursNote": "Nient’altro da configurare: i membri timbrano secondo i propri orari.",
       "geofenceOn": "La timbratura in sede è verificata entro {{radius}} dal segnaposto.",
       "geofenceOff": "Timbratura senza posizione — nessun geofence impostato per questo spazio di lavoro."
@@ -10093,5 +10086,29 @@
       "told": "{{name}} riceve una notifica."
     },
     "setBy": "Fissato da {{name}} · {{date}}"
+  },
+  "workPreset": {
+    "question": "Come si lavora qui?",
+    "saved": "Salvato",
+    "failed": "Impossibile salvare",
+    "custom": "Personalizzato: i dettagli qui sotto sono stati modificati. Scegli un modo sopra per ripristinarli.",
+    "details": "Modifica i dettagli",
+    "FIXED_SHIFTS": {
+      "title": "Turni fissi",
+      "desc": "Un turno pianificato. Si timbra sul posto, all'ora del turno; in ritardo dopo la tolleranza. Senza turno non si timbra."
+    },
+    "FLEXIBLE_HOURS": {
+      "title": "Orario flessibile",
+      "desc": "Nessun turno necessario. Si timbra sul posto; conta tutto il tempo. Oltre le ore del giorno viene segnalato, mai tagliato."
+    },
+    "IN_THE_FIELD": {
+      "title": "Sul campo",
+      "desc": "Nessun perimetro. Si timbra dove si lavora; conta tutto il tempo."
+    },
+    "sameAsWorkspace": "Come il luogo",
+    "worksHereAs": "Lavora qui con",
+    "ownRules": "Regole proprie",
+    "ownHours": "Ore al giorno senza turno",
+    "useWorkspaceHours": "Usa quelle del luogo"
   }
 }

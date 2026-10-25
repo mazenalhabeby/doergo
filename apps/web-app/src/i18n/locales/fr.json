@@ -6014,8 +6014,6 @@
     "workModel": {
       "heading": "Modèle de travail",
       "intro": "Choisissez comment cet espace de travail interprète la présence et les attentes horaires.",
-      "saved": "Modèle de travail mis à jour",
-      "saveFailed": "Impossible de mettre à jour le modèle de travail",
       "remindersBadge": "Active les rappels",
       "remindersNote": "Les modèles par poste et à horaire fixe activent des rappels de pointage de sortie automatiques lorsqu’une personne dépasse son heure de fin prévue.",
       "options": {
@@ -6251,11 +6249,6 @@
       "intro": "Comment cet espace de travail suit le temps.",
       "clockTitle": "Pointeuse — toujours active",
       "clockDesc": "Toute personne disposant du module Pointage pointe l’entrée et la sortie — sur site (géorepérage) ou à distance. Réglez le géorepérage et le pointage à distance dans l’onglet Général.",
-      "modeQuestion": "Comment les heures sont-elles suivies ici ?",
-      "openTitle": "Horaires libres",
-      "openDesc": "Pointez librement l’entrée et la sortie. Pas de créneaux fixes, pas de rappels.",
-      "scheduledTitle": "Créneaux planifiés",
-      "scheduledDesc": "Affectez des personnes à des créneaux. Les membres planifiés reçoivent des rappels de fin de créneau ; les non-affectés travaillent en horaires libres.",
       "openHoursNote": "Rien d’autre à configurer — les membres pointent selon leurs propres horaires.",
       "geofenceOn": "Le pointage sur site est vérifié dans un rayon de {{radius}} autour du repère.",
       "geofenceOff": "Pointage sans localisation — aucun géorepérage défini pour cet espace de travail."
@@ -10093,5 +10086,29 @@
       "told": "{{name}} reçoit une notification."
     },
     "setBy": "Fixé par {{name}} · {{date}}"
+  },
+  "workPreset": {
+    "question": "Comment travaille-t-on ici ?",
+    "saved": "Enregistré",
+    "failed": "Impossible d'enregistrer",
+    "custom": "Personnalisé – les détails ci-dessous ont été modifiés. Choisissez une façon ci-dessus pour les réinitialiser.",
+    "details": "Modifier les détails",
+    "FIXED_SHIFTS": {
+      "title": "Postes fixes",
+      "desc": "Un planning. Pointage sur place, à l'heure du poste ; en retard après la tolérance du poste. Pas de pointage sans poste."
+    },
+    "FLEXIBLE_HOURS": {
+      "title": "Horaires flexibles",
+      "desc": "Pas besoin de poste. Pointage sur place ; tout le temps compte. Au-delà des heures du jour, c'est signalé, jamais coupé."
+    },
+    "IN_THE_FIELD": {
+      "title": "Sur le terrain",
+      "desc": "Pas de périmètre. Pointage là où est le travail ; tout le temps compte."
+    },
+    "sameAsWorkspace": "Comme le lieu",
+    "worksHereAs": "Travaille ici en",
+    "ownRules": "Règles propres",
+    "ownHours": "Heures par jour sans poste",
+    "useWorkspaceHours": "Utiliser celles du lieu"
   }
 }
