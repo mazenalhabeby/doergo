@@ -32,4 +32,26 @@ describe('readClockOut — the rostered end decides overtime', () => {
     expect(v.face).toBe('onTime');
     expect(v.overBy).toBe(0);
   });
+
+  it('a rota worker with no weekly target leaving 2 h before the planned end → early, and asked why (C7)', () => {
+    const v = readClockOut({
+      ...base,
+      targetMinutes: null,
+      countedMinutes: 360,
+      now: new Date(end.getTime() - 120 * 60_000),
+    } as never);
+    expect(v.face).toBe('early');
+    expect(v.shortBy).toBe(120);
+  });
+
+  it('a daily-hours marker is not an end: leaving before it is never early', () => {
+    const v = readClockOut({
+      ...base,
+      targetMinutes: null,
+      endIsDailyLimit: true,
+      countedMinutes: 120,
+      now: new Date(end.getTime() - 300 * 60_000),
+    } as never);
+    expect(v.face).toBe('onTime');
+  });
 });

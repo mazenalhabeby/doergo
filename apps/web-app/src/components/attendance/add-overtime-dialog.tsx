@@ -53,7 +53,12 @@ export function AddOvertimeDialog({ entry }: { entry: TimeEntry }) {
       // The member's own attendance tab offers the same action, keyed
       // ["memberAttendance", memberId, from, to] — a prefix reaches every range.
       queryClient.invalidateQueries({ queryKey: keys.memberRecord.attendance() })
-      notify.success(t("attendance.addOvertime.success", { minutes: value, defaultValue: `Added ${value} min of overtime` }))
+      notify.success(
+        t("attendance.addOvertime.success", {
+          duration: formatDuration(value),
+          defaultValue: `Added ${formatDuration(value)} of overtime`,
+        }),
+      )
       setOpen(false)
     },
     onError: (err: Error) => notify.error(err.message || t("attendance.addOvertime.error", "Could not add overtime")),
@@ -95,19 +100,22 @@ export function AddOvertimeDialog({ entry }: { entry: TimeEntry }) {
             {t("attendance.addOvertime.context", {
               end: formatTime(entry.expectedClockOutAt ?? null, hour12, locale, tz),
               out: formatTime(entry.clockOutAt, hour12, locale, tz),
-              minutes: initial.pastEnd,
+              duration: formatDuration(initial.pastEnd),
               defaultValue: `Shift ended ${formatTime(
                 entry.expectedClockOutAt ?? null,
                 hour12,
                 locale,
-                tz)} · clocked out ${formatTime(entry.clockOutAt, hour12, locale, tz)} (${initial.pastEnd} min later)`,
+                tz,
+              )} · clocked out ${formatTime(entry.clockOutAt, hour12, locale, tz)} (${formatDuration(initial.pastEnd)} later)`,
             })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4">
           <div className="grid gap-1.5">
-            <Label htmlFor={`ot-minutes-${entry.id}`}>{t("attendance.addOvertime.minutes", "Minutes after the shift end")}</Label>
+            <Label htmlFor={`ot-minutes-${entry.id}`}>
+              {t("attendance.addOvertime.minutes", "Minutes after the shift end")}
+            </Label>
             <Input
               id={`ot-minutes-${entry.id}`}
               type="number"
@@ -157,7 +165,10 @@ export function AddOvertimeDialog({ entry }: { entry: TimeEntry }) {
           </Button>
           <Button onClick={() => mutation.mutate()} disabled={!valid || mutation.isPending}>
             {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {t("attendance.addOvertime.approve", { minutes: valid ? value : "", defaultValue: `Approve ${valid ? value : ""} min` })}
+            {t("attendance.addOvertime.approve", {
+              duration: valid ? formatDuration(value) : "",
+              defaultValue: `Approve ${valid ? formatDuration(value) : ""}`,
+            })}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -54,7 +54,7 @@ export class ClockOutService {
 
     const entry = await this.entryToClose(data);
     if (!entry) {
-      throw new BadRequestException('You are not currently clocked in');
+      throw new BadRequestException({ code: 'NOT_ON_THE_CLOCK', message: 'You are not currently clocked in' });
     }
 
     /*

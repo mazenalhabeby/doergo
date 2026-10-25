@@ -23,7 +23,6 @@ import { outstandingBreaks, type BreakPlanItem, formatDuration } from '@hbcfield
  * the right state.
  */
 
-
 interface RestCardProps {
   /** The shift these rests belong to — a rest recorded offline names it. */
   entryId: string;
@@ -113,30 +112,10 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
           </View>
         )}
 
-        <TouchableOpacity
-          style={[styles.primary, { backgroundColor: '#059669' }]}
-          onPress={() =>
-            run(
-              'end',
-              () => shiftActions.endRest({ entryId, breakId: activeBreak.id }),
-              t('attendance.rest.ended', 'Back to work'),
-            )
-          }
-          disabled={busy !== null}
-          activeOpacity={0.8}
-        >
-          {busy === 'end' ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <Ionicons name="checkmark" size={18} color="#fff" />
-              <Text style={styles.primaryText}>{t('attendance.rest.backToWork', 'Back to work')}</Text>
-            </>
-          )}
-        </TouchableOpacity>
+        {/* One button per step (clock review C6): the shift card's "End the rest" ends it — not a second one here. */}
         {/* The honest reason to press it, rather than a nag. */}
         <Text style={[styles.hint, { color: '#047857' }]}>
-          {t('attendance.rest.backHint', 'Until you do, the time keeps counting as rest.')}
+          {t('attendance.rest.backHintCard', 'Tap “End the rest” when you are back — until then it counts as rest.')}
         </Text>
       </View>
     );
@@ -153,9 +132,7 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
       <View style={[styles.card, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}>
         <View style={styles.head}>
           <Ionicons name="cafe-outline" size={20} color={colors.textMuted} />
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
-            {t('attendance.rest.title', 'Rests')}
-          </Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('attendance.rest.title', 'Rests')}</Text>
         </View>
         <Text style={[styles.sub, { color: colors.textMuted }]}>
           {taken.length === plan.length
@@ -268,13 +245,24 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8, marginTop: 12 },
   flex: { flex: 1 },
   primary: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    paddingVertical: 12, borderRadius: 12, marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 12,
   },
   primaryText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   secondary: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    paddingVertical: 12, borderRadius: 12, borderWidth: 1, marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 12,
   },
   secondaryText: { color: '#92400E', fontSize: 14, fontWeight: '700' },
   hint: { fontSize: 11, lineHeight: 15, marginTop: 8 },

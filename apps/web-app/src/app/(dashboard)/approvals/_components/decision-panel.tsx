@@ -19,6 +19,7 @@ import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Input } from "@/components/ui/input"
+import { formatDuration } from "@hbcfield/shared/client"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { UserAvatar } from "@/components/common/user-avatar"
@@ -148,6 +149,10 @@ export function DecisionPanel({
                 onChange={(e) => setMinutes(e.target.value)}
                 className="w-32"
               />
+              {/* The number read as time (clock review C8): "90" is "1h 30m". */}
+              {Number.isInteger(minutesValue) && minutesValue >= 60 && (
+                <p className="text-xs text-muted-foreground">= {formatDuration(minutesValue)}</p>
+              )}
             </div>
           )}
           {armed.input === "expiresOn" && (

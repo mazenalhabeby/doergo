@@ -15,7 +15,13 @@ export const attendanceApi = {
 
   // Employee self-service: clock in at a company location. GPS comes from the
   // browser Geolocation API (device location, NOT IP) so it works over a VPN.
-  clockIn: async (input: { locationId?: string; lat: number; lng: number; accuracy?: number; isRemote?: boolean }) => {
+  clockIn: async (input: {
+    locationId?: string
+    lat?: number
+    lng?: number
+    accuracy?: number
+    isRemote?: boolean
+  }) => {
     const response = (await call(attendanceEndpoints.clockIn, undefined, { body: input })) as ApiResponse<{
       success: boolean
       data: unknown

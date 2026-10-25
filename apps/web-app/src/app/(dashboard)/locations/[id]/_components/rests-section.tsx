@@ -99,7 +99,9 @@ export function RestsSection({ spaceId }: { spaceId: string }) {
                   {rule.remind ? (
                     <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                       <BellRing className="h-3 w-3" />
-                      {t("attendance.rests.remindEvery", "asks again every {{n}}m", { n: rule.snoozeMin })}
+                      {t("attendance.rests.remindEvery", "asks again every {{duration}}", {
+                        duration: formatDuration(rule.snoozeMin),
+                      })}
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -110,12 +112,12 @@ export function RestsSection({ spaceId }: { spaceId: string }) {
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {rule.trigger === "AFTER_WORKED"
-                    ? t("attendance.rests.afterSummary", "{{mins}} minutes, after {{after}} of the shift", {
-                        mins: rule.durationMinutes,
+                    ? t("attendance.rests.afterSummary", "{{duration}}, after {{after}} of the shift", {
+                        duration: formatDuration(rule.durationMinutes),
                         after: formatDuration(rule.afterMinutes ?? 0),
                       })
-                    : t("attendance.rests.windowSummary", "{{mins}} minutes, any time between {{from}} and {{to}}", {
-                        mins: rule.durationMinutes,
+                    : t("attendance.rests.windowSummary", "{{duration}}, any time between {{from}} and {{to}}", {
+                        duration: formatDuration(rule.durationMinutes),
                         from: rule.earliestLocal ?? "—",
                         to: rule.latestLocal ?? t("attendance.rests.shiftEnd", "the end of the shift"),
                       })}

@@ -6,14 +6,17 @@ import { formatDuration } from '@hbcfield/shared/client';
 type ShiftState = ReturnType<typeof readShiftState>;
 
 /** `{workspace} · counted {n} · rest due {time}` — and never the word paid. */
-export function shiftCaption(st: ShiftState, ctx: {
-  t: TFunction;
-  /** The member's own clock — `useTimeFormat().formatTime`. */
-  clockOf: (d: string | Date) => string;
-  monthlyHourBudget?: number | null;
-  live: boolean;
-  resting: boolean;
-}): string {
+export function shiftCaption(
+  st: ShiftState,
+  ctx: {
+    t: TFunction;
+    /** The member's own clock — `useTimeFormat().formatTime`. */
+    clockOf: (d: string | Date) => string;
+    monthlyHourBudget?: number | null;
+    live: boolean;
+    resting: boolean;
+  },
+): string {
   const { t, clockOf, monthlyHourBudget, live, resting } = ctx;
   if (st.kind === 'unconfirmed') {
     return t('shiftClock.leftRunning', {
@@ -39,7 +42,9 @@ export function shiftCaption(st: ShiftState, ctx: {
           : st.finished.rejected
             ? t('shiftClock.countedRejected', { defaultValue: 'not approved' })
             : null,
-    ].filter(Boolean).join(' · ');
+    ]
+      .filter(Boolean)
+      .join(' · ');
   }
   /*
     ① — THREE DIFFERENT SENTENCES, BECAUSE THE THREE ASK DIFFERENT
@@ -59,12 +64,14 @@ export function shiftCaption(st: ShiftState, ctx: {
   if (st.kind === 'before' && st.startsInMinutes !== null && st.startsInMinutes > 0) {
     return [
       st.workspace,
-      t('shiftClock.startsIn', {
-        count: st.startsInMinutes,
-        defaultValue_one: 'your shift starts in a minute',
-        defaultValue_other: `your shift starts in ${st.startsInMinutes} minutes`,
+      // Hours and minutes, never "540 minutes" (clock review C8).
+      t('shiftClock.startsInDuration', {
+        duration: formatDuration(st.startsInMinutes),
+        defaultValue: `your shift starts in ${formatDuration(st.startsInMinutes)}`,
       }),
-    ].filter(Boolean).join(' · ');
+    ]
+      .filter(Boolean)
+      .join(' · ');
   }
   if (st.kind === 'before' && st.schedule === 'FLEXIBLE' && st.minutes !== null) {
     return [
@@ -81,7 +88,9 @@ export function shiftCaption(st: ShiftState, ctx: {
             defaultValue_other: `${st.workingDaysLeft} working days left`,
           })
         : null,
-    ].filter(Boolean).join(' · ');
+    ]
+      .filter(Boolean)
+      .join(' · ');
   }
   if (st.kind === 'before' && st.schedule === 'NONE' && st.minutes !== null) {
     return [
@@ -92,11 +101,14 @@ export function shiftCaption(st: ShiftState, ctx: {
             defaultValue: `last in on ${weekdayName(st.lastInOn)}`,
           })
         : null,
-    ].filter(Boolean).join(' · ');
+    ]
+      .filter(Boolean)
+      .join(' · ');
   }
   if (st.queued && live) {
     return [st.workspace, t('shiftClock.waitingToReach', { defaultValue: 'waiting to reach the office' })]
-      .filter(Boolean).join(' · ');
+      .filter(Boolean)
+      .join(' · ');
   }
   return [
     /*
@@ -113,12 +125,12 @@ export function shiftCaption(st: ShiftState, ctx: {
       : st.workspace,
     st.countedMinutes !== null
       ? resting && !st.restCounts
-        /*
+        ? /*
           ⚠️ ③ FREEZES THE COUNTED FIGURE AND SAYS SO. A rest that silently
           keeps counting is the bug this sentence prevents: the number stops
           moving and a member who does not know why assumes the app hung.
         */
-        ? t('shiftClock.countedFrozen', {
+          t('shiftClock.countedFrozen', {
             counted: formatDuration(st.countedMinutes),
             defaultValue: `counted ${formatDuration(st.countedMinutes)}, not counting now`,
           })
@@ -133,5 +145,7 @@ export function shiftCaption(st: ShiftState, ctx: {
           defaultValue: `rest due ${clockOf(st.nextRest.dueAt)}`,
         })
       : null,
-  ].filter(Boolean).join(' · ');
+  ]
+    .filter(Boolean)
+    .join(' · ');
 }

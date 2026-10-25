@@ -16,7 +16,7 @@ import { ClockInContextService } from './clock-in-context.service';
 import { BreakRulesService } from '../core/break-rules.service';
 import { PresenceService } from '../presence/presence.service';
 import { AttendanceGeocoderService } from '../core/attendance-geocoder.service';
-import { gpsAccuracyRefusal, type ClockInInput, type ClockInOccurrence } from './clock-in-steps';
+import { fixOf, gpsAccuracyRefusal, type ClockInInput, type ClockInOccurrence } from './clock-in-steps';
 import { ShiftSweepService } from '../no-shows/shift-sweep.service';
 import { emitEvent, attendanceClockInEvent } from '@hbcfield/shared/microservices';
 
@@ -79,9 +79,10 @@ export class ClockInRemoteService {
   ) {
     const { occurrence, dayRequests, orgTz } = ctx;
     if (!ctx.mayClockInRemotely) {
-      throw new BadRequestException(
-        'You are not permitted to clock in remotely. Ask your administrator to enable remote clock-in for your account.',
-      );
+      throw new BadRequestException({
+        code: 'REMOTE_NOT_ALLOWED',
+        message: 'You are not permitted to clock in remotely. Ask your administrator to allow it for your account.',
+      });
     }
     /*
       ⚠️ THE BUCKET IS ONLY FOR SOMEBODY WITH NO WORKSPACE — admins included.
@@ -125,7 +126,8 @@ export class ClockInRemoteService {
     const coarse = gpsAccuracyRefusal(data.accuracy);
     if (coarse) throw coarse;
     const bucket = await this.context.getOrCreateRemoteBucket(data.organizationId);
-    const place = await this.geocoder.reverseGeocode(data.lat, data.lng);
+    const fix = fixOf(data);
+    const place = fix ? await this.geocoder.reverseGeocode(fix.lat, fix.lng) : null;
     const remoteClockInAt = occurrence.at;
     // Remote clock-in: the bucket is a logical (pin-less) space, so anchor the
     // shift to the worker's own timezone.
@@ -183,7 +185,7 @@ export class ClockInRemoteService {
             before: remoteClockInAt,
           })
         : null,
-      fix: { lat: data.lat, lng: data.lng, accuracy: data.accuracy },
+      fix,
       zone: { lat: null, lng: null, geofenceRadius: 0 },
     });
     const remoteFlags = [
@@ -194,7 +196,7 @@ export class ClockInRemoteService {
     const remotePresence = await this.presence.atClockIn({
       userId: data.userId,
       organizationId: data.organizationId,
-      point: { lat: data.lat, lng: data.lng },
+      point: fix,
       insideArea: false,
       at: remoteClockInAt,
       timezone: this.context.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? orgTz,

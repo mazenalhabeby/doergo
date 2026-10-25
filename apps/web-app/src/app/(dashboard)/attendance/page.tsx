@@ -9,7 +9,8 @@ import { useAttendanceBreaks } from "./_hooks/use-attendance-breaks"
 import { BreaksTab, TrackingTab, NoShowsTab, AddDayOffDialog, AddAttendanceDialog } from "./_components/attendance-lazy"
 
 export default function AttendancePage() {
-  const { t, activeTab, setActiveTab, canAccess, isAdmin, canReconcile, canDelete, openNoShows } = useAttendancePage()
+  const { t, activeTab, setActiveTab, canAccess, isAdmin, canReconcile, canDelete, canManageLeave, openNoShows } =
+    useAttendancePage()
   const {
     searchQuery,
     setSearchQuery,
@@ -80,10 +81,11 @@ export default function AttendancePage() {
               </h1>
               <p className="mt-1.5 text-muted-foreground">{t("attendance.management.subtitle")}</p>
             </div>
-            {isAdmin && (
+            {(canManageLeave || canReconcile) && (
               <div className="flex items-center gap-2">
-                <AddDayOffDialog />
-                <AddAttendanceDialog />
+                {canManageLeave && <AddDayOffDialog />}
+                {/* Adding a missed day: the server's "correct hours" (C4), not admins only. */}
+                {canReconcile && <AddAttendanceDialog />}
               </div>
             )}
           </div>

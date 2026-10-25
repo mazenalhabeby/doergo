@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { MapPin, Home } from "lucide-react"
 import { useTimeFormat } from "@/hooks"
 import { cn } from "@/lib/utils"
-import { countryFromTz, formatDuration } from "@hbcfield/shared/client"
+import { countryFromTz, formatDuration, workedMinutes } from "@hbcfield/shared/client"
 import type { TimeEntry } from "@hbcfield/shared"
 import { deriveAttendanceFlags } from "@/lib/attendance-status"
 import { dateLocale } from "@/lib/format-date"
@@ -131,8 +131,16 @@ export function ShiftHistory({
                 ))}
             </div>
           )}
-          <div className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
-            {duration(e.clockInAt, e.clockOutAt)}
+          <div className="shrink-0 text-right tabular-nums">
+            {/* Counted — the office's figure (C3); the clocked span beside it when the two differ. */}
+            <div className="text-sm font-semibold text-foreground">
+              {e.clockOutAt ? formatDuration(workedMinutes(e)) : duration(e.clockInAt, null)}
+            </div>
+            {e.clockOutAt && duration(e.clockInAt, e.clockOutAt) !== formatDuration(workedMinutes(e)) && (
+              <div className="text-xs text-muted-foreground">
+                {t("attendance.my.clockedSpan", { span: duration(e.clockInAt, e.clockOutAt) })}
+              </div>
+            )}
           </div>
         </div>
       ))}

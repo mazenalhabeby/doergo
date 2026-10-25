@@ -4,7 +4,7 @@ import { getFix } from '@/lib/location-fix';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { orgHasAddOn, hasAccessModule } from '@hbcfield/shared/client';
+import { orgHasAddOn, accessAllowsAnywhere, hasAccessModule } from '@hbcfield/shared/client';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/island/island-context';
@@ -55,9 +55,11 @@ export function useTimeScreen() {
   });
   const watch = useShiftWatch(status, shift.refresh);
 
-  // Extra-time approvals are bought (shift_scheduling) and held by people who manage users.
+  // Extra-time approvals are bought (shift_scheduling) and decided by whoever holds "approve overtime" —
+  // org-wide or in a workspace, the server's own key (clock review C10; it read "manages users").
   const hasShiftScheduling = orgHasAddOn(user?.orgAddOns, 'shift_scheduling');
-  const canApproveExtraTime = !!user?.canManageUsers && hasShiftScheduling;
+  const canApproveExtraTime =
+    hasShiftScheduling && (user?.role === 'ADMIN' || accessAllowsAnywhere(user?.access as never, 'canApproveOvertime'));
 
   /* ---------------- recent shifts + extra time ---------------- */
   const [recent, setRecent] = useState<TimeEntry[]>([]);
@@ -112,7 +114,9 @@ export function useTimeScreen() {
           /* no fix — the tiles say so */
         }
       })();
-      return () => { alive = false; };
+      return () => {
+        alive = false;
+      };
     }, []),
   );
   const tiles = useMemo(
@@ -122,14 +126,11 @@ export function useTimeScreen() {
 
   // The one workspace whose no-shift rule the page speaks of — the one they are at — never one per workspace.
   const noShift = useMemo(() => noShiftHere(tiles, !!entry, now), [tiles, entry, now]);
-  // No hours left there: ask the leader for overtime today (the Requests form, filled in).
-  const askMoreTime = timeOffOn
-    ? () => router.push({ pathname: '/(app)/(tabs)/time-off', params: { ask: 'OVERTIME' } } as never)
-    : undefined;
 
   /* ---------------- answers the page owns ---------------- */
   const [busy, setBusy] = useState(false);
-  const say = (o: { code?: string; message?: string; params?: Record<string, unknown> }, fallback: string) => refusalText(t, o, fallback);
+  const say = (o: { code?: string; message?: string; params?: Record<string, unknown> }, fallback: string) =>
+    refusalText(t, o, fallback);
 
   // ⑦ — a shift closed with a temporary time: when did they really leave?
   const unconfirmed = status?.unconfirmedClockOut ?? null;
@@ -142,11 +143,17 @@ export function useTimeScreen() {
     setLeavePicker(false);
     if (!unconfirmed) return;
     const at = leaveTimeFrom(hhmm, new Date(unconfirmed.clockInAt), unconfirmedTz ?? 'UTC', new Date());
-    if (!at) { toast.error(t('common.error'), t('attendance.unconfirmed.inFuture')); return; }
+    if (!at) {
+      toast.error(t('common.error'), t('attendance.unconfirmed.inFuture'));
+      return;
+    }
     setBusy(true);
     try {
       const outcome = await actions.resolveClockOut({ entryId: unconfirmed.id, clockOutAt: at });
-      if (outcome.kind === 'refused') { toast.error(t('common.error'), say(outcome, t('shiftReminder.resolveFailed'))); return; }
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), say(outcome, t('shiftReminder.resolveFailed')));
+        return;
+      }
       await shift.refresh();
       if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
       else toast.success(t('common.success'), t('attendance.unconfirmed.saved'));
@@ -161,7 +168,10 @@ export function useTimeScreen() {
     setBusy(true);
     try {
       const outcome = await actions.resolveClockOut({ entryId: entry.id, clockOutAt: at });
-      if (outcome.kind === 'refused') { toast.error(t('common.error'), say(outcome, t('shiftReminder.resolveFailed'))); return; }
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), say(outcome, t('shiftReminder.resolveFailed')));
+        return;
+      }
       await stopBackgroundHeartbeat();
       await stopGeofence();
       await shift.refresh();
@@ -179,7 +189,10 @@ export function useTimeScreen() {
     setBusy(true);
     try {
       const outcome = await actions.requestExtraTime({ entryId: entry.id });
-      if (outcome.kind === 'refused') { toast.error(t('common.error'), say(outcome, t('shiftReminder.extraRequestFailed'))); return; }
+      if (outcome.kind === 'refused') {
+        toast.error(t('common.error'), say(outcome, t('shiftReminder.extraRequestFailed')));
+        return;
+      }
       await shift.refresh();
       if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
       else toast.success(t('common.success'), t('shiftReminder.extraRequestSent'));
@@ -236,7 +249,6 @@ export function useTimeScreen() {
     setRequestOpen,
     tiles,
     noShift,
-    askMoreTime,
     busy,
     unconfirmed,
     unconfirmedTz,

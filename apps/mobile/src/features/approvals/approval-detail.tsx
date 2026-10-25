@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Switch, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { NO_SHOW_EXCUSE_REASONS } from '@hbcfield/shared/client';
+import { NO_SHOW_EXCUSE_REASONS, formatDuration } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/island/island-context';
 import { approvalsApi } from '@/lib/api';
@@ -64,26 +64,47 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
     return (
       <Ground style={{ flex: 1 }}>
         <ScreenHeader title={t('approvals.title')} leading={<HeaderBack onPress={back} />} />
-        {missing
-          ? <AText variant="body" tone="onGlass" style={{ textAlign: 'center', padding: amazen.space(8) }}>{t('approvals.gone')}</AText>
-          : <ActivityIndicator style={{ marginTop: amazen.space(10) }} color={c.accent} />}
+        {missing ? (
+          <AText variant="body" tone="onGlass" style={{ textAlign: 'center', padding: amazen.space(8) }}>
+            {t('approvals.gone')}
+          </AText>
+        ) : (
+          <ActivityIndicator style={{ marginTop: amazen.space(10) }} color={c.accent} />
+        )}
       </Ground>
     );
   }
 
-  const { text, actions, pageOnly, facts, ready } = ApprovalDetailView({ t, i18n, item, armed, reason, minutes, expiresOn });
+  const { text, actions, pageOnly, facts, ready } = ApprovalDetailView({
+    t,
+    i18n,
+    item,
+    armed,
+    reason,
+    minutes,
+    expiresOn,
+  });
 
   return (
     <Ground style={{ flex: 1 }}>
-      <ScreenHeader title={t(`approvals.kinds.${item.kind}`)} leading={<HeaderBack onPress={back} />} style={wide ?? undefined} />
+      <ScreenHeader
+        title={t(`approvals.kinds.${item.kind}`)}
+        leading={<HeaderBack onPress={back} />}
+        style={wide ?? undefined}
+      />
       <ScrollView
         contentContainerStyle={[
           { paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(30), gap: amazen.space(3) },
           wide,
-        ]}>
+        ]}
+      >
         <View style={{ gap: amazen.space(1.5), alignItems: 'flex-start' }}>
-          <AText variant="h2" tone="strong">{item.subject.name || t('approvals.someone')}</AText>
-          <AText variant="body" tone="onGlass">{text.headline}</AText>
+          <AText variant="h2" tone="strong">
+            {item.subject.name || t('approvals.someone')}
+          </AText>
+          <AText variant="body" tone="onGlass">
+            {text.headline}
+          </AText>
           {item.group === 'NOW' ? <Pill label={t('approvals.groups.NOW')} tone="critical" /> : null}
         </View>
         <FactsWell amazen={amazen} facts={facts} lines={3} />
@@ -97,8 +118,16 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
           </View>
         ) : null}
         <WhoElse item={item} />
-        {pageOnly ? <AText variant="caption" tone="onGlass">{t(`approvals.needsPage.${item.kind}`)}</AText> : null}
-        {!item.canDecide ? <AText variant="caption" tone="onGlass">{t('approvals.readOnly')}</AText> : null}
+        {pageOnly ? (
+          <AText variant="caption" tone="onGlass">
+            {t(`approvals.needsPage.${item.kind}`)}
+          </AText>
+        ) : null}
+        {!item.canDecide ? (
+          <AText variant="caption" tone="onGlass">
+            {t('approvals.readOnly')}
+          </AText>
+        ) : null}
       </ScrollView>
 
       {actions.length ? (
@@ -117,28 +146,30 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
               backgroundColor: c.canvas,
             },
             wide,
-          ]}>
-          {actions.slice().reverse().map((a) => (
-            <View key={a.id} style={{ flex: 1 }}>
-              {a.tone !== 'primary'
-                ? (
-                    <GhostButton
-                      label={t(`approvals.actions.${a.labelKey}`)}
-                      tone={a.tone === 'danger' ? 'critical' : undefined}
-                      disabled={busy}
-                      onPress={() => press(a)}
-                    />
-                  )
-                : (
-                    <PrimaryButton
-                      label={t(`approvals.actions.${a.labelKey}`)}
-                      loading={busy && !armed}
-                      disabled={busy}
-                      onPress={() => press(a)}
-                    />
-                  )}
-            </View>
-          ))}
+          ]}
+        >
+          {actions
+            .slice()
+            .reverse()
+            .map((a) => (
+              <View key={a.id} style={{ flex: 1 }}>
+                {a.tone !== 'primary' ? (
+                  <GhostButton
+                    label={t(`approvals.actions.${a.labelKey}`)}
+                    tone={a.tone === 'danger' ? 'critical' : undefined}
+                    disabled={busy}
+                    onPress={() => press(a)}
+                  />
+                ) : (
+                  <PrimaryButton
+                    label={t(`approvals.actions.${a.labelKey}`)}
+                    loading={busy && !armed}
+                    disabled={busy}
+                    onPress={() => press(a)}
+                  />
+                )}
+              </View>
+            ))}
         </View>
       ) : null}
 
@@ -153,6 +184,12 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
           <>
             <SectionLabel>{t('approvals.minutes')}</SectionLabel>
             <GlassInput value={minutes} onChangeText={setMinutes} keyboardType="number-pad" maxLength={4} />
+            {/* The number read as time (clock review C8): "90" is "1h 30m". */}
+            {Number(minutes) >= 60 ? (
+              <AText variant="caption" tone="muted">
+                = {formatDuration(Number(minutes))}
+              </AText>
+            ) : null}
           </>
         ) : null}
         {armed?.input === 'expiresOn' ? (
@@ -203,14 +240,25 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
           </AText>
         ) : null}
         {armed && runCount > 1 ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: amazen.space(3) }}>
-            <AText variant="body" tone="strong" style={{ flexShrink: 1 }}>{t('approvals.noShow.wholeRun', { count: runCount })}</AText>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: amazen.space(3),
+            }}
+          >
+            <AText variant="body" tone="strong" style={{ flexShrink: 1 }}>
+              {t('approvals.noShow.wholeRun', { count: runCount })}
+            </AText>
             <Switch value={wholeRun} onValueChange={setWholeRun} />
           </View>
         ) : null}
         {armed && armed.reason !== 'none' ? (
           <>
-            <SectionLabel>{t(armed.reason === 'required' ? 'approvals.reasonRequired' : 'approvals.reasonOptional')}</SectionLabel>
+            <SectionLabel>
+              {t(armed.reason === 'required' ? 'approvals.reasonRequired' : 'approvals.reasonOptional')}
+            </SectionLabel>
             <GlassInput value={reason} onChangeText={setReason} multiline maxLength={500} autoFocus />
           </>
         ) : null}

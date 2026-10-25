@@ -81,12 +81,15 @@ export class BreakStartService {
     });
 
     if (!entry) {
-      throw new BadRequestException('You must be clocked in to take a break');
+      throw new BadRequestException({ code: 'NOT_ON_THE_CLOCK', message: 'You must be clocked in to take a break' });
     }
 
     // Check if already on break
     if (entry.breaks && entry.breaks.length > 0) {
-      throw new BadRequestException('You are already on a break. End your current break first.');
+      throw new BadRequestException({
+        code: 'ALREADY_ON_REST',
+        message: 'You are already on a break. End your current break first.',
+      });
     }
 
     // The tap's own time; not before the shift began, nor before the last rest ended.

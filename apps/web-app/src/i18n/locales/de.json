@@ -3095,11 +3095,12 @@
       },
       "askMoreTime": "Mehr Zeit anfragen",
       "askMoreTimeSent": "Ihre Leitung wird gefragt. Zeit nach dem Ende zählt, sobald sie zustimmt.",
-      "askMoreTimeWaiting": "Mehr Zeit angefragt"
+      "askMoreTimeWaiting": "Mehr Zeit angefragt",
+      "clockedSpan": "gestempelt {{span}}"
     },
     "management": {
       "title": "Anwesenheitsverwaltung",
-      "subtitle": "Anwesenheit verfolgen und Berichte anzeigen"
+      "subtitle": "Wer eingestempelt ist, gezählte Stunden, Pausen und Nichterscheinen"
     },
     "tabs": {
       "attendance": "Anwesenheit",
@@ -3312,10 +3313,10 @@
       "paid": "Zählt als Arbeitszeit",
       "unpaid": "Zählt nicht",
       "required": "Verpflichtend",
-      "remindEvery": "fragt alle {{n}} Min. erneut",
+      "remindEvery": "fragt alle {{duration}} erneut",
       "noReminder": "keine Erinnerung",
-      "afterSummary": "{{mins}} Minuten, nach {{after}} der Schicht",
-      "windowSummary": "{{mins}} Minuten, zwischen {{from}} und {{to}}",
+      "afterSummary": "{{duration}}, nach {{after}} der Schicht",
+      "windowSummary": "{{duration}}, zwischen {{from}} und {{to}}",
       "shiftEnd": "dem Schichtende",
       "removed": "Pause entfernt",
       "added": "Pause hinzugefügt",
@@ -3370,21 +3371,22 @@
       "viaAccountOn": "Folgt dem Konto, das es erlaubt.",
       "viaAccountOff": "Folgt dem Konto, das es nicht erlaubt.",
       "overrideOn": "Hier erlaubt, unabhängig vom Konto.",
-      "overrideOff": "Hier abgelehnt, obwohl das Konto es erlaubt."
+      "overrideOff": "Hier abgelehnt, obwohl das Konto es erlaubt.",
+      "overrideOffPlain": "Hier verweigert, wie in ihrem Konto."
     },
     "addOvertime": {
       "action": "Überstunden hinzufügen",
       "title": "Überstunden hinzufügen",
       "titleFor": "Überstunden hinzufügen · {{name}}",
-      "context": "Schichtende {{end}} · ausgestempelt {{out}} ({{minutes}} Min. später)",
+      "context": "Schichtende {{end}} · ausgestempelt {{out}} ({{duration}} später)",
       "minutes": "Minuten nach Schichtende",
       "reason": "Grund",
       "reasonPlaceholder": "Wird mit der Genehmigung gespeichert",
       "countedUntil": "Gezählt bis",
       "countedTime": "Gezählte Zeit",
       "cappedAtClockOut": "Zeit nach dem Ausstempeln wird nie gezählt.",
-      "approve": "{{minutes}} Min. genehmigen",
-      "success": "{{minutes}} Min. Überstunden hinzugefügt",
+      "approve": "{{duration}} genehmigen",
+      "success": "{{duration}} Überstunden hinzugefügt",
       "error": "Überstunden konnten nicht hinzugefügt werden"
     },
     "noShift": {
@@ -3397,7 +3399,6 @@
       "shiftOnly": "Nur mit Schicht",
       "shiftOnlyHint": "Mitglieder ohne Schicht heute können hier nicht einstempeln.",
       "note": "Mitglieder mit Schicht sind nicht betroffen. Das Limit zählt jede heute gearbeitete Stunde, an jedem Arbeitsbereich, in der Zeitzone dieses Arbeitsbereichs.",
-      "hours": "{{count}} Std.",
       "less": "Weniger",
       "more": "Mehr",
       "saved": "Gespeichert",
@@ -3474,6 +3475,12 @@
       "longestHint": "Die Stunden ohne Schicht dieses Arbeitsbereichs (Einstellungen der Anwesenheit). Dann fragt das Telefon „Arbeiten Sie noch?“. Eine Änderung dort gilt sofort für alle.",
       "presenceTiming": "Bleibt {{dwell}} Min. am Standort, bevor eingestempelt wird, und ist {{exit}} Min. weg, bevor ausgestempelt wird (Einstellungen der automatischen Stempeluhr dieses Arbeitsbereichs).",
       "windowInvalid": "Wählen Sie zwei verschiedene Uhrzeiten."
+    },
+    "outside": {
+      "waiting": "{{duration}} außerhalb Ihrer Schicht am {{day}} warten auf {{names}}",
+      "waitingNoName": "{{duration}} außerhalb Ihrer Schicht am {{day}} warten auf eine Entscheidung",
+      "andMore_one": "{{names}} und {{count}} weitere Person",
+      "andMore_other": "{{names}} und {{count}} weitere"
     }
   },
   "auditLog": {
@@ -8333,7 +8340,22 @@
     "RULE_ESCALATE_ROLE_REQUIRED": "Wählen Sie, an wen es weitergeht, wenn niemand antwortet.",
     "REQUEST_OVERLAPS_LEAVE": "Dieser Tag liegt in bereits beantragtem oder genehmigtem Urlaub.",
     "SELF_DECISION": "Darüber können Sie nicht selbst entscheiden. Fragen Sie eine Führungskraft oder einen Administrator.",
-    "DAY_HOURS_SPACE_NOT_YOURS": "Wählen Sie einen Arbeitsbereich, den Sie leiten."
+    "DAY_HOURS_SPACE_NOT_YOURS": "Wählen Sie einen Arbeitsbereich, den Sie leiten.",
+    "LOCATION_REQUIRED": "Wählen Sie den Arbeitsort, an dem Sie einstempeln.",
+    "NOT_ASSIGNED_HERE": "Sie sind diesem Arbeitsort nicht zugeteilt. Bitten Sie Ihr Büro, Sie hinzuzufügen.",
+    "NOT_ON_THE_CLOCK": "Sie sind nicht eingestempelt.",
+    "ALREADY_ON_REST": "Sie sind bereits in einer Pause. Beenden Sie sie zuerst.",
+    "REMOTE_NOT_ALLOWED": "Einstempeln außerhalb eines Arbeitsorts ist für Ihr Konto nicht erlaubt. Fragen Sie Ihr Büro.",
+    "ENTRY_ALREADY_DECIDED": "Über diesen Tag wurde bereits entschieden.",
+    "GPS_ACCURACY_LOW": "Ihr Standort ist nur auf {{distance}} genau – {{radius}} oder besser ist nötig. Warten Sie kurz und versuchen Sie es erneut.",
+    "CLOCK_SWITCH_ADMIN_ONLY": "Nur ein Administrator kann seine eigene Stempeluhr ausschalten.",
+    "CLOCK_SWITCH_WHILE_CLOCKED_IN": "Stempeln Sie zuerst aus und schalten Sie dann die Stempeluhr aus.",
+    "EXTRA_TIME_NO_SHIFT": "Es gibt kein geplantes Ende zu verlängern – diese Zeit zählt bereits vollständig.",
+    "ENTRY_STILL_OPEN": "Diese Schicht läuft noch – sie kann entschieden werden, sobald ausgestempelt ist.",
+    "ENTRY_ALREADY_CLOSED": "Diese Schicht wurde inzwischen ausgestempelt – öffnen Sie sie erneut, um die echte Zeit zu sehen.",
+    "OUTSIDE_ALREADY_DECIDED": "Über diese Zeit wurde bereits entschieden.",
+    "OUTSIDE_NOTHING": "Es gibt keine Zeit außerhalb der Schicht zu entscheiden.",
+    "FIX_MISSING": "Für das Einstempeln bei {{location}} wird Ihr Standort benötigt. Erlauben Sie den Standortzugriff und versuchen Sie es erneut."
   },
   "signLink": {
     "tabs": {
@@ -9678,7 +9700,8 @@
       "planned": "Geplant",
       "clocked": "Gestempelt",
       "before": "Vor Beginn",
-      "after": "Nach Ende"
+      "after": "Nach Ende",
+      "pastEnd": "Über das Ende hinaus gearbeitet"
     },
     "cover": {
       "ok": "Genug Personen bleiben",

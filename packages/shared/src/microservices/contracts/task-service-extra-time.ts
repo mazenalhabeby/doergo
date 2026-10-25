@@ -44,6 +44,8 @@ export const listOutsideShift = rpc<{ userId: string; organizationId: string; sc
   'list_outside_shift',
 );
 export const listMyOutsideShift = rpc<{ userId: string; organizationId: string }>('list_my_outside_shift');
+/** Who decides the caller's time today — named on the phone's clock-out receipt (clock review C7). */
+export const listMyApprovers = rpc<{ userId: string; organizationId: string }>('list_my_approvers');
 export const decideOutsideShift = rpc<{
   approverId: string;
   organizationId: string;

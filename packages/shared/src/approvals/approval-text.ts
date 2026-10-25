@@ -75,7 +75,7 @@ export function describeApproval(
       return { headline: t('approvals.headline.hours'), facts };
     }
     case 'away':
-      add('left', when(locale, d.leftAt));
+      add('left', when(locale, d.leftAt, tz));
       add('asked', num(d.requestedMinutes) != null ? formatDuration(num(d.requestedMinutes)) : null);
       add('distance', num(d.distanceM) != null ? formatDistance(num(d.distanceM), { locale: locale }) : null);
       add('reason', str(d.reason));
@@ -83,6 +83,7 @@ export function describeApproval(
     case 'extraTime':
       add('clockedIn', when(locale, d.clockInAt, tz));
       add('plannedEnd', when(locale, d.plannedEnd, tz));
+      add('pastEnd', num(d.pastEndMinutes) ? formatDuration(num(d.pastEndMinutes)) : null, 'warn');
       if (d.stillWorking === true) add('status', t('approvals.stillWorking'), 'warn');
       return { headline: t('approvals.headline.extraTime'), facts };
     case 'outside': {
@@ -97,7 +98,8 @@ export function describeApproval(
       return { headline: t('approvals.headline.outside'), facts };
     }
     case 'overtime':
-      add('from', when(locale, d.overtimeStartAt));
+      add('from', when(locale, d.overtimeStartAt, tz));
+      add('pastEnd', num(d.pastEndMinutes) ? formatDuration(num(d.pastEndMinutes)) : null, 'warn');
       add('round', num(d.cycle) != null ? String(num(d.cycle)) : null);
       add('reason', str(d.reason));
       return { headline: t('approvals.headline.overtime'), facts };

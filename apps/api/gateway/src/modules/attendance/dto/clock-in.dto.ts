@@ -1,5 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean, IsIn, MaxLength, Matches, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  IsIn,
+  MaxLength,
+  Matches,
+  ValidateNested,
+} from 'class-validator';
 import { CLOCK_TRIGGERS, type ClockTrigger } from '@hbcfield/shared';
 import { Type } from 'class-transformer';
 import { CLIENT_ID } from '../../../common/dto/upload.dto';
@@ -12,15 +22,19 @@ export class ClockInDto {
   @IsOptional()
   locationId?: string;
 
-  @ApiProperty({ description: 'Current latitude' })
+  /*
+    The position is asked only where the place checks it (clock review C2): a workspace with a pin refuses a
+    clock-in without one (FIX_MISSING); a workspace with no coordinates, or the Remote bucket, does not need it.
+  */
+  @ApiPropertyOptional({ description: 'Current latitude (needed at a workspace with a pin)' })
   @IsNumber()
-  @IsNotEmpty()
-  lat: number;
+  @IsOptional()
+  lat?: number;
 
-  @ApiProperty({ description: 'Current longitude' })
+  @ApiPropertyOptional({ description: 'Current longitude (needed at a workspace with a pin)' })
   @IsNumber()
-  @IsNotEmpty()
-  lng: number;
+  @IsOptional()
+  lng?: number;
 
   @ApiPropertyOptional({ description: 'GPS accuracy in meters' })
   @IsNumber()
@@ -52,7 +66,10 @@ export class ClockInDto {
   @Matches(CLIENT_ID)
   id?: string;
 
-  @ApiPropertyOptional({ type: OccurrenceEvidenceDto, description: 'When and where the tap happened, for an action recorded offline' })
+  @ApiPropertyOptional({
+    type: OccurrenceEvidenceDto,
+    description: 'When and where the tap happened, for an action recorded offline',
+  })
   @IsOptional()
   @ValidateNested()
   @Type(() => OccurrenceEvidenceDto)

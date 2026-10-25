@@ -1,5 +1,6 @@
 "use client"
 
+import { OutsideWaiting } from "./_components/outside-waiting"
 import { useTranslation } from "react-i18next"
 import { ListChecks } from "lucide-react"
 import { WorkLogTimeline } from "@/components/attendance/worklog-timeline"
@@ -71,6 +72,8 @@ export default function MyAttendancePage() {
         />
         <HoursCard effectiveRange={effectiveRange} entries={entries} />
       </div>
+
+      <OutsideWaiting />
 
       {/*
         The rests planned for the shift that is running.

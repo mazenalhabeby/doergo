@@ -1,4 +1,6 @@
 import React from "react"
+import { useAuth } from "@/contexts/auth-context"
+import { mayManageLeave } from "../_hooks/use-attendance-page"
 import { format } from "date-fns"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -10,16 +12,11 @@ import { useTranslation } from "react-i18next"
 import type { DayOffRow } from "./tracking-types"
 
 /** Approved time off in the range, as its own table — these rows never have clock times. */
-export function TrackingDaysOff({
-  daysOff,
-  canReconcile,
-  isAdmin,
-}: {
-  daysOff: DayOffRow[]
-  canReconcile: boolean
-  isAdmin: boolean
-}) {
+export function TrackingDaysOff({ daysOff }: { daysOff: DayOffRow[] }) {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  // One rule for the column header and its cells (they read two before, and the columns slid apart).
+  const canManageLeave = mayManageLeave(user as never)
   return daysOff.length === 0 ? (
     <div className="p-12 text-center">
       <CalendarOff className="size-12 text-muted-foreground mx-auto mb-4" />
@@ -42,7 +39,7 @@ export function TrackingDaysOff({
           <TableHead className="font-semibold text-muted-foreground">{t("common.duration")}</TableHead>
           <TableHead className="font-semibold text-muted-foreground">{t("attendance.approval")}</TableHead>
           <TableHead className="font-semibold text-muted-foreground">{t("attendance.notes")}</TableHead>
-          {canReconcile && <TableHead className="w-10 text-right" />}
+          {canManageLeave && <TableHead className="w-10 text-right" />}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -94,7 +91,7 @@ export function TrackingDaysOff({
               <TableCell>
                 <NoteCell note={off.reason} />
               </TableCell>
-              {isAdmin && (
+              {canManageLeave && (
                 <TableCell className="text-right">
                   <EditDayOffDialog dayOff={off} />
                 </TableCell>

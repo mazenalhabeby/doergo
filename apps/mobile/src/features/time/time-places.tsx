@@ -29,7 +29,14 @@ export function TimePlaces({ tiles }: { tiles: readonly PlaceTile[] }) {
   if (tiles.length === 0) return null;
   return (
     <Well style={{ paddingVertical: amazen.space(3.25), gap: amazen.space(2.5) }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: amazen.space(3.5) }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: amazen.space(3.5),
+        }}
+      >
         <SectionLabel>{t('time.places.title', 'Where you work')}</SectionLabel>
         {tiles.length > 1 ? (
           <Pressable onPress={() => setAll(true)} hitSlop={10} accessibilityRole="button">
@@ -46,7 +53,9 @@ export function TimePlaces({ tiles }: { tiles: readonly PlaceTile[] }) {
         decelerationRate="fast"
         contentContainerStyle={{ gap: amazen.space(2), paddingHorizontal: amazen.space(3.5) }}
       >
-        {tiles.map((tile) => <PlaceCard key={tile.location.id} tile={tile} />)}
+        {tiles.map((tile) => (
+          <PlaceCard key={tile.location.id} tile={tile} />
+        ))}
       </ScrollView>
 
       <JobSheet visible={all} onClose={() => setAll(false)} title={t('time.places.title', 'Where you work')}>
@@ -54,10 +63,19 @@ export function TimePlaces({ tiles }: { tiles: readonly PlaceTile[] }) {
           {tiles.map((tile, i) => (
             <React.Fragment key={tile.location.id}>
               {i > 0 ? <WellDivider /> : null}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(3) }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: amazen.space(3),
+                  paddingVertical: amazen.space(3),
+                }}
+              >
                 <SiteMark relation={tile.relation} size={36} />
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{tile.location.name}</AText>
+                  <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>
+                    {tile.location.name}
+                  </AText>
                   <AText variant="caption" tone="muted" numberOfLines={1}>
                     {tile.location.address || t('time.places.noSite', 'No site drawn · clocks in anywhere')}
                   </AText>
@@ -91,11 +109,16 @@ const near = (r: PlaceRelation) => r === 'here' || r === 'clockedIn';
 
 function relationLabel(t: (k: string, o?: Record<string, unknown>) => string, tile: PlaceTile): string {
   switch (tile.relation) {
-    case 'clockedIn': return t('time.places.clockedIn', { defaultValue: 'Clocked in here' });
-    case 'here': return t('time.places.here', { defaultValue: 'You are here' });
-    case 'away': return t('time.places.away', { defaultValue: '{{distance}} away', distance: formatDistance(tile.metres ?? 0) });
-    case 'anywhere': return t('time.places.anywhere', { defaultValue: 'Clocks in anywhere' });
-    default: return t('time.places.noFix', { defaultValue: 'Distance unknown' });
+    case 'clockedIn':
+      return t('time.places.clockedIn', { defaultValue: 'Clocked in here' });
+    case 'here':
+      return t('time.places.here', { defaultValue: 'You are here' });
+    case 'away':
+      return t('time.places.away', { defaultValue: '{{distance}} away', distance: formatDistance(tile.metres ?? 0) });
+    case 'anywhere':
+      return t('time.places.anywhere', { defaultValue: 'Clocks in anywhere' });
+    default:
+      return t('time.places.noFix', { defaultValue: 'Distance unknown' });
   }
 }
 
@@ -118,7 +141,8 @@ function noShiftLabel(
     };
   return a.kind === 'refused' && a.reason === 'SHIFT_ONLY'
     ? { text: t('time.places.shiftOnly', { defaultValue: 'Shift only' }), stop: true }
-    : { text: t('time.places.limitReached', { defaultValue: 'Limit reached' }), stop: true };
+    : // Past today's hours: still clocks in, and the time still counts — flagged for the leader (B3).
+      { text: t('time.places.pastHours', { defaultValue: "Past today's hours" }), stop: false };
 }
 
 function PlaceCard({ tile }: { tile: PlaceTile }) {
@@ -146,7 +170,9 @@ function PlaceCard({ tile }: { tile: PlaceTile }) {
     >
       <SiteMark relation={tile.relation} size={32} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 13.5, lineHeight: 18 }}>{tile.location.name}</AText>
+        <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 13.5, lineHeight: 18 }}>
+          {tile.location.name}
+        </AText>
         <AText variant="caption" numberOfLines={1} style={{ color: lead ? c.accent : c.inkMuted, fontSize: 11.5 }}>
           {relationLabel(t, tile)}
         </AText>
@@ -178,7 +204,16 @@ function SiteMark({ relation, size }: { relation: PlaceRelation; size: number })
     <Svg width={size} height={size} viewBox="0 0 40 40">
       {relation === 'anywhere' ? (
         <>
-          <Circle cx={20} cy={20} r={14} fill="none" stroke={ink} strokeOpacity={0.4} strokeWidth={1.6} strokeDasharray="3 4" />
+          <Circle
+            cx={20}
+            cy={20}
+            r={14}
+            fill="none"
+            stroke={ink}
+            strokeOpacity={0.4}
+            strokeWidth={1.6}
+            strokeDasharray="3 4"
+          />
           <Circle cx={20} cy={20} r={3.5} fill={ink} fillOpacity={0.8} />
         </>
       ) : inside ? (
@@ -188,10 +223,26 @@ function SiteMark({ relation, size }: { relation: PlaceRelation; size: number })
         </>
       ) : (
         <>
-          <Circle cx={17} cy={23} r={11} fill={ink} fillOpacity={0.06} stroke={ink} strokeOpacity={0.35} strokeWidth={1.6} />
+          <Circle
+            cx={17}
+            cy={23}
+            r={11}
+            fill={ink}
+            fillOpacity={0.06}
+            stroke={ink}
+            strokeOpacity={0.35}
+            strokeWidth={1.6}
+          />
           {relation === 'away' ? (
             <>
-              <Path d="M31 10 24 16" stroke={ink} strokeOpacity={0.35} strokeWidth={1.6} strokeDasharray="2 3" strokeLinecap="round" />
+              <Path
+                d="M31 10 24 16"
+                stroke={ink}
+                strokeOpacity={0.35}
+                strokeWidth={1.6}
+                strokeDasharray="2 3"
+                strokeLinecap="round"
+              />
               <Circle cx={33.5} cy={7.5} r={3.6} fill={ink} fillOpacity={0.85} />
             </>
           ) : null}

@@ -13,6 +13,11 @@ export const overtimeApi = {
     return call(E.overtime.outsideMine);
   },
 
+  /** Who decides the caller's time right now — named on the clock-out receipt. Online only. */
+  myApprovers: async (): Promise<{ names: string[]; more: number }> => {
+    return call(E.overtime.myApprovers);
+  },
+
   respond: async (data: { response: 'YES' | 'NO'; reason?: string }): Promise<unknown> => {
     return call(E.overtime.respond, undefined, { body: data });
   },

@@ -3095,11 +3095,12 @@
       },
       "askMoreTime": "Chiedi più tempo",
       "askMoreTimeSent": "Viene chiesto al tuo responsabile. Il tempo dopo la fine conta quando approva.",
-      "askMoreTimeWaiting": "In attesa di più tempo"
+      "askMoreTimeWaiting": "In attesa di più tempo",
+      "clockedSpan": "timbrato {{span}}"
     },
     "management": {
       "title": "Gestione delle presenze",
-      "subtitle": "Monitori le presenze e visualizzi i report"
+      "subtitle": "Chi è in servizio, ore conteggiate, pause e assenze"
     },
     "tabs": {
       "attendance": "Presenze",
@@ -3312,10 +3313,10 @@
       "paid": "Conta come lavoro",
       "unpaid": "Non conta",
       "required": "Obbligatoria",
-      "remindEvery": "richiede ogni {{n}} min",
+      "remindEvery": "richiede ogni {{duration}}",
       "noReminder": "nessun promemoria",
-      "afterSummary": "{{mins}} minuti, dopo {{after}} di turno",
-      "windowSummary": "{{mins}} minuti, tra le {{from}} e le {{to}}",
+      "afterSummary": "{{duration}}, dopo {{after}} di turno",
+      "windowSummary": "{{duration}}, tra le {{from}} e le {{to}}",
       "shiftEnd": "la fine del turno",
       "removed": "Pausa rimossa",
       "added": "Pausa aggiunta",
@@ -3370,21 +3371,22 @@
       "viaAccountOn": "Segue il suo account, che lo consente.",
       "viaAccountOff": "Segue il suo account, che non lo consente.",
       "overrideOn": "Consentito qui, qualunque cosa dica il suo account.",
-      "overrideOff": "Rifiutato qui, anche se il suo account lo consente."
+      "overrideOff": "Rifiutato qui, anche se il suo account lo consente.",
+      "overrideOffPlain": "Rifiutato qui, come nel loro account."
     },
     "addOvertime": {
       "action": "Aggiungi straordinari",
       "title": "Aggiungi straordinari",
       "titleFor": "Aggiungi straordinari · {{name}}",
-      "context": "Turno finito alle {{end}} · uscita alle {{out}} ({{minutes}} min dopo)",
+      "context": "Turno finito alle {{end}} · uscita alle {{out}} ({{duration}} dopo)",
       "minutes": "Minuti dopo la fine del turno",
       "reason": "Motivo",
       "reasonPlaceholder": "Registrato con l'approvazione",
       "countedUntil": "Contato fino alle",
       "countedTime": "Tempo contato",
       "cappedAtClockOut": "Il tempo dopo l'uscita non viene mai contato.",
-      "approve": "Approva {{minutes}} min",
-      "success": "Aggiunti {{minutes}} min di straordinari",
+      "approve": "Approva {{duration}}",
+      "success": "Aggiunti {{duration}} di straordinari",
       "error": "Impossibile aggiungere gli straordinari"
     },
     "noShift": {
@@ -3397,7 +3399,6 @@
       "shiftOnly": "Solo con un turno",
       "shiftOnlyHint": "I membri senza turno oggi non possono timbrare qui.",
       "note": "I membri con un turno non sono interessati. Il limite conta ogni ora lavorata oggi, in qualsiasi spazio, nel fuso orario di questo spazio.",
-      "hours": "{{count}} h",
       "less": "Meno",
       "more": "Più",
       "saved": "Salvato",
@@ -3474,6 +3475,12 @@
       "longestHint": "Le ore senza turno di questo spazio di lavoro (impostazioni presenze). A quel punto il telefono chiede «Stai ancora lavorando?». Modificarle lì vale subito per tutti.",
       "presenceTiming": "Resta {{dwell}} min sul posto prima di timbrare e {{exit}} min fuori prima di uscire (impostazioni della timbratura automatica di questo spazio).",
       "windowInvalid": "Scegli due orari diversi."
+    },
+    "outside": {
+      "waiting": "{{duration}} fuori dal tuo turno il {{day}} aspettano {{names}}",
+      "waitingNoName": "{{duration}} fuori dal tuo turno il {{day}} aspettano una decisione",
+      "andMore_one": "{{names}} e {{count}} altro",
+      "andMore_other": "{{names}} e altri {{count}}"
     }
   },
   "auditLog": {
@@ -8333,7 +8340,22 @@
     "RULE_ESCALATE_ROLE_REQUIRED": "Scelga a chi passa se nessuno risponde.",
     "REQUEST_OVERLAPS_LEAVE": "Quel giorno cade in ferie già chieste o approvate.",
     "SELF_DECISION": "Non puoi decidere questo per te stesso. Chiedi a un responsabile o a un amministratore.",
-    "DAY_HOURS_SPACE_NOT_YOURS": "Scegli uno spazio di lavoro che gestisci."
+    "DAY_HOURS_SPACE_NOT_YOURS": "Scegli uno spazio di lavoro che gestisci.",
+    "LOCATION_REQUIRED": "Scegli il luogo di lavoro in cui timbri.",
+    "NOT_ASSIGNED_HERE": "Non sei assegnato a questo luogo di lavoro. Chiedi al tuo ufficio di aggiungerti.",
+    "NOT_ON_THE_CLOCK": "Non hai timbrato l'entrata.",
+    "ALREADY_ON_REST": "Sei già in pausa. Terminala prima.",
+    "REMOTE_NOT_ALLOWED": "Timbrare fuori da un luogo di lavoro non è consentito per il tuo account. Chiedi al tuo ufficio.",
+    "ENTRY_ALREADY_DECIDED": "Questo giorno è già stato deciso.",
+    "GPS_ACCURACY_LOW": "La tua posizione è precisa solo a {{distance}}: serve {{radius}} o meglio. Attendi un momento e riprova.",
+    "CLOCK_SWITCH_ADMIN_ONLY": "Solo un amministratore può disattivare la propria timbratura.",
+    "CLOCK_SWITCH_WHILE_CLOCKED_IN": "Prima timbra l'uscita, poi disattiva la timbratura.",
+    "EXTRA_TIME_NO_SHIFT": "Non c'è una fine prevista da prolungare: tutto questo tempo conta già.",
+    "ENTRY_STILL_OPEN": "Questo turno è ancora in corso: si potrà decidere dopo la timbratura d'uscita.",
+    "ENTRY_ALREADY_CLOSED": "Questo turno è stato chiuso nel frattempo: riaprilo per vedere l'ora reale.",
+    "OUTSIDE_ALREADY_DECIDED": "Questo tempo è già stato deciso.",
+    "OUTSIDE_NOTHING": "Non c'è tempo fuori dal turno da decidere.",
+    "FIX_MISSING": "Serve la tua posizione per timbrare presso {{location}}. Consenti l'accesso alla posizione e riprova."
   },
   "signLink": {
     "tabs": {
@@ -9678,7 +9700,8 @@
       "planned": "Previsto",
       "clocked": "Timbrato",
       "before": "Prima dell’inizio",
-      "after": "Dopo la fine"
+      "after": "Dopo la fine",
+      "pastEnd": "Lavorato oltre la fine"
     },
     "cover": {
       "ok": "Restano abbastanza persone",

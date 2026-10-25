@@ -55,7 +55,7 @@ export interface ClockInLabelInput {
   toleranceMin: number;
   endIsDailyLimit: boolean;
   prior: { clockOutAt: Date; breakPlan: unknown } | null;
-  fix: { lat: number; lng: number; accuracy?: number | null };
+  fix: { lat: number; lng: number; accuracy?: number | null } | null;
   zone: SiteZone;
 }
 

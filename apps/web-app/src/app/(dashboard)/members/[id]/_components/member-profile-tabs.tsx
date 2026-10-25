@@ -91,7 +91,14 @@ export function MemberProfileTabs({
   useWarmMemberTabs()
   const { t } = useTranslation()
   // The statement is what a person's hours cost the company — only for those who may see that.
-  const { user: viewer } = useAuth()
+  const { user: viewer, hasPermission } = useAuth()
+  /*
+    The server's own keys (clock review C4) — "can see all tasks" was enough to be OFFERED these, and the server
+    then refused: adding a missed day needs "correct hours"; the away override per workspace needs "manage
+    workspaces".
+  */
+  const canCorrectHours = hasPermission("canReconcileAttendance")
+  const canSetAway = hasPermission("canManageWorkspaces")
   const canViewLabourCost = (viewer as { canViewLabourCost?: boolean } | null)?.canViewLabourCost === true
   /* Works for a client or partner — see the tab list below for what that hides. */
   const isExternalMember = member.isExternal === true
@@ -240,6 +247,7 @@ export function MemberProfileTabs({
                 employeeId={memberId}
                 employeeName={personName(member)}
                 canManage={canManage}
+                canAddAttendance={canCorrectHours}
               />
             </TabsContent>
           )}
@@ -250,7 +258,7 @@ export function MemberProfileTabs({
             <LocationsTab
               assignments={memberAssignments}
               memberAllowRemote={member.allowRemote}
-              canManage={canManage}
+              canManage={canSetAway}
             />
           </TabsContent>
           {member.scheduleType === "FIXED" && (

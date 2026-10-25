@@ -804,10 +804,7 @@
       "untimed": "Sin duración fijada",
       "ofTotal": "de {{total}}",
       "overBy": "{{over}} más de sus {{total}}",
-      "backToWork": "Volver al trabajo",
-      "backHint": "Hasta que lo haga, el tiempo sigue contando como descanso.",
       "started": "Descanso iniciado",
-      "ended": "De vuelta al trabajo",
       "postponed": "Volveremos a preguntar en breve",
       "timeFor": "Toca su {{name}}",
       "dueIn": "en {{gap}}",
@@ -817,7 +814,8 @@
       "startNow": "Empezar descanso",
       "later": "Más tarde",
       "allDone": "Ha tomado todos sus descansos.",
-      "allDoneWithMissed": "No queda nada para hoy."
+      "allDoneWithMissed": "No queda nada para hoy.",
+      "backHintCard": "Toque «Terminar el descanso» al volver; hasta entonces cuenta como descanso."
     },
     "offline": {
       "notHere": "No se ha fichado",
@@ -890,14 +888,6 @@
     "title": "Horas extra",
     "noActiveRequest": "No hay solicitud de horas extra activa",
     "shiftEnded": "Tu turno ha terminado",
-    "promptTitle": "¿Necesitas horas extra?",
-    "promptSubtitle": "Tu turno ha terminado. ¿Quieres solicitar horas extra?",
-    "reasonPlaceholder": "¿Por qué necesitas horas extra? (opcional)",
-    "yes": "Sí, necesito horas extra",
-    "no": "No, registra mi salida",
-    "requestSent": "Solicitud de horas extra enviada para aprobación",
-    "declined": "Horas extra rechazadas, se registró tu salida",
-    "failedToRespond": "No se pudo responder a la solicitud de horas extra",
     "waitingApproval": "Esperando aprobación",
     "waitingApprovalSub": "Se notificó a tu jefe de equipo. También puedes obtener su firma en este dispositivo.",
     "getLeaderSignature": "Obtener firma del jefe",
@@ -908,7 +898,7 @@
     "rejected": "Horas extra rechazadas",
     "expired": "Solicitud expirada",
     "expiredSub": "La solicitud de horas extra expiró. Se registró tu salida.",
-    "overtimeActive": "Horas extra activas",
+    "overtimeActive": "Tiempo extra aprobado",
     "tapToView": "Toca para ver los detalles",
     "leaderApproval": "Aprobación del jefe",
     "signatureInstructions": "Entrega este dispositivo a tu jefe de equipo para aprobar las horas extra. Seleccionará su nombre, definirá la duración y firmará.",
@@ -2810,12 +2800,10 @@
   },
   "attendanceReview": {
     "segments": {
-      "approvals": "Aprobaciones",
       "noshows": "Ausencias",
       "records": "Historial"
     },
     "empty": {
-      "approvals": "Nada pendiente: todos los turnos están decididos.",
       "noshows": "Sin turnos perdidos en los últimos 7 días.",
       "records": {
         "month": "Sin turnos en los últimos 30 días.",
@@ -3300,7 +3288,6 @@
       "WAITING_FOR_WIFI": "Esperando Wi-Fi: eligió enviar fotos solo con Wi-Fi.",
       "TIME_OFF_DECIDED": "Esta solicitud ya fue resuelta, así que ya no se puede cancelar.",
       "NO_SHIFT_TODAY": "Hoy no tienes turno y este espacio solo permite fichar con turno.",
-      "NO_HOURS_LEFT": "No quedan horas hoy sin turno en este espacio. Pide un turno a tu responsable.",
       "TOO_FAR_TO_ARRIVE": "Estás a {{distance}} del lugar del trabajo. Tienes que estar a menos de {{radius}} para marcar la llegada. Acércate e inténtalo de nuevo.",
       "TOO_FAR_TO_START": "Estás a {{distance}} del lugar del trabajo. Tienes que estar a menos de {{radius}} para empezar el trabajo. Acércate e inténtalo de nuevo.",
       "OUTSIDE_GEOFENCE": "{{location}} solo admite fichajes en el sitio. Estás a {{distance}}.",
@@ -3340,7 +3327,20 @@
       "REQUEST_TOO_MANY_DAYS": "Demasiados días en una solicitud: 31 como máximo.",
       "REQUEST_REMOTE_NOT_ALLOWED": "No tiene permiso para trabajar en remoto.",
       "REQUEST_SPACE_NOT_YOURS": "No trabaja en ese espacio de trabajo.",
-      "REQUEST_KIND_NOT_OFFERED": "Este tipo de solicitud no está disponible en su espacio de trabajo."
+      "REQUEST_KIND_NOT_OFFERED": "Este tipo de solicitud no está disponible en su espacio de trabajo.",
+      "LOCATION_REQUIRED": "Elija el lugar de trabajo en el que ficha.",
+      "NOT_ASSIGNED_HERE": "No está asignado a este lugar de trabajo. Pida a su oficina que le añada.",
+      "NOT_ON_THE_CLOCK": "No ha fichado la entrada.",
+      "ALREADY_ON_REST": "Ya está en un descanso. Termínelo primero.",
+      "REMOTE_NOT_ALLOWED": "Fichar fuera de un lugar de trabajo no está permitido en su cuenta. Consulte a su oficina.",
+      "ENTRY_ALREADY_DECIDED": "Este día ya está decidido.",
+      "GPS_ACCURACY_LOW": "Su ubicación solo tiene una precisión de {{distance}}; se necesita {{radius}} o mejor. Espere un momento y vuelva a intentarlo.",
+      "CLOCK_SWITCH_ADMIN_ONLY": "Solo un administrador puede desactivar su propio reloj de fichaje.",
+      "CLOCK_SWITCH_WHILE_CLOCKED_IN": "Fiche la salida primero y luego desactive el reloj.",
+      "EXTRA_TIME_NO_SHIFT": "No hay un final previsto que ampliar: todo este tiempo ya cuenta.",
+      "ENTRY_STILL_OPEN": "Este turno sigue en curso: se puede decidir cuando se fiche la salida.",
+      "OUTSIDE_ALREADY_DECIDED": "Este tiempo ya está decidido.",
+      "OUTSIDE_NOTHING": "No hay tiempo fuera del turno que decidir."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",
@@ -3416,8 +3416,6 @@
     "counted": "{{counted}} contabilizado",
     "countedFrozen": "{{counted}} contabilizado, ahora no cuenta",
     "restDue": "descanso a las {{time}}",
-    "restOverdue_one": "Tu descanso venció hace {{count}} minuto",
-    "restOverdue_other": "Tu descanso venció hace {{count}} minutos",
     "startRest": "Empezar descanso",
     "endRest": "Terminar descanso",
     "break": "Descanso",
@@ -3429,8 +3427,6 @@
     "countedApproved": "contabilizado y aprobado",
     "countedRejected": "no aprobado",
     "waitingToReach": "esperando a llegar a la oficina",
-    "startsIn_one": "tu turno empieza en {{count}} minuto",
-    "startsIn_other": "tu turno empieza en {{count}} minutos",
     "today": "HOY",
     "thisWeek": "Esta semana",
     "ofTarget": "{{done}} de {{target}}",
@@ -3441,7 +3437,7 @@
     "workedThisWeek": "trabajado esta semana",
     "lastInOn": "último fichaje el {{day}}",
     "whatKind": "QUÉ TIPO · OPCIONAL",
-    "startBreak": "Empezar el descanso",
+    "startBreak": "Empezar un descanso",
     "breakReason": "¿Para qué? (opcional)",
     "restOf": "{{duration}}",
     "restCounts": "cuenta como trabajado",
@@ -3458,9 +3454,9 @@
       "clockInNow": "Marcar entrada ahora"
     },
     "noShiftLeft": "En {{location}} · sin turno · {{left}} para las horas de hoy",
-    "askMoreTime": "Pedir más tiempo",
-    "askMoreTimeHint": "Se pregunta a su responsable. Podrá fichar cuando lo apruebe.",
-    "arrivedStartsAt": "Estás en {{workspace}} · tu turno empieza a las {{time}}"
+    "arrivedStartsAt": "Estás en {{workspace}} · tu turno empieza a las {{time}}",
+    "startsInDuration": "su turno empieza en {{duration}}",
+    "restOverdueDuration": "Su descanso tocaba hace {{duration}}"
   },
   "crew": {
     "onTheClock": "fichados",
@@ -3622,7 +3618,8 @@
       "eyebrowCrew": "AÚN EN CURSO · EL EQUIPO SIGUE",
       "myOpenItems_one": "{{count}} de tus puntos de la lista sigue abierto",
       "myOpenItems_other": "{{count}} de tus puntos de la lista siguen abiertos"
-    }
+    },
+    "andMore": "+{{count}}"
   },
   "myWork": {
     "all": "Todos {{count}}",
@@ -4266,7 +4263,7 @@
       "noFix": "Distancia desconocida",
       "leftToday": "Quedan {{left}} hoy",
       "shiftOnly": "Solo con turno",
-      "limitReached": "Límite alcanzado"
+      "pastHours": "Pasadas las horas de hoy"
     },
     "today": {
       "title": "Hoy",
@@ -5098,7 +5095,11 @@
       "failed": "No ha funcionado. Abre la pantalla de fichaje y hazlo allí.",
       "cannotUndo": "Este fichaje ya no se puede deshacer aquí: el turno está cerrado o ya hay trabajo registrado. Pide a tu oficina que lo corrija.",
       "carryOn": "Sigues: todavía tienes la entrada fichada"
-    }
+    },
+    "undoBanner": "Fichaje automático a las {{time}}",
+    "undo": "Deshacer",
+    "undone": "Fichaje automático deshecho",
+    "undoFailed": "No se pudo deshacer; consulte a su oficina."
   },
   "register": {
     "title": "Equipos",
@@ -5245,7 +5246,8 @@
       "planned": "Previsto",
       "clocked": "Fichado",
       "before": "Antes del inicio",
-      "after": "Después del fin"
+      "after": "Después del fin",
+      "pastEnd": "Trabajado después del final"
     },
     "cover": {
       "ok": "Quedan suficientes personas",

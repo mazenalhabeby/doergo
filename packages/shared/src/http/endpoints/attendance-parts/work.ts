@@ -100,6 +100,12 @@ export const overtimeEndpoints = defineEndpoints('overtime', {
     path: () => '/attendance/outside/mine',
     keep: false,
   }),
+  /** Who decides the caller's time today (names, first three) — the clock-out receipt names them (C7). */
+  myApprovers: endpoint<void, { names: string[]; more: number }>({
+    method: 'GET',
+    path: () => '/attendance/approvers/mine',
+    keep: false,
+  }),
   respond: endpoint<void, unknown, { response: 'YES' | 'NO'; reason?: string }>({
     method: 'POST',
     path: () => '/overtime/respond',

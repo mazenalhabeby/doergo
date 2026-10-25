@@ -804,10 +804,7 @@
       "untimed": "Sans durée fixée",
       "ofTotal": "sur {{total}}",
       "overBy": "{{over}} au-delà de vos {{total}}",
-      "backToWork": "Reprendre le travail",
-      "backHint": "Jusque-là, le temps continue de compter comme pause.",
       "started": "Pause commencée",
-      "ended": "Retour au travail",
       "postponed": "Nous redemanderons dans un instant",
       "timeFor": "C’est l’heure de votre {{name}}",
       "dueIn": "dans {{gap}}",
@@ -817,7 +814,8 @@
       "startNow": "Commencer la pause",
       "later": "Plus tard",
       "allDone": "Toutes vos pauses sont prises.",
-      "allDoneWithMissed": "Plus rien pour aujourd’hui."
+      "allDoneWithMissed": "Plus rien pour aujourd’hui.",
+      "backHintCard": "Touchez « Terminer la pause » à votre retour – d'ici là, cela compte comme pause."
     },
     "offline": {
       "notHere": "Pointage non effectué",
@@ -890,14 +888,6 @@
     "title": "Heures supplémentaires",
     "noActiveRequest": "Aucune demande d'heures supplémentaires active",
     "shiftEnded": "Votre quart est terminé",
-    "promptTitle": "Besoin d'heures supplémentaires ?",
-    "promptSubtitle": "Votre quart est terminé. Souhaitez-vous demander des heures supplémentaires ?",
-    "reasonPlaceholder": "Pourquoi avez-vous besoin d'heures supplémentaires ? (facultatif)",
-    "yes": "Oui, heures supplémentaires",
-    "no": "Non, pointer mon départ",
-    "requestSent": "Demande d'heures supplémentaires envoyée pour approbation",
-    "declined": "Heures supplémentaires refusées, votre départ a été pointé",
-    "failedToRespond": "Échec de la réponse à la demande d'heures supplémentaires",
     "waitingApproval": "En attente d'approbation",
     "waitingApprovalSub": "Votre chef d'équipe a été notifié. Vous pouvez aussi obtenir sa signature sur cet appareil.",
     "getLeaderSignature": "Obtenir la signature du chef",
@@ -908,7 +898,7 @@
     "rejected": "Heures supplémentaires refusées",
     "expired": "Demande expirée",
     "expiredSub": "La demande d'heures supplémentaires a expiré. Votre départ a été pointé.",
-    "overtimeActive": "Heures supplémentaires actives",
+    "overtimeActive": "Temps supplémentaire approuvé",
     "tapToView": "Appuyez pour voir les détails",
     "leaderApproval": "Approbation du chef",
     "signatureInstructions": "Remettez cet appareil à votre chef d'équipe pour approuver les heures supplémentaires. Il sélectionnera son nom, définira la durée et signera.",
@@ -2810,12 +2800,10 @@
   },
   "attendanceReview": {
     "segments": {
-      "approvals": "Validations",
       "noshows": "Absences",
       "records": "Historique"
     },
     "empty": {
-      "approvals": "Rien en attente — tous les postes sont traités.",
       "noshows": "Aucun poste manqué ces 7 derniers jours.",
       "records": {
         "month": "Aucun poste ces 30 derniers jours.",
@@ -3300,7 +3288,6 @@
       "WAITING_FOR_WIFI": "En attente du Wi-Fi : vous avez choisi d'envoyer les photos uniquement en Wi-Fi.",
       "TIME_OFF_DECIDED": "Cette demande a déjà été traitée et ne peut plus être annulée.",
       "NO_SHIFT_TODAY": "Vous n'avez pas de service aujourd'hui, et cet espace n'autorise le pointage qu'avec un service.",
-      "NO_HOURS_LEFT": "Plus d'heures aujourd'hui sans service dans cet espace. Demandez un service à votre responsable.",
       "TOO_FAR_TO_ARRIVE": "Vous êtes à {{distance}} du lieu d'intervention. Vous devez être à moins de {{radius}} pour signaler votre arrivée. Rapprochez-vous et réessayez.",
       "TOO_FAR_TO_START": "Vous êtes à {{distance}} du lieu d'intervention. Vous devez être à moins de {{radius}} pour démarrer l'intervention. Rapprochez-vous et réessayez.",
       "OUTSIDE_GEOFENCE": "{{location}} n'accepte les pointages que sur place. Vous êtes à {{distance}}.",
@@ -3340,7 +3327,20 @@
       "REQUEST_TOO_MANY_DAYS": "Trop de jours dans une demande : 31 au maximum.",
       "REQUEST_REMOTE_NOT_ALLOWED": "Vous n’êtes pas autorisé à télétravailler.",
       "REQUEST_SPACE_NOT_YOURS": "Vous ne travaillez pas dans cet espace de travail.",
-      "REQUEST_KIND_NOT_OFFERED": "Ce type de demande n’est pas proposé dans votre espace de travail."
+      "REQUEST_KIND_NOT_OFFERED": "Ce type de demande n’est pas proposé dans votre espace de travail.",
+      "LOCATION_REQUIRED": "Choisissez le lieu de travail où vous pointez.",
+      "NOT_ASSIGNED_HERE": "Vous n'êtes pas affecté à ce lieu de travail. Demandez à votre bureau de vous ajouter.",
+      "NOT_ON_THE_CLOCK": "Vous n'avez pas pointé votre arrivée.",
+      "ALREADY_ON_REST": "Vous êtes déjà en pause. Terminez-la d'abord.",
+      "REMOTE_NOT_ALLOWED": "Pointer hors d'un lieu de travail n'est pas autorisé pour votre compte. Demandez à votre bureau.",
+      "ENTRY_ALREADY_DECIDED": "Cette journée a déjà été décidée.",
+      "GPS_ACCURACY_LOW": "Votre position n'est précise qu'à {{distance}} – il faut {{radius}} ou mieux. Patientez un instant et réessayez.",
+      "CLOCK_SWITCH_ADMIN_ONLY": "Seul un administrateur peut désactiver sa propre pointeuse.",
+      "CLOCK_SWITCH_WHILE_CLOCKED_IN": "Pointez d'abord votre départ, puis désactivez la pointeuse.",
+      "EXTRA_TIME_NO_SHIFT": "Il n'y a pas de fin prévue à prolonger – tout ce temps compte déjà.",
+      "ENTRY_STILL_OPEN": "Ce poste est toujours en cours – il pourra être décidé une fois le départ pointé.",
+      "OUTSIDE_ALREADY_DECIDED": "Ce temps a déjà été décidé.",
+      "OUTSIDE_NOTHING": "Il n'y a pas de temps hors du poste à décider."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",
@@ -3416,8 +3416,6 @@
     "counted": "{{counted}} comptabilisé",
     "countedFrozen": "{{counted}} comptabilisé, ne compte pas en ce moment",
     "restDue": "pause à {{time}}",
-    "restOverdue_one": "Votre pause était due il y a {{count}} minute",
-    "restOverdue_other": "Votre pause était due il y a {{count}} minutes",
     "startRest": "Commencer la pause",
     "endRest": "Terminer la pause",
     "break": "Pause",
@@ -3429,8 +3427,6 @@
     "countedApproved": "compté et validé",
     "countedRejected": "non validé",
     "waitingToReach": "en attente d’arriver au bureau",
-    "startsIn_one": "votre service commence dans {{count}} minute",
-    "startsIn_other": "votre service commence dans {{count}} minutes",
     "today": "AUJOURD’HUI",
     "thisWeek": "Cette semaine",
     "ofTarget": "{{done}} sur {{target}}",
@@ -3441,7 +3437,7 @@
     "workedThisWeek": "travaillé cette semaine",
     "lastInOn": "dernier pointage {{day}}",
     "whatKind": "QUEL TYPE · FACULTATIF",
-    "startBreak": "Commencer la pause",
+    "startBreak": "Commencer une pause",
     "breakReason": "Pour quoi ? (facultatif)",
     "restOf": "{{duration}}",
     "restCounts": "compte comme du travail",
@@ -3458,9 +3454,9 @@
       "clockInNow": "Pointer maintenant"
     },
     "noShiftLeft": "À {{location}} · sans poste · encore {{left}} avant les heures du jour",
-    "askMoreTime": "Demander plus de temps",
-    "askMoreTimeHint": "Votre responsable est sollicité. Vous pourrez pointer dès son accord.",
-    "arrivedStartsAt": "Vous êtes à {{workspace}} · votre service commence à {{time}}"
+    "arrivedStartsAt": "Vous êtes à {{workspace}} · votre service commence à {{time}}",
+    "startsInDuration": "votre poste commence dans {{duration}}",
+    "restOverdueDuration": "Votre pause était prévue il y a {{duration}}"
   },
   "crew": {
     "onTheClock": "pointés",
@@ -3622,7 +3618,8 @@
       "eyebrowCrew": "ENCORE EN COURS · L'ÉQUIPE CONTINUE",
       "myOpenItems_one": "{{count}} de vos points de liste est encore ouvert",
       "myOpenItems_other": "{{count}} de vos points de liste sont encore ouverts"
-    }
+    },
+    "andMore": "+{{count}}"
   },
   "myWork": {
     "all": "Tout {{count}}",
@@ -4266,7 +4263,7 @@
       "noFix": "Distance inconnue",
       "leftToday": "Encore {{left}} aujourd'hui",
       "shiftOnly": "Avec poste uniquement",
-      "limitReached": "Limite atteinte"
+      "pastHours": "Au-delà des heures du jour"
     },
     "today": {
       "title": "Aujourd’hui",
@@ -5098,7 +5095,11 @@
       "failed": "Cela n’a pas fonctionné. Ouvrez l’écran de pointage pour le faire là.",
       "cannotUndo": "Ce pointage ne peut plus être annulé ici : le service est clôturé ou du travail y est déjà enregistré. Demandez à votre bureau de corriger.",
       "carryOn": "Vous continuez — toujours pointé"
-    }
+    },
+    "undoBanner": "Arrivée pointée automatiquement à {{time}}",
+    "undo": "Annuler",
+    "undone": "Pointage automatique annulé",
+    "undoFailed": "Impossible d'annuler – demandez à votre bureau."
   },
   "register": {
     "title": "Équipements",
@@ -5245,7 +5246,8 @@
       "planned": "Prévu",
       "clocked": "Pointé",
       "before": "Avant le début",
-      "after": "Après la fin"
+      "after": "Après la fin",
+      "pastEnd": "Travaillé après la fin"
     },
     "cover": {
       "ok": "Assez de personnes restent",

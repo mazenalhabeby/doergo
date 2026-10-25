@@ -1,5 +1,5 @@
 import { standInGrant } from '../../approvals/stand-in';
-import { EXTRA_TIME_ANSWER_WAIT_MIN, moreTimeRefusal, personName, zoneOf } from '@hbcfield/shared';
+import { EXTRA_TIME_ANSWER_WAIT_MIN, moreTimeRefusal, peopleNamesSorted, personName, zoneOf } from '@hbcfield/shared';
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, success, TimeEntryStatus } from '@hbcfield/shared';
@@ -29,6 +29,23 @@ export class ExtraTimeService {
     // The ONE approval path — an automatic approval goes through it too.
     private readonly approval: ExtraTimeApprovalService,
   ) {}
+
+  /**
+   * Who decides the caller's time right now (clock review C7): the people a request for more time from this
+   * shift would reach — the own-request rule over the workspace's deciders. Named on the clock-out receipt,
+   * which said "your approver". No running shift → nobody.
+   */
+  async myApprovers(data: { userId: string; organizationId: string }) {
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: { userId: data.userId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_IN },
+      select: { locationId: true },
+    });
+    if (!entry?.locationId) return success({ names: [] as string[], more: 0 });
+    const ask = await this.askFor({ ...data, locationId: entry.locationId });
+    const ids = ask.route === 'AUTOMATIC' ? [] : ask.ids;
+    const people = ids.length ? await peopleNamesSorted(this.prisma, ids.slice(0, 3)) : [];
+    return success({ names: people.map((p) => personName(p)), more: Math.max(0, ids.length - people.length) });
+  }
 
   /**
    * Who is asked about this member's extra time: the shared own-request rule

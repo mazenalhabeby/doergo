@@ -1,7 +1,12 @@
 import { Controller, Get, Post, Body, Param, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Role, RequirePermissionInSpace, OUTSIDE_SHIFT_DECIDE_KEYS } from '@hbcfield/shared';
-import { listOutsideShift, listMyOutsideShift, decideOutsideShift } from '@hbcfield/shared/microservices';
+import {
+  listOutsideShift,
+  listMyOutsideShift,
+  listMyApprovers,
+  decideOutsideShift,
+} from '@hbcfield/shared/microservices';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { ServiceCalls } from '../../common/microservices/service-calls';
@@ -44,6 +49,15 @@ export class OutsideShiftController {
   @ApiOperation({ summary: "The caller's own time outside the shift, waiting for a decision" })
   mine(@Request() req: AuthedRequest) {
     return this.services.task.ask(listMyOutsideShift, { userId: req.user.id, organizationId: callerOrgId(req.user) });
+  }
+
+  // Who decides the caller's own time today — the phone's clock-out receipt names them (C7). Their own only.
+  @Get('approvers/mine')
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @DenyExternal()
+  @ApiOperation({ summary: "Who decides the caller's own time right now (first three names)" })
+  myApprovers(@Request() req: AuthedRequest) {
+    return this.services.task.ask(listMyApprovers, { userId: req.user.id, organizationId: callerOrgId(req.user) });
   }
 
   @Post('entries/:id/outside')

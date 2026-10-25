@@ -40,6 +40,8 @@ const attendanceKeys = {
   worklog: (entryId: string | null | undefined) => named("worklog", [entryId]),
   /** The caller's own shift — the navbar clock, /my/attendance and the rest panel. */
   myStatus: () => named("my-attendance-status"),
+  /** The member's own time outside the shift, waiting for a decision (clock review C10). */
+  myOutsideWaiting: () => named("my-outside-waiting"),
   myHistory: (...range: [from?: string, to?: string]) => named("my-attendance-history", range),
   myClockInLocations: () => named("my-clock-in-locations"),
   /** Member pickers on the add-entry / day-off dialogs. */

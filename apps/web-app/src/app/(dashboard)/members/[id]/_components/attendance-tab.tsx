@@ -19,6 +19,8 @@ interface AttendanceTabProps {
   employeeId: string
   employeeName?: string
   canManage?: boolean
+  /** May add a missed day — the server's "correct hours" (C4). */
+  canAddAttendance?: boolean
 }
 
 export function AttendanceTab({
@@ -26,6 +28,7 @@ export function AttendanceTab({
   employeeId,
   employeeName,
   canManage,
+  canAddAttendance,
 }: AttendanceTabProps) {
   const { t } = useTranslation()
   const { formatTime, formatDate, locale } = useTimeFormat()
@@ -50,19 +53,12 @@ export function AttendanceTab({
           <Clock className="h-4 w-4" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-foreground">
-            {t('technicians.attendanceTab.title')}
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            {t('technicians.attendanceTab.description')}
-          </p>
+          <h2 className="text-sm font-semibold text-foreground">{t("technicians.attendanceTab.title")}</h2>
+          <p className="text-xs text-muted-foreground">{t("technicians.attendanceTab.description")}</p>
         </div>
-        {canManage && (
+        {canAddAttendance && (
           <div className="ml-auto">
-            <AddAttendanceDialog
-              employeeId={employeeId}
-              employeeName={employeeName}
-            />
+            <AddAttendanceDialog employeeId={employeeId} employeeName={employeeName} />
           </div>
         )}
       </div>
@@ -73,26 +69,26 @@ export function AttendanceTab({
             <thead>
               <tr className="border-b border-border/60 text-left">
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t('technicians.attendanceTab.dateColumn')}
+                  {t("technicians.attendanceTab.dateColumn")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t('technicians.attendanceTab.clockInColumn')}
+                  {t("technicians.attendanceTab.clockInColumn")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t('technicians.attendanceTab.clockOutColumn')}
+                  {t("technicians.attendanceTab.clockOutColumn")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t('technicians.attendanceTab.durationColumn')}
+                  {t("technicians.attendanceTab.durationColumn")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t('technicians.attendanceTab.locationColumn')}
+                  {t("technicians.attendanceTab.locationColumn")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t('technicians.attendanceTab.statusColumn')}
+                  {t("technicians.attendanceTab.statusColumn")}
                 </th>
                 {showOvertime && <th className="w-10 px-2 py-3" />}
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t('worklog.column', 'Activity')}
+                  {t("worklog.column", "Activity")}
                 </th>
               </tr>
             </thead>
@@ -103,21 +99,19 @@ export function AttendanceTab({
                 const isOpen = expanded === entry.id
                 return (
                   <Fragment key={entry.id}>
-                  <tr
-                    onClick={() => setExpanded(isOpen ? null : entry.id)}
-                    className="cursor-pointer border-b border-border/60 hover:bg-accent/40 transition-colors"
-                  >
-                    <td className="px-5 py-3 text-foreground">
-                      {formatDate(entry.clockInAt, tz)}
-                      {country ? ` / ${country}` : ""}
-                    </td>
-                    <td className="px-5 py-3 text-muted-foreground">
-                      {formatTime(entry.clockInAt, tz)}
-                    </td>
-                    <td className="px-5 py-3 text-muted-foreground">
-                      {entry.clockOutAt ? formatTime(entry.clockOutAt, tz) : "—"}
-                    </td>
-                    {/*
+                    <tr
+                      onClick={() => setExpanded(isOpen ? null : entry.id)}
+                      className="cursor-pointer border-b border-border/60 hover:bg-accent/40 transition-colors"
+                    >
+                      <td className="px-5 py-3 text-foreground">
+                        {formatDate(entry.clockInAt, tz)}
+                        {country ? ` / ${country}` : ""}
+                      </td>
+                      <td className="px-5 py-3 text-muted-foreground">{formatTime(entry.clockInAt, tz)}</td>
+                      <td className="px-5 py-3 text-muted-foreground">
+                        {entry.clockOutAt ? formatTime(entry.clockOutAt, tz) : "—"}
+                      </td>
+                      {/*
                       The COUNTED hours, through the same helper every other
                       attendance screen reads.
 
@@ -129,54 +123,59 @@ export function AttendanceTab({
                       for. The second line names the difference rather than
                       leaving two numbers to be discovered separately.
                     */}
-                    <td className="px-5 py-3 text-foreground">
-                      {entry.clockOutAt ? (
-                        <>
-                          <span className="font-medium tabular-nums">
-                            {formatDuration(workedMinutes(entry))}
-                          </span>
-                          {entry.totalMinutes != null &&
-                            workedMinutes(entry) !== entry.totalMinutes && (
+                      <td className="px-5 py-3 text-foreground">
+                        {entry.clockOutAt ? (
+                          <>
+                            <span className="font-medium tabular-nums">{formatDuration(workedMinutes(entry))}</span>
+                            {entry.totalMinutes != null && workedMinutes(entry) !== entry.totalMinutes && (
                               <span className="mt-0.5 block text-[11px] tabular-nums text-muted-foreground">
                                 {t("attendance.onSite", "{{duration}} on site", {
                                   duration: formatDuration(entry.totalMinutes),
                                 })}
                               </span>
                             )}
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="px-5 py-3 text-muted-foreground">
-                      {entry.location?.name || "—"}
-                    </td>
-                    <td className="px-5 py-3">
-                      <AttendanceStatusCell entry={entry} />
-                    </td>
-                    {showOvertime && (
-                      // The row expands on click; the action must not.
-                      <td className="px-2 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                        {overtime.canOfferFor(entry) && <AddOvertimeDialog entry={entry} />}
+                          </>
+                        ) : (
+                          "—"
+                        )}
                       </td>
-                    )}
-                    <td className="px-5 py-3">
-                      <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-90")} />
-                    </td>
-                  </tr>
-                  {isOpen && (
-                    <tr className="border-b border-border/60 bg-muted/20">
-                      <td colSpan={columns} className="px-5 py-4">
-                        <div
-                          className={"mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase " +
-                            "tracking-wide text-muted-foreground"}>
-                          <ListChecks className="h-3.5 w-3.5" /> {t('worklog.title', "Activity — what they did")}
-                        </div>
-                        {/* Managers/admins responsible for this member can add & edit their activity. */}
-                        <WorkLogTimeline entryId={entry.id} editable={canManage} memberName={employeeName} clockOutNote={entry.notes} />
+                      <td className="px-5 py-3 text-muted-foreground">{entry.location?.name || "—"}</td>
+                      <td className="px-5 py-3">
+                        <AttendanceStatusCell entry={entry} />
+                      </td>
+                      {showOvertime && (
+                        // The row expands on click; the action must not.
+                        <td className="px-2 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          {overtime.canOfferFor(entry) && <AddOvertimeDialog entry={entry} />}
+                        </td>
+                      )}
+                      <td className="px-5 py-3">
+                        <ChevronRight
+                          className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-90")}
+                        />
                       </td>
                     </tr>
-                  )}
+                    {isOpen && (
+                      <tr className="border-b border-border/60 bg-muted/20">
+                        <td colSpan={columns} className="px-5 py-4">
+                          <div
+                            className={
+                              "mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase " +
+                              "tracking-wide text-muted-foreground"
+                            }
+                          >
+                            <ListChecks className="h-3.5 w-3.5" /> {t("worklog.title", "Activity — what they did")}
+                          </div>
+                          {/* Managers/admins responsible for this member can add & edit their activity. */}
+                          <WorkLogTimeline
+                            entryId={entry.id}
+                            editable={canManage}
+                            memberName={employeeName}
+                            clockOutNote={entry.notes}
+                          />
+                        </td>
+                      </tr>
+                    )}
                   </Fragment>
                 )
               })}
@@ -188,9 +187,7 @@ export function AttendanceTab({
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 text-muted-foreground">
             <Clock className="h-6 w-6" />
           </div>
-          <p className="text-sm text-muted-foreground">
-            {t('technicians.attendanceTab.noRecords')}
-          </p>
+          <p className="text-sm text-muted-foreground">{t("technicians.attendanceTab.noRecords")}</p>
         </div>
       )}
     </div>

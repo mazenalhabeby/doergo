@@ -62,3 +62,22 @@ describe('a refusal settles the time outside the shift (clock review B1)', () =>
     ).toBe(false);
   });
 });
+
+import { pastEndFacts } from '../../approvals/approval-items-time';
+
+describe('approving minutes with the minutes in view (clock review C5)', () => {
+  const now = new Date('2026-10-25T17:00:00Z');
+  it('worked past the end, rounded up to a quarter hour for the box', () => {
+    expect(pastEndFacts('2026-10-25T15:30:00Z', '2026-10-25T16:22:00Z', now)).toEqual({
+      pastEndMinutes: 52,
+      requestedMinutes: 60,
+    });
+  });
+  it('still working: counted to now', () => {
+    expect(pastEndFacts('2026-10-25T16:30:00Z', null, now)).toEqual({ pastEndMinutes: 30, requestedMinutes: 30 });
+  });
+  it('nothing past the end, or no end → no figure (the apps keep their default)', () => {
+    expect(pastEndFacts('2026-10-25T18:00:00Z', null, now)).toEqual({});
+    expect(pastEndFacts(null, null, now)).toEqual({});
+  });
+});

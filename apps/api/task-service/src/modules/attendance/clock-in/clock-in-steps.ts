@@ -20,8 +20,8 @@ import type { judgeOccurrence } from '../../../common/occurrence.util';
 export interface ClockInInput {
   userId: string;
   locationId?: string;
-  lat: number;
-  lng: number;
+  lat?: number;
+  lng?: number;
   accuracy?: number;
   organizationId: string;
   /**
@@ -58,10 +58,16 @@ export type ClockInUser = Prisma.UserGetPayload<{ select: typeof CLOCK_IN_USER_S
 /** Null when the fix is good enough to judge; otherwise the refusal. */
 export function gpsAccuracyRefusal(accuracy: number | undefined): BadRequestException | null {
   if (accuracy && accuracy > ATTENDANCE_CONSTANTS.GPS_ACCURACY_THRESHOLD) {
-    return new BadRequestException(
-      `GPS accuracy too low (${formatDistance(accuracy)}). Please wait for better signal. ` +
+    // Coded, with the figures, so each app says it in the member's language (clock review C1).
+    return new BadRequestException({
+      code: 'GPS_ACCURACY_LOW',
+      message:
+        `GPS accuracy too low (${formatDistance(accuracy)}). Please wait for better signal. ` +
         `Required: ${formatDistance(ATTENDANCE_CONSTANTS.GPS_ACCURACY_THRESHOLD)} or better.`,
-    );
+      // The two figures in the distance shape both apps already format ("85 m", "1.2 km"): how far off the
+      // fix may be (distance), and what is needed (radius).
+      params: { distanceMetres: Math.round(accuracy), radiusMetres: ATTENDANCE_CONSTANTS.GPS_ACCURACY_THRESHOLD },
+    });
   }
   return null;
 }
@@ -183,4 +189,9 @@ export function autoClockInFlag(input: {
           stamp.expectedClockOutAt ?? null,
         ));
   return holds ? [AUTO_CLOCK_IN_FLAG] : [];
+}
+
+/** The tap's position, when the member gave one (clock review C2: asked only where the place checks it). */
+export function fixOf(data: { lat?: number; lng?: number; accuracy?: number }) {
+  return data.lat != null && data.lng != null ? { lat: data.lat, lng: data.lng, accuracy: data.accuracy } : null;
 }

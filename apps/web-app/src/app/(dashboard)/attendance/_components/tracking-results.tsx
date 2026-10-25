@@ -76,7 +76,7 @@ export function TrackingResults({
           </Button>
         </div>
       ) : view === "daysoff" ? (
-        <TrackingDaysOff daysOff={daysOff} canReconcile={canReconcile} isAdmin={isAdmin} />
+        <TrackingDaysOff daysOff={daysOff} />
       ) : filteredEntries.length === 0 ? (
         <div className="p-12 text-center">
           <Clock className="size-12 text-muted-foreground mx-auto mb-4" />

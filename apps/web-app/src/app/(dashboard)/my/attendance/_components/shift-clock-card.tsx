@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button"
 import { ClockInPicker } from "@/components/attendance/clock-in-picker"
 import { ClockOutEarlyDialog } from "@/components/attendance/clock-out-early-dialog"
 import { AskMoreTime } from "@/components/attendance/ask-more-time"
+import { mayClockInRemotely } from "@hbcfield/shared/client"
+import { useAuth } from "@/contexts/auth-context"
 import { LiveShift } from "./live-shift"
 
 /** The member's clock: the running shift (or "clocked out") and the one button that changes it. */
@@ -31,6 +33,8 @@ export function ShiftClockCard({
   pickerProps: ComponentProps<typeof ClockInPicker>
   earlyProps: ComponentProps<typeof ClockOutEarlyDialog>
 }) {
+  const { user } = useAuth()
+  const canClockInRemotely = mayClockInRemotely(user as never)
   const { t } = useTranslation()
   const { formatTime } = useTimeFormat()
   /*
@@ -133,7 +137,8 @@ export function ShiftClockCard({
         <div className="mt-4 space-y-2">
           <Button
             onClick={startClockIn}
-            disabled={pending || locations.length === 0}
+            // Nowhere to clock in, unless they may clock in away — what the navbar has always done (C4).
+            disabled={pending || (locations.length === 0 && !canClockInRemotely)}
             className="w-full bg-green-600 hover:bg-green-700 text-white"
           >
             {pending ? (
@@ -153,7 +158,7 @@ export function ShiftClockCard({
             error toast AFTER the member had already granted location and
             waited for a fix. Said up front instead.
           */}
-          {locations.length === 0 && (
+          {locations.length === 0 && !canClockInRemotely && (
             <p className="text-[11px] leading-snug text-amber-600 dark:text-amber-400">
               {t(
                 "attendance.my.noAssignedLocations",

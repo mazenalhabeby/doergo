@@ -1,3 +1,4 @@
+import { formatDuration } from '@hbcfield/shared/client';
 import { Pressable, View, type ViewStyle } from 'react-native';
 import { type Href } from 'expo-router';
 import { refusedSpaceId } from '@/offline/attendance/refused-shift';
@@ -26,8 +27,6 @@ export function ShiftClockCardViewQueued({
   weekSoFar,
   working,
   onSetRealTime,
-  askMore,
-  onAskMoreTime,
   shift,
 }: {
   vm: ShiftClockCardViewState;
@@ -43,8 +42,6 @@ export function ShiftClockCardViewQueued({
   weekSoFar: ReturnType<typeof ShiftClockCardViewView>['weekSoFar'];
   working: ReturnType<typeof ShiftClockCardViewView>['working'];
   onSetRealTime: Parameters<typeof ShiftClockCardView>[0]['onSetRealTime'];
-  askMore: ReturnType<typeof ShiftClockCardViewView>['askMore'];
-  onAskMoreTime: Parameters<typeof ShiftClockCardView>[0]['onAskMoreTime'];
   shift: Parameters<typeof ShiftClockCardView>[0]['shift'];
 }) {
   const {
@@ -126,10 +123,9 @@ export function ShiftClockCardViewQueued({
             }}
           >
             <AText variant="caption" tone="warn">
-              {t('shiftClock.restOverdue', {
-                count: st.restOverdueBy,
-                defaultValue_one: 'Your rest was due a minute ago',
-                defaultValue_other: `Your rest was due ${st.restOverdueBy} minutes ago`,
+              {t('shiftClock.restOverdueDuration', {
+                duration: formatDuration(st.restOverdueBy),
+                defaultValue: `Your rest was due ${formatDuration(st.restOverdueBy)} ago`,
               })}
             </AText>
           </View>
@@ -172,7 +168,7 @@ export function ShiftClockCardViewQueued({
         </DiscRow>
       ) : (
         <Pressable
-          onPress={askMore ? onAskMoreTime : clockIn.openClockInModal}
+          onPress={clockIn.openClockInModal}
           disabled={working}
           accessibilityRole="button"
           style={({ pressed }) => ({
@@ -185,9 +181,7 @@ export function ShiftClockCardViewQueued({
           })}
         >
           <AText variant="body" style={{ color: c.accentInk, fontFamily: amazen.font.sansMedium }}>
-            {askMore
-              ? t('shiftClock.askMoreTime', { defaultValue: 'Ask for more time' })
-              : refusedCopy?.canClockInNow
+            {refusedCopy?.canClockInNow
               ? t('shiftClock.refused.clockInNow', { defaultValue: 'Clock in now' })
               : st.kind === 'done'
                 ? t('shiftClock.clockInAgain', { defaultValue: 'Clock in again' })
@@ -195,11 +189,6 @@ export function ShiftClockCardViewQueued({
           </AText>
         </Pressable>
       )}
-      {askMore ? (
-        <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', marginTop: amazen.space(2) }}>
-          {t('shiftClock.askMoreTimeHint', { defaultValue: 'Your leader is asked. You can clock in once they agree.' })}
-        </AText>
-      ) : null}
     </CardSurface>
   );
 }

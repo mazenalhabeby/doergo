@@ -42,8 +42,6 @@ export interface ShiftClockCardViewProps {
    * (`noShiftHere` in time-logic). Absent on the home card, which shows no rule.
    */
   noShift?: NoShiftNote | null;
-  /** With no hours left there: the button asks the leader for more time (an OVERTIME request). */
-  onAskMoreTime?: () => void;
   /** Bumped by a "Clock out" elsewhere on the screen (the shift-ended banner): opens this card's receipt. */
   clockOutRequest?: number;
 }
@@ -57,12 +55,10 @@ export function useShiftClockCardView({
   openIssueId,
   totals: given,
   noShift,
-  onAskMoreTime,
   clockOutRequest,
 }: Pick<
   ShiftClockCardViewProps,
-  'shift' | 'style' | 'linkToTime' | 'onSetRealTime' | 'openIssueId' | 'totals' | 'noShift' | 'onAskMoreTime'
-  | 'clockOutRequest'
+  'shift' | 'style' | 'linkToTime' | 'onSetRealTime' | 'openIssueId' | 'totals' | 'noShift' | 'clockOutRequest'
 >) {
   const { user } = useAuth();
   const { amazen } = useTheme();
@@ -161,7 +157,7 @@ export function useShiftClockCardView({
   });
   const totals = given ?? own;
 
-  const insideSpaceIds = useInsideSites();
+  const insideSpaceIds = useInsideSites(status?.assignedLocations);
   /* Which of the eight, decided ONCE and outside the JSX — see `shift-state.ts`. */
   const st = readShiftState({
     status,
@@ -184,7 +180,10 @@ export function useShiftClockCardView({
     // Today's shift names the workspace: no picker (lib/clock-smart.ts).
     shiftSpaceId: status?.nextShift?.spaceId ?? null,
     // A clock-in is when a paused job is offered back (the home jobs strip).
-    onClockedIn: () => { void refresh(); refreshHandovers(); },
+    onClockedIn: () => {
+      void refresh();
+      refreshHandovers();
+    },
   });
 
   const entryId = status?.currentEntry?.id;
@@ -206,7 +205,8 @@ export function useShiftClockCardView({
     : null;
   /* A clock-in that went through replaces the refused one — nothing is left to deal with. */
   useEffect(() => {
-    if (refused?.op === 'attendance.clockIn' && status?.isClockedIn && !shift.pendingSync && engine) void engine.discard(refused.id);
+    if (refused?.op === 'attendance.clockIn' && status?.isClockedIn && !shift.pendingSync && engine)
+      void engine.discard(refused.id);
   }, [refused, status?.isClockedIn, shift.pendingSync, engine]);
 
   /*

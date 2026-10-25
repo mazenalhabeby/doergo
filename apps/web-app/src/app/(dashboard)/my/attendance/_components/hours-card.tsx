@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Clock } from "lucide-react"
 import { useTimeFormat } from "@/hooks"
 import { cn } from "@/lib/utils"
-import { formatDuration, localDateKey, todayKey } from "@hbcfield/shared/client"
+import { workedMinutes, formatDuration, localDateKey, todayKey } from "@hbcfield/shared/client"
 import type { TimeEntry } from "@hbcfield/shared"
 
 /** The chosen window's hours, drawn as bars by day (or by week for a long window). */
@@ -59,8 +59,8 @@ export function HoursCard({
       const offset = Math.round((new Date(`${dayKey}T00:00:00`).getTime() - from.getTime()) / day)
       if (offset < 0 || offset >= dayCount) continue
       const idx = groupWeekly ? Math.floor(offset / 7) : offset
-      const to_ = e.clockOutAt ? new Date(e.clockOutAt).getTime() : Date.now()
-      const mins = Math.max(0, (to_ - at.getTime()) / 60000)
+      // Counted time, the office's own figure (clock review C3); the running shift counts up live.
+      const mins = e.clockOutAt ? workedMinutes(e) : Math.max(0, (Date.now() - at.getTime()) / 60000)
       const bucket = buckets[idx]
       if (bucket) bucket.minutes += mins
       worked += mins

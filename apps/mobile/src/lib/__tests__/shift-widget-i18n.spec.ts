@@ -32,16 +32,23 @@ const card = SHIFT_CARD_FILES.map((f) => readSource(path.join(SRC, f), 'utf8')).
 const calls = [...card.matchAll(/\bt\(\s*[`'"]([a-zA-Z0-9_.]+)[`'"]\s*(,\s*\{([\s\S]*?)\})?\s*\)/g)].map((m) => ({
   key: m[1],
   plural: /\bcount\s*:/.test(m[3] ?? ''),
-  vars: [...(m[3] ?? '').matchAll(/(?:^|[,{\s])([a-zA-Z]+)\s*:/g)].map((v) => v[1]).filter((v) => !v.startsWith('defaultValue')),
+  vars: [...(m[3] ?? '').matchAll(/(?:^|[,{\s])([a-zA-Z]+)\s*:/g)]
+    .map((v) => v[1])
+    .filter((v) => !v.startsWith('defaultValue')),
 }));
 const keys = [...new Map(calls.map((c) => [c.key, c])).values()];
 
-describe('the card\'s keys', () => {
+describe("the card's keys", () => {
   it('finds the keys it expects to (the parser is not silently empty)', () => {
     expect(keys.length).toBeGreaterThanOrEqual(30);
-    expect(keys.map((k) => k.key)).toEqual(expect.arrayContaining([
-      'shiftClock.onTheClock', 'shiftClock.countedFrozen', 'shiftClock.restOverdue', 'home.fullTime.clockIn',
-    ]));
+    expect(keys.map((k) => k.key)).toEqual(
+      expect.arrayContaining([
+        'shiftClock.onTheClock',
+        'shiftClock.countedFrozen',
+        'shiftClock.restOverdueDuration',
+        'home.fullTime.clockIn',
+      ]),
+    );
   });
 
   describe.each(LOCALES)('%s', (lng) => {
@@ -65,7 +72,12 @@ describe('the card\'s keys', () => {
           const drop = (xs: string[]) => (form === '_one' ? xs.filter((x) => x !== 'count') : xs);
           expect({ key: k.key + form, vars: drop(need(here)) }).toEqual({ key: k.key + form, vars: drop(need(en)) });
           // …and nothing the translation needs is left unsupplied by the card
-          for (const v of need(here)) expect({ key: k.key, v, supplied: v === 'count' || k.vars.includes(v) }).toEqual({ key: k.key, v, supplied: true });
+          for (const v of need(here))
+            expect({ key: k.key, v, supplied: v === 'count' || k.vars.includes(v) }).toEqual({
+              key: k.key,
+              v,
+              supplied: true,
+            });
         }
       }
     });
@@ -73,7 +85,8 @@ describe('the card\'s keys', () => {
 });
 
 describe('never "paid" (rule 4)', () => {
-  const PAID = /\b(paid|unpaid|bezahlt\w*|unbezahlt\w*|vergüt\w*|pagad[oa]s?|remunerad\w*|pay[ée]e?s?|rémunér\w*|pagat[oaie]|retribuit\w*)\b/i;
+  const PAID =
+    /\b(paid|unpaid|bezahlt\w*|unbezahlt\w*|vergüt\w*|pagad[oa]s?|remunerad\w*|pay[ée]e?s?|rémunér\w*|pagat[oaie]|retribuit\w*)\b/i;
 
   it.each(LOCALES)('%s — no shiftClock / shiftEnd sentence says it', (lng) => {
     const hits = Object.entries(catalogue[lng]).filter(([k, v]) => /^(shiftClock|shiftEnd)\./.test(k) && PAID.test(v));
@@ -81,16 +94,20 @@ describe('never "paid" (rule 4)', () => {
   });
 
   it.each(LOCALES)('%s — no sentence the card uses says it', (lng) => {
-    const hits = keys.flatMap((k) => (k.plural ? [`${k.key}_one`, `${k.key}_other`] : [k.key]))
+    const hits = keys
+      .flatMap((k) => (k.plural ? [`${k.key}_one`, `${k.key}_other`] : [k.key]))
       .filter((k) => PAID.test(catalogue[lng][k] ?? ''));
     expect(hits).toEqual([]);
   });
 
-  it('no English fallback in the card\'s own source says it', () => {
+  it("no English fallback in the card's own source says it", () => {
     for (const f of CARD_FILES) {
-      const strings = [...readSource(path.join(SRC, f), 'utf8')
-        .replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
-        .matchAll(/(['"`])((?:(?!\1)[^\\]|\\.)*)\1/g)].map((m) => m[2]);
+      const strings = [
+        ...readSource(path.join(SRC, f), 'utf8')
+          .replace(/\/\*[\s\S]*?\*\//g, '')
+          .replace(/(^|[^:])\/\/.*$/gm, '$1')
+          .matchAll(/(['"`])((?:(?!\1)[^\\]|\\.)*)\1/g),
+      ].map((m) => m[2]);
       expect({ f, hits: strings.filter((s) => PAID.test(s)) }).toEqual({ f, hits: [] });
     }
   });

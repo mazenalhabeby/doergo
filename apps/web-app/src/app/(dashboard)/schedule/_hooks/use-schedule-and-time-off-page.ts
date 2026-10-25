@@ -60,7 +60,17 @@ export function useScheduleAndTimeOffPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const canManage = user?.role === "ADMIN" || hasPermission("canViewAllTasks")
-  const canDecide = user?.role === "ADMIN" || hasPermission("canManageRota")
+  /*
+    May set THIS workspace's day hours (clock review C4): the page shows one workspace at a time, and the server
+    checks `canManageRota` org-wide or in that workspace — "held anywhere" made every cell clickable in a
+    workspace the person does not lead, and the form then failed.
+  */
+  const canDecide =
+    user?.role === "ADMIN" ||
+    (user as { canManageRota?: boolean } | null)?.canManageRota === true ||
+    (!!space &&
+      (user?.access as { perSpace?: Record<string, Record<string, boolean>> } | null)?.perSpace?.[space]
+        ?.canManageRota === true)
 
   /*
     A month by default.

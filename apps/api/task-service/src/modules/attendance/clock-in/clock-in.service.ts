@@ -26,7 +26,7 @@ import { ClockInContextService } from './clock-in-context.service';
 import { ClockInRemoteService } from './clock-in-remote.service';
 import { ClockInSiteWriter } from './clock-in-site.writer';
 import { AutoClockService } from '../auto-clock/auto-clock.service';
-import { gpsAccuracyRefusal, outsideSiteRefusal, type ClockInInput } from './clock-in-steps';
+import { fixOf, gpsAccuracyRefusal, outsideSiteRefusal, type ClockInInput } from './clock-in-steps';
 import { joinedIntoWhere } from '../core/clock-in-join';
 
 /**
@@ -153,7 +153,10 @@ export class ClockInService {
 
     // ---- On-site clock-in requires a target location ----
     if (!data.locationId) {
-      throw new BadRequestException('A location is required to clock in on site.');
+      throw new BadRequestException({
+        code: 'LOCATION_REQUIRED',
+        message: 'A location is required to clock in on site.',
+      });
     }
 
     // Verify user has an assignment to this location that is active RIGHT NOW —
@@ -169,7 +172,10 @@ export class ClockInService {
     });
 
     if (!assignment) {
-      throw new BadRequestException('You are not assigned to this location. Contact your administrator.');
+      throw new BadRequestException({
+        code: 'NOT_ASSIGNED_HERE',
+        message: 'You are not assigned to this location. Contact your administrator.',
+      });
     }
 
     // Check if already clocked in
@@ -213,7 +219,16 @@ export class ClockInService {
       geofenceRadius: location.geofenceRadius,
       geofencePolygon: parseGeofencePolygon(location.geofencePolygon),
     };
-    const at = isAtSite({ lat: data.lat, lng: data.lng, accuracy: data.accuracy }, zone);
+    // A position is needed only where the place checks one (C2): a pinned site refuses a clock-in without it.
+    const fix = fixOf(data);
+    if (spaceHasPin && !fix) {
+      throw new BadRequestException({
+        code: 'FIX_MISSING',
+        message: `Your location is needed to clock in at ${location.name}.`,
+        params: { location: location.name },
+      });
+    }
+    const at = fix ? isAtSite(fix, zone) : { inside: true, distanceToCentre: null };
     const distance = at.distanceToCentre ?? 0;
     // A workspace with its ring switched off has nobody "outside" it — never an away day, never review (B6).
     const withinGeofence = at.inside || ringSwitchedOff(location.geofencePolicy);

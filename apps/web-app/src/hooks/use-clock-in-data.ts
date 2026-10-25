@@ -168,10 +168,28 @@ export function useClockInData({
           earlyReason: typeof action === "object" && "out" in action ? action.earlyReason : undefined,
         })
       }
-      const pos = (typeof action === "object" && "locationId" in action && action.pos) || (await getBrowserPosition())
+      /*
+        The position is asked, never demanded (clock review C2): the server needs it only at a workspace with a
+        pin, and says so (FIX_MISSING). Then the browser's own reason (permission denied, no signal) is what
+        the member can act on, so it is the one shown.
+      */
+      let pos: BrowserPosition | null = (typeof action === "object" && "locationId" in action && action.pos) || null
+      let posError: unknown = null
+      if (!pos) {
+        try {
+          pos = await getBrowserPosition()
+        } catch (e) {
+          posError = e
+        }
+      }
+      const at = pos ? { lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy } : {}
+      const send = (body: Parameters<typeof attendanceApi.clockIn>[0]) =>
+        attendanceApi.clockIn(body).catch((e: unknown) => {
+          throw posError && (e as { code?: string })?.code === "FIX_MISSING" ? posError : e
+        })
       if (action === "remote") {
-        // No workspace — geofence-exempt; the server captures a coarse place.
-        return attendanceApi.clockIn({ isRemote: true, lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy })
+        // No workspace — geofence-exempt; the server captures a coarse place when there is a position.
+        return send({ isRemote: true, ...at })
       }
       /*
         An explicit workspace, always.
@@ -181,12 +199,7 @@ export function useClockInData({
         at whichever one the GPS preferred — a payroll error that surfaces weeks
         later on a queried timesheet, if at all.
       */
-      return attendanceApi.clockIn({
-        locationId: action.locationId,
-        lat: pos.lat,
-        lng: pos.lng,
-        accuracy: pos.accuracy,
-      })
+      return send({ locationId: action.locationId, ...at })
     },
     onSuccess: (data, action) => {
       setPickerOpen(false)

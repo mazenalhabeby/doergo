@@ -14,6 +14,7 @@ import { useTimeFormat } from '@/hooks/use-time-format';
 import { formatDistance } from '@/lib/distance';
 import type { OvertimeRequest } from '@/lib/api';
 import { AText, Banner, QuietButton, SheetOption } from '@/components/amazen';
+import { AutoUndoBanner } from './auto-undo-banner';
 import { JobSheet } from '../job/job-ui';
 import { AlwaysLocationNudge } from '@/components/always-location-nudge';
 import { OutOfRingSheet } from './out-of-ring-sheet';
@@ -98,6 +99,7 @@ export function TimeBanners({
   return (
     <View style={{ gap: amazen.space(2) }}>
       <AlwaysLocationNudge active={!!entry && entry.location?.lat != null} />
+      <AutoUndoBanner status={status} onChanged={onChanged} />
 
       {entry && ex?.status === 'OUT_UNREPORTED' ? (
         <Banner
@@ -125,10 +127,10 @@ export function TimeBanners({
         />
       ) : null}
 
-      {overtime && ['PENDING_TECHNICIAN', 'PENDING_APPROVAL', 'APPROVED'].includes(overtime.status) ? (
+      {overtime && ['PENDING_APPROVAL', 'APPROVED'].includes(overtime.status) ? (
         <Banner
           tone={overtime.status === 'APPROVED' ? 'accent' : 'warn'}
-          text={overtime.status === 'PENDING_TECHNICIAN' ? t('overtime.promptTitle') : overtime.status === 'PENDING_APPROVAL' ? waitingText(overtime, t) : approvedLine ?? t('overtime.overtimeActive')}
+          text={overtime.status === 'PENDING_APPROVAL' ? waitingText(overtime, t) : approvedLine ?? t('overtime.overtimeActive')}
           action={{ label: t('time.banners.open', 'Open'), onPress: () => router.push(`/overtime/${overtime.id}` as Href) }}
         />
       ) : null}

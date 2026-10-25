@@ -804,10 +804,7 @@
       "untimed": "Senza durata fissata",
       "ofTotal": "su {{total}}",
       "overBy": "{{over}} oltre i suoi {{total}}",
-      "backToWork": "Torna al lavoro",
-      "backHint": "Finché non lo fa, il tempo continua a contare come pausa.",
       "started": "Pausa iniziata",
-      "ended": "Di nuovo al lavoro",
       "postponed": "Le chiederemo di nuovo a breve",
       "timeFor": "È il momento della sua {{name}}",
       "dueIn": "tra {{gap}}",
@@ -817,7 +814,8 @@
       "startNow": "Inizia la pausa",
       "later": "Più tardi",
       "allDone": "Ha preso tutte le sue pause.",
-      "allDoneWithMissed": "Per oggi non resta altro."
+      "allDoneWithMissed": "Per oggi non resta altro.",
+      "backHintCard": "Tocca «Termina la pausa» quando torni: fino ad allora conta come pausa."
     },
     "offline": {
       "notHere": "Timbratura non registrata",
@@ -890,14 +888,6 @@
     "title": "Straordinario",
     "noActiveRequest": "Nessuna richiesta di straordinario attiva",
     "shiftEnded": "Il tuo turno è terminato",
-    "promptTitle": "Serve lo straordinario?",
-    "promptSubtitle": "Il tuo turno è terminato. Vuoi richiedere lo straordinario?",
-    "reasonPlaceholder": "Perché ti serve lo straordinario? (facoltativo)",
-    "yes": "Sì, mi serve lo straordinario",
-    "no": "No, timbra la mia uscita",
-    "requestSent": "Richiesta di straordinario inviata per l'approvazione",
-    "declined": "Straordinario rifiutato, la tua uscita è stata timbrata",
-    "failedToRespond": "Impossibile rispondere alla richiesta di straordinario",
     "waitingApproval": "In attesa di approvazione",
     "waitingApprovalSub": "Il tuo responsabile di team è stato avvisato. Puoi anche ottenere la sua firma su questo dispositivo.",
     "getLeaderSignature": "Ottieni la firma del responsabile",
@@ -908,7 +898,7 @@
     "rejected": "Straordinario rifiutato",
     "expired": "Richiesta scaduta",
     "expiredSub": "La richiesta di straordinario è scaduta. La tua uscita è stata timbrata.",
-    "overtimeActive": "Straordinario attivo",
+    "overtimeActive": "Tempo extra approvato",
     "tapToView": "Tocca per vedere i dettagli",
     "leaderApproval": "Approvazione del responsabile",
     "signatureInstructions": "Consegna questo dispositivo al tuo responsabile di team per approvare lo straordinario. Selezionerà il suo nome, imposterà la durata e firmerà.",
@@ -2810,12 +2800,10 @@
   },
   "attendanceReview": {
     "segments": {
-      "approvals": "Approvazioni",
       "noshows": "Assenze",
       "records": "Storico"
     },
     "empty": {
-      "approvals": "Nulla in sospeso: tutti i turni sono decisi.",
       "noshows": "Nessun turno saltato negli ultimi 7 giorni.",
       "records": {
         "month": "Nessun turno negli ultimi 30 giorni.",
@@ -3300,7 +3288,6 @@
       "WAITING_FOR_WIFI": "In attesa del Wi-Fi: hai scelto di inviare le foto solo con Wi-Fi.",
       "TIME_OFF_DECIDED": "Questa richiesta è già stata decisa e non può più essere annullata.",
       "NO_SHIFT_TODAY": "Oggi non hai un turno e questo spazio consente di timbrare solo con un turno.",
-      "NO_HOURS_LEFT": "Nessuna ora rimasta oggi senza turno in questo spazio. Chiedi un turno al tuo responsabile.",
       "TOO_FAR_TO_ARRIVE": "Sei a {{distance}} dal luogo dell'intervento. Devi essere entro {{radius}} per segnare l'arrivo. Avvicinati e riprova.",
       "TOO_FAR_TO_START": "Sei a {{distance}} dal luogo dell'intervento. Devi essere entro {{radius}} per iniziare il lavoro. Avvicinati e riprova.",
       "OUTSIDE_GEOFENCE": "{{location}} accetta timbrature solo in sede. Sei a {{distance}}.",
@@ -3340,7 +3327,20 @@
       "REQUEST_TOO_MANY_DAYS": "Troppi giorni in una richiesta: al massimo 31.",
       "REQUEST_REMOTE_NOT_ALLOWED": "Non è autorizzato a lavorare da remoto.",
       "REQUEST_SPACE_NOT_YOURS": "Non lavora in quello spazio di lavoro.",
-      "REQUEST_KIND_NOT_OFFERED": "Questo tipo di richiesta non è disponibile nel suo spazio di lavoro."
+      "REQUEST_KIND_NOT_OFFERED": "Questo tipo di richiesta non è disponibile nel suo spazio di lavoro.",
+      "LOCATION_REQUIRED": "Scegli il luogo di lavoro in cui timbri.",
+      "NOT_ASSIGNED_HERE": "Non sei assegnato a questo luogo di lavoro. Chiedi al tuo ufficio di aggiungerti.",
+      "NOT_ON_THE_CLOCK": "Non hai timbrato l'entrata.",
+      "ALREADY_ON_REST": "Sei già in pausa. Terminala prima.",
+      "REMOTE_NOT_ALLOWED": "Timbrare fuori da un luogo di lavoro non è consentito per il tuo account. Chiedi al tuo ufficio.",
+      "ENTRY_ALREADY_DECIDED": "Questo giorno è già stato deciso.",
+      "GPS_ACCURACY_LOW": "La tua posizione è precisa solo a {{distance}}: serve {{radius}} o meglio. Attendi un momento e riprova.",
+      "CLOCK_SWITCH_ADMIN_ONLY": "Solo un amministratore può disattivare la propria timbratura.",
+      "CLOCK_SWITCH_WHILE_CLOCKED_IN": "Prima timbra l'uscita, poi disattiva la timbratura.",
+      "EXTRA_TIME_NO_SHIFT": "Non c'è una fine prevista da prolungare: tutto questo tempo conta già.",
+      "ENTRY_STILL_OPEN": "Questo turno è ancora in corso: si potrà decidere dopo la timbratura d'uscita.",
+      "OUTSIDE_ALREADY_DECIDED": "Questo tempo è già stato deciso.",
+      "OUTSIDE_NOTHING": "Non c'è tempo fuori dal turno da decidere."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",
@@ -3416,8 +3416,6 @@
     "counted": "{{counted}} conteggiato",
     "countedFrozen": "{{counted}} conteggiato, ora non conta",
     "restDue": "pausa prevista alle {{time}}",
-    "restOverdue_one": "La tua pausa era prevista {{count}} minuto fa",
-    "restOverdue_other": "La tua pausa era prevista {{count}} minuti fa",
     "startRest": "Inizia la pausa",
     "endRest": "Termina la pausa",
     "break": "Pausa",
@@ -3429,8 +3427,6 @@
     "countedApproved": "conteggiato e approvato",
     "countedRejected": "non approvato",
     "waitingToReach": "in attesa di raggiungere l’ufficio",
-    "startsIn_one": "il tuo turno inizia tra {{count}} minuto",
-    "startsIn_other": "il tuo turno inizia tra {{count}} minuti",
     "today": "OGGI",
     "thisWeek": "Questa settimana",
     "ofTarget": "{{done}} di {{target}}",
@@ -3441,7 +3437,7 @@
     "workedThisWeek": "lavorato questa settimana",
     "lastInOn": "ultima timbratura {{day}}",
     "whatKind": "CHE TIPO · FACOLTATIVO",
-    "startBreak": "Inizia la pausa",
+    "startBreak": "Inizia una pausa",
     "breakReason": "Per cosa? (facoltativo)",
     "restOf": "{{duration}}",
     "restCounts": "conta come lavoro",
@@ -3458,9 +3454,9 @@
       "clockInNow": "Timbra ora"
     },
     "noShiftLeft": "A {{location}} · senza turno · ancora {{left}} alle ore di oggi",
-    "askMoreTime": "Chiedi più tempo",
-    "askMoreTimeHint": "Viene chiesto al tuo responsabile. Potrai timbrare quando approva.",
-    "arrivedStartsAt": "Sei a {{workspace}} · il tuo turno inizia alle {{time}}"
+    "arrivedStartsAt": "Sei a {{workspace}} · il tuo turno inizia alle {{time}}",
+    "startsInDuration": "il tuo turno inizia tra {{duration}}",
+    "restOverdueDuration": "La tua pausa era prevista {{duration}} fa"
   },
   "crew": {
     "onTheClock": "in servizio",
@@ -3622,7 +3618,8 @@
       "eyebrowCrew": "ANCORA IN CORSO · LA SQUADRA CONTINUA",
       "myOpenItems_one": "{{count}} dei tuoi punti della lista è ancora aperto",
       "myOpenItems_other": "{{count}} dei tuoi punti della lista sono ancora aperti"
-    }
+    },
+    "andMore": "+{{count}}"
   },
   "myWork": {
     "all": "Tutti {{count}}",
@@ -4266,7 +4263,7 @@
       "noFix": "Distanza sconosciuta",
       "leftToday": "Ancora {{left}} oggi",
       "shiftOnly": "Solo con turno",
-      "limitReached": "Limite raggiunto"
+      "pastHours": "Oltre le ore di oggi"
     },
     "today": {
       "title": "Oggi",
@@ -5098,7 +5095,11 @@
       "failed": "Non ha funzionato. Apri la schermata delle timbrature e fallo lì.",
       "cannotUndo": "Questa timbratura non può più essere annullata qui: il turno è chiuso o c’è già lavoro registrato. Chiedi al tuo ufficio di correggere.",
       "carryOn": "Continui: risulti ancora in servizio"
-    }
+    },
+    "undoBanner": "Entrata timbrata automaticamente alle {{time}}",
+    "undo": "Annulla",
+    "undone": "Timbratura automatica annullata",
+    "undoFailed": "Impossibile annullare: chiedi al tuo ufficio."
   },
   "register": {
     "title": "Attrezzature",
@@ -5245,7 +5246,8 @@
       "planned": "Previsto",
       "clocked": "Timbrato",
       "before": "Prima dell’inizio",
-      "after": "Dopo la fine"
+      "after": "Dopo la fine",
+      "pastEnd": "Lavorato oltre la fine"
     },
     "cover": {
       "ok": "Restano abbastanza persone",

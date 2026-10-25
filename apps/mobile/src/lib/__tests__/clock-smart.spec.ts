@@ -45,7 +45,9 @@ describe('clock-smart', () => {
   });
 
   describe('"You left at … — clock out then?"', () => {
-    const entry = (over: Partial<{ leftSiteAt: string | null; expectedClockOutAt: string | null; endIsDailyLimit: boolean }> = {}) => ({
+    const entry = (
+      over: Partial<{ leftSiteAt: string | null; expectedClockOutAt: string | null; endIsDailyLimit: boolean }> = {},
+    ) => ({
       clockInAt: '2026-10-18T06:00:00.000Z',
       expectedClockOutAt: '2026-10-18T14:30:00.000Z',
       endIsDailyLimit: false,
@@ -60,12 +62,16 @@ describe('clock-smart', () => {
     });
     it('is offered with the moment they left once due', () => {
       expect(forgotClockOutOffer(entry(), at('2026-10-18T15:06:00.000Z'))).toBeNull();
-      expect(forgotClockOutOffer(entry(), at('2026-10-18T15:07:00.000Z'))?.leftAt.toISOString()).toBe('2026-10-18T14:42:00.000Z');
+      expect(forgotClockOutOffer(entry(), at('2026-10-18T15:07:00.000Z'))?.leftAt.toISOString()).toBe(
+        '2026-10-18T14:42:00.000Z',
+      );
     });
     it('left before the end: due 25 min after the planned end, still at the leaving time', () => {
       const e = entry({ leftSiteAt: '2026-10-18T14:00:00.000Z' });
       expect(forgotOfferDueAt(e)?.toISOString()).toBe('2026-10-18T14:55:00.000Z');
-      expect(forgotClockOutOffer(e, at('2026-10-18T15:00:00.000Z'))?.leftAt.toISOString()).toBe('2026-10-18T14:00:00.000Z');
+      expect(forgotClockOutOffer(e, at('2026-10-18T15:00:00.000Z'))?.leftAt.toISOString()).toBe(
+        '2026-10-18T14:00:00.000Z',
+      );
     });
     it('never offered without the server saying when they left, without a planned end, or on a daily limit', () => {
       const later = at('2026-10-18T20:00:00.000Z');
@@ -83,21 +89,38 @@ describe('clock-smart', () => {
       isClockedIn: false,
       currentEntry: null,
       assignedLocations: [],
-      nextShift: { startAt: '2026-10-18T06:00:00.000Z', endAt: '2026-10-18T14:30:00.000Z', spaceId, spaceName: 'Warehouse' },
+      nextShift: {
+        startAt: '2026-10-18T06:00:00.000Z',
+        endAt: '2026-10-18T14:30:00.000Z',
+        spaceId,
+        spaceName: 'Warehouse',
+      },
     });
     const now = new Date('2026-10-18T05:52:00.000Z');
     const t = ((key: string, o?: Record<string, unknown>) => (o?.defaultValue as string) ?? key) as never;
     const clockOf = () => '08:00';
 
     it('inside the shift workspace: "You\'re at the Warehouse · your shift starts at 08:00"', () => {
-      const st = readShiftState({ status: status('w1'), breaks: null, insideSpaceIds: insideOf({ w1: { inside: true } }), now });
+      const st = readShiftState({
+        status: status('w1'),
+        breaks: null,
+        insideSpaceIds: insideOf({ w1: { inside: true } }),
+        now,
+      });
       expect(st.arrived).toBe(true);
-      expect(shiftCaption(st, { t, clockOf, live: true, resting: false })).toBe("You're at Warehouse · your shift starts at 08:00");
+      expect(shiftCaption(st, { t, clockOf, live: true, resting: false })).toBe(
+        "You're at Warehouse · your shift starts at 08:00",
+      );
     });
     it('anywhere else: the usual "starts in" line', () => {
-      const st = readShiftState({ status: status('w1'), breaks: null, insideSpaceIds: insideOf({ w2: { inside: true } }), now });
+      const st = readShiftState({
+        status: status('w1'),
+        breaks: null,
+        insideSpaceIds: insideOf({ w2: { inside: true } }),
+        now,
+      });
       expect(st.arrived).toBe(false);
-      expect(shiftCaption(st, { t, clockOf, live: true, resting: false })).toContain('shiftClock.startsIn');
+      expect(shiftCaption(st, { t, clockOf, live: true, resting: false })).toBe('Warehouse · your shift starts in 8m');
     });
     it('the phone knowing nothing is the old card', () => {
       expect(readShiftState({ status: status('w1'), breaks: null, now }).arrived).toBe(false);

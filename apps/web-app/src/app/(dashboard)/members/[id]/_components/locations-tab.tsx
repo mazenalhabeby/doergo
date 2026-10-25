@@ -64,8 +64,8 @@ export function LocationsTab({ assignments, memberAllowRemote, canManage }: Loca
           <MapPin className="h-4 w-4" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-foreground">{t('technicians.locationsTab.title')}</h2>
-          <p className="text-xs text-muted-foreground">{t('technicians.locationsTab.description')}</p>
+          <h2 className="text-sm font-semibold text-foreground">{t("technicians.locationsTab.title")}</h2>
+          <p className="text-xs text-muted-foreground">{t("technicians.locationsTab.description")}</p>
         </div>
       </div>
 
@@ -74,25 +74,33 @@ export function LocationsTab({ assignments, memberAllowRemote, canManage }: Loca
           {assignments.map((assignment) => (
             <div
               key={assignment.id}
-              className={"group relative rounded-xl border border-border/60 bg-background/40 p-4 " +
-                "transition-all hover:border-primary/40 hover:shadow-md"}
+              className={
+                "group relative rounded-xl border border-border/60 bg-background/40 p-4 " +
+                "transition-all hover:border-primary/40 hover:shadow-md"
+              }
             >
               {/* Primary ribbon pill, top-right */}
               {assignment.isPrimary && (
                 <span
-                  className={"absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full " +
+                  className={
+                    "absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full " +
                     "border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] " +
-                    "font-semibold uppercase tracking-wide text-primary"}>
+                    "font-semibold uppercase tracking-wide text-primary"
+                  }
+                >
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  {t('technicians.locationsTab.primary')}
+                  {t("technicians.locationsTab.primary")}
                 </span>
               )}
 
               {/* Icon + name + address */}
               <div className="flex items-start gap-3">
                 <div
-                  className={"flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 " +
-                    "text-primary flex-shrink-0 transition-transform group-hover:scale-105"}>
+                  className={
+                    "flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 " +
+                    "text-primary flex-shrink-0 transition-transform group-hover:scale-105"
+                  }
+                >
                   <Building2 className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1 pr-14">
@@ -112,17 +120,22 @@ export function LocationsTab({ assignments, memberAllowRemote, canManage }: Loca
                   assignment.schedule.map((day) => (
                     <span
                       key={day}
-                      className={"inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] " +
-                        "font-medium uppercase text-muted-foreground"}
+                      className={
+                        "inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] " +
+                        "font-medium uppercase text-muted-foreground"
+                      }
                     >
                       {day}
                     </span>
                   ))
                 ) : (
                   <span
-                    className={"inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[10px] " +
-                      "font-medium uppercase text-muted-foreground"}>
-                    {t('technicians.locationsTab.allDays')}
+                    className={
+                      "inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[10px] " +
+                      "font-medium uppercase text-muted-foreground"
+                    }
+                  >
+                    {t("technicians.locationsTab.allDays")}
                   </span>
                 )}
               </div>
@@ -147,7 +160,7 @@ export function LocationsTab({ assignments, memberAllowRemote, canManage }: Loca
               {/* Effective-from footer */}
               <div className="mt-3.5 pt-3 border-t border-border/60 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <CalendarDays className="h-3.5 w-3.5 flex-shrink-0" />
-                {t('technicians.locationsTab.effectiveFrom', { date: formatDate(assignment.effectiveFrom) })}
+                {t("technicians.locationsTab.effectiveFrom", { date: formatDate(assignment.effectiveFrom) })}
               </div>
             </div>
           ))}
@@ -157,7 +170,7 @@ export function LocationsTab({ assignments, memberAllowRemote, canManage }: Loca
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 text-muted-foreground">
             <MapPin className="h-6 w-6" />
           </div>
-          <p className="text-sm text-muted-foreground">{t('technicians.locationsTab.noAssignments')}</p>
+          <p className="text-sm text-muted-foreground">{t("technicians.locationsTab.noAssignments")}</p>
         </div>
       )}
     </div>
@@ -244,8 +257,8 @@ function AwayGrantRow({
                 disabled={pending}
                 onClick={() => onChange(o.value)}
                 className={cn(
-                  ("flex-1 border-r border-border px-1 py-1.5 text-[10px] font-semibold " +
-                    "last:border-r-0 transition-colors disabled:opacity-60"),
+                  "flex-1 border-r border-border px-1 py-1.5 text-[10px] font-semibold " +
+                    "last:border-r-0 transition-colors disabled:opacity-60",
                   active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent/40",
                 )}
               >
@@ -263,7 +276,9 @@ function AwayGrantRow({
             : t("attendance.away.viaAccountOff", "Follows their account, which does not.")
           : assignment.allowRemote
             ? t("attendance.away.overrideOn", "Allowed here, whatever their account says.")
-            : t("attendance.away.overrideOff", "Refused here, even though their account allows it.")}
+            : memberAllowRemote
+              ? t("attendance.away.overrideOff", "Refused here, even though their account allows it.")
+              : t("attendance.away.overrideOffPlain", "Refused here, like their account.")}
       </p>
     </div>
   )

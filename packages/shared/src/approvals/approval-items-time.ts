@@ -68,6 +68,8 @@ export const timeApprovals = {
         clockInAt: iso(r.clockInAt),
         plannedEnd: iso(r.expectedClockOutAt),
         stillWorking: open,
+        // What was really worked past the end, and the minutes box opens on it (clock review C5) — it opened on 30.
+        ...pastEndFacts(r.expectedClockOutAt, r.clockOutAt, ctx.now),
         timezone: r.location?.timezone ?? null,
       },
     });
@@ -111,6 +113,7 @@ export const timeApprovals = {
         cycle: r.cycle ?? null,
         reason: r.technicianReason ?? null,
         overtimeStartAt: iso(r.overtimeStartAt),
+        ...pastEndFacts(r.overtimeStartAt, r.actualEndAt ?? r.timeEntry?.clockOutAt, ctx.now),
         timezone: r.location?.timezone ?? null,
       },
     });
@@ -178,3 +181,20 @@ export const timeApprovals = {
     });
   },
 };
+
+/**
+ * Minutes worked past a planned end — to the clock-out, or to now while still working — and the minutes an
+ * approver is offered first: that, rounded up to a quarter hour (clock review C5). Nothing past it → no figure,
+ * and the apps keep their own default.
+ */
+export function pastEndFacts(
+  plannedEnd: unknown,
+  until: unknown,
+  now: Date,
+): { pastEndMinutes?: number; requestedMinutes?: number } {
+  const end = plannedEnd ? new Date(plannedEnd as string).getTime() : NaN;
+  const stop = until ? new Date(until as string).getTime() : now.getTime();
+  if (!Number.isFinite(end) || !Number.isFinite(stop) || stop <= end) return {};
+  const past = Math.round((stop - end) / 60_000);
+  return past > 0 ? { pastEndMinutes: past, requestedMinutes: Math.min(1440, Math.ceil(past / 15) * 15) } : {};
+}

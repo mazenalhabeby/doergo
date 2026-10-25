@@ -3095,11 +3095,12 @@
       },
       "askMoreTime": "Pedir más tiempo",
       "askMoreTimeSent": "Se pregunta a su responsable. El tiempo tras el final cuenta cuando lo apruebe.",
-      "askMoreTimeWaiting": "Esperando más tiempo"
+      "askMoreTimeWaiting": "Esperando más tiempo",
+      "clockedSpan": "fichado {{span}}"
     },
     "management": {
       "title": "Gestión de asistencia",
-      "subtitle": "Controla la asistencia y consulta informes"
+      "subtitle": "Quién está fichado, sus horas contadas, descansos y ausencias"
     },
     "tabs": {
       "attendance": "Asistencia",
@@ -3312,10 +3313,10 @@
       "paid": "Cuenta como trabajo",
       "unpaid": "No computa",
       "required": "Obligatorio",
-      "remindEvery": "vuelve a preguntar cada {{n}} min",
+      "remindEvery": "vuelve a preguntar cada {{duration}}",
       "noReminder": "sin aviso",
-      "afterSummary": "{{mins}} minutos, tras {{after}} de turno",
-      "windowSummary": "{{mins}} minutos, entre las {{from}} y las {{to}}",
+      "afterSummary": "{{duration}}, tras {{after}} de turno",
+      "windowSummary": "{{duration}}, entre las {{from}} y las {{to}}",
       "shiftEnd": "el final del turno",
       "removed": "Descanso eliminado",
       "added": "Descanso añadido",
@@ -3370,21 +3371,22 @@
       "viaAccountOn": "Sigue su cuenta, que lo permite.",
       "viaAccountOff": "Sigue su cuenta, que no lo permite.",
       "overrideOn": "Permitido aquí, diga lo que diga su cuenta.",
-      "overrideOff": "Denegado aquí, aunque su cuenta lo permita."
+      "overrideOff": "Denegado aquí, aunque su cuenta lo permita.",
+      "overrideOffPlain": "Rechazado aquí, como en su cuenta."
     },
     "addOvertime": {
       "action": "Añadir horas extra",
       "title": "Añadir horas extra",
       "titleFor": "Añadir horas extra · {{name}}",
-      "context": "El turno terminó a las {{end}} · salida a las {{out}} ({{minutes}} min después)",
+      "context": "El turno terminó a las {{end}} · salida a las {{out}} ({{duration}} después)",
       "minutes": "Minutos después del fin del turno",
       "reason": "Motivo",
       "reasonPlaceholder": "Se guarda con la aprobación",
       "countedUntil": "Contado hasta",
       "countedTime": "Tiempo contado",
       "cappedAtClockOut": "El tiempo después de la salida nunca se cuenta.",
-      "approve": "Aprobar {{minutes}} min",
-      "success": "Se añadieron {{minutes}} min de horas extra",
+      "approve": "Aprobar {{duration}}",
+      "success": "Se añadieron {{duration}} de horas extra",
       "error": "No se pudieron añadir las horas extra"
     },
     "noShift": {
@@ -3397,7 +3399,6 @@
       "shiftOnly": "Solo con turno",
       "shiftOnlyHint": "Los miembros sin turno hoy no pueden fichar aquí.",
       "note": "Los miembros con turno no se ven afectados. El límite cuenta cada hora trabajada hoy, en cualquier espacio de trabajo, en la zona horaria de este espacio.",
-      "hours": "{{count}} h",
       "less": "Menos",
       "more": "Más",
       "saved": "Guardado",
@@ -3474,6 +3475,12 @@
       "longestHint": "Las horas sin turno de este espacio de trabajo (ajustes de asistencia). Entonces el teléfono pregunta «¿Sigues trabajando?». Cambiarlo allí se aplica a todos al momento.",
       "presenceTiming": "Permanece {{dwell}} min en el lugar antes de fichar la entrada y {{exit}} min fuera antes de fichar la salida (ajustes del fichaje automático de este espacio).",
       "windowInvalid": "Elige dos horas distintas."
+    },
+    "outside": {
+      "waiting": "{{duration}} fuera de tu turno el {{day}} esperan a {{names}}",
+      "waitingNoName": "{{duration}} fuera de tu turno el {{day}} esperan una decisión",
+      "andMore_one": "{{names}} y {{count}} más",
+      "andMore_other": "{{names}} y {{count}} más"
     }
   },
   "auditLog": {
@@ -8333,7 +8340,22 @@
     "RULE_ESCALATE_ROLE_REQUIRED": "Elija a quién pasa si nadie responde.",
     "REQUEST_OVERLAPS_LEAVE": "Ese día cae en vacaciones ya pedidas o aprobadas.",
     "SELF_DECISION": "No puedes decidir esto sobre ti. Pídelo a un responsable o a un administrador.",
-    "DAY_HOURS_SPACE_NOT_YOURS": "Elige un espacio de trabajo que gestiones."
+    "DAY_HOURS_SPACE_NOT_YOURS": "Elige un espacio de trabajo que gestiones.",
+    "LOCATION_REQUIRED": "Elija el lugar de trabajo en el que ficha.",
+    "NOT_ASSIGNED_HERE": "No está asignado a este lugar de trabajo. Pida a su oficina que le añada.",
+    "NOT_ON_THE_CLOCK": "No ha fichado la entrada.",
+    "ALREADY_ON_REST": "Ya está en un descanso. Termínelo primero.",
+    "REMOTE_NOT_ALLOWED": "Fichar fuera de un lugar de trabajo no está permitido en su cuenta. Consulte a su oficina.",
+    "ENTRY_ALREADY_DECIDED": "Este día ya está decidido.",
+    "GPS_ACCURACY_LOW": "Su ubicación solo tiene una precisión de {{distance}}; se necesita {{radius}} o mejor. Espere un momento y vuelva a intentarlo.",
+    "CLOCK_SWITCH_ADMIN_ONLY": "Solo un administrador puede desactivar su propio reloj de fichaje.",
+    "CLOCK_SWITCH_WHILE_CLOCKED_IN": "Fiche la salida primero y luego desactive el reloj.",
+    "EXTRA_TIME_NO_SHIFT": "No hay un final previsto que ampliar: todo este tiempo ya cuenta.",
+    "ENTRY_STILL_OPEN": "Este turno sigue en curso: se puede decidir cuando se fiche la salida.",
+    "ENTRY_ALREADY_CLOSED": "Este turno ya se cerró mientras tanto: ábralo de nuevo para ver la hora real.",
+    "OUTSIDE_ALREADY_DECIDED": "Este tiempo ya está decidido.",
+    "OUTSIDE_NOTHING": "No hay tiempo fuera del turno que decidir.",
+    "FIX_MISSING": "Se necesita su ubicación para fichar en {{location}}. Permita el acceso a la ubicación y vuelva a intentarlo."
   },
   "signLink": {
     "tabs": {
@@ -9678,7 +9700,8 @@
       "planned": "Previsto",
       "clocked": "Fichado",
       "before": "Antes del inicio",
-      "after": "Después del fin"
+      "after": "Después del fin",
+      "pastEnd": "Trabajado después del final"
     },
     "cover": {
       "ok": "Quedan suficientes personas",

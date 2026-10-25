@@ -711,7 +711,7 @@
       "message": "Clock-in/clock-out is only available for full-time employees."
     },
     "breaks": {
-      "takeABreak": "Take a Break",
+      "takeABreak": "Take a rest",
       "lunch": "Lunch",
       "short": "Short",
       "other": "Other",
@@ -804,10 +804,7 @@
       "untimed": "Untimed",
       "ofTotal": "of {{total}}",
       "overBy": "{{over}} past your {{total}}",
-      "backToWork": "Back to work",
-      "backHint": "Until you do, the time keeps counting as rest.",
       "started": "Rest started",
-      "ended": "Back to work",
       "postponed": "We'll ask again shortly",
       "timeFor": "Time for your {{name}}",
       "dueIn": "in {{gap}}",
@@ -817,7 +814,8 @@
       "startNow": "Start rest",
       "later": "Later",
       "allDone": "All your rests are taken.",
-      "allDoneWithMissed": "Nothing more due today."
+      "allDoneWithMissed": "Nothing more due today.",
+      "backHintCard": "Tap “End the rest” when you are back — until then it counts as rest."
     },
     "offline": {
       "notHere": "Not clocked in",
@@ -890,14 +888,6 @@
     "title": "Overtime",
     "noActiveRequest": "No active overtime request",
     "shiftEnded": "Your shift has ended",
-    "promptTitle": "Need Overtime?",
-    "promptSubtitle": "Your shift has ended. Would you like to request overtime?",
-    "reasonPlaceholder": "Why do you need overtime? (optional)",
-    "yes": "Yes, I need overtime",
-    "no": "No, clock me out",
-    "requestSent": "Overtime request sent for approval",
-    "declined": "Overtime declined, you have been clocked out",
-    "failedToRespond": "Failed to respond to overtime prompt",
     "waitingApproval": "Waiting for Approval",
     "waitingApprovalSub": "Your team leader has been notified. You can also get their signature on this device.",
     "getLeaderSignature": "Get Leader Signature",
@@ -908,7 +898,7 @@
     "rejected": "Overtime Rejected",
     "expired": "Request Expired",
     "expiredSub": "The overtime request timed out. You have been clocked out.",
-    "overtimeActive": "Overtime Active",
+    "overtimeActive": "Extra time approved",
     "tapToView": "Tap to view details",
     "leaderApproval": "Leader Approval",
     "signatureInstructions": "Hand this device to your team leader to approve overtime. They will select their name, set the duration, and sign.",
@@ -2810,12 +2800,10 @@
   },
   "attendanceReview": {
     "segments": {
-      "approvals": "Approvals",
       "noshows": "No-shows",
       "records": "History"
     },
     "empty": {
-      "approvals": "Nothing waiting — every shift has been decided.",
       "noshows": "No missed shifts in the last 7 days.",
       "records": {
         "month": "No shifts in the last 30 days.",
@@ -3300,7 +3288,6 @@
       "WAITING_FOR_WIFI": "Waiting for Wi-Fi — you chose to send photos only on Wi-Fi.",
       "TIME_OFF_DECIDED": "This request was already decided, so it can no longer be cancelled.",
       "NO_SHIFT_TODAY": "You have no shift today, and this workspace only allows clocking in with a shift.",
-      "NO_HOURS_LEFT": "No hours left today at this workspace without a shift. Ask your leader for a shift.",
       "TOO_FAR_TO_ARRIVE": "You are {{distance}} from the job site. You need to be within {{radius}} to mark it as arrived. Please move closer and try again.",
       "TOO_FAR_TO_START": "You are {{distance}} from the job site. You need to be within {{radius}} to start the job. Please move closer and try again.",
       "OUTSIDE_GEOFENCE": "{{location}} only accepts clock-ins on site. You are {{distance}} away.",
@@ -3340,7 +3327,20 @@
       "REQUEST_TOO_MANY_DAYS": "Too many days in one request — 31 at most.",
       "REQUEST_REMOTE_NOT_ALLOWED": "You are not allowed to work remotely.",
       "REQUEST_SPACE_NOT_YOURS": "You do not work in that workspace.",
-      "REQUEST_KIND_NOT_OFFERED": "This kind of request is not offered in your workspace."
+      "REQUEST_KIND_NOT_OFFERED": "This kind of request is not offered in your workspace.",
+      "LOCATION_REQUIRED": "Choose the workspace you are clocking in at.",
+      "NOT_ASSIGNED_HERE": "You are not assigned to this workspace. Ask your office to add you.",
+      "NOT_ON_THE_CLOCK": "You are not clocked in.",
+      "ALREADY_ON_REST": "You are already on a rest. End it first.",
+      "REMOTE_NOT_ALLOWED": "Clocking in away from a workspace is not allowed for your account. Ask your office.",
+      "ENTRY_ALREADY_DECIDED": "This day was already decided.",
+      "GPS_ACCURACY_LOW": "Your location is only accurate to {{distance}} — {{radius}} or better is needed. Wait a moment and try again.",
+      "CLOCK_SWITCH_ADMIN_ONLY": "Only an administrator can switch their own clock off.",
+      "CLOCK_SWITCH_WHILE_CLOCKED_IN": "Clock out first, then switch the clock off.",
+      "EXTRA_TIME_NO_SHIFT": "There is no planned end to extend — all of this time counts already.",
+      "ENTRY_STILL_OPEN": "This shift is still running — it can be decided once it is clocked out.",
+      "OUTSIDE_ALREADY_DECIDED": "This time was already decided.",
+      "OUTSIDE_NOTHING": "There is no time outside the shift to decide."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",
@@ -3416,11 +3416,9 @@
     "counted": "counted {{counted}}",
     "countedFrozen": "counted {{counted}}, not counting now",
     "restDue": "rest due {{time}}",
-    "restOverdue_one": "Your rest was due {{count}} minute ago",
-    "restOverdue_other": "Your rest was due {{count}} minutes ago",
     "startRest": "Start the rest",
     "endRest": "End the rest",
-    "break": "Break",
+    "break": "Rest",
     "setRealTime": "Set the real time",
     "doneForToday": "DONE FOR TODAY",
     "backAt": "Back at {{time}}",
@@ -3429,8 +3427,6 @@
     "countedApproved": "counted and approved",
     "countedRejected": "not approved",
     "waitingToReach": "waiting to reach the office",
-    "startsIn_one": "your shift starts in {{count}} minute",
-    "startsIn_other": "your shift starts in {{count}} minutes",
     "today": "TODAY",
     "thisWeek": "This week",
     "ofTarget": "{{done}} of {{target}}",
@@ -3441,7 +3437,7 @@
     "workedThisWeek": "worked this week",
     "lastInOn": "last in on {{day}}",
     "whatKind": "WHAT KIND · OPTIONAL",
-    "startBreak": "Start the break",
+    "startBreak": "Start a rest",
     "breakReason": "What is it for? (optional)",
     "restOf": "{{duration}}",
     "restCounts": "counts as worked",
@@ -3458,9 +3454,9 @@
       "clockInNow": "Clock in now"
     },
     "noShiftLeft": "At {{location}} · no shift · {{left}} to today’s hours",
-    "askMoreTime": "Ask for more time",
-    "askMoreTimeHint": "Your leader is asked. You can clock in once they agree.",
-    "arrivedStartsAt": "You're at {{workspace}} · your shift starts at {{time}}"
+    "arrivedStartsAt": "You're at {{workspace}} · your shift starts at {{time}}",
+    "startsInDuration": "your shift starts in {{duration}}",
+    "restOverdueDuration": "Your rest was due {{duration}} ago"
   },
   "crew": {
     "onTheClock": "on the clock",
@@ -3622,7 +3618,8 @@
       "eyebrowCrew": "STILL IN WORK · THE CREW CARRIES ON",
       "myOpenItems_one": "{{count}} of your checklist items is still open",
       "myOpenItems_other": "{{count}} of your checklist items are still open"
-    }
+    },
+    "andMore": "+{{count}}"
   },
   "myWork": {
     "all": "All {{count}}",
@@ -4266,7 +4263,7 @@
       "noFix": "Distance unknown",
       "leftToday": "{{left}} left today",
       "shiftOnly": "Shift only",
-      "limitReached": "Limit reached"
+      "pastHours": "Past today's hours"
     },
     "today": {
       "title": "Today",
@@ -5098,7 +5095,11 @@
       "failed": "That did not work. Open the Clock screen to do it there.",
       "cannotUndo": "This clock-in can no longer be undone here: the shift is closed or work is recorded on it. Ask your office to correct it.",
       "carryOn": "Carrying on — you are still clocked in"
-    }
+    },
+    "undoBanner": "Clocked in automatically at {{time}}",
+    "undo": "Undo",
+    "undone": "Automatic clock-in undone",
+    "undoFailed": "Could not undo it — ask your office."
   },
   "register": {
     "title": "Equipment",
@@ -5245,7 +5246,8 @@
       "planned": "Planned",
       "clocked": "Clocked",
       "before": "Before the start",
-      "after": "After the end"
+      "after": "After the end",
+      "pastEnd": "Worked past the end"
     },
     "cover": {
       "ok": "Enough people stay",

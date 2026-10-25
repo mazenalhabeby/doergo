@@ -116,7 +116,11 @@ export class ApprovalService {
     });
 
     if (entry.approvalStatus !== 'PENDING') {
-      throw new BadRequestException(`Entry is already ${entry.approvalStatus.toLowerCase()}`);
+      throw new BadRequestException({
+        code: 'ENTRY_ALREADY_DECIDED',
+        message: `Entry is already ${entry.approvalStatus.toLowerCase()}`,
+        params: { status: entry.approvalStatus },
+      });
     }
     assertClosedForDecision(entry);
 
@@ -186,7 +190,11 @@ export class ApprovalService {
     });
 
     if (entry.approvalStatus !== 'PENDING') {
-      throw new BadRequestException(`Entry is already ${entry.approvalStatus.toLowerCase()}`);
+      throw new BadRequestException({
+        code: 'ENTRY_ALREADY_DECIDED',
+        message: `Entry is already ${entry.approvalStatus.toLowerCase()}`,
+        params: { status: entry.approvalStatus },
+      });
     }
     assertClosedForDecision(entry);
 

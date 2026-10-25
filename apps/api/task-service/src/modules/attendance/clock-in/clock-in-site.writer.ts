@@ -25,6 +25,7 @@ import { PresenceService } from '../presence/presence.service';
 import { AttendanceGeocoderService } from '../core/attendance-geocoder.service';
 import { ShiftSweepService } from '../no-shows/shift-sweep.service';
 import {
+  fixOf,
   armAutoClockReminder,
   autoClockInFlag,
   scheduleFlagsAtClockIn,
@@ -172,7 +173,7 @@ export class ClockInSiteWriter {
       toleranceMin: flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
       endIsDailyLimit,
       prior,
-      fix: { lat: data.lat, lng: data.lng, accuracy: data.accuracy },
+      fix: fixOf(data),
       zone: ctx.zone,
     });
     flagReasons.push(
@@ -229,7 +230,7 @@ export class ClockInSiteWriter {
     const presenceCols = await this.presence.atClockIn({
       userId: data.userId,
       organizationId: data.organizationId,
-      point: { lat: data.lat, lng: data.lng },
+      point: fixOf(data),
       insideArea: siteEnforcesZone(ctx.zone) && withinGeofence,
       at: clockInTime,
       timezone: workerTz ?? location.timezone ?? orgTz,
@@ -254,7 +255,8 @@ export class ClockInSiteWriter {
       // hours all hang off it and stay attached.
       isRemote: clockedInAway,
       awayReason: clockedInAway ? data.awayReason?.trim().slice(0, 200) || null : null,
-      clockInPlace: clockedInAway ? await this.geocoder.reverseGeocode(data.lat, data.lng) : null,
+      // Away needs a fix (a pinned site refuses without one, C2) — never geocode nothing.
+      clockInPlace: clockedInAway && data.lat != null && data.lng != null ? await this.geocoder.reverseGeocode(data.lat, data.lng) : null,
       timezone: workerTz,
       flagReasons,
       approvalStatus,

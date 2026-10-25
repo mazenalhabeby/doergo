@@ -3095,11 +3095,12 @@
       },
       "askMoreTime": "Ask for more time",
       "askMoreTimeSent": "Your leader is asked. Time after the end counts once they agree.",
-      "askMoreTimeWaiting": "Waiting for more time"
+      "askMoreTimeWaiting": "Waiting for more time",
+      "clockedSpan": "clocked {{span}}"
     },
     "management": {
       "title": "Attendance Management",
-      "subtitle": "Track attendance and view reports"
+      "subtitle": "Who is on the clock, their counted hours, rests and no-shows"
     },
     "tabs": {
       "attendance": "Attendance",
@@ -3312,10 +3313,10 @@
       "paid": "Counts as work",
       "unpaid": "Doesn't count",
       "required": "Required",
-      "remindEvery": "asks again every {{n}}m",
+      "remindEvery": "asks again every {{duration}}",
       "noReminder": "no reminder",
-      "afterSummary": "{{mins}} minutes, after {{after}} of the shift",
-      "windowSummary": "{{mins}} minutes, any time between {{from}} and {{to}}",
+      "afterSummary": "{{duration}}, after {{after}} of the shift",
+      "windowSummary": "{{duration}}, any time between {{from}} and {{to}}",
       "shiftEnd": "the end of the shift",
       "removed": "Rest removed",
       "added": "Rest added",
@@ -3370,21 +3371,22 @@
       "viaAccountOn": "Follows their account, which allows it.",
       "viaAccountOff": "Follows their account, which does not.",
       "overrideOn": "Allowed here, whatever their account says.",
-      "overrideOff": "Refused here, even though their account allows it."
+      "overrideOff": "Refused here, even though their account allows it.",
+      "overrideOffPlain": "Refused here, like their account."
     },
     "addOvertime": {
       "action": "Add overtime",
       "title": "Add overtime",
       "titleFor": "Add overtime · {{name}}",
-      "context": "Shift ended {{end}} · clocked out {{out}} ({{minutes}} min later)",
+      "context": "Shift ended {{end}} · clocked out {{out}} ({{duration}} later)",
       "minutes": "Minutes after the shift end",
       "reason": "Reason",
       "reasonPlaceholder": "Recorded with the approval",
       "countedUntil": "Counted until",
       "countedTime": "Counted time",
       "cappedAtClockOut": "Time after the clock-out is never counted.",
-      "approve": "Approve {{minutes}} min",
-      "success": "Added {{minutes}} min of overtime",
+      "approve": "Approve {{duration}}",
+      "success": "Added {{duration}} of overtime",
       "error": "Could not add overtime"
     },
     "noShift": {
@@ -3397,7 +3399,6 @@
       "shiftOnly": "Only with a shift",
       "shiftOnlyHint": "Members without a shift today cannot clock in here.",
       "note": "Members with a shift are not affected. The limit counts every hour the member worked today, at any workspace, in this workspace's time zone.",
-      "hours": "{{count}} h",
       "less": "Less",
       "more": "More",
       "saved": "Saved",
@@ -3474,6 +3475,12 @@
       "longestHint": "This workspace's hours without a shift (Attendance settings). At that point the phone asks \"Still working?\". Changing it there applies to everybody at once.",
       "presenceTiming": "Stays {{dwell}} min on site before clocking in, away {{exit}} min before clocking out (this workspace's automatic clock settings).",
       "windowInvalid": "Choose two different times."
+    },
+    "outside": {
+      "waiting": "{{duration}} outside your shift on {{day}} is waiting for {{names}}",
+      "waitingNoName": "{{duration}} outside your shift on {{day}} is waiting for a decision",
+      "andMore_one": "{{names}} and {{count}} more",
+      "andMore_other": "{{names}} and {{count}} more"
     }
   },
   "auditLog": {
@@ -8333,7 +8340,22 @@
     "RULE_ESCALATE_ROLE_REQUIRED": "Choose who it passes to when nobody answers.",
     "REQUEST_OVERLAPS_LEAVE": "That day falls in leave already asked for or approved.",
     "SELF_DECISION": "You cannot decide this about yourself. Ask a manager or an administrator.",
-    "DAY_HOURS_SPACE_NOT_YOURS": "Choose a workspace you manage."
+    "DAY_HOURS_SPACE_NOT_YOURS": "Choose a workspace you manage.",
+    "LOCATION_REQUIRED": "Choose the workspace you are clocking in at.",
+    "NOT_ASSIGNED_HERE": "You are not assigned to this workspace. Ask your office to add you.",
+    "NOT_ON_THE_CLOCK": "You are not clocked in.",
+    "ALREADY_ON_REST": "You are already on a rest. End it first.",
+    "REMOTE_NOT_ALLOWED": "Clocking in away from a workspace is not allowed for your account. Ask your office.",
+    "ENTRY_ALREADY_DECIDED": "This day was already decided.",
+    "GPS_ACCURACY_LOW": "Your location is only accurate to {{distance}} — {{radius}} or better is needed. Wait a moment and try again.",
+    "CLOCK_SWITCH_ADMIN_ONLY": "Only an administrator can switch their own clock off.",
+    "CLOCK_SWITCH_WHILE_CLOCKED_IN": "Clock out first, then switch the clock off.",
+    "EXTRA_TIME_NO_SHIFT": "There is no planned end to extend — all of this time counts already.",
+    "ENTRY_STILL_OPEN": "This shift is still running — it can be decided once it is clocked out.",
+    "ENTRY_ALREADY_CLOSED": "This shift was clocked out meanwhile — open it again to see the real time.",
+    "OUTSIDE_ALREADY_DECIDED": "This time was already decided.",
+    "OUTSIDE_NOTHING": "There is no time outside the shift to decide.",
+    "FIX_MISSING": "Your location is needed to clock in at {{location}}. Allow location access and try again."
   },
   "signLink": {
     "tabs": {
@@ -9678,7 +9700,8 @@
       "planned": "Planned",
       "clocked": "Clocked",
       "before": "Before the start",
-      "after": "After the end"
+      "after": "After the end",
+      "pastEnd": "Worked past the end"
     },
     "cover": {
       "ok": "Enough people stay",

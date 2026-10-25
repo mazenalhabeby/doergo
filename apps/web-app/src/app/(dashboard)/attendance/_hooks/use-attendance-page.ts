@@ -45,6 +45,11 @@ export function useAttendancePage() {
     (`canApproveAttendance`) happens in Approvals, not on this page.
   */
   const canDelete = isAdmin || hasPermission("canDeleteAttendance")
+  /*
+    A day off is written through POST /time-off/manual — `canManageRota` held ORG-WIDE (clock review C4). The
+    buttons were for admins only, and the days-off column header and its cells read two different rules.
+  */
+  const canManageLeave = mayManageLeave(user)
 
   // No-shows (shares the tab's query key → deduped) — drives the tab count badge.
   const { data: noShowPeople = [] } = useQuery({
@@ -55,5 +60,10 @@ export function useAttendancePage() {
   })
   const openNoShows = noShowPeople.reduce((n, p) => n + p.open, 0)
 
-  return { t, activeTab, setActiveTab, canAccess, isAdmin, canReconcile, canDelete, openNoShows }
+  return { t, activeTab, setActiveTab, canAccess, isAdmin, canReconcile, canDelete, canManageLeave, openNoShows }
+}
+
+/** May write a day off: `canManageRota` held org-wide, as POST /time-off/manual checks (clock review C4). */
+export function mayManageLeave(user: { role?: string; canManageRota?: boolean } | null | undefined): boolean {
+  return user?.role === "ADMIN" || user?.canManageRota === true
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { keys } from "@/lib/query-keys"
+import { formatDuration } from "@hbcfield/shared/client"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -82,7 +83,8 @@ export function NoShiftSection({
   const hasHours = policy === "LIMIT" || policy === "ALLOW"
   const hoursDirty = hasHours && policy === savedPolicy && minutes !== savedMinutes
   const step = (delta: number) => setHours((h) => clampDailyMinutes(Math.round((h + delta) * 60)) / 60)
-  const formatHours = (m: number) => t("attendance.noShift.hours", { count: m / 60, defaultValue: `${m / 60} h` })
+  // Hours and minutes ("7h 30m"), never "7.5 h" (clock review C8).
+  const formatHours = (m: number) => formatDuration(m)
 
   const ALL_OPTIONS: { value: NoShiftPolicy; title: string; body: string }[] = [
     {
@@ -93,7 +95,10 @@ export function NoShiftSection({
     {
       value: "LIMIT",
       title: t("attendance.noShift.limit", "Flag days longer than a number of hours"),
-      body: t("attendance.noShift.limitHint", "Every hour counts. A day longer than this is flagged for the leader to look at."),
+      body: t(
+        "attendance.noShift.limitHint",
+        "Every hour counts. A day longer than this is flagged for the leader to look at.",
+      ),
     },
     {
       value: "SHIFT_ONLY",

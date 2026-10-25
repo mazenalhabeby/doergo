@@ -22,8 +22,7 @@ import { shouldKeep } from '../response-cache';
 const ROOT = path.resolve(__dirname, '../../../..');
 
 /** Comments quote endpoints constantly — this file included. */
-const strip = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 /**
  * Reads answered by a dedicated offline reader instead of a kept response.
@@ -38,7 +37,8 @@ const OWN_READER: Record<string, string> = {
   '/attendance/breaks/status': 'src/offline/attendance/load-shift.ts (loadShift)',
   '/attendance/entries/:x/worklog': 'src/offline/attendance/worklog.ts',
   '/tasks': 'src/offline/tasks/use-home-tasks.ts + the Tasks tab (filterTasksLocally)',
-  '/sync/pull': 'it IS the offline layer — pulled rows go into the records store (src/offline/db), never the response cache',
+  '/sync/pull':
+    'it IS the offline layer — pulled rows go into the records store (src/offline/db), never the response cache',
 };
 
 /** Reads that cannot mean anything without a server, with the reason. */
@@ -46,27 +46,35 @@ const ONLINE_ONLY: Record<string, string> = {
   '/chat/search':
     'words across every conversation, asked of the server index; the phone keeps 30 days and no index, and the screen says a search needs a connection',
   '/approvals': 'what waits for a decision NOW — somebody else may decide it first, and deciding is itself online',
-  '/approvals/stand-ins': 'who covers whom today — changed by the office or the leader at any moment; read when the sheet is opened',
-  '/approvals/route': 'who else could decide one item, right now — leave and roles change; asked when the item is opened',
+  '/approvals/stand-ins':
+    'who covers whom today — changed by the office or the leader at any moment; read when the sheet is opened',
+  '/approvals/route':
+    'who else could decide one item, right now — leave and roles change; asked when the item is opened',
   '/chat/badge':
     'the unread total — set live by the socket and asked again on resume; offline the tab keeps the last number',
   '/approvals/count': 'the same, as one number on More — a kept count is a number from another moment',
+  '/attendance/approvers/mine':
+    'who decides the shift right now, named on the clock-out receipt — offline it keeps "your approver" (clock review C7)',
   '/attendance/outside/mine':
     'time outside the shift still waiting for a leader — decided elsewhere at any moment; offline the Time page simply says nothing',
   '/app/version': 'the update gate — any failure lets the app run, and an old answer would hide a required update',
-  '/calendar/people': 'the invite picker — inviting somebody is itself online, so a kept colleague list would only offer a send that cannot happen',
+  '/calendar/people':
+    'the invite picker — inviting somebody is itself online, so a kept colleague list would only offer a send that cannot happen',
   '/auth/me': 'reconciliation only — the signed-in member is restored from SecureStore, and the failure is swallowed',
   '/onboarding/status': 'joining an organization is not something that happens in a basement',
   '/onboarding/validate-org-code/:x': 'the server is the only thing that knows whether a code is real',
   '/invitations/validate/:x': 'the same for an invitation code — and asked before there is a session at all',
-  '/tasks/counts': "the scope badges count the organization's work on the server; a kept count is a number from another moment",
+  '/tasks/counts':
+    "the scope badges count the organization's work on the server; a kept count is a number from another moment",
   // The address picker: a lookup of what is being typed, which only a geocoder can answer.
   '/geo/search': 'geocoding an address as it is typed — only a geocoder can answer it',
   '/geo/reverse': 'naming a dropped pin — the pin keeps its coordinates offline, only the label waits',
   '/geo/place': "a picked suggestion's coordinates — the suggestion itself needed the network",
-  '/rota/week': 'other people’s staffing, for a rota manager: not the member’s own data to hold on a phone, and a stale week is a wrong one',
+  '/rota/week':
+    'other people’s staffing, for a rota manager: not the member’s own data to hold on a phone, and a stale week is a wrong one',
   '/billing/subscription': "Stripe's own status; a kept copy would be a stale claim about money",
-  '/tasks/open-for-me': 'jobs open to my role RIGHT NOW — the first to take each place gets it; a kept list would offer a job somebody else already took, so the section hides offline',
+  '/tasks/open-for-me':
+    'jobs open to my role RIGHT NOW — the first to take each place gets it; a kept list would offer a job somebody else already took, so the section hides offline',
   // Presence — who is on RIGHT NOW. The Crew card says it needs a connection rather than show this morning.
   '/attendance/no-shows': 'presence: a kept answer would name somebody late who has since arrived',
   '/attendance/active-entries': 'presence: who is clocked in now',
@@ -78,7 +86,8 @@ const ONLINE_ONLY: Record<string, string> = {
   '/assets/:x/log': 'a record’s logbook — as /assets; entries are filed online from it',
   // Client requests: an answering queue. A kept "waiting" request offers one somebody else already turned into a job.
   '/spaces/:x/portal/portals': 'the workspace’s portals — read only to reach the request queue, online only',
-  '/portal/admin/portals/:x/requests': 'the answering queue: a kept list would offer a request already turned into a job',
+  '/portal/admin/portals/:x/requests':
+    'the answering queue: a kept list would offer a request already turned into a job',
 };
 
 /*
@@ -90,7 +99,12 @@ const ONLINE_ONLY: Record<string, string> = {
 const PLACEHOLDER = 'XPLACEHOLDERX';
 const placeholderArgs = new Proxy({}, { get: (_t, k) => (k === 'then' ? undefined : PLACEHOLDER) });
 const norm = (raw: string) =>
-  raw.split('?')[0]!.split('/').map((seg) => (seg === PLACEHOLDER ? ':x' : seg)).join('/').replace(/\/$/, '');
+  raw
+    .split('?')[0]!
+    .split('/')
+    .map((seg) => (seg === PLACEHOLDER ? ':x' : seg))
+    .join('/')
+    .replace(/\/$/, '');
 
 function* walk(dir: string): Generator<string> {
   if (!fs.existsSync(dir)) return;

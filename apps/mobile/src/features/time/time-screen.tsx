@@ -83,7 +83,6 @@ export function TimeScreen() {
     setRequestOpen,
     tiles,
     noShift,
-    askMoreTime,
     busy,
     unconfirmed,
     unconfirmedTz,
@@ -188,7 +187,6 @@ export function TimeScreen() {
             openIssueId={issueId ?? null}
             totals={totals}
             noShift={noShift}
-            onAskMoreTime={askMoreTime}
             clockOutRequest={clockOutRequest}
           />
         </TourTarget>

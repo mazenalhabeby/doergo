@@ -1,17 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNow } from '@/hooks/use-now';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/theme-context';
-import { useToast } from '@/island/island-context';
 import { overtimeApi, OvertimeRequest } from '@/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
 import { Ground, HeaderBack, ScreenHeader } from '@/components/amazen';
 import { useScreenWidth } from '@/components/screen-container';
 import { goBack } from '@/lib/go-back';
-import { useQueuedCreate } from '@/offline/actions/queued-create';
 import { formatDuration } from '@hbcfield/shared/client';
 import { overtimePlaceLine, waitingText } from '@/features/time/time-logic';
 import { useTimeFormat } from '@/hooks/use-time-format';
@@ -23,13 +21,10 @@ export default function OvertimeRequestScreen() {
   const router = useRouter();
   const wide = useScreenWidth();
   const { colors } = useTheme();
-  const toast = useToast();
   const { t } = useTranslation();
 
   const [request, setRequest] = useState<OvertimeRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [reason, setReason] = useState('');
 
   // Overtime countdown
 
@@ -56,38 +51,6 @@ export default function OvertimeRequestScreen() {
   const remainingMinutes = counting
     ? Math.max(0, Math.round((new Date(request!.overtimeEndAt!).getTime() - nowMs) / 60000))
     : null;
-
-  const respond = useQueuedCreate('overtime.respond', { idField: null });
-
-  const handleRespond = async (response: 'YES' | 'NO') => {
-    setIsSubmitting(true);
-    try {
-      const body = { response, reason: reason.trim() || undefined };
-      // The answer is kept and sent even with no signal — "yes, I am staying" must not be lost to a basement.
-      const outcome = await respond.run({ lane: `overtime:${id}`, body }, () => overtimeApi.respond(body));
-      if (outcome.kind === 'refused') {
-        toast.error(
-          t('common.error'),
-          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
-            outcome.message ||
-            t('overtime.failedToRespond'),
-        );
-        return;
-      }
-      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-      if (response === 'YES') {
-        toast.success(t('overtime.requestSent'));
-      } else {
-        toast.info(t('overtime.declined'));
-        router.back();
-      }
-      await fetchRequest();
-    } catch (err) {
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('overtime.failedToRespond'));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleGetSignature = () => {
     if (request) {
@@ -141,55 +104,7 @@ export default function OvertimeRequestScreen() {
             </View>
           </View>
 
-          {/* PENDING_TECHNICIAN — YES/NO prompt */}
-          {status === 'PENDING_TECHNICIAN' && (
-            <View style={styles.section}>
-              <View style={[styles.promptCard, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
-                <Ionicons name="alarm-outline" size={40} color="#D97706" />
-                <Text style={styles.promptTitle}>{t('overtime.promptTitle')}</Text>
-                <Text style={styles.promptSubtitle}>{t('overtime.promptSubtitle')}</Text>
-              </View>
-
-              <TextInput
-                style={[
-                  styles.reasonInput,
-                  { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary },
-                ]}
-                placeholder={t('overtime.reasonPlaceholder')}
-                placeholderTextColor={colors.textMuted}
-                value={reason}
-                onChangeText={setReason}
-                multiline
-                maxLength={500}
-              />
-
-              <View style={styles.buttonRow}>
-                <TouchableOpacity
-                  style={[styles.btn, styles.btnNo]}
-                  onPress={() => handleRespond('NO')}
-                  disabled={isSubmitting}
-                >
-                  <Ionicons name="close" size={20} color="#DC2626" />
-                  <Text style={styles.btnNoText}>{t('overtime.no')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.btn, styles.btnYes]}
-                  onPress={() => handleRespond('YES')}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <>
-                      <Ionicons name="checkmark" size={20} color="#fff" />
-                      <Text style={styles.btnYesText}>{t('overtime.yes')}</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
+          {/* The old YES/NO prompt (PENDING_TECHNICIAN) is gone: nothing creates it (clock review C10). */}
           {/* PENDING_APPROVAL — waiting for leader */}
           {status === 'PENDING_APPROVAL' && (
             <View style={styles.section}>

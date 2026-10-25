@@ -1,5 +1,7 @@
 "use client"
 
+import { useAuth } from "@/contexts/auth-context"
+
 import Link from "next/link"
 import { Fragment, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -38,6 +40,9 @@ export function NoShowsTab() {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [openRow, setOpenRow] = useState<string | null>(null)
+  // Reopening is a correction — PATCH /attendance/no-shows/:id is "correct hours" (clock review C4).
+  const { hasPermission } = useAuth()
+  const mayReopen = hasPermission("canReconcileAttendance")
 
   const { data: people = [], isLoading } = useQuery({
     queryKey: keys.attendance.noShows(),
@@ -70,7 +75,9 @@ export function NoShowsTab() {
             <Check className="size-5" />
           </div>
           <p className="text-sm font-medium text-foreground">{t("attendance.noShows.emptyTitle", "No no-shows")}</p>
-          <p className="text-xs text-muted-foreground">{t("attendance.noShows.empty", "Everyone scheduled has clocked in.")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("attendance.noShows.empty", "Everyone scheduled has clocked in.")}
+          </p>
         </div>
       ) : (
         <>
@@ -97,7 +104,11 @@ export function NoShowsTab() {
                     {openRow === p.userId && (
                       <tr className="border-t border-border/40 bg-muted/30">
                         <td colSpan={6} className="px-5 py-3">
-                          <ClosedDays person={p} busy={reopen.isPending} onReopen={(id) => reopen.mutate(id)} />
+                          <ClosedDays
+                            person={p}
+                            busy={reopen.isPending}
+                            onReopen={mayReopen ? (id) => reopen.mutate(id) : undefined}
+                          />
                         </td>
                       </tr>
                     )}
@@ -113,7 +124,15 @@ export function NoShowsTab() {
   )
 }
 
-function PersonRow({ person: p, expanded, onToggle }: { person: NoShowPersonSummary; expanded: boolean; onToggle: () => void }) {
+function PersonRow({
+  person: p,
+  expanded,
+  onToggle,
+}: {
+  person: NoShowPersonSummary
+  expanded: boolean
+  onToggle: () => void
+}) {
   const { t } = useTranslation()
   const [first, ...rest] = p.userName.split(" ")
   return (
@@ -125,8 +144,11 @@ function PersonRow({ person: p, expanded, onToggle }: { person: NoShowPersonSumm
             <span className="block truncate font-medium text-foreground">{p.userName}</span>
             <span className="block truncate text-xs text-muted-foreground">{p.spaceNames.join(" · ")}</span>
           </span>
-          {p.closed.length > 0 &&
-            <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", expanded && "rotate-180")} />}
+          {p.closed.length > 0 && (
+            <ChevronDown
+              className={cn("size-4 shrink-0 text-muted-foreground transition-transform", expanded && "rotate-180")}
+            />
+          )}
         </button>
       </td>
       <td className="px-3 py-3">
@@ -139,8 +161,10 @@ function PersonRow({ person: p, expanded, onToggle }: { person: NoShowPersonSumm
         {p.open > 0 ? (
           <Link
             href="/approvals?kind=noShow"
-            className={"inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 " +
-              "text-xs font-semibold text-primary hover:bg-primary/15"}
+            className={
+              "inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 " +
+              "text-xs font-semibold text-primary hover:bg-primary/15"
+            }
           >
             {t("attendance.noShows.inApprovals", { count: p.open })}
             <ArrowRight className="size-3" />
@@ -156,7 +180,12 @@ function PersonRow({ person: p, expanded, onToggle }: { person: NoShowPersonSumm
 function DayStrip({ days }: { days: NoShowPersonSummary["days"] }) {
   const { t, i18n } = useTranslation()
   const weekday = new Intl.DateTimeFormat(i18n.language, { weekday: "narrow", timeZone: "UTC" })
-  const full = new Intl.DateTimeFormat(i18n.language, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })
+  const full = new Intl.DateTimeFormat(i18n.language, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  })
   return (
     <div className="flex gap-1">
       {days.map((d) => {
@@ -177,10 +206,20 @@ function DayStrip({ days }: { days: NoShowPersonSummary["days"] }) {
   )
 }
 
-function ClosedDays({ person, busy, onReopen }: { person: NoShowPersonSummary; busy: boolean; onReopen: (id: string) => void }) {
+function ClosedDays({
+  person,
+  busy,
+  onReopen,
+}: {
+  person: NoShowPersonSummary
+  busy: boolean
+  /** Absent for a viewer who cannot correct hours: the record only. */
+  onReopen?: (id: string) => void
+}) {
   const { t } = useTranslation()
   const { formatDateTime } = useTimeFormat()
-  if (person.closed.length === 0) return <p className="text-xs text-muted-foreground">{t("attendance.noShows.nothingClosed")}</p>
+  if (person.closed.length === 0)
+    return <p className="text-xs text-muted-foreground">{t("attendance.noShows.nothingClosed")}</p>
   return (
     <ul className="divide-y divide-border/40">
       {person.closed.map((c) => (
@@ -200,17 +239,22 @@ function ClosedDays({ person, busy, onReopen }: { person: NoShowPersonSummary; b
           >
             {closedLabel(t, c)}
           </span>
-          <Button size="sm" variant="outline" className="h-7 gap-1.5" disabled={busy} onClick={() => onReopen(c.id)}>
-            <RotateCcw className="size-3.5" />
-            {t("attendance.noShows.reopen", "Reopen")}
-          </Button>
+          {onReopen && (
+            <Button size="sm" variant="outline" className="h-7 gap-1.5" disabled={busy} onClick={() => onReopen(c.id)}>
+              <RotateCcw className="size-3.5" />
+              {t("attendance.noShows.reopen", "Reopen")}
+            </Button>
+          )}
         </li>
       ))}
     </ul>
   )
 }
 
-function closedLabel(t: (k: string, o?: Record<string, unknown>) => string, c: NoShowPersonSummary["closed"][number]): string {
+function closedLabel(
+  t: (k: string, o?: Record<string, unknown>) => string,
+  c: NoShowPersonSummary["closed"][number],
+): string {
   if (c.state === "ABSENT") return t("attendance.noShows.state.absent")
   const why = c.closeReason ? t(`attendance.noShows.reason.${c.closeReason}`, { defaultValue: c.closeReason }) : null
   const head = t(c.closedAutomatically ? "attendance.noShows.state.settled" : "attendance.noShows.state.excused")

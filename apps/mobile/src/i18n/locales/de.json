@@ -804,10 +804,7 @@
       "untimed": "Ohne Zeitvorgabe",
       "ofTotal": "von {{total}}",
       "overBy": "{{over}} über Ihre {{total}}",
-      "backToWork": "Zurück zur Arbeit",
-      "backHint": "Bis dahin läuft die Zeit weiter als Pause.",
       "started": "Pause begonnen",
-      "ended": "Zurück zur Arbeit",
       "postponed": "Wir fragen gleich noch einmal",
       "timeFor": "Zeit für Ihre {{name}}",
       "dueIn": "in {{gap}}",
@@ -817,7 +814,8 @@
       "startNow": "Pause beginnen",
       "later": "Später",
       "allDone": "Alle Ihre Pausen sind genommen.",
-      "allDoneWithMissed": "Heute steht nichts mehr an."
+      "allDoneWithMissed": "Heute steht nichts mehr an.",
+      "backHintCard": "Tippen Sie auf „Pause beenden“, wenn Sie zurück sind – bis dahin zählt es als Pause."
     },
     "offline": {
       "notHere": "Nicht eingestempelt",
@@ -890,14 +888,6 @@
     "title": "Überstunden",
     "noActiveRequest": "Kein aktiver Überstundenantrag",
     "shiftEnded": "Ihre Schicht ist beendet",
-    "promptTitle": "Überstunden nötig?",
-    "promptSubtitle": "Ihre Schicht ist beendet. Möchten Sie Überstunden beantragen?",
-    "reasonPlaceholder": "Warum brauchen Sie Überstunden? (optional)",
-    "yes": "Ja, ich brauche Überstunden",
-    "no": "Nein, ausstempeln",
-    "requestSent": "Überstundenantrag zur Genehmigung gesendet",
-    "declined": "Überstunden abgelehnt, Sie wurden ausgestempelt",
-    "failedToRespond": "Antwort auf Überstundenanfrage fehlgeschlagen",
     "waitingApproval": "Warten auf Genehmigung",
     "waitingApprovalSub": "Ihr Teamleiter wurde benachrichtigt. Sie können auch eine Unterschrift auf diesem Gerät einholen.",
     "getLeaderSignature": "Teamleiter-Unterschrift einholen",
@@ -908,7 +898,7 @@
     "rejected": "Überstunden abgelehnt",
     "expired": "Anfrage abgelaufen",
     "expiredSub": "Der Überstundenantrag ist abgelaufen. Sie wurden ausgestempelt.",
-    "overtimeActive": "Überstunden aktiv",
+    "overtimeActive": "Mehrzeit genehmigt",
     "tapToView": "Tippen für Details",
     "leaderApproval": "Teamleiter-Genehmigung",
     "signatureInstructions": "Geben Sie dieses Gerät Ihrem Teamleiter zur Genehmigung. Er wählt seinen Namen, legt die Dauer fest und unterschreibt.",
@@ -2810,12 +2800,10 @@
   },
   "attendanceReview": {
     "segments": {
-      "approvals": "Freigaben",
       "noshows": "Fehlzeiten",
       "records": "Verlauf"
     },
     "empty": {
-      "approvals": "Nichts offen — alle Schichten sind entschieden.",
       "noshows": "Keine versäumten Schichten in den letzten 7 Tagen.",
       "records": {
         "month": "Keine Schichten in den letzten 30 Tagen.",
@@ -3300,7 +3288,6 @@
       "WAITING_FOR_WIFI": "Wartet auf WLAN – Sie haben gewählt, Fotos nur über WLAN zu senden.",
       "TIME_OFF_DECIDED": "Dieser Antrag wurde bereits entschieden und kann nicht mehr storniert werden.",
       "NO_SHIFT_TODAY": "Sie haben heute keine Schicht, und dieser Arbeitsbereich erlaubt das Einstempeln nur mit Schicht.",
-      "NO_HOURS_LEFT": "Heute keine Stunden mehr ohne Schicht in diesem Arbeitsbereich. Fragen Sie Ihre Leitung nach einer Schicht.",
       "TOO_FAR_TO_ARRIVE": "Sie sind {{distance}} vom Einsatzort entfernt. Um die Ankunft zu melden, müssen Sie sich im Umkreis von {{radius}} befinden. Bitte gehen Sie näher heran und versuchen Sie es erneut.",
       "TOO_FAR_TO_START": "Sie sind {{distance}} vom Einsatzort entfernt. Um den Auftrag zu starten, müssen Sie sich im Umkreis von {{radius}} befinden. Bitte gehen Sie näher heran und versuchen Sie es erneut.",
       "OUTSIDE_GEOFENCE": "Bei {{location}} ist Einstempeln nur vor Ort möglich. Sie sind {{distance}} entfernt.",
@@ -3340,7 +3327,20 @@
       "REQUEST_TOO_MANY_DAYS": "Zu viele Tage in einem Antrag – höchstens 31.",
       "REQUEST_REMOTE_NOT_ALLOWED": "Sie dürfen nicht remote arbeiten.",
       "REQUEST_SPACE_NOT_YOURS": "Sie arbeiten nicht in diesem Arbeitsbereich.",
-      "REQUEST_KIND_NOT_OFFERED": "Diese Art von Antrag ist in Ihrem Arbeitsbereich nicht verfügbar."
+      "REQUEST_KIND_NOT_OFFERED": "Diese Art von Antrag ist in Ihrem Arbeitsbereich nicht verfügbar.",
+      "LOCATION_REQUIRED": "Wählen Sie den Arbeitsort, an dem Sie einstempeln.",
+      "NOT_ASSIGNED_HERE": "Sie sind diesem Arbeitsort nicht zugeteilt. Bitten Sie Ihr Büro, Sie hinzuzufügen.",
+      "NOT_ON_THE_CLOCK": "Sie sind nicht eingestempelt.",
+      "ALREADY_ON_REST": "Sie sind bereits in einer Pause. Beenden Sie sie zuerst.",
+      "REMOTE_NOT_ALLOWED": "Einstempeln außerhalb eines Arbeitsorts ist für Ihr Konto nicht erlaubt. Fragen Sie Ihr Büro.",
+      "ENTRY_ALREADY_DECIDED": "Über diesen Tag wurde bereits entschieden.",
+      "GPS_ACCURACY_LOW": "Ihr Standort ist nur auf {{distance}} genau – {{radius}} oder besser ist nötig. Warten Sie kurz und versuchen Sie es erneut.",
+      "CLOCK_SWITCH_ADMIN_ONLY": "Nur ein Administrator kann seine eigene Stempeluhr ausschalten.",
+      "CLOCK_SWITCH_WHILE_CLOCKED_IN": "Stempeln Sie zuerst aus und schalten Sie dann die Stempeluhr aus.",
+      "EXTRA_TIME_NO_SHIFT": "Es gibt kein geplantes Ende zu verlängern – diese Zeit zählt bereits vollständig.",
+      "ENTRY_STILL_OPEN": "Diese Schicht läuft noch – sie kann entschieden werden, sobald ausgestempelt ist.",
+      "OUTSIDE_ALREADY_DECIDED": "Über diese Zeit wurde bereits entschieden.",
+      "OUTSIDE_NOTHING": "Es gibt keine Zeit außerhalb der Schicht zu entscheiden."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",
@@ -3416,8 +3416,6 @@
     "counted": "{{counted}} gezählt",
     "countedFrozen": "{{counted}} gezählt, zählt gerade nicht",
     "restDue": "Pause fällig {{time}}",
-    "restOverdue_one": "Ihre Pause war vor {{count}} Minute fällig",
-    "restOverdue_other": "Ihre Pause war vor {{count}} Minuten fällig",
     "startRest": "Pause beginnen",
     "endRest": "Pause beenden",
     "break": "Pause",
@@ -3429,8 +3427,6 @@
     "countedApproved": "gezählt und freigegeben",
     "countedRejected": "nicht freigegeben",
     "waitingToReach": "wartet auf die Übermittlung ans Büro",
-    "startsIn_one": "Ihre Schicht beginnt in {{count}} Minute",
-    "startsIn_other": "Ihre Schicht beginnt in {{count}} Minuten",
     "today": "HEUTE",
     "thisWeek": "Diese Woche",
     "ofTarget": "{{done}} von {{target}}",
@@ -3458,9 +3454,9 @@
       "clockInNow": "Jetzt einstempeln"
     },
     "noShiftLeft": "Bei {{location}} · keine Schicht · noch {{left}} bis zu den heutigen Stunden",
-    "askMoreTime": "Mehr Zeit anfragen",
-    "askMoreTimeHint": "Ihre Leitung wird gefragt. Sobald sie zustimmt, können Sie einstempeln.",
-    "arrivedStartsAt": "Sie sind bei {{workspace}} · Ihre Schicht beginnt um {{time}}"
+    "arrivedStartsAt": "Sie sind bei {{workspace}} · Ihre Schicht beginnt um {{time}}",
+    "startsInDuration": "Ihre Schicht beginnt in {{duration}}",
+    "restOverdueDuration": "Ihre Pause war vor {{duration}} fällig"
   },
   "crew": {
     "onTheClock": "eingestempelt",
@@ -3622,7 +3618,8 @@
       "eyebrowCrew": "NOCH IN ARBEIT · DAS TEAM MACHT WEITER",
       "myOpenItems_one": "{{count}} Ihrer Checklistenpunkte ist noch offen",
       "myOpenItems_other": "{{count}} Ihrer Checklistenpunkte sind noch offen"
-    }
+    },
+    "andMore": "+{{count}}"
   },
   "myWork": {
     "all": "Alle {{count}}",
@@ -4266,7 +4263,7 @@
       "noFix": "Entfernung unbekannt",
       "leftToday": "Noch {{left}} heute",
       "shiftOnly": "Nur mit Schicht",
-      "limitReached": "Grenze erreicht"
+      "pastHours": "Über den heutigen Stunden"
     },
     "today": {
       "title": "Heute",
@@ -5098,7 +5095,11 @@
       "failed": "Das hat nicht geklappt. Öffnen Sie die Stempeluhr und erledigen Sie es dort.",
       "cannotUndo": "Diese Einstempelung kann hier nicht mehr rückgängig gemacht werden: Die Schicht ist abgeschlossen oder es ist bereits Arbeit erfasst. Bitten Sie Ihr Büro um eine Korrektur.",
       "carryOn": "Weiter – Sie sind noch eingestempelt"
-    }
+    },
+    "undoBanner": "Automatisch eingestempelt um {{time}}",
+    "undo": "Rückgängig",
+    "undone": "Automatisches Einstempeln rückgängig gemacht",
+    "undoFailed": "Konnte nicht rückgängig gemacht werden – fragen Sie Ihr Büro."
   },
   "register": {
     "title": "Ausstattung",
@@ -5245,7 +5246,8 @@
       "planned": "Geplant",
       "clocked": "Gestempelt",
       "before": "Vor Beginn",
-      "after": "Nach Ende"
+      "after": "Nach Ende",
+      "pastEnd": "Über das Ende hinaus gearbeitet"
     },
     "cover": {
       "ok": "Genug Personen bleiben",

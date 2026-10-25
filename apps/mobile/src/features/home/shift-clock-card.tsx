@@ -28,6 +28,7 @@ import { ShiftProgress } from './shift-clock/shift-progress';
 import { RefusedShiftBanner } from './shift-clock/refused-banner';
 import { formatDuration } from '@hbcfield/shared/client';
 import type { NoShiftNote } from '../time/time-logic';
+import { useMyApprovers } from './use-my-approvers';
 import { useShiftClockCardView, type ShiftClockCardViewProps } from './use-shift-clock-card-view';
 import { ShiftClockCardViewView } from './shift-clock-card-view-view';
 import { ShiftClockCardViewQueued } from './shift-clock-card-view-queued';
@@ -83,10 +84,10 @@ export function ShiftClockCardView({
   openIssueId,
   totals: given,
   noShift,
-  onAskMoreTime, clockOutRequest,
+  clockOutRequest,
 }: ShiftClockCardViewProps) {
   const vm = useShiftClockCardView({
-    shift, style, linkToTime, onSetRealTime, openIssueId, totals: given, noShift, onAskMoreTime, clockOutRequest,
+    shift, style, linkToTime, onSetRealTime, openIssueId, totals: given, noShift, clockOutRequest,
   });
   const {
     user,
@@ -141,6 +142,7 @@ export function ShiftClockCardView({
     correcting itself in front of the member. ⑧ below is the same decision for
     a different reason.
   */
+  const approver = useMyApprovers(!!clockOutAt); // the only read the receipt adds: WHO decides (C7)
   if (shift.source === 'pending') return null;
 
   /*
@@ -181,8 +183,7 @@ export function ShiftClockCardView({
     dotColor,
     caption,
     noShiftLine,
-    askMore,
-  } = ShiftClockCardViewView({ noShift, onAskMoreTime, user, t, c, clockOf, totals, st, clockIn, busy });
+  } = ShiftClockCardViewView({ noShift, user, t, c, clockOf, totals, st, clockIn, busy });
 
   return (
     <>
@@ -200,8 +201,6 @@ export function ShiftClockCardView({
         weekSoFar={weekSoFar}
         working={working}
         onSetRealTime={onSetRealTime}
-        askMore={askMore}
-        onAskMoreTime={onAskMoreTime}
         shift={shift}
       />
 
@@ -244,7 +243,7 @@ export function ShiftClockCardView({
               the server's own answer; the sheet never re-derives a geofence.
             */
             awayMetres: status.activeExcursion?.lastDistanceM ?? null,
-            approver: null,
+            approver,
           }}
         />
       ) : null}

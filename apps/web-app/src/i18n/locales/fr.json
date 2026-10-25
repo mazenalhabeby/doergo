@@ -3095,11 +3095,12 @@
       },
       "askMoreTime": "Demander plus de temps",
       "askMoreTimeSent": "Votre responsable est sollicité. Le temps après la fin compte dès son accord.",
-      "askMoreTimeWaiting": "Plus de temps demandé"
+      "askMoreTimeWaiting": "Plus de temps demandé",
+      "clockedSpan": "pointé {{span}}"
     },
     "management": {
       "title": "Gestion des présences",
-      "subtitle": "Suivez les présences et consultez les rapports"
+      "subtitle": "Qui est pointé, les heures comptées, les pauses et les absences"
     },
     "tabs": {
       "attendance": "Présence",
@@ -3312,10 +3313,10 @@
       "paid": "Comptée comme travail",
       "unpaid": "Non comptée",
       "required": "Obligatoire",
-      "remindEvery": "redemande toutes les {{n}} min",
+      "remindEvery": "redemande toutes les {{duration}}",
       "noReminder": "sans rappel",
-      "afterSummary": "{{mins}} minutes, après {{after}} de poste",
-      "windowSummary": "{{mins}} minutes, entre {{from}} et {{to}}",
+      "afterSummary": "{{duration}}, après {{after}} de poste",
+      "windowSummary": "{{duration}}, entre {{from}} et {{to}}",
       "shiftEnd": "la fin du poste",
       "removed": "Pause supprimée",
       "added": "Pause ajoutée",
@@ -3370,21 +3371,22 @@
       "viaAccountOn": "Suit son compte, qui l’autorise.",
       "viaAccountOff": "Suit son compte, qui ne l’autorise pas.",
       "overrideOn": "Autorisé ici, quoi que dise son compte.",
-      "overrideOff": "Refusé ici, bien que son compte l’autorise."
+      "overrideOff": "Refusé ici, bien que son compte l’autorise.",
+      "overrideOffPlain": "Refusé ici, comme sur leur compte."
     },
     "addOvertime": {
       "action": "Ajouter des heures sup.",
       "title": "Ajouter des heures supplémentaires",
       "titleFor": "Heures supplémentaires · {{name}}",
-      "context": "Fin du service {{end}} · sortie {{out}} ({{minutes}} min plus tard)",
+      "context": "Fin du service {{end}} · sortie {{out}} ({{duration}} plus tard)",
       "minutes": "Minutes après la fin du service",
       "reason": "Motif",
       "reasonPlaceholder": "Enregistré avec l'approbation",
       "countedUntil": "Compté jusqu'à",
       "countedTime": "Temps compté",
       "cappedAtClockOut": "Le temps après la sortie n'est jamais compté.",
-      "approve": "Approuver {{minutes}} min",
-      "success": "{{minutes}} min d'heures supplémentaires ajoutées",
+      "approve": "Approuver {{duration}}",
+      "success": "{{duration}} d'heures supplémentaires ajoutées",
       "error": "Impossible d'ajouter les heures supplémentaires"
     },
     "noShift": {
@@ -3397,7 +3399,6 @@
       "shiftOnly": "Seulement avec un service",
       "shiftOnlyHint": "Les membres sans service aujourd'hui ne peuvent pas pointer ici.",
       "note": "Les membres ayant un service ne sont pas concernés. La limite compte chaque heure travaillée aujourd'hui, dans n'importe quel espace, dans le fuseau horaire de cet espace.",
-      "hours": "{{count}} h",
       "less": "Moins",
       "more": "Plus",
       "saved": "Enregistré",
@@ -3474,6 +3475,12 @@
       "longestHint": "Les heures sans poste de cet espace de travail (réglages de présence). Le téléphone demande alors « Toujours au travail ? ». Les modifier là-bas s’applique à tous immédiatement.",
       "presenceTiming": "Reste {{dwell}} min sur le site avant de pointer, absent {{exit}} min avant de dépointer (réglages du pointage automatique de cet espace).",
       "windowInvalid": "Choisissez deux heures différentes."
+    },
+    "outside": {
+      "waiting": "{{duration}} hors de votre poste le {{day}} attendent {{names}}",
+      "waitingNoName": "{{duration}} hors de votre poste le {{day}} attendent une décision",
+      "andMore_one": "{{names}} et {{count}} autre",
+      "andMore_other": "{{names}} et {{count}} autres"
     }
   },
   "auditLog": {
@@ -8333,7 +8340,22 @@
     "RULE_ESCALATE_ROLE_REQUIRED": "Choisissez à qui transmettre si personne ne répond.",
     "REQUEST_OVERLAPS_LEAVE": "Ce jour tombe dans un congé déjà demandé ou validé.",
     "SELF_DECISION": "Vous ne pouvez pas décider cela pour vous-même. Demandez à un responsable ou à un administrateur.",
-    "DAY_HOURS_SPACE_NOT_YOURS": "Choisissez un espace de travail que vous gérez."
+    "DAY_HOURS_SPACE_NOT_YOURS": "Choisissez un espace de travail que vous gérez.",
+    "LOCATION_REQUIRED": "Choisissez le lieu de travail où vous pointez.",
+    "NOT_ASSIGNED_HERE": "Vous n'êtes pas affecté à ce lieu de travail. Demandez à votre bureau de vous ajouter.",
+    "NOT_ON_THE_CLOCK": "Vous n'avez pas pointé votre arrivée.",
+    "ALREADY_ON_REST": "Vous êtes déjà en pause. Terminez-la d'abord.",
+    "REMOTE_NOT_ALLOWED": "Pointer hors d'un lieu de travail n'est pas autorisé pour votre compte. Demandez à votre bureau.",
+    "ENTRY_ALREADY_DECIDED": "Cette journée a déjà été décidée.",
+    "GPS_ACCURACY_LOW": "Votre position n'est précise qu'à {{distance}} – il faut {{radius}} ou mieux. Patientez un instant et réessayez.",
+    "CLOCK_SWITCH_ADMIN_ONLY": "Seul un administrateur peut désactiver sa propre pointeuse.",
+    "CLOCK_SWITCH_WHILE_CLOCKED_IN": "Pointez d'abord votre départ, puis désactivez la pointeuse.",
+    "EXTRA_TIME_NO_SHIFT": "Il n'y a pas de fin prévue à prolonger – tout ce temps compte déjà.",
+    "ENTRY_STILL_OPEN": "Ce poste est toujours en cours – il pourra être décidé une fois le départ pointé.",
+    "ENTRY_ALREADY_CLOSED": "Ce poste a été clôturé entre-temps – rouvrez-le pour voir l'heure réelle.",
+    "OUTSIDE_ALREADY_DECIDED": "Ce temps a déjà été décidé.",
+    "OUTSIDE_NOTHING": "Il n'y a pas de temps hors du poste à décider.",
+    "FIX_MISSING": "Votre position est nécessaire pour pointer à {{location}}. Autorisez l'accès à la position et réessayez."
   },
   "signLink": {
     "tabs": {
@@ -9678,7 +9700,8 @@
       "planned": "Prévu",
       "clocked": "Pointé",
       "before": "Avant le début",
-      "after": "Après la fin"
+      "after": "Après la fin",
+      "pastEnd": "Travaillé après la fin"
     },
     "cover": {
       "ok": "Assez de personnes restent",

@@ -100,7 +100,9 @@ export function readClockOut(shift: ClockOutShift): ClockOutView {
   const pastEndExact = shift.shiftEndAt ? (now.getTime() - shift.shiftEndAt.getTime()) / 60_000 : 0;
   const overBy = pastEndExact > tolerance ? Math.floor(pastEndExact) : 0;
   const shortBy =
-    overBy === 0 && target && !shift.endIsDailyLimit
+    // Early is judged against the PLANNED END, which every rota shift has (clock review C7) — a weekly target
+    // existed only for a fixed schedule, so most rota workers were never asked why they left early.
+    overBy === 0 && shift.shiftEndAt && !shift.endIsDailyLimit
       ? shortfallMinutes({ clockOutAt: now, expectedEndAt: shift.shiftEndAt, toleranceMin: tolerance })
       : 0;
   const face: ClockOutFace = overBy > 0 ? 'late' : shortBy > 0 ? 'early' : 'onTime';
