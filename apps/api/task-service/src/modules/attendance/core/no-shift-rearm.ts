@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { SHIFT_REMINDER_DEFAULTS, TimeEntryStatus, clampDailyMinutes } from '@hbcfield/shared';
 import type { PrismaService } from '@hbcfield/shared';
 
@@ -13,7 +14,8 @@ import type { PrismaService } from '@hbcfield/shared';
  *    reminder and the overtime question follow it as they follow any end.
  *
  * A session that already ended keeps what it counted: closed rows are never
- * touched.
+ * touched. Nor is the session of a member with their OWN hours there (clock
+ * review D1) — the workspace's hours are not theirs.
  */
 export async function rearmNoShiftSessions(
   prisma: Pick<PrismaService, '$executeRaw'>,
@@ -23,11 +25,15 @@ export async function rearmNoShiftSessions(
   const to = clampDailyMinutes(input.toMinutes);
   if (from === to) return { reminders: 0, limits: 0 };
   const open = TimeEntryStatus.CLOCKED_IN;
+  const notOwnHours = Prisma.sql`AND NOT EXISTS (SELECT 1 FROM "space_assignments" a
+    WHERE a."userId" = "time_entries"."userId" AND a."spaceId" = ${input.spaceId} AND a."workDailyMinutes" IS NOT NULL
+      AND (a."effectiveTo" IS NULL OR a."effectiveTo" >= now()))`;
   const reminders = await prisma.$executeRaw`
     UPDATE "time_entries" SET "nextRemindAt" = "clockInAt" + make_interval(mins => ${to}::int), "updatedAt" = now()
     WHERE "locationId" = ${input.spaceId} AND "organizationId" = ${input.organizationId}
       AND "status" = ${open}::"TimeEntryStatus" AND "expectedClockOutAt" IS NULL
-      AND "reminderCount" = 0 AND "nextRemindAt" IS NOT NULL`;
+      AND "reminderCount" = 0 AND "nextRemindAt" IS NOT NULL
+      ${notOwnHours}`;
   const delta = to - from;
   const grace = SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
   const limits = await prisma.$executeRaw`
@@ -38,7 +44,8 @@ export async function rearmNoShiftSessions(
           ELSE "nextRemindAt" END,
         "updatedAt" = now()
     WHERE "locationId" = ${input.spaceId} AND "organizationId" = ${input.organizationId}
-      AND "status" = ${open}::"TimeEntryStatus" AND "endIsDailyLimit" = true`;
+      AND "status" = ${open}::"TimeEntryStatus" AND "endIsDailyLimit" = true
+      ${notOwnHours}`;
   return { reminders, limits };
 }
 

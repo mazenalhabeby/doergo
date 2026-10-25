@@ -55,6 +55,7 @@ describe('heartbeatBatch', () => {
     svc.logger = { debug: jest.fn(), log: jest.fn(), warn: jest.fn() };
     svc.presence = { onBatch: jest.fn().mockResolvedValue(undefined), onPosition: jest.fn().mockResolvedValue(undefined) };
     svc.prisma = {
+      spaceAssignment: { findFirst: jest.fn().mockResolvedValue(null) },
       timeEntry: {
         findFirst: jest.fn().mockResolvedValue({
           id: 'e1', userId: 'u1', organizationId: 'org-1', locationId: 'loc-1', isRemote: false,

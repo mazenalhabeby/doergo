@@ -6,7 +6,9 @@ import {
   siteEnforcesZone,
   parseGeofencePolygon,
   GEOFENCE_EXCURSION,
+  ringSwitchedOff,
 } from '@hbcfield/shared';
+import { memberSiteRules } from '../core/member-site-rules';
 import { ATTENDANCE_LOCATION_SELECT } from '../core/attendance-selects';
 import { PrismaService } from '@hbcfield/shared';
 import { ExcursionNotices } from './excursion-notices.service';
@@ -107,7 +109,14 @@ export class HeartbeatService {
       geofenceRadius: entry.location.geofenceRadius,
       geofencePolygon: parseGeofencePolygon(entry.location.geofencePolygon),
     };
-    const hasRing = !entry.isRemote && siteEnforcesZone(sweepZone);
+    // A ring switched off — the workspace's, or this member's own "in the field" (clock review D1) — opens no
+    // excursion. The member's rules are asked only when there is a ring to switch off.
+    const hasRing =
+      !entry.isRemote &&
+      siteEnforcesZone(sweepZone) &&
+      !ringSwitchedOff(
+        (await memberSiteRules(this.prisma, entry.userId, entry.locationId, entry.location)).geofencePolicy,
+      );
 
     /*
       Where they are working now. Asked of the area whether or not the day is

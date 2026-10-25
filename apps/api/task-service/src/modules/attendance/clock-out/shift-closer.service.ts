@@ -24,6 +24,7 @@ import {
  * (the clock-out, a close by decision, the sweeps).
  */
 import { AttendanceRoutingService } from '../core/attendance-routing.service';
+import { memberSiteRules } from '../core/member-site-rules';
 @Injectable()
 export class ShiftCloser {
   private readonly logger = new Logger(ShiftCloser.name);
@@ -58,7 +59,10 @@ export class ShiftCloser {
       expectedClockOutAt: entry.endIsDailyLimit ? null : entry.expectedClockOutAt, // a marker is not an end (B5)
       leftSiteAt: entry.geofenceExcursions[0]?.leftRingAt ?? null,
       lastSeenOnSiteAt: evidence.lastSeenOnSiteAt ?? null,
-      fallbackMinutes: entry.location?.noShiftDailyMinutes,
+      // The member's own hours a day there when set (clock review D1), else the workspace's.
+      fallbackMinutes: entry.location
+        ? (await memberSiteRules(this.prisma, entry.userId, entry.locationId, entry.location)).noShiftDailyMinutes
+        : null,
       now,
     });
 
@@ -178,8 +182,7 @@ export class ShiftCloser {
           breakMinutes: rests.breakMinutes,
           unpaidBreakMinutes: rests.unpaidBreakMinutes,
           ...counted,
-          // Close out any reminder lifecycle so a completed entry never lingers
-          // in a reminder state and the sweeps' index keys are cleared.
+          // Close out any reminder lifecycle: a completed entry never lingers in one; the sweeps' keys are cleared.
           reminderState: 'RESOLVED',
           nextRemindAt: null,
           nextBreakRemindAt: null,
@@ -245,18 +248,14 @@ export class ShiftCloser {
   }
 
   /**
-   * The per-shift flag tolerance (minutes) for LATE/EARLY/OVERTIME, or the
-   * default when the entry has no bound shift. Used at clock-out (clock-in gets
-   * it straight from the resolver).
+   * The per-shift flag tolerance (minutes) for LATE/EARLY/OVERTIME, or the default when the entry has no bound
+   * shift. Used at clock-out (clock-in gets it straight from the resolver).
    */
   getShiftFlagTolerance(shiftId?: string | null): Promise<number> {
     return this.countedTime.toleranceFor(shiftId ?? null);
   }
 
-  /**
-   * Notify managers/admins that a time entry now needs approval (push + bell).
-   * Fired when an entry transitions to approvalStatus = PENDING.
-   */
+  /** Notify managers/admins that a time entry now needs approval (push + bell) — when it becomes PENDING. */
   async sendPendingApprovalAlert(data: {
     entryId: string;
     userId: string;

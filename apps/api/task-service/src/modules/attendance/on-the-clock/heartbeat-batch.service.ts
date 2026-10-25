@@ -7,7 +7,9 @@ import {
   siteEnforcesZone,
   parseGeofencePolygon,
   GEOFENCE_EXCURSION,
+  ringSwitchedOff,
 } from '@hbcfield/shared';
+import { memberSiteRules } from '../core/member-site-rules';
 import { ATTENDANCE_LOCATION_SELECT } from '../core/attendance-selects';
 import { PrismaService } from '@hbcfield/shared';
 import { ExcursionNotices } from './excursion-notices.service';
@@ -82,6 +84,9 @@ export class HeartbeatBatchService {
     if (entry.isRemote) return success({ recorded: 0, opened: false, returned: false });
 
     if (!siteEnforcesZone(zone)) return success({ recorded: 0, opened: false, returned: false });
+    // No ring for them here (the workspace's, or their own "in the field" — clock review D1): nothing to replay.
+    const rules = await memberSiteRules(this.prisma, entry.userId, entry.locationId, entry.location);
+    if (ringSwitchedOff(rules.geofencePolicy)) return success({ recorded: 0, opened: false, returned: false });
 
     const now = new Date();
     // Only this shift's points, none from the future, in the order they were taken.

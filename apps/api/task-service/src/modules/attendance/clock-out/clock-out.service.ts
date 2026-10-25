@@ -9,6 +9,7 @@ import {
   autoClockOutAfterEnd,
   clocksByPresence,
 } from '@hbcfield/shared';
+import { memberSiteRules } from '../core/member-site-rules';
 import { flagsWithMissedRest, moreTimeRefusal, parseBreakPlan } from '@hbcfield/shared';
 import { fixOfTap, judgeOccurrence } from '../../../common/occurrence.util';
 import { approvalFor } from '../core/attendance-occurrence';
@@ -75,7 +76,11 @@ export class ClockOutService {
       data.accuracy = tapFix.accuracy;
     }
 
-    const { hasDeviceCoords, geofenceEvaluable, distance, withinGeofence } = geofenceAtOut(entry.location, data);
+    const { hasDeviceCoords, geofenceEvaluable, distance, withinGeofence } = geofenceAtOut(
+      // The site as THIS member clocks there — their own "in the field" judges no ring (clock review D1).
+      await memberSiteRules(this.prisma, entry.userId, entry.locationId, entry.location),
+      data,
+    );
     /*
       Clocking out from outside the ring is a violation — unless the whole day
       was worked away from the site, where it is the expected place to be.

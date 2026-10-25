@@ -276,6 +276,7 @@ export class ClockInService {
         dayRequests,
         orgTz,
         withinGeofence,
+        insideSite: at.inside,
         remoteApproved,
         zone,
       },

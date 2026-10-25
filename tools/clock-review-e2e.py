@@ -180,8 +180,17 @@ def main():
             # An open entry is refused — as still open, or (where the workspace approves on its own) as already decided.
             check('B9 an open entry cannot be approved', s >= 400 and code(b) in ('ENTRY_STILL_OPEN', 'ENTRY_ALREADY_DECIDED'),
                   (s, b))
+            s, b = call('POST', '/attendance/heartbeat', mike, FAR)
+            hb = data(b) or {}
+            check('D1 his heartbeat from far away is in his (switched-off) ring — no excursion',
+                  s in (200, 201) and hb.get('inRing') is True and not hb.get('activeExcursion'), (s, hb))
             s, b = call('POST', '/attendance/clock-out', mike, {**FAR, 'entryId': made})
             check('D1 he clocks out from where the work was', s in (200, 201), (s, b))
+            hist = data(call('GET', '/attendance/history?limit=10', mike)[1]) or {}
+            rows_h = hist.get('entries', hist) if isinstance(hist, dict) else hist
+            done = next((r for r in rows_h or [] if isinstance(r, dict) and r.get('id') == made), {})
+            check('D1 and the clock-out is not flagged as outside the site',
+                  'OUTSIDE_GEOFENCE_OUT' not in (done.get('flagReasons') or []), done.get('flagReasons'))
     finally:
         if made:
             open_now = open_entry(mike)

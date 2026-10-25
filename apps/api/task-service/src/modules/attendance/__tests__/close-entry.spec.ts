@@ -32,6 +32,7 @@ const openEntry = (over: Record<string, unknown> = {}) => ({
 
 function build(entry: any) {
   const prisma: any = {
+    spaceAssignment: { findFirst: jest.fn().mockResolvedValue(null) },
     timeEntry: {
       findFirst: jest.fn().mockResolvedValue(entry),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),

@@ -608,6 +608,7 @@ describe('still clocked in after the end — the workspace’s own thresholds', 
         update: jest.fn(),
       },
       spaceAssignment: {
+        findFirst: jest.fn().mockResolvedValue(null), // no own rules there (D1)
         findMany: jest
           .fn()
           .mockResolvedValue([

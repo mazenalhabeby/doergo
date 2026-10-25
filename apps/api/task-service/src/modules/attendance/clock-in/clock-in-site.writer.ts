@@ -44,6 +44,7 @@ export interface OnSiteClockIn {
   dayRequests: DayRequestRow[];
   orgTz: string;
   withinGeofence: boolean;
+  insideSite: boolean; // physically inside the area — a ring switched off admits them without placing them
   remoteApproved: boolean;
   zone: {
     lat: number | null;
@@ -231,7 +232,7 @@ export class ClockInSiteWriter {
       userId: data.userId,
       organizationId: data.organizationId,
       point: fixOf(data),
-      insideArea: siteEnforcesZone(ctx.zone) && withinGeofence,
+      insideArea: siteEnforcesZone(ctx.zone) && ctx.insideSite,
       at: clockInTime,
       timezone: workerTz ?? location.timezone ?? orgTz,
       recordedOffline: flagReasons.includes('RECORDED_OFFLINE'),
