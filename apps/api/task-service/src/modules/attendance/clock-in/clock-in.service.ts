@@ -14,6 +14,7 @@ import {
   parseGeofencePolygon,
   activeAssignmentWhere,
   resolveAwayAccess,
+  ringSwitchedOff,
   mayClockInRemotely as canClockInRemotely,
   personForClockIn,
 } from '@hbcfield/shared';
@@ -214,7 +215,8 @@ export class ClockInService {
     };
     const at = isAtSite({ lat: data.lat, lng: data.lng, accuracy: data.accuracy }, zone);
     const distance = at.distanceToCentre ?? 0;
-    const withinGeofence = at.inside;
+    // A workspace with its ring switched off has nobody "outside" it — never an away day, never review (B6).
+    const withinGeofence = at.inside || ringSwitchedOff(location.geofencePolicy);
 
     /*
       Outside the ring — which is a question for the workspace and the person,

@@ -5,9 +5,10 @@ import { PrismaService, personNameOf } from '@hbcfield/shared';
 import { JobPauseService } from '../../tasks/handover/job-pause.service';
 import { NotificationRoutingService } from '../../notification-routing/notification-routing.service';
 import { personName, zoneOf, TimeEntryStatus, SERVICE_NAMES, AUTO_REST_FLAG } from '@hbcfield/shared';
+import { SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN as DEFAULT_TOLERANCE } from '@hbcfield/shared';
 import { clockEventEntry } from '../core/clock-event';
 import { CountedTimeService } from '../core/counted-time.service';
-import { MISSED_REST_FLAG, flagsWithMissedRest, parseBreakPlan } from '@hbcfield/shared';
+import { MISSED_REST_FLAG, flagsWithMissedRest, judgedByLabelRules, parseBreakPlan } from '@hbcfield/shared';
 import { approvalFor } from '../core/attendance-occurrence';
 import { AutoClockService } from '../auto-clock/auto-clock.service';
 import { ClosableEntry, CloseSpec, CLOSED_ROW_INCLUDE, ClosedRow, closingLabelColumns } from './clock-out-helpers';
@@ -44,6 +45,7 @@ export class ShiftCloser {
   async closeProvisionally(
     entry: ClosableEntry & {
       expectedClockOutAt: Date | null;
+      endIsDailyLimit?: boolean | null;
       timezone?: string | null;
       geofenceExcursions: { id: string; leftRingAt: Date }[];
       location?: { name: string; noShiftDailyMinutes?: number | null } | null;
@@ -53,7 +55,7 @@ export class ShiftCloser {
   ): Promise<boolean> {
     const { at, basis } = provisionalClockOut({
       clockInAt: entry.clockInAt,
-      expectedClockOutAt: entry.expectedClockOutAt,
+      expectedClockOutAt: entry.endIsDailyLimit ? null : entry.expectedClockOutAt, // a marker is not an end (B5)
       leftSiteAt: entry.geofenceExcursions[0]?.leftRingAt ?? null,
       lastSeenOnSiteAt: evidence.lastSeenOnSiteAt ?? null,
       fallbackMinutes: entry.location?.noShiftDailyMinutes,
@@ -140,14 +142,13 @@ export class ShiftCloser {
       spec.toleranceMin,
     );
     const excursionIds = (entry.geofenceExcursions ?? []).map((x) => x.id);
-    /*
-      A required rest that fell due and was never taken is MISSED at the close
-      (break-plan.ts). Asked here so every closer flags it the same way — it
-      flags for review and never deducts. The clock-out has already asked, for
-      its own approval and alert; asking again is a no-op (deduplicated).
-    */
+    // A required rest due and not taken — or too short, on a new entry (B7) — is MISSED at the close: flagged,
+    // never deducted, the same for every closer (asking again is a no-op).
     const baseFlags = ((spec.fields.flagReasons as string[] | undefined) ?? entry.flagReasons ?? []) as string[];
-    let closeFlags = flagsWithMissedRest(baseFlags, parseBreakPlan(entry.breakPlan), at);
+    const taken = judgedByLabelRules(entry)
+      ? { minutes: rests.breakMinutes, toleranceMin: spec.toleranceMin ?? DEFAULT_TOLERANCE }
+      : undefined;
+    let closeFlags = flagsWithMissedRest(baseFlags, parseBreakPlan(entry.breakPlan), at, taken);
     let flagsChanged = closeFlags.length !== baseFlags.length;
     let closeApproval: 'AUTO' | 'PENDING' = 'PENDING';
     if (autoRest || baseFlags.includes(AUTO_REST_FLAG)) {

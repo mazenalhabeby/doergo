@@ -231,7 +231,7 @@ describe('the shift the sweep closed', () => {
   function handler(rows: Row[]) {
     const s = setup(rows);
     const push = { sendAttendanceResolvedPush: jest.fn() };
-    const ws = { emitToUser: jest.fn(), emitToOrganization: jest.fn() };
+    const ws = { emitToUser: jest.fn(), emitToOrganization: jest.fn(), emitAttendance: jest.fn() };
     const store = { record: jest.fn() };
     const h = new AttendanceNotificationHandler(s.service, push as any, ws as any, store as any);
     return { ...s, h, push };

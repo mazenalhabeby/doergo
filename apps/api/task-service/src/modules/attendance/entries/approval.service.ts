@@ -118,6 +118,7 @@ export class ApprovalService {
     if (entry.approvalStatus !== 'PENDING') {
       throw new BadRequestException(`Entry is already ${entry.approvalStatus.toLowerCase()}`);
     }
+    assertClosedForDecision(entry);
 
     const updated = await this.prisma.timeEntry.update({
       where: { id: data.entryId },
@@ -187,6 +188,7 @@ export class ApprovalService {
     if (entry.approvalStatus !== 'PENDING') {
       throw new BadRequestException(`Entry is already ${entry.approvalStatus.toLowerCase()}`);
     }
+    assertClosedForDecision(entry);
 
     const updated = await this.prisma.timeEntry.update({
       where: { id: data.entryId },
@@ -259,5 +261,18 @@ export class ApprovalService {
     } catch (err) {
       this.logger.warn(`day-decided push skipped: ${err}`);
     }
+  }
+}
+
+/**
+ * A day is decided once the shift is over (clock review B9): the list shows only finished shifts, and a decision
+ * taken while it ran was rewritten by the clock-out from the labels — a manager's "approved" undone silently.
+ */
+function assertClosedForDecision(entry: { status: string }): void {
+  if (entry.status === 'CLOCKED_IN') {
+    throw new BadRequestException({
+      code: 'ENTRY_STILL_OPEN',
+      message: 'This shift is still running — it can be decided once it is clocked out.',
+    });
   }
 }

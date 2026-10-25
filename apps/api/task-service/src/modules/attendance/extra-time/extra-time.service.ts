@@ -1,12 +1,13 @@
 import { standInGrant } from '../../approvals/stand-in';
-import { moreTimeRefusal, personName, zoneOf } from '@hbcfield/shared';
+import { EXTRA_TIME_ANSWER_WAIT_MIN, moreTimeRefusal, personName, zoneOf } from '@hbcfield/shared';
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, success, TimeEntryStatus } from '@hbcfield/shared';
 import { endOfLocalDay } from '@hbcfield/shared';
 import { ExtraTimeDecision, decidableExtraTimeWhere, respondedAt } from './extra-time-helpers';
 import { AttendanceRoutingService } from '../core/attendance-routing.service';
-import { askAboutOwnRequest, type OwnRequestAsk } from '../../approvals/own-request-route';
+import { type OwnRequestAsk } from '../../approvals/own-request-route';
+import { askAboutExtraTime } from './extra-time-ask';
 import { ExtraTimeApprovalService } from './extra-time-approval.service';
 import { emitEvent, attendanceOvertimeRequestEvent } from '@hbcfield/shared/microservices';
 
@@ -35,14 +36,7 @@ export class ExtraTimeService {
    * approved automatically) over the usual workspace routing.
    */
   async askFor(entry: { locationId: string; organizationId: string; userId: string }): Promise<OwnRequestAsk> {
-    const usual = await this.routing.notifyTargetsFor(entry, 'extraTime');
-    return askAboutOwnRequest(this.prisma, {
-      organizationId: entry.organizationId,
-      subjectId: entry.userId,
-      kind: 'extraTime',
-      spaceIds: entry.locationId ? [entry.locationId] : [],
-      usual,
-    });
+    return askAboutExtraTime(this.prisma, this.routing, entry);
   }
 
   /** Leader approves N more minutes of work → extends the expected end + re-arms reminders. */
@@ -99,7 +93,11 @@ export class ExtraTimeService {
     const created = await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.timeEntry.updateMany({
         where: { id: entry.id, reminderState: { not: 'OVERTIME_PENDING' } },
-        data: { reminderState: 'OVERTIME_PENDING', nextRemindAt: null },
+        // Its deciders are asked once more if nobody answers (B10) — the worker is not nudged meanwhile.
+        data: {
+          reminderState: 'OVERTIME_PENDING',
+          nextRemindAt: new Date(Date.now() + EXTRA_TIME_ANSWER_WAIT_MIN * 60_000),
+        },
       });
       if (!claimed.count) return null;
       const previous = await tx.overtimeRequest.findFirst({

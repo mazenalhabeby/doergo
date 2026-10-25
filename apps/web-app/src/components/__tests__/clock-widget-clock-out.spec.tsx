@@ -21,8 +21,13 @@ const state = {
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string, d?: unknown) => (typeof d === "string" ? d : key) }),
 }))
-jest.mock("@/contexts/auth-context", () => ({ useAuth: () => ({ user: { id: "u-1", role: "EMPLOYEE" } }) }))
-jest.mock("@hbcfield/shared/client", () => ({ hasAccessModule: () => true }))
+jest.mock("@/contexts/auth-context", () => ({
+  useAuth: () => ({ user: { id: "u-1", role: "EMPLOYEE" }, hasPlanFeature: () => true }),
+}))
+jest.mock("@hbcfield/shared/client", () => ({
+  ...jest.requireActual("@hbcfield/shared/client"),
+  hasAccessModule: () => true,
+}))
 jest.mock("@/components/attendance/clock-in-picker", () => ({ ClockInPicker: () => null }))
 jest.mock("@/components/attendance/clock-out-early-dialog", () => ({
   ClockOutEarlyDialog: (p: { open: boolean }) => (p.open ? <div data-testid="early-dialog" /> : null),

@@ -24,6 +24,6 @@ import { ShiftCloser } from './shift-closer.service';
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
   providers: [ShiftCloser, ClockOutService, ClockOutAlertsService, DecidedCloseService, ShiftCloseSweepService],
-  exports: [ClockOutService, ClockOutAlertsService, DecidedCloseService, ShiftCloseSweepService],
+  exports: [ShiftCloser, ClockOutService, ClockOutAlertsService, DecidedCloseService, ShiftCloseSweepService],
 })
 export class ClockOutModule {}

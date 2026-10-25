@@ -670,7 +670,8 @@ describe('AttendanceService', () => {
         expect(claim.where).toEqual({ id: 'entry-123', reminderState: { not: 'OVERTIME_PENDING' } });
         const data = claim.data;
         expect(data.reminderState).toBe('OVERTIME_PENDING');
-        expect(data.nextRemindAt).toBeNull();
+        // Not the worker's reminders: the deciders are asked once more if nobody answers (B10).
+        expect(data.nextRemindAt.getTime()).toBeGreaterThan(Date.now() + 25 * 60_000);
         expect(mockNotificationClient.emit).toHaveBeenCalledWith(
           'attendance_overtime_request',
           expect.objectContaining({ leaderIds: ['leader-1'] }),
@@ -1110,9 +1111,24 @@ describe('AttendanceService', () => {
   });
 
   describe('bulkApprove', () => {
+    it('refuses to decide a shift that is still running (B9)', async () => {
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue({
+        ...mockTimeEntry,
+        approvalStatus: ApprovalStatus.PENDING,
+      });
+      const result = (await approvalService.bulkApprove({
+        entryIds: ['entry-1'],
+        approverId: 'admin-123',
+        organizationId: 'org-123',
+      })) as any;
+      expect(result.data.approved).toHaveLength(0);
+      expect(result.data.failed[0].reason).toMatch(/still running/);
+    });
+
     it('should approve multiple entries', async () => {
       const pendingEntry = {
         ...mockTimeEntry,
+        status: TimeEntryStatus.CLOCKED_OUT,
         approvalStatus: ApprovalStatus.PENDING,
       };
 
@@ -1136,6 +1152,7 @@ describe('AttendanceService', () => {
       mockPrismaService.timeEntry.findFirst
         .mockResolvedValueOnce({
           ...mockTimeEntry,
+          status: TimeEntryStatus.CLOCKED_OUT,
           approvalStatus: ApprovalStatus.PENDING,
         })
         .mockResolvedValueOnce(null) // Not found

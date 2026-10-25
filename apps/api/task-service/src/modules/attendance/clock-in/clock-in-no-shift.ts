@@ -41,8 +41,12 @@ export async function applyNoShiftAllowance(
   if (allowance.kind !== 'free' && agreed > 0) shapingRequests = dayRequests.filter((r) => r.kind !== 'OVERTIME');
   // Only a workspace that needs a shift refuses. No hours left is KEPT and flagged for the leader:
   // nothing is cut any more (docs/plans/time-counting-model.md), exactly as an offline clock-in always was.
-  if (allowance.kind === 'refused' && allowance.reason === 'SHIFT_ONLY' && !flagReasons.includes('RECORDED_OFFLINE')) {
-    throw noShiftRefusal(allowance, location.name);
+  if (allowance.kind === 'refused' && allowance.reason === 'SHIFT_ONLY') {
+    if (!flagReasons.includes('RECORDED_OFFLINE')) throw noShiftRefusal(allowance, location.name);
+    // Recorded offline (the phone could not ask): kept, as a day without a shift for the leader — never the
+    // daily-hours marker, which this workspace does not have (clock review B4).
+    if (!flagReasons.includes('UNSCHEDULED_DAY')) flagReasons.push('UNSCHEDULED_DAY');
+    return { endIsDailyLimit, shapingRequests };
   }
   if (allowance.kind !== 'free') {
     const end = allowance.kind === 'limited' ? allowance.until : clockInTime;

@@ -12,6 +12,12 @@ export interface MoreTimeEntry {
   reminderState?: string | null;
 }
 
+/**
+ * How long a request for more time waits before its deciders are asked AGAIN, once (clock review B10). It used to
+ * stop every reminder and wait silently until the shift was closed, 12 hours later.
+ */
+export const EXTRA_TIME_ANSWER_WAIT_MIN = 30;
+
 /** Why the server refuses a request for more time, or null when it may be asked. */
 export function moreTimeRefusal(entry: MoreTimeEntry): 'EXTRA_TIME_NO_SHIFT' | null {
   return !entry.expectedClockOutAt || entry.endIsDailyLimit === true ? 'EXTRA_TIME_NO_SHIFT' : null;

@@ -1,6 +1,8 @@
 import { ConflictException } from '@nestjs/common';
 import {
   isAtSite,
+  OCCURRENCE_RULES,
+  ringSwitchedOff,
   judgePosition,
   parseGeofencePolygon,
   success,
@@ -86,6 +88,7 @@ interface SiteFacts {
   lng: number | null;
   geofenceRadius: number;
   geofencePolygon: unknown;
+  geofencePolicy?: string | null;
 }
 
 /** Where the clock-out was made, judged against the site. */
@@ -96,7 +99,11 @@ export function geofenceAtOut(site: SiteFacts, fix: { lat?: number; lng?: number
   // huge distance → bogus OUTSIDE_GEOFENCE_OUT flag. (Sec audit H13.)
   const hasDeviceCoords = fix.lat != null && fix.lng != null;
   const hasLocationCoords = site.lat != null && site.lng != null;
-  const geofenceEvaluable = hasDeviceCoords && hasLocationCoords;
+  // The same accuracy as the clock-in (review B6): the fix's accuracy widens the ring, so a 2 km fix used to
+  // read "inside". Past it the position is NOT JUDGED — never "on site". A ring switched off judges nothing.
+  const preciseEnough = fix.accuracy == null || fix.accuracy <= OCCURRENCE_RULES.FIX_MAX_ACCURACY_M;
+  const geofenceEvaluable =
+    hasDeviceCoords && hasLocationCoords && preciseEnough && !ringSwitchedOff(site.geofencePolicy);
 
   // Same helper as clock-in, so a boundary drawn for the site is honoured at
   // both ends of the shift. Non-evaluable → treated as within (no flag).
@@ -134,7 +141,12 @@ export function priorClockOutFlags(flagReasons: string[] | null | undefined, rep
  * every other thing somebody wrote about that day.
  */
 export function notesWithEarlyReason(notes: string | undefined, earlyReason: string): string | undefined {
-  return earlyReason ? [notes, `Left early: ${earlyReason}`].filter(Boolean).join(' · ') : notes;
+  return earlyReason ? appendNote(notes, `Left early: ${earlyReason}`) : notes;
+}
+
+/** One more thing said about the shift, after what is already there — never instead of it. */
+export function appendNote(notes: string | null | undefined, addition: string): string {
+  return [notes, addition].filter(Boolean).join(' · ');
 }
 
 /**

@@ -19,6 +19,8 @@ import { CountedTimeService } from '../core/counted-time.service';
 import { ShiftRematchService } from '../shifts/shift-rematch.service';
 import { EntryChangeLog } from './entry-change-log';
 import { shiftExpectation } from './shift-expectation';
+import { closeByOffice } from './office-close';
+import { ShiftCloser } from '../clock-out/shift-closer.service';
 import type { Prisma } from '@prisma/client';
 
 /** The office correcting one entry: times, rests, the reason — audited. */
@@ -35,6 +37,8 @@ export class EntryEditService {
     @Optional() private readonly rematch?: ShiftRematchService,
     // A manager closing an open shift ends it like any clock-out: jobs left in work pause.
     @Optional() private readonly jobPause?: JobPauseService,
+    // …through the one close (B9). Absent only in narrow unit tests: then the direct write, as before.
+    @Optional() private readonly closer?: ShiftCloser,
   ) {}
   /**
    * Edit a time entry (manager correction)
@@ -257,21 +261,34 @@ export class EntryEditService {
       location: { select: { name: true, timezone: true } },
       editedBy: { select: { id: true, firstName: true, lastName: true } },
     } as const;
-    // One transaction when rests end with it: the entry and its rests move
-    // together, or a crash between them leaves a closed shift with a rest running.
-    const updated = endedBreaks.length
-      ? await this.prisma.$transaction(async (tx) => {
-          for (const b of endedBreaks) {
-            await tx.break.update({
-              where: { id: b.id },
-              data: { endedAt: b.endedAt, durationMinutes: b.durationMinutes },
-            });
-          }
-          return tx.timeEntry.update({ where: { id: data.entryId }, data: updateData, include });
-        })
-      : await this.prisma.timeEntry.update({ where: { id: data.entryId }, data: updateData, include });
+    // An office close goes through THE close (B9); otherwise one transaction when rests end with it: the entry
+    // and its rests move together, or a crash between them leaves a closed shift with a rest running.
+    const viaCloser = closingOpen && !!this.closer;
+    const updated = viaCloser
+      ? await closeByOffice(
+          this.closer!,
+          this.prisma,
+          { ...entry, clockInAt: newClockIn, flagReasons: flags },
+          updateData,
+          {
+            at: newClockOut!,
+            toleranceMin,
+            include,
+          },
+        )
+      : endedBreaks.length
+        ? await this.prisma.$transaction(async (tx) => {
+            for (const b of endedBreaks) {
+              await tx.break.update({
+                where: { id: b.id },
+                data: { endedAt: b.endedAt, durationMinutes: b.durationMinutes },
+              });
+            }
+            return tx.timeEntry.update({ where: { id: data.entryId }, data: updateData, include });
+          })
+        : await this.prisma.timeEntry.update({ where: { id: data.entryId }, data: updateData, include });
 
-    if (entry.status === 'CLOCKED_IN' && updated.status === 'CLOCKED_OUT' && updated.clockOutAt) {
+    if (!viaCloser && entry.status === 'CLOCKED_IN' && updated.status === 'CLOCKED_OUT' && updated.clockOutAt) {
       await this.jobPause?.pauseAtClockOut({
         userId: updated.userId,
         organizationId: data.organizationId,

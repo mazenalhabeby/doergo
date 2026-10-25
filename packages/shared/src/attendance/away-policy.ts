@@ -83,9 +83,7 @@ export interface AwayAccess {
 }
 
 export function resolveAwayAccess(input: AwayAccessInput): AwayAccess {
-  const policy: GeofencePolicy = isGeofencePolicy(input.policy)
-    ? input.policy
-    : DEFAULT_GEOFENCE_POLICY;
+  const policy: GeofencePolicy = isGeofencePolicy(input.policy) ? input.policy : DEFAULT_GEOFENCE_POLICY;
 
   // Nothing to be away FROM. A pin-less workspace never geofenced anybody, and a
   // workspace whose policy switches the ring off has chosen the same thing.
@@ -101,11 +99,14 @@ export function resolveAwayAccess(input: AwayAccessInput): AwayAccess {
   // …then the grant. The assignment overrides the account only when it says
   // something; otherwise the account answers.
   const granted =
-    input.assignmentAllowRemote != null
-      ? input.assignmentAllowRemote
-      : !!input.userAllowRemote || !!input.isAdmin;
+    input.assignmentAllowRemote != null ? input.assignmentAllowRemote : !!input.userAllowRemote || !!input.isAdmin;
 
   return granted ? { allowed: true, reason: 'GRANTED' } : { allowed: false, reason: 'NOT_GRANTED' };
+}
+
+/** A workspace whose ring is switched off: nobody is ever "outside" it, at clock-in or clock-out (review B6). */
+export function ringSwitchedOff(policy?: string | null): boolean {
+  return policy === 'NONE';
 }
 
 /**

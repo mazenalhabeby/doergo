@@ -13,6 +13,7 @@ import {
   judgedByLabelRules,
 } from '@hbcfield/shared';
 import { AttendanceRoutingService, type DeciderCache } from '../core/attendance-routing.service';
+import { remindUnansweredExtraTime } from '../extra-time/extra-time-ask';
 import { AutoClockService } from '../auto-clock/auto-clock.service';
 import { shiftNudgeCadence } from '../core/shift-sweep-helpers';
 import {
@@ -86,7 +87,13 @@ export class ShiftReminderSweepService {
     */
     const autoByEntry = this.autoClock ? await this.autoClock.settingsForEntries(dueEntries, now) : new Map();
     const rearm: { id: string; at: Date }[] = [];
+    const unanswered: Due[] = [];
     for (const entry of dueEntries) {
+      // A request for more time nobody answered: its deciders are asked once more (B10), the worker is not nudged.
+      if (entry.reminderState === 'OVERTIME_PENDING') {
+        unanswered.push(entry);
+        continue;
+      }
       const auto = autoByEntry.get(entry.id);
       // Clocked by arriving and leaving with no shift: its course is the workspace's hours, read now.
       const plannedEnd =
@@ -188,6 +195,9 @@ export class ShiftReminderSweepService {
         this.logger.warn(`Shift escalation: entry=${entry.id}, user=${userName}, leaders=[${leaderIds.join(',')}]`);
       });
     }
+
+    const deps = { prisma: this.prisma, routing: this.routing, notificationClient: this.notificationClient };
+    for (const entry of unanswered) tasks.push(() => remindUnansweredExtraTime(deps, entry));
 
     // Flush with bounded concurrency so a big burst can't monopolize the pooled
     // DB connections and starve live clock-in/out requests.

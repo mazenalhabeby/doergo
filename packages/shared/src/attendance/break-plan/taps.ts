@@ -98,9 +98,7 @@ export function markTaken(
 /** The window closed, or the shift ended, without it being taken. */
 export function markMissed(plan: BreakPlanItem[], ruleId: string): BreakPlanItem[] {
   return plan.map((i) =>
-    i.ruleId === ruleId && (i.state === 'PENDING' || i.state === 'SNOOZED')
-      ? { ...i, state: 'MISSED' as const }
-      : i,
+    i.ruleId === ruleId && (i.state === 'PENDING' || i.state === 'SNOOZED') ? { ...i, state: 'MISSED' as const } : i,
   );
 }
 
@@ -147,10 +145,31 @@ export function flagsWithMissedRest(
   flags: readonly string[] | null | undefined,
   plan: BreakPlanItem[],
   closedAt?: Date | null,
+  /** What was really taken, for a NEW entry (label rules) — a rest too short counts as missed (B7). */
+  taken?: { minutes: number; toleranceMin: number },
 ): string[] {
   const list = [...(flags ?? [])];
-  if (list.includes(MISSED_REST_FLAG) || requiredRestsMissed(plan, closedAt).length === 0) return list;
+  if (list.includes(MISSED_REST_FLAG)) return list;
+  const short = !!taken && requiredRestShort(plan, closedAt, taken.minutes, taken.toleranceMin);
+  if (requiredRestsMissed(plan, closedAt).length === 0 && !short) return list;
   return [...list, MISSED_REST_FLAG];
+}
+
+/**
+ * Were the required rests due by the close really TAKEN, in minutes (clock review B7)? A planned rest is marked
+ * taken when it STARTS, so a one-minute "lunch" used to satisfy a required thirty. Short beyond the shift's
+ * tolerance → missed: flagged for a person, never deducted. The office adding the rest clears it again.
+ */
+export function requiredRestShort(
+  plan: BreakPlanItem[],
+  closedAt: Date | null | undefined,
+  takenMinutes: number,
+  toleranceMin = 0,
+): boolean {
+  if (!closedAt) return false;
+  const due = plan.filter((i) => i.required && i.state !== 'MISSED' && new Date(i.dueAt) <= closedAt);
+  const required = due.reduce((sum, i) => sum + (i.durationMinutes ?? 0), 0);
+  return required > 0 && takenMinutes + toleranceMin < required;
 }
 
 /** Safe read of whatever the JSON column holds — a bad shape is no plan. */
@@ -158,6 +177,9 @@ export function parseBreakPlan(raw: unknown): BreakPlanItem[] {
   if (!Array.isArray(raw)) return [];
   return raw.filter(
     (i): i is BreakPlanItem =>
-      !!i && typeof i === 'object' && typeof (i as BreakPlanItem).ruleId === 'string' && typeof (i as BreakPlanItem).dueAt === 'string',
+      !!i &&
+      typeof i === 'object' &&
+      typeof (i as BreakPlanItem).ruleId === 'string' &&
+      typeof (i as BreakPlanItem).dueAt === 'string',
   );
 }

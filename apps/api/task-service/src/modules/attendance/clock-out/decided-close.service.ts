@@ -4,6 +4,7 @@ import { success, TimeEntryStatus } from '@hbcfield/shared';
 import { CLOSE_ENTRY_INCLUDE } from './clock-out-helpers';
 import { PrismaService } from '@hbcfield/shared';
 import { ShiftCloser } from './shift-closer.service';
+import { appendNote } from './clock-out-steps';
 
 /**
  * A shift closed by somebody's answer: the member's "I forgot to clock out", or an
@@ -94,7 +95,8 @@ export class DecidedCloseService {
       toleranceMin,
       labels: { closedHow: 'CONFIRMED' },
       fields: {
-        notes: 'Self-reported clock-out (forgot to clock out)',
+        // Added to what is there, never replacing it (B8) — the member's own work notes stay.
+        notes: appendNote(entry.notes, 'Self-reported clock-out (forgot to clock out)'),
         flagReasons: uniqueFlags,
         approvalStatus: 'PENDING', // a forgotten clock-out is always worth a glance
       },
@@ -178,7 +180,7 @@ export class DecidedCloseService {
       labels: { closedHow: 'OVERTIME_DECISION' },
       fields: {
         // Added to what is already written about the day, never replacing it.
-        notes: [entry.notes, input.note].filter(Boolean).join(' · '),
+        notes: input.note ? appendNote(entry.notes, input.note) : entry.notes,
         flagReasons: flags,
         approvalStatus: 'PENDING',
       },

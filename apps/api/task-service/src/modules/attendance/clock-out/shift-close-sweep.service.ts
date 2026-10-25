@@ -93,6 +93,8 @@ export class ShiftCloseSweepService {
       where: {
         status: TimeEntryStatus.CLOCKED_IN,
         expectedClockOutAt: { lte: new Date(now.getTime() - AUTO_CLOCK_LIMITS.closeAfterMinutes[0] * 60_000) },
+        // A daily-hours marker is not an end (B5): such a session closes only with evidence they left.
+        endIsDailyLimit: false,
         location: { autoClock: { not: Prisma.DbNull } },
       },
       orderBy: { expectedClockOutAt: 'asc' },

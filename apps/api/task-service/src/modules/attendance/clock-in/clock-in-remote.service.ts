@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, Inject, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject, Logger, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
   success,
@@ -16,7 +16,8 @@ import { ClockInContextService } from './clock-in-context.service';
 import { BreakRulesService } from '../core/break-rules.service';
 import { PresenceService } from '../presence/presence.service';
 import { AttendanceGeocoderService } from '../core/attendance-geocoder.service';
-import type { ClockInInput, ClockInOccurrence } from './clock-in-steps';
+import { gpsAccuracyRefusal, type ClockInInput, type ClockInOccurrence } from './clock-in-steps';
+import { ShiftSweepService } from '../no-shows/shift-sweep.service';
 import { emitEvent, attendanceClockInEvent } from '@hbcfield/shared/microservices';
 
 /** A clock-in away from any workspace: the approved remote day, and the org's Remote bucket. */
@@ -33,6 +34,8 @@ export class ClockInRemoteService {
     private readonly breakRules: BreakRulesService,
     private readonly presence: PresenceService,
     private readonly geocoder: AttendanceGeocoderService,
+    // A rota day worked away is a day PRESENT, not a no-show (clock review B10). Optional for narrow tests.
+    @Optional() private readonly shiftSweeps?: ShiftSweepService,
   ) {}
 
   /*
@@ -118,6 +121,9 @@ export class ClockInRemoteService {
       include: { location: true },
     });
     if (already) throw alreadyClockedIn(already, occurrence.fromEvidence);
+    // The same accuracy as on site (B10): a position this coarse says nothing about where the day was worked.
+    const coarse = gpsAccuracyRefusal(data.accuracy);
+    if (coarse) throw coarse;
     const bucket = await this.context.getOrCreateRemoteBucket(data.organizationId);
     const place = await this.geocoder.reverseGeocode(data.lat, data.lng);
     const remoteClockInAt = occurrence.at;
@@ -218,11 +224,23 @@ export class ClockInRemoteService {
       nextBreakRemindAt: remoteRests.nextBreakRemindAt,
     });
     this.logger.log(`Remote clock in: entry=${entry.id}, user=${data.userId}, place=${place ?? 'unknown'}`);
+    if (remoteScheduled && remoteStamp.shiftId)
+      await this.markRotaDayPresent(data, remoteStamp.shiftId, entry.id, remoteClockInAt);
     emitEvent(this.notificationClient, attendanceClockInEvent, {
       userId: data.userId,
       organizationId: data.organizationId,
       timeEntry: clockEventEntry(entry, 'in'),
     });
     return success(entry, place ? `Clocked in remotely · ${place}` : 'Clocked in remotely');
+  }
+
+  /** The rota shift this away day fulfils, marked present at ITS workspace — never chased as a no-show (B10). */
+  private async markRotaDayPresent(data: ClockInInput, shiftId: string, entryId: string, at: Date) {
+    if (!this.shiftSweeps) return;
+    const shift = await this.prisma.shift.findUnique({ where: { id: shiftId }, select: { spaceId: true } });
+    if (!shift?.spaceId) return;
+    await this.shiftSweeps
+      .markShiftInstancePresent(data.userId, shift.spaceId, shiftId, entryId, at)
+      .catch((e) => this.logger.warn(`markShiftInstancePresent (away day) failed for entry=${entryId}: ${e}`));
   }
 }
