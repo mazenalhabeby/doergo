@@ -2,7 +2,6 @@
 
 import { useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
 import { ClockWidget } from "@/components/attendance/clock-widget"
@@ -11,6 +10,7 @@ import { useShellNav } from "../nav/use-shell-nav"
 import { SidebarHeader } from "./sidebar-header"
 import { SidebarNav } from "./sidebar-nav"
 import { useSidebarState } from "./use-sidebar-state"
+import { Icon } from "@/components/ui/icon"
 
 /**
  * Everything the sidebar holds — the organization, the menu, the shift card and the account — rendered by the
@@ -95,7 +95,7 @@ export function Sidebar() {
                 "transition-colors hover:bg-shell-hover hover:text-shell-ink focus-visible:ring-2 focus-visible:ring-shell-accent",
               )}
             >
-              {collapsed ? <PanelLeftOpen className="size-[17px]" /> : <PanelLeftClose className="size-[17px]" />}
+              <Icon name="sidebarLine" size={18} />
             </button>
           }
         />

@@ -83,7 +83,7 @@ describe("the menu still reaches every page the old bar did", () => {
   })
 
   it("HR is the /my tabs — one list (MY_ITEMS)", () => {
-    const hr = NAV_SECTIONS.flatMap((s) => s.items).find((i) => i.icon === "me")!
+    const hr = NAV_SECTIONS.flatMap((s) => s.items).find((i) => i.icon === "idCard")!
     expect(hr.kids!.map((k) => k.href)).toEqual(MY_ITEMS.map((k) => k.href))
   })
 

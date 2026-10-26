@@ -3,10 +3,10 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useApprovalsCount } from "./use-approvals-count"
 import { CountDot, topBarIcon, topBarIconOn } from "./top-bar-icon"
+import { Icon } from "@/components/ui/icon"
 
 /**
  * Everything waiting for the member to decide — one count beside the bell (the count: use-approvals-count.ts).
@@ -27,7 +27,7 @@ export function ApprovalsButton() {
       data-tour="nav-approvals"
       className={cn(topBarIcon, pathname === "/approvals" && topBarIconOn)}
     >
-      <Inbox />
+      <Icon name="inbox" />
       <CountDot n={total} tone={urgent ? "crit" : "warn"} />
     </Link>
   )

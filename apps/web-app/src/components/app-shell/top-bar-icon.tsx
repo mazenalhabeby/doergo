@@ -3,7 +3,9 @@ import { cn } from "@/lib/utils"
 
 /** The round icon button of the top bar's inbox group — Approvals, Messages, Notifications, Help, Support. */
 export const topBarIcon =
-  "relative grid size-[38px] shrink-0 place-items-center rounded-full text-shell-soft transition-colors " +
+  "relative grid size-[38px] shrink-0 place-items-center rounded-full transition-colors " +
+  // The ink at 72%: a two-tone mark in the faint grey lost its detail at 18px.
+  "text-[color-mix(in_srgb,var(--shell-ink)_72%,transparent)] " +
   "hover:bg-shell-hover hover:text-shell-ink focus-visible:outline-none focus-visible:ring-2 " +
   "focus-visible:ring-shell-accent [&_svg]:size-[18px]"
 

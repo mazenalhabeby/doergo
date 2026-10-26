@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useBillingLock, useClockIn } from "@/hooks"
-import { LogIn, LogOut, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { formatDuration, hasAccessModule } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { ClockInPicker } from "@/components/attendance/clock-in-picker"
 import { ClockOutEarlyDialog } from "@/components/attendance/clock-out-early-dialog"
 import { AskMoreTime } from "@/components/attendance/ask-more-time"
+import { Icon } from "@/components/ui/icon"
 
 /** Whole minutes since an ISO timestamp, ticking every 20 seconds — the card shows hours and minutes. */
 function useElapsedMinutes(sinceIso?: string | null): number {
@@ -76,7 +77,7 @@ export function ClockWidget({ compact = false }: { compact?: boolean }) {
             aria-label={t("attendance.my.clockOut", "Clock Out")}
             className="relative mx-auto grid size-11 place-items-center rounded-2xl bg-shell-accent-soft text-shell-accent"
           >
-            {pending ? spinner : <LogOut className="size-4" />}
+            {pending ? spinner : <Icon name="clockOut" size={18} />}
             <span aria-hidden className="absolute right-1.5 top-1.5 size-2 rounded-full bg-shell-live" />
           </button>
         ) : (
@@ -123,7 +124,7 @@ export function ClockWidget({ compact = false }: { compact?: boolean }) {
           compact ? "mx-auto size-11" : "h-11 w-full",
         )}
       >
-        {pending ? spinner : <LogIn className="size-4" />}
+        {pending ? spinner : <Icon name="clockIn" size={18} />}
         {!compact && t("attendance.my.clockIn", "Clock In")}
       </button>
     </>

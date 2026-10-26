@@ -2,12 +2,12 @@
 
 import { usePathname } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { MessageSquare } from "lucide-react"
 import { canContactColleagues } from "@hbcfield/shared/client"
 
 import { useAuth } from "@/contexts/auth-context"
 import { useChat } from "@/components/chat/chat-context"
 import { CountDot, TopBarButton } from "./top-bar-icon"
+import { Icon } from "@/components/ui/icon"
 
 /**
  * Messages beside Approvals and the bell: the only way in to your conversations
@@ -30,7 +30,7 @@ export function MessagesButton() {
       title={t("chat.title", "Messages")}
       aria-label={t("chat.navLabel", { count: unread, defaultValue: "Messages, {{count}} unread" })}
     >
-      <MessageSquare />
+      <Icon name="chat" />
       <CountDot n={unread} tone="accent" />
     </TopBarButton>
   )

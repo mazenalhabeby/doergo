@@ -8,12 +8,15 @@
  * `<GradientIcon>`, the phone with react-native-svg's `SvgXml` — never redraw
  * a shape by hand in an app.
  *
- * "Gradient ink" (chosen 2026-10-16): the icon is painted with INK_GRADIENT
- * instead of a flat colour — one colour family, sky → blue → indigo.
+ * Ink: one colour family, the shell's jade (2026-10-26 — it was a blue gradient, chosen before the jade
+ * shell). The web paints it from CSS (--icon-ink-from/--icon-ink-to, light and dark), the phone from its
+ * theme (amazen.gradient.iconInk) — the same two jades.
  */
+import { SOLAR_SHELL } from './generated/solar-shell';
+
 export const ICON_VIEWBOX = '0 0 24 24';
 
-export const SOLAR_ICONS = {
+const SOLAR_BASE = {
   /** solar:pen-new-square-bold-duotone */
   compose:
     '<g fill="currentColor"><path d="M1 12C1 6.81455 1 4.22183 2.61091 2.61091C4.22183 1 6.81455 1 12 1C17.1854 1 19.7782 1 21.3891 2.61091C23 4.22183 23 6.81455 23 12C23 17.1854 23 19.7782 21.3891 21.3891C19.7782 23 17.1854 23 12 23C6.81455 23 4.22183 23 2.61091 21.3891C1 19.7782 1 17.1854 1 12Z" opacity=".5"/><path d="M13.9261 14.3018C14.1711 14.1107 14.3933 13.8885 14.8377 13.4441L20.378 7.90374C20.512 7.7698 20.4507 7.53909 20.2717 7.477C19.6178 7.25011 18.767 6.82414 17.9713 6.02835C17.1755 5.23257 16.7495 4.38186 16.5226 3.72788C16.4605 3.54892 16.2298 3.48761 16.0959 3.62156L10.5555 9.16192C10.1111 9.60634 9.88888 9.82854 9.69778 10.0736C9.47235 10.3626 9.27908 10.6753 9.12139 11.0062C8.98771 11.2867 8.88834 11.5848 8.68959 12.181L8.43278 12.9515L8.02443 14.1765L7.64153 15.3252C7.54373 15.6186 7.6201 15.9421 7.8388 16.1608C8.0575 16.3795 8.38099 16.4559 8.67441 16.3581L9.82308 15.9752L11.0481 15.5668L11.8186 15.31L11.8186 15.31C12.4148 15.1113 12.7129 15.0119 12.9934 14.8782C13.3243 14.7205 13.637 14.5273 13.9261 14.3018Z"/><path d="M22.1127 6.16905C23.2952 4.98656 23.2952 3.06936 22.1127 1.88687C20.9302 0.704377 19.013 0.704377 17.8306 1.88687L17.6524 2.06499C17.4806 2.23687 17.4027 2.47695 17.4456 2.7162C17.4726 2.8667 17.5227 3.08674 17.6138 3.3493C17.796 3.87439 18.14 4.56368 18.788 5.21165C19.4359 5.85961 20.1252 6.20364 20.6503 6.38581C20.9129 6.4769 21.1329 6.52697 21.2834 6.55399C21.5227 6.59693 21.7627 6.51905 21.9346 6.34717L22.1127 6.16905Z"/></g>',
@@ -77,14 +80,15 @@ export const SOLAR_ICONS = {
     '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M19.0068 5L5.00684 19"/><path d="M19 19L5 5"/></g>',
 } as const;
 
-export type IconName = keyof typeof SOLAR_ICONS;
+/**
+ * Every mark, by name: the set chat started with, plus the shell's (generated/solar-shell.ts — written by
+ * tools/icons/solar.mjs from the Solar ids it lists). A name in both would be a silent override; the
+ * icons spec fails on one.
+ */
+export const SOLAR_ICONS = { ...SOLAR_BASE, ...SOLAR_SHELL } as const;
+export const ICON_SOURCES = { base: SOLAR_BASE, shell: SOLAR_SHELL } as const;
 
-/** The gradient every "ink" icon is painted with: [offset, colour], top-left → bottom-right. */
-export const INK_GRADIENT: ReadonlyArray<readonly [number, string]> = [
-  [0, '#38bdf8'],
-  [0.55, '#3b82f6'],
-  [1, '#6366f1'],
-];
+export type IconName = keyof typeof SOLAR_ICONS;
 
 /** The icon's markup painted with a paint server (`url(#id)`) instead of currentColor. */
 export function iconMarkup(name: IconName, paint = 'currentColor'): string {

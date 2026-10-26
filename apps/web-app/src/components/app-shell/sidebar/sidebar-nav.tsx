@@ -4,16 +4,15 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
 import { mayListOrgMembers } from "@/lib/assignable-members"
 import { useMyDocumentRequirements } from "@/hooks/use-document-requirements"
 import { useApprovalsCount } from "../use-approvals-count"
 import { isActive, isEntryActive } from "../nav/nav-active"
-import { NAV_ICONS } from "../nav/nav-icons"
 import { usePrefetchRoutes } from "../nav/use-prefetch-routes"
 import type { NavLeaf, NavSection } from "../nav/nav-config"
+import { Icon } from "@/components/ui/icon"
 
 const EASE = "duration-300 ease-[cubic-bezier(.32,.72,0,1)]"
 /** The count beside a row or a page (decisions waiting, documents to hand in). */
@@ -91,7 +90,6 @@ export function SidebarNav({
             </div>
           )}
           {section.items.map((item) => {
-            const Icon = NAV_ICONS[item.icon]
             const active = isEntryActive(pathname, item)
             const isGroup = !!item.kids && !rail
             const expanded = isGroup && open.has(item.href)
@@ -112,7 +110,7 @@ export function SidebarNav({
                   )}
                 />
                 <span className={cn("relative grid shrink-0 place-items-center", !active && "text-shell-soft")}>
-                  <Icon aria-hidden className="size-[19px]" strokeWidth={1.9} />
+                  <Icon name={item.icon} size={20} />
                   {rail && count > 0 && (
                     <span
                       aria-hidden
@@ -121,19 +119,12 @@ export function SidebarNav({
                   )}
                 </span>
                 {!rail && <span className="min-w-0 flex-1 truncate text-left">{label(item)}</span>}
-                {!rail && count > 0 && (
-                  <span className={COUNT_PILL}>
-                    {count > 99 ? "99+" : count}
-                  </span>
-                )}
+                {!rail && count > 0 && <span className={COUNT_PILL}>{count > 99 ? "99+" : count}</span>}
                 {isGroup && (
-                  <ChevronRight
-                    aria-hidden
-                    className={cn(
-                      "size-3.5 shrink-0 text-shell-soft transition-transform",
-                      EASE,
-                      expanded && "rotate-90",
-                    )}
+                  <Icon
+                    name="chevronRight"
+                    size={14}
+                    className={cn("text-shell-soft transition-transform", EASE, expanded && "rotate-90")}
                   />
                 )}
               </>
@@ -229,11 +220,7 @@ function Kids({
                 )}
               >
                 <span className="flex-1 truncate">{label(k)}</span>
-                {count > 0 && (
-                  <span className={COUNT_PILL}>
-                    {count}
-                  </span>
-                )}
+                {count > 0 && <span className={COUNT_PILL}>{count}</span>}
               </Link>
             )
           })}

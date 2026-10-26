@@ -1,6 +1,5 @@
 "use client"
 
-import { Bell } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { formatTimeAgo } from "@/lib/format-date"
 
@@ -11,6 +10,7 @@ import { useNotificationBell } from "./use-notification-bell"
 import { TYPE_CONFIG } from "./notification-type-config"
 import { EmptyNote } from "@/components/ui/empty-note"
 import { CountDot, TopBarButton } from "@/components/app-shell/top-bar-icon"
+import { Icon } from "@/components/ui/icon"
 
 // ============================================================================
 // Component
@@ -37,7 +37,7 @@ export function NotificationBell() {
           title={t("notifications.title")}
           aria-label={`${t("notifications.title")}${unreadCount > 0 ? ` (${unreadCount})` : ""}`}
         >
-          <Bell />
+          <Icon name="bell" />
           <CountDot n={unreadCount} tone="accent" />
         </TopBarButton>
       </PopoverTrigger>

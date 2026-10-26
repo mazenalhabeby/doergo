@@ -3,11 +3,11 @@
 import Link from "next/link"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Building2, ChevronsUpDown, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { useActiveSpaces } from "@/hooks/use-space-directory"
+import { Icon } from "@/components/ui/icon"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,7 +88,7 @@ export function SidebarHeader({ rail }: { rail: boolean }) {
         aria-label={`${orgName} — ${t("nav.spaces", "Workspaces")}`}
       >
         {face}
-        {!rail && <ChevronsUpDown aria-hidden className="size-3.5 shrink-0 text-shell-soft" />}
+        {!rail && <Icon name="chevronsUpDown" size={15} className="text-shell-soft" />}
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
@@ -101,7 +101,11 @@ export function SidebarHeader({ rail }: { rail: boolean }) {
         </DropdownMenuLabel>
         {spaces.length > SEARCH_FROM && (
           <div className="relative px-1 pb-1">
-            <Search aria-hidden className="absolute left-3.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Icon
+              name="searchLine"
+              size={14}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
@@ -120,7 +124,7 @@ export function SidebarHeader({ rail }: { rail: boolean }) {
                 prefetch={false}
                 className="flex items-center gap-2 px-2 py-1.5 text-sm"
               >
-                <Building2 aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+                <Icon name="workspaces" size={16} className="text-muted-foreground" />
                 <span className="truncate">{s.name}</span>
               </Link>
             </DropdownMenuItem>

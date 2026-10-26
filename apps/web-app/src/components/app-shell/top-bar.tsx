@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { Menu } from "lucide-react"
 import { NotificationBell } from "@/components/notifications/notification-bell"
 import { SupportButton } from "@/components/support/support-widget"
 import { HelpButton } from "@/components/tour"
@@ -16,6 +15,7 @@ import { CommandPaletteButton } from "./command-palette-button"
 import { MessagesButton } from "./messages-button"
 import { SidebarBody } from "./sidebar/sidebar"
 import { TopBarButton } from "./top-bar-icon"
+import { Icon } from "@/components/ui/icon"
 
 /**
  * The top of the page panel: search (⌘K) on the left; on the right ONE group — what needs you (Approvals,
@@ -40,7 +40,7 @@ export function TopBar() {
           aria-label={t("nav.openMenu", "Open the menu")}
           aria-expanded={menuOpen}
         >
-          <Menu />
+          <Icon name="menu" />
         </TopBarButton>
         <CommandPaletteButton />
         <div className="ml-auto flex shrink-0 items-center gap-2">

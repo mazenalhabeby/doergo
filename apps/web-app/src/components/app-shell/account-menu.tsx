@@ -4,7 +4,6 @@ import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { useTheme } from "next-themes"
 import { useTranslation } from "react-i18next"
-import { ChevronRight, ChevronsUpDown } from "lucide-react"
 import { personName } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
@@ -18,6 +17,7 @@ import { openSupport } from "@/components/support/support-opener"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { LanguagePanel } from "./language-panel"
 import { SlidePanels } from "./slide-panels"
+import { Icon } from "@/components/ui/icon"
 
 /** The ring around the avatar says the availability (design: live green · coral · grey). */
 const RING: Record<Presence, string> = {
@@ -126,7 +126,7 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
               <b className="truncate text-[13.5px]">{fullName}</b>
               <span className="truncate text-xs text-shell-soft">{position || user.email}</span>
             </span>
-            <ChevronsUpDown aria-hidden className="size-[15px] shrink-0 text-shell-soft" />
+            <Icon name="chevronsUpDown" size={15} className="text-shell-soft" />
           </>
         )}
       </PopoverTrigger>
@@ -222,7 +222,7 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
                     .label
                 }
               </span>
-              <ChevronRight aria-hidden className="size-3.5 text-shell-soft" />
+              <Icon name="chevronRight" size={14} className="text-shell-soft" />
             </button>
             {DIVIDER}
             {tour && (

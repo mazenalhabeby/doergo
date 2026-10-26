@@ -437,6 +437,9 @@
   --shell-rail: 76px;
   --shell-open: 268px;
   --shell-ease: cubic-bezier(.32, .72, 0, 1);
+  /* The icon ink (chat's marks) — the phone's amazen.gradient.iconInk, the same two jades. */
+  --icon-ink-from: #22b48d;
+  --icon-ink-to: #0a6f58;
 }
 .dark {
   --shell-ground: linear-gradient(180deg, #0c4339 0, #09291f 170px, #061a19 340px, #050c0f 520px, #040507 700px);
@@ -459,6 +462,8 @@
   --shell-chip: #ffffff14;
   --shell-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 28px -14px rgba(0, 0, 0, 0.7);
   --shell-pop-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.8);
+  --icon-ink-from: #9af0d6;
+  --icon-ink-to: #10b993;
 }
 .shell-scroll { scrollbar-width: thin; scrollbar-color: var(--shell-line) transparent; }
 .shell-scroll::-webkit-scrollbar { width: 6px; }

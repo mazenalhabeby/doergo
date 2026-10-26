@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { ChevronLeft, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { changeLanguage, supportedLanguages } from "@/i18n/languages"
+import { Icon } from "@/components/ui/icon"
 
 const BACK =
   "grid size-8 place-items-center rounded-[10px] bg-shell-hover outline-none focus-visible:ring-2 focus-visible:ring-shell-accent"
@@ -46,13 +46,13 @@ export function LanguagePanel({ active, onBack }: { active: boolean; onBack: () 
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-2 px-1 pb-2 pt-1">
         <button type="button" onClick={onBack} aria-label={t("common.back", "Back")} className={BACK}>
-          <ChevronLeft className="size-4" />
+          <Icon name="backLine" size={16} />
         </button>
         <b className="flex-1 text-[15px]">{t("common.language", "Language")}</b>
         <span className="text-xs text-shell-soft">{t("account.onlyForYou", "only for you")}</span>
       </div>
       <label className={FIELD}>
-        <Search aria-hidden className="size-[15px] text-shell-soft" />
+        <Icon name="searchLine" size={15} className="text-shell-soft" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -84,8 +84,8 @@ export function LanguagePanel({ active, onBack }: { active: boolean; onBack: () 
                 <b className="truncate text-sm">{l.label}</b>
                 <span className="truncate text-xs text-shell-soft">{l.inYours}</span>
               </span>
-              <span aria-hidden className="text-[15px] text-shell-accent">
-                {on ? "✓" : ""}
+              <span className="grid size-5 place-items-center text-shell-accent">
+                {on && <Icon name="selected" size={20} />}
               </span>
             </button>
           )

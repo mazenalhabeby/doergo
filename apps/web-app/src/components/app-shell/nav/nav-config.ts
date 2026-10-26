@@ -11,22 +11,7 @@
  * keeps its words.
  */
 
-export type NavIconName =
-  | "home"
-  | "inbox"
-  | "tasks"
-  | "calendar"
-  | "time"
-  | "people"
-  | "me"
-  | "workspaces"
-  | "clients"
-  | "assets"
-  | "portals"
-  | "documents"
-  | "reports"
-  | "invoices"
-  | "manage"
+import type { IconName } from "@hbcfield/shared/client"
 
 /** One page. */
 export interface NavLeaf {
@@ -39,7 +24,8 @@ export interface NavLeaf {
 
 /** A top-level row: a page, or a group that opens in place. */
 export interface NavEntry extends NavLeaf {
-  icon: NavIconName
+  /** A mark from the one icon library (packages/shared/src/icons). */
+  icon: IconName
   /** A live count beside the row (see `use-shell-nav.ts`). */
   badge?: "approvals" | "myDocuments"
   kids?: NavLeaf[]
@@ -108,7 +94,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: "/my/attendance",
         label: "nav.me",
         fallback: "HR",
-        icon: "me",
+        icon: "idCard",
         tour: "nav-me",
         badge: "myDocuments",
         kids: [...MY_ITEMS],

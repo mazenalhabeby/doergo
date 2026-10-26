@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
-import { Compass, BookOpen, ChevronRight, Play } from "lucide-react"
+import { BookOpen, ChevronRight, Play } from "lucide-react"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { TopBarButton } from "@/components/app-shell/top-bar-icon"
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import { useTour } from "./tour-context"
 import { TourIcon } from "./tour-icons"
 import { TOURS } from "./registry"
+import { Icon } from "@/components/ui/icon"
 
 /**
  * Always-visible Help & guides launcher for the top bar. From any page it offers
@@ -35,14 +36,14 @@ export function HelpButton() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <TopBarButton on={open} data-tour="nav-help" aria-label={t("tours.help.button")} title={t("tours.help.button")}>
-          <Compass />
+          <Icon name="help" />
         </TopBarButton>
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={10} className="w-80 rounded-xl p-0">
         {/* Header */}
         <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
           <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-            <Compass className="size-4" />
+            <Icon name="help" size={16} />
           </span>
           <div>
             <p className="text-sm font-semibold leading-tight text-foreground">{t("tours.help.title")}</p>
@@ -56,9 +57,11 @@ export function HelpButton() {
             <button
               type="button"
               onClick={() => run(contextual.id)}
-              className={"flex w-full items-center gap-3 rounded-lg border border-primary/25 " +
+              className={
+                "flex w-full items-center gap-3 rounded-lg border border-primary/25 " +
                 "bg-gradient-to-r from-primary/[0.06] to-transparent p-3 text-left " +
-                "transition-colors hover:border-primary/40"}
+                "transition-colors hover:border-primary/40"
+              }
             >
               <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
                 <Play className="size-4" />
@@ -115,7 +118,9 @@ export function HelpButton() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[13px] font-medium text-foreground">{t("tours.help.helpCenter")}</span>
-                <span className="block truncate text-[11px] text-muted-foreground">{t("tours.help.helpCenterDesc")}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {t("tours.help.helpCenterDesc")}
+                </span>
               </span>
               <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
             </Link>
