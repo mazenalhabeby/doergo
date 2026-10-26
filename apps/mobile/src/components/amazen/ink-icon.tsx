@@ -1,9 +1,26 @@
 import React, { useMemo } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
-import { SvgXml } from 'react-native-svg';
+import { SvgAst, parse } from 'react-native-svg';
 import { ICON_VIEWBOX, iconMarkup, type IconName } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
 import type { GlyphProps } from '../glyphs/glyphs';
+
+/*
+  ⚠️ PARSED ONCE per drawing, not per mount. `SvgXml` parses its XML on every mount — fine for one icon, costly in a
+  long list with an icon per row (the Ionicons font it replaced cost nothing there). The markup is the library's
+  constant (a flat icon's colour is `currentColor`, given at render), so a few hundred entries at most; the cap is
+  a guard, not a policy.
+*/
+const AST = new Map<string, ReturnType<typeof parse>>();
+function astFor(xml: string): ReturnType<typeof parse> {
+  let ast = AST.get(xml);
+  if (ast === undefined) {
+    ast = parse(xml);
+    if (AST.size > 600) AST.clear();
+    AST.set(xml, ast);
+  }
+  return ast;
+}
 
 /**
  * One of the product's icons (shared `SOLAR_ICONS` — the same shapes the web
@@ -30,25 +47,30 @@ export function InkIcon({
 }) {
   const { amazen } = useTheme();
   const [from, to] = amazen.gradient.iconInk;
-  const xml = useMemo(
+  const ast = useMemo(
     () =>
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${ICON_VIEWBOX}">` +
-      (flat
-        ? iconMarkup(name)
-        : `<defs><linearGradient id="ink" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="` +
-          `${to}"/></linearGradient></defs>${iconMarkup(name, 'url(#ink)')}`) +
-      '</svg>',
+      astFor(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${ICON_VIEWBOX}">` +
+          (flat
+            ? iconMarkup(name)
+            : `<defs><linearGradient id="ink" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="` +
+              `${to}"/></linearGradient></defs>${iconMarkup(name, 'url(#ink)')}`) +
+          '</svg>',
+      ),
     [name, flat, from, to],
   );
   return (
-    <SvgXml
-      xml={xml}
-      width={size}
-      height={size}
-      color={color}
-      style={style}
-      accessible={!!accessibilityLabel}
-      accessibilityLabel={accessibilityLabel}
+    <SvgAst
+      ast={ast}
+      // SvgAst applies its per-use props through `override` (SvgXml does the same internally).
+      override={{
+        width: size,
+        height: size,
+        color,
+        style,
+        accessible: !!accessibilityLabel,
+        accessibilityLabel,
+      }}
     />
   );
 }

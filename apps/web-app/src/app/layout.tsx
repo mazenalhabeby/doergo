@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Inter, Familjen_Grotesk, Martian_Mono, Geist, Geist_Mono } from "next/font/google"
+import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
 import { QueryProvider } from "@/providers/query-provider"
@@ -10,9 +10,6 @@ import { Toaster } from "@/components/ui"
 // display:'swap' → text paints immediately in the fallback and swaps when the
 // web font loads (better LCP, no invisible-text FOIT). size-adjust fallbacks are
 // applied by next/font automatically to keep the swap CLS-free.
-// The public site's body face (components/marketing/site-font). Not preloaded: the app is in Geist, so an app
-// page never downloads it.
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap", preload: false })
 // The app's face — the web redesign's Geist (the body's font; the public site switches back to Inter).
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" })
 // Figures in the shell (the running clock): tabular, so a ticking time never shifts sideways. Not preloaded —
@@ -24,20 +21,8 @@ const geistMono = Geist_Mono({
   display: "swap",
   preload: false,
 })
-// Marketing/landing typography — mirrors the studio-grade reference:
-// Familjen Grotesk for large light-weight display, Martian Mono for micro-labels.
-const familjen = Familjen_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-familjen",
-  weight: ["400", "500", "600"],
-  display: "swap",
-})
-const martian = Martian_Mono({
-  subsets: ["latin"],
-  variable: "--font-martian",
-  weight: ["300", "400", "500"],
-  display: "swap",
-})
+// The public site's three faces (Inter, Familjen Grotesk, Martian Mono) live in components/marketing/site-fonts:
+// loaded — and preloaded — only on the pages that render them, never on an app page.
 
 const SITE_URL = "https://hbcfield.com"
 const SITE_DESCRIPTION =
@@ -124,7 +109,7 @@ export default function RootLayout({
       */}
       <body
         suppressHydrationWarning
-        className={[inter, geist, geistMono, familjen, martian]
+        className={[geist, geistMono]
           .map((f) => f.variable)
           .concat(geist.className)
           .join(" ")}
