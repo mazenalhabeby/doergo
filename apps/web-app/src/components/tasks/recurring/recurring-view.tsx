@@ -108,10 +108,10 @@ export function RecurringPanel({
   if (!isAdmin) return null
 
   return (
-    <div className={embedded ? "" : "min-h-full bg-muted/30"}>
+    <div className={embedded ? "" : "min-h-full bg-background"}>
       <div className={embedded ? "" : PAGE_SHELL}>
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-3.5">
           <div>
             {!embedded && (
               <button
@@ -122,17 +122,25 @@ export function RecurringPanel({
                 {t("tasks.page.heading")}
               </button>
             )}
-            <h1 className="text-2xl font-semibold text-foreground">{t("tasks.recurring.pageTitle")}</h1>
-            <p className="text-sm text-muted-foreground mt-1">{t("tasks.recurring.pageSubtitle")}</p>
+            <h1
+              className={
+                embedded
+                  ? "text-xl font-semibold tracking-[-0.02em] text-foreground"
+                  : "text-[30px] font-semibold leading-[1.15] tracking-[-0.03em] text-foreground"
+              }
+            >
+              {t("tasks.recurring.pageTitle")}
+            </h1>
+            <p className="mt-1.5 text-[14.5px] text-muted-foreground">{t("tasks.recurring.pageSubtitle")}</p>
           </div>
           <Button
             onClick={() => {
               setEditingTemplate(null)
               setShowDialog(true)
             }}
-            className="bg-blue-600 hover:bg-blue-700 rounded-xl"
+            size="pill"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus />
             {t("tasks.recurring.newTemplate")}
           </Button>
         </div>
@@ -141,13 +149,13 @@ export function RecurringPanel({
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2].map((i) => (
-              <Skeleton key={i} className="h-24 rounded-2xl" />
+              <Skeleton key={i} className="h-24 rounded-[22px]" />
             ))}
           </div>
         ) : visibleTemplates.length === 0 ? (
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-12 text-center">
-            <div className="flex items-center justify-center h-14 w-14 mx-auto rounded-2xl bg-violet-50 dark:bg-violet-900/20 mb-4">
-              <Repeat className="h-7 w-7 text-violet-500" />
+          <div className="rounded-[24px] bg-card p-12 text-center shadow-shell">
+            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-shell-accent-soft">
+              <Repeat className="size-7 text-shell-accent" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-1">
               {spaceId ? t("tasks.recurring.emptyInSpace") : t("tasks.recurring.emptyTitle")}
@@ -158,14 +166,14 @@ export function RecurringPanel({
                 setEditingTemplate(null)
                 setShowDialog(true)
               }}
-              className="bg-blue-600 hover:bg-blue-700 rounded-xl"
+              size="pill"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus />
               {t("tasks.recurring.createFirst")}
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {visibleTemplates.map((template) => (
               <TemplateCard
                 key={template.id}

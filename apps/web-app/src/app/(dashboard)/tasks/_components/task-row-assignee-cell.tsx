@@ -14,8 +14,8 @@ export function TaskRowAssigneeCell({ task, onAssign }: { task: Task; onAssign: 
     <div
       data-no-navigate
       className={
-        "flex items-center gap-2 min-w-0 w-[160px] flex-shrink-0 rounded-md " +
-        "px-1.5 py-1 -mx-1.5 hover:bg-muted/60 cursor-pointer transition-colors"
+        "-mx-1.5 flex min-w-0 cursor-pointer items-center justify-end gap-2 rounded-full px-1.5 py-1 " +
+        "transition-colors hover:bg-shell-chip"
       }
       onClick={(e) => {
         e.stopPropagation()
@@ -49,19 +49,26 @@ export function TaskRowAssigneeCell({ task, onAssign }: { task: Task; onAssign: 
             <TaskAssigneesStack assignees={task.assignees} />
           </span>
           {task.assignees.length <= 2 && (
-            <span className="text-xs text-muted-foreground truncate ml-2">{personName(task.assignees[0]!.user)}</span>
+            <span className="ml-2 truncate text-[13px] text-muted-foreground">
+              {personName(task.assignees[0]!.user)}
+            </span>
           )}
         </div>
       ) : task.assignedTo ? (
         <div className="flex items-center gap-1.5 min-w-0">
           <TaskPersonAvatar person={task.assignedTo} />
-          <span className="text-xs text-muted-foreground truncate">{personName(task.assignedTo)}</span>
+          <span className="truncate text-[13px] text-muted-foreground">{personName(task.assignedTo)}</span>
         </div>
       ) : isOpenToRole(task) ? (
         <OpenRoleChip task={task} />
       ) : (
-        <span className="text-xs text-muted-foreground/40 flex items-center gap-1">
-          <UserPlus className="size-3" />
+        <span
+          className={
+            "inline-flex h-[30px] items-center gap-1.5 rounded-full bg-primary px-3.5 text-[13px] font-semibold " +
+            "text-primary-foreground"
+          }
+        >
+          <UserPlus className="size-3.5" />
           {t("tasks.card.assign")}
         </span>
       )}

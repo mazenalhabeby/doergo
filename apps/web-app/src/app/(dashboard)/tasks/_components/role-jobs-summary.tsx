@@ -42,22 +42,25 @@ export function RoleJobsSummary({ spaceId }: { spaceId: string | null }) {
   const overdue = roles.reduce((s, r) => s + r.overdue, 0)
 
   return (
-    <div className="mb-4 rounded-xl border border-violet-500/25 bg-violet-500/5">
+    <div className="mb-4 rounded-[22px] bg-card shadow-shell">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm"
+        className="flex w-full items-center gap-2.5 rounded-[22px] px-4 py-3 text-left text-sm"
       >
-        <UsersRound className="size-4 shrink-0 text-violet-600 dark:text-violet-400" />
-        <span className="font-medium">{t("tasks.role.summaryTitle")}</span>
+        <UsersRound className="size-4 shrink-0 text-shell-accent" />
+        <span className="font-semibold">{t("tasks.role.summaryTitle")}</span>
         <span className="text-muted-foreground">· {t("tasks.role.openNow", { count: openNow })}</span>
-        {overdue > 0 &&
-          <span className="font-medium text-amber-700 dark:text-amber-400">· {t("tasks.role.overdue", { count: overdue })}</span>}
-        <ChevronDown className={cn("ml-auto size-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+        {overdue > 0 && (
+          <span className="font-semibold text-shell-warn">· {t("tasks.role.overdue", { count: overdue })}</span>
+        )}
+        <ChevronDown
+          className={cn("ml-auto size-4 text-muted-foreground transition-transform", open && "rotate-180")}
+        />
       </button>
       {open && (
-        <div className="overflow-x-auto border-t border-violet-500/15 px-3 pb-3">
+        <div className="overflow-x-auto border-t border-border px-4 pb-3">
           <table className="mt-2 w-full min-w-[560px] text-xs">
             <thead>
               <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -77,15 +80,18 @@ export function RoleJobsSummary({ spaceId }: { spaceId: string | null }) {
                   <td
                     className={cn(
                       "px-2 py-1.5 text-right tabular-nums",
-                      r.overdue > 0 && "font-semibold text-amber-700 dark:text-amber-400")}>{r.overdue}</td>
+                      r.overdue > 0 && "font-semibold text-shell-warn",
+                    )}
+                  >
+                    {r.overdue}
+                  </td>
                   <td className="px-2 py-1.5 text-right tabular-nums">{r.taken}</td>
-                  <td
-                    className="px-2 py-1.5 text-right tabular-nums">{r.avgMinutesToTake == null
-                      ? "—"
-                      : t("tasks.role.minutes", { count: r.avgMinutesToTake })}</td>
-                  <td
-                    className="truncate py-1.5 pl-2 text-muted-foreground">{r.topTakers.map((p) => `${p.name} (${p.count})`).join(", ") ||
-                      "—"}</td>
+                  <td className="px-2 py-1.5 text-right tabular-nums">
+                    {r.avgMinutesToTake == null ? "—" : t("tasks.role.minutes", { count: r.avgMinutesToTake })}
+                  </td>
+                  <td className="truncate py-1.5 pl-2 text-muted-foreground">
+                    {r.topTakers.map((p) => `${p.name} (${p.count})`).join(", ") || "—"}
+                  </td>
                 </tr>
               ))}
             </tbody>

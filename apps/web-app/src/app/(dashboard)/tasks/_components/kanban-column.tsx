@@ -139,9 +139,9 @@ export const KanbanColumn = React.memo(function KanbanColumn({
 
   const dropIndicator = (
     <div className="relative h-0.5 -my-0.5 z-10">
-      <div className="absolute inset-x-0 top-0 h-[2px] bg-blue-500 rounded-full" />
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-blue-500" />
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-blue-500" />
+      <div className="absolute inset-x-0 top-0 h-[2px] bg-shell-accent rounded-full" />
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-shell-accent" />
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-shell-accent" />
     </div>
   )
 
@@ -163,8 +163,10 @@ export const KanbanColumn = React.memo(function KanbanColumn({
           role="listitem"
           tabIndex={0}
           aria-label={`${task.title} — ${label}`}
-          className={"rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary " +
-            "focus-visible:ring-offset-1 focus-visible:ring-offset-background"}
+          className={
+            "rounded-[18px] outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+            "focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+          }
           onDragOver={(e) => handleCardDragOver(e, i)}
           onDrop={handleCardDrop}
         >
@@ -212,19 +214,26 @@ export const KanbanColumn = React.memo(function KanbanColumn({
     // Columns stretch to fill the viewport down to (roughly) the footer so the
     // board doesn't leave a big empty area beneath short columns. The body is
     // flex-1, so it grows to fill this min-height.
-    <div className="flex-shrink-0 w-[280px] flex flex-col min-h-[calc(100vh-340px)]">
+    <div
+      className={cn(
+        "flex min-h-[calc(100vh-340px)] w-[280px] flex-shrink-0 flex-col rounded-[24px] p-3.5 transition-colors duration-200",
+        isOver
+          ? "bg-shell-nav-on"
+          : isOverLimit
+            ? "bg-[color-mix(in_srgb,var(--shell-crit)_9%,hsl(var(--muted)))]"
+            : isAtLimit
+              ? "bg-[color-mix(in_srgb,var(--shell-warn)_11%,hsl(var(--muted)))]"
+              : "bg-muted",
+      )}
+    >
       {/* Column Header */}
-      <div className="flex items-center gap-2 mb-3 px-1">
+      <div className="mb-2.5 flex items-center gap-2 px-1.5 pt-0.5 text-[13px] font-semibold text-muted-foreground">
         <span className="size-2 rounded-full" style={{ backgroundColor: dotColor }} />
-        <span className="text-sm font-semibold text-foreground">{label}</span>
+        <span className="text-foreground">{label}</span>
         <span
           className={cn(
-            "text-xs px-1.5 py-0.5 rounded-md font-medium",
-            isOverLimit
-              ? "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-950"
-              : isAtLimit
-                ? "text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-950"
-                : "text-muted-foreground bg-muted",
+            "font-medium tabular-nums",
+            isOverLimit ? "text-shell-crit" : isAtLimit ? "text-shell-warn" : "text-muted-foreground/70",
           )}
         >
           {wipLimit != null ? `${tasks.length} / ${wipLimit}` : tasks.length}
@@ -233,16 +242,7 @@ export const KanbanColumn = React.memo(function KanbanColumn({
 
       {/* Column Body -- drop zone */}
       <div
-        className={cn(
-          "flex-1 space-y-2 min-h-[200px] p-2 rounded-xl border transition-all duration-200",
-          isOver
-            ? "bg-primary/[0.06] border-primary/30 shadow-inner"
-            : isOverLimit
-              ? "bg-red-50/50 border-red-300 dark:bg-red-950/20 dark:border-red-800"
-              : isAtLimit
-                ? "bg-amber-50/50 border-amber-300 dark:bg-amber-950/20 dark:border-amber-800"
-                : "bg-muted/50 border-border/40",
-        )}
+        className="min-h-[200px] flex-1 space-y-2.5"
         // A named list, so a screen reader announces which column it entered
         // and how many cards it holds.
         role="list"
@@ -255,11 +255,11 @@ export const KanbanColumn = React.memo(function KanbanColumn({
         {tasks.length === 0 ? (
           <div
             className={cn(
-              "flex items-center justify-center h-full min-h-[200px] rounded-lg border-2 border-dashed transition-colors duration-200",
-              isOver ? "border-primary/40 bg-primary/[0.04]" : "border-transparent",
+              "flex h-full min-h-[200px] items-center justify-center rounded-[18px] border-2 border-dashed transition-colors",
+              isOver ? "border-ring" : "border-transparent",
             )}
           >
-            <p className="text-xs text-muted-foreground/50">{isOver ? "Drop here" : "No tasks"}</p>
+            <p className="text-xs text-muted-foreground">{isOver ? "Drop here" : "No tasks"}</p>
           </div>
         ) : (
           renderTasks(tasks)

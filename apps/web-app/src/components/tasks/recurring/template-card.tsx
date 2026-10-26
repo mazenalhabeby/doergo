@@ -58,15 +58,15 @@ export const TemplateCard = memo(function TemplateCard({
 }) {
   const { t } = useTranslation()
   return (
-    <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden transition-shadow hover:shadow-md">
-      <div className="px-6 py-4">
+    <div className="overflow-hidden rounded-[22px] bg-card shadow-shell">
+      <div className="px-5 py-4">
         <div className="flex items-start gap-4">
-          <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-violet-50 dark:bg-violet-900/20 shrink-0 mt-0.5">
-            <Repeat className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+          <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-shell-accent-soft">
+            <Repeat className="size-5 text-shell-accent" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-sm font-semibold text-foreground truncate">{template.title}</h3>
+              <h3 className="truncate text-[15px] font-semibold text-foreground">{template.title}</h3>
               <span
                 className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${getPriorityColor(template.priority)}`}
               >
@@ -111,28 +111,18 @@ export const TemplateCard = memo(function TemplateCard({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Switch
-              checked={template.isActive}
-              onCheckedChange={onToggle}
-              className="data-[state=checked]:bg-green-500"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs gap-1"
-              onClick={onGenerate}
-              disabled={!template.isActive}
-            >
+            <Switch checked={template.isActive} onCheckedChange={onToggle} />
+            <Button variant="outline" size="pill" onClick={onGenerate} disabled={!template.isActive}>
               <Play className="h-3 w-3" />
               {t("tasks.recurring.generate")}
             </Button>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onEdit}>
+            <Button variant="ghost" size="pillIcon" onClick={onEdit}>
               <Pencil className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+              size="pillIcon"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={onDelete}
             >
               <Trash2 className="h-3.5 w-3.5" />

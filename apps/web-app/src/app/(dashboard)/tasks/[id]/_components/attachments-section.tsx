@@ -80,17 +80,17 @@ export function AttachmentsSection({
         {/* Dropzone */}
         <div
           className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${
-            isDragging ? "border-blue-400 bg-blue-50" : "border-border hover:border-border bg-muted"
+            isDragging ? "border-ring bg-shell-accent-soft" : "border-border hover:border-border bg-muted"
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
         >
-          <Upload className={`size-8 mx-auto mb-2 ${isDragging ? "text-blue-400" : "text-muted-foreground"}`} />
+          <Upload className={`size-8 mx-auto mb-2 ${isDragging ? "text-shell-accent" : "text-muted-foreground"}`} />
           <p className="text-sm text-muted-foreground">
             {t("tasks.attachments.dragDropPrefix")}{" "}
-            <span className="text-blue-600 font-medium">{t("tasks.attachments.browse")}</span>
+            <span className="text-shell-accent font-medium">{t("tasks.attachments.browse")}</span>
           </p>
           <p className="text-xs text-muted-foreground mt-1">{t("tasks.attachments.sizeHint")}</p>
         </div>
@@ -99,18 +99,18 @@ export function AttachmentsSection({
         {uploadingFiles.length > 0 && (
           <div className="mt-4 space-y-2">
             {uploadingFiles.map((uf) => (
-              <div key={uf.id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                <Loader2 className="size-4 text-blue-500 animate-spin shrink-0" />
+              <div key={uf.id} className="flex items-center gap-3 p-3 bg-shell-accent-soft rounded-lg">
+                <Loader2 className="size-4 text-shell-accent animate-spin shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{uf.file.name}</p>
-                  <div className="w-full h-1.5 bg-blue-100 rounded-full mt-1.5">
+                  <div className="w-full h-1.5 bg-muted rounded-full mt-1.5">
                     <div
-                      className="h-full bg-blue-500 rounded-full transition-all"
+                      className="h-full bg-shell-accent rounded-full transition-all"
                       style={{ width: `${Math.round(uf.progress * 100)}%` }}
                     />
                   </div>
                 </div>
-                <span className="text-xs text-blue-600 font-medium shrink-0">{Math.round(uf.progress * 100)}%</span>
+                <span className="text-xs text-shell-accent font-medium shrink-0">{Math.round(uf.progress * 100)}%</span>
               </div>
             ))}
           </div>

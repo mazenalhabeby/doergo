@@ -45,12 +45,19 @@ export const ChecklistItemRow = React.memo(function ChecklistItemRow({
   onOwner,
 }: ChecklistItemRowProps) {
   const { t } = useTranslation()
-  const at = item.completedAt ? new Date(item.completedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""
-  const doneLine = item.isCompleted && item.completedBy
-    ? tickedByOther(item)
-      ? t("tasks.checklist.doneFor", { owner: item.assignee?.firstName ?? "", name: personName(item.completedBy), time: at })
-      : t("tasks.checklist.doneBy", { name: personName(item.completedBy), time: at })
-    : null
+  const at = item.completedAt
+    ? new Date(item.completedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : ""
+  const doneLine =
+    item.isCompleted && item.completedBy
+      ? tickedByOther(item)
+        ? t("tasks.checklist.doneFor", {
+            owner: item.assignee?.firstName ?? "",
+            name: personName(item.completedBy),
+            time: at,
+          })
+        : t("tasks.checklist.doneBy", { name: personName(item.completedBy), time: at })
+      : null
   return (
     <div
       className={cn(
@@ -65,9 +72,7 @@ export const ChecklistItemRow = React.memo(function ChecklistItemRow({
         className={cn(
           "flex-shrink-0 size-[18px] rounded-[5px] border-2 flex items-center justify-center",
           "transition-all duration-200",
-          item.isCompleted
-            ? "bg-blue-600 border-blue-600"
-            : "border-border hover:border-blue-400",
+          item.isCompleted ? "bg-primary border-primary" : "border-border hover:border-ring",
         )}
         style={{ transitionTimingFunction: APPLE_EASE }}
       >
@@ -79,9 +84,7 @@ export const ChecklistItemRow = React.memo(function ChecklistItemRow({
         <span
           className={cn(
             "text-sm transition-all duration-200",
-            item.isCompleted
-              ? "text-muted-foreground line-through"
-              : "text-foreground",
+            item.isCompleted ? "text-muted-foreground line-through" : "text-foreground",
           )}
         >
           {item.text}
@@ -90,8 +93,9 @@ export const ChecklistItemRow = React.memo(function ChecklistItemRow({
       </span>
 
       {/* Owner — only on a job with a crew */}
-      {crew && crew.members.length > 1 && (
-        mayHandOut ? (
+      {crew &&
+        crew.members.length > 1 &&
+        (mayHandOut ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -109,7 +113,8 @@ export const ChecklistItemRow = React.memo(function ChecklistItemRow({
             <DropdownMenuContent align="end">
               {crew.members.map((m) => (
                 <DropdownMenuItem key={m.user.id} onSelect={() => onOwner(item.id, m.user.id)}>
-                  {item.assigneeId === m.user.id ? "✓ " : ""}{personName(m.user)}
+                  {item.assigneeId === m.user.id ? "✓ " : ""}
+                  {personName(m.user)}
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
@@ -121,33 +126,44 @@ export const ChecklistItemRow = React.memo(function ChecklistItemRow({
           <button
             type="button"
             onClick={() => onOwner(item.id, null)}
-            className={"flex-shrink-0 text-xs rounded-full px-2.5 py-1 border border-border " + "text-foreground hover:bg-accent"}
-            title={t("tasks.checklist.giveBack")}>
+            className={
+              "flex-shrink-0 text-xs rounded-full px-2.5 py-1 border border-border " + "text-foreground hover:bg-accent"
+            }
+            title={t("tasks.checklist.giveBack")}
+          >
             {t("tasks.checklist.you")} ×
           </button>
         ) : !item.assigneeId && !item.isCompleted && meId && crew.members.some((m) => m.user.id === meId) ? (
           <button
             type="button"
             onClick={() => onOwner(item.id, meId)}
-            className={"flex-shrink-0 text-xs rounded-full px-2.5 py-1 bg-primary " + "text-primary-foreground hover:opacity-90"}>
+            className={
+              "flex-shrink-0 text-xs rounded-full px-2.5 py-1 bg-primary " + "text-primary-foreground hover:opacity-90"
+            }
+          >
             {t("tasks.checklist.takeIt")}
           </button>
         ) : item.assignee ? (
-          <span className="flex-shrink-0 text-xs rounded-full px-2.5 py-1 bg-muted text-muted-foreground">{personName(item.assignee)}</span>
-        ) : null
-      )}
+          <span className="flex-shrink-0 text-xs rounded-full px-2.5 py-1 bg-muted text-muted-foreground">
+            {personName(item.assignee)}
+          </span>
+        ) : null)}
 
       {/* Delete — somebody else's item only for them, the leader or the office (shared mayEditChecklistItem) */}
-      {(!item.assigneeId || item.assigneeId === meId || mayHandOut) && <button
-        type="button"
-        onClick={() => onDelete(item.id)}
-        disabled={isDeleting}
-        className={"flex-shrink-0 p-1 rounded-md opacity-0 group-hover:opacity-100 " +
-          "text-muted-foreground hover:text-red-500 hover:bg-red-50 " +
-          "dark:hover:bg-red-500/10 transition-all duration-150"}
-      >
-        <Trash2 className="size-3.5" />
-      </button>}
+      {(!item.assigneeId || item.assigneeId === meId || mayHandOut) && (
+        <button
+          type="button"
+          onClick={() => onDelete(item.id)}
+          disabled={isDeleting}
+          className={
+            "flex-shrink-0 p-1 rounded-md opacity-0 group-hover:opacity-100 " +
+            "text-muted-foreground hover:text-red-500 hover:bg-red-50 " +
+            "dark:hover:bg-red-500/10 transition-all duration-150"
+          }
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      )}
     </div>
   )
 })

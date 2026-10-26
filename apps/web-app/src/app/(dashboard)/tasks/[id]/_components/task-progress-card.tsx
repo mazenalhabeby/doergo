@@ -2,7 +2,7 @@
 
 import { personName } from "@hbcfield/shared/client"
 import { useTranslation } from "react-i18next"
-import { Check, MessageSquare, Timer, UserPlus } from "lucide-react"
+import { MessageSquare, Timer, UserPlus } from "lucide-react"
 
 import { type WorkflowStatus } from "@/lib/api"
 import { useContactActions } from "@/hooks/use-contact-actions"
@@ -48,29 +48,36 @@ const FALLBACK_STEPS = [
 ]
 
 const FALLBACK_ORDER: Record<string, number> = {
-  DRAFT: 0, NEW: 0, ASSIGNED: 1, ACCEPTED: 2, EN_ROUTE: 3,
-  ARRIVED: 4, IN_PROGRESS: 4, BLOCKED: 4, COMPLETED: 5, CLOSED: 5,
+  DRAFT: 0,
+  NEW: 0,
+  ASSIGNED: 1,
+  ACCEPTED: 2,
+  EN_ROUTE: 3,
+  ARRIVED: 4,
+  IN_PROGRESS: 4,
+  BLOCKED: 4,
+  COMPLETED: 5,
+  CLOSED: 5,
 }
 
 function buildSteps(workflowStatuses?: WorkflowStatus[]) {
   if (workflowStatuses && workflowStatuses.length > 0) {
     return [...workflowStatuses]
-      .filter(s => !s.isCanceled)
+      .filter((s) => !s.isCanceled)
       .sort((a, b) => a.position - b.position)
-      .map(s => ({ key: s.key, label: s.name }))
+      .map((s) => ({ key: s.key, label: s.name }))
   }
   return FALLBACK_STEPS
 }
 
 function getStepIndex(status: string, steps: { key: string }[], workflowStatuses?: WorkflowStatus[]): number {
-  const idx = steps.findIndex(s => s.key === status)
+  const idx = steps.findIndex((s) => s.key === status)
   if (idx >= 0) return idx
   if (!workflowStatuses || workflowStatuses.length === 0) {
     return Math.min(FALLBACK_ORDER[status] ?? 0, steps.length - 1)
   }
   return 0
 }
-
 
 export function TaskProgressCard({
   assignees,
@@ -99,21 +106,21 @@ export function TaskProgressCard({
 
   // Resolve the primary person: the lead, else the first assignee, else the
   // legacy single assignee (assignedTo).
-  const lead = assignees.find(a => a.role === "LEAD")
+  const lead = assignees.find((a) => a.role === "LEAD")
   const primary = lead ?? assignees[0]
   const primaryUser: AssignedUser | null = primary
     ? {
-      id: primary.user.id,
-      firstName: primary.user.firstName,
-      lastName: primary.user.lastName,
-      avatarUrl: primary.user.avatarUrl,
-      phone: (assignedTo?.id === primary.user.id ? assignedTo?.phone : undefined)
-    }
+        id: primary.user.id,
+        firstName: primary.user.firstName,
+        lastName: primary.user.lastName,
+        avatarUrl: primary.user.avatarUrl,
+        phone: assignedTo?.id === primary.user.id ? assignedTo?.phone : undefined,
+      }
     : assignedTo
   // Everyone else shown as stacked avatars — EXCLUDE the primary so the same
   // person is never drawn twice (the bug: a lone MEMBER was both the primary
   // avatar and a stacked avatar).
-  const members = assignees.filter(a => a.user.id !== primary?.user.id)
+  const members = assignees.filter((a) => a.user.id !== primary?.user.id)
 
   const { message, canMessage } = useContactActions()
 
@@ -129,19 +136,22 @@ export function TaskProgressCard({
    * Nobody else on the task means nobody to contact, and the buttons don't
    * appear at all.
    */
-  const contact = [primary, ...members].find(a => a && canMessage(a.user.id))?.user
-    ?? (canMessage(assignedTo?.id) ? assignedTo : null)
+  const contact =
+    [primary, ...members].find((a) => a && canMessage(a.user.id))?.user ??
+    (canMessage(assignedTo?.id) ? assignedTo : null)
 
   // Both buttons must reach the SAME person. Only the legacy assignedTo record
   // carries a phone number, so we have one to dial exactly when the contact is
   // that person; otherwise Call says so rather than ringing someone else.
 
   return (
-    <div className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
+    <div className="mb-4 overflow-hidden rounded-[22px] border border-border bg-card shadow-shell">
       {/* Header row */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
+      <div className="flex items-center justify-between border-b border-border px-5 py-3">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("tasks.progress.progressLabel")}</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground">
+            {t("tasks.progress.progressLabel")}
+          </span>
           {elapsedTime && (
             <>
               <span className="w-px h-3.5 bg-border" />
@@ -167,11 +177,11 @@ export function TaskProgressCard({
               />
               {members.length > 0 && (
                 <StackedAvatars
-                  users={members.map(m => ({
+                  users={members.map((m) => ({
                     id: m.user.id,
                     firstName: m.user.firstName,
                     lastName: m.user.lastName,
-                    avatarUrl: m.user.avatarUrl
+                    avatarUrl: m.user.avatarUrl,
                   }))}
                   max={3}
                   size="xs"
@@ -181,15 +191,11 @@ export function TaskProgressCard({
             </div>
 
             <div className="flex flex-col">
-              <span className="text-xs font-medium text-foreground leading-none">
-                {personName(primaryUser)}
-              </span>
-              {(lead && members.length > 0) && (
+              <span className="text-xs font-medium text-foreground leading-none">{personName(primaryUser)}</span>
+              {lead && members.length > 0 && (
                 <span className="text-[10px] text-muted-foreground/60 leading-none mt-0.5">
-                  {t(
-                    "tasks.progress.lead")} · {members.length} {members.length === 1
-                      ? t("tasks.progress.member")
-                      : t("tasks.progress.members")}
+                  {t("tasks.progress.lead")} · {members.length}{" "}
+                  {members.length === 1 ? t("tasks.progress.member") : t("tasks.progress.members")}
                 </span>
               )}
             </div>
@@ -199,9 +205,10 @@ export function TaskProgressCard({
                 {/* Straight into the conversation — no list, no choosing. */}
                 <button
                   onClick={() => contact.id && message(contact.id)}
-                  className={"size-6 rounded-md flex items-center justify-center " +
-                    "text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 " +
-                    "transition-colors"}
+                  className={
+                    "flex size-8 items-center justify-center rounded-full bg-shell-chip text-muted-foreground " +
+                    "transition-colors hover:text-foreground"
+                  }
                   title={t("tasks.progress.message")}
                 >
                   <MessageSquare className="size-3" />
@@ -217,60 +224,29 @@ export function TaskProgressCard({
         )}
       </div>
 
-      {/* Progress steps */}
-      <div className="px-6 py-5">
-        <style>{`
-          @keyframes stepGlow {
-            0%, 100% { box-shadow: 0 0 0 0 hsl(var(--foreground) / 0.15); }
-            50% { box-shadow: 0 0 0 6px hsl(var(--foreground) / 0); }
-          }
-        `}</style>
-
-        <div className="flex items-start">
+      {/* Progress steps — the boards' step bars: done and current in the accent, the current one named in ink */}
+      <div className="px-5 py-4">
+        <div className="flex gap-1">
           {steps.map((step, index) => {
-            const isDone = index < currentStepIndex
+            const reached = index <= currentStepIndex
             const isActive = index === currentStepIndex
-            const isFuture = index > currentStepIndex
-
             return (
-              <div key={step.key} className="flex items-start flex-1 last:flex-none">
-                <div className="flex flex-col items-center w-16">
-                  <div
-                    className={cn(
-                      "size-7 rounded-full flex items-center justify-center transition-all duration-500",
-                      isDone && "bg-foreground text-background",
-                      isActive && "bg-foreground text-background",
-                      isFuture && "bg-muted border border-border/80",
-                    )}
-                    style={isActive && !isCompleted ? { animation: "stepGlow 2.5s ease-in-out infinite" } : undefined}
-                  >
-                    {isDone ? (
-                      <Check className="size-3.5 stroke-[2.5]" />
-                    ) : isActive ? (
-                      <span className="size-2 rounded-full bg-background" />
-                    ) : (
-                      <span className="size-1.5 rounded-full bg-muted-foreground/20" />
-                    )}
-                  </div>
-                  <span
-                    className={cn(
-                      "text-[10px] mt-2 text-center font-medium leading-tight",
-                      isDone || isActive ? "text-foreground" : "text-muted-foreground/40",
-                    )}
-                  >
-                    {"tKey" in step && step.tKey ? t(step.tKey as string) : step.label}
-                  </span>
-                </div>
-
-                {index < steps.length - 1 && (
-                  <div className="flex-1 mt-3.5 mx-0 h-px relative">
-                    <div className="absolute inset-0 bg-border" />
-                    <div
-                      className="absolute inset-y-0 left-0 bg-foreground transition-all duration-700 ease-out"
-                      style={{ width: isDone ? "100%" : isActive ? "50%" : "0%" }}
-                    />
-                  </div>
+              <div
+                key={step.key}
+                aria-current={isActive ? "step" : undefined}
+                className={cn(
+                  "flex min-w-0 flex-1 flex-col gap-1.5 text-[11px]",
+                  isActive ? "font-semibold text-foreground" : "text-muted-foreground",
                 )}
+              >
+                <i
+                  className={cn(
+                    "h-[5px] rounded-full transition-colors duration-500",
+                    reached ? "bg-shell-accent" : "bg-muted",
+                    isActive && !isCompleted && "animate-pulse",
+                  )}
+                />
+                <span className="truncate">{"tKey" in step && step.tKey ? t(step.tKey as string) : step.label}</span>
               </div>
             )
           })}

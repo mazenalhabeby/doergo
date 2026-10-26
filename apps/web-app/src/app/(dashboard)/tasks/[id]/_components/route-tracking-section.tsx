@@ -97,7 +97,7 @@ export function RouteTrackingSection({ routeData, isLoading, hasAssignee }: Rout
         <div className="flex items-center gap-3 mb-4">
           {isLive && (
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
-              <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
+              <span className="size-1.5 rounded-full bg-shell-accent animate-pulse" />
               {t("tasks.route.live")}
             </span>
           )}
@@ -182,7 +182,7 @@ export function RouteTrackingSection({ routeData, isLoading, hasAssignee }: Rout
                     <span className="text-[11px] font-semibold text-foreground tabular-nums">
                       <DurationValue routeData={routeData} isLive={isLive} />
                     </span>
-                    {isLive && <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />}
+                    {isLive && <span className="size-1.5 rounded-full bg-shell-accent animate-pulse" />}
                   </div>
                 </div>
               </div>

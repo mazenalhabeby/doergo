@@ -11,6 +11,7 @@ import { RefreshCw, AlertCircle } from "lucide-react"
 import { TaskDetailPageSkeleton } from "@/components/skeletons/task-detail-skeleton"
 import { tasksApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { PAGE_SHELL } from "@/components/ui/page-width"
 import { notify } from "@/lib/toast"
 
 // Each from its own file, not the `./_components` barrel: app code is assumed to
@@ -84,14 +85,14 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   // ─── Error ──────────────────────────────────────────────────────────────
   if (isError || !task) {
     return (
-      <div className="min-h-full bg-background p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-card rounded-2xl shadow-sm p-12 text-center">
-            <AlertCircle className="mx-auto size-12 text-red-400 mb-4" />
+      <div className="min-h-full bg-background">
+        <div className={PAGE_SHELL}>
+          <div className="rounded-[24px] bg-card p-12 text-center shadow-shell">
+            <AlertCircle className="mx-auto mb-4 size-12 text-shell-crit" />
             <p className="font-semibold text-lg mb-2">{t("tasks.detail.failedToLoad")}</p>
             <p className="text-muted-foreground mb-4">{(error as Error)?.message || t("tasks.detail.notFound")}</p>
-            <Button variant="outline" onClick={() => refetch()}>
-              <RefreshCw className="mr-2 size-4" /> {t("common.retry")}
+            <Button variant="outline" size="pill" onClick={() => refetch()}>
+              <RefreshCw /> {t("common.retry")}
             </Button>
           </div>
         </div>
@@ -120,7 +121,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         stepMoveDialog={stepMove.dialog}
       />
 
-      <div className="p-8 max-w-7xl mx-auto">
+      <div className={PAGE_SHELL}>
         {/* ─── Header ────────────────────────────────────────────────── */}
         <div data-tour="task-header">
           <TaskDetailHeader
@@ -178,7 +179,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {/* ─── Two-panel layout ──────────────────────────────────────── */}
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
+        <div className="flex flex-col items-start gap-5 lg:flex-row">
           <TaskDetailMainColumn
             taskId={id}
             task={task}
@@ -196,7 +197,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           />
 
           {/* Right sidebar — sticky */}
-          <div data-tour="task-sidebar" className="w-full lg:w-[35%] lg:shrink-0 lg:sticky lg:top-6">
+          <div data-tour="task-sidebar" className="w-full lg:sticky lg:top-6 lg:w-[35%] lg:max-w-[440px] lg:shrink-0">
             <TaskDetailSidebar
               task={task}
               canEdit={canEdit}

@@ -33,7 +33,7 @@ export function TaskDetailsCard({
   const hasMultiple = assignees.length > 1
   const leadCount = assignees.filter((a) => a.role === "LEAD").length
   return (
-    <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
+    <div className="rounded-[22px] border border-border bg-card p-5 shadow-shell">
       <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
         {t("tasks.sidebar.details")}
       </h3>
@@ -84,7 +84,7 @@ export function TaskDetailsCard({
                       <Link
                         href={`/members/${a.userId}`}
                         className={
-                          "text-xs font-medium text-foreground truncate block hover:text-blue-600 " +
+                          "text-xs font-medium text-foreground truncate block hover:text-shell-accent " +
                           "transition-colors"
                         }
                       >
@@ -94,8 +94,8 @@ export function TaskDetailsCard({
                     {isLead && (
                       <span
                         className={
-                          "text-[9px] bg-blue-100 text-blue-700 dark:bg-blue-500/20 " +
-                          "dark:text-blue-400 px-1.5 py-0.5 rounded font-semibold uppercase " +
+                          "text-[9px] bg-shell-accent-soft text-shell-accent " +
+                          "px-1.5 py-0.5 rounded font-semibold uppercase " +
                           "tracking-wider flex-shrink-0"
                         }
                       >
@@ -141,7 +141,7 @@ export function TaskDetailsCard({
               </div>
               <Link
                 href={`/members/${task.assignedTo.id}`}
-                className={"text-xs font-medium text-foreground hover:text-blue-600 " + "transition-colors"}
+                className={"text-xs font-medium text-foreground hover:text-shell-accent " + "transition-colors"}
               >
                 {personName(task.assignedTo)}
               </Link>
@@ -199,8 +199,7 @@ export function TaskDetailsCard({
               <Link
                 href={`/locations`}
                 className={
-                  "text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 " +
-                  "dark:hover:text-blue-300 flex items-center gap-1 transition-colors"
+                  "text-xs font-medium text-shell-accent hover:underline " + "flex items-center gap-1 transition-colors"
                 }
               >
                 {task.space.name}

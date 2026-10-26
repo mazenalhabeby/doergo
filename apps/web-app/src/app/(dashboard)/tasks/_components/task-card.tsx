@@ -8,8 +8,9 @@ import React from "react"
 import { isTaskOverdue } from "@hbcfield/shared/client"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
-import { Calendar, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PriorityTag } from "./task-row-when"
 import { TaskAssigneesStack, TaskPersonAvatar } from "./task-avatars"
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceModules } from "@/hooks/use-space-modules"
@@ -50,7 +51,7 @@ export const TaskCard = React.memo(function TaskCard({
   className,
 }: TaskCardProps) {
   const { t } = useTranslation()
-/*
+  /*
     Modules are the SPACE's, and a board can show tasks from several spaces at
     once — so the row asks about its OWN task's space rather than the
     organization's set. Cached per space by the hook, so a board of fifty rows
@@ -60,70 +61,87 @@ export const TaskCard = React.memo(function TaskCard({
   const { hasModule: spaceHasModule } = useSpaceModules(task.spaceId ?? null)
   const hasModule = task.spaceId ? spaceHasModule : orgHasModule
   const priorityConfig = getPriorityConfig(task.priority)
-  const PriorityIcon = priorityConfig.icon
   const isOverdue = isTaskOverdue(task)
+
+  const where = task.locationAddress || task.space?.name || null
 
   const cardContent = (
     <div
       draggable
       {...dragProps}
       className={cn(
-        "p-3.5 rounded-xl bg-card border border-border/60 shadow-sm dark:shadow-none",
-        "hover:border-border hover:shadow-md",
-        "transition-all duration-200 cursor-grab active:cursor-grabbing select-none",
+        "flex flex-col gap-2.5 rounded-[18px] border-2 border-transparent bg-card px-4 py-3.5 shadow-shell",
+        "cursor-grab select-none transition-all duration-200 active:cursor-grabbing",
         "group/card",
-        isDragging && "opacity-30 scale-95",
+        isDragging && "scale-95 opacity-30",
         className,
       )}
-      style={undefined}
     >
-      <Link
-        href={`/tasks/${task.id}`}
-        draggable={false}
-        className={"text-sm font-medium text-foreground mb-2.5 line-clamp-2 " +
-          "group-hover/card:text-blue-600 transition-colors duration-150 block"}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {task.title}
-      </Link>
-
-      <div className="flex items-center gap-1.5 mb-3">
-        <PriorityIcon className="size-3" style={{ color: priorityConfig.hex }} />
-        <span className="text-[11px] font-medium" style={{ color: priorityConfig.hex }}>
-          {priorityConfig.label}
-        </span>
-        <PausedChip task={task} />
-        {hasModule('story_points') && task.storyPoints != null && (
-          <span className="bg-muted rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground ml-auto">
-            {task.storyPoints}
-          </span>
-        )}
+      <div className="flex flex-col gap-1">
+        <Link
+          href={`/tasks/${task.id}`}
+          draggable={false}
+          className="line-clamp-2 text-[14.5px] font-semibold text-foreground hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {task.title}
+          <PriorityTag priority={task.priority} label={priorityConfig.label} />
+        </Link>
+        {where && <span className="truncate text-[13px] text-muted-foreground">{where}</span>}
       </div>
 
-      {task.checklistItems && task.checklistItems.length > 0 && (() => {
-        const done = task.checklistItems.filter((i) => i.isCompleted).length
-        const total = task.checklistItems.length
-        const pct = (done / total) * 100
-        return (
-          <div className="mb-2.5">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] text-muted-foreground">{done}/{total}</span>
-            </div>
-            <div className="h-1 rounded-full bg-muted overflow-hidden">
-              <div
-                className={cn("h-full rounded-full", pct === 100 ? "bg-green-500" : "bg-blue-500")}
-                style={{ width: `${pct}%`, transition: `width 0.3s ${APPLE_EASE}` }}
-              />
-            </div>
-          </div>
-        )
-      })()}
+      {(task.pausedAt || (hasModule("story_points") && task.storyPoints != null)) && (
+        <div className="flex items-center gap-1.5">
+          <PausedChip task={task} />
+          {hasModule("story_points") && task.storyPoints != null && (
+            <span className="rounded-full bg-shell-chip px-2 text-[11px] font-bold tabular-nums text-muted-foreground">
+              {task.storyPoints}
+            </span>
+          )}
+        </div>
+      )}
 
-      <div className="flex items-center justify-between">
+      {task.checklistItems &&
+        task.checklistItems.length > 0 &&
+        (() => {
+          const done = task.checklistItems.filter((i) => i.isCompleted).length
+          const total = task.checklistItems.length
+          const pct = (done / total) * 100
+          return (
+            <div className="flex items-center gap-2">
+              <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-shell-accent"
+                  style={{ width: `${pct}%`, transition: `width 0.3s ${APPLE_EASE}` }}
+                />
+              </div>
+              <span className="text-[11px] tabular-nums text-muted-foreground">
+                {done}/{total}
+              </span>
+            </div>
+          )
+        })()}
+
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className={cn(
+            "text-[13px] tabular-nums",
+            isOverdue ? "font-semibold text-shell-crit" : "text-muted-foreground",
+          )}
+        >
+          {task.dueDate
+            ? new Date(task.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" })
+            : null}
+        </span>
+
         {/* Assignee area — always clickable to open assign dialog */}
         <div
-          className="flex items-center cursor-pointer rounded-md px-1 py-0.5 -mx-1 hover:bg-muted/50 transition-colors"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAssignClick?.(task.id) }}
+          className="-mx-1 flex cursor-pointer items-center rounded-full px-1 py-0.5 transition-colors hover:bg-shell-chip"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onAssignClick?.(task.id)
+          }}
           title={t("tasks.card.manageAssignees")}
         >
           {task.assignees && task.assignees.length > 0 ? (
@@ -131,30 +149,22 @@ export const TaskCard = React.memo(function TaskCard({
           ) : task.assignedTo ? (
             <div className="flex items-center gap-1.5">
               <TaskPersonAvatar person={task.assignedTo} />
-              <span className="text-[11px] text-muted-foreground truncate max-w-[80px]">
-                {task.assignedTo.firstName}
-              </span>
+              <span className="max-w-[80px] truncate text-xs text-muted-foreground">{task.assignedTo.firstName}</span>
             </div>
           ) : isOpenToRole(task) ? (
             <OpenRoleChip task={task} />
           ) : (
-            <div className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
-              <div className="size-5 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-                <Plus className="size-2.5 text-muted-foreground/40" />
-              </div>
-              <span className="text-[11px] text-muted-foreground/40">{t("tasks.card.assign")}</span>
-            </div>
+            <span
+              className={
+                "inline-flex h-7 items-center gap-1 rounded-full bg-primary px-3 text-xs font-semibold " +
+                "text-primary-foreground"
+              }
+            >
+              <Plus className="size-3" />
+              {t("tasks.card.assign")}
+            </span>
           )}
         </div>
-
-        {task.dueDate && (
-          <div className="flex items-center gap-1">
-            <Calendar className={cn("size-3", isOverdue ? "text-red-500" : "text-muted-foreground/60")} />
-            <span className={cn("text-[11px]", isOverdue ? "text-red-500 font-medium" : "text-muted-foreground/60")}>
-              {new Date(task.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" })}
-            </span>
-          </div>
-        )}
       </div>
     </div>
   )

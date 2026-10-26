@@ -5,11 +5,7 @@ import { useState, memo } from "react"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  Plus,
-  ChevronRight,
-  Loader2,
-} from "lucide-react"
+import { Plus, ChevronRight, Loader2 } from "lucide-react"
 
 import { tasksApi, type Task, type WorkflowStatus } from "@/lib/api"
 import { getPriorityConfig, type StatusConfig } from "@/lib/constants"
@@ -59,9 +55,12 @@ const SubtaskRow = memo(function SubtaskRow({
 
       {/* Title */}
       <span
-        className={"text-sm font-medium text-foreground flex-1 truncate " +
-          "group-hover:text-blue-600 dark:group-hover:text-blue-400 " +
-          "transition-colors"}>
+        className={
+          "text-sm font-medium text-foreground flex-1 truncate " +
+          "group-hover:text-shell-accent " +
+          "transition-colors"
+        }
+      >
         {subtask.title}
       </span>
 
@@ -130,8 +129,7 @@ export const SubtasksSection = memo(function SubtasksSection({
 
   // Create subtask mutation
   const createMutation = useMutation({
-    mutationFn: (title: string) =>
-      tasksApi.createSubtask(taskId, { title, description: "" }),
+    mutationFn: (title: string) => tasksApi.createSubtask(taskId, { title, description: "" }),
     onSuccess: () => {
       notify.success(t("tasks.subtasks.created"))
       setNewTitle("")
@@ -177,17 +175,17 @@ export const SubtasksSection = memo(function SubtasksSection({
         control you are not allowed to use should not be there.
       */}
       {canEdit && (
-      <div className="flex justify-end mb-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-          onClick={() => setShowInput(true)}
-        >
-          <Plus className="size-3.5 mr-1" />
-          {t("common.add")}
-        </Button>
-      </div>
+        <div className="flex justify-end mb-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => setShowInput(true)}
+          >
+            <Plus className="size-3.5 mr-1" />
+            {t("common.add")}
+          </Button>
+        </div>
       )}
 
       {/* Subtask list */}
@@ -202,9 +200,7 @@ export const SubtasksSection = memo(function SubtasksSection({
       {/* Empty state */}
       {subtasks.length === 0 && !showInput && (
         <div className="px-5 py-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            {t("tasks.subtasks.empty")}
-          </p>
+          <p className="text-sm text-muted-foreground">{t("tasks.subtasks.empty")}</p>
         </div>
       )}
 
@@ -212,7 +208,7 @@ export const SubtasksSection = memo(function SubtasksSection({
       {showInput && (
         <div className="px-4 py-3 border-t border-border/40 flex items-center gap-2">
           <div className="pl-2">
-            <span className="size-2 rounded-full bg-blue-500 block" />
+            <span className="size-2 rounded-full bg-shell-accent block" />
           </div>
           <Input
             autoFocus
@@ -225,15 +221,11 @@ export const SubtasksSection = memo(function SubtasksSection({
           />
           <Button
             size="sm"
-            className="h-7 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+            className="h-7 px-3 text-xs"
             onClick={handleSubmit}
             disabled={!newTitle.trim() || createMutation.isPending}
           >
-            {createMutation.isPending ? (
-              <Loader2 className="size-3 animate-spin" />
-            ) : (
-              t("common.add")
-            )}
+            {createMutation.isPending ? <Loader2 className="size-3 animate-spin" /> : t("common.add")}
           </Button>
           <Button
             variant="ghost"

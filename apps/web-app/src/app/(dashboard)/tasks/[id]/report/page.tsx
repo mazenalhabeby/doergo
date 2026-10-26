@@ -5,21 +5,43 @@ import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { AlertCircle, Download, FileQuestion, Loader2, RefreshCw } from "lucide-react"
-import { personName, CLIENT_COPY_OPTIONS, type ClientCopyOption, type TaskReport, type TaskReportCopy } from "@hbcfield/shared/client"
+import {
+  personName,
+  CLIENT_COPY_OPTIONS,
+  type ClientCopyOption,
+  type TaskReport,
+  type TaskReportCopy,
+} from "@hbcfield/shared/client"
 
 import { tasksApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
-import { InvoiceTopBar, InvoiceWorkbench } from "@/components/invoices/invoice-shell"
+import { Icon } from "@/components/ui/icon"
+import { PAGE_SHELL } from "@/components/ui/page-width"
+import { PageHeader, Panel } from "@/components/page/page-kit"
 import { CopySwitch, HeadSwitches, IssuerPicker, ReportRail } from "./_components/report-rail"
 import { ReportSheet } from "./_components/report-sheet"
 import { useTaskPermissions } from "@/hooks/use-task-permissions"
 import { JobReportPageSkeleton, ReportSheetSkeleton } from "../../../../../components/skeletons/report-skeleton"
 import {
-  availableHeadToggles, availableToggles, loadClientInclude, loadHeadOff, loadIssuerChoice, loadOffToggles, normalizeInclude,
-  reportQueryKey, saveClientInclude, saveHeadOff, saveIssuerChoice, saveOffToggles, showPrices, visibleSections,
-  type HeadToggle, type ReportToggle, type Translate,
+  availableHeadToggles,
+  availableToggles,
+  loadClientInclude,
+  loadHeadOff,
+  loadIssuerChoice,
+  loadOffToggles,
+  normalizeInclude,
+  reportQueryKey,
+  saveClientInclude,
+  saveHeadOff,
+  saveIssuerChoice,
+  saveOffToggles,
+  showPrices,
+  visibleSections,
+  type HeadToggle,
+  type ReportToggle,
+  type Translate,
 } from "./_lib/report-model"
 
 /**
@@ -154,82 +176,113 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
     const notFound = status === 404 || notFinished
     return (
       <div className="mx-auto flex max-w-md flex-col items-center px-6 py-24 text-center">
-        {notFound ? <FileQuestion className="size-10 text-muted-foreground" /> : <AlertCircle className="size-10 text-red-500" />}
-        <h1
-          className="mt-4 text-lg font-semibold text-foreground">{notFinished
+        {notFound ? (
+          <FileQuestion className="size-10 text-muted-foreground" />
+        ) : (
+          <AlertCircle className="size-10 text-shell-crit" />
+        )}
+        <h1 className="mt-4 text-lg font-semibold text-foreground">
+          {notFinished
             ? t("tasks.report.notFinished")
-            : notFound ? t("tasks.report.notAvailable") : t("tasks.report.loadFailed")}</h1>
-        {notFound
-          ? <p
-            className="mt-1 text-sm text-muted-foreground">{t(
-              notFinished ? "tasks.report.notFinishedHint" : "tasks.report.notAvailableHint")}</p>
-          : null}
+            : notFound
+              ? t("tasks.report.notAvailable")
+              : t("tasks.report.loadFailed")}
+        </h1>
+        {notFound ? (
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t(notFinished ? "tasks.report.notFinishedHint" : "tasks.report.notAvailableHint")}
+          </p>
+        ) : null}
         <div className="mt-6 flex gap-2">
           {!notFound ? (
-            <Button variant="outline" onClick={() => query.refetch()}>
-              <RefreshCw className="mr-1.5 size-4" />
+            <Button variant="outline" size="pill" onClick={() => query.refetch()}>
+              <RefreshCw />
               {t("tasks.report.retry")}
             </Button>
           ) : null}
-          <Button
-            onClick={() => router.push(
-              notFound ? "/tasks" : `/tasks/${id}`)}>{notFound ? t("tasks.page.heading") : t("tasks.report.back")}</Button>
+          <Button size="pill" onClick={() => router.push(notFound ? "/tasks" : `/tasks/${id}`)}>
+            {notFound ? t("tasks.page.heading") : t("tasks.report.back")}
+          </Button>
         </div>
       </div>
     )
   }
 
   return (
-    <div>
-      <InvoiceTopBar
+    <div className={PAGE_SHELL}>
+      <PageHeader
         title={report?.header.title ?? t("tasks.report.title")}
         subtitle={report ? `${t("tasks.report.title")} · ${report.header.reference}` : undefined}
-        onBack={back}>
-        <CopySwitch copy={copy} onChange={setCopy} />
-        <Button size="sm" className="h-8" onClick={download} disabled={!report || building || query.isFetching}>
-          {building ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : <Download className="mr-1.5 size-4" />}
-          <span className="hidden sm:inline">
-            {building
-              ? progress && progress.total > 0 && progress.done < progress.total
-                ? t("tasks.report.preparingPhotos", { done: progress.done, total: progress.total })
-                : t("tasks.report.preparing")
-              : t("tasks.report.download")}
-          </span>
-        </Button>
-      </InvoiceTopBar>
-
-      <InvoiceWorkbench
-        rail={
+        actions={
           <>
-            {report ? (
-              <IssuerPicker
-                issuers={report.meta.issuers ?? []}
-                value={issuer}
-                defaultId={report.meta.issuerDefaultId ?? null}
-                onChange={chooseIssuer}
-              />
-            ) : null}
-            {headAvailable ? <HeadSwitches available={headAvailable} off={headOff} onToggle={toggleHead} /> : null}
-            <ReportRail
-              copy={copy}
-              available={available}
-              off={off}
-              onToggle={toggle}
-              include={include}
-              onInclude={setIncluded}
-              canIncludeRoute={canViewTracking}
-            />
+            <Button variant="outline" size="pillIcon" onClick={back} aria-label={t("tasks.report.back")}>
+              <Icon name="backLine" />
+            </Button>
+            <CopySwitch copy={copy} onChange={setCopy} />
+            <Button size="pill" onClick={download} disabled={!report || building || query.isFetching}>
+              {building ? <Loader2 className="animate-spin" /> : <Download />}
+              <span className="hidden sm:inline">
+                {building
+                  ? progress && progress.total > 0 && progress.done < progress.total
+                    ? t("tasks.report.preparingPhotos", { done: progress.done, total: progress.total })
+                    : t("tasks.report.preparing")
+                  : t("tasks.report.download")}
+              </span>
+            </Button>
           </>
         }
-      >
-        {report ? (
-          <div className={query.isFetching && query.isPlaceholderData ? "opacity-60 transition-opacity" : undefined}>
-            <ReportSheet report={report} visible={visible} showPrices={prices} generatedBy={generatedBy} headOff={headOff} />
+      />
+
+      <div className="flex flex-wrap items-start gap-4">
+        {/* The rail: who issues it, the top of the report, and what is in it. Stays put while the paper scrolls. */}
+        <Panel
+          as="aside"
+          className={
+            "w-full space-y-5 p-5 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-48px)] lg:w-[320px] lg:shrink-0 " +
+            "lg:overflow-y-auto lg:overscroll-contain [&>*+*]:border-t [&>*+*]:border-border [&>*+*]:pt-5"
+          }
+        >
+          {report ? (
+            <IssuerPicker
+              issuers={report.meta.issuers ?? []}
+              value={issuer}
+              defaultId={report.meta.issuerDefaultId ?? null}
+              onChange={chooseIssuer}
+            />
+          ) : null}
+          {headAvailable ? <HeadSwitches available={headAvailable} off={headOff} onToggle={toggleHead} /> : null}
+          <ReportRail
+            copy={copy}
+            available={available}
+            off={off}
+            onToggle={toggle}
+            include={include}
+            onInclude={setIncluded}
+            canIncludeRoute={canViewTracking}
+          />
+        </Panel>
+
+        {/* The paper itself — the only thing on the page drawn as a document. */}
+        <div className="flex min-w-0 flex-[1_1_520px] justify-center">
+          <div className="w-full max-w-[820px] space-y-5">
+            {report ? (
+              <div
+                className={query.isFetching && query.isPlaceholderData ? "opacity-60 transition-opacity" : undefined}
+              >
+                <ReportSheet
+                  report={report}
+                  visible={visible}
+                  showPrices={prices}
+                  generatedBy={generatedBy}
+                  headOff={headOff}
+                />
+              </div>
+            ) : (
+              <ReportSheetSkeleton />
+            )}
           </div>
-        ) : (
-          <ReportSheetSkeleton />
-        )}
-      </InvoiceWorkbench>
+        </div>
+      </div>
     </div>
   )
 }

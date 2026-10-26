@@ -38,7 +38,7 @@ export function JobTimeCard({ taskId, paused }: { taskId: string; paused: boolea
   const started = data.startedBy
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
+    <div className="rounded-[22px] border border-border bg-card p-5 shadow-shell">
       <div className="flex items-center gap-2">
         <Timer className="size-4 text-muted-foreground" />
         <span className="text-sm font-semibold text-foreground">{t("tasks.jobTime.title")}</span>

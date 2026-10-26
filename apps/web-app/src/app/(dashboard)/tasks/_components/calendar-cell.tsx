@@ -54,7 +54,7 @@ export const CalendarCell = React.memo(function CalendarCell({
         "relative border-b border-r border-border/20 min-h-[90px] p-1 transition-colors duration-100",
         !isCurrentMonth && "opacity-40",
         isWeekendDay && isCurrentMonth && "bg-muted/15",
-        isToday && "bg-blue-500/[0.04]",
+        isToday && "bg-shell-accent-soft",
         dayInWeek === 6 && "border-r-0",
       )}
       style={{
@@ -67,7 +67,7 @@ export const CalendarCell = React.memo(function CalendarCell({
           className={cn(
             "size-6 flex items-center justify-center rounded-full text-xs",
             isToday
-              ? "bg-blue-600 text-white font-bold shadow-sm"
+              ? "bg-primary text-primary-foreground font-bold shadow-sm"
               : isCurrentMonth
                 ? "text-foreground/70 font-medium"
                 : "text-muted-foreground/30",

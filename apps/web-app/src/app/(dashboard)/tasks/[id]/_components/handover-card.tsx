@@ -7,7 +7,14 @@ import { personName, HANDOVER_NOTE_MAX, formatDuration, owesHandover } from "@hb
 import type { Task } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { formatTimeAgo } from "@/lib/format-date"
 import { HANDOVER_WARN_CLASS as WARN, useHandoverPendingText } from "@/components/tasks/handover-pending-notice"
@@ -47,7 +54,7 @@ export function HandoverCard({
   return (
     <div className="space-y-2">
       {task.pausedAt ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-2.5 text-sm">
+        <div className="flex flex-wrap items-center gap-3 rounded-[18px] border border-border bg-card px-4 py-3 text-sm shadow-shell">
           <PauseCircle className="size-4 text-muted-foreground" />
           <span className="flex-1 text-foreground">
             {task.pausedById === meId
@@ -75,7 +82,7 @@ export function HandoverCard({
       ) : null}
 
       {latest ? (
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-[22px] border border-border bg-card p-5 shadow-shell">
           <p className="text-xs font-semibold uppercase tracking-wide text-primary">{t("tasks.handover.label")}</p>
           <div className="mt-3 flex items-center gap-2.5">
             <UserAvatar
@@ -90,7 +97,10 @@ export function HandoverCard({
               <p className="text-xs text-muted-foreground">
                 {[
                   formatTimeAgo(latest.createdAt),
-                  latest.workedMinutes ? t("tasks.handover.worked", { time: formatDuration(latest.workedMinutes) }) : null]
+                  latest.workedMinutes
+                    ? t("tasks.handover.worked", { time: formatDuration(latest.workedMinutes) })
+                    : null,
+                ]
                   .filter(Boolean)
                   .join(" · ")}
               </p>
@@ -98,7 +108,9 @@ export function HandoverCard({
           </div>
           <p className="mt-3 whitespace-pre-wrap text-sm text-foreground">{latest.note}</p>
           {latest.attachmentIds.length ? (
-            <p className="mt-2 text-xs text-muted-foreground">{t("tasks.handover.photos", { count: latest.attachmentIds.length })}</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {t("tasks.handover.photos", { count: latest.attachmentIds.length })}
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -109,8 +121,15 @@ export function HandoverCard({
 }
 
 /** "What you did, and what is left" — the web's way to write the note. */
-function HandoverDialog(
-  { open, onOpenChange, onSave }: { open: boolean; onOpenChange: (o: boolean) => void; onSave: (note: string) => Promise<unknown> }) {
+function HandoverDialog({
+  open,
+  onOpenChange,
+  onSave,
+}: {
+  open: boolean
+  onOpenChange: (o: boolean) => void
+  onSave: (note: string) => Promise<unknown>
+}) {
   const { t } = useTranslation()
   const [note, setNote] = useState("")
   const [saving, setSaving] = useState(false)
@@ -140,7 +159,9 @@ function HandoverDialog(
           placeholder={t("tasks.handover.placeholder")}
         />
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>{t("common.cancel")}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            {t("common.cancel")}
+          </Button>
           <Button onClick={() => void save()} disabled={!note.trim() || saving}>
             {saving ? <Loader2 className="size-4 animate-spin" /> : null}
             {t("tasks.handover.save")}
@@ -150,4 +171,3 @@ function HandoverDialog(
     </Dialog>
   )
 }
-

@@ -45,7 +45,7 @@ const DependencyRow = memo(function DependencyRow({
       <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: step.hex }} title={step.label} />
       <Link
         href={`/tasks/${linked.id}`}
-        className="text-sm font-medium text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1 truncate"
+        className="text-sm font-medium text-foreground hover:text-shell-accent transition-colors flex-1 truncate"
       >
         {linked.title}
       </Link>

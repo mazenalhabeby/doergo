@@ -255,7 +255,7 @@ export function InlineEditField({
           onKeyDown={handleKeyDown}
           onBlur={save}
           rows={4}
-          className="text-sm resize-none ring-2 ring-blue-500/20 border-blue-300"
+          className="text-sm resize-none ring-2 ring-ring/20 border-ring"
           disabled={saving}
         />
         <div className="flex items-center gap-1.5">
@@ -279,7 +279,7 @@ export function InlineEditField({
       onChange={(e) => setDraft(e.target.value)}
       onKeyDown={handleKeyDown}
       onBlur={save}
-      className={cn("h-8 text-sm ring-2 ring-blue-500/20 border-blue-300", className)}
+      className={cn("h-8 text-sm ring-2 ring-ring/20 border-ring", className)}
       disabled={saving}
     />
   )

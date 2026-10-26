@@ -92,7 +92,9 @@ export function AttachmentUpload({ reportId, taskId }: { reportId: string; taskI
             onClick={() => setUploadType("BEFORE")}
             className={cn(
               "px-3 py-1 text-xs font-medium transition-colors",
-              uploadType === "BEFORE" ? "bg-blue-600 text-white" : "bg-card text-muted-foreground hover:bg-accent",
+              uploadType === "BEFORE"
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-muted-foreground hover:bg-accent",
             )}
           >
             {t("tasks.serviceReport.before")}
@@ -102,7 +104,9 @@ export function AttachmentUpload({ reportId, taskId }: { reportId: string; taskI
             onClick={() => setUploadType("AFTER")}
             className={cn(
               "px-3 py-1 text-xs font-medium transition-colors",
-              uploadType === "AFTER" ? "bg-blue-600 text-white" : "bg-card text-muted-foreground hover:bg-accent",
+              uploadType === "AFTER"
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-muted-foreground hover:bg-accent",
             )}
           >
             {t("tasks.serviceReport.after")}
@@ -124,7 +128,7 @@ export function AttachmentUpload({ reportId, taskId }: { reportId: string; taskI
         onClick={() => !isUploading && fileInputRef.current?.click()}
         className={cn(
           "relative rounded-lg border-2 border-dashed transition-all duration-200 cursor-pointer",
-          isDragOver ? "border-blue-400 bg-blue-50" : "border-border bg-muted hover:border-border",
+          isDragOver ? "border-ring bg-shell-accent-soft" : "border-border bg-muted hover:border-border",
           isUploading && "pointer-events-none opacity-60",
         )}
       >
@@ -139,7 +143,7 @@ export function AttachmentUpload({ reportId, taskId }: { reportId: string; taskI
         <div className="flex flex-col items-center justify-center py-6 px-4">
           {isUploading ? (
             <>
-              <Loader2 className="size-5 text-blue-500 animate-spin mb-2" />
+              <Loader2 className="size-5 text-shell-accent animate-spin mb-2" />
               <p className="text-xs text-muted-foreground font-medium">{t("tasks.serviceReport.upload.uploading")}</p>
             </>
           ) : (

@@ -4,6 +4,12 @@ import { useTranslation } from "react-i18next"
 
 import { cn } from "@/lib/utils"
 
+/** The boards' quick filter (`kqf`): a 38px pill, filled with ink when it is the slice on screen. */
+export const QUICK_FILTER =
+  "inline-flex h-[38px] items-center gap-2 rounded-full px-4 text-sm font-medium text-foreground outline-none " +
+  "transition-colors hover:bg-shell-chip focus-visible:ring-2 focus-visible:ring-ring " +
+  "aria-pressed:bg-foreground aria-pressed:font-semibold aria-pressed:text-background"
+
 /**
  * Mine, or everything I oversee.
  *
@@ -23,35 +29,24 @@ export function MineScopeToggle({
   const { t } = useTranslation()
 
   return (
-          <div className="mb-3 inline-flex rounded-lg border border-border bg-card p-0.5" role="group"
-               aria-label={t("tasks.myWork.scope.label", "Whose work")}>
-            {([
-              [false, t("tasks.myWork.scope.all", "All"), counts?.all],
-              [true, t("tasks.myWork.scope.mine", "Mine"), counts?.mine],
-            ] as const).map(([isMine, label, count]) => (
-              <button
-                key={label}
-                type="button"
-                aria-pressed={mineOnly === isMine}
-                onClick={() => onChange(isMine)}
-                className={cn(
-                  "inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition",
-                  mineOnly === isMine
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {label}
-                {typeof count === "number" && (
-                  <span className={cn(
-                    "rounded px-1.5 text-[11px] font-bold tabular-nums",
-                    mineOnly === isMine ? "bg-white/20" : "bg-muted text-muted-foreground",
-                  )}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+    <div className="flex items-center gap-0.5" role="group" aria-label={t("tasks.myWork.scope.label", "Whose work")}>
+      {(
+        [
+          [false, t("tasks.myWork.scope.all", "All"), counts?.all],
+          [true, t("tasks.myWork.scope.mine", "Mine"), counts?.mine],
+        ] as const
+      ).map(([isMine, label, count]) => (
+        <button
+          key={label}
+          type="button"
+          aria-pressed={mineOnly === isMine}
+          onClick={() => onChange(isMine)}
+          className={QUICK_FILTER}
+        >
+          {label}
+          {typeof count === "number" && <span className={cn("tabular-nums opacity-55")}>{count}</span>}
+        </button>
+      ))}
+    </div>
   )
 }

@@ -29,7 +29,7 @@ export function TaskRowStatusCell({
   const { t } = useTranslation()
   const { statusConfig, statusOptions, currentIsFinished, allowedTargets, isManager, canChangeStatus } = status
   return (
-    <div className="w-[110px] flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+    <div className="min-w-0" onClick={(e) => e.stopPropagation()}>
       {canChangeStatus ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -37,15 +37,14 @@ export function TaskRowStatusCell({
               type="button"
               title={t("tasks.menu.status")}
               className={
-                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] " +
-                "font-semibold transition-opacity hover:opacity-80 focus:outline-none " +
-                "focus-visible:ring-2 focus-visible:ring-ring"
+                "-mx-2 inline-flex max-w-full items-center gap-2 rounded-full px-2 py-1 text-[13.5px] font-medium " +
+                "text-foreground outline-none transition-colors hover:bg-shell-chip focus-visible:ring-2 " +
+                "focus-visible:ring-ring"
               }
-              style={{ backgroundColor: `${statusConfig.hex}14`, color: statusConfig.hex }}
             >
-              <span className="size-1.5 rounded-full" style={{ backgroundColor: statusConfig.hex }} />
-              {statusConfig.label}
-              <ChevronDown className="size-2.5 opacity-60" />
+              <span className="size-[7px] shrink-0 rounded-full" style={{ backgroundColor: statusConfig.hex }} />
+              <span className="truncate">{statusConfig.label}</span>
+              <ChevronDown className="size-3 shrink-0 opacity-50" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-[180px]">
@@ -75,12 +74,9 @@ export function TaskRowStatusCell({
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <span
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
-          style={{ backgroundColor: `${statusConfig.hex}14`, color: statusConfig.hex }}
-        >
-          <span className="size-1.5 rounded-full" style={{ backgroundColor: statusConfig.hex }} />
-          {statusConfig.label}
+        <span className="inline-flex max-w-full items-center gap-2 text-[13.5px] font-medium text-muted-foreground">
+          <span className="size-[7px] shrink-0 rounded-full" style={{ backgroundColor: statusConfig.hex }} />
+          <span className="truncate">{statusConfig.label}</span>
         </span>
       )}
     </div>

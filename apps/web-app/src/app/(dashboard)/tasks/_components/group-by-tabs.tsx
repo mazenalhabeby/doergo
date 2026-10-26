@@ -2,8 +2,12 @@
 
 import { useTranslation } from "react-i18next"
 
-import { cn } from "@/lib/utils"
 import type { GroupByOption } from "./grouped-list"
+
+const GROUP_PILL =
+  "h-8 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium text-muted-foreground outline-none " +
+  "transition-colors hover:bg-shell-chip hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring " +
+  "aria-pressed:bg-shell-nav-on aria-pressed:font-semibold aria-pressed:text-shell-nav-on-ink"
 
 /** Group-by tabs (only on list view). */
 export function GroupByTabs({
@@ -18,22 +22,19 @@ export function GroupByTabs({
   const { t } = useTranslation()
 
   return (
-          <div className="mb-3 flex items-center gap-1 text-xs text-muted-foreground">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50 mr-1">{t("tasks.page.group")}</span>
-            {options.map(({ value }) => (
-              <button
-                key={value}
-                onClick={() => onChange(value)}
-                className={cn(
-                  "px-2.5 py-1 rounded-md transition-colors duration-150 whitespace-nowrap",
-                  groupBy === value
-                    ? "bg-foreground/10 text-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50 font-medium"
-                )}
-              >
-                {t(`tasks.groupBy.${value}`)}
-              </button>
-            ))}
-          </div>
+    <div className="mb-3 flex flex-wrap items-center gap-1">
+      <span className="mr-1.5 text-[13px] font-semibold text-muted-foreground">{t("tasks.page.group")}</span>
+      {options.map(({ value }) => (
+        <button
+          key={value}
+          type="button"
+          aria-pressed={groupBy === value}
+          onClick={() => onChange(value)}
+          className={GROUP_PILL}
+        >
+          {t(`tasks.groupBy.${value}`)}
+        </button>
+      ))}
+    </div>
   )
 }

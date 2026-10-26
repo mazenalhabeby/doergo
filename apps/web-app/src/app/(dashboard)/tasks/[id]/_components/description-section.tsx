@@ -13,7 +13,7 @@ interface DescriptionSectionProps {
 export function DescriptionSection({ description, canEdit, onSave }: DescriptionSectionProps) {
   const { t } = useTranslation()
   return (
-    <div className="bg-card rounded-2xl border border-border p-5">
+    <div className="rounded-[22px] border border-border bg-card p-5 shadow-shell">
       <div className="flex items-center gap-2 mb-3">
         <FileText className="size-4 text-muted-foreground" />
         <span className="text-sm font-semibold text-foreground">{t("tasks.description.label")}</span>

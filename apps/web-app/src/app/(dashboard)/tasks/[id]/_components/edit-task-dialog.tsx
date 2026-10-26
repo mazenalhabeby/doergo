@@ -267,11 +267,7 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
             >
               {t("common.cancel")}
             </Button>
-            <Button
-              type="submit"
-              disabled={!isFormValid || updateMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
+            <Button type="submit" disabled={!isFormValid || updateMutation.isPending}>
               {updateMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />

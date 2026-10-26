@@ -95,9 +95,9 @@ export function OpenRoleCard({ task }: { task: Task }) {
   const openMin = task.openedAt ? Math.max(0, Math.round((Date.now() - Date.parse(task.openedAt)) / 60_000)) : null
 
   return (
-    <div className="rounded-2xl border border-violet-500/30 bg-violet-500/5 p-4">
+    <div className="rounded-[22px] border border-border bg-card p-5 shadow-shell">
       <div className="flex flex-wrap items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-violet-700 dark:text-violet-300">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-shell-accent-soft text-shell-accent">
           <UsersRound className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
@@ -148,7 +148,7 @@ export function OpenRoleCard({ task }: { task: Task }) {
       )}
 
       {mayAssign && open && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-violet-500/20 pt-3 text-xs text-muted-foreground">
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
           <span>{t("tasks.role.people")}</span>
           <div className="flex h-7 items-center rounded-md border border-border bg-card">
             <button

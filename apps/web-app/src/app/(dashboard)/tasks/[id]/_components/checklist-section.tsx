@@ -53,9 +53,7 @@ export const ChecklistSection = React.memo(function ChecklistSection({
         if (!old?.checklistItems) return old
         return {
           ...old,
-          checklistItems: old.checklistItems.map((i: ChecklistItem) =>
-            i.id === itemId ? { ...i, isCompleted } : i,
-          ),
+          checklistItems: old.checklistItems.map((i: ChecklistItem) => (i.id === itemId ? { ...i, isCompleted } : i)),
         }
       })
     },
@@ -136,10 +134,7 @@ export const ChecklistSection = React.memo(function ChecklistSection({
         <div className="pt-1">
           <div className="h-1.5 rounded-full bg-muted overflow-hidden">
             <div
-              className={cn(
-                "h-full rounded-full transition-all duration-500",
-                progress === 100 ? "bg-green-500" : "bg-blue-500",
-              )}
+              className={cn("h-full rounded-full transition-all duration-500", "bg-shell-accent")}
               style={{
                 width: `${progress}%`,
                 transitionTimingFunction: APPLE_EASE,

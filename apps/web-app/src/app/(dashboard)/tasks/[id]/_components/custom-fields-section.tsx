@@ -222,7 +222,12 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
 
   return (
     <div data-tour="task-custom-fields">
-      <CollapsibleSection id="custom-fields" icon={Settings2} title={t("tasks.sections.customFields")}>
+      <CollapsibleSection
+        className="rounded-[22px] shadow-shell"
+        id="custom-fields"
+        icon={Settings2}
+        title={t("tasks.sections.customFields")}
+      >
         <div>
           {saveMutation.isPending && (
             <div className="flex justify-end mb-2">

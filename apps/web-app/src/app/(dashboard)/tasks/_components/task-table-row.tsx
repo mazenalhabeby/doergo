@@ -3,18 +3,20 @@
 import React from "react"
 import { useRouter } from "next/navigation"
 import { GripVertical } from "lucide-react"
-import { isTaskOverdue } from "@hbcfield/shared/client"
 import { PausedChip } from "@/components/tasks/paused-chip"
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { getPriorityConfig } from "@/lib/constants"
-import { dateLocale } from "@/lib/format-date"
 import { cn } from "@/lib/utils"
 import type { Task, Sprint, Phase, Epic } from "@/lib/api"
 import { TaskContextMenu, type TaskContextMenuActions } from "./task-context-menu"
 import { TaskRowAssigneeCell } from "./task-row-assignee-cell"
 import { TaskRowStatusCell } from "./task-row-status-cell"
 import { useTaskRowStatus } from "./use-task-row-status"
+import { PriorityTag, TaskRowWhen } from "./task-row-when"
+
+/** The list's columns: handle · when · what · step · who (the boards' `krow`). Header and rows share it. */
+export const TASK_ROW_GRID = "grid-cols-[14px_64px_minmax(0,1fr)_140px_150px]"
 
 export interface TaskTableRowProps {
   task: Task
@@ -36,7 +38,7 @@ export interface TaskTableRowProps {
   isDragging?: boolean
 }
 
-/** One task in the list view: step dot, title, priority, assignee, due date, step — the row opens the task. */
+/** One task in the list view: when, title + priority + where, step, who — the row opens the task. */
 function TaskTableRowInner({
   task,
   onAssign,
@@ -62,15 +64,9 @@ function TaskTableRowInner({
   const router = useRouter()
 
   const status = useTaskRowStatus(task, contextActions?.onStatusChange)
-  const { statusConfig } = status
   const priorityConfig = getPriorityConfig(task.priority)
-  const PriorityIcon = priorityConfig.icon
-
-  const isOverdue = isTaskOverdue(task)
-
-  const formattedDueDate = task.dueDate
-    ? new Date(task.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" })
-    : null
+  // The line under the title: where the job is, else the workspace it belongs to.
+  const where = task.locationAddress || task.space?.name || null
 
   const handleRowClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking on action buttons or drag handle
@@ -89,11 +85,10 @@ function TaskTableRowInner({
       }}
       onClick={handleRowClick}
       className={cn(
-        "group grid grid-cols-[24px_1fr_100px_160px_110px_110px_40px] items-center px-3 h-11",
-        "border-b border-border/20 last:border-b-0",
-        "hover:bg-muted/40 transition-colors duration-100",
-        "cursor-pointer select-none",
-        isDragging && "opacity-30 scale-[0.98]",
+        "group grid items-center gap-3 rounded-[18px] px-2.5 py-2 transition-colors duration-100",
+        TASK_ROW_GRID,
+        "cursor-pointer select-none hover:bg-accent",
+        isDragging && "scale-[0.98] opacity-30",
         draggable && "cursor-grab active:cursor-grabbing",
       )}
     >
@@ -101,57 +96,33 @@ function TaskTableRowInner({
       <div
         data-no-navigate
         className={cn(
-          "flex items-center justify-center transition-opacity",
-          draggable ? "opacity-0 group-hover:opacity-40" : "opacity-0",
+          "flex items-center justify-center text-muted-foreground transition-opacity",
+          draggable ? "opacity-0 group-hover:opacity-60" : "opacity-0",
         )}
       >
         {draggable && <GripVertical className="size-3.5" />}
       </div>
 
-      {/* Title + Status Dot */}
-      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-        <span className="size-2 rounded-full flex-shrink-0" style={{ backgroundColor: statusConfig.hex }} />
-        <span
-          className={
-            "text-sm font-medium text-foreground truncate group-hover:text-blue-600 " +
-            "dark:group-hover:text-blue-400 transition-colors duration-100"
-          }
-        >
-          {task.title}
+      <TaskRowWhen task={task} />
+
+      {/* What: the title with its priority, and where */}
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span className="flex min-w-0 items-center">
+          <span className="truncate text-[15px] font-semibold text-foreground">{task.title}</span>
+          <PriorityTag priority={task.priority} label={priorityConfig.label} />
+          {hasModule("story_points") && task.storyPoints != null && (
+            <span className="ml-2 rounded-full bg-shell-chip px-2 text-[11px] font-bold tabular-nums text-muted-foreground">
+              {task.storyPoints}
+            </span>
+          )}
+          <PausedChip task={task} className="ml-2 flex-shrink-0" />
         </span>
-        <PausedChip task={task} className="flex-shrink-0" />
-      </div>
-
-      {/* Priority */}
-      <div className="flex items-center gap-1.5 w-[100px] flex-shrink-0">
-        <PriorityIcon className="size-3.5 flex-shrink-0" style={{ color: priorityConfig.hex }} />
-        <span className="text-xs font-medium" style={{ color: priorityConfig.hex }}>
-          {priorityConfig.label}
-        </span>
-        {hasModule("story_points") && task.storyPoints != null && (
-          <span className="bg-muted rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground ml-1">
-            {task.storyPoints}
-          </span>
-        )}
-      </div>
-
-      <TaskRowAssigneeCell task={task} onAssign={onAssign} />
-
-      {/* Due Date */}
-      <div className="flex items-center gap-1.5 w-[110px] flex-shrink-0">
-        {formattedDueDate ? (
-          <span className={cn("text-xs", isOverdue ? "text-red-500 font-medium" : "text-muted-foreground")}>
-            {formattedDueDate}
-          </span>
-        ) : (
-          <span className="text-xs text-muted-foreground/30">—</span>
-        )}
+        {where && <span className="truncate text-[13px] text-muted-foreground">{where}</span>}
       </div>
 
       <TaskRowStatusCell task={task} status={status} onStatusChange={contextActions?.onStatusChange} />
 
-      {/* Spacer for grid alignment */}
-      <div />
+      <TaskRowAssigneeCell task={task} onAssign={onAssign} />
     </div>
   )
 

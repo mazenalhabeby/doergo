@@ -162,8 +162,8 @@ export function GroupedList({
           <div
             key={group.key}
             className={cn(
-              "bg-card rounded-xl border overflow-hidden transition-all duration-150",
-              isGroupOver ? "border-blue-400/60 ring-1 ring-blue-400/20" : "border-border/60",
+              "overflow-hidden rounded-[24px] bg-card px-2 pb-2 shadow-shell transition-all duration-150",
+              isGroupOver && "ring-2 ring-ring",
             )}
             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move" }}
             onDragEnter={(e) => { e.preventDefault(); setOverGroupKey(group.key) }}
@@ -180,8 +180,10 @@ export function GroupedList({
             <button
               onClick={() => toggleGroup(group.key)}
               className={cn(
-                "w-full flex items-center gap-2.5 px-4 py-2.5 text-left hover:bg-muted/30 transition-colors",
-                isGroupOver && "bg-blue-50/50 dark:bg-blue-500/[0.05]",
+                "flex w-full items-center gap-2 rounded-[14px] px-3 pb-2 pt-4 text-left text-[13px] font-semibold " +
+                  "text-muted-foreground outline-none transition-colors hover:text-foreground " +
+                  "focus-visible:ring-2 focus-visible:ring-ring",
+                isGroupOver && "bg-shell-accent-soft",
               )}
             >
               <ChevronRight
@@ -191,13 +193,11 @@ export function GroupedList({
               {group.dotColor &&
                 !group.icon &&
                 <span className="size-2 rounded-full flex-shrink-0" style={{ backgroundColor: group.dotColor }} />}
-              <span className="text-sm font-semibold text-foreground">{group.label}</span>
+              <span className="font-semibold text-foreground">{group.label}</span>
               {group.sublabel && <span className="text-xs text-muted-foreground">{group.sublabel}</span>}
-              <span className="text-[11px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md font-medium tabular-nums">
-                {groupTasks.length}
-              </span>
+              <span className="font-medium tabular-nums text-muted-foreground/70">{groupTasks.length}</span>
               {isGroupOver && draggingTaskId && (
-                <span className="ml-auto text-xs font-medium text-blue-600 dark:text-blue-400">{t("tasks.groups.dropHere")}</span>
+                <span className="ml-auto text-xs font-semibold text-shell-accent">{t("tasks.groups.dropHere")}</span>
               )}
             </button>
 
@@ -209,9 +209,9 @@ export function GroupedList({
                     {/* Drop indicator before this row */}
                     {insertIndex?.groupKey === group.key && insertIndex.index === index && draggingTaskId && draggingTaskId !== task.id && (
                       <div className="relative h-0.5 z-10">
-                        <div className="absolute inset-x-4 top-0 h-[2px] bg-blue-500 rounded-full" />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-blue-500" />
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-blue-500" />
+                        <div className="absolute inset-x-4 top-0 h-[2px] bg-shell-accent rounded-full" />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-shell-accent" />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-shell-accent" />
                       </div>
                     )}
                     <div
@@ -239,9 +239,9 @@ export function GroupedList({
                 {/* Drop indicator at end of list */}
                 {insertIndex?.groupKey === group.key && insertIndex.index === groupTasks.length && draggingTaskId && (
                   <div className="relative h-0.5 z-10">
-                    <div className="absolute inset-x-4 top-0 h-[2px] bg-blue-500 rounded-full" />
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-blue-500" />
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-blue-500" />
+                    <div className="absolute inset-x-4 top-0 h-[2px] bg-shell-accent rounded-full" />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-shell-accent" />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-shell-accent" />
                   </div>
                 )}
                 {/* Empty group state */}
@@ -265,10 +265,10 @@ export function GroupedList({
       {canCreate && createLabel && (
         <button
           onClick={handleCreate}
-          className={"w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border " +
-            "border-dashed border-border/60 text-sm text-muted-foreground " +
-            "hover:text-foreground hover:border-border hover:bg-muted/30 " +
-            "transition-colors"}
+          className={
+            "flex h-11 w-full items-center gap-2 rounded-full border border-dashed border-border px-4 text-sm " +
+            "font-semibold text-muted-foreground transition-colors hover:bg-shell-chip hover:text-foreground"
+          }
         >
           <Plus className="size-3.5" />
           {createLabel}

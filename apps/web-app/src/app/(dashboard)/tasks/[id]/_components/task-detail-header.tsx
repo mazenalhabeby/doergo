@@ -7,16 +7,9 @@ import { GradientIcon } from "@/components/ui/gradient-icon"
 import { useRouteAccess } from "@/hooks/use-route-access"
 
 import { Button } from "@/components/ui/button"
-import {
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import { AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useStepConfigs } from "@/hooks/use-step-config"
 import { getRequestId } from "@/lib/utils"
 import { formatMediumDate as formatShortDate } from "@/lib/format-date"
@@ -50,9 +43,9 @@ export function TaskDetailHeader({
   const statusConfig = useStepConfigs([task])(task)
 
   return (
-    <div className="mb-6">
+    <div className="mb-5">
       {/* Breadcrumb-style context line */}
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+      <div className="mb-2 flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <span>{t("tasks.page.heading")}</span>
         <ChevronRight className="size-3" />
         <span className="text-foreground font-medium">{requestId}</span>
@@ -62,19 +55,19 @@ export function TaskDetailHeader({
       </div>
 
       {/* Title row */}
-      <div className="flex items-start justify-between gap-4 mb-4">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3.5">
         <div className="flex-1 min-w-0">
           <InlineEditField
             value={task.title}
             onSave={onTitleSave}
             type="text"
             disabled={!canEdit}
-            className="text-2xl font-semibold"
+            className="text-[30px] font-semibold leading-[1.15] tracking-[-0.03em]"
           />
         </div>
 
         {/* Actions — clean, minimal */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
           {/*
             Edit is a button, not a menu item.
 
@@ -94,24 +87,24 @@ export function TaskDetailHeader({
             tap, never for every job. A finished job's chat still opens, to read.
           */}
           {mayMessage && (
-            <Button variant="outline" size="sm" className="icon-motion h-8" asChild>
+            <Button variant="outline" size="pill" className="icon-motion" asChild>
               <Link href={`/messages?task=${encodeURIComponent(task.id)}`}>
-                <GradientIcon name="chat" size={17} className="mr-1.5" />
+                <GradientIcon name="chat" size={17} />
                 {t("chat.jobChat", "Chat")}
               </Link>
             </Button>
           )}
           {isCompleted && !isCanceled && (
-            <Button variant="outline" size="sm" className="h-8" asChild>
+            <Button variant="outline" size="pill" asChild>
               <Link href={`/tasks/${task.id}/report`}>
-                <FileText className="size-3.5 mr-1.5" />
+                <FileText />
                 {t("tasks.report.open")}
               </Link>
             </Button>
           )}
           {!isCompleted && !isCanceled && canEdit && (
-            <Button variant="outline" size="sm" className="h-8" onClick={onEditClick}>
-              <Pencil className="size-3.5 mr-1.5" />
+            <Button variant="outline" size="pill" onClick={onEditClick}>
+              <Pencil />
               {t("tasks.detail.editTask")}
             </Button>
           )}
@@ -123,14 +116,14 @@ export function TaskDetailHeader({
               trigger={
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="size-4" />
+                    <Button variant="outline" size="pillIcon">
+                      <MoreHorizontal />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     {canCancel && (
                       <AlertDialogTrigger asChild>
-                        <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer">
+                        <DropdownMenuItem className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
                           <Trash2 className="size-4 mr-2" />
                           {t("tasks.detail.cancelRequest")}
                         </DropdownMenuItem>
@@ -154,7 +147,7 @@ export function TaskDetailHeader({
       <div className="flex items-center gap-2 flex-wrap">
         {/* Status badge */}
         <span
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+          className="inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold"
           style={{
             backgroundColor: `${statusConfig.hex}14`,
             color: statusConfig.hex,
@@ -190,16 +183,10 @@ export function TaskDetailHeader({
                 key={s.id}
                 onClick={() => onStatusChange(s.key)}
                 disabled={isStatusChanging}
-                className={"inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs " +
-                  "font-medium border transition-all duration-150 hover:shadow-sm " +
-                  "disabled:opacity-50"}
-                style={{
-                  borderColor: `${s.color}30`,
-                  color: s.color,
-                  backgroundColor: "transparent",
-                }}
-                onMouseEnter={(e) => { (e.currentTarget.style.backgroundColor = `${s.color}10`) }}
-                onMouseLeave={(e) => { (e.currentTarget.style.backgroundColor = "transparent") }}
+                className={
+                  "inline-flex h-7 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-[13px] " +
+                  "font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                }
               >
                 <span className="size-1.5 rounded-full" style={{ backgroundColor: s.color }} />
                 {s.name}
@@ -209,16 +196,18 @@ export function TaskDetailHeader({
         )}
 
         {/* Divider */}
-        <span className="w-px h-4 bg-border/60 mx-1" />
+        <span className="mx-1 h-4 w-px bg-border" />
 
         {/* Space */}
         {task.space && (
           <Link
             href={`/tasks?space=${task.space.id}`}
-            className={"inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] " +
-              "font-medium bg-muted text-muted-foreground hover:bg-muted/80 " +
-              "hover:text-foreground transition-colors"}>
-            <MapPin className="size-2.5" />
+            className={
+              "inline-flex h-6 items-center gap-1.5 rounded-full bg-shell-chip px-2.5 text-xs font-medium " +
+              "text-muted-foreground transition-colors hover:text-foreground"
+            }
+          >
+            <MapPin className="size-3" />
             {task.space.name}
           </Link>
         )}
@@ -226,7 +215,7 @@ export function TaskDetailHeader({
         {/* Phase */}
         {hasModule("phases") && task.phase && (
           <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium"
+            className="inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium"
             style={{ backgroundColor: `${task.phase.color}14`, color: task.phase.color }}
           >
             <span className="size-1.5 rounded-full" style={{ backgroundColor: task.phase.color }} />
@@ -236,9 +225,7 @@ export function TaskDetailHeader({
 
         {/* Sprint */}
         {hasModule("sprints") && task.sprint && (
-          <span
-            className={"inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] " +
-              "font-medium bg-green-500/10 text-green-700 dark:text-green-400"}>
+          <span className="inline-flex h-6 items-center rounded-full bg-shell-accent-soft px-2.5 text-xs font-medium text-shell-accent">
             {task.sprint.name}
           </span>
         )}
@@ -246,8 +233,11 @@ export function TaskDetailHeader({
         {/* Story Points */}
         {hasModule("story_points") && task.storyPoints != null && (
           <span
-            className={"inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-bold " +
-              "tabular-nums bg-muted text-muted-foreground"}>
+            className={
+              "inline-flex h-6 items-center rounded-full bg-shell-chip px-2.5 text-xs font-bold tabular-nums " +
+              "text-muted-foreground"
+            }
+          >
             {t("tasks.units.points", { count: task.storyPoints })}
           </span>
         )}
@@ -255,7 +245,7 @@ export function TaskDetailHeader({
         {/* Epic */}
         {hasModule("epics") && task.epic && (
           <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium"
+            className="inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium"
             style={{ backgroundColor: `${task.epic.color}14`, color: task.epic.color }}
           >
             <span className="size-1.5 rounded-full" style={{ backgroundColor: task.epic.color }} />

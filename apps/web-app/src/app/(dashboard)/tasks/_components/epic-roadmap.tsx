@@ -136,10 +136,10 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
               ))}
               {/* Today marker in header */}
               <div
-                className="absolute top-0 w-px bg-blue-500"
+                className="absolute top-0 w-px bg-shell-accent"
                 style={{ left: todayOffset * DAY_WIDTH, height: HEADER_HEIGHT }}
               >
-                <span className="absolute -top-0 left-1/2 -translate-x-1/2 text-[8px] font-bold text-blue-500 uppercase">
+                <span className="absolute -top-0 left-1/2 -translate-x-1/2 text-[8px] font-bold text-shell-accent uppercase">
                   {t("common.today")}
                 </span>
               </div>
@@ -166,7 +166,7 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
                 >
                   {/* Today line */}
                   <div
-                    className="absolute top-0 w-px border-l border-dashed border-blue-500/30"
+                    className="absolute top-0 w-px border-l border-dashed border-shell-accent"
                     style={{ left: todayOffset * DAY_WIDTH, height: ROW_HEIGHT }}
                   />
 

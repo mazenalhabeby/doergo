@@ -15,6 +15,7 @@ import { BacklogToolbar } from "./_components/backlog-toolbar"
 import { SprintCapacityBar } from "./_components/sprint-capacity"
 import { TasksPageHeader } from "./_components/tasks-page-header"
 import { MineScopeToggle } from "./_components/mine-scope-toggle"
+import { TasksToolbar } from "./_components/tasks-toolbar"
 import { GroupByTabs } from "./_components/group-by-tabs"
 import { TasksErrorState, TasksEmptyState } from "./_components/tasks-states"
 import { TaskListView } from "./_components/task-list-view"
@@ -30,13 +31,19 @@ import { useTasksPage } from "./_hooks/use-tasks-page"
 // loading flash. ssr:false: none of these renders on the server. The schedule's
 // views, the grouped list and the sprint dialogs are lazy in their own files.
 // Shown only on the Recurring tab — loaded when opened, like the other alternate views.
-const RecurringPanel = dynamic(() => import("../../../components/tasks/recurring/recurring-view").then((m) => m.RecurringPanel), {
-  ssr: false,
-})
+const RecurringPanel = dynamic(
+  () => import("../../../components/tasks/recurring/recurring-view").then((m) => m.RecurringPanel),
+  {
+    ssr: false,
+  },
+)
 
-const CreateTaskDialog = dynamic(() => import("../../../components/tasks/create-task-dialog").then((m) => m.CreateTaskDialog), {
-  ssr: false,
-})
+const CreateTaskDialog = dynamic(
+  () => import("../../../components/tasks/create-task-dialog").then((m) => m.CreateTaskDialog),
+  {
+    ssr: false,
+  },
+)
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
@@ -139,11 +146,6 @@ export default function TasksPage() {
         <TasksPageHeader
           isLoading={isLoading}
           total={total}
-          searchInputRef={searchInputRef}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
           showRecurringToggle={user?.role === "ADMIN" && hasPlanFeature("recurring")}
           recurringView={recurringView}
           onToggleRecurring={() => setRecurringView((v) => !v)}
@@ -172,17 +174,25 @@ export default function TasksPage() {
           onChange={handleSpaceChange}
         />
 
-        {/* Mine, or everything I oversee. */}
-        {canSeeOthers && (
-          <MineScopeToggle
-            mineOnly={mineOnly}
-            counts={myCounts}
-            onChange={(isMine) => {
-              setMineOnly(isMine)
-              setPage(1)
-            }}
-          />
-        )}
+        {/* Mine, or everything I oversee — then search and the view switch. */}
+        <TasksToolbar
+          searchInputRef={searchInputRef}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+        >
+          {canSeeOthers && (
+            <MineScopeToggle
+              mineOnly={mineOnly}
+              counts={myCounts}
+              onChange={(isMine) => {
+                setMineOnly(isMine)
+                setPage(1)
+              }}
+            />
+          )}
+        </TasksToolbar>
 
         {recurringView ? (
           <RecurringPanel embedded spaceId={selectedSpaceId} />

@@ -113,14 +113,14 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
       {/* Duration & Employee */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-muted rounded-lg p-4 flex items-center gap-3">
-          <Clock className="size-5 text-blue-500" />
+          <Clock className="size-5 text-shell-accent" />
           <div>
             <p className="text-xs text-muted-foreground">{t("common.duration")}</p>
             <p className="text-sm font-semibold text-foreground">{formatDurationSeconds(report.workDuration)}</p>
           </div>
         </div>
         <div className="bg-muted rounded-lg p-4 flex items-center gap-3">
-          <User className="size-5 text-blue-500" />
+          <User className="size-5 text-shell-accent" />
           <div>
             <p className="text-xs text-muted-foreground">{t("tasks.serviceReport.employee")}</p>
             <p className="text-sm font-semibold text-foreground">

@@ -3,6 +3,9 @@
 import { ListChecks, Paperclip, MessageCircle, Clock, GitBranch, Link2, FileText, MapPin } from "lucide-react"
 import { CommentsSection } from "./comments-section"
 import { CollapsibleSection } from "../../../../../components/common/collapsible-section"
+
+/** A job section wears the redesign's panel: the 22px corner and the shell shadow. */
+const SECTION = "rounded-[22px] shadow-shell"
 import { DescriptionSection } from "./description-section"
 import {
   ServiceReportSection,
@@ -129,6 +132,7 @@ export function TaskDetailMainColumn({
         {hasModule("subtasks") && (
           <div data-tour="task-subtasks">
             <CollapsibleSection
+              className={SECTION}
               id="subtasks"
               icon={GitBranch}
               title={t("tasks.sections.subtasks")}
@@ -150,6 +154,7 @@ export function TaskDetailMainColumn({
         {hasModule("checklists") && (checklistTotal > 0 || !isCanceled) && (
           <div data-tour="task-checklist">
             <CollapsibleSection
+              className={SECTION}
               id="checklist"
               icon={ListChecks}
               title={t("tasks.sections.checklist")}
@@ -170,6 +175,7 @@ export function TaskDetailMainColumn({
         {hasModule("attachments") && (
           <div data-tour="task-attachments">
             <CollapsibleSection
+              className={SECTION}
               id="attachments"
               icon={Paperclip}
               title={t("tasks.sections.attachments")}
@@ -185,6 +191,7 @@ export function TaskDetailMainColumn({
         {hasModule("dependencies") && (
           <div data-tour="task-dependencies">
             <CollapsibleSection
+              className={SECTION}
               id="dependencies"
               icon={Link2}
               title={t("tasks.sections.dependencies")}
@@ -208,6 +215,7 @@ export function TaskDetailMainColumn({
         {/* Comments — always visible */}
         <div data-tour="task-comments">
           <CollapsibleSection
+              className={SECTION}
             id="comments"
             icon={MessageCircle}
             title={t("tasks.comments.title")}
@@ -227,6 +235,7 @@ export function TaskDetailMainColumn({
         {/* Activity — always visible */}
         <div data-tour="task-activity">
           <CollapsibleSection
+              className={SECTION}
             id="activity"
             icon={Clock}
             title={t("tasks.sections.activity")}
@@ -250,7 +259,7 @@ export function TaskDetailMainColumn({
         {/* Service Report — module: service_reports + must be completed */}
         {hasModule("service_reports") && (isCompleted || task.status === "CLOSED") && (
           <div data-tour="task-service-report">
-            <CollapsibleSection id="service-report" icon={FileText} title={t("tasks.sections.serviceReport")}>
+            <CollapsibleSection className={SECTION} id="service-report" icon={FileText} title={t("tasks.sections.serviceReport")}>
               <ServiceReportSection taskId={id} taskStatus={task.status} />
             </CollapsibleSection>
           </div>
@@ -279,7 +288,7 @@ export function TaskDetailMainColumn({
           mayReadRoute &&
           (loadingRoute || (routeData?.points?.length ?? 0) > 0 || task.status === "EN_ROUTE") && (
             <div data-tour="task-route-tracking">
-              <CollapsibleSection id="route-tracking" icon={MapPin} title={t("tasks.sections.routeTracking")}>
+              <CollapsibleSection className={SECTION} id="route-tracking" icon={MapPin} title={t("tasks.sections.routeTracking")}>
                 <RouteTrackingSection routeData={routeData} isLoading={loadingRoute} hasAssignee={hasAssignee} />
               </CollapsibleSection>
             </div>

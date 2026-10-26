@@ -1,14 +1,23 @@
 "use client"
 
 import { useTranslation } from "react-i18next"
-import { CLIENT_COPY_OPTIONS, type ClientCopyOption, type TaskReportCopy, type TaskReportIssuerOption } from "@hbcfield/shared/client"
+import {
+  CLIENT_COPY_OPTIONS,
+  type ClientCopyOption,
+  type TaskReportCopy,
+  type TaskReportIssuerOption,
+} from "@hbcfield/shared/client"
 
-import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { CompanyOptionSelect } from "@/components/companies/company-select"
 import { cn } from "@/lib/utils"
 import type { HeadToggle, HeadToggleGroup, ReportToggle } from "../_lib/report-model"
+
+/** The rail's pieces, as the report board draws them: a 16px heading, a hint under it, a switch per row. */
+const RAIL_TITLE = "text-base font-semibold tracking-[-0.01em] text-foreground"
+const RAIL_HINT = "mt-0.5 text-[13px] leading-snug text-muted-foreground"
+const SWITCH_ROW = "flex items-center gap-3 py-2 text-sm text-foreground"
 
 /** "Office copy / Client copy" — which copy the server is asked for. */
 export function CopySwitch({ copy, onChange }: { copy: TaskReportCopy; onChange: (c: TaskReportCopy) => void }) {
@@ -17,7 +26,8 @@ export function CopySwitch({ copy, onChange }: { copy: TaskReportCopy; onChange:
     <div
       role="radiogroup"
       aria-label={t("tasks.report.copy.label")}
-      className={"inline-grid grid-flow-col gap-0.5 rounded-lg border border-border " + "bg-muted/60 p-0.5"}>
+      className="inline-grid grid-flow-col gap-0.5 rounded-full bg-shell-chip p-[3px]"
+    >
       {(["office", "client"] as const).map((c) => (
         <button
           key={c}
@@ -26,8 +36,11 @@ export function CopySwitch({ copy, onChange }: { copy: TaskReportCopy; onChange:
           aria-checked={copy === c}
           onClick={() => onChange(c)}
           className={cn(
-            "rounded-md px-3 py-1 text-xs font-medium transition-colors",
-            copy === c ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+            "h-[34px] rounded-full px-3.5 text-[13.5px] font-medium outline-none transition-colors",
+            "focus-visible:ring-2 focus-visible:ring-ring",
+            copy === c
+              ? "bg-card font-semibold text-foreground shadow-shell"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           {t(`tasks.report.copy.${c}`)}
@@ -61,16 +74,18 @@ export function IssuerPicker({
   const auto = issuers.find((i) => i.id === defaultId)?.name
   return (
     <div className="space-y-1.5">
-      <Label htmlFor="report-issuer" className="text-sm font-semibold text-foreground">{t("tasks.report.issuer.label")}</Label>
+      <Label htmlFor="report-issuer" className="text-base font-semibold tracking-[-0.01em] text-foreground">
+        {t("tasks.report.issuer.label")}
+      </Label>
       <CompanyOptionSelect
         id="report-issuer"
-        className="h-9 w-full"
+        className="h-[42px] w-full rounded-xl"
         companies={issuers}
         value={value}
         onChange={onChange}
         inheritLabel={auto ? t("companies.sameAsDefault", { name: auto }) : t("tasks.report.issuer.automatic")}
       />
-      <p className="text-[11px] leading-snug text-muted-foreground">{t("tasks.report.issuer.hint")}</p>
+      <p className="text-[13px] leading-snug text-muted-foreground">{t("tasks.report.issuer.hint")}</p>
     </div>
   )
 }
@@ -93,20 +108,22 @@ export function HeadSwitches({
   if (!groups.length) return null
   return (
     <div>
-      <h2 className="text-sm font-semibold text-foreground">{t("tasks.report.head.title")}</h2>
-      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{t("tasks.report.head.hint")}</p>
+      <h2 className={RAIL_TITLE}>{t("tasks.report.head.title")}</h2>
+      <p className={RAIL_HINT}>{t("tasks.report.head.hint")}</p>
       {groups.map((g) => (
         <div key={g} className="mt-3">
-          <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{t(`tasks.report.head.groups.${g}`)}</h3>
-          <ul className="mt-2 space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground">
+            {t(`tasks.report.head.groups.${g}`)}
+          </h3>
+          <ul className="mt-1">
             {available[g].map((tg) => {
               const id = `report-head-${tg}`
               return (
-                <li key={tg} className="flex items-center gap-2.5">
-                  <Checkbox id={id} checked={!off.has(tg)} onCheckedChange={(v) => onToggle(tg, v === true)} />
-                  <label htmlFor={id} className="cursor-pointer text-sm text-foreground">
+                <li key={tg} className={SWITCH_ROW}>
+                  <label htmlFor={id} className="flex-1 cursor-pointer">
                     {g === "facts" ? t(`tasks.report.facts.${tg}`) : t(`tasks.report.head.items.${tg}`)}
                   </label>
+                  <Switch id={id} checked={!off.has(tg)} onCheckedChange={(v) => onToggle(tg, v)} />
                 </li>
               )
             })}
@@ -144,16 +161,18 @@ export function ReportRail({
   return (
     <>
       <div>
-        <h2 className="text-sm font-semibold text-foreground">{t("tasks.report.rail.inThisReport")}</h2>
-        <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{t("tasks.report.rail.inThisReportHint")}</p>
+        <h2 className={RAIL_TITLE}>{t("tasks.report.rail.inThisReport")}</h2>
+        <p className={RAIL_HINT}>{t("tasks.report.rail.inThisReportHint")}</p>
         {available.length ? (
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-2">
             {available.map((tg) => {
               const id = `report-toggle-${tg}`
               return (
-                <li key={tg} className="flex items-center gap-2.5">
-                  <Checkbox id={id} checked={!off.has(tg)} onCheckedChange={(v) => onToggle(tg, v === true)} />
-                  <label htmlFor={id} className="cursor-pointer text-sm text-foreground">{t(`tasks.report.toggles.${tg}`)}</label>
+                <li key={tg} className={SWITCH_ROW}>
+                  <label htmlFor={id} className="flex-1 cursor-pointer">
+                    {t(`tasks.report.toggles.${tg}`)}
+                  </label>
+                  <Switch id={id} checked={!off.has(tg)} onCheckedChange={(v) => onToggle(tg, v)} />
                 </li>
               )
             })}
@@ -165,15 +184,19 @@ export function ReportRail({
 
       {copy === "client" ? (
         <div>
-          <p className="rounded-lg bg-muted/60 p-3 text-[11px] leading-snug text-muted-foreground">{t("tasks.report.rail.clientHint")}</p>
-          <h2 className="mt-4 text-sm font-semibold text-foreground">{t("tasks.report.rail.alsoShow")}</h2>
-          <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{t("tasks.report.rail.alsoShowHint")}</p>
-          <ul className="mt-3 space-y-2.5">
+          <p className="rounded-2xl bg-shell-accent-soft px-4 py-3 text-[13px] leading-snug text-foreground">
+            {t("tasks.report.rail.clientHint")}
+          </p>
+          <h2 className={cn("mt-4", RAIL_TITLE)}>{t("tasks.report.rail.alsoShow")}</h2>
+          <p className={RAIL_HINT}>{t("tasks.report.rail.alsoShowHint")}</p>
+          <ul className="mt-2">
             {options.map((o) => {
               const id = `report-include-${o}`
               return (
-                <li key={o} className="flex items-center justify-between gap-3">
-                  <label htmlFor={id} className="cursor-pointer text-sm text-foreground">{t(`tasks.report.include.${o}`)}</label>
+                <li key={o} className={SWITCH_ROW}>
+                  <label htmlFor={id} className="flex-1 cursor-pointer">
+                    {t(`tasks.report.include.${o}`)}
+                  </label>
                   <Switch id={id} checked={include.includes(o)} onCheckedChange={(v) => onInclude(o, v)} />
                 </li>
               )
