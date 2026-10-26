@@ -33,6 +33,9 @@ const StandInDialog = dynamic(() => import("./_components/stand-in-dialog").then
  * decides through each kind's own route; this page only arranges it: what
  * cannot wait first, then today, then the rest.
  */
+/** The rail and the decision stay in view while the list scrolls; a column taller than the screen scrolls inside. */
+const STICKY_COLUMN = "lg:sticky lg:top-4 lg:max-h-[calc(100dvh-6.5rem)] lg:overflow-y-auto"
+
 export default function ApprovalsPage() {
   const {
     t,
@@ -127,7 +130,8 @@ export default function ApprovalsPage() {
           <Panel
             as="nav"
             className={cn(
-              "flex gap-0.5 overflow-x-auto max-lg:rounded-2xl lg:flex-col lg:overflow-visible",
+              "flex gap-0.5 overflow-x-auto max-lg:rounded-2xl lg:flex-col",
+              STICKY_COLUMN,
               current && "max-lg:hidden",
             )}
           >
@@ -194,8 +198,8 @@ export default function ApprovalsPage() {
             )}
           </Panel>
 
-          <aside className={cn("min-w-0", !current && !currentDay && "max-lg:hidden")}>
-            <div className="lg:sticky lg:top-4">
+          <aside className={cn("min-w-0 rounded-[22px]", STICKY_COLUMN, !current && !currentDay && "max-lg:hidden")}>
+            <div>
               {currentDay ? (
                 <Panel className="p-5">
                   <DayPanel
