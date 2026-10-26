@@ -2,7 +2,7 @@
 
 import { useTranslation } from "react-i18next"
 import { ShieldCheck, ShieldAlert, ShieldX } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Chip } from "@/components/page/page-kit"
 
 /*
   A credential's standing, as a colour and a word.
@@ -14,19 +14,19 @@ import { cn } from "@/lib/utils"
 */
 export function StandingChip({ standing, expiresOn }: { standing: string; expiresOn: string | null }) {
   const { t } = useTranslation()
-  const map: Record<string, { cls: string; Icon: typeof ShieldCheck; label: string }> = {
+  const map: Record<string, { tone: "accent" | "warn" | "crit"; Icon: typeof ShieldCheck; label: string }> = {
     VALID: {
-      cls: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
+      tone: "accent" as const,
       Icon: ShieldCheck,
       label: t("documents.standing.valid"),
     },
     EXPIRING: {
-      cls: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
+      tone: "warn" as const,
       Icon: ShieldAlert,
       label: t("documents.standing.expiring"),
     },
     EXPIRED: {
-      cls: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400",
+      tone: "crit" as const,
       Icon: ShieldX,
       label: t("documents.standing.expired"),
     },
@@ -36,9 +36,9 @@ export function StandingChip({ standing, expiresOn }: { standing: string; expire
   const days = expiresOn ? Math.ceil((new Date(expiresOn).getTime() - Date.now()) / 86_400_000) : null
 
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium", v.cls)}>
+    <Chip tone={v.tone}>
       <v.Icon className="h-3 w-3" />
       {standing === "EXPIRING" && days !== null ? t("documents.standing.inDays", { count: days }) : v.label}
-    </span>
+    </Chip>
   )
 }

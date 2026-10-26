@@ -26,7 +26,7 @@ export function PersonDialog({ userId, onClose }: { userId: string | null; onClo
   })
   return (
     <Dialog open={!!userId} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm rounded-[24px]">
         <DialogHeader>
           <DialogTitle className="sr-only">{data ? personName(data) : t("team.profile", "Profile")}</DialogTitle>
         </DialogHeader>
@@ -40,7 +40,7 @@ export function PersonDialog({ userId, onClose }: { userId: string | null; onClo
           <div className="flex flex-col items-center gap-3 text-center">
             <ChatAvatar u={data} size={72} />
             <div>
-              <p className="text-lg font-semibold">{personName(data)}</p>
+              <p className="text-[22px] font-semibold tracking-[-0.02em]">{personName(data)}</p>
               {data.position && <p className="text-sm text-muted-foreground">{data.position}</p>}
               <p className="mt-1 text-xs text-muted-foreground">{chatPresenceLabel(data.presence, t)}</p>
             </div>
@@ -54,8 +54,10 @@ export function PersonDialog({ userId, onClose }: { userId: string | null; onClo
                   onClose()
                   message(data.id)
                 }}
-                className={"flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm " +
-                  "font-semibold text-primary-foreground hover:opacity-90"}
+                className={
+                  "flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm " +
+                  "font-semibold text-primary-foreground hover:brightness-105"
+                }
               >
                 <MessageSquare className="size-4" />
                 {t("chat.message", "Message")}

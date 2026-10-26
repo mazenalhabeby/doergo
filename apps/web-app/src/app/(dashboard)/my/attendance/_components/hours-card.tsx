@@ -5,6 +5,7 @@ import { Clock } from "lucide-react"
 import { useTimeFormat } from "@/hooks"
 import { cn } from "@/lib/utils"
 import { workedMinutes, formatDuration, localDateKey, todayKey } from "@hbcfield/shared/client"
+import { Panel } from "@/components/page/page-kit"
 import type { TimeEntry } from "@hbcfield/shared"
 
 /** The chosen window's hours, drawn as bars by day (or by week for a long window). */
@@ -82,14 +83,16 @@ export function HoursCard({
     was heavy, and what a working day averaged.
   */
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        <Clock className="h-4 w-4 text-slate-400" />
+    <Panel as="div" className="p-5">
+      <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+        <Clock className="h-4 w-4" />
         {t("attendance.my.hoursIn", "Hours worked")}
       </div>
 
       <div className="mt-2 flex items-baseline gap-3">
-        <p className="text-2xl font-semibold tabular-nums text-foreground">{formatDuration(window_.worked)}</p>
+        <p className="text-[32px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-foreground">
+          {formatDuration(window_.worked)}
+        </p>
         {window_.daysWorked > 0 && (
           <p className="text-xs text-muted-foreground">
             {t("attendance.my.overDays", "{{days}} days · {{avg}} avg", {
@@ -109,8 +112,8 @@ export function HoursCard({
               <div className="flex h-16 w-full items-end">
                 <div
                   className={cn(
-                    "w-full rounded-md transition-[height] duration-700 ease-out",
-                    b.minutes === 0 ? "bg-muted" : isNow ? "bg-primary" : "bg-primary/35",
+                    "w-full rounded-full transition-[height] duration-700 ease-out",
+                    b.minutes === 0 ? "bg-shell-chip" : isNow ? "bg-foreground" : "bg-foreground/25",
                   )}
                   style={{ height: `${Math.max(b.minutes === 0 ? 4 : 10, pct * 100)}%` }}
                   title={`${b.label} · ${formatDuration(b.minutes)}`}
@@ -128,6 +131,6 @@ export function HoursCard({
           )
         })}
       </div>
-    </div>
+    </Panel>
   )
 }

@@ -37,8 +37,8 @@ export function InvitationCreated({
         <div className="space-y-4 py-2">
           {mode === "email" && email ? (
             <div className="text-center space-y-3">
-              <div className="mx-auto w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div className="mx-auto w-12 h-12 rounded-full bg-shell-accent-soft flex items-center justify-center">
+                <CheckCircle2 className="h-6 w-6 text-shell-accent" />
               </div>
               <div>
                 <p className="font-medium text-foreground">{t("invitations.inviteDialog.invitationSent")}</p>
@@ -52,15 +52,19 @@ export function InvitationCreated({
                 <div className="flex items-center justify-center gap-2">
                   <p className="text-xl font-mono font-bold tracking-[0.15em] text-foreground">{generatedCode}</p>
                   <Button variant="ghost" size="icon" onClick={onCopyCode} className="h-7 w-7">
-                    {codeCopied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                    {codeCopied ? (
+                      <Check className="h-3.5 w-3.5 text-shell-accent" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
                   </Button>
                 </div>
               </div>
             </div>
           ) : (
             <div className="text-center space-y-3">
-              <div className="mx-auto w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <Link2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <div className="mx-auto w-12 h-12 rounded-full bg-shell-accent-soft flex items-center justify-center">
+                <Link2 className="h-6 w-6 text-shell-accent" />
               </div>
               <div>
                 <p className="font-medium text-foreground">{t("invitations.inviteDialog.codeCreated")}</p>
@@ -82,7 +86,7 @@ export function InvitationCreated({
               <Button variant="outline" onClick={onCopyCode} className="rounded-lg">
                 {codeCopied ? (
                   <>
-                    <Check className="h-4 w-4 mr-1.5 text-green-600" />
+                    <Check className="h-4 w-4 mr-1.5 text-shell-accent" />
                     {t("common.copied")}
                   </>
                 ) : (

@@ -132,7 +132,7 @@ export function ManageRolesDialog({ open, onOpenChange }: { open: boolean; onOpe
                         {!role.isSystem && (
                           <Button
                             variant="ghost" size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
                             disabled={deleteMutation.isPending || held > 0}
                             title={held > 0
                               ? t("roles.deleteBlocked", "Move its {{count}} members to another role first", { count: held })

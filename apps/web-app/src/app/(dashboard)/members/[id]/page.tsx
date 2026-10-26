@@ -3,10 +3,10 @@
 import { use } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Icon } from "@/components/ui/icon"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PAGE_SHELL } from "@/components/ui/page-width"
 import { useMemberData } from "./_lib/use-member-data"
@@ -54,7 +54,7 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
       <div className="min-h-full bg-background">
         <div className={PAGE_SHELL}>
           <Skeleton className="h-5 w-32 mb-6" />
-          <div className="bg-card rounded-xl border border-border/80 p-6 space-y-4">
+          <div className="space-y-4 rounded-[22px] border border-border bg-card p-6 shadow-shell">
             <div className="flex items-center gap-4">
               <Skeleton className="h-16 w-16 rounded-full" />
               <div className="space-y-2">
@@ -75,7 +75,7 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
     return (
       <MemberNotice onBack={() => router.push("/members")}>
         <h3 className="text-lg font-semibold text-foreground mb-1.5">{t("common.somethingWentWrong")}</h3>
-        <Button variant="outline" size="sm" className="mt-3" onClick={() => refetchMember()}>
+        <Button variant="outline" size="pill" className="mt-3" onClick={() => refetchMember()}>
           {t("common.retry")}
         </Button>
       </MemberNotice>
@@ -93,15 +93,15 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="min-h-full bg-background">
-      <div className={cn(PAGE_SHELL, "space-y-6")}>
+      <div className={cn(PAGE_SHELL, "space-y-4")}>
         {/* Back button */}
         <Button
           variant="ghost"
-          size="sm"
+          size="pill"
           onClick={() => router.push("/members")}
-          className="-ml-2 text-muted-foreground hover:text-foreground"
+          className="-ml-3 text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4 mr-1.5" />
+          <Icon name="backLine" />
           {t("members.detail.backToTeam")}
         </Button>
 

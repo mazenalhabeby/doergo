@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { countryFromTz, formatDuration, workedMinutes } from "@hbcfield/shared/client"
 import type { TimeEntry } from "@hbcfield/shared"
 import { deriveAttendanceFlags } from "@/lib/attendance-status"
+import { Panel } from "@/components/page/page-kit"
 import { dateLocale } from "@/lib/format-date"
 
 /** Human-readable duration between two ISO timestamps (or to now). */
@@ -35,11 +36,11 @@ export function ShiftHistory({
   const { t } = useTranslation()
   const { formatTime, locale } = useTimeFormat()
   return isLoading ? (
-    <div className={"rounded-2xl border border-border bg-card py-12 text-center text-sm " + "text-muted-foreground"}>
+    <Panel as="div" className="py-12 text-center text-sm text-muted-foreground">
       {t("common.loading")}
-    </div>
+    </Panel>
   ) : entries.length === 0 ? (
-    <div className="rounded-2xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">
+    <Panel as="div" className="py-12 text-center text-sm text-muted-foreground">
       {/* Which window is empty — "no records" alone reads as "you have never
             worked here", when it usually means "not in these dates". */}
       {t("attendance.my.noneInRange", "No shifts between {{from}} and {{to}}.", {
@@ -52,9 +53,9 @@ export function ShiftHistory({
           month: "short",
         }),
       })}
-    </div>
+    </Panel>
   ) : (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+    <Panel as="div" className="overflow-hidden p-0">
       {entries.map((e, i) => (
         <div key={e.id} className={`flex items-center gap-4 px-5 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
           <div className="w-28 shrink-0">
@@ -78,7 +79,7 @@ export function ShiftHistory({
             {e.clockOutAt ? (
               formatTime(e.clockOutAt, e.timezone ?? e.location?.timezone)
             ) : (
-              <span className="text-green-600">{t("attendance.my.active")}</span>
+              <span className="text-shell-accent">{t("attendance.my.active")}</span>
             )}
             {/*
                 An away day still belongs to a workspace, so it names the site
@@ -144,6 +145,6 @@ export function ShiftHistory({
           </div>
         </div>
       ))}
-    </div>
+    </Panel>
   )
 }

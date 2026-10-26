@@ -43,8 +43,8 @@ export const MemberBulkActionBar = memo(function MemberBulkActionBar({
     <div
       className={cn(
         "fixed bottom-6 left-1/2 -translate-x-1/2 z-50",
-        "flex items-center gap-2 px-4 py-2.5 rounded-xl",
-        "bg-card/80 backdrop-blur-xl border border-border/60 shadow-xl",
+        "flex items-center gap-2 rounded-full py-2 pl-5 pr-2",
+        "border border-border bg-card shadow-shell-pop",
         "animate-in slide-in-from-bottom-4 fade-in-0 duration-200",
       )}
       style={{ animationTimingFunction: "cubic-bezier(0.32, 0.72, 0, 1)" }}
@@ -58,7 +58,7 @@ export const MemberBulkActionBar = memo(function MemberBulkActionBar({
       {/* Role */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs font-medium rounded-lg">
+          <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs font-medium">
             {t("members.bulk.role")}
           </Button>
         </DropdownMenuTrigger>
@@ -74,7 +74,7 @@ export const MemberBulkActionBar = memo(function MemberBulkActionBar({
       {locations.length > 0 && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs font-medium rounded-lg">
+            <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs font-medium">
               {t("members.bulk.space")}
             </Button>
           </DropdownMenuTrigger>
@@ -93,7 +93,7 @@ export const MemberBulkActionBar = memo(function MemberBulkActionBar({
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 px-2.5 text-xs font-medium rounded-lg"
+        className="h-8 rounded-full px-3 text-xs font-medium"
         onClick={() => onBulkAccess(ids)}
       >
         <ShieldCheck className="size-3.5 mr-1 text-muted-foreground" />
@@ -106,7 +106,10 @@ export const MemberBulkActionBar = memo(function MemberBulkActionBar({
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 px-2.5 text-xs font-medium rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10"
+        className={
+          "h-8 rounded-full px-3 text-xs font-medium text-shell-crit hover:text-shell-crit " +
+          "hover:bg-[color-mix(in_srgb,var(--shell-crit)_11%,transparent)]"
+        }
         onClick={() => setConfirmRemove(true)}
       >
         <Trash2 className="size-3.5 mr-1" />
@@ -117,7 +120,7 @@ export const MemberBulkActionBar = memo(function MemberBulkActionBar({
       <Button
         variant="ghost"
         size="icon"
-        className="size-7 rounded-lg text-muted-foreground hover:text-foreground"
+        className="size-8 rounded-full text-muted-foreground hover:text-foreground"
         onClick={onClear}
       >
         <X className="size-3.5" />

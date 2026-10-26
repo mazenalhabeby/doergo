@@ -33,7 +33,7 @@ interface MemberRowProps {
 
 // Shared grid template \u2014 keeps the header and desktop rows perfectly aligned.
 export const TABLE_GRID =
-  "grid grid-cols-[28px_44px_minmax(0,1.5fr)_minmax(0,1fr)_110px_110px_minmax(0,1.3fr)_40px] items-center gap-4 px-5"
+  "grid grid-cols-[20px_minmax(0,2.3fr)_minmax(0,1.5fr)_130px_96px_minmax(0,1.6fr)_32px] items-center gap-4 px-3.5"
 
 export const MemberRow = memo(function MemberRow({
   member,
@@ -57,7 +57,7 @@ export const MemberRow = memo(function MemberRow({
   const nameButton = (
     <button
       type="button"
-      className="font-medium text-foreground truncate hover:underline text-left"
+      className="truncate text-left text-[14.5px] font-semibold text-foreground hover:underline"
       onClick={() => onNavigate(member.id)}
     >
       {personName(member)}
@@ -66,35 +66,54 @@ export const MemberRow = memo(function MemberRow({
 
   return (
     <div
-      className={cn(
-        "group border-b border-border/50 last:border-0 transition-colors hover:bg-accent/30",
-        isSelected && "bg-accent/30",
-      )}
+      className={cn("group rounded-[14px] transition-colors hover:bg-accent", isSelected && "bg-shell-nav-on")}
       style={{ animation: `fadeSlideIn 0.25s ease-out ${index * 40}ms both` }}
     >
       {/* \u2500\u2500 Desktop: aligned table row \u2500\u2500 */}
-      <div className={cn(TABLE_GRID, "hidden md:grid py-3.5")}>
-        <div className={cn("transition-opacity", anySelected || isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
+      <div className={cn(TABLE_GRID, "hidden min-h-[60px] py-2 md:grid")}>
+        <div
+          className={cn(
+            "transition-opacity",
+            anySelected || isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+          )}
+        >
           {canManage ? (
             <Checkbox checked={isSelected} onCheckedChange={(c) => onSelect(member.id, !!c)} className="h-4 w-4" />
           ) : (
             <div className="h-4 w-4" />
           )}
         </div>
-        <UserAvatar firstName={member.firstName} lastName={member.lastName} avatarUrl={member.avatarUrl} seed={member.id} size="md" />
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            {nameButton}
-            {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">{t("members.you")}</span>}
+        <div className="flex min-w-0 items-center gap-3">
+          <UserAvatar
+            soft
+            firstName={member.firstName}
+            lastName={member.lastName}
+            avatarUrl={member.avatarUrl}
+            seed={member.id}
+            size="lg"
+          />
+          <div className="min-w-0 leading-[1.3]">
+            <div className="flex items-center gap-2">
+              {nameButton}
+              {isSelf && <span className="text-[11px] font-medium text-muted-foreground/70">{t("members.you")}</span>}
+            </div>
+            <p className="truncate text-[12.5px] text-muted-foreground">{member.email}</p>
           </div>
-          <p className="text-sm text-muted-foreground truncate">{member.email}</p>
         </div>
-        <span className={cn("text-sm truncate", member.position ? "text-foreground" : "text-muted-foreground/40")}>
+        <span
+          className={cn("truncate text-[13.5px]", member.position ? "text-foreground" : "text-muted-foreground/40")}
+        >
           {member.position || "\u2014"}
         </span>
-        <div><RoleBadge member={member} /></div>
-        <div><ScheduleBadge member={member} /></div>
-        <div className="min-w-0"><SpacesCell spaceNames={spaceNames} /></div>
+        <div>
+          <RoleBadge member={member} />
+        </div>
+        <div>
+          <ScheduleBadge member={member} />
+        </div>
+        <div className="min-w-0">
+          <SpacesCell spaceNames={spaceNames} />
+        </div>
         <RowActions
           show={isAdmin}
           isSelf={isSelf}
@@ -107,17 +126,24 @@ export const MemberRow = memo(function MemberRow({
       </div>
 
       {/* \u2500\u2500 Mobile: stacked card \u2500\u2500 */}
-      <div className="md:hidden flex items-start gap-3 px-4 py-3.5">
+      <div className="flex items-start gap-3 px-3 py-3 md:hidden">
         {canManage && (
           <Checkbox checked={isSelected} onCheckedChange={(c) => onSelect(member.id, !!c)} className="h-4 w-4 mt-1" />
         )}
-        <UserAvatar firstName={member.firstName} lastName={member.lastName} avatarUrl={member.avatarUrl} seed={member.id} size="md" />
+        <UserAvatar
+          soft
+          firstName={member.firstName}
+          lastName={member.lastName}
+          avatarUrl={member.avatarUrl}
+          seed={member.id}
+          size="lg"
+        />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {nameButton}
-            {isSelf && <span className="text-[11px] text-muted-foreground/70 font-medium">{t("members.you")}</span>}
+            {isSelf && <span className="text-[11px] font-medium text-muted-foreground/70">{t("members.you")}</span>}
           </div>
-          <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+          <p className="truncate text-[12.5px] text-muted-foreground">{member.email}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2">
             <RoleBadge member={member} />
             {member.position && <span className="text-xs text-muted-foreground">{member.position}</span>}

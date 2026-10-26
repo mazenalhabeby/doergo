@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { useTimeFormat } from "@/hooks"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Panel } from "@/components/page/page-kit"
 import { formatDayMonth, formatRelativeDay } from "@/lib/format-date"
 
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const
@@ -67,9 +68,9 @@ function MemberRecentTasks({
   const { t } = useTranslation()
   const router = useRouter()
   return (
-    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
-      <div className="px-5 py-4 border-b border-border/60">
-        <h2 className="text-sm font-semibold text-foreground">{t("members.detail.recentTasks")}</h2>
+    <Panel className="overflow-hidden p-0">
+      <div className="px-5 pb-2 pt-[18px]">
+        <h2 className="text-[15px] font-semibold text-foreground">{t("members.detail.recentTasks")}</h2>
       </div>
       {tasksLoading ? (
         <div className="p-5 space-y-3">
@@ -82,7 +83,7 @@ function MemberRecentTasks({
         </div>
       ) : tasks.length > 0 ? (
         <>
-          <div className="divide-y divide-border/60">
+          <div className="divide-y divide-border">
             {tasks.slice(0, 5).map((task: Task) => {
               const statusConfig = getStatusConfig(task.status)
               return (
@@ -90,7 +91,7 @@ function MemberRecentTasks({
                   key={task.id}
                   type="button"
                   onClick={() => router.push(`/tasks/${task.id}`)}
-                  className="w-full flex items-center justify-between px-5 py-3 hover:bg-accent/40 transition-colors text-left"
+                  className="w-full flex items-center justify-between px-5 py-3 hover:bg-accent transition-colors text-left"
                 >
                   <div className="min-w-0 flex-1 mr-3">
                     <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
@@ -119,7 +120,7 @@ function MemberRecentTasks({
               )
             })}
           </div>
-          <div className="px-5 py-3 border-t border-border/60">
+          <div className="px-5 py-3 border-t border-border">
             <Link
               href={`/tasks?assignee=${memberId}`}
               className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
@@ -133,7 +134,7 @@ function MemberRecentTasks({
           <p className="text-sm text-muted-foreground">{t("members.detail.noTasksAssigned")}</p>
         </div>
       )}
-    </div>
+    </Panel>
   )
 }
 
@@ -142,9 +143,9 @@ function MemberWeekHours({ schedule, scheduleLoading }: { schedule: ScheduleEntr
   const { t } = useTranslation()
   const { formatSchedule } = useTimeFormat()
   return (
-    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
-      <div className="px-5 py-4 border-b border-border/60">
-        <h2 className="text-sm font-semibold text-foreground">{t("members.detail.schedule")}</h2>
+    <Panel className="overflow-hidden p-0">
+      <div className="px-5 pb-2 pt-[18px]">
+        <h2 className="text-[15px] font-semibold text-foreground">{t("members.detail.schedule")}</h2>
       </div>
       {scheduleLoading ? (
         <div className="p-5 space-y-2">
@@ -153,7 +154,7 @@ function MemberWeekHours({ schedule, scheduleLoading }: { schedule: ScheduleEntr
           ))}
         </div>
       ) : (
-        <div className="divide-y divide-border/40">
+        <div className="divide-y divide-border">
           {DAY_KEYS.map((dayKey, i) => {
             const entry = schedule.find((s: ScheduleEntry) => s.dayOfWeek === i)
             const isActive = entry?.isActive
@@ -170,7 +171,7 @@ function MemberWeekHours({ schedule, scheduleLoading }: { schedule: ScheduleEntr
           })}
         </div>
       )}
-    </div>
+    </Panel>
   )
 }
 
@@ -178,9 +179,9 @@ function MemberWeekHours({ schedule, scheduleLoading }: { schedule: ScheduleEntr
 function MemberActivity({ tasks, tasksLoading }: { tasks: Task[]; tasksLoading: boolean }) {
   const { t } = useTranslation()
   return (
-    <div className="bg-card rounded-xl border border-border/80 overflow-hidden">
-      <div className="px-5 py-4 border-b border-border/60">
-        <h2 className="text-sm font-semibold text-foreground">{t("members.detail.activity")}</h2>
+    <Panel className="overflow-hidden p-0">
+      <div className="px-5 pb-2 pt-[18px]">
+        <h2 className="text-[15px] font-semibold text-foreground">{t("members.detail.activity")}</h2>
       </div>
       {tasksLoading ? (
         <div className="p-5 space-y-3">
@@ -193,7 +194,7 @@ function MemberActivity({ tasks, tasksLoading }: { tasks: Task[]; tasksLoading: 
           ))}
         </div>
       ) : tasks.length > 0 ? (
-        <div className="divide-y divide-border/40">
+        <div className="divide-y divide-border">
           {tasks.slice(0, 5).map((task: Task) => {
             const statusConfig = getStatusConfig(task.status)
             return (
@@ -217,6 +218,6 @@ function MemberActivity({ tasks, tasksLoading }: { tasks: Task[]; tasksLoading: 
           <p className="text-sm text-muted-foreground">{t("members.detail.noRecentActivity")}</p>
         </div>
       )}
-    </div>
+    </Panel>
   )
 }

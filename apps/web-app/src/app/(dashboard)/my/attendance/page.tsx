@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { RestPanel } from "@/components/attendance/rest-panel"
 import { UnconfirmedClockOutCard } from "@/components/attendance/unconfirmed-clock-out-card"
 import { PageNotice } from "@/components/ui/empty-note"
+import { PageHeader, Panel } from "@/components/page/page-kit"
 import { useMyAttendancePage } from "./_hooks/use-my-attendance-page"
 import { RangeField } from "./_components/range-field"
 import { ShiftClockCard } from "./_components/shift-clock-card"
@@ -43,13 +44,12 @@ export default function MyAttendancePage() {
   }
 
   return (
-    <div className="max-w-3xl">
-      <div className="mb-6">
-        <h1 data-tour="page-my-attendance" className="text-2xl font-semibold text-foreground">
-          {t("nav.myShifts", "My shifts")}
-        </h1>
-        <p className="text-sm text-muted-foreground">{t("attendance.my.subtitle")}</p>
-      </div>
+    <div>
+      <PageHeader
+        tour="page-my-attendance"
+        title={t("nav.myShifts", "My shifts")}
+        subtitle={t("attendance.my.subtitle")}
+      />
 
       {/*
         A shift left open and closed with a temporary time, waiting for the
@@ -59,7 +59,7 @@ export default function MyAttendancePage() {
       <UnconfirmedClockOutCard className="mb-6" />
 
       {/* Status + summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+      <div className="mb-6 grid grid-cols-1 gap-3.5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <ShiftClockCard
           clockedIn={clockedIn}
           activeEntry={activeEntry}
@@ -92,9 +92,9 @@ export default function MyAttendancePage() {
 
       {/* Active-session work log — jot down what you do; becomes the clock-out summary. */}
       {clockedIn && activeEntry?.id && (
-        <div className="mb-6 rounded-2xl border border-border bg-card p-5">
-          <div className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            <ListChecks className="h-4 w-4 text-primary" /> {t("worklog.myTitle", "What I'm doing today")}
+        <Panel as="div" className="mb-6 p-5">
+          <div className="mb-1 flex items-center gap-1.5 text-[15px] font-semibold text-foreground">
+            <ListChecks className="h-4 w-4 text-shell-accent" /> {t("worklog.myTitle", "What I'm doing today")}
           </div>
           <p className="mb-3 text-xs text-muted-foreground">
             {t(
@@ -104,26 +104,26 @@ export default function MyAttendancePage() {
             )}
           </p>
           <WorkLogTimeline entryId={activeEntry.id} editable />
-        </div>
+        </Panel>
       )}
 
       {/* History, and the window it belongs to */}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 data-tour="my-attn-history" className="text-sm font-semibold text-foreground">
+        <h2 data-tour="my-attn-history" className="text-[15px] font-semibold text-foreground">
           {t("attendance.my.recentEntries")}
           <span className="ml-2 font-normal text-muted-foreground tabular-nums">{entries.length}</span>
         </h2>
 
         {/* The house segmented control, as used by the customers list. */}
-        <div className="inline-flex rounded-lg bg-muted p-0.5">
+        <div className="inline-flex rounded-full bg-shell-chip p-1">
           {(["7", "30", "custom"] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
               className={cn(
-                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                "h-8 rounded-full px-3.5 text-[13px] font-medium transition-colors",
                 period === p
-                  ? "bg-background text-foreground shadow-sm"
+                  ? "bg-card font-semibold text-foreground shadow-shell"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -145,7 +145,7 @@ export default function MyAttendancePage() {
         one of them is furniture nobody needed.
       */}
       {period === "custom" && (
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
+        <Panel as="div" className="mb-4 flex flex-wrap items-center gap-3 p-4">
           <RangeField
             from={customFrom}
             to={customTo}
@@ -160,7 +160,7 @@ export default function MyAttendancePage() {
               {t("attendance.my.pickBoth", "Pick both dates — showing the last 7 days until then.")}
             </p>
           )}
-        </div>
+        </Panel>
       )}
 
       <ShiftHistory isLoading={isLoading} entries={entries} effectiveRange={effectiveRange} />

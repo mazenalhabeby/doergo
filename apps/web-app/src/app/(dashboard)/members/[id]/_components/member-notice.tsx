@@ -2,8 +2,8 @@
 
 import { type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Icon } from "@/components/ui/icon"
 import { PAGE_SHELL } from "@/components/ui/page-width"
 
 // The page with nothing to show but a message (load failure, not found): the
@@ -15,11 +15,11 @@ export function MemberNotice({ onBack, children }: { onBack: () => void; childre
       <div className={PAGE_SHELL}>
         <Button
           variant="ghost"
-          size="sm"
+          size="pill"
           onClick={onBack}
-          className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
+          className="-ml-3 mb-6 text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4 mr-1.5" />
+          <Icon name="backLine" />
           {t("members.detail.backToTeam")}
         </Button>
         <div className="text-center py-20">{children}</div>

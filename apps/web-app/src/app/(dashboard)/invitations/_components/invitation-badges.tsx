@@ -1,9 +1,9 @@
 "use client"
 
 import { InvitationStatus } from "@/lib/api"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/page/page-kit"
 
-/** How an invitation is shown: the status filter's options, its status and role badges, expiry. */
+/** How an invitation is shown: the status filter's options, its status and role words, expiry. */
 export const STATUS_OPTIONS_KEYS = [
   { value: "all", labelKey: "common.allStatuses" },
   { value: InvitationStatus.PENDING, labelKey: "invitations.status.pending" },
@@ -12,44 +12,40 @@ export const STATUS_OPTIONS_KEYS = [
   { value: InvitationStatus.REVOKED, labelKey: "invitations.status.revoked" },
 ] as const
 
-export function getStatusBadge(status: InvitationStatus, t: (key: string) => string) {
-  switch (status) {
-    case InvitationStatus.PENDING:
-      return (
-        <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-100">
-          {t("invitations.status.pending")}
-        </Badge>
-      )
-    case InvitationStatus.ACCEPTED:
-      return (
-        <Badge className="bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-100">
-          {t("invitations.status.accepted")}
-        </Badge>
-      )
-    case InvitationStatus.EXPIRED:
-      return <Badge className="bg-muted text-muted-foreground hover:bg-accent">{t("invitations.status.expired")}</Badge>
-    case InvitationStatus.REVOKED:
-      return (
-        <Badge className="bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-100">
-          {t("invitations.status.revoked")}
-        </Badge>
-      )
-    default:
-      return <Badge variant="outline">{status}</Badge>
-  }
+const STATUS_TONE = {
+  [InvitationStatus.PENDING]: "warn",
+  [InvitationStatus.ACCEPTED]: "accent",
+  [InvitationStatus.EXPIRED]: "soft",
+  [InvitationStatus.REVOKED]: "crit",
+} as const
+
+const STATUS_KEY = {
+  [InvitationStatus.PENDING]: "invitations.status.pending",
+  [InvitationStatus.ACCEPTED]: "invitations.status.accepted",
+  [InvitationStatus.EXPIRED]: "invitations.status.expired",
+  [InvitationStatus.REVOKED]: "invitations.status.revoked",
+} as const
+
+/** The dot each status wears on the filter pills — the same tone as its chip. */
+export const STATUS_DOT: Record<string, string> = {
+  [InvitationStatus.PENDING]: "bg-shell-warn",
+  [InvitationStatus.ACCEPTED]: "bg-shell-live",
+  [InvitationStatus.EXPIRED]: "bg-muted-foreground/50",
+  [InvitationStatus.REVOKED]: "bg-shell-crit",
 }
 
+export function getStatusBadge(status: InvitationStatus, t: (key: string) => string) {
+  if (!(status in STATUS_KEY)) return <Chip>{status}</Chip>
+  return (
+    <Chip tone={STATUS_TONE[status]} dot>
+      {t(STATUS_KEY[status])}
+    </Chip>
+  )
+}
+
+/** The role an invitation brings — a word, not a badge: the card's title. */
 export function getRoleBadge(role: string, t: (key: string) => string) {
-  switch (role) {
-    case "EMPLOYEE":
-      return (
-        <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-100">
-          {t("members.roles.technician")}
-        </Badge>
-      )
-    default:
-      return <Badge variant="outline">{role}</Badge>
-  }
+  return role === "EMPLOYEE" ? t("members.roles.technician") : role
 }
 
 export function isExpired(dateStr: string) {

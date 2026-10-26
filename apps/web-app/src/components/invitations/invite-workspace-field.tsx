@@ -47,7 +47,7 @@ export function InviteWorkspaceField({
           is the one thing standing between the admin and a disabled
           Send button, so it has to say so where they are looking. */}
       {isExternal && !hasSpace && (
-        <p className="text-[11px] text-amber-600 dark:text-amber-400">{t("members.invite.externalNeedsSpace")}</p>
+        <p className="text-[11px] text-shell-warn">{t("members.invite.externalNeedsSpace")}</p>
       )}
     </div>
   )

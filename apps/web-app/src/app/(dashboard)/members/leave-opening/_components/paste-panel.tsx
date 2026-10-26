@@ -55,14 +55,23 @@ export function OpeningPastePanel({
           <h2 className="text-sm font-semibold text-foreground">{t("leaveLedger.opening.pasteTitle")}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">{t("leaveLedger.opening.pasteHint")}</p>
         </div>
-        <Button variant="ghost" size="icon" className="size-7" onClick={onClose} aria-label={t("common.close", "Close")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          onClick={onClose}
+          aria-label={t("common.close", "Close")}
+        >
           <X className="size-4" />
         </Button>
       </div>
       <Textarea
         rows={6}
         value={text}
-        onChange={(e) => { setText(e.target.value); setResult(null) }}
+        onChange={(e) => {
+          setText(e.target.value)
+          setResult(null)
+        }}
         placeholder={"mark.weber@example.com; 10; 0\nSarah Wagner; 6; 2"}
         className="font-mono text-[12.5px]"
       />
@@ -72,7 +81,7 @@ export function OpeningPastePanel({
           {t("leaveLedger.opening.match")}
         </Button>
         {result && (
-          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400">
+          <span className="inline-flex items-center gap-1.5 text-xs text-shell-accent">
             <Check className="size-3.5" />
             {t("leaveLedger.opening.filled", { count: result.filled })}
           </span>
@@ -80,14 +89,16 @@ export function OpeningPastePanel({
       </div>
 
       {problems.length > 0 && (
-        <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
-          <p className="mb-1.5 text-xs font-medium text-amber-800 dark:text-amber-300">
+        <div className="mt-3 rounded-[14px] bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] p-3">
+          <p className="mb-1.5 text-xs font-medium text-shell-warn">
             {t("leaveLedger.opening.notPlaced", { count: problems.length })}
           </p>
           <ul className="space-y-1">
             {problems.map((p) => (
               <li key={`${p.why}-${p.line}`} className="flex gap-2 text-xs text-muted-foreground">
-                <span className="shrink-0 font-mono tabular-nums">{t("leaveLedger.opening.line", { line: p.line })}</span>
+                <span className="shrink-0 font-mono tabular-nums">
+                  {t("leaveLedger.opening.line", { line: p.line })}
+                </span>
                 <span className="min-w-0 flex-1 truncate font-mono">{p.text}</span>
                 <span className="shrink-0">
                   {p.why === "error"

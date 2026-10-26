@@ -55,30 +55,27 @@ export function RequestHistory({
 
   return (
     <section className="mt-6">
-      <h2 className="mb-3 text-sm font-semibold text-foreground">{t("timeOff.my.myRequests")}</h2>
+      <h2 className="mb-2 text-[15px] font-semibold text-foreground">{t("timeOff.my.myRequests")}</h2>
       {isLoading ? (
         <div className="space-y-2">
           {[0, 1].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
+            <div key={i} className="h-16 animate-pulse rounded-[14px] bg-muted" />
           ))}
         </div>
       ) : list.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+        <p className="rounded-[22px] border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
           {t("timeOff.my.noRequests")}
         </p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="rounded-[22px] border border-border bg-card px-5 py-1.5 shadow-shell">
           {list.map((r) => (
             <li
               key={r.id}
-              className={
-                "flex items-start justify-between gap-3 rounded-xl border border-border " +
-                "bg-card px-4 py-3 transition-colors hover:border-primary/30"
-              }
+              className={"flex items-start justify-between gap-3 border-t border-border py-3 first:border-t-0"}
             >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-medium text-foreground">
+                  <p className="text-sm font-semibold text-foreground">
                     {fmt(r.startDate)}
                     {r.endDate.slice(0, 10) !== r.startDate.slice(0, 10) && <> → {fmt(r.endDate)}</>}
                   </p>
@@ -89,7 +86,7 @@ export function RequestHistory({
                 </div>
                 {r.reason && <p className="mt-0.5 truncate text-xs text-muted-foreground">{r.reason}</p>}
                 {r.status === "REJECTED" && r.rejectionReason && (
-                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  <p className="mt-1 text-xs text-shell-crit">
                     {/* The string carries its own "Rejected:" prefix AND a
                         {{reason}} placeholder. Calling t() without the value
                         and appending the reason by hand printed the literal
@@ -101,7 +98,7 @@ export function RequestHistory({
               <div className="flex shrink-0 items-center gap-2">
                 <span
                   className={cn(
-                    "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                    "rounded-full px-2.5 py-1 text-xs font-medium",
                     toneChip(STATUS_TONE[r.status] ?? "neutral"),
                   )}
                 >
@@ -113,7 +110,7 @@ export function RequestHistory({
                     aria-label={t("common.cancel")}
                     onClick={() => cancelMut.mutate(r.id)}
                     disabled={cancelMut.isPending}
-                    className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                   >
                     <X className="size-4" />
                   </button>

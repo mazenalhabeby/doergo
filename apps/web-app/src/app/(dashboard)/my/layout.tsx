@@ -21,13 +21,14 @@ import Link from "next/link"
 
 import { useMySections } from "@/hooks/use-my-sections"
 import { cn } from "@/lib/utils"
+import { PAGE_SHELL } from "@/components/ui/page-width"
 
 export default function MyLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const sections = useMySections()
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
+    <div className={PAGE_SHELL}>
       {/*
         No heading here.
 
@@ -42,10 +43,13 @@ export default function MyLayout({ children }: { children: React.ReactNode }) {
         are. Same rule the workspace tabs follow.
       */}
       {sections.length > 1 && (
-        <div className="mb-5">
+        <div className="mb-6 border-b border-border">
           <div
-            className={"flex items-center gap-0.5 overflow-x-auto [-ms-overflow-style:none] " +
-              "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"}>
+            className={
+              "flex items-center gap-[26px] overflow-x-auto [-ms-overflow-style:none] " +
+              "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            }
+          >
             {sections.map((s) => {
               // startsWith, so a document's own page keeps its tab lit.
               const active = pathname === s.href || pathname.startsWith(`${s.href}/`)
@@ -55,21 +59,18 @@ export default function MyLayout({ children }: { children: React.ReactNode }) {
                   href={s.href}
                   data-tour={s.tour}
                   className={cn(
-                    "relative whitespace-nowrap px-3 py-2 text-sm transition-colors duration-150",
+                    "relative -mb-px flex h-11 items-center whitespace-nowrap border-b-2 text-[14.5px] " +
+                      "transition-colors duration-150",
                     active
-                      ? "font-semibold text-foreground"
-                      : "font-medium text-muted-foreground hover:text-foreground",
+                      ? "border-foreground font-semibold text-foreground"
+                      : "border-transparent font-medium text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {s.label}
-                  {active && (
-                    <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-foreground" />
-                  )}
                 </Link>
               )
             })}
           </div>
-          <div className="h-px bg-border/50" />
         </div>
       )}
 

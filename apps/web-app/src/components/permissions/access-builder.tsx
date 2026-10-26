@@ -279,7 +279,7 @@ export function AccessBuilder({
             "bg-card/95 p-3 shadow-lg backdrop-blur " +
             "supports-[backdrop-filter]:bg-card/80"}>
           <p className="flex min-w-0 flex-1 items-center gap-1.5 text-sm font-semibold text-foreground">
-            <span className="flex h-1.5 w-1.5 rounded-full bg-amber-500" />
+            <span className="flex h-1.5 w-1.5 rounded-full bg-shell-warn" />
             {t("accessBuilder.unsaved", "You have unsaved changes")}
           </p>
           <div className="flex shrink-0 items-center gap-2">

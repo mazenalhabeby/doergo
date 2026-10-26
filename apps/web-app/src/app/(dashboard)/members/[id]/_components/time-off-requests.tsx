@@ -17,6 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { isAbsence, requestDetail } from "@/lib/requests"
 import { RequestKindChip } from "@/components/requests/request-kind"
+import { Panel } from "@/components/page/page-kit"
 import { RequestTimeOffDialog } from "./request-time-off-dialog"
 
 const STATUS_PILLS: Record<TimeOffStatus, { labelKey: string; hex: string }> = {
@@ -63,13 +64,13 @@ export function TimeOffRequests({
   })
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    <Panel className="overflow-hidden p-0">
+      <div className="px-5 pb-2 pt-[18px] flex items-center gap-2.5">
+        <div className="grid size-8 shrink-0 place-items-center rounded-full bg-shell-accent-soft text-shell-accent">
           <CalendarOff className="h-4 w-4" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-foreground">{t("technicians.timeOffTab.title")}</h2>
+          <h2 className="text-[15px] font-semibold text-foreground">{t("technicians.timeOffTab.title")}</h2>
           <p className="text-xs text-muted-foreground">{t("technicians.timeOffTab.description")}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -90,15 +91,12 @@ export function TimeOffRequests({
       </div>
 
       {timeOffRequests && timeOffRequests.length > 0 ? (
-        <div className="divide-y divide-border/60">
+        <div className="divide-y divide-border">
           {timeOffRequests.map((request) => {
             const pill = STATUS_PILLS[request.status]
             const isPending = request.status === "PENDING"
             return (
-              <div
-                key={request.id}
-                className="px-5 py-3.5 hover:bg-accent/40 transition-colors flex items-center gap-3"
-              >
+              <div key={request.id} className="px-5 py-3.5 hover:bg-accent transition-colors flex items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-medium text-foreground">
@@ -180,6 +178,6 @@ export function TimeOffRequests({
           <p className="text-sm text-muted-foreground">{t("technicians.timeOffTab.noRequests")}</p>
         </div>
       )}
-    </div>
+    </Panel>
   )
 }

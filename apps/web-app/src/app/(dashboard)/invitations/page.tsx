@@ -1,18 +1,17 @@
 "use client"
 
-import { personName } from "@hbcfield/shared/client"
-import { UserPlus, Mail, Clock, MoreHorizontal, Trash2 } from "lucide-react"
-
-import { InvitationStatus } from "@/lib/api"
+import { cn } from "@/lib/utils"
+import { PAGE_SHELL } from "@/components/ui/page-width"
 import { Button } from "@/components/ui/button"
-import { ListPageHeader, ListPager, ListTableError, ListTableLoading } from "@/components/common/list-page"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Icon } from "@/components/ui/icon"
+import { PageHeader, Panel } from "@/components/page/page-kit"
+import { ListPager, ListTableError, ListTableLoading } from "@/components/common/list-page"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import { CreateInvitationDialog } from "@/components/invitations/create-invitation-dialog"
-import { formatMediumDateTime } from "@/lib/format-date"
 import { useInvitationsPage } from "./_hooks/use-invitations-page"
-import { STATUS_OPTIONS_KEYS, getStatusBadge, getRoleBadge, isExpired } from "./_components/invitation-badges"
+import { STATUS_DOT, STATUS_OPTIONS_KEYS } from "./_components/invitation-badges"
+import { InvitationCard } from "./_components/invitation-card"
+import { FilterPill, FilterPills } from "@/components/page/page-controls"
 
 export default function InvitationsPage() {
   const {
@@ -41,159 +40,85 @@ export default function InvitationsPage() {
 
   return (
     <div className="min-h-full bg-background">
-      <div className="max-w-screen-xl mx-auto px-6 py-8">
-        {/* Page Header */}
-        <ListPageHeader
+      <div className={PAGE_SHELL}>
+        <PageHeader
           tour="page-invitations"
           title={t("invitations.title")}
           subtitle={t("invitations.subtitle")}
-          statusFilter={statusFilter}
-          onStatusChange={handleStatusChange}
-          statusOptions={STATUS_OPTIONS_KEYS}
-          isLoading={isLoading}
-          onRefresh={() => refetch()}
-        >
-          {/* Create */}
-          <Button className="h-11 px-5 rounded-xl font-medium gap-2" onClick={() => setCreateDialogOpen(true)}>
-            <UserPlus className="size-4" />
-            {t("invitations.createInvitation")}
-          </Button>
-        </ListPageHeader>
-
-        {/* Summary */}
-        {total > 0 && (
-          <div className="mb-4">
-            <p className="text-sm text-muted-foreground">
-              {t("invitations.showingRange", { start: startItem, end: endItem, total, plural: total !== 1 ? "s" : "" })}
-            </p>
-          </div>
-        )}
-
-        {/* Table */}
-        <div className="bg-card rounded-xl border border-border/80 shadow-sm overflow-hidden">
-          {isLoading ? (
-            <ListTableLoading />
-          ) : isError ? (
-            <ListTableError title={t("invitations.failedToLoad")} error={error} onRetry={() => refetch()} />
-          ) : invitations.length === 0 ? (
-            <div className="p-16 text-center">
-              <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">{t("invitations.noInvitationsFound")}</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {statusFilter !== "all" ? t("invitations.noInvitationsHint") : t("invitations.createFirstInvitation")}
-              </p>
-              {statusFilter === "all" && (
-                <Button className="rounded-xl" onClick={() => setCreateDialogOpen(true)}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  {t("invitations.createInvitation")}
-                </Button>
-              )}
-            </div>
-          ) : (
+          actions={
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted">
-                    <TableHead className="font-semibold text-muted-foreground">{t("invitations.table.role")}</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">{t("invitations.table.code")}</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">
-                      {t("invitations.table.status")}
-                    </TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">
-                      {t("invitations.table.createdBy")}
-                    </TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">
-                      {t("invitations.table.created")}
-                    </TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">
-                      {t("invitations.table.expires")}
-                    </TableHead>
-                    <TableHead className="font-semibold text-muted-foreground">
-                      {t("invitations.table.usedBy")}
-                    </TableHead>
-                    <TableHead className="w-[60px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {invitations.map((inv) => (
-                    <TableRow key={inv.id}>
-                      <TableCell>
-                        <div className="space-y-1">
-                          {getRoleBadge(inv.targetRole, t)}
-                          {inv.specialty && <div className="text-xs text-muted-foreground">{inv.specialty}</div>}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {inv.code ? (
-                          <span className="font-mono text-sm font-semibold tracking-wider text-foreground bg-muted px-2 py-1 rounded">
-                            {inv.code}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(inv.status, t)}</TableCell>
-                      <TableCell>
-                        {inv.createdBy ? (
-                          <span className="text-foreground">{personName(inv.createdBy)}</span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground">{formatMediumDateTime(inv.createdAt)}</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span
-                            className={`text-sm ${
-                              inv.status === InvitationStatus.PENDING && isExpired(inv.expiresAt)
-                                ? "text-red-600"
-                                : "text-muted-foreground"
-                            }`}
-                          >
-                            {formatMediumDateTime(inv.expiresAt)}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {inv.acceptedBy ? (
-                          <div>
-                            <span className="text-foreground">{personName(inv.acceptedBy)}</span>
-                            <div className="text-xs text-muted-foreground">{inv.acceptedBy.email}</div>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {inv.status === InvitationStatus.PENDING && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="text-red-600" onClick={() => handleRevokeClick(inv)}>
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                {t("invitations.revokeDialog.revokeButton")}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {/* Pagination */}
-              <ListPager page={page} totalPages={totalPages} setPage={setPage} />
+              <Button
+                variant="outline"
+                size="pillIcon"
+                onClick={() => refetch()}
+                disabled={isLoading}
+                aria-label={t("common.refresh")}
+              >
+                <Icon name="refreshLine" className={cn(isLoading && "animate-spin")} />
+              </Button>
+              <Button size="pillLg" onClick={() => setCreateDialogOpen(true)}>
+                <Icon name="addUser" />
+                {t("invitations.createInvitation")}
+              </Button>
             </>
+          }
+        />
+
+        {/* Status — the board's filter pills (the same values the select carried). */}
+        <div className="mb-3.5 flex flex-wrap items-center gap-2.5">
+          <FilterPills label={t("common.filterByStatus")}>
+            {STATUS_OPTIONS_KEYS.map((option) => (
+              <FilterPill
+                key={option.value}
+                active={statusFilter === option.value}
+                onClick={() => handleStatusChange(option.value)}
+                dot={option.value !== "all" ? STATUS_DOT[option.value] : undefined}
+              >
+                {t(option.labelKey)}
+              </FilterPill>
+            ))}
+          </FilterPills>
+          {total > 0 && (
+            <span className="ml-auto text-[12.5px] text-muted-foreground">
+              {t("invitations.showingRange", { start: startItem, end: endItem, total, plural: total !== 1 ? "s" : "" })}
+            </span>
           )}
         </div>
+
+        {isLoading ? (
+          <Panel>
+            <ListTableLoading />
+          </Panel>
+        ) : isError ? (
+          <Panel>
+            <ListTableError title={t("invitations.failedToLoad")} error={error} onRetry={() => refetch()} />
+          </Panel>
+        ) : invitations.length === 0 ? (
+          <Panel className="px-6 py-14 text-center">
+            <div className="mx-auto mb-4 grid size-14 place-items-center rounded-full bg-shell-chip text-muted-foreground">
+              <Icon name="invite" size={26} />
+            </div>
+            <h3 className="mb-1.5 text-[17px] font-semibold text-foreground">{t("invitations.noInvitationsFound")}</h3>
+            <p className="mb-5 text-sm text-muted-foreground">
+              {statusFilter !== "all" ? t("invitations.noInvitationsHint") : t("invitations.createFirstInvitation")}
+            </p>
+            {statusFilter === "all" && (
+              <Button size="pillLg" onClick={() => setCreateDialogOpen(true)}>
+                <Icon name="addUser" />
+                {t("invitations.createInvitation")}
+              </Button>
+            )}
+          </Panel>
+        ) : (
+          <>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-3.5">
+              {invitations.map((inv) => (
+                <InvitationCard key={inv.id} inv={inv} onRevoke={handleRevokeClick} />
+              ))}
+            </div>
+            <ListPager page={page} totalPages={totalPages} setPage={setPage} />
+          </>
+        )}
       </div>
 
       {/* Create Invitation Dialog */}

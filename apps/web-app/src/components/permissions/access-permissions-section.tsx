@@ -97,7 +97,9 @@ export function AccessPermissionsSection({
                   <ul className="space-y-1">
                     {perms.map((p) => (
                       <li key={p.key} className="flex items-start gap-2 text-xs">
-                        <Check className={cn("mt-0.5 size-3 shrink-0", p.direct ? "text-amber-600" : "text-primary")} />
+                        <Check
+                          className={cn("mt-0.5 size-3 shrink-0", p.direct ? "text-shell-warn" : "text-primary")}
+                        />
                         <span className="min-w-0">
                           <span className="font-medium text-foreground">{p.label}</span>
                           <span className="text-muted-foreground"> — {p.description}</span>
@@ -105,9 +107,8 @@ export function AccessPermissionsSection({
                             <>
                               <span
                                 className={
-                                  "ml-1.5 whitespace-nowrap rounded border border-amber-600/40 " +
-                                  "bg-amber-600/10 px-1 py-px text-[10px] font-medium text-amber-700 " +
-                                  "dark:text-amber-500"
+                                  "ml-1.5 whitespace-nowrap rounded-full px-1.5 py-px text-[10px] font-medium " +
+                                  "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn"
                                 }
                               >
                                 {t("accessBuilder.directGrant", "Granted to this member only")}

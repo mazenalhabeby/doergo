@@ -173,7 +173,7 @@ export function AccessFields({
               Saying so beats leaving an admin to set a restriction that never
               takes effect. */}
             {seesAllSpacesAnyway && (
-              <p className="rounded-lg border border-amber-600/40 bg-amber-600/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-500">
+              <p className="rounded-lg bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] px-3 py-2 text-[11px] text-shell-warn">
                 {t(
                   "accessBuilder.spaceVisibilityOverridden",
                   "This member can view all tasks, so they see every workspace regardless " +

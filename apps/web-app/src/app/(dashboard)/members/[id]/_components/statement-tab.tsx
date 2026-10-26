@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Skeleton } from "@/components/ui/skeleton"
 import { keys } from "@/lib/query-keys"
+import { Notice, Panel } from "@/components/page/page-kit"
 import { EmptyNote } from "@/components/ui/empty-note"
 
 /**
@@ -155,7 +156,7 @@ export function StatementTab({ memberId }: { memberId: string }) {
         {preset !== "custom" && <span className="text-sm text-muted-foreground">{period}</span>}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <Panel className="overflow-hidden p-0">
         {isLoading ? (
           <div className="space-y-2 p-5">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -163,7 +164,7 @@ export function StatementTab({ memberId }: { memberId: string }) {
             ))}
           </div>
         ) : error ? (
-          <p className="p-6 text-sm text-red-600">{(error as Error).message}</p>
+          <p className="p-6 text-sm text-shell-crit">{(error as Error).message}</p>
         ) : !data || data.lines.length === 0 ? (
           <EmptyNote>{t("members.statement.empty")}</EmptyNote>
         ) : (
@@ -211,7 +212,7 @@ export function StatementTab({ memberId }: { memberId: string }) {
                     </td>
                     <td className="px-2 py-2.5 text-right tabular-nums">
                       {l.rateCents == null ? (
-                        <span className="text-amber-600 dark:text-amber-400">{t("members.statement.noRate")}</span>
+                        <span className="text-shell-warn">{t("members.statement.noRate")}</span>
                       ) : (
                         <>
                           {money(l.rateCents)}
@@ -240,18 +241,13 @@ export function StatementTab({ memberId }: { memberId: string }) {
             </table>
           </div>
         )}
-      </div>
+      </Panel>
 
       {data?.missingRate && (
-        <p
-          className={
-            "flex items-start gap-2 rounded-lg border border-amber-500/30 " +
-            "bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300"
-          }
-        >
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <Notice tone="warn" className="mb-0 text-xs">
+          <AlertTriangle />
           {t("members.statement.missingRate")}
-        </p>
+        </Notice>
       )}
       <p className="text-xs text-muted-foreground">{t("members.statement.sameHours")}</p>
     </div>

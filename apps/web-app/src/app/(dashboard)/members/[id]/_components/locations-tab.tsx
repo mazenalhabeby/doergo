@@ -11,6 +11,7 @@ import { locationsApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { effectiveClockRules, spaceAllowsAway, resolveAwayAccess } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
+import { Panel } from "@/components/page/page-kit"
 import { WorkAsRow } from "./work-as-row"
 
 interface Assignment {
@@ -61,14 +62,14 @@ export function LocationsTab({ assignments, memberAllowRemote, canManage }: Loca
   })
 
   return (
-    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
+    <Panel className="overflow-hidden p-0">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+      <div className="px-5 pb-2 pt-[18px] flex items-center gap-2.5">
+        <div className="grid size-8 shrink-0 place-items-center rounded-full bg-shell-accent-soft text-shell-accent">
           <MapPin className="h-4 w-4" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-foreground">{t("technicians.locationsTab.title")}</h2>
+          <h2 className="text-[15px] font-semibold text-foreground">{t("technicians.locationsTab.title")}</h2>
           <p className="text-xs text-muted-foreground">{t("technicians.locationsTab.description")}</p>
         </div>
       </div>
@@ -79,7 +80,7 @@ export function LocationsTab({ assignments, memberAllowRemote, canManage }: Loca
             <div
               key={assignment.id}
               className={
-                "group relative rounded-xl border border-border/60 bg-background/40 p-4 " +
+                "group relative rounded-xl border border-border bg-background/40 p-4 " +
                 "transition-all hover:border-primary/40 hover:shadow-md"
               }
             >
@@ -169,7 +170,7 @@ export function LocationsTab({ assignments, memberAllowRemote, canManage }: Loca
               />
 
               {/* Effective-from footer */}
-              <div className="mt-3.5 pt-3 border-t border-border/60 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="mt-3.5 pt-3 border-t border-border flex items-center gap-1.5 text-xs text-muted-foreground">
                 <CalendarDays className="h-3.5 w-3.5 flex-shrink-0" />
                 {t("technicians.locationsTab.effectiveFrom", { date: formatDate(assignment.effectiveFrom) })}
               </div>
@@ -184,7 +185,7 @@ export function LocationsTab({ assignments, memberAllowRemote, canManage }: Loca
           <p className="text-sm text-muted-foreground">{t("technicians.locationsTab.noAssignments")}</p>
         </div>
       )}
-    </div>
+    </Panel>
   )
 }
 
@@ -243,7 +244,7 @@ function AwayGrantRow({
   ]
 
   return (
-    <div className="mt-3.5 rounded-lg border border-border/60 bg-muted/20 p-2.5">
+    <div className="mt-3.5 rounded-lg border border-border bg-muted/20 p-2.5">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] font-medium text-foreground">
           {t("attendance.away.mayWorkAway", "May work away from here")}
@@ -251,9 +252,7 @@ function AwayGrantRow({
         <span
           className={cn(
             "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-            effective.allowed
-              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
-              : "bg-muted text-muted-foreground",
+            effective.allowed ? "bg-shell-accent-soft text-shell-accent" : "bg-muted text-muted-foreground",
           )}
         >
           {effective.allowed ? t("attendance.away.yes", "Allowed") : t("attendance.away.no", "Refused")}
@@ -273,7 +272,7 @@ function AwayGrantRow({
                 className={cn(
                   "flex-1 border-r border-border px-1 py-1.5 text-[10px] font-semibold " +
                     "last:border-r-0 transition-colors disabled:opacity-60",
-                  active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent/40",
+                  active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent",
                 )}
               >
                 {o.label}

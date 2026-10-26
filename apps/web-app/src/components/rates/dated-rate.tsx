@@ -1,19 +1,13 @@
 "use client"
 
-import { useState } from "react";
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { CalendarClock, History } from "lucide-react";
+import { CalendarClock, History } from "lucide-react"
 
 import { formatDayKey } from "@/lib/day-key"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import {
-  type RateHistoryRow,
-  type RateUnit,
-  useCents,
-  RateHistoryList,
-  ChangeRateDialog,
-} from "./dated-rate-dialog"
+import { type RateHistoryRow, type RateUnit, useCents, RateHistoryList, ChangeRateDialog } from "./dated-rate-dialog"
 
 /**
  * ONE control for every rate in the product — organization default, a
@@ -70,21 +64,24 @@ export function DatedRateField({
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-sm">{label}</Label>
+      <Label htmlFor={id} className="text-sm">
+        {label}
+      </Label>
       <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card px-3 py-2">
         <span id={id} className="text-sm font-semibold tabular-nums">
           {currentCents != null ? (
             <>
-              {cents(
-                currentCents)} <span
-                  className="text-xs font-normal text-muted-foreground">{unit === "day" ? t("rates.perDay") : t("rates.perHour")}</span>
+              {cents(currentCents)}{" "}
+              <span className="text-xs font-normal text-muted-foreground">
+                {unit === "day" ? t("rates.perDay") : t("rates.perHour")}
+              </span>
             </>
           ) : (
             <span className="font-normal text-muted-foreground">{emptyLabel ?? t("rates.notSet")}</span>
           )}
         </span>
         {scheduled && (
-          <span className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400">
+          <span className="inline-flex items-center gap-1 text-[11px] text-shell-accent">
             <CalendarClock className="h-3 w-3" />
             {scheduled.cents != null ? cents(scheduled.cents) : t("rates.notSet")}{" "}
             {t("rates.from", { date: formatDayKey(scheduled.effectiveFrom, i18n.language) })}
@@ -97,7 +94,8 @@ export function DatedRateField({
               variant="ghost"
               size="sm"
               className="h-8 gap-1.5 text-xs text-muted-foreground"
-              onClick={() => setShowHistory((v) => !v)}>
+              onClick={() => setShowHistory((v) => !v)}
+            >
               <History className="h-3.5 w-3.5" />
               {showHistory ? t("rates.hideHistory") : t("rates.history")}
             </Button>
@@ -108,7 +106,8 @@ export function DatedRateField({
             size="sm"
             className="h-8"
             disabled={disabled || history === undefined}
-            onClick={() => setOpen(true)}>
+            onClick={() => setOpen(true)}
+          >
             {currentCents != null || (history?.length ?? 0) > 0 ? t("rates.change") : t("rates.set")}
           </Button>
         </span>

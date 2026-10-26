@@ -2,6 +2,7 @@
 
 import { useTranslation } from "react-i18next"
 import { PageNotice } from "@/components/ui/empty-note"
+import { PageHeader } from "@/components/page/page-kit"
 import { useMyRequests } from "./_hooks/use-my-requests"
 import { useRequestForm } from "./_hooks/use-request-form"
 import { AllowanceSummary } from "./_components/allowance-summary"
@@ -30,15 +31,12 @@ export default function MyTimeOffPage() {
 
   return (
     <div>
-      <header className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("nav.timeOff")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("timeOff.my.subtitle")}</p>
-      </header>
+      <PageHeader title={t("nav.timeOff")} subtitle={t("timeOff.my.subtitle")} />
 
       {/* The allowance, and what is actually left of it. */}
       <AllowanceSummary balance={balance} yearLabel={yearLabel} stats={stats} />
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-3.5 lg:grid-cols-[minmax(0,1fr)_340px]">
         {/* ── Calendar ─────────────────────────────────────────────── */}
         <RequestCalendar
           cursor={form.cursor}

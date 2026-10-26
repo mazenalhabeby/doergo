@@ -37,7 +37,7 @@ export function LiveShift({ since, target }: { since: string; target: { start: n
         />
       )}
       <div>
-        <div className="text-[28px] font-semibold leading-none tabular-nums text-foreground">
+        <div className="text-[34px] font-semibold leading-none tracking-[-0.045em] tabular-nums text-foreground">
           {h}:{String(m).padStart(2, "0")}
           <span className="text-base text-muted-foreground">:{String(sec).padStart(2, "0")}</span>
         </div>

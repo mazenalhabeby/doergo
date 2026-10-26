@@ -1,6 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { Notice } from "@/components/page/page-kit"
 import { useTranslation } from "react-i18next"
 import { Hourglass } from "lucide-react"
 import { formatDuration } from "@hbcfield/shared/client"
@@ -32,13 +33,10 @@ export function OutsideWaiting() {
           names: who,
         }
         return (
-          <div
-            key={w.entryId}
-            className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-sm text-foreground"
-          >
-            <Hourglass className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <Notice key={w.entryId} tone="warn" className="mb-0 font-medium">
+            <Hourglass />
             {who ? t("attendance.outside.waiting", params) : t("attendance.outside.waitingNoName", params)}
-          </div>
+          </Notice>
         )
       })}
     </div>

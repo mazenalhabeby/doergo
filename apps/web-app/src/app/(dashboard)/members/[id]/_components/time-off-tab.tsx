@@ -7,6 +7,7 @@ import { LeaveLedgerPanel } from "@/components/leave/leave-ledger-panel"
 import { employeesApi, type TimeOffStatus } from "@/lib/api"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { keys } from "@/lib/query-keys"
+import { Panel } from "@/components/page/page-kit"
 import { TimeOffRequests } from "./time-off-requests"
 
 export interface TimeOffTabProps {
@@ -32,15 +33,15 @@ export function TimeOffTab({ employeeId, employeeName, canManage }: TimeOffTabPr
 
   if (isLoading) {
     return (
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
+      <Panel className="overflow-hidden p-0">
+        <div className="px-5 pb-2 pt-[18px] flex items-center gap-2.5">
           <Skeleton className="h-8 w-8 rounded-lg" />
           <div className="space-y-1.5">
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-3 w-56" />
           </div>
         </div>
-        <div className="divide-y divide-border/60">
+        <div className="divide-y divide-border">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="px-5 py-3.5 flex items-center gap-3">
               <div className="flex-1 space-y-2">
@@ -51,7 +52,7 @@ export function TimeOffTab({ employeeId, employeeName, canManage }: TimeOffTabPr
             </div>
           ))}
         </div>
-      </div>
+      </Panel>
     )
   }
 

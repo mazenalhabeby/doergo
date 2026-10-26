@@ -17,6 +17,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 import { type PerformanceMetrics } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { Panel } from "@/components/page/page-kit"
 import { StatTile } from "@/components/ui/stat-tile"
 
 interface PerformanceTabProps {
@@ -39,7 +40,10 @@ function Delta({ value, label }: { value: number; label: string }) {
   const up = value >= 0
   return (
     <span
-      className={cn("inline-flex items-center gap-0.5 text-xs font-medium", up ? "text-green-600" : "text-red-600")}
+      className={cn(
+        "inline-flex items-center gap-0.5 text-xs font-medium",
+        up ? "text-shell-accent" : "text-shell-crit",
+      )}
     >
       {up ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
       {up ? "+" : ""}
@@ -61,18 +65,18 @@ function SectionCard({
   children: ReactNode
 }) {
   return (
-    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
-      <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    <Panel className="overflow-hidden p-0">
+      <div className="px-5 pb-2 pt-[18px] flex items-center gap-2.5">
+        <div className="grid size-8 shrink-0 place-items-center rounded-full bg-shell-accent-soft text-shell-accent">
           <Icon className="h-4 w-4" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+          <h2 className="text-[15px] font-semibold text-foreground">{title}</h2>
           <p className="text-xs text-muted-foreground">{subtitle}</p>
         </div>
       </div>
       {children}
-    </div>
+    </Panel>
   )
 }
 
@@ -154,9 +158,9 @@ function ComparisonCell({
   suffix?: string
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+    <div className="rounded-xl border border-border bg-muted/30 p-4">
       <p className="text-xs text-muted-foreground mb-1.5">{label}</p>
-      <p className={cn("text-xl font-semibold", change >= 0 ? "text-green-600" : "text-red-600")}>
+      <p className={cn("text-xl font-semibold", change >= 0 ? "text-shell-accent" : "text-shell-crit")}>
         {change >= 0 ? "+" : ""}
         {change.toFixed(digits)}
         {suffix}

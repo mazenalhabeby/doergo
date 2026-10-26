@@ -14,8 +14,7 @@ import { cn } from "@/lib/utils"
  * D1): the same as the workspace, or one of the three ways with their own hours a day. Anybody set differently
  * carries "Own rules". Saves through the same route as the away override (`canManageWorkspaces`).
  */
-const OWN_TAG =
-  "rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-700 dark:bg-violet-950 dark:text-violet-300"
+const OWN_TAG = "rounded-full bg-shell-chip px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
 
 export function WorkAsRow({
   locationId,
@@ -59,7 +58,7 @@ export function WorkAsRow({
   }
 
   return (
-    <div className="mt-3.5 rounded-lg border border-border/60 bg-muted/20 p-2.5">
+    <div className="mt-3.5 rounded-lg border border-border bg-muted/20 p-2.5">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] font-medium text-foreground">{t("workPreset.worksHereAs", "Works here as")}</span>
         {own && <span className={OWN_TAG}>{t("workPreset.ownRules", "Own rules")}</span>}

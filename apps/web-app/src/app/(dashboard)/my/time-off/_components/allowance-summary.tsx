@@ -9,6 +9,7 @@ import { StatTile } from "@/components/ui/stat-tile"
 import { LeaveBalanceBreakdown } from "@/components/leave/leave-balance-breakdown"
 import type { LeaveBalance } from "@/lib/api/types/employees"
 import type { leaveYearLabel } from "@/lib/leave-ledger"
+import { Panel } from "@/components/page/page-kit"
 import { fmt } from "../_lib/request-calendar"
 
 /**
@@ -34,8 +35,8 @@ export function AllowanceSummary({
   const [showLines, setShowLines] = useState(false)
   return (
     <>
-      <div className="mb-5 grid gap-3 sm:grid-cols-[auto_1fr]">
-        <div className="flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4">
+      <div className="mb-4 grid gap-3.5 sm:grid-cols-[auto_1fr]">
+        <Panel as="div" className="flex items-center gap-4 px-5 py-4">
           <ProgressRing
             tone="low"
             value={balance?.remaining ?? 0}
@@ -44,7 +45,7 @@ export function AllowanceSummary({
             loading={!balance}
           />
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               {yearLabel?.kind === "work"
                 ? t("leaveLedger.allowanceTitleWork", { from: yearLabel.from, to: yearLabel.to })
                 : t("timeOff.my.allowanceTitle", { year: yearLabel?.year ?? new Date().getFullYear() })}
@@ -55,7 +56,7 @@ export function AllowanceSummary({
             {!!balance?.pending && (
               /* Beside the figure, never inside it: a request nobody has
                  approved yet is not time the person has taken. */
-              <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
+              <p className="mt-0.5 text-xs text-shell-warn">
                 {t("timeOff.my.allowancePending", { count: balance.pending })}
               </p>
             )}
@@ -81,7 +82,7 @@ export function AllowanceSummary({
               </p>
             )}
           </div>
-        </div>
+        </Panel>
 
         <div className="grid grid-cols-2 gap-3">
           <StatTile

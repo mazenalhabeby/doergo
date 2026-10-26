@@ -123,9 +123,7 @@ function HoldingRow({ period }: { period: CustodyPeriodDto }) {
         <CustodySpan startedAt={period.startedAt} endedAt={period.endedAt} days={days} />
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">
-          {formatCents(period.totals.outCents)}
-        </p>
+        <p className="text-sm font-semibold tabular-nums text-shell-warn">{formatCents(period.totals.outCents)}</p>
         <p className="text-[11px] text-muted-foreground">{t("custody.whileHeld", "while they had it")}</p>
       </div>
     </Link>

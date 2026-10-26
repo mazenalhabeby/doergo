@@ -3,18 +3,6 @@
 import type { Dispatch, SetStateAction } from "react"
 import { useTranslation } from "react-i18next"
 import { personName } from "@hbcfield/shared/client"
-import {
-  MapPin,
-  Clock,
-  LayoutGrid,
-  ShieldCheck,
-  ClipboardList,
-  Calendar,
-  Umbrella,
-  BarChart3,
-  Package,
-  Receipt,
-} from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {
@@ -127,16 +115,17 @@ export function MemberProfileTabs({
   // No tabs to show (plain member viewing a peer / self) → just the overview.
   if (!showAccessTab && !canViewOps) return overview
 
+  // The board's underline tabs: the chosen one in ink with a 2px rule, the rest soft.
   const triggerCls =
-    "data-[state=active]:bg-foreground data-[state=active]:text-background " +
-    "data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium " +
-    "transition-all gap-1.5"
+    "-mb-px h-[42px] rounded-none border-b-2 border-transparent bg-transparent px-0 text-[13.5px] font-medium " +
+    "text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:border-foreground " +
+    "data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-foreground " +
+    "data-[state=active]:shadow-none"
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-      <TabsList className="bg-card border border-border/60 rounded-xl p-1 shadow-sm h-auto flex-wrap">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <TabsList className="h-auto w-full flex-wrap justify-start gap-x-[22px] rounded-none border-b border-border bg-transparent p-0">
         <TabsTrigger value="overview" className={triggerCls}>
-          <LayoutGrid className="size-3.5" />
           {t("members.detail.overview")}
         </TabsTrigger>
         {showAccessTab && (
@@ -146,14 +135,12 @@ export function MemberProfileTabs({
             onClick={() => setActiveTab("access")}
             className={triggerCls}
           >
-            <ShieldCheck className="size-3.5" />
             {t("members.detail.access")}
           </TabsTrigger>
         )}
         {canViewOps && (
           <>
             <TabsTrigger value="tasks" className={triggerCls}>
-              <ClipboardList className="size-3.5" />
               {t("technicians.detail.tabs.tasks")}
             </TabsTrigger>
             {/* Nothing an external member could ever fill: they do not
@@ -165,12 +152,10 @@ export function MemberProfileTabs({
               real data the first time somebody does. */}
             {!isExternalMember && (
               <TabsTrigger value="attendance" className={triggerCls}>
-                <Clock className="size-3.5" />
                 {t("technicians.detail.tabs.attendance")}
               </TabsTrigger>
             )}
             <TabsTrigger value="locations" className={triggerCls}>
-              <MapPin className="size-3.5" />
               {t("technicians.detail.tabs.locations")}
             </TabsTrigger>
             {/* What has been handed to them — a van, a laptop, a key.
@@ -179,33 +164,28 @@ export function MemberProfileTabs({
               is a real answer and the one somebody checking asset
               returns on a leaver's last day is looking for. */}
             <TabsTrigger value="holdings" className={triggerCls}>
-              <Package className="size-3.5" />
               {t("custody.tab", "Custody")}
             </TabsTrigger>
             {/* Weekly schedule only applies to FIXED-hours members; flexible/
               none members work to a monthly budget, so hide the tab. */}
             {member.scheduleType === "FIXED" && (
               <TabsTrigger value="schedule" className={triggerCls}>
-                <Calendar className="size-3.5" />
                 {t("technicians.detail.tabs.schedule")}
               </TabsTrigger>
             )}
             {!isExternalMember && (
               <TabsTrigger value="time-off" className={triggerCls}>
-                <Umbrella className="size-3.5" />
                 {t("technicians.detail.tabs.timeOff")}
               </TabsTrigger>
             )}
             {!isExternalMember && (
               <TabsTrigger value="performance" className={triggerCls}>
-                <BarChart3 className="size-3.5" />
                 {t("technicians.detail.tabs.performance")}
               </TabsTrigger>
             )}
             {/* We neither pay nor bill an external member, so there is no statement. */}
             {!isExternalMember && canViewLabourCost && (
               <TabsTrigger value="statement" className={triggerCls}>
-                <Receipt className="size-3.5" />
                 {t("members.statement.tab")}
               </TabsTrigger>
             )}
@@ -213,8 +193,8 @@ export function MemberProfileTabs({
         )}
       </TabsList>
 
-      <TabsContent value="overview" className="mt-6">
-        <div className="space-y-6">
+      <TabsContent value="overview" className="mt-4">
+        <div className="space-y-4">
           {overview}
           {/* Full accountability audit trail — managers only (self-gated) */}
           <AuditTrail resourceType="members" resourceId={memberId} />
@@ -222,8 +202,8 @@ export function MemberProfileTabs({
       </TabsContent>
 
       {showAccessTab && (
-        <TabsContent value="access" className="mt-6">
-          <div className="space-y-6">
+        <TabsContent value="access" className="mt-4">
+          <div className="space-y-4">
             <AccessBuilder member={member} onSaved={onMemberSaved} />
           </div>
         </TabsContent>
@@ -241,7 +221,7 @@ export function MemberProfileTabs({
             hidden tab still fetches, so leaving these in would query
             attendance and time-off for somebody who has neither. */}
           {!isExternalMember && (
-            <TabsContent value="attendance" className="mt-6">
+            <TabsContent value="attendance" className="mt-4">
               <AttendanceTab
                 attendance={attendance}
                 employeeId={memberId}
@@ -251,10 +231,10 @@ export function MemberProfileTabs({
               />
             </TabsContent>
           )}
-          <TabsContent value="holdings" className="mt-6">
+          <TabsContent value="holdings" className="mt-4">
             <HoldingsTab memberId={memberId} />
           </TabsContent>
-          <TabsContent value="locations" className="mt-6">
+          <TabsContent value="locations" className="mt-4">
             <LocationsTab
               assignments={memberAssignments}
               memberAllowRemote={member.allowRemote}
@@ -262,22 +242,22 @@ export function MemberProfileTabs({
             />
           </TabsContent>
           {member.scheduleType === "FIXED" && (
-            <TabsContent value="schedule" className="mt-6">
+            <TabsContent value="schedule" className="mt-4">
               <ScheduleTab employeeId={memberId} canManage={canManage} />
             </TabsContent>
           )}
           {!isExternalMember && (
-            <TabsContent value="time-off" className="mt-6">
+            <TabsContent value="time-off" className="mt-4">
               <TimeOffTab employeeId={memberId} employeeName={personName(member)} canManage={canManage} />
             </TabsContent>
           )}
           {!isExternalMember && (
-            <TabsContent value="performance" className="mt-6">
+            <TabsContent value="performance" className="mt-4">
               <PerformanceTab performance={performance} />
             </TabsContent>
           )}
           {!isExternalMember && canViewLabourCost && (
-            <TabsContent value="statement" className="mt-6">
+            <TabsContent value="statement" className="mt-4">
               <StatementTab memberId={memberId} />
             </TabsContent>
           )}

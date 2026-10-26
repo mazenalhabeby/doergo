@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { ToneChip } from "@/components/ui/tone-chip"
 import { toneChip, toneSolid, type Tone } from "@/lib/status-tones"
 import { formatAge, reasonsOf } from "@/lib/phone-sync"
+import { FilterPill } from "@/components/page/page-controls"
 
 /** A phone's sync state as one of the six tones (lib/status-tones). */
 const SYNC_TONE: Record<SyncHealthState, Tone> = {
@@ -45,21 +46,10 @@ export function FilterChip({
   dot?: string
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
-        active
-          ? "border-primary bg-primary/5 text-primary"
-          : "border-border/80 bg-card text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {dot && <span className={cn("h-2 w-2 rounded-full", dot)} aria-hidden />}
-      <span className={cn("font-semibold tabular-nums", active ? "text-primary" : "text-foreground")}>{count}</span>
+    <FilterPill active={active} onClick={onClick} dot={dot}>
+      <span className={cn("font-semibold tabular-nums", active ? "text-background" : "text-foreground")}>{count}</span>
       {label}
-    </button>
+    </FilterPill>
   )
 }
 
@@ -79,10 +69,10 @@ export function DetailPanel({
   const { t } = useTranslation()
   const reasons = reasonsOf(row.codes)
   const parts = [
-    { key: "pending", count: (row.byState.pending ?? 0) + (row.byState.awaiting_auth ?? 0), tone: "bg-blue-500" },
-    { key: "inflight", count: row.byState.inflight ?? 0, tone: "bg-emerald-500" },
-    { key: "retry", count: row.byState.retry ?? 0, tone: "bg-amber-500" },
-    { key: "attention", count: row.attention, tone: "bg-red-500" },
+    { key: "pending", count: (row.byState.pending ?? 0) + (row.byState.awaiting_auth ?? 0), tone: "bg-primary" },
+    { key: "inflight", count: row.byState.inflight ?? 0, tone: "bg-shell-live" },
+    { key: "retry", count: row.byState.retry ?? 0, tone: "bg-shell-warn" },
+    { key: "attention", count: row.attention, tone: "bg-shell-crit" },
   ].filter((p) => p.count > 0)
   const total = parts.reduce((n, p) => n + p.count, 0)
 
@@ -92,8 +82,11 @@ export function DetailPanel({
       : t(`members.phoneSync.states.${row.state}`)
 
   return (
-    <section aria-label={name} className="rounded-xl border border-border/80 bg-card p-5 xl:sticky xl:top-6">
-      <h2 className="text-base font-semibold text-foreground">{name}</h2>
+    <section
+      aria-label={name}
+      className="rounded-[22px] border border-border bg-card p-5 shadow-shell xl:sticky xl:top-4"
+    >
+      <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-foreground">{name}</h2>
       <p className="mt-0.5 text-xs text-muted-foreground">
         {t("members.phoneSync.detail.reported", {
           age: formatAge(row.receivedAt, now, locale),
@@ -114,11 +107,11 @@ export function DetailPanel({
 
       {total > 0 && (
         <>
-          <h3 className={"mt-5 mb-2 text-[11px] font-semibold uppercase tracking-wider " + "text-muted-foreground"}>
+          <h3 className="mb-2 mt-5 text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground">
             {t("members.phoneSync.detail.whatWaits")}
           </h3>
           <div
-            className="flex h-2 overflow-hidden rounded bg-muted"
+            className="flex h-2 overflow-hidden rounded-full bg-shell-chip"
             role="img"
             aria-label={parts.map((p) => `${p.count} ${t(`members.phoneSync.parts.${p.key}`)}`).join(", ")}
           >
@@ -150,10 +143,10 @@ export function DetailPanel({
 
       {reasons.length > 0 && (
         <>
-          <h3 className={"mt-5 mb-1 text-[11px] font-semibold uppercase tracking-wider " + "text-muted-foreground"}>
+          <h3 className="mb-1 mt-5 text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground">
             {t("members.phoneSync.detail.why")}
           </h3>
-          <ul className="divide-y divide-border/60">
+          <ul className="divide-y divide-border">
             {reasons.map((r) => (
               <li key={r.code} className="flex items-start justify-between gap-3 py-2 text-sm">
                 <span className="text-foreground">{t(`members.phoneSync.reasons.${r.key}`, { code: r.code })}</span>
@@ -164,7 +157,7 @@ export function DetailPanel({
         </>
       )}
 
-      <p className="mt-4 rounded-lg bg-muted/60 px-3 py-2.5 text-sm text-muted-foreground">
+      <p className="mt-4 rounded-[14px] bg-muted px-3.5 py-3 text-[13.5px] text-muted-foreground">
         <span className="font-medium text-foreground">{t("members.phoneSync.detail.helpsLabel")} </span>
         {t(`members.phoneSync.advice.${row.state}`, { name: name.split(" ")[0] })}
       </p>

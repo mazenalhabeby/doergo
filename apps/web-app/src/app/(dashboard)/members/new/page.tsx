@@ -4,9 +4,10 @@ import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Icon } from "@/components/ui/icon"
+import { PAGE_SHELL } from "@/components/ui/page-width"
 import { Card, CardContent } from "@/components/ui/card"
 import { useAuth } from "@/contexts/auth-context"
 import { NewMemberForm } from "./_components/new-member-form"
@@ -30,14 +31,14 @@ export default function NewTechnicianPage() {
 
   if (!canCreateEmployees) {
     return (
-      <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
+      <div className={`${PAGE_SHELL} space-y-4`}>
         <Link href="/members">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="ghost" size="pill" className="-ml-3 text-muted-foreground hover:text-foreground">
+            <Icon name="backLine" />
             {t("technicians.create.backToTechnicians")}
           </Button>
         </Link>
-        <Card>
+        <Card className="rounded-[22px] shadow-shell">
           <CardContent className="py-12 text-center">
             <h3 className="text-lg font-medium text-foreground mb-2">{t("technicians.create.accessDenied")}</h3>
             <p className="text-sm text-muted-foreground">{t("technicians.create.noPermission")}</p>
@@ -48,11 +49,11 @@ export default function NewTechnicianPage() {
   }
 
   return (
-    <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-6">
+    <div className={`${PAGE_SHELL} space-y-4`}>
       {/* Back button */}
       <Link href="/members">
-        <Button variant="ghost" size="sm" className="gap-2">
-          <ArrowLeft className="h-4 w-4" />
+        <Button variant="ghost" size="pill" className="-ml-3 text-muted-foreground hover:text-foreground">
+          <Icon name="backLine" />
           {t("technicians.create.backToTechnicians")}
         </Button>
       </Link>

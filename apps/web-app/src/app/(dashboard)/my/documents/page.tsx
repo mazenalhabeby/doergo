@@ -1,14 +1,14 @@
 "use client"
 
 import { useTranslation } from "react-i18next"
-import { Search, Loader2, PenLine, DownloadCloud, Upload, AlertTriangle } from "lucide-react"
+import { Loader2, PenLine, DownloadCloud, Upload } from "lucide-react"
 import { waitingOnMember } from "@hbcfield/shared/client"
 import { SupplyDocumentDialog } from "./_components/supply-document-dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
+import { Chip, Notice, PageHeader, Panel } from "@/components/page/page-kit"
 import { useMyDocumentsPage } from "./_hooks/use-my-documents-page"
 import { MyDocumentList } from "./_components/my-document-list"
+import { FilterPill, FilterPills, SearchPill } from "@/components/page/page-controls"
 
 /*
   A member's own file.
@@ -53,96 +53,89 @@ export default function MyDocumentsPage() {
     exportAll,
   } = useMyDocumentsPage()
 
+  const waiting = requirements.filter(waitingOnMember)
+  const typeTabs = [{ id: null as string | null, label: t("documents.allTypes") }, ...usedTypes]
+
   return (
     <div className="w-full">
-      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            {t("documents.my.title")}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("documents.my.subtitle")}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {/* Only when the organization actually asks its members for
-              something. An upload button on an organization that issues
-              everything is an invitation to be refused. */}
-          {/* And never for an external member: the company asks somebody else's
-              employee for nothing, so there is nothing here for them to supply.
-              The server refuses it too — this only avoids offering it. */}
-          {!isExternalMember && types.some((ty) => ty.direction !== "ISSUED" && ty.isActive) && (
-            <Button size="sm" onClick={() => setSupplying(true)}>
-              <Upload className="mr-2 h-4 w-4" />
-              {t("documents.supply.action")}
-            </Button>
-          )}
-          {documents.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => exportAll.mutate()} disabled={exportAll.isPending}>
-              {exportAll.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <DownloadCloud className="mr-2 h-4 w-4" />
-              )}
-              {t("documents.export.action")}
-            </Button>
-          )}
-        </div>
-      </header>
+      <PageHeader
+        title={t("documents.my.title")}
+        subtitle={t("documents.my.subtitle")}
+        actions={
+          <>
+            {/* Only when the organization actually asks its members for something — and never for an external member:
+                the company asks somebody else's employee for nothing (the server refuses it too). */}
+            {!isExternalMember && types.some((ty) => ty.direction !== "ISSUED" && ty.isActive) && (
+              <Button size="pillLg" onClick={() => setSupplying(true)}>
+                <Upload />
+                {t("documents.supply.action")}
+              </Button>
+            )}
+            {documents.length > 0 && (
+              <Button variant="outline" size="pill" onClick={() => exportAll.mutate()} disabled={exportAll.isPending}>
+                {exportAll.isPending ? <Loader2 className="animate-spin" /> : <DownloadCloud />}
+                {t("documents.export.action")}
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {/*
-        What the organization is still waiting for FROM YOU.
-
-        Deliberately only the ones where the next move is theirs. A licence
-        already sent and sitting in the review queue is not something to chase
-        somebody about — "send us your licence", under a licence they sent
-        yesterday, is the fastest way to teach a person that this screen is
-        wrong and can be ignored.
+        What the organization is still waiting for FROM YOU — only the ones where the next move is theirs. A licence
+        already sent and sitting in the review queue is not something to chase somebody about.
       */}
-      {requirements.filter(waitingOnMember).length > 0 && (
-        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/40">
-          <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
-            {t("documents.required.title")}
-          </p>
-          <ul className="space-y-1.5">
-            {requirements.filter(waitingOnMember).map((r) => (
-              <li key={r.typeId} className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="text-slate-800 dark:text-slate-200">{r.label}</span>
-                <span className="text-slate-500 dark:text-slate-400">{t(`documents.required.state.${r.state}`)}</span>
-                {r.blocksWork && (
-                  <span
-                    className={
-                      "rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold " +
-                      "text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-                    }
-                  >
-                    {t("documents.required.blocksWork")}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
+      {waiting.length > 0 && (
+        <Panel as="div" className="mb-3.5 px-5 py-4">
+          <div className="mb-1.5 flex items-center gap-2.5">
+            <h3 className="flex-1 text-[15px] font-semibold text-foreground">{t("documents.required.title")}</h3>
+            {waiting.some((r) => r.blocksWork) && (
+              <Chip tone="crit" dot>
+                {t("documents.required.blocksWork")}
+              </Chip>
+            )}
+          </div>
+          {waiting.map((r) => (
+            <div
+              key={r.typeId}
+              className="flex flex-wrap items-center gap-3.5 border-t border-border py-3 first-of-type:border-t-0"
+            >
+              <div className="flex min-w-0 flex-1 flex-col">
+                <b className="text-[14.5px] font-semibold text-foreground">{r.label}</b>
+                <span className="text-[12.5px] text-muted-foreground">{t(`documents.required.state.${r.state}`)}</span>
+              </div>
+              {r.blocksWork && (
+                <Chip tone="warn" dot>
+                  {t("documents.required.blocksWork")}
+                </Chip>
+              )}
+            </div>
+          ))}
           {!isExternalMember && (
-            <Button size="sm" className="mt-3" onClick={() => setSupplying(true)}>
-              <Upload className="mr-2 h-4 w-4" />
+            <Button size="pill" className="mt-2" onClick={() => setSupplying(true)}>
+              <Upload />
               {t("documents.supply.action")}
             </Button>
           )}
-        </div>
+        </Panel>
       )}
 
       <SupplyDocumentDialog types={types} open={supplying} onClose={() => setSupplying(false)} />
 
       {exported && (
-        <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+        <Panel as="div" className="mb-3.5 px-5 py-4">
           <div className="mb-2 flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <p className="text-[15px] font-semibold text-foreground">
               {t("documents.export.ready", { count: exported.length })}
             </p>
-            <button onClick={() => setExported(null)} className="text-xs text-slate-400 hover:text-slate-700">
+            <button
+              onClick={() => setExported(null)}
+              className="text-[13px] font-semibold text-muted-foreground hover:text-foreground"
+            >
               {t("common.close")}
             </button>
           </div>
-          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t("documents.export.hint")}</p>
+          <p className="mb-3 text-xs text-muted-foreground">{t("documents.export.hint")}</p>
           <ul className="space-y-1">
             {exported.map((f, i) => (
               <li key={i}>
@@ -150,110 +143,67 @@ export default function MyDocumentsPage() {
                   href={f.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                  className="text-sm font-medium text-shell-accent hover:underline"
                 >
                   {f.title}
                 </a>
               </li>
             ))}
           </ul>
-        </div>
+        </Panel>
       )}
 
-      {/*
-        Anything needing a signature is lifted above the list.
-
-        It is the only thing on this page that is waiting on the person reading
-        it; leaving it in date order among twelve payslips is how it gets missed.
-      */}
+      {/* Anything needing a signature is lifted above the list — the only thing here waiting on the reader. */}
       {awaiting.length > 0 && (
-        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/40">
-          <div className="flex items-start gap-3">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-600 text-white">
-              <PenLine className="h-4 w-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                {t("documents.my.awaiting", { count: awaiting.length })}
-              </p>
-              <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">
-                {awaiting.map((d) => d.title).join(" · ")}
-              </p>
-            </div>
-          </div>
-        </div>
+        <Notice className="items-start py-3.5">
+          <PenLine className="mt-0.5" />
+          <span className="min-w-0 flex-1">
+            <b className="block font-semibold">{t("documents.my.awaiting", { count: awaiting.length })}</b>
+            <span className="text-muted-foreground">{awaiting.map((d) => d.title).join(" · ")}</span>
+          </span>
+        </Notice>
       )}
 
-      {/* Filters */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[200px] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
+      <Panel as="div" className="px-5 py-4">
+        {/* Filters */}
+        <div className="mb-2 flex flex-wrap items-center gap-2.5">
+          <SearchPill
+            className="sm:w-[280px]"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("documents.searchPlaceholder")}
-            className="pl-9"
-            aria-label={t("documents.searchPlaceholder")}
           />
-        </div>
-        {years.length > 1 && (
-          <select
-            value={year ?? ""}
-            onChange={(e) => setYear(e.target.value ? Number(e.target.value) : null)}
-            aria-label={t("documents.year")}
-            className={
-              "h-10 rounded-md border border-slate-200 bg-white px-3 text-sm " +
-              "text-slate-900 dark:border-slate-700 dark:bg-slate-900 " +
-              "dark:text-slate-100"
-            }
-          >
-            <option value="">{t("documents.allYears")}</option>
-            {years.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      {/* Type tabs — only ones with documents behind them */}
-      {usedTypes.length > 0 && (
-        <div className="mb-4 flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-800" role="tablist">
-          <button
-            role="tab"
-            aria-selected={activeType === null}
-            onClick={() => setActiveType(null)}
-            className={cn(
-              "whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors",
-              activeType === null
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200",
-            )}
-          >
-            {t("documents.allTypes")}
-          </button>
-          {usedTypes.map((ty) => (
-            <button
-              key={ty.id}
-              role="tab"
-              aria-selected={activeType === ty.id}
-              onClick={() => setActiveType(ty.id)}
-              className={cn(
-                "whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors",
-                activeType === ty.id
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200",
-              )}
+          {years.length > 1 && (
+            <select
+              value={year ?? ""}
+              onChange={(e) => setYear(e.target.value ? Number(e.target.value) : null)}
+              aria-label={t("documents.year")}
+              className="h-[38px] rounded-xl border border-border bg-card px-3.5 text-[13.5px] text-foreground"
             >
-              {ty.label}
-            </button>
-          ))}
-        </div>
-      )}
+              <option value="">{t("documents.allYears")}</option>
+              {years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          )}
 
-      {/* The list */}
-      <MyDocumentList isLoading={isLoading} visible={visible} hasDocuments={documents.length > 0} types={types} />
+          {/* Type pills — only ones with documents behind them */}
+          {usedTypes.length > 0 && (
+            <FilterPills>
+              {typeTabs.map((ty) => (
+                <FilterPill key={ty.id ?? "all"} active={activeType === ty.id} onClick={() => setActiveType(ty.id)}>
+                  {ty.label}
+                </FilterPill>
+              ))}
+            </FilterPills>
+          )}
+        </div>
+
+        {/* The list */}
+        <MyDocumentList isLoading={isLoading} visible={visible} hasDocuments={documents.length > 0} types={types} />
+      </Panel>
     </div>
   )
 }

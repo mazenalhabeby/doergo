@@ -2,12 +2,11 @@
 
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
-import { Clock, Crown, MapPin, MoreHorizontal, Pencil, Timer, UserMinus } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { roleBadge, ROLE_COLOR_FALLBACK } from "@/lib/role-badge"
 import type { OrgMember } from "@/lib/api"
-import { Badge } from "@/components/ui/badge"
+import { Icon } from "@/components/ui/icon"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -19,7 +18,6 @@ import {
 
 // \u2500\u2500 Row sub-pieces (reused by the desktop table row AND the mobile card) \u2500\u2500\u2500\u2500\u2500\u2500
 
-
 /**
  * The person who owns the organization.
  *
@@ -30,77 +28,58 @@ import {
 export function RoleBadge({ member }: { member: OrgMember }) {
   const { t } = useTranslation()
   // Admin (system tier) always shows as Admin, even if it also carries a role row.
-  if (member.role !== "ADMIN") {
+  if (member.role !== "ADMIN" && member.memberRole) {
     const named = member.memberRole
-    if (named) {
-      return (
-        <Badge
-          variant="outline"
-          className="text-xs font-medium border gap-1.5"
-          style={{ borderColor: named.color || undefined, color: named.color || undefined }}
-        >
-          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: named.color || ROLE_COLOR_FALLBACK }} />
-          {named.name}
-        </Badge>
-      )
-    }
+    return (
+      <span className={ROLE_TAG}>
+        <i
+          aria-hidden
+          className="size-[7px] shrink-0 rounded-[2px]"
+          style={{ backgroundColor: named.color || ROLE_COLOR_FALLBACK }}
+        />
+        <span className="truncate">{named.name}</span>
+      </span>
+    )
   }
   /*
-    One chip, carrying both facts.
-
-    An owner is always an admin, so a separate Owner pill said the same thing
-    twice and competed with the role for the same cell. The owner's badge IS the
-    admin badge, in gold, with a crown standing where the dot stands on every
-    other role — the frame and the icon say "owner" without a second element or a
-    second word.
-
-    Everything else keeps the coloured dot. The column mixed two treatments before
-    — account types as solid tinted chips, named roles as an outline with a dot —
-    so one list looked like two systems; they read the same way now, with colour
-    telling them apart.
+    One tag, carrying both facts. An owner is always an admin, so a separate Owner pill said the same thing twice;
+    the owner's tag IS the admin tag, its square in ink and its word "Owner" (the board's reading). Everything else
+    keeps a coloured square: external amber, an account type grey — one treatment for the whole column.
   */
   const conf = roleBadge(member.role, { isExternal: member.isExternal })
   const owner = member.isOwner === true
   return (
-    <Badge
-      variant="outline"
-      title={owner ? t("members.owner.title", "Owns this organization") : undefined}
-      className={cn(
-        "gap-1.5 border text-xs font-medium",
-        owner
-          ? "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-          : conf.className,
-      )}
-    >
-      {owner ? (
-        <Crown className="size-3 shrink-0" aria-hidden="true" />
-      ) : (
-        <span className={cn("size-1.5 shrink-0 rounded-full", conf.dotClassName)} />
-      )}
-      {t(conf.labelKey)}
-      {owner && <span className="sr-only"> · {t("members.owner.label", "Owner")}</span>}
-    </Badge>
+    <span className={ROLE_TAG} title={owner ? t("members.owner.title", "Owns this organization") : undefined}>
+      <i
+        aria-hidden
+        className={cn(
+          "size-[7px] shrink-0 rounded-[2px]",
+          owner
+            ? "bg-foreground"
+            : member.isExternal
+              ? "bg-shell-warn"
+              : member.role === "ADMIN"
+                ? "bg-shell-accent"
+                : "bg-muted-foreground/50",
+        )}
+      />
+      <span className="truncate">{owner ? t("members.owner.label", "Owner") : t(conf.labelKey)}</span>
+      {owner && <span className="sr-only"> · {t(conf.labelKey)}</span>}
+    </span>
   )
 }
+
+const ROLE_TAG = "inline-flex max-w-full items-center gap-1.5 whitespace-nowrap text-[13px] font-medium text-foreground"
 
 export function ScheduleBadge({ member }: { member: OrgMember }) {
   const { t } = useTranslation()
   const fixed = member.scheduleType === "FIXED"
   const flexible = member.scheduleType === "FLEXIBLE"
-  if (!fixed && !flexible) return <span className="text-sm text-muted-foreground/40">{"\u2014"}</span>
+  if (!fixed && !flexible) return <span className="text-[13.5px] text-muted-foreground/40">{"\u2014"}</span>
   return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "text-xs font-medium border gap-1",
-        fixed
-          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50"
-          : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/50",
-      )}
-    >
-      {fixed ? <Clock className="h-3 w-3" /> : <Timer className="h-3 w-3" />}
+    <span className="text-[13.5px] text-muted-foreground">
       {fixed ? t("members.schedule.fixed") : t("members.schedule.flexible")}
-    </Badge>
+    </span>
   )
 }
 
@@ -123,7 +102,9 @@ const SPACES_SHOWN = 1
 
 export function SpacesCell({ spaceNames }: { spaceNames: string[] }) {
   const { t } = useTranslation()
-  if (spaceNames.length === 0) return <span className="text-sm text-muted-foreground/50 italic">{t("members.noSpaces")}</span>
+  if (spaceNames.length === 0) {
+    return <span className="text-[13px] italic text-muted-foreground/60">{t("members.noSpaces")}</span>
+  }
 
   const shown = spaceNames.slice(0, SPACES_SHOWN)
   const rest = spaceNames.length - shown.length
@@ -132,12 +113,15 @@ export function SpacesCell({ spaceNames }: { spaceNames: string[] }) {
     <Link
       href="/locations"
       title={spaceNames.join(", ")}
-      className="inline-flex max-w-full items-center gap-1.5 min-w-0 text-muted-foreground hover:text-primary transition-colors"
+      className={
+        "inline-flex min-w-0 max-w-full items-center gap-1.5 text-[13px] text-muted-foreground " +
+        "transition-colors hover:text-foreground"
+      }
     >
-      <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-      <span className="min-w-0 truncate text-sm">{shown.join(", ")}</span>
+      <i aria-hidden className="size-1.5 shrink-0 rounded-full bg-shell-accent" />
+      <span className="min-w-0 truncate">{shown.join(", ")}</span>
       {rest > 0 && (
-        <span className="flex-shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+        <span className="shrink-0 rounded-full bg-shell-chip px-1.5 text-[11px] font-semibold tabular-nums text-muted-foreground">
           +{rest}
         </span>
       )}
@@ -173,14 +157,18 @@ export function RowActions({
         <Button
           variant="ghost"
           size="icon"
-          className={cn("h-8 w-8 transition-opacity", !alwaysVisible && "opacity-0 group-hover:opacity-100")}
+          aria-label={t("common.moreActions")}
+          className={cn(
+            "size-8 rounded-full text-muted-foreground transition-opacity",
+            !alwaysVisible && "opacity-0 focus-visible:opacity-100 group-hover:opacity-100",
+          )}
         >
-          <MoreHorizontal className="h-4 w-4" />
+          <Icon name="moreDots" size={18} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem onClick={() => onEdit(member)}>
-          <Pencil className="h-4 w-4 mr-2" />
+          <Icon name="edit" size={16} className="mr-2" />
           {t("common.edit")}
         </DropdownMenuItem>
         {/* You can edit your own profile, but you can't remove yourself. */}
@@ -203,7 +191,7 @@ export function RowActions({
             */}
             {canTransferOwnership && !member.isOwner && !member.isExternal && member.role === "ADMIN" && (
               <DropdownMenuItem onClick={() => onTransfer(member)}>
-                <Crown className="h-4 w-4 mr-2" />
+                <Icon name="shield" size={16} className="mr-2" />
                 {t("members.owner.transfer", "Transfer ownership")}
               </DropdownMenuItem>
             )}
@@ -213,12 +201,16 @@ export function RowActions({
               refusal afterwards, which is how somebody concludes it is broken.
             */}
             <DropdownMenuItem
-              className="text-red-600 focus:text-red-600"
+              className="text-destructive focus:text-destructive"
               disabled={member.isOwner === true}
-              title={member.isOwner ? t("members.owner.cantRemove", "Transfer ownership before removing the owner") : undefined}
+              title={
+                member.isOwner
+                  ? t("members.owner.cantRemove", "Transfer ownership before removing the owner")
+                  : undefined
+              }
               onClick={() => onRemove(member)}
             >
-              <UserMinus className="h-4 w-4 mr-2" />
+              <Icon name="userMinus" size={16} className="mr-2" />
               {t("members.actions.remove")}
             </DropdownMenuItem>
           </>

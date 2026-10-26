@@ -12,6 +12,7 @@ import { AttendanceStatusCell } from "@/components/attendance/attendance-status-
 import { WorkLogTimeline } from "@/components/attendance/worklog-timeline"
 import { useTimeFormat } from "@/hooks"
 import { cn } from "@/lib/utils"
+import { Panel } from "@/components/page/page-kit"
 import { formatDuration, countryFromTz, workedMinutes } from "@hbcfield/shared/client"
 
 interface AttendanceTabProps {
@@ -46,14 +47,14 @@ export function AttendanceTab({
   const columns = showOvertime ? 8 : 7
 
   return (
-    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
+    <Panel className="overflow-hidden p-0">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+      <div className="px-5 pb-2 pt-[18px] flex items-center gap-2.5">
+        <div className="grid size-8 shrink-0 place-items-center rounded-full bg-shell-accent-soft text-shell-accent">
           <Clock className="h-4 w-4" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-foreground">{t("technicians.attendanceTab.title")}</h2>
+          <h2 className="text-[15px] font-semibold text-foreground">{t("technicians.attendanceTab.title")}</h2>
           <p className="text-xs text-muted-foreground">{t("technicians.attendanceTab.description")}</p>
         </div>
         {canAddAttendance && (
@@ -67,7 +68,7 @@ export function AttendanceTab({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/60 text-left">
+              <tr className="border-b border-border text-left">
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {t("technicians.attendanceTab.dateColumn")}
                 </th>
@@ -101,7 +102,7 @@ export function AttendanceTab({
                   <Fragment key={entry.id}>
                     <tr
                       onClick={() => setExpanded(isOpen ? null : entry.id)}
-                      className="cursor-pointer border-b border-border/60 hover:bg-accent/40 transition-colors"
+                      className="cursor-pointer border-b border-border hover:bg-accent transition-colors"
                     >
                       <td className="px-5 py-3 text-foreground">
                         {formatDate(entry.clockInAt, tz)}
@@ -156,7 +157,7 @@ export function AttendanceTab({
                       </td>
                     </tr>
                     {isOpen && (
-                      <tr className="border-b border-border/60 bg-muted/20">
+                      <tr className="border-b border-border bg-muted/20">
                         <td colSpan={columns} className="px-5 py-4">
                           <div
                             className={
@@ -190,6 +191,6 @@ export function AttendanceTab({
           <p className="text-sm text-muted-foreground">{t("technicians.attendanceTab.noRecords")}</p>
         </div>
       )}
-    </div>
+    </Panel>
   )
 }

@@ -60,12 +60,12 @@ export function FindPerson() {
         }}
         placeholder={t("team.find", "Find a person…")}
         aria-label={t("team.find", "Find a person…")}
-        className="h-8 w-full rounded-lg border border-border bg-background pl-8 pr-2 text-xs outline-none focus:border-primary"
+        className="h-8 w-full rounded-full border border-border bg-card pl-8 pr-3 text-xs outline-none focus:border-ring"
       />
       {open && hits.length > 0 && (
         <ul
           role="listbox"
-          className="absolute right-0 top-9 z-30 w-72 overflow-hidden rounded-xl border border-border bg-popover shadow-lg"
+          className="absolute right-0 top-9 z-30 w-72 overflow-hidden rounded-[18px] border border-border bg-popover p-1.5 shadow-shell-pop"
         >
           {hits.map((p) => (
             <li key={p.id}>
@@ -74,7 +74,7 @@ export function FindPerson() {
                 role="option"
                 aria-selected={false}
                 onClick={() => choose(p.id)}
-                className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-muted"
+                className="flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-left hover:bg-accent"
               >
                 <ChatAvatar u={p} size={28} />
                 <span className="min-w-0">

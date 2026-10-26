@@ -12,6 +12,7 @@ import { RequestFields, type RequestFieldsValue } from "@/components/requests/re
 import type { LeaveBalance } from "@/lib/api/types/employees"
 import type { LeaveCountResult } from "@/lib/api/types/calendar"
 import { REASON_TYPES, type ReasonKey } from "./reason-types"
+import { Panel } from "@/components/page/page-kit"
 import { RequestSummary } from "./request-summary"
 
 /**
@@ -65,10 +66,10 @@ export function RequestForm({
 }) {
   const { t } = useTranslation()
   return (
-    <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+    <Panel className="p-4 sm:p-5">
       {kinds.length > 1 && (
         <div className="mb-4 border-b border-border pb-4">
-          <h2 className="mb-2.5 text-sm font-semibold text-foreground">{t("requests.form.kindQuestion")}</h2>
+          <h2 className="mb-2.5 text-[15px] font-semibold text-foreground">{t("requests.form.kindQuestion")}</h2>
           <RequestKindPicker kinds={kinds} value={kind} onChange={chooseKind} />
         </div>
       )}
@@ -81,7 +82,7 @@ export function RequestForm({
         />
       ) : (
         <>
-          <h2 className="text-sm font-semibold text-foreground">{t("timeOff.my.stepReason")}</h2>
+          <h2 className="text-[15px] font-semibold text-foreground">{t("timeOff.my.stepReason")}</h2>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {REASON_TYPES.map(({ key, glyph: Glyph }) => {
               const active = reasonType === key
@@ -151,12 +152,12 @@ export function RequestForm({
       />
 
       <div className="mt-4 flex items-center gap-2">
-        <Button onClick={onSend} disabled={!canSubmit} className="flex-1">
+        <Button onClick={onSend} disabled={!canSubmit} size="pillLg" className="flex-1">
           {sending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Check className="mr-2 size-4" />}
           {t("requests.form.send")}
         </Button>
         {(reasonType || rangeStart || fields.reason) && (
-          <Button variant="ghost" size="sm" onClick={reset} disabled={sending}>
+          <Button variant="ghost" size="pill" onClick={reset} disabled={sending}>
             {t("common.clear", { defaultValue: "Clear" })}
           </Button>
         )}
@@ -166,6 +167,6 @@ export function RequestForm({
           {isOneDayKind(kind) ? t("requests.form.pickDayHint") : t("timeOff.my.pickDaysHint")}
         </p>
       )}
-    </section>
+    </Panel>
   )
 }

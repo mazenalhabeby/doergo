@@ -37,7 +37,7 @@ export function CreatedMemberDialog({
     <ConfirmDialog
       open={open}
       onOpenChange={onOpenChange}
-      titleClassName="flex items-center gap-2 text-green-600"
+      titleClassName="flex items-center gap-2 text-shell-accent"
       title={
         <>
           <Check className="h-5 w-5" />
@@ -58,12 +58,12 @@ export function CreatedMemberDialog({
               <div className="flex items-center gap-2">
                 <span className="font-mono text-sm">{generatedPassword}</span>
                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopyPassword}>
-                  {copiedPassword ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  {copiedPassword ? <Check className="h-4 w-4 text-shell-accent" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
           </div>
-          <p className="text-amber-600 text-sm">{t("technicians.createSuccess.saveWarning")}</p>
+          <p className="text-sm text-shell-warn">{t("technicians.createSuccess.saveWarning")}</p>
         </>
       }
       cancelLabel={null}

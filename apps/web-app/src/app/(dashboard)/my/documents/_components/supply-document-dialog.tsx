@@ -85,17 +85,15 @@ export function SupplyDocumentDialog({
         </DialogHeader>
 
         {suppliable.length === 0 ? (
-          <p className="py-8 text-center text-sm text-slate-400">{t("documents.supply.nothingToSupply")}</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">{t("documents.supply.nothingToSupply")}</p>
         ) : (
           <div className="space-y-4">
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t("documents.supply.whatIsIt")}
-              </span>
+              <span className="mb-1 block text-sm font-medium text-foreground">{t("documents.supply.whatIsIt")}</span>
               <select
                 value={type?.id ?? ""}
                 onChange={(e) => setTypeId(e.target.value)}
-                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
+                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm"
               >
                 {suppliable.map((ty) => (
                   <option key={ty.id} value={ty.id}>
@@ -104,15 +102,13 @@ export function SupplyDocumentDialog({
                 ))}
               </select>
               {type?.description && (
-                <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{type.description}</span>
+                <span className="mt-1 block text-xs text-muted-foreground">{type.description}</span>
               )}
             </label>
 
             {/* The file */}
             <div>
-              <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t("documents.supply.theFile")}
-              </span>
+              <span className="mb-1 block text-sm font-medium text-foreground">{t("documents.supply.theFile")}</span>
               <input
                 ref={inputRef}
                 type="file"
@@ -125,23 +121,19 @@ export function SupplyDocumentDialog({
                 disabled={submit.isPending}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg border border-dashed p-4 text-left transition-colors",
-                  file
-                    ? "border-blue-400 bg-blue-50 dark:border-blue-700 dark:bg-blue-950/30"
-                    : "border-slate-300 hover:border-slate-400 dark:border-slate-700",
+                  file ? "border-shell-accent/40 bg-shell-accent-soft" : "border-border hover:border-foreground/30",
                 )}
               >
                 {file ? (
-                  <FileText className="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+                  <FileText className="h-5 w-5 shrink-0 text-shell-accent" />
                 ) : (
-                  <Upload className="h-5 w-5 shrink-0 text-slate-400" />
+                  <Upload className="h-5 w-5 shrink-0 text-muted-foreground" />
                 )}
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm text-slate-900 dark:text-slate-100">
+                  <span className="block truncate text-sm text-foreground">
                     {file ? file.name : t("documents.supply.chooseFile")}
                   </span>
-                  <span className="block text-xs text-slate-500 dark:text-slate-400">
-                    {t("documents.supply.accepted")}
-                  </span>
+                  <span className="block text-xs text-muted-foreground">{t("documents.supply.accepted")}</span>
                 </span>
               </button>
             </div>
@@ -149,10 +141,7 @@ export function SupplyDocumentDialog({
             {/* Its expiry — read off the document, not asked for */}
             {prompt.state === "READING" && (
               <div
-                className={
-                  "flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2.5 text-sm " +
-                  "text-slate-600 dark:bg-slate-900 dark:text-slate-400"
-                }
+                className={"flex items-center gap-2 rounded-lg bg-muted px-3 py-2.5 text-sm " + "text-muted-foreground"}
               >
                 <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                 {t("documents.supply.reading")}
@@ -171,17 +160,17 @@ export function SupplyDocumentDialog({
                 className={cn(
                   "rounded-lg border px-3 py-2.5",
                   prompt.certainty === "PROVEN"
-                    ? "border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30"
-                    : "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900",
+                    ? "border-shell-accent/40 bg-shell-accent-soft"
+                    : "border-border bg-muted",
                 )}
               >
                 <div className="flex items-center gap-2">
                   {prompt.certainty === "PROVEN" ? (
-                    <ShieldCheck className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+                    <ShieldCheck className="h-4 w-4 shrink-0 text-shell-accent" />
                   ) : (
-                    <CalendarDays className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
+                    <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
                   )}
-                  <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  <span className="text-sm font-medium text-foreground">
                     {t("documents.supply.expiresOnValue", {
                       date: formatCalendarDate(prompt.value),
                     })}
@@ -191,9 +180,7 @@ export function SupplyDocumentDialog({
                   <span
                     className={cn(
                       "text-xs",
-                      prompt.certainty === "PROVEN"
-                        ? "text-blue-700 dark:text-blue-300"
-                        : "text-slate-500 dark:text-slate-400",
+                      prompt.certainty === "PROVEN" ? "text-shell-accent" : "text-muted-foreground",
                     )}
                   >
                     {prompt.certainty === "PROVEN"
@@ -205,7 +192,7 @@ export function SupplyDocumentDialog({
                     onClick={() => setOverriding(true)}
                     className={
                       "inline-flex shrink-0 items-center gap-1 text-xs font-medium " +
-                      "text-slate-600 underline-offset-2 hover:underline dark:text-slate-300"
+                      "text-muted-foreground underline-offset-2 hover:underline"
                     }
                   >
                     <Pencil className="h-3 w-3" />
@@ -222,11 +209,16 @@ export function SupplyDocumentDialog({
                 on every document that was not a passport.
               */
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                <span className="mb-1 block text-sm font-medium text-foreground">
                   {t("documents.supply.expiresOn")}
                 </span>
-                <DatePicker value={expiresOn} onChange={setExpiresOn} clearable autoFocus={prompt.reason === "CORRECTING"} />
-                <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+                <DatePicker
+                  value={expiresOn}
+                  onChange={setExpiresOn}
+                  clearable
+                  autoFocus={prompt.reason === "CORRECTING"}
+                />
+                <span className="mt-1 block text-xs text-muted-foreground">
                   {prompt.reason === "CORRECTING"
                     ? t("documents.supply.dateCorrecting")
                     : t("documents.supply.dateNotFound")}
@@ -235,9 +227,9 @@ export function SupplyDocumentDialog({
             )}
 
             {submit.isPending && (
-              <div className="h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+              <div className="h-1.5 overflow-hidden rounded-full bg-shell-chip">
                 <div
-                  className="h-full bg-blue-600 transition-[width]"
+                  className="h-full bg-shell-accent transition-[width]"
                   style={{ width: `${Math.round(progress * 100)}%` }}
                 />
               </div>
@@ -247,19 +239,19 @@ export function SupplyDocumentDialog({
                 covers them for the work will find out on site that it does not. */}
             <div
               className={
-                "flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 " +
-                "p-3 dark:border-amber-900 dark:bg-amber-950/40"
+                "flex items-start gap-2.5 rounded-lg border border-transparent bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] " +
+                "p-3"
               }
             >
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-              <p className="text-sm text-slate-700 dark:text-slate-300">{t("documents.supply.reviewNotice")}</p>
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-shell-warn" />
+              <p className="text-sm text-foreground">{t("documents.supply.reviewNotice")}</p>
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onClose} disabled={submit.isPending}>
+              <Button variant="outline" size="pill" onClick={onClose} disabled={submit.isPending}>
                 {t("common.cancel")}
               </Button>
-              <Button onClick={() => submit.mutate()} disabled={!canSubmit}>
+              <Button size="pill" onClick={() => submit.mutate()} disabled={!canSubmit}>
                 {submit.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
                 {t("documents.supply.send")}
               </Button>

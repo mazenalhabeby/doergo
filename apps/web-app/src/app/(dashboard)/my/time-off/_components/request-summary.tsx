@@ -46,7 +46,7 @@ export function RequestSummary({
       )}
     >
       <div className="overflow-hidden space-y-2">
-        <div className="rounded-xl bg-muted/50 px-3 py-2.5">
+        <div className="rounded-2xl bg-muted px-4 py-3.5">
           <p className="text-sm text-foreground">
             {rangeStart && fmt(toISO(rangeStart))}
             {rangeEnd && !sameDay(rangeEnd, rangeStart!) && <> → {fmt(toISO(rangeEnd))}</>}
@@ -83,13 +83,18 @@ export function RequestSummary({
         )}
         {kind !== "LEAVE" && (
           /* What approving it will do — said BEFORE sending, the same words the manager reads. */
-          <p className="rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground">
+          <p className="rounded-[14px] bg-muted px-3 py-2.5 text-xs text-muted-foreground">
             {t(requestKindEffectKey(kind))}
           </p>
         )}
         {problem && <p className="px-1 text-xs text-muted-foreground">{problem}</p>}
         {clash && (
-          <p className="flex items-start gap-2 rounded-xl bg-amber-500/10 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
+          <p
+            className={
+              "flex items-start gap-2 rounded-[14px] px-3 py-2.5 text-xs text-shell-warn " +
+              "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)]"
+            }
+          >
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
             <span>
               {t("timeOff.my.overlapWarning", {

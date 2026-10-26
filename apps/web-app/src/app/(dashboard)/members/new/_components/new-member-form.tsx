@@ -91,7 +91,7 @@ export function NewMemberForm({
   }
 
   return (
-    <Card className="max-w-2xl">
+    <Card className="max-w-2xl rounded-[22px] shadow-shell">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <UserPlus className="h-5 w-5" />
@@ -108,7 +108,7 @@ export function NewMemberForm({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">
-                  {t("technicians.create.firstNameLabel")} <span className="text-red-500">*</span>
+                  {t("technicians.create.firstNameLabel")} <span className="text-shell-crit">*</span>
                 </Label>
                 <Input
                   id="firstName"
@@ -120,7 +120,7 @@ export function NewMemberForm({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">
-                  {t("technicians.create.lastNameLabel")} <span className="text-red-500">*</span>
+                  {t("technicians.create.lastNameLabel")} <span className="text-shell-crit">*</span>
                 </Label>
                 <Input
                   id="lastName"
@@ -134,7 +134,7 @@ export function NewMemberForm({
 
             <div className="space-y-2">
               <Label htmlFor="email">
-                {t("technicians.create.emailLabel")} <span className="text-red-500">*</span>
+                {t("technicians.create.emailLabel")} <span className="text-shell-crit">*</span>
               </Label>
               <Input
                 id="email"

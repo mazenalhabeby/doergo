@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Download, Loader2, FileText, Image as ImageIcon, Trash2, Inbox, Clock, XCircle } from "lucide-react"
 import { formatFileSize, memberMayDelete } from "@hbcfield/shared/client"
+import { Chip } from "@/components/page/page-kit"
 import { Button } from "@/components/ui/button"
 import { dateLocale } from "@/lib/format-date"
 import { documentsApi, type MemberDocumentRow, type DocumentTypeRow } from "@/lib/api"
@@ -69,26 +70,21 @@ export function MyDocumentList({
       {isLoading ? (
         <div className="space-y-2" aria-busy="true">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800" />
+            <div key={i} className="h-16 animate-pulse rounded-[14px] bg-muted" />
           ))}
         </div>
       ) : visible.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 py-14 text-center dark:border-slate-700">
-          <Inbox className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
-          <p className="mt-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+        <div className="py-14 text-center">
+          <Inbox className="mx-auto h-8 w-8 text-muted-foreground/50" />
+          <p className="mt-3 text-sm font-medium text-foreground">
             {!hasDocuments ? t("documents.my.empty") : t("documents.noMatches")}
           </p>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             {!hasDocuments ? t("documents.my.emptyHint") : t("documents.noMatchesHint")}
           </p>
         </div>
       ) : (
-        <ul
-          className={
-            "divide-y divide-slate-200 overflow-hidden rounded-xl border " +
-            "border-slate-200 dark:divide-slate-800 dark:border-slate-800"
-          }
-        >
+        <ul className="divide-y divide-border">
           {visible.map((d) => {
             const isImage = d.mimeType.startsWith("image/")
             const period =
@@ -99,52 +95,27 @@ export function MyDocumentList({
                   : new Date(d.issuedAt).toLocaleDateString(dateLocale())
 
             return (
-              <li key={d.id} className="flex items-center gap-3 bg-white px-4 py-3 dark:bg-slate-900">
+              <li key={d.id} className="flex items-center gap-3 px-1 py-3">
                 {/* Unread marker holds its width either way, so rows do not jog */}
                 <span className="w-2 shrink-0" aria-hidden="true">
-                  {d.unread && <span className="block h-2 w-2 rounded-full bg-blue-600" />}
+                  {d.unread && <span className="block h-2 w-2 rounded-full bg-shell-accent" />}
                 </span>
 
-                <span className="shrink-0 text-slate-400">
+                <span className="shrink-0 text-muted-foreground">
                   {isImage ? <ImageIcon className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
                 </span>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{d.title}</span>
-                    {d.unread && (
-                      <span
-                        className={
-                          "rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold " +
-                          "text-blue-700 dark:bg-blue-950 dark:text-blue-400"
-                        }
-                      >
-                        {t("documents.new")}
-                      </span>
-                    )}
+                    <span className="truncate text-[14.5px] font-semibold text-foreground">{d.title}</span>
+                    {d.unread && <Chip tone="accent">{t("documents.new")}</Chip>}
                     {/* Never in the signing queue — the app cannot clear it —
                       but silence would leave the member unaware they must
                       sign a printed copy and return it. */}
                     {types.find((ty) => ty.id === d.typeId)?.signatureMode === "WET_INK" && (
-                      <span
-                        className={
-                          "rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold " +
-                          "text-blue-700 dark:bg-blue-950 dark:text-blue-400"
-                        }
-                      >
-                        {t("documents.signOnPaper")}
-                      </span>
+                      <Chip tone="accent">{t("documents.signOnPaper")}</Chip>
                     )}
-                    {d.needsSignature && (
-                      <span
-                        className={
-                          "rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold " +
-                          "text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-                        }
-                      >
-                        {t("documents.needsSignature")}
-                      </span>
-                    )}
+                    {d.needsSignature && <Chip tone="warn">{t("documents.needsSignature")}</Chip>}
                     {/*
                     Whose document it is, when it is not the reader's.
 
@@ -152,16 +123,7 @@ export function MyDocumentList({
                     rows with the same title otherwise, and signing the wrong
                     one puts their name on somebody else's hours.
                   */}
-                    {d.forMember && (
-                      <span
-                        className={
-                          "rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium " +
-                          "text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                        }
-                      >
-                        {t("documents.onBehalfOf", { name: d.forMember })}
-                      </span>
-                    )}
+                    {d.forMember && <Chip tone="soft">{t("documents.onBehalfOf", { name: d.forMember })}</Chip>}
                     {/*
                     What the member supplied, and where it got to.
 
@@ -172,40 +134,29 @@ export function MyDocumentList({
                     no. The chip is the difference between "sent" and "counts".
                   */}
                     {d.status === "PENDING_VERIFICATION" && (
-                      <span
-                        className={
-                          "inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 " +
-                          "text-[11px] font-semibold text-slate-600 dark:bg-slate-800 " +
-                          "dark:text-slate-300"
-                        }
-                      >
+                      <Chip tone="soft">
                         <Clock className="h-3 w-3" />
                         {t("documents.status.pendingVerification")}
-                      </span>
+                      </Chip>
                     )}
                     {d.status === "REJECTED" && (
-                      <span
-                        className={
-                          "inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 " +
-                          "text-[11px] font-semibold text-red-700 dark:bg-red-950 dark:text-red-400"
-                        }
-                      >
+                      <Chip tone="crit">
                         <XCircle className="h-3 w-3" />
                         {t("documents.status.rejected")}
-                      </span>
+                      </Chip>
                     )}
                     {/* A credential's standing is meaningless until it counts. */}
                     {d.standing && d.status !== "PENDING_VERIFICATION" && d.status !== "REJECTED" && (
                       <StandingChip standing={d.standing} expiresOn={d.expiresOn} />
                     )}
                   </div>
-                  <p className="mt-0.5 truncate text-xs text-slate-500 tabular-nums dark:text-slate-400">
+                  <p className="mt-0.5 truncate text-[12.5px] tabular-nums text-muted-foreground">
                     {d.typeLabel} · {period} · {formatFileSize(d.sizeBytes, i18n.language)}
                   </p>
                   {/* The reason, verbatim. "Rejected" on its own is an
                     instruction to upload the same photograph again. */}
                   {d.status === "REJECTED" && d.rejectionReason && (
-                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">{d.rejectionReason}</p>
+                    <p className="mt-1 text-xs text-shell-crit">{d.rejectionReason}</p>
                   )}
                 </div>
 
@@ -216,7 +167,11 @@ export function MyDocumentList({
                   them to find the way back is how a request gets forgotten.
                 */}
                   {d.needsSignature ? (
-                    <Button size="sm" onClick={() => router.push(`/my/documents/${d.id}/sign`)}>
+                    <Button
+                      size="sm"
+                      className="h-8 rounded-full px-3.5"
+                      onClick={() => router.push(`/my/documents/${d.id}/sign`)}
+                    >
                       {t("documents.signAction")}
                     </Button>
                   ) : (
@@ -247,7 +202,7 @@ export function MyDocumentList({
                       onClick={() => remove.mutate(d.id)}
                       aria-label={t("common.delete")}
                     >
-                      <Trash2 className="h-4 w-4 text-slate-400" />
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   )}
                 </div>

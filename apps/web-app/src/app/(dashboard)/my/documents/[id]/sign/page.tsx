@@ -4,14 +4,13 @@ import { useCallback, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  FileText, Check, Loader2, ShieldCheck, ArrowLeft, ExternalLink,
-} from "lucide-react"
+import { FileText, Check, Loader2, ShieldCheck, ArrowLeft, ExternalLink } from "lucide-react"
 import { documentsApi, type MemberDocumentRow, type DocumentTypeRow } from "@/lib/api"
 import { SignaturePad } from "@/components/common/signature-pad"
 import { Button } from "@/components/ui/button"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { Panel } from "@/components/page/page-kit"
 import { keys } from "@/lib/query-keys"
 
 /*
@@ -119,35 +118,37 @@ export default function SignDocumentPage() {
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6">
       <button
         onClick={() => router.push("/my/documents")}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         {t("documents.my.title")}
       </button>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <Panel as="div" className="p-6">
         <div className="mb-5 flex items-start gap-3">
           <div
-            className={"grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-100 " +
-              "text-blue-700 dark:bg-blue-950 dark:text-blue-400"}>
+            className={
+              "grid h-10 w-10 shrink-0 place-items-center rounded-full bg-shell-accent-soft " + "text-shell-accent"
+            }
+          >
             <FileText className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <h1 className="truncate text-lg font-semibold text-foreground">
               {doc?.title ?? t("documents.sign.title")}
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{doc?.typeLabel}</p>
+            <p className="text-sm text-muted-foreground">{doc?.typeLabel}</p>
           </div>
         </div>
 
         {step !== "done" && (
           <div className="mb-6">
-            <p className="mb-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <p className="mb-1.5 text-xs font-medium text-muted-foreground">
               {t("documents.sign.stepOf", { step: stepNumber, total: totalSteps })}
             </p>
-            <div className="h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div className="h-1 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-blue-600 transition-all duration-300"
+                className="h-full rounded-full bg-shell-accent transition-all duration-300"
                 style={{ width: `${(stepNumber / totalSteps) * 100}%` }}
               />
             </div>
@@ -157,36 +158,33 @@ export default function SignDocumentPage() {
         {/* ── 1 · Read ─────────────────────────────────────────────────── */}
         {step === "read" && (
           <div className="space-y-4">
-            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-              {t("documents.sign.readTitle")}
-            </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              {t("documents.sign.readBody")}
-            </p>
-            <Button onClick={openDocument} disabled={busy} className="w-full">
+            <h2 className="text-base font-semibold text-foreground">{t("documents.sign.readTitle")}</h2>
+            <p className="text-sm text-muted-foreground">{t("documents.sign.readBody")}</p>
+            <Button onClick={openDocument} disabled={busy} size="pillLg" className="w-full">
               {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />}
               {t("documents.sign.openDocument")}
             </Button>
-            <Button variant="outline" onClick={() => setStep("agree")} disabled={!hasRead} className="w-full">
+            <Button
+              variant="outline"
+              onClick={() => setStep("agree")}
+              disabled={!hasRead}
+              size="pillLg"
+              className="w-full"
+            >
               {t("documents.sign.readIt")}
             </Button>
-            {!hasRead && (
-              <p className="text-center text-xs text-slate-400">{t("documents.sign.mustOpen")}</p>
-            )}
+            {!hasRead && <p className="text-center text-xs text-muted-foreground">{t("documents.sign.mustOpen")}</p>}
           </div>
         )}
 
         {/* ── 2 · Agree ────────────────────────────────────────────────── */}
         {step === "agree" && (
           <div className="space-y-4">
-            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-              {t("documents.sign.agreeTitle")}
-            </h2>
+            <h2 className="text-base font-semibold text-foreground">{t("documents.sign.agreeTitle")}</h2>
 
             <blockquote
-              className={"rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm font-medium " +
-                "text-slate-800 dark:border-slate-700 dark:bg-slate-950 " +
-                "dark:text-slate-200"}>
+              className={"rounded-lg border border-border bg-muted p-4 text-sm font-medium " + "text-foreground " + ""}
+            >
               {t("documents.sign.consentText")}
             </blockquote>
 
@@ -198,20 +196,18 @@ export default function SignDocumentPage() {
               doing the opposite of what an evidence trail is for.
             */}
             <div>
-              <p className="mb-2 text-sm text-slate-600 dark:text-slate-400">
-                {t("documents.sign.recordedNotice")}
-              </p>
-              <ul className="space-y-1.5 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+              <p className="mb-2 text-sm text-muted-foreground">{t("documents.sign.recordedNotice")}</p>
+              <ul className="space-y-1.5 rounded-lg border border-border p-3">
                 {["account", "device", "time", "hash"].map((k) => (
-                  <li key={k} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
-                    <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                  <li key={k} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     {t(`documents.sign.records.${k}`)}
                   </li>
                 ))}
               </ul>
             </div>
 
-            <Button onClick={agree} disabled={busy} className="w-full">
+            <Button onClick={agree} disabled={busy} size="pillLg" className="w-full">
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isAcknowledge ? t("documents.sign.confirmRead") : t("documents.sign.agreeAndSign")}
             </Button>
@@ -221,16 +217,12 @@ export default function SignDocumentPage() {
         {/* ── 3 · Sign ─────────────────────────────────────────────────── */}
         {step === "sign" && (
           <div className="space-y-4">
-            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-              {t("documents.sign.signTitleWeb")}
-            </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              {t("documents.sign.signBodyWeb")}
-            </p>
+            <h2 className="text-base font-semibold text-foreground">{t("documents.sign.signTitleWeb")}</h2>
+            <p className="text-sm text-muted-foreground">{t("documents.sign.signBodyWeb")}</p>
 
             <SignaturePad onChange={setSignature} disabled={busy} />
 
-            <Button onClick={submit} disabled={!signature || busy} className="w-full">
+            <Button onClick={submit} disabled={!signature || busy} size="pillLg" className="w-full">
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {busy ? t("documents.sign.sealing") : t("documents.sign.finish")}
             </Button>
@@ -240,24 +232,26 @@ export default function SignDocumentPage() {
         {/* ── Done ─────────────────────────────────────────────────────── */}
         {step === "done" && (
           <div className="space-y-4 py-4 text-center">
-            <div className={cn(
-              "mx-auto grid h-14 w-14 place-items-center rounded-full",
-              "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
-            )}>
+            <div
+              className={cn(
+                "mx-auto grid h-14 w-14 place-items-center rounded-full",
+                "bg-shell-accent-soft text-shell-accent",
+              )}
+            >
               <Check className="h-7 w-7" />
             </div>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <h2 className="text-lg font-semibold text-foreground">
               {isAcknowledge ? t("documents.sign.acknowledged") : t("documents.sign.sealed")}
             </h2>
-            <p className="mx-auto max-w-sm text-sm text-slate-600 dark:text-slate-400">
+            <p className="mx-auto max-w-sm text-sm text-muted-foreground">
               {isAcknowledge ? t("documents.sign.acknowledgedBody") : t("documents.sign.sealedBody")}
             </p>
-            <Button onClick={() => router.push("/my/documents")} className="w-full">
+            <Button onClick={() => router.push("/my/documents")} size="pillLg" className="w-full">
               {t("documents.sign.viewDocuments")}
             </Button>
           </div>
         )}
-      </div>
+      </Panel>
     </div>
   )
 }

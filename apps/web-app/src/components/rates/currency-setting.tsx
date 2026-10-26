@@ -51,7 +51,9 @@ function currencyName(code: string, locale: string): string {
 /** "US dollar (USD, $)", or "Swiss franc (CHF)" when the symbol is the code. */
 function currencyLabel(code: string, locale: string): string {
   const sym = currencySymbol(code, locale)
-  return sym && sym !== code ? `${currencyName(code, locale)} (${code}, ${sym})` : `${currencyName(code, locale)} (${code})`
+  return sym && sym !== code
+    ? `${currencyName(code, locale)} (${code}, ${sym})`
+    : `${currencyName(code, locale)} (${code})`
 }
 
 const INHERIT = "__inherit__"
@@ -80,9 +82,10 @@ export function CurrencySelect({
 }) {
   const { t, i18n } = useTranslation()
   const others = useMemo(
-    () => SUPPORTED_CURRENCIES.filter((c) => !(COMMON_CURRENCIES as readonly string[]).includes(c))
-      .slice()
-      .sort((a, b) => currencyName(a, i18n.language).localeCompare(currencyName(b, i18n.language), i18n.language)),
+    () =>
+      SUPPORTED_CURRENCIES.filter((c) => !(COMMON_CURRENCIES as readonly string[]).includes(c))
+        .slice()
+        .sort((a, b) => currencyName(a, i18n.language).localeCompare(currencyName(b, i18n.language), i18n.language)),
     [i18n.language],
   )
   return (
@@ -97,20 +100,26 @@ export function CurrencySelect({
       <SelectContent className="max-h-80">
         {inheritFrom && (
           <>
-            <SelectItem value={INHERIT}>{inheritLabel ?? t("currency.sameAsOrganization", { code: inheritFrom })}</SelectItem>
+            <SelectItem value={INHERIT}>
+              {inheritLabel ?? t("currency.sameAsOrganization", { code: inheritFrom })}
+            </SelectItem>
             <SelectSeparator />
           </>
         )}
         <SelectGroup>
           {COMMON_CURRENCIES.map((c) => (
-            <SelectItem key={c} value={c}>{currencyLabel(c, i18n.language)}</SelectItem>
+            <SelectItem key={c} value={c}>
+              {currencyLabel(c, i18n.language)}
+            </SelectItem>
           ))}
         </SelectGroup>
         <SelectSeparator />
         <SelectGroup>
           <SelectLabel className="text-xs text-muted-foreground">{t("currency.more")}</SelectLabel>
           {others.map((c) => (
-            <SelectItem key={c} value={c}>{currencyLabel(c, i18n.language)}</SelectItem>
+            <SelectItem key={c} value={c}>
+              {currencyLabel(c, i18n.language)}
+            </SelectItem>
           ))}
         </SelectGroup>
       </SelectContent>
@@ -161,12 +170,16 @@ export function CurrencySetting({
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-sm">{label}</Label>
+      <Label htmlFor={id} className="text-sm">
+        {label}
+      </Label>
       <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card px-3 py-2">
         <span id={id} className="text-sm font-semibold">
           {currencyLabel(effective, i18n.language)}
           {value == null && inheritFrom && (
-            <span className="ml-1.5 text-xs font-normal text-muted-foreground">{t("currency.followsOrganization")}</span>
+            <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+              {t("currency.followsOrganization")}
+            </span>
           )}
         </span>
         <Button
@@ -175,7 +188,10 @@ export function CurrencySetting({
           size="sm"
           className="ml-auto h-8"
           disabled={disabled}
-          onClick={() => { setNext(value); setOpen(true) }}
+          onClick={() => {
+            setNext(value)
+            setOpen(true)
+          }}
         >
           {t("rates.change")}
         </Button>
@@ -191,15 +207,11 @@ export function CurrencySetting({
           <CurrencySelect id={`${id}-select`} value={next} onChange={setNext} inheritFrom={inheritFrom} />
           {changes && (
             <ul className="space-y-1.5 text-sm">
-              <li
-                className={"rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-900 " +
-                  "dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-200"}>
+              <li className="rounded-xl bg-shell-accent-soft px-3 py-2 text-foreground">
                 {t("currency.invoicesKeep")}
               </li>
               {ratesSet > 0 && (
-                <li
-                  className={"rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 " +
-                    "dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"}>
+                <li className="rounded-xl bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] px-3 py-2 text-shell-warn">
                   {t("currency.ratesReread", { count: ratesSet, from: effective, to: nextEffective })}
                 </li>
               )}

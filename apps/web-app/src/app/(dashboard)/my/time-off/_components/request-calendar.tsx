@@ -7,6 +7,7 @@ import type { TimeOffRequest } from "@hbcfield/shared"
 import { cn } from "@/lib/utils"
 import { formatMonthYear } from "@/lib/format-date"
 import { isAbsence } from "@/lib/requests"
+import { Panel } from "@/components/page/page-kit"
 import { monthGrid, sameDay, toISO } from "../_lib/request-calendar"
 
 function Legend({ className, label }: { className: string; label: string }) {
@@ -49,22 +50,22 @@ export function RequestCalendar({
   const monthLabel = formatMonthYear(cursor)
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+    <Panel className="p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <button
           type="button"
           aria-label={t("timeOff.my.prevMonth")}
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
-          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <ChevronLeft className="size-4" />
         </button>
-        <span className="text-sm font-medium capitalize text-foreground">{monthLabel}</span>
+        <span className="text-[15px] font-semibold capitalize text-foreground">{monthLabel}</span>
         <button
           type="button"
           aria-label={t("timeOff.my.nextMonth")}
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
-          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <ChevronRight className="size-4" />
         </button>
@@ -93,12 +94,16 @@ export function RequestCalendar({
               onMouseLeave={() => setHovered(null)}
               title={book?.reason ?? undefined}
               className={cn(
-                "relative mx-auto flex size-10 flex-col items-center justify-center text-sm transition-all duration-150",
+                "relative flex h-[42px] w-full flex-col items-center justify-center rounded-xl text-sm transition-all duration-150",
                 past && "cursor-not-allowed text-muted-foreground/35",
-                !past && !edge && !mid && "rounded-lg text-foreground hover:bg-accent",
-                mid && "bg-primary/15 text-foreground",
-                edge && "rounded-lg bg-primary font-semibold text-primary-foreground shadow-sm motion-safe:scale-105",
-                !past && sameDay(d, today) && !edge && !mid && "font-semibold text-primary",
+                !past && !edge && !mid && "text-foreground hover:bg-accent",
+                mid && "rounded-none bg-muted text-foreground",
+                edge && "bg-foreground font-semibold text-background",
+                !past &&
+                  sameDay(d, today) &&
+                  !edge &&
+                  !mid &&
+                  "font-semibold shadow-[inset_0_0_0_1.5px_hsl(var(--foreground))]",
               )}
             >
               {d.getDate()}
@@ -109,9 +114,12 @@ export function RequestCalendar({
                   className={cn(
                     "absolute bottom-1 rounded-full",
                     isAbsence(book.kind)
-                      ? cn("h-1 w-1", book.status === "APPROVED" ? "bg-green-500" : "bg-amber-500")
+                      ? cn("h-1 w-1", book.status === "APPROVED" ? "bg-shell-live" : "bg-shell-warn")
                       : // Not a day off — a ring, so it never reads as leave.
-                        cn("h-1.5 w-1.5 border", book.status === "APPROVED" ? "border-green-500" : "border-amber-500"),
+                        cn(
+                          "h-1.5 w-1.5 border",
+                          book.status === "APPROVED" ? "border-shell-live" : "border-shell-warn",
+                        ),
                   )}
                 />
               )}
@@ -121,13 +129,13 @@ export function RequestCalendar({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border pt-3 text-[11px] text-muted-foreground">
-        <Legend className="bg-green-500" label={t("timeOff.my.legendApproved")} />
-        <Legend className="bg-amber-500" label={t("timeOff.my.legendPending")} />
-        <Legend className="bg-primary" label={t("timeOff.my.legendSelected")} />
+        <Legend className="bg-shell-live" label={t("timeOff.my.legendApproved")} />
+        <Legend className="bg-shell-warn" label={t("timeOff.my.legendPending")} />
+        <Legend className="bg-foreground" label={t("timeOff.my.legendSelected")} />
         {manyKinds && (
           <Legend className="border border-muted-foreground bg-transparent" label={t("requests.legendNotLeave")} />
         )}
       </div>
-    </section>
+    </Panel>
   )
 }

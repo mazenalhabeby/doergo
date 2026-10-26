@@ -6,13 +6,14 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { ArrowLeft, RefreshCw, Search, Smartphone } from "lucide-react"
 import type { SyncHealthState } from "@hbcfield/shared/client"
 import { organizationsApi, syncApi, type OrgMember } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { dateLocale } from "@/lib/format-date"
 import { cn } from "@/lib/utils"
 import { PAGE_SHELL } from "@/components/ui/page-width"
+import { Icon } from "@/components/ui/icon"
+import { PageHeader, Panel } from "@/components/page/page-kit"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { UserAvatar } from "@/components/common/user-avatar"
@@ -88,45 +89,39 @@ export default function PhoneSyncPage() {
       <div className={PAGE_SHELL}>
         <Link
           href="/members"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" /> {t("members.team")}
+          <Icon name="backLine" size={16} /> {t("members.team")}
         </Link>
 
-        <div className="mt-2 mb-6 flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("members.phoneSync.title")}</h1>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t("members.phoneSync.subtitle")}</p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => health.refetch()}
-            disabled={health.isFetching}
-            className="shrink-0"
-          >
-            <RefreshCw className={cn("mr-2 h-4 w-4", health.isFetching && "animate-spin")} />
-            {t("members.phoneSync.refresh")}
-          </Button>
-        </div>
+        <PageHeader
+          title={t("members.phoneSync.title")}
+          subtitle={t("members.phoneSync.subtitle")}
+          actions={
+            <Button variant="outline" size="pill" onClick={() => health.refetch()} disabled={health.isFetching}>
+              <Icon name="refreshLine" className={cn(health.isFetching && "animate-spin")} />
+              {t("members.phoneSync.refresh")}
+            </Button>
+          }
+        />
 
         {health.isError ? (
-          <div className="rounded-xl border border-border/80 bg-card px-6 py-12 text-center">
+          <Panel as="div" className="px-6 py-12 text-center">
             <p className="text-sm text-muted-foreground">{t("members.phoneSync.loadError")}</p>
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => health.refetch()}>
+            <Button variant="outline" size="pill" className="mt-4" onClick={() => health.refetch()}>
               {t("common.retry")}
             </Button>
-          </div>
+          </Panel>
         ) : rows.length === 0 ? (
-          <div className="rounded-xl border border-border/80 bg-card px-6 py-16 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
-              <Smartphone className="h-6 w-6 text-muted-foreground" />
+          <Panel as="div" className="px-6 py-16 text-center">
+            <div className="mx-auto mb-4 grid size-14 place-items-center rounded-full bg-shell-chip text-muted-foreground">
+              <Icon name="sync" size={26} />
             </div>
             <h3 className="font-semibold text-foreground">{t("members.phoneSync.empty.title")}</h3>
             <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
               {user?.offlineMode ? t("members.phoneSync.empty.bodyOn") : t("members.phoneSync.empty.bodyOff")}
             </p>
-          </div>
+          </Panel>
         ) : (
           <>
             {/* Summary — each chip is also the filter. */}
@@ -153,26 +148,25 @@ export default function PhoneSyncPage() {
               <div className="min-w-0">
                 <div className="mb-3 flex flex-wrap items-center gap-3">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Icon
+                      name="searchLine"
+                      size={16}
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    />
                     <Input
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder={t("members.searchPlaceholder")}
-                      className="h-9 w-56 rounded-lg border-border/80 bg-card pl-9 text-sm"
+                      className="h-[38px] w-[280px] max-w-full rounded-full border-border bg-card pl-10 text-sm shadow-none"
                     />
                   </div>
                   <span className="text-xs text-muted-foreground">{t("members.phoneSync.cadence")}</span>
                 </div>
 
-                <div className="overflow-x-auto rounded-xl border border-border/80 bg-card">
+                <div className="overflow-x-auto rounded-[22px] border border-border bg-card p-1.5 shadow-shell">
                   <table className="w-full min-w-[760px] text-sm">
                     <thead>
-                      <tr
-                        className={
-                          "border-b border-border/60 bg-muted/40 text-left text-xs font-medium " +
-                          "uppercase tracking-wide text-muted-foreground"
-                        }
-                      >
+                      <tr className={"h-10 text-left text-xs font-medium text-muted-foreground"}>
                         <th className="px-4 py-2.5">{t("members.phoneSync.columns.member")}</th>
                         <th className="px-4 py-2.5">{t("members.phoneSync.columns.state")}</th>
                         <th className="px-4 py-2.5 text-right">{t("members.phoneSync.columns.waiting")}</th>
@@ -182,7 +176,7 @@ export default function PhoneSyncPage() {
                         <th className="px-4 py-2.5">{t("members.phoneSync.columns.app")}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/60 tabular-nums">
+                    <tbody className="tabular-nums">
                       {visible.map((r) => {
                         const p = personById.get(r.userId)
                         const isSelected = selected?.userId === r.userId
@@ -194,13 +188,15 @@ export default function PhoneSyncPage() {
                             tabIndex={0}
                             aria-selected={isSelected}
                             className={cn(
-                              "cursor-pointer outline-none transition-colors hover:bg-accent/40 focus-visible:bg-accent/40",
-                              isSelected && "bg-primary/5",
+                              "cursor-pointer outline-none transition-colors hover:bg-accent focus-visible:bg-accent " +
+                                "[&>td:first-child]:rounded-l-[14px] [&>td:last-child]:rounded-r-[14px]",
+                              isSelected && "bg-shell-nav-on",
                             )}
                           >
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-3">
                                 <UserAvatar
+                                  soft
                                   firstName={p?.firstName ?? "?"}
                                   lastName={p?.lastName ?? ""}
                                   avatarUrl={p?.avatarUrl ?? null}

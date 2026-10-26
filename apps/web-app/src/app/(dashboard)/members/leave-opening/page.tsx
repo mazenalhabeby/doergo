@@ -5,20 +5,30 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { AlertCircle, ArrowLeft, ClipboardPaste, Loader2, Save, Search } from "lucide-react"
+import { ArrowLeft, ClipboardPaste, Loader2, Save, Search } from "lucide-react"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { leaveLedgerApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
-import { applyOpeningMatches, openingDraft, openingSaveRows, parseDaysInput, todayKey, type OpeningDraftRow } from "@/lib/leave-ledger"
+import {
+  applyOpeningMatches,
+  openingDraft,
+  openingSaveRows,
+  parseDaysInput,
+  todayKey,
+  type OpeningDraftRow,
+} from "@/lib/leave-ledger"
 import { formatDayMonth, formatMediumDate } from "@/lib/format-date"
 import { serverErrorMessage } from "@/lib/server-error"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { PAGE_WIDTH } from "@/components/ui/page-width"
+import { PageHeader } from "@/components/page/page-kit"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { DaysCell } from "./_components/days-cell"
+import { OpeningNotice } from "./_components/opening-notice"
 
 // The paste panel is behind a tap — not in the first load.
 const OpeningPastePanel = dynamic(() => import("./_components/paste-panel").then((m) => m.OpeningPastePanel))
@@ -86,7 +96,11 @@ export default function LeaveOpeningPage() {
     const base = new Map(openingDraft(opening.data.rows).map((r) => [r.userId, r]))
     return draft.some((r) => {
       const b = base.get(r.userId)
-      return !b || parseDaysInput(b.used) !== parseDaysInput(r.used) || parseDaysInput(b.carried) !== parseDaysInput(r.carried)
+      return (
+        !b ||
+        parseDaysInput(b.used) !== parseDaysInput(r.used) ||
+        parseDaysInput(b.carried) !== parseDaysInput(r.carried)
+      )
     })
   }, [draft, opening.data])
 
@@ -130,40 +144,41 @@ export default function LeaveOpeningPage() {
           <ArrowLeft className="size-3.5" />
           {t("technicians.availabilityPage.title")}
         </Link>
-        <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-2xl">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("leaveLedger.opening.title")}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{t("leaveLedger.opening.subtitle")}</p>
-          </div>
-          {canEdit && opening.data && (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => setPasting((v) => !v)} aria-expanded={pasting}>
-                <ClipboardPaste className="size-4" />
-                {t("leaveLedger.opening.paste")}
-              </Button>
-              <Button size="sm" className="h-8 gap-1.5" onClick={() => save.mutate()} disabled={!dirty || save.isPending}>
-                {save.isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                {t("common.save")}
-              </Button>
-            </div>
-          )}
-        </header>
+        <PageHeader
+          title={t("leaveLedger.opening.title")}
+          subtitle={t("leaveLedger.opening.subtitle")}
+          actions={
+            canEdit &&
+            opening.data && (
+              <>
+                <Button variant="outline" size="pill" onClick={() => setPasting((v) => !v)} aria-expanded={pasting}>
+                  <ClipboardPaste />
+                  {t("leaveLedger.opening.paste")}
+                </Button>
+                <Button size="pillLg" onClick={() => save.mutate()} disabled={!dirty || save.isPending}>
+                  {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
+                  {t("common.save")}
+                </Button>
+              </>
+            )
+          }
+        />
 
         {!canEdit ? (
-          <Notice text={t("leaveLedger.opening.noAccess")} />
+          <OpeningNotice text={t("leaveLedger.opening.noAccess")} />
         ) : opening.isLoading || (opening.data && draft === null) ? (
-          <Skeleton className="h-80 w-full rounded-2xl" />
+          <Skeleton className="h-80 w-full rounded-[22px]" />
         ) : opening.isError ? (
-          <Notice
+          <OpeningNotice
             text={(opening.error as Error)?.message || t("common.error")}
             onRetry={() => void opening.refetch()}
             retryLabel={t("common.retry", "Retry")}
           />
         ) : opening.data === null ? (
-          <Notice text={t("leaveLedger.opening.unavailable")} />
+          <OpeningNotice text={t("leaveLedger.opening.unavailable")} />
         ) : (
           <>
-            <div className="mb-4 flex flex-wrap items-end gap-4 rounded-xl border border-border bg-muted/30 px-4 py-3">
+            <div className="mb-4 flex flex-wrap items-end gap-4 rounded-[18px] bg-muted px-4 py-3">
               <div>
                 <label htmlFor="opening-on" className="mb-1 block text-xs font-medium text-muted-foreground">
                   {t("leaveLedger.opening.startedOn")}
@@ -181,11 +196,9 @@ export default function LeaveOpeningPage() {
               </p>
             </div>
 
-            {pasting && (
-              <OpeningPastePanel onMatched={onMatched} onClose={() => setPasting(false)} />
-            )}
+            {pasting && <OpeningPastePanel onMatched={onMatched} onClose={() => setPasting(false)} />}
 
-            <section className="overflow-hidden rounded-2xl border border-border bg-card">
+            <section className="overflow-hidden rounded-[22px] border border-border bg-card shadow-shell">
               <div className="flex flex-wrap items-center gap-3 border-b border-border/60 px-4 py-3">
                 <div className="relative w-full max-w-xs">
                   <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -211,14 +224,24 @@ export default function LeaveOpeningPage() {
                   </thead>
                   <tbody className="divide-y divide-border/60">
                     {rows.map((r) => (
-                      <tr key={r.userId} className={cn("hover:bg-accent/30", invalid.has(r.userId) && "bg-red-500/5")}>
+                      <tr
+                        key={r.userId}
+                        className={cn(
+                          "hover:bg-accent",
+                          invalid.has(r.userId) && "bg-[color-mix(in_srgb,var(--shell-crit)_6%,transparent)]",
+                        )}
+                      >
                         <td className="px-4 py-2">
                           <p className="font-medium text-foreground">{r.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {r.email}
                             {/* In work years each person's year is their own — say which one these days belong to. */}
                             {r.leaveYear?.mode === "WORK_YEAR" && (
-                              <> · {formatDayMonth(`${r.leaveYear.start}T12:00:00`)} – {formatDayMonth(`${r.leaveYear.end}T12:00:00`)}</>
+                              <>
+                                {" "}
+                                · {formatDayMonth(`${r.leaveYear.start}T12:00:00`)} –{" "}
+                                {formatDayMonth(`${r.leaveYear.end}T12:00:00`)}
+                              </>
                             )}
                           </p>
                         </td>
@@ -248,45 +271,13 @@ export default function LeaveOpeningPage() {
                   </tbody>
                 </table>
               </div>
-              <p
-                className={"border-t border-border/60 px-4 py-2.5 text-[11.5px] " +
-                  "text-muted-foreground"}>{t("leaveLedger.opening.halfDays")}</p>
+              <p className={"border-t border-border/60 px-4 py-2.5 text-[11.5px] " + "text-muted-foreground"}>
+                {t("leaveLedger.opening.halfDays")}
+              </p>
             </section>
           </>
         )}
       </div>
-    </div>
-  )
-}
-
-/** A day count as typed — half days, "10,5" reads 10.5; a cell it cannot read turns red. */
-function DaysCell({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  const bad = parseDaysInput(value) === null
-  return (
-    <input
-      aria-label={label}
-      aria-invalid={bad || undefined}
-      inputMode="decimal"
-      value={value}
-      placeholder="0"
-      onChange={(e) => onChange(e.target.value)}
-      className={cn(
-        ("h-8 w-24 rounded-lg border bg-background px-2.5 text-right font-mono " +
-          "text-sm tabular-nums outline-none transition-colors focus:border-primary"),
-        bad ? "border-red-500 text-red-600" : "border-border",
-      )}
-    />
-  )
-}
-
-function Notice({ text, onRetry, retryLabel }: { text: string; onRetry?: () => void; retryLabel?: string }) {
-  return (
-    <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-5">
-      <AlertCircle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-      <p className="min-w-0 flex-1 text-sm text-muted-foreground">{text}</p>
-      {onRetry && (
-        <Button variant="outline" size="sm" onClick={onRetry}>{retryLabel}</Button>
-      )}
     </div>
   )
 }

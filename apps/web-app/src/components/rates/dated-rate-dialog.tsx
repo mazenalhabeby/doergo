@@ -64,8 +64,8 @@ export function RateHistoryList({ rows, currency }: { rows: RateHistoryRow[]; cu
               <span
                 className={cn(
                   "text-right text-[11px]",
-                  state === "current" && "font-semibold text-green-600 dark:text-green-400",
-                  state === "scheduled" && "font-semibold text-blue-600 dark:text-blue-400",
+                  state === "current" && "font-semibold text-shell-accent",
+                  state === "scheduled" && "font-semibold text-foreground",
                   state === "earlier" && "text-muted-foreground",
                 )}
               >
@@ -139,8 +139,8 @@ export function ChangeRateDialog({
       className={cn(
         "rounded-lg border px-3 py-2",
         tone === "keep"
-          ? "border-green-200 bg-green-50 text-green-900 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-200"
-          : "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200",
+          ? "border-transparent bg-shell-accent-soft text-foreground"
+          : "border-transparent bg-shell-chip text-foreground",
       )}
     >
       {text}

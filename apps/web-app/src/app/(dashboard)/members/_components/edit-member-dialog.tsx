@@ -143,8 +143,8 @@ export function EditMemberDialog({
                     <Badge
                       variant="outline"
                       className={
-                        "shrink-0 text-[10px] font-medium border-amber-500/50 bg-amber-500/10 " +
-                        "text-amber-700 dark:text-amber-400 px-1.5 py-0"
+                        "shrink-0 border-transparent bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] " +
+                        "px-1.5 py-0 text-[10px] font-medium text-shell-warn"
                       }
                     >
                       {t("members.external.badge")}
@@ -200,7 +200,7 @@ export function EditMemberDialog({
                 className="h-9 focus-visible:ring-offset-0"
               />
               {email.trim().toLowerCase() !== member?.email && (
-                <p className="text-[11px] text-amber-600 dark:text-amber-500">
+                <p className="text-[11px] text-shell-warn">
                   {t(
                     "members.memberEditor.emailChangeHint",
                     "This is the member's login — they will sign in with the new address.",
