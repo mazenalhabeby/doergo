@@ -76,35 +76,23 @@ export function useDocumentsScreen() {
     with it. Coming back from signing is exactly when they stop being true, and
     they used to trail for up to a minute.
   */
-  useFocusEffect(
-    useCallback(() => {
-      void load();
-      void refreshRequirements({ force: true });
-    }, [load, refreshRequirements]),
-  );
+  useFocusEffect(useCallback(() => {
+    void load();
+    void refreshRequirements({ force: true });
+  }, [load, refreshRequirements]));
 
   /* Sent with no signal and still on this phone — shown, not hidden until it has gone. */
-  const queued = useMemo<Queued[]>(
-    () =>
-      operations
-        .filter((o) => o.op === 'document.supply' && STILL_MINE.has(o.state))
-        .map((o) => {
-          const b = (o.payload.body ?? {}) as { title?: string; typeId?: string };
-          return { id: o.id, title: b.title ?? '', typeId: b.typeId ?? '' };
-        }),
-    [operations],
-  );
+  const queued = useMemo<Queued[]>(() => operations
+    .filter((o) => o.op === 'document.supply' && STILL_MINE.has(o.state))
+    .map((o) => {
+      const b = (o.payload.body ?? {}) as { title?: string; typeId?: string };
+      return { id: o.id, title: b.title ?? '', typeId: b.typeId ?? '' };
+    }), [operations]);
   const queuedTypeIds = useMemo(() => new Set(queued.map((q) => q.typeId)), [queued]);
-  const need = useMemo(
-    () => stillNeeded(requirements, documents, queuedTypeIds),
-    [requirements, documents, queuedTypeIds],
-  );
+  const need = useMemo(() => stillNeeded(requirements, documents, queuedTypeIds), [requirements, documents, queuedTypeIds]);
 
   const canAdd = types.some((ty) => ty.direction !== 'ISSUED' && ty.isActive) || canPropose;
-  const onPaperOf = useCallback(
-    (d: MemberDocument) => types.find((ty) => ty.id === d.typeId)?.signatureMode === 'WET_INK',
-    [types],
-  );
+  const onPaperOf = useCallback((d: MemberDocument) => types.find((ty) => ty.id === d.typeId)?.signatureMode === 'WET_INK', [types]);
 
   /* One box across the title, the type and the year — whichever the half-remembered word belongs to. */
   const matches = useCallback((d: MemberDocument, f: { typeId: string | null; year: number | null }, q: string) => {
@@ -114,10 +102,7 @@ export function useDocumentsScreen() {
     return d.title.toLowerCase().includes(q) || d.typeLabel.toLowerCase().includes(q) || String(yearOf(d)).includes(q);
   }, []);
   const q = query.trim().toLowerCase();
-  const visible = useMemo(
-    () => documents.filter((d) => matches(d, { typeId, year }, q)),
-    [documents, typeId, year, q, matches],
-  );
+  const visible = useMemo(() => documents.filter((d) => matches(d, { typeId, year }, q)), [documents, typeId, year, q, matches]);
 
   /* Waiting on a signature is ONE section at the top — it was also a banner and a filter pill. */
   const sections = useMemo<Section[]>(() => {
@@ -130,45 +115,29 @@ export function useDocumentsScreen() {
       byYear.get(y)!.push(d);
     }
     const out: Section[] = [];
-    if (waiting.length)
-      out.push({
-        key: 'waiting',
-        title: t('documents.sectionSign', {
-          count: waiting.length,
-          defaultValue: 'Waiting for your signature · {{count}}',
-        }),
-        data: waiting,
-        tone: 'warn',
-      });
-    for (const y of [...byYear.keys()].sort((a, b) => b - a))
-      out.push({ key: String(y), title: `${y} · ${byYear.get(y)!.length}`, data: byYear.get(y)! });
+    if (waiting.length) out.push({ key: 'waiting', title: t('documents.sectionSign', { count: waiting.length, defaultValue: 'Waiting for your signature · {{count}}' }), data: waiting, tone: 'warn' });
+    for (const y of [...byYear.keys()].sort((a, b) => b - a)) out.push({ key: String(y), title: `${y} · ${byYear.get(y)!.length}`, data: byYear.get(y)! });
     return out;
   }, [visible, t]);
 
   const years = useMemo(() => [...new Set(documents.map(yearOf))].sort((a, b) => b - a), [documents]);
-  const usedTypes = useMemo(() => {
-    const ids = new Set(documents.map((d) => d.typeId));
-    return types.filter((ty) => ids.has(ty.id));
-  }, [types, documents]);
+  const usedTypes = useMemo(() => { const ids = new Set(documents.map((d) => d.typeId)); return types.filter((ty) => ids.has(ty.id)); }, [types, documents]);
 
   /* ---------- acts ---------- */
-  const openFile = useCallback(
-    async (d: MemberDocument) => {
-      setOpening(d.id);
-      try {
-        const res = await documentsApi.downloadUrl(d.id);
-        if (!res?.url) throw new Error(t('documents.openFailed'));
-        // A signed link from our server — https only, never another scheme.
-        if (!(await openSafeUrl(httpsUrl(res.url)))) throw new Error(t('documents.openFailed'));
-        void load();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : t('documents.openFailed'));
-      } finally {
-        setOpening(null);
-      }
-    },
-    [load, t, toast],
-  );
+  const openFile = useCallback(async (d: MemberDocument) => {
+    setOpening(d.id);
+    try {
+      const res = await documentsApi.downloadUrl(d.id);
+      if (!res?.url) throw new Error(t('documents.openFailed'));
+      // A signed link from our server — https only, never another scheme.
+      if (!(await openSafeUrl(httpsUrl(res.url)))) throw new Error(t('documents.openFailed'));
+      void load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('documents.openFailed'));
+    } finally {
+      setOpening(null);
+    }
+  }, [load, t, toast]);
 
   const tapDocument = useCallback((d: MemberDocument) => {
     if (d.needsSignature) {
@@ -189,23 +158,14 @@ export function useDocumentsScreen() {
   }, [openFromNotification, state, documents, tapDocument]);
 
   /* From one sheet to another only after the first has left — two modals at once freeze iOS. */
-  const sendNew = (typeIdToSend: string) => {
-    setOpened(null);
-    setTimeout(() => setSupply({ typeId: typeIdToSend }), 280);
-  };
+  const sendNew = (typeIdToSend: string) => { setOpened(null); setTimeout(() => setSupply({ typeId: typeIdToSend }), 280); };
 
-  const askedLine = (row: AskedRow) =>
-    row.why === 'sentBack'
-      ? row.reason
-        ? t('documents.supply.sentBackWhy', { reason: row.reason })
-        : t('documents.required.state.REJECTED')
-      : row.why === 'expired'
-        ? t('documents.required.state.EXPIRED')
-        : row.why === 'expiring'
-          ? row.expiresOn
-            ? t('documents.supply.expiringOn', { date: dayOf(row.expiresOn) })
-            : t('documents.required.state.EXPIRING')
-          : t('documents.required.state.MISSING');
+  const askedLine = (row: AskedRow) => (
+    row.why === 'sentBack' ? (row.reason ? t('documents.supply.sentBackWhy', { reason: row.reason }) : t('documents.required.state.REJECTED'))
+      : row.why === 'expired' ? t('documents.required.state.EXPIRED')
+      : row.why === 'expiring' ? (row.expiresOn ? t('documents.supply.expiringOn', { date: dayOf(row.expiresOn) }) : t('documents.required.state.EXPIRING'))
+      : t('documents.required.state.MISSING')
+  );
 
   const back = () => (router.canGoBack() ? router.back() : router.navigate('/(app)/(tabs)' as Href));
   const filtered = !!q || !!typeId || year !== null;
@@ -215,103 +175,34 @@ export function useDocumentsScreen() {
   const header = (
     <View style={{ gap: amazen.space(3), paddingBottom: amazen.space(1) }}>
       {neededCount > 0 ? (
-        <View
-          style={{
-            backgroundColor: c.warnTint,
-            borderRadius: amazen.radius.panel,
-            paddingHorizontal: amazen.space(3.5),
-            paddingVertical: amazen.space(1.5),
-          }}
-        >
-          <SectionLabel
-            tone="warn"
-            style={{ paddingTop: amazen.space(2), paddingBottom: amazen.space(1) }}
-          >{`${t('documents.required.title')} · ${neededCount}`}</SectionLabel>
+        <View style={{ backgroundColor: c.warnTint, borderRadius: amazen.radius.panel, paddingHorizontal: amazen.space(3.5), paddingVertical: amazen.space(1.5) }}>
+          <SectionLabel tone="warn" style={{ paddingTop: amazen.space(2), paddingBottom: amazen.space(1) }}>{`${t('documents.required.title')} · ${neededCount}`}</SectionLabel>
           {need.asked.map((row, i) => (
-            <Pressable
-              key={row.typeId}
-              onPress={() => setSupply({ typeId: row.typeId })}
-              accessibilityRole="button"
-              style={({ pressed }) => ({
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: amazen.space(3),
-                paddingVertical: amazen.space(2.5),
-                borderTopWidth: i === 0 ? 0 : 1,
-                borderTopColor: c.lineWell,
-                opacity: pressed ? 0.75 : 1,
-              })}
-            >
-              <View
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 10,
-                  backgroundColor: row.why === 'sentBack' || row.why === 'expired' ? c.criticalTint : c.warnTint,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon
-                  name={row.why === 'sentBack' ? 'refreshLine' : 'addLine'}
-                  size={18}
-                  color={row.why === 'sentBack' || row.why === 'expired' ? c.critical : c.warn}
-                />
+            <Pressable key={row.typeId} onPress={() => setSupply({ typeId: row.typeId })} accessibilityRole="button"
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.5), borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell, opacity: pressed ? 0.75 : 1 })}>
+              <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: row.why === 'sentBack' || row.why === 'expired' ? c.criticalTint : c.warnTint, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name={row.why === 'sentBack' ? 'refreshLine' : 'addLine'} size={18} color={row.why === 'sentBack' || row.why === 'expired' ? c.critical : c.warn} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5 }}>
-                    {row.label}
-                  </AText>
+                  <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5 }}>{row.label}</AText>
                   {row.blocksWork ? <Pill label={t('documents.required.blocksWork')} tone="critical" /> : null}
                 </View>
-                <AText
-                  variant="caption"
-                  numberOfLines={2}
-                  style={{ color: row.why === 'sentBack' || row.why === 'expired' ? c.critical : c.inkMuted }}
-                >
-                  {askedLine(row)}
-                </AText>
+                <AText variant="caption" numberOfLines={2} style={{ color: row.why === 'sentBack' || row.why === 'expired' ? c.critical : c.inkMuted }}>{askedLine(row)}</AText>
               </View>
-              <AText variant="body" tone="muted">
-                ›
-              </AText>
+              <AText variant="body" tone="muted">›</AText>
             </Pressable>
           ))}
           {/* Sent, and not yet decided: shown, not offered again. Approved → gone. */}
           {need.checking.map((row, i) => (
-            <View
-              key={row.typeId}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: amazen.space(3),
-                paddingVertical: amazen.space(2.5),
-                borderTopWidth: i === 0 && need.asked.length === 0 ? 0 : 1,
-                borderTopColor: c.lineWell,
-                opacity: 0.8,
-              }}
-            >
-              <View
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 10,
-                  backgroundColor: c.accentTint,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
+            <View key={row.typeId} style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.5), borderTopWidth: i === 0 && need.asked.length === 0 ? 0 : 1, borderTopColor: c.lineWell, opacity: 0.8 }}>
+              <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
                 <Icon name="time" size={17} color={c.accent} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>
-                  {row.label}
-                </AText>
+                <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{row.label}</AText>
                 <AText variant="caption" tone="muted" numberOfLines={1}>
-                  {row.onPhone
-                    ? t('documents.supply.onPhone', 'On this phone · sends when you are online')
-                    : t('documents.supply.checking', 'Sent · the office is checking it')}
+                  {row.onPhone ? t('documents.supply.onPhone', 'On this phone · sends when you are online') : t('documents.supply.checking', 'Sent · the office is checking it')}
                 </AText>
               </View>
             </View>
@@ -321,41 +212,16 @@ export function useDocumentsScreen() {
 
       {queued.length > 0 ? (
         <>
-          <SectionLabel tone="warn" style={{ paddingHorizontal: amazen.space(1) }}>
-            {t('documents.waitingToSend', { count: queued.length, defaultValue: 'Waiting to send · {{count}}' })}
-          </SectionLabel>
+          <SectionLabel tone="warn" style={{ paddingHorizontal: amazen.space(1) }}>{t('documents.waitingToSend', { count: queued.length, defaultValue: 'Waiting to send · {{count}}' })}</SectionLabel>
           <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
             {queued.map((qd, i) => (
-              <View
-                key={qd.id}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: amazen.space(3),
-                  paddingVertical: amazen.space(2.75),
-                  borderTopWidth: i === 0 ? 0 : 1,
-                  borderTopColor: c.lineWell,
-                }}
-              >
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 12,
-                    backgroundColor: c.tile,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
+              <View key={qd.id} style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75), borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell }}>
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center' }}>
                   <Icon name="upload" size={18} color={c.ink} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>
-                    {qd.title}
-                  </AText>
-                  <AText variant="caption" tone="muted" numberOfLines={1}>
-                    {t('documents.queuedLine', 'Added with no signal · sends when you are online')}
-                  </AText>
+                  <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{qd.title}</AText>
+                  <AText variant="caption" tone="muted" numberOfLines={1}>{t('documents.queuedLine', 'Added with no signal · sends when you are online')}</AText>
                 </View>
                 <Pill label={t('offline.chip.waiting')} tone="warn" />
               </View>
@@ -368,38 +234,17 @@ export function useDocumentsScreen() {
       {usedTypes.length > 1 || years.length > 1 ? (
         <FilterRow>
           {usedTypes.length > 1 ? (
-            <FilterPill
-              label={`${typeId ? (usedTypes.find((ty) => ty.id === typeId)?.label ?? '') : t('documents.filter.anyType')} ▾`}
-              on={!!typeId}
-              onPress={() => setPicker('type')}
-            />
+            <FilterPill label={`${typeId ? usedTypes.find((ty) => ty.id === typeId)?.label ?? '' : t('documents.filter.anyType')} ▾`} on={!!typeId} onPress={() => setPicker('type')} />
           ) : null}
-          {years.length > 1 ? (
-            <FilterPill
-              label={`${year ?? t('documents.filter.anyYear')} ▾`}
-              on={year !== null}
-              onPress={() => setPicker('year')}
-            />
-          ) : null}
-          {typeId || year !== null ? (
-            <FilterPill
-              label={`✕ ${t('documents.clearFilters', 'Clear')}`}
-              on={false}
-              onPress={() => {
-                setTypeId(null);
-                setYear(null);
-              }}
-            />
-          ) : null}
+          {years.length > 1 ? <FilterPill label={`${year ?? t('documents.filter.anyYear')} ▾`} on={year !== null} onPress={() => setPicker('year')} /> : null}
+          {typeId || year !== null ? <FilterPill label={`✕ ${t('documents.clearFilters', 'Clear')}`} on={false} onPress={() => { setTypeId(null); setYear(null); }} /> : null}
         </FilterRow>
       ) : null}
     </View>
   );
 
   const countFor = (patch: { typeId?: string | null; year?: number | null }) =>
-    documents.filter((d) =>
-      matches(d, { typeId: 'typeId' in patch ? patch.typeId! : typeId, year: 'year' in patch ? patch.year! : year }, q),
-    ).length;
+    documents.filter((d) => matches(d, { typeId: 'typeId' in patch ? patch.typeId! : typeId, year: 'year' in patch ? patch.year! : year }, q)).length;
 
   const tag = opened ? tagOf(opened) : null;
 

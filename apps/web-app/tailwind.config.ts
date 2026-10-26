@@ -98,6 +98,7 @@ const config: Config = {
       // The app shell's face (layout.tsx loads Geist through next/font) — the redesign boards draw the shell in it.
       fontFamily: {
         shell: ["var(--font-geist)", "system-ui", "-apple-system", "sans-serif"],
+        "shell-mono": ["var(--font-geist-mono)", "ui-monospace", "Menlo", "monospace"],
       },
       boxShadow: {
         shell: "var(--shell-shadow)",

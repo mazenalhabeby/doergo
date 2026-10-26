@@ -3097,7 +3097,11 @@
       "askMoreTime": "Mehr Zeit anfragen",
       "askMoreTimeSent": "Ihre Leitung wird gefragt. Zeit nach dem Ende zählt, sobald sie zustimmt.",
       "askMoreTimeWaiting": "Mehr Zeit angefragt",
-      "clockedSpan": "gestempelt {{span}}"
+      "clockedSpan": "gestempelt {{span}}",
+      "untilTime": "bis {{time}}",
+      "placesToChoose_one": "{{count}} Arbeitsbereich",
+      "placesToChoose_other": "{{count}} Arbeitsbereiche",
+      "out": "Gehen"
     },
     "management": {
       "title": "Anwesenheitsverwaltung",

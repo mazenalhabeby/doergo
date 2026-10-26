@@ -3097,7 +3097,11 @@
       "askMoreTime": "Pedir más tiempo",
       "askMoreTimeSent": "Se pregunta a su responsable. El tiempo tras el final cuenta cuando lo apruebe.",
       "askMoreTimeWaiting": "Esperando más tiempo",
-      "clockedSpan": "fichado {{span}}"
+      "clockedSpan": "fichado {{span}}",
+      "untilTime": "hasta las {{time}}",
+      "placesToChoose_one": "{{count}} espacio de trabajo",
+      "placesToChoose_other": "{{count}} espacios de trabajo",
+      "out": "Salir"
     },
     "management": {
       "title": "Gestión de asistencia",

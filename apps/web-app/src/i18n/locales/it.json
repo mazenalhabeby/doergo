@@ -3097,7 +3097,11 @@
       "askMoreTime": "Chiedi più tempo",
       "askMoreTimeSent": "Viene chiesto al tuo responsabile. Il tempo dopo la fine conta quando approva.",
       "askMoreTimeWaiting": "In attesa di più tempo",
-      "clockedSpan": "timbrato {{span}}"
+      "clockedSpan": "timbrato {{span}}",
+      "untilTime": "fino alle {{time}}",
+      "placesToChoose_one": "{{count}} spazio di lavoro",
+      "placesToChoose_other": "{{count}} spazi di lavoro",
+      "out": "Esci"
     },
     "management": {
       "title": "Gestione delle presenze",

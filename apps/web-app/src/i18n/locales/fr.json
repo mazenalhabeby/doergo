@@ -3097,7 +3097,11 @@
       "askMoreTime": "Demander plus de temps",
       "askMoreTimeSent": "Votre responsable est sollicité. Le temps après la fin compte dès son accord.",
       "askMoreTimeWaiting": "Plus de temps demandé",
-      "clockedSpan": "pointé {{span}}"
+      "clockedSpan": "pointé {{span}}",
+      "untilTime": "jusqu'à {{time}}",
+      "placesToChoose_one": "{{count}} espace de travail",
+      "placesToChoose_other": "{{count}} espaces de travail",
+      "out": "Sortir"
     },
     "management": {
       "title": "Gestion des présences",

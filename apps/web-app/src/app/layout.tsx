@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Inter, Outfit, Familjen_Grotesk, Martian_Mono, Geist } from "next/font/google"
+import { Inter, Outfit, Familjen_Grotesk, Martian_Mono, Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
 import { QueryProvider } from "@/providers/query-provider"
@@ -13,6 +13,15 @@ import { Toaster } from "@/components/ui"
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" })
 // The app shell's face (sidebar, top bar, account menu) — the web redesign's Geist.
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" })
+// Figures in the shell (the running clock): tabular, so a ticking time never shifts sideways. Not preloaded —
+// only somebody on the clock sees it.
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+  weight: ["500", "600"],
+  display: "swap",
+  preload: false,
+})
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit", weight: ["400", "800"], display: "swap" })
 // Marketing/landing typography — mirrors the studio-grade reference:
 // Familjen Grotesk for large light-weight display, Martian Mono for micro-labels.
@@ -114,7 +123,7 @@ export default function RootLayout({
       */}
       <body
         suppressHydrationWarning
-        className={`${inter.variable} ${geist.variable} ${outfit.variable} ${familjen.variable} ${martian.variable} ${inter.className}`}
+        className={[inter, geist, geistMono, outfit, familjen, martian].map((f) => f.variable).concat(inter.className).join(" ")}
       >
         <ThemeProvider
           attribute="class"

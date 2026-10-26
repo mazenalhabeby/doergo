@@ -425,6 +425,9 @@
   --shell-nav-on-ink: #097058;
   --shell-accent: #097058;
   --shell-accent-fill: linear-gradient(180deg, #087961, #0b8168);
+  --clock-a1: #0a8a6c;
+  --clock-a2: #076450;
+  --clock-glow: #10b99366;
   --shell-on-accent: #ffffff;
   --shell-accent-soft: #0b816818;
   --shell-live: #10b993;
@@ -456,6 +459,9 @@
   --shell-nav-on-ink: #66dbba;
   --shell-accent: #66dbba;
   --shell-accent-fill: linear-gradient(180deg, #7fe6c8, #10b993);
+  --clock-a1: #7fe6c8;
+  --clock-a2: #10b993;
+  --clock-glow: #66dbba55;
   --shell-on-accent: #001810;
   --shell-accent-soft: #66dbba24;
   --shell-live: #66dbba;
@@ -474,6 +480,36 @@
   THE loading placeholder (Shimmer and ui/Skeleton both draw it): a bone with one sweep of light, CSS only.
   `.skeleton-wait` holds a page-shaped skeleton back 200 ms, so a page that arrives quickly shows no grey flash.
 */
+/*
+  The clock button (clock-button board, option A — "Aurora"): a light circling the edge, a breathing disc.
+  Jade before clocking in; white with a jade light while the clock runs ([data-on]). CSS only.
+*/
+.clock-aurora {
+  position: relative; isolation: isolate; overflow: hidden; color: var(--shell-on-accent);
+  background: linear-gradient(135deg, var(--clock-a1), var(--clock-a2));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 10px 24px -10px var(--clock-glow);
+  transition: transform .25s var(--ease-spring), box-shadow .25s }
+.clock-aurora::before {
+  content: ""; position: absolute; inset: -60%; z-index: -2;
+  background: conic-gradient(from 0deg, transparent 0 70%, rgba(255, 255, 255, .45) 80%, transparent 90%);
+  animation: clock-aurora-spin 4.5s linear infinite }
+.clock-aurora::after {
+  content: ""; position: absolute; inset: 1.5px; z-index: -1; border-radius: inherit;
+  background: linear-gradient(135deg, var(--clock-a1), var(--clock-a2)) }
+button.clock-aurora:not(:disabled):hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 16px 30px -10px var(--clock-glow) }
+button.clock-aurora:not(:disabled):active { transform: scale(.98) }
+.clock-aurora[data-on] { color: var(--shell-ink); background: var(--shell-card); box-shadow: var(--shell-shadow) }
+.clock-aurora[data-on]::before { background: conic-gradient(from 0deg, transparent 0 60%, var(--shell-live) 78%, transparent 92%) }
+.clock-aurora[data-on]::after { background: var(--shell-card) }
+.clock-aurora-disc { position: relative; display: grid; flex: none; place-items: center; border-radius: 13px; background: rgba(255, 255, 255, .18) }
+.clock-aurora-disc::after {
+  content: ""; position: absolute; inset: -3px; border-radius: 15px; border: 2px solid rgba(255, 255, 255, .35);
+  animation: clock-aurora-breathe 2.4s ease-in-out infinite }
+.clock-aurora[data-on] .clock-aurora-disc { background: var(--shell-accent-soft); color: var(--shell-accent) }
+.clock-aurora[data-on] .clock-aurora-disc::after { border-color: var(--shell-live) }
+@keyframes clock-aurora-spin { to { transform: rotate(1turn) } }
+@keyframes clock-aurora-breathe { 50% { transform: scale(1.08); opacity: .2 } }
+@media (prefers-reduced-motion: reduce) { .clock-aurora::before, .clock-aurora-disc::after { animation: none } }
 .skeleton-bone { position: relative; overflow: hidden; background: var(--shell-bone) }
 .skeleton-bone::after {
   content: ""; position: absolute; inset: 0; transform: translateX(-100%);

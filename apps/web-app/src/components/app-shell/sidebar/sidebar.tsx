@@ -63,7 +63,10 @@ export function Sidebar() {
   return (
     <aside
       aria-label={t("nav.navigation", "Navigation")}
-      className="shell-motion relative z-40 hidden shrink-0 font-shell transition-[width] duration-300 ease-[cubic-bezier(.32,.72,0,1)] lg:block"
+      className={cn(
+        "shell-motion relative z-40 hidden shrink-0 font-shell lg:block",
+        "transition-[width] duration-300 ease-[cubic-bezier(.32,.72,0,1)]",
+      )}
       style={{ width: collapsed ? "var(--shell-rail)" : "var(--shell-open)" }}
     >
       <div

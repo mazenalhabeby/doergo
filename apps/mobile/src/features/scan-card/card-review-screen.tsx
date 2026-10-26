@@ -12,11 +12,7 @@ import { CardExtrasGroup } from '../customer/card-extras';
 import { CardDestinationPicker } from '../customer/card-destination';
 import { DuplicateSheet } from '../customer/card-duplicate';
 import {
-  cardAlternatives,
-  cardExtrasKept,
-  cardFieldsFor,
-  fieldNeedsLook,
-  homelessFields,
+  cardAlternatives, cardExtrasKept, cardFieldsFor, fieldNeedsLook, homelessFields,
   type CardFieldKey,
 } from '../customer/card-review';
 import { FIELD_INPUT, FIELD_LABEL, SAVE_LABEL, reasonSaveIsGrey } from './scan-card-copy';
@@ -24,10 +20,7 @@ import type { CardReview, useCardReview } from './use-card-review';
 import type { useCardSaveFlow } from './use-card-save-flow';
 
 /** The second state of the scanner: what was read, to be checked and saved. */
-export function CardReviewScreen({
-  review,
-  flow,
-}: {
+export function CardReviewScreen({ review, flow }: {
   review: ReturnType<typeof useCardReview> & { read: CardReview };
   flow: ReturnType<typeof useCardSaveFlow>;
 }) {
@@ -36,21 +29,9 @@ export function CardReviewScreen({
   const keyboard = useKeyboardHeight();
   const insets = useSafeAreaInsets();
   const {
-    read,
-    kind,
-    why,
-    destination,
-    company,
-    picking,
-    setValue,
-    toggleLines,
-    pickLine,
-    renameExtra,
-    setExtraValue,
-    dropExtra,
-    chooseDestination,
-    chooseKind,
-    scanAgain,
+    read, kind, why, destination, company, picking,
+    setValue, toggleLines, pickLine, renameExtra, setExtraValue, dropExtra,
+    chooseDestination, chooseKind, scanAgain,
   } = review;
   const { duplicate, saving, ready, attemptSave, saveAnyway, openExisting, useExistingCompany } = flow;
 
@@ -167,7 +148,11 @@ export function CardReviewScreen({
             selected={kind === 'COMPANY'}
             onPress={() => chooseKind('COMPANY')}
           />
-          <ChoiceChip label={t('scan.kindPerson')} selected={kind === 'PERSON'} onPress={() => chooseKind('PERSON')} />
+          <ChoiceChip
+            label={t('scan.kindPerson')}
+            selected={kind === 'PERSON'}
+            onPress={() => chooseKind('PERSON')}
+          />
         </View>
         <Text style={[s.why, { color: colors.textMuted }]}>{t(`scan.why.${why}`)}</Text>
 
@@ -178,7 +163,9 @@ export function CardReviewScreen({
         )}
 
         {captured.length > 0 && (
-          <CardFieldGroup title={t('scan.captured')}>{captured.map((key) => row(key))}</CardFieldGroup>
+          <CardFieldGroup title={t('scan.captured')}>
+            {captured.map((key) => row(key))}
+          </CardFieldGroup>
         )}
 
         {/* What the card said that no field wanted — kept, named and editable
@@ -225,11 +212,8 @@ export function CardReviewScreen({
           accessibilityRole="button"
           accessibilityState={{ disabled: saving || !ready, busy: saving }}
         >
-          {saving ? (
-            <ActivityIndicator size="small" color={COLORS.white} />
-          ) : (
-            <Text style={s.primaryText}>{t(SAVE_LABEL[destination])}</Text>
-          )}
+          {saving ? <ActivityIndicator size="small" color={COLORS.white} />
+                  : <Text style={s.primaryText}>{t(SAVE_LABEL[destination])}</Text>}
         </TouchableOpacity>
         {/* The reason Save is still grey, rather than a button that does
             nothing when pressed. */}
@@ -297,13 +281,7 @@ const s = StyleSheet.create({
   },
   poorBtnText: { color: COLORS.white, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold },
 
-  primary: {
-    borderRadius: RADIUS.md,
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: SPACING.xl,
-  },
+  primary: { borderRadius: RADIUS.md, height: 50, alignItems: 'center', justifyContent: 'center', marginTop: SPACING.xl },
   primaryText: { color: COLORS.white, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold },
   ghost: { alignItems: 'center', paddingVertical: SPACING.md },
 });

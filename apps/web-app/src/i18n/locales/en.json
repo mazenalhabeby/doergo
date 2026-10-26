@@ -3097,7 +3097,11 @@
       "askMoreTime": "Ask for more time",
       "askMoreTimeSent": "Your leader is asked. Time after the end counts once they agree.",
       "askMoreTimeWaiting": "Waiting for more time",
-      "clockedSpan": "clocked {{span}}"
+      "clockedSpan": "clocked {{span}}",
+      "untilTime": "until {{time}}",
+      "placesToChoose_one": "{{count}} workspace",
+      "placesToChoose_other": "{{count}} workspaces",
+      "out": "Out"
     },
     "management": {
       "title": "Attendance Management",
