@@ -489,14 +489,77 @@
   THE loading placeholder (Shimmer and ui/Skeleton both draw it): a bone with one sweep of light, CSS only.
   `.skeleton-wait` holds a page-shaped skeleton back 200 ms, so a page that arrives quickly shows no grey flash.
 */
-/* The toast pill (components/ui/sonner): jade; coral for an error, amber for a warning — by Sonner's data-type. */
-[data-sonner-toaster] { --width: 420px }
-[data-sonner-toast] { --toast-bg: var(--shell-accent-fill); --toast-ink: var(--shell-on-accent); --toast-disc: rgba(255, 255, 255, .18) }
-[data-sonner-toast][data-type="error"] { --toast-bg: linear-gradient(180deg, #c13a2f, #a92e25); --toast-ink: #fff }
-[data-sonner-toast][data-type="warning"] { --toast-bg: linear-gradient(180deg, #b87816, #9c640f); --toast-ink: #fff }
-.dark [data-sonner-toast] { --toast-disc: rgba(0, 0, 0, .1) }
-.dark [data-sonner-toast][data-type="error"] { --toast-bg: linear-gradient(180deg, #fda79d, #f3867a); --toast-ink: #2a0905 }
-.dark [data-sonner-toast][data-type="warning"] { --toast-bg: linear-gradient(180deg, #f6c37f, #eda955); --toast-ink: #241500 }
+/* The toast (components/ui/sonner, toast board): colours by Sonner's data-type, then the motion. */
+[data-sonner-toaster] { --width: 440px }
+[data-sonner-toast] {
+  --toast-bg: var(--shell-accent-fill); --toast-ink: var(--shell-on-accent); --toast-disc: rgba(255, 255, 255, .2);
+  --toast-life: 4s }
+[data-sonner-toast][data-type="error"] { --toast-bg: linear-gradient(135deg, #c13a2f, #a92e25); --toast-ink: #fff; --toast-life: 8s }
+[data-sonner-toast][data-type="warning"] { --toast-bg: linear-gradient(135deg, #b87816, #9c640f); --toast-ink: #fff; --toast-life: 6s }
+[data-sonner-toast]:is([data-type="info"], [data-type="loading"]) {
+  --toast-bg: linear-gradient(135deg, #1b2a26, #0f1c18); --toast-ink: #f1f6fa; --toast-disc: rgba(255, 255, 255, .12); --toast-life: 5s }
+.dark [data-sonner-toast] { --toast-disc: rgba(0, 0, 0, .08) }
+.dark [data-sonner-toast][data-type="error"] { --toast-bg: linear-gradient(135deg, #fda79d, #f3867a); --toast-ink: #2a0905 }
+.dark [data-sonner-toast][data-type="warning"] { --toast-bg: linear-gradient(135deg, #f6c37f, #eda955); --toast-ink: #241500 }
+.dark [data-sonner-toast]:is([data-type="info"], [data-type="loading"]) {
+  --toast-bg: linear-gradient(135deg, #eef4f1, #dbe6e1); --toast-ink: #0b1f1a; --toast-disc: rgba(0, 0, 0, .06) }
+
+.toast-pill {
+  color: var(--toast-ink);
+  /* the sheen is a background LAYER (Sonner owns ::before/::after), crossing once as the toast lands */
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .26) 50%, transparent 70%) -150% 0 / 60% 100% no-repeat,
+    var(--toast-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), 0 24px 44px -14px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .06);
+  animation: toast-land .6s cubic-bezier(.2, 1.2, .3, 1) both, toast-sheen 1.1s .35s ease-out both }
+[data-sonner-toast].toast-pill { transition: transform .55s cubic-bezier(.2, 1.2, .3, 1), opacity .35s, height .4s, box-shadow .2s }
+@keyframes toast-land { from { filter: blur(6px) } }
+@keyframes toast-sheen { from { background-position: -150% 0, 0 0 } to { background-position: 250% 0, 0 0 } }
+.toast-pill:is([data-type="info"], [data-type="loading"]) { animation: toast-land .6s cubic-bezier(.2, 1.2, .3, 1) both }
+
+.toast-icon { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--toast-disc) }
+[data-type="success"] .toast-icon path { stroke-width: 2.4; stroke-dasharray: 22; stroke-dashoffset: 22; animation: toast-draw .45s .35s cubic-bezier(.65, 0, .35, 1) forwards }
+:is([data-type="error"], [data-type="warning"], [data-type="info"]) .toast-icon svg { animation: toast-pop .5s .3s cubic-bezier(.34, 1.56, .64, 1) both }
+[data-type="error"] .toast-icon { animation: toast-shake .42s .5s both }
+@keyframes toast-draw { to { stroke-dashoffset: 0 } }
+@keyframes toast-pop { from { transform: scale(0) } }
+@keyframes toast-shake { 20% { transform: translateX(-5px) } 40% { transform: translateX(4px) } 60% { transform: translateX(-2px) } 80% { transform: translateX(1px) } }
+
+/* time left: a thin line along the bottom shrinking to the centre; it stops while the toasts are hovered */
+.toast-life {
+  position: absolute; left: 22px; right: 22px; bottom: 5px; height: 2.5px; border-radius: 3px; background: currentColor;
+  opacity: .4; transform-origin: center; animation: toast-life var(--toast-life) linear forwards }
+[data-sonner-toast][data-expanded="true"] .toast-life { animation-play-state: paused }
+@keyframes toast-life { to { transform: scaleX(0) } }
+
+/* work in progress: a page being scanned, and a line sweeping along the bottom */
+.toast-scan { position: relative; display: grid; flex: none; place-items: center; width: 34px; height: 40px; overflow: hidden; opacity: .9 }
+.toast-scan::after {
+  content: ""; position: absolute; left: 6px; right: 6px; height: 2px; border-radius: 2px; background: #10b993;
+  box-shadow: 0 0 8px #10b993; animation: toast-scan 1.3s ease-in-out infinite alternate }
+@keyframes toast-scan { from { top: 9px } to { top: 30px } }
+.toast-sweep { position: absolute; left: 22px; right: 22px; bottom: 5px; height: 2.5px; border-radius: 3px; overflow: hidden; background: rgba(127, 127, 127, .25) }
+.toast-sweep::after {
+  content: ""; position: absolute; inset: 0; width: 35%; border-radius: 3px; background: linear-gradient(90deg, #10b993, #7fe6c8);
+  animation: toast-sweep 1.4s cubic-bezier(.65, 0, .35, 1) infinite }
+@keyframes toast-sweep { from { transform: translateX(-100%) } to { transform: translateX(290%) } }
+
+/* Sonner centres its loader absolutely; ours sits in line, where the other icons sit */
+.toast-pill .sonner-loader { position: static; transform: none; display: contents }
+.toast-description { color: var(--toast-ink); opacity: .85 }
+.toast-action { background: rgba(255, 255, 255, .22); color: var(--toast-ink); transition: background-color .2s, transform .2s }
+.toast-action:hover { background: rgba(255, 255, 255, .32); transform: scale(1.04) }
+.dark .toast-action { background: rgba(0, 0, 0, .1) }
+.dark .toast-action:hover { background: rgba(0, 0, 0, .16) }
+/* the close × appears only on hover, at the pill's top-left */
+.toast-close {
+  position: absolute; left: 6px; top: 6px; display: grid; width: 20px; height: 20px; place-items: center; border-radius: 50%;
+  background: var(--shell-card); color: var(--shell-ink); box-shadow: 0 2px 6px rgba(0, 0, 0, .25); opacity: 0; transition: opacity .2s }
+[data-sonner-toast]:hover .toast-close, .toast-close:focus-visible { opacity: 1 }
+.toast-close svg { width: 10px; height: 10px }
+@media (prefers-reduced-motion: reduce) {
+  .toast-pill, .toast-pill *, .toast-pill *::after { animation: none !important }
+  [data-type="success"] .toast-icon path { stroke-dashoffset: 0 } }
+
 /*
   The clock button (clock-button board, option A — "Aurora"): a light circling the edge, a breathing disc.
   Jade before clocking in; white with a jade light while the clock runs ([data-on]). CSS only.
