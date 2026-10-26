@@ -97,7 +97,7 @@ export function SidebarNav({
             const row = cn(
               "group/row relative flex h-10 w-full items-center gap-3 rounded-xl pl-[15px] pr-2.5 text-sm",
               "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-shell-accent",
-              active ? "bg-shell-nav-on font-semibold text-shell-nav-on-ink" : "text-shell-ink hover:bg-shell-hover",
+              active ? "bg-shell-nav-on font-semibold text-shell-nav-on-ink" : "font-medium text-shell-ink hover:bg-shell-hover",
             )
             const inner = (
               <>
@@ -216,7 +216,7 @@ function Kids({
                 className={cn(
                   "flex h-[34px] items-center gap-2 whitespace-nowrap rounded-[10px] px-2.5 text-[13.5px] outline-none",
                   "transition-colors focus-visible:ring-2 focus-visible:ring-shell-accent",
-                  on ? "bg-shell-nav-on font-semibold text-shell-nav-on-ink" : "text-shell-ink hover:bg-shell-hover",
+                  on ? "bg-shell-nav-on font-semibold text-shell-nav-on-ink" : "font-medium text-shell-ink hover:bg-shell-hover",
                 )}
               >
                 <span className="flex-1 truncate">{label(k)}</span>

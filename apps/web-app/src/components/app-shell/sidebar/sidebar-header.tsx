@@ -94,7 +94,7 @@ export function SidebarHeader({ rail }: { rail: boolean }) {
         align="start"
         side={rail ? "right" : "bottom"}
         sideOffset={8}
-        className="w-72 rounded-xl p-1.5"
+        className="w-72 rounded-xl p-1.5 font-shell"
       >
         <DropdownMenuLabel className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {t("nav.spaces", "Workspaces")}

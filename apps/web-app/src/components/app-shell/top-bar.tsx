@@ -31,7 +31,7 @@ export function TopBar() {
   useEffect(() => setMenuOpen(false), [pathname])
 
   return (
-    <header className="relative z-30 shrink-0 bg-background">
+    <header className="relative z-30 shrink-0 bg-background font-shell">
       {/* The page column (PAGE_WIDTH): search lines up with the page's own left edge. */}
       <div className={cn(PAGE_WIDTH, "flex items-center gap-2.5 py-3")}>
         <TopBarButton
@@ -67,7 +67,7 @@ export function TopBar() {
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent
           side="left"
-          className="flex w-[300px] max-w-[85vw] flex-col bg-shell-card p-3 pr-2.5 sm:max-w-[300px]"
+          className="flex w-[300px] max-w-[85vw] flex-col bg-shell-card p-3 font-shell pr-2.5 sm:max-w-[300px]"
         >
           <SheetTitle className="sr-only">{t("nav.navigation", "Navigation")}</SheetTitle>
           {menuOpen && (

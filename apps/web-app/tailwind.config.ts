@@ -95,6 +95,10 @@ const config: Config = {
         overshoot: "cubic-bezier(0.68, -0.15, 0.32, 1.15)",
       },
       /* The shell's two shadows, from CSS (light + dark). Named so cn() knows they ARE shadows — see lib/utils. */
+      // The app shell's face (layout.tsx loads Geist through next/font) — the redesign boards draw the shell in it.
+      fontFamily: {
+        shell: ["var(--font-geist)", "system-ui", "-apple-system", "sans-serif"],
+      },
       boxShadow: {
         shell: "var(--shell-shadow)",
         "shell-pop": "var(--shell-pop-shadow)",
