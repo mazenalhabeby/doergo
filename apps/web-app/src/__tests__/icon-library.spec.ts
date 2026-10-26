@@ -34,7 +34,6 @@ describe("the icon library", () => {
         "account-menu.tsx",
         "language-panel.tsx",
         "slide-panels.tsx",
-        "approvals-button.tsx",
         "messages-button.tsx",
         "command-palette-button.tsx",
       ].map((f) => path.join(SRC, "components/app-shell", f)),

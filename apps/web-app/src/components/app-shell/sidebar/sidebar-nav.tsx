@@ -16,8 +16,9 @@ import { Icon } from "@/components/ui/icon"
 
 const EASE = "duration-300 ease-[cubic-bezier(.32,.72,0,1)]"
 /** The count beside a row or a page (decisions waiting, documents to hand in). */
-const COUNT_PILL =
-  "grid h-5 min-w-5 place-items-center rounded-full bg-shell-warn px-1.5 text-[11px] font-bold tabular-nums text-shell-on-warn"
+const COUNT_PILL = "grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-bold tabular-nums"
+/** Amber; coral when something cannot wait (a person out of the ring now, extra time on a running shift). */
+const pillTone = (urgent: boolean) => (urgent ? "bg-shell-crit text-white" : "bg-shell-warn text-shell-on-warn")
 
 /**
  * The menu list — the desktop sidebar, its rail and the phone drawer all render THIS (one list, one look).
@@ -38,7 +39,7 @@ export function SidebarNav({
   const router = useRouter()
   const { user } = useAuth()
   const prefetch = usePrefetchRoutes(!!user && mayListOrgMembers(user))
-  const counts = useCounts(sections)
+  const { counts, urgent } = useCounts(sections)
 
   // The group holding the current page is open; others open and close in place.
   const activeGroup = useMemo(
@@ -94,10 +95,13 @@ export function SidebarNav({
             const isGroup = !!item.kids && !rail
             const expanded = isGroup && open.has(item.href)
             const count = item.badge ? counts[item.badge] : 0
+            const hot = item.badge === "approvals" && urgent
             const row = cn(
               "group/row relative flex h-10 w-full items-center gap-3 rounded-xl pl-[15px] pr-2.5 text-sm",
               "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-shell-accent",
-              active ? "bg-shell-nav-on font-semibold text-shell-nav-on-ink" : "font-medium text-shell-ink hover:bg-shell-hover",
+              active
+                ? "bg-shell-nav-on font-semibold text-shell-nav-on-ink"
+                : "font-medium text-shell-ink hover:bg-shell-hover",
             )
             const inner = (
               <>
@@ -114,12 +118,17 @@ export function SidebarNav({
                   {rail && count > 0 && (
                     <span
                       aria-hidden
-                      className="absolute -right-1 -top-[3px] size-2 rounded-full border-2 border-shell-card bg-shell-warn"
+                      className={cn(
+                        "absolute -right-1 -top-[3px] size-2 rounded-full border-2 border-shell-card",
+                        hot ? "bg-shell-crit" : "bg-shell-warn",
+                      )}
                     />
                   )}
                 </span>
                 {!rail && <span className="min-w-0 flex-1 truncate text-left">{label(item)}</span>}
-                {!rail && count > 0 && <span className={COUNT_PILL}>{count > 99 ? "99+" : count}</span>}
+                {!rail && count > 0 && (
+                  <span className={cn(COUNT_PILL, pillTone(hot))}>{count > 99 ? "99+" : count}</span>
+                )}
                 {isGroup && (
                   <Icon
                     name="chevronRight"
@@ -147,7 +156,14 @@ export function SidebarNav({
                     prefetch={false}
                     className={row}
                     aria-current={active ? "page" : undefined}
-                    aria-label={rail ? label(item) : undefined}
+                    aria-label={
+                      // The inbox says how many wait ("Approvals, 6 waiting") — the number alone is noise.
+                      item.badge === "approvals" && count > 0
+                        ? t("approvals.navLabel", { count })
+                        : rail
+                          ? label(item)
+                          : undefined
+                    }
                     title={rail ? label(item) : undefined}
                     data-tour={item.tour}
                     onMouseEnter={() => warm(item.href)}
@@ -216,11 +232,13 @@ function Kids({
                 className={cn(
                   "flex h-[34px] items-center gap-2 whitespace-nowrap rounded-[10px] px-2.5 text-[13.5px] outline-none",
                   "transition-colors focus-visible:ring-2 focus-visible:ring-shell-accent",
-                  on ? "bg-shell-nav-on font-semibold text-shell-nav-on-ink" : "font-medium text-shell-ink hover:bg-shell-hover",
+                  on
+                    ? "bg-shell-nav-on font-semibold text-shell-nav-on-ink"
+                    : "font-medium text-shell-ink hover:bg-shell-hover",
                 )}
               >
                 <span className="flex-1 truncate">{label(k)}</span>
-                {count > 0 && <span className={COUNT_PILL}>{count}</span>}
+                {count > 0 && <span className={cn(COUNT_PILL, pillTone(false))}>{count}</span>}
               </Link>
             )
           })}
@@ -231,11 +249,14 @@ function Kids({
 }
 
 /** The live counts beside rows — reads that already exist (the inbox count, the documents reminder). */
-function useCounts(sections: NavSection[]): Record<"approvals" | "myDocuments", number> {
-  const { allowed, total } = useApprovalsCount()
+function useCounts(sections: NavSection[]): {
+  counts: Record<"approvals" | "myDocuments", number>
+  urgent: boolean
+} {
+  const { allowed, total, urgent } = useApprovalsCount()
   const offersMyDocs = sections.some((s) =>
     s.items.some((i) => i.badge === "myDocuments" && (i.kids ?? [i]).some((k) => k.href === "/my/documents")),
   )
   const { actionCount } = useMyDocumentRequirements({ when: offersMyDocs })
-  return { approvals: allowed ? total : 0, myDocuments: actionCount ?? 0 }
+  return { counts: { approvals: allowed ? total : 0, myDocuments: actionCount ?? 0 }, urgent: allowed && urgent }
 }

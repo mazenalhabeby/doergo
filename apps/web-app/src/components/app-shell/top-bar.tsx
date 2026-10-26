@@ -10,7 +10,6 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { useSyncLocale } from "@/hooks/use-sync-locale"
 import { PAGE_WIDTH } from "@/components/ui/page-width"
 import { cn } from "@/lib/utils"
-import { ApprovalsButton } from "./approvals-button"
 import { CommandPaletteButton } from "./command-palette-button"
 import { MessagesButton } from "./messages-button"
 import { SidebarBody } from "./sidebar/sidebar"
@@ -18,8 +17,8 @@ import { TopBarButton } from "./top-bar-icon"
 import { Icon } from "@/components/ui/icon"
 
 /**
- * The top of the page panel: search (⌘K) on the left; on the right ONE group — what needs you (Approvals,
- * Messages, Notifications) and help. Below lg the menu button opens the same sidebar as a drawer.
+ * The top of the page panel: search (⌘K) on the left; on the right ONE group — what needs you (Messages,
+ * Notifications) and help. Below lg the menu button opens the same sidebar as a drawer.
  */
 export function TopBar() {
   const { t } = useTranslation()
@@ -52,7 +51,6 @@ export function TopBar() {
               "shadow-shell",
             )}
           >
-            <ApprovalsButton />
             <MessagesButton />
             <NotificationBell />
             {/* On a phone these two live in the menu drawer — the bar keeps what needs you. */}
