@@ -1,6 +1,5 @@
 "use client"
 
-import { useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
@@ -50,14 +49,13 @@ export function SidebarBody({
 }
 
 /**
- * The desktop sidebar (≥ lg): 268px, or the 76px rail. The column keeps its width while a collapsed rail PEEKS,
- * so the page never moves; the panel floats over it with a shadow instead.
+ * The desktop sidebar (≥ lg): 268px, or the 76px rail — changed only by the toggle or "[" (no hover-open; see
+ * use-sidebar-state).
  */
 export function Sidebar() {
   const { t } = useTranslation()
-  const { collapsed, peeking, toggle, peekIn, peekOut } = useSidebarState()
-  const panel = useRef<HTMLDivElement>(null)
-  const rail = collapsed && !peeking
+  const { collapsed, toggle } = useSidebarState()
+  const rail = collapsed
   const label = collapsed ? t("nav.expandMenu", "Open the menu") : t("nav.collapseMenu", "Collapse the menu")
 
   return (
@@ -70,17 +68,9 @@ export function Sidebar() {
       style={{ width: collapsed ? "var(--shell-rail)" : "var(--shell-open)" }}
     >
       <div
-        ref={panel}
-        onMouseEnter={collapsed ? peekIn : undefined}
-        onMouseLeave={collapsed ? peekOut : undefined}
-        onFocusCapture={collapsed ? peekIn : undefined}
-        onBlurCapture={(e) => {
-          if (collapsed && !panel.current?.contains(e.relatedTarget as Node | null)) peekOut()
-        }}
         className={cn(
           "absolute bottom-2.5 left-0 top-2.5 flex flex-col overflow-hidden rounded-r-3xl py-3 pl-3 pr-2.5",
-          "transition-[width,background-color,box-shadow] duration-300 ease-[cubic-bezier(.32,.72,0,1)]",
-          peeking && "bg-shell-card shadow-shell-pop backdrop-blur-xl",
+          "transition-[width] duration-300 ease-[cubic-bezier(.32,.72,0,1)]",
         )}
         style={{ width: rail ? "var(--shell-rail)" : "var(--shell-open)" }}
       >

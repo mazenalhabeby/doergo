@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 const KEY = "hbcfield-sidebar-collapsed"
 
@@ -13,17 +13,16 @@ function readCollapsed(): boolean {
 }
 
 /**
- * Open or collapsed (the 76px rail), remembered on this browser; "[" toggles it (not while typing). When
- * collapsed, hovering or focusing the rail PEEKS — the full menu floats over the page without moving it —
- * after a short delay so a pointer passing by does not flash it open.
+ * Open or collapsed (the 76px rail), remembered on this browser; "[" toggles it (not while typing).
+ *
+ * ⚠️ The rail does NOT open on hover (2026-10-26). It used to "peek" after 140 ms, and the left edge is where
+ * the pointer passes all day (the back button, a scrollbar, the page's own left column) — every pass opened
+ * it and ran the animation for nobody. Collapsed means collapsed; each icon names itself in a tooltip.
  */
 export function useSidebarState() {
   const [collapsed, setCollapsed] = useState<boolean>(readCollapsed)
-  const [peek, setPeek] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const toggle = useCallback(() => {
-    setPeek(false)
     setCollapsed((c) => {
       try {
         localStorage.setItem(KEY, c ? "0" : "1")
@@ -46,24 +45,5 @@ export function useSidebarState() {
     return () => window.removeEventListener("keydown", onKey)
   }, [toggle])
 
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current)
-    },
-    [],
-  )
-
-  const schedule = useCallback((open: boolean, ms: number) => {
-    if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(() => setPeek(open), ms)
-  }, [])
-
-  return {
-    collapsed,
-    /** Collapsed, but floating open over the page right now. */
-    peeking: collapsed && peek,
-    toggle,
-    peekIn: useCallback(() => schedule(true, 140), [schedule]),
-    peekOut: useCallback(() => schedule(false, 220), [schedule]),
-  }
+  return { collapsed, toggle }
 }

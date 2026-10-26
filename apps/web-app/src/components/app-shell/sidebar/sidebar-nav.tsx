@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
@@ -13,6 +13,7 @@ import { isActive, isEntryActive } from "../nav/nav-active"
 import { usePrefetchRoutes } from "../nav/use-prefetch-routes"
 import type { NavLeaf, NavSection } from "../nav/nav-config"
 import { Icon } from "@/components/ui/icon"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const EASE = "duration-300 ease-[cubic-bezier(.32,.72,0,1)]"
 /** The count beside a row or a page (decisions waiting, documents to hand in). */
@@ -74,122 +75,125 @@ export function SidebarNav({
   const label = (x: NavLeaf) => t(x.label, x.fallback)
 
   return (
-    <nav aria-label={t("nav.navigation", "Navigation")} className="flex flex-col gap-0.5">
-      {sections.map((section, si) => (
-        <div key={section.key} className={cn("flex flex-col gap-px", si > 0 && "pt-3")}>
-          {section.label && (
-            <div className="relative flex h-[26px] items-center pl-3">
-              <span
-                className={cn(
-                  "whitespace-nowrap text-[11.5px] font-semibold uppercase tracking-[0.06em] text-shell-soft transition-opacity",
-                  rail && "opacity-0",
-                )}
-              >
-                {t(section.label.key, section.label.fallback)}
-              </span>
-              {rail && <span aria-hidden className="absolute inset-x-3.5 top-1/2 h-px bg-shell-line" />}
-            </div>
-          )}
-          {section.items.map((item) => {
-            const active = isEntryActive(pathname, item)
-            const isGroup = !!item.kids && !rail
-            const expanded = isGroup && open.has(item.href)
-            const count = item.badge ? counts[item.badge] : 0
-            const hot = item.badge === "approvals" && urgent
-            const row = cn(
-              "group/row relative flex h-10 w-full items-center gap-3 rounded-xl pl-[15px] pr-2.5 text-sm",
-              "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-shell-accent",
-              active
-                ? "bg-shell-nav-on font-semibold text-shell-nav-on-ink"
-                : "font-medium text-shell-ink hover:bg-shell-hover",
-            )
-            const inner = (
-              <>
+    <TooltipProvider delayDuration={120} skipDelayDuration={400}>
+      <nav aria-label={t("nav.navigation", "Navigation")} className="flex flex-col gap-0.5">
+        {sections.map((section, si) => (
+          <div key={section.key} className={cn("flex flex-col gap-px", si > 0 && "pt-3")}>
+            {section.label && (
+              <div className="relative flex h-[26px] items-center pl-3">
                 <span
-                  aria-hidden
                   className={cn(
-                    "absolute bottom-2.5 left-[3px] top-2.5 w-[3px] origin-center rounded bg-shell-accent transition-transform",
-                    EASE,
-                    active ? "scale-y-100" : "scale-y-0",
+                    "whitespace-nowrap text-[11.5px] font-semibold uppercase tracking-[0.06em] text-shell-soft transition-opacity",
+                    rail && "opacity-0",
                   )}
-                />
-                <span className={cn("relative grid shrink-0 place-items-center", !active && "text-shell-soft")}>
-                  <Icon name={item.icon} size={20} />
-                  {rail && count > 0 && (
-                    <span
-                      aria-hidden
-                      className={cn(
-                        "absolute -right-1 -top-[3px] size-2 rounded-full border-2 border-shell-card",
-                        hot ? "bg-shell-crit" : "bg-shell-warn",
-                      )}
+                >
+                  {t(section.label.key, section.label.fallback)}
+                </span>
+                {rail && <span aria-hidden className="absolute inset-x-3.5 top-1/2 h-px bg-shell-line" />}
+              </div>
+            )}
+            {section.items.map((item) => {
+              const active = isEntryActive(pathname, item)
+              const isGroup = !!item.kids && !rail
+              const expanded = isGroup && open.has(item.href)
+              const count = item.badge ? counts[item.badge] : 0
+              const hot = item.badge === "approvals" && urgent
+              const row = cn(
+                "group/row relative flex h-10 w-full items-center gap-3 rounded-xl pl-[15px] pr-2.5 text-sm",
+                "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-shell-accent",
+                active
+                  ? "bg-shell-nav-on font-semibold text-shell-nav-on-ink"
+                  : "font-medium text-shell-ink hover:bg-shell-hover",
+              )
+              const inner = (
+                <>
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute bottom-2.5 left-[3px] top-2.5 w-[3px] origin-center rounded bg-shell-accent transition-transform",
+                      EASE,
+                      active ? "scale-y-100" : "scale-y-0",
+                    )}
+                  />
+                  <span className={cn("relative grid shrink-0 place-items-center", !active && "text-shell-soft")}>
+                    <Icon name={item.icon} size={20} />
+                    {rail && count > 0 && (
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "absolute -right-1 -top-[3px] size-2 rounded-full border-2 border-shell-card",
+                          hot ? "bg-shell-crit" : "bg-shell-warn",
+                        )}
+                      />
+                    )}
+                  </span>
+                  {!rail && <span className="min-w-0 flex-1 truncate text-left">{label(item)}</span>}
+                  {!rail && count > 0 && (
+                    <span className={cn(COUNT_PILL, pillTone(hot))}>{count > 99 ? "99+" : count}</span>
+                  )}
+                  {isGroup && (
+                    <Icon
+                      name="chevronRight"
+                      size={14}
+                      className={cn("text-shell-soft transition-transform", EASE, expanded && "rotate-90")}
                     />
                   )}
-                </span>
-                {!rail && <span className="min-w-0 flex-1 truncate text-left">{label(item)}</span>}
-                {!rail && count > 0 && (
-                  <span className={cn(COUNT_PILL, pillTone(hot))}>{count > 99 ? "99+" : count}</span>
-                )}
-                {isGroup && (
-                  <Icon
-                    name="chevronRight"
-                    size={14}
-                    className={cn("text-shell-soft transition-transform", EASE, expanded && "rotate-90")}
-                  />
-                )}
-              </>
-            )
-            return (
-              <div key={item.href + item.label}>
-                {isGroup ? (
-                  <button
-                    type="button"
-                    className={row}
-                    aria-expanded={expanded}
-                    data-tour={item.tour}
-                    onClick={() => toggleGroup(item.href)}
-                  >
-                    {inner}
-                  </button>
-                ) : (
-                  <Link
-                    href={item.href}
-                    prefetch={false}
-                    className={row}
-                    aria-current={active ? "page" : undefined}
-                    aria-label={
-                      // The inbox says how many wait ("Approvals, 6 waiting") — the number alone is noise.
-                      item.badge === "approvals" && count > 0
-                        ? t("approvals.navLabel", { count })
-                        : rail
-                          ? label(item)
-                          : undefined
-                    }
-                    title={rail ? label(item) : undefined}
-                    data-tour={item.tour}
-                    onMouseEnter={() => warm(item.href)}
-                    onFocus={() => warm(item.href)}
-                    onClick={onNavigate}
-                  >
-                    {inner}
-                  </Link>
-                )}
-                {isGroup && (
-                  <Kids
-                    kids={item.kids!}
-                    open={expanded}
-                    pathname={pathname}
-                    label={label}
-                    warm={warm}
-                    onNavigate={onNavigate}
-                    myDocs={item.badge === "myDocuments" ? counts.myDocuments : 0}
-                  />
-                )}
-              </div>
-            )
-          })}
-        </div>
-      ))}
-    </nav>
+                </>
+              )
+              return (
+                <div key={item.href + item.label}>
+                  {isGroup ? (
+                    <button
+                      type="button"
+                      className={row}
+                      aria-expanded={expanded}
+                      data-tour={item.tour}
+                      onClick={() => toggleGroup(item.href)}
+                    >
+                      {inner}
+                    </button>
+                  ) : (
+                    <RailTip rail={rail} label={label(item)} count={count}>
+                      <Link
+                        href={item.href}
+                        prefetch={false}
+                        className={row}
+                        aria-current={active ? "page" : undefined}
+                        aria-label={
+                          // The inbox says how many wait ("Approvals, 6 waiting") — the number alone is noise.
+                          item.badge === "approvals" && count > 0
+                            ? t("approvals.navLabel", { count })
+                            : rail
+                              ? label(item)
+                              : undefined
+                        }
+                        data-tour={item.tour}
+                        onMouseEnter={() => warm(item.href)}
+                        onFocus={() => warm(item.href)}
+                        onClick={onNavigate}
+                      >
+                        {inner}
+                      </Link>
+                    </RailTip>
+                  )}
+                  {isGroup && (
+                    <Kids
+                      kids={item.kids!}
+                      open={expanded}
+                      pathname={pathname}
+                      label={label}
+                      warm={warm}
+                      onNavigate={onNavigate}
+                      myDocs={item.badge === "myDocuments" ? counts.myDocuments : 0}
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        ))}
+      </nav>
+    </TooltipProvider>
   )
 }
 
@@ -259,4 +263,32 @@ function useCounts(sections: NavSection[]): {
   )
   const { actionCount } = useMyDocumentRequirements({ when: offersMyDocs })
   return { counts: { approvals: allowed ? total : 0, myDocuments: actionCount ?? 0 }, urgent: allowed && urgent }
+}
+
+const RAIL_TIP =
+  "flex items-center gap-2 rounded-lg bg-shell-ink px-2.5 py-1.5 font-shell text-[13px] font-medium text-shell-card " +
+  "shadow-shell-pop"
+
+/** On the collapsed rail an icon names itself here (and how many wait) — the rail never opens on hover. */
+function RailTip({
+  rail,
+  label,
+  count,
+  children,
+}: {
+  rail: boolean
+  label: string
+  count: number
+  children: ReactNode
+}) {
+  if (!rail) return <>{children}</>
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="right" sideOffset={12} className={RAIL_TIP}>
+        {label}
+        {count > 0 && <span className={cn(COUNT_PILL, pillTone(false))}>{count > 99 ? "99+" : count}</span>}
+      </TooltipContent>
+    </Tooltip>
+  )
 }
