@@ -1,7 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { AlertTriangle, ChevronLeft, Inbox, RefreshCw, ScrollText, UserRoundCheck } from "lucide-react"
+import { AlertTriangle, ChevronLeft, Inbox, RefreshCw, UserRoundCheck } from "lucide-react"
 import { APPROVAL_GROUPS, APPROVAL_KINDS, type ApprovalT, describeApproval } from "@hbcfield/shared/client"
 
 import { dateLocale, formatTimeAgo } from "@/lib/format-date"
@@ -18,8 +18,8 @@ import { ApprovalRow } from "./_components/approval-row"
 import { DayRow } from "./_components/day-row"
 import { DayPanel } from "./_components/day-panel"
 
-// Opened by a button: never part of the first load.
-const RulesDialog = dynamic(() => import("./_components/rules-dialog").then((m) => m.RulesDialog), { ssr: false })
+// Its own tab: never part of the inbox's first load.
+const RulesTree = dynamic(() => import("./_components/rules-tree/rules-tree").then((m) => m.RulesTree), { ssr: false })
 
 const StandInDialog = dynamic(() => import("./_components/stand-in-dialog").then((m) => m.StandInDialog), {
   ssr: false,
@@ -46,8 +46,8 @@ export default function ApprovalsPage() {
     setSelected,
     standInOpen,
     setStandInOpen,
-    rulesOpen,
-    setRulesOpen,
+    tab,
+    setTab,
     managesPeople,
     isLoading,
     isError,
@@ -81,12 +81,6 @@ export default function ApprovalsPage() {
               <span className="hidden text-sm text-muted-foreground sm:inline">
                 {t("approvals.updated", { time: formatTimeAgo(dataUpdatedAt) })}
               </span>
-            )}
-            {managesPeople && (
-              <Button variant="outline" size="pill" onClick={() => setRulesOpen(true)}>
-                <ScrollText />
-                {t("approvals.rules.open")}
-              </Button>
             )}
             {/* An external member never hands their decisions on (the server refuses STAND_IN_EXTERNAL). */}
             {!user?.isExternal && (
@@ -122,7 +116,31 @@ export default function ApprovalsPage() {
         </Notice>
       )}
 
-      {isError ? (
+      {managesPeople && (
+        <div role="tablist" aria-label={t("approvals.title")} className="mb-4 flex gap-1 border-b border-border">
+          {(["decide", "rules"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="tab"
+              aria-selected={tab === k}
+              onClick={() => setTab(k)}
+              className={cn(
+                "-mb-px h-11 border-b-2 px-3 text-sm font-semibold transition-colors",
+                tab === k
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t(`approvals.tree.tab.${k}`)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {tab === "rules" && managesPeople ? (
+        <RulesTree />
+      ) : isError ? (
         <ListTableError title={t("approvals.loadFailed")} error={error} onRetry={() => refetch()} />
       ) : (
         <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)_minmax(320px,400px)]">
@@ -245,7 +263,6 @@ export default function ApprovalsPage() {
         </div>
       )}
       {standInOpen && <StandInDialog open={standInOpen} onOpenChange={setStandInOpen} />}
-      {rulesOpen && <RulesDialog open={rulesOpen} onOpenChange={setRulesOpen} />}
     </div>
   )
 }

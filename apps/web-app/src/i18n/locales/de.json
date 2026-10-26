@@ -9844,12 +9844,6 @@
       "short": "braucht {{role}}"
     },
     "rules": {
-      "open": "Regeln",
-      "title": "Freigaberegeln",
-      "intro": "Ab einer Schwelle braucht eine Entscheidung eine zweite Person. Das gilt überall — Eingang, bisherige Seiten und Handy.",
-      "none": "Noch keine Regeln — jede Entscheidung braucht eine Person.",
-      "add": "Regel hinzufügen",
-      "kindLabel": "Was",
       "kind": {
         "overtime": "Überstunden und Mehrzeit",
         "request": "Urlaub und Anträge",
@@ -9857,35 +9851,9 @@
       },
       "where": "Wo",
       "everywhere": "allen Arbeitsbereichen",
-      "threshold": {
-        "overtime": "Mehr als (Stunden)",
-        "request": "Mehr als (Arbeitstage)",
-        "expense": "Mehr als ({{currency}})"
-      },
-      "thresholdHint": "Leer = immer",
-      "secondRole": "Zweite Freigabe durch",
-      "pickRole": "Rolle wählen",
-      "save": "Regel hinzufügen",
-      "saved": "Regel gespeichert.",
       "active": "Aktiv",
       "remove": "Entfernen",
-      "always": "immer",
-      "whenOvertime": "über {{hours}} h",
-      "whenDays_one": "über {{count}} Tag",
-      "whenDays_other": "über {{count}} Tage",
-      "whenAmount": "über {{amount}}",
-      "whenCover": "wenn die Besetzung unter das Minimum fiele",
-      "head": "{{what}} {{when}} in {{where}}:",
-      "needs": "braucht auch {{role}}.",
-      "reminds": "Erinnerung nach {{hours}} h.",
-      "escalates": "An {{role}} nach {{hours}} h.",
-      "noSecond": "Keine zweite Freigabe",
-      "coverLabel": "Nur wenn die Besetzung unter das Minimum fiele (oder eine Qualifikation fehlte)",
-      "noAnswer": "Wenn niemand antwortet",
-      "remindAfter": "Erinnern nach (Stunden)",
-      "escalateAfter": "Weitergeben nach (Stunden)",
-      "escalateTo": "Weitergeben an",
-      "noAnswerHint": "Erinnerungen gehen an alle, die heute entscheiden können (nicht an Abwesende). Geben Sie es an eine Rolle weiter, die entscheiden kann."
+      "noAnswer": "Wenn niemand antwortet"
     },
     "viewFile": {
       "document": "Dokument ansehen",
@@ -9927,6 +9895,51 @@
       "approved": "Tag für {{name}} bestätigt",
       "stopped": "Angehalten bei {{what}}: {{reason}}",
       "members": "An diesem Tag"
+    },
+    "tree": {
+      "tab": {
+        "decide": "Zu entscheiden",
+        "rules": "Wer genehmigt"
+      },
+      "intro": "Wähle, was genehmigt werden muss. Füge eine Regel hinzu, wenn es zusätzlich an jemand anderen gehen oder nachgefasst werden soll, wenn niemand antwortet.",
+      "newRule": "＋ Neue Regel",
+      "what": "Was muss genehmigt werden?",
+      "first": "Erste Genehmigung",
+      "firstBy": {
+        "overtime": "Alle, die in diesem Arbeitsbereich Überstunden genehmigen dürfen",
+        "request": "Alle, die in diesem Arbeitsbereich den Dienstplan planen",
+        "expense": "Alle, die in diesem Arbeitsbereich die Ausrüstung verwalten"
+      },
+      "rule": "Regel {{n}}",
+      "in": "in",
+      "moreThan": "mehr als",
+      "any": "beliebig",
+      "unit": {
+        "overtime": "Std.",
+        "request": "Arbeitstage",
+        "expense": "{{currency}}"
+      },
+      "coverShort": "nur wenn Leute fehlen würden",
+      "alsoBy": "Dann zusätzlich genehmigt von",
+      "nobodySecond": "Niemand — nur nachfassen",
+      "onlyFirst": "Nur die erste Genehmigung",
+      "holders_one": "{{count}} Person hat diese Rolle",
+      "holders_other": "{{count}} Personen haben diese Rolle",
+      "nobodyHolds": "Niemand hat diese Rolle — es würde liegen bleiben",
+      "inThatWorkspace": "{{role}} (in diesem Arbeitsbereich)",
+      "remindAfter": "erinnern nach",
+      "passTo": "weitergeben an",
+      "after": "nach",
+      "nobody": "niemanden",
+      "hours_one": "{{count}} Std.",
+      "hours_other": "{{count}} Std.",
+      "days_one": "{{count}} Tag",
+      "days_other": "{{count}} Tagen",
+      "noRuleFits": "Keine Regel passt",
+      "doneFirst": "Fertig nach der ersten Genehmigung",
+      "footnote": "Passen zwei Regeln, gewinnt die Regel des Arbeitsbereichs, dann die höhere Grenze. Die Genehmigung eines Administrators schließt immer ab, und niemand gibt beide Genehmigungen.",
+      "removed": "Regel entfernt",
+      "noRoles": "Lege zuerst eine Rolle an, die genehmigen darf."
     }
   },
   "overtimePage": {

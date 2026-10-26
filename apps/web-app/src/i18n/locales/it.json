@@ -9844,12 +9844,6 @@
       "short": "serve {{role}}"
     },
     "rules": {
-      "open": "Regole",
-      "title": "Regole di approvazione",
-      "intro": "Oltre una soglia, una decisione richiede una seconda persona. Vale ovunque: la casella, le pagine solite e il telefono.",
-      "none": "Ancora nessuna regola — ogni decisione richiede una persona.",
-      "add": "Aggiungi una regola",
-      "kindLabel": "Cosa",
       "kind": {
         "overtime": "Straordinari e tempo in più",
         "request": "Ferie e richieste",
@@ -9857,35 +9851,9 @@
       },
       "where": "Dove",
       "everywhere": "tutti gli spazi",
-      "threshold": {
-        "overtime": "Più di (ore)",
-        "request": "Più di (giorni lavorativi)",
-        "expense": "Più di ({{currency}})"
-      },
-      "thresholdHint": "Vuoto = sempre",
-      "secondRole": "Seconda approvazione da",
-      "pickRole": "Scelga un ruolo",
-      "save": "Aggiungi regola",
-      "saved": "Regola salvata.",
       "active": "Attiva",
       "remove": "Rimuovi",
-      "always": "sempre",
-      "whenOvertime": "oltre {{hours}} h",
-      "whenDays_one": "oltre {{count}} giorno",
-      "whenDays_other": "oltre {{count}} giorni",
-      "whenAmount": "oltre {{amount}}",
-      "whenCover": "quando la copertura scenderebbe sotto il minimo",
-      "head": "{{what}} {{when}} in {{where}}:",
-      "needs": "richiede anche {{role}}.",
-      "reminds": "Promemoria dopo {{hours}} h.",
-      "escalates": "Passa a {{role}} dopo {{hours}} h.",
-      "noSecond": "Nessuna seconda approvazione",
-      "coverLabel": "Solo quando la copertura scenderebbe sotto il minimo (o mancherebbe una competenza)",
-      "noAnswer": "Se nessuno risponde",
-      "remindAfter": "Ricorda dopo (ore)",
-      "escalateAfter": "Passa dopo (ore)",
-      "escalateTo": "Passa a",
-      "noAnswerHint": "I promemoria vanno a chi può decidere oggi (non a chi è in ferie). Lo passi a un ruolo che può decidere."
+      "noAnswer": "Se nessuno risponde"
     },
     "viewFile": {
       "document": "Vedi il documento",
@@ -9927,6 +9895,51 @@
       "approved": "Giornata approvata per {{name}}",
       "stopped": "Interrotto a {{what}}: {{reason}}",
       "members": "In questo giorno"
+    },
+    "tree": {
+      "tab": {
+        "decide": "Da decidere",
+        "rules": "Chi approva"
+      },
+      "intro": "Scegli cosa va approvato. Aggiungi una regola quando deve passare anche a qualcun altro, o essere sollecitato se nessuno risponde.",
+      "newRule": "＋ Nuova regola",
+      "what": "Cosa va approvato?",
+      "first": "Prima approvazione",
+      "firstBy": {
+        "overtime": "Chi può approvare gli straordinari in quello spazio di lavoro",
+        "request": "Chi pianifica i turni in quello spazio di lavoro",
+        "expense": "Chi gestisce l'attrezzatura in quello spazio di lavoro"
+      },
+      "rule": "Regola {{n}}",
+      "in": "in",
+      "moreThan": "più di",
+      "any": "qualsiasi",
+      "unit": {
+        "overtime": "h",
+        "request": "giorni lavorativi",
+        "expense": "{{currency}}"
+      },
+      "coverShort": "solo se mancherebbero persone",
+      "alsoBy": "Poi approvato anche da",
+      "nobodySecond": "Nessuno — solo sollecitare",
+      "onlyFirst": "Solo la prima approvazione",
+      "holders_one": "{{count}} persona ha questo ruolo",
+      "holders_other": "{{count}} persone hanno questo ruolo",
+      "nobodyHolds": "Nessuno ha ancora questo ruolo — resterebbe in attesa",
+      "inThatWorkspace": "{{role}} (in quello spazio di lavoro)",
+      "remindAfter": "sollecita dopo",
+      "passTo": "passa a",
+      "after": "dopo",
+      "nobody": "nessuno",
+      "hours_one": "{{count}} h",
+      "hours_other": "{{count}} h",
+      "days_one": "{{count}} giorno",
+      "days_other": "{{count}} giorni",
+      "noRuleFits": "Nessuna regola si applica",
+      "doneFirst": "Fatto dopo la prima approvazione",
+      "footnote": "Se si applicano due regole, vince quella dello spazio di lavoro, poi il limite più alto. L'approvazione di un amministratore chiude sempre, e nessuno dà entrambe le approvazioni.",
+      "removed": "Regola eliminata",
+      "noRoles": "Crea prima un ruolo che possa approvare."
     }
   },
   "overtimePage": {

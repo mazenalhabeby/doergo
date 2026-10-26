@@ -9844,12 +9844,6 @@
       "short": "needs {{role}}"
     },
     "rules": {
-      "open": "Rules",
-      "title": "Approval rules",
-      "intro": "Past a threshold, a decision needs a second person. It holds everywhere — the inbox, the old pages and the phone.",
-      "none": "No rules yet — every decision needs one person.",
-      "add": "Add a rule",
-      "kindLabel": "What",
       "kind": {
         "overtime": "Overtime and extra time",
         "request": "Leave and requests",
@@ -9857,35 +9851,9 @@
       },
       "where": "Where",
       "everywhere": "every workspace",
-      "threshold": {
-        "overtime": "More than (hours)",
-        "request": "More than (working days)",
-        "expense": "More than ({{currency}})"
-      },
-      "thresholdHint": "Empty = always",
-      "secondRole": "Second approval by",
-      "pickRole": "Choose a role",
-      "save": "Add rule",
-      "saved": "Rule saved.",
       "active": "On",
       "remove": "Remove",
-      "always": "always",
-      "whenOvertime": "over {{hours}} h",
-      "whenDays_one": "over {{count}} day",
-      "whenDays_other": "over {{count}} days",
-      "whenAmount": "over {{amount}}",
-      "whenCover": "when cover would drop below the minimum",
-      "head": "{{what}} {{when}} in {{where}}:",
-      "needs": "needs {{role}} too.",
-      "reminds": "Reminder after {{hours}} h.",
-      "escalates": "Passed to {{role}} after {{hours}} h.",
-      "noSecond": "No second approval",
-      "coverLabel": "Only when cover would drop below the minimum (or a skill would be missing)",
-      "noAnswer": "If nobody answers",
-      "remindAfter": "Remind after (hours)",
-      "escalateAfter": "Pass on after (hours)",
-      "escalateTo": "Pass to",
-      "noAnswerHint": "Reminders go to whoever can decide it today (not to anyone on leave). Pass it to a role that can decide it."
+      "noAnswer": "If nobody answers"
     },
     "viewFile": {
       "document": "View the document",
@@ -9927,6 +9895,51 @@
       "approved": "Day approved for {{name}}",
       "stopped": "Stopped at {{what}}: {{reason}}",
       "members": "On this day"
+    },
+    "tree": {
+      "tab": {
+        "decide": "To decide",
+        "rules": "Who approves"
+      },
+      "intro": "Pick what needs approval. Add a rule when it should also go to someone else, or be chased when nobody answers.",
+      "newRule": "＋ New rule",
+      "what": "What needs approval?",
+      "first": "First approval",
+      "firstBy": {
+        "overtime": "Anyone who may approve overtime in that workspace",
+        "request": "Anyone who plans the rota in that workspace",
+        "expense": "Anyone who manages equipment in that workspace"
+      },
+      "rule": "Rule {{n}}",
+      "in": "in",
+      "moreThan": "more than",
+      "any": "any",
+      "unit": {
+        "overtime": "h",
+        "request": "working days",
+        "expense": "{{currency}}"
+      },
+      "coverShort": "only when people would be short",
+      "alsoBy": "Then also approved by",
+      "nobodySecond": "Nobody — only chase it",
+      "onlyFirst": "Only the first approval",
+      "holders_one": "{{count}} person holds it",
+      "holders_other": "{{count}} people hold it",
+      "nobodyHolds": "Nobody holds it yet — it would wait",
+      "inThatWorkspace": "{{role}} (in that workspace)",
+      "remindAfter": "remind after",
+      "passTo": "pass to",
+      "after": "after",
+      "nobody": "nobody",
+      "hours_one": "{{count}} h",
+      "hours_other": "{{count}} h",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "noRuleFits": "No rule fits",
+      "doneFirst": "Done after the first approval",
+      "footnote": "If two rules fit, the workspace's own rule wins, then the higher limit. An administrator's approval always finishes it, and nobody gives both approvals.",
+      "removed": "Rule removed",
+      "noRoles": "First create a role that can approve."
     }
   },
   "overtimePage": {

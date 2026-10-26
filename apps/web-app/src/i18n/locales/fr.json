@@ -9844,12 +9844,6 @@
       "short": "attend {{role}}"
     },
     "rules": {
-      "open": "Règles",
-      "title": "Règles de validation",
-      "intro": "Au-delà d’un seuil, une décision demande une deuxième personne. Cela vaut partout : la boîte, les pages habituelles et le téléphone.",
-      "none": "Pas encore de règle — chaque décision demande une personne.",
-      "add": "Ajouter une règle",
-      "kindLabel": "Quoi",
       "kind": {
         "overtime": "Heures supplémentaires et temps en plus",
         "request": "Congés et demandes",
@@ -9857,35 +9851,9 @@
       },
       "where": "Où",
       "everywhere": "tous les espaces",
-      "threshold": {
-        "overtime": "Plus de (heures)",
-        "request": "Plus de (jours ouvrés)",
-        "expense": "Plus de ({{currency}})"
-      },
-      "thresholdHint": "Vide = toujours",
-      "secondRole": "Deuxième validation par",
-      "pickRole": "Choisir un rôle",
-      "save": "Ajouter la règle",
-      "saved": "Règle enregistrée.",
       "active": "Active",
       "remove": "Supprimer",
-      "always": "toujours",
-      "whenOvertime": "au-delà de {{hours}} h",
-      "whenDays_one": "au-delà de {{count}} jour",
-      "whenDays_other": "au-delà de {{count}} jours",
-      "whenAmount": "au-delà de {{amount}}",
-      "whenCover": "quand l’effectif passerait sous le minimum",
-      "head": "{{what}} {{when}} dans {{where}} :",
-      "needs": "demande aussi {{role}}.",
-      "reminds": "Rappel après {{hours}} h.",
-      "escalates": "Transmis à {{role}} après {{hours}} h.",
-      "noSecond": "Pas de seconde validation",
-      "coverLabel": "Seulement quand l’effectif passerait sous le minimum (ou qu’une compétence manquerait)",
-      "noAnswer": "Si personne ne répond",
-      "remindAfter": "Rappeler après (heures)",
-      "escalateAfter": "Transmettre après (heures)",
-      "escalateTo": "Transmettre à",
-      "noAnswerHint": "Les rappels vont à qui peut décider aujourd’hui (pas aux absents). Transmettez à un rôle qui peut décider."
+      "noAnswer": "Si personne ne répond"
     },
     "viewFile": {
       "document": "Voir le document",
@@ -9927,6 +9895,51 @@
       "approved": "Journée validée pour {{name}}",
       "stopped": "Arrêté à {{what}} : {{reason}}",
       "members": "Ce jour-là"
+    },
+    "tree": {
+      "tab": {
+        "decide": "À décider",
+        "rules": "Qui approuve"
+      },
+      "intro": "Choisissez ce qui doit être approuvé. Ajoutez une règle quand cela doit aussi aller à quelqu'un d'autre, ou être relancé quand personne ne répond.",
+      "newRule": "＋ Nouvelle règle",
+      "what": "Qu'est-ce qui doit être approuvé ?",
+      "first": "Première approbation",
+      "firstBy": {
+        "overtime": "Toute personne pouvant approuver les heures sup. dans cet espace de travail",
+        "request": "Toute personne qui planifie le planning dans cet espace de travail",
+        "expense": "Toute personne qui gère l'équipement dans cet espace de travail"
+      },
+      "rule": "Règle {{n}}",
+      "in": "dans",
+      "moreThan": "plus de",
+      "any": "tous",
+      "unit": {
+        "overtime": "h",
+        "request": "jours ouvrés",
+        "expense": "{{currency}}"
+      },
+      "coverShort": "seulement s'il manquerait du monde",
+      "alsoBy": "Puis aussi approuvé par",
+      "nobodySecond": "Personne — seulement relancer",
+      "onlyFirst": "Seulement la première approbation",
+      "holders_one": "{{count}} personne a ce rôle",
+      "holders_other": "{{count}} personnes ont ce rôle",
+      "nobodyHolds": "Personne n'a ce rôle — cela resterait en attente",
+      "inThatWorkspace": "{{role}} (dans cet espace de travail)",
+      "remindAfter": "relancer après",
+      "passTo": "transmettre à",
+      "after": "après",
+      "nobody": "personne",
+      "hours_one": "{{count}} h",
+      "hours_other": "{{count}} h",
+      "days_one": "{{count}} jour",
+      "days_other": "{{count}} jours",
+      "noRuleFits": "Aucune règle ne s'applique",
+      "doneFirst": "Terminé après la première approbation",
+      "footnote": "Si deux règles s'appliquent, celle de l'espace de travail l'emporte, puis la limite la plus haute. L'approbation d'un administrateur termine toujours, et personne ne donne les deux approbations.",
+      "removed": "Règle supprimée",
+      "noRoles": "Créez d'abord un rôle qui peut approuver."
     }
   },
   "overtimePage": {
