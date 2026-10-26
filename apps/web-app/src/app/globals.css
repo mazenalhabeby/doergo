@@ -156,6 +156,66 @@
     --sidebar-ring: 217 91% 60%;
   }
 
+  /*
+    THE APP's tokens (web redesign, 2026-10-26): the design boards' jade, greys, lines and corners, so every page
+    that uses the shadcn tokens (Button, Card, Input, Tabs, Badge…) looks like the design at once. Scoped to
+    `html.app-theme`, which only the dashboard layout sets — the public site and the sign-in keep their own.
+    Pages that hard-code a blue (bg-blue-600 …) are moved over one by one as each page is rebuilt.
+  */
+  html.app-theme {
+    --background: 0 0% 100%;
+    --foreground: 165 48% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 165 48% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 165 48% 8%;
+    --primary: 166 85% 24%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 156 17% 94%;
+    --secondary-foreground: 165 48% 8%;
+    --muted: 156 17% 94%;
+    --muted-foreground: 160 7% 42%;
+    --accent: 158 16% 92%;
+    --accent-foreground: 165 48% 8%;
+    --destructive: 4 64% 42%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 156 9% 90%;
+    --input: 156 9% 88%;
+    --ring: 166 85% 24%;
+    --radius: 0.75rem;
+    --chart-1: 166 85% 30%;
+    --chart-2: 163 62% 50%;
+    --chart-3: 36 81% 36%;
+    --chart-4: 262 52% 55%;
+    --chart-5: 4 64% 48%;
+  }
+  html.app-theme.dark {
+    --background: 206 24% 6%;
+    --foreground: 206 50% 96%;
+    --card: 206 22% 8%;
+    --card-foreground: 206 50% 96%;
+    --popover: 206 20% 9%;
+    --popover-foreground: 206 50% 96%;
+    --primary: 163 62% 63%;
+    --primary-foreground: 160 100% 5%;
+    --secondary: 206 20% 10%;
+    --secondary-foreground: 206 50% 96%;
+    --muted: 206 20% 10%;
+    --muted-foreground: 208 9% 60%;
+    --accent: 208 18% 12%;
+    --accent-foreground: 206 50% 96%;
+    --destructive: 6 96% 77%;
+    --destructive-foreground: 4 78% 9%;
+    --border: 206 10% 14%;
+    --input: 206 10% 17%;
+    --ring: 163 62% 63%;
+    --chart-1: 163 62% 63%;
+    --chart-2: 166 85% 40%;
+    --chart-3: 34 85% 67%;
+    --chart-4: 255 100% 80%;
+    --chart-5: 6 96% 77%;
+  }
+
   /* Pins a subtree to the light theme regardless of dark mode (e.g. the auth
      screens). Themed components (Input/Button) inside resolve to light vars. */
   .force-light {

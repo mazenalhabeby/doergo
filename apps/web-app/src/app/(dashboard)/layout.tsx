@@ -7,6 +7,7 @@ import { PageContentSkeleton } from "@/components/skeletons"
 import { ErrorBoundary } from "@/components/app-shell/error-boundary"
 import { TopBar } from "@/components/app-shell/top-bar"
 import { Sidebar } from "@/components/app-shell/sidebar/sidebar"
+import { useAppTheme } from "@/components/app-shell/use-app-theme"
 import { FirstSpaceGate } from "@/components/app-shell/first-space-gate"
 import { BillingBanner } from "@/components/app-shell/billing-banner"
 import { CommandPalette } from "@/components/command-palette/command-palette"
@@ -108,6 +109,7 @@ function AccountBlockScreen({ icon, title, body, signOutLabel, onSignOut }: {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  useAppTheme()
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
