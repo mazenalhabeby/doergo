@@ -13,7 +13,7 @@ const FIELD =
   "focus-within:ring-2 focus-within:ring-shell-accent"
 const INPUT =
   "min-w-0 flex-1 border-0 bg-transparent text-sm shadow-none outline-none ring-0 placeholder:text-shell-soft " +
-  "focus:outline-none focus:ring-0"
+  "focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
 
 /** The language panel inside the menu: search by its own name or yours, then one tap. */
 export function LanguagePanel({ active, onBack }: { active: boolean; onBack: () => void }) {
