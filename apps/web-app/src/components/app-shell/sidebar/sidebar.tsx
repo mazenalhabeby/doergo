@@ -3,11 +3,10 @@
 import { useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
-import { personName } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
 import { ClockWidget } from "@/components/attendance/clock-widget"
-import { UserDropdown } from "../user-dropdown"
+import { AccountMenu } from "../account-menu"
 import { useShellNav } from "../nav/use-shell-nav"
 import { SidebarHeader } from "./sidebar-header"
 import { SidebarNav } from "./sidebar-nav"
@@ -30,7 +29,7 @@ export function SidebarBody({
   /** The collapse button (desktop only). */
   toggle?: React.ReactNode
 }) {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const sections = useShellNav()
   if (!user) return null
   return (
@@ -44,14 +43,7 @@ export function SidebarBody({
       </div>
       <div className="flex flex-col gap-1.5 pt-2">
         <ClockWidget compact={rail} />
-        <UserDropdown
-          user={user}
-          fullName={personName(user)}
-          avatarUrl={user.avatarUrl}
-          canManageUsers={user.canManageUsers}
-          onLogout={logout}
-          compact={rail}
-        />
+        <AccountMenu compact={rail} />
       </div>
     </>
   )

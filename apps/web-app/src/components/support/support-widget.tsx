@@ -11,6 +11,7 @@ import { useSocketContext } from '@/contexts/socket-context';
 import { useAuth } from '@/contexts/auth-context';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { CountDot, TopBarButton } from '@/components/app-shell/top-bar-icon';
+import { onOpenSupport } from './support-opener';
 import { keys } from "@/lib/query-keys"
 import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 import { SlaLine, TicketList, NewTicket, Thread } from "./ticket-list";
@@ -27,6 +28,16 @@ export function SupportButton() {
   const { subscribe } = useSocketContext();
 
   const [open, setOpen] = useState(false);
+  // "Help and support" in the account menu opens the widget whose button is on screen (support-opener.ts).
+  const trigger = useRef<HTMLButtonElement>(null);
+  useEffect(
+    () => onOpenSupport(() => {
+      if (!trigger.current || trigger.current.offsetParent === null) return false;
+      setOpen(true);
+      return true;
+    }),
+    [],
+  );
   const [activeId, setActiveId] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
   const [agentOnline, setAgentOnline] = useState(false);
@@ -99,7 +110,13 @@ export function SupportButton() {
   return (
     <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setActiveId(null); setComposing(false); } }}>
       <PopoverTrigger asChild>
-        <TopBarButton on={open} data-tour="nav-support" title={t('support.title', 'Support')} aria-label={t('support.title', 'Support')}>
+        <TopBarButton
+          ref={trigger}
+          on={open}
+          data-tour="nav-support"
+          title={t('support.title', 'Support')}
+          aria-label={t('support.title', 'Support')}
+        >
           <Headset />
           <CountDot n={unreadTotal} tone="crit" />
         </TopBarButton>

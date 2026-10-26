@@ -1,3 +1,3 @@
 export { TourProvider, useTour } from "./tour-context"
-export { TourLauncherMenuItem } from "./tour-launcher"
+export { useTourTarget } from "./tour-launcher"
 export { HelpButton } from "./help-button"

@@ -17,6 +17,16 @@ const AVATAR_COLORS = [
   "from-teal-500 to-teal-600",
 ]
 
+/** Soft per-person tints (web redesign): calm tiles, the initials in the deep shade of the same hue. */
+const SOFT_COLORS = [
+  "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+  "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300",
+  "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+  "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+  "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300",
+  "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300",
+]
+
 function hashStr(s: string): number {
   let h = 0
   for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
@@ -51,6 +61,8 @@ interface UserAvatarProps {
   size?: AvatarSize
   /** Show a ring around the avatar (useful for stacked avatars) */
   ring?: boolean
+  /** A soft tint instead of the bright gradient (the shell's account button). */
+  soft?: boolean
   className?: string
   title?: string
 }
@@ -62,11 +74,15 @@ export const UserAvatar = React.memo(function UserAvatar({
   seed,
   size = "md",
   ring = false,
+  soft = false,
   className,
   title,
 }: UserAvatarProps) {
   const initials = personInitials({ firstName, lastName })
-  const gradient = getGradient(seed || `${firstName}${lastName}`)
+  const key = seed || `${firstName}${lastName}`
+  const tone = soft
+    ? SOFT_COLORS[hashStr(key) % SOFT_COLORS.length]!
+    : cn("bg-gradient-to-br text-white", getGradient(key))
   const s = SIZES[size]
 
   // If the avatar image fails to load (broken URL / storage hiccup), fall back to
@@ -77,8 +93,8 @@ export const UserAvatar = React.memo(function UserAvatar({
   return (
     <div
       className={cn(
-        "rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden bg-gradient-to-br text-white",
-        gradient,
+        "rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden",
+        tone,
         s.box,
         ring && "ring-[1.5px] ring-card",
         className,

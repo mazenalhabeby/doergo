@@ -323,7 +323,6 @@
     "userMenu": {
       "profile": "Profil",
       "viewYourProfile": "Ihr Profil anzeigen",
-      "settings": "Einstellungen",
       "managePreferences": "Einstellungen verwalten",
       "signOut": "Abmelden",
       "endYourSession": "Sitzung beenden",
@@ -337,8 +336,6 @@
     "shop": "Shop",
     "team": "Teammitglieder",
     "timeAttendance": "Schichten & Anwesenheit",
-    "lightMode": "Heller Modus",
-    "darkMode": "Dunkler Modus",
     "navigation": "Navigation",
     "toggle": "Umschalten",
     "hideActivityPanel": "Aktivitätsleiste ausblenden",
@@ -4937,7 +4934,6 @@
     "skip": "Überspringen",
     "next": "Weiter",
     "finish": "Fertig",
-    "takeTour": "Tour starten",
     "help": {
       "button": "Hilfe & Anleitungen",
       "title": "Hilfe & Anleitungen",
@@ -10114,5 +10110,19 @@
     "ownRules": "Eigene Regeln",
     "ownHours": "Stunden pro Tag ohne Schicht",
     "useWorkspaceHours": "Die des Arbeitsorts verwenden"
+  },
+  "account": {
+    "button": "{{name}} — Konto",
+    "menu": "Ihr Konto",
+    "myAccount": "Mein Konto",
+    "myAccountHint": "Name, Passwort, Geräte",
+    "myThings": "Meine Zeit, Abwesenheiten und Dokumente",
+    "orgSettings": "Organisationseinstellungen",
+    "darkMode": "Dunkler Modus",
+    "tour": "Kurze Tour durch diese Seite",
+    "help": "Hilfe und Support",
+    "onlyForYou": "nur für Sie",
+    "languageSearch": "Suchen — jede Sprache, jede Schreibweise",
+    "languageNote": "Datum, Zahlen und Beträge folgen der Sprache."
   }
 }

@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
 import { usersApi } from "@/lib/api"
 
-type Presence = "AVAILABLE" | "BUSY" | "AWAY"
+export type Presence = "AVAILABLE" | "BUSY" | "AWAY"
 
 /**
  * Availability options — the ONLY three self-set states. Everyone defaults to
@@ -25,11 +25,6 @@ export const PRESENCE_OPTS: {
   { value: "BUSY", key: "presence.busy", def: "Busy", dot: "bg-red-500", ring: "ring-red-500" },
   { value: "AWAY", key: "presence.away", def: "Away", dot: "bg-amber-500", ring: "ring-amber-500" },
 ]
-
-/** Ring class for a presence value (used on the header avatar). */
-export function presenceRingClass(presence: Presence | string | null | undefined): string {
-  return PRESENCE_OPTS.find((o) => o.value === presence)?.ring ?? "ring-green-500"
-}
 
 /**
  * Self availability controller. Reads the current value from the auth user and

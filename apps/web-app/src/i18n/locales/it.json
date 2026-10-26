@@ -323,7 +323,6 @@
     "userMenu": {
       "profile": "Profilo",
       "viewYourProfile": "Visualizza il tuo profilo",
-      "settings": "Impostazioni",
       "managePreferences": "Gestisci preferenze",
       "signOut": "Esci",
       "endYourSession": "Termina la tua sessione",
@@ -337,8 +336,6 @@
     "shop": "Shop",
     "team": "Membri del team",
     "timeAttendance": "Turni e presenze",
-    "lightMode": "Tema chiaro",
-    "darkMode": "Tema scuro",
     "navigation": "Navigazione",
     "toggle": "Attiva/disattiva",
     "hideActivityPanel": "Nascondi pannello attività",
@@ -4937,7 +4934,6 @@
     "skip": "Salta",
     "next": "Avanti",
     "finish": "Fatto",
-    "takeTour": "Fai il tour",
     "help": {
       "button": "Aiuto e guide",
       "title": "Aiuto e guide",
@@ -10114,5 +10110,19 @@
     "ownRules": "Regole proprie",
     "ownHours": "Ore al giorno senza turno",
     "useWorkspaceHours": "Usa quelle del luogo"
+  },
+  "account": {
+    "button": "{{name}} — account",
+    "menu": "Il tuo account",
+    "myAccount": "Il mio account",
+    "myAccountHint": "nome, password, dispositivi",
+    "myThings": "Il mio tempo, assenze e documenti",
+    "orgSettings": "Impostazioni dell'organizzazione",
+    "darkMode": "Modalità scura",
+    "tour": "Un breve tour di questa pagina",
+    "help": "Aiuto e supporto",
+    "onlyForYou": "solo per te",
+    "languageSearch": "Cerca: qualsiasi lingua, qualsiasi grafia",
+    "languageNote": "Date, numeri e importi seguono la lingua."
   }
 }

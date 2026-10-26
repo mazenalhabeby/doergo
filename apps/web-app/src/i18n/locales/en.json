@@ -323,7 +323,6 @@
     "userMenu": {
       "profile": "Profile",
       "viewYourProfile": "View your profile",
-      "settings": "Settings",
       "managePreferences": "Manage preferences",
       "signOut": "Sign out",
       "endYourSession": "End your session",
@@ -337,8 +336,6 @@
     "shop": "Shop",
     "team": "Team Members",
     "timeAttendance": "Shifts & Attendance",
-    "lightMode": "Light Mode",
-    "darkMode": "Dark Mode",
     "navigation": "Navigation",
     "toggle": "Toggle",
     "hideActivityPanel": "Hide activity panel",
@@ -4937,7 +4934,6 @@
     "skip": "Skip",
     "next": "Next",
     "finish": "Done",
-    "takeTour": "Take a tour",
     "help": {
       "button": "Help & guides",
       "title": "Help & guides",
@@ -10114,5 +10110,19 @@
     "ownRules": "Own rules",
     "ownHours": "Hours a day without a shift",
     "useWorkspaceHours": "Use the workspace's"
+  },
+  "account": {
+    "button": "{{name}} — account",
+    "menu": "Your account",
+    "myAccount": "My account",
+    "myAccountHint": "name, password, devices",
+    "myThings": "My time, leave and documents",
+    "orgSettings": "Organization settings",
+    "darkMode": "Dark mode",
+    "tour": "A quick tour of this page",
+    "help": "Help and support",
+    "onlyForYou": "only for you",
+    "languageSearch": "Search — any language, any spelling",
+    "languageNote": "Dates, numbers and money follow the language."
   }
 }
