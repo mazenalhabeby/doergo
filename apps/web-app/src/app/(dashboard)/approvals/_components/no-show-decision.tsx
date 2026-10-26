@@ -115,7 +115,10 @@ export function NoShowDecision({
           trigger={
             <button
               type="button"
-              className="flex items-start gap-3 rounded-lg border border-border px-3 py-2.5 text-left transition-colors hover:bg-muted/60"
+              className={cn(
+                "flex items-start gap-3 rounded-[14px] border border-border px-3 py-2.5 text-left",
+                "transition-colors hover:bg-muted/60",
+              )}
             >
               <CalendarPlus className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <span>
@@ -142,7 +145,7 @@ export function NoShowDecision({
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button className="rounded-lg" disabled={!choice || busy} onClick={save}>
+        <Button size="pillLg" disabled={!choice || busy} onClick={save}>
           {busy && <Loader2 className="size-4 animate-spin" />}
           {t("approvals.noShow.save")}
         </Button>

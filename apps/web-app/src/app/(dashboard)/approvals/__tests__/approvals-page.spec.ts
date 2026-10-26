@@ -18,18 +18,28 @@ describe("who is offered /approvals", () => {
     expect(mayOpen("/approvals", ctx({ role: "ADMIN" }))).toBe(true)
   })
   it("a member who can approve hours in ONE workspace", () => {
-    expect(mayOpen("/approvals", ctx({ access: { org: {}, perSpace: { s1: { canApproveAttendance: true } } } }))).toBe(true)
+    expect(mayOpen("/approvals", ctx({ access: { org: {}, perSpace: { s1: { canApproveAttendance: true } } } }))).toBe(
+      true,
+    )
   })
   it("a member who can decide nothing is not", () => {
-    expect(mayOpen("/approvals", ctx({ access: { org: { canViewAllTasks: true }, perSpace: { s1: { canViewSpaceAttendance: true } } } }))).toBe(false)
+    expect(
+      mayOpen(
+        "/approvals",
+        ctx({ access: { org: { canViewAllTasks: true }, perSpace: { s1: { canViewSpaceAttendance: true } } } }),
+      ),
+    ).toBe(false)
   })
   it("an org-wide kind held only in a workspace does not count (documents are org-wide)", () => {
-    expect(mayOpen("/approvals", ctx({ access: { org: {}, perSpace: { s1: { canIssueDocuments: true } } } }))).toBe(false)
+    expect(mayOpen("/approvals", ctx({ access: { org: {}, perSpace: { s1: { canIssueDocuments: true } } } }))).toBe(
+      false,
+    )
   })
 })
 
 const locales = path.join(__dirname, "..", "..", "..", "..", "i18n", "locales")
-const keyed = (o: unknown, k: string): unknown => k.split(".").reduce<unknown>((a, p) => (a as Record<string, unknown> | undefined)?.[p], o)
+const keyed = (o: unknown, k: string): unknown =>
+  k.split(".").reduce<unknown>((a, p) => (a as Record<string, unknown> | undefined)?.[p], o)
 
 describe("every kind has words in every language", () => {
   for (const file of fs.readdirSync(locales).filter((f) => f.endsWith(".json"))) {
@@ -50,8 +60,15 @@ describe("describeApproval", () => {
     return v.replace(/\{\{(\w+)\}\}/g, (_, n: string) => String(opts?.[n] ?? ""))
   }) as ApprovalT
   const base = (kind: ApprovalItem["kind"], data: ApprovalItem["data"]): ApprovalItem => ({
-    kind, id: "x", subject: { id: "u", name: "Ana Ruiz", avatarUrl: null }, space: null,
-    raisedAt: null, dueAt: null, group: "LATER", canDecide: true, data,
+    kind,
+    id: "x",
+    subject: { id: "u", name: "Ana Ruiz", avatarUrl: null },
+    space: null,
+    raisedAt: null,
+    dueAt: null,
+    group: "LATER",
+    canDecide: true,
+    data,
   })
 
   it("names every kind without a raw key", () => {
@@ -63,7 +80,11 @@ describe("describeApproval", () => {
   })
 
   it("a cover floor of 0 is 'not set', never '0 needed'", () => {
-    const facts = describeApproval(base("request", { coverLevel: "tight", coverWorst: 2, coverFloor: 0 }), t, "en").facts
+    const facts = describeApproval(
+      base("request", { coverLevel: "tight", coverWorst: 2, coverFloor: 0 }),
+      t,
+      "en",
+    ).facts
     expect(facts.find((f) => f.label === "Cover")?.value).toBe("Cover gets tight")
   })
 

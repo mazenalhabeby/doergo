@@ -41,14 +41,17 @@ export function DayPanel({
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <UserAvatar
+          soft
           {...nameParts(day.subject.name)}
           avatarUrl={day.subject.avatarUrl}
           seed={day.subject.id ?? day.subject.name}
           size="lg"
         />
         <div className="min-w-0">
-          <p className="truncate font-semibold text-foreground">{day.subject.name || t("approvals.someone")}</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="truncate text-[17px] font-semibold text-foreground">
+            {day.subject.name || t("approvals.someone")}
+          </p>
+          <p className="text-[13px] text-muted-foreground">
             {t("approvals.day.label")} · {formatMediumDate(`${day.localDate}T12:00:00Z`)}
             {day.space ? ` · ${day.space.name}` : ""}
           </p>
@@ -59,7 +62,7 @@ export function DayPanel({
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t("approvals.day.members")} · {t("approvals.day.count", { count: members.length })}
         </p>
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <ul className="divide-y divide-border overflow-hidden rounded-[14px] border border-border">
           {members.map((m) => {
             const text = describeApproval(m, t as ApprovalT, dateLocale(), orgCurrency)
             return (
@@ -82,7 +85,7 @@ export function DayPanel({
       {day.approvable.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("approvals.day.nothingToApprove")}</p>
       ) : (
-        <Button className="w-full rounded-xl" onClick={onApprove} disabled={busy}>
+        <Button size="pillLg" className="w-full" onClick={onApprove} disabled={busy}>
           <CheckCheck className="size-4" />
           {t("approvals.day.approve")}
         </Button>

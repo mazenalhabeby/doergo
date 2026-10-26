@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PAGE_SHELL } from "@/components/ui/page-width"
 import { ListTableError } from "@/components/common/list-page"
+import { GroupLabel, Notice, PageHeader, Panel } from "@/components/page/page-kit"
 import { DecisionPanel } from "./_components/decision-panel"
 import { useApprovalsPage, itemKey } from "./_hooks/use-approvals-page"
 import { KindRailItem } from "./_components/kind-rail-item"
@@ -67,73 +68,66 @@ export default function ApprovalsPage() {
 
   return (
     <div className={PAGE_SHELL}>
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <h1 data-tour="page-approvals" className="text-3xl font-bold tracking-tight text-foreground">
-            {t("approvals.title")}
-          </h1>
-          <p className="mt-1.5 text-muted-foreground">{t("approvals.subtitle")}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {dataUpdatedAt > 0 && (
-            <span className="hidden text-xs text-muted-foreground sm:inline">
-              {t("approvals.updated", { time: formatTimeAgo(dataUpdatedAt) })}
-            </span>
-          )}
-          {managesPeople && (
-            <Button variant="outline" className="h-10 rounded-xl" onClick={() => setRulesOpen(true)}>
-              <ScrollText className="size-4" />
-              {t("approvals.rules.open")}
+      <PageHeader
+        tour="page-approvals"
+        title={t("approvals.title")}
+        subtitle={t("approvals.subtitle")}
+        actions={
+          <>
+            {dataUpdatedAt > 0 && (
+              <span className="hidden text-sm text-muted-foreground sm:inline">
+                {t("approvals.updated", { time: formatTimeAgo(dataUpdatedAt) })}
+              </span>
+            )}
+            {managesPeople && (
+              <Button variant="outline" size="pill" onClick={() => setRulesOpen(true)}>
+                <ScrollText />
+                {t("approvals.rules.open")}
+              </Button>
+            )}
+            {/* An external member never hands their decisions on (the server refuses STAND_IN_EXTERNAL). */}
+            {!user?.isExternal && (
+              <Button variant="outline" size="pill" onClick={() => setStandInOpen(true)}>
+                <UserRoundCheck />
+                {t("approvals.standIn.open")}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="pillIcon"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              aria-label={t("approvals.refresh")}
+            >
+              <RefreshCw className={cn(isFetching && "animate-spin")} />
             </Button>
-          )}
-          {/* An external member never hands their decisions on (the server refuses STAND_IN_EXTERNAL). */}
-          {!user?.isExternal && (
-            <Button variant="outline" className="h-10 rounded-xl" onClick={() => setStandInOpen(true)}>
-              <UserRoundCheck className="size-4" />
-              {t("approvals.standIn.open")}
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => refetch()}
-            disabled={isFetching}
-            aria-label={t("approvals.refresh")}
-            className="h-10 w-10 rounded-xl"
-          >
-            <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {covering.length > 0 && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-foreground">
-          <UserRoundCheck className="size-4 shrink-0 text-primary" />
+        <Notice>
+          <UserRoundCheck />
           {t("approvals.standIn.covering", { names: covering.join(", ") })}
-        </div>
+        </Notice>
       )}
 
       {unavailable.length > 0 && (
-        <div
-          className={
-            "mb-4 flex items-center gap-2 rounded-lg border border-amber-500/30 " +
-            "bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300"
-          }
-        >
-          <AlertTriangle className="size-4 shrink-0" />
+        <Notice tone="warn">
+          <AlertTriangle />
           {t("approvals.unavailable", { kinds: unavailable.map((k) => t(`approvals.kinds.${k}`)).join(", ") })}
-        </div>
+        </Notice>
       )}
 
       {isError ? (
         <ListTableError title={t("approvals.loadFailed")} error={error} onRetry={() => refetch()} />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)_minmax(320px,400px)]">
+        <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)_minmax(320px,400px)]">
           {/* Kinds — only the ones that have something, so the rail is itself a summary. */}
-          <nav
-            aria-label={t("approvals.title")}
+          <Panel
+            as="nav"
             className={cn(
-              "flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible",
+              "flex gap-0.5 overflow-x-auto max-lg:rounded-2xl lg:flex-col lg:overflow-visible",
               current && "max-lg:hidden",
             )}
           >
@@ -141,6 +135,7 @@ export default function ApprovalsPage() {
               active={filter === "all"}
               label={t("approvals.all")}
               count={items.length}
+              urgent={items.some((i) => i.group === "NOW")}
               onClick={() => setFilter("all")}
             />
             {APPROVAL_KINDS.filter((k) => counts.has(k)).map((k) => (
@@ -153,64 +148,56 @@ export default function ApprovalsPage() {
                 onClick={() => setFilter(k)}
               />
             ))}
-          </nav>
+          </Panel>
 
-          <section className={cn("min-w-0", (current || currentDay) && "max-lg:hidden")}>
+          <Panel className={cn((current || currentDay) && "max-lg:hidden")}>
             {isLoading ? (
-              <div className="space-y-2">
+              <div className="space-y-2 p-1">
                 {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                  <Skeleton key={i} className="h-16 w-full rounded-[14px]" />
                 ))}
               </div>
             ) : visible.length === 0 && visibleDays.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border px-6 py-16 text-center">
+              <div className="px-6 py-16 text-center">
                 <Inbox className="mx-auto mb-3 size-10 text-muted-foreground/60" />
                 <p className="font-medium text-foreground">{t("approvals.empty")}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{t("approvals.emptyHint")}</p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {APPROVAL_GROUPS.map((g) => {
-                  const rows = visible.filter((i) => i.group === g)
-                  const dayRows = visibleDays.filter((d) => d.group === g)
-                  if (rows.length === 0 && dayRows.length === 0) return null
-                  return (
-                    <div key={g}>
-                      <h2
-                        className={cn(
-                          "mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide",
-                          g === "NOW" ? "text-red-600 dark:text-red-400" : "text-muted-foreground",
-                        )}
-                      >
-                        {g === "NOW" && <span className="size-1.5 rounded-full bg-red-600" aria-hidden />}
-                        {t(`approvals.groups.${g}`)}
-                        <span className="tabular-nums font-normal">{rows.length + dayRows.length}</span>
-                      </h2>
-                      <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-                        {dayRows.map((d) => (
-                          <DayRow key={d.key} day={d} active={d.key === selected} onSelect={() => setSelected(d.key)} />
-                        ))}
-                        {rows.map((i) => (
-                          <ApprovalRow
-                            key={itemKey(i)}
-                            item={i}
-                            active={itemKey(i) === selected}
-                            onSelect={() => setSelected(itemKey(i))}
-                            orgCurrency={user?.orgCurrency}
-                          />
-                        ))}
-                      </ul>
-                    </div>
-                  )
-                })}
-              </div>
+              APPROVAL_GROUPS.map((g) => {
+                const rows = visible.filter((i) => i.group === g)
+                const dayRows = visibleDays.filter((d) => d.group === g)
+                if (rows.length === 0 && dayRows.length === 0) return null
+                return (
+                  <div key={g}>
+                    <GroupLabel tone={g === "NOW" ? "crit" : "soft"}>
+                      {t(`approvals.groups.${g}`)}
+                      <span className="font-normal tabular-nums">{rows.length + dayRows.length}</span>
+                    </GroupLabel>
+                    <ul>
+                      {dayRows.map((d) => (
+                        <DayRow key={d.key} day={d} active={d.key === selected} onSelect={() => setSelected(d.key)} />
+                      ))}
+                      {rows.map((i) => (
+                        <ApprovalRow
+                          key={itemKey(i)}
+                          item={i}
+                          active={itemKey(i) === selected}
+                          onSelect={() => setSelected(itemKey(i))}
+                          orgCurrency={user?.orgCurrency}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })
             )}
-          </section>
+          </Panel>
 
           <aside className={cn("min-w-0", !current && !currentDay && "max-lg:hidden")}>
-            <div className="lg:sticky lg:top-28">
+            <div className="lg:sticky lg:top-4">
               {currentDay ? (
-                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                <Panel className="p-5">
                   <DayPanel
                     day={currentDay}
                     members={membersOf(currentDay)}
@@ -222,13 +209,13 @@ export default function ApprovalsPage() {
                     }}
                     orgCurrency={user?.orgCurrency}
                   />
-                </div>
+                </Panel>
               ) : current ? (
-                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                <Panel className="p-5">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="-ml-2 mb-3 rounded-lg lg:hidden"
+                    className="-ml-2 mb-3 rounded-full lg:hidden"
                     onClick={() => setSelected(null)}
                   >
                     <ChevronLeft className="size-4" />
@@ -240,11 +227,11 @@ export default function ApprovalsPage() {
                     busy={decide.isPending}
                     onDecide={onDecide}
                   />
-                </div>
+                </Panel>
               ) : (
                 !isLoading &&
                 visible.length > 0 && (
-                  <p className="rounded-xl border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground">
+                  <p className="rounded-[22px] border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground">
                     {t("approvals.pick")}
                   </p>
                 )

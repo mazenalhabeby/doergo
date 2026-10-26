@@ -33,7 +33,9 @@ export function WhoElse({ item }: { item: ApprovalItem }) {
         </p>
       )}
       <div>
-        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("approvals.route.title")}</p>
+        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {t("approvals.route.title")}
+        </p>
         {isLoading ? (
           <p className="text-muted-foreground">{t("approvals.route.loading")}</p>
         ) : !data?.deciders.length ? (
@@ -50,7 +52,9 @@ export function WhoElse({ item }: { item: ApprovalItem }) {
               </li>
             ))}
             {data.moreDeciders > 0 && (
-              <li className="text-xs text-muted-foreground">{t("approvals.route.more", { count: data.moreDeciders })}</li>
+              <li className="text-xs text-muted-foreground">
+                {t("approvals.route.more", { count: data.moreDeciders })}
+              </li>
             )}
           </ul>
         )}

@@ -3,9 +3,9 @@
 import { useTranslation } from "react-i18next"
 import { CalendarDays } from "lucide-react"
 import { labelWord, type ApprovalDay } from "@hbcfield/shared/client"
-import { cn } from "@/lib/utils"
 import { formatTimeAgo, formatMediumDate } from "@/lib/format-date"
 import { UserAvatar } from "@/components/common/user-avatar"
+import { Chip, ROW } from "@/components/page/page-kit"
 import { nameParts } from "./name-parts"
 
 /** One person's working day in the list: who, which day, and why it waits — as chips. */
@@ -13,16 +13,9 @@ export function DayRow({ day, active, onSelect }: { day: ApprovalDay; active: bo
   const { t, i18n } = useTranslation()
   return (
     <li>
-      <button
-        type="button"
-        onClick={onSelect}
-        aria-current={active ? "true" : undefined}
-        className={cn(
-          "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
-          active ? "bg-accent" : "hover:bg-accent/50",
-        )}
-      >
+      <button type="button" onClick={onSelect} aria-current={active ? "true" : undefined} className={ROW}>
         <UserAvatar
+          soft
           {...nameParts(day.subject.name)}
           avatarUrl={day.subject.avatarUrl}
           seed={day.subject.id ?? day.subject.name}
@@ -30,7 +23,9 @@ export function DayRow({ day, active, onSelect }: { day: ApprovalDay; active: bo
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <span className="truncate font-medium text-foreground">{day.subject.name || t("approvals.someone")}</span>
+            <span className="truncate text-sm font-semibold text-foreground">
+              {day.subject.name || t("approvals.someone")}
+            </span>
             <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
               <CalendarDays className="size-3" aria-hidden />
               {t("approvals.day.label")} · {formatMediumDate(`${day.localDate}T12:00:00Z`)}
@@ -52,17 +47,12 @@ export function DayChips({ day, locale }: { day: ApprovalDay; locale: string }) 
   return (
     <div className="mt-1 flex flex-wrap gap-1">
       {day.labels.map((code) => (
-        <span
-          key={code}
-          className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400"
-        >
+        <Chip key={code} tone="warn" dot>
           {labelWord(code, locale)}
-        </span>
+        </Chip>
       ))}
       {day.kinds.map((k) => (
-        <span key={k} className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-          {t(`approvals.kinds.${k}`)}
-        </span>
+        <Chip key={k}>{t(`approvals.kinds.${k}`)}</Chip>
       ))}
     </div>
   )

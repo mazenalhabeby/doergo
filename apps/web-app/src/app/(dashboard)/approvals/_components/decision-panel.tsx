@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { formatTimeAgo } from "@/lib/format-date"
 import { cn } from "@/lib/utils"
+import { FactRow } from "@/components/page/page-kit"
 import { WhoElse } from "./who-else"
 import { NoShowDecision } from "./no-show-decision"
 import { nameParts } from "./name-parts"
@@ -94,37 +95,37 @@ export function DecisionPanel({
   const pageOnly = item.canDecide && actions.length === 0 && !!spec.needsPage?.(item)
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex items-start gap-3">
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-3">
         <UserAvatar
+          soft
           {...nameParts(item.subject.name)}
           avatarUrl={item.subject.avatarUrl}
           seed={item.subject.id ?? item.subject.name}
           size="lg"
         />
-        <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {t(`approvals.kinds.${item.kind}`)}
-          </p>
-          <h2 className="truncate text-lg font-semibold text-foreground">
+        <div className="flex min-w-0 flex-col">
+          <h2 className="truncate text-[17px] font-semibold text-foreground">
             {item.subject.name || t("approvals.someone")}
           </h2>
-          <p className="text-sm text-muted-foreground">{text.headline}</p>
+          <p className="text-[13px] text-muted-foreground">
+            {t(`approvals.kinds.${item.kind}`)} · {text.headline}
+          </p>
         </div>
       </div>
 
-      <dl className="divide-y divide-border rounded-lg border border-border bg-card text-sm">
-        {item.space && <Fact label={t("approvals.fact.workspace")} value={item.space.name} />}
+      <dl>
+        {item.space && <FactRow label={t("approvals.fact.workspace")} value={item.space.name} />}
         {text.facts.map((f) => (
-          <Fact key={f.label} {...f} />
+          <FactRow key={f.label} label={f.label} value={f.value} tone={f.tone === "bad" ? "crit" : f.tone} />
         ))}
-        {item.raisedAt && <Fact label={t("approvals.fact.raised")} value={formatTimeAgo(item.raisedAt)} />}
+        {item.raisedAt && <FactRow label={t("approvals.fact.raised")} value={formatTimeAgo(item.raisedAt)} />}
       </dl>
 
       <ViewFile item={item} />
 
       {item.step && (
-        <p className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-foreground">
+        <p className="rounded-2xl bg-shell-accent-soft px-4 py-3 text-sm text-foreground">
           {item.step.mine
             ? t("approvals.step.mine", { role: item.step.roleName })
             : t("approvals.step.waiting", { name: item.step.firstByName, role: item.step.roleName })}
@@ -187,13 +188,11 @@ export function DecisionPanel({
             return (
               <Button
                 key={a.id}
+                size="pillLg"
                 variant={a.tone === "danger" ? (isArmed ? "destructive" : "outline") : "default"}
                 disabled={busy || blocked}
                 onClick={() => send(a)}
-                className={cn(
-                  "rounded-lg",
-                  a.tone === "danger" && !isArmed && "text-destructive hover:text-destructive",
-                )}
+                className={cn(a.tone === "danger" && !isArmed && "text-destructive hover:text-destructive")}
               >
                 {busy && isArmed ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -207,7 +206,7 @@ export function DecisionPanel({
             )
           })}
           {armed && (
-            <Button variant="ghost" className="rounded-lg" disabled={busy} onClick={() => setArmed(null)}>
+            <Button variant="ghost" size="pillLg" disabled={busy} onClick={() => setArmed(null)}>
               {t("common.cancel")}
             </Button>
           )}
@@ -215,12 +214,12 @@ export function DecisionPanel({
       )}
 
       {pageOnly && (
-        <p className="rounded-lg bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
+        <p className="rounded-2xl bg-muted px-4 py-3 text-sm text-muted-foreground">
           {t(`approvals.needsPage.${item.kind}`)}
         </p>
       )}
 
-      <div className="border-t border-border pt-4">
+      <div className="rounded-[14px] bg-muted p-3">
         <WhoElse item={item} />
       </div>
 
@@ -234,23 +233,6 @@ export function DecisionPanel({
           <ArrowUpRight className="size-3.5" />
         </Link>
       )}
-    </div>
-  )
-}
-
-function Fact({ label, value, tone }: { label: string; value: string; tone?: "warn" | "bad" }) {
-  return (
-    <div className="flex items-start justify-between gap-4 px-3 py-2">
-      <dt className="shrink-0 text-muted-foreground">{label}</dt>
-      <dd
-        className={cn(
-          "min-w-0 text-right font-medium text-foreground [overflow-wrap:anywhere]",
-          tone === "warn" && "text-amber-600 dark:text-amber-400",
-          tone === "bad" && "text-red-600 dark:text-red-400",
-        )}
-      >
-        {value}
-      </dd>
     </div>
   )
 }
@@ -288,7 +270,7 @@ function ViewFile({ item }: { item: ApprovalItem }) {
     }
   }
   return (
-    <Button variant="outline" size="sm" className="self-start gap-2" onClick={open} disabled={busy}>
+    <Button variant="outline" size="pill" className="self-start" onClick={open} disabled={busy}>
       {busy ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
       {t(`approvals.viewFile.${item.kind}`)}
     </Button>
