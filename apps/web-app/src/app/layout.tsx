@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Inter, Outfit, Familjen_Grotesk, Martian_Mono, Geist, Geist_Mono } from "next/font/google"
+import { Inter, Familjen_Grotesk, Martian_Mono, Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
 import { QueryProvider } from "@/providers/query-provider"
@@ -24,7 +24,6 @@ const geistMono = Geist_Mono({
   display: "swap",
   preload: false,
 })
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit", weight: ["400", "800"], display: "swap" })
 // Marketing/landing typography — mirrors the studio-grade reference:
 // Familjen Grotesk for large light-weight display, Martian Mono for micro-labels.
 const familjen = Familjen_Grotesk({
@@ -125,7 +124,7 @@ export default function RootLayout({
       */}
       <body
         suppressHydrationWarning
-        className={[inter, geist, geistMono, outfit, familjen, martian]
+        className={[inter, geist, geistMono, familjen, martian]
           .map((f) => f.variable)
           .concat(geist.className)
           .join(" ")}

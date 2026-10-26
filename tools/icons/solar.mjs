@@ -47,6 +47,8 @@ const PICKS = {
   // the phone (2026-10-26): the tab bar draws a LINE mark, the active tab its filled twin; the More page and the
   // home shortcuts draw the destination's filled mark — the same names the web uses for the same pages
   dashboardLine: 'widget-5-linear',
+  homeLine: 'home-2-linear',
+  userLine: 'user-rounded-linear',
   tasksLine: 'clipboard-list-linear',
   timeLine: 'clock-circle-linear',
   peopleLine: 'users-group-rounded-linear',
@@ -154,7 +156,6 @@ const PICKS = {
   chevronsUpDown: 'chevrons-up-down-linear',
   menu: 'hamburger-menu-linear',
   sidebarLine: { id: 'panel-right-linear', flip: true },
-  external: 'arrow-right-up-linear',
 };
 
 const pick = (v) => (typeof v === 'string' ? { id: v, flip: false } : v);

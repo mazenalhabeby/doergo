@@ -29,15 +29,17 @@ export type ClockLocation = {
 }
 
 type Ranked = ReturnType<typeof rankClockInLocations<ClockLocation>>[number]
-type Status = "here" | "far" | "away" | "none"
+type Status = "here" | "far" | "away" | "open" | "none"
 
-/** One verdict per row: on site, too far (refused by the server), allowed from away, or nothing to say. */
-function statusOf({ location: l, distanceM, inside }: Ranked): Status {
+/**
+ * One verdict per row, from the shared site rule (`rankClockInLocations` → `siteEnforcesZone` / `isAtSite`):
+ * on site, outside an area the server enforces (refused, unless allowed from away), or nothing to say — a site
+ * with no area is never "too far".
+ */
+function statusOf({ location: l, distanceM, inside, outside }: Ranked): Status {
   if (inside) return "here"
-  const known = l.lat != null && l.lng != null && distanceM != null
-  if (!known) return "none"
-  if (l.awayAllowed) return "away"
-  return distanceM > (l.geofenceRadius ?? 0) ? "far" : "none"
+  if (outside) return l.awayAllowed ? "away" : "far"
+  return distanceM == null ? "none" : "open"
 }
 
 const PANEL =
@@ -52,6 +54,7 @@ const STATUS_INK: Record<Status, string> = {
   here: "text-shell-accent",
   far: "text-shell-warn",
   away: "text-shell-soft",
+  open: "text-shell-soft",
   none: "text-shell-soft",
 }
 
@@ -108,9 +111,11 @@ export function ClockInPicker({
         ? t("attendance.my.picker.tooFar", "Too far")
         : s === "away"
           ? t("attendance.my.picker.awayAllowed", "Away allowed")
-          : r.location.lat == null
+          : s === "open"
             ? t("attendance.my.picker.noGeofence", "No geofence")
-            : t("attendance.my.picker.unknownDistance", "Distance unknown")
+            : r.location.lat == null
+              ? t("attendance.my.picker.noGeofence", "No geofence")
+              : t("attendance.my.picker.unknownDistance", "Distance unknown")
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

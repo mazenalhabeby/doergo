@@ -11,6 +11,7 @@ import { ClockInPicker } from "@/components/attendance/clock-in-picker"
 import { ClockOutEarlyDialog } from "@/components/attendance/clock-out-early-dialog"
 import { AskMoreTime } from "@/components/attendance/ask-more-time"
 import { Icon } from "@/components/ui/icon"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useTimeFormat } from "@/hooks/use-time-format"
 
 /** Whole minutes since an ISO timestamp, ticking every 20 seconds — the card shows hours and minutes. */
@@ -61,10 +62,13 @@ export function ClockWidget({ compact = false }: { compact?: boolean }) {
 
   if (!canClock) return null
 
-  // The shift's planned end, when there is one — a no-shift day's daily limit is an allowance, not an end.
+  // The shift's planned end, in the ENTRY's zone first (as the early-clock-out dialog says it), when there is
+  // one — a no-shift day's daily limit is an allowance, not an end.
   const plannedEnd =
     activeEntry?.expectedClockOutAt && !activeEntry.endIsDailyLimit ? activeEntry.expectedClockOutAt : null
-  const endsAt = plannedEnd ? formatTime(plannedEnd, activeEntry?.location?.timezone ?? undefined) : null
+  const endsAt = plannedEnd
+    ? formatTime(plannedEnd, activeEntry?.timezone ?? activeEntry?.location?.timezone ?? undefined)
+    : null
   // Before clocking in: the one place they would clock in, or how many there are to choose from (read after
   // the first paint — the line simply appears).
   const places =
@@ -81,52 +85,65 @@ export function ClockWidget({ compact = false }: { compact?: boolean }) {
   const clockInLabel = t("attendance.my.clockIn", "Clock In")
 
   if (clockedIn) {
+    const card = (
+      <div data-on className="clock-aurora flex h-14 items-center gap-2 rounded-[18px] pl-2 pr-2" title={title}>
+        <span className="clock-aurora-disc size-10">
+          <Icon name="clockRunning" size={22} />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col leading-tight">
+          <b className="font-shell-mono text-[15px] font-semibold tabular-nums">{formatDuration(minutes)}</b>
+          <span className="truncate text-[11.5px] text-shell-soft">
+            {[where, endsAt && t("attendance.my.untilTime", { time: endsAt, defaultValue: "until {{time}}" })]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
+        </span>
+        <AskMoreTime entry={activeEntry} compact />
+        <button
+          type="button"
+          // Never billing-locked: the server lets a shift end on a read-only account (@AllowWhenLocked).
+          disabled={pending}
+          onClick={clockOut}
+          aria-label={clockOutLabel}
+          className={cn(
+            "icon-motion inline-flex h-8 shrink-0 items-center gap-1 rounded-[11px] pl-2 pr-2.5 text-xs font-semibold",
+            "clock-out disabled:opacity-60",
+          )}
+        >
+          {pending ? spinner : <Icon name="clockOut" size={14} />}
+          {t("attendance.my.out", "Out")}
+        </button>
+      </div>
+    )
     return (
       <>
         {/* Short of the shift end, Clock Out asks first — the dialog must be HERE, where it is opened. */}
         <ClockOutEarlyDialog {...earlyProps} />
         {compact ? (
-          <button
-            type="button"
-            data-on
-            onClick={clockOut}
-            disabled={pending}
-            title={`${title}${where ? ` · ${where}` : ""} — ${clockOutLabel}`}
-            aria-label={clockOutLabel}
-            className="clock-aurora mx-auto grid size-12 place-items-center rounded-2xl text-shell-accent"
-          >
-            {/* The turning hand IS the "clocked in" signal on the rail. */}
-            {pending ? spinner : <Icon name="clockRunning" size={22} />}
-          </button>
-        ) : (
-          <div data-on className="clock-aurora flex h-14 items-center gap-2 rounded-[18px] pl-2 pr-2" title={title}>
-            <span className="clock-aurora-disc size-10">
-              <Icon name="clockRunning" size={22} />
-            </span>
-            <span className="flex min-w-0 flex-1 flex-col leading-tight">
-              <b className="font-shell-mono text-[15px] font-semibold tabular-nums">{formatDuration(minutes)}</b>
-              <span className="truncate text-[11.5px] text-shell-soft">
-                {[where, endsAt && t("attendance.my.untilTime", { time: endsAt, defaultValue: "until {{time}}" })]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </span>
-            </span>
-            <AskMoreTime entry={activeEntry} compact />
-            <button
-              type="button"
-              // Never billing-locked: the server lets a shift end on a read-only account (@AllowWhenLocked).
-              disabled={pending}
-              onClick={clockOut}
-              aria-label={clockOutLabel}
-              className={cn(
-                "icon-motion inline-flex h-8 shrink-0 items-center gap-1 rounded-[11px] pl-2 pr-2.5 text-xs font-semibold",
-                "clock-out disabled:opacity-60",
-              )}
+          /*
+            On the rail the stopwatch is the STATUS, not the action: a click opens the same card as the open
+            sidebar (time, place, Out). Clocking out on one click of a status mark ended shifts by accident.
+          */
+          <Popover>
+            <PopoverTrigger
+              data-on
+              title={`${title}${where ? ` · ${where}` : ""}`}
+              aria-label={title}
+              className="clock-aurora mx-auto grid size-12 place-items-center rounded-2xl text-shell-accent"
             >
-              {pending ? spinner : <Icon name="clockOut" size={14} />}
-              {t("attendance.my.out", "Out")}
-            </button>
-          </div>
+              <Icon name="clockRunning" size={22} />
+            </PopoverTrigger>
+            <PopoverContent
+              side="right"
+              align="end"
+              sideOffset={12}
+              className="w-[260px] rounded-[20px] border-0 bg-transparent p-0 shadow-none"
+            >
+              {card}
+            </PopoverContent>
+          </Popover>
+        ) : (
+          card
         )}
       </>
     )

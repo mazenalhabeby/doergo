@@ -9,6 +9,7 @@ import { useShellNav } from "../nav/use-shell-nav"
 import { SidebarHeader } from "./sidebar-header"
 import { SidebarNav } from "./sidebar-nav"
 import { useSidebarState } from "./use-sidebar-state"
+import { useMediaQuery } from "@/hooks/use-media-query"
 import { Icon } from "@/components/ui/icon"
 
 /**
@@ -51,8 +52,17 @@ export function SidebarBody({
 /**
  * The desktop sidebar (≥ lg): 268px, or the 76px rail — changed only by the toggle or "[" (no hover-open; see
  * use-sidebar-state).
+ *
+ * ⚠️ MOUNTED only at desktop width, not merely hidden: a CSS-hidden copy still ran the clock, presence,
+ * approvals and documents queries and the "[" key on every phone — and beside the open drawer there were two
+ * clock widgets, two pickers and two early-clock-out dialogs.
  */
 export function Sidebar() {
+  const desktop = useMediaQuery("(min-width: 1024px)")
+  return desktop ? <DesktopSidebar /> : null
+}
+
+function DesktopSidebar() {
   const { t } = useTranslation()
   const { collapsed, toggle } = useSidebarState()
   const rail = collapsed
@@ -61,16 +71,13 @@ export function Sidebar() {
   return (
     <aside
       aria-label={t("nav.navigation", "Navigation")}
-      className={cn(
-        "shell-motion relative z-40 hidden shrink-0 font-shell lg:block",
-        "transition-[width] duration-300 ease-[cubic-bezier(.32,.72,0,1)]",
-      )}
+      className={cn("shell-motion relative z-40 shrink-0 font-shell", "transition-[width] duration-300 ease-apple")}
       style={{ width: collapsed ? "var(--shell-rail)" : "var(--shell-open)" }}
     >
       <div
         className={cn(
           "absolute bottom-2.5 left-0 top-2.5 flex flex-col overflow-hidden rounded-r-3xl py-3 pl-3 pr-2.5",
-          "transition-[width] duration-300 ease-[cubic-bezier(.32,.72,0,1)]",
+          "transition-[width] duration-300 ease-apple",
         )}
         style={{ width: rail ? "var(--shell-rail)" : "var(--shell-open)" }}
       >

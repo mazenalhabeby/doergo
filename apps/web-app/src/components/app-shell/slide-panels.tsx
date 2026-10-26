@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
-const MOTION = "duration-[320ms] ease-[cubic-bezier(.32,.72,0,1)]"
+const MOTION = "duration-300 ease-apple"
 
 /**
  * Two panes side by side in one box: going to the second slides the first out to the left while the second

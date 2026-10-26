@@ -11,6 +11,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { pageShape, type PageShape } from "./page-shape"
 import { CalendarShape, DetailShape, FormShape, ListShape, MessagesShape } from "./page-shapes"
 
+const MODULE_GATED = /^\/(clients|customers|assets|portals)(\/|$)|^\/locations\/[^/]+\/portals\//
+
 const SHAPES: Record<Exclude<PageShape, "dashboard">, () => React.JSX.Element> = {
   list: ListShape,
   detail: DetailShape,
@@ -44,6 +46,11 @@ function pageSkeleton(pathname: string, user: Parameters<typeof dashboardVariant
   if (/^\/tasks\/(?!recurring\/?$)[^/]+\/?$/.test(pathname)) return <TaskDetailPageSkeleton />
   // The list in the view the user left it in (table / board / schedule).
   if (pathname === "/tasks") return <TasksPageLoading />
+  /*
+    ⚠️ MODULE-GATED pages (clients, assets, portals) may not exist for this organization at all. While `user` is
+    still unknown, promising their layout would draw a page that never comes — the neutral list shape stands in.
+  */
+  if (!user && MODULE_GATED.test(pathname)) return <ListShape />
   if (/^\/(clients|customers)\/[^/]+\/?$/.test(pathname)) return <ClientRecordSkeleton />
 
   const shape = pageShape(pathname)

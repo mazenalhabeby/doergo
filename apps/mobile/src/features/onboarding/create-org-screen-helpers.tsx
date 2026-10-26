@@ -4,7 +4,7 @@ import { Icon } from '@/components/amazen/ink-icon';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '@/lib/constants';
 
 /** CreateOrgScreen's module-level helpers, moved here unchanged so its sections can read them too. */
-/** Catalog icon keys → Ionicons names (single binding point, like wizard-icons on web). */
+/** Catalog icon keys → marks in the shared icon library (single binding point, like wizard-icons on web). */
 export const ICON_MAP: Record<string, IconName> = {
   package: 'assets',
   refresh: 'refreshLine',
@@ -40,7 +40,8 @@ export const ICON_MAP: Record<string, IconName> = {
 };
 
 export function ionicon(key: string): IconName {
-  return ICON_MAP[key] ?? 'ellipse-outline';
+  // An unknown key (a new industry on the server) gets a plain dot — never a name the library lacks.
+  return ICON_MAP[key] ?? 'dot';
 }
 
 export const TOTAL_STEPS = 3;

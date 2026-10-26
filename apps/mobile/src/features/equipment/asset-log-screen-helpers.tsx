@@ -75,7 +75,7 @@ export function FieldInput({
       <View style={s.block}>
         <Text style={[s.label, { color: colors.textMuted }]}>{label}</Text>
         <View style={[s.photoRow, { borderColor: border }]}>
-          <Icon name={photo ? 'attach' : 'attach'} size={18} color={photo ? '#22c55e' : colors.textMuted} />
+          <Icon name="attach" size={18} color={photo ? '#22c55e' : colors.textMuted} />
           <Text style={{ flex: 1, fontSize: FONT_SIZE.sm, color: colors.textMuted }}>
             {photo ? t('expenses.photoAttached', 'Photo attached') : t('expenses.noPhoto', 'No photo')}
           </Text>

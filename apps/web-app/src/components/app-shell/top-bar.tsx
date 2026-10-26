@@ -11,6 +11,7 @@ import { useSyncLocale } from "@/hooks/use-sync-locale"
 import { PAGE_WIDTH } from "@/components/ui/page-width"
 import { cn } from "@/lib/utils"
 import { CommandPaletteButton } from "./command-palette-button"
+import { useApprovalsCount } from "./use-approvals-count"
 import { MessagesButton } from "./messages-button"
 import { SidebarBody } from "./sidebar/sidebar"
 import { TopBarButton } from "./top-bar-icon"
@@ -25,6 +26,7 @@ export function TopBar() {
   // Notifications are written on the server in the reader's language.
   useSyncLocale()
   const [menuOpen, setMenuOpen] = useState(false)
+  const approvals = useApprovalsCount()
   const pathname = usePathname()
   // A page chosen any other way (⌘K, a link on the page) closes the drawer too.
   useEffect(() => setMenuOpen(false), [pathname])
@@ -36,10 +38,24 @@ export function TopBar() {
         <TopBarButton
           className="lg:hidden"
           onClick={() => setMenuOpen(true)}
-          aria-label={t("nav.openMenu", "Open the menu")}
+          aria-label={
+            approvals.allowed && approvals.total > 0
+              ? `${t("nav.openMenu", "Open the menu")} — ${t("approvals.navLabel", { count: approvals.total })}`
+              : t("nav.openMenu", "Open the menu")
+          }
           aria-expanded={menuOpen}
         >
           <Icon name="menu" />
+          {/* Approvals live in the sidebar; below lg that is a closed drawer, so the menu button carries the dot. */}
+          {approvals.allowed && approvals.total > 0 && (
+            <span
+              aria-hidden
+              className={cn(
+                "absolute right-1.5 top-1.5 size-2.5 rounded-full border-2 border-shell-card",
+                approvals.urgent ? "bg-shell-crit" : "bg-shell-warn",
+              )}
+            />
+          )}
         </TopBarButton>
         <CommandPaletteButton />
         <div className="ml-auto flex shrink-0 items-center gap-2">

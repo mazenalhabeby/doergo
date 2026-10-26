@@ -34,6 +34,11 @@ export interface RankedCandidate<T extends ClockInCandidate> {
   distanceM: number | null;
   /** Inside its area (a workspace with no area never is). */
   inside: boolean;
+  /**
+   * Measured, and the site HAS an area (a radius or a drawn boundary — `siteEnforcesZone`) that the fix is
+   * outside. The one "too far" a screen may show; a site with no area is never too far.
+   */
+  outside: boolean;
 }
 
 export type ClockInChoice<T extends ClockInCandidate> =
@@ -48,7 +53,9 @@ function measure<T extends ClockInCandidate>(
   location: T,
   fix: { lat: number; lng: number; accuracy?: number | null } | null,
 ): RankedCandidate<T> {
-  if (!fix || location.lat == null || location.lng == null) return { location, distanceM: null, inside: false };
+  if (!fix || location.lat == null || location.lng == null) {
+    return { location, distanceM: null, inside: false, outside: false };
+  }
   const zone = {
     lat: location.lat,
     lng: location.lng,
@@ -60,6 +67,7 @@ function measure<T extends ClockInCandidate>(
     location,
     distanceM: at.distanceToCentre == null ? null : Math.round(at.distanceToCentre),
     inside: siteEnforcesZone(zone) && at.inside,
+    outside: siteEnforcesZone(zone) && !at.inside,
   };
 }
 

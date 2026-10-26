@@ -15,7 +15,7 @@ import type { NavLeaf, NavSection } from "../nav/nav-config"
 import { Icon } from "@/components/ui/icon"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
-const EASE = "duration-300 ease-[cubic-bezier(.32,.72,0,1)]"
+const EASE = "duration-300 ease-apple"
 /** The count beside a row or a page (decisions waiting, documents to hand in). */
 const COUNT_PILL = "grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-bold tabular-nums"
 /** Amber; coral when something cannot wait (a person out of the ring now, extra time on a running shift). */

@@ -16,7 +16,7 @@ describe('clock-smart', () => {
   const site = (id: string) => ({ id, lat: 0, lng: 0, geofenceRadius: 50 });
   const ask = (...ids: string[]): ClockInChoice<ReturnType<typeof site>> => ({
     kind: 'ask',
-    ranked: ids.map((id) => ({ location: site(id), distanceM: null, inside: false })),
+    ranked: ids.map((id) => ({ location: site(id), distanceM: null, inside: false, outside: false })),
   });
 
   describe('no picker when the shift names the workspace', () => {

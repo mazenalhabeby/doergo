@@ -33,14 +33,14 @@ export default function CustomerTabsLayout() {
         name="index"
         options={{
           title: t('portal.tabs.home', 'Home'),
-          tabBarIcon: ({ color, focused }) => <Icon name={focused ? 'home' : 'home'} size={22} color={color} />,
+          tabBarIcon: ({ color, focused }) => <Icon name={focused ? 'home' : 'homeLine'} size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="requests"
         options={{
           title: t('portal.tabs.requests', 'Requests'),
-          tabBarIcon: ({ color, focused }) => <Icon name={focused ? 'tasks' : 'tasks'} size={22} color={color} />,
+          tabBarIcon: ({ color, focused }) => <Icon name={focused ? 'tasks' : 'tasksLine'} size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -54,7 +54,7 @@ export default function CustomerTabsLayout() {
         name="profile"
         options={{
           title: t('portal.tabs.profile', 'Profile'),
-          tabBarIcon: ({ color, focused }) => <Icon name={focused ? 'user' : 'user'} size={22} color={color} />,
+          tabBarIcon: ({ color, focused }) => <Icon name={focused ? 'user' : 'userLine'} size={22} color={color} />,
         }}
       />
     </Tabs>
