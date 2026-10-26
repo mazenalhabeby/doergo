@@ -9940,7 +9940,18 @@
       "doneTwo": "Listo tras las dos aprobaciones",
       "footnote": "Si aplican dos reglas, gana la del espacio de trabajo y luego el límite más alto. La aprobación de un administrador siempre lo cierra y nadie da las dos aprobaciones.",
       "removed": "Regla eliminada",
-      "noRoles": "Crea primero un rol que pueda aprobar."
+      "noRoles": "Crea primero un rol que pueda aprobar.",
+      "range": {
+        "label": "Se aplica a:",
+        "all": "todos",
+        "upTo": "hasta {{to}}",
+        "over": "más de {{from}}",
+        "between": "más de {{from}}, hasta {{to}}",
+        "notIn": "No en {{names}} — tienen sus propias reglas",
+        "twin": "Mismo espacio y límite que la regla {{n}} — solo se usa una de ellas"
+      },
+      "workingDays_one": "{{count}} día laborable",
+      "workingDays_other": "{{count}} días laborables"
     }
   },
   "overtimePage": {

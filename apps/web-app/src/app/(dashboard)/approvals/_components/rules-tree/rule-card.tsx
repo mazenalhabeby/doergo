@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import type { ApprovalRuleInput, ApprovalRuleView } from "@hbcfield/shared/client"
+import { formatMoney, type ApprovalRuleInput, type ApprovalRuleView } from "@hbcfield/shared/client"
+import { dateLocale } from "@/lib/format-date"
+import type { RuleRange } from "../../_lib/rule-range"
 import { Icon } from "@/components/ui/icon"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -34,6 +36,7 @@ export function RuleCard({
   roles,
   workspaces,
   currency,
+  range,
   onChange,
   onRemove,
 }: {
@@ -42,6 +45,7 @@ export function RuleCard({
   roles: RuleRole[]
   workspaces: { id: string; name: string }[]
   currency: string
+  range: RuleRange
   onChange: (patch: Partial<ApprovalRuleInput>) => void
   onRemove: () => void
 }) {
@@ -118,6 +122,7 @@ export function RuleCard({
             {t("approvals.tree.coverShort")}
           </label>
         )}
+        <RangeLine rule={rule} range={range} currency={currency} />
       </TreeNode>
 
       <Stem />
@@ -182,6 +187,42 @@ export function RuleCard({
       </div>
       <Stem />
       <DoneNode>{rule.secondRoleId ? t("approvals.tree.doneTwo") : t("approvals.tree.doneFirst")}</DoneNode>
+    </div>
+  )
+}
+
+/** What this rule really covers next to the others: where a higher limit takes over, which workspaces have their own. */
+function RangeLine({ rule, range, currency }: { rule: ApprovalRuleView; range: RuleRange; currency: string }) {
+  const { t } = useTranslation()
+  if (!rule.isActive) return null
+  const show = (n: number) =>
+    rule.kind === "overtime"
+      ? t("approvals.tree.hours", { count: Math.round((n / 60) * 10) / 10 })
+      : rule.kind === "request"
+        ? t("approvals.tree.workingDays", { count: n })
+        : formatMoney(n, currency, dateLocale())
+  const span =
+    range.from != null && range.to != null
+      ? t("approvals.tree.range.between", { from: show(range.from), to: show(range.to) })
+      : range.from != null
+        ? t("approvals.tree.range.over", { from: show(range.from) })
+        : range.to != null
+          ? t("approvals.tree.range.upTo", { to: show(range.to) })
+          : t("approvals.tree.range.all")
+  return (
+    <div className="flex flex-col gap-1 rounded-xl bg-shell-chip px-2.5 py-2 text-[12.5px] leading-snug">
+      <span>
+        <span className="text-muted-foreground">{t("approvals.tree.range.label")} </span>
+        <b className="font-semibold">{span}</b>
+      </span>
+      {range.notIn.length > 0 && (
+        <span className="text-muted-foreground">
+          {t("approvals.tree.range.notIn", { names: range.notIn.join(", ") })}
+        </span>
+      )}
+      {range.shadowedBy != null && (
+        <span className="text-shell-crit">{t("approvals.tree.range.twin", { n: range.shadowedBy })}</span>
+      )}
     </div>
   )
 }

@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useRulesTree } from "../../_hooks/use-rules-tree"
+import { ruleRanges } from "../../_lib/rule-range"
 import { RuleCard } from "./rule-card"
 import { ChoiceSelect, DoneNode, Stem, TreeNode } from "./tree-nodes"
 
@@ -45,6 +46,8 @@ export function RulesTree() {
   const { user } = useAuth()
   const currency = user?.orgCurrency ?? "EUR"
   const tree = useRulesTree(true)
+  const spaceName = (id: string) => tree.workspaces.find((w) => w.id === id)?.name ?? "?"
+  const ranges = ruleRanges(tree.rules, spaceName)
   const catchesAll = tree.rules.some(
     (r) => r.isActive && !r.spaceId && !r.whenCoverShort && (r.minMinutes ?? r.minDays ?? r.minAmountCents) == null,
   )
@@ -103,6 +106,7 @@ export function RulesTree() {
                   roles={tree.roles}
                   workspaces={tree.workspaces}
                   currency={currency}
+                  range={ranges[i]}
                   onChange={(patch) => tree.change(r, patch)}
                   onRemove={() => tree.remove.mutate(r.id)}
                 />

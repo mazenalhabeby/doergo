@@ -9940,7 +9940,18 @@
       "doneTwo": "Terminé après les deux approbations",
       "footnote": "Si deux règles s'appliquent, celle de l'espace de travail l'emporte, puis la limite la plus haute. L'approbation d'un administrateur termine toujours, et personne ne donne les deux approbations.",
       "removed": "Règle supprimée",
-      "noRoles": "Créez d'abord un rôle qui peut approuver."
+      "noRoles": "Créez d'abord un rôle qui peut approuver.",
+      "range": {
+        "label": "S'applique à :",
+        "all": "tout",
+        "upTo": "jusqu'à {{to}}",
+        "over": "plus de {{from}}",
+        "between": "plus de {{from}}, jusqu'à {{to}}",
+        "notIn": "Pas dans {{names}} — ils ont leurs propres règles",
+        "twin": "Même espace et même limite que la règle {{n}} — une seule des deux est utilisée"
+      },
+      "workingDays_one": "{{count}} jour ouvré",
+      "workingDays_other": "{{count}} jours ouvrés"
     }
   },
   "overtimePage": {

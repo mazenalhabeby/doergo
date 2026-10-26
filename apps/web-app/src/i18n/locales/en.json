@@ -9940,7 +9940,18 @@
       "doneTwo": "Done after both approvals",
       "footnote": "If two rules fit, the workspace's own rule wins, then the higher limit. An administrator's approval always finishes it, and nobody gives both approvals.",
       "removed": "Rule removed",
-      "noRoles": "First create a role that can approve."
+      "noRoles": "First create a role that can approve.",
+      "range": {
+        "label": "Applies to:",
+        "all": "every one",
+        "upTo": "up to {{to}}",
+        "over": "more than {{from}}",
+        "between": "more than {{from}}, up to {{to}}",
+        "notIn": "Not in {{names}} — they have their own rules",
+        "twin": "Same workspace and limit as Rule {{n}} — only one of them is used"
+      },
+      "workingDays_one": "{{count}} working day",
+      "workingDays_other": "{{count}} working days"
     }
   },
   "overtimePage": {

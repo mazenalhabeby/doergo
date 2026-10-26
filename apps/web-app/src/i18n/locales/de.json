@@ -9940,7 +9940,18 @@
       "doneTwo": "Fertig nach beiden Genehmigungen",
       "footnote": "Passen zwei Regeln, gewinnt die Regel des Arbeitsbereichs, dann die höhere Grenze. Die Genehmigung eines Administrators schließt immer ab, und niemand gibt beide Genehmigungen.",
       "removed": "Regel entfernt",
-      "noRoles": "Lege zuerst eine Rolle an, die genehmigen darf."
+      "noRoles": "Lege zuerst eine Rolle an, die genehmigen darf.",
+      "range": {
+        "label": "Gilt für:",
+        "all": "alle",
+        "upTo": "bis {{to}}",
+        "over": "mehr als {{from}}",
+        "between": "mehr als {{from}}, bis {{to}}",
+        "notIn": "Nicht in {{names}} — dort gelten eigene Regeln",
+        "twin": "Gleicher Arbeitsbereich und gleiche Grenze wie Regel {{n}} — nur eine davon wird verwendet"
+      },
+      "workingDays_one": "{{count}} Arbeitstag",
+      "workingDays_other": "{{count}} Arbeitstage"
     }
   },
   "overtimePage": {
