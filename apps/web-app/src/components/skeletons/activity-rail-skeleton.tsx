@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import { getSpaceScope } from "@hbcfield/shared/client";
-import { WORKSPACE_CARD, workspaceCardCols } from "@/components/dashboard";
-import { Shimmer as S } from "@/components/skeletons/primitives";
-import { cn } from "@/lib/utils";
+import { getSpaceScope } from "@hbcfield/shared/client"
+import { WORKSPACE_CARD, workspaceCardCols } from "@/components/dashboard"
+import { Shimmer as S } from "@/components/skeletons/primitives"
+import { cn } from "@/lib/utils"
 
 /**
  * Which layout this user's dashboard renders. Shared by the page and its
@@ -87,8 +87,10 @@ export function ActivityRailSkeleton() {
           {ACTIVITY_LINES.map(([wide, narrow], i) => (
             <div
               key={i}
-              className={"flex items-start gap-3 px-4 py-2.5 border-b border-border/50 animate-in " +
-                "fade-in fill-mode-backwards duration-500 motion-reduce:animate-none"}
+              className={
+                "flex items-start gap-3 px-4 py-2.5 border-b border-border/50 animate-in " +
+                "fade-in fill-mode-backwards duration-500 motion-reduce:animate-none"
+              }
               style={{ animationDelay: `${120 + i * 60}ms` }}
             >
               <S className="h-2 w-2 rounded-full shrink-0 mt-1.5" delayMs={i * 60} />
@@ -111,8 +113,10 @@ export function ActivityRailSkeleton() {
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className={"flex items-center gap-3 px-4 py-2.5 border-b border-border/50 animate-in " +
-                "fade-in fill-mode-backwards duration-500 motion-reduce:animate-none"}
+              className={
+                "flex items-center gap-3 px-4 py-2.5 border-b border-border/50 animate-in " +
+                "fade-in fill-mode-backwards duration-500 motion-reduce:animate-none"
+              }
               style={{ animationDelay: `${320 + i * 60}ms` }}
             >
               <S className="h-8 w-8 rounded-full shrink-0" delayMs={i * 60} />

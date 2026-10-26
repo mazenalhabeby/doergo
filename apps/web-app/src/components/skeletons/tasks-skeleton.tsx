@@ -30,9 +30,7 @@ export function readStoredViewMode(): TaskViewMode {
   if (typeof window === "undefined") return DEFAULT_VIEW_MODE
   try {
     const stored = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY)
-    return stored === "board" || stored === "schedule" || stored === "table"
-      ? stored
-      : DEFAULT_VIEW_MODE
+    return stored === "board" || stored === "schedule" || stored === "table" ? stored : DEFAULT_VIEW_MODE
   } catch {
     // Private mode / storage disabled — the default still applies.
     return DEFAULT_VIEW_MODE
@@ -52,10 +50,7 @@ function TableSkeleton() {
         ))}
       </div>
       {Array.from({ length: 7 }).map((_, i) => (
-        <div
-          key={i}
-          className="flex items-center gap-4 px-5 py-3.5 border-b border-border/20 last:border-0"
-        >
+        <div key={i} className="flex items-center gap-4 px-5 py-3.5 border-b border-border/20 last:border-0">
           <S className="size-4 rounded-full" delayMs={i * 50} />
           {/* Varied title widths so the rows don't read as a barcode. */}
           <S className="h-4 rounded" style={{ width: `${140 + ((i * 17) % 80)}px` }} delayMs={i * 50} />

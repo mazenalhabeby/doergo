@@ -440,6 +440,9 @@
   /* The icon ink (chat's marks) — the phone's amazen.gradient.iconInk, the same two jades. */
   --icon-ink-from: #22b48d;
   --icon-ink-to: #0a6f58;
+  /* A loading placeholder: the bone and the light that sweeps across it. */
+  --shell-bone: #0b332a12;
+  --shell-shine: #ffffff99;
 }
 .dark {
   --shell-ground: linear-gradient(180deg, #0c4339 0, #09291f 170px, #061a19 340px, #050c0f 520px, #040507 700px);
@@ -464,7 +467,22 @@
   --shell-pop-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.8);
   --icon-ink-from: #9af0d6;
   --icon-ink-to: #10b993;
+  --shell-bone: #ffffff12;
+  --shell-shine: #ffffff14;
 }
+/*
+  THE loading placeholder (Shimmer and ui/Skeleton both draw it): a bone with one sweep of light, CSS only.
+  `.skeleton-wait` holds a page-shaped skeleton back 200 ms, so a page that arrives quickly shows no grey flash.
+*/
+.skeleton-bone { position: relative; overflow: hidden; background: var(--shell-bone) }
+.skeleton-bone::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--shell-shine), transparent);
+  animation: bone-shine 1.6s ease-in-out infinite; animation-delay: var(--shimmer-delay, 0ms) }
+@keyframes bone-shine { to { transform: translateX(100%) } }
+.skeleton-wait { animation: skeleton-wait .25s ease-out .2s both }
+@keyframes skeleton-wait { from { opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .skeleton-bone::after { animation: none } .skeleton-wait { animation-duration: 0s } }
 .shell-scroll { scrollbar-width: thin; scrollbar-color: var(--shell-line) transparent; }
 .shell-scroll::-webkit-scrollbar { width: 6px; }
 .shell-scroll::-webkit-scrollbar-thumb { background: var(--shell-line); border-radius: 3px; }

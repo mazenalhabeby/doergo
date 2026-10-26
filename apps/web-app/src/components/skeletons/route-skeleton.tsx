@@ -1,70 +1,54 @@
-'use client';
+"use client"
 
-import { usePathname } from 'next/navigation';
-import { ClientRecordSkeleton, ClientsListSkeleton } from './crm';
+import { usePathname } from "next/navigation"
+import { useTranslation } from "react-i18next"
+import { ClientRecordSkeleton } from "./crm"
+import { DashboardPageSkeleton, dashboardVariant } from "@/components/skeletons/dashboard-page-skeleton"
+import { TasksPageLoading } from "@/components/skeletons/tasks-skeleton"
+import { TaskDetailPageSkeleton } from "./task-detail-skeleton"
+import { JobReportPageSkeleton } from "@/components/skeletons/report-skeleton"
+import { useAuth } from "@/contexts/auth-context"
+import { pageShape, type PageShape } from "./page-shape"
+import { CalendarShape, DetailShape, FormShape, ListShape, MessagesShape } from "./page-shapes"
 
-import { DashboardPageSkeleton, dashboardVariant } from '@/components/skeletons/dashboard-page-skeleton';
-import { TasksPageLoading } from '@/components/skeletons/tasks-skeleton';
-import { TaskDetailPageSkeleton } from './page-skeletons';
-import { JobReportPageSkeleton } from '@/components/skeletons/report-skeleton';
-import { useAuth } from '@/contexts/auth-context';
-
-import { GenericContentSkeleton } from './primitives';
+const SHAPES: Record<Exclude<PageShape, "dashboard">, () => React.JSX.Element> = {
+  list: ListShape,
+  detail: DetailShape,
+  form: FormShape,
+  calendar: CalendarShape,
+  messages: MessagesShape,
+}
 
 /**
- * The page-shaped skeleton for the current route.
+ * What the current page draws while it loads — the ONE answer for the dashboard's `loading.tsx`, the layout's
+ * Suspense boundary, and any page that waits for its route. The shape comes from `pageShape` (six shapes cover
+ * every page); a page that draws its OWN skeleton while its data loads is named here, so the route stage and the
+ * page stage are the same silhouette and the page only ever fills in, never re-arranges.
  *
- * Loading a dashboard page passes through up to three placeholder stages — the
- * auth check, the layout's Suspense boundary, then the route's own loading.tsx.
- * When the first two render a generic shape, the user watches the layout change
- * under them twice before the real page appears. Routing them all through this
- * one map means every stage shows the same silhouette, so the page only ever
- * fills in — it never re-arranges.
- *
- * Add a route here as its page gains a shaped skeleton; anything unmapped falls
- * back to the generic content blocks, which is the previous behaviour.
+ * Held back 200 ms (`.skeleton-wait`): a page that arrives sooner shows no grey flash at all.
  */
 export function RouteSkeleton() {
-  const pathname = usePathname();
-  const { user } = useAuth();
+  const pathname = usePathname()
+  const { user } = useAuth()
+  const { t } = useTranslation()
+  return (
+    <div className="skeleton-wait h-full" role="status" aria-busy="true" aria-label={t("common.loading", "Loading")}>
+      {pageSkeleton(pathname, user)}
+    </div>
+  )
+}
 
-  // A job report — /tasks/<id>/report: the sheet, not the task page.
-  if (/^\/tasks\/[^/]+\/report\/?$/.test(pathname)) {
-    return <JobReportPageSkeleton />;
-  }
+function pageSkeleton(pathname: string, user: Parameters<typeof dashboardVariant>[0]) {
+  // The pages below draw these themselves while their data loads.
+  if (/^\/tasks\/[^/]+\/report\/?$/.test(pathname)) return <JobReportPageSkeleton />
+  if (/^\/tasks\/(?!recurring\/?$)[^/]+\/?$/.test(pathname)) return <TaskDetailPageSkeleton />
+  // The list in the view the user left it in (table / board / schedule).
+  if (pathname === "/tasks") return <TasksPageLoading />
+  if (/^\/(clients|customers)\/[^/]+\/?$/.test(pathname)) return <ClientRecordSkeleton />
 
-  // A task detail route — /tasks/<id>, but not /tasks/recurring.
-  if (pathname.startsWith('/tasks/') && pathname !== '/tasks/recurring') {
-    return <TaskDetailPageSkeleton />;
-  }
-
-  if (pathname === '/tasks') {
-    // Draws the view the user left the list in, so the auth check, the Suspense
-    // boundary and the route loader all show the same shape.
-    return <TasksPageLoading />;
-  }
-
-  if (pathname === '/dashboard') {
-    // The dashboard has three layouts; draw the one this user will actually get.
-    // During the auth check `user` is still null and dashboardVariant falls back
-    // to the admin grid.
-    return <DashboardPageSkeleton variant={dashboardVariant(user)} />;
-  }
-
-  /*
-    The CRM — but only once we know whose CRM it is.
-
-    ⚠️ These routes are MODULE-GATED. Clients, assets and portals exist for an
-    organization only while the module is on, so during the auth check — when
-    `user` is still null — drawing the clients list would be promising a page
-    that may never be rendered for this account at all. The neutral shape below
-    is the honest answer until the user is known; after that this is a real
-    navigation to a route the app has already decided to render.
-  */
-  if (user) {
-    if (pathname.startsWith('/customers/')) return <ClientRecordSkeleton />;
-    if (pathname === '/clients') return <ClientsListSkeleton />;
-  }
-
-  return <GenericContentSkeleton />;
+  const shape = pageShape(pathname)
+  // The dashboard has three layouts; draw the one this user will get (the admin grid while `user` is unknown).
+  if (shape === "dashboard") return <DashboardPageSkeleton variant={dashboardVariant(user)} />
+  const Shape = SHAPES[shape]
+  return <Shape />
 }

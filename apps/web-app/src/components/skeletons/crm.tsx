@@ -1,7 +1,7 @@
-'use client';
+"use client"
 
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 
 /**
  * The CRM's two waits, drawn once.
@@ -14,33 +14,6 @@ import { cn } from '@/lib/utils';
  * then the page, rearranging twice before anything was readable.
  */
 
-/** The clients list: heading, toolbar, then the rows that are coming. */
-export function ClientsListSkeleton() {
-  return (
-    <div className="mx-auto max-w-[1000px] px-6 py-6">
-      <Skeleton className="h-7 w-24" />
-      <Skeleton className="mt-2 h-4 w-56" />
-
-      <div className="mt-6 flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <Skeleton className="h-5 w-28" />
-          <Skeleton className="h-3.5 w-72" />
-        </div>
-        <Skeleton className="h-8 w-32 rounded-lg" />
-      </div>
-
-      <div className="mt-4 flex items-center justify-between gap-2">
-        <Skeleton className="h-9 w-full max-w-xs rounded-md" />
-        <Skeleton className="h-8 w-56 rounded-lg" />
-      </div>
-
-      <div className="mt-4">
-        <ClientRowsSkeleton />
-      </div>
-    </div>
-  );
-}
-
 /**
  * Just the rows — used inside the list once its chrome is already painted.
  *
@@ -49,30 +22,30 @@ export function ClientsListSkeleton() {
  */
 export function ClientRowsSkeleton({ rows = 4 }: { rows?: number }) {
   const widths = [
-    ['w-40', 'w-56'],
-    ['w-32', 'w-44'],
-    ['w-48', 'w-36'],
-    ['w-36', 'w-52'],
-    ['w-44', 'w-40'],
-    ['w-28', 'w-48'],
-  ];
+    ["w-40", "w-56"],
+    ["w-32", "w-44"],
+    ["w-48", "w-36"],
+    ["w-36", "w-52"],
+    ["w-44", "w-40"],
+    ["w-28", "w-48"],
+  ]
   return (
     <div className="space-y-2">
       {Array.from({ length: rows }).map((_, i) => {
-        const [name, meta] = widths[i % widths.length];
+        const [name, meta] = widths[i % widths.length]
         return (
           <div key={i} className="flex items-center gap-3 rounded-xl border border-border p-3">
             <Skeleton className="h-10 w-10 shrink-0 rounded-lg" />
             <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className={cn('h-3.5', name)} />
-              <Skeleton className={cn('h-3', meta)} />
+              <Skeleton className={cn("h-3.5", name)} />
+              <Skeleton className={cn("h-3", meta)} />
             </div>
             <Skeleton className="h-5 w-14 shrink-0 rounded-md" />
           </div>
-        );
+        )
       })}
     </div>
-  );
+  )
 }
 
 /**
@@ -110,10 +83,10 @@ export function ClientRecordSkeleton() {
           <div className="rounded-2xl border border-border/70 bg-card p-4">
             <Skeleton className="mb-3 h-3 w-16" />
             <div className="space-y-3">
-              {['w-32', 'w-24', 'w-28', 'w-20'].map((w, i) => (
+              {["w-32", "w-24", "w-28", "w-20"].map((w, i) => (
                 <div key={i} className="flex items-center justify-between gap-3">
                   <Skeleton className="h-3 w-14" />
-                  <Skeleton className={cn('h-3.5', w)} />
+                  <Skeleton className={cn("h-3.5", w)} />
                 </div>
               ))}
             </div>
@@ -141,22 +114,22 @@ export function ClientRecordSkeleton() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 /** The timeline's own wait, inside a record that has already arrived. */
 export function ActivityFeedSkeleton() {
   return (
     <div className="space-y-2">
-      {['w-3/4', 'w-1/2', 'w-2/3'].map((w, i) => (
+      {["w-3/4", "w-1/2", "w-2/3"].map((w, i) => (
         <div key={i} className="flex gap-3 rounded-2xl border border-border/70 bg-card p-4">
           <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
           <div className="min-w-0 flex-1 space-y-2">
             <Skeleton className="h-3.5 w-28" />
-            <Skeleton className={cn('h-3', w)} />
+            <Skeleton className={cn("h-3", w)} />
           </div>
         </div>
       ))}
     </div>
-  );
+  )
 }

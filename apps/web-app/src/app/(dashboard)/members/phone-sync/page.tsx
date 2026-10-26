@@ -16,7 +16,7 @@ import { PAGE_SHELL } from "@/components/ui/page-width"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { UserAvatar } from "@/components/common/user-avatar"
-import { GenericContentSkeleton } from "@/components/skeletons/primitives"
+import { ListShape } from "@/components/skeletons/page-shapes"
 import { PHONE_SYNC_STATES, countByState, formatAge, matchesSearch } from "@/lib/phone-sync"
 import { TONE, StatePill, FilterChip, DetailPanel } from "./_components/detail-panel"
 import { PageNotice } from "@/components/ui/empty-note"
@@ -74,7 +74,7 @@ export default function PhoneSyncPage() {
   if (!canView) {
     return <PageNotice>{t("manage.noAccess")}</PageNotice>
   }
-  if (health.isLoading) return <GenericContentSkeleton />
+  if (health.isLoading) return <ListShape />
 
   const nameOf = (id: string) => {
     const p = personById.get(id)

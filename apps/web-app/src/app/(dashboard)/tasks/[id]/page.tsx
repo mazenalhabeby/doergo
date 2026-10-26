@@ -8,7 +8,7 @@ import { assigneeIds } from "@/lib/task-assignment"
 
 import { RefreshCw, AlertCircle } from "lucide-react"
 
-import { TaskDetailPageSkeleton } from "@/components/skeletons/page-skeletons"
+import { TaskDetailPageSkeleton } from "@/components/skeletons/task-detail-skeleton"
 import { tasksApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { notify } from "@/lib/toast"

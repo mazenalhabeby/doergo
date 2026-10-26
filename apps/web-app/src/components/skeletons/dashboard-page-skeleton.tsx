@@ -1,17 +1,16 @@
 "use client"
 
-
 import { WORKSPACE_CARD } from "@/components/dashboard"
 import { Shimmer as S } from "@/components/skeletons/primitives"
-import { PAGE_SHELL } from "@/components/ui/page-width";
+import { PAGE_SHELL } from "@/components/ui/page-width"
 import {
   CARD_SHAPE,
   CardSkeleton,
   ActivityRailSkeleton,
   HeaderSkeleton,
   type DashboardPageSkeletonProps,
-} from "./activity-rail-skeleton";
-export { dashboardVariant } from "./activity-rail-skeleton";
+} from "./activity-rail-skeleton"
+export { dashboardVariant } from "./activity-rail-skeleton"
 
 /**
  * Loading state for /dashboard — a structural stand-in, not a generic grey box.
@@ -48,9 +47,11 @@ export function DashboardPageSkeleton({ variant = "spaces" }: DashboardPageSkele
           {Array.from({ length: 2 }).map((_, i) => (
             <div
               key={i}
-              className={"flex items-center gap-3 rounded-2xl border border-border/50 bg-card p-3 " +
+              className={
+                "flex items-center gap-3 rounded-2xl border border-border/50 bg-card p-3 " +
                 "animate-in fade-in fill-mode-backwards duration-500 " +
-                "motion-reduce:animate-none"}
+                "motion-reduce:animate-none"
+              }
               style={{ animationDelay: `${80 + i * 70}ms` }}
             >
               <S className="h-9 w-9 rounded-full shrink-0" delayMs={i * 70} />

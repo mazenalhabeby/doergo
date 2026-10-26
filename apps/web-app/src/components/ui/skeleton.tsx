@@ -1,15 +1,8 @@
 import { cn } from "@/lib/utils"
 
-function Skeleton({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn("animate-pulse rounded-md bg-primary/10", className)}
-      {...props}
-    />
-  )
+/** A placeholder bone — the same one every page skeleton draws (`.skeleton-bone` in globals.css). */
+function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("skeleton-bone rounded-md", className)} {...props} />
 }
 
 export { Skeleton }

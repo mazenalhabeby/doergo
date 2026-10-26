@@ -1,6 +1,6 @@
-'use client';
+"use client"
 
-import { AnimatedLogo } from '@hbcfield/shared/components';
+import { AnimatedLogo } from "@hbcfield/shared/components"
 
 /**
  * The moment before the app knows who you are.
@@ -38,9 +38,11 @@ import { AnimatedLogo } from '@hbcfield/shared/components';
 export function BootScreen() {
   return (
     <div
-      className={"flex min-h-screen items-center justify-center bg-gradient-to-br " +
+      className={
+        "flex min-h-screen items-center justify-center bg-gradient-to-br " +
         "from-slate-100 via-slate-50 to-slate-100 p-4 dark:from-slate-950 " +
-        "dark:via-slate-900 dark:to-slate-950"}
+        "dark:via-slate-900 dark:to-slate-950"
+      }
       // A screen reader should hear that something is loading, not read a logo.
       role="status"
       aria-busy="true"
@@ -62,5 +64,5 @@ export function BootScreen() {
         </span>
       </div>
     </div>
-  );
+  )
 }
