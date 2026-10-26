@@ -9934,7 +9934,6 @@
       "days_one": "{{count}} Tag",
       "days_other": "{{count}} Tagen",
       "noRuleFits": "Keine Regel passt",
-      "doneFirst": "Fertig nach der ersten Genehmigung",
       "doneTwo": "Fertig · 2 Genehmigungen",
       "footnote": "Passen zwei Regeln, gewinnt die Regel des Arbeitsbereichs, dann die höhere Grenze. Die Genehmigung eines Administrators schließt immer ab, und niemand gibt beide Genehmigungen.",
       "removed": "Regel entfernt",
@@ -9960,7 +9959,9 @@
         "pass": "{{role}} nach {{after}}",
         "off": "Aus"
       },
-      "doneOne": "Fertig · 1 Genehmigung"
+      "doneOne": "Fertig · 1 Genehmigung",
+      "upToIn": "{{name}} bis {{to}}",
+      "more": "+{{count}} weitere"
     }
   },
   "overtimePage": {

@@ -9934,7 +9934,6 @@
       "days_one": "{{count}} day",
       "days_other": "{{count}} days",
       "noRuleFits": "No rule fits",
-      "doneFirst": "Done after the first approval",
       "doneTwo": "Done · 2 approvals",
       "footnote": "If two rules fit, the workspace's own rule wins, then the higher limit. An administrator's approval always finishes it, and nobody gives both approvals.",
       "removed": "Rule removed",
@@ -9960,7 +9959,9 @@
         "pass": "{{role}} after {{after}}",
         "off": "Off"
       },
-      "doneOne": "Done · 1 approval"
+      "doneOne": "Done · 1 approval",
+      "upToIn": "{{name}} up to {{to}}",
+      "more": "+{{count}} more"
     }
   },
   "overtimePage": {

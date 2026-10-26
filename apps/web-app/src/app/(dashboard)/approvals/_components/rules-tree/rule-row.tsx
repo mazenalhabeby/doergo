@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { formatMoney, type ApprovalRuleInput, type ApprovalRuleView } from "@hbcfield/shared/client"
 import { dateLocale } from "@/lib/format-date"
 import { Icon } from "@/components/ui/icon"
@@ -31,6 +32,13 @@ function limitPatch(kind: ApprovalRuleView["kind"], v: string): Partial<Approval
     minDays: kind === "request" && n != null ? Math.round(n) : null,
     minAmountCents: kind === "expense" && n != null ? Math.round(n * 100) : null,
   }
+}
+
+/** A stored limit (minutes / working days / cents) as the office reads it. */
+export function limitText(t: TFunction, kind: ApprovalRuleView["kind"], v: number, currency: string): string {
+  if (kind === "overtime") return t("approvals.tree.hours", { count: Math.round((v / 60) * 10) / 10 })
+  if (kind === "request") return t("approvals.tree.workingDays", { count: v })
+  return formatMoney(v, currency, dateLocale())
 }
 
 /** One rule as a chain: where → when (its real range) → who also approves → if nobody answers → done. */
@@ -67,12 +75,7 @@ export function RuleRow({
   const wait = (h: number) =>
     h % 24 ? t("approvals.tree.hours", { count: h }) : t("approvals.tree.days", { count: h / 24 })
   const hourChoices = HOURS.map((h) => ({ value: String(h), label: wait(h) }))
-  const show = (v: number) =>
-    rule.kind === "overtime"
-      ? t("approvals.tree.hours", { count: Math.round((v / 60) * 10) / 10 })
-      : rule.kind === "request"
-        ? t("approvals.tree.workingDays", { count: v })
-        : formatMoney(v, currency, dateLocale())
+  const show = (v: number) => limitText(t, rule.kind, v, currency)
   const span =
     range.from != null && range.to != null
       ? t("approvals.tree.range.between", { from: show(range.from), to: show(range.to) })

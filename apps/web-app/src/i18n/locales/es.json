@@ -9934,7 +9934,6 @@
       "days_one": "{{count}} día",
       "days_other": "{{count}} días",
       "noRuleFits": "Ninguna regla aplica",
-      "doneFirst": "Listo tras la primera aprobación",
       "doneTwo": "Listo · 2 aprobaciones",
       "footnote": "Si aplican dos reglas, gana la del espacio de trabajo y luego el límite más alto. La aprobación de un administrador siempre lo cierra y nadie da las dos aprobaciones.",
       "removed": "Regla eliminada",
@@ -9960,7 +9959,9 @@
         "pass": "{{role}} tras {{after}}",
         "off": "Desactivado"
       },
-      "doneOne": "Listo · 1 aprobación"
+      "doneOne": "Listo · 1 aprobación",
+      "upToIn": "{{name}} hasta {{to}}",
+      "more": "+{{count}} más"
     }
   },
   "overtimePage": {

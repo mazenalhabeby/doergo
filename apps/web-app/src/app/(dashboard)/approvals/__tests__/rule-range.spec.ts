@@ -1,5 +1,5 @@
 import { pickRule, type ApprovalRuleView } from "@hbcfield/shared/client"
-import { ruleRanges } from "../_lib/rule-range"
+import { fallThrough, ruleRanges } from "../_lib/rule-range"
 
 const rule = (id: string, spaceId: string | null, minMinutes: number | null, extra: Partial<ApprovalRuleView> = {}) =>
   ({
@@ -52,5 +52,23 @@ describe("ruleRanges — what each rule really covers", () => {
     expect(b.shadowedBy).toBe(1)
     const [c] = ruleRanges([rule("c", null, null), rule("d", null, 60, { isActive: false })], name)
     expect(c.to).toBeNull()
+  })
+})
+
+describe("fallThrough — where only the first approval is needed", () => {
+  const spaces = [
+    { id: "billa", name: "BILLA AG" },
+    { id: "main", name: "Main Office" },
+    { id: "omv", name: "OMV" },
+  ]
+  it("names workspaces with no rule, and the part under the lowest limit elsewhere", () => {
+    const got = fallThrough([rule("1", "billa", 120), rule("2", "main", null)], spaces)
+    expect(got).toEqual([
+      { name: "BILLA AG", upTo: 120 },
+      { name: "OMV", upTo: null },
+    ])
+  })
+  it("an every-workspace rule with no limit leaves nothing", () => {
+    expect(fallThrough([rule("1", null, null)], spaces)).toEqual([])
   })
 })

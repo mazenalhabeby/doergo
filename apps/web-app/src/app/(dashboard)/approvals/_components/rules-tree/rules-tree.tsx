@@ -7,14 +7,17 @@ import { useAuth } from "@/contexts/auth-context"
 import { Icon } from "@/components/ui/icon"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRulesTree } from "../../_hooks/use-rules-tree"
-import { ruleRanges } from "../../_lib/rule-range"
-import { RuleRow } from "./rule-row"
+import { fallThrough, ruleRanges } from "../../_lib/rule-range"
+import { RuleRow, limitText } from "./rule-row"
 import { ChoiceSelect, Connector, DoneNode } from "./tree-nodes"
 
 const DOTS = {
   backgroundImage: "radial-gradient(hsl(var(--muted-foreground) / 0.18) 1px, transparent 1.2px)",
   backgroundSize: "20px 20px",
 }
+const UNCAUGHT =
+  "flex w-[396px] shrink-0 flex-col gap-0.5 rounded-2xl border border-dashed border-border bg-card px-3.5 py-2.5 " +
+  "shadow-shell"
 const LINE = "bg-[hsl(var(--muted-foreground)/0.35)]"
 const NEW_NODE =
   "inline-flex h-11 items-center gap-2 rounded-2xl border-[1.5px] border-dashed border-shell-accent bg-card px-4 " +
@@ -46,9 +49,12 @@ export function RulesTree() {
   const tree = useRulesTree(true)
   const spaceName = (id: string) => tree.workspaces.find((w) => w.id === id)?.name ?? "?"
   const ranges = ruleRanges(tree.rules, spaceName)
-  const catchesAll = tree.rules.some(
-    (r) => r.isActive && !r.spaceId && !r.whenCoverShort && (r.minMinutes ?? r.minDays ?? r.minAmountCents) == null,
+  const uncaught = fallThrough(tree.rules, tree.workspaces).map((f) =>
+    f.upTo == null
+      ? f.name
+      : t("approvals.tree.upToIn", { name: f.name, to: limitText(t, tree.kind, f.upTo, currency) }),
   )
+  const moreText = t("approvals.tree.more", { count: uncaught.length - 4 })
   const kindName = (k: RuleKind) => t(`approvals.rules.kind.${k}`)
   const countOf = (k: RuleKind) => tree.counts.filter((r) => r.kind === k).length
 
@@ -101,13 +107,20 @@ export function RulesTree() {
                 </Branch>
               ))
             )}
-            {/* Only when something can fall through: a live rule for every workspace with no limit catches it all. */}
-            {!catchesAll && (
+            {/* Only when something can fall through — and it says exactly what does. */}
+            {uncaught.length > 0 && (
               <Branch>
-                <span className="mr-3 shrink-0 text-[12.5px] font-semibold text-muted-foreground">
-                  {t("approvals.tree.noRuleFits")}
-                </span>
-                <DoneNode>{t("approvals.tree.doneFirst")}</DoneNode>
+                <div className={UNCAUGHT}>
+                  <span className="text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+                    {t("approvals.tree.noRuleFits")}
+                  </span>
+                  <span className="text-[13.5px] font-semibold leading-snug">
+                    {uncaught.slice(0, 4).join(" · ")}
+                    {uncaught.length > 4 && <> {moreText}</>}
+                  </span>
+                </div>
+                <Connector />
+                <DoneNode>{t("approvals.tree.doneOne")}</DoneNode>
               </Branch>
             )}
             <Branch>

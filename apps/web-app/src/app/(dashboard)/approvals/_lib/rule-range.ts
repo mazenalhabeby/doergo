@@ -47,3 +47,25 @@ export function ruleRanges(rules: ApprovalRuleView[], spaceName: (id: string) =>
     }
   })
 }
+
+/** What no rule catches, per workspace: all of it, or everything up to the lowest limit there. */
+export interface FallThrough {
+  name: string
+  /** null = every item there; else items up to this limit (stored units) get only the first approval. */
+  upTo: number | null
+}
+
+/**
+ * Where items get ONLY the first approval. A workspace is covered by its own rules AND the every-workspace
+ * ones (the server tries them all); a rule with no limit covers everything, otherwise the lowest limit
+ * leaves the items at or under it uncaught. Rules that need "people would be short" never cover the rest.
+ */
+export function fallThrough(rules: ApprovalRuleView[], workspaces: { id: string; name: string }[]): FallThrough[] {
+  const live = rules.filter((r) => r.isActive && !r.whenCoverShort)
+  return workspaces.flatMap<FallThrough>((w) => {
+    const here = live.filter((r) => !r.spaceId || r.spaceId === w.id)
+    if (!here.length) return [{ name: w.name, upTo: null }]
+    if (here.some((r) => limitOf(r) == null)) return []
+    return [{ name: w.name, upTo: Math.min(...here.map((r) => limitOf(r) as number)) }]
+  })
+}
