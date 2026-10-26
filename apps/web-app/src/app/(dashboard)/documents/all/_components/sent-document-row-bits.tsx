@@ -3,6 +3,7 @@
 import { useTranslation } from "react-i18next"
 import { type IssuedRow, type DocumentChain } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { Chip } from "@/components/page/page-kit"
 
 /* The pieces of one row in the sent-documents list: the loading shimmer, the period, the chain, the state. */
 
@@ -73,7 +74,7 @@ export function ChainLine({ chain }: { chain?: DocumentChain | null }) {
       {days != null && days >= 1 && (
         <>
           <span className="px-1.5 text-muted-foreground/40">·</span>
-          <span className={days >= 3 ? "text-amber-600 dark:text-amber-400" : undefined}>
+          <span className={days >= 3 ? "text-shell-warn" : undefined}>
             {t("documents.all.chain.days", { defaultValue: "{{count}} days", count: days })}
           </span>
         </>
@@ -107,17 +108,11 @@ export function StateChip({ row }: { row: IssuedRow }) {
                 ? [t("documents.all.state.unopened", "Not opened"), "info"]
                 : [t("documents.all.state.opened", "Opened"), "mute"]
 
-  const tones: Record<string, string> = {
-    warn: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-    ok: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-    info: "bg-primary/10 text-primary",
-    bad: "bg-destructive/10 text-destructive",
-    mute: "bg-muted text-muted-foreground",
-  }
+  const tones = { warn: "warn", ok: "accent", info: "accent", bad: "crit", mute: "soft" } as const
 
   return (
-    <span className={cn("hidden shrink-0 rounded-full px-2.5 py-1 text-xs font-medium sm:inline-block", tones[tone])}>
+    <Chip dot tone={tones[tone as keyof typeof tones]} className="hidden sm:inline-flex">
       {label}
-    </span>
+    </Chip>
   )
 }

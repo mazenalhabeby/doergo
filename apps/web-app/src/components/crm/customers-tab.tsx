@@ -6,19 +6,18 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQueryClient } from "@tanstack/react-query"
-import { Contact, Plus, Smartphone, ChevronRight, Building2 } from "lucide-react"
+import { Contact, Plus } from "lucide-react"
 
 import { customersApi } from "@/lib/api"
-import { customerStageLabel, personInitials } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
-import { Truncated } from "@/components/common/truncated"
 import { ClientRowsSkeleton } from "@/components/skeletons/crm"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { SectionHeader, EmptyState } from "../common/section-header"
+import { Icon } from "@/components/ui/icon"
+import { Panel } from "@/components/page/page-kit"
+import { EmptyState } from "@/components/ui/empty-state"
 import { CustomerForm } from "./customer-form"
 import { useClients } from "@/hooks/use-clients"
+import { CustomerRow } from "./customer-row"
 
 // The add / edit dialog lives in customer-form.tsx; re-exported for the client record page.
 export { CustomerForm }
@@ -33,6 +32,34 @@ export { CustomerForm }
   client into seven rows and bury the pipeline.
 */
 type Filter = "all" | "companies" | "people" | "contacts" | "app"
+
+/** The page's primary action: add a client to this workspace (or, on All, the one the form asks for). */
+export function AddCustomerButton({ spaceId }: { spaceId?: string }) {
+  const { t } = useTranslation()
+  const qc = useQueryClient()
+  return (
+    <CustomerForm
+      spaceId={spaceId}
+      onSaved={() => qc.invalidateQueries({ queryKey: keys.customers.lists() })}
+      trigger={
+        <Button size="pillLg">
+          <Plus /> {t("customers.add", "Add customer")}
+        </Button>
+      }
+    />
+  )
+}
+
+/** What the list is for, in one line — the page header's subtitle. */
+export function CustomersIntro({ spaceId }: { spaceId?: string }) {
+  const { t } = useTranslation()
+  return spaceId
+    ? t(
+        "customers.intro",
+        "People & companies for this workspace. Sales works them with tasks; invited ones also use the app.",
+      )
+    : t("customers.introAll", "Every client you can see. Sales works them with tasks; invited ones also use the app.")
+}
 
 /**
  * The clients list — one workspace's, or the organization's.
@@ -49,7 +76,6 @@ type Filter = "all" | "companies" | "people" | "contacts" | "app"
  */
 export function CustomersTab({ spaceId }: { spaceId?: string }) {
   const { t } = useTranslation()
-  const qc = useQueryClient()
   const router = useRouter()
 
   const [search, setSearch] = useState("")
@@ -61,12 +87,12 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
   // page in the browser would show twelve rows of a hundred and a total that
   // disagreed with them.
   const listParams: Parameters<typeof customersApi.list>[0] = {
-            spaceId,
-            // Contacts are withheld by default, so this asks for them rather than
-            // filtering a result set they were never in.
-            contacts: filter === "contacts" ? "only" : undefined,
-            type: filter === "companies" ? "COMPANY" : filter === "people" ? "PERSON" : undefined,
-            /*
+    spaceId,
+    // Contacts are withheld by default, so this asks for them rather than
+    // filtering a result set they were never in.
+    contacts: filter === "contacts" ? "only" : undefined,
+    type: filter === "companies" ? "COMPANY" : filter === "people" ? "PERSON" : undefined,
+    /*
           Org-wide means the CRM book, not every portal resident.
 
           A B2C organization can have thousands of residents; they are people
@@ -75,50 +101,52 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
           the App-users filter below is hidden to match, since it would then
           select from nothing.
         */
-            portalResident: spaceId ? undefined : false,
-            search: debouncedSearch || undefined,
-            limit: 100,
+    portalResident: spaceId ? undefined : false,
+    search: debouncedSearch || undefined,
+    limit: 100,
   }
   const listQ = useClients(listParams)
   const customers = listQ.data?.data ?? []
   // Only the App-users split is still done here: it is a property of the row
   // rather than a different question for the server.
-  const rows = useMemo(
-    () => customers.filter((c) => filter !== "app" || c.isPortalResident),
-    [customers, filter],
-  )
-  const invalidate = () => qc.invalidateQueries({ queryKey: keys.customers.lists() })
+  const rows = useMemo(() => customers.filter((c) => filter !== "app" || c.isPortalResident), [customers, filter])
 
   return (
-    <div className="space-y-4">
-      <SectionHeader
-        icon={Contact}
-        accent="blue"
-        title={t("customers.title", "Customers")}
-        description={
-          spaceId
-            ? t("customers.intro", "People & companies for this workspace. Sales works them with tasks; invited ones also use the app.")
-            : t("customers.introAll", "Every client you can see. Sales works them with tasks; invited ones also use the app.")
-        }
-        action={<CustomerForm spaceId={spaceId} onSaved={invalidate} trigger={
-          <Button size="sm"><Plus className="mr-1.5 h-4 w-4" /> {t("customers.add", "Add customer")}</Button>
-        } />}
-      />
-
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Input
-          placeholder={t("common.search", "Search…")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-9 max-w-xs"
-        />
-        <div className="inline-flex flex-wrap rounded-lg bg-muted p-0.5">
-          {((spaceId
-            ? ["all", "companies", "people", "contacts", "app"]
-            : ["all", "companies", "people", "contacts"]) as Filter[]).map((f) => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={cn("rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                filter === f ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+    <div className="space-y-3.5">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <label
+          className={
+            "flex h-[38px] w-full items-center gap-2 rounded-full border border-border bg-card px-3 " +
+            "text-muted-foreground focus-within:ring-2 focus-within:ring-ring sm:w-[280px]"
+          }
+        >
+          <Icon name="search" size={16} />
+          <input
+            type="search"
+            placeholder={t("common.search", "Search…")}
+            aria-label={t("common.search", "Search…")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+          />
+        </label>
+        <div className="flex flex-wrap gap-1.5">
+          {(
+            (spaceId
+              ? ["all", "companies", "people", "contacts", "app"]
+              : ["all", "companies", "people", "contacts"]) as Filter[]
+          ).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              aria-pressed={filter === f}
+              className={cn(
+                "inline-flex h-8 items-center rounded-full border px-3.5 text-[13px] font-medium transition-colors",
+                filter === f
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border bg-card text-muted-foreground hover:text-foreground",
+              )}
+            >
               {f === "all"
                 ? t("customers.filter.all", "All")
                 : f === "companies"
@@ -139,74 +167,15 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
       ) : rows.length === 0 ? (
         <EmptyState icon={Contact} title={t("customers.empty", "No customers yet")} />
       ) : (
-        <div className="space-y-2">
-          {rows.map((c) => {
-            /*
-              The subtitle, built once.
-
-              It is truncated to the row's width, so the same string has to be
-              available whole for the hover — computing it twice is how the
-              tooltip ends up saying something the row does not.
-            */
-            const subtitle = [
-              c.isContact
-                ? c.contactOf
-                  ? t("customers.contactAt", "Contact at {{name}}", { name: c.contactOf.name })
-                  : t("customers.contactTag", "Contact")
-                : customerStageLabel(c.status || "LEAD"),
-              !c.isContact && c.contactOf ? t("customers.atCompany", "at {{name}}", { name: c.contactOf.name }) : null,
-              /*
-                Who to ring, by name — and the typed `contactName` only while
-                there is nobody real to name instead. That old field is printed
-                here and nowhere else, so a reader seeing "Lead · Klaus Berger"
-                could open the client and never find Klaus.
-              */
-              c.primaryContact
-                ? c.contactCount && c.contactCount > 1
-                  ? `${c.primaryContact.name} +${c.contactCount - 1}`
-                  : c.primaryContact.name
-                : c.contactName,
-              c.phone || c.email,
-            ]
-              .filter(Boolean)
-              .join(" · ")
-            return (
-            <button key={c.id} onClick={() => router.push(`/clients/${c.id}`)}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left transition-colors hover:bg-muted/50",
-                // Dimmed: a contact is somebody else's person, sitting in a list
-                // of your clients. Still readable, plainly not the same thing.
-                c.isContact && "opacity-70",
-              )}>
-              {/*
-                Square for a company, round for a person — the same shape
-                language the client record's own header uses, so the two kinds
-                are told apart before anybody reads a word.
-              */}
-              <span className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center bg-muted text-sm font-semibold text-muted-foreground",
-                c.type === "COMPANY" ? "rounded-lg" : "rounded-full",
-              )}>
-                {c.type === "COMPANY" ? <Building2 className="h-4.5 w-4.5" /> : personInitials(c.name)}
-              </span>
-              <span className="min-w-0 flex-1">
-                <Truncated text={c.name} className="text-sm font-medium text-foreground" />
-                <Truncated text={subtitle} className="text-xs text-muted-foreground" side="bottom" />
-              </span>
-              {c.isPortalResident ? (
-                <Badge className="gap-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300">
-                  <Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}
-                </Badge>
-              ) : c.isContact ? (
-                <Badge variant="outline">{t("customers.contactTag", "Contact")}</Badge>
-              ) : (
-                <Badge variant="secondary">{t("customers.crmTag", "CRM")}</Badge>
-              )}
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </button>
-            )
-          })}
-        </div>
+        <Panel className="p-1.5">
+          <div className="flex h-10 items-center px-3.5 text-xs font-medium text-muted-foreground">
+            {t("customers.title", "Customers")}
+            <span className="ml-1.5 tabular-nums">{rows.length}</span>
+          </div>
+          {rows.map((c) => (
+            <CustomerRow key={c.id} c={c} onOpen={() => router.push(`/clients/${c.id}`)} />
+          ))}
+        </Panel>
       )}
     </div>
   )

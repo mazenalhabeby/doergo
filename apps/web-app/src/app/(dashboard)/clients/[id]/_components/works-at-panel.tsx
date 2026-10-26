@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { personInitials } from "@hbcfield/shared/client"
 import { AddContactDialog } from "./add-contact-dialog"
 import { useClients } from "@/hooks/use-clients"
+import { Panel, PANEL_HEAD, SMALL_PILL } from "./customer-record-bits"
 
 /**
  * The mirror, on a person's record: which companies they are a contact at.
@@ -102,9 +103,9 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
   }
 
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-4">
+    <Panel>
       <div className="mb-2.5 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className={PANEL_HEAD}>
           <Building2 className="h-3.5 w-3.5" /> {t("customers.worksAt", "Works at")}
         </p>
         {canEdit && anyCompanies && (
@@ -113,7 +114,7 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
             mine={{ personId: customer.id }}
             onSaved={invalidate}
             trigger={
-              <button className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+              <button className={SMALL_PILL}>
                 <Plus className="h-3.5 w-3.5" /> {t("customers.addCompany", "Add a company")}
               </button>
             }
@@ -193,6 +194,6 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
           </Button>
         </div>
       )}
-    </div>
+    </Panel>
   )
 }

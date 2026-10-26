@@ -30,7 +30,9 @@ export function FiledAs({
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
-  useEffect(() => { if (editing) inputRef.current?.select() }, [editing])
+  useEffect(() => {
+    if (editing) inputRef.current?.select()
+  }, [editing])
 
   const commit = () => {
     onRename(draft.trim())
@@ -47,31 +49,41 @@ export function FiledAs({
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
           onKeyDown={(e) => {
-            if (e.key === "Enter") { e.preventDefault(); commit() }
-            if (e.key === "Escape") { e.preventDefault(); setEditing(false) }
+            if (e.key === "Enter") {
+              e.preventDefault()
+              commit()
+            }
+            if (e.key === "Escape") {
+              e.preventDefault()
+              setEditing(false)
+            }
           }}
           placeholder={row.docTitle || t("documents.issue.namePlaceholder")}
           aria-label={t("documents.issue.rename")}
-          className={"h-7 w-full max-w-sm rounded-md border border-blue-500 bg-white px-2 " +
-            "text-xs text-slate-900 outline-none dark:bg-slate-900 " +
-            "dark:text-slate-100"}
+          className={
+            "h-7 w-full max-w-sm rounded-md border border-primary bg-card px-2 " +
+            "text-xs text-foreground outline-none " +
+            ""
+          }
         />
-        <p className="mt-0.5 text-[10.5px] text-slate-400">{t("documents.issue.renameHint")}</p>
+        <p className="mt-0.5 text-[10.5px] text-muted-foreground">{t("documents.issue.renameHint")}</p>
       </div>
     )
   }
 
   return (
-    <div className="mt-0.5 flex items-center gap-1 pl-6 text-[11px] text-slate-600 dark:text-slate-300">
+    <div className="mt-0.5 flex items-center gap-1 pl-6 text-[11px] text-muted-foreground">
       <span className="min-w-0 truncate">{t("documents.issue.namedAs", { title: filedAs })}</span>
       {!locked && (
         <button
           type="button"
-          onClick={() => { setDraft(baseName); setEditing(true) }}
+          onClick={() => {
+            setDraft(baseName)
+            setEditing(true)
+          }}
           aria-label={t("documents.issue.rename")}
           title={t("documents.issue.rename")}
-          className={"shrink-0 rounded p-0.5 text-slate-400 hover:bg-slate-100 " +
-            "hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"}
+          className={"shrink-0 rounded p-0.5 text-muted-foreground hover:bg-accent " + "hover:text-foreground "}
         >
           <Pencil className="h-3 w-3" />
         </button>

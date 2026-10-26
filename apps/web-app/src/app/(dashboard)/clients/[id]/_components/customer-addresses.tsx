@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { keys } from "@/lib/query-keys"
 import { AssignDialog } from "./assign-unit-dialog"
 import { AddressDialog } from "./address-dialog"
+import { Panel, PANEL_HEAD, SMALL_PILL } from "./customer-record-bits"
 
 const AddressMap = dynamic(() => import("../../../../../components/map/address-map"), {
   ssr: false,
@@ -100,9 +101,9 @@ export function AddressesPanel({
   })
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 bg-card">
-      <div className="flex items-center justify-between px-4 pt-4">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+    <Panel className="overflow-hidden p-0">
+      <div className="flex items-center justify-between px-5 pt-[18px]">
+        <p className={PANEL_HEAD}>{label}</p>
         <div className="flex items-center gap-3">
           {isApartment && assignSpaceId && (
             <AssignDialog
@@ -111,9 +112,7 @@ export function AddressesPanel({
               entityLabel={entityLabel!}
               onSaved={invalidate}
               trigger={
-                <button
-                  className={"inline-flex items-center gap-1 text-xs font-medium text-primary " + "hover:underline"}
-                >
+                <button className={SMALL_PILL}>
                   <Home className="h-3.5 w-3.5" /> {t("customers.assign", "Assign")}
                 </button>
               }
@@ -124,9 +123,7 @@ export function AddressesPanel({
             onSaved={invalidate}
             isFirst={addresses.length === 0}
             trigger={
-              <button
-                className={"inline-flex items-center gap-1 text-xs font-medium text-primary " + "hover:underline"}
-              >
+              <button className={SMALL_PILL}>
                 <Plus className="h-3.5 w-3.5" /> {t("customers.addAddress", "Add")}
               </button>
             }
@@ -191,7 +188,7 @@ export function AddressesPanel({
           )}
         </div>
       )}
-    </div>
+    </Panel>
   )
 }
 

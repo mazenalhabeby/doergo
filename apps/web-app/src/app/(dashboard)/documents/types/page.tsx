@@ -10,6 +10,8 @@ import { Plus, ArrowLeft, ShieldCheck, RotateCcw } from "lucide-react"
 import { documentsApi, type DocumentTypeRow } from "@/lib/api"
 import { STARTER_DOCUMENT_TYPES, type StarterDocumentType } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
+import { PAGE_SHELL } from "@/components/ui/page-width"
+import { PageHeader, Panel } from "@/components/page/page-kit"
 import { notify } from "@/lib/toast"
 import { BLANK } from "./_lib/type-options"
 import { DirectionIcon } from "./_components/direction-icon"
@@ -96,71 +98,67 @@ export default function DocumentTypesPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className={PAGE_SHELL}>
       <button
         onClick={() => router.push("/documents")}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         {t("documents.issue.title")}
       </button>
 
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          {t("documents.types.title")}
-        </h1>
-        <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{t("documents.types.explainer")}</p>
-      </header>
+      <PageHeader title={t("documents.types.title")} subtitle={t("documents.types.explainer")} />
 
       {isLoading ? (
         <div className="space-y-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
+            <div key={i} className="h-20 animate-pulse rounded-[14px] bg-muted" />
           ))}
         </div>
       ) : (
         <>
           {active.length > 0 && (
-            <ul className="mb-8 space-y-2">
-              {active.map((ty) => (
-                <TypeRow
-                  key={ty.id}
-                  type={ty}
-                  workflows={workflows}
-                  roles={roles}
-                  onEdit={() => setEditing(ty)}
-                  onRetire={() => setActive.mutate({ id: ty.id, isActive: false })}
-                />
-              ))}
-            </ul>
+            <Panel as="div" className="mb-3.5 p-1.5">
+              <ul>
+                {active.map((ty) => (
+                  <TypeRow
+                    key={ty.id}
+                    type={ty}
+                    workflows={workflows}
+                    roles={roles}
+                    onEdit={() => setEditing(ty)}
+                    onRetire={() => setActive.mutate({ id: ty.id, isActive: false })}
+                  />
+                ))}
+              </ul>
+            </Panel>
           )}
 
           {/* Starters — the alternative to an empty form */}
-          <section>
-            <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <Panel className="px-5 py-[18px]">
+            <h2 className="mb-0.5 text-[15px] font-semibold text-foreground">
               {active.length > 0 ? t("documents.types.addAnother") : t("documents.types.startWith")}
             </h2>
-            <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">{t("documents.types.startWithHint")}</p>
+            <p className="mb-3 text-[12.5px] text-muted-foreground">{t("documents.types.startWithHint")}</p>
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
               {STARTER_DOCUMENT_TYPES.filter((st) => !taken.has(st.key)).map((st) => (
                 <button
                   key={st.key}
                   onClick={() => setStarter(st)}
                   className={
-                    "rounded-xl border border-slate-200 bg-white p-4 text-left " +
-                    "transition-colors hover:border-blue-400 dark:border-slate-800 " +
-                    "dark:bg-slate-900"
+                    "rounded-2xl border border-dashed border-border bg-muted/50 p-4 text-left " +
+                    "transition-colors hover:bg-accent"
                   }
                 >
                   <div className="mb-1.5 flex items-center gap-2">
                     <DirectionIcon direction={st.direction} />
-                    <span className="font-medium text-slate-900 dark:text-slate-100">
+                    <span className="font-semibold text-foreground">
                       {t(`documents.types.starters.${st.key}.label`, { defaultValue: st.label })}
                     </span>
-                    {st.isCredential && <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-amber-600" />}
+                    {st.isCredential && <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-shell-warn" />}
                   </div>
-                  <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                  <p className="text-sm leading-relaxed text-muted-foreground">
                     {t(`documents.types.starters.${st.key}.description`, { defaultValue: st.description })}
                   </p>
                 </button>
@@ -169,26 +167,23 @@ export default function DocumentTypesPage() {
               <button
                 onClick={() => setStarter(BLANK)}
                 className={
-                  "rounded-xl border border-dashed border-slate-300 p-4 text-left " +
-                  "transition-colors hover:border-slate-400 dark:border-slate-700"
+                  "rounded-2xl border border-dashed border-border p-4 text-left " + "transition-colors hover:bg-accent"
                 }
               >
                 <div className="mb-1.5 flex items-center gap-2">
-                  <Plus className="h-4 w-4 text-slate-400" />
-                  <span className="font-medium text-slate-900 dark:text-slate-100">{t("documents.types.blank")}</span>
+                  <Plus className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-semibold text-foreground">{t("documents.types.blank")}</span>
                 </div>
-                <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-                  {t("documents.types.blankHint")}
-                </p>
+                <p className="text-sm leading-relaxed text-muted-foreground">{t("documents.types.blankHint")}</p>
               </button>
             </div>
-          </section>
+          </Panel>
 
           {retired.length > 0 && (
             <section className="mt-8">
               <button
                 onClick={() => setShowRetired((v) => !v)}
-                className="text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                className="text-sm text-muted-foreground hover:text-foreground"
               >
                 {t("documents.types.retiredCount", { count: retired.length })}
               </button>
@@ -197,12 +192,9 @@ export default function DocumentTypesPage() {
                   {retired.map((ty) => (
                     <li
                       key={ty.id}
-                      className={
-                        "flex flex-wrap items-center gap-3 rounded-xl border border-dashed " +
-                        "border-slate-200 p-4 dark:border-slate-800"
-                      }
+                      className="flex flex-wrap items-center gap-3 rounded-[14px] border border-dashed border-border px-4 py-3"
                     >
-                      <span className="flex-1 text-slate-500 line-through dark:text-slate-400">{ty.label}</span>
+                      <span className="flex-1 text-muted-foreground line-through">{ty.label}</span>
                       <Button size="sm" variant="ghost" onClick={() => setActive.mutate({ id: ty.id, isActive: true })}>
                         <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
                         {t("documents.types.restore")}
@@ -211,7 +203,7 @@ export default function DocumentTypesPage() {
                   ))}
                 </ul>
               )}
-              <p className="mt-2 max-w-2xl text-xs text-slate-400">{t("documents.types.retiredHint")}</p>
+              <p className="mt-2 max-w-2xl text-xs text-muted-foreground">{t("documents.types.retiredHint")}</p>
             </section>
           )}
         </>

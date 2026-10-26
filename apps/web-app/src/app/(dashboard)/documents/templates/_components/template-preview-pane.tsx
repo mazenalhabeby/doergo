@@ -33,10 +33,8 @@ export function TemplatePreviewPane({
     <aside className="lg:sticky lg:top-6 lg:h-fit">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Eye className="h-4 w-4 text-slate-400" />
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-            {t("documents.templates.preview")}
-          </h2>
+          <Eye className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold text-foreground">{t("documents.templates.preview")}</h2>
         </div>
 
         {/*
@@ -48,16 +46,14 @@ export function TemplatePreviewPane({
           orphaned at the foot of page two is visible here rather than in
           somebody's personnel file.
         */}
-        <div className="inline-flex rounded-lg border border-slate-200 p-0.5 dark:border-slate-800">
+        <div className="inline-flex rounded-lg border border-border p-0.5">
           {(["text", "pdf"] as const).map((m) => (
             <button
               key={m}
               onClick={() => setPreviewMode(m)}
               className={cn(
                 "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-                previewMode === m
-                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
+                previewMode === m ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
               )}
             >
               {t(`documents.templates.preview_${m}`)}
@@ -66,7 +62,7 @@ export function TemplatePreviewPane({
         </div>
       </div>
 
-      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+      <p className="mb-3 text-xs text-muted-foreground">
         {sample
           ? t("documents.templates.previewFor", { name: personName(sample) })
           : t("documents.templates.previewNoOne")}
@@ -77,25 +73,13 @@ export function TemplatePreviewPane({
       ) : (
         /* A page, not a code block: the point is that it reads like the
            letter somebody receives, with the tokens already gone. */
-        <div
-          className={
-            "max-h-[70vh] overflow-y-auto rounded-lg border border-slate-200 bg-white " +
-            "p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-          }
-        >
+        <div className={"max-h-[70vh] overflow-y-auto rounded-lg border border-border bg-card " + "p-6 shadow-sm"}>
           {body.trim() ? (
             <>
-              <p
-                className={
-                  "mb-4 border-b border-slate-200 pb-3 text-lg font-semibold text-slate-900 " +
-                  "dark:border-slate-800 dark:text-slate-100"
-                }
-              >
+              <p className={"mb-4 border-b border-border pb-3 text-lg font-semibold text-foreground " + ""}>
                 {types.find((ty) => ty.id === typeId)?.label || name || t("documents.templates.untitled")}
               </p>
-              <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">
-                {preview}
-              </pre>
+              <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed text-foreground">{preview}</pre>
             </>
           ) : (
             <EmptyNote>{t("documents.templates.previewEmpty")}</EmptyNote>
@@ -103,7 +87,7 @@ export function TemplatePreviewPane({
         </div>
       )}
 
-      <p className="mt-2 text-xs leading-relaxed text-slate-400">{t("documents.templates.notAdvice")}</p>
+      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{t("documents.templates.notAdvice")}</p>
     </aside>
   )
 }

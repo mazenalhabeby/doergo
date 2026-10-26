@@ -6,6 +6,7 @@ import { type IssuedRow } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Chip } from "@/components/page/page-kit"
 import { DocumentRowMenu, VisibilityChip, type DocumentAction } from "./document-control"
 
 export type GroupBy = "type" | "member" | "year"
@@ -37,25 +38,38 @@ export function Empty() {
       <div className="flex size-14 items-center justify-center rounded-2xl bg-muted">
         <FolderOpen className="h-6 w-6 text-muted-foreground/60" />
       </div>
-      <p className="text-sm text-muted-foreground">
-        {t("documents.all.emptyFolder", "This folder is empty.")}
-      </p>
+      <p className="text-sm text-muted-foreground">{t("documents.all.emptyFolder", "This folder is empty.")}</p>
     </div>
   )
 }
 
 export function DocumentRow({
-  doc, index, locale, busy, onOpen, selectable, selected, onToggle, onAction,
+  doc,
+  index,
+  locale,
+  busy,
+  onOpen,
+  selectable,
+  selected,
+  onToggle,
+  onAction,
 }: {
-  doc: IssuedRow; index: number; locale: string; busy: boolean; onOpen: () => void
-  selectable: boolean; selected: boolean; onToggle: () => void
+  doc: IssuedRow
+  index: number
+  locale: string
+  busy: boolean
+  onOpen: () => void
+  selectable: boolean
+  selected: boolean
+  onToggle: () => void
   onAction: (kind: DocumentAction, rows: IssuedRow[]) => void
 }) {
   const { t } = useTranslation()
   const month =
     doc.periodYear && doc.periodMonth
       ? new Date(Date.UTC(doc.periodYear, doc.periodMonth - 1, 1)).toLocaleDateString(locale, {
-          month: "long", timeZone: "UTC",
+          month: "long",
+          timeZone: "UTC",
         })
       : null
 
@@ -63,8 +77,8 @@ export function DocumentRow({
     <div
       style={{ animation: `fadeSlideIn 0.25s ease-out ${index * 40}ms both` }}
       className={cn(
-        "group flex items-center gap-4 border-b border-border/50 px-5 py-3.5 transition-colors last:border-0 hover:bg-accent/30",
-        selected && "bg-primary/5",
+        "group flex min-h-[62px] items-center gap-3.5 rounded-[14px] px-3.5 py-2.5 transition-colors hover:bg-accent",
+        selected && "bg-shell-nav-on",
       )}
     >
       {selectable && (
@@ -74,12 +88,12 @@ export function DocumentRow({
           aria-label={t("documents.control.selectOne", { defaultValue: "Select {{title}}", title: doc.title })}
         />
       )}
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-shell-accent-soft text-shell-accent">
         <FileText className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">{doc.title}</p>
-        <p className="truncate text-sm text-muted-foreground">
+        <p className="truncate text-[14.5px] font-semibold text-foreground">{doc.title}</p>
+        <p className="truncate text-[12.5px] text-muted-foreground">
           {month ?? doc.memberName}
           {month && (
             <>
@@ -91,14 +105,16 @@ export function DocumentRow({
       </div>
       <VisibilityChip row={doc} />
       {!doc.openedAt && (
-        <span className="hidden shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary sm:inline-block">
+        <Chip tone="accent" className="hidden sm:inline-flex">
           {t("documents.all.state.unopened", "Not opened")}
-        </span>
+        </Chip>
       )}
       <Button
-        variant="ghost" size="icon"
+        variant="ghost"
+        size="icon"
         className="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-        disabled={busy} onClick={onOpen}
+        disabled={busy}
+        onClick={onOpen}
         aria-label={t("documents.all.open", "Open")}
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}

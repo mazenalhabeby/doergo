@@ -21,6 +21,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { SpaceTabs } from "@/components/spaces/space-tabs"
 import { PortalTab } from "../../../components/portals/portal-tab"
 import { DashedEmptyBox } from "@/components/ui/empty-note"
+import { PAGE_SHELL } from "@/components/ui/page-width"
+import { PageHeader } from "@/components/page/page-kit"
 
 export default function PortalsPage() {
   const { t } = useTranslation()
@@ -34,13 +36,11 @@ export default function PortalsPage() {
   const hasAssets = ((scope.space?.enabledModules as string[] | null) ?? user?.orgModules ?? []).includes("assets")
 
   return (
-    <div className="mx-auto max-w-[1000px] px-6 py-6">
-      <div className="mb-4">
-        <h1 className="text-2xl font-semibold text-foreground">{t("portal.title", "Client portal")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {scope.space ? scope.space.name : t("portal.subtitle", "What your clients see when they log in.")}
-        </p>
-      </div>
+    <div className={PAGE_SHELL}>
+      <PageHeader
+        title={t("portal.title", "Client portal")}
+        subtitle={scope.space ? scope.space.name : t("portal.subtitle", "What your clients see when they log in.")}
+      />
 
       {scope.showTabs && (
         <SpaceTabs
@@ -48,6 +48,7 @@ export default function PortalsPage() {
           value={scope.spaceId}
           onChange={scope.setSpaceId}
           showAll={false}
+          className="mb-4"
         />
       )}
 

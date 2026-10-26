@@ -10,6 +10,9 @@ import { documentsApi, type ComplianceRow } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { keys } from "@/lib/query-keys"
 import { dateLocale } from "@/lib/format-date"
+import { UserAvatar } from "@/components/common/user-avatar"
+import { PAGE_SHELL } from "@/components/ui/page-width"
+import { Chip, PageHeader, Panel } from "@/components/page/page-kit"
 
 /*
   The compliance board.
@@ -39,93 +42,117 @@ export default function CompliancePage() {
     queryFn: () => documentsApi.compliance(),
   })
 
-  const counts = useMemo(() => ({
-    valid: rows.filter((r) => r.standing === "VALID").length,
-    expiring: rows.filter((r) => r.standing === "EXPIRING").length,
-    expired: rows.filter((r) => r.standing === "EXPIRED").length,
-    blocked: rows.filter((r) => r.blocksDispatch).length,
-  }), [rows])
+  const counts = useMemo(
+    () => ({
+      valid: rows.filter((r) => r.standing === "VALID").length,
+      expiring: rows.filter((r) => r.standing === "EXPIRING").length,
+      expired: rows.filter((r) => r.standing === "EXPIRED").length,
+      blocked: rows.filter((r) => r.blocksDispatch).length,
+    }),
+    [rows],
+  )
 
-  const visible = useMemo(() => rows.filter((r) =>
-    filter === "all" ? true : filter === "blocked" ? r.blocksDispatch : r.standing === "EXPIRING",
-  ), [rows, filter])
+  const visible = useMemo(
+    () =>
+      rows.filter((r) =>
+        filter === "all" ? true : filter === "blocked" ? r.blocksDispatch : r.standing === "EXPIRING",
+      ),
+    [rows, filter],
+  )
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className={PAGE_SHELL}>
       <button
         onClick={() => router.push("/documents")}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         {t("documents.issue.title")}
       </button>
 
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          {t("documents.compliance.title")}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {t("documents.compliance.subtitle")}
-        </p>
-      </header>
+      <PageHeader title={t("documents.compliance.title")} subtitle={t("documents.compliance.subtitle")} />
 
       {/* Tiles double as filters — a count you cannot click is a count you have
           to go and find yourself. */}
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Tile label={t("documents.standing.valid")} value={counts.valid}
-          active={false} onClick={() => setFilter("all")} />
-        <Tile label={t("documents.compliance.expiringSoon")} value={counts.expiring} tone="warn"
-          active={filter === "expiring"} onClick={() => setFilter(filter === "expiring" ? "all" : "expiring")} />
-        <Tile label={t("documents.standing.expired")} value={counts.expired} tone="bad"
-          active={false} onClick={() => setFilter("all")} />
-        <Tile label={t("documents.compliance.blocked")} value={counts.blocked} tone="bad"
-          active={filter === "blocked"} onClick={() => setFilter(filter === "blocked" ? "all" : "blocked")} />
+      <div className="mb-3.5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Tile
+          label={t("documents.standing.valid")}
+          value={counts.valid}
+          active={false}
+          onClick={() => setFilter("all")}
+        />
+        <Tile
+          label={t("documents.compliance.expiringSoon")}
+          value={counts.expiring}
+          tone="warn"
+          active={filter === "expiring"}
+          onClick={() => setFilter(filter === "expiring" ? "all" : "expiring")}
+        />
+        <Tile
+          label={t("documents.standing.expired")}
+          value={counts.expired}
+          tone="bad"
+          active={false}
+          onClick={() => setFilter("all")}
+        />
+        <Tile
+          label={t("documents.compliance.blocked")}
+          value={counts.blocked}
+          tone="bad"
+          active={filter === "blocked"}
+          onClick={() => setFilter(filter === "blocked" ? "all" : "blocked")}
+        />
       </div>
 
       {isLoading ? (
         <div className="space-y-2">
-          {[0, 1, 2].map((i) => <div key={i} className="h-14 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800" />)}
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-14 animate-pulse rounded-[14px] bg-muted" />
+          ))}
         </div>
       ) : visible.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 py-14 text-center dark:border-slate-700">
-          <Inbox className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
-          <p className="mt-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+        <Panel className="py-14 text-center">
+          <Inbox className="mx-auto h-8 w-8 text-muted-foreground/70" />
+          <p className="mt-3 text-sm font-semibold text-foreground">
             {rows.length === 0 ? t("documents.compliance.empty") : t("documents.compliance.noneInFilter")}
           </p>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             {rows.length === 0 ? t("documents.compliance.emptyHint") : ""}
           </p>
-        </div>
+        </Panel>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+        <Panel className="overflow-x-auto p-1.5">
           <table className="w-full min-w-[620px] text-sm">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-900/60">
+              <tr>
                 {["member", "credential", "expires", "effect"].map((k) => (
-                  <th key={k} className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  <th key={k} className="h-10 px-3.5 text-left text-xs font-medium text-muted-foreground">
                     {t(`documents.compliance.columns.${k}`)}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-border border-t border-border">
               {visible.map((r) => (
-                <tr key={r.id} className={cn(r.blocksDispatch && "bg-red-50 dark:bg-red-950/30")}>
-                  <td className="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">
-                    {personName(r.member)}
+                <tr key={r.id}>
+                  <td className="px-3.5 py-3">
+                    <span className="flex items-center gap-3 font-semibold text-foreground">
+                      <UserAvatar {...r.member} seed={r.member.id} size="md" soft />
+                      {personName(r.member)}
+                    </span>
                   </td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{r.credential}</td>
-                  <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">
+                  <td className="px-3.5 py-3 font-semibold text-foreground">{r.credential}</td>
+                  <td className="px-3.5 py-3 tabular-nums text-muted-foreground">
                     {r.expiresOn ? new Date(r.expiresOn).toLocaleDateString(dateLocale()) : "—"}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3.5 py-3">
                     <Effect row={r} />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </Panel>
       )}
     </div>
   )
@@ -142,49 +169,43 @@ function Effect({ row }: { row: ComplianceRow }) {
 
   if (row.blocksDispatch) {
     return (
-      <span
-        className={"inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-1 " +
-          "text-[11px] font-semibold text-red-700 dark:bg-red-950 dark:text-red-400"}>
+      <Chip tone="crit">
         <ShieldX className="h-3.5 w-3.5" />
         {t("documents.compliance.removedFromDispatch")}
-      </span>
+      </Chip>
     )
   }
   if (row.standing === "EXPIRED") {
     return (
-      <span
-        className={"inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 " +
-          "text-[11px] font-semibold text-slate-600 dark:bg-slate-800 " +
-          "dark:text-slate-400"}>
+      <Chip>
         <ShieldX className="h-3.5 w-3.5" />
         {t("documents.compliance.expiredNoGate")}
-      </span>
+      </Chip>
     )
   }
   if (row.standing === "EXPIRING") {
     return (
-      <span
-        className={"inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 " +
-          "text-[11px] font-semibold text-amber-700 dark:bg-amber-950 " +
-          "dark:text-amber-400"}>
+      <Chip tone="warn">
         <ShieldAlert className="h-3.5 w-3.5" />
         {t("documents.compliance.reminderSent", { count: row.daysLeft ?? 0 })}
-      </span>
+      </Chip>
     )
   }
   return (
-    <span
-      className={"inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1 " +
-        "text-[11px] font-semibold text-green-700 dark:bg-green-950 " +
-        "dark:text-green-400"}>
+    <Chip tone="accent">
       <ShieldCheck className="h-3.5 w-3.5" />
       {t("documents.compliance.noAction")}
-    </span>
+    </Chip>
   )
 }
 
+/** A count that is also a filter — the board's `dctile`: the number in red or amber only when it matters. */
 function Tile({
-  label, value, tone, active, onClick,
+  label,
+  value,
+  tone,
+  active,
+  onClick,
 }: {
   label: string
   value: number
@@ -197,31 +218,24 @@ function Tile({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "rounded-xl border p-4 text-left transition-colors",
-        tone === "bad" && value > 0
-          ? "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/40"
-          : tone === "warn" && value > 0
-            ? "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40"
-            : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900",
-        active && "ring-2 ring-blue-500",
+        "flex flex-col gap-1 rounded-[22px] border border-border bg-card px-[18px] py-4 text-left shadow-shell",
+        "transition-colors hover:bg-accent",
+        active && "ring-2 ring-inset ring-foreground",
       )}
     >
-      <div className={cn(
-        "font-mono text-[10px] font-bold uppercase tracking-wider",
-        tone === "bad" && value > 0 ? "text-red-700 dark:text-red-400"
-          : tone === "warn" && value > 0 ? "text-amber-700 dark:text-amber-400"
-            : "text-slate-500",
-      )}>
-        {label}
-      </div>
-      <div className={cn(
-        "mt-1 text-3xl font-semibold tabular-nums tracking-tight",
-        tone === "bad" && value > 0 ? "text-red-700 dark:text-red-400"
-          : tone === "warn" && value > 0 ? "text-amber-700 dark:text-amber-400"
-            : "text-slate-900 dark:text-slate-100",
-      )}>
+      <span className="text-[12.5px] text-muted-foreground">{label}</span>
+      <span
+        className={cn(
+          "text-[28px] font-semibold leading-none tabular-nums tracking-[-0.04em]",
+          tone === "bad" && value > 0
+            ? "text-shell-crit"
+            : tone === "warn" && value > 0
+              ? "text-shell-warn"
+              : "text-foreground",
+        )}
+      >
         {value}
-      </div>
+      </span>
     </button>
   )
 }

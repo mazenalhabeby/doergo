@@ -1,20 +1,19 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { Panel } from "@/components/page/page-kit"
 
-/** A numbered step of a document editor (the type editor and the template editor). */
+/**
+ * A numbered step of a document editor (the type editor and the template editor) — one card per step,
+ * titled "1 · What you give out" as the Documents board draws it (docs/design/web-redesign/Documents.dc.html).
+ */
 export function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (
-    <section>
-      <div className="mb-3 flex items-center gap-2.5">
-        <span
-          className={"grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-900 " +
-            "text-xs font-bold text-white dark:bg-slate-100 dark:text-slate-900"}>
-          {n}
-        </span>
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-      </div>
-      <div className="pl-[34px]">{children}</div>
-    </section>
+    <Panel className="px-5 py-[18px]">
+      <h2 className="mb-3 text-[15px] font-semibold text-foreground">
+        <span className="tabular-nums text-muted-foreground">{n} ·</span> {title}
+      </h2>
+      {children}
+    </Panel>
   )
 }

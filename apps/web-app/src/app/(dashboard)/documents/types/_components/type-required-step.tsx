@@ -33,10 +33,8 @@ export function TypeRequiredStep({
           />
 
           {(requiredFromAll || requiredFromRoleIds.length > 0) && (
-            <div className="mt-3 space-y-2 border-l-2 border-blue-300 pl-4 dark:border-blue-800">
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t("documents.types.requiredFromWho")}
-              </p>
+            <div className="mt-3 space-y-2 border-l-2 border-primary pl-4">
+              <p className="text-sm font-medium text-foreground">{t("documents.types.requiredFromWho")}</p>
               <div className="flex flex-wrap gap-1.5">
                 <button
                   onClick={() => {
@@ -44,10 +42,10 @@ export function TypeRequiredStep({
                     setRequiredFromRoleIds([])
                   }}
                   className={cn(
-                    "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                    "h-8 rounded-full border px-3.5 text-[13px] font-medium transition-colors",
                     requiredFromAll
-                      ? "border-blue-400 bg-blue-100 text-blue-800 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                      : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400",
+                      ? "border-primary bg-shell-accent-soft text-shell-accent"
+                      : "border-border text-muted-foreground hover:bg-accent",
                   )}
                 >
                   {t("documents.types.everyone")}
@@ -64,10 +62,10 @@ export function TypeRequiredStep({
                         )
                       }}
                       className={cn(
-                        "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                        "h-8 rounded-full border px-3.5 text-[13px] font-medium transition-colors",
                         on
-                          ? "border-blue-400 bg-blue-100 text-blue-800 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                          : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400",
+                          ? "border-primary bg-shell-accent-soft text-shell-accent"
+                          : "border-border text-muted-foreground hover:bg-accent",
                       )}
                     >
                       {r.name}
@@ -75,7 +73,7 @@ export function TypeRequiredStep({
                   )
                 })}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{t("documents.types.requiredNote")}</p>
+              <p className="text-xs text-muted-foreground">{t("documents.types.requiredNote")}</p>
             </div>
           )}
         </Step>

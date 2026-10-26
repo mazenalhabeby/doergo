@@ -12,8 +12,18 @@ import { cn } from "@/lib/utils"
 import { dateLocale } from "@/lib/format-date"
 
 const MONTHS_KEY = [
-  "january", "february", "march", "april", "may", "june",
-  "july", "august", "september", "october", "november", "december",
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
 ] as const
 
 /**
@@ -94,15 +104,15 @@ export function StagedDrafts({
   }
 
   return (
-    <section className="mb-5 overflow-hidden rounded-xl border border-amber-300 bg-amber-50/70 dark:border-amber-900 dark:bg-amber-950/30">
-      <header className="flex flex-wrap items-start justify-between gap-3 px-4 py-3">
+    <section className="mb-5 overflow-hidden rounded-[22px] border border-border bg-card shadow-shell">
+      <header className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
         <div className="flex gap-2.5">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-shell-warn" />
           <div>
-            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+            <p className="text-[15px] font-semibold text-foreground">
               {t("documents.issue.pendingDrafts", { count: drafts.length })}
             </p>
-            <p className="mt-0.5 text-[12.5px] text-amber-800/80 dark:text-amber-300/80">
+            <p className="mt-0.5 text-[12.5px] text-muted-foreground">
               {t(
                 "documents.issue.pendingDraftsHint",
                 "Uploaded but not released — the member cannot see these and has not been told about them.",
@@ -113,7 +123,7 @@ export function StagedDrafts({
 
         <div className="flex items-center gap-2">
           <Button
-            size="sm"
+            size="pill"
             onClick={() => onPublish(drafts.map((d) => d.id))}
             disabled={publishing || !!blockedReason}
             title={blockedReason ?? undefined}
@@ -124,23 +134,19 @@ export function StagedDrafts({
         </div>
       </header>
 
-      {blockedReason && (
-        <p className="px-4 pb-2 text-[12px] text-amber-800 dark:text-amber-300">{blockedReason}</p>
-      )}
+      {blockedReason && <p className="px-5 pb-2 text-[12px] text-shell-warn">{blockedReason}</p>}
 
-      <div className="divide-y divide-amber-200/70 border-t border-amber-200/70 dark:divide-amber-900/60 dark:border-amber-900/60">
+      <div className="divide-y divide-border border-t border-border">
         {drafts.map((d) => (
-          <div key={d.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
+          <div key={d.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-medium text-slate-900 dark:text-slate-100">
-                {d.title}
-              </p>
-              <p className="truncate text-[11.5px] text-slate-600 dark:text-slate-400">
+              <p className="truncate text-[14px] font-semibold text-foreground">{d.title}</p>
+              <p className="truncate text-[12.5px] text-muted-foreground">
                 {personName(d.user)} · {d.type.label} · {period(d)}
               </p>
             </div>
 
-            <span className="whitespace-nowrap text-[11.5px] tabular-nums text-slate-500 dark:text-slate-400">
+            <span className="whitespace-nowrap text-[11.5px] tabular-nums text-muted-foreground">
               {new Date(d.createdAt).toLocaleDateString(dateLocale())}
             </span>
 
@@ -150,9 +156,8 @@ export function StagedDrafts({
                 onClick={() => open(d)}
                 disabled={opening === d.id}
                 className={cn(
-                  "inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-[12px] font-medium",
-                  "text-slate-600 hover:bg-white/70 hover:text-slate-900",
-                  "dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
+                  "inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-[13px]",
+                  "font-semibold text-foreground hover:bg-accent",
                 )}
               >
                 {opening === d.id ? (
@@ -166,9 +171,10 @@ export function StagedDrafts({
                 type="button"
                 onClick={() => discard(d)}
                 disabled={busyId === d.id}
-                className={"inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-[12px] " +
-                  "font-medium text-red-600 hover:bg-red-50 dark:text-red-400 " +
-                  "dark:hover:bg-red-950/50"}
+                className={
+                  "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] " +
+                  "font-semibold text-shell-crit hover:bg-shell-chip"
+                }
               >
                 {busyId === d.id ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />

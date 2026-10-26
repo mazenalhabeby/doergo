@@ -16,6 +16,8 @@ import { describeAudience } from "./_lib/template-options"
 import { ModeChip } from "./_components/mode-chip"
 import { TemplateEditor } from "./_components/template-editor"
 import { useOrgRoles } from "@/hooks/use-org-roles"
+import { PAGE_SHELL } from "@/components/ui/page-width"
+import { Chip, Notice, PageHeader, Panel } from "@/components/page/page-kit"
 
 /*
   Contract templates.
@@ -100,108 +102,95 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className={PAGE_SHELL}>
       <button
         onClick={() => router.push("/documents")}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         {t("documents.issue.title")}
       </button>
 
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          {t("documents.templates.title")}
-        </h1>
-        <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-          {t("documents.templates.explainer")}
-        </p>
-      </header>
+      <PageHeader title={t("documents.templates.title")} subtitle={t("documents.templates.explainer")} />
 
       {types.length === 0 && (
-        <div
-          className={
-            "mb-5 flex items-start gap-3 rounded-lg border border-amber-200 " +
-            "bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40"
-          }
-        >
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-          <p className="text-sm text-slate-700 dark:text-slate-300">{t("documents.templates.needTypeFirst")}</p>
-        </div>
+        <Notice tone="warn">
+          <AlertTriangle />
+          <p className="text-sm text-foreground">{t("documents.templates.needTypeFirst")}</p>
+        </Notice>
       )}
 
       {/* Existing templates */}
       {isLoading ? (
         <div className="space-y-2">
           {[0, 1].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
+            <div key={i} className="h-20 animate-pulse rounded-[14px] bg-muted" />
           ))}
         </div>
       ) : templates.length > 0 ? (
-        <ul className="mb-8 space-y-2">
-          {templates.map((tpl) => {
-            const reach = audiences.get(tpl.id) ?? []
-            return (
-              <li
-                key={tpl.id}
-                className={
-                  "flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 " +
-                  "bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
-                }
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-slate-900 dark:text-slate-100">{tpl.name}</span>
-                    <ModeChip mode={tpl.signatureMode} />
-                    <span className="text-[11px] text-slate-400">v{tpl.version}</span>
-                  </div>
-                  {/*
+        <Panel as="div" className="mb-3.5 p-1.5">
+          <ul>
+            {templates.map((tpl) => {
+              const reach = audiences.get(tpl.id) ?? []
+              return (
+                <li
+                  key={tpl.id}
+                  className="flex flex-wrap items-center gap-3 border-t border-border px-3.5 py-[13px] first:border-t-0"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[14.5px] font-semibold text-foreground">{tpl.name}</span>
+                      <ModeChip mode={tpl.signatureMode} />
+                      <span className="text-[11px] text-muted-foreground">v{tpl.version}</span>
+                    </div>
+                    {/*
                     Who it reaches, in a sentence, with today's number. The two
                     dropdowns said "Field Technician"; this says whether anybody
                     is actually a Field Technician.
                   */}
-                  <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
-                    <Users className="h-3.5 w-3.5" />
-                    <span>{describeAudience(tpl, roles, t)}</span>
-                    <span
-                      className={cn(
-                        "rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
-                        reach.length === 0
-                          ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-                      )}
+                    <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[12.5px] text-muted-foreground">
+                      <Users className="h-3.5 w-3.5" />
+                      <span>{describeAudience(tpl, roles, t)}</span>
+                      <Chip tone={reach.length === 0 ? "warn" : "soft"}>
+                        {t("documents.templates.peopleToday", { count: reach.length })}
+                      </Chip>
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      size="pill"
+                      variant="outline"
+                      className="h-8 px-3 text-[13px]"
+                      onClick={() => setEditing(tpl)}
                     >
-                      {t("documents.templates.peopleToday", { count: reach.length })}
-                    </span>
-                  </p>
-                </div>
-                <div className="flex gap-1">
-                  <Button size="sm" variant="ghost" onClick={() => setEditing(tpl)} aria-label={t("common.edit")}>
-                    <PenSquare className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => remove.mutate(tpl.id)}
-                    aria-label={t("common.delete")}
-                  >
-                    <Trash2 className="h-4 w-4 text-slate-400" />
-                  </Button>
-                </div>
-              </li>
-            )
-          })}
-        </ul>
+                      <PenSquare />
+                      {t("common.edit")}
+                    </Button>
+                    <Button
+                      size="pillIcon"
+                      variant="ghost"
+                      className="size-8"
+                      onClick={() => remove.mutate(tpl.id)}
+                      aria-label={t("common.delete")}
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </Panel>
       ) : null}
 
       {/* Starters — the alternative to an empty page */}
-      <section>
-        <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+      <Panel className="px-5 py-[18px]">
+        <h2 className="mb-0.5 text-[15px] font-semibold text-foreground">
           {templates.length > 0 ? t("documents.templates.addAnother") : t("documents.templates.startWith")}
         </h2>
-        <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">{t("documents.templates.startWithHint")}</p>
+        <p className="mb-3 text-[12.5px] text-muted-foreground">{t("documents.templates.startWithHint")}</p>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
           {STARTER_TEMPLATES.map((st) => {
             const isBlank = st.key === "blank"
             return (
@@ -210,30 +199,29 @@ export default function TemplatesPage() {
                 onClick={() => setStarter(st)}
                 disabled={types.length === 0}
                 className={cn(
-                  "rounded-xl border p-4 text-left transition-colors disabled:opacity-50",
-                  isBlank
-                    ? "border-dashed border-slate-300 hover:border-slate-400 dark:border-slate-700"
-                    : "border-slate-200 bg-white hover:border-blue-400 dark:border-slate-800 dark:bg-slate-900",
+                  "rounded-2xl border border-dashed border-border p-4 text-left transition-colors hover:bg-accent",
+                  "disabled:opacity-50",
+                  !isBlank && "bg-muted/50",
                 )}
               >
                 <div className="mb-1.5 flex items-center gap-2">
                   {isBlank ? (
-                    <Plus className="h-4 w-4 text-slate-400" />
+                    <Plus className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <FileSignature className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <FileSignature className="h-4 w-4 text-shell-accent" />
                   )}
-                  <span className="font-medium text-slate-900 dark:text-slate-100">
+                  <span className="font-semibold text-foreground">
                     {t(`documents.templates.starters.${st.key}.name`, { defaultValue: st.name })}
                   </span>
                 </div>
-                <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   {t(`documents.templates.starters.${st.key}.description`, { defaultValue: st.description })}
                 </p>
               </button>
             )
           })}
         </div>
-      </section>
+      </Panel>
     </div>
   )
 }

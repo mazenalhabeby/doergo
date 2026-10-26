@@ -44,10 +44,10 @@ export function TypeCredentialStep({
           />
 
           <div>
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("documents.types.gates")}</p>
-            <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t("documents.types.gatesHint")}</p>
+            <p className="text-sm font-medium text-foreground">{t("documents.types.gates")}</p>
+            <p className="mb-2 text-xs text-muted-foreground">{t("documents.types.gatesHint")}</p>
             {workflows.length === 0 ? (
-              <p className="text-sm text-slate-400">{t("documents.types.noTaskTypes")}</p>
+              <p className="text-sm text-muted-foreground">{t("documents.types.noTaskTypes")}</p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {workflows.map((w) => {
@@ -57,10 +57,10 @@ export function TypeCredentialStep({
                       key={w.id}
                       onClick={() => setGates((g) => (on ? g.filter((x) => x !== w.id) : [...g, w.id]))}
                       className={cn(
-                        "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                        "h-8 rounded-full border px-3.5 text-[13px] font-medium transition-colors",
                         on
                           ? "border-amber-400 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300"
-                          : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400",
+                          : "border-border text-muted-foreground hover:bg-accent",
                       )}
                     >
                       {w.name}

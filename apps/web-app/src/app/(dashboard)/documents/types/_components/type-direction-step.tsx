@@ -61,8 +61,8 @@ export function TypeDirectionStep({
             whether it can be read at all.
           */}
           <div>
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("documents.types.scanShape")}</p>
-            <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t("documents.types.scanShapeHint")}</p>
+            <p className="text-sm font-medium text-foreground">{t("documents.types.scanShape")}</p>
+            <p className="mb-2 text-xs text-muted-foreground">{t("documents.types.scanShapeHint")}</p>
             <div className="grid gap-2 sm:grid-cols-3">
               {(["CARD", "PASSPORT", "PAGE"] as const).map((sh) => (
                 <Choice

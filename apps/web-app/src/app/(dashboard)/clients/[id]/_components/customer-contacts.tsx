@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 import { personInitials } from "@hbcfield/shared/client"
 import { AddContactDialog } from "./add-contact-dialog"
+import { Panel, PANEL_HEAD, SMALL_PILL } from "./customer-record-bits"
 export { WorksAtPanel } from "./works-at-panel"
 
 /**
@@ -70,9 +71,9 @@ export function ContactsPanel({ customer, canEdit }: { customer: Customer; canEd
   })
 
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-4">
+    <Panel>
       <div className="mb-2.5 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className={PANEL_HEAD}>
           <Users className="h-3.5 w-3.5" /> {t("customers.contacts", "Contact people")}
         </p>
         {canEdit && (
@@ -80,7 +81,7 @@ export function ContactsPanel({ customer, canEdit }: { customer: Customer; canEd
             companyId={companyId}
             onSaved={invalidate}
             trigger={
-              <button className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+              <button className={SMALL_PILL}>
                 <UserPlus className="h-3.5 w-3.5" /> {t("customers.addContact", "Add")}
               </button>
             }
@@ -137,7 +138,7 @@ export function ContactsPanel({ customer, canEdit }: { customer: Customer; canEd
           />
         </div>
       )}
-    </div>
+    </Panel>
   )
 }
 
@@ -157,8 +158,11 @@ function ContactRow({
   return (
     <li className="group flex items-start gap-2.5 py-2.5 first:pt-0.5">
       <span
-        className={"mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full " +
-          "bg-primary/10 text-[10px] font-semibold text-primary"}>
+        className={
+          "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full " +
+          "bg-primary/10 text-[10px] font-semibold text-primary"
+        }
+      >
         {personInitials(p.name)}
       </span>
       <span className="min-w-0 flex-1">

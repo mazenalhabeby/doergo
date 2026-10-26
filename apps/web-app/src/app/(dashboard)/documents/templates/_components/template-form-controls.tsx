@@ -7,15 +7,17 @@ export { Step } from "../../_components/editor-step"
 export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
+      <span className="mb-1.5 block text-sm font-medium text-foreground">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-slate-400">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-muted-foreground">{hint}</span>}
     </label>
   )
 }
 
 export function Select({
-  value, onChange, options,
+  value,
+  onChange,
+  options,
 }: {
   value: string
   onChange: (v: string) => void
@@ -25,12 +27,12 @@ export function Select({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={"h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm " +
-        "text-slate-900 dark:border-slate-700 dark:bg-slate-900 " +
-        "dark:text-slate-100"}
+      className={"h-10 w-full rounded-md border border-border bg-card px-3 text-sm " + "text-foreground " + ""}
     >
       {options.map((o) => (
-        <option key={o.value} value={o.value}>{o.label}</option>
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
       ))}
     </select>
   )

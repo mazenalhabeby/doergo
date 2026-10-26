@@ -8,8 +8,15 @@ import { documentsApi, type BrowseLevel, type BrowseFolder, type IssuedRow } fro
 import { UserAvatar } from "@/components/common/user-avatar"
 import { useOpenDocument } from "@/hooks/use-open-document"
 import { cn } from "@/lib/utils"
+import { Count, Panel } from "@/components/page/page-kit"
 import { Checkbox } from "@/components/ui/checkbox"
-import { DocumentActionDialogs, SelectionBar, useDocumentControl, useRowSelection, type DocumentAction } from "./document-control"
+import {
+  DocumentActionDialogs,
+  SelectionBar,
+  useDocumentControl,
+  useRowSelection,
+  type DocumentAction,
+} from "./document-control"
 import { keys } from "@/lib/query-keys"
 import { type GroupBy, type Crumb, GROUPS, Shimmer, Empty, DocumentRow } from "./document-row"
 
@@ -62,8 +69,7 @@ export function FolderBrowser() {
     errorMessage: (e) => e?.message ?? t("documents.all.openFailed", "Could not open the document"),
   })
 
-  const folderLabel = (f: BrowseFolder) =>
-    f.undated ? t("documents.all.undated", "No period") : (f.label ?? f.key)
+  const folderLabel = (f: BrowseFolder) => (f.undated ? t("documents.all.undated", "No period") : (f.label ?? f.key))
 
   const enter = (f: BrowseFolder) =>
     setPath((p) => [...p, { kind: f.kind, key: f.key, label: folderLabel(f), undated: f.undated }])
@@ -72,10 +78,10 @@ export function FolderBrowser() {
     <div>
       {/* How to file it — a different way through the same shelf, not a filter */}
       <div className="mb-5 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
+        <span className="text-[12.5px] font-medium text-muted-foreground">
           {t("documents.all.groupByLabel", "Browse by")}
         </span>
-        <div className="inline-flex rounded-lg border border-border/80 bg-card p-0.5">
+        <div className="inline-flex gap-0.5 rounded-xl bg-shell-chip p-[3px]">
           {GROUPS.map(({ key, icon: Icon }) => (
             <button
               key={key}
@@ -84,10 +90,8 @@ export function FolderBrowser() {
                 setPath([]) // a different hierarchy makes the old path meaningless
               }}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                groupBy === key
-                  ? "bg-accent text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
+                "inline-flex h-[30px] items-center gap-1.5 rounded-[9px] px-3 text-[12.5px] font-medium transition-colors",
+                groupBy === key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
               )}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -128,11 +132,11 @@ export function FolderBrowser() {
         ))}
       </nav>
 
-      <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
+      <Panel className="overflow-hidden p-1.5">
         {isLoading ? (
           <div>
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 border-b border-border/20 px-5 py-3.5 last:border-0">
+              <div key={i} className="flex min-h-[62px] items-center gap-3.5 px-3.5 py-2.5">
                 <Shimmer className="size-9 rounded-lg" />
                 <Shimmer className={cn("h-4", ["w-32", "w-44", "w-36", "w-28"][i])} />
                 <div className="flex-1" />
@@ -147,7 +151,7 @@ export function FolderBrowser() {
             <div>
               <SelectionBar selected={selection.selected} onClear={selection.clear} onAction={act} />
               {canSelect && selection.selected.length === 0 && data.documents.length > 1 && (
-                <div className="flex items-center gap-2.5 border-b border-border/40 px-5 py-2">
+                <div className="flex h-10 items-center gap-2.5 px-3.5">
                   <Checkbox
                     id="folder-select-all"
                     checked={selection.allSelected}
@@ -183,42 +187,42 @@ export function FolderBrowser() {
                 key={f.key}
                 onClick={() => enter(f)}
                 style={{ animation: `fadeSlideIn 0.25s ease-out ${i * 40}ms both` }}
-                className={"group flex w-full items-center gap-4 border-b border-border/50 px-5 " +
-                  "py-3.5 text-left transition-colors last:border-0 hover:bg-accent/30"}
+                className={
+                  "group flex min-h-[62px] w-full items-center gap-3.5 rounded-[14px] px-3.5 " +
+                  "py-2.5 text-left transition-colors hover:bg-accent"
+                }
               >
                 {f.kind === "member" ? (
                   <UserAvatar
                     firstName={(f.label ?? "").split(" ")[0] ?? ""}
                     lastName={(f.label ?? "").split(" ").slice(1).join(" ")}
                     seed={f.key}
-                    size="md"
+                    size="lg"
+                    soft
+                    className="size-9"
                   />
                 ) : (
                   <span
                     className={cn(
-                      "flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors",
-                      f.undated
-                        ? "bg-muted text-muted-foreground"
-                        : "bg-primary/10 text-primary group-hover:bg-primary/15",
+                      "flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors",
+                      f.undated ? "bg-muted text-muted-foreground" : "bg-shell-accent-soft text-shell-accent",
                     )}
                   >
                     {f.undated ? <Clock className="h-4 w-4" /> : <Folder className="h-4 w-4" />}
                   </span>
                 )}
 
-                <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                <span className="min-w-0 flex-1 truncate text-[14.5px] font-semibold text-foreground">
                   {folderLabel(f)}
                 </span>
 
-                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
-                  {f.count}
-                </span>
+                <Count n={f.count} />
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
               </button>
             ))}
           </div>
         )}
-      </div>
+      </Panel>
       <DocumentActionDialogs
         action={action?.kind ?? null}
         rows={action?.rows ?? []}

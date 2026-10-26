@@ -7,6 +7,7 @@ import { UserAvatar } from "@/components/common/user-avatar"
 import { cn } from "@/lib/utils"
 import { DocumentRowMenu, SelectionBar, VisibilityChip } from "./document-control"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Panel } from "@/components/page/page-kit"
 import { useOpenDocument } from "@/hooks/use-open-document"
 import { Shimmer, periodLabel, ChainLine, StateChip } from "./sent-document-row-bits"
 import type { SentRegister } from "../_hooks/use-sent-register"
@@ -25,11 +26,11 @@ export function SentDocumentsList({
     errorMessage: (e) => e?.message ?? t("documents.all.openFailed", "Could not open the document"),
   })
   return (
-    <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
+    <Panel className="overflow-hidden p-1.5">
       {isLoading ? (
         <div>
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-4 border-b border-border/20 px-5 py-3.5 last:border-0">
+            <div key={i} className="flex min-h-[62px] items-center gap-3.5 px-3.5 py-2.5">
               <Shimmer className="size-9 rounded-full" />
               <div className="flex-1 space-y-2">
                 <Shimmer className={cn("h-4", ["w-44", "w-56", "w-40", "w-48"][i])} />
@@ -54,7 +55,7 @@ export function SentDocumentsList({
             onAction={(kind, picked) => setAction({ kind, rows: picked })}
           />
           {canSelect && selection.selected.length === 0 && rows.length > 1 && (
-            <div className="flex items-center gap-2.5 border-b border-border/40 px-5 py-2">
+            <div className="flex h-10 items-center gap-2.5 px-3.5">
               <Checkbox
                 id="docs-select-all"
                 checked={selection.allSelected}
@@ -74,8 +75,8 @@ export function SentDocumentsList({
                 key={row.id}
                 style={{ animation: `fadeSlideIn 0.25s ease-out ${i * 40}ms both` }}
                 className={cn(
-                  "group flex items-center gap-4 border-b border-border/50 px-5 py-3.5 transition-colors last:border-0 hover:bg-accent/30",
-                  selection.isSelected(row.id) && "bg-primary/5",
+                  "group flex min-h-[62px] items-center gap-3.5 rounded-[14px] px-3.5 py-2.5 transition-colors hover:bg-accent",
+                  selection.isSelected(row.id) && "bg-shell-nav-on",
                 )}
               >
                 {canSelect && (
@@ -88,10 +89,17 @@ export function SentDocumentsList({
                     })}
                   />
                 )}
-                <UserAvatar firstName={first} lastName={rest.join(" ")} seed={row.memberId} size="md" />
+                <UserAvatar
+                  firstName={first}
+                  lastName={rest.join(" ")}
+                  seed={row.memberId}
+                  size="lg"
+                  soft
+                  className="size-9"
+                />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{row.title}</p>
-                  <p className="truncate text-sm text-muted-foreground">
+                  <p className="truncate text-[14.5px] font-semibold text-foreground">{row.title}</p>
+                  <p className="truncate text-[12.5px] text-muted-foreground">
                     {row.memberName}
                     <span className="px-1.5 text-muted-foreground/40">·</span>
                     {row.typeLabel}
@@ -124,6 +132,6 @@ export function SentDocumentsList({
           })}
         </div>
       )}
-    </div>
+    </Panel>
   )
 }

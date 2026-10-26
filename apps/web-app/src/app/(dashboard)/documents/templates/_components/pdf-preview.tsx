@@ -6,6 +6,7 @@ import { Loader2, AlertTriangle, Download } from "lucide-react"
 import { documentsApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { EmptyNote } from "@/components/ui/empty-note"
+import { Notice } from "@/components/page/page-kit"
 
 /**
  * The draft, rendered by the server into the PDF a member would receive.
@@ -80,7 +81,7 @@ export function PdfPreview({ body, title, memberId }: { body: string; title: str
 
   if (!body.trim()) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-lg border border-border bg-card p-6">
         <EmptyNote>{t("documents.templates.previewEmpty")}</EmptyNote>
       </div>
     )
@@ -89,10 +90,10 @@ export function PdfPreview({ body, title, memberId }: { body: string; title: str
   return (
     <div className="space-y-2">
       {error ? (
-        <div className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950/40">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
-          <p className="text-sm text-slate-700 dark:text-slate-300">{error}</p>
-        </div>
+        <Notice tone="crit" className="mb-0 items-start">
+          <AlertTriangle className="mt-0.5" />
+          <p className="text-sm text-foreground">{error}</p>
+        </Notice>
       ) : (
         <div className="relative">
           {url && (
@@ -101,16 +102,14 @@ export function PdfPreview({ body, title, memberId }: { body: string; title: str
                  half of a pane that is already narrow. */
               src={`${url}#view=FitH&navpanes=0`}
               title={t("documents.templates.preview")}
-              className="h-[70vh] w-full rounded-lg border border-slate-200 bg-white dark:border-slate-800"
+              className="h-[70vh] w-full rounded-lg border border-border bg-card"
             />
           )}
           {(loading || !url) && (
             <div
               className={cn(
-                "flex items-center justify-center gap-2 rounded-lg text-sm text-slate-400",
-                url
-                  ? "absolute inset-0 bg-white/60 dark:bg-slate-950/60"
-                  : "h-[70vh] border border-slate-200 dark:border-slate-800",
+                "flex items-center justify-center gap-2 rounded-lg text-sm text-muted-foreground",
+                url ? "absolute inset-0 bg-white/60" : "h-[70vh] border border-border",
               )}
             >
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -126,27 +125,22 @@ export function PdfPreview({ body, title, memberId }: { body: string; title: str
         somebody is waiting for their contract.
       */}
       {missing.length > 0 && !error && (
-        <div
-          className={
-            "flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 " +
-            "p-3 dark:border-amber-900 dark:bg-amber-950/40"
-          }
-        >
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-          <p className="text-sm text-slate-700 dark:text-slate-300">
+        <Notice tone="warn" className="mb-0 items-start">
+          <AlertTriangle className="mt-0.5" />
+          <p className="text-sm text-foreground">
             {t("documents.templates.previewMissing", {
               count: missing.length,
               fields: missing.map((f) => t(`documents.templates.fieldLabels.${f}`, { defaultValue: f })).join(", "),
             })}
           </p>
-        </div>
+        </Notice>
       )}
 
       {url && !error && (
         <a
           href={url}
           download={`${title || t("documents.templates.untitled")}.pdf`}
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <Download className="h-4 w-4" />
           {t("documents.templates.previewDownload")}

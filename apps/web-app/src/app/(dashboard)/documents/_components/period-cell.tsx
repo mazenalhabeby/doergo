@@ -28,10 +28,10 @@ export function PeriodCell({
   onChange: (patch: Partial<Row>) => void
 }) {
   const { t } = useTranslation()
-  if (cadence === "ONE_OFF") return <span className="text-slate-400">—</span>
+  if (cadence === "ONE_OFF") return <span className="text-muted-foreground">—</span>
   if (row.scanning) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-500">
+      <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
         <Loader2 className="h-3 w-3 animate-spin" />
         {t("documents.issue.reading", "reading the file…")}
       </span>
@@ -53,11 +53,13 @@ export function PeriodCell({
             onChange={(e) =>
               onChange({ periodMonth: e.target.value ? Number(e.target.value) : null, periodSource: undefined })
             }
-            className="rounded-md border border-slate-300 bg-white px-1.5 py-1 text-[12px] dark:border-slate-700 dark:bg-slate-900"
+            className="rounded-md border border-border bg-card px-1.5 py-1 text-[12px]"
           >
             <option value="">{t("documents.issue.month", "Month")}</option>
             {MONTHS_KEY.map((m, i) => (
-              <option key={m} value={i + 1}>{t(`documents.months.${m}`)}</option>
+              <option key={m} value={i + 1}>
+                {t(`documents.months.${m}`)}
+              </option>
             ))}
           </select>
         )}
@@ -66,23 +68,22 @@ export function PeriodCell({
           onChange={(e) =>
             onChange({ periodYear: e.target.value ? Number(e.target.value) : null, periodSource: undefined })
           }
-          className={"rounded-md border border-slate-300 bg-white px-1.5 py-1 text-[12px] " +
-            "tabular-nums dark:border-slate-700 dark:bg-slate-900"}
+          className={"rounded-md border border-border bg-card px-1.5 py-1 text-[12px] " + "tabular-nums "}
         >
           <option value="">{t("documents.issue.year", "Year")}</option>
           {yearOptions.map((y) => (
-            <option key={y} value={y}>{y}</option>
+            <option key={y} value={y}>
+              {y}
+            </option>
           ))}
         </select>
       </div>
 
       {row.periodSource === "content" && (
-        <span className="text-[10.5px] text-blue-600 dark:text-blue-400">
-          {t("documents.issue.fromFile", "read from the file")}
-        </span>
+        <span className="text-[10.5px] text-shell-accent">{t("documents.issue.fromFile", "read from the file")}</span>
       )}
       {row.periodConflict && (
-        <span className="text-[10.5px] font-medium text-amber-600 dark:text-amber-400">
+        <span className="text-[10.5px] font-medium text-shell-warn">
           {t("documents.issue.periodConflict", "the filename and the file disagree — check this one")}
         </span>
       )}

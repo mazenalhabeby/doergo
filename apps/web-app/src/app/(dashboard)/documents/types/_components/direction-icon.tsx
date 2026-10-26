@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils"
 /** Who files it decides the icon: the office, the member, or either. */
 export const DIRECTION_ICON = { ISSUED: Building2, SUPPLIED: Upload, BOTH: ArrowLeftRight } as const
 const DIRECTION_TONE = {
-  ISSUED: "text-blue-600 dark:text-blue-400",
-  SUPPLIED: "text-emerald-600 dark:text-emerald-400",
+  ISSUED: "text-shell-accent",
+  SUPPLIED: "text-shell-live",
   BOTH: "text-violet-600 dark:text-violet-400",
 } as const
 export function DirectionIcon({ direction }: { direction: string }) {
