@@ -8926,6 +8926,7 @@
   },
   "calendar": {
     "myCalendar": "Mon calendrier",
+    "pageSubtitle": "Interventions, rendez-vous, rappels, congés, jours fériés et échéances au même endroit.",
     "new": "Nouveau",
     "newTitle": "Nouveau dans le calendrier",
     "editTitle": "Modifier",

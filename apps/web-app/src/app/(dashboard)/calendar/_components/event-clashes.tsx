@@ -27,8 +27,8 @@ export function EventClashes({
   return (
     <div
       className={
-        "flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/[0.07] p-3 " +
-        "text-sm text-amber-800 dark:text-amber-200"
+        "flex gap-3 rounded-2xl bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] p-3 " +
+        "text-sm text-shell-warn"
       }
     >
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -55,9 +55,8 @@ export function EventClashes({
                   setStart(dayKey(d), hm(d))
                 }}
                 className={
-                  "rounded-lg bg-emerald-500/10 px-2.5 py-1.5 text-xs font-semibold " +
-                  "text-emerald-700 ring-1 ring-emerald-500/30 transition " +
-                  "hover:bg-emerald-500/20 dark:text-emerald-300"
+                  "rounded-full bg-shell-accent-soft px-2.5 py-1.5 text-xs font-semibold " +
+                  "text-shell-accent transition hover:brightness-95"
                 }
               >
                 {fmtTime(s.start)}

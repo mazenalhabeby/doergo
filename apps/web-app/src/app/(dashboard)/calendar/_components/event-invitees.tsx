@@ -87,11 +87,7 @@ export function EventInvitees({
                   <div
                     className={cn(
                       "text-[11px]",
-                      off
-                        ? "text-amber-600 dark:text-amber-400"
-                        : busy
-                          ? "text-rose-500"
-                          : "text-emerald-600 dark:text-emerald-400",
+                      off ? "text-shell-warn" : busy ? "text-shell-crit" : "text-shell-accent",
                     )}
                   >
                     {!a || allDay

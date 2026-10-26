@@ -8926,6 +8926,7 @@
   },
   "calendar": {
     "myCalendar": "Mi calendario",
+    "pageSubtitle": "Trabajos, citas, recordatorios, ausencias, festivos y vencimientos en un solo lugar.",
     "new": "Nuevo",
     "newTitle": "Nuevo en el calendario",
     "editTitle": "Editar",

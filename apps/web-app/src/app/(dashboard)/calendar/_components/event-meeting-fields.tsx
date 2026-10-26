@@ -150,7 +150,7 @@ export function EventMeetingFields({
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           {t("calendar.how")}
         </span>
-        <div role="tablist" className="grid grid-cols-3 gap-1 rounded-xl border bg-muted/40 p-1">
+        <div role="tablist" className="grid grid-cols-3 gap-0.5 rounded-full bg-shell-chip p-1">
           {(
             [
               ["IN_PERSON", MapPin],
@@ -165,9 +165,9 @@ export function EventMeetingFields({
               aria-selected={mode === m}
               onClick={() => setMode(m)}
               className={cn(
-                "inline-flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 " +
-                  "text-sm font-medium text-muted-foreground transition",
-                mode === m && "bg-background text-foreground shadow-sm ring-1 ring-border",
+                "inline-flex h-8 items-center justify-center gap-1.5 rounded-full px-2 " +
+                  "text-[13.5px] font-medium text-muted-foreground transition",
+                mode === m && "bg-card font-semibold text-foreground shadow-shell",
               )}
             >
               <Icon className="h-4 w-4" />
@@ -230,7 +230,7 @@ export function EventMeetingFields({
             )}
             {place === "CLIENT_SITE" &&
               (!customer ? (
-                <p className="text-xs text-amber-700 dark:text-amber-300">{t("calendar.pickClientFirst")}</p>
+                <p className="text-xs text-shell-warn">{t("calendar.pickClientFirst")}</p>
               ) : clientAddresses.length > 0 ? (
                 <select
                   aria-label={t("calendar.whichAddress")}
@@ -289,8 +289,8 @@ export function EventMeetingFields({
             {provider && (
               <span
                 className={
-                  "inline-flex rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs " +
-                  "font-medium text-blue-700 dark:text-blue-300"
+                  "inline-flex rounded-full bg-shell-accent-soft px-2.5 py-0.5 text-xs " +
+                  "font-medium text-shell-accent"
                 }
               >
                 {t("calendar.linkRecognised", { name: MEETING_PROVIDER_NAMES[provider] })}

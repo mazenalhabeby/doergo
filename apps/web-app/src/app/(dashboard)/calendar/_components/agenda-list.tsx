@@ -24,7 +24,7 @@ export function AgendaList({ days, items, dayKinds, onSelect }: Props) {
     .filter((r) => r.list.length || r.k === today)
   if (!rows.length) {
     return (
-      <div className="grid place-items-center rounded-2xl border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center rounded-[22px] border border-border bg-card px-6 py-16 text-center shadow-shell">
         <CalendarDays className="mb-3 h-8 w-8 text-muted-foreground" />
         <p className="font-medium">{t("calendar.agendaEmpty")}</p>
         <p className="mt-1 text-sm text-muted-foreground">{t("calendar.agendaEmptyHint")}</p>
@@ -32,13 +32,20 @@ export function AgendaList({ days, items, dayKinds, onSelect }: Props) {
     )
   }
   return (
-    <div className="divide-y rounded-2xl border bg-card shadow-sm">
+    <div className="divide-y divide-border rounded-[22px] border border-border bg-card px-[18px] pb-3.5 pt-1.5 shadow-shell">
       {rows.map(({ d, k, list }) => {
         const kind = dayKinds.get(k)
         return (
-          <div key={k} className="grid gap-4 px-4 py-3 sm:grid-cols-[120px_1fr]">
+          <div key={k} className="grid gap-4 py-3.5 sm:grid-cols-[110px_1fr]">
             <div className="flex items-baseline gap-2 sm:block">
-              <div className={cn("text-2xl font-medium tabular-nums tracking-tight", k === today && "text-primary")}>{d.getDate()}</div>
+              <div
+                className={cn(
+                  "text-[22px] font-semibold tabular-nums tracking-[-0.02em]",
+                  k === today && "text-shell-accent",
+                )}
+              >
+                {d.getDate()}
+              </div>
               <div className="text-xs text-muted-foreground">
                 {d.toLocaleDateString(dateLocale(), { weekday: "long", month: "short" })}
                 {(kind === "weekend" || kind === "off-rota") && ` · ${t("calendar.dayOff")}`}
@@ -52,22 +59,20 @@ export function AgendaList({ days, items, dayKinds, onSelect }: Props) {
                   type="button"
                   onClick={(e) => onSelect(x, e.currentTarget)}
                   style={{ "--k": KIND_COLOR[x.kind] } as React.CSSProperties}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-accent"
+                  className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition hover:bg-accent"
                 >
-                  <span className="h-8 w-1 shrink-0 rounded-full bg-[var(--k)]" />
-                  <span className="w-24 shrink-0 font-mono text-xs text-muted-foreground">
+                  <span className="size-2.5 shrink-0 rounded-full bg-[var(--k)]" />
+                  <span className="w-24 shrink-0 text-[13px] tabular-nums text-muted-foreground">
                     {x.allDay
                       ? t("calendar.allDay")
-                      : `${new Date(x.start).toLocaleTimeString(
-                        dateLocale(),
-                        {
+                      : `${new Date(x.start).toLocaleTimeString(dateLocale(), {
                           hour: "2-digit",
-                          minute: "2-digit"
+                          minute: "2-digit",
                         })}–${new Date(x.end).toLocaleTimeString(dateLocale(), { hour: "2-digit", minute: "2-digit" })}`}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{x.title}</span>
-                    <span className="block truncate text-xs text-muted-foreground">
+                    <span className="block truncate text-[14.5px] font-semibold">{x.title}</span>
+                    <span className="block truncate text-[12.5px] text-muted-foreground">
                       {t(`calendar.kind.${x.kind}`)}
                       {x.location ? ` · ${x.location}` : ""}
                       {x.kind === "leave" && x.status === "PENDING" ? ` · ${t("calendar.requested")}` : ""}

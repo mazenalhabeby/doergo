@@ -8926,6 +8926,7 @@
   },
   "calendar": {
     "myCalendar": "Mein Kalender",
+    "pageSubtitle": "Aufträge, Termine, Erinnerungen, Abwesenheiten, Feiertage und Ablaufdaten an einem Ort.",
     "new": "Neu",
     "newTitle": "Neu im Kalender",
     "editTitle": "Bearbeiten",

@@ -30,7 +30,11 @@ export function FeedCard() {
   })
   const revoke = useMutation({
     mutationFn: calendarApi.feedRevoke,
-    onSuccess: () => { setUrl(null); qc.invalidateQueries({ queryKey: keys.calendar.feed() }); toast.success(t("calendar.feed.revoked")) },
+    onSuccess: () => {
+      setUrl(null)
+      qc.invalidateQueries({ queryKey: keys.calendar.feed() })
+      toast.success(t("calendar.feed.revoked"))
+    },
   })
   if (!data?.allowed) return null
 
@@ -42,21 +46,38 @@ export function FeedCard() {
   }
 
   return (
-    <div className="rounded-2xl border bg-card p-3.5 shadow-sm">
-      <div
-        className="flex items-center gap-2 text-sm font-medium"><Link2 className="h-4 w-4 text-primary" />{t("calendar.feed.title")}</div>
-      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t("calendar.feed.body")}</p>
+    <div className="rounded-[22px] border border-border bg-card p-3.5 shadow-shell">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <Link2 className="h-4 w-4 text-shell-accent" />
+        {t("calendar.feed.title")}
+      </div>
+      <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">{t("calendar.feed.body")}</p>
       {url ? (
         <div className="mt-3 space-y-2">
           <div
-            className={"truncate rounded-lg border border-dashed bg-muted/40 px-2.5 py-2 " + "font-mono text-[11px] text-muted-foreground"}
-            title={url}>{url}</div>
-          <p className="text-[11px] text-amber-700 dark:text-amber-300">{t("calendar.feed.once")}</p>
-          <Button size="sm" className="w-full gap-1.5" onClick={copy}><Copy className="h-3.5 w-3.5" />{t("calendar.feed.copy")}</Button>
+            className={
+              "truncate rounded-xl border border-dashed border-border bg-shell-chip px-2.5 py-2 " +
+              "font-mono text-[11px] text-muted-foreground"
+            }
+            title={url}
+          >
+            {url}
+          </div>
+          <p className="text-[11px] text-shell-warn">{t("calendar.feed.once")}</p>
+          <Button size="sm" className="w-full gap-1.5 rounded-full" onClick={copy}>
+            <Copy className="h-3.5 w-3.5" />
+            {t("calendar.feed.copy")}
+          </Button>
         </div>
       ) : (
         <div className="mt-3 flex gap-2">
-          <Button size="sm" variant="outline" className="flex-1 gap-1.5" disabled={rotate.isPending} onClick={() => rotate.mutate()}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 gap-1.5 rounded-full"
+            disabled={rotate.isPending}
+            onClick={() => rotate.mutate()}
+          >
             {data.active ? <RefreshCw className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
             {data.active ? t("calendar.feed.newLink") : t("calendar.feed.make")}
           </Button>
@@ -64,9 +85,11 @@ export function FeedCard() {
             <Button
               size="sm"
               variant="ghost"
+              className="rounded-full"
               aria-label={t("calendar.feed.revoke")}
               title={t("calendar.feed.revoke")}
-              onClick={() => revoke.mutate()}>
+              onClick={() => revoke.mutate()}
+            >
               <Unlink className="h-3.5 w-3.5" />
             </Button>
           )}
