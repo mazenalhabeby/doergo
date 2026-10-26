@@ -507,6 +507,7 @@ button.clock-aurora:not(:disabled):active { transform: scale(.98) }
   animation: clock-aurora-breathe 2.4s ease-in-out infinite }
 .clock-aurora[data-on] .clock-aurora-disc { background: var(--shell-accent-soft); color: var(--shell-accent) }
 .clock-aurora[data-on] .clock-aurora-disc::after { border-color: var(--shell-live) }
+.clock-aurora-still::before { display: none }
 @keyframes clock-aurora-spin { to { transform: rotate(1turn) } }
 @keyframes clock-aurora-breathe { 50% { transform: scale(1.08); opacity: .2 } }
 @media (prefers-reduced-motion: reduce) { .clock-aurora::before, .clock-aurora-disc::after { animation: none } }

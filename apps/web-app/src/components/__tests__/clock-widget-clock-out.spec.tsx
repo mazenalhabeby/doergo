@@ -19,7 +19,10 @@ const state = {
 }
 
 jest.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string, d?: unknown) => (typeof d === "string" ? d : key) }),
+  useTranslation: () => ({
+    t: (key: string, d?: unknown) => (typeof d === "string" ? d : key),
+    i18n: { language: "en" },
+  }),
 }))
 jest.mock("@/contexts/auth-context", () => ({
   useAuth: () => ({ user: { id: "u-1", role: "EMPLOYEE" }, hasPlanFeature: () => true }),
@@ -40,6 +43,7 @@ jest.mock("@/hooks", () => ({
     pending: false,
     startClockIn: jest.fn(),
     clockOut: state.clockOut,
+    locations: [],
     pickerProps: {},
     earlyProps: { open: state.earlyOpen },
   }),
@@ -75,7 +79,8 @@ describe("navbar clock-out", () => {
     state.earlyOpen = false
     state.billingLocked = true
     render()
-    const button = Array.from(host.querySelectorAll("button")).find((b) => b.textContent?.includes("Clock Out"))
+    // The Aurora card says "Out"; its name for a screen reader is the full "Clock Out".
+    const button = Array.from(host.querySelectorAll("button")).find((b) => b.getAttribute("aria-label") === "Clock Out")
     expect(button).toBeDefined()
     expect(button!.disabled).toBe(false)
   })
