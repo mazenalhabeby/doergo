@@ -29,7 +29,7 @@ export const MANAGE_ROWS = [
     asked the way that kind's route asks it — the server lists only those.
   */
   {
-    icon: 'file-tray-full',
+    icon: 'inbox',
     labelKey: 'manage.approvals.label',
     descKey: 'manage.approvals.desc',
     route: '/(app)/approvals',
@@ -39,7 +39,7 @@ export const MANAGE_ROWS = [
     gate: { decides: true },
   },
   {
-    icon: 'stopwatch',
+    icon: 'attendance',
     labelKey: 'manage.attendance.label',
     descKey: 'manage.attendance.desc',
     route: '/(app)/manage/attendance',
@@ -72,7 +72,7 @@ export const MANAGE_ROWS = [
     them that workspace's clients (`crmReachOf`), so the phone offers them.
   */
   {
-    icon: 'people-circle',
+    icon: 'clients',
     labelKey: 'manage.customers.label',
     descKey: 'manage.customers.desc',
     route: '/(app)/customers',
@@ -90,7 +90,7 @@ export const MANAGE_ROWS = [
     Log expense) stays staff-only above.
   */
   {
-    icon: 'construct',
+    icon: 'assets',
     labelKey: 'manage.equipment.label',
     descKey: 'manage.equipment.desc',
     route: '/(app)/equipment',
@@ -100,7 +100,7 @@ export const MANAGE_ROWS = [
     module: 'assets',
   },
   {
-    icon: 'chatbox-ellipses',
+    icon: 'clientRequests',
     labelKey: 'manage.clientRequests.label',
     descKey: 'manage.clientRequests.desc',
     route: '/(app)/client-requests',
@@ -110,7 +110,7 @@ export const MANAGE_ROWS = [
     module: 'b2c_portal',
   },
   {
-    icon: 'mail',
+    icon: 'invite',
     labelKey: 'manage.invitations.label',
     descKey: 'manage.invitations.desc',
     route: '/(app)/manage/invitations',
@@ -119,7 +119,7 @@ export const MANAGE_ROWS = [
     orgWide: true,
   },
   {
-    icon: 'alert-circle',
+    icon: 'issues',
     labelKey: 'manage.issues.label',
     descKey: 'manage.issues.desc',
     route: 'sheet:issues',
@@ -133,7 +133,7 @@ export const MANAGE_ROWS = [
     floor, not on `canViewAllTasks`, which the €2 observer holds.
   */
   {
-    icon: 'time',
+    icon: 'schedule',
     labelKey: 'manage.schedules.label',
     descKey: 'manage.schedules.desc',
     route: '/(app)/manage/schedules',

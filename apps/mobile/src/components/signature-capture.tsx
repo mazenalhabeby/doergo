@@ -1,35 +1,15 @@
 import { useState, useRef, useCallback } from 'react';
-import {
-  useWindowDimensions,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Image
-} from 'react-native';
+import { useWindowDimensions, View, Text, StyleSheet, TouchableOpacity, Modal, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeSignaturePad, type NativeSignaturePadHandle } from './signature-pad-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
-import {
-  COLORS,
-  SPACING,
-  RADIUS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  SHADOWS,
-} from '../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../lib/constants';
 import { useSignatureCapture, type SignatureCaptureProps } from './use-signature-capture';
 import { styles } from './signature-capture-helpers';
 
-export function SignatureCapture({
-  title,
-  onSave,
-  onClear,
-  existingSignature,
-}: SignatureCaptureProps) {
+export function SignatureCapture({ title, onSave, onClear, existingSignature }: SignatureCaptureProps) {
   const {
     colors,
     isDark,
@@ -57,7 +37,11 @@ export function SignatureCapture({
         style={[
           styles.triggerCard,
           { borderColor: colors.border, backgroundColor: colors.surfaceRaised },
-          hasSigned && { borderColor: COLORS.success, borderStyle: 'solid', backgroundColor: isDark ? colors.successLight : '#f0fdf4' },
+          hasSigned && {
+            borderColor: COLORS.success,
+            borderStyle: 'solid',
+            backgroundColor: isDark ? colors.successLight : '#f0fdf4',
+          },
         ]}
         onPress={openPad}
         activeOpacity={0.7}
@@ -67,7 +51,7 @@ export function SignatureCapture({
             <View style={styles.triggerSignedTop}>
               <View style={styles.triggerSignedBadge}>
                 <View style={[styles.signedIconCircle, { backgroundColor: isDark ? colors.successLight : '#dcfce7' }]}>
-                  <Ionicons name="checkmark" size={14} color={COLORS.success} />
+                  <Icon name="checkLine" size={14} color={COLORS.success} />
                 </View>
                 <Text style={[styles.triggerSignedLabel, { color: COLORS.success }]}>{title}</Text>
               </View>
@@ -79,31 +63,25 @@ export function SignatureCapture({
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 style={styles.triggerClearBtn}
               >
-                <Ionicons name="refresh-outline" size={16} color={colors.textMuted} />
+                <Icon name="refreshLine" size={16} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
             <View style={[styles.triggerPreviewContainer, { backgroundColor: isDark ? '#ffffff10' : '#ffffff' }]}>
-              <Image
-                source={{ uri: existingSignature }}
-                style={styles.triggerPreviewImage}
-                resizeMode="contain"
-              />
+              <Image source={{ uri: existingSignature }} style={styles.triggerPreviewImage} resizeMode="contain" />
             </View>
           </View>
         ) : (
           <View style={styles.triggerEmpty}>
             <View style={[styles.triggerIconCircle, { backgroundColor: isDark ? colors.card : '#f1f5f9' }]}>
-              <Ionicons
-                name={isTechnician ? 'finger-print-outline' : 'person-outline'}
-                size={24}
-                color={colors.textMuted}
-              />
+              <Icon name={isTechnician ? 'key' : 'user'} size={24} color={colors.textMuted} />
             </View>
             <View style={styles.triggerTextCol}>
               <Text style={[styles.triggerTitle, { color: colors.textPrimary }]}>{title}</Text>
-              <Text style={[styles.triggerHint, { color: colors.textMuted }]}>{t('components.signatureCapture.tapToOpen')}</Text>
+              <Text style={[styles.triggerHint, { color: colors.textMuted }]}>
+                {t('components.signatureCapture.tapToOpen')}
+              </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            <Icon name="chevronRight" size={18} color={colors.textMuted} />
           </View>
         )}
       </TouchableOpacity>
@@ -134,15 +112,15 @@ export function SignatureCapture({
           exactly where the finger is.
         */}
         <View style={[styles.rotateHost, { backgroundColor: isDark ? '#0a0a14' : '#f8fafc' }]}>
-        <View
-          style={[
-            styles.modalContainer,
-            {
-              backgroundColor: isDark ? '#0a0a14' : '#f8fafc',
-              width: winHeight,
-              height: winWidth,
-              transform: [{ rotate: '90deg' }],
-              /*
+          <View
+            style={[
+              styles.modalContainer,
+              {
+                backgroundColor: isDark ? '#0a0a14' : '#f8fafc',
+                width: winHeight,
+                height: winWidth,
+                transform: [{ rotate: '90deg' }],
+                /*
                 Safe areas, turned with the page.
 
                 A quarter turn clockwise puts the page's top edge along the
@@ -155,98 +133,106 @@ export function SignatureCapture({
                 still physically there, they are just on the page's left and
                 right once it is rotated.
               */
-              paddingTop: insets.right,
-              paddingRight: insets.bottom,
-              paddingBottom: insets.left,
-              paddingLeft: insets.top,
-            },
-          ]}
-        >
-          {/* Header */}
-          <View style={[
-            styles.modalHeader,
-            {
-              paddingTop: SPACING.md + SPACING.sm,
-              backgroundColor: isDark ? '#101020' : '#ffffff',
-              borderBottomColor: colors.border,
-            },
-          ]}>
-            <TouchableOpacity
-              onPress={closePad}
-              style={styles.headerBtn}
-              activeOpacity={0.7}
+                paddingTop: insets.right,
+                paddingRight: insets.bottom,
+                paddingBottom: insets.left,
+                paddingLeft: insets.top,
+              },
+            ]}
+          >
+            {/* Header */}
+            <View
+              style={[
+                styles.modalHeader,
+                {
+                  paddingTop: SPACING.md + SPACING.sm,
+                  backgroundColor: isDark ? '#101020' : '#ffffff',
+                  borderBottomColor: colors.border,
+                },
+              ]}
             >
-              <Ionicons name="close" size={24} color={colors.textSecondary} />
-            </TouchableOpacity>
+              <TouchableOpacity onPress={closePad} style={styles.headerBtn} activeOpacity={0.7}>
+                <Icon name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
 
-            <View style={styles.headerCenter}>
-              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{title}</Text>
+              <View style={styles.headerCenter}>
+                <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{title}</Text>
+              </View>
+
+              <TouchableOpacity onPress={handleClear} style={styles.headerBtn} activeOpacity={0.7}>
+                <Text style={[styles.headerClearText, { color: COLORS.error }]}>
+                  {t('components.signatureCapture.clear')}
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            <TouchableOpacity onPress={handleClear} style={styles.headerBtn} activeOpacity={0.7}>
-              <Text style={[styles.headerClearText, { color: COLORS.error }]}>{t('components.signatureCapture.clear')}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Instruction */}
-          <View style={styles.instructionRow}>
-            <Ionicons
-              name={isSigning ? 'pencil' : 'hand-left-outline'}
-              size={16}
-              color={isSigning ? COLORS.primary : colors.textMuted}
-            />
-            <Text style={[styles.instructionText, { color: isSigning ? COLORS.primary : colors.textMuted }]}>
-              {isSigning ? t('components.signatureCapture.signing') : t('components.signatureCapture.useFingerToSign')}
-            </Text>
-          </View>
-
-          {/* Canvas */}
-          <View style={styles.canvasOuter}>
-            <View style={[
-              styles.canvasCard,
-              {
-                backgroundColor: '#ffffff',
-                borderColor: isSigning ? COLORS.primary : (isDark ? '#333350' : '#e2e8f0'),
-              },
-            ]}>
-              <NativeSignaturePad
-                ref={signatureRef}
-                penColor="#1e293b"
-                strokeWidth={2.6}
-                onBegin={handleBegin}
-                onChange={(hasInk) => setIsSigning(hasInk)}
+            {/* Instruction */}
+            <View style={styles.instructionRow}>
+              <Icon
+                name={isSigning ? 'signPen' : 'hand'}
+                size={16}
+                color={isSigning ? COLORS.primary : colors.textMuted}
               />
+              <Text style={[styles.instructionText, { color: isSigning ? COLORS.primary : colors.textMuted }]}>
+                {isSigning
+                  ? t('components.signatureCapture.signing')
+                  : t('components.signatureCapture.useFingerToSign')}
+              </Text>
+            </View>
 
-              {/* Signature baseline */}
-              <View style={styles.baselineContainer} pointerEvents="none">
-                <View style={[styles.baseline, { backgroundColor: isDark ? '#d0d0d0' : '#cbd5e1' }]} />
-                <Text style={[styles.baselineLabel, { color: isDark ? '#a0a0a0' : '#94a3b8' }]}>
-                  {isTechnician ? t('components.signatureCapture.technician') : t('components.signatureCapture.customer')}
-                </Text>
+            {/* Canvas */}
+            <View style={styles.canvasOuter}>
+              <View
+                style={[
+                  styles.canvasCard,
+                  {
+                    backgroundColor: '#ffffff',
+                    borderColor: isSigning ? COLORS.primary : isDark ? '#333350' : '#e2e8f0',
+                  },
+                ]}
+              >
+                <NativeSignaturePad
+                  ref={signatureRef}
+                  penColor="#1e293b"
+                  strokeWidth={2.6}
+                  onBegin={handleBegin}
+                  onChange={(hasInk) => setIsSigning(hasInk)}
+                />
+
+                {/* Signature baseline */}
+                <View style={styles.baselineContainer} pointerEvents="none">
+                  <View style={[styles.baseline, { backgroundColor: isDark ? '#d0d0d0' : '#cbd5e1' }]} />
+                  <Text style={[styles.baselineLabel, { color: isDark ? '#a0a0a0' : '#94a3b8' }]}>
+                    {isTechnician
+                      ? t('components.signatureCapture.technician')
+                      : t('components.signatureCapture.customer')}
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
 
-          {/* Footer */}
-          <View style={[
-            styles.modalFooter,
-            {
-              paddingBottom: SPACING.lg,
-              backgroundColor: isDark ? '#101020' : '#ffffff',
-              borderTopColor: colors.border,
-            },
-          ]}>
-            <TouchableOpacity
-              style={[styles.saveButton, !isSigning && styles.saveButtonDisabled]}
-              onPress={handleConfirm}
-              disabled={!isSigning}
-              activeOpacity={0.8}
+            {/* Footer */}
+            <View
+              style={[
+                styles.modalFooter,
+                {
+                  paddingBottom: SPACING.lg,
+                  backgroundColor: isDark ? '#101020' : '#ffffff',
+                  borderTopColor: colors.border,
+                },
+              ]}
             >
-              <Ionicons name="checkmark-circle" size={22} color={COLORS.white} />
-              <Text style={styles.saveButtonText}>{t('components.signatureCapture.confirmSignature')}</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveButton, !isSigning && styles.saveButtonDisabled]}
+                onPress={handleConfirm}
+                disabled={!isSigning}
+                activeOpacity={0.8}
+              >
+                <Icon name="selected" size={22} color={COLORS.white} />
+                <Text style={styles.saveButtonText}>{t('components.signatureCapture.confirmSignature')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
         </View>
       </Modal>
     </View>

@@ -1118,17 +1118,9 @@
     "syncAllSent": "Todo enviado"
   },
   "manage": {
-    "timeOff": {
-      "label": "Solicitudes",
-      "desc": "Permisos y solicitudes del equipo: el historial"
-    },
     "members": {
       "label": "Miembros",
       "desc": "Gestionar equipo"
-    },
-    "joinRequests": {
-      "label": "Solicitudes de acceso",
-      "desc": "Revisar y aprobar"
     },
     "invitations": {
       "label": "Invitaciones",
@@ -1225,10 +1217,6 @@
     "customers": {
       "label": "Clientes",
       "desc": "Oportunidades, llamadas, recordatorios y seguimiento"
-    },
-    "extraTime": {
-      "label": "Tiempo extra",
-      "desc": "Aprobar horas extra"
     },
     "issues": {
       "label": "Incidencias de turno",

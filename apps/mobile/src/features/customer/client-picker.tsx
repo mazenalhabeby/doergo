@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { clientFilterQuery, type ClientKind } from '@hbcfield/shared/client';
 import { PressableScale } from '@/components/pressable-scale';
@@ -98,7 +98,12 @@ export function ClientPicker({
   */
   const seq = useRef(0);
 
-  useEffect(() => () => { seq.current += 1; }, []);
+  useEffect(
+    () => () => {
+      seq.current += 1;
+    },
+    [],
+  );
 
   const query = search.trim();
 
@@ -145,7 +150,7 @@ export function ClientPicker({
     <View>
       <Text style={s.label}>{findLabel}</Text>
       <View style={s.searchBar}>
-        <Ionicons name="search" size={17} color={colors.textMuted} />
+        <Icon name="searchLine" size={17} color={colors.textMuted} />
         <TextInput
           value={search}
           onChangeText={setSearch}
@@ -163,7 +168,7 @@ export function ClientPicker({
             accessibilityRole="button"
             accessibilityLabel={t('common.clear', 'Clear')}
           >
-            <Ionicons name="close-circle" size={17} color={colors.textMuted} />
+            <Icon name="closeCircle" size={17} color={colors.textMuted} />
           </PressableScale>
         )}
       </View>
@@ -182,13 +187,7 @@ export function ClientPicker({
       ) : (
         <View style={s.results}>
           {results.map((r, i) => (
-            <PickerRow
-              key={r.id}
-              client={r}
-              selected={selectedId === r.id}
-              divider={i > 0}
-              onSelect={onSelect}
-            />
+            <PickerRow key={r.id} client={r} selected={selectedId === r.id} divider={i > 0} onSelect={onSelect} />
           ))}
         </View>
       )}

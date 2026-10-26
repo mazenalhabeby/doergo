@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Text, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../lib/constants';
@@ -60,13 +60,13 @@ export function DateField({
         accessibilityLabel={title}
         style={[s.box, { borderColor: invalid ? COLORS.error : colors.border }]}
       >
-        <Ionicons name="calendar-outline" size={18} color={selected ? COLORS.primary : colors.textMuted} />
+        <Icon name="calendar" size={18} color={selected ? COLORS.primary : colors.textMuted} />
         <Text style={[s.text, { color: selected ? colors.textPrimary : colors.textMuted }]} numberOfLines={1}>
           {selected
             ? formatDateOf(selected, i18n.language, undefined, true)
-            : placeholder ?? t('components.datePicker.selectDate')}
+            : (placeholder ?? t('components.datePicker.selectDate'))}
         </Text>
-        <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
+        <Icon name="chevronDown" size={16} color={colors.textMuted} />
       </TouchableOpacity>
 
       <DatePickerModal

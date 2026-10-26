@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useSocketContext } from '@/contexts/socket-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTheme } from '@/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
 import { portalApi } from '@/lib/api/portal';
@@ -22,7 +22,11 @@ export default function RequestDetail() {
   const qc = useQueryClient();
   const { subscribe, isConnected } = useSocketContext();
 
-  const q = useQuery({ queryKey: ['portal', 'request', id], queryFn: () => portalApi.request(String(id)), enabled: !!id });
+  const q = useQuery({
+    queryKey: ['portal', 'request', id],
+    queryFn: () => portalApi.request(String(id)),
+    enabled: !!id,
+  });
   const req = q.data;
 
   // Live: refetch when this request's status changes server-side (socket is
@@ -38,27 +42,37 @@ export default function RequestDetail() {
     return off;
   }, [subscribe, id, qc, isConnected]);
 
-  const submitted =
-    req?.createdAt
-      ? (() => {
-          try {
-            return new Date(req.createdAt).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' });
-          } catch {
-            return null;
-          }
-        })()
-      : null;
+  const submitted = req?.createdAt
+    ? (() => {
+        try {
+          return new Date(req.createdAt).toLocaleDateString(i18n.language, {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          });
+        } catch {
+          return null;
+        }
+      })()
+    : null;
 
-  const photos = (req?.attachments ?? []).filter((a) => /image/i.test(a.fileType) || /\.(jpg|jpeg|png|webp|heic)$/i.test(a.fileName || ''));
+  const photos = (req?.attachments ?? []).filter(
+    (a) => /image/i.test(a.fileType) || /\.(jpg|jpeg|png|webp|heic)$/i.test(a.fileName || ''),
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top + SPACING.sm }}>
       <View style={styles.top}>
-        <Pressable style={[styles.back, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />
+        <Pressable
+          style={[styles.back, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={() => router.back()}
+        >
+          <Icon name="backLine" size={20} color={colors.textSecondary} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.topTitle, { color: colors.textPrimary }]}>{t('portal.requestDetails', 'Request details')}</Text>
+          <Text style={[styles.topTitle, { color: colors.textPrimary }]}>
+            {t('portal.requestDetails', 'Request details')}
+          </Text>
           {req ? <Text style={[styles.topSub, { color: colors.textMuted }]}>{req.reference}</Text> : null}
         </View>
       </View>
@@ -73,7 +87,7 @@ export default function RequestDetail() {
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardTop}>
               <View style={[styles.thumb, { backgroundColor: portalTint(req.color) }]}>
-                <MaterialCommunityIcons name={portalIcon(req.icon)} size={26} color={portalColor(req.color)} />
+                <Icon name={portalIcon(req.icon)} size={26} color={portalColor(req.color)} />
               </View>
               <StatusPill status={req.status} />
             </View>
@@ -81,13 +95,13 @@ export default function RequestDetail() {
             <View style={styles.metaRow}>
               {req.unitName ? (
                 <View style={styles.metaItem}>
-                  <Ionicons name="location-outline" size={13} color={colors.textMuted} />
+                  <Icon name="pin" size={13} color={colors.textMuted} />
                   <Text style={[styles.metaText, { color: colors.textMuted }]}>{req.unitName}</Text>
                 </View>
               ) : null}
               {submitted ? (
                 <View style={styles.metaItem}>
-                  <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
+                  <Icon name="calendar" size={13} color={colors.textMuted} />
                   <Text style={[styles.metaText, { color: colors.textMuted }]}>
                     {t('portal.submittedOn', 'Submitted {{date}}', { date: submitted })}
                   </Text>
@@ -103,10 +117,15 @@ export default function RequestDetail() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: SPACING.lg, gap: SPACING.sm }}>
+                contentContainerStyle={{ paddingHorizontal: SPACING.lg, gap: SPACING.sm }}
+              >
                 {photos.map((a) => (
                   <Pressable key={a.id} onPress={() => void openSafeUrl(httpsUrl(a.fileUrl))}>
-                    <Image source={{ uri: a.fileUrl }} style={[styles.photo, { borderColor: colors.border }]} resizeMode="cover" />
+                    <Image
+                      source={{ uri: a.fileUrl }}
+                      style={[styles.photo, { borderColor: colors.border }]}
+                      resizeMode="cover"
+                    />
                   </Pressable>
                 ))}
               </ScrollView>
@@ -139,11 +158,13 @@ export default function RequestDetail() {
                         s.state === 'pending' && { backgroundColor: colors.card, borderColor: colors.border },
                       ]}
                     >
-                      {s.state === 'done' ? <Ionicons name="checkmark" size={14} color="#fff" /> : null}
+                      {s.state === 'done' ? <Icon name="checkLine" size={14} color="#fff" /> : null}
                       {s.state === 'active' ? <View style={styles.pulse} /> : null}
                     </View>
                     {!isLast ? (
-                      <View style={[styles.line, { backgroundColor: s.state === 'done' ? COLORS.success : colors.border }]} />
+                      <View
+                        style={[styles.line, { backgroundColor: s.state === 'done' ? COLORS.success : colors.border }]}
+                      />
                     ) : null}
                   </View>
                   <View
@@ -153,14 +174,17 @@ export default function RequestDetail() {
                         backgroundColor: isDark ? 'rgba(16,185,129,0.10)' : COLORS.primaryLight,
                         borderColor: 'transparent',
                       },
-                    ]}>
+                    ]}
+                  >
                     <Text style={[styles.stepLabel, { color: colors.textPrimary }]}>{s.label}</Text>
-                    <Text style={[styles.stepState, { color: s.state === 'active' ? COLORS.primary : colors.textMuted }]}>
+                    <Text
+                      style={[styles.stepState, { color: s.state === 'active' ? COLORS.primary : colors.textMuted }]}
+                    >
                       {s.state === 'done'
                         ? t('portal.done', 'Done')
                         : s.state === 'active'
-                        ? t('portal.inProgress', 'In progress')
-                        : t('portal.pending', 'Pending')}
+                          ? t('portal.inProgress', 'In progress')
+                          : t('portal.pending', 'Pending')}
                     </Text>
                   </View>
                 </View>
@@ -174,7 +198,13 @@ export default function RequestDetail() {
 }
 
 const styles = StyleSheet.create({
-  top: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md },
+  top: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.md,
+  },
   back: { width: 38, height: 38, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   topTitle: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.lg },
   topSub: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.xs, marginTop: 1 },

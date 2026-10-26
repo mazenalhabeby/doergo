@@ -1,10 +1,11 @@
+import type { IconName } from '@hbcfield/shared/client';
 /**
  * Guides sheet — the mobile "Take a tour" launcher. Lists every guide the user
  * is eligible for (gated) with a "this screen" shortcut at the top, and replays
  * any of them. Opened from a Profile menu item.
  */
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/theme-context';
 import { COLORS, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '@/lib/constants';
@@ -31,7 +32,7 @@ export function GuideSheet({ visible, onClose }: { visible: boolean; onClose: ()
         <View style={styles.headerRow}>
           <Text style={[styles.title, { color: colors.textPrimary }]}>{t('tours.menuTitle')}</Text>
           <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="close" size={22} color={colors.textMuted} />
+            <Icon name="close" size={22} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
 
@@ -57,9 +58,11 @@ export function GuideSheet({ visible, onClose }: { visible: boolean; onClose: ()
             bare route opened an empty page. It is offered on that page, as
             "This screen", and nowhere else.
           */}
-          {availableTours.filter((tr) => !tr.autoRunOn?.endsWith('/') || tr.id === contextualTourId).map((tr) => (
-            <Row key={tr.id} icon={tr.icon} label={t(tr.titleKey)} colors={colors} onPress={() => launch(tr.id)} />
-          ))}
+          {availableTours
+            .filter((tr) => !tr.autoRunOn?.endsWith('/') || tr.id === contextualTourId)
+            .map((tr) => (
+              <Row key={tr.id} icon={tr.icon} label={t(tr.titleKey)} colors={colors} onPress={() => launch(tr.id)} />
+            ))}
           <View style={{ height: SPACING.xl }} />
         </ScrollView>
       </View>
@@ -75,7 +78,7 @@ function Row({
   colors,
   onPress,
 }: {
-  icon: string;
+  icon: IconName;
   label: string;
   subtitle?: string;
   highlight?: boolean;
@@ -85,13 +88,13 @@ function Row({
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
       <View style={[styles.rowIcon, { backgroundColor: highlight ? COLORS.primary : colors.primaryLight }]}>
-        <Ionicons name={icon as never} size={18} color={highlight ? COLORS.white : COLORS.primary} />
+        <Icon name={icon} size={18} color={highlight ? COLORS.white : COLORS.primary} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{label}</Text>
         {subtitle ? <Text style={[styles.rowSub, { color: colors.textMuted }]}>{subtitle}</Text> : null}
       </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      <Icon name="chevronRight" size={18} color={colors.textMuted} />
     </TouchableOpacity>
   );
 }
@@ -108,7 +111,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.xxxl,
   },
-  grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#94a3b8', marginTop: SPACING.md },
+  grabber: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#94a3b8',
+    marginTop: SPACING.md,
+  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',

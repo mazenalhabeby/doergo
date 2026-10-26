@@ -2,7 +2,7 @@ import type { ReactNode, RefObject } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { router } from 'expo-router';
 import { SPACING, FONT_SIZE } from '@/lib/constants';
 
@@ -42,11 +42,13 @@ export function CaptureCamera({
       <SafeAreaView style={StyleSheet.absoluteFill} edges={['top', 'bottom']} pointerEvents="box-none">
         <View style={title !== undefined ? [s.camHead, s.camHeadTitled] : s.camHead}>
           <TouchableOpacity onPress={() => router.back()} style={s.camBtn}>
-            <Ionicons name="close" size={26} color="#fff" />
+            <Icon name="close" size={26} color="#fff" />
           </TouchableOpacity>
           {title !== undefined ? (
             <>
-              <Text style={s.camTitle} numberOfLines={1}>{title}</Text>
+              <Text style={s.camTitle} numberOfLines={1}>
+                {title}
+              </Text>
               <View style={s.camBtn} />
             </>
           ) : null}
@@ -80,7 +82,14 @@ const s = StyleSheet.create({
   black: { flex: 1, backgroundColor: '#000' },
   camHead: { flexDirection: 'row', padding: SPACING.md },
   camHeadTitled: { alignItems: 'center' },
-  camBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(0,0,0,.45)', alignItems: 'center', justifyContent: 'center' },
+  camBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(0,0,0,.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   camTitle: { flex: 1, textAlign: 'center', color: '#fff', fontSize: FONT_SIZE.base, fontWeight: '600' },
   camMid: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: SPACING.xl },
   camMidWide: { paddingHorizontal: SPACING.xl },
@@ -92,6 +101,14 @@ const s = StyleSheet.create({
   camFoot: { marginTop: 'auto', alignItems: 'center', gap: SPACING.md, paddingBottom: SPACING.xl },
   skip: { paddingVertical: 6, paddingHorizontal: SPACING.lg, borderRadius: 99, backgroundColor: 'rgba(0,0,0,.45)' },
   skipText: { color: '#e6ecf5', fontSize: FONT_SIZE.sm },
-  shutter: { width: 68, height: 68, borderRadius: 34, borderWidth: 4, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  shutter: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 4,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   shutterInner: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#fff' },
 });

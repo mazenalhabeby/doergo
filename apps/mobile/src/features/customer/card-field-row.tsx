@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo } from 'react';
 import { View, Text, TextInput, StyleSheet, type KeyboardTypeOptions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { PressableScale } from '@/components/pressable-scale';
 import { useTheme } from '@/contexts/theme-context';
@@ -94,11 +94,7 @@ export const CardFieldRow = memo(function CardFieldRow({
           accessibilityState={{ expanded }}
           accessibilityLabel={t('scan.otherLine')}
         >
-          <Ionicons
-            name={expanded ? 'chevron-up' : 'list-outline'}
-            size={16}
-            color={expanded ? COLORS.primary : colors.textMuted}
-          />
+          <Icon name={expanded ? 'chevronUp' : 'list'} size={16} color={expanded ? COLORS.primary : colors.textMuted} />
         </PressableScale>
       </View>
 
@@ -182,7 +178,9 @@ const LineChoice = memo(function LineChoice({
       accessibilityLabel={line}
       style={[s.lineRow, near && s.lineRowNear]}
     >
-      <Text style={[s.lineText, near && s.lineTextNear]} numberOfLines={1}>{line}</Text>
+      <Text style={[s.lineText, near && s.lineTextNear]} numberOfLines={1}>
+        {line}
+      </Text>
     </PressableScale>
   );
 });

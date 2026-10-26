@@ -1118,17 +1118,9 @@
     "syncAllSent": "Tutto inviato"
   },
   "manage": {
-    "timeOff": {
-      "label": "Richieste",
-      "desc": "Ferie e richieste del team: lo storico"
-    },
     "members": {
       "label": "Membri",
       "desc": "Gestisci il team"
-    },
-    "joinRequests": {
-      "label": "Richieste di adesione",
-      "desc": "Rivedi e approva"
     },
     "invitations": {
       "label": "Inviti",
@@ -1225,10 +1217,6 @@
     "customers": {
       "label": "Clienti",
       "desc": "Lead, chiamate, promemoria e follow-up"
-    },
-    "extraTime": {
-      "label": "Tempo extra",
-      "desc": "Approva gli straordinari"
     },
     "issues": {
       "label": "Problemi di turno",

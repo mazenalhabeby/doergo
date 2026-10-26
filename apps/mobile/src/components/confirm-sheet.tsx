@@ -1,12 +1,10 @@
 import { useCallback } from 'react';
-import type { Ionicons } from '@expo/vector-icons';
+import type { IconName } from '@hbcfield/shared/client';
 import { Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { SPACING, FONT_SIZE } from '../lib/constants';
 import { SlideSheet, SlideSheetActions, SlideSheetHeader, useSlideSheet } from './slide-sheet';
-
-type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 export type ConfirmSheetVariant = 'danger' | 'warning' | 'info' | 'success';
 
@@ -31,9 +29,9 @@ const VARIANT_CONFIG: Record<
   }
 > = {
   danger: { icon: 'warning', buttonBg: '#dc2626' },
-  warning: { icon: 'alert-circle', buttonBg: '#d97706' },
-  info: { icon: 'information-circle', buttonBg: '#2563eb' },
-  success: { icon: 'checkmark-circle', buttonBg: '#16a34a' },
+  warning: { icon: 'alert', buttonBg: '#d97706' },
+  info: { icon: 'info', buttonBg: '#2563eb' },
+  success: { icon: 'selected', buttonBg: '#16a34a' },
 };
 
 export function ConfirmSheet({

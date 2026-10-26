@@ -2,26 +2,14 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { parseClockInPick, rankClockInLocations } from '@hbcfield/shared/client';
 import { useAuth } from '../contexts/auth-context';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { BlurSheet } from './blur-sheet';
 import { SheetPanel } from './sheet-panel';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import type { CompanyLocation } from '../lib/api';
 import { formatDistance } from '../lib/distance';
 import { useTheme } from '../contexts/theme-context';
-import {
-  COLORS,
-  SPACING,
-  RADIUS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-} from '../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -76,16 +64,16 @@ export function LocationPickerSheet({
     */
     <BlurSheet visible={visible} onClose={onClose}>
       <SheetPanel title={t('attendance.picker.title')} onClose={onClose}>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            {asked ? t('settings.clockIn.sheetAsked') : t('attendance.picker.subtitle')}
-          </Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+          {asked ? t('settings.clockIn.sheetAsked') : t('attendance.picker.subtitle')}
+        </Text>
 
-          {/* Location list */}
-          <ScrollView style={styles.list}>
-            {ranked.map(({ location, distanceM: distance, inside: isWithinGeofence }) => {
-              const isSelected = selectedLocation?.id === location.id;
+        {/* Location list */}
+        <ScrollView style={styles.list}>
+          {ranked.map(({ location, distanceM: distance, inside: isWithinGeofence }) => {
+            const isSelected = selectedLocation?.id === location.id;
 
-              /*
+            /*
                 Would this workspace take a clock-in from where they are standing?
 
                 `awayAllowed` comes from the server, answered by the same rule the
@@ -99,106 +87,81 @@ export function LocationPickerSheet({
                 something wrong or the app is broken. Disabled with a sentence
                 says which of the two it is.
               */
-              const outsideRing = distance !== null && !isWithinGeofence;
-              const unusable = outsideRing && location.awayAllowed === false;
+            const outsideRing = distance !== null && !isWithinGeofence;
+            const unusable = outsideRing && location.awayAllowed === false;
 
-              return (
-                <TouchableOpacity
-                  key={location.id}
-                  disabled={unusable}
-                  style={[
-                    styles.locationItem,
-                    { borderColor: colors.border },
-                    unusable && { opacity: 0.45 },
-                    isSelected && [
-                      styles.locationItemSelected,
-                      { backgroundColor: colors.primaryLight },
-                    ],
-                  ]}
-                  onPress={() => onSelect(location)}
-                >
-                  <View style={styles.locationInfo}>
-                    <View style={styles.nameRow}>
-                      <Text style={[styles.locationName, { color: colors.textPrimary }]}>
-                        {location.name}
+            return (
+              <TouchableOpacity
+                key={location.id}
+                disabled={unusable}
+                style={[
+                  styles.locationItem,
+                  { borderColor: colors.border },
+                  unusable && { opacity: 0.45 },
+                  isSelected && [styles.locationItemSelected, { backgroundColor: colors.primaryLight }],
+                ]}
+                onPress={() => onSelect(location)}
+              >
+                <View style={styles.locationInfo}>
+                  <View style={styles.nameRow}>
+                    <Text style={[styles.locationName, { color: colors.textPrimary }]}>{location.name}</Text>
+                    {location.shiftToday && (
+                      <Text style={[styles.badge, { color: colors.textSecondary, borderColor: colors.border }]}>
+                        {t('attendance.picker.shiftToday')}
                       </Text>
-                      {location.shiftToday && (
-                        <Text style={[styles.badge, { color: colors.textSecondary, borderColor: colors.border }]}>
-                          {t('attendance.picker.shiftToday')}
-                        </Text>
-                      )}
-                      {location.isPrimary && (
-                        <Text style={[styles.badge, { color: colors.textSecondary, borderColor: colors.border }]}>
-                          {t('attendance.picker.primary')}
-                        </Text>
-                      )}
-                    </View>
-                    <Text
-                      style={[styles.locationAddress, { color: colors.textMuted }]}
-                      numberOfLines={1}
-                    >
-                      {location.address}
+                    )}
+                    {location.isPrimary && (
+                      <Text style={[styles.badge, { color: colors.textSecondary, borderColor: colors.border }]}>
+                        {t('attendance.picker.primary')}
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={[styles.locationAddress, { color: colors.textMuted }]} numberOfLines={1}>
+                    {location.address}
+                  </Text>
+                  {unusable && (
+                    <Text style={[styles.locationAddress, { color: colors.textMuted, marginTop: 2 }]}>
+                      {t('attendance.picker.onSiteOnly')}
                     </Text>
-                    {unusable && (
-                      <Text style={[styles.locationAddress, { color: colors.textMuted, marginTop: 2 }]}>
-                        {t('attendance.picker.onSiteOnly')}
+                  )}
+                  {distance !== null && (
+                    <View style={styles.distanceRow}>
+                      <Icon
+                        name={isWithinGeofence ? 'selected' : 'navigate'}
+                        size={14}
+                        color={isWithinGeofence ? COLORS.success : colors.textMuted}
+                      />
+                      <Text
+                        style={[
+                          styles.distanceText,
+                          {
+                            color: isWithinGeofence ? COLORS.success : colors.textMuted,
+                          },
+                        ]}
+                      >
+                        {isWithinGeofence
+                          ? t('attendance.picker.inRange', { distance: formatDistance(distance) })
+                          : t('attendance.picker.away', { distance: formatDistance(distance) })}
                       </Text>
-                    )}
-                    {distance !== null && (
-                      <View style={styles.distanceRow}>
-                        <Ionicons
-                          name={
-                            isWithinGeofence
-                              ? 'checkmark-circle'
-                              : 'navigate-outline'
-                          }
-                          size={14}
-                          color={
-                            isWithinGeofence ? COLORS.success : colors.textMuted
-                          }
-                        />
-                        <Text
-                          style={[
-                            styles.distanceText,
-                            {
-                              color: isWithinGeofence
-                                ? COLORS.success
-                                : colors.textMuted,
-                            },
-                          ]}
-                        >
-                          {isWithinGeofence
-                            ? t('attendance.picker.inRange', { distance: formatDistance(distance) })
-                            : t('attendance.picker.away', { distance: formatDistance(distance) })}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  <View
-                    style={[
-                      styles.radio,
-                      { borderColor: colors.borderLight },
-                      isSelected && styles.radioSelected,
-                    ]}
-                  >
-                    {isSelected && <View style={styles.radioInner} />}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+                    </View>
+                  )}
+                </View>
+                <View style={[styles.radio, { borderColor: colors.borderLight }, isSelected && styles.radioSelected]}>
+                  {isSelected && <View style={styles.radioInner} />}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
-          {/* Confirm button */}
-          <TouchableOpacity
-            style={[
-              styles.confirmButton,
-              (!canConfirm || confirmDisabled) && styles.confirmButtonDisabled,
-            ]}
-            onPress={onConfirm}
-            disabled={!canConfirm || confirmDisabled}
-          >
-            <Text style={styles.confirmButtonText}>{label}</Text>
-          </TouchableOpacity>
+        {/* Confirm button */}
+        <TouchableOpacity
+          style={[styles.confirmButton, (!canConfirm || confirmDisabled) && styles.confirmButtonDisabled]}
+          onPress={onConfirm}
+          disabled={!canConfirm || confirmDisabled}
+        >
+          <Text style={styles.confirmButtonText}>{label}</Text>
+        </TouchableOpacity>
       </SheetPanel>
     </BlurSheet>
   );

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { normalizeKindShape, logTypesForKind } from '@hbcfield/shared/client';
@@ -35,21 +35,35 @@ export function EquipmentPicker({ what }: { what: 'expense' | 'log' }) {
 
   useEffect(() => {
     let live = true;
-    assetsApi.mine()
+    assetsApi
+      .mine()
       .then(({ periods }) => {
         if (!live) return;
         const ok = periods.filter((h) => fits(h, what));
-        if (ok.length === 1) { router.replace({ pathname, params: { assetId: ok[0]!.assetId } } as never); return; }
+        if (ok.length === 1) {
+          router.replace({ pathname, params: { assetId: ok[0]!.assetId } } as never);
+          return;
+        }
         setList(ok);
       })
-      .catch(() => { if (live) setFailed(true); });
-    return () => { live = false; };
+      .catch(() => {
+        if (live) setFailed(true);
+      });
+    return () => {
+      live = false;
+    };
   }, [what, pathname]);
 
   const title = what === 'expense' ? t('expenses.title', 'Add a receipt') : t('logbook.title', 'Log something');
   return (
     <EquipmentFrame title={title}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(2.5) }}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: amazen.space(4),
+          paddingBottom: amazen.space(12),
+          gap: amazen.space(2.5),
+        }}
+      >
         {failed ? (
           <AText variant="body" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(8) }}>
             {t('myAssets.loadFailed', 'Could not load what you hold')}
@@ -58,7 +72,7 @@ export function EquipmentPicker({ what }: { what: 'expense' | 'log' }) {
           <LoadingLine onGlass padUnits={8} />
         ) : list.length === 0 ? (
           <View style={{ alignItems: 'center', gap: amazen.space(2), paddingVertical: amazen.space(8) }}>
-            <Ionicons name="cube-outline" size={36} color={c.inkOnGlass} />
+            <Icon name="assets" size={36} color={c.inkOnGlass} />
             <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>
               {t('equipment.nothingFits', 'Nothing you hold takes this.')}
             </AText>

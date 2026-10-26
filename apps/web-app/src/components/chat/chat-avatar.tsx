@@ -14,9 +14,11 @@ export function ChatAvatar({ u, size = 40, dot = true }: { u?: ChatUserRef | nul
   return (
     <span className="relative shrink-0" style={{ width: size, height: size }}>
       <span
-        className={"flex h-full w-full items-center justify-center overflow-hidden " +
+        className={
+          "flex h-full w-full items-center justify-center overflow-hidden " +
           "rounded-full bg-gradient-to-br from-muted to-muted text-[11px] " +
-          "font-semibold text-muted-foreground"}
+          "font-semibold text-muted-foreground"
+        }
         style={{ fontSize: size * 0.32 }}
       >
         {u?.avatarUrl ? (
@@ -28,7 +30,8 @@ export function ChatAvatar({ u, size = 40, dot = true }: { u?: ChatUserRef | nul
       {showDot && (
         <span
           className={`absolute bottom-0 right-0 rounded-full ring-2 ring-background ${presenceColor(
-            u?.presence)} ${u?.presence === "AVAILABLE" ? "motion-ping text-emerald-500" : ""}`}
+            u?.presence,
+          )} ${u?.presence === "AVAILABLE" ? "motion-ping text-emerald-500" : ""}`}
           style={{ width: size * 0.28, height: size * 0.28 }}
         />
       )}
@@ -62,12 +65,14 @@ export function ConversationAvatar({
   if (c.type === "DIRECT") return <ChatAvatar u={c.otherMember} size={size} />
   return (
     <span
-      className={"flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br " +
+      className={
+        "flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br " +
         "from-sky-50 to-indigo-50 ring-1 ring-blue-500/10 dark:from-sky-500/10 " +
-        "dark:to-indigo-500/10"}
+        "dark:to-indigo-500/10"
+      }
       style={{ width: size, height: size }}
     >
-      <GradientIcon name={c.type === "TASK" ? "job" : "group"} size={Math.round(size * 0.55)} />
+      <GradientIcon name={c.type === "TASK" ? "job" : "people"} size={Math.round(size * 0.55)} />
     </span>
   )
 }

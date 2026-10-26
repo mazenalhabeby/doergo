@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, RefreshContr
 import { DetentSheet } from './detent-sheet';
 import { PressableScale } from '@/components/pressable-scale';
 import { EmptyState } from '@/components/amazen/empty-state';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { type Task } from '@/lib/api';
 import { COLORS, SPACING } from '@/lib/constants';
 import { type RouteStop } from '@hbcfield/shared/client';
@@ -61,13 +61,14 @@ export function RoutePlannerScreenYourRoute({ vm }: { vm: RoutePlannerScreenStat
           {/* One line that answers "is this my morning or a detour?" */}
           <Text style={[styles.sheetMeta, { color: colors.textMuted }]} numberOfLines={1}>
             {result
-              ? (toDrive.length < orderedStops.length
-                  ? t('route.remaining', {
-                      defaultValue: '{{left}} of {{total}} stops left',
-                      left: toDrive.length,
-                      total: orderedStops.length,
-                    })
-                  : (`${result.order.length} ${t('route.stopsWord', 'stops')} · ` + `${formatDistance(result.totalMeters)} · ${fmtDur(result.totalSeconds)}`))
+              ? toDrive.length < orderedStops.length
+                ? t('route.remaining', {
+                    defaultValue: '{{left}} of {{total}} stops left',
+                    left: toDrive.length,
+                    total: orderedStops.length,
+                  })
+                : `${result.order.length} ${t('route.stopsWord', 'stops')} · ` +
+                  `${formatDistance(result.totalMeters)} · ${fmtDur(result.totalSeconds)}`
               : `${selectedCount} ${t('route.selected', 'selected')}${start ? ` · ${start.label}` : ''}`}
           </Text>
 
@@ -90,10 +91,13 @@ export function RoutePlannerScreenYourRoute({ vm }: { vm: RoutePlannerScreenStat
               onPress={openFullRoute}
               disabled={resuming}
               style={[styles.cta, { backgroundColor: COLORS.primary }]}
-              accessibilityRole="button">
-              {resuming
-                ? <ActivityIndicator size="small" color="#fff" />
-                : <Ionicons name="navigate" size={17} color="#fff" />}
+              accessibilityRole="button"
+            >
+              {resuming ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Icon name="navigate" size={17} color="#fff" />
+              )}
               {/* "Continue" once some of the day is behind them — the button
                   is doing a different thing and should not claim otherwise. */}
               <Text style={styles.ctaText}>
@@ -109,9 +113,11 @@ export function RoutePlannerScreenYourRoute({ vm }: { vm: RoutePlannerScreenStat
               style={[styles.cta, { backgroundColor: selectedCount === 0 ? colors.border : COLORS.primary }]}
               accessibilityRole="button"
             >
-              {optimizing
-                ? <ActivityIndicator size="small" color="#fff" />
-                : <Ionicons name="git-network" size={17} color="#fff" />}
+              {optimizing ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Icon name="branch" size={17} color="#fff" />
+              )}
               <Text style={[styles.ctaText, selectedCount === 0 && { color: colors.textMuted }]}>
                 {t('route.optimize', 'Optimize route')}
               </Text>
@@ -134,14 +140,16 @@ export function RoutePlannerScreenYourRoute({ vm }: { vm: RoutePlannerScreenStat
         contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={COLORS.primary} />}
-        ListEmptyComponent={loading ? (
-          <ActivityIndicator style={{ marginVertical: SPACING.xl }} color={COLORS.primary} />
-        ) : (
-          <EmptyState
-            icon="map-outline"
-            text={t('route.noStops', 'No tasks with a location. Add a location to a task to route to it.')}
-          />
-        )}
+        ListEmptyComponent={
+          loading ? (
+            <ActivityIndicator style={{ marginVertical: SPACING.xl }} color={COLORS.primary} />
+          ) : (
+            <EmptyState
+              icon="map"
+              text={t('route.noStops', 'No tasks with a location. Add a location to a task to route to it.')}
+            />
+          )
+        }
         renderItem={({ item, index }) => {
           if (result) {
             const s = item as RouteStop;
@@ -158,7 +166,15 @@ export function RoutePlannerScreenYourRoute({ vm }: { vm: RoutePlannerScreenStat
             );
           }
           const x = item as Task;
-          return <PickRow id={x.id} title={x.title} address={x.locationAddress ?? null} on={!!selected[x.id]} onToggle={toggleStop} />;
+          return (
+            <PickRow
+              id={x.id}
+              title={x.title}
+              address={x.locationAddress ?? null}
+              on={!!selected[x.id]}
+              onToggle={toggleStop}
+            />
+          );
         }}
         /*
           No app picker here any more. It was a preference chosen before
@@ -167,11 +183,16 @@ export function RoutePlannerScreenYourRoute({ vm }: { vm: RoutePlannerScreenStat
           The choice is offered at the moment of navigating, and only when
           there is genuinely something to choose between.
         */
-        ListFooterComponent={!!result && orderedStops.length > 1 ? (
-          <Text style={[styles.navNote, { color: colors.textMuted }]}>
-            {t('route.multiStopNote', 'Start navigation opens the whole route. Use the arrow beside a stop to drive to just that one.')}
-          </Text>
-        ) : null}
+        ListFooterComponent={
+          !!result && orderedStops.length > 1 ? (
+            <Text style={[styles.navNote, { color: colors.textMuted }]}>
+              {t(
+                'route.multiStopNote',
+                'Start navigation opens the whole route. Use the arrow beside a stop to drive to just that one.',
+              )}
+            </Text>
+          ) : null
+        }
       />
     </DetentSheet>
   );

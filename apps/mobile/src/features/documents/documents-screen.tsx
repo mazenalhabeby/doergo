@@ -1,6 +1,6 @@
 import React from 'react';
 import { SectionList, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/theme-context';
@@ -60,14 +60,20 @@ export function DocumentsScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         contentContainerStyle={[{ paddingHorizontal: vm.amazen.space(4), paddingBottom: vm.amazen.space(12) }, vm.wide]}
-        refreshControl={
-          refreshControl({ refreshing: vm.refreshing, onRefresh: () => void vm.load('refresh'), color: vm.c.accent })
-        }
+        refreshControl={refreshControl({
+          refreshing: vm.refreshing,
+          onRefresh: () => void vm.load('refresh'),
+          color: vm.c.accent,
+        })}
         ListHeaderComponent={vm.header}
         renderSectionHeader={({ section }) => (
           <SectionLabel
             tone={section.tone}
-            style={{ paddingHorizontal: vm.amazen.space(1), paddingTop: vm.amazen.space(4), paddingBottom: vm.amazen.space(2) }}
+            style={{
+              paddingHorizontal: vm.amazen.space(1),
+              paddingTop: vm.amazen.space(4),
+              paddingBottom: vm.amazen.space(2),
+            }}
           >
             {section.title}
           </SectionLabel>
@@ -77,22 +83,37 @@ export function DocumentsScreen() {
           const first = index === 0;
           const last = index === section.data.length - 1;
           return (
-            <View style={{
-              backgroundColor: vm.c.well, paddingHorizontal: vm.amazen.space(3.5),
-              borderTopLeftRadius: first ? r0 : 0, borderTopRightRadius: first ? r0 : 0,
-              borderBottomLeftRadius: last ? r0 : 0, borderBottomRightRadius: last ? r0 : 0,
-            }}>
-              <DocumentRow doc={item} first={first} onPaper={vm.onPaperOf(item)} busy={vm.opening === item.id} onPress={vm.tapDocument} />
+            <View
+              style={{
+                backgroundColor: vm.c.well,
+                paddingHorizontal: vm.amazen.space(3.5),
+                borderTopLeftRadius: first ? r0 : 0,
+                borderTopRightRadius: first ? r0 : 0,
+                borderBottomLeftRadius: last ? r0 : 0,
+                borderBottomRightRadius: last ? r0 : 0,
+              }}
+            >
+              <DocumentRow
+                doc={item}
+                first={first}
+                onPaper={vm.onPaperOf(item)}
+                busy={vm.opening === item.id}
+                onPress={vm.tapDocument}
+              />
             </View>
           );
         }}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', paddingVertical: vm.amazen.space(8), gap: vm.amazen.space(2) }}>
             {vm.state === 'loading' ? (
-              <AText variant="caption" tone="onGlass">{vm.t('common.loading', 'Loading…')}</AText>
+              <AText variant="caption" tone="onGlass">
+                {vm.t('common.loading', 'Loading…')}
+              </AText>
             ) : vm.state === 'failed' ? (
               <>
-                <AText variant="body" tone="onGlass">{vm.t('documents.loadFailed')}</AText>
+                <AText variant="body" tone="onGlass">
+                  {vm.t('documents.loadFailed')}
+                </AText>
                 <PrimaryButton
                   label={vm.t('common.retry', 'Try again')}
                   onPress={() => {
@@ -104,7 +125,9 @@ export function DocumentsScreen() {
               </>
             ) : (
               <>
-                <AText variant="body" tone="strong">{vm.filtered ? vm.t('documents.noMatches') : vm.t('documents.my.empty')}</AText>
+                <AText variant="body" tone="strong">
+                  {vm.filtered ? vm.t('documents.noMatches') : vm.t('documents.my.empty')}
+                </AText>
                 <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
                   {vm.filtered ? vm.t('documents.noMatchesHint') : vm.t('documents.my.emptyHint')}
                 </AText>
@@ -134,7 +157,9 @@ export function DocumentsScreen() {
               {opened.expiresOn ? (
                 <FactRow label={vm.t('documents.fact.validUntil', 'Valid until')} value={dayOf(opened.expiresOn)} />
               ) : null}
-              {vm.tag ? <FactRow label={vm.t('documents.fact.state', 'State')} value={vm.tag.label} tone={vm.tag.tone} /> : null}
+              {vm.tag ? (
+                <FactRow label={vm.t('documents.fact.state', 'State')} value={vm.tag.label} tone={vm.tag.tone} />
+              ) : null}
             </View>
             {opened.status === 'REJECTED' && opened.rejectionReason ? (
               <View style={{ backgroundColor: vm.c.criticalTint, borderRadius: 16, padding: vm.amazen.space(3.5) }}>
@@ -155,7 +180,11 @@ export function DocumentsScreen() {
               onPress={() => void vm.openFile(opened)}
             />
             {opened.status === 'REJECTED' || opened.standing === 'EXPIRED' || opened.standing === 'EXPIRING' ? (
-              <SheetOption label={vm.t('documents.sendNew', 'Send a new one')} tone="accent" onPress={() => vm.sendNew(opened.typeId)} />
+              <SheetOption
+                label={vm.t('documents.sendNew', 'Send a new one')}
+                tone="accent"
+                onPress={() => vm.sendNew(opened.typeId)}
+              />
             ) : null}
           </>
         ) : null}
@@ -165,7 +194,8 @@ export function DocumentsScreen() {
       <JobSheet
         visible={!!vm.picker}
         onClose={() => vm.setPicker(null)}
-        title={vm.picker === 'year' ? vm.t('documents.filter.year') : vm.t('documents.filter.type')}>
+        title={vm.picker === 'year' ? vm.t('documents.filter.year') : vm.t('documents.filter.type')}
+      >
         {vm.picker === 'type' ? (
           <>
             <SheetOption
@@ -221,11 +251,18 @@ export function DocumentsScreen() {
         documents={vm.documents}
         onClose={() => vm.setSupply(null)}
         /* The badge and the home strip read a cached count — supplying is exactly when it stops being true. */
-        onSubmitted={() => { void vm.load(); void vm.refreshRequirements({ force: true }); }}
-        onContract={vm.canPropose ? () => {
-          vm.setSupply(null);
-          setTimeout(() => router.push('/(app)/send-document' as never), 280);
-        } : undefined}
+        onSubmitted={() => {
+          void vm.load();
+          void vm.refreshRequirements({ force: true });
+        }}
+        onContract={
+          vm.canPropose
+            ? () => {
+                vm.setSupply(null);
+                setTimeout(() => router.push('/(app)/send-document' as never), 280);
+              }
+            : undefined
+        }
       />
     </Ground>
   );

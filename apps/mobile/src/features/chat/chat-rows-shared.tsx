@@ -43,7 +43,7 @@ export function ConversationAvatar({
         justifyContent: 'center',
       }}
     >
-      <InkIcon name={conv.type === 'TASK' ? 'job' : 'group'} size={Math.round(size * 0.56)} />
+      <InkIcon name={conv.type === 'TASK' ? 'job' : 'people'} size={Math.round(size * 0.56)} />
     </View>
   );
 }
@@ -139,7 +139,14 @@ export function Tag({ label, tone }: { label: string; tone?: 'warn' }) {
   const { amazen } = useTheme();
   const c = amazen.color;
   return (
-    <View style={{ borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, backgroundColor: tone === 'warn' ? c.warnTint : c.tile }}>
+    <View
+      style={{
+        borderRadius: 6,
+        paddingHorizontal: 6,
+        paddingVertical: 1,
+        backgroundColor: tone === 'warn' ? c.warnTint : c.tile,
+      }}
+    >
       <AText
         numberOfLines={1}
         style={{

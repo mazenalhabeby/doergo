@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { usePortalRequests } from '@/hooks/use-portal-requests';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTheme } from '@/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
 import { RequestRow } from '@/features/customer/request-bits';
@@ -43,7 +43,7 @@ export default function CustomerRequests() {
           </Text>
         </View>
         <Pressable style={[styles.newBtn, { backgroundColor: COLORS.primary }]} onPress={goReport} hitSlop={8}>
-          <Ionicons name="add" size={18} color="#fff" />
+          <Icon name="addLine" size={18} color="#fff" />
           <Text style={styles.newBtnText}>{t('portal.new', 'New')}</Text>
         </Pressable>
       </View>
@@ -88,20 +88,24 @@ export default function CustomerRequests() {
               icon={item.icon}
               color={item.color}
               // A request still on the phone has no page on the server yet.
-              onPress={() => { if (!isOnPhone(item.id)) router.push(`/(customer)/request/${item.id}`); }}
+              onPress={() => {
+                if (!isOnPhone(item.id)) router.push(`/(customer)/request/${item.id}`);
+              }}
             />
           )}
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <View style={[styles.emptyIcon, { backgroundColor: colors.surface }]}>
-                <Ionicons name="file-tray-outline" size={30} color={colors.textMuted} />
+                <Icon name="inbox" size={30} color={colors.textMuted} />
               </View>
               <Text style={[styles.empty, { color: colors.textMuted }]}>
-                {filter === 'all' ? t('portal.noRequestsShort', 'No requests yet.') : t('portal.noneHere', 'Nothing here.')}
+                {filter === 'all'
+                  ? t('portal.noRequestsShort', 'No requests yet.')
+                  : t('portal.noneHere', 'Nothing here.')}
               </Text>
               {filter === 'all' ? (
                 <Pressable style={[styles.emptyBtn, { backgroundColor: COLORS.primary }]} onPress={goReport}>
-                  <Ionicons name="add" size={18} color="#fff" />
+                  <Icon name="addLine" size={18} color="#fff" />
                   <Text style={styles.emptyBtnText}>{t('portal.reportIssue', 'Report an issue')}</Text>
                 </Pressable>
               ) : null}
@@ -114,10 +118,22 @@ export default function CustomerRequests() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginHorizontal: SPACING.lg },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginHorizontal: SPACING.lg,
+  },
   title: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.title },
   subtitle: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.sm, marginTop: 2 },
-  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.full },
+  newBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: RADIUS.full,
+  },
   newBtnText: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.sm, color: '#fff' },
   filters: { flexDirection: 'row', gap: SPACING.sm, paddingHorizontal: SPACING.lg, marginTop: SPACING.md },
   chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: RADIUS.full, borderWidth: 1 },

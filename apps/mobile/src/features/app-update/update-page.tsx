@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import type { IconName } from '@hbcfield/shared/client';
 import { Modal, View, Text, StyleSheet, Pressable, Platform, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTheme } from '@/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
 import type { VersionStatus } from '@/lib/version-gate';
@@ -19,9 +20,14 @@ const SNOOZE_MS = 24 * 60 * 60 * 1000;
 const SETTLE_MS = 2500;
 
 /** The server names an icon from a closed list; this maps it to the app's set. */
-const RELEASE_ICON: Record<ReleaseIcon, keyof typeof Ionicons.glyphMap> = {
-  calendar: 'calendar-outline', crew: 'people-outline', role: 'hand-left-outline', scan: 'scan-outline',
-  clock: 'time-outline', offline: 'cloud-offline-outline', star: 'sparkles-outline',
+const RELEASE_ICON: Record<ReleaseIcon, IconName> = {
+  calendar: 'calendar',
+  crew: 'people',
+  role: 'hand',
+  scan: 'scanCard',
+  clock: 'time',
+  offline: 'offline',
+  star: 'sparkles',
 };
 
 /*
@@ -49,7 +55,13 @@ export function showUpdatePageNow(): void {
  * ⚠️ EVERY HOOK ABOVE THE EARLY RETURN — see update-banner.tsx for the crash
  * that rule was written in.
  */
-export function UpdatePage({ status, onVisibleChange }: { status: VersionStatus; onVisibleChange?: (visible: boolean) => void }) {
+export function UpdatePage({
+  status,
+  onVisibleChange,
+}: {
+  status: VersionStatus;
+  onVisibleChange?: (visible: boolean) => void;
+}) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -63,9 +75,14 @@ export function UpdatePage({ status, onVisibleChange }: { status: VersionStatus;
   }, []);
 
   useEffect(() => {
-    const open = () => { setSnoozed(false); setSettled(true); };
+    const open = () => {
+      setSnoozed(false);
+      setSettled(true);
+    };
     forceListeners.add(open);
-    return () => { forceListeners.delete(open); };
+    return () => {
+      forceListeners.delete(open);
+    };
   }, []);
 
   useEffect(() => {
@@ -95,22 +112,28 @@ export function UpdatePage({ status, onVisibleChange }: { status: VersionStatus;
   const later = () => {
     setSnoozed(true);
     const stamp = `${version}|${Date.now()}`;
-    AsyncStorage.multiSet([[SNOOZE_KEY, stamp], [BANNER_SNOOZE_KEY, stamp]]).catch(() => {});
+    AsyncStorage.multiSet([
+      [SNOOZE_KEY, stamp],
+      [BANNER_SNOOZE_KEY, stamp],
+    ]).catch(() => {});
   };
   const update = () => {
     later();
     void openUpdate(status.downloadUrl);
   };
-  const store = Platform.OS === 'ios' ? t('updateRequired.appStore', 'the App Store') : t('updateRequired.playStore', 'Google Play');
+  const store =
+    Platform.OS === 'ios'
+      ? t('updateRequired.appStore', 'the App Store')
+      : t('updateRequired.playStore', 'Google Play');
 
   // What is new, from the server in this phone's language; the built-in lines only when it sent none.
   const note = status.whatsNew ?? null;
-  const points: { icon: keyof typeof Ionicons.glyphMap; title?: string; text: string }[] = note
-    ? note.points.map((p) => ({ icon: RELEASE_ICON[p.icon] ?? 'sparkles-outline', title: p.title, text: p.body }))
+  const points: { icon: IconName; title?: string; text: string }[] = note
+    ? note.points.map((p) => ({ icon: RELEASE_ICON[p.icon] ?? 'sparkles', title: p.title, text: p.body }))
     : [
-        { icon: 'cloud-offline-outline', text: t('updatePage.pointOffline') },
-        { icon: 'log-in-outline', text: t('updatePage.pointClock') },
-        { icon: 'time-outline', text: t('updatePage.pointShifts') },
+        { icon: 'offline', text: t('updatePage.pointOffline') },
+        { icon: 'login', text: t('updatePage.pointClock') },
+        { icon: 'time', text: t('updatePage.pointShifts') },
       ];
 
   return (
@@ -123,7 +146,8 @@ export function UpdatePage({ status, onVisibleChange }: { status: VersionStatus;
             paddingTop: insets.top + SPACING.xl,
             paddingBottom: insets.bottom + SPACING.lg,
           },
-        ]}>
+        ]}
+      >
         <View style={styles.body}>
           <Image source={require('../../../assets/icon.png')} style={styles.icon} />
           <Text style={[styles.version, { color: COLORS.primary }]}>{t('updatePage.version', { version })}</Text>
@@ -133,8 +157,11 @@ export function UpdatePage({ status, onVisibleChange }: { status: VersionStatus;
           </Text>
           <View style={styles.points}>
             {points.map((p, i) => (
-              <View key={`${p.icon}-${i}`} style={[styles.point, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Ionicons name={p.icon} size={20} color={COLORS.primary} />
+              <View
+                key={`${p.icon}-${i}`}
+                style={[styles.point, { backgroundColor: colors.card, borderColor: colors.border }]}
+              >
+                <Icon name={p.icon} size={20} color={COLORS.primary} />
                 <View style={{ flex: 1 }}>
                   {p.title ? <Text style={[styles.pointTitle, { color: colors.textPrimary }]}>{p.title}</Text> : null}
                   <Text
@@ -152,10 +179,18 @@ export function UpdatePage({ status, onVisibleChange }: { status: VersionStatus;
           </View>
         </View>
         <View style={styles.actions}>
-          <Pressable onPress={update} style={({ pressed }) => [styles.primary, pressed && styles.pressed]} accessibilityRole="button">
+          <Pressable
+            onPress={update}
+            style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
+            accessibilityRole="button"
+          >
             <Text style={styles.primaryText}>{t('updatePage.update')}</Text>
           </Pressable>
-          <Pressable onPress={later} style={({ pressed }) => [styles.secondary, pressed && styles.pressed]} accessibilityRole="button">
+          <Pressable
+            onPress={later}
+            style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}
+            accessibilityRole="button"
+          >
             <Text style={[styles.secondaryText, { color: colors.textSecondary }]}>{t('updatePage.later')}</Text>
           </Pressable>
           <Text style={[styles.note, { color: colors.textMuted }]}>{t('updatePage.note')}</Text>
@@ -173,12 +208,24 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: FONT_WEIGHT.bold, textAlign: 'center' },
   lead: { fontSize: FONT_SIZE.md, textAlign: 'center', lineHeight: 22, marginBottom: SPACING.md },
   points: { alignSelf: 'stretch', gap: SPACING.sm },
-  point: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, borderWidth: 1, borderRadius: RADIUS.lg, padding: SPACING.md },
+  point: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    borderWidth: 1,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+  },
   pointText: { flex: 1, fontSize: FONT_SIZE.md, lineHeight: 20 },
   pointTitle: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.bold, lineHeight: 20 },
   pointBody: { fontSize: FONT_SIZE.sm, lineHeight: 18 },
   actions: { gap: SPACING.sm },
-  primary: { backgroundColor: COLORS.primary, borderRadius: RADIUS.lg, paddingVertical: SPACING.md + 2, alignItems: 'center' },
+  primary: {
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.lg,
+    paddingVertical: SPACING.md + 2,
+    alignItems: 'center',
+  },
   primaryText: { color: COLORS.white, fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
   secondary: { paddingVertical: SPACING.md, alignItems: 'center' },
   secondaryText: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.medium },

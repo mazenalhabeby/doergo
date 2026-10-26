@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTheme } from '@/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
 import { portalApi } from '@/lib/api/portal';
@@ -71,12 +71,14 @@ export default function ReportWizard() {
         categoryKey: category!.key,
         issue: issue || undefined,
         description: description.trim() || undefined,
-        accessPermitted: cfg?.features?.access ? access ?? undefined : undefined,
-        preferredTime: cfg?.features?.preferredTime ? time ?? undefined : undefined,
-        contactPreference: cfg?.features?.contact ? contact ?? undefined : undefined,
+        accessPermitted: cfg?.features?.access ? (access ?? undefined) : undefined,
+        preferredTime: cfg?.features?.preferredTime ? (time ?? undefined) : undefined,
+        contactPreference: cfg?.features?.contact ? (contact ?? undefined) : undefined,
       };
       // Written somewhere without signal, it waits on the phone and is sent when it can be.
-      const outcome = await requestCreate.run({ lane: `portal:${user?.id ?? 'me'}`, body: input }, () => portalApi.submit(input));
+      const outcome = await requestCreate.run({ lane: `portal:${user?.id ?? 'me'}`, body: input }, () =>
+        portalApi.submit(input),
+      );
       if (outcome.kind === 'refused') {
         throw new Error(
           (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
@@ -85,7 +87,10 @@ export default function ReportWizard() {
         );
       }
       if (outcome.kind === 'queued') {
-        Alert.alert(t('offline.savedForLater'), t('portal.sentWhenOnline', 'It will be sent as soon as you are back online.'));
+        Alert.alert(
+          t('offline.savedForLater'),
+          t('portal.sentWhenOnline', 'It will be sent as soon as you are back online.'),
+        );
       }
       return outcome;
     },
@@ -111,8 +116,7 @@ export default function ReportWizard() {
 
   const step = steps[Math.min(stepIdx, steps.length - 1)];
   const isLast = stepIdx >= steps.length - 1;
-  const canNext =
-    step === 'category' ? category != null : step === 'issue' ? issue != null : true;
+  const canNext = step === 'category' ? category != null : step === 'issue' ? issue != null : true;
 
   const goNext = () => {
     if (isLast) {
@@ -130,11 +134,16 @@ export default function ReportWizard() {
     <View style={[styles.fill, { backgroundColor: colors.background, paddingTop: insets.top + SPACING.sm }]}>
       {/* Top bar */}
       <View style={styles.top}>
-        <Pressable style={[styles.back, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={goBack}>
-          <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />
+        <Pressable
+          style={[styles.back, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={goBack}
+        >
+          <Icon name="backLine" size={20} color={colors.textSecondary} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.topTitle, { color: colors.textPrimary }]}>{t('portal.reportIssue', 'Report an issue')}</Text>
+          <Text style={[styles.topTitle, { color: colors.textPrimary }]}>
+            {t('portal.reportIssue', 'Report an issue')}
+          </Text>
           <Text style={[styles.topStep, { color: colors.textMuted }]}>
             {t('portal.stepOf', 'Step {{n}} of {{total}}', { n: stepIdx + 1, total: steps.length })}
           </Text>
@@ -148,7 +157,9 @@ export default function ReportWizard() {
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
         {step === 'category' && (
           <>
-            <Text style={[styles.q, { color: colors.textPrimary }]}>{t('portal.whatProblem', 'What’s the problem?')}</Text>
+            <Text style={[styles.q, { color: colors.textPrimary }]}>
+              {t('portal.whatProblem', 'What’s the problem?')}
+            </Text>
             {categories.map((c, i) => (
               <Option
                 key={c.key}
@@ -160,7 +171,7 @@ export default function ReportWizard() {
                 }}
                 left={
                   <View style={[styles.optIcon, { backgroundColor: portalTint(c.color) }]}>
-                    <MaterialCommunityIcons name={portalIcon(c.icon)} size={18} color={portalColor(c.color)} />
+                    <Icon name={portalIcon(c.icon)} size={18} color={portalColor(c.color)} />
                   </View>
                 }
                 label={c.label}
@@ -175,7 +186,7 @@ export default function ReportWizard() {
             <Text style={[styles.q, { color: colors.textPrimary }]}>{t('portal.selectIssue', 'Select the issue')}</Text>
             {category.team ? (
               <View style={[styles.smartChip, { backgroundColor: colors.primaryLight }]}>
-                <Ionicons name="navigate" size={13} color={COLORS.primaryDark} />
+                <Icon name="navigate" size={13} color={COLORS.primaryDark} />
                 <Text style={[styles.smartText, { color: COLORS.primaryDark }]}>
                   {t('portal.routing', 'Routed to')} {category.team}
                 </Text>
@@ -191,7 +202,10 @@ export default function ReportWizard() {
           <>
             <Text style={[styles.q, { color: colors.textPrimary }]}>{t('portal.describe', 'Describe it')}</Text>
             <TextInput
-              style={[styles.textarea, { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary }]}
+              style={[
+                styles.textarea,
+                { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary },
+              ]}
               placeholder={t('portal.describePlaceholder', 'What happened, and when? Add anything useful…')}
               placeholderTextColor={colors.textMuted}
               multiline
@@ -203,7 +217,9 @@ export default function ReportWizard() {
 
         {step === 'access' && (
           <>
-            <Text style={[styles.q, { color: colors.textPrimary }]}>{t('portal.access', 'Can we enter if you’re out?')}</Text>
+            <Text style={[styles.q, { color: colors.textPrimary }]}>
+              {t('portal.access', 'Can we enter if you’re out?')}
+            </Text>
             <Option
               selected={access === true}
               colors={colors}
@@ -223,7 +239,10 @@ export default function ReportWizard() {
           <>
             <Text style={[styles.q, { color: colors.textPrimary }]}>{t('portal.location', 'Where is it?')}</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary }]}
+              style={[
+                styles.input,
+                { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary },
+              ]}
               placeholder={t('portal.locationPlaceholder', 'Room / floor / area')}
               placeholderTextColor={colors.textMuted}
               value={description}
@@ -236,14 +255,22 @@ export default function ReportWizard() {
           <>
             <Text style={[styles.q, { color: colors.textPrimary }]}>{t('portal.preferredTime', 'Preferred time')}</Text>
             {(['MORNING', 'AFTERNOON', 'EVENING'] as const).map((tm) => (
-              <Option key={tm} selected={time === tm} colors={colors} onPress={() => setTime(tm)} label={t(`portal.time.${tm}`, tm)} />
+              <Option
+                key={tm}
+                selected={time === tm}
+                colors={colors}
+                onPress={() => setTime(tm)}
+                label={t(`portal.time.${tm}`, tm)}
+              />
             ))}
           </>
         )}
 
         {step === 'contact' && (
           <>
-            <Text style={[styles.q, { color: colors.textPrimary }]}>{t('portal.contactHow', 'How should we reach you?')}</Text>
+            <Text style={[styles.q, { color: colors.textPrimary }]}>
+              {t('portal.contactHow', 'How should we reach you?')}
+            </Text>
             {(['PUSH', 'EMAIL', 'PHONE'] as const).map((cp) => (
               <Option
                 key={cp}
@@ -267,7 +294,9 @@ export default function ReportWizard() {
           {submit.isPending ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.ctaText}>{isLast ? t('portal.submit', 'Submit request') : t('common.next', 'Next')}</Text>
+            <Text style={styles.ctaText}>
+              {isLast ? t('portal.submit', 'Submit request') : t('common.next', 'Next')}
+            </Text>
           )}
         </Pressable>
       </View>

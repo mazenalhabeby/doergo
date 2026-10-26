@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
@@ -79,7 +77,9 @@ function AssetLogScreen() {
   if (loading || logKey === COST_LOG_KEY) {
     return (
       <EquipmentFrame title={title}>
-        <View style={s.centre}><ActivityIndicator color={COLORS.primary} /></View>
+        <View style={s.centre}>
+          <ActivityIndicator color={COLORS.primary} />
+        </View>
       </EquipmentFrame>
     );
   }
@@ -109,7 +109,9 @@ function AssetLogScreen() {
       >
         <View style={s.assetRow}>
           <View style={[s.dot, { backgroundColor: logColor(type.color) }]} />
-          <Text style={[s.asset, { color: colors.textMuted }]} numberOfLines={1}>{held.asset?.name ?? ''}</Text>
+          <Text style={[s.asset, { color: colors.textMuted }]} numberOfLines={1}>
+            {held.asset?.name ?? ''}
+          </Text>
         </View>
 
         {moneyField && canScanReceipts() && (
@@ -121,9 +123,11 @@ function AssetLogScreen() {
             {reading ? (
               <ActivityIndicator size="small" color={COLORS.primary} />
             ) : (
-              <Ionicons name="scan-outline" size={18} color={COLORS.primary} />
+              <Icon name="scanCard" size={18} color={COLORS.primary} />
             )}
-            <Text style={[s.secondaryText, { color: COLORS.primary }]}>{tt('logbook.readReceipt', 'Read the amount from a receipt')}</Text>
+            <Text style={[s.secondaryText, { color: COLORS.primary }]}>
+              {tt('logbook.readReceipt', 'Read the amount from a receipt')}
+            </Text>
           </TouchableOpacity>
         )}
 
@@ -136,7 +140,10 @@ function AssetLogScreen() {
             problem={problemFor(f.key)}
             photo={f.type === 'photo' ? photo : null}
             onPhoto={addPhoto}
-            onRemovePhoto={() => { if (photo) forgetPhoto(photo.uri); setPhoto(null); }}
+            onRemovePhoto={() => {
+              if (photo) forgetPhoto(photo.uri);
+              setPhoto(null);
+            }}
             colors={colors}
             t={tt}
           />
@@ -162,13 +169,12 @@ function AssetLogScreen() {
           style={[s.input, s.boxed, { color: colors.textPrimary, borderColor: colors.border, minHeight: 64 }]}
         />
 
-        <TouchableOpacity
-          onPress={send}
-          disabled={sending}
-          style={[s.primary, { backgroundColor: COLORS.primary }]}
-        >
-          {sending ? <ActivityIndicator size="small" color="#fff" />
-                   : <Text style={[s.primaryText, { color: COLORS.onPrimary }]}>{tt('logbook.send', 'Log it')}</Text>}
+        <TouchableOpacity onPress={send} disabled={sending} style={[s.primary, { backgroundColor: COLORS.primary }]}>
+          {sending ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={[s.primaryText, { color: COLORS.onPrimary }]}>{tt('logbook.send', 'Log it')}</Text>
+          )}
         </TouchableOpacity>
         {needsApproval && (
           <Text style={[s.footnote, { color: colors.textMuted }]}>

@@ -1,4 +1,10 @@
-import { APPROVAL_KIND_SPECS, hasAccessModule, moduleAnywhere, orgHasAddOn, type MobileModule } from '@hbcfield/shared/client';
+import {
+  APPROVAL_KIND_SPECS,
+  hasAccessModule,
+  moduleAnywhere,
+  orgHasAddOn,
+  type MobileModule,
+} from '@hbcfield/shared/client';
 import { holds, holdsOrgWide } from './permissions';
 import { crmCapsOf, drivesRoutes, isExternalMember } from './member-reach';
 import { MANAGE_ROWS, type Destination, type DestinationSubject, asDestination, opens } from './manage-row';
@@ -28,7 +34,7 @@ export const MEMBER_ROWS: Destination[] = [
     can sign nothing.
   */
   {
-    icon: 'document-text',
+    icon: 'documents',
     labelKey: 'shortcuts.documents',
     descKey: 'shortcuts.documentsDesc',
     route: '/(app)/documents',
@@ -41,7 +47,7 @@ export const MEMBER_ROWS: Destination[] = [
     badge: 'documents.due',
   },
   {
-    icon: 'create',
+    icon: 'sign',
     labelKey: 'shortcuts.sign',
     descKey: 'shortcuts.signDesc',
     route: '/(app)/documents',
@@ -53,7 +59,7 @@ export const MEMBER_ROWS: Destination[] = [
     badge: 'documents.toSign',
   },
   {
-    icon: 'cube',
+    icon: 'myEquipment',
     labelKey: 'shortcuts.myEquipment',
     descKey: 'shortcuts.myEquipmentDesc',
     route: '/(app)/my-assets',
@@ -86,7 +92,7 @@ export const MEMBER_ROWS: Destination[] = [
     badge: 'sync.queued',
   },
   {
-    icon: 'timer',
+    icon: 'overtime',
     labelKey: 'shortcuts.overtime',
     descKey: 'shortcuts.overtimeDesc',
     route: '/(app)/overtime/active',
@@ -105,7 +111,7 @@ export const MEMBER_ROWS: Destination[] = [
     module and the SCREEN enforces custody, which it already does.
   */
   {
-    icon: 'receipt',
+    icon: 'expense',
     labelKey: 'shortcuts.logExpense',
     descKey: 'shortcuts.logExpenseDesc',
     route: '/(app)/asset-expense',
@@ -126,7 +132,7 @@ export const MEMBER_ROWS: Destination[] = [
     action, and the tab bar is a set of rooms.
   */
   {
-    icon: 'add-circle',
+    icon: 'plus',
     labelKey: 'shortcuts.newJob',
     descKey: 'shortcuts.newJobDesc',
     route: '/(app)/(tabs)/create-task',
@@ -137,7 +143,7 @@ export const MEMBER_ROWS: Destination[] = [
     act: true,
   },
   {
-    icon: 'scan',
+    icon: 'scanCard',
     labelKey: 'shortcuts.scanCard',
     descKey: 'shortcuts.scanCardDesc',
     route: '/(app)/scan-card',
@@ -157,7 +163,7 @@ export const MEMBER_ROWS: Destination[] = [
     "add clients" in their workspace adds one there, and the server files it.
   */
   {
-    icon: 'person-add',
+    icon: 'addUser',
     labelKey: 'shortcuts.addClient',
     descKey: 'shortcuts.addClientDesc',
     route: '/(app)/customers?new=1',
@@ -175,7 +181,7 @@ export const MEMBER_ROWS: Destination[] = [
     the organization has no Documents option — one door, not three.
   */
   {
-    icon: 'map',
+    icon: 'route',
     labelKey: 'shortcuts.planRoute',
     descKey: 'shortcuts.planRouteDesc',
     route: '/(app)/route-planner',
@@ -187,7 +193,7 @@ export const MEMBER_ROWS: Destination[] = [
   },
   // Reachable, and not a tile: nobody opens support twice a week.
   {
-    icon: 'help-buoy',
+    icon: 'support',
     labelKey: 'shortcuts.support',
     descKey: 'shortcuts.supportDesc',
     route: '/(app)/support',
@@ -202,7 +208,7 @@ export const MEMBER_ROWS: Destination[] = [
     `canLogAssets` logs from the register (Manage → Equipment).
   */
   {
-    icon: 'list',
+    icon: 'equipmentLog',
     labelKey: 'shortcuts.equipmentLog',
     descKey: 'shortcuts.equipmentLogDesc',
     route: '/(app)/asset-log',

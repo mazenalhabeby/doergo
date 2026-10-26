@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import type { StyleProp, ViewStyle } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { ICON_VIEWBOX, iconMarkup, type IconName } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
@@ -15,12 +16,17 @@ export function InkIcon({
   size = 24,
   flat = false,
   color = '#ffffff',
+  style,
+  accessibilityLabel,
 }: {
   name: IconName;
   size?: number;
   flat?: boolean;
   /** The colour of a flat icon. */
   color?: string;
+  style?: StyleProp<ViewStyle>;
+  /** Spoken name; without it the icon is decoration. */
+  accessibilityLabel?: string;
 }) {
   const { amazen } = useTheme();
   const [from, to] = amazen.gradient.iconInk;
@@ -34,7 +40,37 @@ export function InkIcon({
       '</svg>',
     [name, flat, from, to],
   );
-  return <SvgXml xml={xml} width={size} height={size} color={color} />;
+  return (
+    <SvgXml
+      xml={xml}
+      width={size}
+      height={size}
+      color={color}
+      style={style}
+      accessible={!!accessibilityLabel}
+      accessibilityLabel={accessibilityLabel}
+    />
+  );
+}
+
+/**
+ * THE icon (phone) — one mark from the shared library in one colour, the web's `<Icon>`. It replaced Ionicons
+ * (2026-10-26); `mobile-icons.spec` keeps them out.
+ */
+export function Icon({
+  name,
+  size = 20,
+  color,
+  style,
+  accessibilityLabel,
+}: {
+  name: IconName;
+  size?: number;
+  color: string;
+  style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
+}) {
+  return <InkIcon name={name} size={size} flat color={color} style={style} accessibilityLabel={accessibilityLabel} />;
 }
 
 /** An ink icon where a screen asks for a Glyph component (sheet options, tiles). */

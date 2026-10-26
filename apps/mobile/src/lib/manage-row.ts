@@ -1,3 +1,4 @@
+import type { IconName } from '@hbcfield/shared/client';
 import {
   APPROVAL_KIND_SPECS,
   hasAccessModule,
@@ -72,7 +73,8 @@ export type ExtraGate =
   | { decides: true };
 
 export interface Destination {
-  icon: string;
+  /** The destination's mark in the shared library — the home shortcuts and the More page draw it. */
+  icon: IconName;
   labelKey: string;
   descKey: string;
   route: string;
@@ -149,7 +151,8 @@ export type ManageSubject =
 /** Can this member decide any kind of approval — each kind asked the way its route asks it? */
 export function decidesAnything(user: Parameters<typeof holds>[0]): boolean {
   return Object.values(APPROVAL_KIND_SPECS).some((k) =>
-    k.orgWide ? holdsOrgWide(user, k.decideKey) : holds(user, k.decideKey));
+    k.orgWide ? holdsOrgWide(user, k.decideKey) : holds(user, k.decideKey),
+  );
 }
 
 /** The rows this member can actually open. */

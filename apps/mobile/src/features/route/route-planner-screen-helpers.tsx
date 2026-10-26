@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTheme } from '@/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
 import { type RouteStop, formatDuration } from '@hbcfield/shared/client';
@@ -30,7 +30,7 @@ export const LegRow = memo(function LegRow({
     <View style={styles.legRow}>
       <View style={styles.legRail}>
         <View style={[styles.legDot, { backgroundColor: done ? COLORS.success : COLORS.primary }]}>
-          {done ? <Ionicons name="checkmark" size={15} color="#fff" /> : <Text style={styles.legDotText}>{i + 1}</Text>}
+          {done ? <Icon name="checkLine" size={15} color="#fff" /> : <Text style={styles.legDotText}>{i + 1}</Text>}
         </View>
         {!last && <View style={[styles.legLine, { backgroundColor: colors.border }]} />}
       </View>
@@ -48,7 +48,7 @@ export const LegRow = memo(function LegRow({
         {!!drive && <Text style={[styles.legDrive, { color: colors.textMuted }]}>{drive}</Text>}
       </View>
       <TouchableOpacity onPress={() => onNav(s)} hitSlop={8} style={[styles.legNav, { borderColor: colors.border }]}>
-        <Ionicons name="navigate-outline" size={16} color={COLORS.primary} />
+        <Icon name="navigate" size={16} color={COLORS.primary} />
       </TouchableOpacity>
     </View>
   );
@@ -81,11 +81,7 @@ export const PickRow = memo(function PickRow({
         },
       ]}
     >
-      <Ionicons
-        name={on ? 'checkmark-circle' : 'ellipse-outline'}
-        size={22}
-        color={on ? COLORS.primary : colors.textMuted}
-      />
+      <Icon name={on ? 'selected' : 'radioOff'} size={22} color={on ? COLORS.primary : colors.textMuted} />
       <View style={{ flex: 1 }}>
         <Text style={[styles.pickTitle, { color: colors.textPrimary }]} numberOfLines={1}>
           {title}
@@ -253,5 +249,4 @@ export const styles = StyleSheet.create({
     borderRadius: RADIUS.full,
     borderWidth: 1,
   },
-
 });

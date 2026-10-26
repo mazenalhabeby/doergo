@@ -1,5 +1,5 @@
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
 
@@ -52,10 +52,8 @@ export function CaptureReviewFoot({
   return (
     <>
       <View style={[s.row, { borderColor: border }]}>
-        <Ionicons name={shot ? icon : `${icon}-outline`} size={18} color={shot ? '#22c55e' : muted} />
-        <Text style={{ flex: 1, fontSize: FONT_SIZE.sm, color: muted }}>
-          {shot ? attachedLabel : missingLabel}
-        </Text>
+        <Icon name={icon === 'image' ? 'attach' : 'file'} size={18} color={shot ? '#22c55e' : muted} />
+        <Text style={{ flex: 1, fontSize: FONT_SIZE.sm, color: muted }}>{shot ? attachedLabel : missingLabel}</Text>
         <TouchableOpacity onPress={onRetake}>
           <Text style={{ color: primary, fontSize: FONT_SIZE.xs, fontWeight: '700' }}>
             {shot ? t('expenses.retake', 'Retake') : t('expenses.takePhoto', 'Take one')}
@@ -68,8 +66,11 @@ export function CaptureReviewFoot({
         disabled={sendDisabled}
         style={[s.primary, { backgroundColor: ready ? primary : border }]}
       >
-        {sending ? <ActivityIndicator size="small" color="#fff" />
-          : <Text style={sendLabelColor ? [s.primaryText, { color: sendLabelColor }] : s.primaryText}>{sendLabel}</Text>}
+        {sending ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={sendLabelColor ? [s.primaryText, { color: sendLabelColor }] : s.primaryText}>{sendLabel}</Text>
+        )}
       </TouchableOpacity>
       <Text style={[s.footnote, { color: muted }]}>{footnote}</Text>
     </>
@@ -86,7 +87,13 @@ const s = StyleSheet.create({
     padding: SPACING.md,
     marginTop: SPACING.lg,
   },
-  primary: { borderRadius: RADIUS.md, height: 50, alignItems: 'center', justifyContent: 'center', marginTop: SPACING.lg },
+  primary: {
+    borderRadius: RADIUS.md,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: SPACING.lg,
+  },
   primaryText: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: '700' },
   footnote: { fontSize: FONT_SIZE.xs, textAlign: 'center', marginTop: SPACING.md },
 });

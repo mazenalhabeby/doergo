@@ -1,7 +1,15 @@
 import { memo, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator,
-  Linking, Platform, RefreshControl, useWindowDimensions,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+  Linking,
+  Platform,
+  RefreshControl,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -18,7 +26,7 @@ import {
   type InstalledNavApp,
 } from '@/lib/nav-apps';
 import { PressableScale } from '@/components/pressable-scale';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { getFix } from '@/lib/location-fix';
@@ -156,7 +164,8 @@ export default function RoutePlannerScreen() {
                     backgroundColor: result ? COLORS.primary : colors.card,
                     borderColor: result ? COLORS.primary : colors.border,
                   },
-                ]}>
+                ]}
+              >
                 <Text style={[styles.pinText, { color: result ? '#fff' : colors.textPrimary }]}>
                   {result ? String(i + 1) : '•'}
                 </Text>
@@ -174,8 +183,9 @@ export default function RoutePlannerScreen() {
           onPress={() => router.back()}
           style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]}
           accessibilityRole="button"
-          accessibilityLabel={t('common.back', 'Back')}>
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          accessibilityLabel={t('common.back', 'Back')}
+        >
+          <Icon name="backLine" size={24} color={colors.textPrimary} />
         </PressableScale>
         <View style={styles.floatTopRight}>
           <PressableScale
@@ -185,17 +195,21 @@ export default function RoutePlannerScreen() {
             }}
             style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]}
             accessibilityRole="button"
-            accessibilityLabel={t('route.useMyLocation', 'Use my location')}>
-            {locating
-              ? <ActivityIndicator size="small" color={COLORS.primary} />
-              : <Ionicons name="locate" size={20} color={COLORS.primary} />}
+            accessibilityLabel={t('route.useMyLocation', 'Use my location')}
+          >
+            {locating ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <Icon name="gps" size={20} color={COLORS.primary} />
+            )}
           </PressableScale>
           <PressableScale
             onPress={() => fitToRoute(true)}
             style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]}
             accessibilityRole="button"
-            accessibilityLabel={t('route.fitRoute', 'Show the whole route')}>
-            <Ionicons name="scan-outline" size={20} color={colors.textPrimary} />
+            accessibilityLabel={t('route.fitRoute', 'Show the whole route')}
+          >
+            <Icon name="scanCard" size={20} color={colors.textPrimary} />
           </PressableScale>
         </View>
       </View>
@@ -227,15 +241,13 @@ export default function RoutePlannerScreen() {
                 openIn(a.key, stop);
               }}
             >
-              <Ionicons name="navigate" size={18} color={COLORS.primary} />
+              <Icon name="navigate" size={18} color={COLORS.primary} />
               <Text style={[styles.chooserLabel, { color: colors.textPrimary }]}>{a.label}</Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              <Icon name="chevronRight" size={16} color={colors.textMuted} />
             </TouchableOpacity>
           ))}
           <TouchableOpacity style={styles.chooserCancel} onPress={() => setChooserFor(null)}>
-            <Text style={[styles.chooserCancelText, { color: colors.textMuted }]}>
-              {t('common.cancel', 'Cancel')}
-            </Text>
+            <Text style={[styles.chooserCancelText, { color: colors.textMuted }]}>{t('common.cancel', 'Cancel')}</Text>
           </TouchableOpacity>
         </SheetPanel>
       </BlurSheet>

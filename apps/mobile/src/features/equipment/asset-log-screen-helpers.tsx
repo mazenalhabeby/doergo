@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { DateField } from '@/components';
 import { useFormPalette } from './equipment-frame';
 import { type KindLogField, type LogValueProblem } from '@hbcfield/shared/client';
@@ -75,7 +75,7 @@ export function FieldInput({
       <View style={s.block}>
         <Text style={[s.label, { color: colors.textMuted }]}>{label}</Text>
         <View style={[s.photoRow, { borderColor: border }]}>
-          <Ionicons name={photo ? 'image' : 'image-outline'} size={18} color={photo ? '#22c55e' : colors.textMuted} />
+          <Icon name={photo ? 'attach' : 'attach'} size={18} color={photo ? '#22c55e' : colors.textMuted} />
           <Text style={{ flex: 1, fontSize: FONT_SIZE.sm, color: colors.textMuted }}>
             {photo ? t('expenses.photoAttached', 'Photo attached') : t('expenses.noPhoto', 'No photo')}
           </Text>

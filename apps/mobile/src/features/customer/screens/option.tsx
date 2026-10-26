@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, type ThemeColors } from '@/lib/constants';
 
 export type StepId = 'category' | 'issue' | 'describe' | 'access' | 'time' | 'location' | 'contact';
@@ -37,7 +37,7 @@ export function Option({
           <Text style={styles.optBadgeText}>{badge}</Text>
         </View>
       ) : (
-        <Ionicons name="chevron-forward" size={18} color={selected ? COLORS.primary : colors.textMuted} />
+        <Icon name="chevronRight" size={18} color={selected ? COLORS.primary : colors.textMuted} />
       )}
     </Pressable>
   );

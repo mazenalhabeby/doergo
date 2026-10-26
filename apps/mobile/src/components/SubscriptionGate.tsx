@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { billingApi } from '../lib/api/billing';
 import { isLocked } from '@hbcfield/shared/client';
@@ -42,7 +42,7 @@ export function SubscriptionGate() {
   return (
     <View style={styles.overlay}>
       <View style={styles.icon}>
-        <Ionicons name="lock-closed" size={34} color="#f87171" />
+        <Icon name="lock" size={34} color="#f87171" />
       </View>
       <Text style={styles.title}>{t('billing.locked.title', 'Subscription inactive')}</Text>
       <Text style={styles.body}>

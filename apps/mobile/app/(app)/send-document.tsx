@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { File as FsFile } from 'expo-file-system';
@@ -80,8 +80,8 @@ export default function SendDocumentScreen() {
             one people either trust blindly or ignore entirely.
           */}
           <View style={[s.verdict, { borderColor: recognised ? 'rgba(22,163,74,.45)' : colors.border }]}>
-            <Ionicons
-              name={recognised ? 'sparkles' : 'help-circle-outline'}
+            <Icon
+              name={recognised ? 'sparkles' : 'helpLine'}
               size={18}
               color={recognised ? '#22c55e' : colors.textMuted}
             />

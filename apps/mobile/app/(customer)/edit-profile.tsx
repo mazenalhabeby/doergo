@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
 import { FONT_SIZE } from '@/lib/constants';
@@ -30,34 +30,62 @@ export default function EditProfile() {
       await refreshUser();
       router.back();
     } catch (e) {
-      Alert.alert(t('common.error', 'Error'), e instanceof Error ? e.message : t('portal.saveFailed', 'Could not save your changes.'));
+      Alert.alert(
+        t('common.error', 'Error'),
+        e instanceof Error ? e.message : t('portal.saveFailed', 'Could not save your changes.'),
+      );
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <PortalFormScreen title={t('portal.editProfile', 'Edit profile')} onSave={save} canSave={valid && dirty} saving={saving}>
+    <PortalFormScreen
+      title={t('portal.editProfile', 'Edit profile')}
+      onSave={save}
+      canSave={valid && dirty}
+      saving={saving}
+    >
       <PortalField label={t('portal.firstName', 'First name')}>
         <TextInput
-          style={[portalFormStyles.input, { color: colors.textPrimary, backgroundColor: colors.card, borderColor: colors.border }]}
-          value={firstName} onChangeText={setFirstName} placeholder={t('portal.firstName', 'First name')}
-          placeholderTextColor={colors.textMuted} autoCapitalize="words" autoComplete="given-name"
+          style={[
+            portalFormStyles.input,
+            { color: colors.textPrimary, backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+          value={firstName}
+          onChangeText={setFirstName}
+          placeholder={t('portal.firstName', 'First name')}
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="words"
+          autoComplete="given-name"
         />
       </PortalField>
 
       <PortalField label={t('portal.lastName', 'Last name')}>
         <TextInput
-          style={[portalFormStyles.input, { color: colors.textPrimary, backgroundColor: colors.card, borderColor: colors.border }]}
-          value={lastName} onChangeText={setLastName} placeholder={t('portal.lastName', 'Last name')}
-          placeholderTextColor={colors.textMuted} autoCapitalize="words" autoComplete="family-name"
+          style={[
+            portalFormStyles.input,
+            { color: colors.textPrimary, backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+          value={lastName}
+          onChangeText={setLastName}
+          placeholder={t('portal.lastName', 'Last name')}
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="words"
+          autoComplete="family-name"
         />
       </PortalField>
 
       <PortalField label={t('portal.email', 'Email')}>
-        <View style={[portalFormStyles.input, styles.readonly, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View
+          style={[
+            portalFormStyles.input,
+            styles.readonly,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
           <Text style={[styles.readonlyText, { color: colors.textMuted }]}>{user?.email}</Text>
-          <Ionicons name="lock-closed" size={14} color={colors.textMuted} />
+          <Icon name="lock" size={14} color={colors.textMuted} />
         </View>
         <Text style={[styles.hint, { color: colors.textMuted }]}>
           {t('portal.emailReadonly', 'Your email is your login and can’t be changed here.')}

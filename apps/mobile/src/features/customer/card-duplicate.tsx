@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { BlurSheet } from '@/components/blur-sheet';
 import { SheetPanel } from '@/components/sheet-panel';
@@ -113,12 +113,16 @@ export function DuplicateSheet({
             >
               <ClientAvatar customer={m} size={30} />
               <View style={s.rowText}>
-                <Text style={s.rowName} numberOfLines={1}>{m.name}</Text>
+                <Text style={s.rowName} numberOfLines={1}>
+                  {m.name}
+                </Text>
                 {!!(m.email || m.phone) && (
-                  <Text style={s.rowSub} numberOfLines={1}>{m.email || m.phone}</Text>
+                  <Text style={s.rowSub} numberOfLines={1}>
+                    {m.email || m.phone}
+                  </Text>
                 )}
               </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              <Icon name="chevronRight" size={16} color={colors.textMuted} />
             </PressableScale>
           ))}
         </View>

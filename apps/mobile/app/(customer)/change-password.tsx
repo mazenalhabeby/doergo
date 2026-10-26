@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Text, StyleSheet, TextInput, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTheme } from '@/contexts/theme-context';
 import { COLORS, FONT_SIZE, type ThemeColors } from '@/lib/constants';
 import { passwordApi } from '@/lib/api/auth';
@@ -72,7 +72,7 @@ export default function ChangePassword() {
       />
 
       <Pressable style={styles.toggle} onPress={() => setShow((s) => !s)}>
-        <Ionicons name={show ? 'eye-off-outline' : 'eye-outline'} size={16} color={colors.textSecondary} />
+        <Icon name={show ? 'eyeOff' : 'eye'} size={16} color={colors.textSecondary} />
         <Text style={[styles.toggleText, { color: colors.textSecondary }]}>
           {show ? t('portal.hidePasswords', 'Hide passwords') : t('portal.showPasswords', 'Show passwords')}
         </Text>

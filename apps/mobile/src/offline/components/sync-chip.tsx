@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/theme-context';
 import { COLORS, FONT_SIZE, FONT_WEIGHT, RADIUS, SPACING } from '@/lib/constants';
@@ -25,7 +25,7 @@ export function SyncChip({ entityId }: { entityId: string | undefined }) {
       accessibilityRole="text"
       accessibilityLabel={needsYou ? t('offline.chip.attention') : t('offline.chip.waiting')}
     >
-      <Ionicons name={needsYou ? 'alert-circle' : 'cloud-upload-outline'} size={12} color={needsYou ? COLORS.error : COLORS.warning} />
+      <Icon name={needsYou ? 'alert' : 'upload'} size={12} color={needsYou ? COLORS.error : COLORS.warning} />
       <Text style={[s.text, { color: needsYou ? COLORS.error : COLORS.warning }]} numberOfLines={1}>
         {needsYou ? t('offline.chip.attention') : t('offline.chip.waiting')}
       </Text>

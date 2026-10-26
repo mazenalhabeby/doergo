@@ -1,26 +1,10 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Pressable,
-  Dimensions,
-  ScrollView,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, Dimensions, ScrollView } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
-import {
-  COLORS,
-  SPACING,
-  RADIUS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-  SHADOWS,
-} from '../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../lib/constants';
 import { isSameDay } from '../lib/utils';
 import { type DatePickerModalProps, getMonthGrid, styles } from './date-picker-modal-parts';
 
@@ -38,7 +22,7 @@ export function DatePickerModal({
   const { t } = useTranslation();
   const displayTitle = title ?? t('components.datePicker.selectDate');
   const MONTH_NAMES = t('monthNames', { returnObjects: true }) as string[];
-  const DAY_HEADERS = (t('dayNames.headers', { returnObjects: true }) as string[]);
+  const DAY_HEADERS = t('dayNames.headers', { returnObjects: true }) as string[];
   const today = useMemo(() => new Date(), []);
   const [viewYear, setViewYear] = useState(selectedDate?.getFullYear() ?? today.getFullYear());
   const [viewMonth, setViewMonth] = useState(selectedDate?.getMonth() ?? today.getMonth());
@@ -72,25 +56,28 @@ export function DatePickerModal({
   const goToPrevMonth = useCallback(() => {
     if (viewMonth === 0) {
       setViewMonth(11);
-      setViewYear(y => y - 1);
+      setViewYear((y) => y - 1);
     } else {
-      setViewMonth(m => m - 1);
+      setViewMonth((m) => m - 1);
     }
   }, [viewMonth]);
 
   const goToNextMonth = useCallback(() => {
     if (viewMonth === 11) {
       setViewMonth(0);
-      setViewYear(y => y + 1);
+      setViewYear((y) => y + 1);
     } else {
-      setViewMonth(m => m + 1);
+      setViewMonth((m) => m + 1);
     }
   }, [viewMonth]);
 
-  const handleSelect = useCallback((date: Date) => {
-    onSelect(date);
-    onClose();
-  }, [onSelect, onClose]);
+  const handleSelect = useCallback(
+    (date: Date) => {
+      onSelect(date);
+      onClose();
+    },
+    [onSelect, onClose],
+  );
 
   const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const minDateStart = minDate ? dayStart(minDate) : null;
@@ -108,14 +95,14 @@ export function DatePickerModal({
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.textPrimary }]}>{displayTitle}</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close" size={22} color={colors.textMuted} />
+              <Icon name="close" size={22} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
           {/* Month Navigation */}
           <View style={styles.monthNav}>
             <TouchableOpacity onPress={goToPrevMonth} style={styles.navBtn} activeOpacity={0.6}>
-              <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />
+              <Icon name="backLine" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setPane((p) => (p === 'days' ? 'years' : 'days'))}
@@ -126,14 +113,10 @@ export function DatePickerModal({
               <Text style={[styles.monthLabel, { color: colors.textPrimary }]}>
                 {MONTH_NAMES[viewMonth]} {viewYear}
               </Text>
-              <Ionicons
-                name={pane === 'days' ? 'chevron-down' : 'chevron-up'}
-                size={16}
-                color={colors.textSecondary}
-              />
+              <Icon name={pane === 'days' ? 'chevronDown' : 'chevronUp'} size={16} color={colors.textSecondary} />
             </TouchableOpacity>
             <TouchableOpacity onPress={goToNextMonth} style={styles.navBtn} activeOpacity={0.6}>
-              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+              <Icon name="chevronRight" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -147,17 +130,14 @@ export function DatePickerModal({
               {Array.from({ length: 41 }, (_, i) => today.getFullYear() - 10 + i).map((y) => (
                 <TouchableOpacity
                   key={y}
-                  onPress={() => { setViewYear(y); setPane('months'); }}
-                  style={[
-                    styles.paneCell,
-                    y === viewYear && { backgroundColor: COLORS.primary },
-                  ]}
+                  onPress={() => {
+                    setViewYear(y);
+                    setPane('months');
+                  }}
+                  style={[styles.paneCell, y === viewYear && { backgroundColor: COLORS.primary }]}
                   activeOpacity={0.7}
                 >
-                  <Text style={[
-                    styles.paneText,
-                    { color: y === viewYear ? '#fff' : colors.textPrimary },
-                  ]}>{y}</Text>
+                  <Text style={[styles.paneText, { color: y === viewYear ? '#fff' : colors.textPrimary }]}>{y}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -168,77 +148,78 @@ export function DatePickerModal({
               {MONTH_NAMES.map((name, i) => (
                 <TouchableOpacity
                   key={name}
-                  onPress={() => { setViewMonth(i); setPane('days'); }}
-                  style={[
-                    styles.paneCell,
-                    i === viewMonth && { backgroundColor: COLORS.primary },
-                  ]}
+                  onPress={() => {
+                    setViewMonth(i);
+                    setPane('days');
+                  }}
+                  style={[styles.paneCell, i === viewMonth && { backgroundColor: COLORS.primary }]}
                   activeOpacity={0.7}
                 >
-                  <Text style={[
-                    styles.paneText,
-                    { color: i === viewMonth ? '#fff' : colors.textPrimary },
-                  ]} numberOfLines={1}>{name.slice(0, 3)}</Text>
+                  <Text
+                    style={[styles.paneText, { color: i === viewMonth ? '#fff' : colors.textPrimary }]}
+                    numberOfLines={1}
+                  >
+                    {name.slice(0, 3)}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
           )}
 
           {pane === 'days' && (
-          <>
-          {/* Day Headers */}
-          <View style={styles.dayHeaderRow}>
-            {DAY_HEADERS.map((d, i) => (
-              <View key={i} style={styles.dayHeaderCell}>
-                <Text style={[styles.dayHeaderText, { color: colors.textMuted }]}>{d}</Text>
+            <>
+              {/* Day Headers */}
+              <View style={styles.dayHeaderRow}>
+                {DAY_HEADERS.map((d, i) => (
+                  <View key={i} style={styles.dayHeaderCell}>
+                    <Text style={[styles.dayHeaderText, { color: colors.textMuted }]}>{d}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
 
-          {/* Calendar Grid */}
-          {grid.map((week, rowIdx) => (
-            <View key={rowIdx} style={styles.weekRow}>
-              {week.map((date, colIdx) => {
-                if (!date) {
-                  return <View key={colIdx} style={styles.dayCell} />;
-                }
+              {/* Calendar Grid */}
+              {grid.map((week, rowIdx) => (
+                <View key={rowIdx} style={styles.weekRow}>
+                  {week.map((date, colIdx) => {
+                    if (!date) {
+                      return <View key={colIdx} style={styles.dayCell} />;
+                    }
 
-                const isToday = isSameDay(date, today);
-                const isSelected = selectedDate ? isSameDay(date, selectedDate) : false;
-                const outOfRange =
-                  (minDateStart !== null && date < minDateStart) ||
-                  (maxDateStart !== null && date > maxDateStart);
-                const isWeekend = colIdx >= 5;
+                    const isToday = isSameDay(date, today);
+                    const isSelected = selectedDate ? isSameDay(date, selectedDate) : false;
+                    const outOfRange =
+                      (minDateStart !== null && date < minDateStart) || (maxDateStart !== null && date > maxDateStart);
+                    const isWeekend = colIdx >= 5;
 
-                return (
-                  <TouchableOpacity
-                    key={colIdx}
-                    style={[
-                      styles.dayCell,
-                      isSelected && [styles.dayCellSelected, { backgroundColor: COLORS.primary }],
-                      isToday && !isSelected && [styles.dayCellToday, { borderColor: COLORS.primary }],
-                    ]}
-                    onPress={() => handleSelect(date)}
-                    disabled={outOfRange}
-                    activeOpacity={0.6}
-                  >
-                    <Text
-                      style={[
-                        styles.dayText,
-                        { color: colors.textPrimary },
-                        outOfRange && { color: colors.borderLight, opacity: 0.4 },
-                        isWeekend && !outOfRange && !isSelected && { color: colors.textMuted },
-                        isSelected && { color: '#ffffff', fontWeight: FONT_WEIGHT.bold },
-                      ]}
-                    >
-                      {date.getDate()}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ))}
-          </>
+                    return (
+                      <TouchableOpacity
+                        key={colIdx}
+                        style={[
+                          styles.dayCell,
+                          isSelected && [styles.dayCellSelected, { backgroundColor: COLORS.primary }],
+                          isToday && !isSelected && [styles.dayCellToday, { borderColor: COLORS.primary }],
+                        ]}
+                        onPress={() => handleSelect(date)}
+                        disabled={outOfRange}
+                        activeOpacity={0.6}
+                      >
+                        <Text
+                          style={[
+                            styles.dayText,
+                            { color: colors.textPrimary },
+                            outOfRange && { color: colors.borderLight, opacity: 0.4 },
+                            isWeekend && !outOfRange && !isSelected && { color: colors.textMuted },
+                            isSelected && { color: '#ffffff', fontWeight: FONT_WEIGHT.bold },
+                          ]}
+                        >
+                          {date.getDate()}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ))}
+            </>
           )}
 
           {/* Footer */}
@@ -250,21 +231,28 @@ export function DatePickerModal({
                 (minDateStart !== null && dayStart(today) < minDateStart) ||
                 (maxDateStart !== null && dayStart(today) > maxDateStart)
               }
-              onPress={() => { handleSelect(today); }}
+              onPress={() => {
+                handleSelect(today);
+              }}
               style={[styles.todayBtn, { backgroundColor: isDark ? colors.surfaceRaised : '#f1f5f9' }]}
               activeOpacity={0.7}
             >
-              <Ionicons name="today-outline" size={16} color={COLORS.primary} />
+              <Icon name="calendar" size={16} color={COLORS.primary} />
               <Text style={[styles.todayBtnText, { color: COLORS.primary }]}>{t('components.datePicker.today')}</Text>
             </TouchableOpacity>
 
             {selectedDate && onClear && (
               <TouchableOpacity
-                onPress={() => { onClear(); onClose(); }}
+                onPress={() => {
+                  onClear();
+                  onClose();
+                }}
                 style={styles.clearBtn}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.clearBtnText, { color: colors.textMuted }]}>{t('components.datePicker.clear')}</Text>
+                <Text style={[styles.clearBtnText, { color: colors.textMuted }]}>
+                  {t('components.datePicker.clear')}
+                </Text>
               </TouchableOpacity>
             )}
           </View>

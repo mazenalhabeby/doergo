@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
@@ -50,13 +50,13 @@ export default function ManageScreen() {
             activeOpacity={0.6}
           >
             <View style={[s.iconBox, { backgroundColor: item.color + '15' }]}>
-              <Ionicons name={item.icon} size={22} color={item.color} />
+              <Icon name={item.icon} size={22} color={item.color} />
             </View>
             <View style={s.textCol}>
               <Text style={[s.label, { color: colors.textPrimary }]}>{t(item.labelKey)}</Text>
               <Text style={[s.desc, { color: colors.textMuted }]}>{t(item.descKey)}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            <Icon name="chevronRight" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         ))}
       </ScrollView>

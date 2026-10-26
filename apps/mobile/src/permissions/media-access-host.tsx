@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 
 import { BlurSheet } from '../components/blur-sheet';
@@ -84,7 +84,7 @@ export function MediaAccessHost() {
       <SheetPanel title={t(p.title.k, p.title.d)} onClose={() => close(false)}>
         <View style={s.wrap}>
           <View style={[s.icon, { backgroundColor: COLORS.primary + '1a' }]}>
-            <Ionicons name={isCamera ? 'camera-outline' : 'images-outline'} size={26} color={COLORS.primary} />
+            <Icon name={isCamera ? 'camera' : 'attach'} size={26} color={COLORS.primary} />
           </View>
 
           <Text style={[s.sub, { color: colors.textMuted }]}>{t(p.subtitle.k, p.subtitle.d)}</Text>
@@ -92,7 +92,7 @@ export function MediaAccessHost() {
           <View style={s.reasons}>
             {p.promises.map((r) => (
               <View key={r.k} style={s.reason}>
-                <Ionicons name={r.icon} size={15} color={COLORS.primary} />
+                <Icon name={r.icon} size={15} color={COLORS.primary} />
                 <Text style={[s.reasonText, { color: colors.textSecondary }]}>{t(r.k, r.d)}</Text>
               </View>
             ))}
@@ -118,7 +118,7 @@ export function MediaAccessHost() {
             }}
             accessibilityRole="button"
           >
-            <Ionicons name="settings-outline" size={17} color={COLORS.white} />
+            <Icon name="settings" size={17} color={COLORS.white} />
             <Text style={s.primaryText}>{t('perm.openSettings', 'Open settings')}</Text>
           </TouchableOpacity>
 

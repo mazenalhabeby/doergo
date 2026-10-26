@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/theme-context';
@@ -33,36 +33,28 @@ export default function CustomerTabsLayout() {
         name="index"
         options={{
           title: t('portal.tabs.home', 'Home'),
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
-          ),
+          tabBarIcon: ({ color, focused }) => <Icon name={focused ? 'home' : 'home'} size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="requests"
         options={{
           title: t('portal.tabs.requests', 'Requests'),
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'clipboard' : 'clipboard-outline'} size={22} color={color} />
-          ),
+          tabBarIcon: ({ color, focused }) => <Icon name={focused ? 'tasks' : 'tasks'} size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="messages"
         options={{
           title: t('portal.tabs.messages', 'Messages'),
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'chatbubble' : 'chatbubble-outline'} size={22} color={color} />
-          ),
+          tabBarIcon: ({ color, focused }) => <Icon name={focused ? 'chat' : 'chatLine'} size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: t('portal.tabs.profile', 'Profile'),
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
-          ),
+          tabBarIcon: ({ color, focused }) => <Icon name={focused ? 'user' : 'user'} size={22} color={color} />,
         }}
       />
     </Tabs>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import type { IconName } from '@hbcfield/shared/client';
 import {
   View,
   Text,
@@ -16,7 +17,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
@@ -136,21 +137,21 @@ export function SlideSheetHeader({
 }: {
   title: string;
   onClose: () => void;
-  icon?: { name: keyof typeof Ionicons.glyphMap; color: string };
+  icon?: { name: IconName; color: string };
 }) {
   const { colors } = useTheme();
   return (
     <View style={styles.header}>
       {icon ? (
         <View style={styles.titleRow}>
-          <Ionicons name={icon.name} size={22} color={icon.color} />
+          <Icon name={icon.name} size={22} color={icon.color} />
           <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
         </View>
       ) : (
         <Text style={[styles.title, styles.titleFill, { color: colors.textPrimary }]}>{title}</Text>
       )}
       <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-        <Ionicons name="close" size={24} color={colors.textSecondary} />
+        <Icon name="close" size={24} color={colors.textSecondary} />
       </TouchableOpacity>
     </View>
   );
@@ -173,7 +174,7 @@ export function SlideSheetActions({
   cancelLabel: string;
   onConfirm: () => void;
   confirmLabel: string;
-  confirmIcon: React.ComponentProps<typeof Ionicons>['name'];
+  confirmIcon: IconName;
   confirmIconSize: number;
   confirmColor: string;
   /** The confirm is greyed and inert (the cancel only while loading). */
@@ -201,7 +202,7 @@ export function SlideSheetActions({
           <ActivityIndicator size="small" color={COLORS.white} />
         ) : (
           <>
-            <Ionicons name={confirmIcon} size={confirmIconSize} color={COLORS.white} />
+            <Icon name={confirmIcon} size={confirmIconSize} color={COLORS.white} />
             <Text style={styles.confirmText}>{confirmLabel}</Text>
           </>
         )}

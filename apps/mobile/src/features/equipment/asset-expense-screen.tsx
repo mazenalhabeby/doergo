@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { DateField } from '@/components';
 import { EquipmentFrame } from './equipment-frame';
 import { CaptureReviewFoot } from './capture-review';

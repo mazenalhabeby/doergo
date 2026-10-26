@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import i18n from '../i18n';
 import { COLORS, SPACING, FONT_SIZE, FONT_WEIGHT, RADIUS } from '../lib/constants';
 import { checkVersion, type VersionStatus } from '../lib/version-gate';
@@ -113,16 +113,14 @@ export class ErrorBoundary extends React.Component<Props, State> {
             not an alarm — it is an errand, and a red triangle over "please
             update" tells somebody their phone is broken when it is not.
           */}
-          <Ionicons
-            name={canUpdate ? 'arrow-down-circle-outline' : 'warning-outline'}
+          <Icon
+            name={canUpdate ? 'arrowDown' : 'warning'}
             size={48}
             color={canUpdate ? COLORS.primary : COLORS.error}
           />
 
           <Text style={s.title}>
-            {canUpdate
-              ? i18n.t('errors.outdatedTitle')
-              : i18n.t('errors.somethingWentWrong')}
+            {canUpdate ? i18n.t('errors.outdatedTitle') : i18n.t('errors.somethingWentWrong')}
           </Text>
 
           <Text style={s.message}>
@@ -156,7 +154,11 @@ export class ErrorBoundary extends React.Component<Props, State> {
             does the grey line say"; a member should not have to read React's
             internal vocabulary to find the button.
           */}
-          {!!error?.message && <Text style={s.detail} numberOfLines={3}>{error.message}</Text>}
+          {!!error?.message && (
+            <Text style={s.detail} numberOfLines={3}>
+              {error.message}
+            </Text>
+          )}
         </View>
       );
     }

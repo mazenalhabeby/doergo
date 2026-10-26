@@ -1,15 +1,7 @@
 import { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  ScrollView
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/island/island-context';
@@ -20,13 +12,7 @@ import { SignatureCapture } from '@/components';
 import { Ground, HeaderBack, ScreenHeader } from '@/components/amazen';
 import { useScreenWidth } from '@/components/screen-container';
 import { goBack } from '@/lib/go-back';
-import {
-  COLORS,
-  SPACING,
-  RADIUS,
-  FONT_SIZE,
-  FONT_WEIGHT,
-} from '@/lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants';
 import { useQueuedCreate } from '@/offline/actions/queued-create';
 import { personName } from '@hbcfield/shared/client';
 import { initialOf } from '@/lib/people';
@@ -63,13 +49,22 @@ export default function OvertimeSignatureScreen() {
     void Promise.allSettled([teamApi.managers(), teamApi.list()])
       .then(([managers, team]) => {
         if (cancelled) return;
-        setLeaders(approverCandidates({
-          managers: managers.status === 'fulfilled' ? managers.value ?? [] : [],
-          team: team.status === 'fulfilled' ? team.value ?? [] : [],
-        }, user?.id));
+        setLeaders(
+          approverCandidates(
+            {
+              managers: managers.status === 'fulfilled' ? (managers.value ?? []) : [],
+              team: team.status === 'fulfilled' ? (team.value ?? []) : [],
+            },
+            user?.id,
+          ),
+        );
       })
-      .finally(() => { if (!cancelled) setIsLoadingLeaders(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setIsLoadingLeaders(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
 
   const approve = useQueuedCreate('overtime.approveSignature', { idField: null });
@@ -121,121 +116,132 @@ export default function OvertimeSignatureScreen() {
 
   return (
     <Ground style={styles.container}>
-      <ScreenHeader title={t('overtime.leaderApproval')} leading={<HeaderBack onPress={() => goBack()} />} style={wide} />
+      <ScreenHeader
+        title={t('overtime.leaderApproval')}
+        leading={<HeaderBack onPress={() => goBack()} />}
+        style={wide}
+      />
 
       <View style={[{ flex: 1 }, wide]}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Instructions */}
-        <View style={[styles.infoCard, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
-          <Ionicons name="information-circle" size={20} color="#2563EB" />
-          <Text style={styles.infoText}>{t('overtime.signatureInstructions')}</Text>
-        </View>
+          {/* Instructions */}
+          <View style={[styles.infoCard, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
+            <Icon name="info" size={20} color="#2563EB" />
+            <Text style={styles.infoText}>{t('overtime.signatureInstructions')}</Text>
+          </View>
 
-        {/* Select Team Leader */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('overtime.selectLeaderTitle')}</Text>
-          {isLoadingLeaders ? (
-            <ActivityIndicator size="small" color={COLORS.primary} />
-          ) : leaders.length === 0 ? (
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('overtime.noLeaders')}</Text>
-          ) : (
-            <View style={styles.leaderList}>
-              {leaders.map((leader) => (
-                <TouchableOpacity
-                  key={leader.id}
-                  style={[
-                    styles.leaderItem,
-                    { backgroundColor: colors.card, borderColor: selectedLeader?.id === leader.id ? COLORS.primary : colors.border },
-                    selectedLeader?.id === leader.id && styles.leaderItemSelected,
-                  ]}
-                  onPress={() => setSelectedLeader(leader)}
-                >
-                  <View
+          {/* Select Team Leader */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('overtime.selectLeaderTitle')}</Text>
+            {isLoadingLeaders ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : leaders.length === 0 ? (
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('overtime.noLeaders')}</Text>
+            ) : (
+              <View style={styles.leaderList}>
+                {leaders.map((leader) => (
+                  <TouchableOpacity
+                    key={leader.id}
                     style={[
-                      styles.leaderAvatar,
-                      { backgroundColor: selectedLeader?.id === leader.id ? COLORS.primary : colors.textMuted },
-                    ]}>
-                    <Text style={styles.leaderInitial}>{initialOf(leader)}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.leaderName, { color: colors.textPrimary }]}>
-                      {personName(leader)}
-                    </Text>
-                    {leader.subtitle ? <Text style={[styles.leaderRole, { color: colors.textSecondary }]}>{leader.subtitle}</Text> : null}
-                  </View>
-                  {selectedLeader?.id === leader.id && (
-                    <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
-                  )}
+                      styles.leaderItem,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: selectedLeader?.id === leader.id ? COLORS.primary : colors.border,
+                      },
+                      selectedLeader?.id === leader.id && styles.leaderItemSelected,
+                    ]}
+                    onPress={() => setSelectedLeader(leader)}
+                  >
+                    <View
+                      style={[
+                        styles.leaderAvatar,
+                        { backgroundColor: selectedLeader?.id === leader.id ? COLORS.primary : colors.textMuted },
+                      ]}
+                    >
+                      <Text style={styles.leaderInitial}>{initialOf(leader)}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.leaderName, { color: colors.textPrimary }]}>{personName(leader)}</Text>
+                      {leader.subtitle ? (
+                        <Text style={[styles.leaderRole, { color: colors.textSecondary }]}>{leader.subtitle}</Text>
+                      ) : null}
+                    </View>
+                    {selectedLeader?.id === leader.id && <Icon name="selected" size={24} color={COLORS.primary} />}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Duration */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('overtime.selectDuration')}</Text>
+            <View style={styles.durationGrid}>
+              {DURATION_OPTIONS.map((opt) => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[
+                    styles.durationChip,
+                    {
+                      backgroundColor: duration === opt.value ? COLORS.primary : colors.card,
+                      borderColor: duration === opt.value ? COLORS.primary : colors.border,
+                    },
+                  ]}
+                  onPress={() => setDuration(opt.value)}
+                >
+                  <Text
+                    style={[styles.durationChipText, { color: duration === opt.value ? '#fff' : colors.textPrimary }]}
+                  >
+                    {opt.label}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
-          )}
-        </View>
-
-        {/* Duration */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('overtime.selectDuration')}</Text>
-          <View style={styles.durationGrid}>
-            {DURATION_OPTIONS.map((opt) => (
-              <TouchableOpacity
-                key={opt.value}
-                style={[
-                  styles.durationChip,
-                  {
-                    backgroundColor: duration === opt.value ? COLORS.primary : colors.card,
-                    borderColor: duration === opt.value ? COLORS.primary : colors.border,
-                  },
-                ]}
-                onPress={() => setDuration(opt.value)}
-              >
-                <Text style={[styles.durationChipText, { color: duration === opt.value ? '#fff' : colors.textPrimary }]}>
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
           </View>
-        </View>
 
-        {/* Notes */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('overtime.notesOptional')}</Text>
-          <TextInput
-            style={[styles.notesInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary }]}
-            placeholder={t('overtime.notesPlaceholder')}
-            placeholderTextColor={colors.textMuted}
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-            maxLength={500}
-          />
-        </View>
+          {/* Notes */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('overtime.notesOptional')}</Text>
+            <TextInput
+              style={[
+                styles.notesInput,
+                { backgroundColor: colors.card, borderColor: colors.border, color: colors.textPrimary },
+              ]}
+              placeholder={t('overtime.notesPlaceholder')}
+              placeholderTextColor={colors.textMuted}
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+              maxLength={500}
+            />
+          </View>
 
-        {/* Signature */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('overtime.leaderSignature')}</Text>
-          <SignatureCapture
-            title={selectedLeader ? personName(selectedLeader) : t('overtime.leaderSignature')}
-            onSave={(base64: string) => setSignature(base64)}
-            onClear={() => setSignature(null)}
-            existingSignature={signature || undefined}
-          />
-        </View>
+          {/* Signature */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('overtime.leaderSignature')}</Text>
+            <SignatureCapture
+              title={selectedLeader ? personName(selectedLeader) : t('overtime.leaderSignature')}
+              onSave={(base64: string) => setSignature(base64)}
+              onClear={() => setSignature(null)}
+              existingSignature={signature || undefined}
+            />
+          </View>
 
-        {/* Submit */}
-        <TouchableOpacity
-          style={[styles.submitBtn, (!selectedLeader || !signature) && styles.submitBtnDisabled]}
-          onPress={handleSubmit}
-          disabled={isSubmitting || !selectedLeader || !signature}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <>
-              <Ionicons name="checkmark-circle" size={22} color="#fff" />
-              <Text style={styles.submitBtnText}>{t('overtime.approveOvertime')}</Text>
-            </>
-          )}
-        </TouchableOpacity>
+          {/* Submit */}
+          <TouchableOpacity
+            style={[styles.submitBtn, (!selectedLeader || !signature) && styles.submitBtnDisabled]}
+            onPress={handleSubmit}
+            disabled={isSubmitting || !selectedLeader || !signature}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Icon name="selected" size={22} color="#fff" />
+                <Text style={styles.submitBtnText}>{t('overtime.approveOvertime')}</Text>
+              </>
+            )}
+          </TouchableOpacity>
         </ScrollView>
       </View>
     </Ground>
@@ -253,7 +259,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   content: { padding: SPACING.lg, gap: SPACING.lg, paddingBottom: 40 },
-  infoCard: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1 },
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+  },
   infoText: { flex: 1, fontSize: FONT_SIZE.sm, color: '#1E40AF' },
   section: { gap: SPACING.sm },
   sectionTitle: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },

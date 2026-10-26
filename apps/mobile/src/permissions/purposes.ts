@@ -1,4 +1,4 @@
-import type { Ionicons } from '@expo/vector-icons';
+import type { IconName } from '@hbcfield/shared/client';
 
 /**
  * WHY this screen wants the camera — as data, not as code.
@@ -22,7 +22,7 @@ import type { Ionicons } from '@expo/vector-icons';
  * Adding a surface is adding a row here. No screen changes, no hook changes.
  */
 
-type IoniconName = keyof typeof Ionicons.glyphMap;
+type IoniconName = IconName;
 
 /** Which OS permission a flow needs. Some need both. */
 type MediaKind = 'camera' | 'library';
@@ -46,47 +46,47 @@ interface Promise_ extends Line {
  */
 export const PROMISE = {
   readHere: {
-    icon: 'phone-portrait-outline',
+    icon: 'portals',
     k: 'perm.p.readHere',
     d: 'Read on this phone — the image never leaves it',
   },
   textStaysHere: {
-    icon: 'phone-portrait-outline',
+    icon: 'portals',
     k: 'perm.p.textStaysHere',
     d: 'Read on this phone — the text never leaves it',
   },
   deletedAfterReading: {
-    icon: 'trash-outline',
+    icon: 'trash',
     k: 'perm.p.deletedAfterReading',
     d: 'The photo is deleted the moment it has been read',
   },
   youCheckFirst: {
-    icon: 'checkmark-circle-outline',
+    icon: 'checkCircleLine',
     k: 'perm.p.youCheckFirst',
     d: 'You check every field before anything is saved',
   },
   sentWithIt: {
-    icon: 'cloud-upload-outline',
+    icon: 'upload',
     k: 'perm.p.sentWithIt',
     d: 'The photo is sent with it, so the office can check it',
   },
   nothingCreatedYet: {
-    icon: 'lock-closed-outline',
+    icon: 'lock',
     k: 'perm.p.nothingCreatedYet',
     d: 'Nothing is created until somebody confirms it',
   },
   yourFileOnly: {
-    icon: 'shield-checkmark-outline',
+    icon: 'shield',
     k: 'perm.p.yourFileOnly',
     d: 'It goes into your own personnel file, nobody else’s',
   },
   onTheJob: {
-    icon: 'briefcase-outline',
+    icon: 'clients',
     k: 'perm.p.onTheJob',
     d: 'It is attached to this job, where your team can see it',
   },
   youCanRemove: {
-    icon: 'close-circle-outline',
+    icon: 'closeLine',
     k: 'perm.p.youCanRemove',
     d: 'You can remove it afterwards',
   },
@@ -123,7 +123,10 @@ export const PURPOSES = {
     needs: ['camera'],
     uploads: true,
     title: { k: 'perm.receipt.title', d: 'Photograph the receipt' },
-    subtitle: { k: 'perm.receipt.sub', d: 'Point the camera at the slip and the amount, the date and the shop fill themselves in.' },
+    subtitle: {
+      k: 'perm.receipt.sub',
+      d: 'Point the camera at the slip and the amount, the date and the shop fill themselves in.',
+    },
     // NOT `readHere` — the slip is uploaded as evidence for whoever approves it.
     promises: [PROMISE.youCheckFirst, PROMISE.sentWithIt, PROMISE.youCanRemove],
     cancel: { k: 'perm.receipt.cancel', d: 'Type it instead' },
@@ -140,7 +143,10 @@ export const PURPOSES = {
     needs: ['camera'],
     uploads: false,
     title: { k: 'perm.contract.title', d: 'Photograph the contract' },
-    subtitle: { k: 'perm.contract.sub', d: 'Point the camera at the agreement and the plate, the make and the dates fill themselves in.' },
+    subtitle: {
+      k: 'perm.contract.sub',
+      d: 'Point the camera at the agreement and the plate, the make and the dates fill themselves in.',
+    },
     promises: [PROMISE.textStaysHere, PROMISE.deletedAfterReading, PROMISE.nothingCreatedYet],
     cancel: { k: 'perm.contract.cancel', d: 'Type it instead' },
   },

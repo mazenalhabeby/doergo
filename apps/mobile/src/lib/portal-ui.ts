@@ -1,8 +1,8 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import type { IconName } from '@hbcfield/shared/client';
 
 /**
  * Maps the customer-portal template icon/color keys (shared, backend-neutral)
- * to concrete MaterialCommunityIcons names + the HBCField semantic palette, so
+ * to marks in the shared icon library + the HBCField semantic palette, so
  * the same intake config renders identically on web and mobile.
  */
 const PORTAL_COLORS: Record<string, string> = {
@@ -26,29 +26,29 @@ export function portalTint(key?: string | null): string {
   return `${portalColor(key)}22`;
 }
 
-const ICON_MAP: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
+const ICON_MAP: Record<string, IconName> = {
   snowflake: 'snowflake',
   droplet: 'water',
-  zap: 'flash',
+  zap: 'bolt',
   door: 'door',
-  appliance: 'washing-machine',
+  appliance: 'appliance',
   alert: 'alert',
   plus: 'plus',
   inbox: 'inbox',
-  package: 'package-variant',
-  shuffle: 'shuffle-variant',
-  help: 'help-circle-outline',
-  clock: 'clock-outline',
+  package: 'assets',
+  shuffle: 'shuffle',
+  help: 'help',
+  clock: 'time',
   thermometer: 'thermometer',
-  bulb: 'lightbulb-outline',
+  bulb: 'bulb',
   shower: 'shower',
-  shield: 'shield-outline',
+  shield: 'shieldPlain',
   monitor: 'monitor',
-  tool: 'wrench',
+  tool: 'toolbox',
   truck: 'truck',
-  building: 'office-building',
+  building: 'workspaces',
 };
 
-export function portalIcon(key?: string | null): keyof typeof MaterialCommunityIcons.glyphMap {
-  return ICON_MAP[key || ''] || 'help-circle-outline';
+export function portalIcon(key?: string | null): IconName {
+  return ICON_MAP[key || ''] || 'help';
 }

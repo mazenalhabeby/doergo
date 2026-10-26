@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { type NoShow } from '@/lib/api';
 import type { TimeEntry } from '@/lib/api/types';
 import { localDateKey } from '@hbcfield/shared/client';
@@ -89,7 +89,7 @@ export default function AttendanceReviewScreen() {
       {segment === 'records' && (
         <View style={s.controls}>
           <View style={[s.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Ionicons name="search" size={16} color={colors.textMuted} />
+            <Icon name="searchLine" size={16} color={colors.textMuted} />
             <TextInput
               style={[s.searchInput, { color: colors.textPrimary }]}
               value={search}
@@ -101,7 +101,7 @@ export default function AttendanceReviewScreen() {
             />
             {!!search && (
               <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
-                <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                <Icon name="closeCircle" size={16} color={colors.textMuted} />
               </TouchableOpacity>
             )}
           </View>
@@ -160,7 +160,7 @@ export default function AttendanceReviewScreen() {
             }
             ListEmptyComponent={
               <View style={s.empty}>
-                <Ionicons name={emptyCopy.icon} size={40} color={colors.textMuted} />
+                <Icon name={emptyCopy.icon} size={40} color={colors.textMuted} />
                 <Text style={[s.emptyText, { color: colors.textMuted }]}>{emptyCopy.text}</Text>
               </View>
             }

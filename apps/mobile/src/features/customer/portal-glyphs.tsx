@@ -1,7 +1,7 @@
 import React from 'react';
+import { Icon } from '@/components/amazen/ink-icon';
 import { View } from 'react-native';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { portalColor, portalIcon } from '@/lib/portal-ui';
 
 /**
@@ -32,8 +32,22 @@ export function ReportGlyph({ size = 28, color }: PortalGlyphProps) {
   return (
     <Svg {...svg(size)}>
       <Circle cx={12} cy={12} r={10} fill={color} fillOpacity={0.16} />
-      <Rect x={3.4} y={15.1} width={13.4} height={3.8} rx={1.9} fill={color} fillOpacity={0.55} origin="10.1, 17" rotation={-45} />
-      <Path d="M20.6 4.1a5.3 5.3 0 0 0-7.2 7l1.7 1.7a5.3 5.3 0 0 0 7-7.2l-2.7 2.7-2.2-2.2z" fill={color} fillOpacity={0.95} />
+      <Rect
+        x={3.4}
+        y={15.1}
+        width={13.4}
+        height={3.8}
+        rx={1.9}
+        fill={color}
+        fillOpacity={0.55}
+        origin="10.1, 17"
+        rotation={-45}
+      />
+      <Path
+        d="M20.6 4.1a5.3 5.3 0 0 0-7.2 7l1.7 1.7a5.3 5.3 0 0 0 7-7.2l-2.7 2.7-2.2-2.2z"
+        fill={color}
+        fillOpacity={0.95}
+      />
     </Svg>
   );
 }
@@ -114,7 +128,7 @@ export function CategoryGlyph({
           backgroundColor: `${hue}2B`,
         }}
       />
-      <MaterialCommunityIcons name={portalIcon(icon)} size={size} color={hue} />
+      <Icon name={portalIcon(icon)} size={size} color={hue} />
     </View>
   );
 }

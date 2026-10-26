@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Pressable, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTheme } from '@/contexts/theme-context';
 import { canTakeBack, type SentItem } from '@/lib/sent-in';
 import { AText } from '@/components/amazen';
@@ -12,7 +12,17 @@ import { AText } from '@/components/amazen';
  * shows: the strings are worked out by the screen, so a row redraws only when
  * its own words change.
  */
-export const SentRow = memo(function SentRow({ item: i, first, last, what, stateText, dayText, amountText, onTakeBack, takeBackLabel }: {
+export const SentRow = memo(function SentRow({
+  item: i,
+  first,
+  last,
+  what,
+  stateText,
+  dayText,
+  amountText,
+  onTakeBack,
+  takeBackLabel,
+}: {
   item: SentItem;
   first: boolean;
   last: boolean;
@@ -38,7 +48,8 @@ export const SentRow = memo(function SentRow({ item: i, first, last, what, state
   return (
     <View
       style={{
-        backgroundColor: c.well, paddingHorizontal: amazen.space(3.5),
+        backgroundColor: c.well,
+        paddingHorizontal: amazen.space(3.5),
         ...(first ? { borderTopLeftRadius: radius, borderTopRightRadius: radius, marginTop: amazen.space(3) } : null),
         ...(last ? { borderBottomLeftRadius: radius, borderBottomRightRadius: radius } : null),
       }}
@@ -51,16 +62,20 @@ export const SentRow = memo(function SentRow({ item: i, first, last, what, state
           paddingVertical: amazen.space(2.75),
           borderTopWidth: first ? 0 : 1,
           borderTopColor: c.lineWell,
-        }}>
-        <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons
-            name={
-              i.kind === 'contract'
-                ? 'document-text-outline'
-                : i.state === 'toSend'
-                  ? 'cloud-upload-outline'
-                  : 'receipt-outline'
-            }
+        }}
+      >
+        <View
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 11,
+            backgroundColor: c.tile,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon
+            name={i.kind === 'contract' ? 'file' : i.state === 'toSend' ? 'upload' : 'invoices'}
             size={16}
             color={c.ink}
           />
@@ -71,7 +86,9 @@ export const SentRow = memo(function SentRow({ item: i, first, last, what, state
           </AText>
           <AText variant="caption" numberOfLines={2} style={{ color: c.inkMuted }}>
             {`${lead} · `}
-            <AText variant="caption" style={{ color: tone }}>{stateText}</AText>
+            <AText variant="caption" style={{ color: tone }}>
+              {stateText}
+            </AText>
             {i.reason ? <AText variant="caption" tone="muted">{` — “${i.reason}”`}</AText> : null}
           </AText>
           {canTakeBack(i) ? (
@@ -79,8 +96,11 @@ export const SentRow = memo(function SentRow({ item: i, first, last, what, state
               onPress={() => onTakeBack(i)}
               hitSlop={8}
               accessibilityRole="button"
-              style={{ alignSelf: 'flex-start', marginTop: 4 }}>
-              <AText variant="caption" style={{ color: c.critical }}>{takeBackLabel}</AText>
+              style={{ alignSelf: 'flex-start', marginTop: 4 }}
+            >
+              <AText variant="caption" style={{ color: c.critical }}>
+                {takeBackLabel}
+              </AText>
             </Pressable>
           ) : null}
         </View>
@@ -95,7 +115,8 @@ export const SentRow = memo(function SentRow({ item: i, first, last, what, state
                   : i.direction === 'IN'
                     ? c.accent
                     : c.inkStrong,
-            }}>
+            }}
+          >
             {`${i.direction === 'IN' ? '+' : ''}${amountText}`}
           </AText>
         ) : null}

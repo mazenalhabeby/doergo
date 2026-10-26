@@ -1,5 +1,5 @@
 import { View, Text, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { formatCalendarDate } from '@hbcfield/shared/client';
 import { SPACING } from '@/lib/constants';
@@ -20,19 +20,17 @@ export function CredentialSection({ cred }: { cred: CredentialPhoto }) {
   return (
     <>
       {/* The photo */}
-      <Text style={[s.eyebrow, { color: colors.textMuted }]}>
-        {t('documents.supply.theFile')}
-      </Text>
+      <Text style={[s.eyebrow, { color: colors.textMuted }]}>{t('documents.supply.theFile')}</Text>
       {photo ? (
         <View style={[s.picked, { backgroundColor: colors.surfaceRaised }]}>
           <View style={[s.pickedIcon, { backgroundColor: COLORS.primary }]}>
-            <Ionicons name="checkmark" size={18} color={COLORS.white} />
+            <Icon name="checkLine" size={18} color={COLORS.white} />
           </View>
           <Text style={[s.pickedName, { color: colors.textPrimary }]} numberOfLines={1}>
             {photo.fileName}
           </Text>
           <Pressable onPress={cred.clearPhoto} hitSlop={10}>
-            <Ionicons name="close-circle" size={22} color={colors.textMuted} />
+            <Icon name="closeCircle" size={22} color={colors.textMuted} />
           </Pressable>
         </View>
       ) : (
@@ -54,17 +52,12 @@ export function CredentialSection({ cred }: { cred: CredentialPhoto }) {
             onPress={() => cred.setScanning(true)}
             style={[s.scanButton, { backgroundColor: COLORS.primary, shadowColor: COLORS.primary }]}
           >
-            <Ionicons name="scan-outline" size={22} color={COLORS.white} />
+            <Icon name="scanCard" size={22} color={COLORS.white} />
             <Text style={s.scanText}>{t('documents.supply.scan')}</Text>
           </PressableScale>
-          <PressableScale
-            onPress={cred.pickExisting}
-            style={[s.pickButton, { backgroundColor: colors.surfaceRaised }]}
-          >
-            <Ionicons name="images-outline" size={18} color={colors.textSecondary} />
-            <Text style={[s.pickText, { color: colors.textSecondary }]}>
-              {t('documents.supply.chooseExisting')}
-            </Text>
+          <PressableScale onPress={cred.pickExisting} style={[s.pickButton, { backgroundColor: colors.surfaceRaised }]}>
+            <Icon name="attach" size={18} color={colors.textSecondary} />
+            <Text style={[s.pickText, { color: colors.textSecondary }]}>{t('documents.supply.chooseExisting')}</Text>
           </PressableScale>
         </>
       )}
@@ -72,10 +65,8 @@ export function CredentialSection({ cred }: { cred: CredentialPhoto }) {
       {/* Its expiry — read off the document, not asked for */}
       {prompt.state === 'READING' && (
         <View style={[s.expiryRow, { backgroundColor: colors.surfaceRaised }]}>
-          <Ionicons name="hourglass-outline" size={18} color={colors.textMuted} />
-          <Text style={[s.expiryReading, { color: colors.textSecondary }]}>
-            {t('documents.supply.reading')}
-          </Text>
+          <Icon name="extraTime" size={18} color={colors.textMuted} />
+          <Text style={[s.expiryReading, { color: colors.textSecondary }]}>{t('documents.supply.reading')}</Text>
         </View>
       )}
 
@@ -96,8 +87,8 @@ export function CredentialSection({ cred }: { cred: CredentialPhoto }) {
           ]}
         >
           <View style={s.expiryRow}>
-            <Ionicons
-              name={prompt.certainty === 'PROVEN' ? 'shield-checkmark' : 'calendar-outline'}
+            <Icon
+              name={prompt.certainty === 'PROVEN' ? 'shield' : 'calendar'}
               size={18}
               color={prompt.certainty === 'PROVEN' ? COLORS.primary : colors.textSecondary}
             />
@@ -109,17 +100,14 @@ export function CredentialSection({ cred }: { cred: CredentialPhoto }) {
           </View>
           <View style={s.expiryFoot}>
             <Text
-              style={[
-                s.dateNote,
-                { color: prompt.certainty === 'PROVEN' ? COLORS.primary : colors.textSecondary },
-              ]}
+              style={[s.dateNote, { color: prompt.certainty === 'PROVEN' ? COLORS.primary : colors.textSecondary }]}
             >
               {prompt.certainty === 'PROVEN'
                 ? t('documents.supply.dateFromDocument')
                 : t('documents.supply.dateGuessed')}
             </Text>
             <PressableScale onPress={() => cred.setOverriding(true)} style={s.changeDate}>
-              <Ionicons name="create-outline" size={13} color={colors.textSecondary} />
+              <Icon name="edit" size={13} color={colors.textSecondary} />
               <Text style={[s.changeDateText, { color: colors.textSecondary }]}>
                 {t('documents.supply.changeDate')}
               </Text>
@@ -137,10 +125,13 @@ export function CredentialSection({ cred }: { cred: CredentialPhoto }) {
             paddingHorizontal: 14,
             paddingVertical: 4,
             marginTop: SPACING.sm,
-          }}>
+          }}
+        >
           {readFields.holderName ? (
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 }}>
-              <Text style={{ color: colors.textMuted, fontSize: 13 }}>{t('documents.supply.nameOnIt', 'Name on it')}</Text>
+              <Text style={{ color: colors.textMuted, fontSize: 13 }}>
+                {t('documents.supply.nameOnIt', 'Name on it')}
+              </Text>
               <Text style={{ color: colors.textPrimary, fontSize: 13.5 }}>{readFields.holderName}</Text>
             </View>
           ) : null}
@@ -152,8 +143,11 @@ export function CredentialSection({ cred }: { cred: CredentialPhoto }) {
                 paddingVertical: 8,
                 borderTopWidth: readFields.holderName ? 1 : 0,
                 borderTopColor: colors.border,
-              }}>
-              <Text style={{ color: colors.textMuted, fontSize: 13 }}>{t('documents.supply.numberOnIt', 'Number')}</Text>
+              }}
+            >
+              <Text style={{ color: colors.textMuted, fontSize: 13 }}>
+                {t('documents.supply.numberOnIt', 'Number')}
+              </Text>
               <Text style={{ color: colors.textPrimary, fontSize: 13.5 }}>{readFields.documentNumber}</Text>
             </View>
           ) : null}
@@ -166,18 +160,12 @@ export function CredentialSection({ cred }: { cred: CredentialPhoto }) {
           on every document that was not a passport.
         */
         <>
-          <Text style={[s.eyebrow, { color: colors.textMuted }]}>
-            {t('documents.supply.expiresOn')}
-          </Text>
+          <Text style={[s.eyebrow, { color: colors.textMuted }]}>{t('documents.supply.expiresOn')}</Text>
           <PressableScale
             onPress={() => cred.setShowDate(true)}
             style={[s.dateButton, { backgroundColor: colors.surfaceRaised }]}
           >
-            <Ionicons
-              name="calendar-outline"
-              size={18}
-              color={expiresOn ? COLORS.primary : colors.textMuted}
-            />
+            <Icon name="calendar" size={18} color={expiresOn ? COLORS.primary : colors.textMuted} />
             <Text
               style={[
                 s.dateText,
@@ -187,12 +175,10 @@ export function CredentialSection({ cred }: { cred: CredentialPhoto }) {
             >
               {expiresOn ? expiresOn.toLocaleDateString() : t('documents.supply.pickDate')}
             </Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            <Icon name="chevronRight" size={16} color={colors.textMuted} />
           </PressableScale>
           <Text style={[s.dateNote, { color: colors.textSecondary }]}>
-            {prompt.reason === 'CORRECTING'
-              ? t('documents.supply.dateCorrecting')
-              : t('documents.supply.dateNotFound')}
+            {prompt.reason === 'CORRECTING' ? t('documents.supply.dateCorrecting') : t('documents.supply.dateNotFound')}
           </Text>
         </>
       )}
@@ -200,8 +186,14 @@ export function CredentialSection({ cred }: { cred: CredentialPhoto }) {
       <DatePickerModal
         visible={cred.showDate}
         selectedDate={expiresOn}
-        onSelect={(d) => { cred.setExpiresOn(d); cred.setShowDate(false); }}
-        onClear={() => { cred.setExpiresOn(null); cred.setShowDate(false); }}
+        onSelect={(d) => {
+          cred.setExpiresOn(d);
+          cred.setShowDate(false);
+        }}
+        onClear={() => {
+          cred.setExpiresOn(null);
+          cred.setShowDate(false);
+        }}
         onClose={() => cred.setShowDate(false)}
         // An expiry date is in the future — the calendar no longer
         // assumes that for everybody.
@@ -217,10 +209,8 @@ export function CredentialSection({ cred }: { cred: CredentialPhoto }) {
         screen the loudest thing on it.
       */}
       <View style={s.notice}>
-        <Ionicons name="information-circle" size={16} color={colors.textMuted} />
-        <Text style={[s.noticeText, { color: colors.textMuted }]}>
-          {t('documents.supply.reviewNotice')}
-        </Text>
+        <Icon name="info" size={16} color={colors.textMuted} />
+        <Text style={[s.noticeText, { color: colors.textMuted }]}>{t('documents.supply.reviewNotice')}</Text>
       </View>
     </>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTheme } from '@/contexts/theme-context';
 import { AText } from '@/components/amazen';
 
@@ -11,7 +11,12 @@ import { AText } from '@/components/amazen';
  */
 
 /** `.search` — a pill-shaped field on a well. */
-export function SearchField({ value, onChange, placeholder, clearLabel }: {
+export function SearchField({
+  value,
+  onChange,
+  placeholder,
+  clearLabel,
+}: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
@@ -29,8 +34,9 @@ export function SearchField({ value, onChange, placeholder, clearLabel }: {
         borderRadius: amazen.radius.full,
         paddingHorizontal: amazen.space(4),
         height: 46,
-      }}>
-      <Ionicons name="search" size={18} color={c.inkMuted} />
+      }}
+    >
+      <Icon name="searchLine" size={18} color={c.inkMuted} />
       <TextInput
         value={value}
         onChangeText={onChange}
@@ -43,7 +49,7 @@ export function SearchField({ value, onChange, placeholder, clearLabel }: {
       />
       {value.length > 0 ? (
         <Pressable onPress={() => onChange('')} hitSlop={10} accessibilityRole="button" accessibilityLabel={clearLabel}>
-          <Ionicons name="close-circle" size={18} color={c.inkMuted} />
+          <Icon name="closeCircle" size={18} color={c.inkMuted} />
         </Pressable>
       ) : null}
     </View>
@@ -51,7 +57,11 @@ export function SearchField({ value, onChange, placeholder, clearLabel }: {
 }
 
 /** `.seg` — equal parts in a pill; the chosen one is a well lifted off the tile. */
-export function Segmented<K extends string>({ options, value, onChange }: {
+export function Segmented<K extends string>({
+  options,
+  value,
+  onChange,
+}: {
   options: ReadonlyArray<{ key: K; label: string; count?: number | null }>;
   value: K;
   onChange: (k: K) => void;
@@ -71,8 +81,14 @@ export function Segmented<K extends string>({ options, value, onChange }: {
             accessibilityLabel={o.count != null ? `${o.label}, ${o.count}` : o.label}
             style={({ pressed }) => [
               {
-                flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: amazen.space(1.5),
-                minHeight: 36, borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(1.5),
+                flex: 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: amazen.space(1.5),
+                minHeight: 36,
+                borderRadius: amazen.radius.full,
+                paddingHorizontal: amazen.space(1.5),
                 backgroundColor: on ? c.well : 'transparent',
                 opacity: pressed ? 0.8 : 1,
               },
@@ -97,7 +113,9 @@ export function Segmented<K extends string>({ options, value, onChange }: {
               {o.label}
             </AText>
             {o.count != null ? (
-              <AText numeric numberOfLines={1} style={{ fontSize: 11, lineHeight: 16, color: c.inkMuted }}>{String(o.count)}</AText>
+              <AText numeric numberOfLines={1} style={{ fontSize: 11, lineHeight: 16, color: c.inkMuted }}>
+                {String(o.count)}
+              </AText>
             ) : null}
           </Pressable>
         );
@@ -107,7 +125,11 @@ export function Segmented<K extends string>({ options, value, onChange }: {
 }
 
 /** `.chip` — a row of choices that scrolls sideways. The chosen one is jade with a ring. */
-export function FilterChips<K extends string>({ options, value, onChange }: {
+export function FilterChips<K extends string>({
+  options,
+  value,
+  onChange,
+}: {
   options: ReadonlyArray<{ key: K; label: string }>;
   value: K;
   onChange: (k: K) => void;
@@ -132,10 +154,13 @@ export function FilterChips<K extends string>({ options, value, onChange }: {
             accessibilityState={{ selected: on }}
             accessibilityLabel={o.label}
             style={({ pressed }) => ({
-              borderRadius: amazen.radius.full, paddingVertical: 6, paddingHorizontal: 12,
+              borderRadius: amazen.radius.full,
+              paddingVertical: 6,
+              paddingHorizontal: 12,
               backgroundColor: on ? c.accentTint : c.tile,
               // Always 1.5pt, transparent when off — a ring that appears would nudge the row.
-              borderWidth: 1.5, borderColor: on ? c.accent : 'transparent',
+              borderWidth: 1.5,
+              borderColor: on ? c.accent : 'transparent',
               opacity: pressed ? 0.8 : 1,
             })}
           >

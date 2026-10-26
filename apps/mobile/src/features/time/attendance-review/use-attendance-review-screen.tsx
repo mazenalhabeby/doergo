@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { type NoShow } from '@/lib/api';
 import type { TimeEntry } from '@/lib/api/types';
 import {
@@ -139,9 +139,9 @@ export function useAttendanceReviewScreen() {
         </View>
 
         <View style={s.timesRow}>
-          <Ionicons name="log-in-outline" size={14} color={colors.textMuted} />
+          <Icon name="login" size={14} color={colors.textMuted} />
           <Text style={[s.times, { color: colors.textSecondary }]}>{formatTime(entry.clockInAt, tz)}</Text>
-          <Ionicons name="arrow-forward" size={13} color={colors.textMuted} />
+          <Icon name="arrowRight" size={13} color={colors.textMuted} />
           <Text style={[s.times, { color: open ? colors.textMuted : colors.textSecondary }]}>
             {entry.clockOutAt ? formatTime(entry.clockOutAt, tz) : '—'}
           </Text>
@@ -164,7 +164,7 @@ export function useAttendanceReviewScreen() {
             the same grant the endpoint enforces. */}
         {canCorrect && segment === 'records' && (
           <TouchableOpacity style={s.editRow} onPress={() => setEditing(entry)} activeOpacity={0.7}>
-            <Ionicons name="create-outline" size={15} color={COLORS.primary} />
+            <Icon name="edit" size={15} color={COLORS.primary} />
             <Text style={[s.editText, { color: COLORS.primary }]}>{t('attendanceReview.edit.button')}</Text>
             {entry.isEdited && (
               <Text style={[s.editedNote, { color: colors.textMuted }]}>{t('attendanceReview.edit.editedBadge')}</Text>
@@ -206,7 +206,7 @@ export function useAttendanceReviewScreen() {
         </View>
 
         <View style={s.timesRow}>
-          <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+          <Icon name="calendar" size={14} color={colors.textMuted} />
           <Text style={[s.times, { color: colors.textSecondary }]}>
             {t('attendanceReview.expected', {
               from: formatTime(row.expectedClockInAt),
@@ -228,7 +228,7 @@ export function useAttendanceReviewScreen() {
             onPress={() => router.push('/(app)/approvals?kind=noShow' as Href)}
             activeOpacity={0.7}
           >
-            <Ionicons name="file-tray-full-outline" size={15} color={COLORS.primary} />
+            <Icon name="inbox" size={15} color={COLORS.primary} />
             <Text style={[s.editText, { color: COLORS.primary }]}>{t('approvals.decideInApprovals')}</Text>
           </TouchableOpacity>
         )}
@@ -254,12 +254,12 @@ export function useAttendanceReviewScreen() {
   const searching = segment === 'records' && !!debouncedSearch;
   const emptyCopy = {
     records: {
-      icon: 'time-outline' as const,
+      icon: 'time' as const,
       text: searching
         ? t('attendanceReview.empty.noMatch', { name: debouncedSearch })
         : t(`attendanceReview.empty.records.${period}`),
     },
-    noshows: { icon: 'happy-outline' as const, text: t('attendanceReview.empty.noshows') },
+    noshows: { icon: 'smile' as const, text: t('attendanceReview.empty.noshows') },
   }[segment];
 
   const segmentLabel = (seg: Segment) => t(`attendanceReview.segments.${seg}`);

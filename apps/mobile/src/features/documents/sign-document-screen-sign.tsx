@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { COLORS, SPACING } from '@/lib/constants';
 import { SignatureCapture } from '@/components';
 import { useScreenWidth } from '@/components/screen-container';
@@ -42,8 +42,8 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
               const skipped = cs.status === 'SKIPPED';
               return (
                 <View key={cs.order} style={s.chainRow}>
-                  <Ionicons
-                    name={done ? 'checkmark-circle' : skipped ? 'remove-circle-outline' : 'ellipse-outline'}
+                  <Icon
+                    name={done ? 'selected' : skipped ? 'removeLine' : 'radioOff'}
                     size={16}
                     color={done ? COLORS.success : skipped ? colors.textMuted : colors.textSecondary}
                   />
@@ -94,7 +94,7 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <>
-                  <Ionicons name="document-text-outline" size={18} color="#FFFFFF" />
+                  <Icon name="file" size={18} color="#FFFFFF" />
                   <Text style={s.primaryText}>{t('documents.sign.openDocument')}</Text>
                 </>
               )}
@@ -130,7 +130,7 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
             <View style={[s.recordList, { borderColor: colors.border }]}>
               {['account', 'device', 'time', 'hash'].map((k) => (
                 <View key={k} style={s.recordRow}>
-                  <Ionicons name="ellipse" size={5} color={colors.textMuted} />
+                  <Icon name="dot" size={5} color={colors.textMuted} />
                   <Text style={[s.recordText, { color: colors.textSecondary }]}>
                     {t(`documents.sign.records.${k}`)}
                   </Text>
@@ -178,7 +178,7 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
         {step === 'done' && (
           <View style={[s.pane, s.done]}>
             <View style={[s.ring, { backgroundColor: colors.successLight }]}>
-              <Ionicons name="checkmark" size={30} color={COLORS.success} />
+              <Icon name="checkLine" size={30} color={COLORS.success} />
             </View>
             <Text style={[s.h1, { color: colors.textPrimary, textAlign: 'center' }]}>
               {isAcknowledge ? t('documents.sign.acknowledged') : t('documents.sign.sealed')}
@@ -216,7 +216,7 @@ export function SignDocumentScreenSign({ vm }: { vm: SignDocumentScreenState }) 
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <>
-                    <Ionicons name="document-text-outline" size={18} color="#FFFFFF" />
+                    <Icon name="file" size={18} color="#FFFFFF" />
                     <Text style={s.primaryText}>{t('documents.sign.openSigned')}</Text>
                   </>
                 )}

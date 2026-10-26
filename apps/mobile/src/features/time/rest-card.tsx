@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNow } from '@/hooks/use-now';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/theme-context';
 import { useToast } from '@/island/island-context';
@@ -79,7 +79,7 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
     return (
       <View style={[styles.card, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
         <View style={styles.head}>
-          <Ionicons name="cafe" size={20} color="#059669" />
+          <Icon name="rest" size={20} color="#059669" />
           <Text style={[styles.title, { color: '#065F46' }]}>
             {planned?.name ?? t('attendance.rest.onRest', 'On rest')}
           </Text>
@@ -131,7 +131,7 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
     return (
       <View style={[styles.card, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}>
         <View style={styles.head}>
-          <Ionicons name="cafe-outline" size={20} color={colors.textMuted} />
+          <Icon name="rest" size={20} color={colors.textMuted} />
           <Text style={[styles.title, { color: colors.textPrimary }]}>{t('attendance.rest.title', 'Rests')}</Text>
         </View>
         <Text style={[styles.sub, { color: colors.textMuted }]}>
@@ -156,7 +156,7 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
       ]}
     >
       <View style={styles.head}>
-        <Ionicons name="cafe" size={20} color={isDue ? '#D97706' : colors.textMuted} />
+        <Icon name="rest" size={20} color={isDue ? '#D97706' : colors.textMuted} />
         <Text style={[styles.title, { color: isDue ? '#92400E' : colors.textPrimary }]}>
           {isDue
             ? t('attendance.rest.timeFor', 'Time for your {{name}}', { name: next.name.toLowerCase() })
@@ -197,7 +197,7 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
             <ActivityIndicator size="small" color="#fff" />
           ) : (
             <>
-              <Ionicons name="cafe-outline" size={18} color="#fff" />
+              <Icon name="rest" size={18} color="#fff" />
               <Text style={styles.primaryText}>{t('attendance.rest.startNow', 'Start rest')}</Text>
             </>
           )}
@@ -222,7 +222,7 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
               <ActivityIndicator size="small" color="#92400E" />
             ) : (
               <>
-                <Ionicons name="alarm-outline" size={18} color="#92400E" />
+                <Icon name="alarm" size={18} color="#92400E" />
                 <Text style={styles.secondaryText}>{t('attendance.rest.later', 'Later')}</Text>
               </>
             )}

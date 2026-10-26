@@ -11,7 +11,14 @@ import { badgeOf, groupOf, shortcutCandidates, shownShortcuts, smartPicks, MIN_T
  * card that draws nothing has no Edit button, so it can never be repaired.
  */
 const row = (labelKey: string, over: Partial<Destination> = {}): Destination => ({
-  icon: 'x', labelKey, descKey: `${labelKey}Desc`, route: `/(app)/${labelKey}`, color: '#000', permission: '', orgWide: false, ...over,
+  icon: 'dot',
+  labelKey,
+  descKey: `${labelKey}Desc`,
+  route: `/(app)/${labelKey}`,
+  color: '#000',
+  permission: '',
+  orgWide: false,
+  ...over,
 });
 
 const docs = row('documents', { home: true, badge: 'documents.due' });
@@ -35,7 +42,12 @@ describe('Shortcuts widget — the chosen four', () => {
 
   it('a lost tile is dropped and its slot refilled from the smart picks, keeping the rest in place', () => {
     const allowed = ALL.filter((r) => r !== members);
-    expect(keys(shownShortcuts(['route', 'members', 'send', 'support'], allowed, {}))).toEqual(['route', 'send', 'support', 'newJob']);
+    expect(keys(shownShortcuts(['route', 'members', 'send', 'support'], allowed, {}))).toEqual([
+      'route',
+      'send',
+      'support',
+      'newJob',
+    ]);
   });
 
   it('the refill prefers what is waiting', () => {
@@ -50,7 +62,12 @@ describe('Shortcuts widget — the chosen four', () => {
   });
 
   it('never more than four, even from a longer list', () => {
-    expect(keys(shownShortcuts(['support', 'route', 'members', 'send', 'newJob', 'scan'], ALL, {}))).toEqual(['support', 'route', 'members', 'send']);
+    expect(keys(shownShortcuts(['support', 'route', 'members', 'send', 'newJob', 'scan'], ALL, {}))).toEqual([
+      'support',
+      'route',
+      'members',
+      'send',
+    ]);
   });
 
   it('stale keys from an older app version are ignored and refilled, never shown', () => {
@@ -107,8 +124,23 @@ describe('Shortcuts widget — the chosen four', () => {
   });
 
   it('losing access on a REAL session: an admin demoted to a plain member loses Members and the slot refills', () => {
-    const admin = { id: 'u', role: 'ADMIN', access: { org: {} }, spaceModules: ['crm', 'assets'], orgAddOns: [], offlineMode: true };
-    const member = { id: 'u', role: 'EMPLOYEE', access: { org: {} }, spaceModules: ['crm', 'assets'], orgAddOns: [], offlineMode: true, enabledModules: { modules: ['tasks'] } };
+    const admin = {
+      id: 'u',
+      role: 'ADMIN',
+      access: { org: {} },
+      spaceModules: ['crm', 'assets'],
+      orgAddOns: [],
+      offlineMode: true,
+    };
+    const member = {
+      id: 'u',
+      role: 'EMPLOYEE',
+      access: { org: {} },
+      spaceModules: ['crm', 'assets'],
+      orgAddOns: [],
+      offlineMode: true,
+      enabledModules: { modules: ['tasks'] },
+    };
     const chosen = ['manage.members.label', 'shortcuts.sync', 'shortcuts.support'];
     expect(keys(shownShortcuts(chosen, shortcutCandidates(destinationsFor(admin as never)), {}))).toEqual(chosen);
     const after = keys(shownShortcuts(chosen, shortcutCandidates(destinationsFor(member as never)), {}));

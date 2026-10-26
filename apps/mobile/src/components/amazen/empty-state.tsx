@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
+import type { IconName } from '@hbcfield/shared/client';
 import { View, type ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTheme } from '@/contexts/theme-context';
 import { AText } from './text';
 import { GhostButton } from './button';
@@ -19,7 +20,7 @@ export function EmptyState({
   fill = false,
   style,
 }: {
-  icon: ComponentProps<typeof Ionicons>['name'];
+  icon: IconName;
   text: string;
   action?: { label: string; onPress: () => void };
   fill?: boolean;
@@ -40,7 +41,7 @@ export function EmptyState({
         style,
       ]}
     >
-      <Ionicons name={icon} size={40} color={c.inkMuted} />
+      <Icon name={icon} size={40} color={c.inkMuted} />
       <AText variant="body" tone="muted" style={{ textAlign: 'center' }}>
         {text}
       </AText>

@@ -1,15 +1,14 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import type { IconName } from '@hbcfield/shared/client';
+import { Icon } from '@/components/amazen/ink-icon';
 import { type ThemeMode } from '@/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, type ThemeColors } from '@/lib/constants';
 
-type IconName = React.ComponentProps<typeof Ionicons>['name'];
-
 /** CustomerProfile's module-level helpers, moved here unchanged so its sections can read them too. */
 export const THEME_OPTIONS: { mode: ThemeMode; icon: IconName; key: string; fallback: string }[] = [
-  { mode: 'system', icon: 'phone-portrait-outline', key: 'portal.themeSystem', fallback: 'System' },
-  { mode: 'light', icon: 'sunny-outline', key: 'portal.themeLight', fallback: 'Light' },
-  { mode: 'dark', icon: 'moon-outline', key: 'portal.themeDark', fallback: 'Dark' },
+  { mode: 'system', icon: 'portals', key: 'portal.themeSystem', fallback: 'System' },
+  { mode: 'light', icon: 'sun', key: 'portal.themeLight', fallback: 'Light' },
+  { mode: 'dark', icon: 'moon', key: 'portal.themeDark', fallback: 'Dark' },
 ];
 
 export function Group({ title, colors, children }: { title: string; colors: ThemeColors; children: React.ReactNode }) {
@@ -49,7 +48,7 @@ export function Row({
       disabled={!onPress}
     >
       <View style={[styles.rowIcon, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <Ionicons name={icon} size={17} color={danger ? COLORS.error : colors.textSecondary} />
+        <Icon name={icon} size={17} color={danger ? COLORS.error : colors.textSecondary} />
       </View>
       <Text style={[styles.rowLabel, { color: danger ? COLORS.error : colors.textPrimary }]}>{label}</Text>
       {value ? (
@@ -57,7 +56,7 @@ export function Row({
           {value}
         </Text>
       ) : null}
-      {onPress ? <Ionicons name="chevron-forward" size={16} color={colors.textMuted} /> : null}
+      {onPress ? <Icon name="chevronRight" size={16} color={colors.textMuted} /> : null}
     </Pressable>
   );
 }

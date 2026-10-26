@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/theme-context';
@@ -34,7 +34,10 @@ export function OfflineBanner({ style }: { style?: object }) {
     text = t('offline.banner.longOffline', { count: age.value });
   } else if (connectivity === 'offline') {
     tone = 'offline';
-    text = snapshot.waiting > 0 ? t('offline.banner.offlineWaiting', { count: snapshot.waiting }) : t('offline.banner.offline');
+    text =
+      snapshot.waiting > 0
+        ? t('offline.banner.offlineWaiting', { count: snapshot.waiting })
+        : t('offline.banner.offline');
   } else if (connectivity === 'limited') {
     tone = 'offline';
     text = t('offline.banner.limited');
@@ -46,10 +49,10 @@ export function OfflineBanner({ style }: { style?: object }) {
 
   const palette =
     tone === 'attention'
-      ? { bg: colors.errorLight, fg: COLORS.error, icon: 'alert-circle' as const }
+      ? { bg: colors.errorLight, fg: COLORS.error, icon: 'alert' as const }
       : tone === 'offline'
-        ? { bg: colors.warningLight, fg: COLORS.warning, icon: 'cloud-offline-outline' as const }
-        : { bg: colors.primaryLight, fg: COLORS.primary, icon: 'cloud-upload-outline' as const };
+        ? { bg: colors.warningLight, fg: COLORS.warning, icon: 'offline' as const }
+        : { bg: colors.primaryLight, fg: COLORS.primary, icon: 'upload' as const };
 
   return (
     <Pressable
@@ -60,12 +63,12 @@ export function OfflineBanner({ style }: { style?: object }) {
       {tone === 'sending' ? (
         <ActivityIndicator size="small" color={palette.fg} />
       ) : (
-        <Ionicons name={palette.icon} size={18} color={palette.fg} />
+        <Icon name={palette.icon} size={18} color={palette.fg} />
       )}
       <Text style={[s.text, { color: colors.textPrimary }]} numberOfLines={2}>
         {text}
       </Text>
-      <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+      <Icon name="chevronRight" size={16} color={colors.textMuted} />
     </Pressable>
   );
 }

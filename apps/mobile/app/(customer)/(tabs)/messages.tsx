@@ -2,7 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTheme } from '@/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
 import { portalApi } from '@/lib/api/portal';
@@ -22,7 +22,7 @@ export default function CustomerMessages() {
       <Text style={[styles.title, { color: colors.textPrimary }]}>{t('portal.tabs.messages', 'Messages')}</Text>
       <View style={styles.center}>
         <View style={[styles.iconWrap, { backgroundColor: colors.primaryLight }]}>
-          <Ionicons name="chatbubbles-outline" size={34} color={COLORS.primary} />
+          <Icon name="chat" size={34} color={COLORS.primary} />
         </View>
         <Text style={[styles.h, { color: colors.textPrimary }]}>
           {t('portal.contact', 'Contact')} {contactLabel}

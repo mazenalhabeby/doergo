@@ -1,8 +1,18 @@
 import fs from 'fs';
 import path from 'path';
 import {
-  CAP, DOT, EDGE, GAP, ICON, ICON_GAP, SIDE,
-  readLayout, sealedBox, sealedVisible, type Cutout, type Measured,
+  CAP,
+  DOT,
+  EDGE,
+  GAP,
+  ICON,
+  ICON_GAP,
+  SIDE,
+  readLayout,
+  sealedBox,
+  sealedVisible,
+  type Cutout,
+  type Measured,
 } from '../geometry';
 import { androidCutout, cutoutFromInset } from '../cutout';
 import { TONES, dwellFor, ISLAND } from '../tokens';
@@ -11,12 +21,18 @@ import { readSource } from '@/test-utils/read-source';
 const SRC = path.resolve(__dirname, '../..');
 const read = (p: string) => readSource(path.join(SRC, p), 'utf8');
 const code = (p: string) =>
-  read(p).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  read(p)
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 /** Readex Pro at 15pt / weight 500, measured off the real font. */
 const W = { 'Clocked in': 67, 'Overtime approved': 114, 'Anna approved your overtime': 147 } as const;
 const msg = (title: keyof typeof W, extra: Partial<Measured> = {}): Measured => ({
-  title: W[title], value: 42, bodyLines: 0, action: false, ...extra,
+  title: W[title],
+  value: 42,
+  bodyLines: 0,
+  action: false,
+  ...extra,
 });
 
 const DYNAMIC_ISLAND = cutoutFromInset(59, 393);
@@ -52,11 +68,14 @@ describe('the one law — the camera covers nothing, ever', () => {
     }
   });
 
-  it.each(phones.filter(([n]) => !n.startsWith('hard-left')))('%s · the lens never moves — the box grows from the hole\'s centre', (_n, hole, screenW) => {
-    const l = readLayout({ hole, screenW, topInset: 20, measured: msg('Clocked in') });
-    expect(l.open.x + l.open.w / 2).toBeCloseTo(hole.x + hole.w / 2, 0);
-    expect(l.lens.x + l.open.x).toBeCloseTo(hole.x, 5);
-  });
+  it.each(phones.filter(([n]) => !n.startsWith('hard-left')))(
+    "%s · the lens never moves — the box grows from the hole's centre",
+    (_n, hole, screenW) => {
+      const l = readLayout({ hole, screenW, topInset: 20, measured: msg('Clocked in') });
+      expect(l.open.x + l.open.w / 2).toBeCloseTo(hole.x + hole.w / 2, 0);
+      expect(l.lens.x + l.open.x).toBeCloseTo(hole.x, 5);
+    },
+  );
 });
 
 describe('born at the cutout, grows left and right', () => {
@@ -118,13 +137,21 @@ describe('what does not fit beside the lens goes under it', () => {
   });
 
   it('a long title drops on a Dynamic Island; a short one stays beside a Pixel lens', () => {
-    expect(readLayout({ hole: DYNAMIC_ISLAND, screenW: 393, topInset: 59, measured: msg('Anna approved your overtime') }).titleDrops).toBe(true);
+    expect(
+      readLayout({ hole: DYNAMIC_ISLAND, screenW: 393, topInset: 59, measured: msg('Anna approved your overtime') })
+        .titleDrops,
+    ).toBe(true);
     expect(readLayout({ hole: PIXEL, screenW: 412, topInset: 28, measured: msg('Clocked in') }).titleDrops).toBe(false);
   });
 
   it('⚠️ 05.png · a wrapped title is MEASURED — the estimate undercounted and cut a line off', () => {
     const m = { ...msg('Anna approved your overtime'), title: 700, titleWrapped: 4 };
-    const est = readLayout({ hole: IPHONE_13, screenW: 390, topInset: 47, measured: { ...m, titleWrapped: undefined } });
+    const est = readLayout({
+      hole: IPHONE_13,
+      screenW: 390,
+      topInset: 47,
+      measured: { ...m, titleWrapped: undefined },
+    });
     const real = readLayout({ hole: IPHONE_13, screenW: 390, topInset: 47, measured: m });
     expect(real.open.h).toBeGreaterThan(est.open.h);
     expect(code('island/island-view.tsx')).toMatch(/widths\.current\.titleWrapped = e\.nativeEvent\.lines\.length/);
@@ -152,7 +179,12 @@ describe('what does not fit beside the lens goes under it', () => {
 
   it('German is measured, not assumed', () => {
     const en = readLayout({ hole: PIXEL, screenW: 412, topInset: 28, measured: msg('Overtime approved') });
-    const de = readLayout({ hole: PIXEL, screenW: 412, topInset: 28, measured: { ...msg('Overtime approved'), title: 114 * 1.38 } });
+    const de = readLayout({
+      hole: PIXEL,
+      screenW: 412,
+      topInset: 28,
+      measured: { ...msg('Overtime approved'), title: 114 * 1.38 },
+    });
     expect(en.titleDrops).toBe(false);
     expect(de.titleDrops).toBe(true);
     expect(code('island/island-view.tsx')).not.toMatch(/ellipsizeMode|adjustsFontSizeToFit/);
@@ -160,7 +192,12 @@ describe('what does not fit beside the lens goes under it', () => {
 
   it('an icon and a figure with no title — one row HUGGING the notch', () => {
     /* ⚠️ 05.png: a phantom icon gap sent it to the full cap width. */
-    const l = readLayout({ hole: IPHONE_13, screenW: 390, topInset: 47, measured: { title: 0, value: 20, bodyLines: 0, action: false } });
+    const l = readLayout({
+      hole: IPHONE_13,
+      screenW: 390,
+      topInset: 47,
+      measured: { title: 0, value: 20, bodyLines: 0, action: false },
+    });
     expect(l.rung).toBe(1);
     expect(l.open.w).toBeLessThan(IPHONE_13.w + 120);
     expect(l.titleDrops).toBe(false);
@@ -217,8 +254,9 @@ describe('§6/§7 — the colours and the tones', () => {
 describe('04.png — how it reads', () => {
   const view = code('island/island-view.tsx');
   it('⚠️ filled icons only', () => {
-    expect(view).toMatch(/done: 'checkmark-circle'/);
-    expect(view).not.toMatch(/-outline'/);
+    // The shared library's filled marks; a `…Line` mark is the outline that reads as a hairline on black.
+    expect(view).toMatch(/done: 'selected'/);
+    expect(view).not.toMatch(/: '\w+Line'/);
   });
   it('⚠️ the time is always on the right — the arrival time when there is no figure', () => {
     expect(view).toMatch(/value: message\.value \?\? stamp\(\)/);
@@ -231,7 +269,7 @@ describe('04.png — how it reads', () => {
     expect(ctx).toMatch(/msg\.body\.length <= 48/);
     expect(view).toMatch(/!msg\.title && styles\.bodyAlone/);
   });
-  it('uses the app\'s own type — Readex for words, Plex Mono for the time', () => {
+  it("uses the app's own type — Readex for words, Plex Mono for the time", () => {
     expect(view).toMatch(/fontFamily: FONT\.sansMedium, fontSize: 16/);
     expect(view).toMatch(/fontFamily: FONT\.monoMedium/);
   });
@@ -290,7 +328,6 @@ describe('§8/§10 — the motion and the rules', () => {
     expect(view).toMatch(/Gesture\.Exclusive\(pan, tap\)/);
     const island = view.slice(view.indexOf('<GestureDetector'), view.indexOf('</GestureDetector>'));
     expect(island).not.toMatch(/<Pressable[^>]*absoluteFill/);
-
   });
 
   it('⚠️ one island, nothing persistent — a finished message goes to the next or to nothing', () => {
@@ -330,10 +367,9 @@ describe('§11 — what is deleted, and stays deleted', () => {
     }
     expect(ctx).toMatch(/export function useToast/);
   });
-
 });
 
-describe('the constants are the spec\'s', () => {
+describe("the constants are the spec's", () => {
   it('§3', () => {
     expect([GAP, SIDE, ICON, ICON_GAP, CAP, EDGE]).toEqual([6, 18, 22, 9, 372, 8]);
   });

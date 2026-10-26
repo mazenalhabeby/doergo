@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
@@ -51,7 +51,7 @@ export function AlwaysLocationSheet({ visible, onClose }: { visible: boolean; on
         {/* Hero */}
         <View style={styles.hero}>
           <View style={[styles.heroIcon, { backgroundColor: BRAND + '18' }]}>
-            <Ionicons name="navigate" size={30} color={BRAND} />
+            <Icon name="navigate" size={30} color={BRAND} />
           </View>
           <Text style={[styles.title, { color: colors.textPrimary }]}>{t('attendance.alwaysLocation.sheetTitle')}</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
@@ -60,18 +60,25 @@ export function AlwaysLocationSheet({ visible, onClose }: { visible: boolean; on
         </View>
 
         {/* Visual: the OS location chooser with the right option highlighted */}
-        <View style={[styles.chooser, { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: colors.border }]}>
-          <Text style={[styles.chooserLabel, { color: colors.textMuted }]}>{t('attendance.alwaysLocation.chooserLabel')}</Text>
+        <View
+          style={[
+            styles.chooser,
+            { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: colors.border },
+          ]}
+        >
+          <Text style={[styles.chooserLabel, { color: colors.textMuted }]}>
+            {t('attendance.alwaysLocation.chooserLabel')}
+          </Text>
 
           <View style={[styles.optionRow, styles.optionChosen]}>
-            <Ionicons name="radio-button-on" size={20} color={GREEN} />
+            <Icon name="radioOn" size={20} color={GREEN} />
             <Text style={[styles.optionText, { color: GREEN, fontWeight: FONT_WEIGHT.bold }]}>{chosenLabel}</Text>
             <Text style={styles.pointer}>👈</Text>
           </View>
 
           {otherOptions.map((label) => (
             <View key={label} style={styles.optionRow}>
-              <Ionicons name="radio-button-off" size={20} color={colors.textMuted} />
+              <Icon name="radioOff" size={20} color={colors.textMuted} />
               <Text style={[styles.optionText, { color: colors.textSecondary }]}>{label}</Text>
             </View>
           ))}
@@ -91,11 +98,13 @@ export function AlwaysLocationSheet({ visible, onClose }: { visible: boolean; on
 
         {/* Actions */}
         <TouchableOpacity style={styles.primaryBtn} onPress={handleOpenSettings} activeOpacity={0.85}>
-          <Ionicons name="settings-outline" size={20} color={COLORS.white} />
+          <Icon name="settings" size={20} color={COLORS.white} />
           <Text style={styles.primaryText}>{t('attendance.alwaysLocation.openSettings')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.secondaryBtn} onPress={handleClose}>
-          <Text style={[styles.secondaryText, { color: colors.textSecondary }]}>{t('attendance.alwaysLocation.notNow')}</Text>
+          <Text style={[styles.secondaryText, { color: colors.textSecondary }]}>
+            {t('attendance.alwaysLocation.notNow')}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </SlideSheet>
@@ -104,7 +113,14 @@ export function AlwaysLocationSheet({ visible, onClose }: { visible: boolean; on
 
 const styles = StyleSheet.create({
   hero: { alignItems: 'center', marginBottom: SPACING.lg },
-  heroIcon: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md },
+  heroIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.md,
+  },
   title: { fontSize: FONT_SIZE.xxl, fontWeight: FONT_WEIGHT.bold, textAlign: 'center' },
   subtitle: { fontSize: FONT_SIZE.base, textAlign: 'center', marginTop: SPACING.xs, lineHeight: 21 },
   chooser: { borderRadius: RADIUS.lg, borderWidth: 1, padding: SPACING.md, marginBottom: SPACING.lg },
@@ -116,7 +132,12 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   optionRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, paddingVertical: SPACING.sm },
-  optionChosen: { backgroundColor: GREEN + '14', borderRadius: RADIUS.md, paddingHorizontal: SPACING.sm, marginHorizontal: -SPACING.sm },
+  optionChosen: {
+    backgroundColor: GREEN + '14',
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.sm,
+    marginHorizontal: -SPACING.sm,
+  },
   optionText: { flex: 1, fontSize: FONT_SIZE.base },
   pointer: { fontSize: FONT_SIZE.lg },
   steps: { gap: SPACING.md, marginBottom: SPACING.xl },

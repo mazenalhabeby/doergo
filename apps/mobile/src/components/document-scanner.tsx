@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, Image, Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, Image, Dimensions } from 'react-native';
 import { CameraView, type BarcodeScanningResult } from 'expo-camera';
 import { File as FsFile } from 'expo-file-system';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/theme-context';
@@ -113,7 +111,7 @@ export function DocumentScanner({
                   }}
                   style={[s.secondary]}
                 >
-                  <Ionicons name="refresh" size={18} color="#fff" />
+                  <Icon name="refreshLine" size={18} color="#fff" />
                   <Text style={s.secondaryText}>{t('documents.scanner.retake')}</Text>
                 </PressableScale>
                 <PressableScale onPress={accept} style={[s.primary, { backgroundColor: COLORS.primary, flex: 1 }]}>
@@ -141,11 +139,13 @@ export function DocumentScanner({
 
             <View style={[s.top, { paddingTop: insets.top + SPACING.sm }]}>
               <Pressable onPress={onCancel} hitSlop={12} accessibilityRole="button">
-                <Ionicons name="close" size={28} color="#fff" />
+                <Icon name="close" size={28} color="#fff" />
               </Pressable>
-              <Text style={s.title} numberOfLines={1}>{title}</Text>
+              <Text style={s.title} numberOfLines={1}>
+                {title}
+              </Text>
               <Pressable onPress={() => setTorch((v) => !v)} hitSlop={12} accessibilityRole="button">
-                <Ionicons name={torch ? 'flash' : 'flash-off'} size={24} color="#fff" />
+                <Icon name={torch ? 'flash' : 'flashOff'} size={24} color="#fff" />
               </Pressable>
             </View>
 

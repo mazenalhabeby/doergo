@@ -1118,17 +1118,9 @@
     "syncAllSent": "All sent"
   },
   "manage": {
-    "timeOff": {
-      "label": "Requests",
-      "desc": "Team leave and requests — the record"
-    },
     "members": {
       "label": "Members",
       "desc": "Manage team"
-    },
-    "joinRequests": {
-      "label": "Join Requests",
-      "desc": "Review & approve"
     },
     "invitations": {
       "label": "Invitations",
@@ -1225,10 +1217,6 @@
     "attendance": {
       "label": "Attendance",
       "desc": "Timesheet and missed shifts"
-    },
-    "extraTime": {
-      "label": "Extra time",
-      "desc": "Approve overtime requests"
     },
     "issues": {
       "label": "Shift issues",

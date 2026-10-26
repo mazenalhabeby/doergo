@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, AppState } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
 import { useTheme } from '../contexts/theme-context';
@@ -38,7 +38,10 @@ export function AlwaysLocationNudge({ active }: { active: boolean }) {
       if (gap) {
         // Smart local notification (cooldown-deduped) so they hear about it even
         // with the app closed — the banner alone only shows in-app.
-        remindAlwaysLocationIfNeeded({ title: t('attendance.alwaysLocation.title'), body: t('attendance.alwaysLocation.body') });
+        remindAlwaysLocationIfNeeded({
+          title: t('attendance.alwaysLocation.title'),
+          body: t('attendance.alwaysLocation.body'),
+        });
       } else {
         clearAlwaysLocationReminder();
       }
@@ -84,7 +87,7 @@ export function AlwaysLocationNudge({ active }: { active: boolean }) {
         onPress={handlePress}
         style={[styles.banner, { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }]}
       >
-        <Ionicons name="location" size={22} color={AMBER} />
+        <Icon name="pin" size={22} color={AMBER} />
         <View style={styles.textWrap}>
           <Text style={[styles.title, { color: AMBER }]} numberOfLines={1}>
             {t('attendance.alwaysLocation.title')}

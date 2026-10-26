@@ -1,7 +1,7 @@
 import React from 'react';
 import { Linking, Pressable, Share, View } from 'react-native';
 import Constants from 'expo-constants';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import * as Updates from 'expo-updates';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/theme-context';
@@ -41,14 +41,18 @@ export function AboutPage() {
     move when an update is delivered. `isEmbeddedLaunch` = no update applied.
   */
   const updateId = Updates.isEmbeddedLaunch ? null : (Updates.updateId ?? '').slice(0, 8) || null;
-  const updateAt = !Updates.isEmbeddedLaunch && Updates.createdAt ? formatDay(new Date(Updates.createdAt).toISOString(), lang) : null;
+  const updateAt =
+    !Updates.isEmbeddedLaunch && Updates.createdAt ? formatDay(new Date(Updates.createdAt).toISOString(), lang) : null;
 
   const behind = !!status?.updateAvailable && !!status.latest;
   const facts: [string, string][] = [
     [t('settings.about.version', 'Version'), version],
     [t('settings.about.build', 'Build'), `${profile} · ${commit}`],
     [t('settings.about.built', 'Built'), builtAt],
-    [t('settings.about.update', 'Update'), updateId ? `${updateId}${updateAt ? ` · ${updateAt}` : ''}` : t('profile.about.noUpdate')],
+    [
+      t('settings.about.update', 'Update'),
+      updateId ? `${updateId}${updateAt ? ` · ${updateAt}` : ''}` : t('profile.about.noUpdate'),
+    ],
   ];
   const copy = () => void Share.share({ message: `HBCField ${facts.map(([k, v]) => `${k}: ${v}`).join(' | ')}` });
 
@@ -63,10 +67,13 @@ export function AboutPage() {
             backgroundColor: c.accentTint,
             alignItems: 'center',
             justifyContent: 'center',
-          }}>
-          <Ionicons name="construct" size={34} color={c.accent} />
+          }}
+        >
+          <Icon name="tools" size={34} color={c.accent} />
         </View>
-        <AText variant="h2" tone="strong" style={{ fontSize: 22 }}>{t('common.appName', 'HBCField')}</AText>
+        <AText variant="h2" tone="strong" style={{ fontSize: 22 }}>
+          {t('common.appName', 'HBCField')}
+        </AText>
         <AText
           style={{
             color: c.inkOnGlass,
@@ -89,22 +96,26 @@ export function AboutPage() {
             ? t('settings.about.ready', { version: status!.latest, defaultValue: 'Version {{version}} is ready' })
             : t('settings.about.upToDate', 'Up to date')
         }
-        sub={behind
-          ? t('settings.about.youHave', { version, defaultValue: 'You have {{version}}. The store has the new one.' })
-          : updateAt
-            ? t('settings.about.received', {
-                version,
-                date: updateAt,
-                defaultValue: 'Version {{version}} · latest improvements received {{date}}',
-              })
-            : t('settings.about.versionOnly', { version, defaultValue: 'Version {{version}}' })}
+        sub={
+          behind
+            ? t('settings.about.youHave', { version, defaultValue: 'You have {{version}}. The store has the new one.' })
+            : updateAt
+              ? t('settings.about.received', {
+                  version,
+                  date: updateAt,
+                  defaultValue: 'Version {{version}} · latest improvements received {{date}}',
+                })
+              : t('settings.about.versionOnly', { version, defaultValue: 'Version {{version}}' })
+        }
       />
       {behind && status?.downloadUrl ? (
         <PrimaryButton label={t('settings.bio.update', 'Update')} onPress={() => void openUpdate(status.downloadUrl)} />
       ) : null}
 
       <Well style={{ padding: amazen.space(3.5) }}>
-        <AText variant="body" tone="ink" style={{ fontSize: 13.5, lineHeight: 20 }}>{t('profile.about.description')}</AText>
+        <AText variant="body" tone="ink" style={{ fontSize: 13.5, lineHeight: 20 }}>
+          {t('profile.about.description')}
+        </AText>
       </Well>
 
       <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
@@ -112,7 +123,10 @@ export function AboutPage() {
           [t('profile.menu.termsOfService', 'Terms of service'), 'https://hbcfield.com/terms'],
           [t('profile.menu.privacyPolicy', 'Privacy policy'), 'https://hbcfield.com/privacy'],
         ].map(([label, url], i) => (
-          <Pressable key={url} onPress={() => void Linking.openURL(url).catch(() => undefined)} accessibilityRole="link"
+          <Pressable
+            key={url}
+            onPress={() => void Linking.openURL(url).catch(() => undefined)}
+            accessibilityRole="link"
             style={({ pressed }) => ({
               flexDirection: 'row',
               alignItems: 'center',
@@ -120,9 +134,12 @@ export function AboutPage() {
               borderTopWidth: i === 0 ? 0 : 1,
               borderTopColor: c.lineWell,
               opacity: pressed ? 0.75 : 1,
-            })}>
-            <AText variant="body" tone="strong" style={{ flex: 1, fontSize: 14.5 }}>{label}</AText>
-            <Ionicons name="open-outline" size={17} color={c.inkMuted} />
+            })}
+          >
+            <AText variant="body" tone="strong" style={{ flex: 1, fontSize: 14.5 }}>
+              {label}
+            </AText>
+            <Icon name="external" size={17} color={c.inkMuted} />
           </Pressable>
         ))}
       </Well>
@@ -141,8 +158,11 @@ export function AboutPage() {
               paddingVertical: amazen.space(2.5),
               borderTopWidth: i === 0 ? 0 : 1,
               borderTopColor: c.lineWell,
-            }}>
-            <AText variant="caption" tone="muted">{k}</AText>
+            }}
+          >
+            <AText variant="caption" tone="muted">
+              {k}
+            </AText>
             <AText
               selectable
               numberOfLines={1}
@@ -163,8 +183,11 @@ export function AboutPage() {
           paddingHorizontal: 18,
           paddingVertical: 10,
           opacity: pressed ? 0.8 : 1,
-        })}>
-        <AText variant="body" tone="strong" style={{ fontSize: 13.5 }}>{t('settings.about.copy', 'Copy for support')}</AText>
+        })}
+      >
+        <AText variant="body" tone="strong" style={{ fontSize: 13.5 }}>
+          {t('settings.about.copy', 'Copy for support')}
+        </AText>
       </Pressable>
       <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
         {t('common.copyrightYear', { year: new Date().getFullYear() })}

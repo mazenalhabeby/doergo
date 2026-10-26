@@ -1118,17 +1118,9 @@
     "syncAllSent": "Tout est envoyé"
   },
   "manage": {
-    "timeOff": {
-      "label": "Demandes",
-      "desc": "Congés et demandes de l’équipe — l’historique"
-    },
     "members": {
       "label": "Membres",
       "desc": "Gérer l'équipe"
-    },
-    "joinRequests": {
-      "label": "Demandes d'adhésion",
-      "desc": "Examiner et approuver"
     },
     "invitations": {
       "label": "Invitations",
@@ -1225,10 +1217,6 @@
     "customers": {
       "label": "Clients",
       "desc": "Pistes, appels, rappels et relances"
-    },
-    "extraTime": {
-      "label": "Heures supplémentaires",
-      "desc": "Valider les demandes"
     },
     "issues": {
       "label": "Incidents de poste",

@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, ScrollView } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type ThemeColors } from '../lib/constants';
@@ -62,7 +62,7 @@ export function TimePickerModal({
           <View style={s.head}>
             <Text style={s.title}>{title ?? t('createTask.beThereAt', 'Be there at')}</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close" size={22} color={colors.textMuted} />
+              <Icon name="close" size={22} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -102,13 +102,22 @@ export function TimePickerModal({
 
           <View style={s.actions}>
             {!!value && (
-              <TouchableOpacity style={s.clear} onPress={() => { onClear(); onClose(); }}>
+              <TouchableOpacity
+                style={s.clear}
+                onPress={() => {
+                  onClear();
+                  onClose();
+                }}
+              >
                 <Text style={s.clearText}>{t('common.clear', 'Clear')}</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
               style={s.confirm}
-              onPress={() => { onSelect(`${two(h)}:${two(m)}`); onClose(); }}
+              onPress={() => {
+                onSelect(`${two(h)}:${two(m)}`);
+                onClose();
+              }}
             >
               <Text style={s.confirmText}>{t('common.done', 'Done')}</Text>
             </TouchableOpacity>
@@ -141,7 +150,13 @@ const styles = (c: ThemeColors) =>
       color: COLORS.primary,
       fontVariant: ['tabular-nums'],
     },
-    columns: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, marginTop: SPACING.sm },
+    columns: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: SPACING.sm,
+      marginTop: SPACING.sm,
+    },
     col: { maxHeight: 210, width: 88 },
     colInner: { paddingVertical: 4 },
     colon: { fontSize: 22, fontWeight: '800', color: c.textMuted },
@@ -152,6 +167,12 @@ const styles = (c: ThemeColors) =>
     actions: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md },
     clear: { flex: 1, paddingVertical: 12, borderRadius: RADIUS.lg, alignItems: 'center', backgroundColor: c.input },
     clearText: { color: c.textSecondary, fontWeight: FONT_WEIGHT.semibold },
-    confirm: { flex: 2, paddingVertical: 12, borderRadius: RADIUS.lg, alignItems: 'center', backgroundColor: COLORS.primary },
+    confirm: {
+      flex: 2,
+      paddingVertical: 12,
+      borderRadius: RADIUS.lg,
+      alignItems: 'center',
+      backgroundColor: COLORS.primary,
+    },
     confirmText: { color: COLORS.white, fontWeight: FONT_WEIGHT.bold },
   });

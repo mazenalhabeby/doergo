@@ -26,7 +26,17 @@ function screenExists(route: string): boolean {
 
 describe('Shortcuts widget — every persona', () => {
   it('the fixture holds all nine seed personas', () => {
-    expect(Object.keys(PERSONAS).sort()).toEqual(['a.test', 'client', 'dana', 'karim', 'manager', 'mike', 'noor', 'sales', 'sarah']);
+    expect(Object.keys(PERSONAS).sort()).toEqual([
+      'a.test',
+      'client',
+      'dana',
+      'karim',
+      'manager',
+      'mike',
+      'noor',
+      'sales',
+      'sarah',
+    ]);
   });
 
   /*
@@ -40,10 +50,22 @@ describe('Shortcuts widget — every persona', () => {
       'manage.members.label',
       'manage.customers.label',
       // The workspace's register and client requests — the owner holds everything and the org runs both.
-      'manage.equipment.label', 'manage.clientRequests.label',
-      'manage.invitations.label', 'manage.schedules.label',
-      'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.overtime', 'shortcuts.logExpense',
-      'shortcuts.newJob', 'shortcuts.scanCard', 'shortcuts.addClient', 'shortcuts.planRoute', 'shortcuts.support', 'shortcuts.equipmentLog',
+      'manage.equipment.label',
+      'manage.clientRequests.label',
+      'manage.invitations.label',
+      'manage.schedules.label',
+      'shortcuts.documents',
+      'shortcuts.sign',
+      'shortcuts.myEquipment',
+      'shortcuts.sync',
+      'shortcuts.overtime',
+      'shortcuts.logExpense',
+      'shortcuts.newJob',
+      'shortcuts.scanCard',
+      'shortcuts.addClient',
+      'shortcuts.planRoute',
+      'shortcuts.support',
+      'shortcuts.equipmentLog',
     ],
     manager: [
       'manage.approvals.label',
@@ -67,8 +89,15 @@ describe('Shortcuts widget — every persona', () => {
     ],
     dana: [
       'manage.approvals.label',
-      'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.overtime', 'shortcuts.logExpense',
-      'shortcuts.planRoute', 'shortcuts.support', 'shortcuts.equipmentLog',
+      'shortcuts.documents',
+      'shortcuts.sign',
+      'shortcuts.myEquipment',
+      'shortcuts.sync',
+      'shortcuts.overtime',
+      'shortcuts.logExpense',
+      'shortcuts.planRoute',
+      'shortcuts.support',
+      'shortcuts.equipmentLog',
     ],
     mike: [
       'manage.approvals.label',
@@ -88,10 +117,18 @@ describe('Shortcuts widget — every persona', () => {
       'shortcuts.equipmentLog',
     ],
     sales: [
-      'manage.customers.label', 'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.overtime',
+      'manage.customers.label',
+      'shortcuts.documents',
+      'shortcuts.sign',
+      'shortcuts.myEquipment',
+      'shortcuts.sync',
+      'shortcuts.overtime',
       // Scan card / Add client need "add clients". This FIXTURE was captured before migration
       // 20260927090000 gave existing Sales Rep roles that grant — a rep signed in today gets both.
-      'shortcuts.logExpense', 'shortcuts.newJob', 'shortcuts.support', 'shortcuts.equipmentLog',
+      'shortcuts.logExpense',
+      'shortcuts.newJob',
+      'shortcuts.support',
+      'shortcuts.equipmentLog',
     ],
     'a.test': [
       'manage.approvals.label',
@@ -116,7 +153,9 @@ describe('Shortcuts widget — every persona', () => {
   });
 
   it('an external member is never offered the organization’s own property', () => {
-    const internal = [...MANAGE_ROWS, ...MEMBER_ROWS].filter((r) => 'internal' in r && r.internal).map((r) => r.labelKey);
+    const internal = [...MANAGE_ROWS, ...MEMBER_ROWS]
+      .filter((r) => 'internal' in r && r.internal)
+      .map((r) => r.labelKey);
     for (const k of internal) expect(tilesOf('a.test')).not.toContain(k);
   });
 
@@ -132,11 +171,12 @@ describe('Shortcuts widget — every persona', () => {
     }
   });
 
-  it('every destination the card can offer has a glyph', () => {
+  it('every destination the card can offer has a mark — its own, all different', () => {
     const src = fs.readFileSync(path.resolve(__dirname, '../shortcut-glyphs.ts'), 'utf8');
-    for (const r of shortcutCandidates([...MANAGE_ROWS, ...MEMBER_ROWS] as never)) {
-      expect(src).toContain(`'${r.labelKey}':`);
-    }
+    expect(src).toContain('[...MANAGE_ROWS, ...MEMBER_ROWS]');
+    const rows = shortcutCandidates([...MANAGE_ROWS, ...MEMBER_ROWS] as never) as { icon: string }[];
+    for (const r of rows) expect(r.icon).toMatch(/^[a-z][A-Za-z]+$/);
+    expect(new Set(rows.map((r) => r.icon)).size).toBe(rows.length);
   });
 
   /* ── Every tile's route is a screen file ─────────────────────────────── */
@@ -175,7 +215,9 @@ describe('Shortcuts widget — every persona', () => {
     retires the columns, which empties `access.org` on both sides too), so the
     phone and the server agree again and noor is offered both.
   */
-  it('noor: the phone follows the server\'s reach (same resolver), so Scan card and Add client are offered', () => {
-    expect(tilesOf('noor')).toEqual(expect.arrayContaining(['shortcuts.scanCard', 'shortcuts.addClient', 'manage.customers.label']));
+  it("noor: the phone follows the server's reach (same resolver), so Scan card and Add client are offered", () => {
+    expect(tilesOf('noor')).toEqual(
+      expect.arrayContaining(['shortcuts.scanCard', 'shortcuts.addClient', 'manage.customers.label']),
+    );
   });
 });

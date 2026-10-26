@@ -1,10 +1,15 @@
 import type { ReactNode } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, useWindowDimensions,
-  type StyleProp, type ViewStyle,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  useWindowDimensions,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
@@ -85,11 +90,7 @@ export function SheetPanel({
             accessibilityRole="button"
             accessibilityLabel={t('common.close')}
           >
-            <Ionicons
-              name="close"
-              size={24}
-              color={closeDisabled ? colors.textMuted : colors.textSecondary}
-            />
+            <Icon name="close" size={24} color={closeDisabled ? colors.textMuted : colors.textSecondary} />
           </TouchableOpacity>
         </View>
       ) : null}

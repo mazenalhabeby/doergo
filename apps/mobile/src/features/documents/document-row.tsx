@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { formatCalendarDate } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
@@ -9,8 +9,18 @@ import { documentTypeIcon } from '@/lib/document-icons';
 import { AText, Pill } from '@/components/amazen';
 
 const MONTH_KEYS = [
-  'january', 'february', 'march', 'april', 'may', 'june',
-  'july', 'august', 'september', 'october', 'november', 'december',
+  'january',
+  'february',
+  'march',
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december',
 ] as const;
 
 /** A day as the document prints it, from a stored date or timestamp. */
@@ -28,7 +38,8 @@ export function useDocumentTag() {
   const { t } = useTranslation();
   return (d: MemberDocument): { label: string; tone: 'accent' | 'warn' | 'critical' | 'neutral' } | null => {
     if (d.needsSignature) return { label: t('documents.tag.sign', 'Sign'), tone: 'warn' };
-    if (d.status === 'PENDING_VERIFICATION') return { label: t('documents.status.pendingVerification'), tone: 'neutral' };
+    if (d.status === 'PENDING_VERIFICATION')
+      return { label: t('documents.status.pendingVerification'), tone: 'neutral' };
     if (d.status === 'REJECTED') return { label: t('documents.tag.sentBack', 'Sent back'), tone: 'critical' };
     if (d.standing === 'EXPIRED')
       return {
@@ -57,11 +68,12 @@ export function useDocumentTag() {
 /** The month, the year, or the day it came — whichever the document is about. */
 export function usePeriod() {
   const { t } = useTranslation();
-  return (d: MemberDocument) => (
-    d.periodMonth && d.periodYear ? t(`documents.months.${MONTH_KEYS[d.periodMonth - 1]}`)
-      : d.periodYear ? String(d.periodYear)
-      : dayOf(d.issuedAt)
-  );
+  return (d: MemberDocument) =>
+    d.periodMonth && d.periodYear
+      ? t(`documents.months.${MONTH_KEYS[d.periodMonth - 1]}`)
+      : d.periodYear
+        ? String(d.periodYear)
+        : dayOf(d.issuedAt);
 }
 
 /**
@@ -71,7 +83,11 @@ export function usePeriod() {
  * must sign a printed copy.
  */
 export const DocumentRow = memo(function DocumentRow({
-  doc, first, onPaper, busy, onPress,
+  doc,
+  first,
+  onPaper,
+  busy,
+  onPress,
 }: {
   doc: MemberDocument;
   first: boolean;
@@ -86,7 +102,9 @@ export const DocumentRow = memo(function DocumentRow({
   const periodOf = usePeriod();
   const tag = tagOf(doc);
   const period = periodOf(doc);
-  const meta = [doc.typeLabel, doc.forMember ? t('documents.onBehalfOf', { name: doc.forMember }) : null].filter(Boolean).join(' · ');
+  const meta = [doc.typeLabel, doc.forMember ? t('documents.onBehalfOf', { name: doc.forMember }) : null]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <Pressable
@@ -95,8 +113,13 @@ export const DocumentRow = memo(function DocumentRow({
       accessibilityRole="button"
       accessibilityLabel={`${doc.title}, ${period}`}
       style={({ pressed }) => ({
-        flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75),
-        borderTopWidth: first ? 0 : 1, borderTopColor: c.lineWell, opacity: pressed ? 0.75 : 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(3),
+        paddingVertical: amazen.space(2.75),
+        borderTopWidth: first ? 0 : 1,
+        borderTopColor: c.lineWell,
+        opacity: pressed ? 0.75 : 1,
       })}
     >
       <View
@@ -107,8 +130,9 @@ export const DocumentRow = memo(function DocumentRow({
           backgroundColor: doc.needsSignature ? c.accentTint : c.tile,
           alignItems: 'center',
           justifyContent: 'center',
-        }}>
-        <Ionicons name={documentTypeIcon(doc.typeKey)} size={18} color={doc.needsSignature ? c.accent : c.ink} />
+        }}
+      >
+        <Icon name={documentTypeIcon(doc.typeKey)} size={18} color={doc.needsSignature ? c.accent : c.ink} />
         {doc.unread ? (
           <View
             style={{
@@ -137,7 +161,9 @@ export const DocumentRow = memo(function DocumentRow({
         >
           {doc.title}
         </AText>
-        <AText variant="caption" tone="muted" numberOfLines={1}>{meta}</AText>
+        <AText variant="caption" tone="muted" numberOfLines={1}>
+          {meta}
+        </AText>
         {tag || onPaper ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 3 }}>
             {tag ? <Pill label={tag.label} tone={tag.tone} /> : null}
@@ -145,9 +171,11 @@ export const DocumentRow = memo(function DocumentRow({
           </View>
         ) : null}
       </View>
-      {busy
-        ? <ActivityIndicator size="small" color={c.accent} />
-        : <AText variant="caption" tone="muted" numeric>{`${period} ›`}</AText>}
+      {busy ? (
+        <ActivityIndicator size="small" color={c.accent} />
+      ) : (
+        <AText variant="caption" tone="muted" numeric>{`${period} ›`}</AText>
+      )}
     </Pressable>
   );
 });

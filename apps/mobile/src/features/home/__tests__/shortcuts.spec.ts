@@ -2,7 +2,14 @@ import type { Destination } from '@/lib/manage-rows';
 import { shortcutCandidates, smartPicks, shownShortcuts, groupOf } from '../shortcuts';
 
 const row = (labelKey: string, over: Partial<Destination> = {}): Destination => ({
-  icon: 'x', labelKey, descKey: `${labelKey}Desc`, route: `/(app)/${labelKey}`, color: '#000', permission: '', orgWide: false, ...over,
+  icon: 'dot',
+  labelKey,
+  descKey: `${labelKey}Desc`,
+  route: `/(app)/${labelKey}`,
+  color: '#000',
+  permission: '',
+  orgWide: false,
+  ...over,
 });
 
 const docs = row('documents', { home: true, badge: 'documents.due' });
@@ -16,7 +23,9 @@ const ALL = [docs, sync, newJob, scan, send, route, members];
 
 describe('the Shortcuts card', () => {
   it('never offers a route that opens a sheet', () => {
-    expect(shortcutCandidates([...ALL, row('issues', { route: 'sheet:issues' })]).map((r) => r.labelKey)).not.toContain('issues');
+    expect(shortcutCandidates([...ALL, row('issues', { route: 'sheet:issues' })]).map((r) => r.labelKey)).not.toContain(
+      'issues',
+    );
   });
 
   it('smart picks: what is waiting (most first), then actions in table order, then places', () => {
@@ -29,12 +38,20 @@ describe('the Shortcuts card', () => {
   });
 
   it('chosen: the member’s order is kept, whatever is waiting', () => {
-    expect(shownShortcuts(['route', 'members', 'send'], ALL, { 'sync.queued': 5 }).map((r) => r.labelKey)).toEqual(['route', 'members', 'send']);
+    expect(shownShortcuts(['route', 'members', 'send'], ALL, { 'sync.queued': 5 }).map((r) => r.labelKey)).toEqual([
+      'route',
+      'members',
+      'send',
+    ]);
   });
 
   it('a chosen tile they can no longer open is refilled from the smart picks', () => {
     const allowed = ALL.filter((r) => r !== members);
-    expect(shownShortcuts(['route', 'members', 'send'], allowed, {}).map((r) => r.labelKey)).toEqual(['route', 'send', 'newJob']);
+    expect(shownShortcuts(['route', 'members', 'send'], allowed, {}).map((r) => r.labelKey)).toEqual([
+      'route',
+      'send',
+      'newJob',
+    ]);
   });
 
   it('groups the editor: waiting, do, go to, manage', () => {

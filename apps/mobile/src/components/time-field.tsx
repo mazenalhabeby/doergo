@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 
 /** Split a wall-clock "yyyy-MM-ddTHH:mm" into the two things a phone edits. */
@@ -57,7 +57,7 @@ export function TimeField({
           onPress={onPick}
           activeOpacity={0.7}
         >
-          <Ionicons name="calendar-outline" size={15} color={colors.textMuted} />
+          <Icon name="calendar" size={15} color={colors.textMuted} />
           <Text style={[s.controlText, { color: date ? colors.textPrimary : colors.textMuted }]}>
             {date || placeholder}
           </Text>
@@ -66,7 +66,11 @@ export function TimeField({
           style={[
             s.control,
             s.timeControl,
-            { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: bad ? COLORS.error : colors.border },
+            {
+              backgroundColor: colors.surface,
+              color: colors.textPrimary,
+              borderColor: bad ? COLORS.error : colors.border,
+            },
           ]}
           value={time}
           onChangeText={onTime}
@@ -87,15 +91,22 @@ export const s = StyleSheet.create({
   label: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold, marginBottom: SPACING.xs },
   fieldRow: { flexDirection: 'row', gap: SPACING.sm },
   control: {
-    height: 44, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: SPACING.md, fontSize: FONT_SIZE.base,
+    height: 44,
+    borderRadius: RADIUS.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: SPACING.md,
+    fontSize: FONT_SIZE.base,
   },
   dateControl: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   controlText: { fontSize: FONT_SIZE.base },
   timeControl: { width: 96, textAlign: 'center' },
   area: {
-    minHeight: 70, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth,
-    padding: SPACING.md, fontSize: FONT_SIZE.base, textAlignVertical: 'top',
+    minHeight: 70,
+    borderRadius: RADIUS.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: SPACING.md,
+    fontSize: FONT_SIZE.base,
+    textAlignVertical: 'top',
   },
   hint: { fontSize: FONT_SIZE.xs, marginTop: SPACING.xs },
   error: { fontSize: FONT_SIZE.sm, marginBottom: SPACING.md },

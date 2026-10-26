@@ -1,9 +1,18 @@
 import type { ReactNode } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTheme } from '@/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '@/lib/constants';
 
@@ -31,21 +40,33 @@ export function PortalFormScreen({
   const { colors } = useTheme();
   const { t } = useTranslation();
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       {/* Header */}
-      <View style={[portalFormStyles.header, { paddingTop: insets.top + SPACING.sm, borderBottomColor: colors.border }]}>
+      <View
+        style={[portalFormStyles.header, { paddingTop: insets.top + SPACING.sm, borderBottomColor: colors.border }]}
+      >
         <Pressable onPress={() => router.back()} hitSlop={10} style={portalFormStyles.headerBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <Icon name="backLine" size={24} color={colors.textPrimary} />
         </Pressable>
         <Text style={[portalFormStyles.headerTitle, { color: colors.textPrimary }]}>{title}</Text>
         <Pressable onPress={onSave} disabled={!canSave || saving} hitSlop={10} style={portalFormStyles.headerBtn}>
-          {saving ? <ActivityIndicator color={COLORS.primary} /> : (
-            <Text style={[portalFormStyles.save, { color: canSave ? COLORS.primary : colors.textMuted }]}>{t('common.save', 'Save')}</Text>
+          {saving ? (
+            <ActivityIndicator color={COLORS.primary} />
+          ) : (
+            <Text style={[portalFormStyles.save, { color: canSave ? COLORS.primary : colors.textMuted }]}>
+              {t('common.save', 'Save')}
+            </Text>
           )}
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: SPACING.lg, paddingBottom: SPACING.xxxl }} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={{ padding: SPACING.lg, paddingBottom: SPACING.xxxl }}
+        keyboardShouldPersistTaps="handled"
+      >
         {children}
       </ScrollView>
     </KeyboardAvoidingView>

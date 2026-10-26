@@ -8,7 +8,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { INDUSTRY_CARDS, AREAS } from '@hbcfield/shared/client';
 import { useScreenWidth } from '@/components/screen-container';
@@ -51,7 +51,7 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
         {/* Header: back + progress */}
         <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
           <TouchableOpacity style={styles.backButton} onPress={onBack} disabled={isLoading}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+            <Icon name="backLine" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={[styles.progress, { color: colors.textMuted }]}>
             {t('setup.stepOf', { step: step + 1, total: TOTAL_STEPS })}
@@ -59,7 +59,12 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
           <View style={styles.backButton} />
         </View>
         <View style={styles.progressBarTrack}>
-          <View style={[styles.progressBarFill, { backgroundColor: COLORS.primary, width: `${((step + 1) / TOTAL_STEPS) * 100}%` }]} />
+          <View
+            style={[
+              styles.progressBarFill,
+              { backgroundColor: COLORS.primary, width: `${((step + 1) / TOTAL_STEPS) * 100}%` },
+            ]}
+          />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
@@ -71,8 +76,13 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
               <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('setup.work.sub')}</Text>
 
               <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.inputBorder }]}>
-                <View style={[styles.inputIcon, { backgroundColor: colors.surfaceRaised, borderRightColor: colors.inputBorder }]}>
-                  <Ionicons name="create-outline" size={18} color={colors.textMuted} />
+                <View
+                  style={[
+                    styles.inputIcon,
+                    { backgroundColor: colors.surfaceRaised, borderRightColor: colors.inputBorder },
+                  ]}
+                >
+                  <Icon name="edit" size={18} color={colors.textMuted} />
                 </View>
                 <TextInput
                   style={[styles.input, { color: colors.textPrimary }]}
@@ -87,12 +97,14 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
               {plan && fromText && text.trim().length >= 3 && (
                 <View style={[styles.understood, { backgroundColor: colors.card, borderColor: COLORS.successBorder }]}>
                   <View style={styles.understoodEyebrowRow}>
-                    <Ionicons name="sparkles" size={13} color={COLORS.primaryDark} />
-                    <Text style={[styles.eyebrow, { color: COLORS.primaryDark }]}>{t('setup.work.understoodEyebrow')}</Text>
+                    <Icon name="sparkles" size={13} color={COLORS.primaryDark} />
+                    <Text style={[styles.eyebrow, { color: COLORS.primaryDark }]}>
+                      {t('setup.work.understoodEyebrow')}
+                    </Text>
                   </View>
                   <View style={styles.understoodTitleRow}>
                     <View style={[styles.understoodIcon, { backgroundColor: COLORS.primaryLight }]}>
-                      <Ionicons name={ionicon(plan.industryIcon)} size={19} color={COLORS.primaryDark} />
+                      <Icon name={ionicon(plan.industryIcon)} size={19} color={COLORS.primaryDark} />
                     </View>
                     <Text style={[styles.understoodTitle, { color: colors.textPrimary }]}>
                       {t('setup.work.youreIn', { industry: industryLabel(plan.industryKey, plan.industryLabel) })}
@@ -118,9 +130,10 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
                       colors={[COLORS.primary, COLORS.primaryDark]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
-                      style={styles.primaryBtnGrad}>
+                      style={styles.primaryBtnGrad}
+                    >
                       <Text style={styles.primaryBtnText}>{t('setup.work.continue')}</Text>
-                      <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
+                      <Icon name="arrowRight" size={18} color={COLORS.white} />
                     </LinearGradient>
                   </TouchableOpacity>
                 </View>
@@ -149,9 +162,12 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
                       activeOpacity={0.85}
                     >
                       <View style={[styles.cardIcon, { backgroundColor: on ? COLORS.primary : colors.surfaceRaised }]}>
-                        <Ionicons name={ionicon(ind.icon)} size={20} color={on ? COLORS.white : colors.textSecondary} />
+                        <Icon name={ionicon(ind.icon)} size={20} color={on ? COLORS.white : colors.textSecondary} />
                       </View>
-                      <Text style={[styles.cardLabel, { color: on ? COLORS.primaryDark : colors.textPrimary }]} numberOfLines={2}>
+                      <Text
+                        style={[styles.cardLabel, { color: on ? COLORS.primaryDark : colors.textPrimary }]}
+                        numberOfLines={2}
+                      >
                         {industryLabel(ind.key, ind.label)}
                       </Text>
                     </TouchableOpacity>
@@ -170,9 +186,12 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
 
               <View style={styles.areaList}>
                 {areaNames.map((n, i) => (
-                  <View key={i} style={[styles.areaRow, { backgroundColor: colors.card, borderColor: colors.inputBorder }]}>
+                  <View
+                    key={i}
+                    style={[styles.areaRow, { backgroundColor: colors.card, borderColor: colors.inputBorder }]}
+                  >
                     <View style={[styles.areaIcon, { backgroundColor: colors.surfaceRaised }]}>
-                      <Ionicons name="folder-outline" size={16} color={colors.textSecondary} />
+                      <Icon name="folder" size={16} color={colors.textSecondary} />
                     </View>
                     <TextInput
                       style={[styles.areaInput, { color: colors.textPrimary }]}
@@ -182,7 +201,7 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
                       placeholderTextColor={colors.textMuted}
                     />
                     <TouchableOpacity onPress={() => removeArea(i)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+                      <Icon name="closeCircle" size={20} color={colors.textMuted} />
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -193,9 +212,10 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
                   colors={[COLORS.primary, COLORS.primaryDark]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={styles.primaryBtnGrad}>
+                  style={styles.primaryBtnGrad}
+                >
                   <Text style={styles.primaryBtnText}>{t('setup.group.looksGood')}</Text>
-                  <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
+                  <Icon name="arrowRight" size={18} color={COLORS.white} />
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -205,13 +225,26 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
           {step === 2 && plan && (
             <View>
               <Kicker colors={colors} icon="checkCircle" text={t('setup.mobile.almostThere')} />
-              <Text style={[styles.title, { color: colors.textPrimary }]}>{t('setup.mobile.nameTitle', { name: firstName })}</Text>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>
+                {t('setup.mobile.nameTitle', { name: firstName })}
+              </Text>
               <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('setup.mobile.nameSub')}</Text>
 
               <Text style={[styles.label, { color: colors.textPrimary }]}>{t('onboarding.createOrg.nameLabel')}</Text>
-              <View style={[styles.inputContainer, styles.singleLine, { backgroundColor: colors.card, borderColor: colors.inputBorder }]}>
-                <View style={[styles.inputIcon, { backgroundColor: colors.surfaceRaised, borderRightColor: colors.inputBorder }]}>
-                  <Ionicons name="business-outline" size={18} color={colors.textMuted} />
+              <View
+                style={[
+                  styles.inputContainer,
+                  styles.singleLine,
+                  { backgroundColor: colors.card, borderColor: colors.inputBorder },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.inputIcon,
+                    { backgroundColor: colors.surfaceRaised, borderRightColor: colors.inputBorder },
+                  ]}
+                >
+                  <Icon name="workspaces" size={18} color={colors.textMuted} />
                 </View>
                 <TextInput
                   style={[styles.input, styles.inputSingle, { color: colors.textPrimary }]}
@@ -233,13 +266,13 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
                 />
                 <SummaryRow
                   colors={colors}
-                  icon="folder-outline"
+                  icon="folder"
                   title={t('setup.done.areasTitle')}
                   detail={areaNames.filter((n) => n.trim()).join(' · ')}
                 />
                 <SummaryRow
                   colors={colors}
-                  icon="construct-outline"
+                  icon="tools"
                   title={t('setup.done.toolsTitle')}
                   detail={tools.map((tl) => toolLabel(tl.key)).join(' · ')}
                   last
@@ -250,18 +283,20 @@ export function CreateOrgScreenStepOf({ vm }: { vm: CreateOrgScreenState }) {
                 style={[styles.primaryBtn, isLoading && styles.btnDisabled]}
                 onPress={handleCreate}
                 disabled={isLoading}
-                activeOpacity={0.9}>
+                activeOpacity={0.9}
+              >
                 <LinearGradient
                   colors={isLoading ? [COLORS.slate400, COLORS.slate500] : [COLORS.primary, COLORS.primaryDark]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={styles.primaryBtnGrad}>
+                  style={styles.primaryBtnGrad}
+                >
                   {isLoading ? (
                     <ActivityIndicator color={COLORS.white} />
                   ) : (
                     <>
                       <Text style={styles.primaryBtnText}>{t('setup.mobile.createButton')}</Text>
-                      <Ionicons name="checkmark" size={18} color={COLORS.white} />
+                      <Icon name="checkLine" size={18} color={COLORS.white} />
                     </>
                   )}
                 </LinearGradient>

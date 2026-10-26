@@ -12,26 +12,15 @@ import {
   Platform,
 } from 'react-native';
 import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { getFix } from '../lib/location-fix';
 import { useTranslation } from 'react-i18next';
-import {
-  COLORS,
-  SPACING,
-  RADIUS,
-  FONT_SIZE,
-  SHADOWS,
-} from '../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, SHADOWS } from '../lib/constants';
 import { useTheme } from '../contexts/theme-context';
 import { useLocationSearchPicker, type LocationSearchPickerProps } from './use-location-search-picker';
 import { styles } from './location-search-picker-helpers';
 
-export function LocationSearchPicker({
-  address,
-  lat,
-  lng,
-  onLocationChange,
-}: LocationSearchPickerProps) {
+export function LocationSearchPicker({ address, lat, lng, onLocationChange }: LocationSearchPickerProps) {
   const {
     query,
     setQuery,
@@ -55,7 +44,7 @@ export function LocationSearchPicker({
     <View style={styles.container}>
       {/* Search input */}
       <View style={[styles.searchRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Ionicons name="search" size={18} color={colors.textMuted} />
+        <Icon name="searchLine" size={18} color={colors.textMuted} />
         <TextInput
           style={[styles.searchInput, { color: colors.textPrimary }]}
           placeholder={t('components.locationPicker.searchPlaceholder')}
@@ -73,7 +62,7 @@ export function LocationSearchPicker({
         {isSearching && <ActivityIndicator size="small" color={colors.textMuted} />}
         {!isSearching && query.length > 0 && (
           <TouchableOpacity onPress={handleClear}>
-            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+            <Icon name="closeCircle" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         )}
       </View>
@@ -88,7 +77,7 @@ export function LocationSearchPicker({
               onPress={() => handleSelect(r)}
               activeOpacity={0.6}
             >
-              <Ionicons name="location" size={16} color={COLORS.primary} style={{ marginTop: 2 }} />
+              <Icon name="pin" size={16} color={COLORS.primary} style={{ marginTop: 2 }} />
               <Text style={[styles.resultText, { color: colors.textPrimary }]} numberOfLines={2}>
                 {r.display_name}
               </Text>
@@ -129,14 +118,14 @@ export function LocationSearchPicker({
           onPress={handleUseCurrentLocation}
           activeOpacity={0.7}
         >
-          <Ionicons name="navigate" size={20} color={COLORS.primary} />
+          <Icon name="navigate" size={20} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
 
       {/* Coordinates hint */}
       {lat != null && lng != null && (
         <View style={styles.coordsRow}>
-          <Ionicons name="location-outline" size={12} color={colors.textMuted} />
+          <Icon name="pin" size={12} color={colors.textMuted} />
           <Text style={[styles.coordsText, { color: colors.textMuted }]}>
             {lat.toFixed(5)}, {lng.toFixed(5)}
           </Text>

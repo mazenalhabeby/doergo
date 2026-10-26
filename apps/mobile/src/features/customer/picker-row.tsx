@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { PressableScale } from '@/components/pressable-scale';
 import { ClientAvatar } from './client-avatar';
@@ -73,10 +73,16 @@ export const PickerRow = memo(function PickerRow({
     >
       <ClientAvatar customer={client} size={30} />
       <View style={s.rowText}>
-        <Text style={s.rowName} numberOfLines={1}>{client.name}</Text>
-        {!!subtitle && <Text style={s.rowSub} numberOfLines={1}>{subtitle}</Text>}
+        <Text style={s.rowName} numberOfLines={1}>
+          {client.name}
+        </Text>
+        {!!subtitle && (
+          <Text style={s.rowSub} numberOfLines={1}>
+            {subtitle}
+          </Text>
+        )}
       </View>
-      {selected && <Ionicons name="checkmark" size={17} color={COLORS.primary} />}
+      {selected && <Icon name="checkLine" size={17} color={COLORS.primary} />}
     </PressableScale>
   );
 });

@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { usePortalRequests } from '@/hooks/use-portal-requests';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
@@ -212,7 +212,7 @@ export default function CustomerHome() {
             <View
               style={[styles.emptyIcon, { backgroundColor: isDark ? 'rgba(16,185,129,0.12)' : COLORS.primaryLight }]}
             >
-              <Ionicons name="checkmark-done" size={26} color={COLORS.primary} />
+              <Icon name="checkRead" size={26} color={COLORS.primary} />
             </View>
             <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
               {t('portal.allClear', 'You’re all caught up')}

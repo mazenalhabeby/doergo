@@ -1,16 +1,17 @@
 import { StyleSheet, type TextLayoutEventData, type NativeSyntheticEvent } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import type { IconName } from '@hbcfield/shared/client';
+import { Icon } from '@/components/amazen/ink-icon';
 import { ISLAND, type Tone } from './tokens';
 import { FONT } from '../theme/amazen';
 import { DROP_SIDE, ICON, ICON_GAP, SIDE } from './geometry';
 
 /** IslandView's module-level helpers, moved here unchanged so its sections can read them too. */
 /** ⚠️ FILLED ICONS ONLY — an outline reads as a hairline on black. */
-export const ICONS: Record<Tone, keyof typeof Ionicons.glyphMap> = {
-  done: 'checkmark-circle',
-  waiting: 'alert-circle',
-  failed: 'close-circle',
-  queued: 'cloud-offline',
+export const ICONS: Record<Tone, IconName> = {
+  done: 'selected',
+  waiting: 'alert',
+  failed: 'closeCircle',
+  queued: 'offline',
 };
 
 export function lineWidth(e: NativeSyntheticEvent<TextLayoutEventData>): number {
@@ -18,7 +19,7 @@ export function lineWidth(e: NativeSyntheticEvent<TextLayoutEventData>): number 
 }
 
 export function Glyph({ tone, fg }: { tone: Tone; fg: string }) {
-  return <Ionicons name={ICONS[tone]} size={ICON} color={fg} />;
+  return <Icon name={ICONS[tone]} size={ICON} color={fg} />;
 }
 
 export const styles = StyleSheet.create({
@@ -38,7 +39,13 @@ export const styles = StyleSheet.create({
     backgroundColor: ISLAND.bg,
     overflow: 'hidden',
   },
-  headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: ICON_GAP, paddingHorizontal: SIDE },
+  headRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: ICON_GAP,
+    paddingHorizontal: SIDE,
+  },
   /* Under the lens: a little more air than the head row, text left-aligned. */
   drop: { paddingHorizontal: DROP_SIDE, paddingTop: 4, paddingBottom: 16, gap: 3 },
   title: { fontFamily: FONT.sansMedium, fontSize: 16, lineHeight: 21, color: ISLAND.ink, letterSpacing: -0.2 },
@@ -46,10 +53,21 @@ export const styles = StyleSheet.create({
   /* ⚠️ With no title the sentence IS the message — full ink, same size, so the measured height holds. */
   bodyAlone: { color: ISLAND.ink },
   /* The time: mono, quiet — it is context, not the news. */
-  value: { fontFamily: FONT.monoMedium, fontSize: 13, lineHeight: 18, color: ISLAND.dim, fontVariant: ['tabular-nums'] },
+  value: {
+    fontFamily: FONT.monoMedium,
+    fontSize: 13,
+    lineHeight: 18,
+    color: ISLAND.dim,
+    fontVariant: ['tabular-nums'],
+  },
   action: {
-    alignSelf: 'flex-start', marginTop: 4, paddingVertical: 6, paddingHorizontal: 12,
-    borderRadius: 999, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: ISLAND.line,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderColor: ISLAND.line,
   },
   actionLabel: { fontFamily: FONT.sansMedium, fontSize: 13 },
 });

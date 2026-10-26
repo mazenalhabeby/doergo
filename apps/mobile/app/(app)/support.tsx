@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -175,7 +175,7 @@ export default function SupportScreen() {
                 multiline
               />
               <TouchableOpacity style={styles.sendBtn} disabled={sending || !reply.trim()} onPress={submitReply}>
-                <Ionicons name="send" size={18} color="#fff" />
+                <Icon name="send" size={18} color="#fff" />
               </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>

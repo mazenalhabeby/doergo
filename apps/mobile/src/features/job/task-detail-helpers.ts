@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import type { IconName } from '@hbcfield/shared/client';
 /*
   TaskStatus comes from shared, not from `../../lib/api`.
 
@@ -17,18 +17,18 @@ import { TaskStatus, FlowStatus, getNextStep, FIELD_SERVICE_FLOW } from '@hbcfie
 interface StatusAction {
   nextStatus: TaskStatus;
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
 }
 
 // Nicer labels/icons for the canonical field-service transitions, keyed by the
 // CURRENT status. Custom workflows fall back to a generic "Next: <label>".
-const BUILTIN_ACTIONS: Record<string, { next: string; label: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  [TaskStatus.ASSIGNED]:    { next: TaskStatus.ACCEPTED,    label: 'Accept Job',    icon: 'checkmark-circle' },
-  [TaskStatus.ACCEPTED]:    { next: TaskStatus.EN_ROUTE,    label: 'Start Driving', icon: 'car' },
-  [TaskStatus.EN_ROUTE]:    { next: TaskStatus.ARRIVED,     label: "I've Arrived",  icon: 'location' },
-  [TaskStatus.ARRIVED]:     { next: TaskStatus.IN_PROGRESS, label: 'Start Work',    icon: 'construct' },
-  [TaskStatus.IN_PROGRESS]: { next: TaskStatus.COMPLETED,   label: 'Finish Job',    icon: 'checkmark-done' },
-  [TaskStatus.BLOCKED]:     { next: TaskStatus.IN_PROGRESS, label: 'Resume Job',    icon: 'play' },
+const BUILTIN_ACTIONS: Record<string, { next: string; label: string; icon: IconName }> = {
+  [TaskStatus.ASSIGNED]: { next: TaskStatus.ACCEPTED, label: 'Accept Job', icon: 'selected' },
+  [TaskStatus.ACCEPTED]: { next: TaskStatus.EN_ROUTE, label: 'Start Driving', icon: 'car' },
+  [TaskStatus.EN_ROUTE]: { next: TaskStatus.ARRIVED, label: "I've Arrived", icon: 'pin' },
+  [TaskStatus.ARRIVED]: { next: TaskStatus.IN_PROGRESS, label: 'Start Work', icon: 'tools' },
+  [TaskStatus.IN_PROGRESS]: { next: TaskStatus.COMPLETED, label: 'Finish Job', icon: 'checkRead' },
+  [TaskStatus.BLOCKED]: { next: TaskStatus.IN_PROGRESS, label: 'Resume Job', icon: 'play' },
 };
 
 export function getStatusAction(status: string, flowSteps?: FlowStatus[]): StatusAction | null {
@@ -51,7 +51,7 @@ export function getStatusAction(status: string, flowSteps?: FlowStatus[]): Statu
     return {
       nextStatus: next.key as TaskStatus,
       label: labelFits ? builtin!.label : `Next: ${next.label}`,
-      icon: labelFits ? builtin!.icon : 'arrow-forward-circle',
+      icon: labelFits ? builtin!.icon : 'arrowRight',
     };
   }
   // BLOCKED (a side state not in the linear flow) resumes via the builtin map.

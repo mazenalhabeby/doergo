@@ -1118,17 +1118,9 @@
     "syncAllSent": "Alles gesendet"
   },
   "manage": {
-    "timeOff": {
-      "label": "Anträge",
-      "desc": "Urlaub und Anträge des Teams – der Verlauf"
-    },
     "members": {
       "label": "Mitglieder",
       "desc": "Team verwalten"
-    },
-    "joinRequests": {
-      "label": "Beitrittsanfragen",
-      "desc": "Prüfen & genehmigen"
     },
     "invitations": {
       "label": "Einladungen",
@@ -1225,10 +1217,6 @@
     "customers": {
       "label": "Kunden",
       "desc": "Leads, Anrufe, Erinnerungen & Nachfassen"
-    },
-    "extraTime": {
-      "label": "Mehrarbeit",
-      "desc": "Überstunden freigeben"
     },
     "issues": {
       "label": "Schichtprobleme",

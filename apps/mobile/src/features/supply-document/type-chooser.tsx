@@ -1,5 +1,5 @@
 import { View, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { formatCalendarDate } from '@hbcfield/shared/client';
 import type { DocumentType } from '@/lib/api/documents';
@@ -25,7 +25,7 @@ export function OfficeRow({ onContract }: { onContract: () => void }) {
         style={[s.typeRow, { backgroundColor: colors.surfaceRaised }]}
       >
         <View style={[s.typeIcon, { backgroundColor: colors.surface }]}>
-          <Ionicons name="car-outline" size={19} color={colors.textSecondary} />
+          <Icon name="car" size={19} color={colors.textSecondary} />
         </View>
         <View style={s.typeText}>
           <Text style={[s.typeLabel, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -35,7 +35,7 @@ export function OfficeRow({ onContract }: { onContract: () => void }) {
             {t('documents.supply.contractHint', 'Rental, leasing or purchase — the office adds it')}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        <Icon name="chevronRight" size={18} color={colors.textMuted} />
       </PressableScale>
     </>
   );
@@ -64,12 +64,13 @@ export function TypeChooser({
         ? t('documents.supply.sentBackWhy', { reason: row.reason, defaultValue: 'Sent back · {{reason}}' })
         : t('documents.required.state.REJECTED');
     if (row.why === 'expired') return t('documents.required.state.EXPIRED');
-    if (row.why === 'expiring') return row.expiresOn
-      ? t('documents.supply.expiringOn', {
-          date: formatCalendarDate(row.expiresOn.slice(0, 10)),
-          defaultValue: 'Expires {{date}} · send the renewed one',
-        })
-      : t('documents.required.state.EXPIRING');
+    if (row.why === 'expiring')
+      return row.expiresOn
+        ? t('documents.supply.expiringOn', {
+            date: formatCalendarDate(row.expiresOn.slice(0, 10)),
+            defaultValue: 'Expires {{date}} · send the renewed one',
+          })
+        : t('documents.required.state.EXPIRING');
     return t('documents.supply.askedMissing', 'Asked for · not sent yet');
   };
 
@@ -87,26 +88,30 @@ export function TypeChooser({
         accessibilityState={{ selected: on, disabled: !!o.off }}
         style={[
           s.typeRow,
-          on ? { backgroundColor: a.accentTint, borderWidth: 1.5, borderColor: a.accent } : { backgroundColor: colors.surfaceRaised },
+          on
+            ? { backgroundColor: a.accentTint, borderWidth: 1.5, borderColor: a.accent }
+            : { backgroundColor: colors.surfaceRaised },
           o.off && { opacity: 0.6 },
         ]}
       >
-        <View
-          style={[
-            s.typeIcon,
-            { backgroundColor: toneTint(a, o.tone, colors.surface) },
-          ]}>
-          <Ionicons
-            name={o.off ? 'time-outline' : o.tone ? 'add' : documentTypeIcon(full.key)}
+        <View style={[s.typeIcon, { backgroundColor: toneTint(a, o.tone, colors.surface) }]}>
+          <Icon
+            name={o.off ? 'time' : o.tone ? 'addLine' : documentTypeIcon(full.key)}
             size={19}
             color={o.tone === 'crit' ? a.critical : o.tone === 'warn' ? a.warn : on ? a.accent : colors.textSecondary}
           />
         </View>
         <View style={s.typeText}>
-          <Text style={[s.typeLabel, { color: on ? a.accent : colors.textPrimary }]} numberOfLines={1}>{ty.label}</Text>
-          {sub ? <Text style={[s.typeHint, { color: hint }]} numberOfLines={1}>{sub}</Text> : null}
+          <Text style={[s.typeLabel, { color: on ? a.accent : colors.textPrimary }]} numberOfLines={1}>
+            {ty.label}
+          </Text>
+          {sub ? (
+            <Text style={[s.typeHint, { color: hint }]} numberOfLines={1}>
+              {sub}
+            </Text>
+          ) : null}
         </View>
-        {on && <Ionicons name="checkmark-circle" size={20} color={a.accent} />}
+        {on && <Icon name="selected" size={20} color={a.accent} />}
       </PressableScale>
     );
   };
@@ -122,9 +127,7 @@ export function TypeChooser({
         an accident, and the tall one draws the eye for no reason that has
         anything to do with what it is.
       */}
-      <Text style={[s.eyebrow, { color: colors.textMuted }]}>
-        {t('documents.supply.whatIsIt')}
-      </Text>
+      <Text style={[s.eyebrow, { color: colors.textMuted }]}>{t('documents.supply.whatIsIt')}</Text>
       {groups.asked.length ? (
         <Text style={[s.eyebrow, { color: a.warn, marginTop: 0 }]}>
           {t('documents.supply.groupAsked', { count: groups.asked.length, defaultValue: 'Asked for · {{count}}' })}
@@ -139,7 +142,9 @@ export function TypeChooser({
       </View>
       {groups.checking.length ? (
         <>
-          <Text style={[s.eyebrow, { color: colors.textMuted }]}>{t('documents.supply.groupChecking', 'Being checked')}</Text>
+          <Text style={[s.eyebrow, { color: colors.textMuted }]}>
+            {t('documents.supply.groupChecking', 'Being checked')}
+          </Text>
           <View style={s.typeList}>
             {groups.checking.map((row) =>
               typeRow(
@@ -160,9 +165,7 @@ export function TypeChooser({
               {t('documents.supply.groupOther', 'Something else')}
             </Text>
           ) : null}
-          <View style={s.typeList}>
-            {groups.other.map((ty) => typeRow(ty, ty.description ?? null))}
-          </View>
+          <View style={s.typeList}>{groups.other.map((ty) => typeRow(ty, ty.description ?? null))}</View>
         </>
       ) : null}
     </>

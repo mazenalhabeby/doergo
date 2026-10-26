@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { PressableScale } from '@/components/pressable-scale';
 import { useTheme } from '@/contexts/theme-context';
@@ -55,13 +55,7 @@ export function CardExtrasGroup({
       hint={kept ? t('scan.extrasHint') : t('scan.extrasNotKept')}
     >
       {rows.map((row) => (
-        <ExtraRow
-          key={row.id}
-          row={row}
-          onRename={onRename}
-          onChangeValue={onChangeValue}
-          onRemove={onRemove}
-        />
+        <ExtraRow key={row.id} row={row} onRename={onRename} onChangeValue={onChangeValue} onRemove={onRemove} />
       ))}
     </CardFieldGroup>
   );
@@ -116,7 +110,7 @@ const ExtraRow = memo(function ExtraRow({
           accessibilityRole="button"
           accessibilityLabel={t('scan.removeExtra')}
         >
-          <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+          <Icon name="trash" size={16} color={colors.textMuted} />
         </PressableScale>
       </View>
       <TextInput

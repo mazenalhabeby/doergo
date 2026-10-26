@@ -1,4 +1,4 @@
-import type { Ionicons } from '@expo/vector-icons';
+import type { IconName } from '@hbcfield/shared/client';
 
 /**
  * A glyph for a document type.
@@ -15,21 +15,21 @@ import type { Ionicons } from '@expo/vector-icons';
  * Here, not in the sheet that first needed it, because the same mapping belongs
  * on the requirements list and the review queue the moment either grows icons.
  */
-export function documentTypeIcon(key: string | null | undefined): keyof typeof Ionicons.glyphMap {
+export function documentTypeIcon(key: string | null | undefined): IconName {
   const k = (key ?? '').toLowerCase();
 
-  if (k.includes('passport')) return 'earth-outline';
-  if (k.includes('licence') || k.includes('license') || k.includes('driving')) return 'car-outline';
-  if (k.includes('id_card') || k.includes('identity') || k.includes('id')) return 'card-outline';
-  if (k.includes('payslip') || k.includes('salary') || k.includes('pay')) return 'cash-outline';
-  if (k.includes('contract')) return 'reader-outline';
-  if (k.includes('first_aid') || k.includes('medical') || k.includes('health')) return 'medkit-outline';
-  if (k.includes('safety') || k.includes('insurance')) return 'shield-checkmark-outline';
-  if (k.includes('training') || k.includes('course')) return 'school-outline';
-  if (k.includes('certificate') || k.includes('cert') || k.includes('trade')) return 'ribbon-outline';
-  if (k.includes('reference')) return 'chatbox-ellipses-outline';
-  if (k.includes('statement') || k.includes('annual')) return 'stats-chart-outline';
-  if (k.includes('warning')) return 'alert-circle-outline';
+  if (k.includes('passport')) return 'globe';
+  if (k.includes('licence') || k.includes('license') || k.includes('driving')) return 'car';
+  if (k.includes('id_card') || k.includes('identity') || k.includes('id')) return 'card';
+  if (k.includes('payslip') || k.includes('salary') || k.includes('pay')) return 'expense';
+  if (k.includes('contract')) return 'file';
+  if (k.includes('first_aid') || k.includes('medical') || k.includes('health')) return 'medical';
+  if (k.includes('safety') || k.includes('insurance')) return 'shield';
+  if (k.includes('training') || k.includes('course')) return 'school';
+  if (k.includes('certificate') || k.includes('cert') || k.includes('trade')) return 'certificate';
+  if (k.includes('reference')) return 'chat';
+  if (k.includes('statement') || k.includes('annual')) return 'reports';
+  if (k.includes('warning')) return 'alertLine';
 
-  return 'document-text-outline';
+  return 'file';
 }

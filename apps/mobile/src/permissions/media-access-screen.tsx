@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 
@@ -72,7 +72,7 @@ export function MediaAccessScreen({
         {p.promises.map((r) => (
           <View key={r.k} style={s.reason}>
             <View style={s.reasonIcon}>
-              <Ionicons name={r.icon} size={14} color={COLORS.primary} />
+              <Icon name={r.icon} size={14} color={COLORS.primary} />
             </View>
             <Text style={s.reasonText}>{t(r.k, r.d)}</Text>
           </View>
@@ -94,7 +94,7 @@ export function MediaAccessScreen({
             accessibilityRole="button"
             activeOpacity={0.85}
           >
-            <Ionicons name="settings-outline" size={17} color={COLORS.white} />
+            <Icon name="settings" size={17} color={COLORS.white} />
             <Text style={s.primaryText}>{t('perm.openSettings', 'Open settings')}</Text>
           </TouchableOpacity>
         </>
@@ -110,7 +110,7 @@ export function MediaAccessScreen({
             <ActivityIndicator size="small" color={COLORS.white} />
           ) : (
             <>
-              <Ionicons name="camera" size={17} color={COLORS.white} />
+              <Icon name="camera" size={17} color={COLORS.white} />
               <Text style={s.primaryText}>{t('perm.allow', 'Allow camera')}</Text>
             </>
           )}

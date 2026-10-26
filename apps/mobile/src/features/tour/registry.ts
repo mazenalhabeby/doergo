@@ -34,7 +34,7 @@ export const TOURS: TourDef[] = [
   {
     id: 'welcome',
     titleKey: 'tours.welcome.title',
-    icon: 'compass-outline',
+    icon: 'navigate',
     autoRunOn: '/',
     autoRunExact: true,
     steps: [
@@ -54,7 +54,7 @@ export const TOURS: TourDef[] = [
   {
     id: 'tasks',
     titleKey: 'tours.tasks.title',
-    icon: 'briefcase-outline',
+    icon: 'clients',
     autoRunOn: '/tasks',
     autoRunExact: true,
     gate: (c) => c.hasModule('tasks'),
@@ -75,7 +75,7 @@ export const TOURS: TourDef[] = [
   {
     id: 'taskDetail',
     titleKey: 'tours.taskDetail.title',
-    icon: 'document-text-outline',
+    icon: 'file',
     autoRunOn: '/task/',
     gate: (c) => c.hasModule('tasks'),
     steps: [
@@ -97,7 +97,7 @@ export const TOURS: TourDef[] = [
   {
     id: 'attendance',
     titleKey: 'tours.attendance.title',
-    icon: 'time-outline',
+    icon: 'time',
     autoRunOn: '/attendance',
     autoRunExact: true,
     gate: (c) => c.hasModule('clock'),
@@ -117,7 +117,7 @@ export const TOURS: TourDef[] = [
   {
     id: 'timeOff',
     titleKey: 'tours.timeOff.title',
-    icon: 'calendar-outline',
+    icon: 'calendar',
     autoRunOn: '/time-off',
     autoRunExact: true,
     gate: (c) => c.hasModule('time_off'),
@@ -132,7 +132,7 @@ export const TOURS: TourDef[] = [
   {
     id: 'team',
     titleKey: 'tours.team.title',
-    icon: 'people-outline',
+    icon: 'people',
     autoRunOn: '/team',
     autoRunExact: true,
     gate: (c) => c.team,
@@ -149,7 +149,7 @@ export const TOURS: TourDef[] = [
   {
     id: 'more',
     titleKey: 'tours.more.title',
-    icon: 'apps-outline',
+    icon: 'dashboard',
     autoRunOn: '/more',
     autoRunExact: true,
     steps: [
@@ -163,7 +163,7 @@ export const TOURS: TourDef[] = [
   {
     id: 'profile',
     titleKey: 'tours.profile.title',
-    icon: 'person-outline',
+    icon: 'user',
     autoRunOn: '/profile',
     autoRunExact: true,
     steps: [

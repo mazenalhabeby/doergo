@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTheme } from '../contexts/theme-context';
 import { FONT_SIZE, SPACING } from '../lib/constants';
 
@@ -12,7 +12,7 @@ export function NotAllowed({ message }: { message: string }) {
   const { colors } = useTheme();
   return (
     <View style={s.centre}>
-      <Ionicons name="lock-closed-outline" size={40} color={colors.textMuted} />
+      <Icon name="lock" size={40} color={colors.textMuted} />
       <Text style={[s.hint, { color: colors.textMuted }]}>{message}</Text>
     </View>
   );

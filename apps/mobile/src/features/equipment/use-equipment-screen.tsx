@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
@@ -39,7 +39,8 @@ export const canSpendOn = (h: HeldAsset) => {
 };
 
 /** The kind's entry types a member can choose — Cost first where the kind records money going out. */
-export const typesFor = (h: HeldAsset) => logTypesForKind(shapeOf(h)).filter((ty) => ty.key !== COST_LOG_KEY || canSpendOn(h));
+export const typesFor = (h: HeldAsset) =>
+  logTypesForKind(shapeOf(h)).filter((ty) => ty.key !== COST_LOG_KEY || canSpendOn(h));
 
 /** Open the right screen for one thing a member did. */
 export function logFor(assetId: string, key: string) {
@@ -70,86 +71,115 @@ export function useEquipmentScreen() {
   const [busy, setBusy] = useState(false);
   const { operations } = useSyncStatus();
 
-  const load = useCallback(async (spinner = false) => {
-    if (spinner) setRefreshing(true);
-    try {
-      const [mine, proposals, logged, dueSoon] = await Promise.all([
-        assetsApi.mine(),
-        assetProposalsApi.mine(),
-        assetsApi.myLog().catch(() => null),
-        assetsApi.dueMine().catch(() => [] as DueItem[]),
-      ]);
-      // Receipts on their own only on a server without the logbook — they are entries otherwise.
-      const expenses = logged === null ? await assetsApi.myExpenses().catch(() => [] as MyExpense[]) : [];
-      const next: Loaded = {
-        held: mine.periods,
-        canPropose: mine.canPropose,
-        expenses,
-        proposals,
-        entries: logged,
-        due: dueSoon,
-        at: Date.now(),
-      };
-      setData(next);
-      setStale(false);
-      if (user?.id) rememberEquipment(user.id, next);
-      forgetHeldAssets(); // the profile's count reads the same answer
-    } catch {
-      setStale(true);
-      setData((d) => d ?? { held: [], canPropose: false, expenses: [], proposals: [], entries: null, due: [], at: 0 });
-    } finally {
-      setRefreshing(false);
-    }
-  }, [user?.id]);
+  const load = useCallback(
+    async (spinner = false) => {
+      if (spinner) setRefreshing(true);
+      try {
+        const [mine, proposals, logged, dueSoon] = await Promise.all([
+          assetsApi.mine(),
+          assetProposalsApi.mine(),
+          assetsApi.myLog().catch(() => null),
+          assetsApi.dueMine().catch(() => [] as DueItem[]),
+        ]);
+        // Receipts on their own only on a server without the logbook — they are entries otherwise.
+        const expenses = logged === null ? await assetsApi.myExpenses().catch(() => [] as MyExpense[]) : [];
+        const next: Loaded = {
+          held: mine.periods,
+          canPropose: mine.canPropose,
+          expenses,
+          proposals,
+          entries: logged,
+          due: dueSoon,
+          at: Date.now(),
+        };
+        setData(next);
+        setStale(false);
+        if (user?.id) rememberEquipment(user.id, next);
+        forgetHeldAssets(); // the profile's count reads the same answer
+      } catch {
+        setStale(true);
+        setData(
+          (d) => d ?? { held: [], canPropose: false, expenses: [], proposals: [], entries: null, due: [], at: 0 },
+        );
+      } finally {
+        setRefreshing(false);
+      }
+    },
+    [user?.id],
+  );
 
-  useFocusEffect(useCallback(() => { void load(); }, [load]));
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
 
   const held = data?.held ?? [];
   const byAsset = useMemo(() => new Map(held.map((h) => [h.assetId, h] as const)), [held]);
-  const rows = useMemo(() => overlayMyLog(data?.entries ?? null, operations, held, data?.at ?? 0), [data, operations, held]);
+  const rows = useMemo(
+    () => overlayMyLog(data?.entries ?? null, operations, held, data?.at ?? 0),
+    [data, operations, held],
+  );
 
   /* Delivered while this screen is open → re-read, so "Waiting to send" turns into the office's answer. */
-  const delivered = logEntriesDeliveredSince(operations, data?.at ?? 0)
-    + operations.filter(
-        (o) =>
-          (o.op === 'expense.submit' || o.op === 'proposal.raise') &&
-          o.state === 'done' &&
-          o.updatedAt > (data?.at ?? 0),
-      ).length;
+  const delivered =
+    logEntriesDeliveredSince(operations, data?.at ?? 0) +
+    operations.filter(
+      (o) =>
+        (o.op === 'expense.submit' || o.op === 'proposal.raise') && o.state === 'done' && o.updatedAt > (data?.at ?? 0),
+    ).length;
   useEffect(() => {
     if ((data?.at ?? 0) > 0 && delivered > 0) void load();
   }, [delivered, load]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const queued = useMemo<QueuedSend[]>(() => operations
-    .filter((o) => (o.op === 'expense.submit' || o.op === 'proposal.raise') && STILL_MINE.has(o.state))
-    .map((o) => ({ id: o.id, op: o.op, createdAt: o.createdAt, body: (o.payload.body ?? {}) as Record<string, unknown>, params: (o.payload as { params?: Record<string, unknown> }).params })), [operations]);
+  const queued = useMemo<QueuedSend[]>(
+    () =>
+      operations
+        .filter((o) => (o.op === 'expense.submit' || o.op === 'proposal.raise') && STILL_MINE.has(o.state))
+        .map((o) => ({
+          id: o.id,
+          op: o.op,
+          createdAt: o.createdAt,
+          body: (o.payload.body ?? {}) as Record<string, unknown>,
+          params: (o.payload as { params?: Record<string, unknown> }).params,
+        })),
+    [operations],
+  );
 
-  const items = useMemo(() => sentIn({
-    entries: rows,
-    expenses: data?.expenses ?? [],
-    proposals: data?.proposals ?? [],
-    queued,
-    nameOf: (id) => byAsset.get(id)?.asset?.name ?? null,
-    unitOf: (assetId, _logType, field) => {
-      const h = byAsset.get(assetId);
-      return h ? kindMeters(shapeOf(h).logTypes).find((m) => m.key === field)?.unit ?? null : null;
+  const items = useMemo(
+    () =>
+      sentIn({
+        entries: rows,
+        expenses: data?.expenses ?? [],
+        proposals: data?.proposals ?? [],
+        queued,
+        nameOf: (id) => byAsset.get(id)?.asset?.name ?? null,
+        unitOf: (assetId, _logType, field) => {
+          const h = byAsset.get(assetId);
+          return h ? (kindMeters(shapeOf(h).logTypes).find((m) => m.key === field)?.unit ?? null) : null;
+        },
+      }),
+    [rows, data, queued, byAsset],
+  );
+
+  const whatOf = useCallback(
+    (i: SentItem) => {
+      if (i.kind === 'contract') return t('equipment.contract', 'Contract');
+      const h = i.assetId ? byAsset.get(i.assetId) : undefined;
+      const ty = h ? findLogType(shapeOf(h), i.what) : null;
+      return ty ? logTypeLabel(ty, t) : i.what || t('logbook.cost', 'Cost');
     },
-  }), [rows, data, queued, byAsset]);
+    [byAsset, t],
+  );
 
-  const whatOf = useCallback((i: SentItem) => {
-    if (i.kind === 'contract') return t('equipment.contract', 'Contract');
-    const h = i.assetId ? byAsset.get(i.assetId) : undefined;
-    const ty = h ? findLogType(shapeOf(h), i.what) : null;
-    return ty ? logTypeLabel(ty, t) : i.what || t('logbook.cost', 'Cost');
-  }, [byAsset, t]);
-
-  const stateWords = (i: SentItem) => ({
-    toSend: t('offline.chip.waiting', 'Waiting to send'),
-    office: t('equipment.state.office', 'Waiting for the office'),
-    accepted: t('equipment.state.accepted', 'Accepted'),
-    refused: t('equipment.state.refused', 'Refused'),
-    takenBack: t('equipment.state.takenBack', 'Taken back'),
-  })[i.state];
+  const stateWords = (i: SentItem) =>
+    ({
+      toSend: t('offline.chip.waiting', 'Waiting to send'),
+      office: t('equipment.state.office', 'Waiting for the office'),
+      accepted: t('equipment.state.accepted', 'Accepted'),
+      refused: t('equipment.state.refused', 'Refused'),
+      takenBack: t('equipment.state.takenBack', 'Taken back'),
+    })[i.state];
 
   const dueLine = (d: DueItem) => {
     const unit = d.unit ? ` ${d.unit}` : '';
@@ -169,11 +199,22 @@ export function useEquipmentScreen() {
   /* One button per card — the one that fits its kind. A kind with one entry type skips the choice. */
   const act = (h: HeldAsset) => {
     const types = typesFor(h);
-    if (types.length === 1) { logFor(h.assetId, types[0]!.key); return; }
-    if (types.length > 1) { setPicking(h); return; }
+    if (types.length === 1) {
+      logFor(h.assetId, types[0]!.key);
+      return;
+    }
+    if (types.length > 1) {
+      setPicking(h);
+      return;
+    }
     if (canSpendOn(h)) logFor(h.assetId, COST_LOG_KEY);
   };
-  const actLabel = (h: HeldAsset) => (shapeOf(h).logTypes.length > 0 ? t('equipment.logSomething', 'Log something') : canSpendOn(h) ? t('myAssets.addExpense', 'Add a receipt') : null);
+  const actLabel = (h: HeldAsset) =>
+    shapeOf(h).logTypes.length > 0
+      ? t('equipment.logSomething', 'Log something')
+      : canSpendOn(h)
+        ? t('myAssets.addExpense', 'Add a receipt')
+        : null;
 
   const takeBack = async () => {
     const i = takingBack;
@@ -193,24 +234,34 @@ export function useEquipmentScreen() {
   };
 
   /* From one sheet to the next only after the first has left — two at once freeze iOS. */
-  const fromSheet = (fn: () => void) => { setOpened(null); setTimeout(fn, 280); };
+  const fromSheet = (fn: () => void) => {
+    setOpened(null);
+    setTimeout(fn, 280);
+  };
   const back = () => (router.canGoBack() ? router.back() : router.navigate('/(app)/(tabs)' as Href));
   const offerContract = !!data?.canPropose && !orgHasAddOn(user?.orgAddOns ?? null, 'documents');
   const due = data?.due ?? [];
 
   const card = (h: HeldAsset) => {
     const a = h.asset;
-    const sub = [a?.category?.name, [a?.manufacturer, a?.model].filter(Boolean).join(' '), a?.serialNumber].filter(Boolean).join(' · ');
+    const sub = [a?.category?.name, [a?.manufacturer, a?.model].filter(Boolean).join(' '), a?.serialNumber]
+      .filter(Boolean)
+      .join(' · ');
     const label = actLabel(h);
     return (
-      <Pressable key={h.id} onPress={() => setOpened(h)} accessibilityRole="button" accessibilityLabel={a?.name}
+      <Pressable
+        key={h.id}
+        onPress={() => setOpened(h)}
+        accessibilityRole="button"
+        accessibilityLabel={a?.name}
         style={({ pressed }) => ({
           backgroundColor: c.well,
           borderRadius: amazen.radius.panel,
           padding: amazen.space(3.5),
           gap: amazen.space(3),
           opacity: pressed ? 0.9 : 1,
-        })}>
+        })}
+      >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3) }}>
           <View
             style={{
@@ -220,16 +271,21 @@ export function useEquipmentScreen() {
               backgroundColor: c.accentTint,
               alignItems: 'center',
               justifyContent: 'center',
-            }}>
-            <Ionicons name="cube-outline" size={21} color={c.accent} />
+            }}
+          >
+            <Icon name="assets" size={21} color={c.accent} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 15.5 }}>
               {a?.name ?? t('myAssets.anAsset', 'An asset')}
             </AText>
-            <AText variant="caption" tone="muted" numberOfLines={1}>{sub || '—'}</AText>
+            <AText variant="caption" tone="muted" numberOfLines={1}>
+              {sub || '—'}
+            </AText>
           </View>
-          <AText variant="body" tone="muted">›</AText>
+          <AText variant="body" tone="muted">
+            ›
+          </AText>
         </View>
         <View style={{ flexDirection: 'row', gap: amazen.space(2) }}>
           {[
@@ -245,9 +301,12 @@ export function useEquipmentScreen() {
                 borderRadius: 14,
                 paddingHorizontal: amazen.space(2.5),
                 paddingVertical: amazen.space(2),
-              }}>
+              }}
+            >
               <SectionLabel>{k}</SectionLabel>
-              <AText variant="body" tone="strong" numeric numberOfLines={1} style={{ fontSize: 14, marginTop: 2 }}>{v}</AText>
+              <AText variant="body" tone="strong" numeric numberOfLines={1} style={{ fontSize: 14, marginTop: 2 }}>
+                {v}
+              </AText>
             </View>
           ))}
         </View>

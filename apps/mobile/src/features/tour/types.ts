@@ -1,3 +1,4 @@
+import type { IconName } from '@hbcfield/shared/client';
 /**
  * Guided-tour engine — types (React Native port of the web engine).
  *
@@ -68,8 +69,8 @@ export interface TourDef {
   id: string;
   /** i18n key for the tour's human name (shown in the Help launcher). */
   titleKey: string;
-  /** Ionicons icon name for the launcher. */
-  icon: string;
+  /** The launcher's mark, from the shared library. */
+  icon: IconName;
   /** Predicate deciding whether this tour applies to the current user. */
   gate?: (ctx: TourGateContext) => boolean;
   /**

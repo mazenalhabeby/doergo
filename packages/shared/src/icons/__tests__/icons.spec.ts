@@ -49,6 +49,12 @@ describe('the icon library', () => {
     expect(SOLAR_ICONS.clockRunning).toMatch(/d="M12 13\.5V8\.2"\/>$/);
   });
 
+  it('stores every drawing once — two names for one shape is a second library growing inside the first', () => {
+    const byMarkup = new Map<string, string[]>();
+    for (const [name, markup] of entries) byMarkup.set(markup, [...(byMarkup.get(markup) ?? []), name]);
+    expect([...byMarkup.values()].filter((names) => names.length > 1)).toEqual([]);
+  });
+
   it.each(entries)('%s holds drawing markup only — no script, handler, link or style', (_name, markup) => {
     expect(markup).not.toMatch(/<script|<style|<foreignObject|<image|<use\b|href|javascript:|url\(/i);
     for (const [, el] of markup.matchAll(/<([a-zA-Z]+)/g)) expect(ELEMENTS.has(el)).toBe(true);

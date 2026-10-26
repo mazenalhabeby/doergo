@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/amazen/ink-icon';
 import { useTranslation } from 'react-i18next';
 import { type SupportTicket } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
@@ -10,7 +10,13 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '@/lib/constants
 /** SupportScreen's module-level helpers, moved here unchanged so its sections can read them too. */
 /* ---------------- rows: memoised ---------------- */
 
-export const TicketRow = memo(function TicketRow({ ticket: tk, onOpen }: { ticket: SupportTicket; onOpen: (id: string) => void }) {
+export const TicketRow = memo(function TicketRow({
+  ticket: tk,
+  onOpen,
+}: {
+  ticket: SupportTicket;
+  onOpen: (id: string) => void;
+}) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const pendingSync = !!(tk as { pendingSync?: boolean }).pendingSync;
@@ -32,7 +38,9 @@ export const TicketRow = memo(function TicketRow({ ticket: tk, onOpen }: { ticke
         ]}
       />
       <View style={{ flex: 1 }}>
-        <Text style={[styles.ticketSubject, { color: colors.textPrimary }]} numberOfLines={1}>{tk.subject}</Text>
+        <Text style={[styles.ticketSubject, { color: colors.textPrimary }]} numberOfLines={1}>
+          {tk.subject}
+        </Text>
         <Text style={[styles.ticketMeta, { color: colors.textSecondary }]}>
           {pendingSync ? t('offline.chip.waiting') : t(`support.status.${tk.status}`, tk.status)}
         </Text>
@@ -42,7 +50,15 @@ export const TicketRow = memo(function TicketRow({ ticket: tk, onOpen }: { ticke
   );
 });
 
-export const SupportBubble = memo(function SupportBubble({ body, mine, pending }: { body: string; mine: boolean; pending: boolean }) {
+export const SupportBubble = memo(function SupportBubble({
+  body,
+  mine,
+  pending,
+}: {
+  body: string;
+  mine: boolean;
+  pending: boolean;
+}) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   return (
@@ -54,11 +70,12 @@ export const SupportBubble = memo(function SupportBubble({ body, mine, pending }
             ? { backgroundColor: COLORS.primary }
             : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 },
           pending && { opacity: 0.7 },
-        ]}>
+        ]}
+      >
         <Text style={{ color: mine ? '#fff' : colors.textPrimary, fontSize: FONT_SIZE.sm }}>{body}</Text>
         {pending && (
-          <Ionicons
-            name="time-outline"
+          <Icon
+            name="time"
             size={11}
             color="#fff"
             style={{ alignSelf: 'flex-end', marginTop: 2 }}
@@ -88,7 +105,13 @@ export const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4 },
   ticketSubject: { fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.medium },
   ticketMeta: { fontSize: FONT_SIZE.xs, marginTop: 2 },
-  primaryBtn: { backgroundColor: COLORS.primary, margin: SPACING.md, borderRadius: RADIUS.md, paddingVertical: 14, alignItems: 'center' },
+  primaryBtn: {
+    backgroundColor: COLORS.primary,
+    margin: SPACING.md,
+    borderRadius: RADIUS.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
   primaryBtnText: { color: '#fff', fontWeight: FONT_WEIGHT.semibold, fontSize: FONT_SIZE.md },
   input: {
     borderWidth: 1,
