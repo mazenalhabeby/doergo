@@ -85,9 +85,28 @@ describe('the tab pill fits', () => {
   it('leaves room for the longest label in every language', () => {
     // icon 21 + gap 6 + horizontal padding 20
     const room = CAPSULE_W - 21 - 6 - 20;
-    const longest = ['Home', 'Jobs', 'Time', 'Chat', 'More', 'Start', 'Aufträge', 'Zeit',
-      'Mehr', 'Inicio', 'Trabajos', 'Tiempo', 'Más', 'Accueil', 'Tâches', 'Temps', 'Plus',
-      'Lavori', 'Tempo', 'Altro'];
+    const longest = [
+      'Home',
+      'Jobs',
+      'Time',
+      'Chat',
+      'More',
+      'Start',
+      'Aufträge',
+      'Zeit',
+      'Mehr',
+      'Inicio',
+      'Trabajos',
+      'Tiempo',
+      'Más',
+      'Accueil',
+      'Tâches',
+      'Temps',
+      'Plus',
+      'Lavori',
+      'Tempo',
+      'Altro',
+    ];
     for (const label of longest) {
       // Readex Pro at 13px averages ~0.55em per glyph.
       expect(label.length * 13 * 0.55).toBeLessThanOrEqual(room);
@@ -99,9 +118,7 @@ describe('the footer', () => {
   it('has a mark for every tab that can reach the bar or the overflow', () => {
     const src = read(path.join(SRC, 'components/glyphs/tab-glyphs.tsx'));
     const table = src.slice(src.indexOf('TAB_GLYPHS'));
-    const drawn = new Set(
-      [...table.matchAll(/^\s*'?([A-Za-z-]+)'?:\s*(Tab\w+Glyph),/gm)].map((m) => m[1]!),
-    );
+    const drawn = new Set([...table.matchAll(/^\s*'?([A-Za-z-]+)'?:\s*tabMark\(/gm)].map((m) => m[1]!));
     for (const name of TAB_PRIORITY) expect([...drawn]).toContain(name);
   });
 
@@ -121,28 +138,16 @@ describe('the footer', () => {
     expect(more).toContain('TAB_GLYPHS');
   });
 
-  it('keeps every footer mark a stroked outline, except the dots', () => {
+  it('draws every footer mark from the shared library: a LINE mark, its FILLED twin when active', () => {
     /*
-      ⚠️ The footer is the ONE exception to the family's law — see
-      `docs/design/icons/README.md`. Four stacked opacities at 21px composite
-      to a grey smudge, and there is no single surface to punch `contrast`
-      against on a translucent pill over a per-screen gradient.
-
-      `TabMoreGlyph` is the exception inside the exception: an outlined 2px dot
-      is a ring with nothing in it.
+      The web and the phone draw one library (2026-10-26). A hand-drawn footer was a second icon language at
+      the app's most-seen point.
     */
     const src = read(path.join(SRC, 'components/glyphs/tab-glyphs.tsx'));
-    const marks = src.split(/^export function /m).slice(1);
-    for (const mark of marks) {
-      const name = mark.slice(0, mark.indexOf('('));
-      if (name === 'TabMoreGlyph') {
-        expect(mark).toMatch(/fill=\{color\}/);
-        continue;
-      }
-      expect(mark).toContain('{...stroke(color)}');
-      // fillOpacity is the family's four-depth construction; not here.
-      expect(mark).not.toMatch(/fillOpacity/);
-    }
+    expect(src).not.toMatch(/react-native-svg/);
+    const pairs = [...src.matchAll(/tabMark\('(\w+)', '(\w+)'\)/g)].filter((m) => m[1] !== 'moreDots');
+    expect(pairs.length).toBeGreaterThanOrEqual(8);
+    for (const [, line, solid] of pairs) expect(line).toBe(`${solid}Line`);
   });
 });
 
@@ -177,7 +182,7 @@ describe('the footer works on both platforms', () => {
     const src = pill();
     // The LAST `{item.label}` is the drawn one; the first is the
     // accessibilityLabel, which is read out whether or not the word is shown.
-    const label = src.slice(src.lastIndexOf("{item.label}") - 1100, src.lastIndexOf('{item.label}'));
+    const label = src.slice(src.lastIndexOf('{item.label}') - 1100, src.lastIndexOf('{item.label}'));
     expect(label).toMatch(/flexShrink:\s*1/);
     expect(label).toMatch(/numberOfLines=\{1\}/);
   });
@@ -257,7 +262,11 @@ describe('the bar settles without rocking', () => {
       that one number. As long as the number only falls, the mark only travels
       one way. This is what `overshootClamping` buys.
     */
-    const CAPSULE = 108, MARK = 46, ICON = 21, PAD = 10, LABEL = 40;
+    const CAPSULE = 108,
+      MARK = 46,
+      ICON = 21,
+      PAD = 10,
+      LABEL = 40;
     const centreAt = (g: number) => (MARK + (CAPSULE - MARK) * g - (ICON + LABEL * g)) / 2 + PAD;
     let prev = Infinity;
     for (let i = 0; i <= 20; i++) {

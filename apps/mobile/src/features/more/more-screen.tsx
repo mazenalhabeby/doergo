@@ -129,7 +129,7 @@ export function MoreScreen() {
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}>
-                    {G ? <G size={20} color={c.accent} /> : null}
+                    {G ? <G size={20} color={c.accent} filled /> : null}
                   </View>
                   <View>
                     <AText

@@ -29,7 +29,8 @@ export function InkIcon({
       `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${ICON_VIEWBOX}">` +
       (flat
         ? iconMarkup(name)
-        : (`<defs><linearGradient id="ink" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="` + `${to}"/></linearGradient></defs>${iconMarkup(name, 'url(#ink)')}`)) +
+        : `<defs><linearGradient id="ink" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="` +
+          `${to}"/></linearGradient></defs>${iconMarkup(name, 'url(#ink)')}`) +
       '</svg>',
     [name, flat, from, to],
   );
@@ -41,4 +42,14 @@ export function inkGlyph(name: IconName): React.ComponentType<GlyphProps> {
   const Ink = ({ size }: GlyphProps) => <InkIcon name={name} size={size} />;
   Ink.displayName = `Ink(${name})`;
   return Ink;
+}
+
+/**
+ * A library icon where a screen asks for a Glyph, drawn FLAT in the colour that screen passes — the More rows
+ * pass the accent, the home shortcuts the ink, exactly as they did for the hand-drawn marks.
+ */
+export function libGlyph(name: IconName): React.ComponentType<GlyphProps> {
+  const Mark = ({ size, color }: GlyphProps) => <InkIcon name={name} size={size} flat color={color} />;
+  Mark.displayName = `Lib(${name})`;
+  return Mark;
 }

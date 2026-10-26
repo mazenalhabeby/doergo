@@ -9,7 +9,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTheme } from '@/contexts/theme-context';
 import { AText } from '../text';
-import { TAB_GLYPHS, TabMoreGlyph, type TabGlyphProps } from '@/components/glyphs/tab-glyphs';
 import { slide, tint } from './motion';
 import { Bump } from '../motion';
 import type { TabPillItem } from '../tab-pill';
@@ -174,7 +173,7 @@ export function TabSlot({
           <View>
             <Glyph size={21} color={c.inkMuted} />
             <Animated.View style={[{ position: 'absolute', left: 0, top: 0 }, jadeStyle]}>
-              <Glyph size={21} color={c.accent} />
+              <Glyph size={21} color={c.accent} filled />
             </Animated.View>
           </View>
 
