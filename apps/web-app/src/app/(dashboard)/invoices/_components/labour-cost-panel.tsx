@@ -48,7 +48,7 @@ export function LabourCostPanel({
   const daysText = (n: number) => t("invoices.create.costDays", { count: n })
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+    <div className="rounded-[22px] border border-border bg-card shadow-shell p-4 sm:p-5">
       <p className="mb-3 text-sm font-medium text-foreground">{t("invoices.create.marginTitle")}</p>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -61,9 +61,10 @@ export function LabourCostPanel({
         </div>
         <div>
           <p className="text-xs text-muted-foreground">{t("invoices.create.labourCostsYou")}</p>
-          <p className="text-xl font-semibold tabular-nums text-amber-700 dark:text-amber-500">{money(cost, baseCurrency)}</p>
+          <p className="text-xl font-semibold tabular-nums text-shell-warn">{money(cost, baseCurrency)}</p>
           <p className="text-[11px] tabular-nums text-muted-foreground">
-            {formatHoursMinutes(hours)}{days > 0 ? ` · ${daysText(days)}` : ""}
+            {formatHoursMinutes(hours)}
+            {days > 0 ? ` · ${daysText(days)}` : ""}
           </p>
         </div>
         <div>
@@ -73,13 +74,14 @@ export function LabourCostPanel({
           ) : (
             <>
               <p
-                className={cn(
-                  "text-xl font-semibold tabular-nums",
-                  keep < 0 ? "text-red-600 dark:text-red-400" : "text-teal-700 dark:text-teal-400")}>
+                className={cn("text-xl font-semibold tabular-nums", keep < 0 ? "text-shell-crit" : "text-shell-accent")}
+              >
                 {money(keep, baseCurrency)}
               </p>
               {keepPct != null && (
-                <p className="text-[11px] tabular-nums text-muted-foreground">{t("invoices.create.keepShare", { pct: keepPct })}</p>
+                <p className="text-[11px] tabular-nums text-muted-foreground">
+                  {t("invoices.create.keepShare", { pct: keepPct })}
+                </p>
               )}
             </>
           )}
@@ -89,14 +91,14 @@ export function LabourCostPanel({
       {billedInBase != null && billedInBase > 0 && (
         <div className="mt-4" aria-hidden="true">
           <div className="flex h-2 overflow-hidden rounded-full bg-muted">
-            <div className="bg-amber-500" style={{ width: `${costShare}%` }} />
-            <div className="bg-teal-500" style={{ width: `${100 - costShare}%` }} />
+            <div className="bg-shell-warn" style={{ width: `${costShare}%` }} />
+            <div className="bg-shell-accent" style={{ width: `${100 - costShare}%` }} />
           </div>
         </div>
       )}
 
       {needsRate && (
-        <p className="mt-3 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs text-blue-800 dark:text-blue-300">
+        <p className="mt-3 rounded-xl bg-shell-accent-soft px-3 py-2 text-xs text-foreground">
           {t("currency.marginNeedsRate", { from: currency, to: baseCurrency })}
         </p>
       )}
@@ -120,16 +122,19 @@ export function LabourCostPanel({
                     <span className="block font-medium text-foreground">{r.name}</span>
                     {r.role && <span className="block text-[11px] text-muted-foreground">{r.role}</span>}
                   </td>
-                  <td className="px-2 py-2.5 text-right tabular-nums">{r.hours > 0 ? formatHoursMinutes(r.hours) : "—"}</td>
+                  <td className="px-2 py-2.5 text-right tabular-nums">
+                    {r.hours > 0 ? formatHoursMinutes(r.hours) : "—"}
+                  </td>
                   <td className="px-2 py-2.5 text-right tabular-nums">{r.days > 0 ? daysText(r.days) : "—"}</td>
                   <td className="px-2 py-2.5 text-xs">
                     {r.costCents == null ? (
-                      <span className="text-amber-700 dark:text-amber-400">
+                      <span className="text-shell-warn">
                         {t("invoices.create.costNoRate")}
                         {r.workerId && (
                           <Link
                             href={`/members/${r.workerId}?edit=1`}
-                            className="ml-2 font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                            className="ml-2 font-semibold text-shell-accent hover:underline"
+                          >
                             {t("invoices.create.costSetRate")}
                           </Link>
                         )}
@@ -137,30 +142,39 @@ export function LabourCostPanel({
                     ) : (
                       <span className="flex flex-col gap-0.5">
                         {r.hourRateCents != null && (
-                          <span><span
-                            className={"mr-1.5 rounded bg-blue-100 px-1.5 py-px text-[10px] font-bold " +
-                              "text-blue-700 dark:bg-blue-950 dark:text-blue-300"}>{t(
-                                "invoices.create.tagHour")}</span>{formatMoney(
-                                  r.hourRateCents,
-                                  baseCurrency,
-                                  MONEY_LOCALE)} {t("invoices.create.perHour")}</span>
+                          <span>
+                            <span
+                              className={
+                                "mr-1.5 rounded bg-shell-accent-soft px-1.5 py-px text-[10px] font-bold " +
+                                "text-shell-accent"
+                              }
+                            >
+                              {t("invoices.create.tagHour")}
+                            </span>
+                            {formatMoney(r.hourRateCents, baseCurrency, MONEY_LOCALE)} {t("invoices.create.perHour")}
+                          </span>
                         )}
                         {r.dayRateCents != null && (
-                          <span><span
-                            className={"mr-1.5 rounded bg-violet-100 px-1.5 py-px text-[10px] font-bold " +
-                              "text-violet-700 dark:bg-violet-950 dark:text-violet-300"}>{t(
-                                "invoices.create.tagDay")}</span>{formatMoney(
-                                  r.dayRateCents,
-                                  baseCurrency,
-                                  MONEY_LOCALE)} {t("invoices.create.perDay")}</span>
+                          <span>
+                            <span
+                              className={
+                                "mr-1.5 rounded bg-shell-chip px-1.5 py-px text-[10px] font-bold " + "text-foreground"
+                              }
+                            >
+                              {t("invoices.create.tagDay")}
+                            </span>
+                            {formatMoney(r.dayRateCents, baseCurrency, MONEY_LOCALE)} {t("invoices.create.perDay")}
+                          </span>
                         )}
                       </span>
                     )}
                   </td>
                   <td className="py-2.5 pl-2 text-right tabular-nums">
-                    {r.costCents == null
-                      ? <span className="text-muted-foreground">—</span>
-                      : formatMoney(r.costCents, baseCurrency, MONEY_LOCALE)}
+                    {r.costCents == null ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      formatMoney(r.costCents, baseCurrency, MONEY_LOCALE)
+                    )}
                   </td>
                 </tr>
               ))}
@@ -171,7 +185,7 @@ export function LabourCostPanel({
                 <td className="px-2 pt-3 text-right tabular-nums">{formatHoursMinutes(hours)}</td>
                 <td className="px-2 pt-3 text-right tabular-nums">{days > 0 ? daysText(days) : "—"}</td>
                 <td />
-                <td className="pl-2 pt-3 text-right tabular-nums text-amber-700 dark:text-amber-500">{money(cost, baseCurrency)}</td>
+                <td className="pl-2 pt-3 text-right tabular-nums text-shell-warn">{money(cost, baseCurrency)}</td>
               </tr>
             </tfoot>
           </table>
@@ -179,7 +193,7 @@ export function LabourCostPanel({
       )}
 
       {missing.length > 0 && (
-        <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+        <p className="mt-3 rounded-xl bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] px-3 py-2 text-xs text-shell-warn">
           {t("invoices.create.costMissing", { names: missing.map((r) => r.name).join(", "), count: missing.length })}
         </p>
       )}

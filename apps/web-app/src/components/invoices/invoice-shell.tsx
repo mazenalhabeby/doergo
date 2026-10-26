@@ -29,15 +29,18 @@ import { PAGE_WIDTH } from "@/components/ui/page-width"
 /** The step number and title that head each rail section. */
 function SectionHead({ step, title, hint }: { step: number; title: string; hint?: string }) {
   return (
-    <div className="mb-3.5 flex items-center gap-2.5">
+    <div className="mb-4 flex items-center gap-3">
       <span
-        className={"flex size-5 shrink-0 items-center justify-center rounded-full bg-muted " +
-          "text-[10px] font-semibold tabular-nums text-muted-foreground"}>
+        className={
+          "grid size-[26px] shrink-0 place-items-center rounded-full bg-shell-accent " +
+          "text-[12.5px] font-bold tabular-nums text-shell-on-accent"
+        }
+      >
         {step}
       </span>
       <div className="min-w-0">
-        <h2 className="text-sm font-semibold leading-none text-foreground">{title}</h2>
-        {hint && <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{hint}</p>}
+        <h2 className="text-[15px] font-semibold leading-tight text-foreground">{title}</h2>
+        {hint && <p className="mt-0.5 text-[12.5px] leading-snug text-muted-foreground">{hint}</p>}
       </div>
     </div>
   )
@@ -77,28 +80,29 @@ export function InvoiceTopBar({
 }) {
   return (
     <div data-invoice-topbar className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
-      <div className={cn(PAGE_WIDTH, "flex items-center gap-3.5 py-2.5")}>
-        <Button variant="outline" size="icon" className="size-[30px] shrink-0" onClick={onBack}>
+      <div className={cn(PAGE_WIDTH, "flex items-center gap-3 py-3")}>
+        <Button variant="outline" size="pillIcon" className="shrink-0" onClick={onBack}>
           <ArrowLeft className="size-4" />
         </Button>
-        <div className="min-w-0">
-          <h1 className="truncate text-[15px] font-semibold leading-tight tracking-tight text-foreground">
-            {title}
-          </h1>
-          {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
+        <div className="flex min-w-0 flex-col">
+          <div className="flex min-w-0 items-center gap-3">
+            <h1 className="truncate text-[22px] font-semibold leading-tight tracking-[-0.03em] text-foreground">
+              {title}
+            </h1>
+            {status && (
+              <span
+                className={cn(
+                  "hidden h-7 shrink-0 items-center gap-1.5 rounded-[9px] px-[11px] text-[13px] font-semibold sm:inline-flex",
+                  status.className ?? "bg-shell-chip text-muted-foreground",
+                )}
+              >
+                {status.label}
+              </span>
+            )}
+          </div>
+          {subtitle && <p className="truncate text-[13.5px] text-muted-foreground">{subtitle}</p>}
         </div>
         <span className="flex-1" />
-        {status && (
-          <span
-            className={cn(
-              "hidden rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] sm:inline",
-              status.className ??
-                "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
-            )}
-          >
-            {status.label}
-          </span>
-        )}
         {children}
       </div>
     </div>
@@ -115,8 +119,8 @@ export function InvoiceTopBar({
  */
 export function InvoiceNotice({ children }: { children: ReactNode }) {
   return (
-    <div className="border-b border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
-      <div className={cn(PAGE_WIDTH, "py-2 text-center text-xs")}>{children}</div>
+    <div className="bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn">
+      <div className={cn(PAGE_WIDTH, "py-2.5 text-center text-[13px] font-semibold")}>{children}</div>
     </div>
   )
 }
@@ -169,15 +173,21 @@ function useRailFit(ref: RefObject<HTMLElement | null>) {
     if (bar) ro.observe(bar)
     if (scroller) ro.observe(scroller)
     window.addEventListener("resize", fit)
-    return () => { ro.disconnect(); window.removeEventListener("resize", fit) }
+    return () => {
+      ro.disconnect()
+      window.removeEventListener("resize", fit)
+    }
   }, [ref])
 }
+
+/** The rail beside the document — wider on a wide screen, as the board draws its steps. */
+const WORKBENCH_COLUMNS = "lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)]"
 
 export function InvoiceWorkbench({ rail, children }: { rail: ReactNode; children: ReactNode }) {
   const railRef = useRef<HTMLElement>(null)
   useRailFit(railRef)
   return (
-    <div className={cn(PAGE_WIDTH, "grid items-start lg:grid-cols-[320px_minmax(0,1fr)]")}>
+    <div className={cn(PAGE_WIDTH, "grid items-start gap-x-[18px]", WORKBENCH_COLUMNS)}>
       {/*
         On a wide screen the rail is its own scrolling column: it stays put
         while the document scrolls, and scrolling inside it never drags the
@@ -186,12 +196,15 @@ export function InvoiceWorkbench({ rail, children }: { rail: ReactNode; children
       */}
       <aside
         ref={railRef}
-        className="border-b border-border bg-muted/30 px-4 py-5 lg:sticky lg:top-[var(--rail-top,53px)] lg:h-[var(--rail-h,calc(100dvh-53px))] lg:overflow-y-auto lg:overscroll-contain lg:border-b-0 lg:border-r [scrollbar-gutter:stable]"
+        className={
+          "py-5 lg:sticky lg:top-[var(--rail-top,53px)] lg:h-[var(--rail-h,calc(100dvh-53px))] " +
+          "lg:overflow-y-auto lg:overscroll-contain [scrollbar-gutter:stable]"
+        }
       >
-        <div className="space-y-5 [&>*+*]:border-t [&>*+*]:border-border [&>*+*]:pt-5">{rail}</div>
+        <div className="flex flex-col gap-2.5">{rail}</div>
       </aside>
 
-      <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-8">
+      <main className="min-w-0 py-5">
         <div className="mx-auto w-full max-w-[820px] space-y-5">{children}</div>
       </main>
     </div>
@@ -211,7 +224,7 @@ export function RailSection({
   children: ReactNode
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
+    <div className="rounded-[20px] border border-border bg-card px-[18px] py-4 shadow-shell">
       <SectionHead step={step} title={title} hint={hint} />
       {children}
     </div>

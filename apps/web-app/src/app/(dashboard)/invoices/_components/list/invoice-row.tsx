@@ -14,13 +14,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
 import { daysOverdue, bandFor, isOutstanding } from "../../_lib/aging"
 import { statusStyle, primaryStep, otherSteps, isDeletable, type LifecycleStep } from "../../_lib/lifecycle"
 import { formatCurrency } from "../../_lib/list-format"
+import { INVOICE_GRID } from "./invoice-list-head"
 
 /** One invoice in the list — the whole row opens it; the next step sits at its end. */
 export function InvoiceRow({
-  inv, isAdmin, severalCompanies, step, stepPending, onOpen, onDelete,
+  inv,
+  isAdmin,
+  severalCompanies,
+  step,
+  stepPending,
+  onOpen,
+  onDelete,
 }: {
   inv: Invoice
   isAdmin: boolean
@@ -39,6 +47,9 @@ export function InvoiceRow({
   const late = isOutstanding(inv) ? daysOverdue(inv.dueDate) : null
   const lateBand = late !== null && late > 0 ? bandFor(late) : null
 
+  const day = (iso: string) =>
+    new Date(iso).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", timeZone: "UTC" })
+
   return (
     <div
       role="button"
@@ -52,12 +63,14 @@ export function InvoiceRow({
           onOpen(inv.id)
         }
       }}
-      className={"group relative flex cursor-pointer items-center gap-4 border-b " +
-        "border-border/20 px-4 py-3.5 pl-5 transition-colors last:border-0 " +
-        "hover:bg-muted/25 focus-visible:bg-muted/25 focus-visible:outline-none"}
+      className={cn(
+        INVOICE_GRID,
+        "group relative min-h-16 cursor-pointer rounded-[14px] px-3.5 py-2.5 outline-none transition-colors",
+        "hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
+      )}
     >
       {/*
-        A hairline in the age's own colour. The band is already
+        A short bar in the age's own colour. The band is already
         on the screen twice — as a bar and as a pill — and this
         makes a late row findable while SCROLLING, which is how
         this list is actually read.
@@ -66,11 +79,8 @@ export function InvoiceRow({
         <span
           aria-hidden
           className={cn(
-            "absolute inset-y-0 left-0 w-[3px]",
-            lateBand === "d1_30" ? "bg-amber-400"
-            : lateBand === "d31_60" ? "bg-orange-500"
-            : lateBand === "d61_90" ? "bg-red-500"
-            : "bg-red-700",
+            "absolute bottom-3.5 left-0 top-3.5 w-[3px] rounded-full",
+            lateBand === "d1_30" ? "bg-shell-warn/60" : lateBand === "d31_60" ? "bg-shell-warn" : "bg-shell-crit",
           )}
         />
       )}
@@ -81,30 +91,44 @@ export function InvoiceRow({
         every row — and it is not what anybody scans by. It is a
         reference: needed when you have it, never searched for.
       */}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">{inv.clientName}</p>
-        <p className="truncate text-[11px] text-muted-foreground">
-          <span className="font-mono">{inv.invoiceNumber}</span>
-          {severalCompanies && inv.legalEntity && <span> · {companyName(inv.legalEntity)}</span>}
-          {inv.clientEmail && <span className="opacity-60"> · {inv.clientEmail}</span>}
+      <div className="min-w-0">
+        <p className="truncate text-[14.5px] font-semibold text-foreground">{inv.clientName}</p>
+        <p className="truncate text-[12.5px] text-muted-foreground">
+          <span className="font-shell-mono xl:hidden">{inv.invoiceNumber}</span>
+          {severalCompanies && inv.legalEntity && (
+            <span>
+              <span className="xl:hidden"> · </span>
+              {companyName(inv.legalEntity)}
+            </span>
+          )}
+          {inv.clientEmail && <span className="opacity-70"> · {inv.clientEmail}</span>}
         </p>
       </div>
 
+      <span className="hidden truncate font-shell-mono text-[13px] text-muted-foreground xl:block">
+        {inv.invoiceNumber}
+      </span>
+
       {/* The two dates together, since they are read together. */}
-      <div className="hidden w-[8.5rem] shrink-0 text-right text-[11px] leading-tight text-muted-foreground sm:block">
+      <div className="hidden text-[12.5px] leading-tight text-muted-foreground md:block">
+        <p className="tabular-nums">{t("invoices.issuedOn", { date: day(inv.issueDate) })}</p>
         <p className="tabular-nums">
-          {t("invoices.issuedOn", {
-            date: new Date(inv.issueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", timeZone: "UTC" }),
-          })}
-        </p>
-        <p className="tabular-nums">
-          {inv.dueDate
-            ? t("invoices.dueOn", {
-                date: new Date(inv.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", timeZone: "UTC" }),
-              })
-            : t("invoices.create.onReceipt")}
+          {inv.dueDate ? t("invoices.dueOn", { date: day(inv.dueDate) }) : t("invoices.create.onReceipt")}
         </p>
       </div>
+
+      <span className="hidden md:block">
+        <span
+          className={cn(
+            "inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium",
+            status.bg,
+            status.text,
+          )}
+        >
+          <span aria-hidden className="size-1.5 rounded-full bg-current" />
+          {t(`invoices.statuses.${(inv.status || "DRAFT").toLowerCase()}`)}
+        </span>
+      </span>
 
       {/*
         The due date alone does not say how late something is —
@@ -112,48 +136,37 @@ export function InvoiceRow({
         age decides whether this is a reminder or a phone call,
         so it is stated.
       */}
-      <div className="w-[6.5rem] shrink-0 text-right">
-        <p className="text-sm font-semibold tabular-nums text-foreground">
+      <div className="text-right">
+        <p className="text-[15px] font-semibold tabular-nums text-foreground">
           {formatCurrency(inv.total, inv.currency)}
         </p>
         {late !== null && late > 0 && (
-          <p className={cn(
-            "text-[11px] font-medium tabular-nums",
-            lateBand === "d1_30" ? "text-amber-600 dark:text-amber-400"
-            : lateBand === "d31_60" ? "text-orange-600 dark:text-orange-400"
-            : "text-red-600 dark:text-red-400",
-          )}>
+          <p
+            className={cn(
+              "text-xs font-semibold tabular-nums",
+              lateBand === "d1_30" || lateBand === "d31_60" ? "text-shell-warn" : "text-shell-crit",
+            )}
+          >
             {t("invoices.daysLate", { count: late })}
           </p>
         )}
       </div>
 
-      <span className={cn(
-        "hidden w-[5.5rem] shrink-0 rounded-full px-2 py-0.5 text-center text-[10px] font-semibold uppercase tracking-[0.08em] md:block",
-        status.bg, status.text,
-      )}>
-        {t(`invoices.statuses.${(inv.status || "DRAFT").toLowerCase()}`)}
-      </span>
-
-      <div className="flex w-[7.5rem] shrink-0 items-center justify-end gap-1">
-        {/*
-          ⚠️ The next step, stated — and only on hover or focus
-          once the row is not the one being acted on. Fifty rows
-          each shouting an action is fifty things competing with
-          the figure beside them; revealing it keeps the column
-          quiet without burying the one action a row exists for.
-        */}
+      <div className="flex items-center justify-end gap-1">
+        {/* ⚠️ The next step, stated — the one action a row exists for must not be the hardest thing on it. */}
         {isAdmin && primary && (
-          <button
-            onClick={(e) => { e.stopPropagation(); step(inv, primary) }}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              step(inv, primary)
+            }}
             disabled={stepPending}
-            className={"rounded-md border border-border px-2 py-1 text-[11px] font-medium " +
-              "text-muted-foreground opacity-0 transition-all hover:border-primary/40 " +
-              "hover:bg-primary/5 hover:text-primary focus-visible:opacity-100 " +
-              "disabled:opacity-50 group-hover:opacity-100"}
+            className="hidden h-8 rounded-full px-3.5 text-[13px] font-semibold lg:inline-flex"
           >
             {t(primary.labelKey)}
-          </button>
+          </Button>
         )}
         {isAdmin && (
           <DropdownMenu>
@@ -161,10 +174,12 @@ export function InvoiceRow({
               <button
                 onClick={(e) => e.stopPropagation()}
                 aria-label={t("common.more", "More")}
-                className={"flex size-7 items-center justify-center rounded-md text-muted-foreground " +
-                  "transition-colors hover:bg-muted/50 hover:text-foreground"}
+                className={
+                  "grid size-8 place-items-center rounded-full text-muted-foreground transition-colors " +
+                  "hover:bg-shell-chip hover:text-foreground"
+                }
               >
-                <MoreHorizontal className="size-3.5" />
+                <MoreHorizontal className="size-4" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44" onClick={(e) => e.stopPropagation()}>
@@ -183,22 +198,26 @@ export function InvoiceRow({
                   <primary.icon className="mr-2 size-3.5" /> {t(primary.labelKey)}
                 </DropdownMenuItem>
               )}
-              {others.filter((o) => !o.destructive).map((o) => (
-                <DropdownMenuItem key={o.to} onClick={() => step(inv, o)}>
-                  <o.icon className="mr-2 size-3.5" /> {t(o.labelKey)}
-                </DropdownMenuItem>
-              ))}
+              {others
+                .filter((o) => !o.destructive)
+                .map((o) => (
+                  <DropdownMenuItem key={o.to} onClick={() => step(inv, o)}>
+                    <o.icon className="mr-2 size-3.5" /> {t(o.labelKey)}
+                  </DropdownMenuItem>
+                ))}
               <DropdownMenuSeparator />
               {isDeletable(inv.status) && (
-                <DropdownMenuItem className="text-red-600" onClick={() => onDelete(inv)}>
+                <DropdownMenuItem className="text-destructive" onClick={() => onDelete(inv)}>
                   <XCircle className="mr-2 size-3.5" /> {t("common.delete")}
                 </DropdownMenuItem>
               )}
-              {others.filter((o) => o.destructive).map((o) => (
-                <DropdownMenuItem key={o.to} className="text-red-600" onClick={() => step(inv, o)}>
-                  <o.icon className="mr-2 size-3.5" /> {t(o.labelKey)}
-                </DropdownMenuItem>
-              ))}
+              {others
+                .filter((o) => o.destructive)
+                .map((o) => (
+                  <DropdownMenuItem key={o.to} className="text-destructive" onClick={() => step(inv, o)}>
+                    <o.icon className="mr-2 size-3.5" /> {t(o.labelKey)}
+                  </DropdownMenuItem>
+                ))}
             </DropdownMenuContent>
           </DropdownMenu>
         )}

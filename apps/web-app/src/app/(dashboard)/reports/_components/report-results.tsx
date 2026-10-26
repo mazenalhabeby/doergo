@@ -2,9 +2,9 @@
 
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
-import { BarChart3 } from "lucide-react"
 import { type ReportResult } from "@/lib/api"
-import { CHART_COLORS } from "./chart-colors"
+import { Icon } from "@/components/ui/icon"
+import { Panel } from "@/components/page/page-kit"
 import { fmt } from "./report-options"
 import { ReportsTableCard } from "./reports-table-card"
 
@@ -40,55 +40,38 @@ export function ReportResults({ result, isDetail }: { result: ReportResult; isDe
 
   if (result.rows.length === 0) {
     return (
-      <div
-        className={
-          "rounded-2xl border border-border bg-card shadow-sm dark:shadow-none " +
-          "dark:border-white/[0.08] p-14 text-center"
-        }
-      >
-        <div className="grid place-items-center h-10 w-10 rounded-xl bg-muted mx-auto mb-3">
-          <BarChart3 className="h-5 w-5 text-muted-foreground" />
-        </div>
+      <Panel className="flex flex-col items-center px-6 py-14 text-center">
+        <span className="mb-3 grid size-10 place-items-center rounded-xl bg-shell-chip text-muted-foreground">
+          <Icon name="reports" size={20} />
+        </span>
         <p className="text-sm text-muted-foreground">{t("reports.noData", "No data for this period.")}</p>
-      </div>
+      </Panel>
     )
   }
 
+  const tiles = statCards(result)
   return (
-    <div data-tour="reports-results" className="space-y-5">
-      {/* KPI stat cards */}
-      {statCards(result).length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
-          {statCards(result).map((s, i) => (
-            <div
-              key={i}
-              className={
-                "rounded-2xl border border-border bg-card shadow-sm dark:shadow-none " + "dark:border-white/[0.08] p-4"
-              }
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-2 w-2 rounded-full shrink-0"
-                  style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
-                />
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
-                  {s.label}
-                </p>
-              </div>
-              <p className="text-2xl font-bold tabular-nums text-foreground mt-1.5">{s.value}</p>
-            </div>
+    <div data-tour="reports-results" className="flex flex-col gap-3.5">
+      {/* The totals — one tile per measure */}
+      {tiles.length > 0 && (
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
+          {tiles.map((s, i) => (
+            <Panel key={i} as="div" className="flex flex-col gap-1 px-[18px] py-4">
+              <p className="truncate text-[12.5px] text-muted-foreground">{s.label}</p>
+              <p className="text-[26px] font-semibold tracking-[-0.04em] tabular-nums text-foreground">{s.value}</p>
+            </Panel>
           ))}
         </div>
       )}
 
       {/* Chart card (hidden for the day-by-day timesheet) */}
       {!isDetail && chartMeasure && labelCol && chartData.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-foreground">
+        <Panel className="px-3 pb-4 pt-2">
+          <div className="flex items-center gap-2.5 px-2.5 pb-3 pt-2">
+            <h3 className="flex-1 text-sm font-semibold text-foreground">
               {t("reports.topBy", "Top {{measure}}", { measure: chartMeasure.label })}
             </h3>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-[13px] text-muted-foreground">
               {t("reports.topN", "Top {{n}}", { n: chartData.length })}
             </span>
           </div>
@@ -97,7 +80,7 @@ export function ReportResults({ result, isDetail }: { result: ReportResult; isDe
             measureLabel={chartMeasure.label}
             format={(v) => fmt(v, chartMeasure.format)}
           />
-        </div>
+        </Panel>
       )}
 
       <ReportsTableCard result={result} />

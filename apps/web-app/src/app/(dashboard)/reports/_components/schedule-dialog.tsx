@@ -80,7 +80,7 @@ export function ScheduleDialog({
 
         {/* Existing schedules */}
         {schedules && schedules.length > 0 && (
-          <div className="space-y-1.5 rounded-lg border border-border p-2">
+          <div className="space-y-1.5 rounded-xl border border-border p-2">
             {schedules.map((s) => (
               <div key={s.id} className="flex items-center gap-2 text-xs">
                 <CalendarClock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -90,7 +90,7 @@ export function ScheduleDialog({
                 </span>
                 <button
                   onClick={() => delSched.mutate(s.id)}
-                  className="text-muted-foreground hover:text-red-600 shrink-0"
+                  className="text-muted-foreground shrink-0 hover:text-destructive"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>

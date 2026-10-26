@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Download, FileText, Save, Pencil, CalendarClock, ChevronDown, Table2 } from "lucide-react"
 import { type DatasetMeta } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/page/page-kit"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { reportLabel } from "@hbcfield/shared/client"
 import type { ActiveReport } from "../_hooks/use-report-builder"
@@ -44,11 +44,11 @@ export function ReportHeader({
   const { t, i18n } = useTranslation()
   const lang = i18n.language
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-foreground truncate">{active.name}</h2>
-          <Badge variant="secondary" className="shrink-0 font-normal">
+          <h2 className="truncate text-[26px] font-semibold tracking-[-0.03em] text-foreground">{active.name}</h2>
+          <Chip>
             {isDetail
               ? t("reports.badgeTimesheet", "Timesheet")
               : active.builder
@@ -56,9 +56,9 @@ export function ReportHeader({
                 : active.savedId
                   ? t("reports.badgeSaved", "Saved")
                   : t("reports.badgeTemplate", "Template")}
-          </Badge>
+          </Chip>
         </div>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="mt-1 text-[13.5px] text-muted-foreground">
           {(isDetail
             ? [rangeLabel]
             : [dsMeta && reportLabel(lang, dsMeta.labelKey, dsMeta.label), rangeLabel, customerFilter]
@@ -67,15 +67,15 @@ export function ReportHeader({
             .join("  ·  ")}
         </p>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
         {!isDetail && canBuild && !active.builder && (
-          <Button variant="ghost" size="sm" className="gap-1.5 h-9" onClick={onCustomize}>
+          <Button variant="ghost" size="pill" onClick={onCustomize}>
             <Pencil className="h-3.5 w-3.5" />
             {t("reports.customize", "Customize")}
           </Button>
         )}
         {!isDetail && canBuild && (
-          <Button data-tour="reports-save" variant="outline" size="sm" className="gap-1.5 h-9" onClick={onSave}>
+          <Button data-tour="reports-save" variant="outline" size="pill" onClick={onSave}>
             <Save className="h-3.5 w-3.5" />
             {active.savedId
               ? t("reports.updateTemplate", "Update template")
@@ -83,7 +83,7 @@ export function ReportHeader({
           </Button>
         )}
         {!isDetail && canSchedule && active.savedId && (
-          <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={onSchedule}>
+          <Button variant="outline" size="pill" onClick={onSchedule}>
             <CalendarClock className="h-3.5 w-3.5" />
             {t("reports.schedule", "Schedule")}
           </Button>
@@ -91,7 +91,7 @@ export function ReportHeader({
         {hasRows && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button data-tour="reports-export" variant="outline" size="sm" className="gap-1.5 h-9">
+              <Button data-tour="reports-export" variant="outline" size="pill">
                 <Download className="h-3.5 w-3.5" />
                 {t("reports.export", "Export")}
                 <ChevronDown className="h-3.5 w-3.5 opacity-60" />

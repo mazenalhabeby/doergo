@@ -49,10 +49,12 @@ export function ReportBuilderFields({
   const { t, i18n } = useTranslation()
   const lang = i18n.language
   return (
-    <div className="p-4 space-y-3">
+    <div className="space-y-4 p-[18px]">
       {/* Dataset */}
       <div data-tour="reports-dataset" className="flex items-center gap-3">
-        <Label className="text-xs w-20 shrink-0">{t("reports.dataset", "Dataset")}</Label>
+        <Label className="w-24 shrink-0 text-[12.5px] font-semibold text-muted-foreground">
+          {t("reports.dataset", "Dataset")}
+        </Label>
         <Select
           value={active.def.dataset}
           onValueChange={(v) => {
@@ -74,7 +76,7 @@ export function ReportBuilderFields({
             )
           }}
         >
-          <SelectTrigger className="h-9 w-[220px] text-xs">
+          <SelectTrigger className="h-10 w-[220px] rounded-xl text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -90,7 +92,9 @@ export function ReportBuilderFields({
       {/* Attendance-only: Summary vs Detailed (day-by-day per user) */}
       {isAttendance && (
         <div className="flex items-center gap-3">
-          <Label className="text-xs w-20 shrink-0">{t("reports.view", "View")}</Label>
+          <Label className="w-24 shrink-0 text-[12.5px] font-semibold text-muted-foreground">
+            {t("reports.view", "View")}
+          </Label>
           <Segmented
             ariaLabel={t("reports.view", "View")}
             value={isDetail ? "detail" : "summary"}
@@ -112,9 +116,11 @@ export function ReportBuilderFields({
         /* Detailed timesheet: pick the user + columns */
         <>
           <div className="flex items-center gap-3">
-            <Label className="text-xs w-20 shrink-0">{t("reports.user", "User")}</Label>
+            <Label className="w-24 shrink-0 text-[12.5px] font-semibold text-muted-foreground">
+              {t("reports.user", "User")}
+            </Label>
             <Select value={active.userId ?? ""} onValueChange={(v) => setActive((a) => (a ? { ...a, userId: v } : a))}>
-              <SelectTrigger className="h-9 w-[240px] text-xs">
+              <SelectTrigger className="h-10 w-[240px] rounded-xl text-sm">
                 <SelectValue placeholder={t("reports.pickUser", "Select a technician…")} />
               </SelectTrigger>
               <SelectContent>
@@ -127,7 +133,9 @@ export function ReportBuilderFields({
             </Select>
           </div>
           <div className="flex items-start gap-3">
-            <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.columns", "Columns")}</Label>
+            <Label className="w-24 shrink-0 text-[12.5px] font-semibold text-muted-foreground pt-1.5">
+              {t("reports.columns", "Columns")}
+            </Label>
             <div className="flex flex-wrap gap-1.5">
               {TIMESHEET_COLS.map((key) => {
                 const on = tsCols.includes(key)
@@ -153,7 +161,9 @@ export function ReportBuilderFields({
       ) : (
         <>
           <div data-tour="reports-measures" className="flex items-start gap-3">
-            <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.measures", "Measures")}</Label>
+            <Label className="w-24 shrink-0 text-[12.5px] font-semibold text-muted-foreground pt-1.5">
+              {t("reports.measures", "Measures")}
+            </Label>
             <div className="flex flex-wrap gap-1.5">
               {dsMeta.measures.map((m) => {
                 const on = (active.def.measures || []).includes(m.key)
@@ -166,7 +176,9 @@ export function ReportBuilderFields({
             </div>
           </div>
           <div data-tour="reports-dimensions" className="flex items-start gap-3">
-            <Label className="text-xs w-20 shrink-0 pt-1.5">{t("reports.groupByDim", "Group by")}</Label>
+            <Label className="w-24 shrink-0 text-[12.5px] font-semibold text-muted-foreground pt-1.5">
+              {t("reports.groupByDim", "Group by")}
+            </Label>
             <div className="flex flex-wrap gap-1.5">
               {dsMeta.dimensions.map((dim) => {
                 const on = (active.def.dimensions || []).includes(dim.key)
@@ -181,12 +193,14 @@ export function ReportBuilderFields({
           {/* Scope to one customer → the export becomes their statement. */}
           {hasCustomerDim && (
             <div className="flex items-center gap-3">
-              <Label className="text-xs w-20 shrink-0">{t("reports.customer", "Customer")}</Label>
+              <Label className="w-24 shrink-0 text-[12.5px] font-semibold text-muted-foreground">
+                {t("reports.customer", "Customer")}
+              </Label>
               <Select
                 value={customerFilter ?? "__all__"}
                 onValueChange={(v) => setCustomerFilter(v === "__all__" ? undefined : v)}
               >
-                <SelectTrigger className="h-9 w-[220px] text-xs">
+                <SelectTrigger className="h-10 w-[220px] rounded-xl text-sm">
                   <SelectValue placeholder={t("reports.allCustomers", "All customers")} />
                 </SelectTrigger>
                 <SelectContent>

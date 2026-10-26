@@ -29,11 +29,11 @@ export function describeInvoice(inv: Invoice, t: TFunction) {
   const overdue = !settled && !dead && late !== null && late > 0
 
   const standing = settled
-    ? { text: t("invoices.detail.paidOn", { date: fmtDate(inv.paidAt) }), tone: "text-green-700 dark:text-green-400" }
+    ? { text: t("invoices.detail.paidOn", { date: fmtDate(inv.paidAt) }), tone: "text-shell-accent" }
     : dead
       ? { text: statusLabel, tone: "text-muted-foreground" }
       : overdue
-        ? { text: t("invoices.detail.overdueBy", { count: late! }), tone: "text-red-600 dark:text-red-400" }
+        ? { text: t("invoices.detail.overdueBy", { count: late! }), tone: "text-shell-crit font-semibold" }
         : inv.dueDate
           ? {
               text:

@@ -6,6 +6,7 @@ import { use } from "react"
 
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
+import { FactRow, Panel } from "@/components/page/page-kit"
 import { ConfirmDialog } from "@/components/common/confirm-dialog"
 // Types only: the builder (and jsPDF, ~350 kB) loads on the Download / Print click.
 import { PAGE_WIDTH } from "@/components/ui/page-width"
@@ -45,8 +46,8 @@ function InvoiceDetail({ id }: { id: string }) {
     return (
       <div className={cn(PAGE_WIDTH, "py-6")}>
         <div className="mx-auto w-full max-w-[820px] space-y-5">
-          <Skeleton className="h-28 w-full rounded-2xl" />
-          <Skeleton className="h-[32rem] w-full rounded-2xl" />
+          <Skeleton className="h-28 w-full rounded-[22px]" />
+          <Skeleton className="h-[32rem] w-full rounded-[22px]" />
         </div>
       </div>
     )
@@ -85,12 +86,12 @@ function InvoiceDetail({ id }: { id: string }) {
       <div className={cn(PAGE_WIDTH, "py-6")}>
         <div className="mx-auto w-full max-w-[820px] space-y-5">
           {/* ── The answer, above the document ─────────────────────────── */}
-          <div className="flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-border bg-card px-5 py-4 sm:px-6">
+          <Panel className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 px-6 py-5">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              <p className="text-[13.5px] text-muted-foreground">
                 {settled ? t("invoices.detail.amountPaid") : t("invoices.create.amountDue")}
               </p>
-              <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-foreground">
+              <p className="mt-1 text-[30px] font-semibold leading-tight tracking-[-0.04em] tabular-nums text-foreground">
                 {money(inv.total, inv.currency)}
               </p>
               {/* In another currency than yours: what it was worth on the day, at the rate saved with it. */}
@@ -107,26 +108,31 @@ function InvoiceDetail({ id }: { id: string }) {
                     ` · ${t("currency.ecbOn", { date: fmtDate(inv.exchangeRateDate) })}`}
                 </p>
               )}
-              <p className={cn("mt-1 text-xs", standing.tone)}>{standing.text}</p>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    "inline-flex h-[30px] items-center gap-2 rounded-[9px] px-3 text-[13px] font-semibold",
+                    style.bg,
+                    style.text,
+                  )}
+                >
+                  {statusLabel}
+                </span>
+                {standing.text !== statusLabel && (
+                  <span className={cn("text-[13px]", standing.tone)}>{standing.text}</span>
+                )}
+              </div>
             </div>
 
-            <dl className="grid gap-1 text-right text-xs">
-              <div className="flex justify-between gap-6">
-                <dt className="text-muted-foreground">{t("invoices.create.issueDate")}</dt>
-                <dd className="tabular-nums">{fmtDate(inv.issueDate)}</dd>
-              </div>
-              <div className="flex justify-between gap-6">
-                <dt className="text-muted-foreground">{t("invoices.create.dueDate")}</dt>
-                <dd className="tabular-nums">{inv.dueDate ? fmtDate(inv.dueDate) : t("invoices.create.onReceipt")}</dd>
-              </div>
-              {periodLabel && (
-                <div className="flex justify-between gap-6">
-                  <dt className="text-muted-foreground">{t("invoices.create.servicePeriod")}</dt>
-                  <dd className="tabular-nums">{periodLabel}</dd>
-                </div>
-              )}
+            <dl className="w-full max-w-[300px]">
+              <FactRow label={t("invoices.create.issueDate")} value={fmtDate(inv.issueDate)} />
+              <FactRow
+                label={t("invoices.create.dueDate")}
+                value={inv.dueDate ? fmtDate(inv.dueDate) : t("invoices.create.onReceipt")}
+              />
+              {periodLabel && <FactRow label={t("invoices.create.servicePeriod")} value={periodLabel} />}
             </dl>
-          </div>
+          </Panel>
 
           {/*
             THE DOCUMENT — the same one the create and edit screens render.
@@ -185,8 +191,8 @@ function InvoiceDetail({ id }: { id: string }) {
         onOpenChange={(open) => !open && setConfirmStep(null)}
         title={t("invoices.markSent.title")}
         description={t("invoices.markSent.desc", { number: inv.invoiceNumber, client: inv.clientName })}
-        cancelClassName="rounded-lg"
-        confirmClassName="rounded-lg"
+        cancelClassName="rounded-full"
+        confirmClassName="rounded-full"
         confirmLabel={t("invoices.actions.send")}
         onConfirm={() => {
           const to = confirmStep?.to
@@ -207,9 +213,9 @@ function InvoiceDetail({ id }: { id: string }) {
           client: inv.clientName,
           total: money(inv.total, inv.currency),
         })}
-        cancelClassName="rounded-lg"
+        cancelClassName="rounded-full"
         destructive
-        confirmClassName="rounded-lg focus:ring-red-600"
+        confirmClassName="rounded-full focus:ring-destructive"
         confirmDisabled={deleteMutation.isPending}
         confirmLabel={t("common.delete")}
         onConfirm={() => deleteMutation.mutate()}

@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, Cell } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer } from "recharts"
 
 /**
  * The reports bar chart, in its own module so recharts can be code-split.
@@ -11,7 +11,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, Respon
  * the same treatment, so every visitor paid for the chart library whether or not a
  * report produced a chart.
  */
-import { CHART_COLORS } from "./chart-colors"
 
 interface ReportBarChartProps {
   data: { label: string; value: number }[]
@@ -53,11 +52,8 @@ export function ReportBarChart({ data, measureLabel, format }: ReportBarChartPro
           itemStyle={{ color: "hsl(var(--popover-foreground))" }}
           formatter={((v: unknown) => [format(Number(v)), measureLabel]) as never}
         />
-        <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={22}>
-          {data.map((_, i) => (
-            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-          ))}
-        </Bar>
+        {/* One series, one colour — the board's accent bars. */}
+        <Bar dataKey="value" radius={[0, 7, 7, 0]} maxBarSize={14} fill="var(--shell-accent)" />
       </BarChart>
     </ResponsiveContainer>
   )

@@ -105,7 +105,7 @@ export function InvoiceDetailTopBar({
       */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-1.5" disabled={busy}>
+          <Button variant="outline" size="pill" disabled={busy}>
             <Languages className="size-3.5" />
             <span className="hidden md:inline">
               {t("invoices.pdfLanguage.button", {
@@ -135,11 +135,11 @@ export function InvoiceDetailTopBar({
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      <Button variant="outline" size="sm" className="gap-1.5" disabled={busy} onClick={print}>
+      <Button variant="outline" size="pill" disabled={busy} onClick={print}>
         <Printer className="size-3.5" />
         <span className="hidden sm:inline">{t("invoices.actions.print")}</span>
       </Button>
-      <Button variant="outline" size="sm" className="gap-1.5" disabled={busy} onClick={download}>
+      <Button variant="outline" size="pill" disabled={busy} onClick={download}>
         {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
         <span className="hidden sm:inline">{t("invoices.actions.pdf")}</span>
       </Button>
@@ -151,7 +151,7 @@ export function InvoiceDetailTopBar({
         invoice is up to, which is the screen's job.
       */}
       {isAdmin && primary && (
-        <Button size="sm" className="gap-1.5" onClick={() => step(primary)}>
+        <Button size="pill" onClick={() => step(primary)}>
           <primary.icon className="size-3.5" /> {t(primary.labelKey)}
         </Button>
       )}
@@ -165,7 +165,7 @@ export function InvoiceDetailTopBar({
       {isAdmin && (others.length > 0 || isEditable(inv.status)) && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="size-8 shrink-0" aria-label={t("common.more", "More")}>
+            <Button variant="outline" size="pillIcon" className="shrink-0" aria-label={t("common.more", "More")}>
               <MoreHorizontal className="size-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -176,12 +176,12 @@ export function InvoiceDetailTopBar({
               </DropdownMenuItem>
             )}
             {others.map((o) => (
-              <DropdownMenuItem key={o.to} className={cn(o.destructive && "text-red-600")} onClick={() => step(o)}>
+              <DropdownMenuItem key={o.to} className={cn(o.destructive && "text-destructive")} onClick={() => step(o)}>
                 <o.icon className="mr-2 size-3.5" /> {t(o.labelKey)}
               </DropdownMenuItem>
             ))}
             {isDeletable(inv.status) && (
-              <DropdownMenuItem className="text-red-600" onClick={() => setConfirmDelete(true)}>
+              <DropdownMenuItem className="text-destructive" onClick={() => setConfirmDelete(true)}>
                 <Trash2 className="mr-2 size-3.5" /> {t("common.delete")}
               </DropdownMenuItem>
             )}

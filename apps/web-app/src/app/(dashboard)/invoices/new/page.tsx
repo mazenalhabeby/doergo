@@ -67,6 +67,7 @@ function NewInvoice() {
         onBack={() => router.push("/invoices")}
       >
         <Button
+          size="pill"
           className="shrink-0"
           disabled={!canSave || createMutation.isPending}
           onClick={() => createMutation.mutate()}

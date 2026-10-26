@@ -12,9 +12,12 @@ import { CompanySelect, companyName, useCompanies } from "@/components/companies
 
 /** Who it is for. `extra` is where a screen adds its own offer under the name. */
 export function ClientFields({
-  clientName, setClientName,
-  clientEmail, setClientEmail,
-  clientAddress, setClientAddress,
+  clientName,
+  setClientName,
+  clientEmail,
+  setClientEmail,
+  clientAddress,
+  setClientAddress,
   extra,
 }: {
   clientName: string
@@ -103,11 +106,12 @@ export function LineEditor({
     onChange(lines.map((l, n) => (n === i ? { ...l, ...patch } : l)))
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="overflow-hidden rounded-[22px] border border-border bg-card shadow-shell">
       <div className="flex items-center justify-between border-b border-border/40 px-4 py-2.5">
         <p className="text-sm font-medium text-foreground">{title}</p>
         <Button
-          variant="ghost" size="sm"
+          variant="ghost"
+          size="sm"
           className="h-7 gap-1.5 text-muted-foreground"
           onClick={() => onChange([...lines, { description: "", quantity: "1", unitPrice: "0" }])}
         >
@@ -151,7 +155,7 @@ export function LineEditor({
               type="button"
               aria-label={t("common.delete")}
               onClick={() => onChange(lines.filter((_, n) => n !== i))}
-              className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-red-500/10 hover:text-red-600"
+              className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             >
               <Trash2 className="size-3.5" />
             </button>
@@ -185,7 +189,9 @@ export function IssuedByField({
   const auto = companies.find((c) => c.id === autoId) ?? main
   return (
     <div>
-      <Label className="text-xs" htmlFor="inv-company">{t("companies.invoiceIssuedBy")}</Label>
+      <Label className="text-xs" htmlFor="inv-company">
+        {t("companies.invoiceIssuedBy")}
+      </Label>
       <CompanySelect
         id="inv-company"
         value={value}

@@ -9,7 +9,13 @@ import { formatCurrency } from "../../_lib/list-format"
 
 /** Confirming the one step with no way back, and confirming a delete. */
 export function InvoiceListDialogs({
-  sendTarget, setSendTarget, onStatus, deleteTarget, setDeleteTarget, onDelete, deletePending,
+  sendTarget,
+  setSendTarget,
+  onStatus,
+  deleteTarget,
+  setDeleteTarget,
+  onDelete,
+  deletePending,
 }: {
   sendTarget: { inv: Invoice; step: LifecycleStep } | null
   setSendTarget: (v: { inv: Invoice; step: LifecycleStep } | null) => void
@@ -66,7 +72,7 @@ export function InvoiceListDialogs({
         }
         cancelClassName="rounded-lg"
         destructive
-        confirmClassName="rounded-lg focus:ring-red-600"
+        confirmClassName="rounded-full focus:ring-destructive"
         confirmDisabled={deletePending}
         confirmLabel={t("common.delete")}
         onConfirm={() => {

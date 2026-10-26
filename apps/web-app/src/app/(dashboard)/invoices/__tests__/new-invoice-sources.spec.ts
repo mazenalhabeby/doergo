@@ -1,4 +1,3 @@
-
 import path from "path"
 
 import { code, createScreen, documentCode, newPage } from "./_screen"
@@ -20,7 +19,6 @@ const ROOT = path.join(__dirname, "..")
   Three sources now, because all three are real: a workspace, a client, or
   nothing at all (a charge that was never a task).
 */
-
 
 /*
   ⚠️ `screen()`, not `newPage()`, wherever the property is about what a person
@@ -229,9 +227,21 @@ describe("the nav label", () => {
     const d = JSON.parse(readSource(path.join(LOCALES, `${lang}.json`), "utf8"))
     const c = d.invoices?.create ?? {}
     const missing = [
-      "billFrom", "fromSpace", "fromClient", "fromNothing", "workspace", "client",
-      "choose", "clientFillsHeader", "nothingHint", "alsoAddClient", "clientAdded", "clientAddFailed",
-      "noCustomerSpaces", "alsoAddClientWhen", "alsoAddClientNeedsName",
+      "billFrom",
+      "fromSpace",
+      "fromClient",
+      "fromNothing",
+      "workspace",
+      "client",
+      "choose",
+      "clientFillsHeader",
+      "nothingHint",
+      "alsoAddClient",
+      "clientAdded",
+      "clientAddFailed",
+      "noCustomerSpaces",
+      "alsoAddClientWhen",
+      "alsoAddClientNeedsName",
     ].filter((k) => typeof c[k] !== "string")
     expect({ lang, missing }).toEqual({ lang, missing: [] })
   })
@@ -310,9 +320,18 @@ describe("how the labour is written up", () => {
     for (const lang of ["en", "de", "es", "fr", "it"]) {
       const d = JSON.parse(readSource(path.join(LOCALES, `${lang}.json`), "utf8"))
       const missing = [
-        "groupBy", "groupByTask", "groupByMember", "groupByBoth",
-        "groupByTaskHint", "groupByMemberHint", "groupByBothHint",
-        "preview", "descriptionCol", "amount", "included", "labourTotal",
+        "groupBy",
+        "groupByTask",
+        "groupByMember",
+        "groupByBoth",
+        "groupByTaskHint",
+        "groupByMemberHint",
+        "groupByBothHint",
+        "preview",
+        "descriptionCol",
+        "amount",
+        "included",
+        "labourTotal",
       ].filter((k) => typeof d.invoices?.create?.[k] !== "string")
       expect({ lang, missing }).toEqual({ lang, missing: [] })
     }
@@ -504,8 +523,7 @@ describe("the pickers", () => {
     const LOCALES = path.join(ROOT, "../../../i18n/locales")
     for (const lang of ["en", "de", "es", "fr", "it"]) {
       const d = JSON.parse(readSource(path.join(LOCALES, `${lang}.json`), "utf8"))
-      const missing = ["searchWorkspace", "searchClient"]
-        .filter((k) => typeof d.invoices?.create?.[k] !== "string")
+      const missing = ["searchWorkspace", "searchClient"].filter((k) => typeof d.invoices?.create?.[k] !== "string")
       expect({ lang, missing }).toEqual({ lang, missing: [] })
     }
   })
@@ -557,6 +575,6 @@ describe("the rail survives being narrow", () => {
     const s = src()
     expect(s).not.toMatch(/flex flex-wrap gap-2/)
     // The two three-way choices, and the line-description choice stacked the same way.
-    expect(s.match(/grid gap-1 rounded-xl border border-border bg-muted\/50 p-1/g) ?? []).toHaveLength(3)
+    expect(s.match(/className="(mt-2 )?grid gap-1\.5"/g) ?? []).toHaveLength(3)
   })
 })

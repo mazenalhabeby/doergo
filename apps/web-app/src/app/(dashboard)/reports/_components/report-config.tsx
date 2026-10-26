@@ -3,6 +3,7 @@
 import { Play } from "lucide-react"
 import { type ReportDatePreset, type ReportGranularity } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { Panel } from "@/components/page/page-kit"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toISODateString } from "@hbcfield/shared/client"
@@ -64,7 +65,7 @@ export function ReportConfig({
   const supportsTime = active.def.granularity !== undefined
 
   return (
-    <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] divide-y divide-border/60">
+    <Panel className="divide-y divide-border p-0">
       {/* Builder fields */}
       {active.builder && dsMeta && (
         <ReportBuilderFields
@@ -86,9 +87,9 @@ export function ReportConfig({
       )}
 
       {/* Period / time split + Run */}
-      <div data-tour="reports-period" className="flex flex-wrap items-end gap-3 p-4">
+      <div data-tour="reports-period" className="flex flex-wrap items-end gap-3 p-[18px]">
         <div className="space-y-1.5">
-          <label className="text-xs text-muted-foreground">{t("reports.period", "Period")}</label>
+          <label className="text-[12.5px] font-semibold text-muted-foreground">{t("reports.period", "Period")}</label>
           <Select
             value={isCustomRange ? "__custom__" : active.def.dateRange?.preset || "last_30d"}
             onValueChange={(v) => {
@@ -99,7 +100,7 @@ export function ReportConfig({
               } else patchDef({ dateRange: { preset: v as ReportDatePreset } })
             }}
           >
-            <SelectTrigger className="h-9 w-[160px] text-xs">
+            <SelectTrigger className="h-10 w-[170px] rounded-xl text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -117,7 +118,7 @@ export function ReportConfig({
         {isCustomRange && (
           <>
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">{t("reports.from", "From")}</label>
+              <label className="text-[12.5px] font-semibold text-muted-foreground">{t("reports.from", "From")}</label>
               <DatePicker
                 value={toDateInput(active.def.dateRange?.from)}
                 max={toDateInput(active.def.dateRange?.to) || undefined}
@@ -136,7 +137,7 @@ export function ReportConfig({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">{t("reports.to", "To")}</label>
+              <label className="text-[12.5px] font-semibold text-muted-foreground">{t("reports.to", "To")}</label>
               <DatePicker
                 value={toDateInput(active.def.dateRange?.to)}
                 min={toDateInput(active.def.dateRange?.from) || undefined}
@@ -158,12 +159,14 @@ export function ReportConfig({
         )}
         {!isDetail && supportsTime && (
           <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">{t("reports.timeSplit", "Time split")}</label>
+            <label className="text-[12.5px] font-semibold text-muted-foreground">
+              {t("reports.timeSplit", "Time split")}
+            </label>
             <Select
               value={active.def.granularity || "none"}
               onValueChange={(v) => patchDef({ granularity: v as ReportGranularity })}
             >
-              <SelectTrigger className="h-9 w-[150px] text-xs">
+              <SelectTrigger className="h-10 w-[160px] rounded-xl text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -179,7 +182,8 @@ export function ReportConfig({
         {isDetail ? (
           <Button
             data-tour="reports-run"
-            className="gap-1.5 h-9 ml-auto"
+            size="pill"
+            className="ml-auto"
             disabled={timesheetPending || !active.userId}
             onClick={runTimesheet}
           >
@@ -189,7 +193,8 @@ export function ReportConfig({
         ) : (
           <Button
             data-tour="reports-run"
-            className="gap-1.5 h-9 ml-auto"
+            size="pill"
+            className="ml-auto"
             disabled={runPending || !active.def.measures?.length}
             onClick={onRun}
           >
@@ -198,6 +203,6 @@ export function ReportConfig({
           </Button>
         )}
       </div>
-    </div>
+    </Panel>
   )
 }

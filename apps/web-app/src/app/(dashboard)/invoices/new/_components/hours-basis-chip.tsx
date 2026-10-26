@@ -7,14 +7,20 @@ import { formatHoursMinutes } from "@hbcfield/shared/client"
 
 import { keys } from "@/lib/query-keys"
 import { spaceMembersApi } from "@/lib/api"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 const BASIS_TONE: Record<string, string> = {
-  SHIFT: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
-  CLOCKED: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300",
-  COUNTED: "bg-green-500/15 text-green-700 dark:text-green-300",
+  SHIFT: "bg-shell-chip text-foreground",
+  CLOCKED: "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn",
+  COUNTED: "bg-shell-accent-soft text-shell-accent",
 }
 
 /**
@@ -24,7 +30,10 @@ const BASIS_TONE: Record<string, string> = {
  * and the line follows. Working view only, never the client's copy.
  */
 export function HoursBasisChip({
-  basis, hoursByBasis, spaceId, assignmentId,
+  basis,
+  hoursByBasis,
+  spaceId,
+  assignmentId,
 }: {
   basis?: string | null
   hoursByBasis?: Record<string, number>
@@ -34,7 +43,8 @@ export function HoursBasisChip({
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const save = useMutation({
-    mutationFn: (b: "COUNTED" | "CLOCKED" | "SHIFT") => spaceMembersApi.updateRoles(spaceId!, assignmentId!, { hoursBasis: b }),
+    mutationFn: (b: "COUNTED" | "CLOCKED" | "SHIFT") =>
+      spaceMembersApi.updateRoles(spaceId!, assignmentId!, { hoursBasis: b }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.invoices.gather() })
       queryClient.invalidateQueries({ queryKey: keys.spaceMembers.list(spaceId) })
@@ -46,8 +56,10 @@ export function HoursBasisChip({
   const chip = (
     <span
       className={cn(
-        ("ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] " + "font-semibold"),
-        BASIS_TONE[basis] ?? BASIS_TONE.COUNTED)}>
+        "ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] " + "font-semibold",
+        BASIS_TONE[basis] ?? BASIS_TONE.COUNTED,
+      )}
+    >
       {save.isPending ? <Loader2 className="size-3 animate-spin" /> : null}
       {t(`scheduling.membersPage.basis.${basis}`)}
       {spaceId && assignmentId && hoursByBasis && <ChevronDown className="size-3" />}
@@ -58,13 +70,18 @@ export function HoursBasisChip({
     <DropdownMenu>
       <DropdownMenuTrigger
         className={"rounded-full focus-visible:outline-none focus-visible:ring-2 " + "focus-visible:ring-ring"}
-        aria-label={t("scheduling.membersPage.hoursBasis")}>
+        aria-label={t("scheduling.membersPage.hoursBasis")}
+      >
         {chip}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
         <DropdownMenuLabel className="text-xs">{t("scheduling.membersPage.hoursBasis")}</DropdownMenuLabel>
         {(["COUNTED", "CLOCKED", "SHIFT"] as const).map((b) => (
-          <DropdownMenuItem key={b} onSelect={() => b !== basis && save.mutate(b)} className="flex items-center justify-between gap-3">
+          <DropdownMenuItem
+            key={b}
+            onSelect={() => b !== basis && save.mutate(b)}
+            className="flex items-center justify-between gap-3"
+          >
             <span className={cn(b === basis && "font-semibold")}>{t(`scheduling.membersPage.basis.${b}`)}</span>
             <span className="tabular-nums text-muted-foreground">{formatHoursMinutes(hoursByBasis[b] ?? 0)}</span>
           </DropdownMenuItem>

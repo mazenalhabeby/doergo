@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { BarChart3, Clock, SlidersHorizontal, Trash2 } from "lucide-react"
 import { type SavedReport } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { GroupLabel, Panel } from "@/components/page/page-kit"
 import type { ActiveReport } from "../_hooks/use-report-builder"
 
 function NavBtn({
@@ -27,23 +28,25 @@ function NavBtn({
     <div
       data-tour={dataTour}
       className={cn(
-        "group/nav w-full rounded-xl border px-2.5 py-2.5 transition-all " + "cursor-pointer flex items-start gap-2.5",
-        activeKey ? "border-primary/50 bg-primary/[0.05] shadow-sm" : "border-transparent hover:bg-accent/50",
+        "group/nav flex w-full cursor-pointer items-start gap-3 rounded-[14px] p-2.5 transition-colors",
+        activeKey ? "bg-shell-nav-on" : "hover:bg-accent",
       )}
       onClick={onClick}
     >
       <div
         className={cn(
-          "grid place-items-center h-8 w-8 rounded-lg shrink-0 transition-colors",
+          "grid size-8 shrink-0 place-items-center rounded-[10px] transition-colors",
           activeKey
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-muted-foreground group-hover/nav:text-foreground",
+            ? "bg-shell-accent-soft text-shell-accent"
+            : "bg-shell-chip text-muted-foreground group-hover/nav:text-foreground",
         )}
       >
         <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1 pt-0.5">
-        <div className="text-sm font-medium text-foreground truncate">{label}</div>
+        <div className={cn("truncate text-sm text-foreground", activeKey ? "font-semibold" : "font-medium")}>
+          {label}
+        </div>
         {desc && <p className="text-xs text-muted-foreground mt-0.5 leading-snug line-clamp-2">{desc}</p>}
       </div>
       {onDelete && (
@@ -53,7 +56,7 @@ function NavBtn({
             onDelete()
           }}
           className={
-            "opacity-0 group-hover/nav:opacity-100 text-muted-foreground " + "hover:text-red-600 shrink-0 pt-0.5"
+            "opacity-0 group-hover/nav:opacity-100 text-muted-foreground " + "hover:text-destructive shrink-0 pt-0.5"
           }
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -76,8 +79,8 @@ type ReportsNavProps = {
 export function ReportsNav({ active, saved, canBuild, onNew, onPick, onDelete }: ReportsNavProps) {
   const { t } = useTranslation()
   return (
-    <div className="space-y-5">
-      <div className="space-y-1">
+    <Panel as="nav" className="flex flex-col gap-3 self-start">
+      <div className="flex flex-col gap-0.5">
         <NavBtn
           dataTour="reports-builder"
           activeKey={!!active?.builder}
@@ -89,10 +92,8 @@ export function ReportsNav({ active, saved, canBuild, onNew, onPick, onDelete }:
       </div>
       {saved && saved.length > 0 && (
         <div data-tour="reports-saved-list">
-          <p className={"text-[11px] font-semibold uppercase tracking-wider text-muted-foreground " + "mb-2 px-1"}>
-            {t("reports.myTemplates", "My templates")}
-          </p>
-          <div className="space-y-1">
+          <GroupLabel className="pt-1">{t("reports.myTemplates", "My templates")}</GroupLabel>
+          <div className="flex flex-col gap-0.5">
             {saved.map((r) => (
               <NavBtn
                 key={r.id}
@@ -108,10 +109,10 @@ export function ReportsNav({ active, saved, canBuild, onNew, onPick, onDelete }:
         </div>
       )}
       {canBuild && (!saved || saved.length === 0) && (
-        <p className="text-[11px] text-muted-foreground px-1 leading-snug">
+        <p className="px-3 pb-2 text-xs leading-snug text-muted-foreground">
           {t("reports.templatesHint", "Build a report, then “Save as template” to reuse it here.")}
         </p>
       )}
-    </div>
+    </Panel>
   )
 }

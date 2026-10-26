@@ -12,7 +12,12 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 
-import { InvoiceTopBar, InvoiceNotice, InvoiceWorkbench, RailSection } from "../../../../../components/invoices/invoice-shell"
+import {
+  InvoiceTopBar,
+  InvoiceNotice,
+  InvoiceWorkbench,
+  RailSection,
+} from "../../../../../components/invoices/invoice-shell"
 import { InvoiceDocument } from "../../_components/invoice-document"
 import { ClientFields, TermsFields, LineEditor, IssuedByField } from "../../_components/invoice-fields"
 import { useAuth } from "@/contexts/auth-context"
@@ -78,8 +83,8 @@ function EditInvoice({ id }: { id: string }) {
     return (
       <div className="min-h-full bg-background">
         <InvoiceTopBar title={t("invoices.edit.title", "Edit invoice")} onBack={() => router.push("/invoices")} />
-        <InvoiceWorkbench rail={<Skeleton className="h-64 w-full rounded-2xl" />}>
-          <Skeleton className="h-[28rem] w-full rounded-2xl" />
+        <InvoiceWorkbench rail={<Skeleton className="h-64 w-full rounded-[20px]" />}>
+          <Skeleton className="h-[28rem] w-full rounded-[20px]" />
         </InvoiceWorkbench>
       </div>
     )
@@ -97,7 +102,7 @@ function EditInvoice({ id }: { id: string }) {
             "Only a draft invoice can be edited. Cancel this one and issue another instead.",
           )}
         </p>
-        <Button variant="outline" className="mt-4" onClick={() => router.push(`/invoices/${id}`)}>
+        <Button variant="outline" size="pill" className="mt-4" onClick={() => router.push(`/invoices/${id}`)}>
           {t("common.back", "Back")}
         </Button>
       </div>
@@ -114,10 +119,10 @@ function EditInvoice({ id }: { id: string }) {
         status={{ label: t("invoices.status.draft", "Draft") }}
         onBack={() => router.push("/invoices")}
       >
-        <Button variant="outline" className="shrink-0" onClick={() => router.push(`/invoices/${id}`)}>
+        <Button variant="ghost" size="pill" className="shrink-0" onClick={() => router.push(`/invoices/${id}`)}>
           {t("common.cancel")}
         </Button>
-        <Button className="shrink-0" disabled={!canSave || save.isPending} onClick={() => save.mutate()}>
+        <Button size="pill" className="shrink-0" disabled={!canSave || save.isPending} onClick={() => save.mutate()}>
           {save.isPending && <Loader2 className="mr-1.5 size-4 animate-spin" />}
           {t("common.save", "Save")}
         </Button>

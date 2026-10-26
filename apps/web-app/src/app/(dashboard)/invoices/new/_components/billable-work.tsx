@@ -73,7 +73,7 @@ export function BillableWork({
           ))}
         </div>
       ) : entries.length === 0 && dayRuns.length === 0 && hourRuns.length === 0 ? (
-        <div className="bg-card rounded-2xl border border-border text-center py-12">
+        <div className="rounded-[22px] border border-border bg-card py-12 text-center shadow-shell">
           <FileText className="size-10 mx-auto text-muted-foreground/20 mb-3" />
           <p className="text-sm text-muted-foreground">{t("invoices.create.noWork")}</p>
           <p className="text-xs text-muted-foreground/60 mt-1">{t("invoices.create.noWorkHint")}</p>
@@ -87,7 +87,7 @@ export function BillableWork({
               <div
                 key={e.taskId}
                 className={cn(
-                  "bg-card rounded-xl border transition-colors",
+                  "rounded-2xl border bg-card transition-colors",
                   e.include ? "border-border" : "border-border/40 opacity-60",
                 )}
               >

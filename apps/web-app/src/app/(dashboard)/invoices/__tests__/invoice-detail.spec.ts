@@ -1,4 +1,3 @@
-
 import path from "path"
 
 import { code, documentCode, listPage } from "./_screen"
@@ -141,7 +140,7 @@ describe("the invoice list", () => {
     // It was `max-w-6xl` — three hundred pixels narrower than the navigation
     // above it, so the title floated in from the left edge.
     const src = listPage()
-    expect(src).toMatch(/cn\(PAGE_WIDTH/)
+    expect(src).toMatch(/cn\(PAGE_WIDTH|className=\{PAGE_SHELL\}/)
     expect(src).not.toMatch(/max-w-6xl mx-auto/)
   })
 
@@ -164,7 +163,12 @@ describe("the invoice list", () => {
   it("groups the list into the four piles", () => {
     const src = listPage()
     expect(src).toContain("groupByBucket")
-    for (const k of ["invoices.buckets.overdue", "invoices.buckets.open", "invoices.buckets.draft", "invoices.buckets.settled"]) {
+    for (const k of [
+      "invoices.buckets.overdue",
+      "invoices.buckets.open",
+      "invoices.buckets.draft",
+      "invoices.buckets.settled",
+    ]) {
       expect(src).toContain(k)
     }
   })

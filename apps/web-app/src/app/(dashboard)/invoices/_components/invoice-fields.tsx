@@ -34,13 +34,18 @@ export { ClientFields, type EditableLine, num, LineEditor, IssuedByField } from 
  * read twice to use once.
  */
 export function TermsFields({
-  issueDate, setIssueDate,
-  dueDate, setDueDate,
-  currency, setCurrency,
+  issueDate,
+  setIssueDate,
+  dueDate,
+  setDueDate,
+  currency,
+  setCurrency,
   currencySource,
   exchange,
-  taxPct, setTaxPct,
-  discount, setDiscount,
+  taxPct,
+  setTaxPct,
+  discount,
+  setDiscount,
   children,
 }: {
   issueDate: string
@@ -68,11 +73,15 @@ export function TermsFields({
         no room for either date to be readable.
       */}
       <div>
-        <Label className="text-xs" htmlFor="inv-issue">{t("invoices.create.issueDate")}</Label>
+        <Label className="text-xs" htmlFor="inv-issue">
+          {t("invoices.create.issueDate")}
+        </Label>
         <DatePicker id="inv-issue" value={issueDate} onChange={setIssueDate} className="mt-1" />
       </div>
       <div>
-        <Label className="text-xs" htmlFor="inv-due">{t("invoices.create.dueDate")}</Label>
+        <Label className="text-xs" htmlFor="inv-due">
+          {t("invoices.create.dueDate")}
+        </Label>
         <DatePicker
           id="inv-due"
           value={dueDate}
@@ -95,21 +104,28 @@ export function TermsFields({
       */}
       <div>
         <div className="flex items-center justify-between gap-2">
-          <Label className="text-xs" htmlFor="inv-currency">{t("invoices.create.currency")}</Label>
+          <Label className="text-xs" htmlFor="inv-currency">
+            {t("invoices.create.currency")}
+          </Label>
           {currencySource && (
-            <span
-              className={"rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold " +
-                "text-blue-700 dark:bg-blue-950/50 dark:text-blue-300"}>
+            <span className="rounded-full bg-shell-accent-soft px-2 py-0.5 text-[10px] font-semibold text-shell-accent">
               {t(`currency.from.${currencySource}`)}
             </span>
           )}
         </div>
-        <CurrencySelect id="inv-currency" value={currency} onChange={(c) => c && setCurrency(c)} className="mt-1 h-9 rounded-md" />
+        <CurrencySelect
+          id="inv-currency"
+          value={currency}
+          onChange={(c) => c && setCurrency(c)}
+          className="mt-1 h-9 rounded-md"
+        />
       </div>
 
       {exchange?.differs && (
         <div>
-          <Label className="text-xs" htmlFor="inv-rate">{t("currency.rateLabel")}</Label>
+          <Label className="text-xs" htmlFor="inv-rate">
+            {t("currency.rateLabel")}
+          </Label>
           <div className="mt-1 flex items-center gap-2 rounded-md border border-input px-2.5">
             <span className="shrink-0 text-xs text-muted-foreground">1 {currency} =</span>
             <Input
@@ -124,23 +140,26 @@ export function TermsFields({
             <span className="shrink-0 text-xs text-muted-foreground">{exchange.baseCurrency}</span>
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            {exchange.loading
-              ? t("currency.rateLoading")
-              : exchange.source === "ECB" && exchange.date
-                ? t("currency.rateFromEcb", { date: formatDayKey(exchange.date, i18n.language) })
-                : exchange.source === "MANUAL"
-                  ? <>
-                      {t("currency.rateManual")}{" "}
-                      <button
-                        type="button"
-                        className="font-medium text-blue-600 hover:underline dark:text-blue-400"
-                        onClick={exchange.resetToEcb}>
-                        {t("currency.useEcb")}
-                      </button>
-                    </>
-                  : t("currency.rateNone", { from: currency, to: exchange.baseCurrency })}
+            {exchange.loading ? (
+              t("currency.rateLoading")
+            ) : exchange.source === "ECB" && exchange.date ? (
+              t("currency.rateFromEcb", { date: formatDayKey(exchange.date, i18n.language) })
+            ) : exchange.source === "MANUAL" ? (
+              <>
+                {t("currency.rateManual")}{" "}
+                <button
+                  type="button"
+                  className="font-medium text-shell-accent hover:underline"
+                  onClick={exchange.resetToEcb}
+                >
+                  {t("currency.useEcb")}
+                </button>
+              </>
+            ) : (
+              t("currency.rateNone", { from: currency, to: exchange.baseCurrency })
+            )}
           </p>
-          {!exchange.valid && <p className="mt-1 text-[11px] text-red-600">{t("currency.rateInvalid")}</p>}
+          {!exchange.valid && <p className="mt-1 text-[11px] text-destructive">{t("currency.rateInvalid")}</p>}
         </div>
       )}
 
@@ -148,7 +167,9 @@ export function TermsFields({
         <div>
           <Label className="text-xs">{t("invoices.create.taxRate")}</Label>
           <Input
-            type="number" min={0} value={taxPct}
+            type="number"
+            min={0}
+            value={taxPct}
             onChange={(e) => setTaxPct(e.target.value)}
             className="mt-1 h-9 tabular-nums"
           />
@@ -156,7 +177,9 @@ export function TermsFields({
         <div>
           <Label className="text-xs">{t("invoices.create.discount")}</Label>
           <Input
-            type="number" min={0} value={discount}
+            type="number"
+            min={0}
+            value={discount}
             onChange={(e) => setDiscount(e.target.value)}
             className="mt-1 h-9 tabular-nums"
           />
