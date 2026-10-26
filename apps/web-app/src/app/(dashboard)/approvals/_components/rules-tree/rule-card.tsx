@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import type { RuleRole } from "../../_hooks/use-rules-tree"
-import { ChoiceSelect, LIMIT, NONE, Stem, TreeLine, TreeNode } from "./tree-nodes"
+import { ChoiceSelect, DoneNode, LIMIT, NONE, Stem, TreeLine, TreeNode } from "./tree-nodes"
 
 const HOURS = ["4", "24", "48", "72"]
 
@@ -180,6 +180,8 @@ export function RuleCard({
           )}
         </TreeLine>
       </div>
+      <Stem />
+      <DoneNode>{rule.secondRoleId ? t("approvals.tree.doneTwo") : t("approvals.tree.doneFirst")}</DoneNode>
     </div>
   )
 }

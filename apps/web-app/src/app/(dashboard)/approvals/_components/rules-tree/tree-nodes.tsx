@@ -100,3 +100,16 @@ export function ChoiceSelect({
 
 /** The short line joining two boxes. */
 export const Stem = () => <span aria-hidden className="h-5 w-0.5 shrink-0 bg-[hsl(var(--muted-foreground)/0.35)]" />
+
+const DONE =
+  "inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-[13px] font-semibold shadow-shell"
+
+/** Where a branch ends. */
+export function DoneNode({ children }: { children: ReactNode }) {
+  return (
+    <span className={DONE}>
+      <span aria-hidden className="size-2 rounded-full bg-shell-accent" />
+      {children}
+    </span>
+  )
+}

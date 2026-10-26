@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useRulesTree } from "../../_hooks/use-rules-tree"
 import { RuleCard } from "./rule-card"
-import { ChoiceSelect, Stem, TreeNode } from "./tree-nodes"
+import { ChoiceSelect, DoneNode, Stem, TreeNode } from "./tree-nodes"
 
 /** One column under the split: the joining line above it, then its boxes. */
 const BRANCH =
@@ -26,9 +26,6 @@ const NEW_CARD =
 const NO_RULE =
   "w-full rounded-2xl border border-border bg-card px-3 py-2.5 text-center text-[12.5px] font-semibold " +
   "text-muted-foreground shadow-shell"
-const DONE =
-  "inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-[13px] font-semibold shadow-shell"
-
 const DOTS = {
   backgroundImage: "radial-gradient(hsl(var(--border)) 1px, transparent 1.2px)",
   backgroundSize: "18px 18px",
@@ -48,6 +45,9 @@ export function RulesTree() {
   const { user } = useAuth()
   const currency = user?.orgCurrency ?? "EUR"
   const tree = useRulesTree(true)
+  const catchesAll = tree.rules.some(
+    (r) => r.isActive && !r.spaceId && !r.whenCoverShort && (r.minMinutes ?? r.minDays ?? r.minAmountCents) == null,
+  )
   const kindName = (k: RuleKind) => t(`approvals.rules.kind.${k}`)
   const countOf = (k: RuleKind) => tree.counts.filter((r) => r.kind === k).length
 
@@ -109,14 +109,14 @@ export function RulesTree() {
               </Branch>
             ))
           )}
-          <Branch>
-            <div className={NO_RULE}>{t("approvals.tree.noRuleFits")}</div>
-            <Stem />
-            <span className={DONE}>
-              <span aria-hidden className="size-2 rounded-full bg-shell-accent" />
-              {t("approvals.tree.doneFirst")}
-            </span>
-          </Branch>
+          {/* Only when something can fall through: an active rule for every workspace with no limit catches it all. */}
+          {!catchesAll && (
+            <Branch>
+              <div className={NO_RULE}>{t("approvals.tree.noRuleFits")}</div>
+              <Stem />
+              <DoneNode>{t("approvals.tree.doneFirst")}</DoneNode>
+            </Branch>
+          )}
           <Branch className="w-[170px]">
             <button type="button" onClick={tree.add} disabled={tree.busy} className={NEW_CARD}>
               {t("approvals.tree.newRule")}

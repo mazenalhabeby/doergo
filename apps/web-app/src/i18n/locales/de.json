@@ -9937,6 +9937,7 @@
       "days_other": "{{count}} Tagen",
       "noRuleFits": "Keine Regel passt",
       "doneFirst": "Fertig nach der ersten Genehmigung",
+      "doneTwo": "Fertig nach beiden Genehmigungen",
       "footnote": "Passen zwei Regeln, gewinnt die Regel des Arbeitsbereichs, dann die höhere Grenze. Die Genehmigung eines Administrators schließt immer ab, und niemand gibt beide Genehmigungen.",
       "removed": "Regel entfernt",
       "noRoles": "Lege zuerst eine Rolle an, die genehmigen darf."

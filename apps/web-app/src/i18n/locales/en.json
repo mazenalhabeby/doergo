@@ -9937,6 +9937,7 @@
       "days_other": "{{count}} days",
       "noRuleFits": "No rule fits",
       "doneFirst": "Done after the first approval",
+      "doneTwo": "Done after both approvals",
       "footnote": "If two rules fit, the workspace's own rule wins, then the higher limit. An administrator's approval always finishes it, and nobody gives both approvals.",
       "removed": "Rule removed",
       "noRoles": "First create a role that can approve."

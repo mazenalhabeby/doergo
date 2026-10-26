@@ -9937,6 +9937,7 @@
       "days_other": "{{count}} jours",
       "noRuleFits": "Aucune règle ne s'applique",
       "doneFirst": "Terminé après la première approbation",
+      "doneTwo": "Terminé après les deux approbations",
       "footnote": "Si deux règles s'appliquent, celle de l'espace de travail l'emporte, puis la limite la plus haute. L'approbation d'un administrateur termine toujours, et personne ne donne les deux approbations.",
       "removed": "Règle supprimée",
       "noRoles": "Créez d'abord un rôle qui peut approuver."

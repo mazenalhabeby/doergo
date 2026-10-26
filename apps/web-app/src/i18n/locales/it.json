@@ -9937,6 +9937,7 @@
       "days_other": "{{count}} giorni",
       "noRuleFits": "Nessuna regola si applica",
       "doneFirst": "Fatto dopo la prima approvazione",
+      "doneTwo": "Fatto dopo entrambe le approvazioni",
       "footnote": "Se si applicano due regole, vince quella dello spazio di lavoro, poi il limite più alto. L'approvazione di un amministratore chiude sempre, e nessuno dà entrambe le approvazioni.",
       "removed": "Regola eliminata",
       "noRoles": "Crea prima un ruolo che possa approvare."
