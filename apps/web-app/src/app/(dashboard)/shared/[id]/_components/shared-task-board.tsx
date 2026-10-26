@@ -54,7 +54,7 @@ export function SharedTaskBoard({ spaceId, canAssign, workers }: SharedTaskBoard
           ))}
         </div>
       ) : tasks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-muted/20 px-6 py-14 text-center">
+        <div className="flex flex-col items-center justify-center rounded-[22px] border border-dashed bg-muted/20 px-6 py-14 text-center">
           <span className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
             <ClipboardList className="h-6 w-6" />
           </span>
@@ -63,7 +63,7 @@ export function SharedTaskBoard({ spaceId, canAssign, workers }: SharedTaskBoard
       ) : (
         <div className="grid gap-2">
           {tasks.map((task) => (
-            <div key={task.id} className="rounded-xl border bg-card p-4">
+            <div key={task.id} className="rounded-[18px] border border-border bg-card p-4 shadow-shell">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">{task.title}</p>

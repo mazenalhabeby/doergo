@@ -134,7 +134,7 @@ export function RotaWeekGrid({
                   key={dayStrs[i]}
                   className={cn(
                     "px-2 py-2 text-center text-xs font-semibold min-w-[92px]",
-                    dayStrs[i] === todayStr ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground",
+                    dayStrs[i] === todayStr ? "text-shell-accent" : "text-muted-foreground",
                   )}
                 >
                   <div>{t(`scheduling.rota.weekdaysShort.${WEEKDAY_KEYS[d.getDay()]}`)}</div>
@@ -163,7 +163,7 @@ export function RotaWeekGrid({
                       title={conflict ? t("scheduling.rota.grid.conflictCell") : undefined}
                       className={cn(
                         "px-1.5 py-1.5 align-top text-center",
-                        dayStrs[i] === todayStr && "bg-blue-50/50 dark:bg-blue-950/20",
+                        dayStrs[i] === todayStr && "bg-shell-accent-soft",
                         conflict && "rounded-md ring-1 ring-inset ring-amber-400 dark:ring-amber-600",
                       )}
                     >

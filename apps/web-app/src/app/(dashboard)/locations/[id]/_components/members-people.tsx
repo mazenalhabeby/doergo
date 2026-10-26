@@ -213,7 +213,7 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
                             <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
                               {bill !== "DAY" && (
                                 <span
-                                  className={cn(m.billRateCents != null && "font-semibold text-blue-600 dark:text-blue-400")}
+                                  className={cn(m.billRateCents != null && "font-semibold text-shell-accent")}
                                   title={m.billRateCents != null
                                     ? t("scheduling.membersPage.setForPerson")
                                     : t("scheduling.membersPage.inherited")}

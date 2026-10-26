@@ -5,44 +5,25 @@ import { memo } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
-import {
-  Plus,
-  MoreHorizontal,
-  Users,
-  Settings2,
-  ToggleRight,
-  ToggleLeft,
-  Building2,
-  ChevronRight,
-  SlidersHorizontal,
-  Handshake,
-  Briefcase,
-  Inbox,
-} from "lucide-react"
 import { AVAILABLE_MODULES } from "@hbcfield/shared/client"
 import { locationsApi, type CompanyLocation, type StatusWorkflow } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { Icon } from "@/components/ui/icon"
 import { EmptyState as SharedEmptyState } from "@/components/ui/empty-state"
-import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
-// Module color mapping for pills
-const MODULE_COLORS: Record<string, string> = {
-  time_tracking: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-  sprints: "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
-  story_points: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-  epics: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-  phases: "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
-  custom_fields: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-}
+import { Chip } from "@/components/page/page-kit"
+import { UserAvatar } from "@/components/common/user-avatar"
+import { cn } from "@/lib/utils"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 function getModuleLabel(key: string): string {
   return AVAILABLE_MODULES.find((m) => m.key === key)?.label || key
+}
+
+/** How far a share reaches, as a chip tone (the shared-with-us rows). */
+export const LEVEL_TONE: Record<string, "soft" | "accent" | "warn"> = {
+  VIEW: "soft",
+  CONTRIBUTE: "accent",
+  CONTROL: "warn",
 }
 
 // ============================================================================
@@ -60,30 +41,41 @@ export function EmptyState({
   locked,
   lockReason,
 }: {
-  onCreateClick: () => void;
-  isAdmin: boolean;
-  locked?: boolean;
-  lockReason?: string;
+  onCreateClick: () => void
+  isAdmin: boolean
+  locked?: boolean
+  lockReason?: string
 }) {
   const { t } = useTranslation()
   return (
     <SharedEmptyState
-      icon={Building2}
+      icon={<Icon name="workspaces" size={24} />}
       title={t("locations.empty.title")}
       description={t("locations.empty.description")}
-      action={isAdmin && (
-        <Button onClick={onCreateClick} disabled={locked} title={locked ? lockReason : undefined} className="gap-2">
-          <Plus className="h-4 w-4" />
-          {t("locations.createSpace")}
-        </Button>
-      )}
+      className="rounded-[22px]"
+      action={
+        isAdmin && (
+          <Button
+            size="pill"
+            onClick={onCreateClick}
+            disabled={locked}
+            title={locked ? lockReason : undefined}
+            className="gap-2"
+          >
+            <Icon name="plus" size={16} />
+            {t("locations.createSpace")}
+          </Button>
+        )
+      }
     />
   )
 }
 
 // ============================================================================
-// SPACE CARD
+// SPACE CARD — the board's workspace card (docs/design/web-redesign/Company.dc.html)
 // ============================================================================
+
+const SMALL_PILL = "h-8 rounded-full px-3.5 text-[13px] font-semibold"
 
 export const SpaceCard = memo(function SpaceCard({
   space,
@@ -116,183 +108,169 @@ export const SpaceCard = memo(function SpaceCard({
   })
 
   const memberCount = assignments?.length || 0
+  const people = (assignments ?? []).flatMap((a) => (a.user ? [a.user] : [])).slice(0, 3)
   const enabledModules = space.enabledModules || []
   const workflow = workflows.find((w) => w.id === space.workflowId) || workflows.find((w) => w.isDefault)
   const statusCount = workflow?.statuses?.length || 0
+  const [first, ...rest] = space.name.trim().split(/\s+/)
 
   return (
     <div
       data-tour={index === 0 ? "spaces-card" : undefined}
-      className={`rounded-xl border bg-card p-5 transition-all duration-200 hover:shadow-md ${
-        !space.isActive ? "opacity-60" : ""
-      }`}
-      style={{ animationDelay: `${index * 50}ms`, animation: "fadeInUp 0.3s ease-out forwards", opacity: 0 }}
+      className={cn(
+        "relative flex flex-col gap-3.5 rounded-[22px] border border-border bg-card p-[18px] shadow-shell",
+        !space.isActive && "opacity-70",
+      )}
     >
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      {/* Head: the workspace's mark, its name and address. */}
+      <div className="flex items-start gap-3">
+        <UserAvatar
+          soft
+          seed={space.id}
+          firstName={first}
+          lastName={rest.join(" ")}
+          className="size-11 rounded-[14px] text-sm font-bold"
+          title={space.name}
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <h3 className="truncate text-base font-semibold tracking-[-0.01em] text-foreground">{space.name}</h3>
+          {space.address && <p className="truncate text-[12.5px] text-muted-foreground">{space.address}</p>}
+        </div>
+      </div>
 
-      {/* Top: Name + Status + Member count */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h3 className="text-base font-semibold text-foreground truncate">{space.name}</h3>
-            <Badge
-              variant="outline"
-              className={`text-xs font-medium ${
-                space.isActive
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                  : "border-border text-muted-foreground"
-              }`}
-            >
-              {space.isActive ? t("common.active") : t("locations.archived", "Archived")}
-            </Badge>
-            {/*
-              Which workspace catches work belonging to no particular one.
+      {/* Tags: kind, the default, archived. */}
+      <div className="flex flex-wrap gap-1.5">
+        {/* Ownership kind — tag the non-default kinds (COMPANY is implicit). */}
+        {space.kind === "CUSTOMER" && <Chip>{t("locations.form.kindCustomer", "Customer company")}</Chip>}
+        {space.kind === "PROJECT" && <Chip>{t("locations.form.kindProject", "My project")}</Chip>}
+        {/*
+          Which workspace catches work belonging to no particular one.
 
-              On the LIST, not only inside the space: it is a property of the
-              ORGANIZATION — exactly one space has it — and a fact about the set
-              is unreadable when it is only visible one card at a time. It is
-              also what makes a space undeletable, so seeing it here explains a
-              refusal before somebody meets it.
-            */}
-            {space.isDefault && (
-              <Badge variant="outline" className="gap-1 text-xs font-medium border-primary/30 bg-primary/10 text-primary">
-                <Inbox className="h-3 w-3" />
-                {t("locations.default.badge", "Default")}
-              </Badge>
-            )}
-            {/* Ownership kind — badge the non-default kinds (COMPANY is implicit). */}
-            {space.kind === "CUSTOMER" && (
-              <Badge
-                variant="outline"
-                className={"gap-1 text-xs font-medium border-amber-200 bg-amber-50 text-amber-700 " +
-                  "dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300"}>
-                <Handshake className="h-3 w-3" />
-                {t("locations.form.kindCustomer", "Customer company")}
-              </Badge>
-            )}
-            {space.kind === "PROJECT" && (
-              <Badge
-                variant="outline"
-                className={"gap-1 text-xs font-medium border-blue-200 bg-blue-50 text-blue-700 " +
-                  "dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"}>
-                <Briefcase className="h-3 w-3" />
-                {t("locations.form.kindProject", "My project")}
-              </Badge>
-            )}
-            {memberCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <Users className="h-3.5 w-3.5" />
-                {t("locations.memberCount", { count: memberCount })}
-              </span>
-            )}
+          On the LIST, not only inside the space: it is a property of the
+          ORGANIZATION — exactly one space has it — and a fact about the set
+          is unreadable when it is only visible one card at a time. It is
+          also what makes a space undeletable, so seeing it here explains a
+          refusal before somebody meets it.
+        */}
+        {space.isDefault && (
+          <Chip className="bg-foreground text-background">{t("locations.default.badge", "Default")}</Chip>
+        )}
+        {space.isActive ? (
+          <Chip tone="accent" dot>
+            {t("common.active")}
+          </Chip>
+        ) : (
+          <Chip tone="warn">{t("locations.archived", "Archived")}</Chip>
+        )}
+      </div>
+
+      {/* People here. */}
+      {memberCount > 0 && (
+        <div className="flex items-center gap-2.5 text-[13px] text-muted-foreground">
+          <div className="flex">
+            {people.map((p) => (
+              <UserAvatar
+                key={p.id}
+                soft
+                ring
+                seed={p.id}
+                firstName={p.firstName}
+                lastName={p.lastName}
+                avatarUrl={p.avatarUrl}
+                className="-ml-[7px] size-7 text-[10px] ring-2 first:ml-0"
+              />
+            ))}
           </div>
-
-          {/* Address */}
-          {space.address && (
-            <p className="text-sm text-muted-foreground mt-1 truncate">{space.address}</p>
-          )}
-
-          {/* Modules row */}
-          {enabledModules.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {enabledModules.map((mod) => (
-                <span
-                  key={mod}
-                  className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${
-                    MODULE_COLORS[mod] || "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {getModuleLabel(mod)}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Workflow info */}
-          {workflow && (
-            <p className="text-xs text-muted-foreground mt-2">
-              {t(
-                "locations.workflowPrefix")}{workflow.name}{statusCount > 0 ? t("locations.statusCountSuffix", { count: statusCount }) : ""}
-            </p>
-          )}
+          <span className="font-medium text-foreground">{t("locations.memberCount", { count: memberCount })}</span>
         </div>
+      )}
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          {space.isActive && (
-            <>
-              {/* Offered only to somebody who may actually use it. It used to be
-                  shown to everyone and landed them on a permission wall — the
-                  page refused correctly, but the button had already promised. */}
-              {canConfigure && (
-            <Button
-              data-tour={index === 0 ? "spaces-card-configure" : undefined}
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1.5 text-xs rounded-lg"
-              onClick={onOpenSettings}
+      {/* Workflow. */}
+      {workflow && (
+        <div className="flex items-center gap-2.5 text-[13px] text-muted-foreground">
+          <span>{t("locations.workflowPrefix").trim()}</span>
+          <span className="truncate font-medium text-foreground">
+            {workflow.name}
+            {statusCount > 0 ? t("locations.statusCountSuffix", { count: statusCount }) : ""}
+          </span>
+        </div>
+      )}
+
+      {/* Modules switched on here. */}
+      {enabledModules.length > 0 && (
+        <div className="flex flex-wrap gap-[5px]">
+          {enabledModules.map((mod) => (
+            <span
+              key={mod}
+              className="rounded-lg border border-border px-2 py-[3px] text-[11.5px] text-muted-foreground"
             >
-              <Settings2 className="h-3.5 w-3.5" />
-              {t("locations.configure")}
-            </Button>
-              )}
-              <Button
-                data-tour={index === 0 ? "spaces-card-viewtasks" : undefined}
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground rounded-lg"
-                onClick={onViewTasks}
-              >
-                {t("locations.viewTasks")}
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
-            </>
-          )}
-          {isAdmin && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button data-tour={index === 0 ? "spaces-card-actions" : undefined} variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {canConfigure && (
-                  <DropdownMenuItem onClick={onOpenSettings}>
-                    <SlidersHorizontal className="mr-2 h-4 w-4" />
-                    {t("locations.spaceSettings")}
-                  </DropdownMenuItem>
-                )}
-                {space.isActive ? (
-                  <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
-                    <ToggleLeft className="mr-2 h-4 w-4" />
-                    {t("locations.archiveAction", "Archive")}
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem onClick={onReactivate} className="text-emerald-600 focus:text-emerald-600">
-                    <ToggleRight className="mr-2 h-4 w-4" />
-                    {t("locations.restoreAction", "Restore")}
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+              {getModuleLabel(mod)}
+            </span>
+          ))}
         </div>
+      )}
+
+      {/* Actions. */}
+      <div className="mt-auto flex items-center gap-2 border-t border-border pt-3">
+        {space.isActive && (
+          <>
+            {/* Offered only to somebody who may actually use it. It used to be
+                shown to everyone and landed them on a permission wall — the
+                page refused correctly, but the button had already promised. */}
+            {canConfigure && (
+              <Button
+                data-tour={index === 0 ? "spaces-card-configure" : undefined}
+                variant="outline"
+                className={SMALL_PILL}
+                onClick={onOpenSettings}
+              >
+                {t("locations.configure")}
+              </Button>
+            )}
+            <Button
+              data-tour={index === 0 ? "spaces-card-viewtasks" : undefined}
+              variant="ghost"
+              className={SMALL_PILL}
+              onClick={onViewTasks}
+            >
+              {t("locations.viewTasks")}
+            </Button>
+          </>
+        )}
+        {!space.isActive && isAdmin && (
+          <Button variant="outline" className={SMALL_PILL} onClick={onReactivate}>
+            {t("locations.restoreAction", "Restore")}
+          </Button>
+        )}
+        <span className="flex-1" />
+        {isAdmin && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                data-tour={index === 0 ? "spaces-card-actions" : undefined}
+                variant="ghost"
+                size="icon"
+                className="size-[34px] rounded-full"
+                aria-label={t("common.more")}
+              >
+                <Icon name="moreDots" size={18} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {canConfigure && (
+                <DropdownMenuItem onClick={onOpenSettings}>{t("locations.spaceSettings")}</DropdownMenuItem>
+              )}
+              {space.isActive ? (
+                <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+                  {t("locations.archiveAction", "Archive")}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={onReactivate}>{t("locations.restoreAction", "Restore")}</DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
     </div>
   )
 })
-
-// ============================================================================
-// SHARED WITH US — cross-org invites + active shared spaces (guest side)
-// ============================================================================
-
-export const LEVEL_BADGE: Record<string, string> = {
-  VIEW: "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  CONTRIBUTE: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300",
-  CONTROL: "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300",
-}

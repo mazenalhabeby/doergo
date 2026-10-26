@@ -225,7 +225,7 @@ export function AuditLogSection() {
                     {log.user ? (
                       <Link
                         href={`/members/${log.user.id}`}
-                        className="text-xs text-foreground truncate hover:text-blue-600 transition-colors"
+                        className="text-xs text-foreground truncate hover:text-shell-accent transition-colors"
                       >
                         {personName(log.user)}
                       </Link>

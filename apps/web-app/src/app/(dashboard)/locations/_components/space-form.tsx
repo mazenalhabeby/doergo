@@ -146,12 +146,12 @@ export function SpaceForm({
             className={cn(
               "rounded-xl border p-4 text-left transition-all",
               !isPhysical
-                ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-200 dark:ring-blue-800"
+                ? "border-primary bg-shell-accent-soft ring-1 ring-primary/20"
                 : "border-border hover:border-muted-foreground/30",
             )}
           >
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Boxes className="h-4 w-4 text-blue-600" /> {t("locations.form.workspace")}
+              <Boxes className="h-4 w-4 text-shell-accent" /> {t("locations.form.workspace")}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">{t("locations.form.workspaceHint")}</p>
           </button>
@@ -162,12 +162,12 @@ export function SpaceForm({
             className={cn(
               "rounded-xl border p-4 text-left transition-all",
               isPhysical
-                ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-200 dark:ring-blue-800"
+                ? "border-primary bg-shell-accent-soft ring-1 ring-primary/20"
                 : "border-border hover:border-muted-foreground/30",
             )}
           >
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <MapPin className="h-4 w-4 text-blue-600" /> {t("locations.form.physical")}
+              <MapPin className="h-4 w-4 text-shell-accent" /> {t("locations.form.physical")}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">{t("locations.form.physicalHint")}</p>
           </button>

@@ -49,7 +49,7 @@ export function AssetJobsPanel({
           key={tk.id}
           onClick={() => router.push(`/tasks/${tk.id}`)}
           className={
-            "flex w-full items-center gap-3 rounded-xl border border-border bg-card " +
+            "flex w-full items-center gap-3 rounded-[14px] border border-border bg-card " +
             "p-3 text-left transition-colors hover:border-primary/40"
           }
         >

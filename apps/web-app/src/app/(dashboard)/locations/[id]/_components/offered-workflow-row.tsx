@@ -54,7 +54,7 @@ export function OfferedWorkflowRow({
           <span
             className={cn(
               "inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium",
-              isLocal ? "bg-blue-500/10 text-blue-600 dark:text-blue-400" : "bg-muted text-muted-foreground",
+              isLocal ? "bg-shell-accent-soft text-shell-accent" : "bg-muted text-muted-foreground",
             )}
             title={
               isLocal

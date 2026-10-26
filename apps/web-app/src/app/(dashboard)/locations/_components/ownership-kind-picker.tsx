@@ -39,12 +39,12 @@ export function OwnershipKindPicker({
             className={cn(
               "rounded-xl border p-3 text-left transition-all",
               active
-                ? "border-blue-600 bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-900/20 dark:ring-blue-800"
+                ? "border-primary bg-shell-accent-soft ring-1 ring-primary/20"
                 : "border-border hover:border-muted-foreground/30",
             )}
           >
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Icon className="h-4 w-4 text-blue-600" /> {opt.label}
+              <Icon className="h-4 w-4 text-shell-accent" /> {opt.label}
             </div>
           </button>
         )

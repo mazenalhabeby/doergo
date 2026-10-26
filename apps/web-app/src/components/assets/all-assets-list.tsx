@@ -94,7 +94,7 @@ export function AllAssetsList({ spaceNames }: { spaceNames: Record<string, strin
         </label>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-card">
+      <div className="overflow-x-auto rounded-[22px] border border-border bg-card shadow-shell">
         <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>

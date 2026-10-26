@@ -16,7 +16,10 @@ import type { AssetDetail } from "../_lib/asset-detail"
 
 /** The record's title row: its name and status, and what can be done to it. */
 export function AssetRecordHeader({
-  id, asset, kind, shape,
+  id,
+  asset,
+  kind,
+  shape,
 }: {
   id: string
   asset: AssetDetail
@@ -29,12 +32,14 @@ export function AssetRecordHeader({
 
   return (
     <div className="flex items-start gap-4">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
+      <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-shell-accent-soft text-shell-accent">
         <Package className="h-5 w-5" />
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
-          <h1 className="truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">{asset.name}</h1>
+          <h1 className="truncate text-2xl font-semibold leading-[1.15] tracking-[-0.03em] text-foreground sm:text-[30px]">
+            {asset.name}
+          </h1>
           <AssetStatusChip status={asset.status} className="text-[11px]" />
         </div>
         {shape.hasAddress && asset.locationAddress && (
@@ -90,7 +95,7 @@ export function AssetRecordHeader({
             qc.invalidateQueries({ queryKey: keys.assets.activities(id) })
           }}
           trigger={
-            <Button variant="outline" size="sm" className="shrink-0">
+            <Button variant="outline" size="pill" className="shrink-0">
               <Settings2 className="mr-1.5 h-3.5 w-3.5" /> {t("common.edit", "Edit")}
             </Button>
           }

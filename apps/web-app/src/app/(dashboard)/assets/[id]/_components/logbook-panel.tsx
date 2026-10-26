@@ -5,7 +5,14 @@ import { useTranslation } from "react-i18next"
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Gauge, Loader2 } from "lucide-react"
 
-import { formatCents, kindMeters, logTypesForKind, findLogType, personName, type KindShape } from "@hbcfield/shared/client"
+import {
+  formatCents,
+  kindMeters,
+  logTypesForKind,
+  findLogType,
+  personName,
+  type KindShape,
+} from "@hbcfield/shared/client"
 import { assetsApi } from "@/lib/api"
 import { logColor, logTypeLabel } from "@/components/assets/log-style"
 import { useAuth } from "@/contexts/auth-context"
@@ -142,7 +149,7 @@ export function LogbookPanel({ assetId, shape, canManage }: { assetId: string; s
       {/* ── Who spent what, and on which kind of work ─────────────────── */}
       {summary && (summary.byAuthor.some((a) => a.outCents > 0) || typeSpend.length > 0) && (
         <div className="grid gap-2 sm:grid-cols-2">
-          <div className="rounded-xl border border-border bg-card p-3">
+          <div className="rounded-[14px] border border-border bg-card p-3">
             <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">
               {t("assetLog.byPerson", "Who spent what")}
             </p>
@@ -167,7 +174,7 @@ export function LogbookPanel({ assetId, shape, canManage }: { assetId: string; s
                 ))}
             </div>
           </div>
-          <div className="rounded-xl border border-border bg-card p-3">
+          <div className="rounded-[14px] border border-border bg-card p-3">
             <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">
               {t("assetLog.byType", "By type")}
             </p>

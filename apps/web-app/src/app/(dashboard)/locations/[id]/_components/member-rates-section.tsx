@@ -144,7 +144,7 @@ function CostFromProfile({
         <span className="text-xs font-medium text-foreground">{t("rates.costsYou")}</span>
         <Link
           href={`/members/${member.userId}`}
-          className="text-[11px] font-semibold text-blue-600 hover:underline dark:text-blue-400"
+          className="text-[11px] font-semibold text-shell-accent hover:underline"
         >
           {t("rates.changeOnProfile")}
         </Link>

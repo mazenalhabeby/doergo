@@ -106,7 +106,7 @@ export function CategoryDialog({
               type="checkbox"
               checked={!!catForm.urgent}
               onChange={(e) => setCatForm({ ...catForm, urgent: e.target.checked })}
-              className="h-4 w-4 rounded border-slate-300 text-primary"
+              className="h-4 w-4 rounded border-border text-primary"
             />
             {t("portal.catUrgent", "Auto-mark requests in this category as URGENT")}
           </label>

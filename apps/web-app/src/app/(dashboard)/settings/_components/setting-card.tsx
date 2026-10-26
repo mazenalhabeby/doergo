@@ -1,37 +1,29 @@
 import type { LucideIcon } from "lucide-react"
 
-/** A settings card: icon, title, one-line description, then the controls. Shared by every section. */
+/**
+ * A settings card — the board's section card (docs/design/web-redesign/Settings.dc.html): a title, one line
+ * saying what it is for, then the controls. Shared by every section. `icon` and its colours are still accepted
+ * from the callers but the redesign draws the card without an icon tile.
+ */
 export function SettingCard({
-  icon: Icon,
-  iconColor,
-  iconBg,
   title,
   description,
   children,
 }: {
-  icon: LucideIcon
-  iconColor: string
-  iconBg: string
+  icon?: LucideIcon
+  iconColor?: string
+  iconBg?: string
   title: string
   description?: string
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-      <div className="px-6 py-5 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}>
-            <Icon className={`h-5 w-5 ${iconColor}`} />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-foreground">{title}</h3>
-            {description && (
-              <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
-            )}
-          </div>
-        </div>
+    <section className="flex flex-col gap-3.5 rounded-[22px] border border-border bg-card px-5 py-[18px] shadow-shell">
+      <div className="flex flex-col gap-0.5">
+        <h3 className="text-[15px] font-semibold text-foreground">{title}</h3>
+        {description && <p className="text-[12.5px] text-muted-foreground">{description}</p>}
       </div>
-      <div className="px-6 py-5">{children}</div>
-    </div>
+      <div>{children}</div>
+    </section>
   )
 }

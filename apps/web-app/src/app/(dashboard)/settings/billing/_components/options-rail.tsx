@@ -83,7 +83,7 @@ export function OptionsRail({
 
   return (
     <aside className="lg:sticky lg:top-4">
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="overflow-hidden rounded-[22px] border border-border bg-card shadow-shell">
         <div className="border-b border-border bg-gradient-to-b from-pink-500/[0.07] to-transparent px-4 py-3.5">
           {/*
             The scope is part of the heading, not a footnote under it.
@@ -177,7 +177,7 @@ export function OptionsRail({
         </div>
       </div>
 
-      <p className="mt-3 rounded-xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground">
+      <p className="mt-3 rounded-2xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground">
         <b className="mb-0.5 block font-semibold text-foreground">
           {t('billing.addOns.railNoteTitle', 'Chosen once, used everywhere')}
         </b>

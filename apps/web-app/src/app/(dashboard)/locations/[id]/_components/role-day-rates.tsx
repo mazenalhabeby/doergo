@@ -65,7 +65,7 @@ export function RoleDayRates({ role, spaceId }: { role: SpaceRoleInSpace; spaceI
         <button
           type="button"
           onClick={() => setShowDefault(true)}
-          className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400"
+          className="text-xs font-semibold text-shell-accent hover:underline"
         >
           {t("rates.otherWorkspaces")} ›
         </button>

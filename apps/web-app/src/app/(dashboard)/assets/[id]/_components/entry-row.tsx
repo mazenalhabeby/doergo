@@ -14,18 +14,19 @@ import Link from "next/link"
 import { Inbox } from "lucide-react"
 
 /** Every query this panel reads, so a write can refresh exactly them. */
-export const logbookKeys = (assetId: string) => [
-  keys.assets.log(assetId),
-  keys.assets.logSummary(assetId),
-  keys.assets.record(assetId),
-  keys.assets.money(assetId),
-  keys.assets.custody(assetId),
-  keys.assets.expensesPending(),
-] as const
+export const logbookKeys = (assetId: string) =>
+  [
+    keys.assets.log(assetId),
+    keys.assets.logSummary(assetId),
+    keys.assets.record(assetId),
+    keys.assets.money(assetId),
+    keys.assets.custody(assetId),
+    keys.assets.expensesPending(),
+  ] as const
 
 export function Kpi({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1 rounded-xl border border-border bg-card p-3">
+    <div className="space-y-1 rounded-[14px] border border-border bg-card p-3">
       <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
       {children}
     </div>
@@ -44,8 +45,12 @@ export function DueRow({ due }: { due: AssetLogDue }) {
       : null,
     due.unitsLeft !== null
       ? due.unitsLeft >= 0
-        ? t("assetLog.inUnits", "in {{amount}}", { amount: `${due.unitsLeft.toLocaleString()}${due.unit ? ` ${due.unit}` : ""}` })
-        : t("assetLog.unitsOver", "{{amount}} overdue", { amount: `${(-due.unitsLeft).toLocaleString()}${due.unit ? ` ${due.unit}` : ""}` })
+        ? t("assetLog.inUnits", "in {{amount}}", {
+            amount: `${due.unitsLeft.toLocaleString()}${due.unit ? ` ${due.unit}` : ""}`,
+          })
+        : t("assetLog.unitsOver", "{{amount}} overdue", {
+            amount: `${(-due.unitsLeft).toLocaleString()}${due.unit ? ` ${due.unit}` : ""}`,
+          })
       : null,
   ].filter(Boolean)
 
@@ -56,12 +61,16 @@ export function DueRow({ due }: { due: AssetLogDue }) {
           {due.stage === "overdue" && <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-destructive" />}
           {due.label}
         </span>
-        <span className={cn(
-          "shrink-0 text-xs",
-          due.stage === "overdue"
-            ? "text-destructive"
-            : due.stage === "soon" ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground",
-        )}>
+        <span
+          className={cn(
+            "shrink-0 text-xs",
+            due.stage === "overdue"
+              ? "text-destructive"
+              : due.stage === "soon"
+                ? "text-amber-600 dark:text-amber-400"
+                : "text-muted-foreground",
+          )}
+        >
           {parts.join(" · ")}
         </span>
       </div>
@@ -79,7 +88,12 @@ export function DueRow({ due }: { due: AssetLogDue }) {
 }
 
 export function EntryRow({
-  assetId, entry, shape, canManage, isMine, onChanged,
+  assetId,
+  entry,
+  shape,
+  canManage,
+  isMine,
+  onChanged,
 }: {
   assetId: string
   entry: AssetLogEntry
@@ -101,7 +115,9 @@ export function EntryRow({
   })
   const openPhoto = useMutation({
     mutationFn: () => assetsApi.getReceiptUrl(entry.id),
-    onSuccess: (d) => { if (d?.url) window.open(d.url, "_blank", "noopener,noreferrer") },
+    onSuccess: (d) => {
+      if (d?.url) window.open(d.url, "_blank", "noopener,noreferrer")
+    },
     onError: (e: Error) => notify.error(e.message),
   })
 
@@ -114,11 +130,13 @@ export function EntryRow({
   const canRemove = canManage || (isMine && waiting)
 
   return (
-    <div className={cn(
-      "group rounded-xl border bg-card p-3",
-      waiting ? "border-amber-300/70 dark:border-amber-900/60" : "border-border",
-      refused && "opacity-60",
-    )}>
+    <div
+      className={cn(
+        "group rounded-xl border bg-card p-3",
+        waiting ? "border-amber-300/70 dark:border-amber-900/60" : "border-border",
+        refused && "opacity-60",
+      )}
+    >
       <div className="flex items-start gap-3">
         <span className={cn("mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full", color.dot)} />
         <div className="min-w-0 flex-1">
@@ -136,7 +154,11 @@ export function EntryRow({
                 aria-label={t("assetLog.openPhoto", "Open the photo")}
                 title={t("assetLog.openPhoto", "Open the photo")}
               >
-                {openPhoto.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Receipt className="h-3.5 w-3.5" />}
+                {openPhoto.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Receipt className="h-3.5 w-3.5" />
+                )}
               </button>
             )}
           </p>
@@ -147,18 +169,19 @@ export function EntryRow({
           </p>
           {shown.length > 0 && <p className="mt-0.5 text-xs text-foreground/80">{shown.join(" · ")}</p>}
           {refused && entry.reviewNote && (
-            <p
-              className="mt-0.5 text-xs text-muted-foreground">{t(
-                "assetLog.refusedBecause",
-                "Refused: {{reason}}",
-                { reason: entry.reviewNote })}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {t("assetLog.refusedBecause", "Refused: {{reason}}", { reason: entry.reviewNote })}
+            </p>
           )}
         </div>
 
         {waiting && (
           <span
-            className={"shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold " +
-              "text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"}>
+            className={
+              "shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold " +
+              "text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+            }
+          >
             {t("expenses.pending", "Waiting")}
           </span>
         )}
@@ -169,10 +192,16 @@ export function EntryRow({
         )}
 
         {entry.amountCents > 0 && (
-          <span className={cn(
-            "shrink-0 text-sm font-semibold tabular-nums",
-            refused ? "text-muted-foreground" : entry.direction === "IN" ? "text-emerald-600 dark:text-emerald-400" : "text-foreground",
-          )}>
+          <span
+            className={cn(
+              "shrink-0 text-sm font-semibold tabular-nums",
+              refused
+                ? "text-muted-foreground"
+                : entry.direction === "IN"
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-foreground",
+            )}
+          >
             {entry.direction === "IN" ? "+" : "−"} {formatCents(entry.amountCents)}
           </span>
         )}
@@ -191,15 +220,16 @@ export function EntryRow({
           <button
             onClick={() => remove.mutate()}
             disabled={remove.isPending}
-            className={"shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity " +
-              "hover:text-destructive group-hover:opacity-100"}
+            className={
+              "shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity " +
+              "hover:text-destructive group-hover:opacity-100"
+            }
             aria-label={t("common.remove", "Remove")}
           >
             <Trash2 className="h-4 w-4" />
           </button>
         ) : null}
       </div>
-
     </div>
   )
 }

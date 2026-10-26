@@ -9,6 +9,8 @@ import { ArrowLeft } from "lucide-react"
 import { assetsApi, type MaintenanceHistoryItem } from "@/lib/api"
 import { normalizeKindShape, logTypesForKind, assetAccessIn } from "@hbcfield/shared/client"
 import { AssetListTable } from "@/components/assets/asset-list-table"
+import { PAGE_SHELL } from "@/components/ui/page-width"
+import { Count } from "@/components/page/page-kit"
 import { AssetFaults } from "@/components/assets/asset-faults"
 import { AssetCustodyPanel } from "@/components/assets/asset-custody-panel"
 import { LogbookPanel } from "./_components/logbook-panel"
@@ -94,9 +96,7 @@ export default function AssetRecordPage() {
   }
   if (!asset) {
     return (
-      <div className="mx-auto max-w-6xl p-6 text-center text-muted-foreground">
-        {t("assetRecords.notFound", "Not found")}
-      </div>
+      <div className={`${PAGE_SHELL} text-center text-muted-foreground`}>{t("assetRecords.notFound", "Not found")}</div>
     )
   }
 
@@ -119,7 +119,7 @@ export default function AssetRecordPage() {
   const openCount = tasks.filter((tk) => !DONE.includes(tk.status)).length
 
   return (
-    <div className="mx-auto max-w-6xl p-6">
+    <div className={PAGE_SHELL}>
       {/*
         Back goes where the label says, not wherever the browser last was.
 
@@ -132,7 +132,7 @@ export default function AssetRecordPage() {
       */}
       <button
         onClick={() => router.push(backHref)}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" /> {kind?.name ?? t("assetKinds.title", "Assets")}
       </button>
@@ -140,13 +140,13 @@ export default function AssetRecordPage() {
       {/* Header */}
       <AssetRecordHeader id={id} asset={asset} kind={kind} shape={shape} />
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[300px_1fr]">
+      <div className="mt-5 grid gap-4 lg:grid-cols-[300px_1fr]">
         {/* Left: about */}
         <AssetAbout asset={asset} shape={shape} />
 
         {/* Right: what happened to it */}
         <main className="min-w-0 space-y-4">
-          <div className="flex items-center gap-1 border-b border-border/70">
+          <div className="flex items-center gap-6 overflow-x-auto border-b border-border">
             {(
               [
                 ["activity", t("assetRecords.activity", "Activity"), (actQ.data ?? []).length],
@@ -174,14 +174,14 @@ export default function AssetRecordPage() {
                 key={key}
                 onClick={() => setTab(key)}
                 className={cn(
-                  "-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors",
+                  "-mb-px inline-flex h-11 shrink-0 items-center gap-2 border-b-2 text-[14.5px] font-medium transition-colors",
                   tab === key
-                    ? "border-primary text-foreground"
+                    ? "border-foreground font-semibold text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground",
                 )}
               >
                 {label}
-                {count ? <span className="text-xs text-muted-foreground">{count}</span> : null}
+                {count ? <Count n={count} /> : null}
               </button>
             ))}
           </div>

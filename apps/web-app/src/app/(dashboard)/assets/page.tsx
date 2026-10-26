@@ -32,6 +32,8 @@ import { AllAssetsList } from "@/components/assets/all-assets-list"
 import { ProposalQueue } from "@/components/assets/proposal-queue"
 import { keys } from "@/lib/query-keys"
 import { DashedEmptyBox } from "@/components/ui/empty-note"
+import { PAGE_SHELL } from "@/components/ui/page-width"
+import { PageHeader } from "@/components/page/page-kit"
 
 export default function AssetsPage() {
   const { t } = useTranslation()
@@ -42,15 +44,12 @@ export default function AssetsPage() {
   const spaceNames = Object.fromEntries(scope.spaces.map((s) => [s.id, s.name]))
 
   return (
-    <div className="mx-auto max-w-[1000px] px-6 py-6">
-      <div className="mb-4">
-        <h1 data-tour="page-assets" className="text-2xl font-semibold text-foreground">
-          {t("assets.title")}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {space ? space.name : t("assets.all.subtitle", "Every asset in your workspaces — search to find one")}
-        </p>
-      </div>
+    <div className={PAGE_SHELL}>
+      <PageHeader
+        tour="page-assets"
+        title={t("assets.title")}
+        subtitle={space ? space.name : t("assets.all.subtitle", "Every asset in your workspaces — search to find one")}
+      />
 
       {scope.showTabs && (
         <SpaceTabs

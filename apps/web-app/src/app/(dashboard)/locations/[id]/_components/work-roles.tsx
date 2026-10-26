@@ -65,9 +65,7 @@ function Initials({ p }: { p: { firstName?: string | null; lastName?: string | n
   return (
     <Avatar className="h-6 w-6 border-2 border-card">
       {p.avatarUrl && <AvatarImage src={p.avatarUrl} alt="" />}
-      <AvatarFallback className="text-[9px]">
-        {personInitials(p)}
-      </AvatarFallback>
+      <AvatarFallback className="text-[9px]">{personInitials(p)}</AvatarFallback>
     </Avatar>
   )
 }
@@ -82,7 +80,9 @@ function RoleHolders({ holders }: { holders: SpaceRoleInSpace["holders"] }) {
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <span className="flex -space-x-1.5">
-        {holders.slice(0, 4).map((h) => <Initials key={h.id} p={h} />)}
+        {holders.slice(0, 4).map((h) => (
+          <Initials key={h.id} p={h} />
+        ))}
       </span>
       <span className="truncate text-xs text-muted-foreground" title={names.join(", ")}>
         {names.slice(0, 3).join(", ")}
@@ -119,7 +119,10 @@ export function RoleCard({
   return (
     <div className="flex items-start justify-between gap-4 rounded-xl border p-4 transition-colors hover:bg-muted/50">
       <div className="flex min-w-0 items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${color}20` }}>
+        <span
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+          style={{ backgroundColor: `${color}20` }}
+        >
           <Icon className="h-4 w-4" style={{ color }} />
         </span>
         <div className="min-w-0 space-y-1.5">
@@ -128,8 +131,7 @@ export function RoleCard({
             {role.isSystem && (
               <Badge
                 variant="outline"
-                className={"gap-1 border-slate-200 bg-slate-50 text-[11px] text-slate-600 " +
-                  "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"}
+                className={"gap-1 border-border bg-muted text-[11px] text-muted-foreground " + ""}
               >
                 <Lock className="h-3 w-3" />
                 {t("scheduling.roles.builtIn")}
@@ -137,16 +139,18 @@ export function RoleCard({
             )}
             {isWork && (
               <span className="text-xs font-medium tabular-nums text-foreground">
-                {role.dayRateCents != null
-                  ? `${cents(role.dayRateCents)} ${t("scheduling.workRoles.perDay")}`
-                  : <span className="font-normal text-muted-foreground">{t("scheduling.workRoles.dayRateNone")}</span>}
+                {role.dayRateCents != null ? (
+                  `${cents(role.dayRateCents)} ${t("scheduling.workRoles.perDay")}`
+                ) : (
+                  <span className="font-normal text-muted-foreground">{t("scheduling.workRoles.dayRateNone")}</span>
+                )}
                 {role.dayRateSource === "default" && (
                   <span className="ml-1 font-normal text-muted-foreground">· {t("rates.sourceDefault")}</span>
                 )}
               </span>
             )}
             {scheduled && (
-              <span className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400">
+              <span className="inline-flex items-center gap-1 text-[11px] text-shell-accent">
                 <CalendarClock className="h-3 w-3" />
                 {scheduled.cents != null ? cents(scheduled.cents) : t("rates.notSet")}{" "}
                 {t("rates.from", { date: formatDayKey(scheduled.effectiveFrom, i18n.language) })}

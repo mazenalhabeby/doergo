@@ -63,8 +63,8 @@ export function GeneralSection() {
     <div className="space-y-6">
       <SettingCard
         icon={Building2}
-        iconColor="text-blue-600"
-        iconBg="bg-blue-50"
+        iconColor="text-shell-accent"
+        iconBg="bg-shell-accent-soft"
         title={t("settings.general.title")}
         description={t("settings.general.description")}
       >

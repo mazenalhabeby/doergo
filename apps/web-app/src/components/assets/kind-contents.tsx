@@ -200,7 +200,7 @@ export function KindContents({
             return (
               <div
                 key={r.id}
-                className={"group flex items-center gap-3 rounded-xl border border-border bg-card " +
+                className={"group flex items-center gap-3 rounded-[14px] border border-border bg-card " +
                   "p-3 transition-colors hover:border-primary/40"}>
                 <button
                   onClick={() => router.push(`/assets/${r.id}`)}

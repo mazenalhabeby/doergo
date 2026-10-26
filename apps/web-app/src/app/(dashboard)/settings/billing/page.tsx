@@ -2,13 +2,15 @@
 
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PAGE_SHELL } from '@/components/ui/page-width';
+import { Chip, PageHeader } from '@/components/page/page-kit';
 import { billingApi } from '@/lib/api';
 
 import { BillBreakdown } from './_components/bill-breakdown';
 import { OptionsRail } from './_components/options-rail';
-import { dateLocale } from "@/lib/format-date"
+import { dateLocale } from '@/lib/format-date';
 import { useTranslation } from 'react-i18next';
-import { useBillingPage } from "./_hooks/use-billing-page";
+import { useBillingPage } from './_hooks/use-billing-page';
 
 /**
  * Billing & plan.
@@ -34,25 +36,17 @@ import { useBillingPage } from "./_hooks/use-billing-page";
  * affects.
  */
 
-const STATUS_BADGE: Record<string, { key: string; fallback: string; cls: string }> = {
-  trialing: { key: 'billing.status.trialing', fallback: 'Trial', cls: 'bg-primary/10 text-primary' },
-  active: { key: 'billing.status.active', fallback: 'Active', cls: 'bg-emerald-500/10 text-emerald-500' },
-  past_due: { key: 'billing.status.pastDue', fallback: 'Payment due', cls: 'bg-amber-500/10 text-amber-500' },
-  canceled: { key: 'billing.status.canceled', fallback: 'Canceled', cls: 'bg-muted text-muted-foreground' },
-  incomplete: { key: 'billing.status.incomplete', fallback: 'Inactive', cls: 'bg-red-500/10 text-red-500' },
+const STATUS_BADGE: Record<string, { key: string; fallback: string; tone: 'soft' | 'accent' | 'warn' | 'crit' }> = {
+  trialing: { key: 'billing.status.trialing', fallback: 'Trial', tone: 'accent' },
+  active: { key: 'billing.status.active', fallback: 'Active', tone: 'accent' },
+  past_due: { key: 'billing.status.pastDue', fallback: 'Payment due', tone: 'warn' },
+  canceled: { key: 'billing.status.canceled', fallback: 'Canceled', tone: 'soft' },
+  incomplete: { key: 'billing.status.incomplete', fallback: 'Inactive', tone: 'crit' },
 };
 
 export default function BillingPage() {
   const { t } = useTranslation();
-  const {
-    isAdmin,
-    sub,
-    bill,
-    loading,
-    busy,
-    go,
-    saveAddOns,
-  } = useBillingPage();
+  const { isAdmin, sub, bill, loading, busy, go, saveAddOns } = useBillingPage();
 
   if (loading) {
     return (
@@ -62,7 +56,7 @@ export default function BillingPage() {
     );
   }
 
-  const st = sub ? STATUS_BADGE[sub.status] ?? STATUS_BADGE.active : STATUS_BADGE.active;
+  const st = sub ? (STATUS_BADGE[sub.status] ?? STATUS_BADGE.active) : STATUS_BADGE.active;
 
   return (
     <div className="min-h-full bg-background">
@@ -71,18 +65,14 @@ export default function BillingPage() {
         3xl the rail and the workspace list were each too narrow to read — the
         module chips wrapped one per line and the option names truncated.
       */}
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {t('billing.title', 'Billing')}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t(
-              'billing.subtitle',
-              'You pay for the people who use HBCField, what each workspace switches on, and any options.',
-            )}
-          </p>
-        </div>
+      <div className={PAGE_SHELL}>
+        <PageHeader
+          title={t('billing.title', 'Billing')}
+          subtitle={t(
+            'billing.subtitle',
+            'You pay for the people who use HBCField, what each workspace switches on, and any options.',
+          )}
+        />
 
         {/*
           Content, then the options rail.
@@ -91,14 +81,14 @@ export default function BillingPage() {
           that never scrolls away, and the rail is reference rather than
           navigation.
         */}
-        <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-4">
             {/* ── status, on one line ─────────────────────────────────────── */}
             {sub && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${st.cls}`}>
+                <Chip tone={st.tone} dot>
                   {t(st.key, st.fallback)}
-                </span>
+                </Chip>
 
                 {/*
                   Only what the server actually sends. A renewal date, a card
@@ -115,11 +105,13 @@ export default function BillingPage() {
                 )}
                 {sub.status === 'trialing' && sub.trialDaysLeft != null && (
                   <span className="text-xs font-medium text-primary">
-                    {t('billing.trialDaysLeft', '{{count}} days left in your trial — nothing to pay yet', { count: sub.trialDaysLeft })}
+                    {t('billing.trialDaysLeft', '{{count}} days left in your trial — nothing to pay yet', {
+                      count: sub.trialDaysLeft,
+                    })}
                   </span>
                 )}
                 {sub.cancelAtPeriodEnd && sub.currentPeriodEnd && (
-                  <span className="text-xs text-amber-500">
+                  <span className="text-xs text-shell-warn">
                     {t('billing.cancelsOn', 'Cancels on {{date}}', {
                       date: new Date(sub.currentPeriodEnd).toLocaleDateString(dateLocale()),
                     })}
@@ -130,7 +122,7 @@ export default function BillingPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="ml-auto h-7 text-xs text-muted-foreground"
+                    className="ml-auto h-8 rounded-full px-3.5 text-[13px] text-muted-foreground"
                     disabled={busy !== null}
                     onClick={() => go(() => billingApi.cancel(), 'cancel')}
                   >
@@ -153,36 +145,36 @@ export default function BillingPage() {
               its way is how a payment gets missed.
             */}
             {sub?.billingMode === 'INVOICE' && (
-              <div className="rounded-xl border border-border bg-card p-4">
-                <p className="text-sm font-medium text-foreground">
-                  {t('billing.byInvoice', 'Paid by invoice')}
-                </p>
+              <div className="rounded-[22px] border border-border bg-card px-5 py-4 shadow-shell">
+                <p className="text-sm font-medium text-foreground">{t('billing.byInvoice', 'Paid by invoice')}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {t('billing.byInvoiceHint', 'We email an invoice each month, due within {{days}} days. No card is charged.', {
-                    days: sub.invoiceDueDays,
-                  })}
+                  {t(
+                    'billing.byInvoiceHint',
+                    'We email an invoice each month, due within {{days}} days. No card is charged.',
+                    {
+                      days: sub.invoiceDueDays,
+                    },
+                  )}
                 </p>
               </div>
             )}
 
             {sub?.billingMode === 'EXTERNAL' && (
-              <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
-                <p className="text-sm font-medium text-foreground">
-                  {t('billing.byAgreement', 'Billed by agreement')}
-                </p>
+              <div className="rounded-[18px] bg-shell-accent-soft px-[18px] py-4">
+                <p className="text-sm font-medium text-foreground">{t('billing.byAgreement', 'Billed by agreement')}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {t(
                     'billing.byAgreementHint',
-                    ('Nothing is charged automatically. The figures below are what this ' +
+                    'Nothing is charged automatically. The figures below are what this ' +
                       'organization would cost at list price — useful for a renewal, not an ' +
-                      'invoice.'),
+                      'invoice.',
                   )}
                 </p>
               </div>
             )}
 
             {!isAdmin && (
-              <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+              <div className="rounded-2xl bg-shell-chip px-4 py-3 text-sm text-muted-foreground">
                 {t('billing.adminOnly', 'Only an organization admin can change what you pay for.')}
               </div>
             )}
@@ -238,9 +230,7 @@ export default function BillingPage() {
               */
               hasSubscription={sub?.hasBillingAccount === true}
               invoiceMode={sub?.billingMode === 'INVOICE'}
-              canSubscribe={
-                sub?.billingMode !== 'EXTERNAL' && sub?.status !== 'trialing' && !sub?.hasBillingAccount
-              }
+              canSubscribe={sub?.billingMode !== 'EXTERNAL' && sub?.status !== 'trialing' && !sub?.hasBillingAccount}
             />
           )}
         </div>

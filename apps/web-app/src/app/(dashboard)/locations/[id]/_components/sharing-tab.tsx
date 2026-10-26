@@ -103,8 +103,8 @@ function SharesSection({ spaceId }: { spaceId: string }) {
                   <div className="flex items-start gap-3 min-w-0">
                     <span
                       className={
-                        "flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 " +
-                        "text-blue-600 dark:bg-blue-950 dark:text-blue-300"
+                        "flex size-9 shrink-0 items-center justify-center rounded-lg bg-shell-accent-soft " +
+                        "text-shell-accent"
                       }
                     >
                       <Building2 className="h-4 w-4" />

@@ -23,7 +23,10 @@ export function HolidaysSection() {
   const lang = useLang()
   const qc = useQueryClient()
   const year = new Date().getFullYear()
-  const { data, isLoading } = useQuery({ queryKey: keys.calendar.settings(year, lang), queryFn: () => calendarApi.settings(year, lang) })
+  const { data, isLoading } = useQuery({
+    queryKey: keys.calendar.settings(year, lang),
+    queryFn: () => calendarApi.settings(year, lang),
+  })
   const [editWs, setEditWs] = useState<Ws | null>(null)
 
   const refresh = () => {
@@ -33,12 +36,20 @@ export function HolidaysSection() {
   }
   const saveOrg = useMutation({
     mutationFn: calendarApi.updateOrg,
-    onSuccess: () => { refresh(); toast.success(t("holidays.saved")) },
+    onSuccess: () => {
+      refresh()
+      toast.success(t("holidays.saved"))
+    },
     onError: (e) => toast.error(serverErrorMessage(e, t)),
   })
 
   if (isLoading || !data) {
-    return <div className="space-y-6"><Skeleton className="h-64 rounded-2xl" /><Skeleton className="h-48 rounded-2xl" /></div>
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-64 rounded-2xl" />
+        <Skeleton className="h-48 rounded-2xl" />
+      </div>
+    )
   }
   const org = data.organization
   const orgCountry = org.holidayCountry ?? org.addressCountry ?? null
@@ -47,8 +58,8 @@ export function HolidaysSection() {
     <div className="space-y-6">
       <SettingCard
         icon={Building}
-        iconColor="text-blue-600 dark:text-blue-400"
-        iconBg="bg-blue-500/10"
+        iconColor="text-shell-accent"
+        iconBg="bg-shell-accent-soft"
         title={t("holidays.orgTitle")}
         description={t("holidays.orgBody")}
       >
@@ -63,16 +74,22 @@ export function HolidaysSection() {
             <WeekendPicker
               value={org.weekendDays}
               disabled={saveOrg.isPending}
-              onChange={(v) => v.length ? saveOrg.mutate({ weekendDays: v }) : toast.error(t("holidays.weekendNeedsOne"))}
+              onChange={(v) =>
+                v.length ? saveOrg.mutate({ weekendDays: v }) : toast.error(t("holidays.weekendNeedsOne"))
+              }
             />
             <p className="text-xs text-muted-foreground">{t("holidays.weekendHint")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground">
             <span className="rounded-md bg-background px-2 py-1 ring-1 ring-border">{t("holidays.layerOrg")}</span>
             <CornerDownRight className="h-3.5 w-3.5" />
-            <span className="rounded-md bg-background px-2 py-1 ring-1 ring-border">{t("holidays.layerWorkspace")}</span>
+            <span className="rounded-md bg-background px-2 py-1 ring-1 ring-border">
+              {t("holidays.layerWorkspace")}
+            </span>
             <CornerDownRight className="h-3.5 w-3.5" />
-            <span className="rounded-md bg-primary/10 px-2 py-1 text-primary ring-1 ring-primary/30">{t("holidays.layerPerson")}</span>
+            <span className="rounded-md bg-primary/10 px-2 py-1 text-primary ring-1 ring-primary/30">
+              {t("holidays.layerPerson")}
+            </span>
             <span>{t("holidays.layersRule")}</span>
           </div>
         </div>
@@ -102,14 +119,22 @@ export function HolidaysSection() {
               <tbody>
                 {data.workspaces.map((w) => (
                   <tr key={w.id} className="border-t">
-                    <td
-                      className="px-2 py-3 font-medium">{w.name}<span
-                        className="ml-2 text-xs font-normal text-muted-foreground">{t("holidays.people", { count: w.people })}</span></td>
+                    <td className="px-2 py-3 font-medium">
+                      {w.name}
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        {t("holidays.people", { count: w.people })}
+                      </span>
+                    </td>
                     <td className="px-2 py-3">
                       <span className={cn(w.holidaySource !== "CHOSEN" && "text-muted-foreground")}>
-                        {w.country ?? "—"}{w.region ? ` · ${w.region}` : ""}
-                        {w.holidaySource === "ORGANIZATION" && <span className="ml-1.5 text-xs italic">({t("holidays.inherited")})</span>}
-                        {w.holidaySource === "LOCATION" && <span className="ml-1.5 text-xs italic">({t("holidays.fromAddress")})</span>}
+                        {w.country ?? "—"}
+                        {w.region ? ` · ${w.region}` : ""}
+                        {w.holidaySource === "ORGANIZATION" && (
+                          <span className="ml-1.5 text-xs italic">({t("holidays.inherited")})</span>
+                        )}
+                        {w.holidaySource === "LOCATION" && (
+                          <span className="ml-1.5 text-xs italic">({t("holidays.fromAddress")})</span>
+                        )}
                       </span>
                     </td>
                     <td className="px-2 py-3">
@@ -121,22 +146,33 @@ export function HolidaysSection() {
                               "rounded-md px-1.5 py-0.5 text-[11px] font-semibold",
                               w.inherited.weekend
                                 ? "bg-muted text-muted-foreground"
-                                : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{dayName(d)}</span>
+                                : "bg-rose-500/10 text-rose-700 dark:text-rose-300",
+                            )}
+                          >
+                            {dayName(d)}
+                          </span>
                         ))}
                       </span>
                     </td>
                     <td className="px-2 py-3 tabular-nums">
                       {w.holidayCount}
-                      {w.estimatedCount > 0 &&
+                      {w.estimatedCount > 0 && (
                         <span
-                          className={"ml-2 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[11px] font-medium " +
-                            "text-amber-700 dark:text-amber-300"}>{t("holidays.estimatedCount", { count: w.estimatedCount })}</span>}
+                          className={
+                            "ml-2 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[11px] font-medium " +
+                            "text-amber-700 dark:text-amber-300"
+                          }
+                        >
+                          {t("holidays.estimatedCount", { count: w.estimatedCount })}
+                        </span>
+                      )}
                     </td>
-                    <td
-                      className="px-2 py-3 text-right"><Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setEditWs(w)}><Pencil className="mr-1.5 h-3.5 w-3.5" />{t("common.edit", "Edit")}</Button></td>
+                    <td className="px-2 py-3 text-right">
+                      <Button size="sm" variant="ghost" onClick={() => setEditWs(w)}>
+                        <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                        {t("common.edit", "Edit")}
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -155,8 +191,14 @@ export function HolidaysSection() {
         description={t("holidays.feedBody")}
       >
         <div className="flex items-center justify-between gap-4">
-          <Label htmlFor="cal-feeds" className="text-sm font-medium">{t("holidays.feedToggle")}</Label>
-          <Switch id="cal-feeds" checked={org.calendarFeedsEnabled} onCheckedChange={(v) => saveOrg.mutate({ calendarFeedsEnabled: v })} />
+          <Label htmlFor="cal-feeds" className="text-sm font-medium">
+            {t("holidays.feedToggle")}
+          </Label>
+          <Switch
+            id="cal-feeds"
+            checked={org.calendarFeedsEnabled}
+            onCheckedChange={(v) => saveOrg.mutate({ calendarFeedsEnabled: v })}
+          />
         </div>
         <p className="mt-2 text-xs text-muted-foreground">{t("holidays.feedOff")}</p>
       </SettingCard>

@@ -193,7 +193,7 @@ export function RotaDialog({
                     className={cn(
                       "flex-1 rounded-md py-1.5 text-xs font-medium transition-colors border",
                       daysOfWeek.includes(idx)
-                        ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800"
+                        ? "bg-shell-accent-soft text-shell-accent border-primary/30"
                         : "bg-muted text-muted-foreground border-border",
                     )}
                   >
@@ -216,7 +216,7 @@ export function RotaDialog({
                     className={cn(
                       "rounded-md py-1.5 text-xs font-medium transition-colors border",
                       daysOfMonth.includes(d)
-                        ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800"
+                        ? "bg-shell-accent-soft text-shell-accent border-primary/30"
                         : "bg-muted text-muted-foreground border-border",
                     )}
                   >

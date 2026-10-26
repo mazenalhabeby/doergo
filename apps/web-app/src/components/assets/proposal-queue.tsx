@@ -55,7 +55,7 @@ export function ProposalQueue({ kinds, spaceId }: { kinds: AssetCategory[]; spac
   if (q.isLoading || proposals.length === 0) return null
 
   return (
-    <div className="mb-4 overflow-hidden rounded-2xl border border-primary/40 bg-primary/[0.04]">
+    <div className="mb-4 overflow-hidden rounded-[18px] bg-shell-accent-soft">
       <button onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-2.5 px-4 py-3 text-left">
         {open ? <ChevronDown className="h-4 w-4 text-primary" /> : <ChevronRight className="h-4 w-4 text-primary" />}
         <Sparkles className="h-4 w-4 text-primary" />

@@ -16,7 +16,7 @@ export function DefaultWorkspaceCard({ space }: { space: CompanyLocation }) {
   const queryClient = useQueryClient()
   const [makingDefault, setMakingDefault] = useState(false)
   return (
-    <Card>
+    <Card className="rounded-[22px] shadow-shell">
       <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-sm font-medium text-foreground">

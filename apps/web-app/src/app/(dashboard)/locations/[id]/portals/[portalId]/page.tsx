@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { useActiveSpaces } from "@/hooks/use-space-directory"
 import { ConfirmDialog, ConfirmTargetDialog } from "@/components/common/confirm-dialog"
+import { PAGE_SHELL } from "@/components/ui/page-width"
 import { TPL_BY_KEY, EMPTY_CAT } from "./_lib/portal-templates"
 import { PortalHeader } from "./_components/portal-header"
 import { PortalCoverPanel } from "./_components/portal-cover-panel"
@@ -153,7 +154,7 @@ export default function PortalDetailPage() {
 
   return (
     <div className="min-h-full bg-background">
-      <div className="max-w-screen-lg mx-auto px-6 py-8">
+      <div className={PAGE_SHELL}>
         <PortalHeader
           portal={portal}
           meta={meta}
@@ -171,8 +172,8 @@ export default function PortalDetailPage() {
 
         {/* This portal belongs to its space — requests route here automatically
             (inheriting the space's flow). No cross-space re-pointing. */}
-        <div className="mb-6 flex items-center gap-2.5 rounded-2xl border border-border bg-muted/30 px-4 py-3">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <div className="mb-5 flex items-center gap-2.5 rounded-2xl bg-shell-accent-soft px-4 py-3">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-card text-shell-accent">
             <Building2 className="h-4 w-4" />
           </span>
           <p className="min-w-0 text-sm text-muted-foreground">

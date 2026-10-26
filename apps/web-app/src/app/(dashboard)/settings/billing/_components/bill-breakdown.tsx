@@ -67,7 +67,7 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
                 <li
                   key={s.spaceId}
                   className={cn(
-                    "rounded-xl border border-border bg-card",
+                    "rounded-[22px] border border-border bg-card shadow-shell",
                     // A free workspace is worth seeing, and worth seeing as
                     // quieter than the ones costing money.
                     empty && "opacity-60",
@@ -142,7 +142,7 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
             price: formatCents(peopleCents),
           })}
         />
-        <div className="rounded-xl border border-border bg-card">
+        <div className="rounded-[22px] border border-border bg-card shadow-shell">
           <PersonRow
             label={t("billing.bill.staffSeats", "Staff")}
             count={bill.staffSeatCount}

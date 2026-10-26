@@ -16,7 +16,7 @@ export function SpaceTypeCard({
 }) {
   const { t } = useTranslation()
   return (
-    <Card>
+    <Card className="rounded-[22px] shadow-shell">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
@@ -39,7 +39,7 @@ export function SpaceTypeCard({
             className={cn(
               "gap-1 shrink-0 border-transparent",
               isPhysical
-                ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                ? "bg-shell-accent-soft text-shell-accent"
                 : "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
             )}
           >
@@ -56,12 +56,12 @@ export function SpaceTypeCard({
             className={cn(
               "rounded-xl border p-4 text-left transition-all",
               !isPhysical
-                ? "border-blue-600 bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-900/20 dark:ring-blue-800"
+                ? "border-primary bg-shell-accent-soft ring-1 ring-primary/20"
                 : "border-border hover:border-muted-foreground/30",
             )}
           >
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Boxes className="h-4 w-4 text-blue-600" /> {t("locations.form.workspace")}
+              <Boxes className="h-4 w-4 text-shell-accent" /> {t("locations.form.workspace")}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">{t("locations.form.workspaceHint")}</p>
           </button>
@@ -71,12 +71,12 @@ export function SpaceTypeCard({
             className={cn(
               "rounded-xl border p-4 text-left transition-all",
               isPhysical
-                ? "border-blue-600 bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-900/20 dark:ring-blue-800"
+                ? "border-primary bg-shell-accent-soft ring-1 ring-primary/20"
                 : "border-border hover:border-muted-foreground/30",
             )}
           >
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <MapPin className="h-4 w-4 text-blue-600" /> {t("locations.form.physical")}
+              <MapPin className="h-4 w-4 text-shell-accent" /> {t("locations.form.physical")}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">{t("locations.form.physicalHint")}</p>
           </button>

@@ -103,8 +103,7 @@ export function ShiftsTab({ spaceId }: { spaceId: string }) {
                       {!shift.spaceId && (
                         <Badge
                           variant="outline"
-                          className={"text-[11px] border-slate-200 bg-slate-50 text-slate-600 " +
-                            "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"}
+                          className={"text-[11px] border-border bg-muted text-muted-foreground " + ""}
                         >
                           {t("scheduling.shifts.orgWide")}
                         </Badge>
@@ -112,8 +111,10 @@ export function ShiftsTab({ spaceId }: { spaceId: string }) {
                       {crosses && (
                         <Badge
                           variant="outline"
-                          className={"text-[11px] gap-1 border-amber-200 bg-amber-50 text-amber-700 " +
-                            "dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300"}
+                          className={
+                            "text-[11px] gap-1 border-amber-200 bg-amber-50 text-amber-700 " +
+                            "dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                          }
                         >
                           <Moon className="h-3 w-3" />
                           {t("scheduling.shifts.crossesMidnight")}
@@ -126,7 +127,9 @@ export function ShiftsTab({ spaceId }: { spaceId: string }) {
                       )}
                     </div>
                     <p className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-                      <span>{shift.startLocal} – {shift.endLocal}</span>
+                      <span>
+                        {shift.startLocal} – {shift.endLocal}
+                      </span>
                       {shift.breakMinutes > 0 && (
                         <span className="inline-flex items-center gap-1">
                           <span aria-hidden>·</span>
@@ -157,12 +160,7 @@ export function ShiftsTab({ spaceId }: { spaceId: string }) {
       )}
 
       {dialogOpen && (
-        <ShiftDialog
-          spaceId={spaceId}
-          shift={editTarget}
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-        />
+        <ShiftDialog spaceId={spaceId} shift={editTarget} open={dialogOpen} onOpenChange={setDialogOpen} />
       )}
 
       <ConfirmTargetDialog

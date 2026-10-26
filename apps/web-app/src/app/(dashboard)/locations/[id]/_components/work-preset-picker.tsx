@@ -72,12 +72,12 @@ export function WorkPresetPicker({
               className={cn(
                 "rounded-xl border p-4 text-left transition-all disabled:opacity-70",
                 on
-                  ? "border-blue-600 bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-900/20 dark:ring-blue-800"
+                  ? "border-primary bg-shell-accent-soft ring-1 ring-primary/20"
                   : "border-border hover:border-muted-foreground/30",
               )}
             >
               <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Icon className="h-4 w-4 text-blue-600" /> {t(`workPreset.${p}.title`)}
+                <Icon className="h-4 w-4 text-shell-accent" /> {t(`workPreset.${p}.title`)}
                 {on && save.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
               </div>
               <p className="mt-1 text-xs text-muted-foreground">{t(`workPreset.${p}.desc`)}</p>

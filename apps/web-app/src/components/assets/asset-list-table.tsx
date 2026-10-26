@@ -94,7 +94,7 @@ export function AssetListTable({ assetId, list }: { assetId: string; list: KindL
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border">
+      <div className="overflow-x-auto rounded-[18px] border border-border">
         <table className="w-full min-w-[32rem] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30 text-[11px] uppercase tracking-wider text-muted-foreground">

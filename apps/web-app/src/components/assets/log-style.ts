@@ -10,9 +10,13 @@ import { COST_LOG_KEY, type KindLogField, type KindLogType, type LogColor } from
  * spelled out in full because Tailwind only ships classes it can find as text.
  */
 export const LOG_COLOR_CLASSES: Record<LogColor, { dot: string; chip: string; bar: string }> = {
-  slate: { dot: "bg-slate-500", chip: "bg-slate-500/10 text-slate-700 dark:text-slate-300", bar: "bg-slate-500" },
-  blue: { dot: "bg-blue-500", chip: "bg-blue-500/10 text-blue-700 dark:text-blue-300", bar: "bg-blue-500" },
-  green: { dot: "bg-emerald-500", chip: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300", bar: "bg-emerald-500" },
+  slate: { dot: "bg-muted-foreground", chip: "bg-muted text-foreground", bar: "bg-muted-foreground" },
+  blue: { dot: "bg-primary", chip: "bg-shell-accent-soft text-shell-accent", bar: "bg-primary" },
+  green: {
+    dot: "bg-emerald-500",
+    chip: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    bar: "bg-emerald-500",
+  },
   amber: { dot: "bg-amber-500", chip: "bg-amber-500/10 text-amber-700 dark:text-amber-300", bar: "bg-amber-500" },
   red: { dot: "bg-red-500", chip: "bg-red-500/10 text-red-700 dark:text-red-300", bar: "bg-red-500" },
   violet: { dot: "bg-violet-500", chip: "bg-violet-500/10 text-violet-700 dark:text-violet-300", bar: "bg-violet-500" },
@@ -34,7 +38,8 @@ export const logColor = (name: string | null | undefined) =>
 export function logTypeLabel(
   t: TFunction,
   type: Pick<KindLogType, "key" | "label"> | null | undefined,
-  fallbackKey?: string | null): string {
+  fallbackKey?: string | null,
+): string {
   const key = type?.key ?? fallbackKey ?? COST_LOG_KEY
   if (key === COST_LOG_KEY) return t("assetLog.cost", "Cost")
   if (type?.label) return type.label

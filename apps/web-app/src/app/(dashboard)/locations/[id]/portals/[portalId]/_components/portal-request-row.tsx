@@ -28,7 +28,7 @@ export function PortalRequestRow({ request: r, onOpen }: { request: PortalReques
       onClick={onOpen}
     >
       <span
-        className={`h-2 w-2 rounded-full shrink-0 ${r.priority ? "" : "bg-slate-400"}`}
+        className={`h-2 w-2 rounded-full shrink-0 ${r.priority ? "" : "bg-muted-foreground"}`}
         style={r.priority ? { backgroundColor: getPriorityConfig(r.priority).hex } : undefined}
         title={r.priority ? getPriorityConfig(r.priority).label : undefined}
       />

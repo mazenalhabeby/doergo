@@ -55,8 +55,7 @@ export function ShiftDialog({
   const crosses = shiftCrossesMidnight(startLocal, endLocal)
 
   const mutation = useMutation({
-    mutationFn: (data: CreateShiftInput) =>
-      isEdit ? shiftsApi.update(shift!.id, data) : shiftsApi.create(data),
+    mutationFn: (data: CreateShiftInput) => (isEdit ? shiftsApi.update(shift!.id, data) : shiftsApi.create(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.schedules.shifts(spaceId) })
       notify.success(isEdit ? t("scheduling.shifts.toast.updated") : t("scheduling.shifts.toast.created"))
@@ -137,11 +136,7 @@ export function ShiftDialog({
           </div>
 
           {crosses && (
-            <Badge
-              variant="outline"
-              className={"gap-1 border-indigo-200 bg-indigo-50 text-indigo-700 " +
-                "dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300"}
-            >
+            <Badge variant="outline" className={"gap-1 border-primary/30 bg-shell-accent-soft text-shell-accent " + ""}>
               <Moon className="h-3 w-3" />
               {t("scheduling.shifts.crossesMidnight")}
             </Badge>
@@ -150,11 +145,23 @@ export function ShiftDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="shift-break">{t("scheduling.shifts.fields.breakMinutes")}</Label>
-              <Input id="shift-break" type="number" min={0} value={breakMinutes} onChange={(e) => setBreakMinutes(e.target.value)} />
+              <Input
+                id="shift-break"
+                type="number"
+                min={0}
+                value={breakMinutes}
+                onChange={(e) => setBreakMinutes(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="shift-grace">{t("scheduling.shifts.fields.graceMin")}</Label>
-              <Input id="shift-grace" type="number" min={0} value={graceMin} onChange={(e) => setGraceMin(e.target.value)} />
+              <Input
+                id="shift-grace"
+                type="number"
+                min={0}
+                value={graceMin}
+                onChange={(e) => setGraceMin(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="shift-interval">{t("scheduling.shifts.fields.reminderIntervalMin")}</Label>
@@ -168,10 +175,18 @@ export function ShiftDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="shift-max">{t("scheduling.shifts.fields.maxReminders")}</Label>
-              <Input id="shift-max" type="number" min={0} value={maxReminders} onChange={(e) => setMaxReminders(e.target.value)} />
+              <Input
+                id="shift-max"
+                type="number"
+                min={0}
+                value={maxReminders}
+                onChange={(e) => setMaxReminders(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="shift-tolerance">{t("scheduling.shifts.fields.flagToleranceMin", "Late/overtime tolerance (min)")}</Label>
+              <Label htmlFor="shift-tolerance">
+                {t("scheduling.shifts.fields.flagToleranceMin", "Late/overtime tolerance (min)")}
+              </Label>
               <Input
                 id="shift-tolerance"
                 type="number"
@@ -182,10 +197,12 @@ export function ShiftDialog({
             </div>
           </div>
           <p className="text-[11px] text-muted-foreground">{t("scheduling.shifts.reminderHint")}</p>
-          <p
-            className="text-[11px] text-muted-foreground">{t(
+          <p className="text-[11px] text-muted-foreground">
+            {t(
               "scheduling.shifts.toleranceHint",
-              ("Grace before an entry is flagged Late Arrival, Early Departure or " + "Overtime."))}</p>
+              "Grace before an entry is flagged Late Arrival, Early Departure or " + "Overtime.",
+            )}
+          </p>
         </div>
 
         <DialogFooter>

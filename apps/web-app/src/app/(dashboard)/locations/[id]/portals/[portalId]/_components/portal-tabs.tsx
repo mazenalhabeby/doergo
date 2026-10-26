@@ -8,6 +8,7 @@ import { portalTile } from "@/lib/portal-ui"
 import { personInitials } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsContent, TabsTrigger } from "@/components/ui/tabs"
+import { Count } from "@/components/page/page-kit"
 import { EmptyState as SharedEmptyState } from "@/components/ui/empty-state"
 import { PortalRequestRow } from "./portal-request-row"
 
@@ -55,7 +56,7 @@ export function PortalTabs({
   return (
     <>
       <Tabs defaultValue="requests" className="w-full">
-        <TabsList className="h-11 p-1">
+        <TabsList className={PU_TABS}>
           <TabTrigger value="requests" label={t("portal.tabRequests", "Requests")} count={requestCount} />
           <TabTrigger value="clients" label={t("portal.tabClients", "Clients")} count={clientCount} />
           <TabTrigger value="categories" label={t("portal.tabCategories", "Categories")} count={categories.length} />
@@ -240,21 +241,25 @@ export function PortalTabs({
   )
 }
 
+/** The board's underlined tabs: a hairline under the row, the open one underlined in ink. */
+const PU_TABS = "h-11 w-full justify-start gap-6 rounded-none border-b border-border bg-transparent p-0"
+const PU_TAB =
+  "-mb-px h-11 gap-2 rounded-none border-b-2 border-transparent px-0 text-[14.5px] font-medium " +
+  "text-muted-foreground shadow-none hover:text-foreground data-[state=active]:border-foreground " +
+  "data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-foreground " +
+  "data-[state=active]:shadow-none"
+
 function TabTrigger({ value, label, count }: { value: string; label: string; count: number }) {
   return (
-    <TabsTrigger value={value} className="rounded-md data-[state=active]:shadow-sm">
+    <TabsTrigger value={value} className={PU_TAB}>
       {label}
-      {count > 0 && (
-        <span className="ml-1.5 rounded-full bg-foreground/10 px-1.5 text-[11px] font-semibold tabular-nums">
-          {count}
-        </span>
-      )}
+      {count > 0 && <Count n={count} />}
     </TabsTrigger>
   )
 }
 
 function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-2xl border border-border bg-card overflow-hidden">{children}</div>
+  return <div className="overflow-hidden rounded-[22px] border border-border bg-card shadow-shell">{children}</div>
 }
 
 function EmptyState({

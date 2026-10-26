@@ -210,7 +210,7 @@ export function AssetsTab({
               <div
                 key={kind.id}
                 className={
-                  "group relative rounded-2xl border border-border bg-card p-4 " +
+                  "group relative rounded-[22px] border border-border bg-card p-[18px] shadow-shell " +
                   "transition-colors hover:border-primary/40"
                 }
               >
@@ -218,8 +218,8 @@ export function AssetsTab({
                   <div className="flex items-start gap-3">
                     <span
                       className={
-                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl " +
-                        "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400"
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] " +
+                        "bg-shell-accent-soft text-shell-accent"
                       }
                     >
                       <Package className="h-4.5 w-4.5" />

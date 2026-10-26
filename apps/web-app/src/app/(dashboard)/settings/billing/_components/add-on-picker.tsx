@@ -3,13 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
-import {
-  AVAILABLE_ADD_ONS,
-  addOnsMonthlyCost,
-  addOnI18n,
-  formatCents,
-  type AddOnDef,
-} from '@hbcfield/shared/client';
+import { AVAILABLE_ADD_ONS, addOnsMonthlyCost, addOnI18n, formatCents, type AddOnDef } from '@hbcfield/shared/client';
 
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -81,7 +75,7 @@ export function AddOnPicker({
   const description = (a: AddOnDef) => t(addOnI18n.description(a.key), { defaultValue: a.description });
 
   return (
-    <div className="rounded-xl border border-border bg-card">
+    <div className="rounded-[22px] border border-border bg-card shadow-shell">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
         <div>
           <p className="text-sm font-semibold text-foreground">{t('billing.addOns.title', 'Options')}</p>
@@ -156,13 +150,14 @@ export function AddOnPicker({
       */}
       {dirty && !disabled && (
         <div
-          className={"sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 " +
-            "rounded-b-xl border-t border-border bg-card/95 px-5 py-3 backdrop-blur " +
-            "supports-[backdrop-filter]:bg-card/80"}>
+          className={
+            'sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 ' +
+            'rounded-b-xl border-t border-border bg-card/95 px-5 py-3 backdrop-blur ' +
+            'supports-[backdrop-filter]:bg-card/80'
+          }
+        >
           <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground">
-              {t('billing.addOns.unsaved', 'Unsaved changes')}
-            </p>
+            <p className="text-sm font-medium text-foreground">{t('billing.addOns.unsaved', 'Unsaved changes')}</p>
             <p className="text-xs text-muted-foreground tabular-nums">
               {formatCents(current)} → <span className="font-semibold text-foreground">{formatCents(proposed)}</span>
               {t('billing.addOns.perMonth', '/mo')}
@@ -170,9 +165,7 @@ export function AddOnPicker({
               <span
                 className={cn(
                   'font-semibold',
-                  delta > 0
-                    ? 'text-amber-600 dark:text-amber-400'
-                    : 'text-emerald-600 dark:text-emerald-400',
+                  delta > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400',
                 )}
               >
                 {delta > 0 ? '+' : ''}
@@ -184,12 +177,7 @@ export function AddOnPicker({
           <div className="flex items-center gap-2">
             {/* Discard, not Cancel: nothing is being cancelled, and putting the
                 switches back by hand is the alternative. */}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setSelected(purchased)}
-              disabled={saving}
-            >
+            <Button size="sm" variant="outline" onClick={() => setSelected(purchased)} disabled={saving}>
               {t('common.discard', 'Discard')}
             </Button>
             <Button size="sm" onClick={save} disabled={saving}>

@@ -6,7 +6,12 @@ import { useTranslation } from "react-i18next"
 import { ListChecks, Mail, Phone, ShieldAlert, Smartphone, UserCheck } from "lucide-react"
 
 import {
-  personInitials, personName, detailRowsForKind, kindHolderLabel, warrantyState, type KindShape,
+  personInitials,
+  personName,
+  detailRowsForKind,
+  kindHolderLabel,
+  warrantyState,
+  type KindShape,
 } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { dateLocale } from "@/lib/format-date"
@@ -58,10 +63,9 @@ export function AssetAbout({ asset, shape }: { asset: AssetDetail; shape: KindSh
       )}
 
       {shape.holder.enabled && (
-        <div className="rounded-2xl border border-border/70 bg-card p-4">
+        <div className="rounded-[22px] border border-border bg-card px-[18px] py-4 shadow-shell">
           <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <UserCheck className="h-3.5 w-3.5" />{" "}
-            {kindHolderLabel(shape, t("assetRecords.holder", "Held by"))}
+            <UserCheck className="h-3.5 w-3.5" /> {kindHolderLabel(shape, t("assetRecords.holder", "Held by"))}
           </p>
           {holders.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("assetRecords.nobodyHas", "Nobody has this one.")}</p>
@@ -78,15 +82,20 @@ export function AssetAbout({ asset, shape }: { asset: AssetDetail; shape: KindSh
                     className="flex w-full items-center gap-2 text-left"
                   >
                     <span
-                      className={"flex h-8 w-8 shrink-0 items-center justify-center rounded-full " +
-                        "bg-primary/10 text-[11px] font-semibold text-primary"}>
+                      className={
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full " +
+                        "bg-primary/10 text-[11px] font-semibold text-primary"
+                      }
+                    >
                       {personInitials(h.user)}
                     </span>
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-medium text-foreground hover:text-primary">
                         {personName(h.user)}
                       </span>
-                      <span className="text-xs text-muted-foreground">{t("assetRecords.memberTag", "Member (staff)")}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {t("assetRecords.memberTag", "Member (staff)")}
+                      </span>
                     </span>
                   </button>
                 ) : h.customer ? (
@@ -97,23 +106,28 @@ export function AssetAbout({ asset, shape }: { asset: AssetDetail; shape: KindSh
                     >
                       {h.customer.name}
                       <span
-                        className={"inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 " +
+                        className={
+                          "inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 " +
                           "text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/50 " +
-                          "dark:text-emerald-300"}>
+                          "dark:text-emerald-300"
+                        }
+                      >
                         <Smartphone className="h-2.5 w-2.5" /> {t("assetRecords.appAccess", "App access")}
                       </span>
                     </button>
                     {h.customer.email && (
                       <a
                         href={`mailto:${h.customer.email}`}
-                        className={"flex items-center gap-1.5 text-xs text-muted-foreground " + "hover:text-primary"}>
+                        className={"flex items-center gap-1.5 text-xs text-muted-foreground " + "hover:text-primary"}
+                      >
                         <Mail className="h-3 w-3" /> {h.customer.email}
                       </a>
                     )}
                     {h.customer.phone && (
                       <a
                         href={`tel:${h.customer.phone}`}
-                        className={"flex items-center gap-1.5 text-xs text-muted-foreground " + "hover:text-primary"}>
+                        className={"flex items-center gap-1.5 text-xs text-muted-foreground " + "hover:text-primary"}
+                      >
                         <Phone className="h-3 w-3" /> {h.customer.phone}
                       </a>
                     )}
@@ -126,7 +140,7 @@ export function AssetAbout({ asset, shape }: { asset: AssetDetail; shape: KindSh
       )}
 
       {(rows.length > 0 || facts.length > 0 || !!asset.notes) && (
-        <div className="rounded-2xl border border-border/70 bg-card p-4">
+        <div className="rounded-[22px] border border-border bg-card px-[18px] py-4 shadow-shell">
           <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             <ListChecks className="h-3.5 w-3.5" /> {t("assetRecords.fields", "Details")}
           </p>
@@ -156,10 +170,12 @@ export function AssetAbout({ asset, shape }: { asset: AssetDetail; shape: KindSh
             })}
           </dl>
           {warranty === "expired" || warranty === "soon" ? (
-            <p className={cn(
-              "mt-1 flex items-center justify-end gap-1 text-[11px] font-medium",
-              warranty === "expired" ? "text-destructive" : "text-amber-600 dark:text-amber-400",
-            )}>
+            <p
+              className={cn(
+                "mt-1 flex items-center justify-end gap-1 text-[11px] font-medium",
+                warranty === "expired" ? "text-destructive" : "text-amber-600 dark:text-amber-400",
+              )}
+            >
               <ShieldAlert className="h-3.5 w-3.5" />
               {warranty === "expired"
                 ? t("assetFacts.warranty.expired", "Warranty ended")

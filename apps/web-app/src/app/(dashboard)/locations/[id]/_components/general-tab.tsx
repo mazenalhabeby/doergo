@@ -125,7 +125,7 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
       <DefaultWorkspaceCard space={space} />
 
       {/* ── Space details ── */}
-      <Card>
+      <Card className="rounded-[22px] shadow-shell">
         <CardHeader className="pb-3">
           <div className="flex items-start gap-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -209,7 +209,7 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
 
       {/* ── Save ── */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={mutation.isPending} className="min-w-[120px]">
+        <Button size="pillLg" onClick={handleSave} disabled={mutation.isPending} className="min-w-[120px]">
           {mutation.isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

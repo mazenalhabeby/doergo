@@ -72,7 +72,7 @@ export function Timeline({ loading, activities }: { loading: boolean; activities
       {activities.map((a) => {
         const author = a.author ? personName(a.author) : t("assetRecords.systemAuthor", "Automatic")
         return (
-          <div key={a.id} className="rounded-xl border border-border bg-card p-3">
+          <div key={a.id} className="rounded-[14px] border border-border bg-card p-3">
             <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
               {/*
                 ⚠️ An unrecognised type used to fall through to "Note", so a

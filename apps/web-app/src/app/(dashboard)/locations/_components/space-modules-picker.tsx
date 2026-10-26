@@ -59,7 +59,7 @@ export function SpaceModulesPicker({
                     className={cn(
                       "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                       active
-                        ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                        ? "border-primary bg-shell-accent-soft text-shell-accent"
                         : "border-border text-muted-foreground hover:bg-muted/50",
                     )}
                   >
@@ -88,7 +88,7 @@ export function SpaceModulesPicker({
                     type="checkbox"
                     checked={enabledModules.includes(mod.key)}
                     onChange={() => toggleModule(mod.key)}
-                    className="mt-0.5 rounded border-border text-blue-600 focus:ring-blue-500"
+                    className="mt-0.5 rounded border-border text-shell-accent focus:ring-ring"
                   />
                   <div>
                     <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">

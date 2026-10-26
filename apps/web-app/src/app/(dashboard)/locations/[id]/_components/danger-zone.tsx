@@ -38,7 +38,7 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
   }
 
   return (
-    <Card className="max-w-3xl border-destructive/40">
+    <Card className="rounded-[22px] shadow-shell max-w-3xl border-destructive/40">
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
@@ -54,9 +54,12 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
         {space.isActive ? (
           /* Active → offer Archive */
           <div
-            className={"flex flex-col gap-3 rounded-xl border border-destructive/30 " +
+            className={
+              "flex flex-col gap-3 rounded-xl border border-destructive/30 " +
               "bg-destructive/5 px-4 py-3 sm:flex-row sm:items-center " +
-              "sm:justify-between"}>
+              "sm:justify-between"
+            }
+          >
             <div className="pr-4">
               <p className="text-sm font-medium text-foreground">{t("locations.danger.deleteTitle")}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{t("locations.danger.deleteHint")}</p>
@@ -75,12 +78,20 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
         ) : (
           /* Archived → offer Restore */
           <div
-            className={"flex flex-col gap-3 rounded-xl border border-border bg-muted/30 px-4 " +
-              "py-3 sm:flex-row sm:items-center sm:justify-between"}>
+            className={
+              "flex flex-col gap-3 rounded-xl border border-border bg-muted/30 px-4 " +
+              "py-3 sm:flex-row sm:items-center sm:justify-between"
+            }
+          >
             <div className="pr-4">
-              <p className="text-sm font-medium text-foreground">{t("locations.danger.restoreTitle", "Restore this workspace")}</p>
+              <p className="text-sm font-medium text-foreground">
+                {t("locations.danger.restoreTitle", "Restore this workspace")}
+              </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {t("locations.danger.restoreHint", "This workspace is archived. Restoring makes it active and visible in pickers again.")}
+                {t(
+                  "locations.danger.restoreHint",
+                  "This workspace is archived. Restoring makes it active and visible in pickers again.",
+                )}
               </p>
             </div>
             <Button
@@ -101,16 +112,22 @@ export function DangerZone({ space }: { space: CompanyLocation }) {
 
         {/* Permanent delete — empty spaces only (server-guarded). */}
         <div
-          className={"mt-3 flex flex-col gap-3 rounded-xl border border-destructive/30 " +
+          className={
+            "mt-3 flex flex-col gap-3 rounded-xl border border-destructive/30 " +
             "bg-destructive/5 px-4 py-3 sm:flex-row sm:items-center " +
-            "sm:justify-between"}>
+            "sm:justify-between"
+          }
+        >
           <div className="pr-4">
-            <p className="text-sm font-medium text-foreground">{t("locations.purgeSpace", "Delete workspace permanently")}</p>
+            <p className="text-sm font-medium text-foreground">
+              {t("locations.purgeSpace", "Delete workspace permanently")}
+            </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {t(
                 "locations.danger.purgeHint",
-                ("Removes the workspace forever. Only possible while it has no tasks, " +
-                  "attendance or shift history. This cannot be undone."))}
+                "Removes the workspace forever. Only possible while it has no tasks, " +
+                  "attendance or shift history. This cannot be undone.",
+              )}
             </p>
           </div>
           <Button variant="destructive" className="shrink-0" disabled={locked} onClick={() => openDialog("purge")}>

@@ -65,23 +65,23 @@ export const StatusRow = memo(function StatusRow({
       return (
         <Badge
           variant="outline"
-          className={"text-[10px] px-1.5 py-0 h-5 border-blue-200 text-blue-600 " + "dark:border-blue-800 dark:text-blue-400 shrink-0"}>
+          className={"text-[10px] px-1.5 py-0 h-5 border-primary/30 text-shell-accent " + " shrink-0"}
+        >
           {t("workflows.start")}
         </Badge>
       )
     }
     if (status.isFinal && !status.isCanceled) {
       return (
-        <button
-          type="button"
-          onClick={() => onChange(index, { isFinal: false })}
-          className="shrink-0"
-        >
+        <button type="button" onClick={() => onChange(index, { isFinal: false })} className="shrink-0">
           <Badge
             variant="outline"
-            className={"text-[10px] px-1.5 py-0 h-5 border-emerald-200 text-emerald-600 " +
+            className={
+              "text-[10px] px-1.5 py-0 h-5 border-emerald-200 text-emerald-600 " +
               "dark:border-emerald-800 dark:text-emerald-400 cursor-pointer " +
-              "hover:bg-emerald-50 dark:hover:bg-emerald-950"}>
+              "hover:bg-emerald-50 dark:hover:bg-emerald-950"
+            }
+          >
             {t("workflows.final")}
           </Badge>
         </button>
@@ -96,9 +96,12 @@ export const StatusRow = memo(function StatusRow({
         >
           <Badge
             variant="outline"
-            className={"text-[10px] px-1.5 py-0 h-5 border-red-200 text-red-600 " +
+            className={
+              "text-[10px] px-1.5 py-0 h-5 border-red-200 text-red-600 " +
               "dark:border-red-800 dark:text-red-400 cursor-pointer hover:bg-red-50 " +
-              "dark:hover:bg-red-950"}>
+              "dark:hover:bg-red-950"
+            }
+          >
             {t("workflows.canceled")}
           </Badge>
         </button>
@@ -131,7 +134,7 @@ export const StatusRow = memo(function StatusRow({
   const stepShape = { key: toStatusKey(status.name), isFinal: status.isFinal, capabilities: caps }
   const formMode = builderStepMode({ ...stepShape, form: status.form }, workflowName)
   const standardAvailable = builderStepMode({ ...stepShape, form: null }, workflowName) === "legacy"
-  const asked = formMode === "own" ? status.form?.fields.length ?? 0 : 0
+  const asked = formMode === "own" ? (status.form?.fields.length ?? 0) : 0
   const formInvalid =
     Object.keys(definitionErrors(status.form)).length > 0 || Object.keys(status.formServerErrors ?? {}).length > 0
   const toggleCap = (key: string) =>
@@ -142,10 +145,7 @@ export const StatusRow = memo(function StatusRow({
   return (
     <div className="group space-y-1 py-0.5">
       <div className="flex items-center gap-2 h-9">
-        <ColorPicker
-          value={status.color}
-          onChange={(color) => onChange(index, { color })}
-        />
+        <ColorPicker value={status.color} onChange={(color) => onChange(index, { color })} />
         <Input
           ref={inputRef}
           value={status.name}
@@ -158,9 +158,11 @@ export const StatusRow = memo(function StatusRow({
           type="button"
           onClick={() => onRemove(index)}
           disabled={total <= 1}
-          className={"w-6 h-6 flex items-center justify-center text-muted-foreground " +
+          className={
+            "w-6 h-6 flex items-center justify-center text-muted-foreground " +
             "hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity " +
-            "disabled:opacity-0"}
+            "disabled:opacity-0"
+          }
           aria-label={t("workflows.builder.removeStatus")}
         >
           <X className="h-3.5 w-3.5" />
@@ -201,7 +203,7 @@ export const StatusRow = memo(function StatusRow({
                 unmet
                   ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
                   : on
-                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                    ? "border-primary bg-shell-accent-soft text-shell-accent"
                     : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted"
               }`}
             >
@@ -223,7 +225,7 @@ export const StatusRow = memo(function StatusRow({
             formInvalid
               ? "border-red-400 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300"
               : formOpen
-                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                ? "border-primary bg-shell-accent-soft text-shell-accent"
                 : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted"
           }`}
         >

@@ -6,11 +6,7 @@ import { Plus, ChevronDown, Check } from "lucide-react"
 
 import { type StatusWorkflow } from "@/lib/api"
 import { Label } from "@/components/ui/label"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { WorkflowBuilder } from "./workflow-builder"
 
 interface WorkflowSelectorProps {
@@ -31,7 +27,7 @@ const WorkflowSelector = memo(function WorkflowSelector({
   label,
 }: WorkflowSelectorProps) {
   const { t } = useTranslation()
-  const resolvedLabel = label === undefined ? t('locations.workflowLabel') : label
+  const resolvedLabel = label === undefined ? t("locations.workflowLabel") : label
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [showBuilder, setShowBuilder] = useState(false)
 
@@ -43,7 +39,7 @@ const WorkflowSelector = memo(function WorkflowSelector({
       onChange(id)
       setDropdownOpen(false)
     },
-    [onChange]
+    [onChange],
   )
 
   const handleCreateClick = useCallback(() => {
@@ -56,7 +52,7 @@ const WorkflowSelector = memo(function WorkflowSelector({
       onChange(newId)
       setShowBuilder(false)
     },
-    [onChange]
+    [onChange],
   )
 
   const handleCancelCreate = useCallback(() => {
@@ -70,15 +66,17 @@ const WorkflowSelector = memo(function WorkflowSelector({
         <PopoverTrigger asChild disabled={disabled}>
           <button
             type="button"
-            className={"flex h-9 w-full items-center justify-between rounded-md border " +
+            className={
+              "flex h-9 w-full items-center justify-between rounded-md border " +
               "border-input bg-transparent px-3 py-2 text-sm shadow-sm " +
               "ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring " +
-              "disabled:cursor-not-allowed disabled:opacity-50"}
+              "disabled:cursor-not-allowed disabled:opacity-50"
+            }
           >
             <span className={selectedWorkflow ? "text-foreground" : "text-muted-foreground"}>
               {selectedWorkflow
-                ? `${selectedWorkflow.name}${statusCount > 0 ? t('locations.statusCountSuffix', { count: statusCount }) : ""}`
-                : t('locations.selectWorkflow')}
+                ? `${selectedWorkflow.name}${statusCount > 0 ? t("locations.statusCountSuffix", { count: statusCount }) : ""}`
+                : t("locations.selectWorkflow")}
             </span>
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </button>
@@ -99,19 +97,17 @@ const WorkflowSelector = memo(function WorkflowSelector({
                 >
                   <div
                     className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                      isSelected
-                        ? "border-blue-600 bg-blue-600"
-                        : "border-border"
+                      isSelected ? "border-primary bg-primary" : "border-border"
                     }`}
                   >
                     {isSelected && <Check className="h-3 w-3 text-white" />}
                   </div>
                   <span className="flex-1 text-left truncate">
                     {wf.name}
-                    {wf.isDefault ? t('locations.defaultSuffix') : ""}
+                    {wf.isDefault ? t("locations.defaultSuffix") : ""}
                   </span>
                   <span className="text-xs text-muted-foreground shrink-0">
-                    {t('locations.statusCount', { count })}
+                    {t("locations.statusCount", { count })}
                   </span>
                 </button>
               )
@@ -123,12 +119,14 @@ const WorkflowSelector = memo(function WorkflowSelector({
               <button
                 type="button"
                 onClick={handleCreateClick}
-                className={"flex w-full items-center gap-2 rounded-sm px-2.5 py-2 text-sm " +
+                className={
+                  "flex w-full items-center gap-2 rounded-sm px-2.5 py-2 text-sm " +
                   "text-muted-foreground hover:text-foreground hover:bg-muted " +
-                  "transition-colors"}
+                  "transition-colors"
+                }
               >
                 <Plus className="h-4 w-4" />
-                {t('locations.createNewWorkflow')}
+                {t("locations.createNewWorkflow")}
               </button>
             </>
           )}
@@ -136,13 +134,7 @@ const WorkflowSelector = memo(function WorkflowSelector({
       </Popover>
 
       {/* Inline builder */}
-      {showBuilder && (
-        <WorkflowBuilder
-          mode="create"
-          onCreated={handleCreated}
-          onCancel={handleCancelCreate}
-        />
-      )}
+      {showBuilder && <WorkflowBuilder mode="create" onCreated={handleCreated} onCancel={handleCancelCreate} />}
     </div>
   )
 })

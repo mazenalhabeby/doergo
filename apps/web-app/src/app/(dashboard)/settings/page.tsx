@@ -4,6 +4,10 @@ import { useState, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
+import { Icon } from "@/components/ui/icon"
+import { PAGE_SHELL } from "@/components/ui/page-width"
+import { GroupLabel, PageHeader, Panel, RAIL_ROW } from "@/components/page/page-kit"
+import { cn } from "@/lib/utils"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { resolveSettingsSection } from "@/lib/route-access"
 // Each section loads when it is opened (see lazy-sections.tsx).
@@ -82,101 +86,56 @@ export default function SettingsPage() {
     [router],
   )
 
+  // One rail entry — the board's rail row, the chosen one filled.
+  const railButton = (item: (typeof ORG_NAV_ITEMS)[number]) => (
+    <button
+      key={item.key}
+      type="button"
+      data-tour={`settings-nav-${item.key}`}
+      aria-current={activeSection === item.key ? "true" : undefined}
+      onClick={() => selectSection(item.key)}
+      className={cn(RAIL_ROW, "w-auto shrink-0 lg:w-full")}
+    >
+      <Icon name={item.icon} size={18} className="text-muted-foreground" />
+      <span className="whitespace-nowrap">{t(item.labelKey)}</span>
+    </button>
+  )
+
   return (
     <div className="min-h-full bg-background">
-      <div className="max-w-screen-xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 data-tour="page-settings" className="text-2xl font-bold text-foreground tracking-tight">
-            {isPersonalSection ? t("settings.personalTitle") : t("settings.title")}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {isPersonalSection ? t("settings.personalSubtitle") : t("settings.subtitle")}
-          </p>
-        </div>
+      <div className={PAGE_SHELL}>
+        <PageHeader
+          tour="page-settings"
+          title={isPersonalSection ? t("settings.personalTitle") : t("settings.title")}
+          subtitle={isPersonalSection ? t("settings.personalSubtitle") : t("settings.subtitle")}
+        />
 
-        {/* Sidebar + Content */}
-        <div className="flex gap-8">
-          {/* Sidebar Navigation */}
-          <nav className="w-56 shrink-0 hidden lg:block">
-            <div className="sticky top-24 space-y-0.5">
-              {/* Organization section — only for admins */}
-              {showOrgGroup && (
-                <>
-                  <p
-                    data-tour="settings-org-group"
-                    className={
-                      "px-3.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wider " + "text-muted-foreground"
-                    }
-                  >
-                    {t("settings.nav.organizationGroup")}
-                  </p>
-                  {orgNavItems.map((item) => {
-                    const isActive = activeSection === item.key
-                    return (
-                      <button
-                        key={item.key}
-                        data-tour={`settings-nav-${item.key}`}
-                        onClick={() => selectSection(item.key)}
-                        className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
-                          isActive
-                            ? "bg-foreground/[0.06] text-foreground"
-                            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                        }`}
-                      >
-                        <item.icon className="size-4" />
-                        {t(item.labelKey)}
-                      </button>
-                    )
-                  })}
-                </>
-              )}
+        {/* Rail + Content */}
+        <div className="grid items-start gap-[18px] lg:grid-cols-[250px_minmax(0,1fr)]">
+          {/* The rail — a column on desktop, one scrollable row on small screens. */}
+          <Panel
+            as="nav"
+            className={cn(
+              "flex gap-0.5 overflow-x-auto p-2 lg:sticky lg:top-3 lg:flex-col lg:overflow-visible",
+              "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            )}
+          >
+            {/* Organization section — only for whoever may open one of its parts */}
+            {showOrgGroup && (
+              <>
+                <GroupLabel className="hidden lg:flex">
+                  <span data-tour="settings-org-group">{t("settings.nav.organizationGroup")}</span>
+                </GroupLabel>
+                {orgNavItems.map(railButton)}
+              </>
+            )}
 
-              {/* Personal section */}
-              <div data-tour="settings-personal-group" className={showOrgGroup ? "pt-5 pb-1.5" : "pb-1.5"}>
-                <p className="px-3.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t("settings.nav.personalGroup")}
-                </p>
-              </div>
-              {personalNavItems.map((item) => {
-                const isActive = activeSection === item.key
-                return (
-                  <button
-                    key={item.key}
-                    data-tour={`settings-nav-${item.key}`}
-                    onClick={() => selectSection(item.key)}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
-                      isActive
-                        ? "bg-foreground/[0.06] text-foreground"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                    }`}
-                  >
-                    <item.icon className="size-4" />
-                    {t(item.labelKey)}
-                  </button>
-                )
-              })}
-            </div>
-          </nav>
-
-          {/* Mobile Tab Bar */}
-          <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border px-4 py-2 flex gap-1 overflow-x-auto">
-            {[...orgNavItems, ...personalNavItems].map((item) => {
-              const isActive = activeSection === item.key
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => selectSection(item.key)}
-                  className={`flex-none flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
-                    isActive ? "text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{t(item.labelKey)}</span>
-                </button>
-              )
-            })}
-          </div>
+            {/* Personal section */}
+            <GroupLabel className={cn("hidden lg:flex", showOrgGroup && "lg:pt-4")}>
+              <span data-tour="settings-personal-group">{t("settings.nav.personalGroup")}</span>
+            </GroupLabel>
+            {personalNavItems.map(railButton)}
+          </Panel>
 
           {/* Content Area */}
           <div className="flex-1 min-w-0">

@@ -46,7 +46,7 @@ export function BillTotal({ bill, estimate }: { bill: OrgCostBreakdown; estimate
   }, [bill, listTotal])
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5">
+    <div className="relative overflow-hidden rounded-[22px] border border-border bg-card p-[22px] shadow-shell">
       {/* One soft wash behind the content, inert to pointers. */}
       <div
         aria-hidden
@@ -56,7 +56,7 @@ export function BillTotal({ bill, estimate }: { bill: OrgCostBreakdown; estimate
         <p className="text-sm text-muted-foreground">
           {estimate ? t("billing.bill.estimate", "At list price") : t("billing.bill.total", "Your monthly total")}
         </p>
-        <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-foreground">
+        <p className="mt-1 text-[44px] font-semibold leading-none tabular-nums tracking-[-0.04em] text-foreground">
           {formatCents(bill.monthlyCents)}
           <span className="ml-1 text-base font-normal text-muted-foreground">
             {t("billing.bill.perMonth", "/month")}

@@ -61,13 +61,12 @@ export function SiteLocationCard({
   /** A drawn boundary supersedes the radius — see the note by the field. */
   const hasBoundary = (polygon?.length ?? 0) >= 3
   return (
-    <Card>
+    <Card className="rounded-[22px] shadow-shell">
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
           <span
             className={
-              "flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-100 " +
-              "text-sky-600 dark:bg-sky-950 dark:text-sky-300"
+              "flex size-9 shrink-0 items-center justify-center rounded-lg bg-shell-accent-soft " + "text-shell-accent"
             }
           >
             <MapPin className="h-[18px] w-[18px]" />

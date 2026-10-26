@@ -7,6 +7,7 @@ import { CalendarClock, Clock, MapPin, Users } from "lucide-react"
 
 import { type CompanyLocation } from "@/lib/api"
 import { Card } from "@/components/ui/card"
+import { Panel } from "@/components/page/page-kit"
 import { SectionHeader } from "../../../../../components/common/section-header"
 import { ShiftsTab } from "./shifts-tab"
 import { RotaTab } from "./rota-tab"
@@ -38,7 +39,7 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
   const [scheduled, setScheduled] = useState(workspaceSchedulesShifts(space.workModel))
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <SectionHeader
         icon={CalendarClock}
         accent="indigo"
@@ -47,7 +48,7 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
       />
 
       {/* Time clock — the universal baseline (informational). */}
-      <Card className="flex items-start gap-3 border-dashed bg-muted/30 p-4">
+      <Card className="rounded-[22px] shadow-shell flex items-start gap-3 border-dashed bg-muted/30 p-4">
         <span
           className={
             "flex size-9 shrink-0 items-center justify-center rounded-lg " +
@@ -75,13 +76,13 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
 
       {/* Scheduling layer — only when Scheduled is on. */}
       {scheduled && (
-        <div className="space-y-6">
-          <div className="border-t border-border/60 pt-6">
+        <div className="space-y-4">
+          <Panel className="p-5">
             <ShiftsTab spaceId={space.id} />
-          </div>
-          <div className="border-t border-border/60 pt-6">
+          </Panel>
+          <Panel className="p-5">
             <RotaTab spaceId={space.id} />
-          </div>
+          </Panel>
         </div>
       )}
 
@@ -92,35 +93,35 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
         every attendance model: an open-hours workspace has a geofence too.
       */}
       {/* The details the way of working sets — open to change, closed until somebody wants to (D1). */}
-      <details className="group rounded-xl border border-border/60 px-4 py-3" open={isCustom}>
+      <details className="group rounded-[22px] border border-border bg-card px-5 py-4 shadow-shell" open={isCustom}>
         <summary className="cursor-pointer select-none text-sm font-medium text-foreground">
           {t("workPreset.details", "Change details")}
         </summary>
         <div className="space-y-6 pt-4">
-          <div className="border-t border-border/60 pt-6">
+          <div className="border-t border-border pt-5">
             <AwayPolicySection space={space} />
           </div>
 
           {/* Clocking in with no shift — every attendance model, like the geofence. */}
-          <div className="border-t border-border/60 pt-6">
+          <div className="border-t border-border pt-5">
             <NoShiftSection space={space} schedulesShifts={scheduled} />
           </div>
         </div>
       </details>
 
       {/* What members may ask for here — leave, remote, a changed day, overtime, other. */}
-      <div className="border-t border-border/60 pt-6">
+      <Panel className="p-5">
         <RequestKindsSection space={space as CompanyLocation & { requestKinds?: string[] | null }} />
-      </div>
+      </Panel>
 
       {/*
         The automatic clock — entering and leaving the area clocks in and out.
         Renders nothing for the Remote bucket, so it brings its own divider.
       */}
       {!space.isRemote && (
-        <div className="border-t border-border/60 pt-6">
+        <Panel className="p-5">
           <AutoClockSection space={space as CompanyLocation & { autoClock?: unknown }} />
-        </div>
+        </Panel>
       )}
 
       {/*
@@ -131,9 +132,9 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
         knows how many people this site needs is the person configuring the site,
         not whoever happens to be approving a request that afternoon.
       */}
-      <div className="border-t border-border/60 pt-6">
+      <Panel className="p-5">
         <MinCoverSection space={space} />
-      </div>
+      </Panel>
 
       {/*
         Rests, under BOTH models.
@@ -143,9 +144,9 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
         that is true whether or not the day has a rota. A rest planned "after
         five hours" needs no shift at all — it counts from the clock-in.
       */}
-      <div className="border-t border-border/60 pt-6">
+      <Panel className="p-5">
         <RestsSection spaceId={space.id} />
-      </div>
+      </Panel>
 
       {/* Open-hours reassurance — nothing else to configure. */}
       {!scheduled && (

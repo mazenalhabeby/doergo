@@ -6,17 +6,8 @@ import { SPACE_TAB_OPTION } from "@hbcfield/shared/client"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
-import {
-  Blocks,
-  Building2,
-  CalendarClock,
-  ChevronRight as ChevronRightNav,
-  Loader2,
-  Share2,
-  ShieldAlert,
-  UserCog,
-  Workflow,
-} from "lucide-react"
+import { Loader2, ShieldAlert } from "lucide-react"
+import type { IconName } from "@hbcfield/shared/client"
 
 import { canManageSpace } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
@@ -25,6 +16,9 @@ import { Button } from "@/components/ui/button"
 import { BackToSpaces, CenteredNotice } from "@/components/spaces/space-page"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlanGate } from "@/components/common/plan-gate"
+import { Icon } from "@/components/ui/icon"
+import { PageHeader, Panel } from "@/components/page/page-kit"
+import { PAGE_SHELL } from "@/components/ui/page-width"
 import { cn } from "@/lib/utils"
 
 import dynamic from "next/dynamic"
@@ -127,32 +121,33 @@ export default function SpaceSettingsPage() {
     const option = SPACE_TAB_OPTION[tab]
     return !option || hasPlanFeature(option)
   }
-  const SECTIONS = [
-    { value: "general", label: t("locations.tabs.general"), icon: Building2, show: true },
-    { value: "attendance", label: t("scheduling.tabs.attendance"), icon: CalendarClock, show: true },
-    { value: "modules", label: t("locations.tabs.modules"), icon: Blocks, show: true },
+  const ALL_SECTIONS: { value: string; label: string; icon: IconName; show: boolean }[] = [
+    { value: "general", label: t("locations.tabs.general"), icon: "settings", show: true },
+    { value: "attendance", label: t("scheduling.tabs.attendance"), icon: "attendance", show: true },
+    { value: "modules", label: t("locations.tabs.modules"), icon: "dashboard", show: true },
     /*
       ⚠️ This was `show: true`. The whole builder opened for an organization that
       had not bought Custom workflows — design one, press save, 402. The server
       was doing its job; the experience of not owning the Option was losing work
       at the last step.
     */
-    { value: "workflow", label: t("locations.tabs.workflow"), icon: Workflow, show: optionAllows("workflow") },
-    { value: "members", label: t("scheduling.tabs.members"), icon: UserCog, show: true },
-    { value: "sharing", label: t("spaceSharing.tabTitle"), icon: Share2, show: mods.includes("space_sharing") },
+    { value: "workflow", label: t("locations.tabs.workflow"), icon: "branch", show: optionAllows("workflow") },
+    { value: "members", label: t("scheduling.tabs.members"), icon: "people", show: true },
+    { value: "sharing", label: t("spaceSharing.tabTitle"), icon: "link", show: mods.includes("space_sharing") },
     /*
       Customers, Assets, Client portal and Invoices used to sit here. They are
       the workspace's CONTENT, not its configuration, and each now has its own
       address where the same screen lives — see MOVED_TABS above and the links
       on the General tab.
     */
-  ].filter((s) => s.show)
+  ]
+  const SECTIONS = ALL_SECTIONS.filter((s) => s.show)
 
   // Gate the whole page on the user-management permission (mirrors other admin pages).
   if (!canManage) {
     return (
       <div className="min-h-full bg-background">
-        <div className="max-w-[1100px] mx-auto px-6 py-6">
+        <div className={PAGE_SHELL}>
           <CenteredNotice
             icon={ShieldAlert}
             title={t("scheduling.unauthorized.title")}
@@ -169,22 +164,23 @@ export default function SpaceSettingsPage() {
 
   return (
     <div className="min-h-full bg-background">
-      <div className="max-w-[1100px] mx-auto px-6 py-6">
+      <div className={PAGE_SHELL}>
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-3">
           <BackToSpaces />
-          <div className="mt-3 flex items-center gap-3">
-            <div className="rounded-xl bg-primary/10 p-2.5">
-              <Building2 className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                {isLoading ? t("common.loading") : space?.name || t("scheduling.title")}
-              </h1>
-              <p className="text-sm text-muted-foreground">{t("scheduling.subtitle")}</p>
-            </div>
-          </div>
         </div>
+        <PageHeader
+          title={isLoading ? t("common.loading") : space?.name || t("scheduling.title")}
+          subtitle={t("scheduling.subtitle")}
+          actions={
+            space && (
+              <Button variant="outline" size="pill" onClick={() => router.push(`/tasks?space=${spaceId}`)}>
+                <Icon name="tasks" size={16} />
+                {t("locations.viewTasks")}
+              </Button>
+            )
+          }
+        />
 
         {isLoading ? (
           <div className="flex items-center justify-center py-24">
@@ -196,18 +192,15 @@ export default function SpaceSettingsPage() {
             <p className="text-sm text-muted-foreground mt-2">{t("scheduling.notFound.description")}</p>
           </div>
         ) : (
-          <Tabs value={activeTab} onValueChange={openTab} className="lg:flex lg:items-start lg:gap-7">
-            {/* Section nav — sticky framed rail on desktop, scrollable row on mobile. */}
-            <div className="mb-5 lg:sticky lg:top-4 lg:mb-0 lg:w-60 lg:shrink-0 lg:self-start">
-              <p className="hidden px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 lg:block">
-                {t("locations.settingsNav", "Settings")}
-              </p>
+          <Tabs value={activeTab} onValueChange={openTab} className="lg:flex lg:items-start lg:gap-4">
+            {/* Section nav — the board's rail panel on desktop, a scrollable row on mobile. */}
+            <Panel as="nav" className="mb-4 lg:sticky lg:top-4 lg:mb-0 lg:w-[250px] lg:shrink-0 lg:self-start">
               <TabsList
+                aria-label={t("locations.settingsNav", "Settings")}
                 className={cn(
-                  "flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-muted/40 p-1",
+                  "flex h-auto w-full justify-start gap-0.5 overflow-x-auto bg-transparent p-0",
                   "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-                  "lg:flex-col lg:gap-0.5 lg:overflow-visible lg:rounded-2xl lg:border " +
-                    "lg:border-border/60 lg:bg-card/80 lg:p-2 lg:shadow-sm lg:backdrop-blur",
+                  "lg:flex-col lg:overflow-visible",
                 )}
               >
                 {SECTIONS.map((s) => (
@@ -215,46 +208,21 @@ export default function SpaceSettingsPage() {
                     key={s.value}
                     value={s.value}
                     className={cn(
-                      "group shrink-0 gap-2 whitespace-nowrap",
-                      "lg:relative lg:w-full lg:justify-start lg:rounded-xl lg:px-3 lg:py-2.5 " +
-                        "lg:text-[13px] lg:font-medium lg:text-muted-foreground lg:transition-all " +
-                        "lg:duration-150",
-                      "lg:hover:bg-muted/70 lg:hover:text-foreground",
-                      "lg:data-[state=active]:bg-primary/10 " +
-                        "lg:data-[state=active]:font-semibold lg:data-[state=active]:text-primary " +
-                        "lg:data-[state=active]:shadow-none",
-                      // Active left-accent bar.
-                      "lg:before:absolute lg:before:left-0 lg:before:top-1/2 lg:before:h-5 " +
-                        "lg:before:w-[3px] lg:before:-translate-y-1/2 lg:before:rounded-r-full " +
-                        "lg:before:bg-primary lg:before:opacity-0 lg:before:transition-opacity " +
-                        "lg:data-[state=active]:before:opacity-100",
+                      "group h-[46px] shrink-0 justify-start gap-3 whitespace-nowrap rounded-xl px-3 text-sm",
+                      "font-medium text-foreground shadow-none transition-colors hover:bg-accent lg:w-full",
+                      "data-[state=active]:bg-shell-nav-on data-[state=active]:font-semibold",
+                      "data-[state=active]:text-shell-nav-on-ink data-[state=active]:shadow-none",
                     )}
                   >
-                    {/* Icon in a soft tile that tints to primary on the active item. */}
-                    <span
-                      className={
-                        "hidden h-6 w-6 items-center justify-center rounded-md bg-muted/70 " +
-                        "text-muted-foreground transition-colors group-hover:text-foreground " +
-                        "group-data-[state=active]:bg-primary/15 " +
-                        "group-data-[state=active]:text-primary lg:flex"
-                      }
-                    >
-                      <s.icon className="h-3.5 w-3.5" />
+                    <span className="grid size-[30px] shrink-0 place-items-center rounded-[9px] bg-shell-chip text-muted-foreground">
+                      <Icon name={s.icon} size={16} />
                     </span>
-                    {/* Inline icon on mobile (no tile). */}
-                    <s.icon className="h-4 w-4 shrink-0 lg:hidden" />
-                    {s.label}
-                    {/* Trailing chevron hints the active section. */}
-                    <ChevronRightNav
-                      className={
-                        "ml-auto hidden h-3.5 w-3.5 opacity-0 transition-opacity " +
-                        "group-data-[state=active]:opacity-60 lg:block"
-                      }
-                    />
+                    <span className="flex-1 text-left">{s.label}</span>
+                    <Icon name="chevronRight" size={14} className="hidden text-muted-foreground lg:block" />
                   </TabsTrigger>
                 ))}
               </TabsList>
-            </div>
+            </Panel>
 
             {/* Content column */}
             <div className="min-w-0 flex-1">

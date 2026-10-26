@@ -60,7 +60,7 @@ export function OwnershipCard({
     queryClient.invalidateQueries({ queryKey: keys.rates.history("SPACE", space.id) })
   }
   return (
-    <Card>
+    <Card className="rounded-[22px] shadow-shell">
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
           <span

@@ -47,7 +47,7 @@ export function TypeCapabilityChips({
                 unmet
                   ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
                   : on
-                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                    ? "border-primary bg-shell-accent-soft text-shell-accent"
                     : "border-border bg-muted/50 text-muted-foreground hover:bg-muted"
               }`}
             >

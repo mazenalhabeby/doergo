@@ -4,6 +4,7 @@ import { personName } from "@hbcfield/shared/client"
 import { ClipboardList, ListChecks, UserPlus, ShieldAlert, MapPin } from "lucide-react"
 
 import { UserAvatar } from "@/components/common/user-avatar"
+import { PAGE_SHELL } from "@/components/ui/page-width"
 import { cn } from "@/lib/utils"
 import { BackToSpaces, CenteredNotice } from "@/components/spaces/space-page"
 import { Badge } from "@/components/ui/badge"
@@ -47,7 +48,7 @@ export default function SharedSpaceViewPage() {
   if (!share) {
     return (
       <div className="min-h-full bg-background">
-        <div className="max-w-[1100px] mx-auto px-6 py-6">
+        <div className={PAGE_SHELL}>
           <BackToSpaces />
           <CenteredNotice
             icon={ShieldAlert}
@@ -61,7 +62,7 @@ export default function SharedSpaceViewPage() {
 
   return (
     <div className="min-h-full bg-background">
-      <div className="max-w-[1100px] mx-auto px-6 py-6">
+      <div className={PAGE_SHELL}>
         {/* Header */}
         <SharedSpaceHeader
           share={share}
@@ -77,7 +78,7 @@ export default function SharedSpaceViewPage() {
 
         {/* Workers on this space (owner enabled "show workers") */}
         {share.showWorkers && workers && workers.length > 0 && (
-          <div className="mt-8 space-y-3">
+          <div className="mt-6 space-y-3">
             <div className="flex items-center gap-2">
               <UserPlus className="h-4 w-4 text-muted-foreground" />
               <h2 className="text-sm font-semibold text-foreground">
@@ -86,7 +87,7 @@ export default function SharedSpaceViewPage() {
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {workers.map((w) => (
-                <div key={w.id} className="flex items-center gap-3 rounded-xl border bg-card p-3">
+                <div key={w.id} className="flex items-center gap-3 rounded-[14px] border border-border bg-card p-3">
                   <UserAvatar firstName={w.user?.firstName} lastName={w.user?.lastName} seed={w.user?.id} size="sm" />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{personName(w.user)}</p>
@@ -104,7 +105,7 @@ export default function SharedSpaceViewPage() {
 
         {/* Live locations (owner enabled "show tracking") */}
         {share.showTracking && tracked && tracked.length > 0 && (
-          <div className="mt-8 space-y-3">
+          <div className="mt-6 space-y-3">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
               <h2 className="text-sm font-semibold text-foreground">
@@ -124,7 +125,7 @@ export default function SharedSpaceViewPage() {
                       ? t("spaceSharing.guest.justNow", "just now")
                       : t("spaceSharing.guest.minsAgo", "{{m}} min ago", { m: mins })
                 return (
-                  <div key={w.id} className="flex items-center gap-3 rounded-xl border bg-card p-3">
+                  <div key={w.id} className="flex items-center gap-3 rounded-[14px] border border-border bg-card p-3">
                     <UserAvatar firstName={w.firstName} lastName={w.lastName} seed={w.id} size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground truncate">{personName(w)}</p>
@@ -148,14 +149,14 @@ export default function SharedSpaceViewPage() {
 
         {/* Attendance (owner enabled "show attendance") */}
         {share.showAttendance && attendanceEntries.length > 0 && (
-          <div className="mt-8 space-y-3">
+          <div className="mt-6 space-y-3">
             <div className="flex items-center gap-2">
               <ClipboardList className="h-4 w-4 text-muted-foreground" />
               <h2 className="text-sm font-semibold text-foreground">
                 {t("spaceSharing.guest.attendanceHeading", "Attendance")}
               </h2>
             </div>
-            <div className="rounded-xl border bg-card overflow-hidden">
+            <div className="overflow-hidden rounded-[22px] border border-border bg-card shadow-shell">
               {attendanceEntries.slice(0, 25).map((e) => {
                 const fmt = (d?: string | null) =>
                   d
@@ -169,7 +170,7 @@ export default function SharedSpaceViewPage() {
                 return (
                   <div
                     key={e.id}
-                    className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/20 last:border-0"
+                    className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border last:border-0"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <UserAvatar
@@ -202,14 +203,14 @@ export default function SharedSpaceViewPage() {
 
         {/* Guest's own requests */}
         {share.allowRequests && myRequests && myRequests.length > 0 && (
-          <div className="mt-8 space-y-3">
+          <div className="mt-6 space-y-3">
             <div className="flex items-center gap-2">
               <ListChecks className="h-4 w-4 text-muted-foreground" />
               <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.myRequests")}</h2>
             </div>
             <div className="grid gap-2">
               {myRequests.map((req) => (
-                <div key={req.id} className="rounded-xl border bg-card p-3.5">
+                <div key={req.id} className="rounded-[14px] border border-border bg-card p-3.5">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">

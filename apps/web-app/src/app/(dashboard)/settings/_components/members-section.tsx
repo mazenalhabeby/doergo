@@ -3,14 +3,7 @@
 import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  Copy,
-  Check,
-  RefreshCw,
-  Shield,
-  Key,
-  Loader2,
-} from "lucide-react"
+import { Copy, Check, RefreshCw, Shield, Key, Loader2 } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { useTranslation } from "react-i18next"
 import { SettingCard } from "./setting-card"
@@ -30,19 +23,19 @@ export function MembersSection() {
       value: JoinPolicy.OPEN,
       label: t("settings.joinPolicy.open"),
       description: t("settings.joinPolicy.openDescription"),
-      color: "emerald"
+      color: "emerald",
     },
     {
       value: JoinPolicy.INVITE_ONLY,
       label: t("settings.joinPolicy.inviteOnly"),
       description: t("settings.joinPolicy.inviteOnlyDescription"),
-      color: "blue"
+      color: "blue",
     },
     {
       value: JoinPolicy.CLOSED,
       label: t("settings.joinPolicy.closed"),
       description: t("settings.joinPolicy.closedDescription"),
-      color: "slate"
+      color: "slate",
     },
   ] as const
 
@@ -113,27 +106,29 @@ export function MembersSection() {
       {/* Join Code */}
       <SettingCard
         icon={Key}
-        iconColor="text-blue-600"
-        iconBg="bg-blue-50"
+        iconColor="text-shell-accent"
+        iconBg="bg-shell-accent-soft"
         title={t("settings.joinCode.title")}
         description={t("settings.joinCode.description")}
       >
         <div className="space-y-4">
           {/* Join Code Display */}
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
+          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-shell-accent-soft to-card border border-primary/30 rounded-xl">
             {displayCode ? (
               <>
-                <span className="text-2xl font-mono font-bold tracking-[0.3em] text-blue-800 flex-1">
+                <span className="text-2xl font-mono font-bold tracking-[0.3em] text-shell-accent flex-1">
                   {displayCode}
                 </span>
                 <Button variant="ghost" size="icon" onClick={handleCopy} className="shrink-0 rounded-lg">
-                  {copied ? <Check className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5 text-blue-400" />}
+                  {copied ? (
+                    <Check className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <Copy className="h-5 w-5 text-shell-accent" />
+                  )}
                 </Button>
               </>
             ) : (
-              <span className="text-sm text-muted-foreground flex-1">
-                {t("settings.joinCode.noCode")}
-              </span>
+              <span className="text-sm text-muted-foreground flex-1">{t("settings.joinCode.noCode")}</span>
             )}
           </div>
 
@@ -166,7 +161,7 @@ export function MembersSection() {
         description={t("settings.joinPolicy.description")}
       >
         <div className="space-y-3">
-          {JOIN_POLICY_OPTIONS.map(option => {
+          {JOIN_POLICY_OPTIONS.map((option) => {
             const isActive = currentPolicy === option.value
             return (
               <button
@@ -176,22 +171,26 @@ export function MembersSection() {
                 onClick={() => isOrgAdmin && setSelectedPolicy(option.value)}
                 disabled={!isOrgAdmin}
                 aria-disabled={!isOrgAdmin}
-                className={(`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ` +
+                className={
+                  `w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ` +
                   `disabled:cursor-not-allowed disabled:opacity-60 ` +
                   `${
-                  isActive
-                    ? "border-blue-400 bg-blue-50/60 shadow-sm"
-                    : "border-border bg-card hover:border-border hover:bg-accent/50"
-                }`)}
+                    isActive
+                      ? "border-primary/30 bg-shell-accent-soft shadow-sm"
+                      : "border-border bg-card hover:border-border hover:bg-accent/50"
+                  }`
+                }
               >
                 <div className="flex items-center gap-3">
-                  <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                    isActive ? "border-blue-500 bg-blue-500" : "border-border"
-                  }`}>
+                  <div
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                      isActive ? "border-primary bg-primary" : "border-border"
+                    }`}
+                  >
                     {isActive && <Check className="h-3 w-3 text-white" />}
                   </div>
                   <div>
-                    <p className={`text-sm font-semibold ${isActive ? "text-blue-700" : "text-foreground"}`}>
+                    <p className={`text-sm font-semibold ${isActive ? "text-shell-accent" : "text-foreground"}`}>
                       {option.label}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">{option.description}</p>
@@ -206,7 +205,7 @@ export function MembersSection() {
               <Button
                 onClick={() => updatePolicyMutation.mutate({ joinPolicy: selectedPolicy! })}
                 disabled={updatePolicyMutation.isPending}
-                className="rounded-xl bg-blue-600 hover:bg-blue-700"
+                className="rounded-xl bg-primary hover:bg-primary/90"
               >
                 {updatePolicyMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {t("common.saveChanges")}
