@@ -489,6 +489,14 @@
   THE loading placeholder (Shimmer and ui/Skeleton both draw it): a bone with one sweep of light, CSS only.
   `.skeleton-wait` holds a page-shaped skeleton back 200 ms, so a page that arrives quickly shows no grey flash.
 */
+/* The toast pill (components/ui/sonner): jade; coral for an error, amber for a warning — by Sonner's data-type. */
+[data-sonner-toaster] { --width: 420px }
+[data-sonner-toast] { --toast-bg: var(--shell-accent-fill); --toast-ink: var(--shell-on-accent); --toast-disc: rgba(255, 255, 255, .18) }
+[data-sonner-toast][data-type="error"] { --toast-bg: linear-gradient(180deg, #c13a2f, #a92e25); --toast-ink: #fff }
+[data-sonner-toast][data-type="warning"] { --toast-bg: linear-gradient(180deg, #b87816, #9c640f); --toast-ink: #fff }
+.dark [data-sonner-toast] { --toast-disc: rgba(0, 0, 0, .1) }
+.dark [data-sonner-toast][data-type="error"] { --toast-bg: linear-gradient(180deg, #fda79d, #f3867a); --toast-ink: #2a0905 }
+.dark [data-sonner-toast][data-type="warning"] { --toast-bg: linear-gradient(180deg, #f6c37f, #eda955); --toast-ink: #241500 }
 /*
   The clock button (clock-button board, option A — "Aurora"): a light circling the edge, a breathing disc.
   Jade before clocking in; white with a jade light while the clock runs ([data-on]). CSS only.

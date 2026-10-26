@@ -142,7 +142,7 @@ export default function RootLayout({
               <AuthProvider>{children}</AuthProvider>
             </QueryProvider>
           </I18nProvider>
-          <Toaster position="bottom-right" closeButton />
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
