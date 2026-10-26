@@ -17,14 +17,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-/** The mark of the brand, in the shell's jade (the design's three-facet logo). */
-export function ShellMark({ className }: { className?: string }) {
+/**
+ * OUR logo — the faceted HBC FIELD mark (public/logo_HBCFIELD.svg, the one the login page and the phone show),
+ * not a drawing of it. Decorative here: the organization's name beside it is what the row says.
+ */
+export function BrandMark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 40 40" aria-hidden className={cn("size-[30px] shrink-0", className)}>
-      <path d="M6 30 20 4l14 26z" fill="#10b993" />
-      <path d="M20 4 34 30H20z" fill="#0b8168" />
-      <path d="M6 30h28l-14 6z" fill="#7fe6c8" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element -- a static SVG from /public; next/image adds nothing here
+    <img src="/logo_HBCFIELD.svg" alt="" width={26} height={30} className={cn("h-[30px] w-auto shrink-0", className)} />
   )
 }
 
@@ -56,7 +56,7 @@ export function SidebarHeader({ rail }: { rail: boolean }) {
 
   const face = (
     <>
-      <ShellMark />
+      <BrandMark />
       {!rail && (
         <span className="flex min-w-0 flex-1 flex-col text-left leading-tight">
           <b className="truncate text-[14.5px] font-bold">{orgName}</b>
