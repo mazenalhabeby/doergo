@@ -120,7 +120,7 @@ export function ClockWidget({ compact = false }: { compact?: boolean }) {
               aria-label={clockOutLabel}
               className={cn(
                 "icon-motion inline-flex h-8 shrink-0 items-center gap-1 rounded-[11px] pl-2 pr-2.5 text-xs font-semibold",
-                "bg-[image:var(--shell-accent-fill)] text-shell-on-accent disabled:opacity-60",
+                "clock-out disabled:opacity-60",
               )}
             >
               {pending ? spinner : <Icon name="clockOut" size={14} />}
