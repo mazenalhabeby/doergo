@@ -75,7 +75,7 @@ function RouteChangeIndicator() {
 /** The page in ONE rounded panel on the shell's ground (full-bleed below lg). */
 const PAGE_PANEL =
   "relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background " +
-  "lg:rounded-[26px] lg:border lg:border-shell-line lg:shadow-[var(--shell-shadow)]"
+  "lg:rounded-[26px] lg:border lg:border-shell-line lg:shadow-shell"
 
 /** Invisible component that runs inside SocketProvider to sync all real-time events */
 function RealtimeSyncLayer() {

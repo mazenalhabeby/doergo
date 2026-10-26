@@ -77,7 +77,7 @@ export function Sidebar() {
         className={cn(
           "absolute bottom-2.5 left-0 top-2.5 flex flex-col overflow-hidden rounded-r-3xl py-3 pl-3 pr-2.5",
           "transition-[width,background-color,box-shadow] duration-300 ease-[cubic-bezier(.32,.72,0,1)]",
-          peeking && "bg-shell-card shadow-[var(--shell-pop-shadow)] backdrop-blur-xl",
+          peeking && "bg-shell-card shadow-shell-pop backdrop-blur-xl",
         )}
         style={{ width: rail ? "var(--shell-rail)" : "var(--shell-open)" }}
       >

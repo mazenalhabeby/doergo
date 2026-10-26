@@ -1,6 +1,13 @@
 import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { extendTailwindMerge } from "tailwind-merge"
 import { formatDurationSeconds } from "@hbcfield/shared/client"
+
+/*
+  ⚠️ tailwind-merge reads a shadow it does not know (`shadow-[var(--x)]`, `shadow-shell-pop`) as a shadow COLOUR, so
+  a component's own `shadow-md` survived next to it and the design's shadow never showed (the account menu). The
+  shell's shadows are named here as shadows, so the one passed in replaces the default.
+*/
+const twMerge = extendTailwindMerge({ extend: { classGroups: { shadow: [{ shadow: ["shell", "shell-pop"] }] } } })
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -43,7 +50,12 @@ export function cityFromTz(tz?: string | null): string {
 // distinct (kind, locale, timeZone, hour12) combo — in practice a tiny set — so
 // rendering a long list reuses formatters instead of rebuilding them each cell.
 const _dtfCache = new Map<string, Intl.DateTimeFormat>()
-function getDtf(kind: "t" | "dt", locale: string | undefined, hour12: boolean, timeZone?: string | null): Intl.DateTimeFormat {
+function getDtf(
+  kind: "t" | "dt",
+  locale: string | undefined,
+  hour12: boolean,
+  timeZone?: string | null,
+): Intl.DateTimeFormat {
   const key = `${kind}|${locale || ""}|${hour12 ? 1 : 0}|${timeZone || ""}`
   let fmt = _dtfCache.get(key)
   if (!fmt) {
@@ -54,10 +66,7 @@ function getDtf(kind: "t" | "dt", locale: string | undefined, hour12: boolean, t
     // With a timeZone, append the SHORT zone name (EST, CET, …) via Intl —
     // DST-aware, and it falls back to a GMT offset (GMT+5:30) for zones without
     // a common abbreviation. This is the standard, unambiguous label.
-    fmt = new Intl.DateTimeFormat(
-      locale || undefined,
-      timeZone ? { ...base, timeZone, timeZoneName: "short" } : base,
-    )
+    fmt = new Intl.DateTimeFormat(locale || undefined, timeZone ? { ...base, timeZone, timeZoneName: "short" } : base)
     _dtfCache.set(key, fmt)
   }
   return fmt
@@ -155,8 +164,11 @@ export function getRequestId(task: { id: string; createdAt: string }, orgName?: 
   const year = new Date(task.createdAt).getFullYear()
   const idPart = task.id.slice(-3).toUpperCase()
   const prefix = orgName
-    ? orgName.replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase()
-    : 'REQ'
+    ? orgName
+        .replace(/[^a-zA-Z]/g, "")
+        .slice(0, 3)
+        .toUpperCase()
+    : "REQ"
   return `${prefix}-${year}-${idPart}`
 }
 

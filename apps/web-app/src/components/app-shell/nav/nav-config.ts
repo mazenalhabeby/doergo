@@ -53,7 +53,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: "/dashboard",
         label: "nav.sidebar.dashboard",
         fallback: "Dashboard",
-        icon: "home",
+        icon: "dashboard",
         tour: "nav-dashboard",
       },
       { href: "/approvals", label: "approvals.title", fallback: "Approvals", icon: "inbox", badge: "approvals" },

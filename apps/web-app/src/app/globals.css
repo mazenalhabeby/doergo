@@ -433,7 +433,7 @@
   --shell-crit: #b03127;
   --shell-chip: #0b332a0f;
   --shell-shadow: 0 1px 2px rgba(11, 51, 42, 0.05), 0 10px 28px -14px rgba(11, 51, 42, 0.2);
-  --shell-pop-shadow: 0 24px 60px -18px rgba(11, 51, 42, 0.35);
+  --shell-pop-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 30px 70px -20px rgba(0, 0, 0, 0.4);
   --shell-rail: 76px;
   --shell-open: 268px;
   --shell-ease: cubic-bezier(.32, .72, 0, 1);
@@ -464,7 +464,7 @@
   --shell-crit: #fd978c;
   --shell-chip: #ffffff14;
   --shell-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 28px -14px rgba(0, 0, 0, 0.7);
-  --shell-pop-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.8);
+  --shell-pop-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.8);
   --icon-ink-from: #9af0d6;
   --icon-ink-to: #10b993;
   --shell-bone: #ffffff12;

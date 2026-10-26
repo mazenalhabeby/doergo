@@ -49,7 +49,7 @@ export function TopBar() {
             aria-label={t("nav.inbox", "What needs you")}
             className={cn(
               "flex h-11 items-center gap-0.5 rounded-full border border-shell-line bg-shell-card px-[3px]",
-              "shadow-[var(--shell-shadow)]",
+              "shadow-shell",
             )}
           >
             <ApprovalsButton />

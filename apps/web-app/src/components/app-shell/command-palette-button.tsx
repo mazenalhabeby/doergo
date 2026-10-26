@@ -21,7 +21,7 @@ export function CommandPaletteButton() {
       aria-label={t("common.search")}
       className={
         "flex h-11 w-11 shrink-0 items-center justify-center gap-2.5 rounded-full border border-shell-line " +
-        "bg-shell-card text-sm text-shell-soft shadow-[var(--shell-shadow)] transition-colors " +
+        "bg-shell-card text-sm text-shell-soft shadow-shell transition-colors " +
         "sm:w-auto sm:min-w-0 sm:max-w-[380px] sm:flex-1 sm:justify-start sm:pl-4 sm:pr-2 " +
         "hover:text-shell-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-shell-accent"
       }

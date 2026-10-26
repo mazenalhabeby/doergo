@@ -135,7 +135,7 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
         align="start"
         sideOffset={10}
         aria-label={t("account.menu", "Your account")}
-        className="w-[300px] rounded-[20px] border-shell-line bg-shell-card p-2 text-shell-ink shadow-[var(--shell-pop-shadow)]"
+        className="w-[300px] rounded-[20px] border-shell-line bg-shell-card p-2 text-shell-ink shadow-shell-pop"
       >
         <SlidePanels index={panel === "language" ? 1 : 0}>
           <div className="flex flex-col gap-0.5">

@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 const PICKS = {
   // the menu
   home: 'home-2-bold-duotone',
+  dashboard: 'widget-5-bold-duotone',
   inbox: 'inbox-bold-duotone',
   tasks: 'clipboard-list-bold-duotone',
   calendar: 'calendar-bold-duotone',
@@ -28,7 +29,7 @@ const PICKS = {
   assets: 'box-bold-duotone',
   portals: 'smartphone-2-bold-duotone',
   documents: 'documents-bold-duotone',
-  reports: 'chart-2-bold-duotone',
+  reports: 'pie-chart-2-bold-duotone',
   invoices: 'bill-list-bold-duotone',
   manage: 'tuning-2-bold-duotone',
   settings: 'settings-bold-duotone',
