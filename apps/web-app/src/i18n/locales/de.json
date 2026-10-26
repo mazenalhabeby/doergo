@@ -360,7 +360,11 @@
     "me": "HR",
     "meSubtitle": "Ihre Schichten, Ihr Urlaub und Ihre Dokumente.",
     "myShifts": "Meine Schichten",
-    "allDocuments": "Alle Dokumente"
+    "allDocuments": "Alle Dokumente",
+    "expandMenu": "Menü ausklappen",
+    "collapseMenu": "Menü einklappen",
+    "openMenu": "Menü öffnen",
+    "inbox": "Was auf Sie wartet"
   },
   "dashboard": {
     "admin": {

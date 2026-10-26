@@ -28,12 +28,7 @@ import {
  * all `useTranslation` consumers immediately.
  */
 export function LanguageSwitcher() {
-  const { t, i18n } = useTranslation()
-  // i18n.language updates reactively (useTranslation subscribes to
-  // `languageChanged`), so the active checkmark always reflects the choice.
-  const current = i18n.language?.split("-")[0] || "en"
-  const activeLang =
-    supportedLanguages.find((l) => l.code === current) ?? supportedLanguages[0]
+  const { t } = useTranslation()
 
   return (
     <DropdownMenu>
@@ -53,24 +48,35 @@ export function LanguageSwitcher() {
           {t("common.language")}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {supportedLanguages.map((lang) => {
-          const isActive = lang.code === activeLang.code
-          return (
-            <DropdownMenuItem
-              key={lang.code}
-              onSelect={() => changeLanguage(lang.code)}
-              className={cn(
-                "rounded-md cursor-pointer gap-2",
-                isActive && "bg-muted/60",
-              )}
-            >
-              <span aria-hidden className="text-base leading-none">{lang.flag}</span>
-              <span className="flex-1 text-sm">{lang.label}</span>
-              {isActive && <Check className="h-4 w-4 text-primary" />}
-            </DropdownMenuItem>
-          )
-        })}
+        <LanguageItems />
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+/** The languages as menu rows — the marketing header's switcher and the account menu both list them. */
+export function LanguageItems() {
+  const { i18n } = useTranslation()
+  // i18n.language updates reactively (useTranslation subscribes to
+  // `languageChanged`), so the active checkmark always reflects the choice.
+  const current = i18n.language?.split("-")[0] || "en"
+  const activeLang = supportedLanguages.find((l) => l.code === current) ?? supportedLanguages[0]
+  return (
+    <>
+      {supportedLanguages.map((lang) => {
+        const isActive = lang.code === activeLang.code
+        return (
+          <DropdownMenuItem
+            key={lang.code}
+            onSelect={() => changeLanguage(lang.code)}
+            className={cn("rounded-md cursor-pointer gap-2", isActive && "bg-muted/60")}
+          >
+            <span aria-hidden className="text-base leading-none">{lang.flag}</span>
+            <span className="flex-1 text-sm">{lang.label}</span>
+            {isActive && <Check className="h-4 w-4 text-primary" />}
+          </DropdownMenuItem>
+        )
+      })}
+    </>
   )
 }

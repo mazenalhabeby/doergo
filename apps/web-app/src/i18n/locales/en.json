@@ -360,7 +360,11 @@
     "me": "HR",
     "meSubtitle": "Your shifts, your leave and your documents.",
     "myShifts": "My shifts",
-    "allDocuments": "All documents"
+    "allDocuments": "All documents",
+    "expandMenu": "Open the menu",
+    "collapseMenu": "Collapse the menu",
+    "openMenu": "Open the menu",
+    "inbox": "What needs you"
   },
   "dashboard": {
     "admin": {

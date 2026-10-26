@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next"
 import { Compass, BookOpen, ChevronRight, Play } from "lucide-react"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { TopBarButton } from "@/components/app-shell/top-bar-icon"
 import { cn } from "@/lib/utils"
 import { useTour } from "./tour-context"
 import { TourIcon } from "./tour-icons"
@@ -33,15 +34,9 @@ export function HelpButton() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={t("tours.help.button")}
-          title={t("tours.help.button")}
-          className={"flex size-9 items-center justify-center rounded-lg text-muted-foreground " +
-            "transition-colors hover:bg-muted hover:text-foreground"}
-        >
-          <Compass className="size-[19px]" />
-        </button>
+        <TopBarButton on={open} data-tour="nav-help" aria-label={t("tours.help.button")} title={t("tours.help.button")}>
+          <Compass />
+        </TopBarButton>
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={10} className="w-80 rounded-xl p-0">
         {/* Header */}

@@ -14,6 +14,24 @@ const config: Config = {
   theme: {
   	extend: {
   		colors: {
+  			shell: {
+  				ground: 'var(--shell-ground-base)',
+  				card: 'var(--shell-card)',
+  				ink: 'var(--shell-ink)',
+  				soft: 'var(--shell-soft)',
+  				line: 'var(--shell-line)',
+  				hover: 'var(--shell-hover)',
+  				'nav-on': 'var(--shell-nav-on)',
+  				'nav-on-ink': 'var(--shell-nav-on-ink)',
+  				accent: 'var(--shell-accent)',
+  				'on-accent': 'var(--shell-on-accent)',
+  				'accent-soft': 'var(--shell-accent-soft)',
+  				live: 'var(--shell-live)',
+  				warn: 'var(--shell-warn)',
+  				'on-warn': 'var(--shell-on-warn)',
+  				crit: 'var(--shell-crit)',
+  				chip: 'var(--shell-chip)'
+  			},
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',

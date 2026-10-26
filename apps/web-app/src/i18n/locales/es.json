@@ -360,7 +360,11 @@
     "me": "RR. HH.",
     "meSubtitle": "Tus turnos, tus vacaciones y tus documentos.",
     "myShifts": "Mis turnos",
-    "allDocuments": "Todos los documentos"
+    "allDocuments": "Todos los documentos",
+    "expandMenu": "Abrir el menú",
+    "collapseMenu": "Contraer el menú",
+    "openMenu": "Abrir el menú",
+    "inbox": "Lo que te espera"
   },
   "dashboard": {
     "admin": {

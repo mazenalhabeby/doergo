@@ -14,18 +14,19 @@ export function CommandPaletteButton() {
 
   return (
     <button
+      type="button"
       onClick={() => setOpen(true)}
       data-tour="nav-command"
-      className={"flex w-[190px] lg:w-[240px] items-center gap-2 h-9 px-3 rounded-lg " +
-        "border border-border/60 bg-muted/40 text-muted-foreground " +
-        "hover:text-foreground hover:bg-muted/80 transition-colors"}
+      aria-keyshortcuts="Meta+K Control+K"
+      aria-label={t("common.search")}
+      className={"flex h-11 w-11 shrink-0 items-center justify-center gap-2.5 rounded-full border border-shell-line " +
+        "bg-shell-card text-sm text-shell-soft shadow-[var(--shell-shadow)] transition-colors " +
+        "sm:w-auto sm:min-w-0 sm:max-w-[380px] sm:flex-1 sm:justify-start sm:pl-4 sm:pr-2 " +
+        "hover:text-shell-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-shell-accent"}
     >
       <Search className="size-4 shrink-0" />
-      <span className="hidden sm:inline text-[13px]">{t("common.search")}</span>
-      <kbd
-        className={"pointer-events-none ml-auto hidden sm:inline-flex h-5 select-none " +
-          "items-center gap-0.5 rounded border border-border bg-background px-1.5 " +
-          "font-mono text-[10px] font-medium text-muted-foreground"}>
+      <span className="hidden flex-1 truncate text-left sm:block">{t("common.search")}</span>
+      <kbd className="hidden select-none rounded-lg bg-shell-chip px-2 py-1 font-mono text-[11px] sm:inline">
         {isMac ? "\u2318" : "Ctrl+"}K
       </kbd>
     </button>

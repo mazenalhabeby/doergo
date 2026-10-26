@@ -9,6 +9,8 @@ import {
   CreditCard,
   Sun,
   Moon,
+  Languages,
+  ChevronsUpDown,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { usePresence, PRESENCE_OPTS, presenceRingClass } from "@/components/attendance/presence-toggle"
@@ -22,8 +24,12 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { LanguageItems } from "./language-switcher"
 
 // ---------------------------------------------------------------------------
 // Theme Toggle (inside dropdown)
@@ -48,26 +54,34 @@ function ThemeToggleItem() {
 // ---------------------------------------------------------------------------
 export function UserDropdown({
   user,
-  initials,
   fullName,
   avatarUrl,
   canManageUsers,
   onLogout,
+  compact = false,
 }: {
   user: { email: string; role: string; firstName?: string; lastName?: string }
-  initials: string
   fullName: string
   avatarUrl?: string | null
   canManageUsers: boolean
   onLogout: () => void
+  /** The sidebar's collapsed rail: the avatar alone. */
+  compact?: boolean
 }) {
   const { t } = useTranslation()
   const { current: presence, set: setPresence, saving: savingPresence } = usePresence()
+  const presenceOpt = PRESENCE_OPTS.find((o) => o.value === presence)
+  const presenceLabel = presenceOpt ? t(presenceOpt.key, presenceOpt.def) : user.email
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="ml-2 flex items-center gap-2 rounded-full outline-none transition-opacity hover:opacity-80"
-        title={t("presence.title", "Availability")}
+        data-tour="nav-profile"
+        aria-label={`${fullName} — ${t("presence.title", "Availability")}`}
+        className={cn(
+          "flex h-14 w-full min-w-0 items-center gap-3 rounded-2xl px-2 text-left text-shell-ink outline-none",
+          "transition-colors hover:bg-shell-hover focus-visible:ring-2 focus-visible:ring-shell-accent",
+          compact && "justify-center px-0",
+        )}
       >
         {/* Ring color = availability (Slack/Teams-style status on the avatar). */}
         <UserAvatar
@@ -75,10 +89,19 @@ export function UserDropdown({
           lastName={user.lastName}
           avatarUrl={avatarUrl}
           size="md"
-          className={cn("ring-2 ring-offset-1 ring-offset-background", presenceRingClass(presence))}
+          className={cn("shrink-0 ring-2 ring-offset-1 ring-offset-transparent", presenceRingClass(presence))}
         />
+        {!compact && (
+          <>
+            <span className="flex min-w-0 flex-1 flex-col leading-tight">
+              <span className="truncate text-sm font-semibold">{fullName}</span>
+              <span className="truncate text-xs text-shell-soft">{presenceLabel}</span>
+            </span>
+            <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-shell-soft" />
+          </>
+        )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={10} className="w-64 rounded-xl p-1.5">
+      <DropdownMenuContent side={compact ? "right" : "top"} align="start" sideOffset={10} className="w-64 rounded-xl p-1.5">
         {/* User info */}
         <DropdownMenuLabel className="px-2 py-2 font-normal">
           <div className="flex items-center gap-3">
@@ -150,6 +173,15 @@ export function UserDropdown({
         <DropdownMenuSeparator />
 
         <ThemeToggleItem />
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="rounded-md cursor-pointer gap-2 px-2 py-1.5 text-sm">
+            <Languages className="h-4 w-4 text-muted-foreground" />
+            {t("common.language")}
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="min-w-[180px] rounded-lg p-1">
+            <LanguageItems />
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
 
         <DropdownMenuSeparator />
 

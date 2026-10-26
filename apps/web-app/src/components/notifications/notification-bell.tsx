@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import { useNotificationBell } from "./use-notification-bell"
 import { TYPE_CONFIG } from "./notification-type-config"
 import { EmptyNote } from "@/components/ui/empty-note"
+import { CountDot, TopBarButton } from "@/components/app-shell/top-bar-icon"
 
 // ============================================================================
 // Component
@@ -30,20 +31,15 @@ export function NotificationBell() {
       }}
     >
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative rounded-lg">
-          <Bell className="h-5 w-5 text-muted-foreground" />
-          {unreadCount > 0 && (
-            <span
-              className={
-                "absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center " +
-                "rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 " +
-                "ring-white"
-              }
-            >
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
-        </Button>
+        <TopBarButton
+          on={open}
+          data-tour="nav-notifications"
+          title={t("notifications.title")}
+          aria-label={`${t("notifications.title")}${unreadCount > 0 ? ` (${unreadCount})` : ""}`}
+        >
+          <Bell />
+          <CountDot n={unreadCount} tone="accent" />
+        </TopBarButton>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-96 p-0 rounded-xl shadow-xl border-border">
         {/* Header */}

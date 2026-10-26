@@ -360,7 +360,11 @@
     "me": "RH",
     "meSubtitle": "Vos postes, vos congés et vos documents.",
     "myShifts": "Mes postes",
-    "allDocuments": "Tous les documents"
+    "allDocuments": "Tous les documents",
+    "expandMenu": "Déplier le menu",
+    "collapseMenu": "Replier le menu",
+    "openMenu": "Ouvrir le menu",
+    "inbox": "Ce qui vous attend"
   },
   "dashboard": {
     "admin": {

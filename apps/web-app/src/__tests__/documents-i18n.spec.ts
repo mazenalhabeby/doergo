@@ -12,6 +12,8 @@
  *    English on a German phone.
  */
 import fs from 'fs';
+import { NAV_SECTIONS, visibleSections } from '@/components/app-shell/nav/nav-config';
+import { isEntryActive } from '@/components/app-shell/nav/nav-active';
 import { ROUTE_RULES } from '@/lib/route-access';
 import path from 'path';
 import { unknownTokens, STARTER_TEMPLATES } from '@hbcfield/shared/client';
@@ -148,27 +150,26 @@ describe('the documents navigation', () => {
     expect(ROUTE_RULES['/documents/compliance'].need).toEqual(['any:canAssignTasks']);
   });
 
-  it('marks the dropdown active from exactly the routes it contains', () => {
+  it('marks the group active from exactly the routes it contains', () => {
     /*
       The attendance menu listed a route it did not contain and omitted two it
-      did, so the bar lit up twice on one page and nowhere on two others. Five
-      of these six share a prefix, which makes the same mistake easier here.
+      did, so the bar lit up twice on one page and nowhere on two others. The
+      group is active from its OWN pages (isEntryActive) — never a prefix.
     */
-    const block = navbar.slice(
-      navbar.indexOf('function DocumentsDropdown'),
-      navbar.indexOf('// Time & Attendance Dropdown'),
-    );
-    expect(block).toContain('isDropdownActive(pathname, items.map((i) => i.href))');
-    for (const href of ['/my/documents', '/documents', '/documents/review', '/documents/types', '/documents/templates', '/documents/compliance']) {
-      expect(block).toContain(`"${href}"`);
+    const docs = NAV_SECTIONS.flatMap((s) => s.items).find((i) => i.icon === 'documents')!;
+    for (const href of ['/documents', '/documents/all', '/documents/types', '/documents/templates', '/documents/compliance']) {
+      expect(isEntryActive(href, docs)).toBe(true);
     }
+    expect(isEntryActive('/my/documents', docs)).toBe(false);
   });
 
   it('renders a plain link when only one entry is visible', () => {
-    // An ordinary member sees only their own file. A menu that opens to reveal
-    // one item is a click for nothing.
-    const block = navbar.slice(navbar.indexOf('function DocumentsDropdown'));
-    expect(block).toContain('if (items.length === 1)');
+    // A menu that opens to reveal one item is a click for nothing.
+    const docs = visibleSections(NAV_SECTIONS, (h) => h === '/documents/all')
+      .flatMap((s) => s.items)
+      .find((i) => i.icon === 'documents')!;
+    expect(docs.kids).toBeUndefined();
+    expect(docs.href).toBe('/documents/all');
   });
 });
 

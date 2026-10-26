@@ -1,5 +1,6 @@
 
 import path from 'path';
+import { MY_ITEMS, NAV_SECTIONS, visibleSections } from '@/components/app-shell/nav/nav-config';
 import { BUILTIN_ROLES, EXTERNAL_DEFAULT_ROLE_SLUG } from '@hbcfield/shared/client';
 import { readNavbar } from './_navbar-screen';
 
@@ -68,7 +69,9 @@ describe('canApproveOvertime', () => {
   it('opens the menu for somebody whose only grant is overtime', () => {
     // Otherwise the link exists and nothing renders it: their own approvals
     // queue is reachable only by typing the URL.
-    expect(navbar).toContain('showSchedule || showAttendance || showOvertime');
+    // The Time group shows whenever ONE of its pages is offered (visibleSections), and opens on it.
+    const time = visibleSections(NAV_SECTIONS, (h) => h === '/overtime').flatMap((s) => s.items)[0];
+    expect(time?.href).toBe('/overtime');
     expect(navModelFor(supervisor).time).toContain('/overtime');
   });
 
@@ -146,8 +149,8 @@ describe('what an external member may never reach', () => {
     // /my/documents is the signing surface: the reminder links there and the
     // nav item carries the count. Removing it would strand a supervisor whose
     // notification leads exactly there.
-    const sections = read('src/hooks/use-my-sections.ts');
-    expect(sections).toContain('/my/documents');
-    expect(sections).not.toContain('isExternal');
+    expect(MY_ITEMS.map((i) => i.href)).toContain('/my/documents');
+    expect(read('src/hooks/use-my-sections.ts')).not.toContain('isExternal');
+    expect(read('src/components/app-shell/nav/nav-config.ts')).not.toContain('isExternal');
   });
 });

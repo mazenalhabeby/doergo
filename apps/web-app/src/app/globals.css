@@ -408,6 +408,66 @@
 .ws-card-more { grid-column: 1 / -1; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   THE SHELL — sidebar, top bar and the ground the page panel sits on
+   (web redesign, Home-Sidebar board confirmed 2026-10-18). The phone app's
+   Amazen colours: jade accent, green ground. ONE place; Tailwind reads them as
+   `shell-*` (tailwind.config.ts). Pages keep their own tokens for now.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --shell-ground: linear-gradient(180deg, #bfe0d2 0, #d5ece1 170px, #e6f2ec 340px, #f0f6f3 520px, #f3f7f5 700px);
+  --shell-ground-base: #f3f7f5;
+  --shell-card: #ffffff;
+  --shell-ink: #0b1f1a;
+  --shell-soft: #63726d;
+  --shell-line: #0b332a1f;
+  --shell-hover: #e6eeeb;
+  --shell-nav-on: #dcebe5;
+  --shell-nav-on-ink: #097058;
+  --shell-accent: #097058;
+  --shell-accent-fill: linear-gradient(180deg, #087961, #0b8168);
+  --shell-on-accent: #ffffff;
+  --shell-accent-soft: #0b816818;
+  --shell-live: #10b993;
+  --shell-warn: #a86b12;
+  --shell-on-warn: #ffffff;
+  --shell-crit: #b03127;
+  --shell-chip: #0b332a0f;
+  --shell-shadow: 0 1px 2px rgba(11, 51, 42, 0.05), 0 10px 28px -14px rgba(11, 51, 42, 0.2);
+  --shell-pop-shadow: 0 24px 60px -18px rgba(11, 51, 42, 0.35);
+  --shell-rail: 76px;
+  --shell-open: 268px;
+  --shell-ease: cubic-bezier(.32, .72, 0, 1);
+}
+.dark {
+  --shell-ground: linear-gradient(180deg, #0c4339 0, #09291f 170px, #061a19 340px, #050c0f 520px, #040507 700px);
+  --shell-ground-base: #040507;
+  --shell-card: #0b0f12;
+  --shell-ink: #f1f6fa;
+  --shell-soft: #8f9aa4;
+  --shell-line: #ffffff17;
+  --shell-hover: #171d22;
+  --shell-nav-on: #283736;
+  --shell-nav-on-ink: #66dbba;
+  --shell-accent: #66dbba;
+  --shell-accent-fill: linear-gradient(180deg, #7fe6c8, #10b993);
+  --shell-on-accent: #001810;
+  --shell-accent-soft: #66dbba24;
+  --shell-live: #66dbba;
+  --shell-warn: #f2b263;
+  --shell-on-warn: #1a1200;
+  --shell-crit: #fd978c;
+  --shell-chip: #ffffff14;
+  --shell-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 28px -14px rgba(0, 0, 0, 0.7);
+  --shell-pop-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.8);
+}
+.shell-scroll { scrollbar-width: thin; scrollbar-color: var(--shell-line) transparent; }
+.shell-scroll::-webkit-scrollbar { width: 6px; }
+.shell-scroll::-webkit-scrollbar-thumb { background: var(--shell-line); border-radius: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .shell-motion, .shell-motion * { transition: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    MOTION — chat first (docs/design/messages-motion.html, approved 2026-10-16).
    Short (0.2–0.45 s), a spring only where something ARRIVES, and nothing at
    all for anybody whose system asks for reduced motion (the block at the end).

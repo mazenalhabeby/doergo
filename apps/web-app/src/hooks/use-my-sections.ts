@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouteAccess } from "@/hooks/use-route-access"
+import { MY_ITEMS } from "@/components/app-shell/nav/nav-config"
 
 /**
  * What belongs to the person, and which of it they actually have.
@@ -40,47 +41,17 @@ export function useMySections(): MySection[] {
   const { may } = useRouteAccess()
   const { t } = useTranslation()
 
-  return useMemo(() => {
-    const sections: (MySection & { show: boolean })[] = [
-      {
-        href: "/my/attendance",
-        /*
-          "My shifts", not "Attendance".
-
-          The manager page in the Time & attendance menu is already called
-          Attendance, and two entries with one name in one bar is how somebody
-          ends up on their own record looking for their team's.
-        */
-        label: t("nav.myShifts", "My shifts"),
-        tour: "nav-my-attendance",
-        /*
-          The clock module, and nothing else.
-
-          It used to be `clock && !showAttendance` — hidden from anyone who had
-          the manager attendance page, to stop two attendance entries sitting in
-          one bar. That was a clutter workaround with a real cost: a manager who
-          clocks in had no way to reach their OWN shifts. The two now live in
-          different menus, so the workaround can go.
-        */
-        show: may("/my/attendance"),
-      },
-      {
-        href: "/my/time-off",
-        label: t("nav.sidebar.timeOff", "Requests"),
-        // The registry spells it without the second hyphen; the anchor has to
-        // match it exactly or the welcome tour's step points at nothing.
-        tour: "nav-my-timeoff",
-        show: may("/my/time-off"),
-      },
-      {
-        href: "/my/documents",
-        label: t("nav.sidebar.myDocuments", "My documents"),
-        tour: "nav-my-documents",
-        // A plan capability rather than a module: documents are bought for the
-        // organization, not switched on per workspace.
-        show: may("/my/documents"),
-      },
-    ]
-    return sections.filter((s) => s.show).map(({ show: _show, ...s }) => s)
-  }, [may, t])
+  /*
+    The list itself lives in the navigation's data (components/app-shell/nav/nav-config.ts, MY_ITEMS) — the
+    sidebar's HR group and these tabs are one list. Notes that used to sit here:
+    • "My shifts", not "Attendance": the manager page is already called Attendance, and two entries with one
+      name is how somebody ends up on their own record looking for their team's.
+    • Shown by the clock module alone (a manager who clocks in must reach their OWN shifts).
+    • The time-off tour anchor is "nav-my-timeoff" — the registry spells it without the second hyphen.
+  */
+  return useMemo(
+    () =>
+      MY_ITEMS.filter((s) => may(s.href)).map((s) => ({ href: s.href, label: t(s.label, s.fallback), tour: s.tour })),
+    [may, t],
+  )
 }

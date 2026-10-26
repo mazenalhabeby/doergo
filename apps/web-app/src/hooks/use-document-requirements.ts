@@ -31,7 +31,14 @@ import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
  * reminder that refetches on every navigation is a reminder that gets blamed for
  * the dashboard feeling slow.
  */
-export function useMyDocumentRequirements({ withPage = false }: { withPage?: boolean } = {}) {
+export function useMyDocumentRequirements({
+  withPage = false,
+  when = true,
+}: {
+  withPage?: boolean
+  /** Ask at all — the sidebar asks only when it offers My documents. */
+  when?: boolean
+} = {}) {
   const { user, hasPlanFeature } = useAuth()
   /*
     The navbar's count waits until the page has loaded (useAfterFirstLoad); the
@@ -39,7 +46,7 @@ export function useMyDocumentRequirements({ withPage = false }: { withPage?: boo
     out with it — and the count then reads the same cached reply.
   */
   const afterFirstLoad = useAfterFirstLoad(1)
-  const enabled = !!user && hasPlanFeature("documents") && (withPage || afterFirstLoad)
+  const enabled = when && !!user && hasPlanFeature("documents") && (withPage || afterFirstLoad)
 
   const { data } = useQuery({
     queryKey: keys.documents.myPending(),

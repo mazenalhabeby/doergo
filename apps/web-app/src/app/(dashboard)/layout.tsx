@@ -5,7 +5,8 @@ import { BootScreen } from "@/components/skeletons/boot-screen"
 import { useRouter, usePathname } from "next/navigation"
 import { PageContentSkeleton } from "@/components/skeletons"
 import { ErrorBoundary } from "@/components/app-shell/error-boundary"
-import { TopNavbar } from "@/components/top-navbar/top-navbar"
+import { TopBar } from "@/components/app-shell/top-bar"
+import { Sidebar } from "@/components/app-shell/sidebar/sidebar"
 import { FirstSpaceGate } from "@/components/app-shell/first-space-gate"
 import { BillingBanner } from "@/components/app-shell/billing-banner"
 import { CommandPalette } from "@/components/command-palette/command-palette"
@@ -65,11 +66,16 @@ function RouteChangeIndicator() {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[100] h-[3px]">
-      <div className="h-full bg-blue-600 animate-progress-bar rounded-r-full" />
+      <div className="h-full bg-shell-accent animate-progress-bar rounded-r-full" />
     </div>
   );
 }
 
+
+/** The page in ONE rounded panel on the shell's ground (full-bleed below lg). */
+const PAGE_PANEL =
+  "relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background " +
+  "lg:rounded-[26px] lg:border lg:border-shell-line lg:shadow-[var(--shell-shadow)]"
 
 /** Invisible component that runs inside SocketProvider to sync all real-time events */
 function RealtimeSyncLayer() {
@@ -204,17 +210,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <BreadcrumbProvider>
     <ChatProvider>
     <TourProvider>
-      <div className="h-screen flex flex-col">
-        <FirstSpaceGate />
-        <RouteChangeIndicator />
-        <TopNavbar />
-        <BillingBanner />
-        <div className="flex-1 overflow-auto bg-background">
-          <ErrorBoundary>
-            <Suspense fallback={<PageContentSkeleton />}>
-              {page}
-            </Suspense>
-          </ErrorBoundary>
+      {/*
+        The shell (web redesign, 2026-10): the sidebar on the green ground, the page in ONE rounded panel.
+        Below lg the sidebar is a drawer behind the top bar's menu button and the panel fills the screen.
+      */}
+      <div className="flex h-dvh bg-shell-ground bg-[image:var(--shell-ground)] bg-no-repeat text-shell-ink">
+        <Sidebar />
+        <div className="flex min-w-0 flex-1 flex-col lg:py-2.5 lg:pr-2.5">
+          <div className={PAGE_PANEL}>
+            <FirstSpaceGate />
+            <RouteChangeIndicator />
+            <TopBar />
+            <BillingBanner />
+            <div className="flex-1 overflow-auto bg-background text-foreground">
+              <ErrorBoundary>
+                <Suspense fallback={<PageContentSkeleton />}>
+                  {page}
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+          </div>
         </div>
       </div>
       <CommandPalette />
