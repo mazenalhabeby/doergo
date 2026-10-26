@@ -549,7 +549,12 @@ svg[data-i] { transform-box: fill-box; transform-origin: 50% 50% }
 .icon-motion:is(:hover, :focus-visible) svg[data-i="leave"] { animation: m-nudge-r .5s var(--ease-out-soft) }
 .icon-motion:is(:hover, :focus-visible) :is(svg[data-i="close"], svg[data-i="xLine"], svg[data-i="closeLine"]) { transition: transform .3s var(--ease-spring); transform: rotate(90deg) }
 /* The stopwatch (own.ts): its play / stop pops; while the clock runs, the hand (always the last child) sweeps. */
-.icon-motion:is(:hover, :focus-visible) :is(svg[data-i="clockIn"], svg[data-i="clockOut"]) > :last-child { animation: m-popi .5s var(--ease-spring) }
+/* ⚠️ the glyph scales around ITS OWN centre (fill-box) — from the svg's corner it jumped down-right. */
+.icon-motion:is(:hover, :focus-visible) :is(svg[data-i="clockIn"], svg[data-i="clockOut"]) > :last-child {
+  transform-box: fill-box; transform-origin: 50% 50%; animation: m-tick .45s var(--ease-out-soft) }
+.icon-motion:is(:hover, :focus-visible) :is(svg[data-i="clockIn"], svg[data-i="clockOut"]) > g { animation: m-press .45s var(--ease-out-soft) }
+@keyframes m-tick { 45% { transform: scale(1.12) } }
+@keyframes m-press { 45% { transform: translateY(.8px) } }
 svg[data-i="clockRunning"] > :last-child { transform-box: view-box; transform-origin: 12px 13.5px; animation: m-sweep 6s linear infinite }
 @keyframes m-sweep { to { transform: rotate(360deg) } }
 @keyframes m-swing { 15% { transform: rotate(16deg) } 35% { transform: rotate(-12deg) } 55% { transform: rotate(7deg) } 75% { transform: rotate(-3deg) } }
