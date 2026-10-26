@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTheme } from "next-themes"
 import { useTranslation } from "react-i18next"
 import { ChevronRight, ChevronsUpDown } from "lucide-react"
@@ -17,6 +17,7 @@ import { usePresence, PRESENCE_OPTS, type Presence } from "@/components/attendan
 import { openSupport } from "@/components/support/support-opener"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { LanguagePanel } from "./language-panel"
+import { SlidePanels } from "./slide-panels"
 
 /** The ring around the avatar says the availability (design: live green · coral · grey). */
 const RING: Record<Presence, string> = {
@@ -49,6 +50,13 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
   const tour = useTourTarget()
   const [open, setOpen] = useState(false)
   const [panel, setPanel] = useState<"menu" | "language">("menu")
+  const languageRow = useRef<HTMLButtonElement>(null)
+  // Back from the language panel: focus returns to the row that opened it — once the menu pane is live again.
+  const wasLanguage = useRef(false)
+  useEffect(() => {
+    if (panel === "menu" && wasLanguage.current) languageRow.current?.focus({ preventScroll: true })
+    wasLanguage.current = panel === "language"
+  }, [panel])
   if (!user) return null
 
   const fullName = personName(user)
@@ -129,9 +137,7 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
         aria-label={t("account.menu", "Your account")}
         className="w-[300px] rounded-[20px] border-shell-line bg-shell-card p-2 text-shell-ink shadow-[var(--shell-pop-shadow)]"
       >
-        {panel === "language" ? (
-          <LanguagePanel onBack={() => setPanel("menu")} />
-        ) : (
+        <SlidePanels index={panel === "language" ? 1 : 0}>
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-3 px-2.5 pb-3 pt-2.5">
               <span className="rounded-full" style={ringStyle(presence, 4)}>
@@ -202,7 +208,13 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
                 />
               </button>
             </div>
-            <button type="button" onClick={() => setPanel("language")} className={cn(ROW, "h-[42px]")}>
+            <button
+              ref={languageRow}
+              type="button"
+              aria-expanded={panel === "language"}
+              onClick={() => setPanel("language")}
+              className={cn(ROW, "h-[42px]")}
+            >
               <span className="flex-1">{t("common.language", "Language")}</span>
               <span className="text-[13px] text-shell-soft">
                 {
@@ -239,7 +251,8 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
               {t("nav.userMenu.signOut", "Sign out")}
             </button>
           </div>
-        )}
+          <LanguagePanel active={panel === "language"} onBack={() => setPanel("menu")} />
+        </SlidePanels>
       </PopoverContent>
     </Popover>
   )

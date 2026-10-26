@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { ChevronLeft, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -16,9 +16,17 @@ const INPUT =
   "focus:outline-none focus:ring-0"
 
 /** The language panel inside the menu: search by its own name or yours, then one tap. */
-export function LanguagePanel({ onBack }: { onBack: () => void }) {
+export function LanguagePanel({ active, onBack }: { active: boolean; onBack: () => void }) {
   const { t, i18n } = useTranslation()
   const [q, setQ] = useState("")
+  const search = useRef<HTMLInputElement>(null)
+  // The panel is always mounted (it slides in): focus the search once it is shown — without scrolling the
+  // sliding box — and start empty next time.
+  useEffect(() => {
+    if (!active) return setQ("")
+    const id = window.setTimeout(() => search.current?.focus({ preventScroll: true }), 120)
+    return () => window.clearTimeout(id)
+  }, [active])
   const current = i18n.language?.split("-")[0] || "en"
   const names = useMemo(() => {
     try {
@@ -35,7 +43,7 @@ export function LanguagePanel({ onBack }: { onBack: () => void }) {
     })
 
   return (
-    <div className="flex flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-2 px-1 pb-2 pt-1">
         <button type="button" onClick={onBack} aria-label={t("common.back", "Back")} className={BACK}>
           <ChevronLeft className="size-4" />
@@ -48,13 +56,13 @@ export function LanguagePanel({ onBack }: { onBack: () => void }) {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          autoFocus
+          ref={search}
           placeholder={t("account.languageSearch", "Search — any language, any spelling")}
           aria-label={t("account.languageSearch", "Search — any language, any spelling")}
           className={INPUT}
         />
       </label>
-      <div className="flex max-h-72 flex-col overflow-y-auto">
+      <div className="flex min-h-0 max-h-72 flex-1 flex-col overflow-y-auto">
         {rows.map((l) => {
           const on = l.code === current
           return (
@@ -83,7 +91,7 @@ export function LanguagePanel({ onBack }: { onBack: () => void }) {
           )
         })}
       </div>
-      <p className="mt-1 border-t border-shell-line px-2.5 pt-2.5 text-[12.5px] text-shell-soft">
+      <p className="mt-auto border-t border-shell-line px-2.5 pt-2.5 text-[12.5px] text-shell-soft">
         {t("account.languageNote", "Dates, numbers and money follow the language.")}
       </p>
     </div>
