@@ -54,21 +54,23 @@ export function ClockOutEarlyDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            <AlertTriangle className="h-5 w-5 text-shell-warn" />
             {t("attendance.early.title", "You are {{short}} short of your shift", { short })}
           </DialogTitle>
           <DialogDescription>
             {expectedClockOutAt
               ? t(
-                "attendance.early.body",
-                ("Your shift runs to {{end}}. You can still clock out — tell us why, and " +
-                  "it goes to whoever is responsible with the entry."),
-                {
-                  end: formatTime(expectedClockOutAt, timezone ?? undefined),
-                })
+                  "attendance.early.body",
+                  "Your shift runs to {{end}}. You can still clock out — tell us why, and " +
+                    "it goes to whoever is responsible with the entry.",
+                  {
+                    end: formatTime(expectedClockOutAt, timezone ?? undefined),
+                  },
+                )
               : t(
-                "attendance.early.bodyNoEnd",
-                ("You can still clock out — tell us why, and it goes to whoever is " + "responsible with the entry."))}
+                  "attendance.early.bodyNoEnd",
+                  "You can still clock out — tell us why, and it goes to whoever is " + "responsible with the entry.",
+                )}
           </DialogDescription>
         </DialogHeader>
 
@@ -96,12 +98,7 @@ export function ClockOutEarlyDialog({
           <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)} disabled={pending}>
             {t("attendance.early.keepWorking", "Keep working")}
           </Button>
-          <Button
-            variant="destructive"
-            className="flex-1"
-            onClick={() => onConfirm(reason.trim())}
-            disabled={pending}
-          >
+          <Button variant="destructive" className="flex-1" onClick={() => onConfirm(reason.trim())} disabled={pending}>
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
             {t("attendance.early.confirm", "Clock out anyway")}
           </Button>

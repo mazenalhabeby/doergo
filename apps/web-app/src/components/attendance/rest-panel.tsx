@@ -57,17 +57,26 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
 
   const start = useMutation({
     mutationFn: (ruleId?: string) => attendanceApi.startBreak(ruleId ? { ruleId } : {}),
-    onSuccess: () => { refresh(); toast.success(t("attendance.rest.started", "Rest started")) },
+    onSuccess: () => {
+      refresh()
+      toast.success(t("attendance.rest.started", "Rest started"))
+    },
     onError: (e: Error) => toast.error(e.message),
   })
   const end = useMutation({
     mutationFn: () => attendanceApi.endBreak(),
-    onSuccess: () => { refresh(); toast.success(t("attendance.rest.ended", "Back to work")) },
+    onSuccess: () => {
+      refresh()
+      toast.success(t("attendance.rest.ended", "Back to work"))
+    },
     onError: (e: Error) => toast.error(e.message),
   })
   const later = useMutation({
     mutationFn: (ruleId?: string) => attendanceApi.snoozeBreak(ruleId ? { ruleId } : {}),
-    onSuccess: () => { refresh(); toast.success(t("attendance.rest.postponed", "We'll ask again shortly")) },
+    onSuccess: () => {
+      refresh()
+      toast.success(t("attendance.rest.postponed", "We'll ask again shortly"))
+    },
     onError: (e: Error) => toast.error(e.message),
   })
   const busy = start.isPending || end.isPending || later.isPending
@@ -83,43 +92,50 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
     return (
       <div
         className={cn(
-          ("rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 " + "dark:border-emerald-900 dark:bg-emerald-950/30"),
-          className)}>
-        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+          "rounded-2xl border border-transparent bg-shell-accent-soft p-5 " +
+            "",
+          className,
+        )}
+      >
+        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-shell-accent">
           <Coffee className="h-4 w-4" />
           {planned?.name ?? t("attendance.rest.onRest", "On rest")}
         </div>
 
-        <p className="mt-3 font-mono text-3xl font-semibold tabular-nums text-emerald-800 dark:text-emerald-300">
+        <p className="mt-3 font-mono text-3xl font-semibold tabular-nums text-shell-accent">
           {formatDuration(elapsed)}
         </p>
-        <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-400/80">
+        <p className="mt-1 text-xs text-shell-accent">
           {target
             ? over
-              ? t(
-                "attendance.rest.overBy",
-                "{{over}} past your {{total}}",
-                { over: formatDuration(elapsed - target), total: formatDuration(target) })
+              ? t("attendance.rest.overBy", "{{over}} past your {{total}}", {
+                  over: formatDuration(elapsed - target),
+                  total: formatDuration(target),
+                })
               : t("attendance.rest.ofTotal", "of {{total}}", { total: formatDuration(target) })
             : t("attendance.rest.untimed", "Untimed")}
           {planned && !planned.isPaid ? ` · ${t("attendance.rest.unpaid", "not counted")}` : ""}
         </p>
 
         {target != null && (
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-emerald-200/70 dark:bg-emerald-900">
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-shell-accent-soft">
             <div
-              className={cn("h-full rounded-full transition-all", over ? "bg-amber-500" : "bg-emerald-600")}
+              className={cn("h-full rounded-full transition-all", over ? "bg-shell-warn" : "bg-shell-accent")}
               style={{ width: `${pct}%` }}
             />
           </div>
         )}
 
-        <Button onClick={() => end.mutate()} disabled={busy} className="mt-4 w-full bg-emerald-600 text-white hover:bg-emerald-700">
+        <Button
+          onClick={() => end.mutate()}
+          disabled={busy}
+          className="mt-4 w-full bg-shell-accent text-shell-on-accent hover:bg-shell-accent"
+        >
           {end.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
           {t("attendance.rest.backToWork", "Back to work")}
         </Button>
         {/* The honest reason to press it, rather than a nag. */}
-        <p className="mt-2 text-[11px] leading-snug text-emerald-700/70 dark:text-emerald-400/70">
+        <p className="mt-2 text-[11px] leading-snug text-shell-accent">
           {t("attendance.rest.backHint", "Until you do, the time keeps counting as rest.")}
         </p>
       </div>
@@ -138,7 +154,7 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
   const isDue = next && dueIn <= 0
 
   return (
-    <div className={cn("rounded-2xl border border-border bg-card p-5", className)}>
+    <div className={cn("rounded-[22px] border border-border bg-card p-5 shadow-shell", className)}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           <Coffee className="h-4 w-4" />
@@ -159,11 +175,13 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
               className={cn(
                 "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums",
                 isDue
-                  ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
+                  ? "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn"
                   : "bg-muted text-muted-foreground",
               )}
             >
-              {isDue ? t("attendance.rest.dueNow", "Due now") : t("attendance.rest.dueIn", "in {{gap}}", { gap: formatDuration(dueIn) })}
+              {isDue
+                ? t("attendance.rest.dueNow", "Due now")
+                : t("attendance.rest.dueIn", "in {{gap}}", { gap: formatDuration(dueIn) })}
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -172,14 +190,16 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
             {next.isPaid
               ? t("attendance.rest.paidNote", "counts as work")
               : t("attendance.rest.unpaidNote", "comes off your counted hours")}
-            {next.snoozeCount > 0 ? ` · ${t("attendance.rest.postponedTimes", "postponed {{n}}×", { n: next.snoozeCount })}` : ""}
+            {next.snoozeCount > 0
+              ? ` · ${t("attendance.rest.postponedTimes", "postponed {{n}}×", { n: next.snoozeCount })}`
+              : ""}
           </p>
 
           <div className={cn("mt-3 flex gap-2", dense && "flex-col")}>
             <Button
               onClick={() => start.mutate(next.ruleId)}
               disabled={busy}
-              className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700"
+              className="flex-1 bg-shell-accent text-shell-on-accent hover:bg-shell-accent"
               size={dense ? "sm" : "default"}
             >
               {start.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coffee className="h-4 w-4" />}
@@ -212,7 +232,7 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
           {taken.map((i) => (
             <li key={i.ruleId} className="flex items-center justify-between gap-3 text-xs">
               <span className="flex items-center gap-1.5 text-muted-foreground">
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                <Check className="h-3.5 w-3.5 text-shell-accent" />
                 {i.name}
               </span>
               <span className="tabular-nums text-muted-foreground">{formatDuration(i.durationMinutes)}</span>
@@ -221,7 +241,7 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
           {missed.map((i) => (
             <li key={i.ruleId} className="flex items-center justify-between gap-3 text-xs">
               <span className="flex items-center gap-1.5 text-muted-foreground">
-                <Clock3 className="h-3.5 w-3.5 text-amber-600" />
+                <Clock3 className="h-3.5 w-3.5 text-shell-warn" />
                 {i.name}
               </span>
               {/*

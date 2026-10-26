@@ -76,7 +76,9 @@ export function LeaveBalanceBreakdown({
                 "shrink-0 font-mono tabular-nums",
                 line.key === "ALLOWANCE"
                   ? "text-foreground"
-                  : line.days < 0 ? "text-foreground/80" : "text-emerald-700 dark:text-emerald-400",
+                  : line.days < 0
+                    ? "text-foreground/80"
+                    : "text-shell-accent",
               )}
             >
               {formatLineDays(line, locale)}
@@ -88,7 +90,9 @@ export function LeaveBalanceBreakdown({
           <dd
             className={cn(
               "font-mono text-[15px] font-semibold tabular-nums",
-              view.remaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground")}>
+              view.remaining < 0 ? "text-shell-crit" : "text-foreground",
+            )}
+          >
             {formatDays(view.remaining, locale)}
           </dd>
         </div>
@@ -96,7 +100,7 @@ export function LeaveBalanceBreakdown({
 
       {view.pending > 0 && (
         /* Beside the figure, never inside it — a request nobody approved is not time taken. */
-        <p className="border-t border-border px-3 py-1.5 text-[11.5px] text-amber-700 dark:text-amber-400">
+        <p className="border-t border-border px-3 py-1.5 text-[11.5px] text-shell-warn">
           {t("timeOff.my.allowancePending", { count: view.pending })}
         </p>
       )}
@@ -114,7 +118,7 @@ export function LeaveBalanceBreakdown({
           <span className="flex shrink-0 items-center gap-1.5 font-mono tabular-nums">
             <span className="text-muted-foreground">{formatDays(view.remaining, locale)}</span>
             <ArrowRight className="size-3.5 text-muted-foreground" aria-hidden />
-            <span className={cn("font-semibold", after < 0 ? "text-red-600 dark:text-red-400" : "text-foreground")}>
+            <span className={cn("font-semibold", after < 0 ? "text-shell-crit" : "text-foreground")}>
               {formatDays(after, locale)}
             </span>
           </span>

@@ -20,10 +20,10 @@ const DAYS = 30
 
 /** One colour per way a planned day ended — the legend below names them. */
 const MARK_STYLE: Record<NoShowDayMark, string> = {
-  open: "bg-red-500/15 text-red-600 dark:text-red-400 ring-1 ring-inset ring-red-500/40",
-  absent: "bg-red-500/15 text-red-600 dark:text-red-400",
-  excused: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  late: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  open: "bg-[color-mix(in_srgb,var(--shell-crit)_11%,transparent)] text-shell-crit",
+  absent: "bg-[color-mix(in_srgb,var(--shell-crit)_11%,transparent)] text-shell-crit",
+  excused: "bg-shell-accent-soft text-shell-accent",
+  late: "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn",
   worked: "bg-muted text-muted-foreground",
   planned: "bg-muted text-muted-foreground",
 }
@@ -61,7 +61,7 @@ export function NoShowsTab() {
   })
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card shadow-sm">
+    <div className="rounded-[22px] border border-border bg-card shadow-shell">
       <div className="border-b border-border/60 px-5 py-4">
         <h3 className="text-sm font-semibold text-foreground">{t("attendance.noShows.title", "No-shows")}</h3>
         <p className="mt-0.5 text-xs text-muted-foreground">{t("attendance.noShows.recordSubtitle", { days: DAYS })}</p>
@@ -71,7 +71,7 @@ export function NoShowsTab() {
         <div className="px-5 py-10 text-center text-sm text-muted-foreground">{t("common.loading", "Loading…")}</div>
       ) : people.length === 0 ? (
         <div className="flex flex-col items-center gap-2 px-5 py-12 text-center">
-          <div className="flex size-11 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+          <div className="flex size-11 items-center justify-center rounded-full bg-shell-accent-soft text-shell-accent">
             <Check className="size-5" />
           </div>
           <p className="text-sm font-medium text-foreground">{t("attendance.noShows.emptyTitle", "No no-shows")}</p>
@@ -139,7 +139,14 @@ function PersonRow({
     <tr className="border-t border-border/60 first:border-t-0">
       <td className="px-5 py-3">
         <button type="button" onClick={onToggle} className="flex items-center gap-3 text-left" aria-expanded={expanded}>
-          <UserAvatar firstName={first} lastName={rest.join(" ")} avatarUrl={p.avatarUrl} seed={p.userId} size="sm" />
+          <UserAvatar
+            firstName={first}
+            lastName={rest.join(" ")}
+            avatarUrl={p.avatarUrl}
+            seed={p.userId}
+            size="sm"
+            soft
+          />
           <span className="min-w-0">
             <span className="block truncate font-medium text-foreground">{p.userName}</span>
             <span className="block truncate text-xs text-muted-foreground">{p.spaceNames.join(" · ")}</span>
@@ -233,8 +240,8 @@ function ClosedDays({
             className={cn(
               "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold",
               c.state === "ABSENT"
-                ? "bg-red-500/10 text-red-600 dark:text-red-400"
-                : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+                ? "bg-[color-mix(in_srgb,var(--shell-crit)_11%,transparent)] text-shell-crit"
+                : "bg-shell-accent-soft text-shell-accent",
             )}
           >
             {closedLabel(t, c)}

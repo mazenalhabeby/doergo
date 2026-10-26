@@ -49,7 +49,8 @@ export function UnconfirmedClockOutCard({ className }: { className?: string }) {
     queryFn: () => attendanceApi.getMyStatus(),
     staleTime: 15_000,
   })
-  const entry = (status as { unconfirmedClockOut?: UnconfirmedClockOut | null } | undefined)?.unconfirmedClockOut ?? null
+  const entry =
+    (status as { unconfirmedClockOut?: UnconfirmedClockOut | null } | undefined)?.unconfirmedClockOut ?? null
 
   const [leftAt, setLeftAt] = useState("")
   const [saving, setSaving] = useState(false)
@@ -106,13 +107,13 @@ export function UnconfirmedClockOutCard({ className }: { className?: string }) {
     <div
       ref={ref}
       className={cn(
-        "rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5",
-        highlighted && "ring-2 ring-amber-500/40",
+        "rounded-2xl border border-transparent bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] p-5",
+        highlighted && "ring-2 ring-[color-mix(in_srgb,var(--shell-warn)_30%,transparent)]",
         className,
       )}
     >
       <div className="flex items-start gap-3">
-        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-shell-warn" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-foreground">
             {t("attendance.my.unconfirmed.title", { day, time: temporary })}

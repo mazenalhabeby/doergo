@@ -159,7 +159,7 @@ export function AddAdjustmentDialog({
           </div>
 
           {tried && !parsed.ok && (
-            <p role="alert" className="text-xs text-red-600 dark:text-red-400">
+            <p role="alert" className="text-xs text-shell-crit">
               {t(`serverErrors.${parsed.code}`)}
             </p>
           )}

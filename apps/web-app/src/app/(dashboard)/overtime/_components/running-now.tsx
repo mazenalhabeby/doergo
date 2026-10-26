@@ -11,11 +11,19 @@ import { clock, mins, STATE_PILL } from "../_lib/round-words"
  * fills toward the agreed end and turns amber once they are past it (that
  * part is not counted).
  */
-export function RunningNow({ rounds, now, onOpen }: { rounds: OvertimeRunningRound[]; now: Date; onOpen: (id: string) => void }) {
+export function RunningNow({
+  rounds,
+  now,
+  onOpen,
+}: {
+  rounds: OvertimeRunningRound[]
+  now: Date
+  onOpen: (id: string) => void
+}) {
   const { t, i18n } = useTranslation()
   if (rounds.length === 0) return null
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card">
+    <section className="overflow-hidden rounded-[22px] border border-border bg-card shadow-shell">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-4 py-3">
         <h2 className="text-base font-semibold text-foreground">{t("overtimePage.running.title")}</h2>
         <p className="text-xs text-muted-foreground">{t("overtimePage.running.sub")}</p>
@@ -34,10 +42,17 @@ export function RunningNow({ rounds, now, onOpen }: { rounds: OvertimeRunningRou
               key={r.id}
               type="button"
               onClick={() => onOpen(r.id)}
-              className="flex flex-col gap-2 rounded-xl border border-border p-3 text-left transition-colors hover:bg-muted/50"
+              className="flex flex-col gap-2 rounded-2xl bg-muted p-3 text-left transition-colors hover:bg-accent"
             >
               <span className="flex items-center gap-3">
-                <UserAvatar firstName={first} lastName={rest.join(" ")} avatarUrl={r.avatarUrl} seed={r.userId} size="sm" />
+                <UserAvatar
+                  firstName={first}
+                  lastName={rest.join(" ")}
+                  avatarUrl={r.avatarUrl}
+                  seed={r.userId}
+                  size="sm"
+                  soft
+                />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium text-foreground">{r.userName}</span>
                   <span className="block truncate text-xs text-muted-foreground">
@@ -46,25 +61,30 @@ export function RunningNow({ rounds, now, onOpen }: { rounds: OvertimeRunningRou
                   </span>
                 </span>
                 <span
-                  className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold", STATE_PILL[over ? "OVER" : "RUNNING"])}>
+                  className={cn(
+                    "inline-flex h-6 shrink-0 items-center rounded-full px-2.5 text-xs font-semibold",
+                    STATE_PILL[over ? "OVER" : "RUNNING"],
+                  )}
+                >
                   {over ? t("overtimePage.overBy", { minutes: mins(spent - agreed) }) : t("overtimePage.state.RUNNING")}
                 </span>
               </span>
-              <span className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
+              <span className="h-1.5 overflow-hidden rounded-full bg-border" aria-hidden>
                 <span
-                  className={cn("block h-full rounded-full", over ? "bg-amber-500" : "bg-emerald-500")}
+                  className={cn("block h-full rounded-full", over ? "bg-shell-warn" : "bg-shell-accent")}
                   style={{ width: `${over ? 100 : pct}%` }}
                 />
               </span>
               <span className="flex justify-between text-xs text-muted-foreground tabular-nums">
                 <span>
-                  <b
-                    className="font-semibold text-foreground">{mins(
-                      Math.min(spent, agreed))}</b> {t("overtimePage.ofAgreed", { minutes: mins(agreed) })}
+                  <b className="font-semibold text-foreground">{mins(Math.min(spent, agreed))}</b>{" "}
+                  {t("overtimePage.ofAgreed", { minutes: mins(agreed) })}
                 </span>
-                <span>{t(
-                  over ? "overtimePage.wasUntil" : "overtimePage.until",
-                  { time: clock(r.overtimeEndAt, r.timezone, i18n.language) })}</span>
+                <span>
+                  {t(over ? "overtimePage.wasUntil" : "overtimePage.until", {
+                    time: clock(r.overtimeEndAt, r.timezone, i18n.language),
+                  })}
+                </span>
               </span>
             </button>
           )

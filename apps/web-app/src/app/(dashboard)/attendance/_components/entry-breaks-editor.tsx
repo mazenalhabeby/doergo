@@ -90,7 +90,7 @@ export function EntryBreaksEditor({
                   className={cn(
                     "flex size-7 shrink-0 items-center justify-center rounded-full",
                     b.type === "LUNCH"
-                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                      ? "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn"
                       : b.type === "SHORT"
                         ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
                         : "bg-muted text-muted-foreground",
@@ -174,7 +174,7 @@ export function EntryBreaksEditor({
               <span
                 className={
                   "flex size-7 shrink-0 items-center justify-center rounded-full border " +
-                  "border-dashed border-amber-500/50 text-amber-600 dark:text-amber-400"
+                  "border-dashed border-current text-shell-warn"
                 }
               >
                 <Plus className="size-3.5" />
@@ -182,7 +182,7 @@ export function EntryBreaksEditor({
               <span className="min-w-0 flex-1">
                 <span className="block text-xs font-medium text-foreground">
                   {b.label}
-                  <span className="ml-1.5 font-normal text-amber-600 dark:text-amber-400">
+                  <span className="ml-1.5 font-normal text-shell-warn">
                     {t("attendance.addBreak.pending", "on save")}
                   </span>
                 </span>

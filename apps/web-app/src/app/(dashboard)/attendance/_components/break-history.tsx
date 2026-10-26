@@ -36,7 +36,7 @@ export function BreakHistory({
   const { t } = useTranslation()
   const { hour12, locale } = useTimeFormat()
   return (
-    <div className="bg-card rounded-2xl border border-border/60 shadow-sm">
+    <div className="bg-card rounded-[22px] border border-border shadow-shell">
       <div className="p-6 border-b border-border">
         <div className="flex items-center justify-between">
           <div>
@@ -46,7 +46,7 @@ export function BreakHistory({
           <div className="flex items-center gap-3">
             {/* Break Type Filter */}
             <Select value={breakTypeFilter} onValueChange={setBreakTypeFilter}>
-              <SelectTrigger className="w-[130px] h-10 rounded-lg bg-card border-border/80 shadow-sm">
+              <SelectTrigger className="w-[130px] h-10 rounded-full bg-card border-border">
                 <SelectValue placeholder={t("attendance.breaks.typeFilter")} />
               </SelectTrigger>
               <SelectContent>
@@ -61,14 +61,14 @@ export function BreakHistory({
             <DatePicker
               value={breakDate}
               onChange={setBreakDate}
-              triggerClassName="w-[160px] h-10 bg-card/80 border-border/80 rounded-lg shadow-sm"
+              triggerClassName="w-[160px] h-10 bg-card border-border rounded-full"
             />
 
             <Button
               variant="outline"
               size="icon"
               onClick={() => refetchBreakHistory()}
-              className="h-10 w-10 rounded-lg border-border/80 bg-card shadow-sm hover:bg-accent"
+              className="h-10 w-10 rounded-full border-border bg-card hover:bg-accent"
             >
               <RefreshCw className="size-4 text-muted-foreground" />
             </Button>
@@ -111,6 +111,7 @@ export function BreakHistory({
 
                       seed={breakItem.user?.id}
                       size="md"
+                      soft
                     />
                     <span className="font-medium text-foreground">{personName(breakItem.user)}</span>
                   </div>
@@ -120,7 +121,7 @@ export function BreakHistory({
                     className={cn(
                       "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border",
                       breakItem.type === "LUNCH"
-                        ? "bg-amber-500/10 text-amber-700 border-amber-200"
+                        ? "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn border-transparent"
                         : breakItem.type === "SHORT"
                           ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200"
                           : "bg-muted text-foreground border-border",
@@ -146,7 +147,7 @@ export function BreakHistory({
                   {breakItem.endedAt ? (
                     formatTime(breakItem.endedAt, hour12, locale, breakTz(breakItem))
                   ) : (
-                    <span className="text-orange-600">{t("attendance.breaks.onBreak")}</span>
+                    <span className="text-shell-warn">{t("attendance.breaks.onBreak")}</span>
                   )}
                 </TableCell>
                 <TableCell className="font-medium text-foreground">
@@ -161,7 +162,7 @@ export function BreakHistory({
                     leave an audit trail nobody can read.
                   */}
                   {breakItem.addedBy && (
-                    <div className="mt-0.5 flex items-center gap-1 text-[11px] font-normal text-amber-600 dark:text-amber-400">
+                    <div className="mt-0.5 flex items-center gap-1 text-[11px] font-normal text-shell-warn">
                       <UserPen className="size-3" />
                       <span title={breakItem.reason || undefined}>
                         {t("attendance.breaks.addedBy", "Added by {{name}}", {

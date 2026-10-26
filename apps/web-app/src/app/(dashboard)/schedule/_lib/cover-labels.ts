@@ -16,10 +16,30 @@ type CoverLevel = CoverVerdict["level"]
 /** Palette per level, from the design tokens. Semantic colour only — the leave
  *  bars themselves are told apart by TEXTURE, so hue is free to mean severity. */
 export const COVER_TONE: Record<CoverLevel, { text: string; bg: string; ring: string; dot: string }> = {
-  ok:    { text: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10", ring: "ring-emerald-500/30", dot: "bg-emerald-500" },
-  tight: { text: "text-amber-600 dark:text-amber-400",     bg: "bg-amber-500/10",   ring: "ring-amber-500/30",   dot: "bg-amber-500" },
-  short: { text: "text-red-600 dark:text-red-400",         bg: "bg-red-500/10",     ring: "ring-red-500/30",     dot: "bg-red-500" },
-  skill: { text: "text-red-600 dark:text-red-400",         bg: "bg-red-500/10",     ring: "ring-red-500/30",     dot: "bg-red-500" },
+  ok: {
+    text: "text-shell-accent",
+    bg: "bg-shell-accent-soft",
+    ring: "ring-[color-mix(in_srgb,var(--shell-accent)_30%,transparent)]",
+    dot: "bg-shell-accent",
+  },
+  tight: {
+    text: "text-shell-warn",
+    bg: "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)]",
+    ring: "ring-[color-mix(in_srgb,var(--shell-warn)_30%,transparent)]",
+    dot: "bg-shell-warn",
+  },
+  short: {
+    text: "text-shell-crit",
+    bg: "bg-[color-mix(in_srgb,var(--shell-crit)_11%,transparent)]",
+    ring: "ring-[color-mix(in_srgb,var(--shell-crit)_30%,transparent)]",
+    dot: "bg-shell-crit",
+  },
+  skill: {
+    text: "text-shell-crit",
+    bg: "bg-[color-mix(in_srgb,var(--shell-crit)_11%,transparent)]",
+    ring: "ring-[color-mix(in_srgb,var(--shell-crit)_30%,transparent)]",
+    dot: "bg-shell-crit",
+  },
 }
 
 /** A single character for the bar itself — the chart must read without hover. */
@@ -66,7 +86,8 @@ export function coverDetail(v: CoverVerdict, t: TFunction): string {
   }
   if (!v.floor) {
     return t("cover.detail.noFloor", {
-      defaultValue: "{{worst}} would be left. No minimum is set for this workspace, so there is nothing to judge it against.",
+      defaultValue:
+        "{{worst}} would be left. No minimum is set for this workspace, so there is nothing to judge it against.",
       worst: v.worst,
     })
   }
@@ -80,7 +101,8 @@ export function coverDetail(v: CoverVerdict, t: TFunction): string {
 /** The one-line form for a chart bar's tooltip and the compact list. */
 export function coverShort(v: CoverVerdict, t: TFunction): string {
   if (v.level === "skill") return t("cover.short.skill", "No {{skill}} cover", { skill: v.skill ?? "" })
-  if (v.level === "short") return t("cover.short.short", "{{worst}} left, needs {{floor}}", { worst: v.worst, floor: v.floor })
+  if (v.level === "short")
+    return t("cover.short.short", "{{worst}} left, needs {{floor}}", { worst: v.worst, floor: v.floor })
   if (v.level === "tight") return t("cover.short.tight", "At minimum ({{worst}})", { worst: v.worst })
   return t("cover.short.ok", "{{worst}} left", { worst: v.worst })
 }
@@ -88,14 +110,13 @@ export function coverShort(v: CoverVerdict, t: TFunction): string {
 /** The live floor panel's pill. `here` is the clock; the floor is the rule. */
 export function floorLabel(space: Pick<FloorSpace, "here" | "minCover" | "status">, t: TFunction): string {
   if (!space.minCover) return t("cover.floor.none", "No minimum set")
-  if (space.status === "short")
-    return t("cover.floor.short", "{{n}} under minimum", { n: space.minCover - space.here })
+  if (space.status === "short") return t("cover.floor.short", "{{n}} under minimum", { n: space.minCover - space.here })
   if (space.status === "tight") return t("cover.floor.tight", "At minimum {{floor}}", { floor: space.minCover })
   return t("cover.floor.ok", "Minimum {{floor}}", { floor: space.minCover })
 }
 
 export const FLOOR_TONE: Record<FloorSpace["status"], string> = {
-  ok:    "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  tight: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  short: "bg-red-500/10 text-red-600 dark:text-red-400",
+  ok: "bg-shell-accent-soft text-shell-accent",
+  tight: "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn",
+  short: "bg-[color-mix(in_srgb,var(--shell-crit)_11%,transparent)] text-shell-crit",
 }

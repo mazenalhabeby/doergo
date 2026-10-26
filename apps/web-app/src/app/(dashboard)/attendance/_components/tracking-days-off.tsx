@@ -57,6 +57,7 @@ export function TrackingDaysOff({ daysOff }: { daysOff: DayOffRow[] }) {
                     lastName={off.technician?.lastName}
                     seed={off.technician?.id}
                     size="md"
+                    soft
                   />
                   <p className="font-medium text-foreground">{personName(off.technician)}</p>
                 </div>

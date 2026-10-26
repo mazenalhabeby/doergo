@@ -23,7 +23,8 @@ export function StatusBadge({ status }: { status: string }) {
     CLOCKED_IN: {
       label: t("attendance.status.active"),
       icon: CheckCircle2,
-      className: "bg-green-500/10 text-green-700 border-green-200",
+      className:
+        "bg-shell-accent-soft text-shell-accent border-transparent",
     },
     CLOCKED_OUT: {
       label: t("attendance.status.completed"),
@@ -33,7 +34,8 @@ export function StatusBadge({ status }: { status: string }) {
     AUTO_OUT: {
       label: t("attendance.status.auto"),
       icon: AlertCircle,
-      className: "bg-amber-500/10 text-amber-700 border-amber-200",
+      className:
+        "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn border-transparent",
     },
   }[status] || {
     label: status,

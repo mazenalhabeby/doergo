@@ -12,6 +12,7 @@ import { StatTile } from "@/components/ui/stat-tile"
 import { deriveAttendanceFlags } from "@/lib/attendance-status"
 import { LabelChip } from "@/components/attendance/attendance-label-chip"
 import { useTimeFormat } from "@/hooks/use-time-format"
+import { WARN_SOFT } from "./time-styles"
 
 /** An entry's labels — the one catalogue's words, order and colours, with each reason on hover. */
 function FlagReasonBadges({ entry }: { entry: TimeEntry }) {
@@ -56,7 +57,13 @@ export function WorkerCell({ entry }: { entry: TimeEntry }) {
   const { t } = useTranslation()
   return (
     <div className="flex items-center gap-3">
-      <UserAvatar firstName={entry.user?.firstName} lastName={entry.user?.lastName} seed={entry.user?.id} size="md" />
+      <UserAvatar
+        firstName={entry.user?.firstName}
+        lastName={entry.user?.lastName}
+        seed={entry.user?.id}
+        size="md"
+        soft
+      />
       <div>
         <p className="font-medium text-foreground">{personName(entry.user)}</p>
         <p className="text-xs text-muted-foreground">{entry.location?.name || t("attendance.unknownLocation")}</p>
@@ -117,22 +124,22 @@ export function ApprovalCell({ entry }: { entry: TimeEntry }) {
   return (
     <div className="space-y-1">
       {entry.approvalStatus === "AUTO" ? (
-        <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-shell-accent">
           <CheckCircle2 className="size-3.5" />
           {word}
         </span>
       ) : entry.approvalStatus === "APPROVED" ? (
-        <span className="inline-flex items-center gap-1 text-xs text-blue-600 font-medium">
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-shell-accent">
           <CheckCircle2 className="size-3.5" />
           {word}
         </span>
       ) : entry.approvalStatus === "REJECTED" ? (
-        <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-shell-crit">
           <XCircle className="size-3.5" />
           {word}
         </span>
       ) : (
-        <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-shell-warn">
           <Clock className="size-3.5" />
           {word}
         </span>
@@ -169,10 +176,8 @@ function EditedBadge({ entry }: { entry: TimeEntry }) {
         }}
         title={editor ? t("attendance.edited.by", { name: editor, defaultValue: `Edited by ${editor}` }) : undefined}
         className={
-          "inline-flex w-fit items-center gap-1 rounded-full border " +
-          "border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium " +
-          "text-amber-600 dark:text-amber-400 transition-colors " +
-          "hover:bg-amber-500/20 cursor-pointer"
+          "inline-flex h-5 w-fit cursor-pointer items-center gap-1 rounded-full px-2 text-[11px] font-semibold " +
+          `${WARN_SOFT} transition hover:brightness-95`
         }
       >
         <Pencil className="size-2.5" />
@@ -226,7 +231,7 @@ export function NoteCell({ note, maxWidth = 180 }: { note?: string | null; maxWi
       </HoverCardTrigger>
       <HoverCardContent align="start" side="top" className="w-80 max-h-64 overflow-y-auto">
         <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <StickyNote className="size-3.5 text-brand-600" />
+          <StickyNote className="size-3.5 text-shell-accent" />
           {t("attendance.notes")}
         </div>
         <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{note}</p>

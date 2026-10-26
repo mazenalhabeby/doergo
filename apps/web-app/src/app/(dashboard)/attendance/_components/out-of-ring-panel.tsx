@@ -50,33 +50,33 @@ export function OutOfRingPanel() {
 
   return (
     <>
-    <div className="bg-card rounded-2xl border border-orange-200/60 dark:border-orange-500/25 shadow-sm mb-8 overflow-hidden">
-      <div className="p-5 border-b border-orange-100 dark:border-orange-500/20 bg-orange-50/50 dark:bg-orange-500/5">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-orange-500/15 text-orange-600 dark:text-orange-400">
-            <Navigation className="size-5" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-orange-900 dark:text-orange-200">
-              {t("attendance.outOfRing.title", "Out of the ring")}
-            </h2>
-            <p className="text-sm text-orange-700 dark:text-orange-300/80">
-              {t(
-                "attendance.outOfRing.desc",
-                "Workers who left their work area and need a decision or are on approved time.",
-              )}
-            </p>
+      <div className="bg-card rounded-[22px] border border-border shadow-shell mb-8 overflow-hidden">
+        <div className="p-5 border-b border-transparent bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)]">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn">
+              <Navigation className="size-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-shell-warn">
+                {t("attendance.outOfRing.title", "Out of the ring")}
+              </h2>
+              <p className="text-sm text-shell-warn">
+                {t(
+                  "attendance.outOfRing.desc",
+                  "Workers who left their work area and need a decision or are on approved time.",
+                )}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="divide-y divide-orange-100 dark:divide-orange-500/15">
-        {/* APPROVED — live countdown */}
-        {approved.map((ex) => (
-          <ApprovedRow key={ex.id} ex={ex} />
-        ))}
+        <div className="divide-y divide-orange-100">
+          {/* APPROVED — live countdown */}
+          {approved.map((ex) => (
+            <ApprovedRow key={ex.id} ex={ex} />
+          ))}
+        </div>
       </div>
-    </div>
     </>
   )
 }
@@ -88,9 +88,9 @@ function ApprovedRow({ ex }: { ex: GeofenceExcursion }) {
   const expired = ex.timerExpired || remainingMs <= 0
 
   return (
-    <div className="p-4 flex items-center gap-4 justify-between hover:bg-orange-50/30 dark:hover:bg-orange-500/5">
+    <div className="p-4 flex items-center gap-4 justify-between hover:bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)]">
       <div className="flex items-center gap-3 min-w-0">
-        <UserAvatar firstName={ex.user?.firstName} lastName={ex.user?.lastName} seed={ex.userId} size="md" />
+        <UserAvatar firstName={ex.user?.firstName} lastName={ex.user?.lastName} seed={ex.userId} size="md" soft />
         <div className="min-w-0">
           <p className="font-medium text-foreground truncate">{name}</p>
           <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -103,8 +103,11 @@ function ApprovedRow({ ex }: { ex: GeofenceExcursion }) {
       <div className="shrink-0 text-right">
         {expired ? (
           <span
-            className={"inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-1 " +
-              "text-xs font-semibold text-red-600 dark:text-red-400 tabular-nums"}>
+            className={
+              "inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--shell-crit)_11%,transparent)] px-2.5 py-1 " +
+              "text-xs font-semibold text-shell-crit tabular-nums"
+            }
+          >
             <Timer className="size-3.5" />
             {t("attendance.outOfRing.timeExpired", "Time expired")}
           </span>
@@ -113,8 +116,8 @@ function ApprovedRow({ ex }: { ex: GeofenceExcursion }) {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums",
               remainingMs < 5 * 60_000
-                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                : "bg-green-500/10 text-green-600 dark:text-green-400",
+                ? "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn"
+                : "bg-shell-accent-soft text-shell-accent",
             )}
           >
             <Timer className="size-3.5" />

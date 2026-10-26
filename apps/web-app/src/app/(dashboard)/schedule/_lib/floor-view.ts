@@ -94,7 +94,12 @@ export function lateLabel(minutes: number): string {
 
 /** Sort order within a group: the most useful person first. */
 const STATE_ORDER: Record<FloorPerson["state"], number> = {
-  expected: 0, working: 1, busy: 2, break: 3, leave: 4, rest: 5,
+  expected: 0,
+  working: 1,
+  busy: 2,
+  break: 3,
+  leave: 4,
+  rest: 5,
 }
 
 export function byUsefulness(a: FloorPerson, b: FloorPerson): number {
@@ -107,22 +112,22 @@ export function byUsefulness(a: FloorPerson, b: FloorPerson): number {
 
 /** Ring colour per state. One hue, one meaning, used nowhere else on the panel. */
 export const STATE_RING: Record<FloorPerson["state"], string> = {
-  busy:     "ring-blue-500",
-  working:  "ring-emerald-500",
-  break:    "ring-amber-500",
-  expected: "ring-slate-400 dark:ring-slate-500",
-  leave:    "ring-violet-500",
-  rest:     "ring-transparent",
+  busy: "ring-blue-500",
+  working: "ring-shell-accent",
+  break: "ring-shell-warn",
+  expected: "ring-muted-foreground/50",
+  leave: "ring-violet-500",
+  rest: "ring-transparent",
 }
 
 export const LATE_RING: Record<LateTone, string> = {
-  soon:   "ring-slate-400 dark:ring-slate-500",
-  slight: "ring-amber-500",
-  late:   "ring-red-500",
+  soon: "ring-muted-foreground/50",
+  slight: "ring-shell-warn",
+  late: "ring-shell-crit",
 }
 
 export const LATE_TEXT: Record<LateTone, string> = {
-  soon:   "text-muted-foreground",
-  slight: "text-amber-600 dark:text-amber-400",
-  late:   "text-red-600 dark:text-red-400",
+  soon: "text-muted-foreground",
+  slight: "text-shell-warn",
+  late: "text-shell-crit",
 }

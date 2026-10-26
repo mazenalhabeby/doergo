@@ -1,5 +1,7 @@
 "use client"
 
+import { UserAvatar } from "@/components/common/user-avatar"
+import { PENDING_STRIPES } from "@/components/attendance/time-styles"
 import { personName } from "@hbcfield/shared/client"
 import { format, parseISO } from "date-fns"
 import { useTranslation } from "react-i18next"
@@ -73,7 +75,7 @@ export function SpaceBlock({
   return (
     <>
       <div className="sticky left-0 flex items-center gap-2 border-y border-border bg-muted/70 px-4 py-1.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</span>
+        <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">{title}</span>
         {minCover > 0 && (
           <span className="text-[11px] text-muted-foreground/70">
             {t("cover.chart.minimum", "· minimum cover {{n}}", { n: minCover })}
@@ -90,17 +92,9 @@ export function SpaceBlock({
         return (
           <div key={p.id} className="grid border-b border-border last:border-b-0" style={template}>
             <div className="sticky left-0 z-10 flex min-h-[2.9rem] items-center gap-2 border-r border-border bg-card px-3 py-1.5">
-              <span
-                className={
-                  "grid h-7 w-7 shrink-0 place-items-center rounded-full bg-muted " +
-                  "text-[10.5px] font-semibold text-muted-foreground"
-                }
-              >
-                {p.firstName[0]}
-                {p.lastName[0]}
-              </span>
+              <UserAvatar firstName={p.firstName} lastName={p.lastName} seed={p.id} className="size-[30px]" soft />
               <span className="min-w-0">
-                <span className="block truncate text-[13px] font-medium leading-tight text-foreground">
+                <span className="block truncate text-sm font-semibold leading-tight text-foreground">
                   {personName(p)}
                 </span>
                 <span className="block truncate text-[11px] leading-tight text-muted-foreground">
@@ -184,9 +178,8 @@ export function SpaceBlock({
                   style={{ gridColumn: `${startIdx + 2} / ${endIdx + 3}` }}
                   className={cn(
                     common,
-                    "z-[2] cursor-pointer border-[1.5px] border-amber-500/80 text-amber-900 dark:text-amber-200 transition",
-                    "bg-[repeating-linear-gradient(45deg,theme(colors.amber.200)_0_4px,theme(colors.amber.300)_4px_8px)]",
-                    "dark:bg-[repeating-linear-gradient(45deg,theme(colors.amber.950)_0_4px,theme(colors.amber.900)_4px_8px)]",
+                    "z-[2] cursor-pointer text-shell-warn transition",
+                    PENDING_STRIPES,
                     "hover:-translate-y-px hover:shadow-sm",
                     selected?.id === bar.id && "ring-2 ring-primary ring-offset-1 ring-offset-card",
                     selected && selected.id !== bar.id && "opacity-40",
@@ -235,7 +228,7 @@ export function SpaceBlock({
                       "overflow-hidden whitespace-nowrap rounded-full border bg-card px-1 " +
                       "text-[10px] font-medium transition hover:-translate-y-px",
                     pending
-                      ? "border-dashed border-amber-500/80 text-amber-800 dark:text-amber-300"
+                      ? "border-dashed border-current text-shell-warn"
                       : "border-border text-muted-foreground",
                     selected?.id === m.id && "ring-2 ring-primary ring-offset-1 ring-offset-card",
                     selected && selected.id !== m.id && "opacity-40",

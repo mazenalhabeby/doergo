@@ -202,7 +202,7 @@ function DrawerBody({
                   key={d.day}
                   className={cn(
                     "grid grid-cols-[3.9rem_1fr_auto] items-center gap-2.5 border-b border-border px-3 py-2 text-[12.5px] last:border-b-0",
-                    (d.breach || d.skillGap) && "bg-red-500/5",
+                    (d.breach || d.skillGap) && "bg-[color-mix(in_srgb,var(--shell-crit)_11%,transparent)]",
                   )}
                 >
                   <span className="text-[12px] font-semibold tabular-nums">
@@ -232,7 +232,7 @@ function DrawerBody({
                   <span
                     className={cn(
                       "whitespace-nowrap text-right text-[12.5px] font-semibold tabular-nums",
-                      d.breach || d.skillGap ? "text-red-600 dark:text-red-400" : "text-foreground",
+                      d.breach || d.skillGap ? "text-shell-crit" : "text-foreground",
                     )}
                   >
                     {d.now}

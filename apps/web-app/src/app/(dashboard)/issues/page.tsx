@@ -8,6 +8,8 @@ import { shiftIssuesApi } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { useSocketContext } from "@/contexts/socket-context"
 import { cn } from "@/lib/utils"
+import { Chip as Pill, PageHeader, ROW } from "@/components/page/page-kit"
+import { PAGE_SHELL } from "@/components/ui/page-width"
 import { keys } from "@/lib/query-keys"
 import { SEV_DOT, fmt, Chip } from "./_components/issue-display"
 import { IssueThread } from "./_components/issue-thread"
@@ -40,44 +42,33 @@ export default function IssuesPage() {
   }, [subscribe, isConnected, qc, selectedId])
 
   return (
-    <div className="mx-auto max-w-6xl p-4 md:p-6">
-      {/* Page header */}
-      <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <AlertTriangle className="h-5 w-5" />
-        </div>
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Shift Issues</h1>
-          <p className="text-sm text-muted-foreground">
-            Blockers reported during shifts — acknowledge, dispatch, and resolve.
-          </p>
-        </div>
-        {openCount > 0 && (
-          <span
-            className={
-              "ml-auto rounded-full bg-red-100 px-3 py-1 text-sm font-semibold " +
-              "text-red-700 dark:bg-red-950/50 dark:text-red-300"
-            }
-          >
-            {openCount} open
-          </span>
-        )}
-      </div>
+    <div className={PAGE_SHELL}>
+      <PageHeader
+        title="Shift Issues"
+        subtitle="Blockers reported during shifts — acknowledge, dispatch, and resolve."
+        actions={
+          openCount > 0 && (
+            <Pill tone="crit" dot className="h-8 px-3 text-sm">
+              {openCount} open
+            </Pill>
+          )
+        }
+      />
 
-      <div className="grid h-[72vh] grid-cols-1 gap-4 md:grid-cols-[20rem_1fr]">
+      <div className="grid h-[72vh] grid-cols-1 gap-4 md:grid-cols-[320px_1fr]">
         {/* Inbox */}
         <aside
           className={cn(
-            "flex min-h-0 flex-col overflow-hidden rounded-2xl border " + "border-border/60 bg-card shadow-sm",
+            "flex min-h-0 flex-col overflow-hidden rounded-[22px] border border-border bg-card shadow-shell",
             selectedId && "hidden md:flex",
           )}
         >
-          <header className="flex items-center gap-2 border-b border-border/60 px-4 py-3">
+          <header className="flex items-center gap-2 px-5 pb-1 pt-4">
             <Inbox className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold">Inbox</h2>
+            <h2 className="text-[15px] font-semibold text-foreground">Inbox</h2>
             {listQ.isFetching && <Loader2 className="ml-auto h-3.5 w-3.5 animate-spin text-muted-foreground" />}
           </header>
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-2.5">
             {listQ.isLoading ? (
               <div className="flex justify-center py-10">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -91,20 +82,18 @@ export default function IssuesPage() {
               issues.map((i) => (
                 <button
                   key={i.id}
+                  type="button"
                   onClick={() => setSelectedId(i.id)}
-                  className={cn(
-                    "flex w-full gap-3 border-b border-border/40 px-4 py-3 text-left " +
-                      "transition-colors hover:bg-accent/50",
-                    selectedId === i.id && "bg-accent/70",
-                  )}
+                  aria-current={selectedId === i.id ? "true" : undefined}
+                  className={ROW}
                 >
                   <span
-                    className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", SEV_DOT[i.severity])}
+                    className={cn("mt-[5px] size-[9px] shrink-0 rounded-full", SEV_DOT[i.severity])}
                     title={i.severity}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-medium text-foreground">{i.title}</span>
+                      <span className="truncate text-sm font-semibold text-foreground">{i.title}</span>
                       <Chip status={i.status} />
                     </div>
                     <span className="mt-0.5 block truncate text-xs text-muted-foreground">
@@ -120,7 +109,7 @@ export default function IssuesPage() {
         {/* Thread */}
         <section
           className={cn(
-            "flex min-h-0 flex-col overflow-hidden rounded-2xl border " + "border-border/60 bg-card shadow-sm",
+            "flex min-h-0 flex-col overflow-hidden rounded-[22px] border border-border bg-card shadow-shell",
             !selectedId && "hidden md:flex",
           )}
         >

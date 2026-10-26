@@ -20,14 +20,14 @@ export function LanesCard({ space, formatTime }: { space: FloorSpace; formatTime
     {
       key: "expected",
       label: t("cover.lane.notIn", "Not in"),
-      tone: "text-red-600 dark:text-red-400",
+      tone: "text-shell-crit",
       people: of("expected"),
       alarm: true,
     },
     {
       key: "working",
       label: t("cover.lane.free", "Free now"),
-      tone: "text-emerald-600 dark:text-emerald-400",
+      tone: "text-shell-accent",
       people: of("working"),
     },
     {
@@ -39,14 +39,14 @@ export function LanesCard({ space, formatTime }: { space: FloorSpace; formatTime
     {
       key: "break",
       label: t("cover.lane.break", "On a break"),
-      tone: "text-amber-600 dark:text-amber-400",
+      tone: "text-shell-warn",
       people: of("break"),
     },
     { key: "away", label: t("cover.lane.away", "Away"), tone: "text-muted-foreground", people: of("leave", "rest") },
   ]
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-border bg-card">
+    <article className="overflow-hidden rounded-[22px] border border-border bg-card shadow-shell">
       <CardHead space={space} c={c} />
       <div className="px-4 pb-3 pt-3">
         <Bar space={space} t={c} />
@@ -57,7 +57,7 @@ export function LanesCard({ space, formatTime }: { space: FloorSpace; formatTime
             key={lane.key}
             className={cn(
               "min-w-0 border-b border-r border-border p-3 last:border-r-0",
-              lane.alarm && lane.people.length > 0 && "bg-red-500/5",
+              lane.alarm && lane.people.length > 0 && "bg-[color-mix(in_srgb,var(--shell-crit)_11%,transparent)]",
             )}
           >
             <div

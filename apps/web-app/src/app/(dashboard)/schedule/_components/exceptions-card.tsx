@@ -4,6 +4,7 @@ import { personName } from "@hbcfield/shared/client"
 import { useTranslation } from "react-i18next"
 import { type FloorPerson, type FloorSpace } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { CRIT_SOFT } from "@/components/attendance/time-styles"
 import { LATE_TEXT, byUsefulness, isExpected, isPresent, lateness, tally } from "../_lib/floor-view"
 import { useLine, type Fmt } from "./use-floor-line"
 import { Bar, Avatar, CardHead } from "./floor-card-common"
@@ -29,20 +30,20 @@ export function ExceptionsCard({ space, formatTime }: { space: FloorSpace; forma
   const good = overdue.length === 0 && space.status !== "short"
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-border bg-card">
+    <article className="overflow-hidden rounded-[22px] border border-border bg-card shadow-shell">
       <CardHead space={space} c={c} />
 
       <div className="px-4 pb-3.5 pt-3">
         <div
           className={cn(
             "mb-3 flex items-center gap-2.5 text-[14px] font-semibold tracking-tight",
-            good ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+            good ? "text-shell-accent" : "text-shell-crit",
           )}
         >
           <span
             className={cn(
               "grid h-6 w-6 shrink-0 place-items-center rounded-lg text-[13px] font-extrabold",
-              good ? "bg-emerald-500/10" : "bg-red-500/10",
+              good ? "bg-shell-accent-soft" : "bg-[color-mix(in_srgb,var(--shell-crit)_11%,transparent)]",
             )}
             aria-hidden
           >
@@ -62,10 +63,7 @@ export function ExceptionsCard({ space, formatTime }: { space: FloorSpace; forma
           {overdue.map((p) => {
             const l = lateness(p)!
             return (
-              <div
-                key={p.id}
-                className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2.5"
-              >
+              <div key={p.id} className={cn("flex items-center gap-3 rounded-2xl px-3 py-2.5", CRIT_SOFT)}>
                 <Avatar person={p} size="md" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13.5px] font-semibold tracking-tight">{personName(p)}</span>

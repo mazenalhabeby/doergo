@@ -1,18 +1,24 @@
-import { formatDuration, overtimeRoundMinutes, overtimeRoundState, personName, type OvertimeRoundState } from "@hbcfield/shared/client"
+import {
+  formatDuration,
+  overtimeRoundMinutes,
+  overtimeRoundState,
+  personName,
+  type OvertimeRoundState,
+} from "@hbcfield/shared/client"
 import type { OvertimeRequest } from "@/lib/api"
 
 type T = (key: string, opts?: Record<string, unknown>) => string
 
 /** One colour per state, the legend names them all. */
 export const STATE_PILL: Record<OvertimeRoundState, string> = {
-  RUNNING: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  OVER: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  DONE: "bg-muted text-foreground",
+  RUNNING: "bg-shell-accent-soft text-shell-accent",
+  OVER: "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn",
+  DONE: "bg-shell-chip text-foreground",
   WAITING_PERSON: "bg-sky-500/15 text-sky-700 dark:text-sky-400",
-  WAITING_DECISION: "bg-primary/10 text-primary",
-  NO_ANSWER: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  NOT_NEEDED: "bg-muted text-muted-foreground",
-  REFUSED: "bg-red-500/10 text-red-600 dark:text-red-400",
+  WAITING_DECISION: "bg-shell-accent-soft text-shell-accent",
+  NO_ANSWER: "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn",
+  NOT_NEEDED: "bg-shell-chip text-muted-foreground",
+  REFUSED: "bg-[color-mix(in_srgb,var(--shell-crit)_11%,transparent)] text-shell-crit",
 }
 
 /** The round's facts as the shared rule reads them. */
@@ -37,7 +43,12 @@ export function roundOf(r: OvertimeRequest, now: Date) {
 export const mins = (m: number) => formatDuration(Math.max(0, Math.round(m)))
 
 /** A time on the workspace's own clock ("18:02"), with the day when asked. */
-export function clock(iso: string | null | undefined, tz: string | null | undefined, lang: string, withDay = false): string {
+export function clock(
+  iso: string | null | undefined,
+  tz: string | null | undefined,
+  lang: string,
+  withDay = false,
+): string {
   if (!iso) return ""
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ""
@@ -87,6 +98,8 @@ export function headline(t: T, r: OvertimeRequest, state: OvertimeRoundState, wo
     case "REFUSED":
       return t("overtimePage.line.refused", { name, by: r.approvedBy ? personName(r.approvedBy) : "" })
     case "NOT_NEEDED":
-      return r.status === "CANCELED" ? t("overtimePage.line.declined", { name }) : t("overtimePage.line.noReply", { name })
+      return r.status === "CANCELED"
+        ? t("overtimePage.line.declined", { name })
+        : t("overtimePage.line.noReply", { name })
   }
 }

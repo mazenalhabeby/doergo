@@ -48,7 +48,7 @@ export function RoundsList({
     }).format(new Date(r.createdAt))
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card">
+    <section className="overflow-hidden rounded-[22px] border border-border bg-card shadow-shell">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-4 py-3">
         <h2 className="text-base font-semibold text-foreground">{t("overtimePage.list.title")}</h2>
         <p className="text-xs text-muted-foreground">{t("overtimePage.list.sub")}</p>
@@ -88,7 +88,7 @@ export function RoundsList({
                 {newDay && (
                   <div
                     className={
-                      "border-t border-border bg-muted/40 px-4 py-1.5 text-xs font-semibold " +
+                      "border-t border-border px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-[0.04em] " +
                       "text-muted-foreground first:border-t-0"
                     }
                   >
@@ -99,8 +99,8 @@ export function RoundsList({
                   type="button"
                   onClick={() => onSelect(r.id)}
                   className={cn(
-                    "flex w-full items-start gap-3 border-t border-border px-4 py-3 text-left transition-colors hover:bg-muted/50",
-                    selected === r.id && "bg-primary/5",
+                    "flex w-full items-start gap-3 border-t border-border px-4 py-3 text-left transition-colors hover:bg-accent",
+                    selected === r.id && "bg-shell-nav-on",
                   )}
                 >
                   <UserAvatar
@@ -109,6 +109,7 @@ export function RoundsList({
                     avatarUrl={r.technician?.avatarUrl}
                     seed={r.technicianId}
                     size="sm"
+                    soft
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm text-foreground">{headline(t, r, state, worked, agreed)}</span>
@@ -121,13 +122,16 @@ export function RoundsList({
                       {worked > 0 ? mins(worked) : "—"}
                     </span>
                     {overBy > 0 && (
-                      <span className="block text-[11px] text-amber-600 dark:text-amber-400">
+                      <span className="block text-[11px] text-shell-warn">
                         {t("overtimePage.overBy", { minutes: mins(overBy) })}
                       </span>
                     )}
                   </span>
                   <span
-                    className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold", STATE_PILL[state])}
+                    className={cn(
+                      "inline-flex h-6 shrink-0 items-center rounded-full px-2.5 text-xs font-semibold",
+                      STATE_PILL[state],
+                    )}
                   >
                     {t(`overtimePage.state.${state}`)}
                   </span>

@@ -7,14 +7,17 @@ import { COVER_TONE } from "../_lib/cover-labels"
 
 function Stat({ n, tone, title, sub }: { n: number; tone: keyof typeof COVER_TONE; title: string; sub: string }) {
   return (
-    <div className="flex items-center gap-3.5 rounded-2xl border border-border bg-card p-4">
+    <div className="flex items-center gap-3.5 rounded-[22px] border border-border bg-card px-[18px] py-4 shadow-shell">
       <span
-        className={cn("text-[26px] font-bold leading-none tabular-nums", n ? COVER_TONE[tone].text : "text-foreground")}
+        className={cn(
+          "text-[30px] font-semibold leading-none tracking-[-0.03em] tabular-nums",
+          n ? COVER_TONE[tone].text : "text-foreground",
+        )}
       >
         {n}
       </span>
       <span className="text-[12.5px] leading-snug text-muted-foreground">
-        <b className="block text-[13px] font-semibold text-foreground">{title}</b>
+        <b className="block text-[13.5px] font-semibold text-foreground">{title}</b>
         {sub}
       </span>
     </div>

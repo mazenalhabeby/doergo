@@ -13,12 +13,16 @@ import { overtimeApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/page/page-kit"
+import { PAGE_SHELL } from "@/components/ui/page-width"
+import { SEG, segButton } from "@/components/attendance/time-styles"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { mins } from "./_lib/round-words"
 import { RunningNow } from "./_components/running-now"
 import { ByPerson } from "./_components/by-person"
 import { RoundsList } from "./_components/rounds-list"
-import { RoundPanel, StateLegend } from "./_components/round-panel"
+import { RoundPanel } from "./_components/round-panel"
+import { StateLegend } from "./_components/state-legend"
 
 type Period = "week" | "lastWeek" | "month"
 const ALL = "all"
@@ -97,7 +101,7 @@ function OvertimePageInner() {
   */
   if (!allowed) {
     return (
-      <div className="min-h-full flex items-center justify-center bg-background">
+      <div className="flex min-h-full items-center justify-center">
         <div className="text-center">
           <XCircle className="size-16 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-foreground">{t("common.accessDenied")}</h2>
@@ -111,39 +115,45 @@ function OvertimePageInner() {
   const periodLabel = t(`overtimePage.period.${period}`)
 
   return (
-    <div className="min-h-full bg-background">
-      <div className="mx-auto grid max-w-screen-xl gap-6 px-6 py-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="flex min-w-0 flex-col gap-6">
-          <header>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 data-tour="page-overtime" className="text-3xl font-bold tracking-tight text-foreground">{t("overtimePage.title")}</h1>
-                <p className="mt-1.5 max-w-3xl text-muted-foreground">{t("overtimePage.explain")}</p>
-              </div>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0 rounded-xl"
-                onClick={() => summary.refetch()}
-                aria-label={t("common.refresh", "Refresh")}>
-                <RefreshCw className="size-4" />
-              </Button>
-            </div>
-            <ol className="mt-3 flex flex-wrap gap-2">
-              {[1, 2, 3, 4].map((n) => (
-                <li key={n} className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
-                  <span className="mr-1 font-semibold text-foreground">{n}</span>
-                  {t(`overtimePage.step${n}`)}
-                </li>
-              ))}
-            </ol>
-          </header>
+    <div className={PAGE_SHELL}>
+      <PageHeader
+        tour="page-overtime"
+        title={t("overtimePage.title")}
+        subtitle={t("overtimePage.explain")}
+        actions={
+          <Button
+            variant="outline"
+            size="pillIcon"
+            onClick={() => summary.refetch()}
+            aria-label={t("common.refresh", "Refresh")}
+          >
+            <RefreshCw />
+          </Button>
+        }
+      />
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex min-w-0 flex-col gap-4">
+          <ol className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+            {[1, 2, 3, 4].map((n) => (
+              <li
+                key={n}
+                className="flex items-center gap-2.5 rounded-2xl bg-muted px-3.5 py-3 text-[13px] text-foreground"
+              >
+                <b
+                  className={
+                    "grid size-6 shrink-0 place-items-center rounded-full bg-shell-accent text-xs " +
+                    "font-semibold text-shell-on-accent"
+                  }
+                >
+                  {n}
+                </b>
+                {t(`overtimePage.step${n}`)}
+              </li>
+            ))}
+          </ol>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div
-              className="inline-flex rounded-xl border border-border bg-muted/40 p-1"
-              role="tablist"
-              aria-label={t("overtimePage.periodLabel")}>
+            <div className={SEG} role="tablist" aria-label={t("overtimePage.periodLabel")}>
               {(["week", "lastWeek", "month"] as Period[]).map((p) => (
                 <button
                   key={p}
@@ -151,27 +161,36 @@ function OvertimePageInner() {
                   role="tab"
                   aria-selected={period === p}
                   onClick={() => setPeriod(p)}
-                  className={cn(
-                    "rounded-lg px-3 py-1.5 text-sm transition-colors",
-                    period === p ? "bg-background font-semibold text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-                  )}
+                  className={segButton(period === p)}
                 >
                   {t(`overtimePage.period.${p}`)}
                 </button>
               ))}
             </div>
             <Select value={spaceId} onValueChange={setSpaceId}>
-              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-10 w-48 rounded-full">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL}>{t("overtimePage.allWorkspaces")}</SelectItem>
-                {spaces.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                {spaces.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select value={personId} onValueChange={setPersonId}>
-              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-10 w-48 rounded-full">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL}>{t("overtimePage.everyone")}</SelectItem>
-                {people.map(([id, name]) => <SelectItem key={id} value={id}>{name}</SelectItem>)}
+                {people.map(([id, name]) => (
+                  <SelectItem key={id} value={id}>
+                    {name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -181,7 +200,10 @@ function OvertimePageInner() {
               value={totals ? mins(totals.workedMinutes) : "—"}
               label={t("overtimePage.num.worked", { period: periodLabel.toLowerCase() })}
             />
-            <Figure value={totals ? String(totals.rounds) : "—"} label={t("overtimePage.num.rounds", { count: totals?.people ?? 0 })} />
+            <Figure
+              value={totals ? String(totals.rounds) : "—"}
+              label={t("overtimePage.num.rounds", { count: totals?.people ?? 0 })}
+            />
             <Figure
               value={summary.data ? String(summary.data.running.length) : "—"}
               label={t("overtimePage.num.running")}
@@ -216,18 +238,16 @@ function OvertimePageInner() {
 
 function Figure({ value, label, tone }: { value: string; label: string; tone?: "run" | "warn" }) {
   return (
-    <div className={cn("rounded-2xl border bg-card px-4 py-3", tone === "warn" ? "border-amber-500/40" : "border-border")}>
+    <div className="flex flex-col gap-1.5 rounded-[22px] border border-border bg-card px-[18px] py-4 shadow-shell">
+      <p className="text-[13.5px] text-muted-foreground">{label}</p>
       <p
         className={cn(
-          "text-2xl font-semibold tabular-nums",
-          tone === "run"
-            ? "text-emerald-600 dark:text-emerald-400"
-            : tone === "warn" ? "text-amber-600 dark:text-amber-400" : "text-foreground",
+          "text-[30px] font-semibold leading-[1.1] tracking-[-0.03em] tabular-nums",
+          tone === "run" ? "text-shell-accent" : tone === "warn" ? "text-shell-warn" : "text-foreground",
         )}
       >
         {value}
       </p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
     </div>
   )
 }

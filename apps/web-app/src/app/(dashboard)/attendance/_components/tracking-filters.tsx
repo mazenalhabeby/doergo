@@ -1,4 +1,5 @@
 import React from "react"
+import { SEG, segButton } from "@/components/attendance/time-styles"
 import { useTranslation } from "react-i18next"
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, subMonths } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -77,7 +78,7 @@ export function TrackingFilters({
           placeholder={t("attendance.tracking.searchPlaceholder")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm"
+          className="pl-10 h-11 bg-card border-border rounded-full"
         />
       </div>
 
@@ -89,7 +90,7 @@ export function TrackingFilters({
           setPage(1)
         }}
       >
-        <SelectTrigger className="w-[200px] h-11 rounded-xl bg-card border-border/80 shadow-sm">
+        <SelectTrigger className="w-[200px] h-11 rounded-full bg-card border-border">
           <MapPin className="size-4 mr-2 text-muted-foreground" />
           <SelectValue placeholder={t("attendance.tracking.selectLocation")} />
         </SelectTrigger>
@@ -111,7 +112,7 @@ export function TrackingFilters({
           setPage(1)
         }}
       >
-        <SelectTrigger className="w-[150px] h-11 rounded-xl bg-card border-border/80 shadow-sm">
+        <SelectTrigger className="w-[150px] h-11 rounded-full bg-card border-border">
           <SelectValue placeholder={t("attendance.tracking.statusPlaceholder")} />
         </SelectTrigger>
         <SelectContent>
@@ -126,7 +127,7 @@ export function TrackingFilters({
       <div
         className={
           "group inline-flex items-center h-11 gap-1 rounded-xl border " +
-          "border-border/80 bg-card/80 px-3 shadow-sm transition-colors " +
+          "border-border bg-card px-3 transition-colors " +
           "focus-within:border-foreground/30 focus-within:ring-2 " +
           "focus-within:ring-foreground/10"
         }
@@ -161,27 +162,17 @@ export function TrackingFilters({
         variant="outline"
         size="icon"
         onClick={() => refetch()}
-        className="h-11 w-11 rounded-xl border-border/80 bg-card shadow-sm hover:bg-accent"
+        className="h-11 w-11 rounded-full border-border bg-card hover:bg-accent"
       >
         <RefreshCw className="size-4 text-muted-foreground" />
       </Button>
 
       {/* Quick range presets */}
-      <div className="inline-flex items-center gap-1 rounded-xl border border-border/70 bg-muted/40 p-1 shadow-sm">
+      <div className={SEG}>
         {presets.map((p) => {
           const active = selectedDate === p.from && endDate === p.to
           return (
-            <button
-              key={p.key}
-              type="button"
-              onClick={() => applyRange(p.from, p.to)}
-              className={cn(
-                "h-9 rounded-lg px-3 text-xs font-medium transition-all",
-                active
-                  ? "bg-foreground text-background shadow-sm"
-                  : "text-muted-foreground hover:bg-background hover:text-foreground",
-              )}
-            >
+            <button key={p.key} type="button" onClick={() => applyRange(p.from, p.to)} className={segButton(active)}>
               {t(`attendance.tracking.presets.${p.key}`)}
             </button>
           )

@@ -46,7 +46,7 @@ export const isImg = (m?: string) => !!m && m.startsWith("image/")
 export const Chip = ({ status }: { status: string }) => (
   <span
     className={cn(
-      "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] " + "font-semibold uppercase tracking-wide",
+      "inline-flex h-5 shrink-0 items-center rounded-full border px-2 text-[11px] font-semibold",
       STATUS[status],
     )}
   >

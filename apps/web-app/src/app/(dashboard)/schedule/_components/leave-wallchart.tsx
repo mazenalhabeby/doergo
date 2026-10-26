@@ -120,7 +120,7 @@ export function LeaveWallchart({
 
   if (isLoading) {
     return (
-      <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+      <div className="space-y-3 rounded-[22px] border border-border bg-card p-4 shadow-shell">
         {[...Array(6)].map((_, i) => (
           <Skeleton key={i} className="h-10 w-full rounded-lg" />
         ))}
@@ -139,7 +139,7 @@ export function LeaveWallchart({
   */
   if (!spaces.some((s) => s.people.length) && !unassigned.length) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-12 text-center">
+      <div className="rounded-[22px] border border-border bg-card p-12 text-center shadow-shell">
         <Users className="mx-auto mb-3 h-9 w-9 text-muted-foreground" strokeWidth={1.5} />
         <p className="text-sm font-medium text-foreground">{t("cover.chart.emptyTitle", "Nobody to show here")}</p>
         <p className="mt-1 text-[13px] text-muted-foreground">
@@ -161,14 +161,19 @@ export function LeaveWallchart({
 
   return (
     <Popover open={!!picked} onOpenChange={(open) => !open && onClosePick?.()}>
-      <div className={cn("overflow-hidden rounded-2xl border border-border bg-card", selected && "is-focused")}>
+      <div
+        className={cn(
+          "overflow-hidden rounded-[22px] border border-border bg-card shadow-shell",
+          selected && "is-focused",
+        )}
+      >
         <div className="overflow-x-auto">
           <div className="min-w-max">
             {/* Dates */}
-            <div className="grid bg-muted/50 border-b border-border" style={template}>
+            <div className="grid border-b border-border bg-card" style={template}>
               <div
                 className={
-                  "sticky left-0 z-20 bg-muted/50 px-3 py-1.5 text-[11px] font-semibold " +
+                  "sticky left-0 z-20 bg-card px-3 py-1.5 text-[11px] font-bold " +
                   "uppercase tracking-wider text-muted-foreground border-r border-border"
                 }
               >
@@ -185,12 +190,10 @@ export function LeaveWallchart({
                     isWeekend(d) && "bg-muted",
                   )}
                 >
-                  <span className="block text-[9px] uppercase tracking-wider text-muted-foreground/70">
-                    {format(d, "EEEEE")}
-                  </span>
+                  <span className="block text-[11px] text-muted-foreground">{format(d, "EEEEE")}</span>
                   <span
                     className={cn(
-                      "block text-[12px] font-semibold tabular-nums text-muted-foreground",
+                      "block text-[13px] font-semibold tabular-nums text-foreground",
                       isSameDay(d, new Date()) &&
                         "mx-auto grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground",
                     )}

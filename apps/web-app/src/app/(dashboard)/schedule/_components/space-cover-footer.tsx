@@ -60,11 +60,7 @@ export function SpaceCoverFooter({
               className={cn(
                 "border-l border-border py-1 text-center text-xs tabular-nums",
                 isWeekend(d) && "bg-muted",
-                short
-                  ? "font-bold text-red-600 dark:text-red-400"
-                  : tight
-                    ? "font-bold text-amber-600 dark:text-amber-400"
-                    : "text-muted-foreground",
+                short ? "font-bold text-shell-crit" : tight ? "font-bold text-shell-warn" : "text-muted-foreground",
               )}
             >
               {info.working}
@@ -72,7 +68,7 @@ export function SpaceCoverFooter({
                 <span
                   className={cn(
                     "block text-[10px] font-bold leading-tight",
-                    minCover > 0 && proj < minCover ? "text-red-600 dark:text-red-400" : "text-primary",
+                    minCover > 0 && proj < minCover ? "text-shell-crit" : "text-primary",
                   )}
                 >
                   → {proj}
@@ -118,10 +114,10 @@ export function SpaceCoverFooter({
                   "border-l border-border py-1 text-center text-xs",
                   isWeekend(d) && "bg-muted",
                   n < minCover
-                    ? "font-bold text-red-600 dark:text-red-400"
+                    ? "font-bold text-shell-crit"
                     : n === minCover
-                      ? "font-bold text-amber-600 dark:text-amber-400"
-                      : "text-emerald-600 dark:text-emerald-400",
+                      ? "font-bold text-shell-warn"
+                      : "text-shell-accent",
                 )}
               >
                 {mark}

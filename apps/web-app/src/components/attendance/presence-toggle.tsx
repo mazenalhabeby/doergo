@@ -21,9 +21,15 @@ export const PRESENCE_OPTS: {
   dot: string
   ring: string
 }[] = [
-  { value: "AVAILABLE", key: "presence.available", def: "Available", dot: "bg-green-500", ring: "ring-green-500" },
-  { value: "BUSY", key: "presence.busy", def: "Busy", dot: "bg-red-500", ring: "ring-red-500" },
-  { value: "AWAY", key: "presence.away", def: "Away", dot: "bg-amber-500", ring: "ring-amber-500" },
+  {
+    value: "AVAILABLE",
+    key: "presence.available",
+    def: "Available",
+    dot: "bg-shell-accent",
+    ring: "ring-shell-accent",
+  },
+  { value: "BUSY", key: "presence.busy", def: "Busy", dot: "bg-shell-crit", ring: "ring-shell-crit" },
+  { value: "AWAY", key: "presence.away", def: "Away", dot: "bg-shell-warn", ring: "ring-shell-warn" },
 ]
 
 /**

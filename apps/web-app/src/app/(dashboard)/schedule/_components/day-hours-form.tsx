@@ -117,7 +117,9 @@ export function DayHoursForm({ picked, onClose }: { picked: PickedDay; onClose: 
       </div>
 
       {stop ? (
-        <p className="rounded-lg bg-amber-500/10 px-2.5 py-2 text-[12.5px] text-foreground">{stop}</p>
+        <p className="rounded-lg bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] px-2.5 py-2 text-[12.5px] text-foreground">
+          {stop}
+        </p>
       ) : view.isLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-8 w-full" />
@@ -140,7 +142,7 @@ export function DayHoursForm({ picked, onClose }: { picked: PickedDay; onClose: 
             {planned}
             {clocked && (
               <span className="ml-1">
-                · <span className="mr-1 inline-block size-1.5 rounded-full bg-emerald-500 align-middle" />
+                · <span className="mr-1 inline-block size-1.5 rounded-full bg-shell-accent align-middle" />
                 {t("dayHours.plan.clockedIn", { time: clocked.at })}
               </span>
             )}

@@ -28,7 +28,7 @@ export function ActiveBreaks({
   // The break somebody asked to end, waiting for the confirm.
   const [endingId, setEndingId] = useState<string | null>(null)
   return (
-    <div className="bg-card rounded-2xl border border-border/60 shadow-sm mb-6">
+    <div className="bg-card rounded-[22px] border border-border shadow-shell mb-6">
       <ConfirmDialog
         open={endingId !== null}
         onOpenChange={(open) => !open && setEndingId(null)}
@@ -40,7 +40,7 @@ export function ActiveBreaks({
       <div className="p-6 border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-600">
+            <div className="p-2.5 rounded-lg bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn">
               <Coffee className="size-5" />
             </div>
             <div>
@@ -63,7 +63,7 @@ export function ActiveBreaks({
         </div>
       ) : activeBreaks.length === 0 ? (
         <div className="p-12 text-center">
-          <CheckCircle2 className="size-12 text-green-400 mx-auto mb-4" />
+          <CheckCircle2 className="size-12 text-shell-accent mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground">{t("attendance.breaks.noActiveBreaks")}</h3>
           <p className="text-muted-foreground mt-1">{t("attendance.breaks.allWorking")}</p>
         </div>
@@ -76,7 +76,7 @@ export function ActiveBreaks({
                   className={cn(
                     "size-10 rounded-full flex items-center justify-center",
                     breakItem.type === "LUNCH"
-                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                      ? "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn"
                       : breakItem.type === "SHORT"
                         ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
                         : "bg-muted text-muted-foreground",
@@ -107,7 +107,7 @@ export function ActiveBreaks({
                 <span
                   className={cn(
                     "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full",
-                    "bg-orange-50 dark:bg-orange-500/10 text-orange-700 border border-orange-200",
+                    "bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn border border-transparent",
                   )}
                 >
                   <Clock className="size-3.5" />

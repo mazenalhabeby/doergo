@@ -10,7 +10,9 @@ import { AlertCircle, CalendarDays, ChevronLeft, ChevronRight, House, RefreshCw 
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SpaceTabs } from "@/components/spaces/space-tabs"
-import { PAGE_WIDTH } from "@/components/ui/page-width"
+import { PAGE_SHELL } from "@/components/ui/page-width"
+import { PageHeader } from "@/components/page/page-kit"
+import { CRIT_SOFT, PENDING_STRIPES, ROUND_ICON, SEG, segButton } from "@/components/attendance/time-styles"
 import { cn } from "@/lib/utils"
 
 import { FloorNowPanel } from "./_components/floor-now-panel"
@@ -68,10 +70,10 @@ export default function ScheduleAndTimeOffPage() {
 
   if (!canManage) {
     return (
-      <div className="min-h-full bg-background">
-        <div className={cn(PAGE_WIDTH, "py-6")}>
-          <div className="rounded-2xl border border-border bg-card p-12 text-center">
-            <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-400" />
+      <div className="min-h-full">
+        <div className={PAGE_SHELL}>
+          <div className="rounded-[22px] border border-border bg-card p-12 text-center shadow-shell">
+            <AlertCircle className="mx-auto mb-4 h-12 w-12 text-shell-crit" />
             <h3 className="mb-2 text-lg font-medium text-foreground">
               {t("technicians.availabilityPage.accessDenied")}
             </h3>
@@ -89,14 +91,13 @@ export default function ScheduleAndTimeOffPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-full bg-background">
-        <div className={cn(PAGE_WIDTH, "py-6")}>
-          <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h1 data-tour="page-availability" className="text-2xl font-semibold tracking-tight text-foreground">
-                {t("technicians.availabilityPage.title")}
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
+      <div className="min-h-full">
+        <div className={PAGE_SHELL}>
+          <PageHeader
+            tour="page-availability"
+            title={t("technicians.availabilityPage.title")}
+            subtitle={
+              <>
                 {t("cover.page.subtitle", "Who is on the floor now, and who is asking to be off later.")}
                 {/* A quiet way in to the starting balances — inline, so the header keeps its shape. */}
                 {opensOpening && (
@@ -110,58 +111,56 @@ export default function ScheduleAndTimeOffPage() {
                     </Link>
                   </>
                 )}
-              </p>
-            </div>
+              </>
+            }
+            actions={
+              <>
+                <div className={SEG} role="group">
+                  {(["fortnight", "month"] as const).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      aria-pressed={range === r}
+                      onClick={() => setRange(r)}
+                      className={segButton(range === r)}
+                    >
+                      {r === "fortnight" ? t("cover.range.fortnight", "2 weeks") : t("cover.range.month", "Month")}
+                    </button>
+                  ))}
+                </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex rounded-xl border bg-muted/40 p-0.5" role="group">
-                {(["fortnight", "month"] as const).map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    aria-pressed={range === r}
-                    onClick={() => setRange(r)}
-                    className={cn(
-                      "h-7 rounded-lg px-3 text-[13px] font-medium text-muted-foreground transition hover:text-foreground",
-                      range === r && "bg-background text-foreground shadow-sm ring-1 ring-border",
-                    )}
-                  >
-                    {r === "fortnight" ? t("cover.range.fortnight", "2 weeks") : t("cover.range.month", "Month")}
-                  </button>
-                ))}
-              </div>
-
-              {/* The calendar's counterpart to its Team button — always here, opening on the period on screen. */}
-              <Button asChild variant="outline" size="sm" className="h-8 gap-1.5">
-                <Link href={`/calendar?date=${format(anchor, "yyyy-MM-dd")}`}>
-                  <CalendarDays className="h-4 w-4" />
-                  {t("nav.sidebar.calendar")}
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm" className="h-8" onClick={() => setAnchor(new Date())}>
-                {t("common.today")}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => step(-1)}
-                aria-label={t("common.previous", "Previous")}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="min-w-[10.5rem] text-center text-sm font-semibold text-foreground">{rangeLabel}</span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => step(1)}
-                aria-label={t("common.next", "Next")}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </header>
+                {/* The calendar's counterpart to its Team button — always here, opening on the period on screen. */}
+                <Button asChild variant="outline" size="pill">
+                  <Link href={`/calendar?date=${format(anchor, "yyyy-MM-dd")}`}>
+                    <CalendarDays />
+                    {t("nav.sidebar.calendar")}
+                  </Link>
+                </Button>
+                <Button variant="outline" size="pill" onClick={() => setAnchor(new Date())}>
+                  {t("common.today")}
+                </Button>
+                <button
+                  type="button"
+                  className={ROUND_ICON}
+                  onClick={() => step(-1)}
+                  aria-label={t("common.previous", "Previous")}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="min-w-[10.5rem] text-center text-sm font-semibold tabular-nums text-foreground">
+                  {rangeLabel}
+                </span>
+                <button
+                  type="button"
+                  className={ROUND_ICON}
+                  onClick={() => step(1)}
+                  aria-label={t("common.next", "Next")}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </>
+            }
+          />
 
           {/*
             A failed read must never look like an empty organization.
@@ -172,12 +171,10 @@ export default function ScheduleAndTimeOffPage() {
             it cost a round trip to diagnose something the screen already knew.
           */}
           {loadError && (
-            <div className="mb-4 flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+            <div className={cn("mb-4 flex items-start gap-3 rounded-2xl p-4", CRIT_SOFT)}>
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-destructive">
-                  {t("cover.error.title", "This page could not load")}
-                </p>
+                <p className="text-sm font-semibold">{t("cover.error.title", "This page could not load")}</p>
                 <p className="mt-0.5 text-[12.5px] text-muted-foreground">
                   {loadError.message || t("cover.error.generic", "The server did not answer.")}
                 </p>
@@ -185,7 +182,7 @@ export default function ScheduleAndTimeOffPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="shrink-0"
+                className="shrink-0 rounded-full"
                 onClick={() => {
                   void floorQuery.refetch()
                   void leaveQuery.refetch()
@@ -242,24 +239,18 @@ export default function ScheduleAndTimeOffPage() {
             className="flex flex-wrap items-center justify-center gap-6 py-3 text-xs text-muted-foreground"
           >
             <span className="inline-flex items-center gap-2">
-              <i className="h-3 w-5 rounded-sm bg-primary/85" />
+              <i className="h-3 w-5 rounded-[4px] bg-shell-accent" />
               {t("common.approved")}
             </span>
             <span className="inline-flex items-center gap-2">
-              <i
-                className={
-                  "h-3 w-5 rounded-sm border border-amber-500/80 " +
-                  "bg-[repeating-linear-gradient(45deg,theme(colors.amber.200)_0_4px,theme(colors.amber.300)_4px_8px)] " +
-                  "dark:bg-[repeating-linear-gradient(45deg,theme(colors.amber.950)_0_4px,theme(colors.amber.900)_4px_8px)]"
-                }
-              />
+              <i className={"h-3 w-5 rounded-[4px] " + PENDING_STRIPES} />
               {t("cover.legend.pending", "Pending — yours to decide")}
             </span>
             <span className="inline-flex items-center gap-2">
               <i
                 className={
                   "inline-flex h-4 items-center rounded-full border border-dashed " +
-                  "border-amber-500/80 bg-card px-1 text-amber-800 dark:text-amber-300"
+                  "border-current bg-card px-1 text-shell-warn"
                 }
               >
                 <House className="h-2.5 w-2.5" />

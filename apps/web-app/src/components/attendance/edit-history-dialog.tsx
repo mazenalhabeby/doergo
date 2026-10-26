@@ -9,13 +9,7 @@ import { Pencil, Loader2, ArrowRight, History } from "lucide-react"
 import { attendanceApi, type TimeEntry, type EntryEditChange, type EntryEditHistoryItem } from "@/lib/api"
 import { useTimeFormat } from "@/hooks"
 import { formatTimeOfDay } from "@/lib/utils"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { keys } from "@/lib/query-keys"
 
@@ -92,7 +86,7 @@ export function EditHistoryDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <History className="size-4 text-amber-600" />
+            <History className="size-4 text-shell-warn" />
             {t("attendance.history.title", "Edit history")}
           </DialogTitle>
           <DialogDescription>
@@ -113,10 +107,18 @@ export function EditHistoryDialog({
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/60">
-                  <TableHead className="font-semibold text-muted-foreground">{t("attendance.history.when", "When")}</TableHead>
-                  <TableHead className="font-semibold text-muted-foreground">{t("attendance.history.editor", "Editor")}</TableHead>
-                  <TableHead className="font-semibold text-muted-foreground">{t("attendance.history.change", "Change")}</TableHead>
-                  <TableHead className="font-semibold text-muted-foreground">{t("attendance.edited.reason", "Reason")}</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground">
+                    {t("attendance.history.when", "When")}
+                  </TableHead>
+                  <TableHead className="font-semibold text-muted-foreground">
+                    {t("attendance.history.editor", "Editor")}
+                  </TableHead>
+                  <TableHead className="font-semibold text-muted-foreground">
+                    {t("attendance.history.change", "Change")}
+                  </TableHead>
+                  <TableHead className="font-semibold text-muted-foreground">
+                    {t("attendance.edited.reason", "Reason")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -139,7 +141,9 @@ export function EditHistoryDialog({
                           {row.changes.map((c, i) => (
                             <div key={i} className="flex items-center gap-2 text-xs">
                               <span className="w-16 shrink-0 text-muted-foreground">{fieldLabel(c.field)}</span>
-                              <span className="text-muted-foreground line-through tabular-nums">{fmtVal(c.field, c.from)}</span>
+                              <span className="text-muted-foreground line-through tabular-nums">
+                                {fmtVal(c.field, c.from)}
+                              </span>
                               <ArrowRight className="size-3 shrink-0 text-muted-foreground/50" />
                               <span className="font-medium text-foreground tabular-nums">{fmtVal(c.field, c.to)}</span>
                             </div>

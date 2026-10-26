@@ -1,5 +1,6 @@
 "use client"
 
+import { SEG, segButton } from "@/components/attendance/time-styles"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { useCallback, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
@@ -8,7 +9,6 @@ import { Columns3, ListFilter, Radio } from "lucide-react"
 
 import { employeesApi } from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
 import { useTimeFormat } from "@/hooks/use-time-format"
 import { readStoredFloorView, storeFloorView, type FloorView } from "../_lib/floor-view"
 import { keys } from "@/lib/query-keys"
@@ -63,7 +63,7 @@ export function FloorNowPanel({ spaceFilter }: { spaceFilter: string }) {
 
   if (isLoading) {
     return (
-      <div className="mb-4 rounded-2xl border border-border bg-card p-4">
+      <div className="mb-4 rounded-[22px] border border-border bg-card p-4 shadow-shell">
         <Skeleton className="mb-4 h-4 w-40" />
         <Skeleton className="h-20 w-full" />
       </div>
@@ -75,16 +75,12 @@ export function FloorNowPanel({ spaceFilter }: { spaceFilter: string }) {
   return (
     <section className="mb-4">
       <header className="mb-2.5 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <Radio className="h-3.5 w-3.5 animate-pulse text-emerald-500" aria-hidden />
+        <h2 className="flex items-center gap-2 text-[17px] font-semibold text-foreground">
+          <Radio className="h-3.5 w-3.5 animate-pulse text-shell-accent" aria-hidden />
           {t("cover.floorNow.title", "On the floor right now")}
         </h2>
 
-        <div
-          className="inline-flex rounded-lg border border-border bg-card p-0.5"
-          role="group"
-          aria-label={t("cover.floorNow.viewLabel", "Layout")}
-        >
+        <div className={SEG} role="group" aria-label={t("cover.floorNow.viewLabel", "Layout")}>
           {(
             [
               ["exceptions", ListFilter, t("cover.floorNow.viewExceptions", "Only what needs you")],
@@ -97,10 +93,7 @@ export function FloorNowPanel({ spaceFilter }: { spaceFilter: string }) {
               aria-pressed={view === v}
               onClick={() => choose(v)}
               title={label}
-              className={cn(
-                "inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium transition",
-                view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-              )}
+              className={segButton(view === v)}
             >
               <Icon className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{label}</span>

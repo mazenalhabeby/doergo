@@ -1,4 +1,6 @@
 import React from "react"
+import { Count } from "@/components/page/page-kit"
+import { SEG, segButton } from "@/components/attendance/time-styles"
 import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { AlertCircle, CheckCircle2, Clock, Users, CalendarOff } from "lucide-react"
@@ -112,42 +114,19 @@ export function TrackingTab({
 
       {/* Attendance vs Days-off sub-tabs (days off are org-wide → "all" view only) */}
       {showDaysOffTab && (
-        <div className="mb-4 inline-flex items-center gap-1 rounded-xl bg-muted p-1">
+        <div className={cn(SEG, "mb-4")}>
           <button
             type="button"
             onClick={() => setView("attendance")}
-            className={cn(
-              "inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium transition-all",
-              effectiveView === "attendance"
-                ? "bg-foreground text-background shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
+            className={segButton(effectiveView === "attendance")}
           >
             <Clock className="size-4" />
             {t("attendance.tabs.attendance", "Attendance")}
           </button>
-          <button
-            type="button"
-            onClick={() => setView("daysoff")}
-            className={cn(
-              "inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium transition-all",
-              effectiveView === "daysoff"
-                ? "bg-foreground text-background shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
+          <button type="button" onClick={() => setView("daysoff")} className={segButton(effectiveView === "daysoff")}>
             <CalendarOff className="size-4" />
             {t("attendance.tabs.daysOff", "Days off")}
-            {daysOff.length > 0 && (
-              <span
-                className={cn(
-                  "ml-0.5 rounded-full px-1.5 text-[11px] font-semibold tabular-nums",
-                  effectiveView === "daysoff" ? "bg-background/20" : "bg-foreground/10",
-                )}
-              >
-                {daysOff.length}
-              </span>
-            )}
+            {daysOff.length > 0 && <Count n={daysOff.length} />}
           </button>
         </div>
       )}

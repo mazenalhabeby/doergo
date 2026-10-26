@@ -3,6 +3,7 @@
 import { type AttendanceChip, type AttendanceTone } from "@/lib/attendance-status"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import { ACCENT_SOFT, CRIT_SOFT, WARN_SOFT } from "./time-styles"
 
 /**
  * One attendance label as a chip — the same colours on every attendance
@@ -11,26 +12,27 @@ import { cn } from "@/lib/utils"
  */
 
 export const LABEL_TONE_CLASSES: Record<AttendanceTone, string> = {
-  green: "border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400",
-  amber: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  red: "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400",
-  blue: "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  orange: "border-orange-500/20 bg-orange-500/10 text-orange-600 dark:text-orange-400",
-  purple: "border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400",
-  muted: "border-border bg-muted text-muted-foreground",
+  green: ACCENT_SOFT,
+  amber: WARN_SOFT,
+  red: CRIT_SOFT,
+  // Kinds of time (away, extra, a rest) keep their own hue, drawn as the same soft chip.
+  blue: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  orange: "bg-orange-500/10 text-orange-700 dark:text-orange-300",
+  purple: "bg-purple-500/10 text-purple-700 dark:text-purple-300",
+  muted: "bg-shell-chip text-muted-foreground",
 }
 
 export const LABEL_TONE_DOT: Record<AttendanceTone, string> = {
-  green: "bg-green-500",
-  amber: "bg-amber-500",
-  red: "bg-red-500",
+  green: "bg-shell-accent",
+  amber: "bg-shell-warn",
+  red: "bg-shell-crit",
   blue: "bg-blue-500",
   orange: "bg-orange-500",
   purple: "bg-purple-500",
   muted: "bg-muted-foreground",
 }
 
-const CHIP = "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium"
+const CHIP = "inline-flex h-5 items-center rounded-full px-2 text-[11px] font-semibold"
 
 export function LabelChip({ chip, className }: { chip: AttendanceChip; className?: string }) {
   const body = <span className={cn(CHIP, LABEL_TONE_CLASSES[chip.tone], className)}>{chip.label}</span>

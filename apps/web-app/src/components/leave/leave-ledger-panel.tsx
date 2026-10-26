@@ -88,7 +88,7 @@ export function LeaveLedgerPanel({
   const editable = canAdjust && ledger?.canEdit === true
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card">
+    <section className="overflow-hidden rounded-[22px] border border-border bg-card shadow-shell">
       <header className="flex flex-wrap items-center gap-2.5 border-b border-border/60 px-5 py-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Scale className="h-4 w-4" />
@@ -102,7 +102,11 @@ export function LeaveLedgerPanel({
             {opensOpening && (
               <Link
                 href="/members/leave-opening"
-                className={"text-xs font-medium text-muted-foreground underline-offset-2 " + "hover:text-foreground hover:underline"}>
+                className={
+                  "text-xs font-medium text-muted-foreground underline-offset-2 " +
+                  "hover:text-foreground hover:underline"
+                }
+              >
                 {t("leaveLedger.opening.link")}
               </Link>
             )}
@@ -184,7 +188,12 @@ function LedgerRow({
   return (
     <li className={cn("px-3 py-2.5", voided && "bg-muted/30")}>
       <div className="flex items-start gap-3">
-        <div className={cn("min-w-0 flex-1", voided && "text-muted-foreground line-through decoration-muted-foreground/60")}>
+        <div
+          className={cn(
+            "min-w-0 flex-1",
+            voided && "text-muted-foreground line-through decoration-muted-foreground/60",
+          )}
+        >
           <p className="text-[13px] font-medium text-foreground">{t(`leaveLedger.lines.${line.kind}`)}</p>
           {line.reason && <p className="mt-0.5 text-xs text-muted-foreground">{line.reason}</p>}
           <p className="mt-0.5 text-[11px] text-muted-foreground">
@@ -194,16 +203,19 @@ function LedgerRow({
         <span
           className={cn(
             "shrink-0 font-mono text-[13px] tabular-nums",
-            voided
-              ? "text-muted-foreground line-through"
-              : line.days < 0 ? "text-foreground/80" : "text-emerald-700 dark:text-emerald-400")}>
+            voided ? "text-muted-foreground line-through" : line.days < 0 ? "text-foreground/80" : "text-shell-accent",
+          )}
+        >
           {formatSignedDays(line.days, dateLocale())}
         </span>
       </div>
       {voided && (
         <p className="mt-1 text-[11px] text-muted-foreground">
           {line.voidedBy
-            ? t("leaveLedger.ledger.voidedByOn", { name: personName(line.voidedBy), date: formatMediumDate(line.voidedAt!) })
+            ? t("leaveLedger.ledger.voidedByOn", {
+                name: personName(line.voidedBy),
+                date: formatMediumDate(line.voidedAt!),
+              })
             : t("leaveLedger.ledger.voidedOn", { date: formatMediumDate(line.voidedAt!) })}
         </p>
       )}
@@ -220,8 +232,11 @@ function LedgerRow({
       {canUndo && confirming && (
         /* Confirmed in place: the row says what undoing does, and asks once. */
         <div
-          className={"mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-amber-500/10 px-2.5 " +
-            "py-2 text-[12px] text-amber-800 dark:text-amber-300"}>
+          className={
+            "mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] px-2.5 " +
+            "py-2 text-[12px] text-shell-warn"
+          }
+        >
           <span className="min-w-0 flex-1">{t("leaveLedger.ledger.undoConfirm")}</span>
           <Button size="sm" variant="ghost" className="h-7" onClick={onCancelUndo} disabled={pending}>
             {t("leaveLedger.ledger.keep")}

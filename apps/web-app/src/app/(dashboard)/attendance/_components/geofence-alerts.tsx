@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next"
+import { Chip } from "@/components/page/page-kit"
 import { type TimeEntry } from "@/lib/api"
 import { UserAvatar } from "@/components/common/user-avatar"
 import { useTimeFormat } from "@/hooks"
@@ -12,27 +13,25 @@ export function GeofenceAlerts({ violations }: { violations: TimeEntry[] }) {
   const { hour12, locale } = useTimeFormat()
   if (violations.length === 0) return null
   return (
-    <div className="bg-card rounded-2xl border border-amber-200/60 dark:border-amber-500/25 shadow-sm mb-8 overflow-hidden">
-      <div className="p-5 border-b border-amber-100 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5">
+    <div className="bg-card rounded-[22px] border border-border shadow-shell mb-8 overflow-hidden">
+      <div className="p-5 border-b border-transparent bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)]">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
+          <div className="p-2 rounded-lg bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)] text-shell-warn">
             <AlertCircle className="size-5" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-200">
+            <h2 className="text-lg font-semibold text-shell-warn">
               {t("attendance.tracking.geofenceAlerts", { count: violations.length })}
             </h2>
-            <p className="text-sm text-amber-700 dark:text-amber-300/80">
-              {t("attendance.tracking.geofenceAlertsDesc")}
-            </p>
+            <p className="text-sm text-shell-warn">{t("attendance.tracking.geofenceAlertsDesc")}</p>
           </div>
         </div>
       </div>
-      <div className="divide-y divide-amber-100 dark:divide-amber-500/15">
+      <div className="divide-y divide-amber-100">
         {violations.slice(0, 5).map((entry: TimeEntry) => (
           <div
             key={entry.id}
-            className="p-4 flex items-center justify-between hover:bg-amber-50/30 dark:hover:bg-amber-500/5"
+            className="p-4 flex items-center justify-between hover:bg-[color-mix(in_srgb,var(--shell-warn)_13%,transparent)]"
           >
             <div className="flex items-center gap-3">
               <UserAvatar
@@ -41,6 +40,7 @@ export function GeofenceAlerts({ violations }: { violations: TimeEntry[] }) {
 
                 seed={entry.user?.id}
                 size="md"
+                soft
               />
               <div>
                 <p className="font-medium text-foreground">{personName(entry.user)}</p>
@@ -65,26 +65,16 @@ export function GeofenceAlerts({ violations }: { violations: TimeEntry[] }) {
                     </p>
                     <div className="mt-1.5 flex items-center gap-1.5 justify-end">
                       {!entry.clockInWithinGeofence && (
-                        <span
-                          className={
-                            "inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 " +
-                            "text-[11px] font-medium text-amber-600 dark:text-amber-400"
-                          }
-                        >
+                        <Chip tone="warn" className="h-5 gap-1 px-2 text-[11px]">
                           <MapPin className="size-3" />
                           {t("attendance.tracking.clockInOutside")}
-                        </span>
+                        </Chip>
                       )}
                       {entry.clockOutAt && entry.clockOutWithinGeofence === false && (
-                        <span
-                          className={
-                            "inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 " +
-                            "text-[11px] font-medium text-amber-600 dark:text-amber-400"
-                          }
-                        >
+                        <Chip tone="warn" className="h-5 gap-1 px-2 text-[11px]">
                           <MapPin className="size-3" />
                           {t("attendance.tracking.clockOutOutside")}
-                        </span>
+                        </Chip>
                       )}
                     </div>
                   </div>
@@ -95,7 +85,7 @@ export function GeofenceAlerts({ violations }: { violations: TimeEntry[] }) {
           </div>
         ))}
         {violations.length > 5 && (
-          <div className="p-3 text-center text-sm text-amber-600">
+          <div className="p-3 text-center text-sm text-shell-warn">
             {t("attendance.tracking.moreAlerts", { count: violations.length - 5 })}
           </div>
         )}

@@ -49,7 +49,10 @@ export function TrackingResults({
 > & { view: "attendance" | "daysoff" }) {
   const { t } = useTranslation()
   return (
-    <div data-tour="tracking-table" className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
+    <div
+      data-tour="tracking-table"
+      className="bg-card rounded-[22px] border border-border shadow-shell overflow-hidden"
+    >
       {loadingEntries || loadingLocations ? (
         <div className="p-6 space-y-4">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -65,7 +68,7 @@ export function TrackingResults({
         </div>
       ) : isError ? (
         <div className="p-12 text-center">
-          <AlertCircle className="size-12 text-red-400 mx-auto mb-4" />
+          <AlertCircle className="size-12 text-shell-crit mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground">{t("attendance.tracking.failedToLoad")}</h3>
           <p className="text-muted-foreground mt-1">
             {error instanceof Error ? error.message : t("attendance.tracking.errorOccurred")}

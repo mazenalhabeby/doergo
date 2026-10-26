@@ -25,9 +25,14 @@ export function Bar({ space, t: c }: { space: FloorSpace; t: FloorTally }) {
     <div className="relative h-2 w-full overflow-visible rounded-full bg-muted">
       <div className="flex h-full w-full overflow-hidden rounded-full">
         {c.busy > 0 && <span className="h-full bg-blue-500" style={{ width: pct(c.busy) }} />}
-        {c.working > 0 && <span className="h-full bg-emerald-500" style={{ width: pct(c.working) }} />}
-        {c.break > 0 && <span className="h-full bg-amber-500" style={{ width: pct(c.break) }} />}
-        {c.expected > 0 && <span className="h-full bg-red-500/70" style={{ width: pct(c.expected) }} />}
+        {c.working > 0 && <span className="h-full bg-shell-accent" style={{ width: pct(c.working) }} />}
+        {c.break > 0 && <span className="h-full bg-shell-warn" style={{ width: pct(c.break) }} />}
+        {c.expected > 0 && (
+          <span
+            className="h-full bg-[color-mix(in_srgb,var(--shell-crit)_11%,transparent)]"
+            style={{ width: pct(c.expected) }}
+          />
+        )}
       </div>
       {/* The floor, drawn ON the bar: "are we above the line" needs no arithmetic. */}
       {floorPct !== null && (
