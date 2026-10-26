@@ -36,7 +36,7 @@ export function HelpButton() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <TopBarButton on={open} data-tour="nav-help" aria-label={t("tours.help.button")} title={t("tours.help.button")}>
-          <Icon name="help" />
+          <Icon name="helpLine" />
         </TopBarButton>
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={10} className="w-80 rounded-xl p-0">

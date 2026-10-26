@@ -44,6 +44,12 @@ const PICKS = {
   pin: 'map-point-bold-duotone',
   warning: 'danger-triangle-bold-duotone',
   sidebar: { id: 'panel-right-bold-duotone', flip: true },
+  // the top bar's inbox group — line, as the design draws it
+  inboxLine: 'inbox-linear',
+  chatLine: 'chat-round-linear',
+  bellLine: 'bell-linear',
+  helpLine: 'question-circle-linear',
+  supportLine: 'headphones-round-sound-linear',
   // small controls (line)
   selected: 'check-circle-bold',
   checkLine: 'unread-linear',

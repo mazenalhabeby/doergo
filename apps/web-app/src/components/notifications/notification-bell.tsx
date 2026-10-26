@@ -37,7 +37,7 @@ export function NotificationBell() {
           title={t("notifications.title")}
           aria-label={`${t("notifications.title")}${unreadCount > 0 ? ` (${unreadCount})` : ""}`}
         >
-          <Icon name="bell" />
+          <Icon name="bellLine" />
           <CountDot n={unreadCount} tone="accent" />
         </TopBarButton>
       </PopoverTrigger>

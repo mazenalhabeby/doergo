@@ -128,7 +128,7 @@ export function SupportButton() {
           title={t("support.title", "Support")}
           aria-label={t("support.title", "Support")}
         >
-          <Icon name="support" />
+          <Icon name="supportLine" />
           <CountDot n={unreadTotal} tone="crit" />
         </TopBarButton>
       </PopoverTrigger>

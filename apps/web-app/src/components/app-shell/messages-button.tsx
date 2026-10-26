@@ -30,7 +30,7 @@ export function MessagesButton() {
       title={t("chat.title", "Messages")}
       aria-label={t("chat.navLabel", { count: unread, defaultValue: "Messages, {{count}} unread" })}
     >
-      <Icon name="chat" />
+      <Icon name="chatLine" />
       <CountDot n={unread} tone="accent" />
     </TopBarButton>
   )

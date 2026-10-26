@@ -556,7 +556,7 @@
 
 /* each icon's own motion, on hover or keyboard focus of the control holding it */
 svg[data-i] { transform-box: fill-box; transform-origin: 50% 50% }
-.icon-motion:is(:hover, :focus-visible) svg[data-i="bell"], .icon-motion:is(:hover, :focus-visible) svg[data-i="bellOff"] { transform-origin: 50% 8%; animation: m-swing .8s var(--ease-out-soft) }
+.icon-motion:is(:hover, :focus-visible) svg[data-i="bell"], .icon-motion:is(:hover, :focus-visible) svg[data-i="bellLine"], .icon-motion:is(:hover, :focus-visible) svg[data-i="bellOff"] { transform-origin: 50% 8%; animation: m-swing .8s var(--ease-out-soft) }
 .icon-motion:is(:hover, :focus-visible) svg[data-i="send"] { animation: m-plane .6s var(--ease-out-soft) }
 .icon-motion:is(:hover, :focus-visible) svg[data-i="search"] { animation: m-lens .55s var(--ease-spring) }
 .icon-motion:is(:hover, :focus-visible) :is(svg[data-i="compose"], svg[data-i="edit"]) { animation: m-write .6s var(--ease-out-soft) }

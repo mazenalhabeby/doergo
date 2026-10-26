@@ -27,7 +27,7 @@ export function ApprovalsButton() {
       data-tour="nav-approvals"
       className={cn(topBarIcon, pathname === "/approvals" && topBarIconOn)}
     >
-      <Icon name="inbox" />
+      <Icon name="inboxLine" />
       <CountDot n={total} tone={urgent ? "crit" : "warn"} />
     </Link>
   )
