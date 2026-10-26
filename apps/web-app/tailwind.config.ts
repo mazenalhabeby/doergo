@@ -97,6 +97,9 @@ const config: Config = {
       /* The shell's two shadows, from CSS (light + dark). Named so cn() knows they ARE shadows — see lib/utils. */
       // The app shell's face (layout.tsx loads Geist through next/font) — the redesign boards draw the shell in it.
       fontFamily: {
+        // The app's face is Geist (2026-10-26, geist-app board); the public site keeps Inter through `font-site`.
+        sans: ["var(--font-geist)", "system-ui", "-apple-system", "sans-serif"],
+        site: ["var(--font-inter)", "system-ui", "-apple-system", "sans-serif"],
         shell: ["var(--font-geist)", "system-ui", "-apple-system", "sans-serif"],
         "shell-mono": ["var(--font-geist-mono)", "ui-monospace", "Menlo", "monospace"],
       },

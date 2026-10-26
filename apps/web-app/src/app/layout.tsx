@@ -10,8 +10,10 @@ import { Toaster } from "@/components/ui"
 // display:'swap' → text paints immediately in the fallback and swaps when the
 // web font loads (better LCP, no invisible-text FOIT). size-adjust fallbacks are
 // applied by next/font automatically to keep the swap CLS-free.
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" })
-// The app shell's face (sidebar, top bar, account menu) — the web redesign's Geist.
+// The public site's body face (components/marketing/site-font). Not preloaded: the app is in Geist, so an app
+// page never downloads it.
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap", preload: false })
+// The app's face — the web redesign's Geist (the body's font; the public site switches back to Inter).
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" })
 // Figures in the shell (the running clock): tabular, so a ticking time never shifts sideways. Not preloaded —
 // only somebody on the clock sees it.
@@ -123,7 +125,10 @@ export default function RootLayout({
       */}
       <body
         suppressHydrationWarning
-        className={[inter, geist, geistMono, outfit, familjen, martian].map((f) => f.variable).concat(inter.className).join(" ")}
+        className={[inter, geist, geistMono, outfit, familjen, martian]
+          .map((f) => f.variable)
+          .concat(geist.className)
+          .join(" ")}
       >
         <ThemeProvider
           attribute="class"

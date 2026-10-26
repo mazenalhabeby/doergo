@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react"
 import { registerMarketingCopy, wantMarketing } from "@/i18n"
+import { SiteFont } from "./site-font"
 
 /**
  * The public site's text for one page. Its server page reads the groups it renders (`home`,
@@ -15,5 +16,5 @@ import { registerMarketingCopy, wantMarketing } from "@/i18n"
 export function MarketingCopy({ en, children }: { en: Record<string, unknown>; children: ReactNode }) {
   useState(() => registerMarketingCopy("en", en))
   useEffect(() => wantMarketing(), [])
-  return <>{children}</>
+  return <SiteFont>{children}</SiteFont>
 }

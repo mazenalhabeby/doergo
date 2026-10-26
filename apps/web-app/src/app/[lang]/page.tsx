@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteFont } from "@/components/marketing/site-font";
 import { notFound } from "next/navigation";
 import { StructuredData } from "@/components/seo/structured-data";
 import LocalizedHome from "../_home/LocalizedHome";
@@ -54,7 +55,9 @@ export default async function Page({ params }: Params) {
         only the namespaces the page renders, in the one language it renders,
         and every other route — the English home page included — carries none.
       */}
-      <LocalizedHome lang={lang} resources={{ [lang]: { translation: marketingBundle(lang) } }} />
+      <SiteFont>
+        <LocalizedHome lang={lang} resources={{ [lang]: { translation: marketingBundle(lang) } }} />
+      </SiteFont>
     </>
   );
 }
