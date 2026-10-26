@@ -75,14 +75,14 @@ export function ClockWidget({ compact = false }: { compact?: boolean }) {
             disabled={pending}
             title={`${title}${where ? ` · ${where}` : ""} — ${t("attendance.my.clockOut", "Clock Out")}`}
             aria-label={t("attendance.my.clockOut", "Clock Out")}
-            className="relative mx-auto grid size-11 place-items-center rounded-2xl bg-shell-accent-soft text-shell-accent"
+            className="mx-auto grid size-11 place-items-center rounded-2xl bg-shell-accent-soft text-shell-accent"
           >
-            {pending ? spinner : <Icon name="clockOut" size={18} />}
-            <span aria-hidden className="absolute right-1.5 top-1.5 size-2 rounded-full bg-shell-live" />
+            {/* The turning hand IS the "clocked in" signal on the rail. */}
+            {pending ? spinner : <Icon name="clockRunning" size={20} />}
           </button>
         ) : (
           <div className="flex items-center gap-2.5 rounded-2xl bg-shell-accent-soft py-2.5 pl-3 pr-2.5">
-            <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-shell-live" />
+            <Icon name="clockRunning" size={20} className="text-shell-accent" />
             <span className="flex min-w-0 flex-1 flex-col leading-tight">
               <b className="truncate text-[13px] text-shell-ink">{title}</b>
               {where && <span className="truncate text-xs text-shell-soft">{where}</span>}
@@ -94,11 +94,12 @@ export function ClockWidget({ compact = false }: { compact?: boolean }) {
               disabled={pending}
               onClick={clockOut}
               className={cn(
-                "h-[30px] shrink-0 rounded-full px-3 text-xs font-semibold text-shell-on-accent",
-                "bg-[image:var(--shell-accent-fill)] disabled:opacity-60",
+                "icon-motion inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-full pl-2.5 pr-3 text-xs font-semibold",
+                "bg-[image:var(--shell-accent-fill)] text-shell-on-accent disabled:opacity-60",
               )}
             >
-              {pending ? spinner : t("attendance.my.clockOut", "Clock Out")}
+              {pending ? spinner : <Icon name="clockOut" size={15} />}
+              {t("attendance.my.clockOut", "Clock Out")}
             </button>
           </div>
         )}
@@ -119,7 +120,7 @@ export function ClockWidget({ compact = false }: { compact?: boolean }) {
         aria-label={compact ? t("attendance.my.clockIn", "Clock In") : undefined}
         onClick={startClockIn}
         className={cn(
-          "flex items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-shell-on-accent",
+          "icon-motion flex items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-shell-on-accent",
           "bg-[image:var(--shell-accent-fill)] transition-opacity hover:opacity-90 disabled:opacity-60",
           compact ? "mx-auto size-11" : "h-11 w-full",
         )}

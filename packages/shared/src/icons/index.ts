@@ -13,6 +13,7 @@
  * theme (amazen.gradient.iconInk) — the same two jades.
  */
 import { SOLAR_SHELL } from './generated/solar-shell';
+import { HBC_ICONS } from './own';
 
 export const ICON_VIEWBOX = '0 0 24 24';
 
@@ -81,12 +82,12 @@ const SOLAR_BASE = {
 } as const;
 
 /**
- * Every mark, by name: the set chat started with, plus the shell's (generated/solar-shell.ts — written by
- * tools/icons/solar.mjs from the Solar ids it lists). A name in both would be a silent override; the
- * icons spec fails on one.
+ * Every mark, by name: the set chat started with, the shell's (generated/solar-shell.ts — written by
+ * tools/icons/solar.mjs from the Solar ids it lists), and our own drawings (own.ts). A name in two would be a
+ * silent override; the icons spec fails on one.
  */
-export const SOLAR_ICONS = { ...SOLAR_BASE, ...SOLAR_SHELL } as const;
-export const ICON_SOURCES = { base: SOLAR_BASE, shell: SOLAR_SHELL } as const;
+export const SOLAR_ICONS = { ...SOLAR_BASE, ...SOLAR_SHELL, ...HBC_ICONS } as const;
+export const ICON_SOURCES = { base: SOLAR_BASE, shell: SOLAR_SHELL, own: HBC_ICONS } as const;
 
 export type IconName = keyof typeof SOLAR_ICONS;
 

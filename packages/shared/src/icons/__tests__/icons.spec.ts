@@ -40,10 +40,13 @@ const ATTRS = new Set([
 describe('the icon library', () => {
   const entries = Object.entries(SOLAR_ICONS);
 
-  it('has no name in both sources (a spread would override it silently)', () => {
-    const base = Object.keys(ICON_SOURCES.base);
-    expect(Object.keys(ICON_SOURCES.shell).filter((k) => base.includes(k))).toEqual([]);
-    expect(entries.length).toBe(base.length + Object.keys(ICON_SOURCES.shell).length);
+  it('has no name in two sources (a spread would override it silently)', () => {
+    const names = Object.values(ICON_SOURCES).flatMap((source) => Object.keys(source));
+    expect(entries.length).toBe(names.length);
+  });
+
+  it('the running clock keeps its hand LAST — the web turns `> :last-child` around the dial centre', () => {
+    expect(SOLAR_ICONS.clockRunning).toMatch(/d="M12 13\.5V8\.2"\/>$/);
   });
 
   it.each(entries)('%s holds drawing markup only — no script, handler, link or style', (_name, markup) => {

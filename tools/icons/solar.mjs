@@ -36,8 +36,6 @@ const PICKS = {
   help: 'question-circle-bold-duotone',
   support: 'headphones-round-sound-bold-duotone',
   plus: 'add-circle-bold-duotone',
-  clockIn: 'login-3-bold-duotone',
-  clockOut: 'logout-3-bold-duotone',
   language: 'translation-bold-duotone',
   moon: 'moon-bold-duotone',
   sun: 'sun-2-bold-duotone',

@@ -548,6 +548,10 @@ svg[data-i] { transform-box: fill-box; transform-origin: 50% 50% }
 .icon-motion:is(:hover, :focus-visible) :is(svg[data-i="back"], svg[data-i="backLine"]) { animation: m-nudge-l .5s var(--ease-out-soft) }
 .icon-motion:is(:hover, :focus-visible) svg[data-i="leave"] { animation: m-nudge-r .5s var(--ease-out-soft) }
 .icon-motion:is(:hover, :focus-visible) :is(svg[data-i="close"], svg[data-i="xLine"], svg[data-i="closeLine"]) { transition: transform .3s var(--ease-spring); transform: rotate(90deg) }
+/* The stopwatch (own.ts): its play / stop pops; while the clock runs, the hand (always the last child) sweeps. */
+.icon-motion:is(:hover, :focus-visible) :is(svg[data-i="clockIn"], svg[data-i="clockOut"]) > :last-child { animation: m-popi .5s var(--ease-spring) }
+svg[data-i="clockRunning"] > :last-child { transform-box: view-box; transform-origin: 12px 13.5px; animation: m-sweep 6s linear infinite }
+@keyframes m-sweep { to { transform: rotate(360deg) } }
 @keyframes m-swing { 15% { transform: rotate(16deg) } 35% { transform: rotate(-12deg) } 55% { transform: rotate(7deg) } 75% { transform: rotate(-3deg) } }
 @keyframes m-plane { 40% { transform: translate(4px, -4px) rotate(-6deg) } 41% { opacity: 0 } 42% { transform: translate(-5px, 5px); opacity: 0 } 70% { opacity: 1 } }
 @keyframes m-lens { 40% { transform: scale(1.18) rotate(-10deg) } }
@@ -560,7 +564,7 @@ svg[data-i] { transform-box: fill-box; transform-origin: 50% 50% }
 
 @media (prefers-reduced-motion: reduce) {
   :is(.motion-thread-in, .motion-panel-in, .motion-sheet-in, .motion-fade-in, .motion-msg-in, .motion-msg-sent, .motion-stagger,
-      .motion-bump, .motion-chip, .motion-leave, .motion-fly svg, .motion-marker::before, .motion-ping::after, .motion-wave > i, svg[data-i]) {
+      .motion-bump, .motion-chip, .motion-leave, .motion-fly svg, .motion-marker::before, .motion-ping::after, .motion-wave > i, svg[data-i], svg[data-i] > *) {
     animation: none !important;
     transition: none !important;
   }
