@@ -9852,8 +9852,7 @@
       "where": "Dove",
       "everywhere": "tutti gli spazi",
       "active": "Attiva",
-      "remove": "Rimuovi",
-      "noAnswer": "Se nessuno risponde"
+      "remove": "Rimuovi"
     },
     "viewFile": {
       "document": "Vedi il documento",
@@ -9902,7 +9901,7 @@
         "rules": "Chi approva"
       },
       "intro": "Scegli cosa va approvato. Aggiungi una regola quando deve passare anche a qualcun altro, o essere sollecitato se nessuno risponde.",
-      "newRule": "＋ Nuova regola",
+      "newRule": "Nuova regola",
       "what": "Cosa va approvato?",
       "first": "Prima approvazione",
       "firstBy": {
@@ -9911,7 +9910,6 @@
         "expense": "Chi gestisce l'attrezzatura in quello spazio di lavoro"
       },
       "rule": "Regola {{n}}",
-      "in": "in",
       "moreThan": "più di",
       "any": "qualsiasi",
       "unit": {
@@ -9937,12 +9935,11 @@
       "days_other": "{{count}} giorni",
       "noRuleFits": "Nessuna regola si applica",
       "doneFirst": "Fatto dopo la prima approvazione",
-      "doneTwo": "Fatto dopo entrambe le approvazioni",
+      "doneTwo": "Fatto · 2 approvazioni",
       "footnote": "Se si applicano due regole, vince quella dello spazio di lavoro, poi il limite più alto. L'approvazione di un amministratore chiude sempre, e nessuno dà entrambe le approvazioni.",
       "removed": "Regola eliminata",
       "noRoles": "Crea prima un ruolo che possa approvare.",
       "range": {
-        "label": "Vale per:",
         "all": "tutti",
         "upTo": "fino a {{to}}",
         "over": "più di {{from}}",
@@ -9951,7 +9948,19 @@
         "twin": "Stesso spazio e stesso limite della regola {{n}} — se ne usa solo una"
       },
       "workingDays_one": "{{count}} giorno lavorativo",
-      "workingDays_other": "{{count}} giorni lavorativi"
+      "workingDays_other": "{{count}} giorni lavorativi",
+      "node": {
+        "where": "Dove",
+        "when": "Quando",
+        "also": "Approva anche",
+        "chase": "Nessuna risposta"
+      },
+      "chase": {
+        "remind": "Sollecita dopo {{after}}",
+        "pass": "{{role}} dopo {{after}}",
+        "off": "Disattivato"
+      },
+      "doneOne": "Fatto · 1 approvazione"
     }
   },
   "overtimePage": {

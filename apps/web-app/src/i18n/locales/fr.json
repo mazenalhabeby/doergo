@@ -9852,8 +9852,7 @@
       "where": "Où",
       "everywhere": "tous les espaces",
       "active": "Active",
-      "remove": "Supprimer",
-      "noAnswer": "Si personne ne répond"
+      "remove": "Supprimer"
     },
     "viewFile": {
       "document": "Voir le document",
@@ -9902,7 +9901,7 @@
         "rules": "Qui approuve"
       },
       "intro": "Choisissez ce qui doit être approuvé. Ajoutez une règle quand cela doit aussi aller à quelqu'un d'autre, ou être relancé quand personne ne répond.",
-      "newRule": "＋ Nouvelle règle",
+      "newRule": "Nouvelle règle",
       "what": "Qu'est-ce qui doit être approuvé ?",
       "first": "Première approbation",
       "firstBy": {
@@ -9911,7 +9910,6 @@
         "expense": "Toute personne qui gère l'équipement dans cet espace de travail"
       },
       "rule": "Règle {{n}}",
-      "in": "dans",
       "moreThan": "plus de",
       "any": "tous",
       "unit": {
@@ -9937,12 +9935,11 @@
       "days_other": "{{count}} jours",
       "noRuleFits": "Aucune règle ne s'applique",
       "doneFirst": "Terminé après la première approbation",
-      "doneTwo": "Terminé après les deux approbations",
+      "doneTwo": "Terminé · 2 approbations",
       "footnote": "Si deux règles s'appliquent, celle de l'espace de travail l'emporte, puis la limite la plus haute. L'approbation d'un administrateur termine toujours, et personne ne donne les deux approbations.",
       "removed": "Règle supprimée",
       "noRoles": "Créez d'abord un rôle qui peut approuver.",
       "range": {
-        "label": "S'applique à :",
         "all": "tout",
         "upTo": "jusqu'à {{to}}",
         "over": "plus de {{from}}",
@@ -9951,7 +9948,19 @@
         "twin": "Même espace et même limite que la règle {{n}} — une seule des deux est utilisée"
       },
       "workingDays_one": "{{count}} jour ouvré",
-      "workingDays_other": "{{count}} jours ouvrés"
+      "workingDays_other": "{{count}} jours ouvrés",
+      "node": {
+        "where": "Où",
+        "when": "Quand",
+        "also": "Approuve aussi",
+        "chase": "Sans réponse"
+      },
+      "chase": {
+        "remind": "Relancer après {{after}}",
+        "pass": "{{role}} après {{after}}",
+        "off": "Désactivé"
+      },
+      "doneOne": "Terminé · 1 approbation"
     }
   },
   "overtimePage": {

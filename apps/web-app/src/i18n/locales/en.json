@@ -9852,8 +9852,7 @@
       "where": "Where",
       "everywhere": "every workspace",
       "active": "On",
-      "remove": "Remove",
-      "noAnswer": "If nobody answers"
+      "remove": "Remove"
     },
     "viewFile": {
       "document": "View the document",
@@ -9902,7 +9901,7 @@
         "rules": "Who approves"
       },
       "intro": "Pick what needs approval. Add a rule when it should also go to someone else, or be chased when nobody answers.",
-      "newRule": "＋ New rule",
+      "newRule": "New rule",
       "what": "What needs approval?",
       "first": "First approval",
       "firstBy": {
@@ -9911,7 +9910,6 @@
         "expense": "Anyone who manages equipment in that workspace"
       },
       "rule": "Rule {{n}}",
-      "in": "in",
       "moreThan": "more than",
       "any": "any",
       "unit": {
@@ -9937,12 +9935,11 @@
       "days_other": "{{count}} days",
       "noRuleFits": "No rule fits",
       "doneFirst": "Done after the first approval",
-      "doneTwo": "Done after both approvals",
+      "doneTwo": "Done · 2 approvals",
       "footnote": "If two rules fit, the workspace's own rule wins, then the higher limit. An administrator's approval always finishes it, and nobody gives both approvals.",
       "removed": "Rule removed",
       "noRoles": "First create a role that can approve.",
       "range": {
-        "label": "Applies to:",
         "all": "every one",
         "upTo": "up to {{to}}",
         "over": "more than {{from}}",
@@ -9951,7 +9948,19 @@
         "twin": "Same workspace and limit as Rule {{n}} — only one of them is used"
       },
       "workingDays_one": "{{count}} working day",
-      "workingDays_other": "{{count}} working days"
+      "workingDays_other": "{{count}} working days",
+      "node": {
+        "where": "Where",
+        "when": "When",
+        "also": "Also approves",
+        "chase": "No answer"
+      },
+      "chase": {
+        "remind": "Remind after {{after}}",
+        "pass": "{{role}} after {{after}}",
+        "off": "Off"
+      },
+      "doneOne": "Done · 1 approval"
     }
   },
   "overtimePage": {

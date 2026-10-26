@@ -4,42 +4,40 @@ import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { RULE_KINDS, type RuleKind } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
+import { Icon } from "@/components/ui/icon"
 import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
 import { useRulesTree } from "../../_hooks/use-rules-tree"
 import { ruleRanges } from "../../_lib/rule-range"
-import { RuleCard } from "./rule-card"
-import { ChoiceSelect, DoneNode, Stem, TreeNode } from "./tree-nodes"
+import { RuleRow } from "./rule-row"
+import { ChoiceSelect, Connector, DoneNode } from "./tree-nodes"
 
-/** One column under the split: the joining line above it, then its boxes. */
-const BRANCH =
-  "relative flex w-[280px] shrink-0 flex-col items-center px-2.5 pt-5 " +
-  "before:absolute before:left-0 before:right-0 before:top-0 before:h-0.5 before:bg-[hsl(var(--muted-foreground)/0.35)] " +
-  "first:before:left-1/2 last:before:right-1/2 " +
-  "after:absolute after:left-1/2 after:top-0 after:h-5 after:w-0.5 after:bg-[hsl(var(--muted-foreground)/0.35)]"
-
-const NEW_PILL =
-  "inline-flex h-10 items-center gap-2 rounded-full border-[1.5px] border-shell-accent px-4 text-sm font-semibold " +
-  "text-shell-accent hover:bg-shell-accent-soft disabled:opacity-50"
-const NEW_CARD =
-  "mt-1 h-24 w-full rounded-2xl border-[1.5px] border-dashed border-shell-accent bg-card text-sm font-bold " +
-  "text-shell-accent hover:bg-shell-accent-soft disabled:opacity-50"
-const NO_RULE =
-  "w-full rounded-2xl border border-border bg-card px-3 py-2.5 text-center text-[12.5px] font-semibold " +
-  "text-muted-foreground shadow-shell"
 const DOTS = {
-  backgroundImage: "radial-gradient(hsl(var(--border)) 1px, transparent 1.2px)",
-  backgroundSize: "18px 18px",
+  backgroundImage: "radial-gradient(hsl(var(--muted-foreground) / 0.18) 1px, transparent 1.2px)",
+  backgroundSize: "20px 20px",
 }
+const LINE = "bg-[hsl(var(--muted-foreground)/0.35)]"
+const NEW_NODE =
+  "inline-flex h-11 items-center gap-2 rounded-2xl border-[1.5px] border-dashed border-shell-accent bg-card px-4 " +
+  "text-sm font-semibold text-shell-accent hover:bg-shell-accent-soft disabled:opacity-50"
+const START =
+  "flex w-[226px] shrink-0 flex-col gap-2 rounded-2xl border-[1.5px] border-foreground bg-card p-3.5 shadow-shell"
 
-function Branch({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn(BRANCH, className)}>{children}</div>
+/** One branch off the start node: the stub joining it to the trunk, then its chain. */
+function Branch({ children }: { children: ReactNode }) {
+  return (
+    <div className="relative flex items-end py-2 pl-10">
+      <span aria-hidden className={`absolute bottom-[38px] left-0 h-0.5 w-10 ${LINE}`} />
+      {children}
+    </div>
+  )
 }
 
 /**
- * "Who approves": pick what needs approval, see who approves it first, then the office's rules for
- * it side by side — a second approval past a limit, a chase when nobody answers. The server decides
- * which rule applies (the workspace's own first, then the higher limit), so there is no order to set.
+ * "Who approves", laid out like a node canvas (n8n, Freepik Spaces): what needs approval on the left, one
+ * chain per rule fanning out to the right — where → when → who also approves → if nobody answers → done.
+ * Each node says one thing; clicking it opens its editor. Every change saves at once (the server checks
+ * and enforces it). Which rule applies is the server's choice: the workspace's own first, then the higher
+ * limit — each "When" node shows the range that results.
  */
 export function RulesTree() {
   const { t } = useTranslation()
@@ -56,20 +54,15 @@ export function RulesTree() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2.5">
-        <p className="mr-auto max-w-[640px] text-sm text-muted-foreground">{t("approvals.tree.intro")}</p>
-        <button type="button" onClick={tree.add} disabled={tree.busy} className={NEW_PILL}>
-          {t("approvals.tree.newRule")}
-        </button>
-      </div>
+      <p className="max-w-[720px] text-sm text-muted-foreground">{t("approvals.tree.intro")}</p>
 
-      <div
-        className="flex flex-col items-center overflow-x-auto rounded-[22px] border border-border bg-shell-chip px-4 pb-6 pt-7"
-        style={DOTS}
-      >
-        <TreeNode icon="arrowRight" className="border-[1.5px] border-foreground">
-          <div className="flex min-w-0 flex-col gap-1">
-            <span className="text-[12.5px] text-muted-foreground">{t("approvals.tree.what")}</span>
+      <div className="overflow-x-auto rounded-[22px] border border-border bg-shell-chip p-6" style={DOTS}>
+        <div className="flex min-w-min items-center">
+          <div className={START}>
+            <span className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+              <Icon name="flash" size={14} />
+              {t("approvals.tree.what")}
+            </span>
             <ChoiceSelect
               value={tree.kind}
               onChange={(v) => tree.setKind(v as RuleKind)}
@@ -79,53 +72,51 @@ export function RulesTree() {
                 label: countOf(k) ? `${kindName(k)} · ${countOf(k)}` : kindName(k),
               }))}
             />
-          </div>
-        </TreeNode>
-        <Stem />
-        <TreeNode icon="userLine">
-          <div className="min-w-0">
-            <b className="block text-sm">{t("approvals.tree.first")}</b>
-            <span className="block text-[12.5px] text-muted-foreground">
-              {t(`approvals.tree.firstBy.${tree.kind}`)}
+            <span className="text-[12px] leading-snug text-muted-foreground">
+              {t("approvals.tree.first")}: {t(`approvals.tree.firstBy.${tree.kind}`)}
             </span>
           </div>
-        </TreeNode>
-        <Stem />
+          <Connector />
 
-        <div className="flex min-w-min items-start">
-          {tree.isLoading ? (
-            <Branch>
-              <Skeleton className="h-64 w-full rounded-2xl" />
-            </Branch>
-          ) : (
-            tree.rules.map((r, i) => (
-              <Branch key={r.id}>
-                <RuleCard
-                  rule={r}
-                  n={i + 1}
-                  roles={tree.roles}
-                  workspaces={tree.workspaces}
-                  currency={currency}
-                  range={ranges[i]}
-                  onChange={(patch) => tree.change(r, patch)}
-                  onRemove={() => tree.remove.mutate(r.id)}
-                />
+          {/* The trunk: one line down the left of the branches. */}
+          <div className="relative flex flex-col">
+            <span aria-hidden className={`absolute bottom-[38px] left-0 top-[66px] w-0.5 ${LINE}`} />
+            {tree.isLoading ? (
+              <Branch>
+                <Skeleton className="h-20 w-[880px] rounded-2xl" />
               </Branch>
-            ))
-          )}
-          {/* Only when something can fall through: an active rule for every workspace with no limit catches it all. */}
-          {!catchesAll && (
+            ) : (
+              tree.rules.map((r, i) => (
+                <Branch key={r.id}>
+                  <RuleRow
+                    rule={r}
+                    n={i + 1}
+                    roles={tree.roles}
+                    workspaces={tree.workspaces}
+                    currency={currency}
+                    range={ranges[i]}
+                    onChange={(patch) => tree.change(r, patch)}
+                    onRemove={() => tree.remove.mutate(r.id)}
+                  />
+                </Branch>
+              ))
+            )}
+            {/* Only when something can fall through: a live rule for every workspace with no limit catches it all. */}
+            {!catchesAll && (
+              <Branch>
+                <span className="mr-3 shrink-0 text-[12.5px] font-semibold text-muted-foreground">
+                  {t("approvals.tree.noRuleFits")}
+                </span>
+                <DoneNode>{t("approvals.tree.doneFirst")}</DoneNode>
+              </Branch>
+            )}
             <Branch>
-              <div className={NO_RULE}>{t("approvals.tree.noRuleFits")}</div>
-              <Stem />
-              <DoneNode>{t("approvals.tree.doneFirst")}</DoneNode>
+              <button type="button" onClick={tree.add} disabled={tree.busy} className={NEW_NODE}>
+                <Icon name="plus" size={16} />
+                {t("approvals.tree.newRule")}
+              </button>
             </Branch>
-          )}
-          <Branch className="w-[170px]">
-            <button type="button" onClick={tree.add} disabled={tree.busy} className={NEW_CARD}>
-              {t("approvals.tree.newRule")}
-            </button>
-          </Branch>
+          </div>
         </div>
       </div>
       <p className="text-[12.5px] text-muted-foreground">{t("approvals.tree.footnote")}</p>

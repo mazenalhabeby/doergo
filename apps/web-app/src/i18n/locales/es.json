@@ -9852,8 +9852,7 @@
       "where": "Dónde",
       "everywhere": "todos los espacios",
       "active": "Activa",
-      "remove": "Quitar",
-      "noAnswer": "Si nadie responde"
+      "remove": "Quitar"
     },
     "viewFile": {
       "document": "Ver el documento",
@@ -9902,7 +9901,7 @@
         "rules": "Quién aprueba"
       },
       "intro": "Elige qué necesita aprobación. Añade una regla cuando deba ir también a otra persona o recordarse si nadie responde.",
-      "newRule": "＋ Nueva regla",
+      "newRule": "Nueva regla",
       "what": "¿Qué necesita aprobación?",
       "first": "Primera aprobación",
       "firstBy": {
@@ -9911,7 +9910,6 @@
         "expense": "Quien gestione el equipo en ese espacio de trabajo"
       },
       "rule": "Regla {{n}}",
-      "in": "en",
       "moreThan": "más de",
       "any": "cualquiera",
       "unit": {
@@ -9937,12 +9935,11 @@
       "days_other": "{{count}} días",
       "noRuleFits": "Ninguna regla aplica",
       "doneFirst": "Listo tras la primera aprobación",
-      "doneTwo": "Listo tras las dos aprobaciones",
+      "doneTwo": "Listo · 2 aprobaciones",
       "footnote": "Si aplican dos reglas, gana la del espacio de trabajo y luego el límite más alto. La aprobación de un administrador siempre lo cierra y nadie da las dos aprobaciones.",
       "removed": "Regla eliminada",
       "noRoles": "Crea primero un rol que pueda aprobar.",
       "range": {
-        "label": "Se aplica a:",
         "all": "todos",
         "upTo": "hasta {{to}}",
         "over": "más de {{from}}",
@@ -9951,7 +9948,19 @@
         "twin": "Mismo espacio y límite que la regla {{n}} — solo se usa una de ellas"
       },
       "workingDays_one": "{{count}} día laborable",
-      "workingDays_other": "{{count}} días laborables"
+      "workingDays_other": "{{count}} días laborables",
+      "node": {
+        "where": "Dónde",
+        "when": "Cuándo",
+        "also": "También aprueba",
+        "chase": "Sin respuesta"
+      },
+      "chase": {
+        "remind": "Recordar tras {{after}}",
+        "pass": "{{role}} tras {{after}}",
+        "off": "Desactivado"
+      },
+      "doneOne": "Listo · 1 aprobación"
     }
   },
   "overtimePage": {

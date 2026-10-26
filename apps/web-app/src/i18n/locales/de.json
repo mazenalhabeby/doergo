@@ -9852,8 +9852,7 @@
       "where": "Wo",
       "everywhere": "allen Arbeitsbereichen",
       "active": "Aktiv",
-      "remove": "Entfernen",
-      "noAnswer": "Wenn niemand antwortet"
+      "remove": "Entfernen"
     },
     "viewFile": {
       "document": "Dokument ansehen",
@@ -9902,7 +9901,7 @@
         "rules": "Wer genehmigt"
       },
       "intro": "Wähle, was genehmigt werden muss. Füge eine Regel hinzu, wenn es zusätzlich an jemand anderen gehen oder nachgefasst werden soll, wenn niemand antwortet.",
-      "newRule": "＋ Neue Regel",
+      "newRule": "Neue Regel",
       "what": "Was muss genehmigt werden?",
       "first": "Erste Genehmigung",
       "firstBy": {
@@ -9911,7 +9910,6 @@
         "expense": "Alle, die in diesem Arbeitsbereich die Ausrüstung verwalten"
       },
       "rule": "Regel {{n}}",
-      "in": "in",
       "moreThan": "mehr als",
       "any": "beliebig",
       "unit": {
@@ -9937,12 +9935,11 @@
       "days_other": "{{count}} Tagen",
       "noRuleFits": "Keine Regel passt",
       "doneFirst": "Fertig nach der ersten Genehmigung",
-      "doneTwo": "Fertig nach beiden Genehmigungen",
+      "doneTwo": "Fertig · 2 Genehmigungen",
       "footnote": "Passen zwei Regeln, gewinnt die Regel des Arbeitsbereichs, dann die höhere Grenze. Die Genehmigung eines Administrators schließt immer ab, und niemand gibt beide Genehmigungen.",
       "removed": "Regel entfernt",
       "noRoles": "Lege zuerst eine Rolle an, die genehmigen darf.",
       "range": {
-        "label": "Gilt für:",
         "all": "alle",
         "upTo": "bis {{to}}",
         "over": "mehr als {{from}}",
@@ -9951,7 +9948,19 @@
         "twin": "Gleicher Arbeitsbereich und gleiche Grenze wie Regel {{n}} — nur eine davon wird verwendet"
       },
       "workingDays_one": "{{count}} Arbeitstag",
-      "workingDays_other": "{{count}} Arbeitstage"
+      "workingDays_other": "{{count}} Arbeitstage",
+      "node": {
+        "where": "Wo",
+        "when": "Wann",
+        "also": "Genehmigt zusätzlich",
+        "chase": "Keine Antwort"
+      },
+      "chase": {
+        "remind": "Erinnern nach {{after}}",
+        "pass": "{{role}} nach {{after}}",
+        "off": "Aus"
+      },
+      "doneOne": "Fertig · 1 Genehmigung"
     }
   },
   "overtimePage": {
