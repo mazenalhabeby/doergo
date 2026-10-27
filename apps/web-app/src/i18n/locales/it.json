@@ -9976,7 +9976,8 @@
         "noRule": "Nessuna regola — un'approvazione",
         "upTo": "Un'approvazione fino a {{to}}",
         "addHere": "Aggiungi regola"
-      }
+      },
+      "onlyFirstDone": "Solo la prima approvazione — poi fatto"
     }
   },
   "overtimePage": {

@@ -9976,7 +9976,8 @@
         "noRule": "No rule — one approval",
         "upTo": "One approval up to {{to}}",
         "addHere": "Add rule"
-      }
+      },
+      "onlyFirstDone": "Only the first approval — then done"
     }
   },
   "overtimePage": {

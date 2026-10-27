@@ -9976,7 +9976,8 @@
         "noRule": "Keine Regel — eine Genehmigung",
         "upTo": "Eine Genehmigung bis {{to}}",
         "addHere": "Regel hinzufügen"
-      }
+      },
+      "onlyFirstDone": "Nur die erste Genehmigung — dann fertig"
     }
   },
   "overtimePage": {

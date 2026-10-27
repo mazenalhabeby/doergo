@@ -80,7 +80,7 @@ export function UncaughtNode({
           </ul>
         </PopoverContent>
       </Popover>
-      <DoneNode>{t("approvals.tree.doneOne")}</DoneNode>
+      <DoneNode>{t("approvals.tree.onlyFirstDone")}</DoneNode>
     </div>
   )
 }
