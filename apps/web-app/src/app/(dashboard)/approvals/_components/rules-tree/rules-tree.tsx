@@ -11,15 +11,12 @@ import { useRulesTree } from "../../_hooks/use-rules-tree"
 import { fallThrough, ruleRanges } from "../../_lib/rule-range"
 import { limitText } from "./rule-step"
 import { RulesCanvas } from "./rules-canvas"
-import { DoneNode } from "./tree-nodes"
+import { UncaughtNode } from "./uncaught-node"
 
 const NEW_NODE =
   "inline-flex h-11 items-center gap-2 rounded-2xl border-[1.5px] border-dashed border-shell-accent bg-card px-4 " +
   "text-sm font-semibold text-shell-accent hover:bg-shell-accent-soft disabled:opacity-50"
 const START = "flex w-[230px] flex-col gap-1.5 rounded-2xl border-[1.5px] border-foreground bg-card p-4 shadow-shell"
-const UNCAUGHT =
-  "flex w-[396px] flex-col gap-0.5 rounded-2xl border border-dashed border-border bg-card px-3.5 py-2.5 shadow-shell"
-
 /**
  * "Who approves": what needs approval in a sidebar (with what already has rules), and the chosen kind on a
  * node canvas like n8n — the start on the left, one chain per rule fanning out: where → when (its real
@@ -33,12 +30,7 @@ export function RulesTree() {
   const tree = useRulesTree(true)
   const spaceName = (id: string) => tree.workspaces.find((w) => w.id === id)?.name ?? "?"
   const ranges = ruleRanges(tree.rules, spaceName)
-  const uncaught = fallThrough(tree.rules, tree.workspaces).map((f) =>
-    f.upTo == null
-      ? f.name
-      : t("approvals.tree.upToIn", { name: f.name, to: limitText(t, tree.kind, f.upTo, currency) }),
-  )
-  const moreText = t("approvals.tree.more", { count: uncaught.length - 4 })
+  const uncaught = fallThrough(tree.rules, tree.workspaces)
   const kindName = (k: RuleKind) => t(`approvals.rules.kind.${k}`)
   const countOf = (k: RuleKind) => tree.counts.filter((r) => r.kind === k).length
 
@@ -54,23 +46,16 @@ export function RulesTree() {
       </span>
     </div>
   )
-  const fallsThrough =
-    uncaught.length > 0 ? (
-      <div className="flex items-center gap-3">
-        <div className={UNCAUGHT}>
-          <span className="text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
-            {t("approvals.tree.noRuleFits")}
-          </span>
-          <span className="text-[13.5px] font-semibold leading-snug">
-            {uncaught.slice(0, 4).join(" · ")}
-            {uncaught.length > 4 && <> {moreText}</>}
-          </span>
-        </div>
-        <DoneNode>{t("approvals.tree.doneOne")}</DoneNode>
-      </div>
-    ) : null
+  const fallsThrough = uncaught.length ? (
+    <UncaughtNode
+      items={uncaught}
+      limitText={(v) => limitText(t, tree.kind, v, currency)}
+      busy={tree.busy}
+      onAdd={tree.add}
+    />
+  ) : null
   const add = (
-    <button type="button" onClick={tree.add} disabled={tree.busy} className={NEW_NODE}>
+    <button type="button" onClick={() => tree.add()} disabled={tree.busy} className={NEW_NODE}>
       <Icon name="plus" size={16} />
       {t("approvals.tree.newRule")}
     </button>

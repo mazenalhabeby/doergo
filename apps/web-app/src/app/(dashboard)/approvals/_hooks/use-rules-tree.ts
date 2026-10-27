@@ -98,11 +98,14 @@ export function useRulesTree(enabled: boolean) {
     save.mutate({ input: { ...ruleInput(r), ...patch }, id: r.id })
   }
 
-  /** A new rule asks the first role that can decide for a second approval — a rule must DO something. */
-  const add = () => {
+  /**
+   * A new rule — for one workspace, or every one when none is given. It asks the first role that can decide
+   * for a second approval: a rule must DO something.
+   */
+  const add = (spaceId: string | null = null) => {
     const role = roles.find((r) => r.holders > 0) ?? roles[0]
     if (!role) return notify.error(t("approvals.tree.noRoles"))
-    save.mutate({ input: { kind, secondRoleId: role.id, isActive: true } })
+    save.mutate({ input: { kind, spaceId, secondRoleId: role.id, isActive: true } })
   }
 
   const ofKind = (rules ?? []).filter((r) => r.kind === kind)

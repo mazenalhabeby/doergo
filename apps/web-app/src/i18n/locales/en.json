@@ -9960,12 +9960,23 @@
         "off": "Off"
       },
       "doneOne": "Done · 1 approval",
-      "upToIn": "{{name}} up to {{to}}",
-      "more": "+{{count}} more",
       "startLabel": "When this is sent",
       "ruleCount_one": "{{count}} rule",
       "ruleCount_other": "{{count}} rules",
-      "noRules": "No rules — one approval"
+      "noRules": "No rules — one approval",
+      "uncaught": {
+        "none_one": "{{count}} workspace has no rule",
+        "none_other": "{{count}} workspaces have no rule",
+        "below_one": "{{count}} workspace is covered only above a limit",
+        "below_other": "{{count}} workspaces are covered only above a limit",
+        "alsoBelow_one": "and {{count}} only above a limit · click to see",
+        "alsoBelow_other": "and {{count}} only above a limit · click to see",
+        "see": "They get only the first approval · click to see",
+        "everyWorkspace": "One rule for every workspace",
+        "noRule": "No rule — one approval",
+        "upTo": "One approval up to {{to}}",
+        "addHere": "Add rule"
+      }
     }
   },
   "overtimePage": {

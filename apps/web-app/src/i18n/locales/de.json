@@ -9960,12 +9960,23 @@
         "off": "Aus"
       },
       "doneOne": "Fertig · 1 Genehmigung",
-      "upToIn": "{{name}} bis {{to}}",
-      "more": "+{{count}} weitere",
       "startLabel": "Wenn das eingereicht wird",
       "ruleCount_one": "{{count}} Regel",
       "ruleCount_other": "{{count}} Regeln",
-      "noRules": "Keine Regeln — eine Genehmigung"
+      "noRules": "Keine Regeln — eine Genehmigung",
+      "uncaught": {
+        "none_one": "{{count}} Arbeitsbereich hat keine Regel",
+        "none_other": "{{count}} Arbeitsbereiche haben keine Regel",
+        "below_one": "{{count}} Arbeitsbereich ist nur über einer Grenze abgedeckt",
+        "below_other": "{{count}} Arbeitsbereiche sind nur über einer Grenze abgedeckt",
+        "alsoBelow_one": "und {{count}} nur über einer Grenze · klicken zum Ansehen",
+        "alsoBelow_other": "und {{count}} nur über einer Grenze · klicken zum Ansehen",
+        "see": "Dort gibt es nur die erste Genehmigung · klicken zum Ansehen",
+        "everyWorkspace": "Eine Regel für alle Arbeitsbereiche",
+        "noRule": "Keine Regel — eine Genehmigung",
+        "upTo": "Eine Genehmigung bis {{to}}",
+        "addHere": "Regel hinzufügen"
+      }
     }
   },
   "overtimePage": {

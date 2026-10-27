@@ -50,6 +50,7 @@ export function ruleRanges(rules: ApprovalRuleView[], spaceName: (id: string) =>
 
 /** What no rule catches, per workspace: all of it, or everything up to the lowest limit there. */
 export interface FallThrough {
+  id: string
   name: string
   /** null = every item there; else items up to this limit (stored units) get only the first approval. */
   upTo: number | null
@@ -64,8 +65,8 @@ export function fallThrough(rules: ApprovalRuleView[], workspaces: { id: string;
   const live = rules.filter((r) => r.isActive && !r.whenCoverShort)
   return workspaces.flatMap<FallThrough>((w) => {
     const here = live.filter((r) => !r.spaceId || r.spaceId === w.id)
-    if (!here.length) return [{ name: w.name, upTo: null }]
+    if (!here.length) return [{ id: w.id, name: w.name, upTo: null }]
     if (here.some((r) => limitOf(r) == null)) return []
-    return [{ name: w.name, upTo: Math.min(...here.map((r) => limitOf(r) as number)) }]
+    return [{ id: w.id, name: w.name, upTo: Math.min(...here.map((r) => limitOf(r) as number)) }]
   })
 }

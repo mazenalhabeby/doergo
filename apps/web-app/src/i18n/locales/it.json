@@ -9960,12 +9960,23 @@
         "off": "Disattivato"
       },
       "doneOne": "Fatto · 1 approvazione",
-      "upToIn": "{{name}} fino a {{to}}",
-      "more": "+{{count}} altri",
       "startLabel": "Quando viene inviato",
       "ruleCount_one": "{{count}} regola",
       "ruleCount_other": "{{count}} regole",
-      "noRules": "Nessuna regola — un'approvazione"
+      "noRules": "Nessuna regola — un'approvazione",
+      "uncaught": {
+        "none_one": "{{count}} spazio non ha regole",
+        "none_other": "{{count}} spazi non hanno regole",
+        "below_one": "{{count}} spazio è coperto solo sopra un limite",
+        "below_other": "{{count}} spazi sono coperti solo sopra un limite",
+        "alsoBelow_one": "e {{count}} solo sopra un limite · clicca per vedere",
+        "alsoBelow_other": "e {{count}} solo sopra un limite · clicca per vedere",
+        "see": "Hanno solo la prima approvazione · clicca per vedere",
+        "everyWorkspace": "Una regola per tutti gli spazi",
+        "noRule": "Nessuna regola — un'approvazione",
+        "upTo": "Un'approvazione fino a {{to}}",
+        "addHere": "Aggiungi regola"
+      }
     }
   },
   "overtimePage": {

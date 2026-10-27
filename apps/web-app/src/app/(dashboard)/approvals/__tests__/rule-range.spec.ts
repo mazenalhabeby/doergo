@@ -64,8 +64,8 @@ describe("fallThrough — where only the first approval is needed", () => {
   it("names workspaces with no rule, and the part under the lowest limit elsewhere", () => {
     const got = fallThrough([rule("1", "billa", 120), rule("2", "main", null)], spaces)
     expect(got).toEqual([
-      { name: "BILLA AG", upTo: 120 },
-      { name: "OMV", upTo: null },
+      { id: "billa", name: "BILLA AG", upTo: 120 },
+      { id: "omv", name: "OMV", upTo: null },
     ])
   })
   it("an every-workspace rule with no limit leaves nothing", () => {
