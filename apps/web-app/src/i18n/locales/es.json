@@ -9924,7 +9924,6 @@
       },
       "rule": "Regla {{n}}",
       "moreThan": "más de",
-      "any": "cualquiera",
       "unit": {
         "overtime": "min",
         "request": "días laborables",
@@ -10021,8 +10020,13 @@
       "readOnly": "Para todos los espacios — solo la empresa puede cambiarla",
       "confirmRemove": "¿Borrar?",
       "confirmRemoveLabel": "¿Borrar {{rule}}? Pulsa otra vez para confirmar",
-      "ruleOff": "Desactivada"
-    }
+      "ruleOff": "Desactivada",
+      "daysInARow_one": "{{count}} día seguido",
+      "daysInARow_other": "{{count}} días seguidos",
+      "noLimit": "Sin límite — todos",
+      "capped": "Ajustado al límite máximo: {{max}}"
+    },
+    "pressAgain": "Pulsa otra vez para confirmar"
   },
   "overtimePage": {
     "title": "Horas extra",

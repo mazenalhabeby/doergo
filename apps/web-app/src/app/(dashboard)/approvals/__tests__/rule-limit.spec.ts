@@ -1,6 +1,15 @@
 import type { TFunction } from "i18next"
 import type { ApprovalItem, ApprovalRuleView } from "@hbcfield/shared/client"
-import { durationFields, durationValue, limitInput, limitMax, limitPatch, limitText } from "../_lib/rule-limit"
+import {
+  durationFields,
+  durationValue,
+  limitCapped,
+  limitInput,
+  limitMax,
+  limitPatch,
+  limitPatchInput,
+  limitText,
+} from "../_lib/rule-limit"
 import { ruleLinkForItem } from "../_lib/rule-link"
 
 /*
@@ -15,7 +24,9 @@ const t = ((key: string, o?: Record<string, unknown>) =>
       ? `${o?.h} h`
       : key === "requests.duration.minutes"
         ? `${o?.m} min`
-        : key) as unknown as TFunction
+        : key === "approvals.tree.daysInARow"
+          ? `${o?.count} days in a row`
+          : key) as unknown as TFunction
 
 const rule = (kind: ApprovalRuleView["kind"], extra: Partial<ApprovalRuleView>) =>
   ({ kind, minMinutes: null, minDays: null, minAmountCents: null, ...extra }) as ApprovalRuleView
@@ -23,7 +34,7 @@ const rule = (kind: ApprovalRuleView["kind"], extra: Partial<ApprovalRuleView>) 
 describe("a duration limit — hours and minutes", () => {
   it("50 min reads as 50 min and saves back as 50", () => {
     const typed = limitInput(rule("overtime", { minMinutes: 50 }))
-    expect(durationFields(typed)).toEqual({ h: "0", m: "50" })
+    expect(durationFields(typed)).toEqual({ h: "", m: "50" })
     expect(limitPatch("overtime", durationValue("0", "50"))).toEqual({
       minMinutes: 50,
       minDays: null,
@@ -54,9 +65,44 @@ describe("a duration limit — hours and minutes", () => {
     expect(durationFields("")).toEqual({ h: "", m: "" })
   })
 
+  it("whole hours leave the minutes empty, so clearing the hours removes the limit", () => {
+    expect(durationFields("60")).toEqual({ h: "1", m: "" })
+    expect(durationFields("120")).toEqual({ h: "2", m: "" })
+    const { m } = durationFields("60")
+    expect(limitPatch("overtime", durationValue("", m)).minMinutes).toBeNull()
+  })
+
+  it("a total of 0 from zeros is no limit, never 'more than 0 min'", () => {
+    expect(durationValue("0", "0")).toBe("")
+    expect(durationValue("0", "")).toBe("")
+    expect(limitPatch("hours", durationValue("0", "0")).minMinutes).toBeNull()
+  })
+
+  it("decimal hours are turned into minutes; a negative field counts as nothing", () => {
+    expect(durationValue("1.5", "")).toBe("90")
+    expect(durationValue("0.25", "5")).toBe("20")
+    expect(durationValue("-2", "")).toBe("")
+    expect(durationValue("1", "-5")).toBe("60")
+    expect(durationFields(durationValue("1.5", ""))).toEqual({ h: "1", m: "30" })
+  })
+
   it("is capped at the kind's ceiling, in minutes", () => {
     expect(limitMax("overtime")).toBe(1440)
     expect(limitPatch("overtime", durationValue("30", "0")).minMinutes).toBe(1440)
+  })
+
+  it("says when the typed value was capped, and the field reads the saved value", () => {
+    expect(limitCapped("overtime", durationValue("30", ""))).toBe(true)
+    expect(limitCapped("overtime", durationValue("2", ""))).toBe(false)
+    expect(limitCapped("overtime", "")).toBe(false)
+    const saved = limitPatchInput("overtime", limitPatch("overtime", durationValue("30", "")))
+    expect(durationFields(saved)).toEqual({ h: "24", m: "" })
+    expect(limitPatchInput("expense", limitPatch("expense", "12.5"))).toBe("12.5")
+    expect(limitPatchInput("overtime", limitPatch("overtime", ""))).toBe("")
+  })
+
+  it("missed clock-ins read as days in a row", () => {
+    expect(limitText(t, "noShow", 3, "EUR")).toBe("3 days in a row")
   })
 
   it("other kinds keep their own unit", () => {

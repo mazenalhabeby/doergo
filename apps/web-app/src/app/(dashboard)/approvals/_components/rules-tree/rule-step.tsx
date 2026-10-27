@@ -2,45 +2,15 @@
 
 import { useTranslation } from "react-i18next"
 import type { ApprovalRuleInput, ApprovalRuleView } from "@hbcfield/shared/client"
-import { Icon } from "@/components/ui/icon"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import type { RuleRange } from "../../_lib/rule-range"
 import type { RuleRole } from "../../_hooks/use-rules-tree"
-import { useConfirmPress } from "../../_hooks/use-confirm-press"
 import { ChoiceSelect, DoneNode, FlowNode, NONE } from "./tree-nodes"
 import { WhenNode } from "./when-node"
+import { RemoveButton } from "./remove-button"
 
 const HOURS = [4, 24, 48, 72]
-/**
- * The bin shows when the row is pointed at or focused (always on a touch screen, which cannot point), and deletes
- * only on a SECOND press — a rule is never lost to one stray tap.
- */
-const BIN =
-  "grid h-8 min-w-8 place-items-center rounded-lg px-1.5 text-muted-foreground opacity-0 transition-opacity " +
-  "hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100 " +
-  "[@media(hover:none)]:opacity-100"
-
-type RemoveProps = { label: string; confirmLabel: string; busy?: boolean; onRemove: () => void }
-function RemoveButton({ label, confirmLabel, busy, onRemove }: RemoveProps) {
-  const { t } = useTranslation()
-  const { asking, press } = useConfirmPress(onRemove)
-  return (
-    <button
-      type="button"
-      onClick={press}
-      disabled={busy}
-      aria-label={asking ? confirmLabel : label}
-      className={cn(
-        BIN,
-        "disabled:pointer-events-none disabled:opacity-50",
-        asking && "bg-shell-crit/10 text-[12px] font-semibold text-shell-crit opacity-100",
-      )}
-    >
-      {asking ? t("approvals.tree.confirmRemove") : <Icon name="trash" size={15} />}
-    </button>
-  )
-}
 
 export type RulePartName = "head" | "where" | "when" | "also" | "chase" | "done"
 
@@ -116,8 +86,8 @@ export function RulePart({
     pass ? t("approvals.tree.chase.pass", { role: pass.name, after: wait(rule.escalateAfterHours ?? 48) }) : null,
   ].filter(Boolean)
 
-  // Switched off: faded, never so far that the words lose their contrast — the head says "Off" in words.
-  const dim = !rule.isActive && "opacity-70"
+  // Switched off: the node's frame goes dashed and flat, its words keep full contrast — the head says "Off" in words.
+  const dim = !rule.isActive && "[&>*]:border-dashed [&>*]:shadow-none"
   // Each rule's own switch and bin say which rule they are about, for a screen reader.
   const ruleName = t("approvals.tree.rule", { n })
   const activeLabel = t("approvals.rules.active")

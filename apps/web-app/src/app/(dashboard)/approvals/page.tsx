@@ -49,7 +49,8 @@ export default function ApprovalsPage() {
     setFilter,
     selected,
     setSelected,
-    tab,
+    tabs,
+    shown,
     setTab,
     managesRules,
     isLoading,
@@ -71,13 +72,6 @@ export default function ApprovalsPage() {
     membersOf,
     approveDay,
   } = useApprovalsPage()
-  // An external member never hands their decisions on (the server refuses STAND_IN_EXTERNAL).
-  const tabs = (["decide", "rules", "stand"] as const).filter(
-    (k) => k === "decide" || (k === "rules" ? managesRules : !user?.isExternal),
-  )
-  // A tab this person may not open (a link from somebody else, a permission taken away) is the inbox.
-  const shown = (tabs as readonly string[]).includes(tab) ? tab : "decide"
-
   return (
     <div className={PAGE_SHELL}>
       <PageHeader

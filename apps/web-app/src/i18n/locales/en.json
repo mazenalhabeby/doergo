@@ -9924,7 +9924,6 @@
       },
       "rule": "Rule {{n}}",
       "moreThan": "more than",
-      "any": "any",
       "unit": {
         "overtime": "min",
         "request": "working days",
@@ -10021,8 +10020,13 @@
       "readOnly": "For every workspace — only the company can change it",
       "confirmRemove": "Delete?",
       "confirmRemoveLabel": "Delete {{rule}}? Press again to confirm",
-      "ruleOff": "Off"
-    }
+      "ruleOff": "Off",
+      "daysInARow_one": "{{count}} day in a row",
+      "daysInARow_other": "{{count}} days in a row",
+      "noLimit": "No limit — every one",
+      "capped": "Capped at the highest limit: {{max}}"
+    },
+    "pressAgain": "Press again to confirm"
   },
   "overtimePage": {
     "title": "Overtime",

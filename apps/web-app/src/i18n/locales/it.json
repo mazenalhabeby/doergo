@@ -9924,7 +9924,6 @@
       },
       "rule": "Regola {{n}}",
       "moreThan": "più di",
-      "any": "qualsiasi",
       "unit": {
         "overtime": "min",
         "request": "giorni lavorativi",
@@ -10021,8 +10020,13 @@
       "readOnly": "Per tutti gli spazi — solo l’azienda può cambiarla",
       "confirmRemove": "Eliminare?",
       "confirmRemoveLabel": "Eliminare {{rule}}? Premi di nuovo per confermare",
-      "ruleOff": "Disattivata"
-    }
+      "ruleOff": "Disattivata",
+      "daysInARow_one": "{{count}} giorno di fila",
+      "daysInARow_other": "{{count}} giorni di fila",
+      "noLimit": "Nessun limite — tutti",
+      "capped": "Portato al limite massimo: {{max}}"
+    },
+    "pressAgain": "Premi di nuovo per confermare"
   },
   "overtimePage": {
     "title": "Straordinari",

@@ -19,6 +19,7 @@ import "@xyflow/react/dist/style.css"
 import type { ApprovalRuleInput, ApprovalRuleView } from "@hbcfield/shared/client"
 import type { RuleRange } from "../../_lib/rule-range"
 import type { RuleRole } from "../../_hooks/use-rules-tree"
+import { useOneFingerScrolls } from "../../_hooks/use-one-finger-scrolls"
 import { RulePart, type RulePartName } from "./rule-step"
 
 /** What every rule node needs, shared once instead of copied into each node's data. */
@@ -210,12 +211,14 @@ function useRevealFocus() {
   )
 }
 
-/** The canvas's frame: its height, and the focus that follows the keyboard. */
+/** The canvas's frame: its height (at most 60% of a phone's screen), and the focus that follows the keyboard. */
 function Frame({ height, children }: { height: number; children: ReactNode }) {
   const reveal = useRevealFocus()
+  const ref = useOneFingerScrolls()
   return (
     <div
-      className="w-full overflow-hidden rounded-[22px] border border-border bg-shell-chip"
+      ref={ref}
+      className="w-full overflow-hidden rounded-[22px] border border-border bg-shell-chip max-md:max-h-[60vh]"
       style={{ height }}
       onFocusCapture={reveal}
     >

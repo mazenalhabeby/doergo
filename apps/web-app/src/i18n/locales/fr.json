@@ -9924,7 +9924,6 @@
       },
       "rule": "Règle {{n}}",
       "moreThan": "plus de",
-      "any": "tous",
       "unit": {
         "overtime": "min",
         "request": "jours ouvrés",
@@ -10021,8 +10020,13 @@
       "readOnly": "Pour tous les espaces — seule l’entreprise peut la modifier",
       "confirmRemove": "Supprimer ?",
       "confirmRemoveLabel": "Supprimer {{rule}} ? Appuyez à nouveau pour confirmer",
-      "ruleOff": "Désactivée"
-    }
+      "ruleOff": "Désactivée",
+      "daysInARow_one": "{{count}} jour d’affilée",
+      "daysInARow_other": "{{count}} jours d’affilée",
+      "noLimit": "Sans limite — tous",
+      "capped": "Ramené à la limite maximale : {{max}}"
+    },
+    "pressAgain": "Appuyez à nouveau pour confirmer"
   },
   "overtimePage": {
     "title": "Heures supplémentaires",

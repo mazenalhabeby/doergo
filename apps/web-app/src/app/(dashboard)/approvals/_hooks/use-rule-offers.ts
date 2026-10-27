@@ -8,7 +8,8 @@ import type { OfferedRule } from "../_components/rules-tree/suggestion-bar"
 /**
  * The rules this page offers for one kind: the ones the last 90 days suggest, and the one an inbox item
  * asked for ("make a rule like this", read once from the link — it also picks the kind). "Not now" hides
- * an offer for this visit.
+ * an offer for this visit. An offer the caller could not add AS OFFERED is not made: a manager of some
+ * workspaces never sees "every workspace" (it would have been added in one of theirs, without saying so).
  */
 export function useRuleOffers({
   kind,
@@ -16,12 +17,15 @@ export function useRuleOffers({
   insights,
   spaceName,
   limitText,
+  mayOffer,
 }: {
   kind: RuleKind
   setKind: (k: RuleKind) => void
   insights: RuleInsights | undefined
   spaceName: (id: string) => string
   limitText: (v: number) => string
+  /** May the caller add a rule for this workspace (null = every workspace)? */
+  mayOffer: (spaceId: string | null) => boolean
 }) {
   const { t } = useTranslation()
   const [fromItem, setFromItem] = useState<{ kind: RuleKind; spaceId: string | null; limit: number | null } | null>(
@@ -68,8 +72,8 @@ export function useRuleOffers({
         limit: s.limit,
         why: t("approvals.tree.smart.suggest", { count: s.count, limit: limitText(s.limit), where: where(s.spaceId) }),
       })
-    return out.filter((o) => !hidden.has(`${kind}:${o.key}`))
-  }, [fromItem, insights, kind, hidden, spaceName, limitText, t])
+    return out.filter((o) => mayOffer(o.spaceId) && !hidden.has(`${kind}:${o.key}`))
+  }, [fromItem, insights, kind, hidden, spaceName, limitText, mayOffer, t])
 
   const dismiss = (o: OfferedRule) => {
     setHidden((h) => new Set(h).add(`${kind}:${o.key}`))

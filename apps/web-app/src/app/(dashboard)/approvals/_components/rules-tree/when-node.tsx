@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import { RULE_LIMITS, type ApprovalRuleInput, type ApprovalRuleView } from "@hbcfield/shared/client"
@@ -12,9 +12,11 @@ import {
   durationFields,
   durationValue,
   isDurationKind,
+  limitCapped,
   limitInput,
   limitMax,
   limitPatch,
+  limitPatchInput,
   limitText,
 } from "../../_lib/rule-limit"
 import type { RuleRange } from "../../_lib/rule-range"
@@ -42,36 +44,59 @@ export function WhenNode({
   // A duration is typed as hours and minutes, each its own field.
   const duration = isDurationKind(rule.kind)
   const [hm, setHm] = useState(() => durationFields(stored))
+  // The last value sent (or read back): blur and the editor closing both commit — the same value is sent once.
+  const sent = useRef(stored)
+  // Typed above the kind's ceiling: what is saved is the ceiling, and the editor says so.
+  const [capped, setCapped] = useState(false)
   // Follows the SAVED value only when it changes — a refetch of the same rule never wipes what is being typed.
   useEffect(() => {
+    sent.current = stored
     setLimit(stored)
     setHm(durationFields(stored))
   }, [stored])
   const typed = duration ? durationValue(hm.h, hm.m) : limit
   // Saved on Enter, on leaving the field, and when the editor closes (Escape or a click away) — never on unmount,
-  // which is also what a DELETED rule does.
-  const commit = () => typed !== stored && onChange(limitPatch(rule.kind, typed))
+  // which is also what a DELETED rule does. The fields then show what was SAVED (1.5 h reads 1 h 30 min).
+  const commit = () => {
+    const patch = limitPatch(rule.kind, typed)
+    const saved = limitPatchInput(rule.kind, patch)
+    setCapped(limitCapped(rule.kind, typed))
+    setLimit(saved)
+    setHm(durationFields(saved))
+    if (saved === sent.current) return
+    sent.current = saved
+    onChange(patch)
+  }
+  // Under the fields, one line: "No limit" while they are empty (no placeholder to clip), or that it was capped.
+  const hintId = `rule-limit-hint-${rule.id}`
+  const max = limitMax(rule.kind)
+  const hint =
+    typed === ""
+      ? t("approvals.tree.noLimit")
+      : capped && max != null
+        ? t("approvals.tree.capped", {
+            max: limitText(t, rule.kind, rule.kind === "expense" ? max * 100 : max, currency),
+          })
+        : null
   const hasLimit = !!RULE_LIMITS[rule.kind]
-  const field = (
-    value: string,
-    set: (v: string) => void,
-    label: string,
-    max?: number,
-    empty = t("approvals.tree.any"),
-  ) => (
+  const field = (value: string, set: (v: string) => void, label: string, top?: number) => (
     <input
       type="number"
       min={0}
-      max={max}
-      inputMode={duration ? "numeric" : "decimal"}
+      max={top}
+      step="any"
+      inputMode="decimal"
       value={value}
-      placeholder={empty}
-      onChange={(e) => set(e.target.value)}
+      onChange={(e) => {
+        setCapped(false)
+        set(e.target.value)
+      }}
       // Hours → minutes is one value being typed: saved when focus leaves the PAIR, or the half-typed hours would
       // be saved and the saved value would wipe the minutes being typed.
       onBlur={(e) => !(duration && e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) && commit()}
       onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
       aria-label={label}
+      aria-describedby={hintId}
       className={cn(LIMIT, duration ? "w-16" : "w-24", "text-center")}
     />
   )
@@ -120,7 +145,7 @@ export function WhenNode({
                 hm.h,
                 (h) => setHm((v) => ({ ...v, h })),
                 `${t("approvals.tree.moreThan")} · ${t("approvals.tree.unit.h")}`,
-                Math.floor((limitMax(rule.kind) ?? 0) / 60),
+                Math.floor((max ?? 0) / 60),
               )}
               <span className="text-[13px] text-muted-foreground">{t("approvals.tree.unit.h")}</span>
               {field(
@@ -128,15 +153,17 @@ export function WhenNode({
                 (m) => setHm((v) => ({ ...v, m })),
                 `${t("approvals.tree.moreThan")} · ${t("approvals.tree.unit.min")}`,
                 59,
-                "0",
               )}
             </>
           ) : (
-            field(limit, setLimit, t("approvals.tree.moreThan"), limitMax(rule.kind))
+            field(limit, setLimit, t("approvals.tree.moreThan"), max)
           )}
           <span className="text-[13px] text-muted-foreground">
             {t(`approvals.tree.unit.${rule.kind}`, { currency })}
           </span>
+          <p id={hintId} aria-live="polite" className="w-full text-[12px] text-muted-foreground">
+            {hint}
+          </p>
         </div>
       )}
       {rule.kind === "request" && (

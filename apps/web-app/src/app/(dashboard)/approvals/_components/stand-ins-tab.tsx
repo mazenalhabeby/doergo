@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ListTableError } from "@/components/common/list-page"
 import { cn } from "@/lib/utils"
 import { useConfirmPress } from "../_hooks/use-confirm-press"
+import { ConfirmHint } from "./confirm-hint"
 
 // Today on this device's calendar (the shared day key).
 const todayKey = () => localDateKey()
@@ -227,40 +228,47 @@ function StandInList({
     <div>
       <GroupLabel className="px-0 pt-0">{title}</GroupLabel>
       <ul className="divide-y divide-border rounded-lg border border-border">
-        {rows.map((r) => (
-          <li key={r.id} className="flex items-center gap-3 px-3 py-2 text-sm">
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-foreground">
-                {show === "to" ? r.to.name : show === "from" ? r.from.name : `${r.from.name} → ${r.to.name}`}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {r.active ? `${t("approvals.standIn.now")} · ` : ""}
-                {t("approvals.standIn.from", { from: day(r.startsOn), to: day(r.endsOn) })}
-                {r.note ? ` · ${r.note}` : ""}
-              </p>
-            </div>
-            {r.canEnd && <EndButton busy={busy} onEnd={() => onEnd(r.id)} />}
-          </li>
-        ))}
+        {rows.map((r) => {
+          const who = show === "to" ? r.to.name : show === "from" ? r.from.name : `${r.from.name} → ${r.to.name}`
+          const dates = t("approvals.standIn.from", { from: day(r.startsOn), to: day(r.endsOn) })
+          return (
+            <li key={r.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-foreground">{who}</p>
+                <p className="text-xs text-muted-foreground">
+                  {r.active ? `${t("approvals.standIn.now")} · ` : ""}
+                  {dates}
+                  {r.note ? ` · ${r.note}` : ""}
+                </p>
+              </div>
+              {/* Each "End" says whose stand-in and which days — a list of identical buttons tells a screen reader nothing. */}
+              {r.canEnd && <EndButton busy={busy} about={`${who}, ${dates}`} onEnd={() => onEnd(r.id)} />}
+            </li>
+          )
+        })}
       </ul>
     </div>
   )
 }
 
 /** "End" acts on the second press — a stand-in is never ended by one stray tap. */
-function EndButton({ busy, onEnd }: { busy: boolean; onEnd: () => void }) {
+function EndButton({ busy, about, onEnd }: { busy: boolean; about: string; onEnd: () => void }) {
   const { t } = useTranslation()
   const { asking, press } = useConfirmPress(onEnd)
+  const label = asking ? t("approvals.standIn.confirmEndLabel") : t("approvals.standIn.end")
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      className={cn("rounded-lg", asking && "border-shell-crit text-shell-crit")}
-      disabled={busy}
-      onClick={press}
-      aria-label={asking ? t("approvals.standIn.confirmEndLabel") : undefined}
-    >
-      {asking ? t("approvals.standIn.confirmEnd") : t("approvals.standIn.end")}
-    </Button>
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        className={cn("rounded-lg", asking && "border-shell-crit text-shell-crit")}
+        disabled={busy}
+        onClick={press}
+        aria-label={`${label} · ${about}`}
+      >
+        {asking ? t("approvals.standIn.confirmEnd") : t("approvals.standIn.end")}
+      </Button>
+      <ConfirmHint asking={asking} />
+    </>
   )
 }

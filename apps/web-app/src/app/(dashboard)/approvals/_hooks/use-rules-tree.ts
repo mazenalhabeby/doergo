@@ -133,10 +133,14 @@ export function useRulesTree(enabled: boolean) {
     given stay when a rule changes (the server recomputes what is needed on every decision).
   */
   const pending = useRef(0)
-  const refresh = () => {
+  // The kinds changed since the last re-read: each rule's OWN kind, not the one open when it was edited.
+  const changed = useRef(new Set<RuleKind>())
+  const refresh = (k: RuleKind) => {
+    changed.current.add(k)
     if (pending.current > 0) return
     qc.invalidateQueries({ queryKey: keys.approvals.rules() })
-    qc.invalidateQueries({ queryKey: keys.approvals.ruleInsights(kind) })
+    for (const c of changed.current) qc.invalidateQueries({ queryKey: keys.approvals.ruleInsights(c) })
+    changed.current.clear()
   }
   const fail = (e: Error) => notify.error(e.message)
 
@@ -146,15 +150,21 @@ export function useRulesTree(enabled: boolean) {
   })
   const create = useMutation({
     mutationFn: (input: ApprovalRuleInput) => approvalsApi.saveRule(input),
-    onSuccess: refresh,
+    onSuccess: (_r, input) => refresh(input.kind),
     onError: fail,
   })
+  // Saves to one rule run one after another (see `change`); a delete waits for them too.
+  const queue = useRef(Promise.resolve())
   /*
     Delete: the rule leaves the screen at once (and with it any save still queued for it — the queue finds it gone);
     a refused delete puts it back where it was. No re-read lands while it is in flight, or it would bring it back.
+    It is SENT only after the saves already in flight: one landing after the delete would answer 404 on screen.
   */
   const remove = useMutation({
-    mutationFn: (id: string) => approvalsApi.deleteRule(id),
+    mutationFn: async (id: string) => {
+      await queue.current
+      return approvalsApi.deleteRule(id)
+    },
     onMutate: async (id: string) => {
       pending.current += 1
       await qc.cancelQueries({ queryKey: keys.approvals.rules() })
@@ -171,9 +181,9 @@ export function useRulesTree(enabled: boolean) {
         )
       fail(e)
     },
-    onSettled: () => {
+    onSettled: (_r, _e, _id, back) => {
       pending.current -= 1
-      refresh()
+      refresh(back?.rule?.kind ?? kind)
     },
   })
 
@@ -182,7 +192,6 @@ export function useRulesTree(enabled: boolean) {
     one after another — a slower earlier save can never land after a later one and undo it — and each sends the
     rule as it stands after every change before it. A rule the caller may only read is never sent.
   */
-  const queue = useRef(Promise.resolve())
   const change = (r: ApprovalRuleView, patch: Partial<ApprovalRuleInput>) => {
     if (r.editable === false) return
     void qc.cancelQueries({ queryKey: keys.approvals.rules() })
@@ -195,7 +204,7 @@ export function useRulesTree(enabled: boolean) {
       // Deleted meanwhile: nothing to save (it used to answer 404 on screen).
       if (now) await save.mutateAsync({ input: ruleInput(now), id: r.id }).catch(() => undefined)
       pending.current -= 1
-      refresh()
+      refresh(r.kind)
     })
   }
 

@@ -9924,7 +9924,6 @@
       },
       "rule": "Regel {{n}}",
       "moreThan": "mehr als",
-      "any": "beliebig",
       "unit": {
         "overtime": "Min.",
         "request": "Arbeitstage",
@@ -10021,8 +10020,13 @@
       "readOnly": "Für alle Arbeitsbereiche — nur die Firma kann das ändern",
       "confirmRemove": "Löschen?",
       "confirmRemoveLabel": "{{rule}} löschen? Zum Bestätigen noch einmal drücken",
-      "ruleOff": "Aus"
-    }
+      "ruleOff": "Aus",
+      "daysInARow_one": "{{count}} Tag in Folge",
+      "daysInARow_other": "{{count}} Tage in Folge",
+      "noLimit": "Keine Grenze — jeder Fall",
+      "capped": "Auf die höchste Grenze gesetzt: {{max}}"
+    },
+    "pressAgain": "Zum Bestätigen noch einmal drücken"
   },
   "overtimePage": {
     "title": "Überstunden",

@@ -36,7 +36,7 @@ export function useApprovalsPage() {
   }, [])
   // "Who approves" — the office's rules — is a tab of its own (?tab=rules opens it).
   const [tab, setTabState] = useState<ApprovalsTab>("decide")
-  // The inbox (a fan-out over every kind) is read only once the tab is known, and only on "To decide".
+  // The inbox (a fan-out over every kind) is read only once the tab is known, and only while it is shown.
   const [tabKnown, setTabKnown] = useState(false)
   useEffect(() => {
     const want = new URLSearchParams(window.location.search).get("tab")
@@ -51,15 +51,24 @@ export function useApprovalsPage() {
     else q.set("tab", next)
     window.history.replaceState(null, "", `${window.location.pathname}${q.size ? `?${q}` : ""}`)
   }, [])
-  const { holds } = useRouteAccess()
+  const { holds, ctx } = useRouteAccess()
   // Office rules: "manage approval rules", org-wide or in a workspace (the server narrows to those workspaces).
   const managesRules = holds("any:canManageApprovalRules")
+  // Who is asking is not known yet: no tab is refused and nothing is "empty" — the page is still loading.
+  const accessKnown = ctx != null
+  // An external member never hands their decisions on (the server refuses STAND_IN_EXTERNAL).
+  const tabs = (["decide", "rules", "stand"] as const).filter(
+    (k) => k === "decide" || (k === "rules" ? managesRules : !user?.isExternal),
+  )
+  // A tab this person may not open (a link from somebody else, a permission taken away) is the inbox.
+  const shown: ApprovalsTab = (tabs as readonly string[]).includes(tab) ? tab : "decide"
 
+  // Read for the tab SHOWN — a refused "?tab=rules" falls back to the inbox, and the inbox must then load.
   const { data, isLoading, isError, error, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: keys.approvals.list(),
     queryFn: approvalsApi.list,
     staleTime: 15_000,
-    enabled: tabKnown && tab === "decide",
+    enabled: tabKnown && accessKnown && shown === "decide",
   })
 
   const items = useMemo(() => data?.items ?? [], [data])
@@ -92,7 +101,7 @@ export function useApprovalsPage() {
     the focus is in something that uses the arrows itself (a field, a select, a list box, a menu, the tabs).
   */
   useEffect(() => {
-    if (tab !== "decide") return
+    if (shown !== "decide") return
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null
       if (
@@ -111,7 +120,7 @@ export function useApprovalsPage() {
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [visible, selected, tab])
+  }, [visible, selected, shown])
 
   const decide = useMutation({
     mutationFn: (d: ApprovalDecision) => approvalsApi.decide(d),
@@ -159,11 +168,12 @@ export function useApprovalsPage() {
     setFilter,
     selected,
     setSelected,
-    tab,
+    tabs,
+    shown,
     setTab,
     managesRules,
-    // Not read yet because the tab is not known: still loading, never "nothing to decide".
-    isLoading: isLoading || !tabKnown,
+    // Not read yet because the tab or the reader is not known: still loading, never "nothing to decide".
+    isLoading: isLoading || !tabKnown || !accessKnown,
     isError,
     error,
     refetch,

@@ -79,12 +79,18 @@ export function RulesTree() {
   const kindName = (k: RuleKind) => t(`approvals.rules.kind.${k}`)
   const countOf = (k: RuleKind) => tree.counts.filter((r) => r.kind === k).length
   const showLimit = useCallback((v: number) => limitText(t, tree.kind, v, currency), [t, tree.kind, currency])
+  const { everywhere, workspaces } = tree
+  const mayOffer = useCallback(
+    (spaceId: string | null) => everywhere || (!!spaceId && workspaces.some((w) => w.id === spaceId)),
+    [everywhere, workspaces],
+  )
   const { offers, dismiss } = useRuleOffers({
     kind: tree.kind,
     setKind: tree.setKind,
     insights: tree.insights,
     spaceName,
     limitText: showLimit,
+    mayOffer,
   })
 
   // The canvas's three boxes, each made again only when what it shows changes.
