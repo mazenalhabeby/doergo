@@ -1,46 +1,30 @@
 "use client"
 
-import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { RULE_KINDS, type RuleKind } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { Icon } from "@/components/ui/icon"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Panel, RAIL_ROW } from "@/components/page/page-kit"
+import { cn } from "@/lib/utils"
 import { useRulesTree } from "../../_hooks/use-rules-tree"
 import { fallThrough, ruleRanges } from "../../_lib/rule-range"
-import { RuleRow, limitText } from "./rule-row"
-import { ChoiceSelect, Connector, DoneNode } from "./tree-nodes"
+import { limitText } from "./rule-step"
+import { RulesCanvas } from "./rules-canvas"
+import { DoneNode } from "./tree-nodes"
 
-const DOTS = {
-  backgroundImage: "radial-gradient(hsl(var(--muted-foreground) / 0.18) 1px, transparent 1.2px)",
-  backgroundSize: "20px 20px",
-}
-const UNCAUGHT =
-  "flex w-[396px] shrink-0 flex-col gap-0.5 rounded-2xl border border-dashed border-border bg-card px-3.5 py-2.5 " +
-  "shadow-shell"
-const LINE = "bg-[hsl(var(--muted-foreground)/0.35)]"
 const NEW_NODE =
   "inline-flex h-11 items-center gap-2 rounded-2xl border-[1.5px] border-dashed border-shell-accent bg-card px-4 " +
   "text-sm font-semibold text-shell-accent hover:bg-shell-accent-soft disabled:opacity-50"
-const START =
-  "flex w-[226px] shrink-0 flex-col gap-2 rounded-2xl border-[1.5px] border-foreground bg-card p-3.5 shadow-shell"
-
-/** One branch off the start node: the stub joining it to the trunk, then its chain. */
-function Branch({ children }: { children: ReactNode }) {
-  return (
-    <div className="relative flex items-end py-2 pl-10">
-      <span aria-hidden className={`absolute bottom-[38px] left-0 h-0.5 w-10 ${LINE}`} />
-      {children}
-    </div>
-  )
-}
+const START = "flex w-[230px] flex-col gap-1.5 rounded-2xl border-[1.5px] border-foreground bg-card p-4 shadow-shell"
+const UNCAUGHT =
+  "flex w-[396px] flex-col gap-0.5 rounded-2xl border border-dashed border-border bg-card px-3.5 py-2.5 shadow-shell"
 
 /**
- * "Who approves", laid out like a node canvas (n8n, Freepik Spaces): what needs approval on the left, one
- * chain per rule fanning out to the right — where → when → who also approves → if nobody answers → done.
- * Each node says one thing; clicking it opens its editor. Every change saves at once (the server checks
- * and enforces it). Which rule applies is the server's choice: the workspace's own first, then the higher
- * limit — each "When" node shows the range that results.
+ * "Who approves": what needs approval in a sidebar (with what already has rules), and the chosen kind on a
+ * node canvas like n8n — the start on the left, one chain per rule fanning out: where → when (its real
+ * range) → also approves → no answer → done. A node says one thing; clicking it opens its editor; every
+ * change saves at once and the server checks and enforces it.
  */
 export function RulesTree() {
   const { t } = useTranslation()
@@ -58,79 +42,87 @@ export function RulesTree() {
   const kindName = (k: RuleKind) => t(`approvals.rules.kind.${k}`)
   const countOf = (k: RuleKind) => tree.counts.filter((r) => r.kind === k).length
 
+  const start = (
+    <div className={START}>
+      <span className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+        <Icon name="flash" size={14} />
+        {t("approvals.tree.startLabel")}
+      </span>
+      <b className="text-[16px] leading-snug">{kindName(tree.kind)}</b>
+      <span className="text-[12px] leading-snug text-muted-foreground">
+        {t("approvals.tree.first")}: {t(`approvals.tree.firstBy.${tree.kind}`)}
+      </span>
+    </div>
+  )
+  const fallsThrough =
+    uncaught.length > 0 ? (
+      <div className="flex items-center gap-3">
+        <div className={UNCAUGHT}>
+          <span className="text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+            {t("approvals.tree.noRuleFits")}
+          </span>
+          <span className="text-[13.5px] font-semibold leading-snug">
+            {uncaught.slice(0, 4).join(" · ")}
+            {uncaught.length > 4 && <> {moreText}</>}
+          </span>
+        </div>
+        <DoneNode>{t("approvals.tree.doneOne")}</DoneNode>
+      </div>
+    ) : null
+  const add = (
+    <button type="button" onClick={tree.add} disabled={tree.busy} className={NEW_NODE}>
+      <Icon name="plus" size={16} />
+      {t("approvals.tree.newRule")}
+    </button>
+  )
+
   return (
     <div className="flex flex-col gap-3">
       <p className="max-w-[720px] text-sm text-muted-foreground">{t("approvals.tree.intro")}</p>
-
-      <div className="overflow-x-auto rounded-[22px] border border-border bg-shell-chip p-6" style={DOTS}>
-        <div className="flex min-w-min items-center">
-          <div className={START}>
-            <span className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
-              <Icon name="flash" size={14} />
-              {t("approvals.tree.what")}
-            </span>
-            <ChoiceSelect
-              value={tree.kind}
-              onChange={(v) => tree.setKind(v as RuleKind)}
-              label={t("approvals.tree.what")}
-              choices={RULE_KINDS.map((k) => ({
-                value: k,
-                label: countOf(k) ? `${kindName(k)} · ${countOf(k)}` : kindName(k),
-              }))}
-            />
-            <span className="text-[12px] leading-snug text-muted-foreground">
-              {t("approvals.tree.first")}: {t(`approvals.tree.firstBy.${tree.kind}`)}
-            </span>
-          </div>
-          <Connector />
-
-          {/* The trunk: one line down the left of the branches. */}
-          <div className="relative flex flex-col">
-            <span aria-hidden className={`absolute bottom-[38px] left-0 top-[66px] w-0.5 ${LINE}`} />
-            {tree.isLoading ? (
-              <Branch>
-                <Skeleton className="h-20 w-[880px] rounded-2xl" />
-              </Branch>
-            ) : (
-              tree.rules.map((r, i) => (
-                <Branch key={r.id}>
-                  <RuleRow
-                    rule={r}
-                    n={i + 1}
-                    roles={tree.roles}
-                    workspaces={tree.workspaces}
-                    currency={currency}
-                    range={ranges[i]}
-                    onChange={(patch) => tree.change(r, patch)}
-                    onRemove={() => tree.remove.mutate(r.id)}
-                  />
-                </Branch>
-              ))
-            )}
-            {/* Only when something can fall through — and it says exactly what does. */}
-            {uncaught.length > 0 && (
-              <Branch>
-                <div className={UNCAUGHT}>
-                  <span className="text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
-                    {t("approvals.tree.noRuleFits")}
+      <div className="grid items-start gap-4 lg:grid-cols-[210px_minmax(0,1fr)]">
+        <Panel as="nav" className="flex flex-col gap-0.5">
+          <span className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground">
+            {t("approvals.tree.what")}
+          </span>
+          {RULE_KINDS.map((k) => {
+            const n = countOf(k)
+            return (
+              <button
+                key={k}
+                type="button"
+                aria-current={tree.kind === k}
+                onClick={() => tree.setKind(k)}
+                className={cn(RAIL_ROW, "h-auto items-start py-2.5")}
+              >
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate">{kindName(k)}</span>
+                  <span className={cn("text-xs font-normal", n ? "text-shell-accent" : "text-muted-foreground")}>
+                    {n ? t("approvals.tree.ruleCount", { count: n }) : t("approvals.tree.noRules")}
                   </span>
-                  <span className="text-[13.5px] font-semibold leading-snug">
-                    {uncaught.slice(0, 4).join(" · ")}
-                    {uncaught.length > 4 && <> {moreText}</>}
-                  </span>
-                </div>
-                <Connector />
-                <DoneNode>{t("approvals.tree.doneOne")}</DoneNode>
-              </Branch>
-            )}
-            <Branch>
-              <button type="button" onClick={tree.add} disabled={tree.busy} className={NEW_NODE}>
-                <Icon name="plus" size={16} />
-                {t("approvals.tree.newRule")}
+                </span>
               </button>
-            </Branch>
-          </div>
-        </div>
+            )
+          })}
+        </Panel>
+        {tree.isLoading ? (
+          <Skeleton className="h-[420px] w-full rounded-[22px]" />
+        ) : (
+          <RulesCanvas
+            kind={tree.kind}
+            start={start}
+            uncaught={fallsThrough}
+            add={add}
+            ctx={{
+              rules: tree.rules,
+              ranges,
+              roles: tree.roles,
+              workspaces: tree.workspaces,
+              currency,
+              onChange: tree.change,
+              onRemove: (r) => tree.remove.mutate(r.id),
+            }}
+          />
+        )}
       </div>
       <p className="text-[12.5px] text-muted-foreground">{t("approvals.tree.footnote")}</p>
     </div>

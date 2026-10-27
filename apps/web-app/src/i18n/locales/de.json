@@ -9961,7 +9961,11 @@
       },
       "doneOne": "Fertig · 1 Genehmigung",
       "upToIn": "{{name}} bis {{to}}",
-      "more": "+{{count}} weitere"
+      "more": "+{{count}} weitere",
+      "startLabel": "Wenn das eingereicht wird",
+      "ruleCount_one": "{{count}} Regel",
+      "ruleCount_other": "{{count}} Regeln",
+      "noRules": "Keine Regeln — eine Genehmigung"
     }
   },
   "overtimePage": {

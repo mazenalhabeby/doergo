@@ -9961,7 +9961,11 @@
       },
       "doneOne": "Done · 1 approval",
       "upToIn": "{{name}} up to {{to}}",
-      "more": "+{{count}} more"
+      "more": "+{{count}} more",
+      "startLabel": "When this is sent",
+      "ruleCount_one": "{{count}} rule",
+      "ruleCount_other": "{{count}} rules",
+      "noRules": "No rules — one approval"
     }
   },
   "overtimePage": {

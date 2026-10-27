@@ -64,17 +64,6 @@ export function FlowNode({
   )
 }
 
-/** The line joining two nodes, with the ports at each end. */
-export function Connector() {
-  return (
-    <span aria-hidden className="relative flex w-6 shrink-0 items-center self-center">
-      <span className="h-0.5 w-full bg-[hsl(var(--muted-foreground)/0.35)]" />
-      <span className="absolute -left-1 size-2 rounded-full border-2 border-[hsl(var(--muted-foreground)/0.5)] bg-card" />
-      <span className="absolute -right-1 size-2 rounded-full border-2 border-[hsl(var(--muted-foreground)/0.5)] bg-card" />
-    </span>
-  )
-}
-
 /** Where a chain ends. */
 export function DoneNode({ children }: { children: ReactNode }) {
   return (
