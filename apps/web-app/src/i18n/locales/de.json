@@ -9840,7 +9840,7 @@
       "firstDone": "Freigegeben — jetzt wartet es auf {{role}}.",
       "mine": "Sie haben freigegeben. Jetzt braucht es {{role}}.",
       "waiting": "{{name}} hat freigegeben. Es braucht auch {{role}}.",
-      "short": "braucht {{role}}"
+      "badge": "Schritt 2 von 2 · {{role}}"
     },
     "rules": {
       "kind": {

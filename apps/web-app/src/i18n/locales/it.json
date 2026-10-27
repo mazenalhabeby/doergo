@@ -9840,7 +9840,7 @@
       "firstDone": "Approvato — ora attende {{role}}.",
       "mine": "Lei ha approvato. Ora serve {{role}}.",
       "waiting": "{{name}} ha approvato. Serve anche {{role}}.",
-      "short": "serve {{role}}"
+      "badge": "Passo 2 di 2 · {{role}}"
     },
     "rules": {
       "kind": {

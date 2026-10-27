@@ -9840,7 +9840,7 @@
       "firstDone": "Validé — en attente de {{role}}.",
       "mine": "Vous avez validé. Il faut maintenant {{role}}.",
       "waiting": "{{name}} a validé. Il faut aussi {{role}}.",
-      "short": "attend {{role}}"
+      "badge": "Étape 2 sur 2 · {{role}}"
     },
     "rules": {
       "kind": {

@@ -38,6 +38,8 @@ export function ApprovalRow({
               {item.subject.name || t("approvals.someone")}
             </b>
             <Chip tone={item.group === "NOW" ? "crit" : "soft"}>{t(`approvals.kinds.${item.kind}`)}</Chip>
+            {/* An office rule: one approval is in, the item waits for a second person holding the role. */}
+            {item.step && <Chip tone="warn">{t("approvals.step.badge", { role: item.step.roleName })}</Chip>}
             {item.raisedAt && (
               <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
                 {formatTimeAgo(item.raisedAt)}
@@ -48,7 +50,6 @@ export function ApprovalRow({
             {text.headline}
             {lead ? ` · ${lead.value}` : ""}
             {item.space ? ` · ${item.space.name}` : ""}
-            {item.step ? ` · ${t("approvals.step.short", { role: item.step.roleName })}` : ""}
           </span>
         </span>
       </button>
