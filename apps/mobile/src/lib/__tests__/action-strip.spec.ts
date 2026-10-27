@@ -1,4 +1,4 @@
-import { stripItems, stripLines, stripTone, itemLines } from '@/features/home/action-strip-state';
+import { stripCount, stripItems, stripLines, stripTone, itemLines } from '@/features/home/action-strip-state';
 
 const none = { toUpload: [], rejected: [], toSign: [], expiringSoon: [] };
 const NOW = Date.parse('2026-09-26T10:00:00Z');
@@ -52,5 +52,19 @@ describe('the action strip', () => {
   it('a colleague waiting beats a count', () => {
     const items = stripItems({ ...none, toSign: [{ id: 'd', title: 'Contract' }, { id: 'e', title: 'Time sheet', forMember: 'Mike Weber' }] });
     expect(stripLines(items)!.sub).toEqual({ key: 'strip.line.waitingOnYou', values: { name: 'Mike Weber' } });
+  });
+
+  it('approvals count as that many things, one row that opens the inbox', () => {
+    const only = stripItems({ ...none, approvals: 3 });
+    expect(only).toEqual([expect.objectContaining({ kind: 'approvals', count: 3 })]);
+    expect(stripLines(only)!.title).toEqual({ key: 'strip.item.approvals', values: { count: 3 } });
+    expect(stripTone(only)).toBe('warn');
+    const mixed = stripItems({ ...none, approvals: 3, toSign: [{ id: 'd', title: 'Contract' }] });
+    expect(stripCount(mixed)).toBe(4);
+    expect(stripLines(mixed)).toEqual({
+      title: { key: 'strip.needYou', values: { count: 4 } },
+      sub: { key: 'strip.line.approvals', values: { count: 3 } },
+    });
+    expect(stripItems({ ...none, approvals: 0 })).toEqual([]);
   });
 });

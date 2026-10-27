@@ -3674,7 +3674,9 @@
       "toSign_one": "{{count}} por firmar",
       "toSign_other": "{{count}} por firmar",
       "toUpload_one": "{{count}} por subir",
-      "toUpload_other": "{{count}} por subir"
+      "toUpload_other": "{{count}} por subir",
+      "approvals_one": "{{count}} aprobación espera su decisión",
+      "approvals_other": "{{count}} aprobaciones esperan su decisión"
     },
     "item": {
       "sentBack": "Tu {{label}} fue devuelto",
@@ -3691,7 +3693,10 @@
       "expiresToday": "Tu {{label}} vence hoy",
       "expiresIn_one": "Tu {{label}} vence mañana",
       "expiresIn_other": "Tu {{label}} vence en {{count}} días",
-      "expiringSub": "Aún válido · envía el renovado"
+      "expiringSub": "Aún válido · envía el renovado",
+      "approvals_one": "{{count}} aprobación",
+      "approvals_other": "{{count}} aprobaciones",
+      "approvalsSub": "Espera su decisión"
     }
   },
   "clientsCard": {
@@ -5371,7 +5376,10 @@
       "firstDone": "Aprobado — ahora espera a {{role}}.",
       "mine": "Usted aprobó. Ahora necesita a {{role}}.",
       "waiting": "{{name}} aprobó. También necesita a {{role}}.",
-      "short": "necesita a {{role}}"
+      "short": "necesita a {{role}}",
+      "youFinish": "{{name}} aprobó. Su aprobación lo completa.",
+      "youCanGive": "{{name}} aprobó. También necesita a {{role}} — usted puede dar una de ellas.",
+      "agreed": "{{name}} acordó {{time}} — un tiempo menor aquí cuenta en su lugar."
     },
     "decideInApprovals": "Decidir en Aprobaciones",
     "noShow": {
@@ -5409,6 +5417,10 @@
       "approved": "Día aprobado para {{name}}",
       "stopped": "Se detuvo en {{what}}: {{reason}}",
       "members": "En este día"
+    },
+    "tag": {
+      "waitsForYou": "Espera su decisión",
+      "datesPassed": "Fechas ya pasadas"
     }
   },
   "people": {

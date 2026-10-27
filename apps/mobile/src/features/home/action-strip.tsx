@@ -12,7 +12,9 @@ import { SheetPanel } from '@/components/sheet-panel';
 import { SupplyDocumentSheet } from '../supply-document/supply-document-sheet';
 import { SignGlyph } from '@/components/glyphs/tile-glyphs';
 import { CountersignGlyph, DocBlockedGlyph, DocExpiringGlyph, DocNeededGlyph, DocSentBackGlyph } from '@/components/glyphs/doc-glyphs';
-import { itemLines, stripItems, stripLines, stripTone, type StripItem, type StripTone } from './action-strip-state';
+import { itemLines, stripCount, stripItems, stripLines, stripTone, type StripItem, type StripTone } from './action-strip-state';
+import { useApprovalsWaiting } from './use-approvals-waiting';
+import { ApprovalsGlyph } from '@/components/glyphs/queue-glyphs';
 import { usePhrase, type Phrase } from './phrase';
 import { GlyphTile } from './glyph-tile';
 import { StripBox } from './strip-box';
@@ -46,16 +48,20 @@ export function ActionStrip() {
   const router = useRouter();
   const reqs = useDocumentRequirements();
   const say = usePhrase();
+  const approvals = useApprovalsWaiting();
 
   const items = useMemo(
-    () => stripItems({ toUpload: reqs.toUpload, rejected: reqs.rejected, toSign: reqs.toSign, expiringSoon: reqs.expiringSoon }),
-    [reqs.toUpload, reqs.rejected, reqs.toSign, reqs.expiringSoon],
+    () => stripItems({
+      toUpload: reqs.toUpload, rejected: reqs.rejected, toSign: reqs.toSign, expiringSoon: reqs.expiringSoon, approvals,
+    }),
+    [reqs.toUpload, reqs.rejected, reqs.toSign, reqs.expiringSoon, approvals],
   );
   const [open, setOpen] = useState(false);
   const [supply, setSupply] = useState<{ typeId: string } | null>(null);
   const [types, setTypes] = useState<DocumentType[] | null>(null);
 
-  const shown = reqs.ready && items.length > 0;
+  // Approvals are read on their own: they show even before the documents have answered.
+  const shown = items.length > 0 && (reqs.ready || items.every((i) => i.kind === 'approvals'));
 
   /* The upload sheet needs the catalogue; fetched only once somebody goes there. */
   const loadTypes = async () => {
@@ -67,6 +73,10 @@ export function ActionStrip() {
 
   const go = (item: StripItem) => {
     setOpen(false);
+    if (item.kind === 'approvals') {
+      router.push('/(app)/approvals' as Href);
+      return;
+    }
     if (item.documentId) {
       router.push({ pathname: '/sign-document', params: { id: item.documentId } } as unknown as Href);
       return;
@@ -86,13 +96,14 @@ export function ActionStrip() {
   const lines = stripLines(items)!;
   const ink = toneColor(c, tone, c.ink);
   const single = items.length === 1;
+  const total = stripCount(items);
 
   return (
     <>
       <StripBox
         tone={tone}
         Glyph={single ? glyphFor(items[0]!) : undefined}
-        count={single ? undefined : items.length}
+        count={single ? undefined : total}
         title={say(lines.title)}
         sub={say(lines.sub)}
         onPress={() => (single ? go(items[0]!) : setOpen(true))}
@@ -107,9 +118,9 @@ export function ActionStrip() {
             </Eyebrow>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: amazen.space(2), marginTop: amazen.space(2) }}>
-            <AText variant="displaySm" numeric style={{ color: tone === 'calm' ? c.inkStrong : ink }}>{items.length}</AText>
+            <AText variant="displaySm" numeric style={{ color: tone === 'calm' ? c.inkStrong : ink }}>{total}</AText>
             <AText variant="h3" tone="ink">
-              {t(items.every((i) => i.blocksWork) ? 'strip.heroStopping' : 'strip.heroNeed', { count: items.length })}
+              {t(items.every((i) => i.blocksWork) ? 'strip.heroStopping' : 'strip.heroNeed', { count: total })}
             </AText>
           </View>
           <AText variant="caption" tone="muted" style={{ marginTop: 2 }}>{say(lines.sub)}</AText>
@@ -170,7 +181,7 @@ function FadingList({ items, tone, onPick, say, surface }: {
         bounces={scrolls}>
         {items.map((item, i) => {
           const l = itemLines(item);
-          const ink = item.blocksWork ? c.critical : item.kind === 'expiring' ? c.inkMuted : c.warn;
+          const ink = item.blocksWork ? c.critical : item.kind === 'expiring' ? c.inkMuted : item.kind === 'approvals' ? c.accent : c.warn;
           return (
             <Pressable
               key={item.key}
@@ -219,6 +230,7 @@ function FadingList({ items, tone, onPick, say, surface }: {
 /** Each kind's mark, from the document family (glyphs/doc-glyphs.tsx). */
 function glyphFor(item: StripItem): React.ComponentType<GlyphProps> {
   switch (item.kind) {
+    case 'approvals': return ApprovalsGlyph;
     case 'sign': return SignGlyph;
     case 'countersign': return CountersignGlyph;
     case 'sentBack': return DocSentBackGlyph;

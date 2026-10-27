@@ -31,6 +31,9 @@ import { nameParts } from "./name-parts"
 import { ConfirmHint } from "./confirm-hint"
 import { useTick } from "../_hooks/use-tick"
 import { ruleLinkForItem } from "../_lib/rule-link"
+import { initialDecisionMinutes, stepNoticeKey } from "../_lib/step-notice"
+import { formatRequestMinutes } from "@/lib/requests"
+import { DatesPassedTag } from "./dates-passed-tag"
 import { Icon } from "@/components/ui/icon"
 
 /**
@@ -59,8 +62,8 @@ export function DecisionPanel({
   const { t } = useTranslation()
   const actions = approvalActionsFor(item)
   const ruleLink = onMakeRule ? ruleLinkForItem(item) : null
-  const requested = (item.data as Record<string, unknown>).requestedMinutes
-  const initialMinutes = typeof requested === "number" ? requested : 30
+  const initialMinutes = initialDecisionMinutes(item)
+  const agreed = item.step?.agreedMinutes
   const [armed, setArmed] = useState<ApprovalActionSpec | null>(null)
   const [reason, setReason] = useState("")
   const [minutes, setMinutes] = useState<number | null>(30)
@@ -134,13 +137,13 @@ export function DecisionPanel({
         {item.raisedAt && <FactRow label={t("approvals.fact.raised")} value={formatTimeAgo(item.raisedAt)} />}
       </dl>
 
+      <DatesPassedTag item={item} className="self-start" />
+
       <ViewFile item={item} />
 
       {item.step && (
         <p className="rounded-2xl bg-shell-accent-soft px-4 py-3 text-sm text-foreground">
-          {item.step.mine
-            ? t("approvals.step.mine", { role: item.step.roleName })
-            : t("approvals.step.waiting", { name: item.step.firstByName, role: item.step.roleName })}
+          {t(stepNoticeKey(item.step), { name: item.step.firstByName, role: item.step.roleName })}
         </p>
       )}
 
@@ -160,6 +163,15 @@ export function DecisionPanel({
 
       {armed && (
         <div className="space-y-3">
+          {/* An earlier approver agreed a time: the field starts on it, and the smaller of the two is what counts. */}
+          {armed.input === "minutes" && typeof agreed === "number" && item.step && (
+            <p className="text-[13px] text-muted-foreground">
+              {t("approvals.step.agreed", {
+                name: item.step.firstByName,
+                time: formatRequestMinutes(agreed, (k, o) => t(k, o)),
+              })}
+            </p>
+          )}
           {armed.input === "minutes" && (
             <DurationField
               key={`${item.kind}:${item.id}`}

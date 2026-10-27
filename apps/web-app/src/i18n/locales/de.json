@@ -9843,7 +9843,10 @@
       "firstDone": "Freigegeben — jetzt wartet es auf {{role}}.",
       "mine": "Sie haben freigegeben. Jetzt braucht es {{role}}.",
       "waiting": "{{name}} hat freigegeben. Es braucht auch {{role}}.",
-      "badge": "Schritt 2 von 2 · {{role}}"
+      "badge": "Schritt 2 von 2 · {{role}}",
+      "youFinish": "{{name}} hat freigegeben. Ihre Freigabe schließt es ab.",
+      "waitingYou": "{{name}} hat freigegeben. Es braucht auch {{role}} – Sie können eine davon geben.",
+      "agreed": "{{name}} hat {{time}} zugestimmt – eine kürzere Zeit hier zählt stattdessen."
     },
     "rules": {
       "kind": {
@@ -10031,7 +10034,9 @@
       "capped": "Auf die höchste Grenze gesetzt: {{max}}",
       "unreadable": "Diese Zahl ist nicht lesbar — die Grenze bleibt, wie sie war."
     },
-    "pressAgain": "Zum Bestätigen noch einmal drücken"
+    "pressAgain": "Zum Bestätigen noch einmal drücken",
+    "yours": "Wartet auf Sie",
+    "datesPassed": "Tage bereits vorbei"
   },
   "overtimePage": {
     "title": "Überstunden",

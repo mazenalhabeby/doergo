@@ -11,7 +11,7 @@
  * falls to the next sharpest fact that IS on the wire — never an invented one.
  */
 
-export type StripKind = 'sentBack' | 'upload' | 'sign' | 'countersign' | 'expiring';
+export type StripKind = 'sentBack' | 'upload' | 'sign' | 'countersign' | 'expiring' | 'approvals';
 
 export interface StripItem {
   key: string;
@@ -27,6 +27,8 @@ export interface StripItem {
   forMember?: string | null;
   /** Expiring: whole days left, from `expiresOn`. */
   daysLeft?: number | null;
+  /** Approvals: how many decisions wait for the member — one row, counted as that many things. */
+  count?: number;
 }
 
 interface StripInput {
@@ -34,6 +36,8 @@ interface StripInput {
   rejected: { typeId: string; label: string; blocksWork: boolean }[];
   toSign: { id: string; title: string; forMember?: string | null }[];
   expiringSoon: { typeId: string; label: string; expiresOn: string | null }[];
+  /** Approvals waiting for this member (`/approvals/count`); online only, 0 when unknown. */
+  approvals?: number;
 }
 
 /*
@@ -43,6 +47,7 @@ interface StripInput {
   Sent back outranks never-sent because the member believes it is done.
 */
 function rank(i: StripItem): number {
+  if (i.kind === 'approvals') return 2.5;
   if (i.kind === 'sentBack' && i.blocksWork) return 0;
   if (i.kind === 'upload' && i.blocksWork) return 1;
   if (i.kind === 'sentBack') return 2;
@@ -76,6 +81,9 @@ export function stripItems(input: StripInput, now: number = Date.now()): StripIt
       key: `exp:${r.typeId}`, kind: 'expiring' as const, label: r.label, blocksWork: false, typeId: r.typeId,
       daysLeft: r.expiresOn ? Math.max(0, Math.ceil((Date.parse(r.expiresOn) - now) / 86_400_000)) : null,
     })),
+    ...(input.approvals && input.approvals > 0
+      ? [{ key: 'approvals', kind: 'approvals' as const, label: '', blocksWork: false, count: input.approvals }]
+      : []),
   ];
   // Stable within a rank: the server's own order (newest issued first) stands.
   return items.map((it, i) => ({ it, i })).sort((a, b) => rank(a.it) - rank(b.it) || a.i - b.i).map((x) => x.it);
@@ -92,10 +100,20 @@ export function stripTone(items: StripItem[]): StripTone {
 
 import type { Phrase } from './phrase';
 
+/** How many things the strip stands for: each row is one, the approvals row is as many as it counts. */
+export function stripCount(items: StripItem[]): number {
+  return items.reduce((n, i) => n + (i.count ?? 1), 0);
+}
+
 /** One item's own two lines. */
 export function itemLines(i: StripItem): { title: Phrase; sub: Phrase } {
   const first = (i.forMember ?? '').split(' ')[0] || (i.forMember ?? '');
   switch (i.kind) {
+    case 'approvals':
+      return {
+        title: { key: 'strip.item.approvals', values: { count: i.count ?? 0 } },
+        sub: { key: 'strip.item.approvalsSub' },
+      };
     case 'sentBack':
       return {
         title: { key: 'strip.item.sentBack', values: { label: i.label } },
@@ -136,17 +154,17 @@ export function itemLines(i: StripItem): { title: Phrase; sub: Phrase } {
  * may name a thing, because it states a fact about the set, not the task.
  */
 export function stripLines(items: StripItem[]): { title: Phrase; sub: Phrase } | null {
-  const n = items.length;
-  if (n === 0) return null;
-  if (n === 1) return itemLines(items[0]!);
+  if (items.length === 0) return null;
+  if (items.length === 1) return itemLines(items[0]!);
+  const n = stripCount(items);
 
   const blocking = items.filter((i) => i.blocksWork).length;
-  const title: Phrase = blocking === n
+  const title: Phrase = blocking === items.length
     ? { key: 'strip.stopping', values: { count: n } }
     : { key: 'strip.needYou', values: { count: n } };
 
   // The stake beats everything: something is stopping work reaching them.
-  if (blocking === n) return { title, sub: { key: 'strip.line.nothingReaches' } };
+  if (blocking === items.length) return { title, sub: { key: 'strip.line.nothingReaches' } };
   if (blocking > 0) return { title, sub: { key: 'strip.line.someStop', values: { count: blocking } } };
 
   // Then the one they think is finished.
@@ -158,9 +176,13 @@ export function stripLines(items: StripItem[]): { title: Phrase; sub: Phrase } |
   const other = items.find((i) => i.kind === 'countersign');
   if (other) return { title, sub: { key: 'strip.line.waitingOnYou', values: { name: other.forMember ?? '' } } };
 
+  // Then decisions somebody is waiting for.
+  const asks = items.find((i) => i.kind === 'approvals');
+  if (asks) return { title, sub: { key: 'strip.line.approvals', values: { count: asks.count ?? 0 } } };
+
   // Only things running out: a mention, not a demand.
   if (items.every((i) => i.kind === 'expiring')) {
-    return { title, sub: { key: n === 2 ? 'strip.line.neitherUrgent' : 'strip.line.noneUrgent' } };
+    return { title, sub: { key: items.length === 2 ? 'strip.line.neitherUrgent' : 'strip.line.noneUrgent' } };
   }
 
   // What they are in for.

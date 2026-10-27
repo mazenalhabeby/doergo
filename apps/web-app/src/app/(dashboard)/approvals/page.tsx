@@ -65,6 +65,7 @@ export default function ApprovalsPage() {
     dataUpdatedAt,
     items,
     counts,
+    yours,
     visible,
     current,
     decide,
@@ -167,6 +168,15 @@ export default function ApprovalsPage() {
                 current && "max-lg:hidden",
               )}
             >
+              {yours.length > 0 && (
+                <KindRailItem
+                  active={filter === "yours"}
+                  label={t("approvals.yours")}
+                  count={yours.length}
+                  urgent={yours.some((i) => i.group === "NOW")}
+                  onClick={() => setFilter("yours")}
+                />
+              )}
               <KindRailItem
                 active={filter === "all"}
                 label={t("approvals.all")}
@@ -208,7 +218,13 @@ export default function ApprovalsPage() {
                       </GroupLabel>
                       <ul>
                         {dayRows.map((d) => (
-                          <DayRow key={d.key} day={d} active={d.key === selected} onSelect={() => setSelected(d.key)} />
+                          <DayRow
+                            key={d.key}
+                            day={d}
+                            active={d.key === selected}
+                            onSelect={() => setSelected(d.key)}
+                            yourTurn={membersOf(d).some((i) => i.step?.waitsForYou)}
+                          />
                         ))}
                         {rows.map((i) => (
                           <ApprovalRow

@@ -3674,7 +3674,9 @@
       "toSign_one": "{{count}} zu unterschreiben",
       "toSign_other": "{{count}} zu unterschreiben",
       "toUpload_one": "{{count}} hochzuladen",
-      "toUpload_other": "{{count}} hochzuladen"
+      "toUpload_other": "{{count}} hochzuladen",
+      "approvals_one": "{{count}} Freigabe wartet auf Ihre Entscheidung",
+      "approvals_other": "{{count}} Freigaben warten auf Ihre Entscheidung"
     },
     "item": {
       "sentBack": "„{{label}}“ wurde zurückgeschickt",
@@ -3691,7 +3693,10 @@
       "expiresToday": "„{{label}}“ läuft heute ab",
       "expiresIn_one": "„{{label}}“ läuft morgen ab",
       "expiresIn_other": "„{{label}}“ läuft in {{count}} Tagen ab",
-      "expiringSub": "Noch gültig · erneuertes Dokument senden"
+      "expiringSub": "Noch gültig · erneuertes Dokument senden",
+      "approvals_one": "{{count}} Freigabe",
+      "approvals_other": "{{count}} Freigaben",
+      "approvalsSub": "Wartet auf Ihre Entscheidung"
     }
   },
   "clientsCard": {
@@ -5371,7 +5376,10 @@
       "firstDone": "Freigegeben — jetzt wartet es auf {{role}}.",
       "mine": "Sie haben freigegeben. Jetzt braucht es {{role}}.",
       "waiting": "{{name}} hat freigegeben. Es braucht auch {{role}}.",
-      "short": "braucht {{role}}"
+      "short": "braucht {{role}}",
+      "youFinish": "{{name}} hat freigegeben. Ihre Freigabe schließt es ab.",
+      "youCanGive": "{{name}} hat freigegeben. Es braucht auch {{role}} — Sie können eine davon erteilen.",
+      "agreed": "{{name}} hat {{time}} zugestimmt — eine kürzere Zeit hier zählt stattdessen."
     },
     "decideInApprovals": "In Genehmigungen entscheiden",
     "noShow": {
@@ -5409,6 +5417,10 @@
       "approved": "Tag für {{name}} bestätigt",
       "stopped": "Angehalten bei {{what}}: {{reason}}",
       "members": "An diesem Tag"
+    },
+    "tag": {
+      "waitsForYou": "Wartet auf Sie",
+      "datesPassed": "Zeitraum schon vorbei"
     }
   },
   "people": {

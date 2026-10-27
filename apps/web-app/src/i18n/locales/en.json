@@ -9843,7 +9843,10 @@
       "firstDone": "Approved — now waiting for {{role}}.",
       "mine": "You approved. It now needs {{role}}.",
       "waiting": "{{name}} approved. It needs {{role}} too.",
-      "badge": "Step 2 of 2 · {{role}}"
+      "badge": "Step 2 of 2 · {{role}}",
+      "youFinish": "{{name}} approved. Your approval finishes it.",
+      "waitingYou": "{{name}} approved. It needs {{role}} too — you can give one of them.",
+      "agreed": "{{name}} agreed {{time}} — a smaller time here counts instead."
     },
     "rules": {
       "kind": {
@@ -10031,7 +10034,9 @@
       "capped": "Capped at the highest limit: {{max}}",
       "unreadable": "Couldn't read that number — the limit stays as it was."
     },
-    "pressAgain": "Press again to confirm"
+    "pressAgain": "Press again to confirm",
+    "yours": "Waiting for you",
+    "datesPassed": "Dates already passed"
   },
   "overtimePage": {
     "title": "Overtime",

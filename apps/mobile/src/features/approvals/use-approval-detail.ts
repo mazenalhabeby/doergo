@@ -66,7 +66,10 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
   // The form starts from the item's own values — on load, and every time a decision sheet opens.
   const resetInputs = useCallback((it: ApprovalItem | null) => {
     const d = (it?.data ?? {}) as Record<string, unknown>;
-    setDuration(durationFieldsOf(typeof d.requestedMinutes === 'number' ? d.requestedMinutes : 30));
+    // An earlier approver's agreed time comes first: the smallest agreed time counts, so a default would cut it.
+    const agreed = it?.step?.agreedMinutes;
+    const start = typeof agreed === 'number' && agreed > 0 ? agreed : d.requestedMinutes;
+    setDuration(durationFieldsOf(typeof start === 'number' ? start : 30));
     setExpiresOn(typeof d.expiresOn === 'string' ? d.expiresOn.slice(0, 10) : '');
   }, []);
   useEffect(() => resetInputs(item), [item, resetInputs]);

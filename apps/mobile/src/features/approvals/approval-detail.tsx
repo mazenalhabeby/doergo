@@ -3,10 +3,6 @@ import { ActivityIndicator, Pressable, ScrollView, Switch, View } from 'react-na
 import { useTranslation } from 'react-i18next';
 import { NO_SHOW_EXCUSE_REASONS } from '@hbcfield/shared/client';
 import { useTheme } from '@/contexts/theme-context';
-import { useToast } from '@/island/island-context';
-import { approvalsApi } from '@/lib/api';
-import { formatDay } from '@/lib/money';
-import { useResponsive } from '@/lib/responsive';
 import {
   AText,
   GhostButton,
@@ -18,13 +14,12 @@ import {
   Pill,
   SectionLabel,
 } from '@/components/amazen';
-import { centeredContent } from '@/components/screen-container';
 import { JobSheet } from '../job/job-ui';
 import { WhoElse } from './who-else';
 import { useApprovalDetail } from './use-approval-detail';
-import { ISO_DAY } from './approval-detail-helpers';
 import { ApprovalDetailView } from './approval-detail-view';
 import { ApprovalDurationField } from './approval-duration-field';
+import { AgreedTimeLine, ApprovalTags, StepNotice } from './approval-step-notice';
 import { FactsWell } from '@/components/facts-well';
 import { DateField } from '@/components/date-field';
 
@@ -120,18 +115,13 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
           <AText variant="body" tone="onGlass">
             {text.headline}
           </AText>
-          {item.group === 'NOW' ? <Pill label={t('approvals.groups.NOW')} tone="critical" /> : null}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(1.5) }}>
+            {item.group === 'NOW' ? <Pill label={t('approvals.groups.NOW')} tone="critical" /> : null}
+            <ApprovalTags item={item} />
+          </View>
         </View>
         <FactsWell amazen={amazen} facts={facts} lines={3} />
-        {item.step ? (
-          <View style={{ backgroundColor: c.accentTint, borderRadius: amazen.radius.panel, padding: amazen.space(3) }}>
-            <AText variant="body" tone="strong" style={{ fontSize: 13.5 }}>
-              {item.step.mine
-                ? t('approvals.step.mine', { role: item.step.roleName })
-                : t('approvals.step.waiting', { name: item.step.firstByName, role: item.step.roleName })}
-            </AText>
-          </View>
-        ) : null}
+        {item.step ? <StepNotice step={item.step} /> : null}
         <WhoElse item={item} />
         {pageOnly ? (
           <View style={{ gap: amazen.space(2) }}>
@@ -199,7 +189,10 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
         eyebrow={<SectionLabel>{item.subject.name}</SectionLabel>}
       >
         {armed?.input === 'minutes' ? (
-          <ApprovalDurationField key={`${itemKey}:${armed.id}`} value={duration} onChange={setDuration} />
+          <>
+            <AgreedTimeLine item={item} />
+            <ApprovalDurationField key={`${itemKey}:${armed.id}`} value={duration} onChange={setDuration} />
+          </>
         ) : null}
         {armed?.input === 'expiresOn' ? (
           <>

@@ -7,6 +7,7 @@ import { UserAvatar } from "@/components/common/user-avatar"
 import { Chip, ROW } from "@/components/page/page-kit"
 import { nameParts } from "./name-parts"
 import { describeItem } from "../_lib/describe"
+import { DatesPassedTag } from "./dates-passed-tag"
 
 /** One decision in the inbox list: who, which kind (coral when it cannot wait), the headline, how long it waited. */
 export function ApprovalRow({
@@ -47,6 +48,8 @@ export function ApprovalRow({
             <Chip tone={item.group === "NOW" ? "crit" : "soft"}>{t(`approvals.kinds.${item.kind}`)}</Chip>
             {/* An office rule: one approval is in, the item waits for a second person holding the role. */}
             {item.step && <Chip tone="warn">{t("approvals.step.badge", { role: item.step.roleName })}</Chip>}
+            {item.step?.waitsForYou && <Chip tone="crit">{t("approvals.yours")}</Chip>}
+            <DatesPassedTag item={item} />
             {item.raisedAt && (
               <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
                 {formatTimeAgo(item.raisedAt)}

@@ -3674,7 +3674,9 @@
       "toSign_one": "{{count}} to sign",
       "toSign_other": "{{count}} to sign",
       "toUpload_one": "{{count}} to upload",
-      "toUpload_other": "{{count}} to upload"
+      "toUpload_other": "{{count}} to upload",
+      "approvals_one": "{{count}} approval waits for your decision",
+      "approvals_other": "{{count}} approvals wait for your decision"
     },
     "item": {
       "sentBack": "Your {{label}} was sent back",
@@ -3691,7 +3693,10 @@
       "expiresToday": "Your {{label}} expires today",
       "expiresIn_one": "Your {{label}} expires tomorrow",
       "expiresIn_other": "Your {{label}} expires in {{count}} days",
-      "expiringSub": "Still valid · send the renewed one"
+      "expiringSub": "Still valid · send the renewed one",
+      "approvals_one": "{{count}} approval",
+      "approvals_other": "{{count}} approvals",
+      "approvalsSub": "Waiting for your decision"
     }
   },
   "clientsCard": {
@@ -5371,7 +5376,10 @@
       "firstDone": "Approved — now waiting for {{role}}.",
       "mine": "You approved. It now needs {{role}}.",
       "waiting": "{{name}} approved. It needs {{role}} too.",
-      "short": "needs {{role}}"
+      "short": "needs {{role}}",
+      "youFinish": "{{name}} approved. Your approval finishes it.",
+      "youCanGive": "{{name}} approved. It needs {{role}} too — you can give one of them.",
+      "agreed": "{{name}} agreed {{time}} — a smaller time here counts instead."
     },
     "decideInApprovals": "Decide in Approvals",
     "noShow": {
@@ -5409,6 +5417,10 @@
       "approved": "Day approved for {{name}}",
       "stopped": "Stopped at {{what}}: {{reason}}",
       "members": "On this day"
+    },
+    "tag": {
+      "waitsForYou": "Waiting for you",
+      "datesPassed": "Dates already passed"
     }
   },
   "people": {

@@ -9843,7 +9843,10 @@
       "firstDone": "Approvato — ora attende {{role}}.",
       "mine": "Lei ha approvato. Ora serve {{role}}.",
       "waiting": "{{name}} ha approvato. Serve anche {{role}}.",
-      "badge": "Passo 2 di 2 · {{role}}"
+      "badge": "Passo 2 di 2 · {{role}}",
+      "youFinish": "{{name}} ha approvato. La Sua approvazione lo conclude.",
+      "waitingYou": "{{name}} ha approvato. Serve anche {{role}}: Lei può darne una.",
+      "agreed": "{{name}} ha concordato {{time}}: un tempo minore qui conta al suo posto."
     },
     "rules": {
       "kind": {
@@ -10031,7 +10034,9 @@
       "capped": "Portato al limite massimo: {{max}}",
       "unreadable": "Numero non leggibile — il limite resta com'era."
     },
-    "pressAgain": "Prema di nuovo per confermare"
+    "pressAgain": "Prema di nuovo per confermare",
+    "yours": "In attesa di Lei",
+    "datesPassed": "Date già passate"
   },
   "overtimePage": {
     "title": "Straordinari",

@@ -34,11 +34,13 @@ import { StandInSheet } from './stand-in-sheet';
 import { refreshControl } from '@/components/pull-refresh';
 import { ApprovalDayRow } from './approval-day-row';
 import { minutesText } from './approval-minutes-text';
+import { ApprovalTags } from './approval-step-notice';
 
 /** A list row: one item, or a person's working day that groups several. */
 type Row = { day: ApprovalDay; item?: undefined } | { item: ApprovalItem; day?: undefined };
 
-type Filter = ApprovalKind | 'all';
+/** A kind, everything, or only what waits for the caller's own approval. */
+type Filter = ApprovalKind | 'all' | 'forYou';
 
 /**
  * APPROVALS — everything waiting for this member to decide, in one list: what
@@ -103,18 +105,24 @@ export function ApprovalsScreen() {
     for (const i of items ?? []) n.set(i.kind, (n.get(i.kind) ?? 0) + 1);
     return n;
   }, [items]);
+  const forYou = useMemo(() => (items ?? []).filter((i) => i.step?.waitsForYou).length, [items]);
+  const fits = (i: ApprovalItem) =>
+    filter === 'all' || i.kind === filter || (filter === 'forYou' && !!i.step?.waitsForYou);
+  const membersOf = (d: ApprovalDay) =>
+    (items ?? []).filter((i) => d.members.some((m) => memberKey(m) === approvalKey(i)));
   // A person's working day is one row; the items it holds are opened from it.
   const grouped = useMemo(() => new Set(days.flatMap((d) => d.members.map(memberKey))), [days]);
   const shown = useMemo(
-    () => (items ?? []).filter((i) => (filter === 'all' || i.kind === filter) && !grouped.has(approvalKey(i))),
-    [items, filter, grouped],
+    () => (items ?? []).filter((i) => fits(i) && !grouped.has(approvalKey(i))),
+    [items, filter, grouped], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const shownDays = useMemo(
-    () => days.filter((d) => filter === 'all' || d.members.some((m) => m.kind === filter)),
-    [days, filter],
+    () =>
+      days.filter((d) =>
+        filter === 'forYou' ? membersOf(d).some(fits) : filter === 'all' || d.members.some((m) => m.kind === filter),
+      ),
+    [days, filter, items], // eslint-disable-line react-hooks/exhaustive-deps
   );
-  const membersOf = (d: ApprovalDay) =>
-    (items ?? []).filter((i) => d.members.some((m) => memberKey(m) === approvalKey(i)));
   const sections = useMemo(
     () =>
       APPROVAL_GROUPS.map((g) => ({
@@ -142,8 +150,15 @@ export function ApprovalsScreen() {
   const header = (
     <View style={{ gap: amazen.space(3), paddingBottom: amazen.space(2) }}>
       {/* Filtered (often from a notification): the pills stay, so "All" is always one tap away. */}
-      {counts.size > 1 || filter !== 'all' ? (
+      {counts.size > 1 || filter !== 'all' || forYou > 0 ? (
         <FilterRow>
+          {forYou > 0 || filter === 'forYou' ? (
+            <FilterPill
+              label={`${t('approvals.tag.waitsForYou')} ${forYou}`}
+              on={filter === 'forYou'}
+              onPress={() => setFilter('forYou')}
+            />
+          ) : null}
           <FilterPill
             label={`${t('approvals.all')} ${items?.length ?? 0}`}
             on={filter === 'all'}
@@ -220,7 +235,9 @@ export function ApprovalsScreen() {
             ) : filter !== 'all' && items.length > 0 ? (
               <>
                 <AText variant="body" tone="strong" style={{ textAlign: 'center' }}>
-                  {t('approvals.emptyKind', { kind: t(`approvals.kinds.${filter}`) })}
+                  {t('approvals.emptyKind', {
+                    kind: t(filter === 'forYou' ? 'approvals.tag.waitsForYou' : `approvals.kinds.${filter}`),
+                  })}
                 </AText>
                 <GhostButton label={t('approvals.showAll')} onPress={() => setFilter('all')} />
               </>
@@ -256,9 +273,12 @@ export function ApprovalsScreen() {
                 .filter(Boolean)
                 .join(' · ')}
               trailing={
-                <AText variant="caption" tone="muted" numeric>
-                  {item.raisedAt ? formatDay(item.raisedAt, i18n.language) : ''}
-                </AText>
+                <View style={{ alignItems: 'flex-end', gap: amazen.space(1) }}>
+                  <ApprovalTags item={item} />
+                  <AText variant="caption" tone="muted" numeric>
+                    {item.raisedAt ? formatDay(item.raisedAt, i18n.language) : ''}
+                  </AText>
+                </View>
               }
               onPress={() =>
                 router.push({ pathname: '/(app)/approval/[key]', params: { key: approvalKey(item) } } as never)

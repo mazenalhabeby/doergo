@@ -4,7 +4,8 @@ import type { QueryKey } from "@tanstack/react-query"
 import type { ApprovalItem, ApprovalKind } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
 
-export type Filter = ApprovalKind | "all"
+/** A kind, everything, or "yours": only what waits for the reader under an office rule. */
+export type Filter = ApprovalKind | "all" | "yours"
 
 /** The kind's own screen reads these — refreshed after a decision made here. */
 export const KIND_KEYS: Partial<Record<ApprovalKind, QueryKey[]>> = {

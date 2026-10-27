@@ -9843,7 +9843,10 @@
       "firstDone": "Validé — en attente de {{role}}.",
       "mine": "Vous avez validé. Il faut maintenant {{role}}.",
       "waiting": "{{name}} a validé. Il faut aussi {{role}}.",
-      "badge": "Étape 2 sur 2 · {{role}}"
+      "badge": "Étape 2 sur 2 · {{role}}",
+      "youFinish": "{{name}} a validé. Votre validation le termine.",
+      "waitingYou": "{{name}} a validé. Il faut aussi {{role}} — vous pouvez en donner une.",
+      "agreed": "{{name}} a accordé {{time}} — une durée plus courte ici compte à la place."
     },
     "rules": {
       "kind": {
@@ -10031,7 +10034,9 @@
       "capped": "Ramené à la limite maximale : {{max}}",
       "unreadable": "Nombre illisible — la limite reste inchangée."
     },
-    "pressAgain": "Appuyez à nouveau pour confirmer"
+    "pressAgain": "Appuyez à nouveau pour confirmer",
+    "yours": "En attente de vous",
+    "datesPassed": "Dates déjà passées"
   },
   "overtimePage": {
     "title": "Heures supplémentaires",

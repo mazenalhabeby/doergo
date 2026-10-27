@@ -16,6 +16,7 @@ import { useApprovalDays } from "./use-approval-days"
 import { listOrder } from "../_lib/list-order"
 import { useArrowWalk, type ReturnTo } from "./use-arrow-walk"
 import { useNarrowFocus } from "./use-narrow-focus"
+import { matchesFilter } from "../_lib/step-notice"
 
 export type ApprovalsTab = "decide" | "rules" | "stand"
 
@@ -30,7 +31,9 @@ export function useApprovalsPage() {
   useEffect(() => {
     const q = new URLSearchParams(window.location.search)
     const kind = q.get("kind")
-    if (kind && (APPROVAL_KINDS as readonly string[]).includes(kind)) {
+    // "?kind=yours": only what waits for the reader's approval.
+    if (kind === "yours") setFilter("yours")
+    else if (kind && (APPROVAL_KINDS as readonly string[]).includes(kind)) {
       setFilter(kind as Filter)
       // One item asked for by name (a page's "Decide in Approvals"): open it.
       const id = q.get("id")
@@ -86,12 +89,15 @@ export function useApprovalsPage() {
     for (const i of items) c.set(i.kind, (c.get(i.kind) ?? 0) + 1)
     return c
   }, [items])
+  /** Items half-way through an office rule that now wait for the reader — the rail's first entry when any. */
+  const yours = useMemo(() => items.filter((i) => i.step?.waitsForYou), [items])
+  // The last one waiting for the reader decided: the entry leaves the rail, and the list goes back to everything.
+  useEffect(() => {
+    if (filter === "yours" && data && yours.length === 0) setFilter("all")
+  }, [filter, data, yours.length])
   const dayState = useApprovalDays(data, filter, (key) => setSelected((s) => (s === key ? null : s)))
   const visible = useMemo(
-    () =>
-      (filter === "all" ? items : items.filter((i) => i.kind === filter)).filter(
-        (i) => !dayState.grouped.has(itemKey(i)),
-      ),
+    () => items.filter((i) => matchesFilter(i, filter) && !dayState.grouped.has(itemKey(i))),
     [items, filter, dayState.grouped],
   )
   const currentDay = dayState.visibleDays.find((d) => d.key === selected) ?? null
@@ -231,6 +237,7 @@ export function useApprovalsPage() {
     dataUpdatedAt,
     items,
     counts,
+    yours,
     visible,
     current,
     decide,

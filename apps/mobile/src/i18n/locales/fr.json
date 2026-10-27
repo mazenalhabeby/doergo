@@ -3674,7 +3674,9 @@
       "toSign_one": "{{count}} à signer",
       "toSign_other": "{{count}} à signer",
       "toUpload_one": "{{count}} à envoyer",
-      "toUpload_other": "{{count}} à envoyer"
+      "toUpload_other": "{{count}} à envoyer",
+      "approvals_one": "{{count}} validation attend votre décision",
+      "approvals_other": "{{count}} validations attendent votre décision"
     },
     "item": {
       "sentBack": "Votre {{label}} a été renvoyé",
@@ -3691,7 +3693,10 @@
       "expiresToday": "Votre {{label}} expire aujourd’hui",
       "expiresIn_one": "Votre {{label}} expire demain",
       "expiresIn_other": "Votre {{label}} expire dans {{count}} jours",
-      "expiringSub": "Encore valide · envoyez le renouvelé"
+      "expiringSub": "Encore valide · envoyez le renouvelé",
+      "approvals_one": "{{count}} validation",
+      "approvals_other": "{{count}} validations",
+      "approvalsSub": "Attend votre décision"
     }
   },
   "clientsCard": {
@@ -5371,7 +5376,10 @@
       "firstDone": "Validé — en attente de {{role}}.",
       "mine": "Vous avez validé. Il faut maintenant {{role}}.",
       "waiting": "{{name}} a validé. Il faut aussi {{role}}.",
-      "short": "attend {{role}}"
+      "short": "attend {{role}}",
+      "youFinish": "{{name}} a validé. Votre validation le termine.",
+      "youCanGive": "{{name}} a validé. Il faut aussi {{role}} — vous pouvez en donner une.",
+      "agreed": "{{name}} a accordé {{time}} — une durée plus courte ici compte à la place."
     },
     "decideInApprovals": "Décider dans Validations",
     "noShow": {
@@ -5409,6 +5417,10 @@
       "approved": "Journée validée pour {{name}}",
       "stopped": "Arrêté à {{what}} : {{reason}}",
       "members": "Ce jour-là"
+    },
+    "tag": {
+      "waitsForYou": "Vous attend",
+      "datesPassed": "Dates déjà passées"
     }
   },
   "people": {

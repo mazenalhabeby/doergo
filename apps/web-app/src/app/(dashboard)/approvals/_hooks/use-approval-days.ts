@@ -9,9 +9,7 @@ import { keys } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
 import { serverErrorMessage } from "@/lib/server-error"
 import { KIND_KEYS, type Filter } from "../_lib/approval-keys"
-
-/** A day is shown under a filter when any of its items is of that kind. */
-const dayMatches = (d: ApprovalDay, filter: Filter) => filter === "all" || d.members.some((m) => m.kind === filter)
+import { matchesFilter } from "../_lib/step-notice"
 
 /**
  * The inbox's working days: one row per person and day where they have two or
@@ -23,7 +21,12 @@ export function useApprovalDays(data: ApprovalInbox | undefined, filter: Filter,
   const qc = useQueryClient()
   const days = useMemo(() => data?.days ?? [], [data])
   const grouped = useMemo(() => new Set(days.flatMap((d) => d.members.map(memberKey))), [days])
-  const visibleDays = useMemo(() => days.filter((d) => dayMatches(d, filter)), [days, filter])
+  // A day is shown under a filter when any of its items is (a kind, or one waiting for the reader).
+  const visibleDays = useMemo(() => {
+    if (filter === "all") return days
+    const byKey = new Map((data?.items ?? []).map((i) => [memberKey(i), i]))
+    return days.filter((d) => d.members.some((m) => matchesFilter(byKey.get(memberKey(m)) ?? { kind: m.kind }, filter)))
+  }, [days, data, filter])
   /** The items a day holds, read from the list (the day only names them). */
   const membersOf = useCallback(
     (day: ApprovalDay): ApprovalItem[] => {
