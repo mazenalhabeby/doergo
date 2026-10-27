@@ -10009,7 +10009,8 @@
       "minutes_other": "{{count}} Min.",
       "assetKind": "Anlagenart",
       "anyAssetKind": "Jede Anlagenart",
-      "urgentOnly": "Nur dringende"
+      "urgentOnly": "Nur dringende",
+      "loadFailed": "Die Regeln konnten nicht geladen werden."
     }
   },
   "overtimePage": {

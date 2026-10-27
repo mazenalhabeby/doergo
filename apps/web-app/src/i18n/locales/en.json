@@ -10009,7 +10009,8 @@
       "minutes_other": "{{count}} min",
       "assetKind": "Asset kind",
       "anyAssetKind": "Any asset kind",
-      "urgentOnly": "Urgent only"
+      "urgentOnly": "Urgent only",
+      "loadFailed": "The rules could not be loaded."
     }
   },
   "overtimePage": {

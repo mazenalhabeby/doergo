@@ -5,6 +5,7 @@ import { RULE_KINDS, type RuleKind } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { Icon } from "@/components/ui/icon"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ListTableError } from "@/components/common/list-page"
 import { Panel, RAIL_ROW } from "@/components/page/page-kit"
 import { cn } from "@/lib/utils"
 import { useRulesTree } from "../../_hooks/use-rules-tree"
@@ -111,7 +112,9 @@ export function RulesTree() {
             )
           })}
         </Panel>
-        {tree.isLoading ? (
+        {tree.isError ? (
+          <ListTableError title={t("approvals.tree.loadFailed")} error={tree.error} onRetry={() => tree.refetch()} />
+        ) : tree.isLoading ? (
           <Skeleton className="h-[420px] w-full rounded-[22px]" />
         ) : (
           <RulesCanvas

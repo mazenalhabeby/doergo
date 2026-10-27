@@ -10009,7 +10009,8 @@
       "minutes_other": "{{count}} min",
       "assetKind": "Tipo de activo",
       "anyAssetKind": "Cualquier tipo de activo",
-      "urgentOnly": "Solo urgentes"
+      "urgentOnly": "Solo urgentes",
+      "loadFailed": "No se pudieron cargar las reglas."
     }
   },
   "overtimePage": {

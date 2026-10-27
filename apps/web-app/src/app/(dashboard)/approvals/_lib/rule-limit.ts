@@ -24,23 +24,22 @@ export function limitInput(r: ApprovalRuleView): string {
   return String(n)
 }
 
-/** What to save for a typed value — only the kind's own column, every other one cleared. */
-export function limitPatch(kind: RuleKind, v: string): Partial<ApprovalRuleInput> {
-  const spec = RULE_LIMITS[kind]
-  const typed = v.trim() === "" ? null : Math.max(0, Number(v))
-  const stored =
-    typed == null
-      ? null
-      : kind === "overtime"
-        ? Math.round(typed * 60)
-        : kind === "expense"
-          ? Math.round(typed * 100)
-          : Math.round(typed)
+/** A limit in its STORED unit into the kind's own column — every other limit column cleared. */
+export function limitFields(kind: RuleKind, stored: number | null): Partial<ApprovalRuleInput> {
+  const field = RULE_LIMITS[kind]?.field
   return {
-    minMinutes: spec?.field === "minMinutes" ? stored : null,
-    minDays: spec?.field === "minDays" ? stored : null,
-    minAmountCents: spec?.field === "minAmountCents" ? stored : null,
+    minMinutes: field === "minMinutes" ? stored : null,
+    minDays: field === "minDays" ? stored : null,
+    minAmountCents: field === "minAmountCents" ? stored : null,
   }
+}
+
+/** What to save for a typed value (hours / minutes / days / money), capped at the kind's ceiling. */
+export function limitPatch(kind: RuleKind, v: string): Partial<ApprovalRuleInput> {
+  const typed = v.trim() === "" ? null : Math.max(0, Number(v))
+  if (typed == null || !Number.isFinite(typed)) return limitFields(kind, null)
+  const stored = Math.round(kind === "overtime" ? typed * 60 : kind === "expense" ? typed * 100 : typed)
+  return limitFields(kind, Math.min(stored, RULE_LIMITS[kind]?.max ?? stored))
 }
 
 /** A stored limit as the office reads it. */

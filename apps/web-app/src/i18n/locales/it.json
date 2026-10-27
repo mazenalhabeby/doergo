@@ -10009,7 +10009,8 @@
       "minutes_other": "{{count}} min",
       "assetKind": "Tipo di bene",
       "anyAssetKind": "Qualsiasi tipo di bene",
-      "urgentOnly": "Solo urgenti"
+      "urgentOnly": "Solo urgenti",
+      "loadFailed": "Impossibile caricare le regole."
     }
   },
   "overtimePage": {

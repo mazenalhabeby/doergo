@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { ApprovalRuleInput, ApprovalRuleView, RuleKind } from "@hbcfield/shared/client"
@@ -9,6 +9,7 @@ import { keys } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
 import { useOrgRoles } from "@/hooks/use-org-roles"
 import { useSpaceDirectory } from "@/hooks/use-space-directory"
+import { limitFields } from "../_lib/rule-limit"
 import { useAuth } from "@/contexts/auth-context"
 import { isAdmin, spacesGranting } from "@hbcfield/shared/client"
 
@@ -20,8 +21,11 @@ export interface RuleRole {
   holders: number
 }
 
-/** The fields a rule card edits — everything the server stores, nothing it fills in itself. */
-export function ruleInput(r: ApprovalRuleView): ApprovalRuleInput {
+/**
+ * The fields a rule card edits — EVERYTHING the server stores (a save replaces the rule whole), nothing it
+ * fills in itself. A field missing here is wiped by the next edit of any other field.
+ */
+function ruleInput(r: ApprovalRuleView): ApprovalRuleInput {
   return {
     kind: r.kind,
     spaceId: r.spaceId,
@@ -33,6 +37,8 @@ export function ruleInput(r: ApprovalRuleView): ApprovalRuleInput {
     remindAfterHours: r.remindAfterHours,
     escalateAfterHours: r.escalateAfterHours,
     escalateRoleId: r.escalateRoleId,
+    categoryId: r.categoryId,
+    urgentOnly: r.urgentOnly,
     isActive: r.isActive,
   }
 }
@@ -47,7 +53,13 @@ export function useRulesTree(enabled: boolean) {
   const qc = useQueryClient()
   const [kind, setKind] = useState<RuleKind>("overtime")
 
-  const { data: rules, isLoading } = useQuery({
+  const {
+    data: rules,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: keys.approvals.rules(),
     queryFn: approvalsApi.rules,
     enabled,
@@ -91,12 +103,19 @@ export function useRulesTree(enabled: boolean) {
     [spaces, scope],
   )
 
-  const refresh = () => qc.invalidateQueries({ queryKey: keys.approvals.all() })
+  /*
+    Only the rules and their numbers are re-read after a change — not the inbox, which is a fan-out over every
+    kind. A rule switched off or removed closes the steps it left open, so the inbox is re-read then too.
+  */
+  const refresh = (inbox = false) => {
+    qc.invalidateQueries({ queryKey: keys.approvals.rules() })
+    if (inbox) qc.invalidateQueries({ queryKey: keys.approvals.list() })
+  }
   const fail = (e: Error) => notify.error(e.message)
 
   const save = useMutation({
     mutationFn: ({ input, id }: { input: ApprovalRuleInput; id?: string }) => approvalsApi.saveRule(input, id),
-    onSuccess: refresh,
+    onSuccess: (_d, v) => refresh(v.input.isActive === false),
     onError: (e: Error) => {
       fail(e)
       refresh()
@@ -106,17 +125,29 @@ export function useRulesTree(enabled: boolean) {
     mutationFn: (id: string) => approvalsApi.deleteRule(id),
     onSuccess: () => {
       notify.success(t("approvals.tree.removed"))
-      refresh()
+      refresh(true)
     },
     onError: fail,
   })
 
-  /** Change one rule: the cache moves at once, the server confirms (or the error puts it back). */
+  /*
+    Change one rule: the cache moves at once, the server confirms (or the error re-reads it). A save REPLACES
+    the rule, so saves are chained one after another — a slower earlier save can never land after a later one
+    and undo it — and each sends the rule as it stands after every change before it.
+  */
+  const queue = useRef(Promise.resolve())
   const change = (r: ApprovalRuleView, patch: Partial<ApprovalRuleInput>) => {
+    void qc.cancelQueries({ queryKey: keys.approvals.rules() })
     qc.setQueryData<ApprovalRuleView[]>(keys.approvals.rules(), (old) =>
       (old ?? []).map((x) => (x.id === r.id ? { ...x, ...patch } : x)),
     )
-    save.mutate({ input: { ...ruleInput(r), ...patch }, id: r.id })
+    queue.current = queue.current.then(() => {
+      const now = qc.getQueryData<ApprovalRuleView[]>(keys.approvals.rules())?.find((x) => x.id === r.id) ?? r
+      return save.mutateAsync({ input: ruleInput(now), id: r.id }).then(
+        () => undefined,
+        () => undefined,
+      )
+    })
   }
 
   /**
@@ -127,17 +158,8 @@ export function useRulesTree(enabled: boolean) {
     if (scope && !spaceId) spaceId = workspaces[0]?.id ?? null
     const role = roles.find((r) => r.holders > 0) ?? roles[0]
     if (!role) return notify.error(t("approvals.tree.noRoles"))
-    const at = (k: RuleKind) => (kind === k ? limit : null)
-    save.mutate({
-      input: {
-        kind,
-        spaceId,
-        minMinutes: at("overtime"),
-        minDays: at("request"),
-        minAmountCents: at("expense"),
-        secondRoleId: role.id,
-        isActive: true,
-      },
+    return save.mutateAsync({
+      input: { kind, spaceId, ...limitFields(kind, limit), secondRoleId: role.id, isActive: true },
     })
   }
 
@@ -150,6 +172,9 @@ export function useRulesTree(enabled: boolean) {
     rules: ofKind,
     counts: rules ?? [],
     isLoading,
+    isError,
+    error,
+    refetch,
     roles,
     workspaces,
     change,

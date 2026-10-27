@@ -10009,7 +10009,8 @@
       "minutes_other": "{{count}} min",
       "assetKind": "Type d’équipement",
       "anyAssetKind": "Tout type d’équipement",
-      "urgentOnly": "Urgentes seulement"
+      "urgentOnly": "Urgentes seulement",
+      "loadFailed": "Impossible de charger les règles."
     }
   },
   "overtimePage": {
