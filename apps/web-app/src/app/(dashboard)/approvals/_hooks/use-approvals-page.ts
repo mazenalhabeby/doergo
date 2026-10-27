@@ -6,7 +6,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   APPROVAL_KINDS,
   type ApprovalDecision,
-  type ApprovalItem,
   type ApprovalKind,
   type ApprovalInbox,
 } from "@hbcfield/shared/client"
@@ -19,6 +18,8 @@ import { useRouteAccess } from "@/hooks/use-route-access"
 export { itemKey } from "../_lib/approval-keys"
 import { KIND_KEYS, itemKey, type Filter } from "../_lib/approval-keys"
 import { useApprovalDays } from "./use-approval-days"
+
+export type ApprovalsTab = "decide" | "rules" | "stand"
 
 /** The inbox's state: the list, the chosen kind and item, keyboard walking, and deciding. */
 export function useApprovalsPage() {
@@ -39,10 +40,18 @@ export function useApprovalsPage() {
     }
   }, [])
   // "Who approves" — the office's rules — is a tab of its own (?tab=rules opens it).
-  const [tab, setTab] = useState<"decide" | "rules" | "stand">("decide")
+  const [tab, setTabState] = useState<ApprovalsTab>("decide")
   useEffect(() => {
     const want = new URLSearchParams(window.location.search).get("tab")
-    if (want === "rules" || want === "stand") setTab(want)
+    if (want === "rules" || want === "stand") setTabState(want)
+  }, [])
+  // The open tab stays in the address, so a reload or a shared link lands on it.
+  const setTab = useCallback((next: ApprovalsTab) => {
+    setTabState(next)
+    const q = new URLSearchParams(window.location.search)
+    if (next === "decide") q.delete("tab")
+    else q.set("tab", next)
+    window.history.replaceState(null, "", `${window.location.pathname}${q.size ? `?${q}` : ""}`)
   }, [])
   const { holds } = useRouteAccess()
   // Office rules: "manage approval rules", org-wide or in a workspace (the server narrows to those workspaces).

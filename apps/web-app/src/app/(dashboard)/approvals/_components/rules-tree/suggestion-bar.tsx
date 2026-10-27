@@ -27,6 +27,7 @@ export function SuggestionBar({
   kindLabel,
   offers,
   busy,
+  approver,
   onAdd,
   onDismiss,
 }: {
@@ -34,6 +35,8 @@ export function SuggestionBar({
   kindLabel: string
   offers: OfferedRule[]
   busy: boolean
+  /** Who a rule added from here asks (changed on the canvas after). */
+  approver?: string
   onAdd: (o: OfferedRule) => void
   onDismiss: (o: OfferedRule) => void
 }) {
@@ -62,7 +65,14 @@ export function SuggestionBar({
               >
                 <Icon name="sparkles" size={17} />
               </span>
-              <p className="min-w-0 flex-1 text-[13.5px] leading-snug">{o.why}</p>
+              <p className="min-w-0 flex-1 text-[13.5px] leading-snug">
+                {o.why}
+                {approver && (
+                  <span className="mt-0.5 block text-[12.5px] text-muted-foreground">
+                    {t("approvals.tree.smart.approver", { role: approver })}
+                  </span>
+                )}
+              </p>
               <button
                 type="button"
                 disabled={busy}

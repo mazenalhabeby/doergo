@@ -33,10 +33,11 @@ export interface RulesCtx {
   hits?: Record<string, number>
   everywhere: boolean
 }
-const Ctx = createContext<RulesCtx | null>(null)
+type Boxes = { start: ReactNode; uncaught: ReactNode | null; add: ReactNode }
+const Ctx = createContext<(RulesCtx & { boxes: Boxes }) | null>(null)
 
 type PartData = { ruleId: string; part: RulePartName }
-type BoxData = { el: ReactNode }
+type BoxData = { box: keyof Boxes }
 
 const HANDLE = "!size-2 !min-h-0 !min-w-0 !border-2 !border-[hsl(var(--muted-foreground)/0.5)] !bg-card"
 
@@ -75,10 +76,12 @@ function PartNode({ data }: NodeProps<Node<PartData>>) {
 }
 
 function BoxNode({ data, id }: NodeProps<Node<BoxData>>) {
+  // The box's content is read from the context, so the layout never has to change for it to change.
+  const ctx = useContext(Ctx)
   return (
     <div className="nodrag nopan animate-in fade-in zoom-in-95 duration-300">
       <Ports left={id !== "start"} right={id === "start" || id === "uncaught"} />
-      {data.el}
+      {ctx?.boxes[data.box]}
     </div>
   )
 }
@@ -101,19 +104,17 @@ const CONTROLS =
   "[&>button]:!fill-foreground [&>button:hover]:!bg-accent"
 const EDGE = { stroke: "hsl(var(--muted-foreground) / 0.45)", strokeWidth: 1.6 }
 
-/** Lays the rules out: the start on the left, one row per rule, then what nothing catches, then "new rule". */
-function layout(
-  ctx: RulesCtx,
-  start: ReactNode,
-  uncaught: ReactNode | null,
-  add: ReactNode,
-): { nodes: Node[]; edges: Edge[] } {
-  const rows = ctx.rules.length + (uncaught ? 1 : 0) + 1
+/**
+ * Lays the rules out: the start on the left, one row per rule, then what nothing catches, then "new rule".
+ * Reads only the SHAPE (which rules, on or off, is there an uncaught row) — editing a rule changes no node.
+ */
+function layout(rules: { id: string; isActive: boolean }[], hasUncaught: boolean): { nodes: Node[]; edges: Edge[] } {
+  const rows = rules.length + (hasUncaught ? 1 : 0) + 1
   const nodes: Node[] = [
-    { id: "start", type: "box", position: { x: 0, y: ((rows - 1) * ROW) / 2 - 20 }, data: { el: start } },
+    { id: "start", type: "box", position: { x: 0, y: ((rows - 1) * ROW) / 2 - 20 }, data: { box: "start" } },
   ]
   const edges: Edge[] = []
-  ctx.rules.forEach((r, i) => {
+  rules.forEach((r, i) => {
     const y = i * ROW
     nodes.push({
       id: `${r.id}:head`,
@@ -135,9 +136,9 @@ function layout(
       })
     })
   })
-  let y = ctx.rules.length * ROW
-  if (uncaught) {
-    nodes.push({ id: "uncaught", type: "box", position: { x: 290, y }, data: { el: uncaught } })
+  let y = rules.length * ROW
+  if (hasUncaught) {
+    nodes.push({ id: "uncaught", type: "box", position: { x: 290, y }, data: { box: "uncaught" } })
     edges.push({
       id: "start>uncaught",
       source: "start",
@@ -146,7 +147,7 @@ function layout(
     })
     y += ROW
   }
-  nodes.push({ id: "add", type: "box", position: { x: 290, y: y + 10 }, data: { el: add } })
+  nodes.push({ id: "add", type: "box", position: { x: 290, y: y + 10 }, data: { box: "add" } })
   edges.push({ id: "start>add", source: "start", target: "add", style: { ...EDGE, strokeDasharray: "5 5" } })
   return { nodes, edges }
 }
@@ -170,10 +171,13 @@ export function RulesCanvas(props: {
   kind: string
 }) {
   const { ctx, start, uncaught, add, kind } = props
-  const { nodes, edges } = useMemo(() => layout(ctx, start, uncaught, add), [ctx, start, uncaught, add])
+  const shape = ctx.rules.map((r) => `${r.id}${r.isActive ? "" : "-"}`).join(",") + (uncaught ? "|u" : "")
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the shape string IS what the layout reads
+  const { nodes, edges } = useMemo(() => layout(ctx.rules, !!uncaught), [shape])
   const signature = `${kind}:${ctx.rules.map((r) => r.id).join(",")}:${uncaught ? 1 : 0}`
+  const value = useMemo(() => ({ ...ctx, boxes: { start, uncaught, add } }), [ctx, start, uncaught, add])
   return (
-    <Ctx.Provider value={ctx}>
+    <Ctx.Provider value={value}>
       <ReactFlowProvider>
         <div
           className="w-full overflow-hidden rounded-[22px] border border-border bg-shell-chip"
@@ -187,6 +191,8 @@ export function RulesCanvas(props: {
             nodesConnectable={false}
             elementsSelectable
             onNodeClick={NOOP}
+            nodesFocusable={false}
+            edgesFocusable={false}
             minZoom={0.4}
             maxZoom={1.4}
             proOptions={{ hideAttribution: true }}

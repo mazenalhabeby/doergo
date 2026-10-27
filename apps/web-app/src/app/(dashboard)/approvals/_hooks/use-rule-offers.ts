@@ -31,10 +31,14 @@ export function useRuleOffers({
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search)
-    const k = q.get("kind")
+    const k = q.get("ruleKind")
     if (!isRuleKind(k)) return
     const limit = q.get("limit")
     setKind(k)
+    // Read once: a reload, or a link copied from the address bar, does not offer the same rule again.
+    const keep = new URLSearchParams(q)
+    for (const p of ["ruleKind", "space", "limit"]) keep.delete(p)
+    window.history.replaceState(null, "", `${window.location.pathname}${keep.size ? `?${keep}` : ""}`)
     // Only a link from an item offers a rule; a plain link to a kind just opens it.
     if (!q.get("space") && !limit) return
     setFromItem({

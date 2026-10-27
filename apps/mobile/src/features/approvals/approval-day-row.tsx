@@ -46,7 +46,12 @@ export function ApprovalDayRow({
     try {
       const res = await approvalsApi.decideDay(day.approvable);
       const failed = res.results.find((r) => !r.ok);
-      if (failed) {
+      const waiting = res.results.find((r) => r.waitingFor);
+      if (!failed && waiting) {
+        toast.success(
+          t('approvals.day.partly', { what: t(`approvals.kinds.${waiting.kind}`), role: waiting.waitingFor }),
+        );
+      } else if (failed) {
         toast.error(
           t('approvals.day.stopped', {
             what: t(`approvals.kinds.${failed.kind}`),

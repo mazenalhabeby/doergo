@@ -9894,6 +9894,7 @@
       "review": "Examiner",
       "needsMinutes": "Le temps supplémentaire et les heures sup. demandent des minutes : ouvrez-les un par un.",
       "nothingToApprove": "Rien ici ne peut être validé d’un coup : ouvrez chaque élément.",
+      "partly": "Approuvé — {{what}} attend encore {{role}}.",
       "approved": "Journée validée pour {{name}}",
       "stopped": "Arrêté à {{what}} : {{reason}}",
       "members": "Ce jour-là"
@@ -9945,16 +9946,15 @@
       "days_other": "{{count}} jours",
       "noRuleFits": "Aucune règle ne s'applique",
       "doneTwo": "Terminé · 2 approbations",
-      "footnote": "Si deux règles s'appliquent, celle de l'espace de travail l'emporte, puis la limite la plus haute. L'approbation d'un administrateur termine toujours, et personne ne donne les deux approbations.",
+      "footnote": "Chaque règle qui correspond s’applique : le cas demande toutes les approbations qu’elles nomment, chacune par une personne différente. L’approbation d’un administrateur le termine toujours.",
       "removed": "Règle supprimée",
       "noRoles": "Créez d'abord un rôle qui peut approuver.",
       "range": {
         "all": "tout",
-        "upTo": "jusqu'à {{to}}",
         "over": "plus de {{from}}",
-        "between": "plus de {{from}}, jusqu'à {{to}}",
-        "notIn": "Pas dans {{names}} — ils ont leurs propres règles",
-        "twin": "Même espace et même limite que la règle {{n}} — une seule des deux est utilisée"
+        "twin": "Comme la règle {{n}} — elle demande aux mêmes personnes pour les mêmes cas",
+        "alsoWith_one": "La règle {{numbers}} s’applique aussi ici — son approbation est aussi nécessaire",
+        "alsoWith_other": "Les règles {{numbers}} s’appliquent aussi ici — leurs approbations sont aussi nécessaires"
       },
       "workingDays_one": "{{count}} jour ouvré",
       "workingDays_other": "{{count}} jours ouvrés",
@@ -10003,7 +10003,8 @@
         "hits_one": "{{count}} en 90 jours",
         "hits_other": "{{count}} en 90 jours",
         "makeRule": "Créer une règle comme celle-ci",
-        "fromItemAny": "Une règle comme pour la demande ouverte : {{where}}, toutes."
+        "fromItemAny": "Une règle comme pour la demande ouverte : {{where}}, toutes.",
+        "approver": "Seconde approbation par {{role}} — modifiable sur le canevas"
       },
       "minutes_one": "{{count}} min",
       "minutes_other": "{{count}} min",

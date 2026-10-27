@@ -5407,6 +5407,7 @@
       "review": "Examiner",
       "needsMinutes": "Le temps supplémentaire et les heures sup. demandent des minutes : ouvrez-les un par un.",
       "nothingToApprove": "Rien ici ne peut être validé d’un coup : ouvrez chaque élément.",
+      "partly": "Approuvé — {{what}} attend encore {{role}}.",
       "approved": "Journée validée pour {{name}}",
       "stopped": "Arrêté à {{what}} : {{reason}}",
       "members": "Ce jour-là"

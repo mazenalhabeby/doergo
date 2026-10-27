@@ -1,4 +1,4 @@
-import { pickRule, type ApprovalRuleView } from "@hbcfield/shared/client"
+import { requiredRoleIds, type ApprovalRuleView } from "@hbcfield/shared/client"
 import { fallThrough, ruleRanges } from "../_lib/rule-range"
 
 const rule = (id: string, spaceId: string | null, minMinutes: number | null, extra: Partial<ApprovalRuleView> = {}) =>
@@ -20,40 +20,49 @@ const rule = (id: string, spaceId: string | null, minMinutes: number | null, ext
     ...extra,
   }) as ApprovalRuleView
 
-const NAMES: Record<string, string> = { billa: "BILLA AG", main: "Main Office" }
-const name = (id: string) => NAMES[id] ?? id
-
-describe("ruleRanges — what each rule really covers", () => {
-  const rules = [rule("1", "billa", null), rule("2", "billa", 120), rule("3", "main", null), rule("4", null, null)]
-  const [r1, r2, r3, r4] = ruleRanges(rules, name)
-
-  it("a rule stops where a higher limit in the same workspace starts", () => {
-    expect(r1).toMatchObject({ from: null, to: 120 })
-    expect(r2).toMatchObject({ from: 120, to: null })
-    expect(r3).toMatchObject({ from: null, to: null, notIn: [] })
+/*
+  Decision A (2026-10-27): every rule that fits applies — a rule covers its whole range on its own, and the
+  page says which other rules meet it on some items (their approvers are needed too).
+*/
+describe("ruleRanges — every rule that fits applies", () => {
+  it("a rule covers from its limit with no end, and names the rules that apply alongside", () => {
+    const rules = [
+      rule("1", "billa", null, { secondRoleId: "lead" }),
+      rule("2", "billa", 120, { secondRoleId: "hr" }),
+      rule("3", "main", null),
+      rule("4", null, null, { secondRoleId: "admin" }),
+    ]
+    const [r1, r2, r3, r4] = ruleRanges(rules)
+    expect(r1).toEqual({ from: null, alsoWith: [2, 4], shadowedBy: null })
+    expect(r2).toEqual({ from: 120, alsoWith: [1, 4], shadowedBy: null })
+    expect(r3.alsoWith).toEqual([4])
+    expect(r4.alsoWith).toEqual([1, 2, 3])
   })
 
-  it("an every-workspace rule names the workspaces whose own rules replace it", () => {
-    expect(r4.notIn).toEqual(["BILLA AG", "Main Office"])
+  it("agrees with the server: every fitting rule's approver is needed", () => {
+    const rules = [
+      rule("site", "billa", 60, { secondRoleId: "lead" }),
+      rule("org", null, 120, { secondRoleId: "admin" }),
+    ]
+    expect(requiredRoleIds(rules, { spaceIds: ["billa"], minutes: 180 }).sort()).toEqual(["admin", "lead"])
+    expect(requiredRoleIds(rules, { spaceIds: ["omv"], minutes: 180 })).toEqual(["admin"])
+    expect(ruleRanges(rules)[0].alsoWith).toEqual([2])
   })
 
-  it("agrees with the server's choice at every edge", () => {
-    for (const [space, minutes, want] of [
-      ["billa", 60, "1"],
-      ["billa", 120, "1"],
-      ["billa", 121, "2"],
-      ["main", 500, "3"],
-      ["omv", 30, "4"],
-    ] as const)
-      expect(pickRule(rules, { spaceIds: [space], minutes })?.id).toBe(want)
-  })
-
-  it("a later twin with the same place and limit is never used; switched-off rules do not cut a range", () => {
-    const [a, b] = ruleRanges([rule("a", null, 60), rule("b", null, 60)], name)
-    expect(a.shadowedBy).toBeNull()
+  it("the same rule twice adds nothing; with another approver it is not a twin, it is a second approval", () => {
+    const [, b] = ruleRanges([rule("a", null, 60), rule("b", null, 60)])
     expect(b.shadowedBy).toBe(1)
-    const [c] = ruleRanges([rule("c", null, null), rule("d", null, 60, { isActive: false })], name)
-    expect(c.to).toBeNull()
+    const [, c] = ruleRanges([rule("a", null, 60), rule("c", null, 60, { secondRoleId: "other" })])
+    expect(c).toEqual({ from: 60, alsoWith: [1], shadowedBy: null })
+  })
+
+  it("switched-off rules, and rules for another workspace, are not alongside", () => {
+    const [x] = ruleRanges([
+      rule("x", "billa", null),
+      rule("y", "main", null),
+      rule("z", null, 60, { isActive: false }),
+    ])
+    expect(x.alsoWith).toEqual([])
   })
 })
 
@@ -72,5 +81,8 @@ describe("fallThrough — where only the first approval is needed", () => {
   })
   it("an every-workspace rule with no limit leaves nothing", () => {
     expect(fallThrough([rule("1", null, null)], spaces)).toEqual([])
+  })
+  it("a rule that asks nobody more (reminders only) does not take items out of the first approval", () => {
+    expect(fallThrough([rule("1", null, null, { secondRoleId: null })], spaces)).toHaveLength(3)
   })
 })

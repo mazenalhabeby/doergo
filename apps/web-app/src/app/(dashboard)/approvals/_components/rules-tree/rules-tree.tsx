@@ -32,7 +32,7 @@ export function RulesTree() {
   const currency = user?.orgCurrency ?? "EUR"
   const tree = useRulesTree(true)
   const spaceName = (id: string) => tree.workspaces.find((w) => w.id === id)?.name ?? "?"
-  const ranges = ruleRanges(tree.rules, spaceName)
+  const ranges = ruleRanges(tree.rules)
   const uncaught = fallThrough(tree.rules, tree.workspaces)
   const kindName = (k: RuleKind) => t(`approvals.rules.kind.${k}`)
   const countOf = (k: RuleKind) => tree.counts.filter((r) => r.kind === k).length
@@ -63,11 +63,11 @@ export function RulesTree() {
       limitText={showLimit}
       busy={tree.busy}
       everywhere={tree.everywhere}
-      onAdd={(spaceId) => tree.add({ spaceId })}
+      onAdd={(spaceId) => void tree.add({ spaceId }).catch(() => {})}
     />
   ) : null
   const add = (
-    <button type="button" onClick={() => tree.add()} disabled={tree.busy} className={NEW_NODE}>
+    <button type="button" onClick={() => void tree.add().catch(() => {})} disabled={tree.busy} className={NEW_NODE}>
       <Icon name="plus" size={16} />
       {t("approvals.tree.newRule")}
     </button>
@@ -81,10 +81,9 @@ export function RulesTree() {
         kindLabel={kindName(tree.kind)}
         offers={offers}
         busy={tree.busy}
-        onAdd={(o) => {
-          tree.add({ spaceId: o.spaceId, limit: o.limit })
-          dismiss(o)
-        }}
+        approver={tree.defaultRole?.name}
+        // Gone once it is really added — a failed save leaves the offer to try again.
+        onAdd={(o) => void tree.add({ spaceId: o.spaceId, limit: o.limit }).then(() => dismiss(o), () => {})}
         onDismiss={dismiss}
       />
       <div className="grid items-start gap-4 lg:grid-cols-[210px_minmax(0,1fr)]">

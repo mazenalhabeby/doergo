@@ -33,7 +33,12 @@ export function useApprovalDays(data: ApprovalInbox | undefined, filter: Filter,
     mutationFn: (day: ApprovalDay) => approvalsApi.decideDay(day.approvable),
     onSuccess: (res, day) => {
       const failed = res.results.find((r) => !r.ok)
-      if (failed) {
+      const waiting = res.results.find((r) => r.waitingFor)
+      if (!failed && waiting) {
+        notify.success(
+          t("approvals.day.partly", { what: t(`approvals.kinds.${waiting.kind}`), role: waiting.waitingFor }),
+        )
+      } else if (failed) {
         notify.error(
           t("approvals.day.stopped", {
             what: t(`approvals.kinds.${failed.kind}`),

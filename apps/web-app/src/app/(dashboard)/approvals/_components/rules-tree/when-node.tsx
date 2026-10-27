@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import { RULE_LIMITS, type ApprovalRuleInput, type ApprovalRuleView } from "@hbcfield/shared/client"
@@ -8,7 +8,7 @@ import { assetsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
-import { limitInput, limitPatch, limitText } from "../../_lib/rule-limit"
+import { limitInput, limitMax, limitPatch, limitText } from "../../_lib/rule-limit"
 import type { RuleRange } from "../../_lib/rule-range"
 import { ChoiceSelect, FlowNode, LIMIT, NONE } from "./tree-nodes"
 
@@ -29,9 +29,15 @@ export function WhenNode({
   onChange: (patch: Partial<ApprovalRuleInput>) => void
 }) {
   const { t } = useTranslation()
-  const [limit, setLimit] = useState(limitInput(rule))
-  useEffect(() => setLimit(limitInput(rule)), [rule])
-  const commit = () => limit !== limitInput(rule) && onChange(limitPatch(rule.kind, limit))
+  const stored = limitInput(rule)
+  const [limit, setLimit] = useState(stored)
+  // Follows the SAVED value only when it changes — a refetch of the same rule never wipes what is being typed.
+  useEffect(() => setLimit(stored), [stored])
+  const commit = () => limit !== stored && onChange(limitPatch(rule.kind, limit))
+  // Closing the step's popover unmounts the field without a blur: what was typed is still saved.
+  const latest = useRef(commit)
+  latest.current = commit
+  useEffect(() => () => void latest.current(), [])
   const hasLimit = !!RULE_LIMITS[rule.kind]
   // Asset kinds are read only for an asset-papers rule, and once for every such rule (shared cache).
   const { data: kinds } = useQuery({
@@ -49,13 +55,9 @@ export function WhenNode({
         ? rule.urgentOnly
           ? t("approvals.tree.urgentOnly")
           : t("approvals.tree.range.all")
-        : range.from != null && range.to != null
-          ? t("approvals.tree.range.between", { from: show(range.from), to: show(range.to) })
-          : range.from != null
-            ? t("approvals.tree.range.over", { from: show(range.from) })
-            : range.to != null
-              ? t("approvals.tree.range.upTo", { to: show(range.to) })
-              : t("approvals.tree.range.all")
+        : range.from != null
+          ? t("approvals.tree.range.over", { from: show(range.from) })
+          : t("approvals.tree.range.all")
 
   return (
     <FlowNode
@@ -77,6 +79,7 @@ export function WhenNode({
           <input
             type="number"
             min={0}
+            max={limitMax(rule.kind)}
             inputMode="decimal"
             value={limit}
             placeholder={t("approvals.tree.any")}

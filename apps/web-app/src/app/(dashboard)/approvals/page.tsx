@@ -68,6 +68,8 @@ export default function ApprovalsPage() {
   const tabs = (["decide", "rules", "stand"] as const).filter(
     (k) => k === "decide" || (k === "rules" ? managesRules : !user?.isExternal),
   )
+  // A tab this person may not open (a link from somebody else, a permission taken away) is the inbox.
+  const shown = (tabs as readonly string[]).includes(tab) ? tab : "decide"
 
   return (
     <div className={PAGE_SHELL}>
@@ -116,11 +118,13 @@ export default function ApprovalsPage() {
               key={k}
               type="button"
               role="tab"
-              aria-selected={tab === k}
+              id={`approvals-tab-${k}`}
+              aria-controls="approvals-panel"
+              aria-selected={shown === k}
               onClick={() => setTab(k)}
               className={cn(
                 "-mb-px h-11 border-b-2 px-3 text-sm font-semibold transition-colors",
-                tab === k
+                shown === k
                   ? "border-foreground text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground",
               )}
@@ -131,140 +135,142 @@ export default function ApprovalsPage() {
         </div>
       )}
 
-      {tab === "rules" && managesRules ? (
-        <RulesTree />
-      ) : tab === "stand" && !user?.isExternal ? (
-        <StandInsTab />
-      ) : isError ? (
-        <ListTableError title={t("approvals.loadFailed")} error={error} onRetry={() => refetch()} />
-      ) : (
-        <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)_minmax(320px,400px)]">
-          {/* Kinds — only the ones that have something, so the rail is itself a summary. */}
-          <Panel
-            as="nav"
-            className={cn(
-              "flex gap-0.5 overflow-x-auto max-lg:rounded-2xl lg:flex-col",
-              STICKY_COLUMN,
-              current && "max-lg:hidden",
-            )}
-          >
-            <KindRailItem
-              active={filter === "all"}
-              label={t("approvals.all")}
-              count={items.length}
-              urgent={items.some((i) => i.group === "NOW")}
-              onClick={() => setFilter("all")}
-            />
-            {APPROVAL_KINDS.filter((k) => counts.has(k)).map((k) => (
-              <KindRailItem
-                key={k}
-                active={filter === k}
-                label={t(`approvals.kinds.${k}`)}
-                count={counts.get(k) ?? 0}
-                urgent={items.some((i) => i.kind === k && i.group === "NOW")}
-                onClick={() => setFilter(k)}
-              />
-            ))}
-          </Panel>
-
-          <Panel className={cn((current || currentDay) && "max-lg:hidden")}>
-            {isLoading ? (
-              <div className="space-y-2 p-1">
-                {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full rounded-[14px]" />
-                ))}
-              </div>
-            ) : visible.length === 0 && visibleDays.length === 0 ? (
-              <div className="px-6 py-16 text-center">
-                <Inbox className="mx-auto mb-3 size-10 text-muted-foreground/60" />
-                <p className="font-medium text-foreground">{t("approvals.empty")}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{t("approvals.emptyHint")}</p>
-              </div>
-            ) : (
-              APPROVAL_GROUPS.map((g) => {
-                const rows = visible.filter((i) => i.group === g)
-                const dayRows = visibleDays.filter((d) => d.group === g)
-                if (rows.length === 0 && dayRows.length === 0) return null
-                return (
-                  <div key={g}>
-                    <GroupLabel tone={g === "NOW" ? "crit" : "soft"}>
-                      {t(`approvals.groups.${g}`)}
-                      <span className="font-normal tabular-nums">{rows.length + dayRows.length}</span>
-                    </GroupLabel>
-                    <ul>
-                      {dayRows.map((d) => (
-                        <DayRow key={d.key} day={d} active={d.key === selected} onSelect={() => setSelected(d.key)} />
-                      ))}
-                      {rows.map((i) => (
-                        <ApprovalRow
-                          key={itemKey(i)}
-                          item={i}
-                          active={itemKey(i) === selected}
-                          onSelect={() => setSelected(itemKey(i))}
-                          orgCurrency={user?.orgCurrency}
-                        />
-                      ))}
-                    </ul>
-                  </div>
-                )
-              })
-            )}
-          </Panel>
-
-          <aside className={cn("min-w-0 rounded-[22px]", STICKY_COLUMN, !current && !currentDay && "max-lg:hidden")}>
-            <div>
-              {currentDay ? (
-                <Panel className="p-5">
-                  <DayPanel
-                    day={currentDay}
-                    members={membersOf(currentDay)}
-                    busy={approveDay.isPending}
-                    onApprove={() => approveDay.mutate(currentDay)}
-                    onReview={(i) => {
-                      setFilter("all")
-                      setSelected(`${i.kind}:${i.id}`)
-                    }}
-                    orgCurrency={user?.orgCurrency}
-                  />
-                </Panel>
-              ) : current ? (
-                <Panel className="p-5">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="-ml-2 mb-3 rounded-full lg:hidden"
-                    onClick={() => setSelected(null)}
-                  >
-                    <ChevronLeft className="size-4" />
-                    {t("approvals.back")}
-                  </Button>
-                  <DecisionPanel
-                    item={current}
-                    text={describeApproval(current, t as ApprovalT, dateLocale(), user?.orgCurrency)}
-                    busy={decide.isPending}
-                    onDecide={onDecide}
-                    onMakeRule={
-                      managesRules
-                        ? (link) => {
-                            window.history.replaceState(null, "", link)
-                            setTab("rules")
-                          }
-                        : undefined
-                    }
-                  />
-                </Panel>
-              ) : (
-                !isLoading &&
-                visible.length > 0 && (
-                  <p className="rounded-[22px] border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground">
-                    {t("approvals.pick")}
-                  </p>
-                )
+      <div id="approvals-panel" role="tabpanel" aria-labelledby={`approvals-tab-${shown}`}>
+        {shown === "rules" ? (
+          <RulesTree />
+        ) : shown === "stand" ? (
+          <StandInsTab />
+        ) : isError ? (
+          <ListTableError title={t("approvals.loadFailed")} error={error} onRetry={() => refetch()} />
+        ) : (
+          <div className="grid items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)_minmax(320px,400px)]">
+            {/* Kinds — only the ones that have something, so the rail is itself a summary. */}
+            <Panel
+              as="nav"
+              className={cn(
+                "flex gap-0.5 overflow-x-auto max-lg:rounded-2xl lg:flex-col",
+                STICKY_COLUMN,
+                current && "max-lg:hidden",
               )}
-            </div>
-          </aside>
-        </div>
-      )}
+            >
+              <KindRailItem
+                active={filter === "all"}
+                label={t("approvals.all")}
+                count={items.length}
+                urgent={items.some((i) => i.group === "NOW")}
+                onClick={() => setFilter("all")}
+              />
+              {APPROVAL_KINDS.filter((k) => counts.has(k)).map((k) => (
+                <KindRailItem
+                  key={k}
+                  active={filter === k}
+                  label={t(`approvals.kinds.${k}`)}
+                  count={counts.get(k) ?? 0}
+                  urgent={items.some((i) => i.kind === k && i.group === "NOW")}
+                  onClick={() => setFilter(k)}
+                />
+              ))}
+            </Panel>
+
+            <Panel className={cn((current || currentDay) && "max-lg:hidden")}>
+              {isLoading ? (
+                <div className="space-y-2 p-1">
+                  {[...Array(6)].map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full rounded-[14px]" />
+                  ))}
+                </div>
+              ) : visible.length === 0 && visibleDays.length === 0 ? (
+                <div className="px-6 py-16 text-center">
+                  <Inbox className="mx-auto mb-3 size-10 text-muted-foreground/60" />
+                  <p className="font-medium text-foreground">{t("approvals.empty")}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{t("approvals.emptyHint")}</p>
+                </div>
+              ) : (
+                APPROVAL_GROUPS.map((g) => {
+                  const rows = visible.filter((i) => i.group === g)
+                  const dayRows = visibleDays.filter((d) => d.group === g)
+                  if (rows.length === 0 && dayRows.length === 0) return null
+                  return (
+                    <div key={g}>
+                      <GroupLabel tone={g === "NOW" ? "crit" : "soft"}>
+                        {t(`approvals.groups.${g}`)}
+                        <span className="font-normal tabular-nums">{rows.length + dayRows.length}</span>
+                      </GroupLabel>
+                      <ul>
+                        {dayRows.map((d) => (
+                          <DayRow key={d.key} day={d} active={d.key === selected} onSelect={() => setSelected(d.key)} />
+                        ))}
+                        {rows.map((i) => (
+                          <ApprovalRow
+                            key={itemKey(i)}
+                            item={i}
+                            active={itemKey(i) === selected}
+                            onSelect={() => setSelected(itemKey(i))}
+                            orgCurrency={user?.orgCurrency}
+                          />
+                        ))}
+                      </ul>
+                    </div>
+                  )
+                })
+              )}
+            </Panel>
+
+            <aside className={cn("min-w-0 rounded-[22px]", STICKY_COLUMN, !current && !currentDay && "max-lg:hidden")}>
+              <div>
+                {currentDay ? (
+                  <Panel className="p-5">
+                    <DayPanel
+                      day={currentDay}
+                      members={membersOf(currentDay)}
+                      busy={approveDay.isPending}
+                      onApprove={() => approveDay.mutate(currentDay)}
+                      onReview={(i) => {
+                        setFilter("all")
+                        setSelected(`${i.kind}:${i.id}`)
+                      }}
+                      orgCurrency={user?.orgCurrency}
+                    />
+                  </Panel>
+                ) : current ? (
+                  <Panel className="p-5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="-ml-2 mb-3 rounded-full lg:hidden"
+                      onClick={() => setSelected(null)}
+                    >
+                      <ChevronLeft className="size-4" />
+                      {t("approvals.back")}
+                    </Button>
+                    <DecisionPanel
+                      item={current}
+                      text={describeApproval(current, t as ApprovalT, dateLocale(), user?.orgCurrency)}
+                      busy={decide.isPending}
+                      onDecide={onDecide}
+                      onMakeRule={
+                        managesRules
+                          ? (link) => {
+                              window.history.replaceState(null, "", link)
+                              setTab("rules")
+                            }
+                          : undefined
+                      }
+                    />
+                  </Panel>
+                ) : (
+                  !isLoading &&
+                  visible.length > 0 && (
+                    <p className="rounded-[22px] border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground">
+                      {t("approvals.pick")}
+                    </p>
+                  )
+                )}
+              </div>
+            </aside>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

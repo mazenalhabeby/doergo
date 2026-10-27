@@ -103,6 +103,8 @@ const approvalsKeys = {
   standIns: () => named("approvals", ["stand-ins"]),
   rules: () => named("approvals", ["rules"]),
   ruleInsights: (kind: string) => named("approvals", ["rules", "insights", kind]),
+  /** Not under "rules": saving a rule does not change who holds a role. */
+  ruleRoles: () => named("approvals", ["rule-roles"]),
 } as const
 
 const shiftIssuesKeys = {

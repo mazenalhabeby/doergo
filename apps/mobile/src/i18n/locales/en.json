@@ -5407,6 +5407,7 @@
       "review": "Review",
       "needsMinutes": "Extra time and overtime need minutes — open them one by one.",
       "nothingToApprove": "Nothing here can be approved in one go — open each item.",
+      "partly": "Approved — {{what}} still needs {{role}}.",
       "approved": "Day approved for {{name}}",
       "stopped": "Stopped at {{what}}: {{reason}}",
       "members": "On this day"

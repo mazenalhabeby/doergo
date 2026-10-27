@@ -42,6 +42,13 @@ export function limitPatch(kind: RuleKind, v: string): Partial<ApprovalRuleInput
   return limitFields(kind, Math.min(stored, RULE_LIMITS[kind]?.max ?? stored))
 }
 
+/** The highest value the field takes, in the unit the office types (the kind's stored ceiling). */
+export function limitMax(kind: RuleKind): number | undefined {
+  const max = RULE_LIMITS[kind]?.max
+  if (max == null) return undefined
+  return kind === "overtime" ? max / 60 : kind === "expense" ? max / 100 : max
+}
+
 /** A stored limit as the office reads it. */
 export function limitText(t: TFunction, kind: RuleKind, v: number, currency: string): string {
   if (kind === "overtime") return t("approvals.tree.hours", { count: Math.round((v / 60) * 10) / 10 })

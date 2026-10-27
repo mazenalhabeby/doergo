@@ -9894,6 +9894,7 @@
       "review": "Prüfen",
       "needsMinutes": "Mehrarbeit und Überstunden brauchen Minuten — öffnen Sie sie einzeln.",
       "nothingToApprove": "Hier lässt sich nichts auf einmal bestätigen — öffnen Sie jeden Eintrag.",
+      "partly": "Genehmigt — {{what}} braucht noch {{role}}.",
       "approved": "Tag für {{name}} bestätigt",
       "stopped": "Angehalten bei {{what}}: {{reason}}",
       "members": "An diesem Tag"
@@ -9945,16 +9946,15 @@
       "days_other": "{{count}} Tagen",
       "noRuleFits": "Keine Regel passt",
       "doneTwo": "Fertig · 2 Genehmigungen",
-      "footnote": "Passen zwei Regeln, gewinnt die Regel des Arbeitsbereichs, dann die höhere Grenze. Die Genehmigung eines Administrators schließt immer ab, und niemand gibt beide Genehmigungen.",
+      "footnote": "Jede passende Regel gilt: Der Fall braucht alle Genehmigungen, die sie nennen, jede von einer anderen Person. Die Genehmigung einer Administratorin oder eines Administrators schließt ihn immer ab.",
       "removed": "Regel entfernt",
       "noRoles": "Lege zuerst eine Rolle an, die genehmigen darf.",
       "range": {
         "all": "alle",
-        "upTo": "bis {{to}}",
         "over": "mehr als {{from}}",
-        "between": "mehr als {{from}}, bis {{to}}",
-        "notIn": "Nicht in {{names}} — dort gelten eigene Regeln",
-        "twin": "Gleicher Arbeitsbereich und gleiche Grenze wie Regel {{n}} — nur eine davon wird verwendet"
+        "twin": "Wie Regel {{n}} — sie fragt dieselben Personen zu denselben Fällen",
+        "alsoWith_one": "Regel {{numbers}} gilt hier auch — ihre Genehmigung wird ebenfalls gebraucht",
+        "alsoWith_other": "Die Regeln {{numbers}} gelten hier auch — ihre Genehmigungen werden ebenfalls gebraucht"
       },
       "workingDays_one": "{{count}} Arbeitstag",
       "workingDays_other": "{{count}} Arbeitstage",
@@ -10003,7 +10003,8 @@
         "hits_one": "{{count}} in 90 Tagen",
         "hits_other": "{{count}} in 90 Tagen",
         "makeRule": "Eine Regel wie diese anlegen",
-        "fromItemAny": "Eine Regel wie beim geöffneten Antrag: {{where}}, alle."
+        "fromItemAny": "Eine Regel wie beim geöffneten Antrag: {{where}}, alle.",
+        "approver": "Zweite Genehmigung durch {{role}} — im Plan änderbar"
       },
       "minutes_one": "{{count}} Min.",
       "minutes_other": "{{count}} Min.",

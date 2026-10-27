@@ -9894,6 +9894,7 @@
       "review": "Review",
       "needsMinutes": "Extra time and overtime need minutes — open them one by one.",
       "nothingToApprove": "Nothing here can be approved in one go — open each item.",
+      "partly": "Approved — {{what}} still needs {{role}}.",
       "approved": "Day approved for {{name}}",
       "stopped": "Stopped at {{what}}: {{reason}}",
       "members": "On this day"
@@ -9945,16 +9946,15 @@
       "days_other": "{{count}} days",
       "noRuleFits": "No rule fits",
       "doneTwo": "Done · 2 approvals",
-      "footnote": "If two rules fit, the workspace's own rule wins, then the higher limit. An administrator's approval always finishes it, and nobody gives both approvals.",
+      "footnote": "Every rule that fits applies: the item needs every approver they name, each a different person. An administrator's approval always finishes it.",
       "removed": "Rule removed",
       "noRoles": "First create a role that can approve.",
       "range": {
         "all": "every one",
-        "upTo": "up to {{to}}",
         "over": "more than {{from}}",
-        "between": "more than {{from}}, up to {{to}}",
-        "notIn": "Not in {{names}} — they have their own rules",
-        "twin": "Same workspace and limit as Rule {{n}} — only one of them is used"
+        "twin": "Same as Rule {{n}} — it asks the same people for the same items",
+        "alsoWith_one": "Rule {{numbers}} applies here too — its approval is needed as well",
+        "alsoWith_other": "Rules {{numbers}} apply here too — their approvals are needed as well"
       },
       "workingDays_one": "{{count}} working day",
       "workingDays_other": "{{count}} working days",
@@ -10003,7 +10003,8 @@
         "hits_one": "{{count}} in 90 days",
         "hits_other": "{{count}} in 90 days",
         "makeRule": "Make a rule like this",
-        "fromItemAny": "A rule like the one you came from: {{where}}, every one."
+        "fromItemAny": "A rule like the one you came from: {{where}}, every one.",
+        "approver": "Second approval by {{role}} — change it on the canvas"
       },
       "minutes_one": "{{count}} min",
       "minutes_other": "{{count}} min",

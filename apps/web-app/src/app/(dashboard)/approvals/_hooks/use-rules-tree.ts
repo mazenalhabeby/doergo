@@ -3,23 +3,17 @@
 import { useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { ApprovalRuleInput, ApprovalRuleView, RuleKind } from "@hbcfield/shared/client"
+import type { ApprovalRuleInput, ApprovalRuleView, RuleKind, RuleRoleView } from "@hbcfield/shared/client"
 import { approvalsApi } from "@/lib/api"
 import { keys } from "@/lib/query-keys"
 import { notify } from "@/lib/toast"
-import { useOrgRoles } from "@/hooks/use-org-roles"
 import { useSpaceDirectory } from "@/hooks/use-space-directory"
 import { limitFields } from "../_lib/rule-limit"
 import { useAuth } from "@/contexts/auth-context"
 import { isAdmin, spacesGranting } from "@hbcfield/shared/client"
 
 /** A role a rule may name: one that grants something (a work role grants nothing), with how many hold it. */
-export interface RuleRole {
-  id: string
-  name: string
-  inSpace: boolean
-  holders: number
-}
+export type RuleRole = RuleRoleView
 
 /**
  * The fields a rule card edits — EVERYTHING the server stores (a save replaces the rule whole), nothing it
@@ -71,20 +65,19 @@ export function useRulesTree(enabled: boolean) {
     enabled,
     staleTime: 60_000,
   })
-  const { data: orgRoles } = useOrgRoles(undefined, { enabled })
-  const { data: spaceRoles } = useOrgRoles("space", { enabled })
+  // The roles a rule may name — names and how many hold each, readable by whoever manages rules (any scope).
+  const { data: roleRows } = useQuery({
+    queryKey: keys.approvals.ruleRoles(),
+    queryFn: approvalsApi.ruleRoles,
+    staleTime: 5 * 60_000,
+    enabled,
+  })
   const { data: spaces } = useSpaceDirectory({ enabled })
 
-  const roles = useMemo<RuleRole[]>(() => {
-    const out = new Map<string, RuleRole>()
-    const add = (list: typeof orgRoles, inSpace: boolean) =>
-      (list ?? [])
-        .filter((r) => Object.values(r.permissions ?? {}).some(Boolean))
-        .forEach((r) => out.set(r.id, { id: r.id, name: r.name, inSpace, holders: r.memberCount ?? 0 }))
-    add(orgRoles, false)
-    add(spaceRoles, true)
-    return [...out.values()].sort((a, b) => a.name.localeCompare(b.name))
-  }, [orgRoles, spaceRoles])
+  const roles = useMemo<RuleRole[]>(
+    () => [...new Map((roleRows ?? []).map((r) => [r.id, r])).values()].sort((a, b) => a.name.localeCompare(b.name)),
+    [roleRows],
+  )
 
   // Held in some workspaces only: those workspaces, and never a rule for "every workspace" (the server agrees).
   const { user } = useAuth()
@@ -154,10 +147,15 @@ export function useRulesTree(enabled: boolean) {
    * A new rule — for one workspace, or every one when none is given. It asks the first role that can decide
    * for a second approval: a rule must DO something.
    */
-  const add = ({ spaceId = null, limit = null }: { spaceId?: string | null; limit?: number | null } = {}) => {
+  // A new rule asks a role somebody actually holds; the office changes it on the canvas.
+  const defaultRole = roles.find((r) => r.holders > 0) ?? roles[0]
+  const add = async ({ spaceId = null, limit = null }: { spaceId?: string | null; limit?: number | null } = {}) => {
     if (scope && !spaceId) spaceId = workspaces[0]?.id ?? null
-    const role = roles.find((r) => r.holders > 0) ?? roles[0]
-    if (!role) return notify.error(t("approvals.tree.noRoles"))
+    const role = defaultRole
+    if (!role) {
+      notify.error(t("approvals.tree.noRoles"))
+      throw new Error("no role")
+    }
     return save.mutateAsync({
       input: { kind, spaceId, ...limitFields(kind, limit), secondRoleId: role.id, isActive: true },
     })
@@ -176,6 +174,7 @@ export function useRulesTree(enabled: boolean) {
     error,
     refetch,
     roles,
+    defaultRole,
     workspaces,
     change,
     add,

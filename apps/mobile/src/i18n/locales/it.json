@@ -5407,6 +5407,7 @@
       "review": "Esamina",
       "needsMinutes": "Tempo extra e straordinari richiedono i minuti: aprili uno per uno.",
       "nothingToApprove": "Qui niente si approva in un colpo solo: apri ogni elemento.",
+      "partly": "Approvato — {{what}} richiede ancora {{role}}.",
       "approved": "Giornata approvata per {{name}}",
       "stopped": "Interrotto a {{what}}: {{reason}}",
       "members": "In questo giorno"

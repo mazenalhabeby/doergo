@@ -16,6 +16,7 @@ import {
   type ApprovalInbox,
   type ApprovalDayMember,
   type ApproveDayResult,
+  type RuleRoleView,
 } from '@hbcfield/shared/client';
 
 /** The approvals inbox — every kind's own list and action, run as the caller by the gateway. */
@@ -51,6 +52,11 @@ export const approvalsApi = {
   },
   rules: async (): Promise<ApprovalRuleView[]> => {
     const res = await call(approvalsEndpoints.rules) as ApiResponse<{ data: ApprovalRuleView[] }>;
+    if (res.error) throw apiError(res);
+    return res.data!.data;
+  },
+  ruleRoles: async (): Promise<RuleRoleView[]> => {
+    const res = await call(approvalsEndpoints.ruleRoles) as ApiResponse<{ data: RuleRoleView[] }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },

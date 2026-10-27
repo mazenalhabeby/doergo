@@ -52,16 +52,34 @@ export function RulePart({
   const { t } = useTranslation()
 
   const roleOf = (id: string | null) => roles.find((r) => r.id === id)
-  const nobody = (id: string | null) => !!id && (roleOf(id)?.holders ?? 0) === 0
-  const roleChoices = roles.map((r) => ({
-    value: r.id,
-    label: r.inSpace ? t("approvals.tree.inThatWorkspace", { role: r.name }) : r.name,
-  }))
+  // "Nobody holds it" only when the role list is known — never while it loads or for a role it does not list.
+  const nobody = (id: string | null) => roleOf(id)?.holders === 0
+  // A role the rule names but the list does not (yet): still a choice, so the picker shows it.
+  const missing = [
+    [rule.secondRoleId, rule.secondRoleName],
+    [rule.escalateRoleId, rule.escalateRoleName],
+  ]
+    .flatMap(([id, name]) => (id && !roleOf(id) ? [{ value: id, label: name ?? "—" }] : []))
+    .filter((c, i, list) => list.findIndex((o) => o.value === c.value) === i)
+  const roleChoices = [
+    ...roles.map((r) => ({
+      value: r.id,
+      label: r.inSpace ? t("approvals.tree.inThatWorkspace", { role: r.name }) : r.name,
+    })),
+    ...missing,
+  ]
   const wait = (h: number) =>
     h % 24 ? t("approvals.tree.hours", { count: h }) : t("approvals.tree.days", { count: h / 24 })
-  const hourChoices = HOURS.map((h) => ({ value: String(h), label: wait(h) }))
-  const second = roleOf(rule.secondRoleId)
-  const pass = roleOf(rule.escalateRoleId)
+  // The usual waits, plus whatever this rule already has (set elsewhere, or before the list changed).
+  const hourChoices = [...new Set([...HOURS, rule.remindAfterHours, rule.escalateAfterHours])]
+    .filter((h): h is number => h != null)
+    .sort((a, b) => a - b)
+    .map((h) => ({ value: String(h), label: wait(h) }))
+  // Named by the list, else by the rule itself (the list may still be loading).
+  const named = (id: string | null, name: string | null | undefined) =>
+    roleOf(id) ?? (id && name ? { id, name, inSpace: false, holders: -1 } : undefined)
+  const second = named(rule.secondRoleId, rule.secondRoleName)
+  const pass = named(rule.escalateRoleId, rule.escalateRoleName)
   const chase = [
     rule.remindAfterHours != null ? t("approvals.tree.chase.remind", { after: wait(rule.remindAfterHours) }) : null,
     pass ? t("approvals.tree.chase.pass", { role: pass.name, after: wait(rule.escalateAfterHours ?? 48) }) : null,
@@ -97,16 +115,32 @@ export function RulePart({
           <FlowNode
             icon="workspaces"
             label={t("approvals.tree.node.where")}
-            value={workspaces.find((w) => w.id === rule.spaceId)?.name ?? t("approvals.rules.everywhere")}
-            sub={range.notIn.length ? t("approvals.tree.range.notIn", { names: range.notIn.join(", ") }) : undefined}
+            value={
+              rule.spaceId
+                ? // An archived workspace is not in the list: its name comes with the rule.
+                  (workspaces.find((w) => w.id === rule.spaceId)?.name ?? rule.spaceName ?? "—")
+                : t("approvals.rules.everywhere")
+            }
+            sub={
+              range.alsoWith.length
+                ? t("approvals.tree.range.alsoWith", {
+                    count: range.alsoWith.length,
+                    numbers: range.alsoWith.join(", "),
+                  })
+                : undefined
+            }
           >
             <ChoiceSelect
               value={rule.spaceId ?? NONE}
               onChange={(v) => onChange({ spaceId: v === NONE ? null : v })}
               label={t("approvals.rules.where")}
               choices={[
-                { value: NONE, label: t("approvals.rules.everywhere") },
+                // Every workspace only for a caller who manages rules everywhere (the server refuses it otherwise).
+                ...(everywhere || !rule.spaceId ? [{ value: NONE, label: t("approvals.rules.everywhere") }] : []),
                 ...workspaces.map((w) => ({ value: w.id, label: w.name })),
+                ...(rule.spaceId && !workspaces.some((w) => w.id === rule.spaceId)
+                  ? [{ value: rule.spaceId, label: rule.spaceName ?? "—" }]
+                  : []),
               ]}
             />
           </FlowNode>
@@ -129,9 +163,11 @@ export function RulePart({
             sub={
               !second
                 ? t("approvals.tree.onlyFirst")
-                : second.holders
+                : second.holders > 0
                   ? t("approvals.tree.holders", { count: second.holders })
-                  : t("approvals.tree.nobodyHolds")
+                  : second.holders === 0
+                    ? t("approvals.tree.nobodyHolds")
+                    : undefined
             }
           >
             <ChoiceSelect

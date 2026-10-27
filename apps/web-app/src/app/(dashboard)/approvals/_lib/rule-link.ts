@@ -1,8 +1,11 @@
 import { ruleKindOf, type ApprovalItem, type RuleKind } from "@hbcfield/shared/client"
 
-/** The link to the rules page offering one rule: `/approvals?tab=rules&kind=…&space=…&limit=…`. */
+/**
+ * The link to the rules page offering one rule: `/approvals?tab=rules&ruleKind=…&space=…&limit=…`. Its own name
+ * (`ruleKind`), never `kind` — that one opens the inbox on an approval kind, and some share a name ("overtime").
+ */
 export function ruleLinkFor(kind: RuleKind, spaceId: string | null, limit: number | null): string {
-  const q = new URLSearchParams({ tab: "rules", kind })
+  const q = new URLSearchParams({ tab: "rules", ruleKind: kind })
   if (spaceId) q.set("space", spaceId)
   if (limit != null) q.set("limit", String(limit))
   return `/approvals?${q}`

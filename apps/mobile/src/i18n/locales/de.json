@@ -5407,6 +5407,7 @@
       "review": "Prüfen",
       "needsMinutes": "Mehrarbeit und Überstunden brauchen Minuten — öffnen Sie sie einzeln.",
       "nothingToApprove": "Hier lässt sich nichts auf einmal bestätigen — öffnen Sie jeden Eintrag.",
+      "partly": "Genehmigt — {{what}} braucht noch {{role}}.",
       "approved": "Tag für {{name}} bestätigt",
       "stopped": "Angehalten bei {{what}}: {{reason}}",
       "members": "An diesem Tag"

@@ -15,6 +15,8 @@ import { Combobox } from "@/components/ui/combobox"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { GroupLabel, Panel } from "@/components/page/page-kit"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ListTableError } from "@/components/common/list-page"
 
 const todayKey = () => {
   const d = new Date()
@@ -30,7 +32,10 @@ const day = (k: string) => formatMediumDate(`${k}T12:00:00Z`)
 export function StandInsTab() {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  const { data } = useQuery({ queryKey: keys.approvals.standIns(), queryFn: approvalsApi.standIns })
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: keys.approvals.standIns(),
+    queryFn: approvalsApi.standIns,
+  })
 
   const [toUserId, setTo] = useState("")
   const [fromUserId, setFrom] = useState("")
@@ -82,6 +87,15 @@ export function StandInsTab() {
   const canFill = !!data && (data.mayHandOver || data.mayArrange)
   const ready = !!toUserId && !!startsOn && !!endsOn && endsOn >= startsOn && !create.isPending
 
+  if (isError) return <ListTableError title={t("approvals.loadFailed")} error={error} onRetry={() => refetch()} />
+  if (isLoading)
+    return (
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+        <Skeleton className="h-80 rounded-[22px]" />
+        <Skeleton className="h-48 rounded-[22px]" />
+      </div>
+    )
+
   return (
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
       <Panel className="flex flex-col gap-3 p-5">
@@ -117,7 +131,16 @@ export function StandInsTab() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="stand-in-from">{t("approvals.standIn.firstDay")}</Label>
-                <DatePicker id="stand-in-from" value={startsOn} min={todayKey()} onChange={setStart} />
+                <DatePicker
+                  id="stand-in-from"
+                  value={startsOn}
+                  min={todayKey()}
+                  // A first day after the last one moves the last one with it.
+                  onChange={(v) => {
+                    setStart(v)
+                    if (v > endsOn) setEnd(v)
+                  }}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="stand-in-to">{t("approvals.standIn.lastDay")}</Label>

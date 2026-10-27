@@ -1,49 +1,47 @@
-import type { ApprovalRuleView } from "@hbcfield/shared/client"
+import { ruleLimitOf, type ApprovalRuleView } from "@hbcfield/shared/client"
 
 /**
- * What a rule REALLY covers once the others are taken into account — the same choice the server makes
- * (`pickRule` in shared approval-rules.ts): of the rules that fit, a workspace's own beats every-workspace,
- * then the higher limit wins, so a rule stops where a higher limit in the same place starts.
+ * What a rule covers next to the others — the server's reading (`rulesThatApply` in shared approval-rules.ts):
+ * EVERY rule that fits an item applies, and the item needs every approver they name. So a rule covers its
+ * whole range on its own, and the page says which other rules apply to some of the same items.
  */
 export interface RuleRange {
   /** Exclusive lower limit in stored units (minutes / days / cents); null = from nothing. */
   from: number | null
-  /** Where a higher limit in the same place takes over; null = no end. */
-  to: number | null
-  /** Every-workspace rule: the workspaces whose own rules replace it. */
-  notIn: string[]
-  /** An earlier rule has the same place and limit: only one of the two is ever used (that rule's 1-based number). */
+  /** Other active rules (1-based numbers) that apply to some of the same items: their approvers are needed too. */
+  alsoWith: number[]
+  /** An earlier rule asks the same people for the same items: this one adds nothing (that rule's 1-based number). */
   shadowedBy: number | null
 }
 
-const limitOf = (r: ApprovalRuleView) => r.minMinutes ?? r.minDays ?? r.minAmountCents ?? null
+const limitOf = (r: ApprovalRuleView) => ruleLimitOf(r)
+
+/** Two rules can meet on one item: the same workspace, or one of them everywhere; one asset kind each, if any. */
+const overlap = (a: ApprovalRuleView, b: ApprovalRuleView) =>
+  (!a.spaceId || !b.spaceId || a.spaceId === b.spaceId) &&
+  (!a.categoryId || !b.categoryId || a.categoryId === b.categoryId)
+
+/** The same rule twice: same place, limit and conditions, and the same approver. */
+const twins = (a: ApprovalRuleView, b: ApprovalRuleView) =>
+  a.spaceId === b.spaceId &&
+  limitOf(a) === limitOf(b) &&
+  a.whenCoverShort === b.whenCoverShort &&
+  (a.categoryId ?? null) === (b.categoryId ?? null) &&
+  a.urgentOnly === b.urgentOnly &&
+  a.secondRoleId === b.secondRoleId
 
 /** Ranges for the rules of ONE kind, in the order shown. */
-export function ruleRanges(rules: ApprovalRuleView[], spaceName: (id: string) => string): RuleRange[] {
-  const live = rules.filter((r) => r.isActive)
-  return rules.map((r) => {
-    const from = limitOf(r)
-    const same = live.filter((o) => o.id !== r.id && o.spaceId === r.spaceId)
-    // A rule that only applies when people would be short never takes the plain range away.
-    const higher = same
-      .filter((o) => !o.whenCoverShort && (limitOf(o) ?? -1) > (from ?? -1))
-      .map((o) => limitOf(o) as number)
-    const twin = rules.findIndex(
-      (o) =>
-        o.id !== r.id &&
-        o.isActive &&
-        o.spaceId === r.spaceId &&
-        limitOf(o) === from &&
-        o.whenCoverShort === r.whenCoverShort,
-    )
-    const notIn = r.spaceId
-      ? []
-      : [...new Set(live.filter((o) => o.spaceId).map((o) => o.spaceId as string))].map(spaceName)
+export function ruleRanges(rules: ApprovalRuleView[]): RuleRange[] {
+  return rules.map((r, i) => {
+    const twin = rules.findIndex((o, j) => j < i && o.isActive && twins(o, r))
     return {
-      from,
-      to: higher.length ? Math.min(...higher) : null,
-      notIn,
-      shadowedBy: twin >= 0 && twin < rules.indexOf(r) ? twin + 1 : null,
+      from: limitOf(r),
+      alsoWith: r.isActive
+        ? rules.flatMap((o, j) =>
+            j !== i && o.isActive && o.secondRoleId && overlap(o, r) && !twins(o, r) ? [j + 1] : [],
+          )
+        : [],
+      shadowedBy: r.isActive && twin >= 0 ? twin + 1 : null,
     }
   })
 }
@@ -64,7 +62,8 @@ export interface FallThrough {
  */
 export function fallThrough(rules: ApprovalRuleView[], workspaces: { id: string; name: string }[]): FallThrough[] {
   // A rule for one asset kind, or urgent requests only, covers just part of what arrives there: it never covers the rest.
-  const live = rules.filter((r) => r.isActive && !r.whenCoverShort && !r.categoryId && !r.urgentOnly)
+  // Only a rule that asks somebody more takes items out of "first approval only" (reminder-only rules do not).
+  const live = rules.filter((r) => r.isActive && r.secondRoleId && !r.whenCoverShort && !r.categoryId && !r.urgentOnly)
   return workspaces.flatMap<FallThrough>((w) => {
     const here = live.filter((r) => !r.spaceId || r.spaceId === w.id)
     if (!here.length) return [{ id: w.id, name: w.name, upTo: null }]

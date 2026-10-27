@@ -57,6 +57,7 @@ export function DecisionPanel({
 }) {
   const { t } = useTranslation()
   const actions = approvalActionsFor(item)
+  const ruleLink = onMakeRule ? ruleLinkForItem(item) : null
   const [armed, setArmed] = useState<ApprovalActionSpec | null>(null)
   const [reason, setReason] = useState("")
   const [minutes, setMinutes] = useState("30")
@@ -137,10 +138,10 @@ export function DecisionPanel({
         </p>
       )}
 
-      {onMakeRule && ruleLinkForItem(item) && (
+      {onMakeRule && ruleLink && (
         <button
           type="button"
-          onClick={() => onMakeRule(ruleLinkForItem(item)!)}
+          onClick={() => onMakeRule(ruleLink)}
           className="inline-flex items-center gap-1.5 self-start text-[13px] font-semibold text-shell-accent hover:underline"
         >
           <Icon name="sparkles" size={15} />

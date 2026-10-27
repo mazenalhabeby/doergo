@@ -9894,6 +9894,7 @@
       "review": "Esamina",
       "needsMinutes": "Tempo extra e straordinari richiedono i minuti: aprili uno per uno.",
       "nothingToApprove": "Qui niente si approva in un colpo solo: apri ogni elemento.",
+      "partly": "Approvato — {{what}} richiede ancora {{role}}.",
       "approved": "Giornata approvata per {{name}}",
       "stopped": "Interrotto a {{what}}: {{reason}}",
       "members": "In questo giorno"
@@ -9945,16 +9946,15 @@
       "days_other": "{{count}} giorni",
       "noRuleFits": "Nessuna regola si applica",
       "doneTwo": "Fatto · 2 approvazioni",
-      "footnote": "Se si applicano due regole, vince quella dello spazio di lavoro, poi il limite più alto. L'approvazione di un amministratore chiude sempre, e nessuno dà entrambe le approvazioni.",
+      "footnote": "Vale ogni regola che corrisponde: il caso richiede tutte le approvazioni che indicano, ognuna da una persona diversa. L’approvazione di un amministratore lo chiude sempre.",
       "removed": "Regola eliminata",
       "noRoles": "Crea prima un ruolo che possa approvare.",
       "range": {
         "all": "tutti",
-        "upTo": "fino a {{to}}",
         "over": "più di {{from}}",
-        "between": "più di {{from}}, fino a {{to}}",
-        "notIn": "Non in {{names}} — hanno le loro regole",
-        "twin": "Stesso spazio e stesso limite della regola {{n}} — se ne usa solo una"
+        "twin": "Come la regola {{n}} — chiede alle stesse persone per gli stessi casi",
+        "alsoWith_one": "Anche la regola {{numbers}} vale qui — serve anche la sua approvazione",
+        "alsoWith_other": "Anche le regole {{numbers}} valgono qui — servono anche le loro approvazioni"
       },
       "workingDays_one": "{{count}} giorno lavorativo",
       "workingDays_other": "{{count}} giorni lavorativi",
@@ -10003,7 +10003,8 @@
         "hits_one": "{{count}} in 90 giorni",
         "hits_other": "{{count}} in 90 giorni",
         "makeRule": "Crea una regola come questa",
-        "fromItemAny": "Una regola come per la richiesta aperta: {{where}}, tutte."
+        "fromItemAny": "Una regola come per la richiesta aperta: {{where}}, tutte.",
+        "approver": "Seconda approvazione di {{role}} — modificabile nella tela"
       },
       "minutes_one": "{{count}} min",
       "minutes_other": "{{count}} min",
