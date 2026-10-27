@@ -241,6 +241,8 @@ export function useRulesTree(enabled: boolean) {
     roles,
     defaultRole,
     workspaces,
+    /** Which workspaces the caller manages rules in is known (always, for an every-workspace manager). */
+    workspacesKnown: !scope || spaces != null,
     change,
     add,
     remove,

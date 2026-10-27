@@ -48,6 +48,8 @@ export function WhenNode({
   const sent = useRef(stored)
   // Typed above the kind's ceiling: what is saved is the ceiling, and the editor says so.
   const [capped, setCapped] = useState(false)
+  // Typed something that is not a number: nothing is saved, the fields go back to the saved limit, and it says so.
+  const [unreadable, setUnreadable] = useState(false)
   // Follows the SAVED value only when it changes — a refetch of the same rule never wipes what is being typed.
   useEffect(() => {
     sent.current = stored
@@ -58,7 +60,14 @@ export function WhenNode({
   // Saved on Enter, on leaving the field, and when the editor closes (Escape or a click away) — never on unmount,
   // which is also what a DELETED rule does. The fields then show what was SAVED (1.5 h reads 1 h 30 min).
   const commit = () => {
-    const patch = limitPatch(rule.kind, typed)
+    const patch = typed == null ? null : limitPatch(rule.kind, typed)
+    setUnreadable(!patch)
+    if (!patch || typed == null) {
+      setCapped(false)
+      setLimit(sent.current)
+      setHm(durationFields(sent.current))
+      return
+    }
     const saved = limitPatchInput(rule.kind, patch)
     setCapped(limitCapped(rule.kind, typed))
     setLimit(saved)
@@ -67,11 +76,13 @@ export function WhenNode({
     sent.current = saved
     onChange(patch)
   }
-  // Under the fields, one line: "No limit" while they are empty (no placeholder to clip), or that it was capped.
+  // Under the fields, one line: "No limit" while they are empty (no placeholder to clip), that it was capped, or
+  // that what was typed could not be read.
   const hintId = `rule-limit-hint-${rule.id}`
   const max = limitMax(rule.kind)
-  const hint =
-    typed === ""
+  const hint = unreadable
+    ? t("approvals.tree.unreadable")
+    : typed === ""
       ? t("approvals.tree.noLimit")
       : capped && max != null
         ? t("approvals.tree.capped", {
@@ -79,16 +90,16 @@ export function WhenNode({
           })
         : null
   const hasLimit = !!RULE_LIMITS[rule.kind]
-  const field = (value: string, set: (v: string) => void, label: string, top?: number) => (
+  // Text with a number keyboard, never type="number" (rule-limit.ts readLimitNumber): a comma or a dot both read.
+  const field = (value: string, set: (v: string) => void, label: string, mode: "numeric" | "decimal") => (
     <input
-      type="number"
-      min={0}
-      max={top}
-      step="any"
-      inputMode="decimal"
+      type="text"
+      inputMode={mode}
+      autoComplete="off"
       value={value}
       onChange={(e) => {
         setCapped(false)
+        setUnreadable(false)
         set(e.target.value)
       }}
       // Hours → minutes is one value being typed: saved when focus leaves the PAIR, or the half-typed hours would
@@ -97,6 +108,7 @@ export function WhenNode({
       onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
       aria-label={label}
       aria-describedby={hintId}
+      aria-invalid={unreadable || undefined}
       className={cn(LIMIT, duration ? "w-16" : "w-24", "text-center")}
     />
   )
@@ -145,23 +157,32 @@ export function WhenNode({
                 hm.h,
                 (h) => setHm((v) => ({ ...v, h })),
                 `${t("approvals.tree.moreThan")} · ${t("approvals.tree.unit.h")}`,
-                Math.floor((max ?? 0) / 60),
+                "decimal",
               )}
               <span className="text-[13px] text-muted-foreground">{t("approvals.tree.unit.h")}</span>
               {field(
                 hm.m,
                 (m) => setHm((v) => ({ ...v, m })),
                 `${t("approvals.tree.moreThan")} · ${t("approvals.tree.unit.min")}`,
-                59,
+                "numeric",
               )}
             </>
           ) : (
-            field(limit, setLimit, t("approvals.tree.moreThan"), max)
+            field(limit, setLimit, t("approvals.tree.moreThan"), rule.kind === "expense" ? "decimal" : "numeric")
           )}
-          <span className="text-[13px] text-muted-foreground">
-            {t(`approvals.tree.unit.${rule.kind}`, { currency })}
-          </span>
-          <p id={hintId} aria-live="polite" className="w-full text-[12px] text-muted-foreground">
+          {/* A duration's fields already say h and min: overtime needs nothing after them, changed hours only how. */}
+          {rule.kind !== "overtime" && (
+            <span className="text-[13px] text-muted-foreground">
+              {rule.kind === "hours"
+                ? t("approvals.tree.changedByHand")
+                : t(`approvals.tree.unit.${rule.kind}`, { currency })}
+            </span>
+          )}
+          <p
+            id={hintId}
+            aria-live="polite"
+            className={cn("w-full text-[12px]", unreadable ? "text-destructive" : "text-muted-foreground")}
+          >
             {hint}
           </p>
         </div>

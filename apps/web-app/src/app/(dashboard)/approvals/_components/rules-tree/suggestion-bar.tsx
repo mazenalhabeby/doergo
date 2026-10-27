@@ -16,7 +16,7 @@ export interface OfferedRule {
 
 const CARD =
   "flex min-w-[260px] flex-1 items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-shell " +
-  "animate-in fade-in slide-in-from-top-1 duration-300"
+  "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-300"
 
 /**
  * The page's own reading of the last 90 days, in one line, and the rules worth adding — each one tap away.

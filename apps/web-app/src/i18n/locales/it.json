@@ -9925,14 +9925,13 @@
       "rule": "Regola {{n}}",
       "moreThan": "più di",
       "unit": {
-        "overtime": "min",
         "request": "giorni lavorativi",
         "expense": "{{currency}}",
-        "hours": "min modificati a mano",
         "noShow": "giorni di fila",
         "h": "h",
         "min": "min"
       },
+      "changedByHand": "modificati a mano",
       "coverShort": "solo se mancherebbero persone",
       "alsoBy": "Poi approvato anche da",
       "nobodySecond": "Nessuno — solo sollecitare",
@@ -9949,6 +9948,8 @@
       "hours_other": "{{count}} h",
       "days_one": "{{count}} giorno",
       "days_other": "{{count}} giorni",
+      "daysAfter_one": "{{count}} giorno",
+      "daysAfter_other": "{{count}} giorni",
       "noRuleFits": "Nessuna regola si applica",
       "doneTwo": "Fatto · 2 approvazioni",
       "footnote": "Vale ogni regola che corrisponde: il caso richiede tutte le approvazioni che indicano, ognuna da una persona diversa. L’approvazione di un amministratore lo chiude sempre.",
@@ -9990,7 +9991,8 @@
         "everyWorkspace": "Una regola per tutti gli spazi",
         "noRule": "Nessuna regola — un'approvazione",
         "upTo": "Un'approvazione fino a {{to}}",
-        "addHere": "Aggiungi regola"
+        "addHere": "Aggiungi regola",
+        "addHereIn": "Aggiungi regola per {{name}}"
       },
       "onlyFirstDone": "Solo la prima approvazione — poi fatto",
       "smart": {
@@ -10009,7 +10011,8 @@
         "hits_other": "{{count}} in 90 giorni",
         "makeRule": "Crea una regola come questa",
         "fromItemAny": "Una regola come per la richiesta aperta: {{where}}, tutte.",
-        "approver": "Seconda approvazione di {{role}} — modificabile nella tela"
+        "approver": "Seconda approvazione di {{role}} — modificabile nella tela",
+        "notYours": "La regola della richiesta aperta non viene proposta: qui non si possono aggiungere regole per {{where}}."
       },
       "assetKind": "Tipo di bene",
       "anyAssetKind": "Qualsiasi tipo di bene",
@@ -10024,7 +10027,8 @@
       "daysInARow_one": "{{count}} giorno di fila",
       "daysInARow_other": "{{count}} giorni di fila",
       "noLimit": "Nessun limite — tutti",
-      "capped": "Portato al limite massimo: {{max}}"
+      "capped": "Portato al limite massimo: {{max}}",
+      "unreadable": "Numero non leggibile — il limite resta com'era."
     },
     "pressAgain": "Premi di nuovo per confermare"
   },

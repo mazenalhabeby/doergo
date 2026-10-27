@@ -9925,14 +9925,13 @@
       "rule": "Regla {{n}}",
       "moreThan": "más de",
       "unit": {
-        "overtime": "min",
         "request": "días laborables",
         "expense": "{{currency}}",
-        "hours": "min cambiados a mano",
         "noShow": "días seguidos",
         "h": "h",
         "min": "min"
       },
+      "changedByHand": "cambiados a mano",
       "coverShort": "solo si faltaría gente",
       "alsoBy": "Luego también lo aprueba",
       "nobodySecond": "Nadie — solo recordar",
@@ -9949,6 +9948,8 @@
       "hours_other": "{{count}} h",
       "days_one": "{{count}} día",
       "days_other": "{{count}} días",
+      "daysAfter_one": "{{count}} día",
+      "daysAfter_other": "{{count}} días",
       "noRuleFits": "Ninguna regla aplica",
       "doneTwo": "Listo · 2 aprobaciones",
       "footnote": "Se aplica cada regla que encaja: el caso necesita todas las aprobaciones que nombran, cada una de una persona distinta. La aprobación de un administrador siempre lo cierra.",
@@ -9990,7 +9991,8 @@
         "everyWorkspace": "Una regla para todos los espacios",
         "noRule": "Sin regla — una aprobación",
         "upTo": "Una aprobación hasta {{to}}",
-        "addHere": "Añadir regla"
+        "addHere": "Añadir regla",
+        "addHereIn": "Añadir regla para {{name}}"
       },
       "onlyFirstDone": "Solo la primera aprobación — y listo",
       "smart": {
@@ -10009,7 +10011,8 @@
         "hits_other": "{{count}} en 90 días",
         "makeRule": "Crear una regla como esta",
         "fromItemAny": "Una regla como la de la solicitud abierta: {{where}}, todas.",
-        "approver": "Segunda aprobación de {{role}} — se cambia en el lienzo"
+        "approver": "Segunda aprobación de {{role}} — se cambia en el lienzo",
+        "notYours": "No se ofrece la regla de la solicitud abierta: no puede añadir reglas en {{where}}."
       },
       "assetKind": "Tipo de activo",
       "anyAssetKind": "Cualquier tipo de activo",
@@ -10024,7 +10027,8 @@
       "daysInARow_one": "{{count}} día seguido",
       "daysInARow_other": "{{count}} días seguidos",
       "noLimit": "Sin límite — todos",
-      "capped": "Ajustado al límite máximo: {{max}}"
+      "capped": "Ajustado al límite máximo: {{max}}",
+      "unreadable": "No se puede leer ese número — el límite sigue como estaba."
     },
     "pressAgain": "Pulsa otra vez para confirmar"
   },

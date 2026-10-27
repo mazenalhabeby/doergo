@@ -15,7 +15,7 @@ import { formatRequestMinutes } from "@/lib/requests"
   overtime and changed hours as hours + minutes, leave in working days, missed clock-ins in days in a row,
   expenses in money. Stored as minutes / days / cents — a duration is kept in whole minutes and shown as hours
   + minutes, so what is saved reads back exactly (decimal hours turned 50 min into "0.8 h", saved again as 48);
-  decimal hours may still be TYPED ("1.5" h is 90 min) and then read back as 1 h 30 min.
+  decimal hours may still be TYPED ("1.5" or "1,5" h is 90 min) and then read back as 1 h 30 min.
 */
 
 /** A limit that is a duration (stored in minutes): typed in two fields, hours and minutes, and read as "1 h 30 min". */
@@ -40,15 +40,27 @@ export function durationFields(minutes: string): { h: string; m: string } {
 }
 
 /**
- * The hours and minutes fields back into total minutes. Hours may be decimal ("1.5" is 90 min); a negative or
- * unreadable field counts as nothing; a total of 0 — both empty, or only zeros — is no limit ("").
+ * A number as the office types it, with a comma or a dot as the decimal separator ("1,5" is "1.5", "12,50" is
+ * 12.5): "" for an empty field, null for one that cannot be read (letters, two separators, a minus sign). The
+ * fields are text, not number inputs: Safari reports a decimal comma in a number input as EMPTY, and an empty
+ * field is "no limit" — "1,5" would have saved a rule that catches everything.
  */
-export function durationValue(h: string, m: string): string {
-  const part = (v: string) => {
-    const n = Number(v.trim().replace(",", "."))
-    return v.trim() === "" || !Number.isFinite(n) || n < 0 ? 0 : n
-  }
-  const total = Math.round(part(h) * 60 + part(m))
+export function readLimitNumber(v: string): number | "" | null {
+  const s = v.trim()
+  if (s === "") return ""
+  if (!/^(\d+[.,]?\d*|[.,]\d+)$/.test(s)) return null
+  return Number(s.replace(",", "."))
+}
+
+/**
+ * The hours and minutes fields back into total minutes. Hours may be decimal ("1.5" or "1,5" is 90 min); an empty
+ * field counts as nothing; a total of 0 — both empty, or only zeros — is no limit (""). Null when either field
+ * cannot be read: never "no limit".
+ */
+export function durationValue(h: string, m: string): string | null {
+  const [hours, minutes] = [readLimitNumber(h), readLimitNumber(m)]
+  if (hours === null || minutes === null) return null
+  const total = Math.round((hours || 0) * 60 + (minutes || 0))
   return total > 0 ? String(total) : ""
 }
 
@@ -62,10 +74,14 @@ export function limitFields(kind: RuleKind, stored: number | null): Partial<Appr
   }
 }
 
-/** What to save for a typed value (total minutes / days / money), capped at the kind's ceiling. */
-export function limitPatch(kind: RuleKind, v: string): Partial<ApprovalRuleInput> {
-  const typed = v.trim() === "" ? null : Math.max(0, Number(v))
-  if (typed == null || !Number.isFinite(typed)) return limitFields(kind, null)
+/**
+ * What to save for a typed value (total minutes / days / money), capped at the kind's ceiling. Null when it
+ * cannot be read — the saved limit then stays; only an EMPTY field removes it.
+ */
+export function limitPatch(kind: RuleKind, v: string): Partial<ApprovalRuleInput> | null {
+  const typed = readLimitNumber(v)
+  if (typed === null) return null
+  if (typed === "") return limitFields(kind, null)
   const stored = Math.round(kind === "expense" ? typed * 100 : typed)
   return limitFields(kind, Math.min(stored, RULE_LIMITS[kind]?.max ?? stored))
 }
@@ -80,8 +96,8 @@ export function limitMax(kind: RuleKind): number | undefined {
 /** Was the typed value above the kind's ceiling (so what is saved is the ceiling, not what was typed)? */
 export function limitCapped(kind: RuleKind, v: string): boolean {
   const max = limitMax(kind)
-  const typed = Number(v)
-  return v.trim() !== "" && max != null && Number.isFinite(typed) && typed > max
+  const typed = readLimitNumber(v)
+  return typeof typed === "number" && max != null && typed > max
 }
 
 /** What a patch from `limitPatch` saves, back in the field's own form ("" = no limit). */

@@ -28,6 +28,7 @@ const AddAttendanceDialog = dynamic(
 )
 
 type Choice = "excuse" | "absent"
+const CHOICES: Choice[] = ["excuse", "absent"]
 
 /**
  * A missed shift, decided with an answer that CLOSES it (shared attendance/no-show.ts):
@@ -80,31 +81,53 @@ export function NoShowDecision({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm font-semibold text-foreground">{t("approvals.noShow.whatHappened")}</p>
+      <p id="noshow-what" className="text-sm font-semibold text-foreground">
+        {t("approvals.noShow.whatHappened")}
+      </p>
 
-      <ChoiceCard
-        selected={choice === "excuse"}
-        onSelect={() => setChoice("excuse")}
-        title={t("approvals.actions.excuse")}
-        help={t("approvals.noShow.excusedHelp")}
+      {/* One radio group: Tab lands on it once (the chosen answer, else the first), the arrows move the answer. */}
+      <div
+        role="radiogroup"
+        aria-labelledby="noshow-what"
+        className="flex flex-col gap-3"
+        onKeyDown={(e) => {
+          const at = CHOICES.indexOf((e.target as HTMLElement).dataset.choice as Choice)
+          const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key]
+          if (at < 0 || !step) return
+          e.preventDefault()
+          const next = CHOICES[(at + step + CHOICES.length) % CHOICES.length]!
+          setChoice(next)
+          e.currentTarget.querySelector<HTMLElement>(`[data-choice="${next}"]`)?.focus()
+        }}
       >
-        {choice === "excuse" && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {NO_SHOW_EXCUSE_REASONS.map((r) => (
-              <ChoiceChip key={r} type="button" on={reasonCode === r} onClick={() => setReasonCode(r)}>
-                {t(`approvals.noShow.reasons.${r}`)}
-              </ChoiceChip>
-            ))}
-          </div>
-        )}
-      </ChoiceCard>
+        <ChoiceCard
+          value="excuse"
+          focusable={choice !== "absent"}
+          selected={choice === "excuse"}
+          onSelect={() => setChoice("excuse")}
+          title={t("approvals.actions.excuse")}
+          help={t("approvals.noShow.excusedHelp")}
+        >
+          {choice === "excuse" && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {NO_SHOW_EXCUSE_REASONS.map((r) => (
+                <ChoiceChip key={r} type="button" on={reasonCode === r} onClick={() => setReasonCode(r)}>
+                  {t(`approvals.noShow.reasons.${r}`)}
+                </ChoiceChip>
+              ))}
+            </div>
+          )}
+        </ChoiceCard>
 
-      <ChoiceCard
-        selected={choice === "absent"}
-        onSelect={() => setChoice("absent")}
-        title={t("approvals.actions.absent")}
-        help={t("approvals.noShow.absentHelp")}
-      />
+        <ChoiceCard
+          value="absent"
+          focusable={choice === "absent"}
+          selected={choice === "absent"}
+          onSelect={() => setChoice("absent")}
+          title={t("approvals.actions.absent")}
+          help={t("approvals.noShow.absentHelp")}
+        />
+      </div>
 
       {prefill && (
         <AddAttendanceDialog
@@ -164,12 +187,17 @@ export function NoShowDecision({
 }
 
 function ChoiceCard({
+  value,
+  focusable,
   selected,
   onSelect,
   title,
   help,
   children,
 }: {
+  value: Choice
+  /** The one answer Tab stops on (roving tabindex). */
+  focusable: boolean
   selected: boolean
   onSelect: () => void
   title: string
@@ -180,7 +208,8 @@ function ChoiceCard({
     <div
       role="radio"
       aria-checked={selected}
-      tabIndex={0}
+      data-choice={value}
+      tabIndex={focusable ? 0 : -1}
       onClick={onSelect}
       onKeyDown={(e) => {
         if (e.key === " " || e.key === "Enter") {

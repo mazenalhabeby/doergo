@@ -69,8 +69,11 @@ export function RulePart({
     }),
     ...missing,
   ]
-  const wait = (h: number) =>
-    h % 24 ? t("approvals.tree.hours", { count: h }) : t("approvals.tree.days", { count: h / 24 })
+  // A wait alone ("2 Tage" in a list) or inside a sentence ("nach 2 Tagen" — German takes another case there).
+  const wait = (h: number, inSentence = false) =>
+    h % 24
+      ? t("approvals.tree.hours", { count: h })
+      : t(inSentence ? "approvals.tree.daysAfter" : "approvals.tree.days", { count: h / 24 })
   // The usual waits, plus whatever this rule already has (set elsewhere, or before the list changed).
   const hourChoices = [...new Set([...HOURS, rule.remindAfterHours, rule.escalateAfterHours])]
     .filter((h): h is number => h != null)
@@ -82,8 +85,10 @@ export function RulePart({
   const second = named(rule.secondRoleId, rule.secondRoleName)
   const pass = named(rule.escalateRoleId, rule.escalateRoleName)
   const chase = [
-    rule.remindAfterHours != null ? t("approvals.tree.chase.remind", { after: wait(rule.remindAfterHours) }) : null,
-    pass ? t("approvals.tree.chase.pass", { role: pass.name, after: wait(rule.escalateAfterHours ?? 48) }) : null,
+    rule.remindAfterHours != null
+      ? t("approvals.tree.chase.remind", { after: wait(rule.remindAfterHours, true) })
+      : null,
+    pass ? t("approvals.tree.chase.pass", { role: pass.name, after: wait(rule.escalateAfterHours ?? 48, true) }) : null,
   ].filter(Boolean)
 
   // Switched off: the node's frame goes dashed and flat, its words keep full contrast — the head says "Off" in words.

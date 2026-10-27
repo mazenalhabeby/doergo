@@ -9925,14 +9925,13 @@
       "rule": "Rule {{n}}",
       "moreThan": "more than",
       "unit": {
-        "overtime": "min",
         "request": "working days",
         "expense": "{{currency}}",
-        "hours": "min changed by hand",
         "noShow": "days in a row",
         "h": "h",
         "min": "min"
       },
+      "changedByHand": "changed by hand",
       "coverShort": "only when people would be short",
       "alsoBy": "Then also approved by",
       "nobodySecond": "Nobody — only chase it",
@@ -9949,6 +9948,8 @@
       "hours_other": "{{count}} h",
       "days_one": "{{count}} day",
       "days_other": "{{count}} days",
+      "daysAfter_one": "{{count}} day",
+      "daysAfter_other": "{{count}} days",
       "noRuleFits": "No rule fits",
       "doneTwo": "Done · 2 approvals",
       "footnote": "Every rule that fits applies: the item needs every approver they name, each a different person. An administrator's approval always finishes it.",
@@ -9990,12 +9991,13 @@
         "everyWorkspace": "One rule for every workspace",
         "noRule": "No rule — one approval",
         "upTo": "One approval up to {{to}}",
-        "addHere": "Add rule"
+        "addHere": "Add rule",
+        "addHereIn": "Add a rule for {{name}}"
       },
       "onlyFirstDone": "Only the first approval — then done",
       "smart": {
-        "window_one": "{{count}} {{kind}} ask in the last {{days}} days",
-        "window_other": "{{count}} {{kind}} asks in the last {{days}} days",
+        "window_one": "{{count}} request ({{kind}}) in the last {{days}} days",
+        "window_other": "{{count}} requests ({{kind}}) in the last {{days}} days",
         "caught_one": "{{count}} went to a rule",
         "caught_other": "{{count}} went to a rule",
         "alone_one": "{{count}} was decided by one person",
@@ -10009,7 +10011,8 @@
         "hits_other": "{{count}} in 90 days",
         "makeRule": "Make a rule like this",
         "fromItemAny": "A rule like the one you came from: {{where}}, every one.",
-        "approver": "Second approval by {{role}} — change it on the canvas"
+        "approver": "Second approval by {{role}} — change it on the canvas",
+        "notYours": "The rule from the request you opened isn't offered: you can't add rules for {{where}}."
       },
       "assetKind": "Asset kind",
       "anyAssetKind": "Any asset kind",
@@ -10024,7 +10027,8 @@
       "daysInARow_one": "{{count}} day in a row",
       "daysInARow_other": "{{count}} days in a row",
       "noLimit": "No limit — every one",
-      "capped": "Capped at the highest limit: {{max}}"
+      "capped": "Capped at the highest limit: {{max}}",
+      "unreadable": "Couldn't read that number — the limit stays as it was."
     },
     "pressAgain": "Press again to confirm"
   },

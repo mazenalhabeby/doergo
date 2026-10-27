@@ -75,7 +75,14 @@ export function UncaughtNode({
                       : t("approvals.tree.uncaught.upTo", { to: limitText(f.upTo) })}
                   </span>
                 </span>
-                <button type="button" disabled={busy} onClick={() => onAdd(f.id)} className={ADD}>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onAdd(f.id)}
+                  // Every row's button reads "Add rule": the label names the workspace it adds one for.
+                  aria-label={t("approvals.tree.uncaught.addHereIn", { name: f.name })}
+                  className={ADD}
+                >
                   <Icon name="plus" size={14} />
                   {t("approvals.tree.uncaught.addHere")}
                 </button>

@@ -9925,14 +9925,13 @@
       "rule": "Regel {{n}}",
       "moreThan": "mehr als",
       "unit": {
-        "overtime": "Min.",
         "request": "Arbeitstage",
         "expense": "{{currency}}",
-        "hours": "Min. von Hand geändert",
         "noShow": "Tage in Folge",
         "h": "Std.",
         "min": "Min."
       },
+      "changedByHand": "von Hand geändert",
       "coverShort": "nur wenn Leute fehlen würden",
       "alsoBy": "Dann zusätzlich genehmigt von",
       "nobodySecond": "Niemand — nur nachfassen",
@@ -9948,7 +9947,9 @@
       "hours_one": "{{count}} Std.",
       "hours_other": "{{count}} Std.",
       "days_one": "{{count}} Tag",
-      "days_other": "{{count}} Tagen",
+      "days_other": "{{count}} Tage",
+      "daysAfter_one": "{{count}} Tag",
+      "daysAfter_other": "{{count}} Tagen",
       "noRuleFits": "Keine Regel passt",
       "doneTwo": "Fertig · 2 Genehmigungen",
       "footnote": "Jede passende Regel gilt: Der Fall braucht alle Genehmigungen, die sie nennen, jede von einer anderen Person. Die Genehmigung einer Administratorin oder eines Administrators schließt ihn immer ab.",
@@ -9990,7 +9991,8 @@
         "everyWorkspace": "Eine Regel für alle Arbeitsbereiche",
         "noRule": "Keine Regel — eine Genehmigung",
         "upTo": "Eine Genehmigung bis {{to}}",
-        "addHere": "Regel hinzufügen"
+        "addHere": "Regel hinzufügen",
+        "addHereIn": "Regel für {{name}} hinzufügen"
       },
       "onlyFirstDone": "Nur die erste Genehmigung — dann fertig",
       "smart": {
@@ -10009,7 +10011,8 @@
         "hits_other": "{{count}} in 90 Tagen",
         "makeRule": "Eine Regel wie diese anlegen",
         "fromItemAny": "Eine Regel wie beim geöffneten Antrag: {{where}}, alle.",
-        "approver": "Zweite Genehmigung durch {{role}} — im Plan änderbar"
+        "approver": "Zweite Genehmigung durch {{role}} — im Plan änderbar",
+        "notYours": "Die Regel wie beim geöffneten Antrag wird nicht angeboten: In {{where}} dürfen Sie keine Regeln anlegen."
       },
       "assetKind": "Anlagenart",
       "anyAssetKind": "Jede Anlagenart",
@@ -10024,7 +10027,8 @@
       "daysInARow_one": "{{count}} Tag in Folge",
       "daysInARow_other": "{{count}} Tage in Folge",
       "noLimit": "Keine Grenze — jeder Fall",
-      "capped": "Auf die höchste Grenze gesetzt: {{max}}"
+      "capped": "Auf die höchste Grenze gesetzt: {{max}}",
+      "unreadable": "Diese Zahl ist nicht lesbar — die Grenze bleibt, wie sie war."
     },
     "pressAgain": "Zum Bestätigen noch einmal drücken"
   },

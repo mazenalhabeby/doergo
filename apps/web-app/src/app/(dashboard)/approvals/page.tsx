@@ -1,10 +1,10 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { AlertTriangle, ChevronLeft, Inbox, RefreshCw, UserRoundCheck } from "lucide-react"
+import { AlertTriangle, ChevronLeft, Inbox, UserRoundCheck } from "lucide-react"
 import { APPROVAL_GROUPS, APPROVAL_KINDS, type ApprovalT, describeApproval } from "@hbcfield/shared/client"
 
-import { dateLocale, formatTimeAgo } from "@/lib/format-date"
+import { dateLocale } from "@/lib/format-date"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -17,6 +17,7 @@ import { KindRailItem } from "./_components/kind-rail-item"
 import { ApprovalRow } from "./_components/approval-row"
 import { DayRow } from "./_components/day-row"
 import { DayPanel } from "./_components/day-panel"
+import { InboxActions } from "./_components/inbox-actions"
 import { tabKeyTarget } from "./_lib/tab-keys"
 
 // Its own tab: never part of the inbox's first load; the tab's own shape while its code arrives, never a blank panel.
@@ -53,6 +54,7 @@ export default function ApprovalsPage() {
     shown,
     setTab,
     managesRules,
+    settled,
     isLoading,
     isError,
     error,
@@ -78,25 +80,12 @@ export default function ApprovalsPage() {
         tour="page-approvals"
         title={t("approvals.title")}
         subtitle={t("approvals.subtitle")}
-        // Refresh and "Updated …" are about the inbox: only on its tab (the other tabs keep themselves current).
+        // Refresh and "Updated …" are about the inbox: only on its tab (the other tabs keep themselves current),
+        // and only once the tab is known — a "?tab=rules" link must not flash the inbox's controls first.
         actions={
+          settled &&
           shown === "decide" && (
-            <>
-              {dataUpdatedAt > 0 && (
-                <span className="hidden text-sm text-muted-foreground sm:inline">
-                  {t("approvals.updated", { time: formatTimeAgo(dataUpdatedAt) })}
-                </span>
-              )}
-              <Button
-                variant="outline"
-                size="pillIcon"
-                onClick={() => refetch()}
-                disabled={isFetching}
-                aria-label={t("approvals.refresh")}
-              >
-                <RefreshCw className={cn(isFetching && "animate-spin")} />
-              </Button>
-            </>
+            <InboxActions updatedAt={dataUpdatedAt} fetching={isFetching} onRefresh={() => refetch()} />
           )
         }
       />
@@ -115,7 +104,7 @@ export default function ApprovalsPage() {
         </Notice>
       )}
 
-      {tabs.length > 1 && (
+      {settled && tabs.length > 1 && (
         <div
           role="tablist"
           aria-label={t("approvals.title")}
@@ -154,7 +143,10 @@ export default function ApprovalsPage() {
       )}
 
       <div id="approvals-panel" role="tabpanel" aria-labelledby={`approvals-tab-${shown}`}>
-        {shown === "rules" ? (
+        {/* Which tab, and who is asking, not known yet: a neutral shape — not the inbox's, which may not be the tab. */}
+        {!settled ? (
+          <TabLoading />
+        ) : shown === "rules" ? (
           <RulesTree />
         ) : shown === "stand" ? (
           <StandInsTab />

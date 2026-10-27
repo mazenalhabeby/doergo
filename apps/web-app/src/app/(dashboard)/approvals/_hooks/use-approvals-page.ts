@@ -16,6 +16,10 @@ import { useApprovalDays } from "./use-approval-days"
 
 export type ApprovalsTab = "decide" | "rules" | "stand"
 
+/** What keeps ↑ / ↓ for itself, so the inbox does not walk while the focus is in it. */
+const USES_ARROWS =
+  '[role="combobox"],[role="listbox"],[role="menu"],[role="tablist"],[role="slider"],[role="radio"],[role="radiogroup"]'
+
 /** The inbox's state: the list, the chosen kind and item, keyboard walking, and deciding. */
 export function useApprovalsPage() {
   const { t } = useTranslation()
@@ -98,7 +102,8 @@ export function useApprovalsPage() {
 
   /*
     ↑ / ↓ walk the list — a queue is worked through, not clicked through. Only on "To decide", and never while
-    the focus is in something that uses the arrows itself (a field, a select, a list box, a menu, the tabs).
+    the focus is in something that uses the arrows itself (a field, a select, a list box, a menu, the tabs, a
+    radio group such as a no-show's answers).
   */
   useEffect(() => {
     if (shown !== "decide") return
@@ -109,7 +114,7 @@ export function useApprovalsPage() {
         (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)
       )
         return
-      if (el?.closest('[role="combobox"],[role="listbox"],[role="menu"],[role="tablist"],[role="slider"]')) return
+      if (el?.closest(USES_ARROWS)) return
       if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return
       const at = visible.findIndex((i) => itemKey(i) === selected)
       const next = visible[Math.min(visible.length - 1, Math.max(0, at + (e.key === "ArrowDown" ? 1 : -1)))]
@@ -172,6 +177,8 @@ export function useApprovalsPage() {
     shown,
     setTab,
     managesRules,
+    /** The tab and the reader's access are both known — until then no tab, header action or inbox is drawn. */
+    settled: tabKnown && accessKnown,
     // Not read yet because the tab or the reader is not known: still loading, never "nothing to decide".
     isLoading: isLoading || !tabKnown || !accessKnown,
     isError,

@@ -9,6 +9,7 @@ import {
   limitPatch,
   limitPatchInput,
   limitText,
+  readLimitNumber,
 } from "../_lib/rule-limit"
 import { ruleLinkForItem } from "../_lib/rule-link"
 
@@ -35,7 +36,7 @@ describe("a duration limit — hours and minutes", () => {
   it("50 min reads as 50 min and saves back as 50", () => {
     const typed = limitInput(rule("overtime", { minMinutes: 50 }))
     expect(durationFields(typed)).toEqual({ h: "", m: "50" })
-    expect(limitPatch("overtime", durationValue("0", "50"))).toEqual({
+    expect(limitPatch("overtime", durationValue("0", "50")!)).toEqual({
       minMinutes: 50,
       minDays: null,
       minAmountCents: null,
@@ -47,7 +48,7 @@ describe("a duration limit — hours and minutes", () => {
     for (const kind of ["overtime", "hours"] as const)
       for (const n of [1, 29, 59, 60, 61, 90, 125, 1439, 1440]) {
         const { h, m } = durationFields(limitInput(rule(kind, { minMinutes: n })))
-        expect(limitPatch(kind, durationValue(h, m)).minMinutes).toBe(n)
+        expect(limitPatch(kind, durationValue(h, m)!)?.minMinutes).toBe(n)
       }
   })
 
@@ -59,7 +60,7 @@ describe("a duration limit — hours and minutes", () => {
 
   it("both fields empty is no limit; one empty field counts as 0", () => {
     expect(durationValue("", "")).toBe("")
-    expect(limitPatch("overtime", durationValue("", "")).minMinutes).toBeNull()
+    expect(limitPatch("overtime", durationValue("", "")!)?.minMinutes).toBeNull()
     expect(durationValue("2", "")).toBe("120")
     expect(durationValue("", "45")).toBe("45")
     expect(durationFields("")).toEqual({ h: "", m: "" })
@@ -69,36 +70,52 @@ describe("a duration limit — hours and minutes", () => {
     expect(durationFields("60")).toEqual({ h: "1", m: "" })
     expect(durationFields("120")).toEqual({ h: "2", m: "" })
     const { m } = durationFields("60")
-    expect(limitPatch("overtime", durationValue("", m)).minMinutes).toBeNull()
+    expect(limitPatch("overtime", durationValue("", m)!)?.minMinutes).toBeNull()
   })
 
   it("a total of 0 from zeros is no limit, never 'more than 0 min'", () => {
     expect(durationValue("0", "0")).toBe("")
     expect(durationValue("0", "")).toBe("")
-    expect(limitPatch("hours", durationValue("0", "0")).minMinutes).toBeNull()
+    expect(limitPatch("hours", durationValue("0", "0")!)?.minMinutes).toBeNull()
   })
 
-  it("decimal hours are turned into minutes; a negative field counts as nothing", () => {
+  it("decimal hours are turned into minutes, with a dot or a comma", () => {
     expect(durationValue("1.5", "")).toBe("90")
-    expect(durationValue("0.25", "5")).toBe("20")
-    expect(durationValue("-2", "")).toBe("")
-    expect(durationValue("1", "-5")).toBe("60")
-    expect(durationFields(durationValue("1.5", ""))).toEqual({ h: "1", m: "30" })
+    expect(durationValue("1,5", "")).toBe("90")
+    expect(durationValue("0,25", "5")).toBe("20")
+    expect(durationValue(" 2 ", "")).toBe("120")
+    expect(durationFields(durationValue("1,5", "")!)).toEqual({ h: "1", m: "30" })
+  })
+
+  it("an unreadable field is never 'no limit' — nothing is saved", () => {
+    for (const [h, m] of [
+      ["abc", ""],
+      ["-2", ""],
+      ["1", "-5"],
+      ["1.5.5", ""],
+      ["1,2,3", ""],
+      [",", ""],
+    ])
+      expect(durationValue(h, m)).toBeNull()
+    expect(limitPatch("overtime", "1h")).toBeNull()
+    expect(limitPatch("expense", "12€")).toBeNull()
+    expect(limitPatch("request", "drei")).toBeNull()
+    expect(limitCapped("expense", "lots")).toBe(false)
   })
 
   it("is capped at the kind's ceiling, in minutes", () => {
     expect(limitMax("overtime")).toBe(1440)
-    expect(limitPatch("overtime", durationValue("30", "0")).minMinutes).toBe(1440)
+    expect(limitPatch("overtime", durationValue("30", "0")!)?.minMinutes).toBe(1440)
   })
 
   it("says when the typed value was capped, and the field reads the saved value", () => {
-    expect(limitCapped("overtime", durationValue("30", ""))).toBe(true)
-    expect(limitCapped("overtime", durationValue("2", ""))).toBe(false)
+    expect(limitCapped("overtime", durationValue("30", "")!)).toBe(true)
+    expect(limitCapped("overtime", durationValue("2", "")!)).toBe(false)
     expect(limitCapped("overtime", "")).toBe(false)
-    const saved = limitPatchInput("overtime", limitPatch("overtime", durationValue("30", "")))
+    const saved = limitPatchInput("overtime", limitPatch("overtime", durationValue("30", "")!)!)
     expect(durationFields(saved)).toEqual({ h: "24", m: "" })
-    expect(limitPatchInput("expense", limitPatch("expense", "12.5"))).toBe("12.5")
-    expect(limitPatchInput("overtime", limitPatch("overtime", ""))).toBe("")
+    expect(limitPatchInput("expense", limitPatch("expense", "12.5")!)).toBe("12.5")
+    expect(limitPatchInput("overtime", limitPatch("overtime", "")!)).toBe("")
   })
 
   it("missed clock-ins read as days in a row", () => {
@@ -107,8 +124,19 @@ describe("a duration limit — hours and minutes", () => {
 
   it("other kinds keep their own unit", () => {
     expect(limitInput(rule("expense", { minAmountCents: 1250 }))).toBe("12.5")
-    expect(limitPatch("expense", "12.5").minAmountCents).toBe(1250)
-    expect(limitPatch("request", "3").minDays).toBe(3)
+    expect(limitPatch("expense", "12.5")?.minAmountCents).toBe(1250)
+    expect(limitPatch("request", "3")?.minDays).toBe(3)
+    expect(limitPatch("noShow", "")?.minDays).toBeNull()
+  })
+
+  it("money and whole numbers take a decimal comma too", () => {
+    expect(limitPatch("expense", "12,50")?.minAmountCents).toBe(1250)
+    expect(limitPatch("expense", ",5")?.minAmountCents).toBe(50)
+    expect(limitPatch("request", "3,0")?.minDays).toBe(3)
+    expect(limitPatch("noShow", "2,6")?.minDays).toBe(3)
+    expect(readLimitNumber("12,50")).toBe(12.5)
+    expect(readLimitNumber("  ")).toBe("")
+    expect(readLimitNumber("1 000")).toBeNull()
   })
 })
 

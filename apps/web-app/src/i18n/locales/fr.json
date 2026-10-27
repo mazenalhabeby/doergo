@@ -9925,14 +9925,13 @@
       "rule": "Règle {{n}}",
       "moreThan": "plus de",
       "unit": {
-        "overtime": "min",
         "request": "jours ouvrés",
         "expense": "{{currency}}",
-        "hours": "min modifiées à la main",
         "noShow": "jours d’affilée",
         "h": "h",
         "min": "min"
       },
+      "changedByHand": "modifiées à la main",
       "coverShort": "seulement s'il manquerait du monde",
       "alsoBy": "Puis aussi approuvé par",
       "nobodySecond": "Personne — seulement relancer",
@@ -9949,6 +9948,8 @@
       "hours_other": "{{count}} h",
       "days_one": "{{count}} jour",
       "days_other": "{{count}} jours",
+      "daysAfter_one": "{{count}} jour",
+      "daysAfter_other": "{{count}} jours",
       "noRuleFits": "Aucune règle ne s'applique",
       "doneTwo": "Terminé · 2 approbations",
       "footnote": "Chaque règle qui correspond s’applique : le cas demande toutes les approbations qu’elles nomment, chacune par une personne différente. L’approbation d’un administrateur le termine toujours.",
@@ -9990,7 +9991,8 @@
         "everyWorkspace": "Une règle pour tous les espaces",
         "noRule": "Aucune règle — une approbation",
         "upTo": "Une approbation jusqu'à {{to}}",
-        "addHere": "Ajouter une règle"
+        "addHere": "Ajouter une règle",
+        "addHereIn": "Ajouter une règle pour {{name}}"
       },
       "onlyFirstDone": "Seulement la première approbation — puis terminé",
       "smart": {
@@ -10009,7 +10011,8 @@
         "hits_other": "{{count}} en 90 jours",
         "makeRule": "Créer une règle comme celle-ci",
         "fromItemAny": "Une règle comme pour la demande ouverte : {{where}}, toutes.",
-        "approver": "Seconde approbation par {{role}} — modifiable sur le canevas"
+        "approver": "Seconde approbation par {{role}} — modifiable sur le canevas",
+        "notYours": "La règle de la demande ouverte n'est pas proposée : vous ne pouvez pas ajouter de règles pour {{where}}."
       },
       "assetKind": "Type d’équipement",
       "anyAssetKind": "Tout type d’équipement",
@@ -10024,7 +10027,8 @@
       "daysInARow_one": "{{count}} jour d’affilée",
       "daysInARow_other": "{{count}} jours d’affilée",
       "noLimit": "Sans limite — tous",
-      "capped": "Ramené à la limite maximale : {{max}}"
+      "capped": "Ramené à la limite maximale : {{max}}",
+      "unreadable": "Nombre illisible — la limite reste inchangée."
     },
     "pressAgain": "Appuyez à nouveau pour confirmer"
   },

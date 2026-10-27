@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { isRuleKind, type RuleInsights, type RuleKind } from "@hbcfield/shared/client"
 import type { OfferedRule } from "../_components/rules-tree/suggestion-bar"
@@ -10,6 +10,7 @@ import type { OfferedRule } from "../_components/rules-tree/suggestion-bar"
  * asked for ("make a rule like this", read once from the link — it also picks the kind). "Not now" hides
  * an offer for this visit. An offer the caller could not add AS OFFERED is not made: a manager of some
  * workspaces never sees "every workspace" (it would have been added in one of theirs, without saying so).
+ * The item's offer then leaves one line saying why — the link switched the kind, and nothing else would.
  */
 export function useRuleOffers({
   kind,
@@ -18,6 +19,7 @@ export function useRuleOffers({
   spaceName,
   limitText,
   mayOffer,
+  ready,
 }: {
   kind: RuleKind
   setKind: (k: RuleKind) => void
@@ -26,6 +28,8 @@ export function useRuleOffers({
   limitText: (v: number) => string
   /** May the caller add a rule for this workspace (null = every workspace)? */
   mayOffer: (spaceId: string | null) => boolean
+  /** Is it known yet what the caller may add (their workspaces read)? Until then nothing is said to be refused. */
+  ready: boolean
 }) {
   const { t } = useTranslation()
   const [fromItem, setFromItem] = useState<{ kind: RuleKind; spaceId: string | null; limit: number | null } | null>(
@@ -52,8 +56,11 @@ export function useRuleOffers({
     })
   }, [setKind])
 
+  const where = useCallback(
+    (id: string | null) => (id ? spaceName(id) : t("approvals.rules.everywhere")),
+    [spaceName, t],
+  )
   const offers = useMemo<OfferedRule[]>(() => {
-    const where = (id: string | null) => (id ? spaceName(id) : t("approvals.rules.everywhere"))
     const out: OfferedRule[] = []
     if (fromItem && fromItem.kind === kind)
       out.push({
@@ -73,11 +80,16 @@ export function useRuleOffers({
         why: t("approvals.tree.smart.suggest", { count: s.count, limit: limitText(s.limit), where: where(s.spaceId) }),
       })
     return out.filter((o) => mayOffer(o.spaceId) && !hidden.has(`${kind}:${o.key}`))
-  }, [fromItem, insights, kind, hidden, spaceName, limitText, mayOffer, t])
+  }, [fromItem, insights, kind, hidden, where, limitText, mayOffer, t])
+  // The rule the opened item asked for, refused for this caller: said once, until "Not now" or another kind.
+  const notYours =
+    ready && fromItem && fromItem.kind === kind && !mayOffer(fromItem.spaceId) && !hidden.has(`${kind}:item`)
+      ? t("approvals.tree.smart.notYours", { where: where(fromItem.spaceId) })
+      : null
 
   const dismiss = (o: OfferedRule) => {
     setHidden((h) => new Set(h).add(`${kind}:${o.key}`))
     if (o.key === "item") setFromItem(null)
   }
-  return { offers, dismiss }
+  return { offers, dismiss, notYours }
 }

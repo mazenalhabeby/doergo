@@ -84,13 +84,14 @@ export function RulesTree() {
     (spaceId: string | null) => everywhere || (!!spaceId && workspaces.some((w) => w.id === spaceId)),
     [everywhere, workspaces],
   )
-  const { offers, dismiss } = useRuleOffers({
+  const { offers, dismiss, notYours } = useRuleOffers({
     kind: tree.kind,
     setKind: tree.setKind,
     insights: tree.insights,
     spaceName,
     limitText: showLimit,
     mayOffer,
+    ready: tree.workspacesKnown,
   })
 
   // The canvas's three boxes, each made again only when what it shows changes.
@@ -130,6 +131,12 @@ export function RulesTree() {
   return (
     <div className="flex flex-col gap-3">
       <p className="max-w-[720px] text-sm text-muted-foreground">{t("approvals.tree.intro")}</p>
+      {notYours && (
+        <p role="status" className="flex items-center gap-2 text-[13px] text-muted-foreground">
+          <Icon name="alertLine" size={15} />
+          {notYours}
+        </p>
+      )}
       <SuggestionBar
         insights={tree.insights?.kind === tree.kind ? tree.insights : undefined}
         kindLabel={kindName(tree.kind)}

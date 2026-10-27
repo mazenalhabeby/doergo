@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useMemo, type FocusEvent, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react"
 import {
   Background,
   BackgroundVariant,
@@ -19,7 +19,9 @@ import "@xyflow/react/dist/style.css"
 import type { ApprovalRuleInput, ApprovalRuleView } from "@hbcfield/shared/client"
 import type { RuleRange } from "../../_lib/rule-range"
 import type { RuleRole } from "../../_hooks/use-rules-tree"
+import { useMediaQuery } from "@/hooks/use-media-query"
 import { useOneFingerScrolls } from "../../_hooks/use-one-finger-scrolls"
+import { useRevealFocus } from "../../_hooks/use-reveal-focus"
 import { RulePart, type RulePartName } from "./rule-step"
 
 /** What every rule node needs, shared once instead of copied into each node's data. */
@@ -45,6 +47,9 @@ const BoxCtx = createContext<Boxes | null>(null)
 type PartData = { ruleId: string; part: RulePartName }
 type BoxData = { box: keyof Boxes }
 
+/** A node arrives with a short zoom — not for anybody whose system asks for reduced motion. */
+const ARRIVE = "nodrag nopan motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-300"
+const REDUCED_MOTION = "(prefers-reduced-motion: reduce)"
 const HANDLE = "!size-2 !min-h-0 !min-w-0 !border-2 !border-[hsl(var(--muted-foreground)/0.5)] !bg-card"
 
 function Ports({ left = true, right = true }: { left?: boolean; right?: boolean }) {
@@ -62,7 +67,7 @@ function PartNode({ data }: NodeProps<Node<PartData>>) {
   if (!ctx || i < 0) return null
   const rule = ctx.rules[i]
   return (
-    <div className="nodrag nopan animate-in fade-in zoom-in-95 duration-300">
+    <div className={ARRIVE}>
       {data.part !== "head" && <Ports right={data.part !== "done"} />}
       <RulePart
         part={data.part}
@@ -86,7 +91,7 @@ function BoxNode({ data, id }: NodeProps<Node<BoxData>>) {
   // The box's content is read from the context, so the layout never has to change for it to change.
   const boxes = useContext(BoxCtx)
   return (
-    <div className="nodrag nopan animate-in fade-in zoom-in-95 duration-300">
+    <div className={ARRIVE}>
       <Ports left={id !== "start"} right={id === "start" || id === "uncaught"} />
       {boxes?.[data.box]}
     </div>
@@ -105,6 +110,9 @@ const COLUMNS: { part: RulePartName; x: number }[] = [
   { part: "done", x: 1074 },
 ]
 const ROW = 132
+const FRAME =
+  "w-full overflow-hidden rounded-[22px] border border-border bg-shell-chip " +
+  "max-md:max-h-[60vh] [@media(any-pointer:coarse)]:max-h-[60vh]"
 /** The zoom buttons in the theme's colours (the library draws them white). */
 const CONTROLS =
   "!overflow-hidden !rounded-xl !border !border-border !shadow-shell [&>button]:!border-border [&>button]:!bg-card " +
@@ -116,7 +124,11 @@ const EDGE = { stroke: "hsl(var(--muted-foreground) / 0.45)", strokeWidth: 1.6 }
  * Reads only the SHAPE (which rules, on or off, is there an uncaught row) — editing a rule moves no node; the
  * nodes read the rule itself from the context.
  */
-function layout(rules: { id: string; isActive: boolean }[], hasUncaught: boolean): { nodes: Node[]; edges: Edge[] } {
+function layout(
+  rules: { id: string; isActive: boolean }[],
+  hasUncaught: boolean,
+  still: boolean,
+): { nodes: Node[]; edges: Edge[] } {
   const rows = rules.length + (hasUncaught ? 1 : 0) + 1
   const nodes: Node[] = [
     { id: "start", type: "box", position: { x: 0, y: ((rows - 1) * ROW) / 2 - 20 }, data: { box: "start" } },
@@ -138,7 +150,8 @@ function layout(rules: { id: string; isActive: boolean }[], hasUncaught: boolean
         id: `${from}>${id}`,
         source: from,
         target: id,
-        animated: r.isActive && c > 0,
+        // Flowing while the rule is on — still for reduced motion (the library's dash animation never stops).
+        animated: r.isActive && c > 0 && !still,
         style: EDGE,
         type: c === 0 ? "default" : "straight",
       })
@@ -166,7 +179,7 @@ const READABLE = 0.7
 const NARROW = 768
 
 /** Re-frames the view, animated, whenever the set of nodes changes (another type, a rule added or removed). */
-function Refit({ signature }: { signature: string }) {
+function Refit({ signature, still }: { signature: string; still: boolean }) {
   const flow = useReactFlow()
   const store = useStoreApi()
   useEffect(() => {
@@ -174,54 +187,28 @@ function Refit({ signature }: { signature: string }) {
       const { width, height } = store.getState()
       const start = flow.getNode("start")
       if ((width || window.innerWidth) >= NARROW || !start)
-        return void flow.fitView({ duration: 450, padding: 0.08, maxZoom: 1, minZoom: READABLE })
+        return void flow.fitView({ duration: still ? 0 : 450, padding: 0.08, maxZoom: 1, minZoom: READABLE })
       // The start at the left edge, its middle at the middle: the first rules beside it, the rest a pan away.
       const middle = start.position.y + (start.measured?.height ?? 100) / 2
-      void flow.setViewport({ x: 16, y: (height || 380) / 2 - middle * READABLE, zoom: READABLE }, { duration: 450 })
+      void flow.setViewport(
+        { x: 16, y: (height || 380) / 2 - middle * READABLE, zoom: READABLE },
+        { duration: still ? 0 : 450 },
+      )
     })
     return () => cancelAnimationFrame(id)
-  }, [signature, flow, store])
+  }, [signature, still, flow, store])
   return null
 }
 
 /**
- * Keyboard: Tab may land on a control inside a node that is off screen (the nodes themselves take no focus).
- * The focused node is brought into view — and the browser's own scroll of the clipped canvas, which would
- * leave it drawn out of place, is undone.
+ * The canvas's frame: its height (at most 60% of the screen on a phone or any touch screen — the page must stay
+ * scrollable past it), and the focus that follows the keyboard.
  */
-function useRevealFocus() {
-  const flow = useReactFlow()
-  return useCallback(
-    (e: FocusEvent<HTMLDivElement>) => {
-      for (let el = e.target as HTMLElement | null; el && el !== e.currentTarget; el = el.parentElement)
-        if (el.scrollTop || el.scrollLeft) el.scrollTo(0, 0)
-      const id = (e.target as HTMLElement).closest<HTMLElement>(".react-flow__node")?.dataset.id
-      const node = id ? flow.getInternalNode(id) : undefined
-      if (!node) return
-      const { x, y } = node.internals.positionAbsolute
-      const w = node.measured.width ?? 0
-      const h = node.measured.height ?? 0
-      const view = flow.getViewport()
-      const box = e.currentTarget.getBoundingClientRect()
-      const [left, top] = [x * view.zoom + view.x, y * view.zoom + view.y]
-      if (left >= 0 && top >= 0 && left + w * view.zoom <= box.width && top + h * view.zoom <= box.height) return
-      void flow.setCenter(x + w / 2, y + h / 2, { zoom: view.zoom, duration: 300 })
-    },
-    [flow],
-  )
-}
-
-/** The canvas's frame: its height (at most 60% of a phone's screen), and the focus that follows the keyboard. */
 function Frame({ height, children }: { height: number; children: ReactNode }) {
   const reveal = useRevealFocus()
   const ref = useOneFingerScrolls()
   return (
-    <div
-      ref={ref}
-      className="w-full overflow-hidden rounded-[22px] border border-border bg-shell-chip max-md:max-h-[60vh]"
-      style={{ height }}
-      onFocusCapture={reveal}
-    >
+    <div ref={ref} className={FRAME} style={{ height }} onFocusCapture={reveal}>
       {children}
     </div>
   )
@@ -236,9 +223,10 @@ export function RulesCanvas(props: {
   kind: string
 }) {
   const { ctx, start, uncaught, add, kind } = props
+  const still = useMediaQuery(REDUCED_MOTION)
   const shape = ctx.rules.map((r) => `${r.id}${r.isActive ? "" : "-"}`).join(",") + (uncaught ? "|u" : "")
   // eslint-disable-next-line react-hooks/exhaustive-deps -- the shape string IS what the layout reads
-  const { nodes, edges } = useMemo(() => layout(ctx.rules, !!uncaught), [shape])
+  const { nodes, edges } = useMemo(() => layout(ctx.rules, !!uncaught, still), [shape, still])
   const signature = `${kind}:${ctx.rules.map((r) => r.id).join(",")}:${uncaught ? 1 : 0}`
   const boxes = useMemo(() => ({ start, uncaught, add }), [start, uncaught, add])
   return (
@@ -272,7 +260,7 @@ export function RulesCanvas(props: {
                 color="hsl(var(--muted-foreground) / 0.25)"
               />
               <Controls showInteractive={false} className={CONTROLS} />
-              <Refit signature={signature} />
+              <Refit signature={signature} still={still} />
             </ReactFlow>
           </Frame>
         </ReactFlowProvider>
