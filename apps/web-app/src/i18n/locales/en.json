@@ -10002,7 +10002,8 @@
         "notNow": "Not now",
         "hits_one": "{{count}} in 90 days",
         "hits_other": "{{count}} in 90 days",
-        "makeRule": "Make a rule like this"
+        "makeRule": "Make a rule like this",
+        "fromItemAny": "A rule like the one you came from: {{where}}, every one."
       },
       "minutes_one": "{{count}} min",
       "minutes_other": "{{count}} min",

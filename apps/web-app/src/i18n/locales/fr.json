@@ -10002,7 +10002,8 @@
         "notNow": "Pas maintenant",
         "hits_one": "{{count}} en 90 jours",
         "hits_other": "{{count}} en 90 jours",
-        "makeRule": "Créer une règle comme celle-ci"
+        "makeRule": "Créer une règle comme celle-ci",
+        "fromItemAny": "Une règle comme pour la demande ouverte : {{where}}, toutes."
       },
       "minutes_one": "{{count}} min",
       "minutes_other": "{{count}} min",

@@ -35,6 +35,8 @@ export function useRuleOffers({
     if (!isRuleKind(k)) return
     const limit = q.get("limit")
     setKind(k)
+    // Only a link from an item offers a rule; a plain link to a kind just opens it.
+    if (!q.get("space") && !limit) return
     setFromItem({
       kind: k,
       spaceId: q.get("space"),
@@ -50,10 +52,10 @@ export function useRuleOffers({
         key: "item",
         spaceId: fromItem.spaceId,
         limit: fromItem.limit,
-        why: t("approvals.tree.smart.fromItem", {
-          where: where(fromItem.spaceId),
-          limit: fromItem.limit != null ? limitText(fromItem.limit) : t("approvals.tree.range.all"),
-        }),
+        why:
+          fromItem.limit != null
+            ? t("approvals.tree.smart.fromItem", { where: where(fromItem.spaceId), limit: limitText(fromItem.limit) })
+            : t("approvals.tree.smart.fromItemAny", { where: where(fromItem.spaceId) }),
       })
     for (const s of insights?.kind === kind ? insights.suggestions : [])
       out.push({
