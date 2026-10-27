@@ -265,6 +265,8 @@ export class EntryEditService {
       leaves the entry automatic: when the whole change from what was clocked is past a rule that asks for more
       people, the entry waits for approval again — through the approve path, which runs the rule's steps.
     */
+    // Approvals already given were for the OLD times: an edit starts the office rules' approvals again.
+    if (timesChanged) await this.rules.clear(data.organizationId, 'hours', entry.id);
     if (timesChanged && newClockOut && entry.approvalStatus !== 'REJECTED') {
       const minutes = handChangedMinutes({
         isEdited: true,

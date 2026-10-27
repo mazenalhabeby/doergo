@@ -2703,7 +2703,7 @@ model ApprovalStep {
   kind           String
   /// The id the kind's route takes (a time entry, a time-off request, an expense).
   itemId         String
-  /// The first rule that applied (its reminders and escalation; switching it off or deleting it closes the step).
+  /// The first rule that applied when it opened (for the record; every decision recomputes what the rules ask now).
   ruleId         String
   firstById      String
   firstAt        DateTime  @default(now())

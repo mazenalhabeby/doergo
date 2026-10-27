@@ -1,24 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { ABSENCE_WHERE, personName, type RuleFacts, type RuleKind } from '@hbcfield/shared';
+import { personName, type RuleKind } from '@hbcfield/shared';
 import { PrismaService } from '@hbcfield/shared';
+export type { RuleItem, RuleItemWindow } from './rule-items';
 import { CoverService } from '../../technicians/cover.service';
+import { OutsideShiftService } from '../../attendance/extra-time/outside-shift.service';
+import { REQUEST_RULE_SELECT, requestRuleFacts, requestsCoverShort } from './request-rule-facts';
+import { inSpaces, type RuleItem, type RuleItemWindow } from './rule-items';
 import { MAX_ITEMS, clientRequestItems, hoursItems, namesOf, noShowItems, proposalItems } from './rule-facts-kinds';
-
-/** One item a rule could apply to, as a rule reads it. */
-export interface RuleItem {
-  itemId: string;
-  since: Date;
-  subjectId: string | null;
-  subjectName: string;
-  facts: RuleFacts;
-}
-
-/**
- * Which window of items to read: still WAITING since before a moment (the "nobody answers" sweep), or
- * EVERY item raised since a day, decided or not (what a rule would have touched — the rules page's numbers).
- */
-export type RuleItemWindow = { waitingBefore: Date; since?: never } | { since: Date; waitingBefore?: never };
 
 /**
  * The items of one kind as office rules read them — the ONE place a kind's facts (workspace, minutes, days,
@@ -43,37 +32,43 @@ export class RuleFactsReader {
           ...(window.since ? {} : { status: 'PENDING' as const }),
           createdAt: created,
           technician: { organizationId, isActive: true },
+          ...(window.spaceIds
+            ? {
+                OR: [
+                  { spaceId: { in: window.spaceIds } },
+                  { spaceId: null, technician: { spaceAssignments: { some: { spaceId: { in: window.spaceIds } } } } },
+                ],
+              }
+            : {}),
         },
         select: {
-          id: true,
+          ...REQUEST_RULE_SELECT,
           createdAt: true,
-          startDate: true,
-          endDate: true,
-          workingDays: true,
-          kind: true,
-          spaceId: true,
-          technicianId: true,
-          technician: { select: { firstName: true, lastName: true, spaceAssignments: { select: { spaceId: true } } } },
+          technician: { select: { firstName: true, lastName: true, ...REQUEST_RULE_SELECT.technician.select } },
         },
         orderBy: { createdAt: 'desc' },
         take: MAX_ITEMS,
       });
-      const cover = needCover ? await this.coverShort(organizationId, rows) : new Map<string, boolean>();
+      // CoverService lives with the technicians; asked through the container, never imported into this module.
+      const cover = needCover
+        ? await requestsCoverShort(this.moduleRef.get(CoverService, { strict: false }), organizationId, rows)
+        : new Map<string, boolean>();
       return rows.map((t) => ({
         itemId: t.id,
         since: t.createdAt,
         subjectId: t.technicianId,
         subjectName: personName(t.technician),
-        facts: {
-          spaceIds: t.spaceId ? [t.spaceId] : t.technician.spaceAssignments.map((a) => a.spaceId),
-          days: t.workingDays ?? Math.round((t.endDate.getTime() - t.startDate.getTime()) / 86_400_000) + 1,
-          coverShort: cover.get(t.id) ?? false,
-        },
+        facts: requestRuleFacts(t, cover.get(t.id) ?? false),
       }));
     }
     if (kind === 'expense') {
       const rows = await this.prisma.assetMoney.findMany({
-        where: { organizationId, ...(window.since ? {} : { status: 'SUBMITTED' as const }), createdAt: created },
+        where: {
+          organizationId,
+          ...(window.since ? {} : { status: 'SUBMITTED' as const }),
+          createdAt: created,
+          ...(window.spaceIds ? { asset: { category: { spaceId: { in: window.spaceIds } } } } : {}),
+        },
         select: { id: true, createdAt: true, amountCents: true, authorId: true, assetId: true },
         orderBy: { createdAt: 'desc' },
         take: MAX_ITEMS,
@@ -99,9 +94,10 @@ export class RuleFactsReader {
     // Overtime: the formal round waiting for a leader — keyed by its shift, like the second step.
     const rows = await this.prisma.overtimeRequest.findMany({
       where: window.since
-        ? { organizationId, createdAt: { gte: window.since } }
+        ? { organizationId, createdAt: { gte: window.since }, ...inSpaces(window, 'locationId') }
         : {
             organizationId,
+            ...inSpaces(window, 'locationId'),
             status: 'PENDING_APPROVAL',
             OR: [
               { technicianRespondedAt: { lte: window.waitingBefore } },
@@ -120,37 +116,25 @@ export class RuleFactsReader {
       orderBy: { createdAt: 'desc' },
       take: MAX_ITEMS,
     });
-    return rows.map((o) => ({
-      itemId: o.timeEntryId,
-      since: o.technicianRespondedAt ?? o.createdAt,
-      subjectId: o.technicianId,
-      subjectName: personName(o.technician),
-      facts: { spaceIds: [o.locationId], minutes: o.maxDurationMinutes ?? null },
-    }));
-  }
-
-  /** The wallchart's verdict for pending LEAVE, only when a rule asks about cover. */
-  private async coverShort(
-    organizationId: string,
-    rows: Array<{ id: string; technicianId: string; startDate: Date; endDate: Date; kind: string }>,
-  ): Promise<Map<string, boolean>> {
-    const out = new Map<string, boolean>();
-    try {
-      // CoverService lives with the technicians; asked through the container, never imported into this module.
-      const cover = this.moduleRef.get(CoverService, { strict: false });
-      const leave = rows.filter((r) => r.kind === ABSENCE_WHERE.kind);
-      const verdicts = await cover.assessMany(
-        organizationId,
-        leave.map((r) => ({ id: r.id, technicianId: r.technicianId, startDate: r.startDate, endDate: r.endDate })),
-      );
-      for (const [id, v] of verdicts)
-        out.set(
-          id,
-          (v as { level?: string } | null)?.level === 'short' || (v as { level?: string } | null)?.level === 'skill',
-        );
-    } catch {
-      // Unreadable cover: a cover-only rule does not fire, rather than firing on a guess.
-    }
-    return out;
+    // …and time worked outside the shift, counted as overtime under its own step (the attendance module owns it).
+    const outside = await this.moduleRef
+      .get(OutsideShiftService, { strict: false })
+      .ruleItems(organizationId, window, MAX_ITEMS);
+    return [
+      ...rows.map((o) => ({
+        itemId: o.timeEntryId,
+        since: o.technicianRespondedAt ?? o.createdAt,
+        subjectId: o.technicianId,
+        subjectName: personName(o.technician),
+        facts: { spaceIds: [o.locationId], minutes: o.maxDurationMinutes ?? null },
+      })),
+      ...outside.map((o) => ({
+        itemId: o.itemId,
+        since: o.since,
+        subjectId: o.subjectId,
+        subjectName: personName(o.user),
+        facts: { spaceIds: [o.spaceId], minutes: o.minutes },
+      })),
+    ];
   }
 }

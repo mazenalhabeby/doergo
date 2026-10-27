@@ -1,4 +1,6 @@
 import { ruleInsights } from '../approval-rule-insights';
+import { handChangedMinutes } from '../rule-item-facts';
+import { mayDecideRuleKind, ruleKindsDecidedBy } from '../rule-deciders';
 import { pickRule, requiredRoleIds, ruleInputProblem, ruleMatches, rulesThatApply } from '../approval-rules';
 import type { ApprovalRuleView, RuleFacts } from '../approval-rules';
 
@@ -95,5 +97,50 @@ describe('every rule that fits applies', () => {
 
   it('a rule without a second role asks nobody more', () => {
     expect(requiredRoleIds([r('remind', null, null, null)], { spaceIds: [], minutes: 600 })).toEqual([]);
+  });
+});
+
+describe('hours changed by hand', () => {
+  const t = (hm: string) => `2026-10-20T${hm}:00Z`;
+  it('an edit counts how far the times moved from what was clocked', () => {
+    expect(
+      handChangedMinutes({
+        isEdited: true,
+        originalClockIn: t('08:00'),
+        originalClockOut: t('16:00'),
+        clockInAt: t('07:30'),
+        clockOutAt: t('17:00'),
+      }),
+    ).toBe(90);
+  });
+  it('hours the office TYPED IN (nothing ever clocked) are by hand from start to end', () => {
+    expect(handChangedMinutes({ isEdited: true, clockInAt: t('06:00'), clockOutAt: t('18:00') })).toBe(720);
+  });
+  it('nothing edited is nothing changed', () => {
+    expect(handChangedMinutes({ isEdited: false, clockInAt: t('06:00'), clockOutAt: t('18:00') })).toBe(0);
+  });
+});
+
+/*
+  ⚠️ A rule may only ask a role somebody can actually give the approval with: the kind's own route refuses
+  everybody else first. Seen live — a rule asked a Sales Rep about changed hours, and the item waited forever.
+*/
+describe('who may give an approval of a rule kind', () => {
+  const access = (org: Record<string, boolean>, perSpace: Record<string, Record<string, boolean>> = {}) =>
+    ({ isAdmin: false, org, perSpace }) as never;
+  it("the kind's own permission, org-wide or bridged", () => {
+    expect(mayDecideRuleKind(access({ canApproveAttendance: true }), 'hours', null)).toBe(true);
+    expect(mayDecideRuleKind(access({ crmWork: true }), 'hours', null)).toBe(false);
+    // canViewAllTasks bridges to approving overtime (org-flags), as the session reads it.
+    expect(mayDecideRuleKind(access({ canViewAllTasks: true }), 'overtime', null)).toBe(true);
+  });
+  it('in a workspace: only that workspace counts for a workspace rule, any for an every-workspace rule', () => {
+    const a = access({}, { s1: { canManageAssets: true } });
+    expect(mayDecideRuleKind(a, 'expense', 's1')).toBe(true);
+    expect(mayDecideRuleKind(a, 'expense', 's2')).toBe(false);
+    expect(mayDecideRuleKind(a, 'expense', null)).toBe(true);
+  });
+  it('lists the kinds a person could approve', () => {
+    expect(ruleKindsDecidedBy(access({ canApproveAttendance: true }))).toEqual(['hours']);
   });
 });

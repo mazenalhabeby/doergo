@@ -35,11 +35,22 @@ export function isRuleKind(v: unknown): v is RuleKind {
 
 /** Which rule kind an inbox kind falls under (extra time IS overtime). */
 export function ruleKindOf(kind: ApprovalKind): RuleKind | null {
-  if (kind === 'overtime' || kind === 'extraTime') return 'overtime';
+  // Time outside the shift is counted as overtime, under its own step (`ruleStepItemId`).
+  if (kind === 'overtime' || kind === 'extraTime' || kind === 'outside') return 'overtime';
   if (kind === 'request') return 'request';
   if (kind === 'expense') return 'expense';
   if (kind === 'hours' || kind === 'noShow' || kind === 'assetProposal' || kind === 'clientRequest') return kind;
   return null;
+}
+
+/**
+ * The id an office rule's step is kept under for an inbox item: overtime rounds belong to their time entry; time
+ * outside the shift has its own step on the entry, so approving it never finishes the extra-time one.
+ */
+export function ruleStepItemId(kind: ApprovalKind, id: string, data: Record<string, unknown> = {}): string {
+  if (kind === 'overtime') return String(data.timeEntryId ?? '');
+  if (kind === 'outside') return `${id}:outside`;
+  return id;
 }
 
 /** The limit a kind's rule may set: which column holds it, which fact it is compared with, and its ceiling. */
@@ -95,6 +106,8 @@ export interface ApprovalRuleView {
   /** clientRequest: only urgent requests. */
   urgentOnly: boolean;
   isActive: boolean;
+  /** May the caller change it? False for an every-workspace rule shown to a manager of some workspaces only. */
+  editable?: boolean;
 }
 
 export interface ApprovalRuleInput {
@@ -251,4 +264,6 @@ export interface RuleRoleView {
   inSpace: boolean;
   /** How many people hold it now. */
   holders: number;
+  /** The rule kinds at least one holder could approve — a role outside this cannot be asked for that kind. */
+  decides: RuleKind[];
 }

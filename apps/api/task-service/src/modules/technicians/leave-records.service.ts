@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
+import { REQUEST_RULE_SELECT, requestRuleFacts, requestsCoverShort } from '../approvals/rules/request-rule-facts';
 import {
   assertMemberInScope,
   toISODateString,
@@ -27,6 +29,8 @@ export class LeaveRecordsService {
     private readonly calendarRules: CalendarRulesService,
     // The ONE vacation balance (allowance + adjustments − taken, in the leave year).
     private readonly leaveLedger: LeaveLedgerService,
+    // Office rules: leave the office records follows the same rules as leave a member asks for.
+    private readonly rules: ApprovalRulesService,
   ) {}
 
   /** Time off across the organization — or across the spaces a member leads (org-leave-list.ts). */
@@ -116,20 +120,42 @@ export class LeaveRecordsService {
       end,
       true,
     );
-    const timeOff = await this.prisma.timeOff.create({
+    // Recorded waiting; the office's own entry is the first approval — an office rule may ask more people.
+    const created = await this.prisma.timeOff.create({
       data: {
         technicianId: data.technicianId,
         startDate: start,
         endDate: end,
         reason: data.reason?.trim() || null,
         workingDays,
-        status: 'APPROVED',
-        approvedById: data.editorId,
-        approvedAt: new Date(),
+        status: 'PENDING',
       },
+      select: REQUEST_RULE_SELECT,
     });
-
-    return success(timeOff, 'Day off added');
+    const coverShort =
+      (await this.rules.asksAboutCover(data.organizationId)) &&
+      ((await requestsCoverShort(this.cover, data.organizationId, [created])).get(created.id) ?? false);
+    const decided = await this.rules.decide(
+      {
+        organizationId: data.organizationId,
+        kind: 'request',
+        itemId: created.id,
+        facts: requestRuleFacts(created, coverShort, workingDays),
+        deciderId: data.editorId,
+        subjectId: data.technicianId,
+      },
+      () =>
+        this.prisma.timeOff.update({
+          where: { id: created.id },
+          data: { status: 'APPROVED', approvedById: data.editorId, approvedAt: new Date() },
+        }),
+    );
+    if (decided.waiting)
+      return success(
+        { id: created.id, ...decided.waiting },
+        `Day off added — waiting for ${decided.waiting.waitingFor}`,
+      );
+    return success(decided.done, 'Day off added');
   }
 
   /**

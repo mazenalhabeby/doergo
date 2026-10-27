@@ -17,14 +17,6 @@ export function openStep(
   });
 }
 
-/** Close every step a rule left open (the rule was deleted or switched off). */
-export async function closeStepsOf(prisma: PrismaService, organizationId: string, ruleId: string) {
-  await prisma.approvalStep.updateMany({
-    where: { organizationId, ruleId, consumedAt: null },
-    data: { consumedAt: new Date() },
-  });
-}
-
 /** Mark one step used — only if nobody else did first. */
 export async function consumeStep(prisma: PrismaService, id: string) {
   await prisma.approvalStep.updateMany({ where: { id, consumedAt: null }, data: { consumedAt: new Date() } });

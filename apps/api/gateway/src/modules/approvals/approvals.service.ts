@@ -8,6 +8,7 @@ import {
   dedupeApprovals,
   isAdmin,
   ruleKindOf,
+  ruleStepItemId,
   sortApprovals,
   toApproval,
   type ApprovalContext,
@@ -179,7 +180,7 @@ export class ApprovalsService {
   /** Items half-way through an office rule's two approvals: who went first, who must finish. */
   private async attachSteps(user: SessionUser, items: ApprovalItem[]): Promise<void> {
     if (!this.rules) return;
-    const keyOf = (i: ApprovalItem) => (i.kind === 'overtime' ? String(i.data.timeEntryId ?? '') : i.id);
+    const keyOf = (i: ApprovalItem) => ruleStepItemId(i.kind, i.id, i.data);
     const asked = items
       .map((i) => ({ i, kind: ruleKindOf(i.kind), itemId: keyOf(i) }))
       .filter((x) => x.kind && x.itemId) as Array<{

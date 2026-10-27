@@ -5,6 +5,7 @@ import { TimeOffDecisionService } from '../time-off-decision.service';
 
 function service(status: string) {
   const svc = Object.create(TimeOffDecisionService.prototype) as any;
+  svc.rules = { clearItem: jest.fn() };
   svc.prisma = {
     timeOff: {
       findUnique: jest.fn().mockResolvedValue({ id: 'to-1', technicianId: 'u1', status }),
@@ -19,6 +20,8 @@ describe('cancelling time off', () => {
     const svc = service('PENDING');
     const res = await svc.cancelTimeOff({ timeOffId: 'to-1', technicianId: 'u1' });
     expect(res.data.status).toBe('CANCELED');
+    // Withdrawn: an office rule's half-way approvals end with it.
+    expect(svc.rules.clearItem).toHaveBeenCalledWith('request', 'to-1');
   });
 
   it('answers a resend with the same result instead of a refusal', async () => {

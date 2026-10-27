@@ -36,7 +36,7 @@ export function entryServices(
     new (ApprovalService as unknown as Ctor)(prisma, changes, notificationClient, rules),
     new (EntryEditService as unknown as Ctor)(prisma, countedTime, changes, rules, rematch, jobPause),
     new (EntryRecordService as unknown as Ctor)(prisma, changes),
-    new (ManualEntriesService as unknown as Ctor)(prisma, changes, noShowSettle),
+    new (ManualEntriesService as unknown as Ctor)(prisma, changes, rules, noShowSettle),
   );
 }
 

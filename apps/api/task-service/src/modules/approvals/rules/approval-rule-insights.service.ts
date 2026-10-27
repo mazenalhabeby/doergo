@@ -21,7 +21,7 @@ export class ApprovalRuleInsightsService {
     // only the manager's own rules are shown by name.
     const [rules, items] = await Promise.all([
       this.admin.listRules(organizationId),
-      this.facts.read(organizationId, kind, { since }),
+      this.facts.read(organizationId, kind, { since, spaceIds }),
     ]);
     if (!spaceIds) return ruleInsights(kind, rules, items);
     // Held in some workspaces only: their items, nobody else's, and only rules they could add.

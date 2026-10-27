@@ -298,10 +298,29 @@ def report():
         print(f'     {label:24} {len(xs):3} {p50:7.0f} {mx:7.0f}{flag}')
 
 
+def pause_office_rules():
+    """This run is about COUNTING time, not office rules: the organization's active rules are switched off for it
+    (an "every request needs an admin" rule would hold the day's hours the leader sets) and switched back after."""
+    owner, _ = login('client@example.com')
+    rules = [r for r in data(call('GET', '/approvals/rules', owner)[1]) or [] if r.get('isActive')]
+    for r in rules:
+        call('PATCH', f"/approvals/rules/{r['id']}", owner, {**{k: r.get(k) for k in RULE_FIELDS}, 'isActive': False})
+    return owner, rules
+
+
+RULE_FIELDS = ('kind', 'spaceId', 'minMinutes', 'minDays', 'minAmountCents', 'whenCoverShort', 'secondRoleId',
+               'remindAfterHours', 'escalateAfterHours', 'escalateRoleId', 'categoryId', 'urgentOnly')
+
+
 if __name__ == '__main__':
+    owner_tok, paused = pause_office_rules()
     try:
         main()
     finally:
+        for r in paused:
+            call('PATCH', f"/approvals/rules/{r['id']}", owner_tok, {**{k: r.get(k) for k in RULE_FIELDS}, 'isActive': True})
+        if paused:
+            print(f'office rules switched back on: {len(paused)}')
         report()
         print(f"\n{'ALL PASSED' if failures == 0 else f'{failures} FAILED'}")
     sys.exit(1 if failures else 0)

@@ -11,7 +11,8 @@ const ms = (v: When) => (v == null ? null : new Date(v).getTime());
 /**
  * Hours changed by hand: how far an entry's times were moved from what was clocked, in whole minutes. The
  * originals are kept on the FIRST edit, so this is the whole change, however many edits. An entry still open
- * when it was first edited has no original clock-out: only its start counts.
+ * when it was first edited has no original clock-out: only its start counts. An entry the office TYPED IN (edited,
+ * with nothing ever clocked) is by hand from start to end: its whole length.
  */
 export function handChangedMinutes(e: {
   isEdited?: boolean | null;
@@ -26,6 +27,7 @@ export function handChangedMinutes(e: {
     const b = ms(was);
     return a == null || b == null ? 0 : Math.abs(a - b);
   };
+  if (e.originalClockIn == null) return Math.round(diff(e.clockOutAt, e.clockInAt) / 60_000);
   return Math.round((diff(e.clockInAt, e.originalClockIn) + diff(e.clockOutAt, e.originalClockOut)) / 60_000);
 }
 

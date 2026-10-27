@@ -257,7 +257,7 @@ describe('edit history', () => {
 describe('office edit — a rule on changed hours', () => {
   function withRule(entry: Record<string, any>, secondStep: string | null) {
     const { prisma } = build(entry);
-    const rules = { secondStepFor: jest.fn().mockResolvedValue(secondStep) };
+    const rules = { secondStepFor: jest.fn().mockResolvedValue(secondStep), clear: jest.fn() };
     const svc = entryServices(
       prisma,
       new CountedTimeService(prisma),

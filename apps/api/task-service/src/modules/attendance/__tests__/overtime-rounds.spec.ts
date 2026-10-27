@@ -44,6 +44,8 @@ describe('overtime rounds', () => {
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       overtimeRequest: {
+      // Earlier approved rounds on the shift (office rules judge the whole): none.
+      aggregate: jest.fn().mockResolvedValue({ _sum: { maxDurationMinutes: 0 } }),
         findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 'ot1' }),
         update: jest.fn().mockResolvedValue({ id: 'ot1' }),

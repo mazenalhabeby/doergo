@@ -7,3 +7,4 @@ export * from './approval-rule-insights';
 export * from './rule-item-facts';
 export * from './own-request';
 export * from './approval-days';
+export * from './rule-deciders';

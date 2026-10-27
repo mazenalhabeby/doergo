@@ -1,5 +1,6 @@
+import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { Injectable, NotFoundException, Logger, Optional } from '@nestjs/common';
-import { zoneOf, success, personPasses } from '@hbcfield/shared';
+import { zoneOf, success, personPasses, handChangedMinutes } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../core/self-decision';
 import { zonedWallTimeToUtc as sharedZonedWallTimeToUtc, localPartsIn, parseHm } from '@hbcfield/shared';
 import { scopeAllows } from '@hbcfield/shared';
@@ -23,6 +24,8 @@ export class ManualEntriesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly changes: EntryChangeLog,
+    // Office rules on changed hours: typed-in hours are hours changed by hand, their whole length.
+    private readonly rules: ApprovalRulesService,
     // Hours added for a day somebody was marked missing close that no-show ("They were here").
     @Optional() private readonly noShowSettle?: NoShowSettleService,
   ) {}
@@ -103,7 +106,17 @@ export class ManualEntriesService {
     }
 
     if (toCreate.length) {
+      // A rule asking more people about this many hours: the entries wait, the office's entry being the first approval.
+      const length = (e: ManualEntryRow) => handChangedMinutes(e);
+      const facts = (e: ManualEntryRow) => ({ spaceIds: [data.locationId], minutes: length(e) });
+      const ruled = new Set<ManualEntryRow>();
+      for (const e of toCreate)
+        if (await this.rules.secondStepFor(data.organizationId, 'hours', facts(e))) {
+          Object.assign(e, { approvalStatus: 'PENDING', approvedById: null, approvedAt: null, approvalNotes: null });
+          ruled.add(e);
+        }
       await this.writeManualEntries(data, toCreate, { breakOffsetMin, breakMin, reason });
+      if (ruled.size) await this.askRules(data, [...ruled], facts);
     }
 
     this.logger.log(
@@ -125,6 +138,46 @@ export class ManualEntriesService {
       `Added ${toCreate.length} ${toCreate.length === 1 ? 'entry' : 'entries'}` +
         (skipped ? ` (skipped ${skipped} — already recorded)` : ''),
     );
+  }
+
+  /** Each typed-in day a rule asks about: the office's entry is the first approval; an administrator's finishes it. */
+  private async askRules(
+    data: ManualEntriesInput,
+    rows: ManualEntryRow[],
+    facts: (e: ManualEntryRow) => { spaceIds: string[]; minutes: number },
+  ) {
+    const created = await this.prisma.timeEntry.findMany({
+      where: {
+        userId: data.userId,
+        organizationId: data.organizationId,
+        clockInAt: { in: rows.map((r) => r.clockInAt as Date) },
+      },
+      select: { id: true, clockInAt: true },
+    });
+    for (const e of rows) {
+      const id = created.find((c) => c.clockInAt.getTime() === (e.clockInAt as Date).getTime())?.id;
+      if (!id) continue;
+      await this.rules.decide(
+        {
+          organizationId: data.organizationId,
+          kind: 'hours',
+          itemId: id,
+          facts: facts(e),
+          deciderId: data.editorId,
+          subjectId: data.userId,
+        },
+        () =>
+          this.prisma.timeEntry.update({
+            where: { id },
+            data: {
+              approvalStatus: 'APPROVED',
+              approvedById: data.editorId,
+              approvedAt: new Date(),
+              approvalNotes: 'Added by admin',
+            },
+          }),
+      );
+    }
   }
 
   /*

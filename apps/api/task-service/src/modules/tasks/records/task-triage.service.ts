@@ -13,6 +13,7 @@ import {
   unitAddress,
   workerToAssign,
   isUrgentPriority,
+  clientPortalSpaceId,
 } from '@hbcfield/shared';
 import { ApprovalRulesService } from '../../approvals/rules/approval-rules.service';
 import { ClientProxy } from '@nestjs/microservices';
@@ -144,38 +145,51 @@ export class TaskTriageService {
     const routedAddress = unit?.address || task.locationAddress || space.address || null;
 
     // Office rules — asked LAST, after every check that can still refuse, so an approval is never spent on a
-    // routing that then fails. An (urgent) request in this workspace may need more people before it becomes a job.
-    const step = await this.rules.firstStep({
-      organizationId: data.organizationId,
-      kind: 'clientRequest',
-      itemId: task.id,
-      // Urgent if the CLIENT said so, whatever priority the person routing it picks (a lower one is no way out).
-      facts: { spaceIds: [space.id], urgent: isUrgentPriority(task.priority) || isUrgentPriority(data.priority) },
-      deciderId: data.userId,
-      subjectId: null,
-    });
-    if (step) return success({ id: task.id, triaged: false, ...step }, `Approved — waiting for ${step.waitingFor}`);
-
-    const updated = await this.prisma.task.update({
-      where: { id: data.id },
-      data: {
-        spaceId: data.spaceId,
-        workflowId: effWorkflowId,
-        status: initialStatus,
-        priority: (data.priority as TaskPriority) || task.priority,
-        assignedToId,
-        triaged: true,
-        locationAddress: routedAddress,
-        // Keep any coords the task already had; else use the space's as a rough pin.
-        ...(task.locationLat == null && task.locationLng == null
-          ? { locationLat: space.lat, locationLng: space.lng }
-          : {}),
+    // routing that then fails. Judged where the request BELONGS as well as where it is sent (routing it to a
+    // workspace without a rule is no way out), and urgent if the CLIENT said so, whatever priority routing picks.
+    const home =
+      task.spaceId ??
+      (task.customerId ? await clientPortalSpaceId(this.prisma, task.customerId, data.organizationId) : null);
+    const decided = await this.rules.decide(
+      {
+        organizationId: data.organizationId,
+        kind: 'clientRequest',
+        itemId: task.id,
+        facts: {
+          spaceIds: [...new Set([space.id, ...(home ? [home] : [])])],
+          urgent: isUrgentPriority(task.priority) || isUrgentPriority(data.priority),
+        },
+        deciderId: data.userId,
+        subjectId: null,
       },
-      include: {
-        assignedTo: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
-        createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-      },
-    });
+      () =>
+        this.prisma.task.update({
+          where: { id: data.id },
+          data: {
+            spaceId: data.spaceId,
+            workflowId: effWorkflowId,
+            status: initialStatus,
+            priority: (data.priority as TaskPriority) || task.priority,
+            assignedToId,
+            triaged: true,
+            locationAddress: routedAddress,
+            // Keep any coords the task already had; else use the space's as a rough pin.
+            ...(task.locationLat == null && task.locationLng == null
+              ? { locationLat: space.lat, locationLng: space.lng }
+              : {}),
+          },
+          include: {
+            assignedTo: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+            createdBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+          },
+        }),
+    );
+    if (decided.waiting)
+      return success(
+        { id: task.id, triaged: false, ...decided.waiting },
+        `Approved — waiting for ${decided.waiting.waitingFor}`,
+      );
+    const updated = decided.done;
 
     await this.support.createTaskEvent(data.id, data.userId, TaskEventType.UPDATED, {
       triaged: true,

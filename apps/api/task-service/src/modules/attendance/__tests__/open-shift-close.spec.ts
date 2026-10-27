@@ -1,3 +1,4 @@
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 /**
  * Shifts left open: closed with a temporary time, replaced by the real one.
  */
@@ -129,7 +130,9 @@ describe('overtime added by a manager to a closed shift', () => {
       userCanApproveOvertime: jest.fn().mockResolvedValue(true),
       assertNotSelfOvertimeDecision: jest.fn().mockResolvedValue(undefined),
       approveExtraTime: jest.fn().mockResolvedValue({ success: true }),
+      approvedOvertimeMinutes: jest.fn().mockResolvedValue(0),
     };
+    svc.rules = noOfficeRules();
     svc.countedTime = { recomputeClosed: jest.fn() };
     svc.notificationClient = { emit: jest.fn() };
     return svc;

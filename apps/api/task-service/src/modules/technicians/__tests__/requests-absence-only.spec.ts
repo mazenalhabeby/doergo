@@ -1,3 +1,4 @@
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 import { ABSENCE_WHERE } from '@hbcfield/shared';
 /**
  * ⚠️ ONLY LEAVE IS AN ABSENCE (requests/request-kinds.ts ABSENCE_WHERE).
@@ -69,7 +70,7 @@ describe('only leave is an absence', () => {
       leaveAdjustment: { findMany: jest.fn().mockResolvedValue([]) },
     };
     const calendarRules = { personRules: jest.fn(), personRulesMany: jest.fn().mockResolvedValue(new Map()) } as any;
-    const service = new LeaveRecordsService(prisma, {} as any, calendarRules, new LeaveLedgerService(prisma, calendarRules));
+    const service = new LeaveRecordsService(prisma, {} as any, calendarRules, new LeaveLedgerService(prisma, calendarRules), noOfficeRules());
     const res: any = await service.getLeaveBalance({ technicianId: 'u1', organizationId: 'org-1' });
     expect(res.data).toMatchObject({ taken: 0, pending: 0, remaining: 25 });
     expect(prisma.timeOff.findMany.mock.calls[0][0].where.kind).toBe('LEAVE');

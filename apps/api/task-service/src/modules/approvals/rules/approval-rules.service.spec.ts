@@ -72,7 +72,12 @@ describe('ApprovalRulesService.gate', () => {
     // user.findFirst answers two questions: the decider's role, and "holds the role org-wide".
     prisma.user.findFirst.mockImplementation(async ({ where }: any) => {
       if (where.memberRoleId) return where.id === 'mgr' ? { id: 'mgr' } : null;
-      return { role: where.id === 'owner' ? 'ADMIN' : 'EMPLOYEE', firstName: where.id, lastName: '' };
+      return {
+        role: where.id.endsWith('owner') ? 'ADMIN' : 'EMPLOYEE',
+        firstName: where.id,
+        lastName: '',
+        isActive: where.id !== 'gone-owner',
+      };
     });
     prisma.spaceAssignment.findFirst.mockResolvedValue(null);
   });
@@ -128,6 +133,46 @@ describe('ApprovalRulesService.gate', () => {
     expect(await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 600 }, deciderId: 'owner' })).toEqual({
       finalize: true,
     });
+  });
+
+  it("a DEACTIVATED administrator finishes nothing — the step opens like anybody else's", async () => {
+    const v = await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 600 }, deciderId: 'gone-owner' });
+    expect(v).toEqual({ finalize: false, roleName: 'Space Manager' });
+  });
+
+  it('the cap is the SMALLEST minutes any approver agreed to — and the rule is judged on the whole', async () => {
+    // Earlier rounds take the shift to 3 h; this round agrees 50 min. The rule (over 2 h) applies; the cap is 50.
+    await svc.gate({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, agreeMinutes: 50, deciderId: 'leader' });
+    expect(steps[0].minutes).toBe(50);
+    const v = await svc.gate({
+      ...base,
+      facts: { spaceIds: ['s1'], minutes: 180 },
+      agreeMinutes: 90,
+      deciderId: 'mgr',
+    });
+    expect(v).toEqual({ finalize: true, minutes: 50, stepId: 's0' });
+  });
+
+  /*
+    ⚠️ decide(): the write runs only when every approval is in, and a write that fails opens the step again —
+    the approvals already given stay, and the people who gave them may try again.
+  */
+  it('decide() writes nothing while waiting, and keeps the approvals when the write fails', async () => {
+    const write = jest.fn(async () => 'written');
+    const first = await svc.decide({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'leader' }, write);
+    expect(first).toEqual({ waiting: { stage: 'FIRST_STEP', waitingFor: 'Space Manager' } });
+    expect(write).not.toHaveBeenCalled();
+    const boom = jest.fn(async () => {
+      throw new Error('the write failed');
+    });
+    await expect(
+      svc.decide({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'mgr' }, boom),
+    ).rejects.toThrow('the write failed');
+    expect(steps[0].consumedAt).toBeNull();
+    // Every role is given: the retry is the same decision — the manager who approved may finish it.
+    await expect(
+      svc.decide({ ...base, facts: { spaceIds: ['s1'], minutes: 180 }, deciderId: 'mgr' }, write),
+    ).resolves.toEqual({ done: 'written' });
   });
 
   it('a rejection drops the open step', async () => {

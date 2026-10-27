@@ -1,3 +1,4 @@
+import { rulesFromGate } from '../../approvals/__tests__/no-office-rules';
 /**
  * Time outside the planned shift — ONE decision per entry (docs/plans/time-counting-model.md, phase 3).
  *
@@ -53,9 +54,9 @@ function make(opts: { row?: unknown; claimed?: number; gate?: unknown; mayApprov
       if (opts.self) throw new ForbiddenException({ code: 'SELF_DECISION' });
     }),
   };
-  const decisions = { addOvertimeToClosedEntry: jest.fn().mockResolvedValue({ success: true }) };
+  const decisions = { recordDecidedOvertime: jest.fn().mockResolvedValue({ success: true }) };
   const routing = { notifyTargetsFor: jest.fn().mockResolvedValue(['anna']) };
-  const rules = { gate: jest.fn().mockResolvedValue(opts.gate ?? { finalize: true }), clear: jest.fn() };
+  const rules = rulesFromGate(jest.fn().mockResolvedValue(opts.gate ?? { finalize: true }));
   const client = { emit: jest.fn() };
   const svc = new OutsideShiftService(
     prisma as never,
@@ -81,7 +82,7 @@ describe('deciding time outside the shift', () => {
       data: { expectedClockInAt: at('07:00') },
     });
     expect(counted.recomputeClosed).toHaveBeenCalled();
-    expect(decisions.addOvertimeToClosedEntry).toHaveBeenCalledWith(
+    expect(decisions.recordDecidedOvertime).toHaveBeenCalledWith(
       expect.objectContaining({ entryId: 'e1', minutes: 90 }),
     );
     expect(prisma.timeEntry.updateMany.mock.calls[0][0].data).toMatchObject({
@@ -93,7 +94,7 @@ describe('deciding time outside the shift', () => {
   it('count part of it: after the end first', async () => {
     const { svc, prisma, decisions } = make();
     await svc.decide(decide(60));
-    expect(decisions.addOvertimeToClosedEntry).toHaveBeenCalledWith(expect.objectContaining({ minutes: 60 }));
+    expect(decisions.recordDecidedOvertime).toHaveBeenCalledWith(expect.objectContaining({ minutes: 60 }));
     expect(prisma.timeEntry.update).not.toHaveBeenCalled();
   });
 
@@ -101,9 +102,10 @@ describe('deciding time outside the shift', () => {
     const { svc, decisions, rules, prisma } = make();
     const r = (await svc.decide(decide(0))) as { data: { counted: number } };
     expect(r.data.counted).toBe(0);
-    expect(decisions.addOvertimeToClosedEntry).not.toHaveBeenCalled();
+    expect(decisions.recordDecidedOvertime).not.toHaveBeenCalled();
     expect(prisma.timeEntry.update).not.toHaveBeenCalled();
-    expect(rules.clear).toHaveBeenCalledWith('org', 'overtime', 'e1');
+    // Its own step, never the extra-time one on the same entry.
+    expect(rules.clear).toHaveBeenCalledWith('org', 'overtime', 'e1:outside');
     expect(rules.gate).not.toHaveBeenCalled();
   });
 
@@ -112,7 +114,7 @@ describe('deciding time outside the shift', () => {
     const r = (await svc.decide(decide(150))) as { data: { stage: string } };
     expect(r.data.stage).toBe('FIRST_STEP');
     expect(prisma.timeEntry.updateMany).not.toHaveBeenCalled();
-    expect(decisions.addOvertimeToClosedEntry).not.toHaveBeenCalled();
+    expect(decisions.recordDecidedOvertime).not.toHaveBeenCalled();
   });
 
   it('decided once: a second decision is refused', async () => {

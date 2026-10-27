@@ -43,6 +43,11 @@ export const approvalRulesInsights = rpc<{ organizationId: string; kind: RuleKin
   'approval_rules_insights',
 );
 
+/** For each role: the rule kinds at least one of its holders could approve (the rules page marks the others). */
+export const approvalRuleRoleKinds = rpc<{ organizationId: string; roleIds: string[] }, Record<string, RuleKind[]>>(
+  'approval_rule_role_kinds',
+);
+
 export const approvalRulesDelete = rpc<{ organizationId: string; id: string; spaceIds?: string[] }, { deleted: true }>(
   'approval_rules_delete',
 );

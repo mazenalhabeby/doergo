@@ -1,3 +1,4 @@
+import { rulesFromGate } from '../../approvals/__tests__/no-office-rules';
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
@@ -39,11 +40,7 @@ describe('AssetProposalService', () => {
   const routing = { resolveWatchers: jest.fn() };
   const notifications = { emit: jest.fn() };
   // Office rules: by default none applies; a test sets a verdict when it is about them.
-  const rules = {
-    gate: jest.fn(),
-    clear: jest.fn(),
-    reopen: jest.fn(),
-  };
+  const rules = rulesFromGate(jest.fn());
   // Every uploaded page exists and is small, unless a test says otherwise.
   const store = {
     head: jest.fn(async () => ({ exists: true, sizeBytes: 1000 })),

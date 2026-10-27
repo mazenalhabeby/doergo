@@ -145,42 +145,43 @@ export class AssetExpenseReviewService {
       message: 'You cannot decide your own expense. Ask a manager or an administrator.',
     });
 
-    // Office rules: past a threshold accepting is step 1 of 2; the slip stays submitted. A refusal ends it.
-    if (data.decision === 'reject') await this.rules.clear(data.organizationId, 'expense', data.entryId);
-    if (data.decision === 'accept' && this.rules) {
-      const spaceId = filed.asset?.category?.spaceId ?? null;
-      const verdict = await this.rules.gate({
-        organizationId: data.organizationId,
-        kind: 'expense',
-        itemId: data.entryId,
-        facts: { spaceIds: spaceId ? [spaceId] : [], amountCents: filed.amountCents ?? 0 },
-        deciderId: data.userId,
-        subjectId: filed.authorId,
-      });
-      if (!verdict.finalize) {
-        return success({
+    // The decision itself: claimed only while still submitted, so two reviewers cannot both decide it.
+    const write = async () => {
+      const { count } = await this.prisma.assetMoney.updateMany({
+        where: {
           id: data.entryId,
+          organizationId: data.organizationId,
           status: EXPENSE_STATUS.SUBMITTED,
-          stage: 'FIRST_STEP',
-          waitingFor: verdict.roleName,
-        });
-      }
-    }
+        },
+        data: {
+          status: data.decision === 'accept' ? EXPENSE_STATUS.RECORDED : EXPENSE_STATUS.REJECTED,
+          reviewedById: data.userId,
+          reviewedAt: new Date(),
+          reviewNote: data.note?.trim().slice(0, 300) || null,
+        },
+      });
+      if (!count) throw new NotFoundException('That expense is not waiting for a decision');
+    };
 
-    const { count } = await this.prisma.assetMoney.updateMany({
-      where: {
-        id: data.entryId,
-        organizationId: data.organizationId,
-        status: EXPENSE_STATUS.SUBMITTED,
-      },
-      data: {
-        status: data.decision === 'accept' ? EXPENSE_STATUS.RECORDED : EXPENSE_STATUS.REJECTED,
-        reviewedById: data.userId,
-        reviewedAt: new Date(),
-        reviewNote: data.note?.trim().slice(0, 300) || null,
-      },
-    });
-    if (!count) throw new NotFoundException('That expense is not waiting for a decision');
+    // Office rules: past a threshold accepting waits for the others; the slip stays submitted. A refusal ends it.
+    if (data.decision === 'reject') {
+      await this.rules.clear(data.organizationId, 'expense', data.entryId);
+      await write();
+    } else {
+      const spaceId = filed.asset?.category?.spaceId ?? null;
+      const decided = await this.rules.decide(
+        {
+          organizationId: data.organizationId,
+          kind: 'expense',
+          itemId: data.entryId,
+          facts: { spaceIds: spaceId ? [spaceId] : [], amountCents: filed.amountCents ?? 0 },
+          deciderId: data.userId,
+          subjectId: filed.authorId,
+        },
+        write,
+      );
+      if (decided.waiting) return success({ id: data.entryId, status: EXPENSE_STATUS.SUBMITTED, ...decided.waiting });
+    }
 
     await this.notifier.expenseDecided({
       entryId: data.entryId,

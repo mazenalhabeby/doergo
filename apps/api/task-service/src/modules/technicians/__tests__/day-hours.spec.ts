@@ -1,3 +1,4 @@
+import { noOfficeRules } from '../../approvals/__tests__/no-office-rules';
 /**
  * The office sets ONE day's hours (docs/plans/time-counting-model.md, phase 2).
  *
@@ -243,7 +244,14 @@ describe('DayHoursReshapeService — through the same rule as a clock-in', () =>
 
 describe('DayHoursService — who may set whose day', () => {
   function make(
-    opts: { member?: boolean; assigned?: boolean; rostered?: boolean; leave?: unknown[]; previous?: unknown } = {},
+    opts: {
+      member?: boolean;
+      assigned?: boolean;
+      rostered?: boolean;
+      leave?: unknown[];
+      previous?: unknown;
+      rules?: unknown;
+    } = {},
   ) {
     const prisma = {
       user: {
@@ -273,7 +281,7 @@ describe('DayHoursService — who may set whose day', () => {
         })),
         update: jest.fn(async (a: { data: Record<string, unknown> }) => ({
           id: 'prev',
-          approvedBy: null,
+          approvedBy: a.data.status === 'APPROVED' ? { firstName: 'Anna', lastName: 'M' } : null,
           space: null,
           startDate: at('2026-10-24'),
           endDate: at('2026-10-24'),
@@ -283,7 +291,13 @@ describe('DayHoursService — who may set whose day', () => {
     };
     const reshape = { reshapeDay: jest.fn().mockResolvedValue(1) };
     const client = { emit: jest.fn() };
-    return { svc: new DayHoursService(prisma as never, reshape as never, client as never), prisma, reshape, client };
+    const rules = (opts.rules ?? noOfficeRules()) as never;
+    return {
+      svc: new DayHoursService(prisma as never, reshape as never, client as never, rules),
+      prisma,
+      reshape,
+      client,
+    };
   }
   const input = (over: Record<string, unknown> = {}) => ({
     editorId: 'leader',
@@ -296,14 +310,12 @@ describe('DayHoursService — who may set whose day', () => {
     ...over,
   });
 
-  it('writes an APPROVED changed-hours request, re-shapes the day and tells the member who set it', async () => {
+  it('writes the changed-hours request, approves it, re-shapes the day and tells the member who set it', async () => {
     const { svc, prisma, reshape, client } = make();
     const res = (await svc.setDayHours(input())) as { data: { entriesChanged: number } };
-    expect(prisma.timeOff.create.mock.calls[0][0].data).toMatchObject({
-      kind: 'HOURS',
-      status: 'APPROVED',
-      approvedById: 'leader',
-    });
+    // Saved waiting, then approved by the office's own entry (no office rule asks more).
+    expect(prisma.timeOff.create.mock.calls[0][0].data).toMatchObject({ kind: 'HOURS', status: 'PENDING' });
+    expect(prisma.timeOff.update.mock.calls[0][0].data).toMatchObject({ status: 'APPROVED', approvedById: 'leader' });
     expect(reshape.reshapeDay).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-10-24', spaceId: 'sp1' }));
     expect(res.data.entriesChanged).toBe(1);
     expect(client.emit.mock.calls[0][1]).toMatchObject({ approved: true, setBy: 'Anna M', memberId: 'u1' });
@@ -315,10 +327,42 @@ describe('DayHoursService — who may set whose day', () => {
     });
     await svc.setDayHours(input({ endTime: '17:00' }));
     expect(prisma.timeOff.create).not.toHaveBeenCalled();
-    expect(prisma.timeOff.update.mock.calls[0][0]).toMatchObject({
+    expect(prisma.timeOff.update.mock.calls[0][0]).toMatchObject({ where: { id: 'prev' }, data: { endTime: '17:00' } });
+    expect(prisma.timeOff.update.mock.calls[1][0]).toMatchObject({
       where: { id: 'prev' },
-      data: { endTime: '17:00', status: 'APPROVED' },
+      data: { status: 'APPROVED' },
     });
+  });
+
+  it('setting it again starts its office-rule approvals over — the hours changed', async () => {
+    const rules = { decide: jest.fn().mockResolvedValue({ done: { saved: {}, entriesChanged: 0 } }), clear: jest.fn() };
+    const { svc } = make({
+      previous: { id: 'prev', startDate: at('2026-10-24'), endDate: at('2026-10-24'), status: 'PENDING' },
+      rules,
+    });
+    await svc.setDayHours(input({ endTime: '17:00' }));
+    expect(rules.clear).toHaveBeenCalledWith('org', 'request', 'prev');
+  });
+
+  /*
+    ⚠️ The office setting a day's hours follows the same office rules as a member asking: past one, the office's
+    entry is the first approval — the hours wait, nothing is re-shaped and nobody is told yet.
+  */
+  it('an office rule on requests makes it wait — nothing counts, nothing re-shaped, nobody told', async () => {
+    const rules = {
+      decide: jest.fn().mockResolvedValue({ waiting: { stage: 'FIRST_STEP', waitingFor: 'HR' } }),
+      clear: jest.fn(),
+    };
+    const { svc, prisma, reshape, client } = make({ rules });
+    const res = (await svc.setDayHours(input())) as { data: { stage: string } };
+    expect(res.data.stage).toBe('FIRST_STEP');
+    expect(rules.decide).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'request', deciderId: 'leader', facts: { spaceIds: ['sp1'], days: 1 } }),
+      expect.any(Function),
+    );
+    expect(prisma.timeOff.update).not.toHaveBeenCalled();
+    expect(reshape.reshapeDay).not.toHaveBeenCalled();
+    expect(client.emit).not.toHaveBeenCalled();
   });
 
   it('refuses a day inside a longer changed-hours request', async () => {

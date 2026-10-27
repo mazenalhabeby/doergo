@@ -149,22 +149,37 @@ export class ProposalReviewService {
     // Out of scope answers exactly like decided or missing — and before the
     // claim, so a refused reviewer never takes it out of somebody else's queue.
     await this.places.assertReviewable(data.id, data);
-    // Office rules: papers for some kinds of thing, somewhere, may need a second person — decided before the claim.
-    const verdict = await this.firstStepOf(data);
-    if (verdict && !verdict.finalize)
-      return success({
-        id: data.id,
-        status: PROPOSAL_STATUS.PENDING,
-        stage: 'FIRST_STEP',
-        waitingFor: verdict.roleName,
-      });
-    // The rules' step was used up by this decision; if nothing gets written it is open again.
-    const stepId = verdict?.finalize ? verdict.stepId : undefined;
+    // Office rules: papers for some kinds of thing, somewhere, may need more people — decided before the claim;
+    // if nothing gets written the approvals already given stay (`decide` opens the step again).
+    const facts = await this.rulesFactsOf(data);
+    const apply = () => this.applyAccepted(data);
+    if (!facts) return apply();
+    const decided = await this.rules.decide(
+      {
+        organizationId: data.organizationId,
+        kind: 'assetProposal',
+        itemId: data.id,
+        facts: facts.ruleFacts,
+        deciderId: data.userId,
+        subjectId: facts.raisedById,
+      },
+      apply,
+    );
+    if (decided.waiting) return success({ id: data.id, status: PROPOSAL_STATUS.PENDING, ...decided.waiting });
+    return decided.done;
+  }
 
-    const proposal = await this.claim(data.id, data.organizationId).catch(async (e) => {
-      await this.rules.reopen(stepId);
-      throw e;
-    });
+  /** Accepting, once every approval is in: claim it, create the thing, or put it back in the queue. */
+  private async applyAccepted(
+    data: {
+      id: string;
+      categoryId?: string;
+      typeId?: string;
+      fields?: ContractFields;
+      retireReplaced?: boolean;
+    } & ContractActor,
+  ) {
+    const proposal = await this.claim(data.id, data.organizationId);
 
     const categoryId = data.categoryId ?? proposal.categoryId;
     const holderUserId = proposal.holderUserId ?? proposal.raisedById;
@@ -230,7 +245,6 @@ export class ProposalReviewService {
       );
       return success({ id: proposal.id, assetId, status: PROPOSAL_STATUS.ACCEPTED });
     } catch (e) {
-      await this.rules.reopen(stepId);
       /*
         ⚠️ Put it back in the queue.
 
@@ -252,7 +266,7 @@ export class ProposalReviewService {
    * does not decide them (the expense review's rule) — then the office rules: the kind (the reviewer's choice
    * wins) and where it belongs, as the queue reads it.
    */
-  private async firstStepOf(data: { id: string; categoryId?: string } & ContractActor) {
+  private async rulesFactsOf(data: { id: string; categoryId?: string } & ContractActor) {
     const facts = await this.places.ruleFacts(data.id, data.organizationId, data.categoryId);
     if (!facts) return null;
     const { raisedById, holderUserId, ...ruleFacts } = facts;
@@ -263,14 +277,7 @@ export class ProposalReviewService {
         organizationId: data.organizationId,
         message: 'You cannot accept papers you sent in or that are for you. Ask a colleague.',
       });
-    return this.rules.gate({
-      organizationId: data.organizationId,
-      kind: 'assetProposal',
-      itemId: data.id,
-      facts: ruleFacts,
-      deciderId: data.userId,
-      subjectId: raisedById,
-    });
+    return { raisedById, ruleFacts };
   }
 
   /** Refuse it, with a reason the member reads. */

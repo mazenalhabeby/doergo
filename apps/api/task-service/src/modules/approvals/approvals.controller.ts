@@ -15,6 +15,7 @@ import {
   approvalSteps,
   approvalRulesList,
   approvalRulesInsights,
+  approvalRuleRoleKinds,
   approvalRulesSave,
   approvalRulesDelete,
 } from '@hbcfield/shared/microservices';
@@ -63,6 +64,11 @@ export class ApprovalsController {
   @MessagePattern(pattern(approvalRulesInsights))
   ruleInsights(@Payload() data: RpcRequest<typeof approvalRulesInsights>) {
     return this.insights.insights(data.organizationId, data.kind, data.spaceIds);
+  }
+
+  @MessagePattern(pattern(approvalRuleRoleKinds))
+  ruleRoleKinds(@Payload() data: RpcRequest<typeof approvalRuleRoleKinds>) {
+    return this.rulesAdmin.roleKinds(data.organizationId, (data.roleIds ?? []).slice(0, 500));
   }
 
   @MessagePattern(pattern(approvalRulesSave))

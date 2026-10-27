@@ -2,53 +2,54 @@ import fs from 'fs';
 import path from 'path';
 
 /*
-  Office rules are only real if every approve path of their kinds asks the
-  gate, and every refusal path drops the open step. A new path that skips it
-  lets a rule be bypassed from that page — this fails first.
+  Office rules are only real if EVERY approve path of their kinds asks them through `rules.decide` (the write
+  runs only when every approval is in, and the step opens again if it fails), and every refusal path drops the
+  open step. A new path that writes past the rules lets a rule be bypassed from that page — this fails first.
+
+  ⚠️ Checked ONE FILE AT A TIME: the first version joined two files and grepped the result, so a path in one
+  file that never asked passed on the strength of the other ("overtime added to a finished shift").
 */
 const MODULES = path.join(__dirname, '..', '..');
 const read = (rel: string) => fs.readFileSync(path.join(MODULES, rel), 'utf8');
+const decides = (kind: string) => new RegExp(`rules\\.decide\\(\\s*\\{[\\s\\S]{0,240}kind: '${kind}'`, 'g');
+const clears = (kind: string) => new RegExp(`rules\\.clear\\([^)]*'${kind}'`);
 
-describe('office rules are asked on every approve path of their kinds', () => {
-  // A kind whose approve and refuse paths live in two files since a split names both (`a + b`).
-  const paths: Array<[string, string]> = [
-    [
-      'attendance/extra-time/extra-time-approval.service.ts + attendance/extra-time/extra-time-decision.service.ts',
-      'overtime',
-    ],
-    ['attendance/extra-time/outside-shift.service.ts', 'overtime'],
-    ['technicians/time-off-decision.service.ts', 'request'],
-    ['assets/expenses/asset-expense-review.service.ts', 'expense'],
-  ];
-  for (const [file, kind] of paths) {
-    it(`${file} gates and clears '${kind}'`, () => {
-      const src = file.split(' + ').map(read).join('\n');
-      expect(src).toMatch(new RegExp(`rules\\.gate\\(\\{[\\s\\S]{0,200}kind: '${kind}'`));
-      expect(src).toMatch(new RegExp(`rules\\??\\.clear\\([^)]*'${kind}'`));
-      // A step-1 answer returns BEFORE anything is written.
-      expect(src).toMatch(/if \(!verdict\.finalize\)[\s\S]{0,80}return success\(/);
-    });
-  }
-});
+// [file, kind, does it also refuse (and must drop the step)?]
+const PATHS: Array<[string, string, boolean]> = [
+  ['attendance/extra-time/extra-time-approval.service.ts', 'overtime', false],
+  // ADD overtime to a closed shift (the hole: it wrote with no rule at all) · refuse a round.
+  ['attendance/extra-time/extra-time-decision.service.ts', 'overtime', true],
+  ['attendance/extra-time/outside-shift.service.ts', 'overtime', true],
+  ['attendance/entries/approval.service.ts', 'hours', true],
+  // Typed-in hours are changed hours, their whole length.
+  ['attendance/entries/manual-entries.service.ts', 'hours', false],
+  ['attendance/no-shows/no-show-record.service.ts', 'noShow', true],
+  ['technicians/time-off-decision.service.ts', 'request', true],
+  // The office recording leave, or setting a day's hours, follows the same rules as a member asking.
+  ['technicians/leave-records.service.ts', 'request', false],
+  ['technicians/day-hours.service.ts', 'request', false],
+  ['assets/expenses/asset-expense-review.service.ts', 'expense', true],
+  ['assets/proposals/proposal-review.service.ts', 'assetProposal', true],
+  // A client request has no refusal — it only ever becomes a job.
+  ['tasks/records/task-triage.service.ts', 'clientRequest', false],
+];
 
-describe('the newer kinds ask through firstStep, before they write', () => {
-  // [file, kind, does the path have a refusal that must drop the open step?]
-  const paths: Array<[string, string, boolean]> = [
-    ['attendance/entries/approval.service.ts', 'hours', true],
-    ['attendance/no-shows/no-show-record.service.ts', 'noShow', true],
-    ['assets/proposals/proposal-review.service.ts', 'assetProposal', true],
-    // A client request has no refusal — it only ever becomes a job.
-    ['tasks/records/task-triage.service.ts', 'clientRequest', false],
-  ];
-  for (const [file, kind, clears] of paths) {
-    it(`${file} asks firstStep for '${kind}' and answers step 1 before writing`, () => {
+describe('every approve path asks the office rules through decide()', () => {
+  for (const [file, kind, refuses] of PATHS) {
+    it(`${file} asks decide() for '${kind}'${refuses ? ' and clears on a refusal' : ''}`, () => {
       const src = read(file);
-      // firstStep, or gate itself where the path must open the step again when its write fails.
-      expect(src).toMatch(new RegExp(`(firstStep|gate)\\(\\{[\\s\\S]{0,200}kind: '${kind}'`));
-      expect(src).toMatch(/if \(step\) return success\(|stage: 'FIRST_STEP'/);
-      if (clears) expect(src).toMatch(new RegExp(`rules\\.clear\\([^)]*'${kind}'`));
+      expect(src).toMatch(decides(kind));
+      // Nothing in an approve path asks the gate directly: decide() is what re-opens a step a failed write used.
+      expect(src).not.toMatch(/rules\.(gate|firstStep)\(/);
+      if (refuses) expect(src).toMatch(clears(kind));
     });
   }
+
+  it('step 1 answers before anything is written, on every path that can wait', () => {
+    const silent = PATHS.filter(([f]) => !/decided\.waiting/.test(read(f))).map(([f]) => f);
+    // The office's typed-in hours just stay waiting; every other path answers "waiting for …".
+    expect(silent).toEqual(['attendance/entries/manual-entries.service.ts']);
+  });
 });
 
 describe('a client request cannot be routed round an "urgent only" rule', () => {

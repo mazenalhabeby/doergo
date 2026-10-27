@@ -1,3 +1,4 @@
+import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
 import {
   assertMemberInScope,
   notEndedWhere,
@@ -48,6 +49,8 @@ export class DayHoursService {
     private readonly prisma: PrismaService,
     private readonly reshape: DayHoursReshapeService,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+    // Office rules: hours the office sets for a day follow the same rules as hours a member asks for.
+    private readonly rules: ApprovalRulesService,
     // The rota's plan for the form's read — the resolver lives in attendance's core module.
     private readonly moduleRef?: ModuleRef,
   ) {}
@@ -136,55 +139,85 @@ export class DayHoursService {
       });
     }
 
-    const now = new Date();
+    // Saved waiting; the office's own entry is the first approval — an office rule on requests may ask more people.
     const fields = {
       startTime: value.startTime ?? null,
       endTime: value.endTime ?? null,
       reason: value.reason ?? null,
-      status: 'APPROVED' as const,
-      approvedById: editorId,
-      approvedAt: now,
+      status: 'PENDING' as const,
+      approvedById: null,
+      approvedAt: null,
     };
-    const include = { space: { select: SPACE_BRIEF }, approvedBy: { select: { firstName: true, lastName: true } } };
-    const saved = previous
-      ? await this.prisma.timeOff.update({ where: { id: previous.id }, data: fields, include })
+    const pending = previous
+      ? await this.prisma.timeOff.update({ where: { id: previous.id }, data: fields })
       : await this.prisma.timeOff.create({
           data: { technicianId, kind: 'HOURS', startDate: day, endDate: day, spaceId, ...fields },
-          include,
         });
+    // Set again: approvals given for the EARLIER hours are void — the new hours start their approvals over.
+    if (previous) await this.rules.clear(organizationId, 'request', pending.id);
+    const decided = await this.rules.decide(
+      {
+        organizationId,
+        kind: 'request',
+        itemId: pending.id,
+        facts: { spaceIds: spaceId ? [spaceId] : [], days: 1 },
+        deciderId: editorId,
+        subjectId: technicianId,
+      },
+      () =>
+        this.applyApproved({ id: pending.id, organizationId, technicianId, editorId, spaceId, date: value.startDate }),
+    );
+    if (decided.waiting)
+      return success({ ...pending, ...decided.waiting }, `Hours saved — waiting for ${decided.waiting.waitingFor}`);
+    const { saved, entriesChanged } = decided.done;
+    return success({ ...saved, entriesChanged }, previous ? 'Hours for the day changed' : 'Hours for the day set');
+  }
 
+  /** Every approval in: the hours count, the day already clocked is re-shaped, and the member is told. */
+  private async applyApproved(a: {
+    id: string;
+    organizationId: string;
+    technicianId: string;
+    editorId: string;
+    spaceId: string | null;
+    date: string;
+  }) {
+    const include = { space: { select: SPACE_BRIEF }, approvedBy: { select: { firstName: true, lastName: true } } };
+    const saved = await this.prisma.timeOff.update({
+      where: { id: a.id },
+      data: { status: 'APPROVED', approvedById: a.editorId, approvedAt: new Date() },
+      include,
+    });
     const entriesChanged = await this.reshape.reshapeDay({
-      organizationId,
-      userId: technicianId,
-      date: value.startDate,
-      spaceId,
+      organizationId: a.organizationId,
+      userId: a.technicianId,
+      date: a.date,
+      spaceId: a.spaceId,
       request: {
         id: saved.id,
         kind: 'HOURS',
-        spaceId,
+        spaceId: a.spaceId,
         startTime: saved.startTime,
         endTime: saved.endTime,
         minutes: null,
         startDate: saved.startDate,
         endDate: saved.endDate,
       },
-      actorId: editorId,
+      actorId: a.editorId,
       reason: saved.reason,
     });
-
     // Told, not asked: the member's day changed, and they hear it from the person who changed it.
     emitEvent(this.notificationClient, timeOffDecidedEvent, {
       timeOffId: saved.id,
-      organizationId,
-      memberId: technicianId,
+      organizationId: a.organizationId,
+      memberId: a.technicianId,
       ...requestFacts(saved),
       approved: true,
-      startDate: value.startDate,
-      endDate: value.startDate,
+      startDate: a.date,
+      endDate: a.date,
       setBy: saved.approvedBy ? personName(saved.approvedBy) : null,
     });
-
-    return success({ ...saved, entriesChanged }, previous ? 'Hours for the day changed' : 'Hours for the day set');
+    return { saved, entriesChanged };
   }
 
   /**

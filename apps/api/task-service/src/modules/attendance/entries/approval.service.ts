@@ -127,34 +127,34 @@ export class ApprovalService {
     }
     assertClosedForDecision(entry);
 
-    // Office rules: hours changed by hand past a limit need a second person — step 1 writes nothing here.
-    const step = await this.rules.firstStep({
-      organizationId: data.organizationId,
-      kind: 'hours',
-      itemId: entry.id,
-      facts: { spaceIds: [entry.locationId], minutes: handChangedMinutes(entry) },
-      deciderId: data.approverId,
-      subjectId: entry.userId,
-    });
-    if (step) return success({ ...entry, ...step }, `Approved — waiting for ${step.waitingFor}`);
-
-    const updated = await this.prisma.timeEntry.update({
-      where: { id: data.entryId },
-      data: {
-        approvalStatus: ApprovalStatus.APPROVED,
-        approvedById: data.approverId,
-        approvedAt: new Date(),
-        approvalNotes: data.notes,
+    // Office rules: hours changed by hand past a limit need more people — until then nothing is written here.
+    const decided = await this.rules.decide(
+      {
+        organizationId: data.organizationId,
+        kind: 'hours',
+        itemId: entry.id,
+        facts: { spaceIds: [entry.locationId], minutes: handChangedMinutes(entry) },
+        deciderId: data.approverId,
+        subjectId: entry.userId,
       },
-      include: {
-        user: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-        location: {
-          select: { name: true, timezone: true },
-        },
-      },
-    });
+      () =>
+        this.prisma.timeEntry.update({
+          where: { id: data.entryId },
+          data: {
+            approvalStatus: ApprovalStatus.APPROVED,
+            approvedById: data.approverId,
+            approvedAt: new Date(),
+            approvalNotes: data.notes,
+          },
+          include: {
+            user: { select: { id: true, firstName: true, lastName: true } },
+            location: { select: { name: true, timezone: true } },
+          },
+        }),
+    );
+    if (decided.waiting)
+      return success({ ...entry, ...decided.waiting }, `Approved — waiting for ${decided.waiting.waitingFor}`);
+    const updated = decided.done;
 
     this.logger.log(`Entry approved: entry=${data.entryId}, approver=${data.approverId}`);
 

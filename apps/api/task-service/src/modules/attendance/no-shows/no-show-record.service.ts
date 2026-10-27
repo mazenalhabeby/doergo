@@ -159,36 +159,44 @@ export class NoShowRecordService {
     const excuse = data.action === 'excuse';
     /*
       Office rules: excusing a long run of missed days may need more people; marking absent ends it. The step
-      belongs to the RUN — kept under its newest day (the inbox item), found from any of its days — and the
-      days counted are the ones this decision closes: the whole run, or one day.
+      belongs to the RUN — kept under its newest day (the inbox item), found from any of its days — and it is judged
+      on the WHOLE run, whether this decision closes all of it or one day: a five-day run excused one day at a time
+      is still five days in a row.
     */
     const runIds = run?.ids ?? [inst.id];
-    if (!excuse) await this.rules.clear(data.organizationId, 'noShow', runIds);
-    const step = excuse
-      ? await this.rules.firstStep({
-          organizationId: data.organizationId,
-          kind: 'noShow',
-          itemId: data.wholeRun ? (run?.latestId ?? inst.id) : inst.id,
-          itemAliases: data.wholeRun ? runIds : [],
-          facts: { spaceIds: inst.spaceId ? [inst.spaceId] : [], days: ids.length },
-          deciderId: data.excusedById ?? '',
-          subjectId: inst.userId,
-        })
-      : null;
-    if (step) return success({ id: inst.id, state: inst.state, decided: 0, ...step });
-    const res = await this.prisma.shiftInstance.updateMany({
-      // Only the ones still open — a day closed meanwhile keeps its own answer.
-      where: { id: { in: ids }, state: { in: [...NO_SHOW_OPEN_STATES] } },
-      data: {
-        state: excuse ? 'EXCUSED' : 'ABSENT',
-        nextRemindAt: null,
-        closeReason: excuse ? (isNoShowExcuseReason(data.reasonCode) ? data.reasonCode : 'OTHER') : null,
-        closedAutomatically: false,
-        excuseReason: data.reason?.trim().slice(0, 500) || null,
-        excusedById: data.excusedById ?? null,
-        decidedAt: now,
+    const close = () =>
+      this.prisma.shiftInstance.updateMany({
+        // Only the ones still open — a day closed meanwhile keeps its own answer.
+        where: { id: { in: ids }, state: { in: [...NO_SHOW_OPEN_STATES] } },
+        data: {
+          state: excuse ? 'EXCUSED' : 'ABSENT',
+          nextRemindAt: null,
+          closeReason: excuse ? (isNoShowExcuseReason(data.reasonCode) ? data.reasonCode : 'OTHER') : null,
+          closedAutomatically: false,
+          excuseReason: data.reason?.trim().slice(0, 500) || null,
+          excusedById: data.excusedById ?? null,
+          decidedAt: now,
+        },
+      });
+    if (!excuse) {
+      await this.rules.clear(data.organizationId, 'noShow', runIds);
+      const res = await close();
+      return success({ id: inst.id, state: 'ABSENT', decided: res.count });
+    }
+    const decided = await this.rules.decide(
+      {
+        organizationId: data.organizationId,
+        kind: 'noShow',
+        itemId: run?.latestId ?? inst.id,
+        itemAliases: runIds,
+        facts: { spaceIds: inst.spaceId ? [inst.spaceId] : [], days: run?.count ?? 1 },
+        deciderId: data.excusedById ?? '',
+        subjectId: inst.userId,
       },
-    });
-    return success({ id: inst.id, state: excuse ? 'EXCUSED' : 'ABSENT', decided: res.count });
+      close,
+    );
+    if (decided.waiting) return success({ id: inst.id, state: inst.state, decided: 0, ...decided.waiting });
+    const res = decided.done;
+    return success({ id: inst.id, state: 'EXCUSED', decided: res.count });
   }
 }

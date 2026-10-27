@@ -82,79 +82,86 @@ export class ExtraTimeApprovalService {
       select: { id: true, overtimeStartAt: true },
     });
 
-    // Office rules: past a threshold this approval is step 1 of 2, and the shift waits for the second person.
-    const verdict = await this.rules.gate({
-      organizationId: data.organizationId,
-      kind: 'overtime',
-      itemId: entry.id,
-      facts: { spaceIds: entry.locationId ? [entry.locationId] : [], minutes },
-      deciderId: data.approverId,
-      subjectId: entry.userId,
-    });
-    if (!verdict.finalize) {
-      return success(
-        { entryId: entry.id, stage: 'FIRST_STEP', waitingFor: verdict.roleName },
-        `Approved — waiting for ${verdict.roleName}`,
-      );
+    // Office rules: past a threshold this approval is one of several, and the shift waits for the others.
+    const decided = await this.rules.decide(
+      {
+        organizationId: data.organizationId,
+        kind: 'overtime',
+        itemId: entry.id,
+        // Judged on the shift's whole overtime; this decision agrees to its own minutes.
+        facts: {
+          spaceIds: entry.locationId ? [entry.locationId] : [],
+          minutes: minutes + (await this.approvedOvertimeMinutes(entry.id)),
+        },
+        agreeMinutes: minutes,
+        deciderId: data.approverId,
+        subjectId: entry.userId,
+      },
+      async (agreed) => {
+        if (agreed != null) minutes = agreed;
+        /*
+          ⚠️ APPROVED OVERTIME IS A NUMBER OF MINUTES AFTER THE END, NOT AFTER THE CLICK.
+
+          This used to extend from "now" when the shift had already ended, which
+          made the pay depend on when the leader happened to look: ninety minutes
+          approved at 19:00 for a shift that ended at 17:00 paid until 20:30. With a
+          phone that sends its clock-out hours later, that is money nobody approved.
+          So the minutes run from the end the member was working to — the current
+          expected end (moved by earlier rounds, so rounds add up), or where the
+          request said overtime began — and the paid time is still capped by the
+          real clock-out. Only the REMINDER waits for now: a member whose approved
+          time has already run out is asked again after the grace, not in the past.
+        */
+        const newExpected = overtimeEndFor({
+          expectedEndAt: entry.expectedClockOutAt,
+          requestStartedAt: round?.overtimeStartAt ?? null,
+          clockOutAt: entry.clockOutAt,
+          now,
+          minutes,
+        });
+        const remindFrom = newExpected.getTime() > now.getTime() ? newExpected : now;
+
+        await this.prisma.$transaction([
+          this.prisma.timeEntry.update({
+            where: { id: entry.id },
+            data: closed
+              ? { expectedClockOutAt: newExpected }
+              : {
+                  expectedClockOutAt: newExpected,
+                  reminderState: 'OVERTIME_APPROVED',
+                  reminderCount: 0,
+                  nextRemindAt: new Date(remindFrom.getTime() + graceMin * 60_000),
+                },
+          }),
+          ...(round
+            ? [
+                this.prisma.overtimeRequest.update({
+                  where: { id: round.id },
+                  data: {
+                    status: 'APPROVED',
+                    approvedById: data.approverId,
+                    approvedAt: now,
+                    maxDurationMinutes: minutes,
+                    overtimeEndAt: newExpected,
+                    approvalMethod: automatic ? 'AUTOMATIC' : data.signature ? 'SIGNATURE' : 'REMOTE',
+                    leaderSignature: data.signature ?? null,
+                    approverNotes: data.notes ?? null,
+                  },
+                }),
+              ]
+            : []),
+        ]);
+
+        // Closed: the timesheet already counted it — count it again with the approval.
+        if (closed) await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
+        await relabelAfterEndMoved(this.prisma, entry, newExpected); // new entries: facts + departure labels
+        return newExpected;
+      },
+    );
+    if (decided.waiting) {
+      return success({ entryId: entry.id, ...decided.waiting }, `Approved — waiting for ${decided.waiting.waitingFor}`);
     }
-    if (verdict.minutes != null) minutes = verdict.minutes;
-
-    /*
-      ⚠️ APPROVED OVERTIME IS A NUMBER OF MINUTES AFTER THE END, NOT AFTER THE CLICK.
-
-      This used to extend from "now" when the shift had already ended, which
-      made the pay depend on when the leader happened to look: ninety minutes
-      approved at 19:00 for a shift that ended at 17:00 paid until 20:30. With a
-      phone that sends its clock-out hours later, that is money nobody approved.
-      So the minutes run from the end the member was working to — the current
-      expected end (moved by earlier rounds, so rounds add up), or where the
-      request said overtime began — and the paid time is still capped by the
-      real clock-out. Only the REMINDER waits for now: a member whose approved
-      time has already run out is asked again after the grace, not in the past.
-    */
-    const newExpected = overtimeEndFor({
-      expectedEndAt: entry.expectedClockOutAt,
-      requestStartedAt: round?.overtimeStartAt ?? null,
-      clockOutAt: entry.clockOutAt,
-      now,
-      minutes,
-    });
-    const remindFrom = newExpected.getTime() > now.getTime() ? newExpected : now;
-
-    await this.prisma.$transaction([
-      this.prisma.timeEntry.update({
-        where: { id: entry.id },
-        data: closed
-          ? { expectedClockOutAt: newExpected }
-          : {
-              expectedClockOutAt: newExpected,
-              reminderState: 'OVERTIME_APPROVED',
-              reminderCount: 0,
-              nextRemindAt: new Date(remindFrom.getTime() + graceMin * 60_000),
-            },
-      }),
-      ...(round
-        ? [
-            this.prisma.overtimeRequest.update({
-              where: { id: round.id },
-              data: {
-                status: 'APPROVED',
-                approvedById: data.approverId,
-                approvedAt: now,
-                maxDurationMinutes: minutes,
-                overtimeEndAt: newExpected,
-                approvalMethod: automatic ? 'AUTOMATIC' : data.signature ? 'SIGNATURE' : 'REMOTE',
-                leaderSignature: data.signature ?? null,
-                approverNotes: data.notes ?? null,
-              },
-            }),
-          ]
-        : []),
-    ]);
-
-    // Closed: the timesheet already counted it — count it again with the approval.
-    if (closed) await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
-    await relabelAfterEndMoved(this.prisma, entry, newExpected); // new entries: facts + departure labels
+    const newExpected = decided.done;
 
     // Approved automatically: the owner asked and is answered on screen, not pushed about their own.
     if (!automatic)
@@ -194,6 +201,15 @@ export class ExtraTimeApprovalService {
       organizationId,
       message: 'You cannot approve your own overtime. Ask a manager or an administrator.',
     });
+  }
+
+  /** Overtime already approved on this shift, every earlier round — what a rule adds this round to. */
+  async approvedOvertimeMinutes(entryId: string): Promise<number> {
+    const done = await this.prisma.overtimeRequest.aggregate({
+      where: { timeEntryId: entryId, status: 'APPROVED' },
+      _sum: { maxDurationMinutes: true },
+    });
+    return done._sum.maxDurationMinutes ?? 0;
   }
 
   /** True if the user may approve overtime for a space (space sub-role grant, or org admin). */

@@ -64,3 +64,16 @@ export function primaryContactOf(db: On<'customerContact', 'findFirst'>, company
     select: { role: true, person: { select: { name: true, phone: true, email: true } } },
   });
 }
+
+/** The workspace a client's portal belongs to (null: no portal) — where its requests belong. */
+export async function clientPortalSpaceId(
+  db: On<'customer', 'findFirst'>,
+  customerId: string,
+  organizationId: string,
+): Promise<string | null> {
+  const c = await db.customer.findFirst({
+    where: { id: customerId, organizationId },
+    select: { portal: { select: { spaceId: true } } },
+  });
+  return c?.portal?.spaceId ?? null;
+}

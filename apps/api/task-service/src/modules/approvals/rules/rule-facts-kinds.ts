@@ -12,7 +12,7 @@ import {
 } from '@hbcfield/shared';
 import { runsFor } from '../../attendance/no-shows/no-show-run-facts';
 import { ProposalPlacesService } from '../../assets/proposals/proposal-places.service';
-import type { RuleItem, RuleItemWindow } from './rule-facts.reader';
+import { inSpaces, type RuleItem, type RuleItemWindow } from './rule-items';
 
 /** People's names for a list of ids — one query. */
 export async function namesOf(prisma: PrismaService, ids: string[]): Promise<Map<string, string>> {
@@ -37,12 +37,14 @@ export async function hoursItems(prisma: PrismaService, organizationId: string, 
       ? // The window: finished entries a person looked at or changed — not every automatic shift of 90 days.
         {
           organizationId,
+          ...inSpaces(window, 'locationId'),
           clockInAt: { gte: window.since },
           status: { not: 'CLOCKED_IN' },
           OR: [{ approvalStatus: { not: 'AUTO' } }, { isEdited: true }],
         }
       : {
           organizationId,
+          ...inSpaces(window, 'locationId'),
           approvalStatus: 'PENDING',
           status: { not: 'CLOCKED_IN' },
           clockOutAt: { lte: window.waitingBefore },
@@ -81,13 +83,16 @@ export async function noShowItems(prisma: PrismaService, organizationId: string,
     where: window.since
       ? {
           organizationId,
+          ...inSpaces(window, 'spaceId'),
           expectedClockInAt: { gte: window.since },
-          OR: [
-            { state: { in: [...NO_SHOW_OPEN_STATES, 'ABSENT'] } },
-            { state: 'EXCUSED', closedAutomatically: false },
-          ],
+          OR: [{ state: { in: [...NO_SHOW_OPEN_STATES, 'ABSENT'] } }, { state: 'EXCUSED', closedAutomatically: false }],
         }
-      : { organizationId, state: { in: [...NO_SHOW_OPEN_STATES] }, expectedClockInAt: { lte: window.waitingBefore } },
+      : {
+          organizationId,
+          ...inSpaces(window, 'spaceId'),
+          state: { in: [...NO_SHOW_OPEN_STATES] },
+          expectedClockInAt: { lte: window.waitingBefore },
+        },
     select: {
       id: true,
       userId: true,
@@ -183,6 +188,14 @@ export async function clientRequestItems(prisma: PrismaService, organizationId: 
     where: {
       organizationId,
       source: 'CUSTOMER_PORTAL',
+      ...(window.spaceIds
+        ? {
+            OR: [
+              { spaceId: { in: window.spaceIds } },
+              { spaceId: null, customer: { portal: { spaceId: { in: window.spaceIds } } } },
+            ],
+          }
+        : {}),
       ...(window.since
         ? { createdAt: { gte: window.since } }
         : { triaged: false, createdAt: { lte: window.waitingBefore } }),

@@ -4,6 +4,7 @@ import {
   PrismaService,
   SERVICE_NAMES,
   judgedByLabelRules,
+  toISODateString,
   localPartsIn,
   readLabelFacts,
   withExpectedEnd,
@@ -52,6 +53,34 @@ export class DayHoursReshapeService {
   ) {}
 
   /** Re-shape the day's entries; returns how many changed. */
+  /** An approved one-day HOURS request — set in Approvals or by the office — re-plans the sessions it is about. */
+  async reshapeApprovedHours(
+    t: {
+      id: string;
+      kind: string;
+      technicianId: string;
+      spaceId: string | null;
+      startDate: Date;
+      endDate: Date;
+      startTime: string | null;
+      endTime: string | null;
+      reason: string | null;
+    },
+    actorId: string,
+    organizationId: string,
+  ): Promise<number> {
+    if (t.kind !== 'HOURS' || t.startDate.getTime() !== t.endDate.getTime()) return 0;
+    return this.reshapeDay({
+      organizationId,
+      userId: t.technicianId,
+      date: toISODateString(t.startDate),
+      spaceId: t.spaceId,
+      request: { ...t, kind: 'HOURS', minutes: null },
+      actorId,
+      reason: t.reason,
+    });
+  }
+
   async reshapeDay(change: DayHoursChange): Promise<number> {
     const dayStart = Date.parse(`${change.date}T00:00:00.000Z`);
     // A day either side covers every zone on Earth; the local day is checked per entry below.

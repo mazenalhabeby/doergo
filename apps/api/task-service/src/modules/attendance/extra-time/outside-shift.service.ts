@@ -1,3 +1,5 @@
+// size-exempt: one outside-shift decision read top to bottom — the office rules, the claim, the write, put back
+import type { TimeEntry } from '@prisma/client';
 import { ConflictException, ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -53,6 +55,16 @@ const pendingWhere = (since: Date) => ({
  * rule recounts. Not counting writes nothing but the decision. Either way it is decided ONCE
  * (`outsideDecidedAt`), so the inbox stops asking.
  */
+/** A leader's decision about one entry's time outside the shift. */
+type OutsideDecision = {
+  approverId: string;
+  organizationId: string;
+  entryId: string;
+  minutes: number;
+  reason?: string | null;
+  scopeSpaceIds?: AttendanceScope;
+};
+
 @Injectable()
 export class OutsideShiftService {
   private readonly logger = new Logger(OutsideShiftService.name);
@@ -100,6 +112,52 @@ export class OutsideShiftService {
       .map((r) => ({ ...r, outside: outsideShift(r, tol.get(r.shiftId ?? '') ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN) }))
       .filter((r) => r.outside);
     return success(out, `${out.length} entr(ies) with time outside the shift`);
+  }
+
+  /**
+   * The items office rules read (the "nobody answers" sweep and the rules page): waiting since before a moment, or
+   * every one decided or raised since a day — keyed `<entry>:outside`, the step the decision itself uses.
+   */
+  async ruleItems(
+    organizationId: string,
+    window: { waitingBefore?: Date; since?: Date; spaceIds?: string[] },
+    max: number,
+  ) {
+    const rows = await this.prisma.timeEntry.findMany({
+      where: window.since
+        ? {
+            organizationId,
+            ...(window.spaceIds ? { locationId: { in: window.spaceIds } } : {}),
+            clockOutAt: { gte: window.since },
+            OR: [{ outsideCountedMinutes: { gt: 0 } }, pendingWhere(window.since)],
+          }
+        : {
+            organizationId,
+            ...(window.spaceIds ? { locationId: { in: window.spaceIds } } : {}),
+            ...pendingWhere(new Date(Date.now() - LOOKBACK_DAYS * 86_400_000)),
+            clockOutAt: { lte: window.waitingBefore },
+          },
+      include: { user: { select: { firstName: true, lastName: true } } },
+      orderBy: { clockOutAt: 'desc' },
+      take: max,
+    });
+    const tol = await this.tolerances(rows.map((r) => r.shiftId));
+    return rows.flatMap((r) => {
+      const o = outsideShift(r, tol.get(r.shiftId ?? '') ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN);
+      const minutes = r.outsideCountedMinutes ?? o?.total ?? 0;
+      return minutes > 0
+        ? [
+            {
+              itemId: `${r.id}:outside`,
+              since: r.clockOutAt ?? r.clockInAt,
+              subjectId: r.userId,
+              user: r.user,
+              spaceId: r.locationId,
+              minutes,
+            },
+          ]
+        : [];
+    });
   }
 
   /** The member's own undecided time outside the shift, and whom it waits for. */
@@ -155,14 +213,7 @@ export class OutsideShiftService {
   }
 
   /** Count `minutes` of it (all, part — 0 = don't count). Decided once. */
-  async decide(data: {
-    approverId: string;
-    organizationId: string;
-    entryId: string;
-    minutes: number;
-    reason?: string | null;
-    scopeSpaceIds?: AttendanceScope;
-  }) {
+  async decide(data: OutsideDecision) {
     const entry = await this.prisma.timeEntry.findFirst({
       where: { id: data.entryId, organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) },
     });
@@ -182,71 +233,38 @@ export class OutsideShiftService {
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
     await this.approval.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
 
-    const plan = planAfterCounting(entry, outside, Number.isFinite(data.minutes) ? data.minutes : 0);
-    // Office rules: counting time is overtime — past a threshold it is step 1 of 2, and nothing is written.
-    if (plan.counted > 0 && this.rules) {
-      const verdict = await this.rules.gate({
-        organizationId: data.organizationId,
-        kind: 'overtime',
-        itemId: entry.id,
-        facts: { spaceIds: entry.locationId ? [entry.locationId] : [], minutes: plan.counted },
-        deciderId: data.approverId,
-        subjectId: entry.userId,
-      });
-      if (!verdict.finalize) {
-        return success(
-          { entryId: entry.id, stage: 'FIRST_STEP', waitingFor: verdict.roleName },
-          `Approved — waiting for ${verdict.roleName}`,
-        );
-      }
-    }
-
-    // Not counted: a step half-way under an office rule is dropped, like every refusal.
-    if (plan.counted === 0) await this.rules.clear(data.organizationId, 'overtime', entry.id);
-
-    // Claimed first: two leaders deciding at once cannot both count it.
-    const claimed = await this.prisma.timeEntry.updateMany({
-      where: { id: entry.id, outsideDecidedAt: null },
-      data: { outsideDecidedAt: new Date(), outsideDecidedById: data.approverId, outsideCountedMinutes: plan.counted },
-    });
-    if (!claimed.count)
-      throw new ConflictException({ code: 'OUTSIDE_ALREADY_DECIDED', message: 'This time was already decided.' });
-
-    const before = entry.expectedClockInAt!.getTime() - plan.expectedClockInAt.getTime();
-    const after = plan.expectedClockOutAt.getTime() - entry.expectedClockOutAt!.getTime();
-    try {
-      if (before > 0) {
-        await this.prisma.timeEntry.update({
-          where: { id: entry.id },
-          data: { expectedClockInAt: plan.expectedClockInAt },
-        });
-        await this.countedTime.recomputeClosed({ ...entry, expectedClockInAt: plan.expectedClockInAt });
-      }
-      if (after > 0) {
-        // The overtime path: a round on the record, the end moved, recounted, relabelled, the member told.
-        await this.decisions.addOvertimeToClosedEntry({
-          approverId: data.approverId,
-          entryId: entry.id,
-          minutes: Math.round(after / 60_000),
-          reason: data.reason ?? null,
+    let plan = planAfterCounting(entry, outside, Number.isFinite(data.minutes) ? data.minutes : 0);
+    // Its OWN step (never the extra-time one on the same entry: approving one must not finish or cancel the other).
+    const stepId = `${entry.id}:outside`;
+    if (plan.counted === 0) {
+      // Not counted: a step half-way under an office rule is dropped, like every refusal.
+      await this.rules.clear(data.organizationId, 'overtime', stepId);
+      await this.write(entry, plan, data);
+    } else {
+      // Counting time is overtime — past a threshold it waits for the others, and nothing is written yet.
+      const decided = await this.rules.decide(
+        {
           organizationId: data.organizationId,
-          scopeSpaceIds: data.scopeSpaceIds,
-        });
-      }
-    } catch (err) {
-      // Claimed, then not written (B1): put the claim back so it is asked again — never vanish uncounted.
-      await this.prisma.timeEntry.updateMany({
-        where: { id: entry.id, outsideDecidedById: data.approverId },
-        data: {
-          outsideDecidedAt: null,
-          outsideDecidedById: null,
-          outsideCountedMinutes: null,
-          expectedClockInAt: entry.expectedClockInAt,
+          kind: 'overtime',
+          itemId: stepId,
+          facts: { spaceIds: entry.locationId ? [entry.locationId] : [], minutes: plan.counted },
+          deciderId: data.approverId,
+          subjectId: entry.userId,
         },
-      });
-      if (before > 0) await this.countedTime.recomputeClosed(entry);
-      throw err;
+        async (agreed) => {
+          // Never more than any approver agreed to.
+          if (agreed != null && agreed < plan.counted) plan = planAfterCounting(entry, outside, agreed);
+          await this.write(entry, plan, data);
+        },
+      );
+      if (decided.waiting)
+        return success(
+          { entryId: entry.id, ...decided.waiting },
+          `Approved — waiting for ${decided.waiting.waitingFor}`,
+        );
     }
+    const after = plan.expectedClockOutAt.getTime() - entry.expectedClockOutAt!.getTime();
+
     // The member hears every outcome (A9); time counted after the end was told by the overtime path.
     if (after <= 0) {
       emitEvent(this.notificationClient, attendanceOvertimeDecisionEvent, {
@@ -286,5 +304,52 @@ export class OutsideShiftService {
       spaceId: entry.locationId,
     });
     return success({ entryId: entry.id, counted: plan.counted, of: outside.total }, note);
+  }
+
+  /** Claim the decision, move the plan, recount — or put the claim back if any of it fails. */
+  private async write(entry: TimeEntry, plan: ReturnType<typeof planAfterCounting>, data: OutsideDecision) {
+    // Claimed first: two leaders deciding at once cannot both count it.
+    const claimed = await this.prisma.timeEntry.updateMany({
+      where: { id: entry.id, outsideDecidedAt: null },
+      data: { outsideDecidedAt: new Date(), outsideDecidedById: data.approverId, outsideCountedMinutes: plan.counted },
+    });
+    if (!claimed.count)
+      throw new ConflictException({ code: 'OUTSIDE_ALREADY_DECIDED', message: 'This time was already decided.' });
+
+    const before = entry.expectedClockInAt!.getTime() - plan.expectedClockInAt.getTime();
+    const after = plan.expectedClockOutAt.getTime() - entry.expectedClockOutAt!.getTime();
+    try {
+      if (before > 0) {
+        await this.prisma.timeEntry.update({
+          where: { id: entry.id },
+          data: { expectedClockInAt: plan.expectedClockInAt },
+        });
+        await this.countedTime.recomputeClosed({ ...entry, expectedClockInAt: plan.expectedClockInAt });
+      }
+      if (after > 0) {
+        // The overtime path: a round on the record, the end moved, recounted, relabelled, the member told.
+        await this.decisions.recordDecidedOvertime({
+          approverId: data.approverId,
+          entryId: entry.id,
+          minutes: Math.round(after / 60_000),
+          reason: data.reason ?? null,
+          organizationId: data.organizationId,
+          scopeSpaceIds: data.scopeSpaceIds,
+        });
+      }
+    } catch (err) {
+      // Claimed, then not written (B1): put the claim back so it is asked again — never vanish uncounted.
+      await this.prisma.timeEntry.updateMany({
+        where: { id: entry.id, outsideDecidedById: data.approverId },
+        data: {
+          outsideDecidedAt: null,
+          outsideDecidedById: null,
+          outsideCountedMinutes: null,
+          expectedClockInAt: entry.expectedClockInAt,
+        },
+      });
+      if (before > 0) await this.countedTime.recomputeClosed(entry);
+      throw err;
+    }
   }
 }

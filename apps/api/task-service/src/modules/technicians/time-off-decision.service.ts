@@ -1,4 +1,12 @@
-import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Optional,
+} from '@nestjs/common';
+import { DayHoursReshapeService } from '../attendance/shifts/day-hours-reshape.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { notEndedWhere, isAbsence, toISODateString, PrismaService, SERVICE_NAMES, success } from '@hbcfield/shared';
 import { assertNotSelfDecision } from '../attendance/core/self-decision';
@@ -7,6 +15,7 @@ import { SPACE_BRIEF, requestFacts } from './technicians-helpers';
 import { ApprovalRulesService } from '../approvals/rules/approval-rules.service';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import { CoverService } from './cover.service';
+import { requestRuleFacts, requestsCoverShort, type RequestRuleRow } from '../approvals/rules/request-rule-facts';
 import { workingDaysOf } from './member-requests';
 import { emitEvent, timeOffDecidedEvent } from '@hbcfield/shared/microservices';
 
@@ -19,6 +28,7 @@ export class TimeOffDecisionService {
     private readonly calendarRules: CalendarRulesService,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
     private readonly rules: ApprovalRulesService,
+    @Optional() private readonly reshape?: DayHoursReshapeService,
   ) {}
 
   private recountedWorkingDays(organizationId: string, userId: string, start: Date, end: Date) {
@@ -93,68 +103,53 @@ export class TimeOffDecisionService {
 
     // Office rules: past a threshold this approval is step 1 of 2 and the request stays pending.
     if (!approved) await this.rules.clear(organizationId, 'request', timeOffId);
-    if (approved && this.rules) {
-      const days =
-        workingDays ??
-        (timeOff as { workingDays?: number | null }).workingDays ??
-        Math.round((timeOff.endDate.getTime() - timeOff.startDate.getTime()) / 86_400_000) + 1;
-      const spaceIds = (timeOff as { spaceId?: string | null }).spaceId
-        ? [(timeOff as { spaceId: string }).spaceId]
-        : timeOff.technician.spaceAssignments.map((a) => a.spaceId);
-      // Cover is asked only when a rule cares — it is the wallchart's own verdict (CoverService).
-      const coverShort =
-        isAbsence(timeOff.kind) &&
-        (await this.prisma.approvalRule.count({
-          where: { organizationId, kind: 'request', isActive: true, whenCoverShort: true },
-        })) > 0
-          ? ['short', 'skill'].includes(
-              (
-                await this.cover.assessMany(organizationId, [
-                  {
-                    id: timeOff.id,
-                    technicianId: timeOff.technicianId,
-                    startDate: timeOff.startDate,
-                    endDate: timeOff.endDate,
-                  },
-                ])
-              ).get(timeOff.id)?.level ?? 'ok',
-            )
-          : false;
-      const verdict = await this.rules.gate({
-        organizationId,
-        kind: 'request',
-        itemId: timeOffId,
-        facts: { spaceIds, days, coverShort },
-        deciderId: approverId,
-        subjectId: timeOff.technicianId,
+    const write = () =>
+      this.prisma.timeOff.update({
+        where: { id: timeOffId },
+        data: {
+          ...(workingDays !== undefined ? { workingDays } : {}),
+          status: approved ? 'APPROVED' : 'REJECTED',
+          approvedById: approverId,
+          approvedAt: new Date(),
+          rejectionReason: approved ? null : rejectionReason,
+          ...(automatic ? { autoApproved: true } : {}),
+        },
+        include: {
+          technician: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+          approvedBy: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+          space: { select: SPACE_BRIEF },
+        },
       });
-      if (!verdict.finalize) {
-        return success(
-          { ...timeOff, stage: 'FIRST_STEP', waitingFor: verdict.roleName },
-          `Approved — waiting for ${verdict.roleName}`,
-        );
-      }
+    let updated: Awaited<ReturnType<typeof write>>;
+    if (approved) {
+      // The one reader of a request's facts, shared with the sweep and the rules page; cover only when a rule asks.
+      const row = { ...timeOff, kind: timeOff.kind as string } as unknown as RequestRuleRow;
+      const coverShort =
+        (await this.rules.asksAboutCover(organizationId)) &&
+        ((await requestsCoverShort(this.cover, organizationId, [row])).get(timeOff.id) ?? false);
+      const decided = await this.rules.decide(
+        {
+          organizationId,
+          kind: 'request',
+          itemId: timeOffId,
+          facts: requestRuleFacts(row, coverShort, workingDays),
+          deciderId: approverId,
+          subjectId: timeOff.technicianId,
+        },
+        write,
+      );
+      if (decided.waiting)
+        return success({ ...timeOff, ...decided.waiting }, `Approved — waiting for ${decided.waiting.waitingFor}`);
+      updated = decided.done;
+      // Changed hours for a day already clocked re-shape it, now that they are approved (day-hours' own rule).
+      await this.reshape?.reshapeApprovedHours(updated, approverId, organizationId);
+    } else {
+      updated = await write();
     }
-    const updated = await this.prisma.timeOff.update({
-      where: { id: timeOffId },
-      data: {
-        ...(workingDays !== undefined ? { workingDays } : {}),
-        status: approved ? 'APPROVED' : 'REJECTED',
-        approvedById: approverId,
-        approvedAt: new Date(),
-        rejectionReason: approved ? null : rejectionReason,
-        ...(automatic ? { autoApproved: true } : {}),
-      },
-      include: {
-        technician: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-        approvedBy: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-        space: { select: SPACE_BRIEF },
-      },
-    });
 
     /*
       And tell the person whose leave it is.
@@ -215,6 +210,8 @@ export class TimeOffDecisionService {
       where: { id: timeOffId },
       data: { status: 'CANCELED' },
     });
+    // Withdrawn: an office rule's approvals half-way through end with it.
+    await this.rules.clearItem('request', timeOffId);
 
     return success(updated);
   }

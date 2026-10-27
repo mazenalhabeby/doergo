@@ -19,6 +19,7 @@ Covers:
      refused, removing the rule closes the half-done step (the leave request
      stays exactly as it was)
 """
+import subprocess
 import atexit
 import json
 import sys
@@ -215,10 +216,12 @@ def rules_section():
     status, _ = call('GET', '/approvals/rules', leader_tok)
     check('only people managers read the rules', status == 403, status)
 
-    status, body = call('GET', '/organizations/roles', admin)
+    status, body = call('GET', '/approvals/rules/roles', admin)
     roles = data(body) if status == 200 else []
-    # A role nobody in the scenario holds: the second step can only be refused here.
-    role = next((r for r in roles if r.get('memberCount', 0) == 0), None) or (roles[-1] if roles else None)
+    # A rule may only ask a role whose holders can approve requests (RULE_ROLE_CANNOT_DECIDE otherwise). The Admin
+    # role: its holder finishes at once, and nobody else in the scenario holds it — the second step can be refused.
+    able = [r for r in roles if 'request' in (r.get('decides') or [])]
+    role = next((r for r in able if r.get('name') == 'Admin'), None) or (able[0] if able else None)
     check('found a role for the second step', role is not None, status)
     if not role:
         return
@@ -252,7 +255,17 @@ def rules_section():
         status, _ = call('DELETE', f'/approvals/rules/{rule_id}', admin)
         check('the rule is removed', status == 200, status)
     still = next((i for i in inbox(leader_tok) if i['kind'] == 'request' and i['id'] == item['id']), None)
-    check('the request is untouched and no longer half-way', still is not None and not still.get('step'), still and still.get('step'))
+    check('the request is untouched (still waiting)', still is not None)
+    # Removing a rule never wipes approvals already given: the step stays only while ANOTHER active rule still asks
+    # the same role (decision 2026-10-27). Whether it shows depends on the organization's own rules.
+    other = [r for r in data(call('GET', '/approvals/rules', admin)[1]) or []
+             if r.get('kind') == 'request' and r.get('isActive') and r.get('secondRoleId') == role['id'] and not r.get('spaceId')]
+    shown = bool(still and still.get('step'))
+    check('half-way only if another rule still asks for that role', shown == bool(other), (shown, len(other)))
+    # Leave no step of this run behind.
+    subprocess.run(['docker', 'exec', 'hbcfield-postgres', 'psql', '-U', 'hbcfield', '-d', 'hbcfield', '-qc',
+                    f"update approval_steps set \"consumedAt\" = now() where \"itemId\" = '{item['id']}' and \"consumedAt\" is null"],
+                   check=False, capture_output=True)
 
 
 if __name__ == '__main__':

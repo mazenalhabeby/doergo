@@ -10,7 +10,7 @@ import {
   PrismaService,
 } from '@hbcfield/shared';
 import { RULE_MESSAGES } from './approval-rules-helpers';
-import { closeStepsOf } from './approval-steps';
+import { roleCanDecide, ruleKindsByRole } from './rule-role-deciders';
 
 /**
  * The office rules themselves: listing, saving and deleting them (closing the
@@ -24,8 +24,12 @@ export class ApprovalRulesAdminService {
 
   async listRules(organizationId: string, spaceIds?: string[]): Promise<ApprovalRuleView[]> {
     const rules = await this.prisma.approvalRule.findMany({
-      // Held in some workspaces only: their rules, never the every-workspace ones or another workspace's.
-      where: { organizationId, ...(spaceIds ? { spaceId: { in: spaceIds } } : {}) },
+      /*
+        Held in some workspaces only: their own rules, AND the every-workspace ones — read-only (\`editable: false\`),
+        because those apply in their workspaces too and the page would otherwise say "only the first approval"
+        where the company already asks for more. Never another workspace's.
+      */
+      where: { organizationId, ...(spaceIds ? { OR: [{ spaceId: { in: spaceIds } }, { spaceId: null }] } : {}) },
       orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }],
     });
     const roleIds = [...new Set(rules.flatMap((r) => [r.secondRoleId, r.escalateRoleId]).filter(Boolean) as string[])];
@@ -59,6 +63,7 @@ export class ApprovalRulesAdminService {
       categoryName: categories.find((c) => c.id === r.categoryId)?.name ?? null,
       urgentOnly: r.urgentOnly,
       isActive: r.isActive,
+      editable: !spaceIds || (!!r.spaceId && spaceIds.includes(r.spaceId)),
     }));
   }
 
@@ -93,6 +98,12 @@ export class ApprovalRulesAdminService {
     if (!second || !escalate)
       throw new BadRequestException({ message: RULE_MESSAGES.RULE_ROLE_REQUIRED, code: 'RULE_ROLE_REQUIRED' });
     if (!space) throw new NotFoundException('Workspace not found');
+    // The role it asks must be able to give that approval — else its items wait for somebody who cannot.
+    if (second.id && !(await roleCanDecide(this.prisma, organizationId, second.id, input.kind, space.id ?? null)))
+      throw new BadRequestException({
+        message: RULE_MESSAGES.RULE_ROLE_CANNOT_DECIDE,
+        code: 'RULE_ROLE_CANNOT_DECIDE',
+      });
     const limit = RULE_LIMITS[input.kind];
     const data = {
       kind: input.kind,
@@ -112,19 +123,12 @@ export class ApprovalRulesAdminService {
       ...(input.isActive != null || !id ? { isActive: input.isActive ?? true } : {}),
     };
     if (id) {
-      const before = await this.prisma.approvalRule.findFirst({
-        where: { id, organizationId },
-        select: { kind: true, spaceId: true, secondRoleId: true },
-      });
-      if (!before) throw new NotFoundException('Rule not found');
-      await this.prisma.approvalRule.updateMany({ where: { id, organizationId }, data });
       /*
-        Switched off, or now about something else (another kind, workspace or approver): items half-way under it
-        stop saying "needs …" now, and the next approval is judged by the rules as they are then.
+        Items half-way through keep the approvals already given: every decision recomputes what the rules ask NOW
+        (approval-rules.service `gate`), so an edit, a switch-off or a delete never sends people back to step 1.
       */
-      const moved =
-        before.kind !== data.kind || before.spaceId !== data.spaceId || before.secondRoleId !== data.secondRoleId;
-      if (data.isActive === false || moved) await closeStepsOf(this.prisma, organizationId, id);
+      const { count } = await this.prisma.approvalRule.updateMany({ where: { id, organizationId }, data });
+      if (!count) throw new NotFoundException('Rule not found');
       return { id };
     }
     return this.prisma.approvalRule.create({
@@ -133,12 +137,16 @@ export class ApprovalRulesAdminService {
     });
   }
 
+  /** Which rule kinds each role's holders could approve — the rules page marks a role that cannot. */
+  roleKinds(organizationId: string, roleIds: string[]) {
+    return ruleKindsByRole(this.prisma, organizationId, roleIds);
+  }
+
   async deleteRule(organizationId: string, id: string, spaceIds?: string[]): Promise<{ deleted: true }> {
     if (spaceIds) await this.assertRuleInScope(organizationId, id, spaceIds);
     const { count } = await this.prisma.approvalRule.deleteMany({ where: { id, organizationId } });
     if (!count) throw new NotFoundException('Rule not found');
-    // Items half-way under it finish on their next approval, and stop saying "needs …" now.
-    await closeStepsOf(this.prisma, organizationId, id);
+    // Items half-way under it keep what was given; the next decision is judged by the rules that remain.
     return { deleted: true };
   }
 

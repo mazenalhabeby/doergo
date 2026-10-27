@@ -29,7 +29,7 @@ import { ApprovalRulesClient } from './approval-rules.client';
 import type { AuthedRequest } from '../../common/request.types';
 import { callerOrgId } from '../../common/caller-org';
 import { ServiceCalls } from '../../common/microservices/service-calls';
-import { listAccessRoles } from '@hbcfield/shared/microservices';
+import { approvalRuleRoleKinds, listAccessRoles } from '@hbcfield/shared/microservices';
 
 type RoleRow = { id: string; name: string; permissions?: Record<string, unknown>; memberCount?: number };
 import type { SessionUser } from '../../common/request.types';
@@ -115,12 +115,27 @@ export class ApprovalsController {
     const [org, space] = await Promise.all(
       (['org', 'space'] as const).map((scope) => this.services.auth.ask(listAccessRoles, { organizationId, scope })),
     );
-    const brief = (inSpace: boolean) => (r: RoleRow) =>
-      Object.values(r.permissions ?? {}).some(Boolean)
-        ? [{ id: r.id, name: r.name, inSpace, holders: r.memberCount ?? 0 }]
-        : [];
     const rows = (reply: unknown) => ((reply as { data?: RoleRow[] })?.data ?? (reply as RoleRow[])) || [];
-    return { success: true, data: [...rows(org).flatMap(brief(false)), ...rows(space).flatMap(brief(true))] };
+    const all = [
+      ...rows(org).map((r) => ({ r, inSpace: false })),
+      ...rows(space).map((r) => ({ r, inSpace: true })),
+    ].filter(({ r }) => Object.values(r.permissions ?? {}).some(Boolean));
+    // Which kinds each role's holders could approve — so the page marks a role that could never give the approval.
+    const kinds = await this.services.task.ask(approvalRuleRoleKinds, {
+      organizationId,
+      roleIds: all.map(({ r }) => r.id),
+    });
+    const kindsOf = ((kinds as { data?: unknown })?.data ?? kinds) as Record<string, string[]>;
+    return {
+      success: true,
+      data: all.map(({ r, inSpace }) => ({
+        id: r.id,
+        name: r.name,
+        inSpace,
+        holders: r.memberCount ?? 0,
+        decides: kindsOf?.[r.id] ?? [],
+      })),
+    };
   }
 
   @Get('rules/insights')

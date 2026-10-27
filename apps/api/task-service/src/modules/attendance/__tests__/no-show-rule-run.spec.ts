@@ -25,7 +25,10 @@ describe('a rule on missed clock-ins follows the run', () => {
       },
       user: { findFirst: jest.fn().mockResolvedValue(null) },
     };
-    const rules: any = { firstStep: jest.fn().mockResolvedValue(null), clear: jest.fn() };
+    const rules: any = {
+      decide: jest.fn(async (_input: unknown, write: () => Promise<unknown>) => ({ done: await write() })),
+      clear: jest.fn(),
+    };
     return { prisma, rules, svc: new NoShowRecordService(prisma, rules) };
   }
   const resolve = (svc: NoShowRecordService, over: Record<string, unknown>) =>
@@ -34,16 +37,22 @@ describe('a rule on missed clock-ins follows the run', () => {
   it('excusing the whole run asks under its newest day, found from any of them, for all its days', async () => {
     const { svc, rules } = setup();
     await resolve(svc, { wholeRun: true });
-    expect(rules.firstStep).toHaveBeenCalledWith(
+    expect(rules.decide).toHaveBeenCalledWith(
       expect.objectContaining({ itemId: 'd3', itemAliases: ['d1', 'd2', 'd3'], facts: { spaceIds: ['s1'], days: 3 } }),
+      expect.any(Function),
     );
   });
 
-  it('excusing one day counts that day only', async () => {
+  /*
+    ⚠️ One day at a time is no way round a "3 days in a row" rule: a single-day excuse is judged on the WHOLE run,
+    under the same step — five days excused one by one still need the people the rule names.
+  */
+  it("excusing ONE day of a run is still judged on the whole run, under the run's step", async () => {
     const { svc, rules } = setup();
     await resolve(svc, {});
-    expect(rules.firstStep).toHaveBeenCalledWith(
-      expect.objectContaining({ itemId: 'd1', facts: { spaceIds: ['s1'], days: 1 } }),
+    expect(rules.decide).toHaveBeenCalledWith(
+      expect.objectContaining({ itemId: 'd3', itemAliases: ['d1', 'd2', 'd3'], facts: { spaceIds: ['s1'], days: 3 } }),
+      expect.any(Function),
     );
   });
 
@@ -51,6 +60,6 @@ describe('a rule on missed clock-ins follows the run', () => {
     const { svc, rules } = setup();
     await resolve(svc, { action: 'absent' });
     expect(rules.clear).toHaveBeenCalledWith('o', 'noShow', ['d1', 'd2', 'd3']);
-    expect(rules.firstStep).not.toHaveBeenCalled();
+    expect(rules.decide).not.toHaveBeenCalled();
   });
 });

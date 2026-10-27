@@ -90,3 +90,33 @@ export function staffWithAccess(db: On<'user', 'findMany'>, organizationId: stri
     take: 500,
   });
 }
+
+/**
+ * The ACTIVE people holding any of these roles now — as their org role or a workspace role — with their access
+ * facts and which roles they hold (an office rule may only ask a role somebody holding it can approve with).
+ */
+export function roleHoldersWithAccess(
+  db: On<'user', 'findMany'>,
+  organizationId: string,
+  roleIds: string[],
+  now: Date,
+) {
+  return db.user.findMany({
+    where: {
+      organizationId,
+      isActive: true,
+      OR: [
+        { memberRoleId: { in: roleIds } },
+        { spaceAssignments: { some: { roleId: { in: roleIds }, ...activeWindowWhere(now) } } },
+      ],
+    },
+    select: {
+      ...ORG_ACCESS_SELECT,
+      memberRoleId: true,
+      spaceAssignments: {
+        where: activeWindowWhere(now),
+        select: { spaceId: true, roleId: true, role: { select: { permissions: true, isActive: true } } },
+      },
+    },
+  });
+}

@@ -100,7 +100,7 @@ export async function peopleWhoPass(
 export function personRoleAndName(db: On<'user', 'findFirst'>, userId: string, organizationId: string) {
   return db.user.findFirst({
     where: { id: userId, organizationId },
-    select: { role: true, firstName: true, lastName: true },
+    select: { role: true, firstName: true, lastName: true, isActive: true },
   });
 }
 

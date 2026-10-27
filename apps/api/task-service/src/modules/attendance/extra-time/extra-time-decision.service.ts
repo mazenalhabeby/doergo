@@ -1,3 +1,4 @@
+import type { TimeEntry } from '@prisma/client';
 import { Injectable, Inject, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, refusalSettlesOutside, success, TimeEntryStatus } from '@hbcfield/shared';
@@ -13,6 +14,16 @@ import { emitEvent, attendanceOvertimeDecisionEvent } from '@hbcfield/shared/mic
  * The office deciding extra time after the fact: refusing it, taking back approved
  * overtime, adding overtime to a closed shift.
  */
+/** Overtime added to a closed shift by a leader. */
+type OvertimeAdd = {
+  approverId: string;
+  entryId: string;
+  minutes: number;
+  reason?: string | null;
+  organizationId: string;
+  scopeSpaceIds?: AttendanceScope;
+};
+
 @Injectable()
 export class ExtraTimeDecisionService {
   constructor(
@@ -95,14 +106,7 @@ export class ExtraTimeDecisionService {
    * after the shift end, capped by the real clock-out, not your own shift.
    * A request already waiting is simply approved instead.
    */
-  async addOvertimeToClosedEntry(data: {
-    approverId: string;
-    entryId: string;
-    minutes: number;
-    reason?: string | null;
-    organizationId: string;
-    scopeSpaceIds?: AttendanceScope;
-  }) {
+  async addOvertimeToClosedEntry(data: OvertimeAdd) {
     const minutes = Math.round(data.minutes);
     if (!minutes || minutes < 1 || minutes > 1440) {
       throw new BadRequestException('Overtime minutes must be between 1 and 1440');
@@ -132,6 +136,41 @@ export class ExtraTimeDecisionService {
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
     await this.approval.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
 
+    // Office rules: adding it is approving it — past a threshold it waits for the others, nothing written yet.
+    const decided = await this.rules.decide(
+      {
+        organizationId: data.organizationId,
+        kind: 'overtime',
+        itemId: entry.id,
+        // Judged on the shift's whole overtime; this decision agrees to its own minutes.
+        facts: {
+          spaceIds: entry.locationId ? [entry.locationId] : [],
+          minutes: minutes + (await this.approval.approvedOvertimeMinutes(entry.id)),
+        },
+        agreeMinutes: minutes,
+        deciderId: data.approverId,
+        subjectId: entry.userId,
+      },
+      (agreed) => this.writeRound(entry, agreed ?? minutes, data),
+    );
+    if (decided.waiting)
+      return success({ entryId: entry.id, ...decided.waiting }, `Approved — waiting for ${decided.waiting.waitingFor}`);
+    return decided.done;
+  }
+
+  /**
+   * Time worked after the end, ALREADY decided (outside-shift's decision ran the office rules itself, under its
+   * own step): the same round on the record, end moved, recounted, relabelled, member told — no second gate.
+   */
+  async recordDecidedOvertime(data: OvertimeAdd) {
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: { id: data.entryId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_OUT },
+    });
+    if (!entry || !entry.clockOutAt) throw new NotFoundException('Time entry not found');
+    return this.writeRound(entry, Math.round(data.minutes), data);
+  }
+
+  private async writeRound(entry: TimeEntry, minutes: number, data: OvertimeAdd) {
     const now = new Date();
     const newExpected = overtimeEndFor({
       expectedEndAt: entry.expectedClockOutAt,

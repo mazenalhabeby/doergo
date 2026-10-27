@@ -17,8 +17,6 @@ function setup() {
       findMany: jest.fn().mockResolvedValue([]),
       create: jest.fn(async () => ({ id: 'r-new' })),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-      // The rule as it was before an edit: the same kind, everywhere, the same approver.
-      findFirst: jest.fn().mockResolvedValue({ kind: 'overtime', spaceId: null, secondRoleId: 'role-mgr' }),
       deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     approvalStep: { updateMany: jest.fn() },
@@ -29,6 +27,10 @@ function setup() {
     assetCategory: {
       findFirst: jest.fn().mockResolvedValue({ id: 'cat' }),
       findMany: jest.fn().mockResolvedValue([]),
+    },
+    // Whoever holds the role may approve every kind (an administrator) — a test about a role that cannot says so.
+    user: {
+      findMany: jest.fn().mockResolvedValue([{ role: 'ADMIN', memberRoleId: 'role-mgr', spaceAssignments: [] }]),
     },
     companyLocation: {
       findFirst: jest.fn().mockResolvedValue({ id: 'site' }),
@@ -107,36 +109,73 @@ describe('saving an office rule', () => {
 
   it("editing another organization's rule reads as missing", async () => {
     const { prisma, svc } = setup();
-    prisma.approvalRule.findFirst.mockResolvedValueOnce(null);
+    prisma.approvalRule.updateMany.mockResolvedValueOnce({ count: 0 });
     await expect(svc.saveRule(ORG, 'u1', rule, 'r1')).rejects.toThrow(NotFoundException);
-    expect(prisma.approvalRule.findFirst.mock.calls[0][0].where).toEqual({ id: 'r1', organizationId: ORG });
-    expect(prisma.approvalRule.updateMany).not.toHaveBeenCalled();
+    expect(prisma.approvalRule.updateMany.mock.calls[0][0].where).toEqual({ id: 'r1', organizationId: ORG });
     expect(prisma.approvalStep.updateMany).not.toHaveBeenCalled();
   });
 
-  it('switching a rule off closes its open steps; editing an active one leaves them', async () => {
+  /*
+    ⚠️ An edit, a switch-off or a different approver NEVER wipes approvals already given: every decision
+    recomputes what the rules ask now. Closing the steps sent people back to step 1 under the OTHER rules too.
+  */
+  it('switching a rule off, or changing its approver, leaves the open steps alone', async () => {
+    const { prisma, svc } = setup();
+    await svc.saveRule(ORG, 'u1', { ...rule, isActive: false }, 'r1');
+    await svc.saveRule(ORG, 'u1', { ...rule, secondRoleId: 'role-hr' }, 'r1');
+    expect(prisma.approvalStep.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('an edit that says nothing about on/off keeps it; a new rule starts on', async () => {
     const { prisma, svc } = setup();
     await svc.saveRule(ORG, 'u1', rule, 'r1');
-    expect(prisma.approvalStep.updateMany).not.toHaveBeenCalled();
-    await svc.saveRule(ORG, 'u1', { ...rule, isActive: false }, 'r1');
-    expect(prisma.approvalStep.updateMany.mock.calls[0][0].where).toEqual({
-      organizationId: ORG,
-      ruleId: 'r1',
-      consumedAt: null,
+    expect(prisma.approvalRule.updateMany.mock.calls[0][0].data).not.toHaveProperty('isActive');
+    await svc.saveRule(ORG, 'u1', rule);
+    expect(prisma.approvalRule.create.mock.calls[0][0].data.isActive).toBe(true);
+  });
+
+  /*
+    ⚠️ A rule may only ask a role somebody holding it can give the approval with — the kind's own route
+    refuses everybody else first, and the item would wait for an approval nobody can give (seen live: a Sales Rep).
+  */
+  it('refuses a role nobody holding it may approve this kind with', async () => {
+    const { prisma, svc } = setup();
+    prisma.user.findMany.mockResolvedValueOnce([
+      {
+        role: 'EMPLOYEE',
+        memberRoleId: 'role-mgr',
+        memberRole: { permissions: { crmWork: true }, isActive: true },
+        spaceAssignments: [],
+      },
+    ]);
+    await expect(svc.saveRule(ORG, 'u1', { kind: 'hours', secondRoleId: 'role-mgr' })).rejects.toMatchObject({
+      response: { code: 'RULE_ROLE_CANNOT_DECIDE' },
+    });
+    expect(prisma.approvalRule.create).not.toHaveBeenCalled();
+  });
+
+  it('accepts it when one holder may — through the role, or the org-wide bridge', async () => {
+    const { prisma, svc } = setup();
+    prisma.user.findMany.mockResolvedValueOnce([
+      {
+        role: 'EMPLOYEE',
+        memberRoleId: 'role-mgr',
+        memberRole: { permissions: { canApproveAttendance: true }, isActive: true },
+        spaceAssignments: [],
+      },
+    ]);
+    await expect(svc.saveRule(ORG, 'u1', { kind: 'hours', secondRoleId: 'role-mgr' })).resolves.toEqual({
+      id: 'r-new',
     });
   });
 });
 
 describe('deleting an office rule', () => {
-  it('closes the steps it left open', async () => {
+  it('keeps the approvals already given on items half-way under it', async () => {
     const { prisma, svc } = setup();
     await expect(svc.deleteRule(ORG, 'r1')).resolves.toEqual({ deleted: true });
     expect(prisma.approvalRule.deleteMany.mock.calls[0][0].where).toEqual({ id: 'r1', organizationId: ORG });
-    expect(prisma.approvalStep.updateMany.mock.calls[0][0].where).toEqual({
-      organizationId: ORG,
-      ruleId: 'r1',
-      consumedAt: null,
-    });
+    expect(prisma.approvalStep.updateMany).not.toHaveBeenCalled();
   });
 
   it("another organization's rule: 404, no step touched", async () => {
@@ -165,10 +204,21 @@ describe('listing office rules', () => {
 describe('a caller who may manage approval rules in some workspaces only', () => {
   const MINE = ['site-a'];
 
-  it("lists only those workspaces' rules — never the every-workspace ones", async () => {
+  it("lists those workspaces' rules, and the every-workspace ones READ-ONLY — never another workspace's", async () => {
     const { prisma, svc } = setup();
-    await svc.listRules(ORG, MINE);
-    expect(prisma.approvalRule.findMany.mock.calls[0][0].where).toEqual({ organizationId: ORG, spaceId: { in: MINE } });
+    prisma.approvalRule.findMany.mockResolvedValueOnce([
+      { id: 'mine', kind: 'overtime', spaceId: 'site-a', secondRoleId: null, escalateRoleId: null, isActive: true },
+      { id: 'org', kind: 'overtime', spaceId: null, secondRoleId: null, escalateRoleId: null, isActive: true },
+    ]);
+    const views = await svc.listRules(ORG, MINE);
+    expect(prisma.approvalRule.findMany.mock.calls[0][0].where).toEqual({
+      organizationId: ORG,
+      OR: [{ spaceId: { in: MINE } }, { spaceId: null }],
+    });
+    expect(views.map((v) => [v.id, v.editable])).toEqual([
+      ['mine', true],
+      ['org', false],
+    ]);
   });
 
   it('refuses a rule for every workspace or for another workspace, writing nothing', async () => {
@@ -197,21 +247,5 @@ describe('a caller who may manage approval rules in some workspaces only', () =>
       id: 'r-new',
     });
     expect(prisma.approvalRule.create).toHaveBeenCalled();
-  });
-
-  it('an edit that says nothing about on/off keeps it; a new rule starts on', async () => {
-    const { prisma, svc } = setup();
-    await svc.saveRule(ORG, 'u1', rule, 'r1');
-    expect(prisma.approvalRule.updateMany.mock.calls[0][0].data).not.toHaveProperty('isActive');
-    await svc.saveRule(ORG, 'u1', rule);
-    expect(prisma.approvalRule.create.mock.calls[0][0].data.isActive).toBe(true);
-  });
-
-  it('a rule now about another approver closes the steps opened under it', async () => {
-    const { prisma, svc } = setup();
-    await svc.saveRule(ORG, 'u1', { ...rule, secondRoleId: 'role-hr' }, 'r1');
-    expect(prisma.approvalStep.updateMany.mock.calls[0][0].where).toEqual(
-      expect.objectContaining({ ruleId: 'r1', consumedAt: null }),
-    );
   });
 });
